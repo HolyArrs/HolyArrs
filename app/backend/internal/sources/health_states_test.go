@@ -31,7 +31,7 @@ func TestHealth_EachState(t *testing.T) {
 	}{
 		{domain.Source{State: "enabled"}, StateWorking, "Working"},
 		{domain.Source{State: "disabled"}, StateDisabled, "Paused by you"},
-		{domain.Source{State: "paused", PauseReason: reason(KindLoginRefused), PausedUntil: &until}, StateAuthFailed, "turned down the key"},
+		{domain.Source{State: "paused", PauseReason: reason(KindLoginRefused), PausedUntil: &until}, StateAuthFailed, "password refused"},
 		{domain.Source{State: "paused", PauseReason: reason(KindDown), PausedUntil: &until}, StateUnreachable, "could not reach"},
 		{domain.Source{State: "paused", PauseReason: reason(KindRateLimited), PausedUntil: &until}, StateUnreachable, "slow down"},
 		{domain.Source{State: "paused", PauseReason: reason(KindBlocked), PausedUntil: &until}, StateUnreachable, "local network"},
@@ -414,7 +414,7 @@ func TestSave_KeepsKeysInVault(t *testing.T) {
 }
 
 func TestExplain_PlainWords(t *testing.T) {
-	if got := Explain(&Error{Kind: KindLoginRefused, Msg: "401 Unauthorized"}); !strings.Contains(got, "turned down the key") {
+	if got := Explain(&Error{Kind: KindLoginRefused, Msg: "401 Unauthorized"}); !strings.Contains(got, "password refused") {
 		t.Fatal(got)
 	}
 	if got := Explain(&Error{Kind: KindBlocked}); !strings.Contains(got, "local network") {

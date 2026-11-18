@@ -166,7 +166,7 @@ func AddVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in Versio
 	}
 	if in.FolderName != "" {
 		folder = strings.TrimSpace(in.FolderName)
-		if !filepath.IsLocal(folder) || strings.ContainsAny(folder, `/\:*?"<>|`) || strings.HasPrefix(folder, ".") || strings.HasSuffix(folder, ".") || folder != in.FolderName || len(folder) > 200 || reservedName(folder) || strings.IndexFunc(folder, func(r rune) bool { return unicode.IsControl(r) || unicode.Is(unicode.Cf, r) }) >= 0 {
+		if folder != in.FolderName || !customFolderOK(folder) {
 			return v, ErrVersionFolder
 		}
 	}
@@ -465,4 +465,19 @@ func MainLabel(fourK bool) string {
 		return mediafiles.FourKName
 	}
 	return "Main"
+}
+
+// customFolderOK says a Version's own folder name is safe: one folder, or
+// folders inside grouping folders written with forward slashes, each a
+// plain folder name.
+func customFolderOK(folder string) bool {
+	if len(folder) > 200 || !validFolder(folder) {
+		return false
+	}
+	for _, seg := range strings.Split(folder, "/") {
+		if !filepath.IsLocal(seg) || strings.ContainsAny(seg, `:*?"<>|`) || strings.HasSuffix(seg, ".") || reservedName(seg) || strings.IndexFunc(seg, func(r rune) bool { return unicode.IsControl(r) || unicode.Is(unicode.Cf, r) }) >= 0 {
+			return false
+		}
+	}
+	return true
 }

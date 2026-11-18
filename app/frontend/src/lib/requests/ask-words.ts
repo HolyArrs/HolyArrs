@@ -1,6 +1,7 @@
 // Words and small rules for Requests screens.
 
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { shownPerson } from '#lib/core/plain.ts';
 import type { AskLimit, LimitKind } from './types.ts';
 import type { Ask } from '../core/types.ts';
 
@@ -18,7 +19,7 @@ export function names(list: string[]): string {
 
 /** Who asked: "Asked by ana and bo". */
 export function askedBy(a: Pick<Ask, 'people' | 'asked_by'>): string {
-	const list = a.people.length ? a.people.map((p) => p.name) : [a.asked_by.name];
+	const list = a.people.length ? a.people.map((p) => shownPerson(p.name)) : [shownPerson(a.asked_by.name)];
 	return t('requests.words.askedBy', { names: names(list) });
 }
 
@@ -110,11 +111,11 @@ export const askTabs: { tab: AskTab; label: string }[] = [
 ];
 
 /** Which tab an ask sits in. */
-export function askTab(a: Pick<Ask, 'state' | 'title_id'>): AskTab {
+export function askTab(a: Pick<Ask, 'state' | 'title_id' | 'adding'>): AskTab {
 	if (a.state === 'asked') return 'waiting';
 	if (a.state === 'turned_down') return 'declined';
 	if (a.state === 'available') return 'done';
-	return a.title_id ? 'approved' : 'failed';
+	return a.title_id || a.adding ? 'approved' : 'failed';
 }
 
 /** Counts the asks in each tab. */
@@ -151,6 +152,22 @@ export function approverCounts(asks: Pick<Ask, 'state' | 'title_id'>[]): Record<
 		if (askTab(a) === 'failed') n.failed++;
 	}
 	return n;
+}
+
+type Counts = Record<ApproverTab, number> & { failed: number };
+
+/** The server's totals of every request, moved by what is changing on the page now: `viewed` counts against `listed` (the list as it was read). */
+export function totalCounts(server: Counts, viewed: Counts, listed: Counts): Counts {
+	const at = (k: keyof Counts) => Math.max(0, server[k] + viewed[k] - listed[k]);
+	return { pending: at('pending'), processing: at('processing'), done: at('done'), failed: at('failed') };
+}
+
+const TAB_STATES: Record<ApproverTab, Ask['state'][]> = { pending: ['asked'], processing: ['approved'], done: ['available', 'turned_down'] };
+
+/** The request states to read for a tab that the server says holds requests (`total`) but none of which the list read carries; none when the tab already shows some. */
+export function statesToFill(tab: ApproverTab, total: number, listed: Pick<Ask, 'state'>[]): Ask['state'][] {
+	const states = TAB_STATES[tab];
+	return total > 0 && !listed.some((a) => states.includes(a.state)) ? states : [];
 }
 
 const when = (iso?: string) => (iso ? Date.parse(iso) || 0 : 0);

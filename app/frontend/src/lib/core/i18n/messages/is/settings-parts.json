@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Ekki tókst að tengja {name}",
 	"settings.parts.connected": "{name} tengt",
 	"settings.parts.title": "Hlutar",
+	"settings.parts.onOff": "Kveikja eða slökkva á hlutum",
 	"settings.parts.ownerOnly": "Aðeins eigandi og stjórnendur",
 	"settings.parts.safeMode": "HolyArrs keyrir í öruggum ham: aðeins kjarninn keyrir og rofar hluta og stýringar þrepa eru hunsaðar fram að venjulegri ræsingu. Notaðu <b>Endurræsa HolyArrs</b> á <a>Hættusvæði</a> til að fara úr öruggum ham.",
 	"settings.parts.dangerZone": "Hættusvæði",

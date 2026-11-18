@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -57,7 +58,7 @@
 	}
 
 	async function makeKey(side: Side) {
-		if (a?.sides.find((s) => s.side === side)?.key && !confirm(t('arrapi.seerr.replaceConfirm', { app: sideWord[side].app }))) return;
+		if (a?.sides.find((s) => s.side === side)?.key && !(await ask(t('arrapi.seerr.replaceConfirm', { app: sideWord[side].app }), { yes: t('ui.ask.replace'), danger: true }))) return;
 		busy = 'key-' + side;
 		try {
 			const r = await api.post<{ key: string }>(`/settings/old-app-api/keys/${side}`);
@@ -72,7 +73,7 @@
 	}
 
 	async function removeKey(side: Side) {
-		if (!confirm(t('arrapi.seerr.removeConfirm', { app: sideWord[side].app, what: sideWhatLower(side) }))) return;
+		if (!(await ask(t('arrapi.seerr.removeConfirm', { app: sideWord[side].app, what: sideWhatLower(side) }), { yes: t('ui.ask.remove'), danger: true }))) return;
 		busy = 'del-' + side;
 		try {
 			await api.del(`/settings/old-app-api/keys/${side}`);

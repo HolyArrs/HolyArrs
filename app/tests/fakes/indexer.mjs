@@ -55,13 +55,18 @@ export function albumReleasesFor(artist, album, year) {
 function showReleasesFor(s, season, ep) {
 	const dotted = s.name.replace(/[^A-Za-z0-9]+/g, '.');
 	const two = (/** @type {number} */ n) => String(n).padStart(2, '0');
+	const aired = s.episodes.filter((e) => Number(e[0]) === season && String(e[3]) < '2090');
+	// Posted the day after what it holds aired (the last aired episode for a season pack): HolyArrs refuses a
+	// Release posted before its episode came out as a likely fake.
+	const holds = ep !== null ? aired.filter((e) => Number(e[1]) === ep) : aired;
+	const last = holds.map((e) => String(e[3])).sort().pop();
+	const posted = (last ? new Date(Date.parse(`${last}T00:00:00Z`) + 86_400_000) : new Date(Date.UTC(2024, 0, 1))).toUTCString().replace('GMT', '+0000');
 	const one = (/** @type {string} */ name, /** @type {number} */ size, /** @type {number} */ seeders) => {
 		const hash = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(16).padStart(8, '0').repeat(5);
-		return `<item><title>${name}</title><guid>${name}</guid><pubDate>Mon, 01 Jan 2024 00:00:00 +0000</pubDate>` +
+		return `<item><title>${name}</title><guid>${name}</guid><pubDate>${posted}</pubDate>` +
 			`<enclosure url="http://127.0.0.1:${indexerPort}/dl/${hash}.torrent" length="${size}" type="application/x-bittorrent"/>` +
 			`<torznab:attr name="seeders" value="${seeders}"/><torznab:attr name="peers" value="${seeders + 5}"/><torznab:attr name="infohash" value="${hash}"/></item>`;
 	};
-	const aired = s.episodes.filter((e) => Number(e[0]) === season && String(e[3]) < '2090');
 	if (ep !== null) {
 		const code = `S${two(season)}E${two(ep)}`;
 		return one(`${dotted}.${code}.1080p.WEB-DL.H264-HOLYARRS`, 1_200_000_000, 40) + one(`${dotted}.${code}.720p.WEB.H264-HOLYARRS`, 600_000_000, 30) +

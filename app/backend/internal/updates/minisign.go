@@ -62,7 +62,7 @@ func ParsePublicKey(s string) (PublicKey, error) {
 // Pinned parses PinnedKeys; a key that does not parse is skipped.
 func Pinned() []PublicKey {
 	var out []PublicKey
-	for _, s := range PinnedKeys {
+	for _, s := range append(PinnedKeys, labKey) {
 		if k, err := ParsePublicKey(s); err == nil {
 			out = append(out, k)
 		}

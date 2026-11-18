@@ -9,7 +9,7 @@ import (
 // is a warning.
 func TestBackupsOffNoWarnings(t *testing.T) {
 	w := newWorld(t)
-	w.bk = Backups{Off: true, Started: true, KeyPrint: "abcd"}
+	w.bk = Backups{Off: true, Started: true, KeyKit: "warn"}
 	got := w.run(t)
 	if c := got["backups"]; c.State != OK {
 		t.Fatalf("no backup with Off %+v", c)

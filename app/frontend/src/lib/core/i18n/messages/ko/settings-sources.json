@@ -7,6 +7,7 @@
 	"settings.sources.title": "소스",
 	"settings.sources.add": "소스 추가",
 	"settings.sources.lead": "우선순위 1이 가장 먼저입니다. 실패한 소스는 최대 6시간 동안 건너뜁니다. 피드가 없는 사이트는 Jackett나 Prowlarr를 Torznab 피드로 추가하세요.",
+	"settings.sources.builtIn": "내장 사이트에는 Jackett나 Prowlarr가 필요 없습니다: {sites}. {kind}에서 {site}을(를) 고르세요.",
 	"settings.sources.change": "{name} 변경",
 	"settings.sources.name": "이름",
 	"settings.sources.feedKind": "피드 종류",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "저장",
 	"settings.sources.cancel": "취소",
 	"settings.sources.none": "소스 없음",
-	"settings.sources.noneText": "Torznab 또는 Newznab 피드, 또는 Jackett나 Prowlarr를 추가하세요.",
+	"settings.sources.noneText": "내장 사이트, Torznab 또는 Newznab 피드, 또는 Jackett나 Prowlarr를 추가하세요.",
 	"settings.sources.rowTitle": "{url} · 우선순위 {priority} · {uses}",
 	"settings.sources.priorityUses": "우선순위 {priority} · {uses}",
 	"settings.sources.keyIs": "키 {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "사이트",
 	"settings.sources.addressSite": "사이트 자체의 주소입니다. 사이트가 옮겨진 경우에만 바꾸세요.",
 	"settings.sources.siteKeyLabel": "쿠키 또는 RSS 키",
-	"settings.sources.siteKeyHint": "내 계정에서: 브라우저 쿠키의 uid와 pass, 또는 RSS 링크의 u와 tp. 암호화되어 보관됩니다."
+	"settings.sources.siteKeyHint": "내 계정에서: 브라우저 쿠키의 uid와 pass, 또는 RSS 링크의 u와 tp. 암호화되어 보관됩니다.",
+	"settings.sources.sendTo": "다운로드 보낼 곳",
+	"settings.sources.sendToAny": "아무 다운로더",
+	"settings.sources.sendToHint": "이 소스에서 고른 것은 모두 이 다운로더로만 갑니다. 꺼져 있으면 기다립니다.",
+	"settings.sources.sendToGone": "고른 다운로더가 삭제되었습니다. 이 소스의 다운로드는 이제 아무 다운로더로 갑니다."
 }

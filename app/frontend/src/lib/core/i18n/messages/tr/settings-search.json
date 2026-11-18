@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Çıkıştan önce paylaşılan sürüm adaylarını reddet",
 	"settings.search.refuseEarlyHint": "Büyük olasılıkla sahte. Sürüm adayı seç yine uyarıyla gösterir.",
 	"settings.search.refuseTiny": "Boyut ve dosya türüne göre sahteleri reddet",
-	"settings.search.refuseTinyHint": "Fazla küçük sürüm adayları, boş dosyalar ve HD adlı .wmv ya da .asf dosyaları",
+	"settings.search.refuseTinyHint": "Fazla küçük sürüm adayları, boş dosyalar, yarıda kalmış videolar ve HD adlı .wmv ya da .asf dosyaları",
 	"settings.search.grace": "Bir sürüm adayı kaç saat erken olabilir",
 	"settings.search.graceHint": "Saat dilimleri için. Varsayılan 24.",
 	"settings.search.floors": "İçe aktarırken dosya boyutlarını denetle",

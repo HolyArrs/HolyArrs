@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { bareNames, personText, shownPerson } from '#lib/core/plain.ts';
+	import PersonText from '#lib/ui/PersonText.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Billboard from '#lib/ui/Billboard.svelte';
 	import TrailerPlayer from '#lib/ui/TrailerPlayer.svelte';
@@ -126,7 +128,7 @@
 			const by = picked.state === 'turned_down' ? ctx.decidedBy(picked) : '';
 			// Others who said no to the same title before, after this ask's own decider.
 			const also = ctx.alsoDeclined(picked);
-			const first = by && by !== picked.decided_by?.name ? t('requests.window.by', { name: by }) : picked.decided_at ? t('requests.window.on', { date: whenDate(picked.decided_at) }) : '';
+			const first = by && by !== shownPerson(picked.decided_by?.name) ? t('requests.window.by', { name: by }) : picked.decided_at ? t('requests.window.on', { date: whenDate(picked.decided_at) }) : '';
 			return [first, also].filter(Boolean).join(' ');
 		}
 		if (life.stage === 'failed') {
@@ -269,7 +271,7 @@
 			{#key picked.id}
 			<div class="swap" in:fade={{ duration: status && startChoosing ? 0 : ms(520) }} out:fade={{ duration: ms(360) }}>
 				<Billboard
-					label={t('requests.window.bannerLabel', { name: picked.name, who: ctx.who(picked).name })}
+					label={t('requests.window.bannerLabel', { name: picked.name, who: personText(ctx.who(picked).name) })}
 					testid="ask-banner"
 					kind={picked.kind === 'movie' || picked.kind === 'show' ? picked.kind : undefined}
 					tmdb={picked.kind === 'artist' ? null : picked.tmdb_id}
@@ -284,7 +286,7 @@
 					{#snippet meta()}
 						<p class="facts"><span>{kindOf(picked)}</span>{#if qualityTag(picked)}<span>{qualityTag(picked)}</span>{/if}{#if year}<span>{year}</span>{/if}{#if count(picked)}<span>{count(picked)}</span>{/if}</p>
 						{#each [ctx.who(picked)] as w (w.id)}
-							<p class="asker"><Avatar name={w.name} src={w.avatar} size={22} /><span><b>{w.name}</b> {t('requests.window.asked')} <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{agoLong(picked.asked_at)}</time>{#if watchlistLine(picked.people, undefined)}{' '}{t('requests.window.fromPlex')}{/if}</span>{#if w.kid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</p>
+							<p class="asker"><Avatar name={bareNames(w.name)} src={w.avatar} size={22} /><span><b><PersonText text={w.name} /></b> {t('requests.window.asked')} <time datetime={picked.asked_at} title={dateTime(picked.asked_at)}>{agoLong(picked.asked_at)}</time>{#if watchlistLine(picked.people, undefined)}{' '}{t('requests.window.fromPlex')}{/if}</span>{#if w.kid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</p>
 						{/each}
 						{#if picked.note}<p class="said">&ldquo;{picked.note}&rdquo;</p>{/if}
 					{/snippet}
@@ -294,6 +296,7 @@
 							<span></span>
 						{:else if waiting(picked)}
 							<div class="acts" class:gone={choosing} inert={choosing}>
+								<button type="button" class="act glass round" aria-label={t('requests.window.removeName', { name: picked.name })} title={t('requests.page.removeRequest')} data-testid="ask-remove" onclick={() => ctx.removeAsk(picked)}><Icon name="trash" size={20} /></button>
 								<button type="button" class="act glass st-half" aria-label={t('requests.window.declineName', { name: picked.name })} data-testid="ask-decline" onclick={() => ctx.turnDown([picked])}><Icon name="x" size={20} />{t('requests.window.decline')}</button>
 								<button type="button" class="act primary st-half" aria-label={t('requests.window.approveName', { name: picked.name })} data-testid="ask-approve" data-opens-sheet onclick={() => void choose()}><Icon name="check" size={20} />{t('requests.window.approve')}</button>
 							</div>
@@ -302,7 +305,7 @@
 								{#if ctx.isPending(picked.id)}
 									<p class="state">{t('requests.window.sending')}</p>
 								{:else}
-									<p class="state">{ctx.decided(picked) || lifecycle(picked).label}{#if lifecycle(picked).stage === 'getting'}<span class="sep">·</span>{t('requests.window.gettingNow')}{/if}</p>
+									<p class="state"><PersonText text={ctx.decided(picked) || lifecycle(picked).label} />{#if lifecycle(picked).stage === 'getting'}<span class="sep">·</span>{t('requests.window.gettingNow')}{/if}</p>
 								{/if}
 							</div>
 						{/if}
@@ -317,7 +320,7 @@
 					<span class="life inline tone-{life.tone}" role="progressbar" aria-label={t('requests.window.progress', { name: picked.name, label: life.label })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(life.pct)}><span class="fill" style:width="{life.pct}%"></span></span>
 					<div class="says">
 						<p class="huge tone-{life.tone}">{life.label}</p>
-						<p class="sent">{sentence}{#if life.more}<span class="more">{` · ${life.more}`}</span>{/if}</p>
+						<p class="sent"><PersonText text={sentence} />{#if life.more}<span class="more">{` · ${life.more}`}</span>{/if}</p>
 						{#if dlId}<a class="tl-link" href={to(`/downloads?open=${dlId}`)} data-testid="ask-download">{t('requests.window.seeDownload')}<Icon name="chevronRight" size={16} /></a>{/if}
 					</div>
 					{#if picked.kind !== 'movie' && !choosing}
@@ -354,14 +357,17 @@
 						{#if row.pills.length && !status}
 							<div class="quality">
 								<QualityPills pills={row.pills} bind:selected={quality} />
-								<p class="q-line" data-testid="quality-asked">{t('requests.window.askedFor', { name: ctx.who(picked).name, quality: askedLabel })}{#if chosen?.extra}{' '}{t('requests.window.addsOnly', { quality: chosen.label })}{/if}</p>
+								<p class="q-line" data-testid="quality-asked"><PersonText text={t('requests.window.askedFor', { name: ctx.who(picked).name, quality: askedLabel })} />{#if chosen?.extra}{' '}{t('requests.window.addsOnly', { quality: chosen.label })}{/if}</p>
 							</div>
 						{/if}
 					</div>
 					{#if !status}
 					<footer class="sh-f">
 						<span class="sum">{pick.empty ? t('requests.window.tickOne') : changed ? t('requests.window.addsTicked') : picked.kind === 'movie' ? t('requests.window.addsMovie') : t('requests.window.addsWhat', { what: (count(picked) || t('requests.window.everything')).toLowerCase() })}</span>
-						<button type="button" class="act ghost" onclick={closeSheet}>{t('requests.window.back')}</button>
+						<!-- The buttons on the banner are hidden behind this panel, so Remove and Decline are here too. -->
+						<button type="button" class="act ghost round" aria-label={t('requests.window.removeName', { name: picked.name })} title={t('requests.page.removeRequest')} data-testid="ask-remove-sheet" onclick={() => ctx.removeAsk(picked)}><Icon name="trash" size={18} /></button>
+						<button type="button" class="act ghost" aria-label={t('requests.window.declineName', { name: picked.name })} data-testid="ask-decline-sheet" onclick={() => ctx.turnDown([picked])}>{t('requests.window.decline')}</button>
+						<button type="button" class="act ghost sh-back" onclick={closeSheet}>{t('requests.window.back')}</button>
 						<button type="button" class="act primary" disabled={pick.empty} onclick={approveChosen}><Icon name="check" size={18} />{t('requests.window.approve')}</button>
 					</footer>
 					{/if}
@@ -407,7 +413,7 @@
 	.act.primary:disabled { opacity: 0.4; cursor: default; transform: none; }
 	.act.glass { background: rgb(255 255 255 / 0.18); color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
 	.act.glass:hover { background: rgb(255 255 255 / 0.28); }
-	.act.round { width: 50px; padding: 0; }
+	.act.round { flex: none; width: 50px; padding: 0; }
 	.act.ghost { background: none; color: var(--text-muted); height: 44px; }
 	.act.ghost:hover { color: var(--text); background: var(--surface-2); }
 
@@ -476,6 +482,7 @@
 	.sum { flex: 1; color: var(--text-muted); font: var(--t-footnote); }
 	.sh-f .act.primary { background: var(--text); color: var(--bg); height: 40px; padding: 0 18px; font: var(--t-subhead); font-weight: 600; }
 	.sh-f .act.ghost { height: 40px; font: var(--t-subhead); }
+	.sh-f .act.round { width: 40px; padding: 0; }
 
 	.swap { position: absolute; inset: 0; }
 
@@ -513,15 +520,17 @@
 	@media (max-width: 767px) {
 		.facts { flex-wrap: wrap; white-space: normal; row-gap: 2px; }
 		.act { height: 46px; padding: 0 18px; }
+		.act.round { width: 46px; }
 		.tl-link { height: 44px; }
 		.sh-f { flex-wrap: wrap; }
 		.sum { flex: 1 0 100%; }
-		.sh-f .act.ghost { margin-left: auto; }
+		.sh-f .sh-back { margin-left: auto; }
 	}
 	@media (pointer: coarse) {
 		.st-hide, .tl-link { height: 44px; }
 		.sheet :global(.line), .sheet :global(.season) { min-height: 44px; }
 		.sh-f .act.primary, .sh-f .act.ghost { height: 44px; }
+		.sh-f .act.round { width: 44px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.frame :global(.ui-billboard .content), .fill, .acts, .act { transition: none; }

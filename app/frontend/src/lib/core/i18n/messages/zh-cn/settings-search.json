@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "排除发行前就已发布的资源",
 	"settings.search.refuseEarlyHint": "很可能是假的。手动选资源时仍会显示，并附带警告。",
 	"settings.search.refuseTiny": "按大小和文件类型排除虚假资源",
-	"settings.search.refuseTinyHint": "过小的资源、空文件，以及名称标着高清却是 .wmv 或 .asf 的文件",
+	"settings.search.refuseTinyHint": "过小的资源、空文件、被截断的视频，以及名称标着高清却是 .wmv 或 .asf 的文件",
 	"settings.search.grace": "资源可提前的小时数",
 	"settings.search.graceHint": "用于处理时区差异。默认 24。",
 	"settings.search.floors": "导入时检查文件大小",

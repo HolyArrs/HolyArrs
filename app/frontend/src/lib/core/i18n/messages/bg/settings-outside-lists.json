@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Вашите списъци от Trakt не могат да се четат, докато не се зададе.",
 	"settings.outsideLists.replaceKey": "Смяна на ключа за Trakt",
 	"settings.outsideLists.pasteKey": "Поставете ключа за Trakt",
+	"settings.outsideLists.mdblistKey": "Ключ на MDBList",
+	"settings.outsideLists.mdblistInfo": "По избор. С вашия API ключ на MDBList списъците от MDBList се четат през API на MDBList; без него – през публичната им връзка. Пази се криптиран и е същият ключ, който външните оценки използват в режим Вашите собствени ключове.",
+	"settings.outsideLists.pasteMdblistKey": "Поставете вашия API ключ на MDBList",
+	"settings.outsideLists.replaceMdblistKey": "Смяна на ключа на MDBList",
+	"settings.outsideLists.removeMdblistKey": "Премахване на ключа",
+	"settings.outsideLists.mdblistKeySaved": "Ключът на MDBList е запазен",
+	"settings.outsideLists.mdblistKeyRemoved": "Ключът на MDBList е премахнат; списъците използват публичната си връзка",
 	"settings.outsideLists.replaceVip": "Смяна на VIP токена за достъп",
 	"settings.outsideLists.vip": "VIP токен за достъп (по избор)",
 	"settings.outsideLists.vipHint": "Добавя раздел Trakt към страниците на заглавията: оценка, зрители и коментари",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Добавяне към списъка „Никога не добавяй“",
 	"settings.outsideLists.showDot": "сериал ·",
 	"settings.outsideLists.takeOff": "Махане на {name}",
-	"settings.outsideLists.empty": "Празно"
+	"settings.outsideLists.empty": "Още няма нищо в този списък"
 }

@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "এই ভার্সনের বাছাইয়ের নিয়ম",
 	"movies.versions.folderLabel": "এই ভার্সনের লাইব্রেরি ফোল্ডার",
 	"movies.versions.cancel": "বাতিল",
-	"movies.versions.addButton": "ভার্সন যোগ করুন"
+	"movies.versions.addButton": "ভার্সন যোগ করুন",
+	"movies.versions.setEdition": "এডিশন ঠিক করুন",
+	"movies.versions.editionFileHint": "এই ফাইলটি কোন কাট, যেমন Theatrical বা Directors Cut। মুছতে ফাঁকা রাখুন।",
+	"movies.versions.unprotectConfirm": "{label} থেকে সুরক্ষা সরাবেন? একটি ভালো কপি আবার এটির জায়গা নিতে পারবে।",
+	"movies.versions.editionChars": "অনুমোদিত নয়:",
+	"movies.versions.editionInvalid": "এই এডিশনটি ব্যবহার করা যাবে না। এটি ছোট রাখুন (অ্যাকসেন্টযুক্ত ও ল্যাটিন নয় এমন অক্ষর বেশি জায়গা নেয়), ওপরে তালিকাভুক্ত অক্ষরগুলো বাদ দিন এবং শেষে ডট দেবেন না।",
+	"movies.versions.editionDevice": "Windows {name} নামটি ডিভাইসের জন্য রেখে দেয়, তাই এটি ব্যবহার করা যাবে না। অন্য একটি নাম লিখুন।"
 }

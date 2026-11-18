@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Abi ceļi ir vienādi, tāpēc šis pāris neko nemaina. Tas tomēr pasaka HolyArrs, kur atrodas šī klienta faili, tāpēc varat to paturēt.",
 	"settings.downloaders.change": "Mainīt: {name}",
 	"settings.downloaders.whichApp": "Kura lietotne",
-	"settings.downloaders.torrents": "(torenti)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torenti",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Visvairāk lietotais",
 	"settings.downloaders.name": "Nosaukums",
 	"settings.downloaders.address": "Adrese",
 	"settings.downloaders.addressHint": "Tās tīmekļa lapa. SABnzbd izmanto IP vai atļauj HolyArrs resursdatora nosaukumu.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategorija pēc importa",
 	"settings.downloaders.categoryAfterImportHint": "Kad torrents ir importēts, HolyArrs to pārvieto uz šo kategoriju. Atstājiet tukšu, lai tas paliktu galvenajā kategorijā.",
 	"settings.downloaders.ownOnly": "Rādīt tikai HolyArrs vienumus",
-	"settings.downloaders.ownOnlyHint": "Citu lietotņu vienumi šajā lejupielādētājā ir paslēpti, un HolyArrs tos nemaina."
+	"settings.downloaders.ownOnlyHint": "Citu lietotņu vienumi šajā lejupielādētājā ir paslēpti, un HolyArrs tos nemaina.",
+	"settings.downloaders.state.notAnswering": "Neatbild",
+	"settings.downloaders.state.paused": "Apturēts",
+	"settings.downloaders.state.resting": "Atpūšas",
+	"settings.downloaders.state.signInRefused": "Pieteikšanās noraidīta",
+	"settings.downloaders.state.working": "Darbojas"
 }

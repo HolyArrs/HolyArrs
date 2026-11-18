@@ -20,6 +20,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
@@ -281,7 +282,7 @@ func TestTestButtonAndTokenNeverLogged(t *testing.T) {
 			t.Fatalf("%s test: %q %v", kind, res, err)
 		}
 		bad, _ := Add(ctx, w.s, w.v, Input{Name: kind + " wrong", Kind: kind, URL: srv.URL, Token: "wrong-1"}, domain.System)
-		if _, err := l.Test(ctx, bad); err == nil || err.Error() != "the server turned down the token" {
+		if _, err := l.Test(ctx, bad); err == nil || err.Error() != doctor.Line(doctor.Auth) {
 			t.Fatalf("%s wrong token: %v", kind, err)
 		}
 	}
@@ -299,7 +300,8 @@ func TestTestButtonAndTokenNeverLogged(t *testing.T) {
 			t.Fatalf("token leaked: %s", where)
 		}
 	}
-	if m.LastError != "the server did not answer" {
+	// A closed port says what is wrong and the fix, never the address.
+	if m.LastError != doctor.Line(doctor.Refused) {
 		t.Fatalf("last error %q", m.LastError)
 	}
 }

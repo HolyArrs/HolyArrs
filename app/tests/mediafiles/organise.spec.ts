@@ -27,7 +27,7 @@ test.beforeAll(async ({ browser }) => {
 	await page.goto('/settings/library-folders');
 	await page.getByRole('button', { name: 'Add a folder' }).click();
 	await page.getByLabel('Folder path').fill(oldLib);
-	await page.getByLabel('Name').fill('Old library');
+	await page.getByRole('textbox', { name: /^Name/ }).fill('Old library');
 	await page.getByRole('button', { name: 'Add', exact: true }).click();
 	// the row shows its name and a short path (full path on hover)
 	await expect(page.locator('#main .folder').filter({ hasText: 'Old library' })).toBeVisible();
@@ -190,7 +190,7 @@ test('settings: patterns show a live example, a bad word is caught, and the choi
 	await page.getByTestId('savebar').getByRole('button', { name: 'Discard' }).click();
 	await page.reload();
 	await expect(page.getByLabel('Folders read per library scan')).toHaveValue('5000');
-	await page.getByRole('button', { name: 'Clear now' }).click();
+	await page.getByRole('button', { name: 'Clear', exact: true }).click();
 	await expect(page.getByText('Removing held files')).toBeVisible();
 });
 

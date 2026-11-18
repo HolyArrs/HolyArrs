@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Turn down Releases posted before release",
 	"settings.search.refuseEarlyHint": "Likely fakes. Choose a release still shows them, with a warning.",
 	"settings.search.refuseTiny": "Turn down fakes by size and file type",
-	"settings.search.refuseTinyHint": "Too-small Releases, empty files and .wmv or .asf under HD names",
+	"settings.search.refuseTinyHint": "Too-small Releases, empty files, cut-off videos and .wmv or .asf under HD names",
 	"settings.search.grace": "Hours a Release may be early",
 	"settings.search.graceHint": "For time zones. Default 24.",
 	"settings.search.floors": "Check file sizes at import",

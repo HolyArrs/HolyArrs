@@ -159,7 +159,7 @@ func (h *handler) pickRulesOf(ctx context.Context, p wireProfile) (mediafiles.Pi
 	if len(tps) > maxPushedTraits {
 		sort.SliceStable(tps, func(i, j int) bool { return abs(tps[i].Points) > abs(tps[j].Points) })
 		for _, tp := range tps[maxPushedTraits:] {
-			notes = append(notes, clipName(names[tp.Trait])+" is left out: Pick rules hold at most 64 traits; the strongest scores were kept")
+			notes = append(notes, clipName(names[tp.Trait])+" is left out: Pick rules hold at most 256 traits; the strongest scores were kept")
 		}
 		tps = tps[:maxPushedTraits]
 	}
@@ -168,7 +168,7 @@ func (h *handler) pickRulesOf(ctx context.Context, p wireProfile) (mediafiles.Pi
 }
 
 // maxPushedTraits matches the Pick rules limit on listed traits.
-const maxPushedTraits = 64
+const maxPushedTraits = mediafiles.MaxTraits
 
 func abs(n int) int {
 	if n < 0 {

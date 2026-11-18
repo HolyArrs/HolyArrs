@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "niciuna",
 	"settings.thisApp.needsRestart": "Necesită repornire. HOLYARRS_URL_BASE sau -url-base o suprascrie.",
 	"settings.thisApp.save": "Salvează",
-	"settings.thisApp.licence": "HolyArrs este software liber sub licența AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs este software liber sub licența AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Trimite apelurile externe printr-un proxy. Regulile de blocare și de rețea locală se aplică în continuare destinației reale.",
+	"settings.thisApp.proxyType": "Tip",
+	"settings.thisApp.proxyOff": "Oprit",
+	"settings.thisApp.proxyHost": "Gazdă",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Nume de utilizator",
+	"settings.thisApp.proxyPasswordLabel": "Parolă",
+	"settings.thisApp.proxyPasswordKept": "Lasă gol pentru a păstra parola salvată",
+	"settings.thisApp.proxyBypass": "Ocolește proxy-ul pentru",
+	"settings.thisApp.proxyBypassHint": "Nume, adrese sau intervale, separate prin virgule. *.example.com acoperă toate numele de sub el.",
+	"settings.thisApp.proxyBypassLocal": "Ocolește proxy-ul pentru adresele locale",
+	"settings.thisApp.proxyBypassLocalHint": "Acest calculator și rețeaua de acasă se conectează direct",
+	"settings.thisApp.proxySaved": "Proxy salvat",
+	"settings.thisApp.proxyOffSaved": "Proxy oprit"
 }

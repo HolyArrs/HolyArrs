@@ -4,11 +4,14 @@ import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 // Home: the owner's overview, and the setup bar while setup is open, on a desktop and a phone.
 for (const width of [1280, 390]) {
 	test(`home at ${width}px: Library and Needs attention, setup steps fill the bar`, async ({ browser }) => {
+		test.setTimeout(90_000);
 		const ctx = await browser.newContext({ viewport: { width, height: 900 } });
 		const page = await ctx.newPage();
 		await signIn(page, owner());
 		await page.goto('/');
 		await expect(page.getByRole('heading', { name: 'Home', level: 1 })).toBeVisible();
+		// The first visit waits (30 s at most) for Explore's lists, which the fake metadata server never builds.
+		await expect(page.getByTestId('home-overview')).toBeVisible({ timeout: 35_000 });
 		const welcome = page.getByTestId('home-welcome');
 		if (await welcome.isVisible()) {
 			// One segment per step, all the same width, filling the bar.

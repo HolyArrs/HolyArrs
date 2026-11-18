@@ -56,12 +56,14 @@ var riskyRoutes = map[string]bool{
 	// API keys, AI keys and arr API keys.
 	"POST /api/v1/auth/keys":                          true,
 	"DELETE /api/v1/auth/keys/{id}":                   true,
+	"PUT /api/v1/auth/keys/{id}":                      true,
 	"POST /api/v1/auth/ai-connect":                    true,
 	"POST /api/v1/settings/old-app-api/keys/{side}":   true,
 	"DELETE /api/v1/settings/old-app-api/keys/{side}": true,
 	// Accounts: role and state changes, new accounts (an invite, people
 	// brought in from a media server or by a Move from the old apps).
 	"PUT /api/v1/users/{id}":          true,
+	"DELETE /api/v1/users/{id}":       true,
 	"POST /api/v1/users/invites":      true,
 	"POST /api/v1/auth/import/{kind}": true,
 	"POST /api/v1/migrate/moves":      true,
@@ -85,6 +87,11 @@ var riskyRoutes = map[string]bool{
 	"POST /api/v1/auth/plex/my-link/start":  true,
 	"POST /api/v1/auth/plex/my-link/finish": true,
 	"DELETE /api/v1/auth/plex/my-link":      true,
+	// Jellyfin and Emby links, mine and other people's.
+	"POST /api/v1/auth/media-link/{server}":       true,
+	"DELETE /api/v1/auth/media-link/{kind}":       true,
+	"PUT /api/v1/users/{id}/media-link":           true,
+	"DELETE /api/v1/users/{id}/media-link/{kind}": true,
 	// Sign-in settings, the trusted-network skip among them.
 	"PUT /api/v1/auth/settings": true,
 }

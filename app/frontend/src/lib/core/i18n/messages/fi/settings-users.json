@@ -83,6 +83,7 @@
 	"settings.users.preset": "Esiasetus",
 	"settings.users.comingSoon": "Tulossa pian",
 	"settings.users.custom": "Mukautettu",
+	"settings.users.customHint": "Oma valintasi alla olevista kytkimistä. Esiasetuksen valinta korvaa sen; valitse Mukautettu uudelleen, niin saat sen takaisin.",
 	"settings.users.ageRating": "Ikäraja",
 	"settings.users.newPasswordFor": "Uusi salasana käyttäjälle {name}",
 	"settings.users.passwordNote": "Käytä tätä, kun {name} on unohtanut omansa. Hänet kirjataan ulos kaikkialta ja hän kirjautuu uudelleen uudella salasanalla. Kerro se hänelle kasvokkain.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "esim. Äiti",
 	"settings.users.days": "Linkin voimassaolopäivät",
 	"settings.users.makeInvite": "Luo kutsulinkki",
-	"settings.users.permAuto4k": "4K-pyynnöt hyväksytään odottamatta"
+	"settings.users.permAuto4k": "4K-pyynnöt hyväksytään odottamatta",
+	"settings.users.serverAccount": "Palvelintili",
+	"settings.users.pickAccount": "Valitse tili mediapalvelimelta",
+	"settings.users.accountLinked": "Yhdistetty käyttäjään {name}",
+	"settings.users.removedOnServer": "Poistettu {word}-palvelimelta, joten poistettu käytöstä täällä",
+	"settings.users.delete": "Poista",
+	"settings.users.deleteName": "Poista {name}",
+	"settings.users.confirmDelete": "Poistetaanko {name}? Hänet kirjataan ulos pysyvästi ja hänen avaimensa poistuvat. Hänen pyyntönsä jäävät, poistettuna henkilönä.",
+	"settings.users.deleteYes": "Poista henkilö",
+	"settings.users.keep": "Säilytä",
+	"settings.users.deleted": "{name} poistettu",
+	"settings.users.couldntDelete": "Poistaminen epäonnistui",
+	"settings.users.confirmDeleteKeys": "Hänen tekemänsä Seerr-avaimet lakkaavat toimimasta kaikilta, kunnes uusi tehdään.",
+	"settings.users.qualities": "Laadut",
+	"settings.users.qualitiesHint": "He voivat valita vain päällä olevat. Kun kaikki ovat päällä, myös uudet tarjotaan."
 }

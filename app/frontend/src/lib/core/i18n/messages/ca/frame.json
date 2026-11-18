@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} en espera",
 	"frame.nav.new": "{n} de noves",
 	"frame.nav.manage": "Gestiona",
+	"frame.nav.activity": "Activitat",
+	"frame.nav.system": "Sistema",
 	"frame.nav.history": "Historial",
 	"frame.nav.status": "Estat",
 	"frame.nav.settings": "Configuració",
+	"frame.nav.plugins": "Connectors",
 	"frame.nav.goTo": "Ves a",
 	"frame.nav.active": "{n} actives, {percent}%",
 	"frame.nav.decide": "{n} requereixen una decisió",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Sistema",
 	"frame.layout.switch": "Canvia de compte",
 	"frame.layout.signOut": "Tanca la sessió",
+	"frame.layout.support": "Dona suport a HolyArrs",
 	"frame.layout.signOutFail": "No s'ha pogut confirmar el tancament de sessió",
 	"frame.layout.signedOut": "Sessió tancada",
 	"frame.layout.accountMenu": "{name}, {role}: compte i aparença",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs ho torna a intentar tot sol",
 	"frame.feeds.clearNow": "Neteja ara",
 	"frame.feeds.cleared": "Netejat del Gestor de baixades",
-	"frame.feeds.clearStill": "Encara no netejat"
+	"frame.feeds.clearStill": "Encara no netejat",
+	"frame.error.pageGone": "Aquesta pàgina no existeix. Potser l'enllaç és antic o està mal escrit."
 }

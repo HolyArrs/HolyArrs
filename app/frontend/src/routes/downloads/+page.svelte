@@ -1,12 +1,14 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { libraryBrief } from '#lib/mediafiles/index.ts';
-	import { decisionName, manyWords, removeBody, removeFilesWords, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice, applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync, dlPush, decisions, refreshDecisions, DlSections, ConfirmMatch, byDownload, AddTorrents, SteerSheet, BULK_DONE, byClient, type BulkAction } from '#lib/downloads/index.ts';
+	import { decisionName, manyWords, removeBody, removeFilesWords, removeDeletesFiles, doneLine, doneInLibrary, finishedOwn, removeStart, rowName, rowPath, type DownloaderSettings, type DownloaderView, type RemoveChoice, applyPatch, fromAnswer, isDl, mergeClient, wentStale, type Sync, dlPush, decisions, refreshDecisions, DlSections, ConfirmMatch, byDownload, AddTorrents, SteerSheet, BULK_DONE, byClient, type BulkAction } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { to } from '#lib/core/paths.ts';
 	import { dlScope } from '#lib/core/search-field.svelte.ts';
 	import { api, message } from '#lib/core/api.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { type Decision, type DownloadRow } from '#lib/core/types.ts';
@@ -311,7 +313,7 @@
 
 	let busy = $state(0);
 	async function markFailed(r: DownloadRow) {
-		if (!confirm(t('downloads.page.markFailedAsk', { name: who(r) }))) return;
+		if (!(await ask(t('downloads.page.markFailedAsk', { name: who(r) }), { yes: t('ui.ask.markFailed') }))) return;
 		busy = r.id;
 		try {
 			await api.post(`/downloads/${r.id}/mark-failed`);
@@ -345,6 +347,8 @@
 		targets = ok;
 		const own = ok.length === 1 && !ok[0].client_item;
 		choice = own ? removeStart(settings) : { delete_files: false, turn_down: false, search_again: false };
+		// A finished download is often still seeding from the files the library copy came from: delete files starts off.
+		if (ok.some(finishedOwn)) choice.delete_files = false;
 		if (withFiles) choice.delete_files = true;
 		// A removed Downloader's rows: no Downloader is left to delete files from.
 		if (ok.every((r) => r.downloader_gone)) choice.delete_files = false;
@@ -360,6 +364,8 @@
 		const bad: string[] = [];
 		// Rows whose remove failed: a second press of Remove sends only these, never the ones already gone.
 		const failed = new Set<DownloadRow>();
+		// Removed in HolyArrs, but the Downloader refused: said at once, and HolyArrs asks it again.
+		const notes: string[] = [];
 		try {
 			// Client items go in one call per Downloader; HolyArrs' own each through HolyArrs.
 			const outsideRows = list.filter((r) => r.client_item);
@@ -382,7 +388,8 @@
 			}
 			for (const r of list.filter((x) => !x.client_item)) {
 				try {
-					await api.post(`/downloads/${r.id}/remove`, removeBody(list.length === 1 ? choice : { delete_files: choice.delete_files, turn_down: false, search_again: false }));
+					const res = await api.post<{ client_note?: string }>(`/downloads/${r.id}/remove`, removeBody(list.length === 1 && !doneInLibrary(r) ? choice : { delete_files: choice.delete_files, turn_down: false, search_again: false }));
+					if (res?.client_note) notes.push(`${who(r)}: ${serverWords(res.client_note)}`);
 				} catch (err) {
 					bad.push(`${who(r)}: ${message(err)}`);
 					failed.add(r);
@@ -396,6 +403,7 @@
 				const one = list.length === 1 && !list[0].client_item;
 				const searching = one && choice.turn_down && choice.search_again;
 				toasts.push(list.length > 1 ? t('downloads.page.nRemoved', { count: list.length }) : t('downloads.page.removed'), 'ok', searching ? { body: t('downloads.page.nextRelease') } : {});
+				if (notes.length) toasts.push(t('downloads.rm.clientRefused'), 'fail', { body: notes.join(' · ') });
 			}
 			await load();
 		} finally {
@@ -563,7 +571,7 @@
 	{:else}
 	<EmptyState icon="download" title={t('downloads.page.noDownloads')} text={t('downloads.page.liveText')} action={{ label: t('downloads.page.addMedia'), href: to('/search'), icon: 'search' }} />
 	{/if}
-	{#if !watch}<p class="aside-link"><a href={to('/settings/downloaders')}>{t('downloads.page.downloaders')}</a>{#if torrentClients.length}<button type="button" class="addlk" onclick={() => (addOpen = true)} data-testid="dl-add-empty">{t('downloads.page.addTorrent')}</button>{/if}</p>{/if}
+	{#if !watch}<div class="aside-link"><Button href={to('/settings/downloaders')}>{t('downloads.page.downloaders')}</Button>{#if torrentClients.length}<Button onclick={() => (addOpen = true)} data-testid="dl-add-empty">{t('downloads.page.addTorrent')}</Button>{/if}</div>{/if}
 	</div>
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message={t('downloads.page.couldNotLoad')} onretry={load} /></div>{/if}
@@ -581,16 +589,17 @@
 			{#if target}
 				<p class="who">{who(target)}</p>
 				<details class="raw"><summary>{t('downloads.page.details')}</summary><p>{target.name}</p></details>
+				{#if doneLine(target)}<p class="hint done-line" data-testid="dl-remove-done">{doneLine(target)}</p>{/if}
 			{:else}
 				<ul class="many" data-testid="dl-remove-list">{#each targets.slice(0, 6) as r (r.id)}<li>{who(r)}</li>{/each}{#if targets.length > 6}<li class="hint">{t('downloads.page.andMore', { count: targets.length - 6 })}</li>{/if}</ul>
 			{/if}
 			{#if !targets.every((r) => r.downloader_gone)}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={choice.delete_files} data-testid="dl-remove-files" />
-				<span><b>{t('downloads.page.alsoDelete')}</b><br /><span class="hint" data-testid="dl-remove-files-hint">{choice.delete_files ? removeFilesWords(targets)   : t('downloads.page.offKeeps', { name: target?.downloader || t('downloads.rm.theDownloader') })}</span></span>
+				<span><b>{t('downloads.page.alsoDelete')}</b><br /><span class="hint" data-testid="dl-remove-files-hint">{choice.delete_files ? removeFilesWords(targets) + (targets.some((r) => doneInLibrary(r)) ? ' ' + t('downloads.rm.libraryStays') : '') : t('downloads.page.offKeeps', { name: target?.downloader || t('downloads.rm.theDownloader') })}</span></span>
 			</label>
 			{/if}
-			{#if target && !target.client_item}
+			{#if target && !target.client_item && !doneInLibrary(target)}
 			<label class="checkline">
 				<input type="checkbox" bind:checked={choice.turn_down} />
 				<span><b>{t('downloads.page.addTurnedDown')}</b><br /><span class="hint">{t('downloads.page.neverPicks', { what: manyWords(target.kind) ? t('downloads.dp.these', { many: manyWords(target.kind)?.many ?? '' }) : t('downloads.page.thisMovie') })}</span></span>
@@ -607,7 +616,7 @@
 	{#snippet footer()}
 		{@const n = targets.length - blocked.length}
 		<Button variant="plain" onclick={() => (removeOpen = false)}>{t('downloads.sel.cancel')}</Button>
-		<Button variant="destructive" type="submit" form="remove-form" busy={removeBusy} disabled={removeBusy || n === 0} data-testid="dl-remove-confirm">{n > 1 ? t('downloads.page.removeCount', { count: n }) : t('downloads.act.remove')}{choice.delete_files ? t('downloads.page.andDeleteFiles') : ''}</Button>
+		<Button variant="destructive" type="submit" form="remove-form" busy={removeBusy} disabled={removeBusy || n === 0} data-testid="dl-remove-confirm">{n > 1 ? t('downloads.page.removeCount', { count: n }) : t('downloads.act.remove')}{removeDeletesFiles(choice.delete_files, targets.filter((r) => !blocked.includes(r))) ? t('downloads.page.andDeleteFiles') : ''}</Button>
 	{/snippet}
 </Sheet>
 
@@ -645,9 +654,7 @@
 	/* On desktop the notes live in the status popover (DlSections), behind a dot; the bare list is for phones. */
 	@media (min-width: 641px) { .notes { display: none; } }
 	.matchpad:empty { display: none; }
-	.aside-link { text-align: center; margin-top: -24px; }
-	.aside-link a { display: inline-flex; align-items: center; min-height: 44px; color: var(--accent-text); font: var(--t-callout); font-weight: 500; }
-	.addlk { display: inline-flex; align-items: center; min-height: 44px; margin-left: 20px; background: none; border: 0; padding: 0; color: var(--accent-text); font: var(--t-callout); font-weight: 500; cursor: pointer; }
+	.aside-link { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: -20px; }
 	.raw { color: var(--text-muted); font: var(--t-footnote); }
 	.raw summary { width: max-content; min-height: 24px; cursor: pointer; border-radius: 6px; }
 	.raw summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }

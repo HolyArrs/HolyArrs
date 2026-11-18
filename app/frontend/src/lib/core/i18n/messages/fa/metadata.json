@@ -3,5 +3,6 @@
 	"metadata.details.movie": "فیلم",
 	"metadata.health.downTitle": "متادیتا آفلاین است",
 	"metadata.health.down": "تا برگشتن آن، جستجو و تصاویر تازه متوقف می‌مانند. کتابخانه‌ات همچنان کار می‌کند.",
-	"metadata.health.back": "متادیتا دوباره آنلاین شد"
+	"metadata.health.back": "متادیتا دوباره آنلاین شد",
+	"metadata.health.fakeIp": "روتر یا VPN شما HolyArrs را به یک نشانی جعلی (198.18.x.x) می‌فرستد. معمولاً این کار Clash یا Surge است. {host} را به فهرست اتصال مستقیم آن اضافه کنید."
 }

@@ -97,17 +97,17 @@ test('change, add and remove Versions; a busy Version stays', async () => {
 	await ad.getByLabel('Version name').fill('Small');
 	await ad.getByRole('button', { name: 'Add version' }).click();
 	await expect(card.getByTestId('version')).toHaveCount(3);
-	page.once('dialog', (d) => d.accept());
 	await card.getByRole('button', { name: 'Version actions for Small' }).click();
 	await page.getByRole('menuitem', { name: 'Remove Small' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(card.getByTestId('version')).toHaveCount(2);
 	await expect(card.getByRole('button', { name: 'Remove Main' })).toHaveCount(0);
 	await expect(card.getByRole('button', { name: /^Version actions for Main/ })).toHaveCount(0);
 
 	// The 4K pack is downloading or placed: the Version is not removed.
-	page.once('dialog', (d) => d.accept());
 	await card.getByRole('button', { name: 'Version actions for 4K' }).click();
 	await page.getByRole('menuitem', { name: 'Remove 4K' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByText(/download or import under way|still has files/)).toBeVisible();
 	await expect(card.getByTestId('version')).toHaveCount(2);
 	await axe(page, 'show page with two Versions');

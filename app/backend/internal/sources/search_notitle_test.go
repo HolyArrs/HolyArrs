@@ -177,7 +177,8 @@ func TestMovieSearch_KindsAndCategories(t *testing.T) {
 		name, kinds, cats string
 		want              []string // cat of each request
 	}{
-		{"no movie categories", `[]`, `{}`, []string{"2000"}},
+		// The empty id answer is asked again by title.
+		{"no movie categories", `[]`, `{}`, []string{"2000", "2000"}},
 		{"shows only", `["tv"]`, `{"tv":[5000]}`, nil},
 	} {
 		t.Run(c.name, func(t *testing.T) {

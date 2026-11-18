@@ -42,8 +42,8 @@ const (
 	Balanced Preset = "balanced"
 	Light    Preset = "light"
 	Careful  Preset = "careful"
-	// Off makes no scheduled backups. Manual backups and the copies taken
-	// around an update still are, so going back after an update works.
+	// Off makes no backups on its own: none on a schedule and none kept
+	// around an update. Manual backups still work.
 	Off Preset = "off"
 )
 

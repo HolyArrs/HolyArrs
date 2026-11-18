@@ -83,6 +83,7 @@
 	"settings.users.preset": "Eelseadistus",
 	"settings.users.comingSoon": "Tulekul",
 	"settings.users.custom": "Kohandatud",
+	"settings.users.customHint": "See on teie enda valik allolevatest lülititest. Eelseadistuse valimine asendab selle; valige uuesti Kohandatud, et see tagasi saada.",
 	"settings.users.ageRating": "Vanusepiirang",
 	"settings.users.newPasswordFor": "Uus parool kasutajale {name}",
 	"settings.users.passwordNote": "Kasuta seda, kui {name} unustas oma parooli. Ta logitakse kõikjalt välja ja logib uuesti sisse uue parooliga. Ütle see talle näost näkku.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "nt Ema",
 	"settings.users.days": "Päevi, mil link kehtib",
 	"settings.users.makeInvite": "Loo kutse link",
-	"settings.users.permAuto4k": "4K taotlused kiidetakse heaks ilma ootamata"
+	"settings.users.permAuto4k": "4K taotlused kiidetakse heaks ilma ootamata",
+	"settings.users.serverAccount": "Serveri konto",
+	"settings.users.pickAccount": "Vali konto meediaserveris",
+	"settings.users.accountLinked": "Seotud kasutajaga {name}",
+	"settings.users.removedOnServer": "Eemaldatud {word} serverist, seega siin välja lülitatud",
+	"settings.users.delete": "Kustuta",
+	"settings.users.deleteName": "Kustuta {name}",
+	"settings.users.confirmDelete": "Kas kustutada {name}? Ta logitakse jäädavalt välja ja tema võtmed kaovad. Tema soovid jäävad, eemaldatud isikuna.",
+	"settings.users.deleteYes": "Kustuta isik",
+	"settings.users.keep": "Jäta alles",
+	"settings.users.deleted": "{name} kustutatud",
+	"settings.users.couldntDelete": "Kustutamine ebaõnnestus",
+	"settings.users.confirmDeleteKeys": "Tema loodud Seerri võtmed lakkavad kõigi jaoks töötamast, kuni luuakse uus.",
+	"settings.users.qualities": "Kvaliteedid",
+	"settings.users.qualitiesHint": "Nad saavad valida ainult sisselülitatuid. Kui kõik on sees, pakutakse ka uusi."
 }

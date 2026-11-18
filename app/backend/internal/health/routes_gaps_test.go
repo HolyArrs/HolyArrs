@@ -159,9 +159,15 @@ func TestNotOwnerAndKeyKitWords(t *testing.T) {
 	if cs[0].Message != "x" {
 		t.Fatalf("owner: %q", cs[0].Message)
 	}
+	// The calm note gets the others' words too; a cleared check stays empty.
 	cs = kit(OK)
 	ownerWords(req(webserver.RoleAdmin), cs)
-	if cs[0].Message != "x" {
+	if cs[0].Message != KeyKitRecommendedForOthers {
 		t.Fatalf("ok state: %q", cs[0].Message)
+	}
+	cs = []domain.HealthCheck{{Key: "backups:key", State: OK}}
+	ownerWords(req(webserver.RoleAdmin), cs)
+	if cs[0].Message != "" {
+		t.Fatalf("cleared: %q", cs[0].Message)
 	}
 }

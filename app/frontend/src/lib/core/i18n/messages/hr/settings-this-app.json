@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "nema",
 	"settings.thisApp.needsRestart": "Treba ponovno pokretanje. Nadjačavaju je HOLYARRS_URL_BASE ili -url-base.",
 	"settings.thisApp.save": "Spremi",
-	"settings.thisApp.licence": "HolyArrs je slobodan softver pod licencom AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs je slobodan softver pod licencom AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Šalji vanjske pozive preko proxyja. Pravila blokiranja i kućne mreže i dalje vrijede za pravo odredište.",
+	"settings.thisApp.proxyType": "Vrsta",
+	"settings.thisApp.proxyOff": "Isključeno",
+	"settings.thisApp.proxyHost": "Host",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Korisničko ime",
+	"settings.thisApp.proxyPasswordLabel": "Lozinka",
+	"settings.thisApp.proxyPasswordKept": "Ostavite prazno za zadržavanje spremljene lozinke",
+	"settings.thisApp.proxyBypass": "Zaobiđi proxy za",
+	"settings.thisApp.proxyBypassHint": "Imena, adrese ili rasponi, odvojeni zarezima. *.example.com pokriva sva imena ispod.",
+	"settings.thisApp.proxyBypassLocal": "Zaobiđi proxy za lokalne adrese",
+	"settings.thisApp.proxyBypassLocalHint": "Ovo računalo i kućna mreža spajaju se izravno",
+	"settings.thisApp.proxySaved": "Proxy spremljen",
+	"settings.thisApp.proxyOffSaved": "Proxy isključen"
 }

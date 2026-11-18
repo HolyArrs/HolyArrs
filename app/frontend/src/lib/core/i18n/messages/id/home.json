@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Dimatikan di Bagian",
 	"home.noneForSources": "tidak ada untuk yang ditemukan sumbermu",
 	"home.addedTwice": "ditambahkan dua kali",
-	"home.addedTwiceMany": "ditambahkan dua kali"
+	"home.addedTwiceMany": "ditambahkan dua kali",
+	"home.notSetUpYet": "Belum diatur",
+	"home.setUpToAdd": "Selesaikan penyiapan untuk menambahkan {name}",
+	"home.comingThisWeek": "Hadir minggu ini",
+	"home.thisWeek": "minggu ini",
+	"home.landingThisWeek": "Episode dan film yang hadir minggu ini",
+	"home.popularThisWeek": "Rilisan populer yang hadir minggu ini",
+	"home.peopleCheck": "Pemeriksaan orang",
+	"home.cantReadUsers": "daftar pengguna tidak bisa dibaca"
 }

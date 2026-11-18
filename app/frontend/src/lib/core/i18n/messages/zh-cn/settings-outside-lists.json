@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "设置之前，无法读取你的 Trakt 列表。",
 	"settings.outsideLists.replaceKey": "替换 Trakt 密钥",
 	"settings.outsideLists.pasteKey": "粘贴 Trakt 密钥",
+	"settings.outsideLists.mdblistKey": "MDBList 密钥",
+	"settings.outsideLists.mdblistInfo": "可选。填写你的 MDBList API 密钥后，MDBList 列表通过 MDBList API 读取；不填则通过其公开链接读取。它会加密保存，并且与“你自己的密钥”模式下外部评分使用的是同一个密钥。",
+	"settings.outsideLists.pasteMdblistKey": "粘贴你的 MDBList API 密钥",
+	"settings.outsideLists.replaceMdblistKey": "替换 MDBList 密钥",
+	"settings.outsideLists.removeMdblistKey": "移除密钥",
+	"settings.outsideLists.mdblistKeySaved": "MDBList 密钥已保存",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList 密钥已移除；列表将使用其公开链接",
 	"settings.outsideLists.replaceVip": "替换 VIP 访问令牌",
 	"settings.outsideLists.vip": "VIP 访问令牌（可选）",
 	"settings.outsideLists.vipHint": "在条目页增加一个 Trakt 标签页：评分、观看人数和评论",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "添加到永不添加列表",
 	"settings.outsideLists.showDot": "剧集 ·",
 	"settings.outsideLists.takeOff": "移出 {name}",
-	"settings.outsideLists.empty": "空"
+	"settings.outsideLists.empty": "此列表中还没有内容"
 }

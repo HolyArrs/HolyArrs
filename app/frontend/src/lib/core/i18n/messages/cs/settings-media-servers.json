@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Cesta v HolyArrs",
 	"settings.mediaServers.pathTo": "Stejná složka na serveru",
 	"settings.mediaServers.pathHint": "Jen pokud server vidí vaše soubory pod jinou cestou",
+	"settings.mediaServers.webUrl": "Adresa pro prohlížeče",
+	"settings.mediaServers.webUrlHint": "Adresa, na které lidé otevírají server v telefonu nebo počítači. Přidá tlačítko Otevřít na stránky titulů, které server má. Nechte prázdné, pokud tlačítko nechcete.",
 	"settings.mediaServers.local": "Dosáhnout do místní sítě",
 	"settings.mediaServers.send": "Posílat aktualizace",
 	"settings.mediaServers.save": "Uložit",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Vypnout historii sledování? Vše dosud přečtené se smaže.",
 	"settings.mediaServers.watchTurnedOn": "Historie sledování zapnuta. První čtení proběhne do 30 minut.",
 	"settings.mediaServers.watchTurnedOff": "Historie sledování vypnuta",
-	"settings.mediaServers.watchFailed": "Historii sledování se nepodařilo změnit"
+	"settings.mediaServers.watchFailed": "Historii sledování se nepodařilo změnit",
+	"settings.mediaServers.labelTitle": "Štítky v Plexu",
+	"settings.mediaServers.labelSwitch": "Označit požadované tituly štítkem",
+	"settings.mediaServers.labelHint": "Když je požadovaný film nebo seriál v Plexu, HolyArrs mu přidá štítek, abyste podle něj mohli v Plexu filtrovat, tvořit kolekce nebo sdílet. Stávající štítky zůstanou.",
+	"settings.mediaServers.labelText": "Štítek",
+	"settings.mediaServers.labelAskers": "Přidat jako štítek i jméno žadatele",
+	"settings.mediaServers.labelSaved": "Štítky v Plexu uloženy",
+	"settings.mediaServers.labelFailed": "Štítky v Plexu se nepodařilo uložit",
+	"settings.mediaServers.labelExisting": "Označit už požadované tituly",
+	"settings.mediaServers.labelExistingStarted": "Označování začalo. Tituly dostanou štítky během několika minut.",
+	"settings.mediaServers.labelExistingFailed": "Označování se nepodařilo spustit"
 }

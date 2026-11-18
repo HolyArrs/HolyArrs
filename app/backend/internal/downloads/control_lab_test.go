@@ -49,12 +49,12 @@ func TestLabQbitControls(t *testing.T) {
 	if err := q.PauseItem(ctx, id); err != nil {
 		t.Fatal(err)
 	}
-	j := wait("stopped", func(j Job) bool { return j.Detail == "stoppedDL" || j.Detail == "stoppedUP" })
+	j := wait("stopped", func(j Job) bool { return labStopped(j.Detail) })
 	t.Logf("after pause: %s (%s)", j.State, j.Detail)
 	if err := q.ResumeItem(ctx, id); err != nil {
 		t.Fatal(err)
 	}
-	j = wait("started", func(j Job) bool { return j.Detail != "stoppedDL" && j.Detail != "stoppedUP" })
+	j = wait("started", func(j Job) bool { return !labStopped(j.Detail) })
 	t.Logf("after resume: %s (%s)", j.State, j.Detail)
 	if err := q.Recheck(ctx, id); err != nil {
 		t.Fatal(err)
@@ -88,11 +88,11 @@ func TestLabQbitControls(t *testing.T) {
 	if err := q.PauseAll(ctx); err != nil {
 		t.Fatal(err)
 	}
-	wait("stopped by pause all", func(j Job) bool { return j.Detail == "stoppedDL" || j.Detail == "stoppedUP" })
+	wait("stopped by pause all", func(j Job) bool { return labStopped(j.Detail) })
 	if err := q.ResumeAll(ctx); err != nil {
 		t.Fatal(err)
 	}
-	wait("started by resume all", func(j Job) bool { return j.Detail != "stoppedDL" && j.Detail != "stoppedUP" })
+	wait("started by resume all", func(j Job) bool { return !labStopped(j.Detail) })
 	after, _ := q.Status(ctx)
 	t.Logf("status after: %+v", after)
 }
@@ -139,4 +139,14 @@ func TestLabSabControls(t *testing.T) {
 	if err := s.SetSpeedLimit(ctx, 0, 0); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// labStopped is true for a stopped torrent: qBittorrent 5 says stopped,
+// qBittorrent 4 says paused.
+func labStopped(state string) bool {
+	switch state {
+	case "stoppedDL", "stoppedUP", "pausedDL", "pausedUP":
+		return true
+	}
+	return false
 }

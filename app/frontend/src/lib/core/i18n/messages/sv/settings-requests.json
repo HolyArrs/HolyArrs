@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Visa för folk",
 	"settings.requests.choiceMain": "{rules} · titelns huvudkopia",
 	"settings.requests.choiceOwn": "{rules} · sparas som en egen kopia",
-	"settings.requests.choiceNotReady": "Erbjuds när en 4K-kvalitet är inställd ovan"
+	"settings.requests.choiceNotReady": "Erbjuds när en 4K-kvalitet är inställd ovan",
+	"settings.requests.approvals": "Godkännanden",
+	"settings.requests.autoApprove": "Godkänn förfrågningar automatiskt",
+	"settings.requests.autoApproveNote": "Av = deras förfrågningar väntar på dig. Titlar från Plex-bevakningslistan följer samma reglage.",
+	"settings.requests.ownerTag": "Ägare",
+	"settings.requests.choiceAdd": "Lägg till en kvalitet",
+	"settings.requests.choiceNew": "Ny kvalitet",
+	"settings.requests.choiceLabel": "Ditt namn",
+	"settings.requests.choiceSeen": "Andra ser"
 }

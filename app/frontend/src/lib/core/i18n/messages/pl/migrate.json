@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Wymagają uwagi: {n}",
 	"migrate.needAttentionWhy": "Ich starego folderu nie ma na tym serwerze, więc trafiają jako poszukiwane do folderu tutaj. Popraw folder lub dodaj regułę ścieżki: {list}",
 	"migrate.leftOutUncheckedN": "Pominięte: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} ma ustawione „Nie przenoś ich”; wybierz dla niego folder i zaimportuj ponownie"
+	"migrate.leftOutUncheckedWhy": "{folder} ma ustawione „Nie przenoś ich”; wybierz dla niego folder i zaimportuj ponownie",
+	"migrate.seasonsDifferOne": "Sprawdź 1 serial znaleziony po numerze TMDB",
+	"migrate.seasonsDifferOther": "Seriale znalezione po numerze TMDB do sprawdzenia: {n}",
+	"migrate.seasonsDifferWhy": "{list} znaleziono tylko po numerze TMDB ze starej aplikacji, tutaj pod inną nazwą. Otwórz każdy i sprawdź, czy to ten sam serial. Jeśli tak, jego sezony są inaczej numerowane: dopasuj jego Pozostałe pliki, a potem włącz serial. Jeśli nie, usuń go; jego pliki zostaną tam, gdzie są.",
+	"migrate.stillChecking": "Seriale, które serwer metadanych wciąż sprawdza: {n}. Lista zaktualizuje się sama po zakończeniu.",
+	"migrate.stillCheckingImport": "Seriale, które serwer metadanych wciąż sprawdza: {n}. Możesz już importować; zostaną sprawdzone podczas importu."
 }

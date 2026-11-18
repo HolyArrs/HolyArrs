@@ -95,26 +95,20 @@ func MountWarning(ctx context.Context, db Reader, lf mediafiles.LibraryFolder, e
 	return fmt.Sprintf("the Library folder is empty while the Library knows %d files in it; is a drive or network share not mounted?", n)
 }
 
-// folderTaken says whether a folder of a Library folder already belongs to
-// a title in the Library, comparing names as its filesystem does.
-func FolderTaken(ctx context.Context, db Reader, lf mediafiles.LibraryFolder, folder string) (bool, error) {
-	rows, err := db.QueryContext(ctx, `SELECT folder_name FROM versions WHERE library_folder_id = ? AND lower(folder_name) = lower(?)
-		AND title_id IN (SELECT id FROM titles WHERE state != 'removed')`, lf.ID, folder)
+// FolderTaken is the title a folder of a Library folder already belongs
+// to, comparing names as its filesystem does; 0 when it is free.
+func FolderTaken(ctx context.Context, db Reader, lf mediafiles.LibraryFolder, folder string) (int64, error) {
+	owners, err := folderOwners(ctx, db, lf.ID, folder)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-	defer rows.Close()
 	fold := FoldsCase(lf.Path)
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			return false, err
-		}
-		if sameFolderName(name, folder, fold) {
-			return true, nil
+	for _, o := range owners {
+		if sameFolderName(o.Name, folder, fold) {
+			return o.TitleID, nil
 		}
 	}
-	return false, rows.Err()
+	return 0, nil
 }
 
 // episodeLabel is "S01E02" for a Slot's episode.

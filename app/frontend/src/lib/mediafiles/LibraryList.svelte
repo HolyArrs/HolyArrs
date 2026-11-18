@@ -1,7 +1,8 @@
 <script lang="ts">
+	import PersonText from '#lib/ui/PersonText.svelte';
+	import { personText } from '#lib/core/plain.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { onMount, tick, untrack } from 'svelte';
-	import { flip } from 'svelte/animate';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -22,16 +23,19 @@
 	import { plainReason } from '../core/plain.ts';
 	import { to } from '../core/paths.ts';
 	import { session } from '../core/session.svelte.ts';
-	import { moveMs, easeOut } from '../core/transitions.ts';
+	import { DUR, EASE } from '../core/transitions.ts';
 	import type { EpisodeView, TitleView } from '../core/types.ts';
 	import BannerArt from './BannerArt.svelte';
 	import LibraryLetterRail from './LibraryLetterRail.svelte';
 	import LibraryPoster from './LibraryPoster.svelte';
+	import WatchedMark from './WatchedMark.svelte';
+	import { titleWatched, watchedWords } from './watched.ts';
+	import { refreshWatched, watchedNow } from './watched.svelte.ts';
 	import { emptyAdds, exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type AddKind, type Kind } from './library.ts';
 	import { libraryState } from './library-state.ts';
 	import { partOff } from './parts.svelte.ts';
-	import { buildEntries, cell, grow, isProgressCol, posterExtra, posterFacts, requestedBy, rowCell, scoreText, shrink, tone, type Entry, type View } from './library-view.ts';
-	import { needsAttention, barOf, type PosterDetail } from './poster.ts';
+	import { buildEntries, cell, drawRange, grow, holdFocus, isProgressCol, placeKeeper, posterCols, posterRowGuess, posterRowKey, posterExtra, posterFacts, requestedBy, rowCell, scoreText, shrink, tone, type Entry, type View } from './library-view.ts';
+	import { needsAttention, barOf, flipFrom, type PosterDetail } from './poster.ts';
 	import { columnSort, progressOf, sortName, sortsFor, tableMinWidth, type Column, type FilterState, type LibKind, type SortDir, type SortKey } from './table.ts';
 	import { artName, slotKind } from './title-page.ts';
 	import { colPx } from './library-view.ts';
@@ -135,6 +139,27 @@
 		return id ? seriesName(id) : '';
 	};
 
+	// Posters are laid out in whole rows, so they are drawn a row at a time near the screen, like the other views' rows.
+	let vw = $state(1280);
+	const narrow = $derived(vw < 640);
+	const gapX = $derived(narrow ? 12 : 18);
+	const gapY = $derived(narrow ? 18 : 26);
+	const cols = $derived(posterCols(listWidth, narrow ? (kind === 'artist' ? squarePhoneMin[posterSize] : gridMin * 0.66) : gridMin, gapX));
+	const lines = (t: TitleView) => (posterDetail !== 'title' && who === 'staff' && needsAttention(libraryState(t)) ? 1 : 0) + (posterDetail === 'full' && posterExtra(t) ? 1 : 0);
+	// The grid's own width, to the fraction of a pixel (the list's width is rounded), so a guess matches the drawn row.
+	let gridW = $state(0);
+	const cardRows = $derived.by(() => {
+		if (view !== 'posters') return [];
+		const colW = ((Math.abs(gridW - listWidth) < 1 ? gridW : listWidth) - (cols - 1) * gapX) / cols;
+		const out: { key: string; guess: number }[] = [];
+		for (let i = 0; i < shown.length; i += cols) {
+			const row = shown.slice(i, i + cols);
+			const guess = posterRowGuess(row.map((t) => ({ square: t.kind === 'artist', lines: lines(t) })), colW, gapY);
+			out.push({ key: posterRowKey(cols, posterDetail, guess, row[0].id), guess });
+		}
+		return out;
+	});
+
 	let scrollY = $state(0);
 	let viewH = $state(900);
 	let listTop = $state(0);
@@ -150,28 +175,66 @@
 	/** Height guess for a row not yet measured, from its kind's banner shape. */
 	const guessFor = (k: string) => (view === 'rows' ? (phone ? 60 : 54) : view === 'overview' ? 168 : phone ? Math.round((listWidth - 24) / bannerRatio(k)) + 92 : rowH(k));
 	const offsets = $derived.by(() => {
-		const out = new Array<number>(entries.length + 1);
+		const n = view === 'posters' ? cardRows.length : entries.length;
+		const out = new Array<number>(n + 1);
 		out[0] = 0;
-		for (let i = 0; i < entries.length; i++) out[i + 1] = out[i] + (heights.get(entries[i].key) ?? (entries[i].type === 'head' ? 52 : guessFor((entries[i] as Extract<Entry, { type: 'row' }>).t.kind)));
+		for (let i = 0; i < n; i++) out[i + 1] = out[i] + (view === 'posters' ? (heights.get(cardRows[i].key) ?? cardRows[i].guess) : heights.get(entries[i].key) ?? (entries[i].type === 'head' ? 52 : guessFor((entries[i] as Extract<Entry, { type: 'row' }>).t.kind)));
 		return out;
 	});
-	const virtual = $derived(entries.length > 80);
-	function indexAt(y: number) {
-		let lo = 0;
-		let hi = entries.length;
-		while (lo < hi) {
-			const mid = (lo + hi) >> 1;
-			if (offsets[mid + 1] <= y) lo = mid + 1;
-			else hi = mid;
-		}
-		return lo;
-	}
-	const range = $derived.by(() => {
-		if (!virtual) return { start: 0, end: entries.length };
-		const top = scrollY - listTop;
-		return { start: Math.max(0, indexAt(top - 800)), end: Math.min(entries.length, indexAt(top + viewH + 800) + 1) };
-	});
+	const virtual = $derived((view === 'posters' ? shown.length : entries.length) > 80);
+	const range = $derived(virtual ? drawRange(offsets, scrollY - listTop, viewH) : { start: 0, end: offsets.length - 1 });
 	const slice = $derived(entries.slice(range.start, range.end));
+	const cards = $derived(view === 'posters' ? shown.slice(range.start * cols, range.end * cols) : []);
+	// Each drawn poster row keeps its real height (the grid's own row size and the gap), so the rows around it sit right.
+	function measureCards() {
+		if (view !== 'posters' || !gridEl) return;
+		const w = gridEl.getBoundingClientRect().width;
+		if (Math.abs(w - gridW) > 0.01) gridW = w;
+		else keeper.mark();
+		// Rows measured at other widths or details are guessed again; drop them once they pile up.
+		if (heights.size > cardRows.length * 3) { const keep = new Set(cardRows.map((r) => r.key)); for (const k of [...heights.keys()]) if (!keep.has(k)) heights.delete(k); }
+		getComputedStyle(gridEl).gridTemplateRows.split(' ').forEach((v, r) => {
+			const key = cardRows[range.start + r]?.key;
+			const h = parseFloat(v) + gapY;
+			if (key && h > gapY && Math.abs((heights.get(key) ?? 0) - h) > 0.01) heights.set(key, h);
+		});
+	}
+	$effect(() => {
+		cards; posterDetail;
+		untrack(measureCards);
+	});
+	// The first title on screen stays where it was when the rows change shape (columns, size, details, a live update above it).
+	const keeper = placeKeeper(() => (view === 'posters' ? gridEl : undefined), (p) => {
+		const i = shown.findIndex((t) => t.id === p.id);
+		return i < 0 || Math.abs(i - p.at) > cols ? null : listTop + offsets[Math.floor(i / cols)] - window.scrollY;
+	});
+	$effect.pre(() => { void cardRows; untrack(keeper.note); });
+	$effect(() => { void cardRows; untrack(keeper.keep); });
+	$effect.pre(() => { void cards; untrack(() => holdFocus(gridEl, cards)); });
+	const seenIds = new Set<number>();
+	// Cards glide to their new places when the order changes (a sort, a filter, a live update), not while scrolling.
+	let wasAt = new Map<string, DOMRect>();
+	$effect.pre(() => {
+		shown;
+		untrack(() => (wasAt = gridEl && !reducedMotion() ? new Map([...gridEl.children].map((el) => [(el as HTMLElement).dataset.titleId ?? '', el.getBoundingClientRect()])) : new Map()));
+	});
+	$effect(() => {
+		shown;
+		untrack(() => {
+			for (const el of gridEl && wasAt.size ? (gridEl.children as HTMLCollectionOf<HTMLElement>) : []) {
+				const a = wasAt.get(el.dataset.titleId ?? '');
+				const from = a && flipFrom(a, el.getBoundingClientRect());
+				if (from) el.animate([{ transform: from, transformOrigin: '0 0' }, { transform: 'none', transformOrigin: '0 0' }], { duration: DUR.base, easing: EASE.out });
+			}
+			wasAt = new Map();
+		});
+	});
+	$effect(() => {
+		if (!gridEl) return;
+		const ro = new ResizeObserver(() => untrack(measureCards));
+		ro.observe(gridEl);
+		return () => ro.disconnect();
+	});
 	function measure(node: HTMLElement, key: string) {
 		let k = key;
 		const ro = new ResizeObserver(() => {
@@ -189,10 +252,12 @@
 		};
 	}
 	function readTop() {
-		if (listEl) listTop = listEl.getBoundingClientRect().top + window.scrollY;
+		const el = view === 'posters' ? gridEl : listEl;
+		if (el) listTop = el.getBoundingClientRect().top + window.scrollY;
 	}
 	$effect(() => {
 		listEl;
+		gridEl;
 		view;
 		void tick().then(readTop);
 	});
@@ -244,18 +309,15 @@
 	const jumps = $derived(firstOfLetter(shown.map((t) => ({ id: t.id, name: sortName(t.name) }))));
 	const railOn = $derived(sort.key === 'name' && !grouped && shown.length > 12);
 	let railFocus = $state('A');
+	/** Where a title's line starts on the page (Posters: the row it sits in), or null when it is not shown (Rows and Banners start under the list's heading line): the letter rail goes there, and so does a place saved at another width. */
+	export function topOf(id: number) { const at = view === 'posters' ? Math.floor(shown.findIndex((t) => t.id === id) / cols) : entries.findIndex((e) => e.type === 'row' && e.t.id === id); const b = view === 'posters' ? null : listEl?.querySelector('.body'); return at < 0 ? null : listTop + (b && listEl ? b.getBoundingClientRect().top - listEl.getBoundingClientRect().top : 0) + offsets[at]; }
 	async function jump(letter: string) {
 		let id = jumps.get(letter);
 		if (id === undefined) return;
 		if (sort.dir === 'desc') id = [...shown].reverse().find((t) => letterOf(sortName(t.name)) === letter)?.id ?? id;
 		railFocus = letter;
-		const at = entries.findIndex((e) => e.type === 'row' && e.t.id === id);
-		if (at < 0) return;
-		if (view === 'posters') {
-			document.querySelector<HTMLElement>(`[data-title-id="${id}"]`)?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
-			return;
-		}
-		window.scrollTo({ top: listTop + offsets[at] - 120, behavior: reducedMotion() || virtual ? 'instant' : 'smooth' });
+		const top = topOf(id);
+		if (top !== null) window.scrollTo({ top: top - 120, behavior: reducedMotion() || virtual ? 'instant' : 'smooth' });
 		scrollY = window.scrollY;
 		active = rowEntries.findIndex((r) => r.t.id === id);
 	}
@@ -287,17 +349,19 @@
 	}
 
 	onMount(() => {
+		void refreshWatched();
 		const onResize = () => {
 			viewH = window.innerHeight;
+			vw = window.innerWidth;
 			readTop();
 		};
 		onResize();
 		window.addEventListener('resize', onResize);
-		return () => window.removeEventListener('resize', onResize);
+		return () => (window.removeEventListener('resize', onResize), keeper.stop());
 	});
 </script>
 
-<svelte:window bind:scrollY />
+<svelte:window bind:scrollY onscroll={keeper.mark} />
 
 <!-- The rail column is kept while loading too, so the cards do not narrow when it appears. -->
 <div class:has-rail={railOn || (!loaded && sort.key === 'name' && !grouped)} class="with-rail">
@@ -305,22 +369,22 @@
 		<PageLoader loading={!loaded} label={tr('mediafiles.list.loading')} onretry={retryLoad}>
 		{#if error}
 			<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
-		{:else if titles.length === 0}
+		{:else if titles.length === 0 || (shown.length === 0 && !q && !filtersOn)}
 			{@const [firstAdd, ...moreAdds] = emptyAdds(kind, partOff)}
-			<EmptyState icon="library" title={tr('mediafiles.list.nothingYet')} action={firstAdd ? { label: addWords[firstAdd.kind], href: to(firstAdd.href), icon: 'search' } : undefined} />
-			<div class="empty-more">
+			<EmptyState icon="library" title={tr('mediafiles.list.nothingYet')} action={firstAdd ? { label: addWords[firstAdd.kind], href: to(firstAdd.href), icon: 'search' } : undefined}>
 				{#each moreAdds as a (a.kind)}<Button href={to(a.href)}>{addWords[a.kind]}</Button>{/each}
 				{#if session.can('settings')}<Button href={to('/settings/library-folders')}>{tr('mediafiles.list.folders')}</Button>{/if}
-			</div>
+			</EmptyState>
 		{:else if shown.length === 0}
 			<EmptyState compact icon="search" title={q && !filtersOn ? tr('mediafiles.list.nothingFor', { q }) : tr('mediafiles.list.nothingMatches')} action={filtersOn || q ? { label: tr('mediafiles.saved.clear'), onclick: clearFilters } : undefined} />
 		{:else if view === 'posters'}
-			<ul class="grid" class:selecting style="--poster-min: {gridMin}px" style:--poster-min-phone={kind === 'artist' ? `${squarePhoneMin[posterSize]}px` : undefined} aria-label={tr('mediafiles.list.titlesOf', { kind: kindTitle })} bind:this={gridEl}>
-				{#each shown as t (t.id)}
+			<div class="body" style:height={virtual ? `${offsets[offsets.length - 1] - gapY}px` : undefined}>
+			<ul class="grid" role="list" tabindex="-1" class:selecting style="--pcols: {cols}; gap: {gapY}px {gapX}px" style:padding-top={virtual ? `${offsets[range.start]}px` : undefined} aria-label={tr('mediafiles.list.titlesOf', { kind: kindTitle })} bind:this={gridEl}>
+				{#each cards as t, i (t.id)}
 					{@const p = progressOf(t)}
 					{@const ls = who === 'staff' ? libraryState(t) : null}
-					<li class="item" style:--poster-ratio={posterRatio(t.kind)} animate:flip={{ duration: moveMs, easing: easeOut }} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
-						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} score={sort.key === 'score' ? scoreText(t) : ''} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} />
+					<li class="item" style:--poster-ratio={posterRatio(t.kind)} aria-setsize={shown.length} aria-posinset={range.start * cols + i + 1} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
+						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} score={sort.key === 'score' ? scoreText(t) : ''} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} seen={seenIds.has(t.id)} onseen={() => seenIds.add(t.id)} watched={titleWatched(t, watchedNow.ix)} />
 						{#if selecting}
 							<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 						{/if}
@@ -328,6 +392,7 @@
 					</li>
 				{/each}
 			</ul>
+			</div>
 		{:else}
 			<div class="rows {view}" class:v-rows={view === 'rows'} class:has-select={selecting} style="--acts-w: {actsW}px; --cols: {gridCols}; --table-min: {tableMin}px; --banner-w: {bannerW}px; --row-pad: {20 + touchActs + (view === 'table' && !phone && hiddenCols > 0 ? 16 : 0)}px" bind:this={listEl}>
 				{#if view === 'rows' && !phone}
@@ -382,12 +447,13 @@
 								{@const requester = requestedBy(t)}
 								{@const fold = filter.status === 'missing' && t.kind === 'show' && (t.show?.missing ?? 0) > 0}
 								{@const ri = rowEntries.findIndex((r) => r.t.id === t.id)}
+								{@const wm = titleWatched(t, watchedNow.ix)}
 								<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 								<div
 									class="entry"
 									role="listitem"
 									tabindex={ri === active ? 0 : -1}
-									aria-label="{t.name}{t.year ? `, ${t.year}` : ''}{picked.has(t.id) ? `, ${tr('mediafiles.list.selectedWord')}` : ''}"
+									aria-label="{t.name}{t.year ? `, ${t.year}` : ''}{wm ? `, ${watchedWords(wm, tr)}` : ''}{picked.has(t.id) ? `, ${tr('mediafiles.list.selectedWord')}` : ''}"
 									data-key={e.key}
 									data-testid="library-row"
 									data-title-id={t.id}
@@ -404,16 +470,16 @@
 										<div class="lr" class:ph={phone} style="--facts: {factsTpl}; --row-h: {phone ? 60 : 54}px">
 											{#if selecting}<span class="lsel"><input type="checkbox" class="pick-box lpick" checked={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" /></span>{/if}
 											<span class="lp" style:--poster-ratio={posterRatio(t.kind)} class:round={t.kind === 'artist'}>
-												<Poster src={t.artwork[0]} name={t.name} />
+												<Poster src={t.artwork[0]} name={t.name} />{#if phone}<WatchedMark mark={wm} look="bar" />{/if}
 											</span>
 											<span class="lt">
 												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												{#if !phone && t.year}<small>{t.year}</small>{/if}
-												{#if phone}{@const fc = rowCols.find((c) => !isProgressCol(c)) ?? rowCols[0]}<span class="lsub">{[ls?.label, fc ? rowCell(t, fc, p, seriesOf(t)) : ''].filter(Boolean).join(' · ')}</span>{/if}
+												{#if phone}{@const fc = rowCols.find((c) => !isProgressCol(c)) ?? rowCols[0]}<span class="lsub"><PersonText text={[ls?.label, fc ? rowCell(t, fc, p, seriesOf(t)) : ''].filter(Boolean).join(' · ')} /></span>{/if}
 											</span>
 											{#if !phone}
 												<span class="ls {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}><i class="dot" aria-hidden="true"></i>{ls?.label ?? '—'}</span>
-												{#each rowCols as c (c.id)}<span class="lc" title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}>{rowCell(t, c, p, seriesOf(t)) || '—'}</span>{/each}
+												{#each rowCols as c (c.id)}<span class="lc" title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}><PersonText text={rowCell(t, c, p, seriesOf(t)) || '—'} /></span>{/each}
 												<span class="acts">
 													{#if canManage && !selecting}
 														<IconButton icon="search" size="sm" tipSide="below-end" label={tr('mediafiles.poster.searchFor', { title: t.name })} tabindex={ri === active ? 0 : -1} onclick={() => searchTitles([t.id])} />
@@ -439,7 +505,7 @@
 													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{#if sort.key === 'score' && !phone && scoreText(t)} · ★ {scoreText(t)}{/if}{/if}
 													{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
 												</span>
-												{#if phone}<span class="facts">{factCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c, seriesOf(t)))).filter(Boolean).join(' · ')}</span>{/if}
+												{#if phone}<span class="facts"><PersonText text={factCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c, seriesOf(t)))).filter(Boolean).join(' · ')} /></span>{/if}
 											</span>
 											{#if kind !== 'all'}
 												{#each shownCols as c (c.id)}
@@ -459,7 +525,7 @@
 															<span class="sr-only">{progressText(t)}</span>
 														</span>
 													{:else}
-														<span class="c" class:num={c.numeric} class:path={c.id === 'path'} title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}>{cell(t, c, seriesOf(t)) || '—'}</span>
+														<span class="c" class:num={c.numeric} class:path={c.id === 'path'} title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}><PersonText text={cell(t, c, seriesOf(t)) || '—'} /></span>
 													{/if}
 												{/each}
 											{/if}
@@ -474,7 +540,7 @@
 										</div>
 									{:else}
 										<div class="ov" class:music={t.kind === 'artist'}>
-											<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /></a>
+											<a class="ov-poster" style:--poster-ratio={posterRatio(t.kind)} href={openLink(t)} tabindex="-1" aria-hidden="true"><Poster src={t.artwork[0]} name={t.name} /><WatchedMark mark={wm} /></a>
 											<div class="ov-main">
 												<h2><a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>{#if t.year}<span class="yr">{t.year}</span>{/if}<span class="keep ov-keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={15} /></span></h2>
 												{#if t.kind === 'artist'}
@@ -493,7 +559,7 @@
 											<!-- The status leads on its own line (never cut short); under it only facts that say something. -->
 											<dl class="ov-facts">
 												{#if ls}<dt class="sr-only">{tr('mediafiles.col.status')}</dt><dd class="ov-state"><span class="ls {ls.tone}"><i class="dot" aria-hidden="true"></i>{ls.label}</span></dd>{/if}
-												{#each chosenCols.filter((c) => !isProgressCol(c) && c.id !== 'status' && c.id !== 'kept').slice(0, 4) as c (c.id)}{#if cell(t, c, seriesOf(t))}<dt>{c.label}</dt><dd title={cell(t, c, seriesOf(t))}>{cell(t, c, seriesOf(t))}</dd>{/if}{/each}
+												{#each chosenCols.filter((c) => !isProgressCol(c) && c.id !== 'status' && c.id !== 'kept').slice(0, 4) as c (c.id)}{#if cell(t, c, seriesOf(t))}<dt>{c.label}</dt><dd title={personText(cell(t, c, seriesOf(t)))}><PersonText text={cell(t, c, seriesOf(t))} /></dd>{/if}{/each}
 											</dl>
 											{#if selecting}<input type="checkbox" class="pick-box ov-pick" checked={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />{/if}
 										</div>
@@ -521,7 +587,7 @@
 									{#if lastOpenedId === t.id}<span class="sr-only" data-testid="last-opened">{tr('mediafiles.list.lastOpened')}</span>{/if}
 									{#if requester && view !== 'rows'}
 										<p class="row-notes">
-											<span class="requester" data-testid="requested-by">{tr('mediafiles.view.askedBy', { name: requester })}</span>
+											<span class="requester" data-testid="requested-by"><PersonText text={tr('mediafiles.view.askedBy', { name: requester })} /></span>
 										</p>
 									{/if}
 								</div>
@@ -552,7 +618,7 @@
 	.lp.round { border-radius: 50%; }
 	.lpick { display: block; margin: 0 auto; }
 	.lt { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-	.lt a { color: var(--text); font: 600 14px/1.25 var(--font-ui); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lt a { min-width: 0; color: var(--text); font: 600 14px/1.25 var(--font-ui); text-decoration: none; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
 	.lt a:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.lt small { flex: none; color: var(--text-muted); font: 500 12.5px/1 var(--font-ui); }
 	.ls { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--text); font: var(--t-callout); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -662,7 +728,7 @@
 	.series-head a { margin-left: auto; color: var(--accent-text); font: var(--t-footnote); font-weight: 600; }
 
 	.ov { display: grid; grid-template-columns: 92px minmax(0, 1fr) minmax(200px, 264px); gap: 18px 24px; padding: 14px 20px 14px 16px; }
-	.ov-poster { display: block; border-radius: 8px; overflow: hidden; }
+	.ov-poster { position: relative; display: block; border-radius: 8px; overflow: hidden; }
 	.ov-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 	.ov h2 { margin: 0; font: var(--t-title3); display: flex; align-items: baseline; gap: 10px; }
 	/* A long name wraps (up to three lines) beside the year and the bell, which never break. */
@@ -683,7 +749,8 @@
 	/* Music: a square photo that keeps its shape, and two or three lines of bio. */
 	.ov.music .ov-poster { align-self: start; }
 
-	.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--poster-min, 172px), 1fr)); gap: 26px 18px; margin: 0; padding: 0; list-style: none; }
+	.grid:focus { outline: none; }
+	.grid { display: grid; grid-template-columns: repeat(var(--pcols, 1), minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
 	/* Posters: no paint containment here, so the lift, tilt and shadow are never clipped. */
 	.grid > li { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 4px; scroll-margin-top: 120px; }
 	.grid > li:hover, .grid > li:focus-within { z-index: 2; }
@@ -712,28 +779,22 @@
 	.ep-name { overflow-wrap: anywhere; }
 	.ep-date { color: var(--text-muted); }
 	.fold-note { margin: 0; color: var(--text-muted); font: var(--t-callout); }
-	.empty-more { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 	@media (max-width: 639px) {
 		.with-rail.has-rail { grid-template-columns: minmax(0, 1fr) 20px; gap: 6px; }
-		.rows.table { overflow: clip; }
-		.rows.table > .body { min-width: 0; }
+		.rows.table { overflow: clip; } .rows.table > .body { min-width: 0; }
 		.row { grid-template-columns: 1fr auto; grid-template-areas: 'art art' 'name acts'; gap: 10px 8px; min-width: 0; padding: 0 12px 12px; }
 		.row > .art { margin: 0 -12px; --banner-r: 0; border-radius: 0; box-shadow: none; }
-		.row > .art::after { display: none; }
-		.rows.table .entry::before { left: 0; right: 0; }
+		.row > .art::after { display: none; } .rows.table .entry::before { left: 0; right: 0; }
 		.rows.table .row { min-height: 0; }
 		.row > .state { position: absolute; right: 20px; top: 20px; z-index: 1; }
 		.row > .state .keep { background: rgb(0 0 0 / 55%); color: #fff; }
 		.row > .state .keep.on { background: color-mix(in srgb, var(--ok, #2fa36b) 85%, #000); color: #fff; }
-		.row > .art { grid-area: art; }
-		.row > .name { grid-area: name; }
+		.row > .art { grid-area: art; } .row > .name { grid-area: name; }
 		.row > .acts { grid-area: acts; position: static; translate: none; padding: 0; background: none; box-shadow: none; backdrop-filter: none; opacity: 1; }
 		.row > .c { display: none; }
 		.ov { grid-template-columns: 72px minmax(0, 1fr); }
-		.ov-facts { grid-column: 1 / -1; }
-		.ov-facts dd.ov-state { justify-self: start; }
+		.ov-facts { grid-column: 1 / -1; } .ov-facts dd.ov-state { justify-self: start; }
 		.ov-bio { -webkit-line-clamp: 2; line-clamp: 2; }
-		.grid { grid-template-columns: repeat(auto-fill, minmax(var(--poster-min-phone, calc(var(--poster-min, 172px) * 0.66)), 1fr)); gap: 18px 12px; }
 		.fold, .row-notes, .rows.table .fold, .rows.table .row-notes { padding-left: 12px; }
 	}
 </style>

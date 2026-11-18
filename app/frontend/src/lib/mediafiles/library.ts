@@ -156,9 +156,12 @@ export function secondVersion(
 	return { label: '4K', pick_rules_id: fourK?.id ?? rules[0]?.id ?? 0, library_folder_id: folder?.id ?? mainFolder };
 }
 
+// A Slot whose import was asked for again keeps the reason of its card while it imports; that reason is not shown meanwhile.
+export const staleWhileImporting = (s: { state?: string; reason?: string | null }) => s.state === 'importing' && !!s.reason && s.reason !== 'importing';
+
 // Release gate notes are left out; they are shown elsewhere.
-export function slotNotes(slots: { reason?: string | null }[]): string[] {
-	return [...new Set(slots.map((s) => s.reason ?? '').filter((r) => r && !r.startsWith('release gate:')))];
+export function slotNotes(slots: { state?: string; reason?: string | null }[]): string[] {
+	return [...new Set(slots.filter((s) => !staleWhileImporting(s)).map((s) => s.reason ?? '').filter((r) => r && !r.startsWith('release gate:')))];
 }
 
 // Strips accents so a name starting with an accented letter files under its plain letter.

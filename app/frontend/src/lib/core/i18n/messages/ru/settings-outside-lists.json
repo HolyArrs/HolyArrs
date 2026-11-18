@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Пока он не задан, ваши списки Trakt прочитать нельзя.",
 	"settings.outsideLists.replaceKey": "Заменить ключ Trakt",
 	"settings.outsideLists.pasteKey": "Вставьте ключ Trakt",
+	"settings.outsideLists.mdblistKey": "Ключ MDBList",
+	"settings.outsideLists.mdblistInfo": "Необязательно. С вашим ключом API MDBList списки MDBList читаются через API MDBList, без него — по их публичной ссылке. Он хранится в зашифрованном виде, и это тот же ключ, который внешние оценки используют в режиме «Свои ключи».",
+	"settings.outsideLists.pasteMdblistKey": "Вставьте свой ключ API MDBList",
+	"settings.outsideLists.replaceMdblistKey": "Заменить ключ MDBList",
+	"settings.outsideLists.removeMdblistKey": "Удалить ключ",
+	"settings.outsideLists.mdblistKeySaved": "Ключ MDBList сохранён",
+	"settings.outsideLists.mdblistKeyRemoved": "Ключ MDBList удалён; списки используют свою публичную ссылку",
 	"settings.outsideLists.replaceVip": "Заменить токен доступа VIP",
 	"settings.outsideLists.vip": "Токен доступа VIP (необязательно)",
 	"settings.outsideLists.vipHint": "Добавляет на страницы тайтлов вкладку Trakt: оценка, зрители и комментарии",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Добавить в список «Никогда не добавлять»",
 	"settings.outsideLists.showDot": "сериал ·",
 	"settings.outsideLists.takeOff": "Убрать {name}",
-	"settings.outsideLists.empty": "Пусто"
+	"settings.outsideLists.empty": "В этом списке пока ничего нет"
 }

@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Film",
 	"metadata.health.downTitle": "Metadane offline",
 	"metadata.health.down": "Wyszukiwanie i nowe grafiki są wstrzymane, dopóki serwer nie wróci. Twoja Biblioteka nadal działa.",
-	"metadata.health.back": "Metadane znów online"
+	"metadata.health.back": "Metadane znów online",
+	"metadata.health.fakeIp": "Twój router lub VPN kieruje HolyArrs na fałszywy adres (198.18.x.x). Zwykle robi to Clash albo Surge. Dodaj {host} do jego listy połączeń bezpośrednich."
 }

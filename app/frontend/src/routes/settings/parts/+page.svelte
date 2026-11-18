@@ -127,6 +127,10 @@
 		});
 	}
 
+	// Part names in the app's language; the server sends them in English.
+	const partKeys: Record<string, string> = { movies: 'frame.nav.movies', shows: 'frame.nav.shows', music: 'frame.nav.music', subtitles: 'core.settings.subtitles.label', wishlist: 'frame.nav.requests', sources: 'core.settings.sources.label' };
+	const partName = (p: PartView) => (partKeys[p.part] ? t(partKeys[p.part]) : serverWords(p.name));
+
 	const paused = (s: StageState) => s.state === 'off';
 	const pausable = (s: StageState) => !!parts?.stages?.includes(s.key.replace(/^stage:/, ''));
 
@@ -167,25 +171,25 @@
 	{/if}
 
 	<div data-testid="parts">
-		<SettingsCard id="parts-card" title={t('settings.parts.title')} description={t('settings.parts.partsDesc')}>
+		<SettingsCard id="parts-card" title={t('settings.parts.onOff')} description={t('settings.parts.partsDesc')}>
 			<ul class="rows list">
 				{#each parts.parts as p (p.part)}
 					<li data-testid="part" data-part={p.part} data-state={p.state}>
 						<div class="grow">
 							<div class="name">
-								{p.name}
-								<span class="chip {runTone(p.state)}">{runWord({ state: p.state, stuck: false })}</span>
+								{partName(p)}
+								{#if p.state !== 'running'}<span class="chip {runTone(p.state)}">{runWord({ state: p.state, stuck: false })}</span>{/if}
 							</div>
 							<p class="xs muted">{t('settings.parts.whenOff', { what: partStops[p.part as PartName] })}</p>
 							{#if partNeeds[p.part as PartName]}<p class="xs muted">{partNeeds[p.part as PartName]}</p>{/if}
-							{#if p.reason}<p class="xs muted">{p.reason}</p>{/if}
+							{#if p.reason}<p class="xs muted">{serverWords(p.reason)}</p>{/if}
 						</div>
 						<div class="row acts">
 							{#if p.on}
 								<Button type="button" onclick={() => restartPart(p)} disabled={!!busy} aria-label={t('settings.parts.restartName', { name: p.name })}>{t('settings.parts.restart')}</Button>
-								<Button variant="plain" type="button" onclick={() => switchPart(p, false)} disabled={!!busy} aria-label={t('settings.parts.turnOffName', { name: p.name })}>{t('settings.parts.turnOff')}</Button>
+								<Button type="button" onclick={() => switchPart(p, false)} disabled={!!busy} aria-label={t('settings.parts.turnOffName', { name: p.name })}>{t('settings.parts.turnOff')}</Button>
 							{:else}
-								<Button variant="primary" type="button" onclick={() => switchPart(p, true)} disabled={!!busy} aria-label={t('settings.parts.turnOnName', { name: p.name })}>{t('settings.parts.turnOn')}</Button>
+								<Button type="button" onclick={() => switchPart(p, true)} disabled={!!busy} aria-label={t('settings.parts.turnOnName', { name: p.name })}>{t('settings.parts.turnOn')}</Button>
 							{/if}
 						</div>
 					</li>
@@ -197,23 +201,23 @@
 	<div data-testid="control-stages">
 		<SettingsCard id="stages-card" title={t('settings.parts.stages')} description={t('settings.parts.stagesDesc')}>
 			{#if split.stages.length === 0}
-				<p class="small muted">{t('settings.parts.noStages')}</p>
+				<p class="empty-row">{t('settings.parts.noStages')}</p>
 			{:else}
-				<ul class="rows list">
+				<ul class="rows list stage-list">
 					{#each split.stages as s (s.key)}
 						<li data-testid="control-stage" data-state={s.state}>
 							<div class="grow">
-								<div class="name">{s.name} <span class="chip {runTone(s.state)}">{runWord(s)}</span></div>
-								{#if s.reason}<p class="xs muted">{s.reason}</p>{/if}
+								<div class="name">{serverWords(s.name)} {#if s.state !== 'running' || s.stuck}<span class="chip {runTone(s.state)}">{runWord(s)}</span>{/if}</div>
+								{#if s.reason}<p class="xs muted">{serverWords(s.reason)}</p>{/if}
 							</div>
 							{#if pausable(s)}<div class="row acts">
 								{#if paused(s)}
 									<Button type="button" onclick={() => stage(s, 'resume')} disabled={!!busy} aria-label={t('settings.parts.stage.resume', { name: s.name })}>{t('settings.parts.resume')}</Button>
 								{:else}
-									<Button variant="plain" type="button" onclick={() => stage(s, 'pause')} disabled={!!busy} aria-label={t('settings.parts.stage.pause', { name: s.name })}>{t('settings.parts.pause')}</Button>
+									<Button type="button" onclick={() => stage(s, 'pause')} disabled={!!busy} aria-label={t('settings.parts.stage.pause', { name: s.name })}>{t('settings.parts.pause')}</Button>
 								{/if}
 								<Button type="button" onclick={() => stage(s, 'restart')} disabled={!!busy} aria-label={t('settings.parts.stage.restart', { name: s.name })}>{t('settings.parts.restart')}</Button>
-							</div>{:else}<span class="xs muted">{t('settings.parts.withApp')}</span>{/if}
+							</div>{/if}
 						</li>
 					{/each}
 				</ul>
@@ -224,19 +228,19 @@
 	<div data-testid="control-links">
 		<SettingsCard id="links-card" title={t('settings.parts.links')} description={t('settings.parts.linksDesc')}>
 			{#if split.links.length === 0}
-				<p class="small muted">{t('settings.parts.noLinks')}</p>
+				<p class="empty-row">{t('settings.parts.noLinks')}</p>
 			{:else}
 				<ul class="rows list">
 					{#each split.links as l (l.key)}
 						<li data-testid="control-link" data-state={l.state}>
 							<div class="grow">
-								<div class="name">{l.name} <span class="xs muted">{linkLabel(l.kind)}</span> <span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
-								{#if l.reason}<p class="xs muted">{l.reason}</p>{/if}
+								<div class="name">{serverWords(l.name)} <span class="chip">{linkLabel(l.kind)}</span> {#if l.state !== 'running' || l.stuck}<span class="chip {runTone(l.state)}">{runWord(l)}</span>{/if}</div>
+								{#if l.reason}<p class="xs muted">{serverWords(l.reason)}</p>{/if}
 							</div>
-							{#if linkTarget(l.key)}
+							{#if linkTarget(l.key)}<div class="row acts">
 								<Button type="button" onclick={() => reconnect(l)} disabled={!!busy} aria-label="{linkAction[l.kind]} {l.name}"
 									>{linkAction[l.kind]}</Button>
-							{/if}
+							</div>{/if}
 						</li>
 					{/each}
 				</ul>
@@ -248,7 +252,7 @@
 	<div data-testid="control-events">
 		<SettingsCard title={t('settings.parts.controls')}>
 			{#if events.length === 0}
-				<p class="small muted">{t('settings.parts.nothingUsed')}</p>
+				<p class="empty-row">{t('settings.parts.nothingUsed')}</p>
 			{:else}
 				<ul class="rows list">
 					{#each events as e (e.ID)}
@@ -267,12 +271,13 @@
 {/if}
 
 <style>
-	.list {
-		margin-top: var(--s-3);
-	}
 	.list li {
-		align-items: flex-start;
 		flex-wrap: wrap;
+	}
+	/* The action area is one button tall whether it holds buttons or a line of text, so rows keep one height. */
+	.acts {
+		min-height: 36px;
+		align-items: center;
 	}
 	.list .grow {
 		min-width: 0;
@@ -287,6 +292,10 @@
 	}
 	.acts {
 		flex-wrap: wrap;
+	}
+	/* Buttons in a list share one width so their edges line up. */
+	.acts :global(.ui-btn) {
+		min-width: 96px;
 	}
 	:global(.settings-content) .card.confirm {
 		box-shadow: 0 0 0 1px var(--ha-red);
@@ -304,6 +313,23 @@
 		.list .grow,
 		.list .acts {
 			width: 100%;
+		}	/* Stages stay one line on phones too (name left, buttons right), so rows with and without buttons keep one height. */
+		.stage-list li {
+			flex-direction: row;
+			flex-wrap: nowrap;
+			align-items: center;
+			gap: var(--s-3);
+		}
+		.stage-list .grow {
+			width: auto;
+		}
+		.stage-list .acts {
+			width: auto;
+			flex: none;
+			flex-wrap: nowrap;
+		}
+		.stage-list .acts :global(.ui-btn) {
+			min-width: 0;
 		}
 	}
 </style>

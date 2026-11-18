@@ -89,3 +89,16 @@ func TestSnapshotNumberNotReused(t *testing.T) {
 		t.Fatalf("new read %d (%v) reuses the number of %d", next.ID, err, first.ID)
 	}
 }
+
+func TestSetKeepUpToDateTx(t *testing.T) {
+	st, err := database.Open(t.TempDir(), database.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	ctx := context.Background()
+	// No title with this id: the helper must not fail.
+	if err := st.Write(ctx, func(tx *sql.Tx) error { return SetKeepUpToDateTx(tx, 999999, true) }); err != nil {
+		t.Fatal(err)
+	}
+}

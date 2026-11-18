@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Deixe assistentes de IA usarem o HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Chaves e rotas para outras apps",
+	"core.settings.remoteAccess.label": "Acesso remoto",
+	"core.settings.remoteAccess.about": "Use o HolyArrs fora de casa",
 	"core.settings.tmdb.label": "Metadados",
 	"core.settings.tmdb.about": "De onde vêm pósteres e nomes",
 	"core.settings.health.label": "Verificações de saúde",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Um gestor de downloads não tem pasta de salvamento, por isso o HolyArrs não consegue importar as transferências concluídas.",
 	"core.api.sourceOff": "Algumas linhas estão desligadas nesta instalação.",
 	"core.plain.noDownloader": "As suas fontes encontram transferências que nenhum dos seus gestores de downloads aceita, por isso nenhuma pode ser enviada.",
-	"core.plain.sameDownloader": "Dois gestores de downloads chegam à mesma aplicação, por isso os downloads podem aparecer duas vezes."
+	"core.plain.sameDownloader": "Dois gestores de downloads chegam à mesma aplicação, por isso os downloads podem aparecer duas vezes.",
+	"core.plain.peopleCheck": "Não é possível ler a lista de utilizadores do servidor multimédia, por isso quem é removido lá não é desativado aqui.",
+	"core.plain.deleted": "eliminado",
+	"core.plain.deletedName": "{name} (eliminado)"
 }

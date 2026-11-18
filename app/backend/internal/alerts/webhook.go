@@ -179,6 +179,9 @@ func (s *Sender) webhook(ctx context.Context, a domain.Alert, m Message) error {
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
+		if errors.Is(err, outbound.ErrMetadataRefused) {
+			return fail("the address is a cloud metadata address, which HolyArrs never connects to", err)
+		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
 			return fail("webhook link points to the local network, which this Alert may not reach", err)
 		}

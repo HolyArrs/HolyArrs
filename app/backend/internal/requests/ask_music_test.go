@@ -139,7 +139,7 @@ func TestArtistAskAlbumsJoinApproveAndAskAgain(t *testing.T) {
 		t.Fatalf("alert %+v", last)
 	}
 	e := hasEvent(r.events(t), domain.EventAskApproved)
-	if e == nil || e.Data["approved_by"] != "luis" || len(anyStrings(e.Data["asked_by"])) != 2 {
+	if e == nil || e.Data["approved_by"] != "luis" || len(anyStrings(e.Data["asked_by"])) != 2 || len(askerIDs(e.Data["asked_by_ids"])) != 2 {
 		t.Fatalf("approved event %+v", e)
 	}
 

@@ -3,6 +3,7 @@ package sources
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 
@@ -15,32 +16,50 @@ import (
 // askAll asks every Source used for this kind of search; tv picks the Sources
 // and categories for shows. A Source with tags is asked only for a title that
 // shares one of them or whose Pick rules do; Pick rules with tags (ruleTags)
-// ask only the Sources sharing one of those.
-func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool, titleTags, ruleTags []string) ([]found, []string, int, []skippedSource, error) {
+// ask only the Sources sharing one of those. A copy (versionID) in a Library
+// folder that asks only tagged Sources also has that folder's tags and leaves
+// untagged Sources out while any Source of the kind has one of them, usable
+// for this search or not. When none has, the untagged Sources are asked too
+// and note says so. When they have but this search has no Source left to ask
+// (a Source taken through the Pick rules' tags counts), nobody is asked and
+// note is the line that says why (keptApart tells the two apart).
+func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bool, ti mediafiles.Title, versionID int64, ruleTags []string) (all []found, failures []string, answered int, skipped []skippedSource, note string, err error) {
 	ruleTags = mediafiles.CleanTags(ruleTags) // Source tags are stored this way
 	now := time.Now().UTC()
-	srcs, err := database.Select[domain.Source](ctx, s.Store.Read(), "sources",
-		"state IN ('enabled', 'paused') ORDER BY priority, id")
+	srcs, err := database.Select[domain.Source](ctx, s.Store.Read(), "sources", anyState+" ORDER BY priority, id")
 	if err != nil {
-		return nil, nil, 0, nil, err
+		return nil, nil, 0, nil, "", err
 	}
-	var all []found
-	var failures []string
-	var skipped []skippedSource
-	answered := 0
+	cp, err := s.copySourcesOf(ctx, ti, versionID, srcs)
+	if err != nil {
+		return nil, nil, 0, nil, "", err
+	}
+	every := slices.Clone(srcs)
+	srcs = slices.DeleteFunc(srcs, func(src domain.Source) bool {
+		// Untagged Sources are no part of a search kept to tagged ones; nothing is said about them.
+		return src.State == "disabled" || cp.only && len(src.Tags) == 0 || src.Format == "rss" || hand && !src.UseFor.HandSearch || !hand && !src.UseFor.AutoSearch || tv && !handlesTV(src) || q.Music && !handlesMusic(src) || !tv && !q.Music && !handlesMovies(src)
+	})
+	if cp.only && !slices.ContainsFunc(srcs, func(src domain.Source) bool {
+		return cp.takes(src.Tags, ruleTags) && mediafiles.RulesTakeSource(src.Tags, ruleTags) && !pausedNow(src, now)
+	}) {
+		if line := cp.keptApartLine(every, ti.Kind, hand, now); line != "" {
+			return nil, nil, 0, nil, line, nil
+		}
+	}
+	if cp.passed && len(srcs) > 0 {
+		note = folderTagsNote
+	}
 	for i, src := range srcs {
-		if src.Format == "rss" || hand && !src.UseFor.HandSearch || !hand && !src.UseFor.AutoSearch || tv && !handlesTV(src) || q.Music && !handlesMusic(src) || !tv && !q.Music && !handlesMovies(src) {
+		has := strings.Join(src.Tags, ", ")
+		if !cp.takes(src.Tags, ruleTags) {
+			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + has + ") are not on this title"})
 			continue
 		}
-		if !mediafiles.SourceTakesTitle(src.Tags, titleTags, ruleTags) {
-			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + strings.Join(src.Tags, ", ") + ") are not on this title"})
+		if !mediafiles.RulesTakeSource(src.Tags, ruleTags) && len(src.Tags) == 0 {
+			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: noTagsWhy + strings.Join(ruleTags, ", ")})
 			continue
 		}
 		if !mediafiles.RulesTakeSource(src.Tags, ruleTags) {
-			has := strings.Join(src.Tags, ", ")
-			if has == "" {
-				has = "none"
-			}
 			skipped = append(skipped, skippedSource{ID: src.ID, Name: src.Name, Why: tagsWhy + has + ") are not in the Pick rules' tags (" + strings.Join(ruleTags, ", ") + ")"})
 			continue
 		}
@@ -69,12 +88,13 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 		}
 		cl, err := s.client(ctx, src)
 		var items []Item
+		var slowed error
 		if err == nil {
-			items, err = cl.Search(ctx, qq)
+			items, slowed, err = cl.searchNamed(ctx, qq, qq.other.n)
 		}
 		if err != nil {
 			if ctx.Err() != nil {
-				return nil, nil, 0, nil, ctx.Err()
+				return nil, nil, 0, nil, "", ctx.Err()
 			}
 			if errors.Is(err, ErrNothingToSearch) {
 				failures = append(failures, src.Name+": "+err.Error())
@@ -87,12 +107,17 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 			continue
 		}
 		answered++
+		// The title search worked, so earlier failures are over; a slow-down
+		// on an other name then pauses the Source from a fresh count.
 		s.recovered(ctx, src)
+		if slowed != nil {
+			s.pause(ctx, src, slowed)
+		}
 		for _, item := range items {
 			all = append(all, found{src: src, item: item, keys: secretValues(cl.cfg)})
 		}
 	}
-	return all, failures, answered, skipped, nil
+	return all, failures, answered, skipped, note, nil
 }
 
 // skippedSource is a Source a search could not use: paused, or failed this
@@ -130,7 +155,7 @@ func noAnswer(failures []string, answered int, skipped []skippedSource) (reason 
 	if !failed {
 		for _, k := range skipped {
 			failures = append(failures, k.Name+": "+pauseWords(k.Why))
-			tagsOnly = tagsOnly && strings.HasPrefix(k.Why, tagsWhy)
+			tagsOnly = tagsOnly && isTagsWhy(k.Why)
 		}
 	}
 	if tagsOnly {
@@ -139,12 +164,43 @@ func noAnswer(failures []string, answered int, skipped []skippedSource) (reason 
 	return "no Source answered: " + strings.Join(failures, "; "), map[string]any{"sources": skipped}, true, failed
 }
 
-// tagsWhy starts the reason a tagged Source was not asked.
-const tagsWhy = "its tags ("
+// folderTagsNote is what a search says when its Library folder asks only tagged
+// Sources and none of the Sources it can use has one of the tags.
+const folderTagsNote = "No Source this search can use has this folder's tags, so Sources without the folder's tags were asked."
+
+// keptApart says whether a search's note is the line of a search that asked
+// nobody because its folder's tagged Sources cannot be asked.
+func keptApart(note string) bool {
+	return note != "" && note != folderTagsNote
+}
+
+// noted puts a search's note into the data of its Event.
+func noted(data map[string]any, note string) map[string]any {
+	if note == "" {
+		return data
+	}
+	if data == nil {
+		data = map[string]any{}
+	}
+	data["sources_note"] = note
+	return data
+}
+
+// tagsWhy starts the reason a tagged Source was not asked, noTagsWhy the
+// reason an untagged one was not asked by Pick rules that have tags.
+const (
+	tagsWhy   = "its tags ("
+	noTagsWhy = "it has no tags, and the Pick rules only take Sources tagged "
+)
+
+// isTagsWhy says whether a Source was left out for its tags, not for a fault.
+func isTagsWhy(why string) bool {
+	return strings.HasPrefix(why, tagsWhy) || strings.HasPrefix(why, noTagsWhy)
+}
 
 // pauseWords says why a Source is paused in plain words.
 func pauseWords(why string) string {
-	if strings.HasPrefix(why, tagsWhy) {
+	if isTagsWhy(why) {
 		return why
 	}
 	switch why {

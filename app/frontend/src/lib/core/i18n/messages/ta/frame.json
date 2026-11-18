@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} காத்திருக்கின்றன",
 	"frame.nav.new": "{n} புதியவை",
 	"frame.nav.manage": "நிர்வகி",
+	"frame.nav.activity": "செயல்பாடு",
+	"frame.nav.system": "அமைப்பு",
 	"frame.nav.history": "வரலாறு",
 	"frame.nav.status": "நிலை",
 	"frame.nav.settings": "அமைப்புகள்",
+	"frame.nav.plugins": "செருகுநிரல்கள்",
 	"frame.nav.goTo": "செல்",
 	"frame.nav.active": "{n} செயலில், {percent}%",
 	"frame.nav.decide": "{n} க்கு முடிவு தேவை",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "அமைப்பு",
 	"frame.layout.switch": "கணக்கை மாற்று",
 	"frame.layout.signOut": "வெளியேறு",
+	"frame.layout.support": "HolyArrs-ஐ ஆதரிக்கவும்",
 	"frame.layout.signOutFail": "வெளியேறியதை உறுதிசெய்ய முடியவில்லை",
 	"frame.layout.signedOut": "வெளியேறினீர்கள்",
 	"frame.layout.accountMenu": "{name}, {role}: கணக்கும் தோற்றமும்",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs தானாகவே மீண்டும் முயல்கிறது",
 	"frame.feeds.clearNow": "இப்போதே அழி",
 	"frame.feeds.cleared": "பதிவிறக்கியிலிருந்து அழிக்கப்பட்டது",
-	"frame.feeds.clearStill": "இன்னும் அழிக்கப்படவில்லை"
+	"frame.feeds.clearStill": "இன்னும் அழிக்கப்படவில்லை",
+	"frame.error.pageGone": "இந்தப் பக்கம் இல்லை. இணைப்பு பழையதாகவோ தவறாக எழுதப்பட்டதாகவோ இருக்கலாம்."
 }

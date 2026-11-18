@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Deixe assistentes de IA usarem o HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Chaves e rotas para outros apps",
+	"core.settings.remoteAccess.label": "Acesso remoto",
+	"core.settings.remoteAccess.about": "Use o HolyArrs fora de casa",
 	"core.settings.tmdb.label": "Metadados",
 	"core.settings.tmdb.about": "De onde vêm pôsteres e nomes",
 	"core.settings.health.label": "Verificações de saúde",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Senha, duas etapas, dispositivos",
 	"core.api.sourceOff": "Algumas linhas estão desligadas nesta instalação.",
 	"core.plain.noDownloader": "Suas fontes encontram downloads que nenhum dos seus gerenciadores de downloads aceita, então nenhum pode ser enviado.",
-	"core.plain.sameDownloader": "Dois gerenciadores de downloads chegam ao mesmo app, então os downloads podem aparecer duas vezes."
+	"core.plain.sameDownloader": "Dois gerenciadores de downloads chegam ao mesmo app, então os downloads podem aparecer duas vezes.",
+	"core.plain.peopleCheck": "Não é possível ler a lista de usuários do servidor de mídia, então quem é removido lá não é desativado aqui.",
+	"core.plain.deleted": "excluído",
+	"core.plain.deletedName": "{name} (excluído)"
 }

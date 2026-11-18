@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "تعذّر الاتصال بـ {name}",
 	"settings.parts.connected": "تم الاتصال بـ {name}",
 	"settings.parts.title": "الأقسام",
+	"settings.parts.onOff": "تشغيل الأقسام أو إيقافها",
 	"settings.parts.ownerOnly": "للمالك والمشرفين فقط",
 	"settings.parts.safeMode": "HolyArrs يعمل في الوضع الآمن: تعمل النواة فقط، وتُرفض مفاتيح تشغيل الأقسام وأدوات التحكم في المراحل حتى البدء العادي. استخدم <b>إعادة تشغيل HolyArrs</b> في <a>منطقة الخطر</a> للخروج من الوضع الآمن.",
 	"settings.parts.dangerZone": "منطقة الخطر",

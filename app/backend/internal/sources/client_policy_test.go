@@ -32,7 +32,7 @@ func TestPolicy_AllowLocalNetworkPerSource(t *testing.T) {
 func TestPolicy_AllowLocalStillRefusesMetadata(t *testing.T) {
 	for _, host := range []string{"169.254.169.254", "100.100.100.200", "[fd00:ec2::254]"} {
 		_, err := New(Config{URL: "http://" + host + "/api", Protocol: "torrent", AllowLocal: true}).Caps(context.Background())
-		if err == nil || !strings.Contains(err.Error(), "network policy") {
+		if err == nil || !strings.Contains(err.Error(), "cloud metadata address") {
 			t.Fatalf("metadata address %s: %v", host, err)
 		}
 	}

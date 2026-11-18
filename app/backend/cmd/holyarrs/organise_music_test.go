@@ -229,7 +229,7 @@ func TestMusicNamingAPI(t *testing.T) {
 	if v.Music["various"] != "Various Artists/Lab Mix - Volume 1 (2024)/05 - Various Artists - Night.mp3" {
 		t.Fatalf("track artist example %+v", v.Music)
 	}
-	if v.Naming["music_adopt_scan_limit"] != float64(200) {
+	if v.Naming["music_adopt_scan_limit"] != float64(50) {
 		t.Fatalf("music scan limit %+v", v.Naming["music_adopt_scan_limit"])
 	}
 	if b := do(t, "POST", u+"/settings/naming/example", `{"track_pattern":"{track_title}"}`, 400); !strings.Contains(string(b), "must hold {track}") {

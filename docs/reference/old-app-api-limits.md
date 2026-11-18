@@ -9,7 +9,7 @@ What old-app clients can't do through HolyArrs, and the fix for each common erro
 
 ## Supported apps
 
-Seerr, Overseerr, Bazarr, Unpackerr, Prowlarr and the Homepage Sonarr widget. Recyclarr, Maintainerr, Cleanuparr and other apps that talk to Sonarr or Radarr are not supported.
+Seerr, Overseerr, Bazarr, Unpackerr, Prowlarr and the Homepage Sonarr widget. The Homepage Radarr widget is untried. Recyclarr, Maintainerr, Cleanuparr and other apps that talk to Sonarr or Radarr are not supported.
 
 ## If it does not work
 
@@ -37,6 +37,7 @@ Seerr, Overseerr, Bazarr, Unpackerr, Prowlarr and the Homepage Sonarr widget. Re
 | Unanswered calls | Return an error. HolyArrs never pretends a call worked. |
 | Tags | Not attached to titles, so lists filtered by tag are not narrowed. |
 | Languages | Carry only their name. No known original language reads "Unknown". |
+| Dashboard lists | `/wanted/missing`, `/calendar`, `/health`, `/queue/details` and `/queue/status` answer on both sides. `/wanted/cutoff` is not answered. |
 | Version number | Status reports `4.0.99.0` on the Sonarr side and `5.0.99.0` on the Radarr side, because clients choose their calls from it. |
 
 </details>

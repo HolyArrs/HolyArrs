@@ -7,6 +7,7 @@
 	"settings.sources.title": "सोर्स",
 	"settings.sources.add": "सोर्स जोड़ें",
 	"settings.sources.lead": "प्राथमिकता 1 सबसे पहले चलता है। जो सोर्स फ़ेल हो, उसे छह घंटे तक छोड़ा जाता है। जिन साइटों में फ़ीड नहीं है, उनके लिए Jackett या Prowlarr को Torznab फ़ीड की तरह जोड़ें।",
+	"settings.sources.builtIn": "अंतर्निहित साइटों के लिए Jackett या Prowlarr की ज़रूरत नहीं है: {sites}। {kind} में {site} चुनें।",
 	"settings.sources.change": "{name} बदलें",
 	"settings.sources.name": "नाम",
 	"settings.sources.feedKind": "फ़ीड का प्रकार",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "सेव करें",
 	"settings.sources.cancel": "रद्द करें",
 	"settings.sources.none": "कोई सोर्स नहीं",
-	"settings.sources.noneText": "Torznab या Newznab फ़ीड जोड़ें, या Jackett या Prowlarr।",
+	"settings.sources.noneText": "कोई अंतर्निहित साइट, Torznab या Newznab फ़ीड, या Jackett या Prowlarr जोड़ें।",
 	"settings.sources.rowTitle": "{url} · प्राथमिकता {priority} · {uses}",
 	"settings.sources.priorityUses": "प्राथमिकता {priority} · {uses}",
 	"settings.sources.keyIs": "कुंजी {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "साइट",
 	"settings.sources.addressSite": "साइट का अपना पता। इसे तभी बदलें जब साइट कहीं और चली गई हो।",
 	"settings.sources.siteKeyLabel": "कुकी या RSS कुंजी",
-	"settings.sources.siteKeyHint": "अपने ही खाते से: ब्राउज़र कुकी से uid और pass, या अपने RSS लिंक से u और tp। एन्क्रिप्ट करके रखा जाता है।"
+	"settings.sources.siteKeyHint": "अपने ही खाते से: ब्राउज़र कुकी से uid और pass, या अपने RSS लिंक से u और tp। एन्क्रिप्ट करके रखा जाता है।",
+	"settings.sources.sendTo": "डाउनलोड यहाँ भेजें",
+	"settings.sources.sendToAny": "कोई भी डाउनलोडर",
+	"settings.sources.sendToHint": "इस स्रोत से चुनी गई हर चीज़ सिर्फ़ इसी डाउनलोडर में जाती है। यह बंद हो तो इंतज़ार होता है।",
+	"settings.sources.sendToGone": "चुना गया डाउनलोडर हटा दिया गया। इस स्रोत के डाउनलोड अब किसी भी डाउनलोडर में जाते हैं।"
 }

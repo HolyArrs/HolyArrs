@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "زبان ذخیره نشد",
 	"accounts.language.count.one": "۱ زبان",
 	"accounts.language.count.other": "{n} زبان",
-	"accounts.account.watchEveryone": "مالک این را برای همه روشن کرده. برای متوقف کردنش هر دو را خاموش کن."
+	"accounts.account.watchEveryone": "مالک این را برای همه روشن کرده. برای متوقف کردنش هر دو را خاموش کن.",
+	"accounts.watch.title": "نشانه‌های تماشا",
+	"accounts.watch.hint": "حساب خود را روی یک سرور رسانه اینجا پیوند دهید تا کتابخانه نشان دهد چه دیده‌اید.",
+	"accounts.watch.as": "{server}، به‌عنوان {name}",
+	"accounts.watch.nameOn": "نام در {server}",
+	"accounts.watch.passwordOnce": "گذرواژه شما فقط به {server} می‌رود و نگه داشته نمی‌شود.",
+	"accounts.watch.linked": "به {name} در {server} پیوند خورد",
+	"accounts.watch.unlinked": "پیوند برداشته شد",
+	"accounts.login.importPaused": "ورودت به پایان رسید، پس درون‌ریزی متوقف شد. وارد شو، ورود یک کتابخانه را باز کن و برای ادامه اسکن را بزن."
 }

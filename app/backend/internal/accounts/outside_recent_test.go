@@ -245,3 +245,43 @@ func TestNoPasswordOwnerLinksPlex(t *testing.T) {
 		t.Fatalf("stale my-link finish: %d %s", resp.StatusCode, out)
 	}
 }
+
+// While first-run setup is open, an owner with no password who signs in again
+// through Jellyfin keeps the setup session's standing, so a long Import review
+// is not refused after ten minutes; a member's sign-in and a finished wizard
+// get no such standing.
+func TestSetupOwnerOutsideSignInAgainStaysSetup(t *testing.T) {
+	f := gated(t, Options{})
+	ms := fakeSetupServer(t)
+	in := func(path, name string) person {
+		b, _ := json.Marshal(map[string]string{"url": ms.URL, "name": name, "password": "right"})
+		c := client(t)
+		resp, out := call(t, c, "POST", f.srv.URL+path, string(b), nil)
+		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+			t.Fatalf("jellyfin %s %s: %d %s", path, name, resp.StatusCode, out)
+		}
+		var v struct {
+			CSRF string `json:"csrf"`
+		}
+		jsonOf(t, out, &v)
+		return person{c, v.CSRF}
+	}
+	in("/api/v1/auth/setup/media-server/jellyfin", "boss")
+	again := in("/api/v1/auth/media-server/jellyfin", "boss")
+	f.clock.add(localRecentFor + time.Minute)
+	if importAsks(t, f, again) {
+		t.Fatal("setup still open: the owner's second Jellyfin sign-in was refused after ten minutes")
+	}
+	if who := meOf(t, f, again); !who.SetupRecent {
+		t.Fatalf("second sign-in: %+v", who)
+	}
+	own := in("/api/v1/auth/media-server/jellyfin", "boss")
+	if resp, out := own.do(t, f, http.MethodPost, "/api/v1/auth/setup/done", ``); resp.StatusCode != http.StatusOK {
+		t.Fatalf("setup done: %d %s", resp.StatusCode, out)
+	}
+	after := in("/api/v1/auth/media-server/jellyfin", "boss")
+	f.clock.add(localRecentFor + time.Minute)
+	if !importAsks(t, f, after) {
+		t.Fatal("after the wizard, a stale Jellyfin sign-in still passed")
+	}
+}

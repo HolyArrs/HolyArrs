@@ -7,6 +7,7 @@
 	"settings.sources.title": "Sources",
 	"settings.sources.add": "Ajouter une source",
 	"settings.sources.lead": "La priorité 1 passe en premier. Une source qui échoue est ignorée jusqu'à six heures. Pour les sites sans flux, ajoutez Jackett ou Prowlarr comme flux Torznab.",
+	"settings.sources.builtIn": "Les sites intégrés n’ont pas besoin de Jackett ni de Prowlarr : {sites}. Choisissez {site} sous {kind}.",
 	"settings.sources.change": "Modifier {name}",
 	"settings.sources.name": "Nom",
 	"settings.sources.feedKind": "Type de flux",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Enregistrer",
 	"settings.sources.cancel": "Annuler",
 	"settings.sources.none": "Aucune source",
-	"settings.sources.noneText": "Ajoutez un flux Torznab ou Newznab, ou Jackett ou Prowlarr.",
+	"settings.sources.noneText": "Ajoutez un site intégré, un flux Torznab ou Newznab, ou Jackett ou Prowlarr.",
 	"settings.sources.rowTitle": "{url} · priorité {priority} · {uses}",
 	"settings.sources.priorityUses": "Priorité {priority} · {uses}",
 	"settings.sources.keyIs": "clé {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Site",
 	"settings.sources.addressSite": "L’adresse propre du site. Ne la changez que si le site a déménagé.",
 	"settings.sources.siteKeyLabel": "Cookie ou clé RSS",
-	"settings.sources.siteKeyHint": "De votre propre compte : uid et pass du cookie du navigateur, ou u et tp de votre lien RSS. Conservé chiffré."
+	"settings.sources.siteKeyHint": "De votre propre compte : uid et pass du cookie du navigateur, ou u et tp de votre lien RSS. Conservé chiffré.",
+	"settings.sources.sendTo": "Envoyer les téléchargements à",
+	"settings.sources.sendToAny": "N'importe quel client",
+	"settings.sources.sendToHint": "Tout ce qui est choisi depuis cette source va uniquement à ce client. S'il est hors service, ça attend.",
+	"settings.sources.sendToGone": "Le client de téléchargement choisi a été supprimé. Les téléchargements de cette source vont maintenant à n'importe quel client."
 }

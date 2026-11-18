@@ -276,7 +276,7 @@
         "type": "object"
       },
       "AdoptCandidate": {
-        "description": "One folder in the Library folder. status: matched (score 0.9 or more, no close runner-up), unsure, unmatched, no_video, in_library, never_add.",
+        "description": "One folder in the Library folder. status: matched (score 0.9 or more, no close runner-up), unsure, unmatched, not_looked_up (the metadata server did not answer for it), no_video, in_library, never_add.",
         "properties": {
           "albums": {
             "description": "An artist folder: each album folder, the album and Pressing it fits, and the track each file holds.",
@@ -382,7 +382,7 @@
             "type": "integer"
           },
           "status": {
-            "description": "matched, unsure, unmatched, no_video (no video or audio file), in_library or never_add.",
+            "description": "matched, unsure, unmatched, not_looked_up (the metadata server did not answer for it), no_video (no video or audio file), in_library or never_add.",
             "type": "string"
           },
           "title_id": {
@@ -2842,7 +2842,8 @@
           "kind": {
             "enum": [
               "tmdb_list",
-              "trakt_list"
+              "trakt_list",
+              "mdblist_list"
             ],
             "type": "string"
           },
@@ -2992,6 +2993,10 @@
           },
           "url": {
             "type": "string"
+          },
+          "web_url": {
+            "description": "Where people's browsers open the server, for the Open in button on Library title pages (Jellyfin and Emby). Empty: no button.",
+            "type": "string"
           }
         },
         "type": "object"
@@ -3041,6 +3046,10 @@
           },
           "url": {
             "description": "The server's address, e.g. http://192.168.1.10:32400 (Plex) or http://192.168.1.10:8096 (Jellyfin, Emby).",
+            "type": "string"
+          },
+          "web_url": {
+            "description": "Where people's browsers open the server, for the Open in button on Library title pages (Jellyfin and Emby). Empty: no button.",
             "type": "string"
           }
         },
@@ -3114,7 +3123,7 @@
         "description": "An old app to read: url with key (qBittorrent: username and password, or its API key), or path to a backup on this server. Keys and passwords are used for this call only, never stored or answered.",
         "properties": {
           "allow_local_network": {
-            "description": "Let this read reach the local network (link-local and cloud metadata addresses stay refused).",
+            "description": "Let this read reach the local network (cloud metadata addresses stay refused).",
             "type": "boolean"
           },
           "key": {
@@ -6500,10 +6509,14 @@
           },
           "kind": {
             "enum": [
+              "opensubtitles",
+              "subdl",
               "podnapisi",
               "gestdown",
-              "fake",
-              "fake_account"
+              "addic7ed",
+              "yifysubtitles",
+              "tvsubtitles",
+              "bsplayer"
             ],
             "type": "string"
           },
@@ -8123,6 +8136,100 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/app/update/go-back": {
+      "post": {
+        "description": "Puts back the version that ran before the last update.",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The updater's state"
+          }
+        },
+        "summary": "Go back to the previous version",
+        "tags": [
+          "This app"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/app/update/install": {
+      "get": {
+        "description": "Whether a newer version is downloaded and ready, the update mode, and the progress of an install or a go-back. The updater ships switched off until its signing key exists.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The updater's state"
+          }
+        },
+        "summary": "The built-in updater's state",
+        "tags": [
+          "This app"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Installs the downloaded version once HolyArrs is idle; waiting can take minutes, so it answers at once and the page follows the progress.",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The updater's state"
+          }
+        },
+        "summary": "Install the ready version",
+        "tags": [
+          "This app"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/app/update/mode": {
+      "put": {
+        "description": "How the built-in updater acts: off, ask or auto. It is off by default.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The updater's state"
+          }
+        },
+        "summary": "Set the update mode",
+        "tags": [
+          "This app"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/artists": {
       "post": {
         "description": "Adds an artist by MusicBrainz id with its album choice, new-album choice and album kinds. The artist, a main Version and every album are written at once; a details refresh follows as a Job that fetches the Pressings and tracks of the included albums, chooses one Pressing per album and makes one Slot per track (not out yet until the album's release date, then missing). Albums are not searched yet (stage 3.3).",
@@ -8699,7 +8806,7 @@
     },
     "/api/v1/asks": {
       "get": {
-        "description": "People who may approve see everyone's asks; others see only their own. Waiting asks first, then newest.",
+        "description": "People who may approve see everyone's asks; others see only their own. Waiting asks first, then newest. The list holds at most limit asks (200 unless limit says more); counts (pending, processing, done and failed) and total are of everything the person may see.",
         "operationId": "listAsks",
         "parameters": [
           {
@@ -8757,6 +8864,15 @@
                         "$ref": "#/components/schemas/Ask"
                       },
                       "type": "array"
+                    },
+                    "counts": {
+                      "additionalProperties": {
+                        "type": "integer"
+                      },
+                      "type": "object"
+                    },
+                    "total": {
+                      "type": "integer"
                     }
                   },
                   "type": "object"
@@ -8991,13 +9107,19 @@
     },
     "/api/v1/asks/remove": {
       "post": {
-        "description": "For people who approve. Send ids, or a filter: \"failed\" (approved, nothing added) or \"finished\" (ready or turned down). Only the asks go; titles, files, downloads and follows stay. Answers how many were removed.",
+        "description": "For people who approve. Send ids, or a filter: \"failed\" (approved, and no title was added or it was deleted from the Library since) or \"finished\" (ready or turned down). With a filter, ids narrow it to those asks and only the ones the filter still names go; failed_downloads are asks whose download failed, removed while still approved. Only the asks go; titles, files, downloads and follows stay. Answers how many were removed.",
         "operationId": "removeAsks",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "properties": {
+                  "failed_downloads": {
+                    "items": {
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
                   "filter": {
                     "enum": [
                       "failed",
@@ -9010,6 +9132,14 @@
                       "type": "integer"
                     },
                     "type": "array"
+                  },
+                  "only": {
+                    "description": "With ids and no filter: of those ids, only the asks still failed (or finished) go.",
+                    "enum": [
+                      "failed",
+                      "finished"
+                    ],
+                    "type": "string"
                   }
                 },
                 "type": "object"
@@ -10244,6 +10374,74 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Owner or admin, signed in: set an AI (mcp) key's mcp_groups. Admins reach only their own keys. Scopes stay fixed.",
+        "operationId": "editKey",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "mcp_groups": {
+                    "items": {
+                      "enum": [
+                        "see",
+                        "add",
+                        "control",
+                        "settings",
+                        "delete",
+                        "admin",
+                        "approve"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "mcp_groups"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The key's new tick boxes."
+          },
+          "400": {
+            "description": "Unknown group, or not an AI key."
+          },
+          "403": {
+            "description": "Not the owner or an admin, or called with a key."
+          },
+          "404": {
+            "description": "No such key."
+          }
+        },
+        "summary": "Change an AI key's tick boxes",
+        "tags": [
+          "API keys"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/auth/login": {
@@ -10397,6 +10595,141 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/auth/media-link": {
+      "get": {
+        "description": "Lists the owner's connected Jellyfin and Emby servers (name and kind, never the address) and my links to accounts on them.",
+        "operationId": "myMediaLinks",
+        "responses": {
+          "200": {
+            "description": "The servers and my links."
+          }
+        },
+        "summary": "Servers I may link and my links",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/auth/media-link/{kind}": {
+      "delete": {
+        "description": "kind is jellyfin or emby. Removes my link and ends the sessions it signed in; refused when it is my only way to sign in.",
+        "operationId": "myMediaUnlink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Confirm your local password first."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Nothing linked."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "It is my only way to sign in."
+          }
+        },
+        "summary": "Unlink my Jellyfin or Emby account",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/media-link/{server}": {
+      "post": {
+        "description": "Signs in to my account on that server with its name and password (sent to the server only, never kept) and links it to me, replacing my earlier link of that kind; only the account id there is kept. Needs a recent local password.",
+        "operationId": "myMediaLink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "server",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Linked."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Wrong name or password."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Confirm your local password first."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such media server."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "That account is linked to someone else."
+          }
+        },
+        "summary": "Link my Jellyfin or Emby account",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/media-server/{kind}": {
       "post": {
         "description": "kind is jellyfin or emby (when turned on).",
@@ -10478,7 +10811,7 @@
     },
     "/api/v1/auth/media-server/{kind}/test": {
       "post": {
-        "description": "Asks the address for its public server info (5 s limit, no redirects, no link-local or multicast addresses). Answers ok with the server name and version, or ok false with a reason.",
+        "description": "Asks the address for its public server info (5 s limit, no redirects, no cloud metadata or multicast addresses). Answers ok with the server name and version, or ok false with a reason.",
         "operationId": "mediaServerTest",
         "parameters": [
           {
@@ -15847,7 +16180,7 @@
     },
     "/api/v1/downloads/{id}/remove": {
       "post": {
-        "description": "Takes an active Download away by hand: removed from the Downloader (with its files when delete_files), the Release turned down when turn_down, and the movie searched again when turn_down and search_again; otherwise it goes back to wanted. Missing choices come from Settings > Downloaders.",
+        "description": "Takes a Download away by hand, an active one or a finished (seeding) one on a Downloader HolyArrs may change: removed from the Downloader (with its files when delete_files), the Release turned down when turn_down, and the movie searched again when turn_down and search_again; otherwise it goes back to wanted. Missing choices come from Settings > Downloaders.",
         "operationId": "removeDownload",
         "parameters": [
           {
@@ -15885,7 +16218,20 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DownloadView"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/DownloadView"
+                    },
+                    {
+                      "properties": {
+                        "client_note": {
+                          "description": "Set when the Downloader refused to remove it: what it said. HolyArrs asks again on the next sync.",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
                 }
               }
             },
@@ -15909,7 +16255,7 @@
                 }
               }
             },
-            "description": "The download is not active any more."
+            "description": "The download is not active any more, its Downloader is read-only, or HolyArrs is placing its files in the library right now."
           }
         },
         "summary": "Remove a download",
@@ -18230,7 +18576,7 @@
     },
     "/api/v1/library-folders/{id}/scan": {
       "post": {
-        "description": "Queues a dry run that matches each folder to a TMDB movie with a confidence score; nothing is written. GET /api/v1/jobs/{id} then holds result.plan (an AdoptPlan). At most adopt_scan_limit folders (default 5000) are read, in name order; when plan.more is true, scan again with after set to plan.next for the rest. A folder whose TMDB lookup fails is unmatched with the reason instead of stopping the scan. A {tmdb-N} tag in a folder name wins over the name and year. A show Library folder (5.2.2) matches each folder to a show at the show details source (a {tvdb-N}, {tmdb-N}, {tvmaze-N} or {imdb-ttN} tag wins), and lists each video under files with the episodes its name gives (S01E02, multi-episode names, an air day or a running number) or why it gives none; plan.kind says movie or show, and plan.warning is set when the Library folder is empty while the Library knows files in it (a drive or share not mounted). A music Library folder reads at most music_adopt_scan_limit artist folders (default 200); its MusicBrainz lookups wait behind album imports, searches and staff, each artist folder's result is saved to the Job as it is done (plan.partial), and each album lists at most 40 files (album.cut).",
+        "description": "Queues a dry run that matches each folder to a TMDB movie with a confidence score; nothing is written. GET /api/v1/jobs/{id} then holds result.plan (an AdoptPlan). At most adopt_scan_limit folders (default 5000) are read, in name order; when plan.more is true, scan again with after set to plan.next for the rest. A folder whose TMDB lookup fails is unmatched with the reason instead of stopping the scan. A {tmdb-N} tag in a folder name wins over the name and year. A show Library folder (5.2.2) matches each folder to a show at the show details source (a {tvdb-N}, {tmdb-N}, {tvmaze-N} or {imdb-ttN} tag wins), and lists each video under files with the episodes its name gives (S01E02, multi-episode names, an air day or a running number) or why it gives none; plan.kind says movie or show, and plan.warning is set when the Library folder is empty while the Library knows files in it (a drive or share not mounted). A music Library folder reads at most music_adopt_scan_limit artist folders (default 50); its MusicBrainz lookups wait behind album imports, searches and staff, each artist folder's result is saved to the Job as it is done (plan.partial), and each album lists at most 40 files (album.cut).",
         "operationId": "scanFolder",
         "parameters": [
           {
@@ -18493,6 +18839,20 @@
         "summary": "Who watched what",
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/library/watched-by-anyone": {
+      "get": {
+        "description": "The ids of every title any account watched on Plex, Jellyfin or Emby, from the last watch history read, whether or not the account is linked to a person here. Feeds the Library's Watched by anyone filter. Needs the owner or an admin. Empty while watch history is off.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on and the watched title ids."
+          }
+        },
+        "summary": "Titles anybody watched",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
         "x-holyarrs-scope": "admin"
       }
     },
@@ -19071,6 +19431,41 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/media-servers/watch-links": {
+      "get": {
+        "description": "The switched-on Jellyfin and Emby servers with a browser address that have this Library movie or show, each with the link that opens it in the server's web app. A server that cannot be reached is left out.",
+        "operationId": "getWatchLinks",
+        "parameters": [
+          {
+            "description": "A Library title id.",
+            "in": "query",
+            "name": "title",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{\"links\": [{\"server\", \"kind\", \"url\"}]}, empty when no server has it."
+          },
+          "400": {
+            "description": "No title id."
+          },
+          "404": {
+            "description": "No such title."
+          }
+        },
+        "summary": "Where a title opens on the media servers",
+        "tags": [
+          "Media servers"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
       }
     },
     "/api/v1/media-servers/{id}": {
@@ -21770,6 +22165,20 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/my/watched": {
+      "get": {
+        "description": "What the signed-in person watched on Plex, Jellyfin or Emby, from the last watch history read: the ids of their watched movies, and for each show the number of episodes watched per season. Only the accounts linked to that person count, and nobody else's are ever answered. linked is false for a person with no media server account here, and everything is empty while watch history is off. One answer covers the whole Library.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on, whether the person has a linked account, their watched movie ids and their watched episode counts by show and season."
+          }
+        },
+        "summary": "What I watched",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/needs-decision": {
       "get": {
         "description": "Movies where HolyArrs ran out of Releases or hit a conflict, newest first, with the reason in plain words. count feeds the badge in the menu.",
@@ -22122,7 +22531,7 @@
         "x-holyarrs-scope": "read"
       },
       "post": {
-        "description": "Saves a TMDB or Trakt list and, when on, reads it once straight away.",
+        "description": "Saves a TMDB, Trakt or MDBList list and, when on, reads it once straight away.",
         "operationId": "addOutsideList",
         "requestBody": {
           "content": {
@@ -23362,6 +23771,191 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/plugins": {
+      "get": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "responses": {
+          "200": {
+            "description": "Plugins from the cached signed list with installed state, version, declared access, enabled flag and the active sandbox limits"
+          }
+        },
+        "summary": "List plugins",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/tailscale/signout": {
+      "post": {
+        "description": "Owner only, signed-in session only. Stops the Tailscale plugin, runs it once to log the device out and wipe its Tailscale state, and leaves it stopped. If the logout itself fails the state is still wiped; remove the device in Tailscale's admin page.",
+        "responses": {
+          "200": {
+            "description": "Signed out; the plugin stays stopped"
+          },
+          "404": {
+            "description": "The Tailscale plugin is not installed"
+          }
+        },
+        "summary": "Sign the Tailscale plugin out",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/tailscale/status": {
+      "get": {
+        "description": "Owner only. The Tailscale plugin's own status file: state, device and ts.net name, Tailscale version, last update, login expiry and direct or relayed. The sign-in link is left out when the request uses an API key.",
+        "responses": {
+          "200": {
+            "description": "Status; state is not_connected until the plugin has written one"
+          },
+          "404": {
+            "description": "The Tailscale plugin is not installed"
+          }
+        },
+        "summary": "Tailscale plugin status",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}": {
+      "delete": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "keep",
+            "required": false,
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped and removed; keep=1 keeps its program and data, disabled"
+          },
+          "404": {
+            "description": "Not installed"
+          }
+        },
+        "summary": "Remove a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/install": {
+      "post": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Installed and started"
+          },
+          "404": {
+            "description": "Not on the plugin list"
+          },
+          "409": {
+            "description": "Plugin signing key not set yet"
+          },
+          "422": {
+            "description": "Refused by the install checks"
+          },
+          "501": {
+            "description": "Plugins run only on Linux"
+          },
+          "502": {
+            "description": "The list server or a list signature failed"
+          }
+        },
+        "summary": "Install and start a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/start": {
+      "post": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Started"
+          },
+          "404": {
+            "description": "Not installed"
+          },
+          "422": {
+            "description": "Refused by the start checks; the plugin stays disabled"
+          },
+          "501": {
+            "description": "Plugins run only on Linux"
+          }
+        },
+        "summary": "Start a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/stop": {
+      "post": {
+        "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped and disabled until started again"
+          },
+          "404": {
+            "description": "Not installed"
+          }
+        },
+        "summary": "Stop a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/public/signin-art": {
@@ -25056,6 +25650,92 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/settings/mdblist-key": {
+      "get": {
+        "description": "Never sent in full. The same key gives outside ratings in Your own keys mode.",
+        "operationId": "getMDBListKey",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaskedKey"
+                }
+              }
+            },
+            "description": "Masked key."
+          }
+        },
+        "summary": "The MDBList key, masked",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Your MDBList API key, kept encrypted. MDBList lists are read through the MDBList API with it, and by their public link without it; an empty key removes it. Needs a password sign-in, not an API key.",
+        "operationId": "putMDBListKey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "key"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaskedKey"
+                }
+              }
+            },
+            "description": "Saved (masked), or empty once removed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No key field."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Sign in with a password first."
+          }
+        },
+        "summary": "Store or remove the MDBList key",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/settings/metadata": {
       "get": {
         "description": "The mode (full: the HolyArrs metadata server, own: your own keys, off: no lookups), whether the Docker settings lock it, which own keys are saved (never the keys), each kind of detail on or off, and the outside addresses the mode uses.",
@@ -25455,6 +26135,239 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/plex-labels": {
+      "get": {
+        "description": "Whether HolyArrs puts a label on requested movies and shows in Plex, the label, and whether each requester's name is added too. Off by default; the label is holyarrs unless changed.",
+        "responses": {
+          "200": {
+            "description": "{\"enabled\": bool, \"label\": string, \"askers\": bool}."
+          }
+        },
+        "summary": "Plex label settings",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Body {\"enabled\": bool, \"label\": string, \"askers\": bool}; a field left out keeps its value. Turning it on labels titles that become available from then on. Labels already on a Plex item stay. Needs a password sign-in or an API key.",
+        "responses": {
+          "200": {
+            "description": "Saved; the settings as stored."
+          },
+          "400": {
+            "description": "The body is not JSON, or the label is empty or longer than 64 characters."
+          },
+          "403": {
+            "description": "Only the owner, signed in with a password or an API key, may change it."
+          }
+        },
+        "summary": "Change the Plex label settings",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/plex-labels/run": {
+      "post": {
+        "description": "Labels every requested movie and show already in the Library on each Plex server, in the background. A title Plex does not have yet is tried again on the next pass.",
+        "responses": {
+          "202": {
+            "description": "Started."
+          },
+          "409": {
+            "description": "Plex labels are off."
+          }
+        },
+        "summary": "Label existing requested titles",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/proxy": {
+      "get": {
+        "description": "The proxy every outside call goes through, and what skips it.",
+        "operationId": "getProxy",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "bypass": {
+                      "description": "Names (*.example.com), addresses and ranges that skip the proxy, split by commas.",
+                      "type": "string"
+                    },
+                    "bypass_local": {
+                      "description": "Local-network addresses skip the proxy. Default true.",
+                      "type": "boolean"
+                    },
+                    "host": {
+                      "type": "string"
+                    },
+                    "password": {
+                      "description": "Never the password: the mask when one is saved, otherwise empty.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "type": "integer"
+                    },
+                    "type": {
+                      "description": "Empty when no proxy is used.",
+                      "enum": [
+                        "",
+                        "http",
+                        "https",
+                        "socks5"
+                      ],
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "host",
+                    "port",
+                    "username",
+                    "password",
+                    "bypass",
+                    "bypass_local"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The proxy setting."
+          }
+        },
+        "summary": "The app proxy",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "put": {
+        "description": "Owner only. Takes effect at once; open connections are closed so new ones use the change. The blocked and home-network rules still apply to each real destination.",
+        "operationId": "putProxy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "bypass": {
+                    "description": "Names (*.example.com), addresses and ranges that skip the proxy, split by commas.",
+                    "type": "string"
+                  },
+                  "bypass_local": {
+                    "description": "Local-network addresses skip the proxy. Default true.",
+                    "type": "boolean"
+                  },
+                  "host": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "description": "Send the mask (or leave it out) to keep the saved password; empty clears it.",
+                    "type": "string"
+                  },
+                  "port": {
+                    "type": "integer"
+                  },
+                  "type": {
+                    "description": "Empty when no proxy is used.",
+                    "enum": [
+                      "",
+                      "http",
+                      "https",
+                      "socks5"
+                    ],
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "bypass": {
+                      "description": "Names (*.example.com), addresses and ranges that skip the proxy, split by commas.",
+                      "type": "string"
+                    },
+                    "bypass_local": {
+                      "description": "Local-network addresses skip the proxy. Default true.",
+                      "type": "boolean"
+                    },
+                    "host": {
+                      "type": "string"
+                    },
+                    "password": {
+                      "description": "Never the password: the mask when one is saved, otherwise empty.",
+                      "type": "string"
+                    },
+                    "port": {
+                      "type": "integer"
+                    },
+                    "type": {
+                      "description": "Empty when no proxy is used.",
+                      "enum": [
+                        "",
+                        "http",
+                        "https",
+                        "socks5"
+                      ],
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "host",
+                    "port",
+                    "username",
+                    "password",
+                    "bypass",
+                    "bypass_local"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The proxy setting."
+          },
+          "400": {
+            "description": "Not a valid proxy."
+          },
+          "403": {
+            "description": "Only the owner may change the proxy."
+          }
+        },
+        "summary": "Save the app proxy",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/settings/release-gate": {
@@ -31328,7 +32241,57 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/users/media-accounts": {
+      "get": {
+        "description": "Owner only: every connected Jellyfin and Emby server with its accounts, to link a person to one. An account already linked to someone else carries taken_by (that person's id) and taken_name.",
+        "operationId": "serverAccounts",
+        "responses": {
+          "200": {
+            "description": "The servers and their accounts."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Only the owner."
+          }
+        },
+        "summary": "Accounts on the connected servers",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/users/{id}": {
+      "delete": {
+        "description": "Signs the person out and removes their keys, links and two-factor; what they asked for stays. Nobody removes the owner or themself, and only the owner removes an admin.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          }
+        },
+        "summary": "Remove a person",
+        "tags": [
+          "People"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      },
       "put": {
         "description": "Role, permissions, state and age-rating limit; the owner cannot be changed here. max_rating is a Kid's age-rating limit: one value from G, PG, PG-13, R, NC-17 or TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA, or empty for no limit. rating_country is US (only US ratings are known for now). An empty max_rating clears the limit and a left-out one keeps it. Only members can have a limit; making someone an admin clears it. An unknown rating, a country other than US, or a limit on an admin answers 400. A person with a limit may hold only the ask and auto_approve permissions; any other permission with a limit answers 400 \"A Kid account can only ask for titles.\"",
         "operationId": "editUser",
@@ -31462,6 +32425,124 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/users/{id}/media-link": {
+      "put": {
+        "description": "Owner only: links the person to an account the server lists, replacing their earlier link of that kind.",
+        "operationId": "userMediaLink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Linked."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Only the owner."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such person, server or account."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "That account is linked to someone else."
+          }
+        },
+        "summary": "Link a person to a server account",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/users/{id}/media-link/{kind}": {
+      "delete": {
+        "description": "Owner only: removes the person's Jellyfin or Emby link; refused when it is their only way to sign in.",
+        "operationId": "userMediaUnlink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Only the owner."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Nothing linked."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "It is their only way to sign in."
+          }
+        },
+        "summary": "Unlink a person's server account",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/users/{id}/password": {

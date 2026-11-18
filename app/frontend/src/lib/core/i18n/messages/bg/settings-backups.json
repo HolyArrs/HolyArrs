@@ -32,11 +32,12 @@
 	"settings.backups.key": "Главен ключ",
 	"settings.backups.keyDesc": "Резервните копия не включват този ключ. Пазете копие на сигурно място.",
 	"settings.backups.noKit": "Още няма запазен комплект за този ключ. Без него запазените пароли от резервно копие не могат да се отворят на нова машина.",
+	"settings.backups.kitRecommended": "Препоръчително: изтеглете комплекта с ключове.",
 	"settings.backups.ownerOnlyKit": "Само собственикът може да го изтегли; помолете го.",
 	"settings.backups.fingerprint": "Отпечатък на ключа",
 	"settings.backups.downloadKit": "Изтегляне на комплекта с ключове",
 	"settings.backups.restoreKey": "За възстановяване: преименувайте на holyarrs.key и сложете в папката config",
 	"settings.backups.offPlan": "Изключено",
-	"settings.backups.offAbout": "Няма планирани резервни копия. Преди всяка актуализация все пак се прави копие.",
+	"settings.backups.offAbout": "Без автоматични резервни копия, дори преди актуализация. Копията, които правите сами, още работят.",
 	"settings.backups.offKeeps": "Изключено запазва резервните копия, които вече имате."
 }

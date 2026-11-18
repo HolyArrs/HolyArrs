@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "จะอ่านรายการ Trakt ของคุณไม่ได้จนกว่าจะตั้งค่า",
 	"settings.outsideLists.replaceKey": "เปลี่ยนคีย์ Trakt",
 	"settings.outsideLists.pasteKey": "วางคีย์ Trakt",
+	"settings.outsideLists.mdblistKey": "คีย์ MDBList",
+	"settings.outsideLists.mdblistInfo": "ไม่บังคับ หากมีคีย์ API ของ MDBList รายการ MDBList จะอ่านผ่าน MDBList API หากไม่มีจะอ่านผ่านลิงก์สาธารณะ เก็บแบบเข้ารหัสและเป็นคีย์เดียวกับที่คะแนนจากภายนอกใช้ในโหมดคีย์ของคุณเอง",
+	"settings.outsideLists.pasteMdblistKey": "วางคีย์ API ของ MDBList ของคุณ",
+	"settings.outsideLists.replaceMdblistKey": "เปลี่ยนคีย์ MDBList",
+	"settings.outsideLists.removeMdblistKey": "ลบคีย์",
+	"settings.outsideLists.mdblistKeySaved": "บันทึกคีย์ MDBList แล้ว",
+	"settings.outsideLists.mdblistKeyRemoved": "ลบคีย์ MDBList แล้ว รายการจะใช้ลิงก์สาธารณะ",
 	"settings.outsideLists.replaceVip": "เปลี่ยนโทเคนเข้าถึง VIP",
 	"settings.outsideLists.vip": "โทเคนเข้าถึง VIP (ไม่บังคับ)",
 	"settings.outsideLists.vipHint": "เพิ่มแท็บ Trakt ในหน้าเรื่อง: คะแนน ผู้ชม และความคิดเห็น",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "เพิ่มในรายการห้ามเพิ่ม",
 	"settings.outsideLists.showDot": "ซีรีส์ ·",
 	"settings.outsideLists.takeOff": "เอา {name} ออก",
-	"settings.outsideLists.empty": "ว่างเปล่า"
+	"settings.outsideLists.empty": "ยังไม่มีอะไรในรายการนี้"
 }

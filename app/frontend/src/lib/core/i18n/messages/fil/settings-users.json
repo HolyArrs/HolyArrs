@@ -83,6 +83,7 @@
 	"settings.users.preset": "Preset",
 	"settings.users.comingSoon": "Malapit na",
 	"settings.users.custom": "Custom",
+	"settings.users.customHint": "Sarili mong kombinasyon ng mga switch sa ibaba. Pinapalitan ito ng pagpili ng preset; piliin ulit ang Custom para maibalik ito.",
 	"settings.users.ageRating": "Age rating",
 	"settings.users.newPasswordFor": "Bagong password para kay {name}",
 	"settings.users.passwordNote": "Gamitin ito kapag nakalimutan ni {name} ang sa kanya. Maka-sign out siya sa lahat ng lugar at magsa-sign in ulit gamit ang bago. Sabihin ito sa kanya nang personal.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "hal. Nanay",
 	"settings.users.days": "Mga araw na tatagal ang link",
 	"settings.users.makeInvite": "Gumawa ng link ng imbitasyon",
-	"settings.users.permAuto4k": "Mga 4K request na naaprubahan nang hindi naghihintay"
+	"settings.users.permAuto4k": "Mga 4K request na naaprubahan nang hindi naghihintay",
+	"settings.users.serverAccount": "Account sa server",
+	"settings.users.pickAccount": "Pumili ng account sa isang media server",
+	"settings.users.accountLinked": "Naka-link kay {name}",
+	"settings.users.removedOnServer": "Inalis sa {word} server, kaya pinatay dito",
+	"settings.users.delete": "Burahin",
+	"settings.users.deleteName": "Burahin si {name}",
+	"settings.users.confirmDelete": "Burahin si {name}? Masa-sign out siya nang tuluyan at mawawala ang mga key niya. Mananatili ang mga request niya, bilang inalis na tao.",
+	"settings.users.deleteYes": "Burahin ang tao",
+	"settings.users.keep": "Panatilihin",
+	"settings.users.deleted": "Nabura si {name}",
+	"settings.users.couldntDelete": "Hindi nabura",
+	"settings.users.confirmDeleteKeys": "Hihinto sa paggana para sa lahat ang mga Seerr key na ginawa niya hanggang may gumawa ng bago.",
+	"settings.users.qualities": "Mga kalidad",
+	"settings.users.qualitiesHint": "Ang mga naka-on lang ang mapipili nila. Kapag naka-on lahat, iaalok din ang mga bago."
 }

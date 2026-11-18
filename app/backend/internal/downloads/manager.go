@@ -71,6 +71,8 @@ type Manager struct {
 	Now         func() time.Time                                 // test clock
 	Sleep       func(ctx context.Context, d time.Duration) error // test sleep; nil waits for real
 	OnFinished  func(ctx context.Context, downloadID int64)      // starts the Import
+	// QueueImport queues the Import a person asked for again and says when it could not; unset, OnFinished is used.
+	QueueImport func(ctx context.Context, downloadID int64) error
 	// OnFailed is told about each Slot whose Download failed and should be
 	// searched again. The search then picks the next Release, or the Slot needs a
 	// decision.
@@ -105,6 +107,8 @@ type Manager struct {
 	missed           map[int64]missCount // downloads missing from their Downloader, by id
 	crawl            map[int64]crawlMark // speed windows of the crawling torrent rule, by download id
 	relinkTried      map[int64]time.Time // last look for a removed Downloader's download in the others, by download id
+	rereading        map[int64]bool      // downloads whose Import again reads their folder now
+	walking          map[int64]bool      // downloads whose folder walk has not returned yet, even after Import again gave up on it
 	packMu           sync.Mutex          // one Widen at a time
 }
 

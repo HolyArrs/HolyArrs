@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Apagado en Partes",
 	"home.noneForSources": "falta para lo que encuentran tus fuentes",
 	"home.addedTwice": "está añadido dos veces",
-	"home.addedTwiceMany": "están añadidos dos veces"
+	"home.addedTwiceMany": "están añadidos dos veces",
+	"home.notSetUpYet": "Aún sin configurar",
+	"home.setUpToAdd": "Termina la configuración para añadir {name}",
+	"home.comingThisWeek": "Llega esta semana",
+	"home.thisWeek": "esta semana",
+	"home.landingThisWeek": "Episodios y películas que llegan esta semana",
+	"home.popularThisWeek": "Estrenos populares que llegan esta semana",
+	"home.peopleCheck": "Comprobación de personas",
+	"home.cantReadUsers": "no se puede leer la lista de usuarios"
 }

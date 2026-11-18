@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Caminho no HolyArrs",
 	"settings.mediaServers.pathTo": "Mesma pasta no servidor",
 	"settings.mediaServers.pathHint": "Só se o servidor vê os seus ficheiros em outro caminho",
+	"settings.mediaServers.webUrl": "Endereço para navegadores",
+	"settings.mediaServers.webUrlHint": "Onde as pessoas abrem o servidor no telemóvel ou computador. Adiciona um botão Abrir nas páginas dos títulos que ele tem. Deixe vazio para não mostrar o botão.",
 	"settings.mediaServers.local": "Aceder a rede local",
 	"settings.mediaServers.send": "Enviar atualizações",
 	"settings.mediaServers.save": "Guardar",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Desativar o histórico de visualização? Tudo o que foi lido até agora é apagado.",
 	"settings.mediaServers.watchTurnedOn": "Histórico de visualização ativado. A primeira leitura ocorre nos próximos 30 minutos.",
 	"settings.mediaServers.watchTurnedOff": "Histórico de visualização desativado",
-	"settings.mediaServers.watchFailed": "Não foi possível alterar o histórico de visualização"
+	"settings.mediaServers.watchFailed": "Não foi possível alterar o histórico de visualização",
+	"settings.mediaServers.labelTitle": "Etiquetas do Plex",
+	"settings.mediaServers.labelSwitch": "Etiquetar títulos pedidos",
+	"settings.mediaServers.labelHint": "Quando um filme ou série pedido está no Plex, o HolyArrs adiciona-lhe uma etiqueta, para poder filtrar, criar coleções ou partilhar por ela no Plex. As etiquetas que já existem ficam.",
+	"settings.mediaServers.labelText": "Etiqueta",
+	"settings.mediaServers.labelAskers": "Adicionar também o nome de quem pediu como etiqueta",
+	"settings.mediaServers.labelSaved": "Etiquetas do Plex guardadas",
+	"settings.mediaServers.labelFailed": "Não foi possível guardar as etiquetas do Plex",
+	"settings.mediaServers.labelExisting": "Etiquetar títulos já pedidos",
+	"settings.mediaServers.labelExistingStarted": "Etiquetagem iniciada. Os títulos recebem as etiquetas dentro de poucos minutos.",
+	"settings.mediaServers.labelExistingFailed": "Não foi possível iniciar a etiquetagem"
 }

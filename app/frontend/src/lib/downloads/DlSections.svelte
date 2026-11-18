@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { bareNames } from '#lib/core/plain.ts'; import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Downloads page body: a header strip with speed and time left, status tabs with sub-options, the list, the detail pane and the selection bars.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -196,7 +196,7 @@
 				return f === 'ratio' ? (r.ratio ?? undefined) : f === 'peers' ? (r.peers ?? 0) : (r.seeds ?? 0);
 			}
 			case 'tracker': return r.tracker;
-			case 'requested': return r.requested_by;
+			case 'requested': return r.requested_by ? bareNames(r.requested_by) : undefined;
 			case 'source': return r.source_name;
 			case 'category': return categoryWords(r.category);
 		}
@@ -613,8 +613,7 @@
 <style>
 	.ch[data-col='proto']:has(:global(svg)), .ch[data-col='kind']:has(:global(svg)) { justify-content: center; }
 	.ch[data-col='proto'] .lbl, .ch[data-col='kind'] .lbl { display: flex; }
-	.ch[data-col='poster'] { justify-content: center; }
-	.ch[data-col='poster'] .lbl { display: flex; }
+	.ch[data-col='poster'] { justify-content: center; } .ch[data-col='poster'] .lbl { display: flex; }
 	@media (min-width: 641px) {
 		.ch[data-col='proto']:has(:global(svg)) .lbl, .ch[data-col='poster'] .lbl, .ch[data-col='kind']:has(:global(svg)) .lbl { transform: translateX(calc(var(--gap) / 2 - 4px)); }
 	}
@@ -728,7 +727,9 @@
 		.dline > [data-col='poster'] { width: 36px; height: 54px; }
 		.dline > [data-col='status'] { font: 400 12px/16px var(--font-ui); }
 		.dline > [data-col='time'] { font-variant-numeric: tabular-nums; white-space: nowrap; }
-	.tabrow { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 24px), transparent); padding-right: 24px; }
+	/* Phone: the status pills stay on one line and the row scrolls sideways; tighter pills fit all five at 390 px, and no label is faded or cut. */
+	.tabrow { scroll-padding-inline: var(--dl-gutter); }
+	.tabrow .tab { padding: 0 8px; gap: 4px; }
 		.tabrow :global([data-testid='dl-stat']) { display: none; }
 		.qline { display: flex; align-items: center; gap: 6px; min-height: 24px; margin: 0; padding: 2px var(--dl-gutter) 4px; color: var(--text-muted); font: 400 12px/16px var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 		.qline .qd { color: color-mix(in srgb, var(--ok) 45%, var(--text-muted)); font-weight: 600; }

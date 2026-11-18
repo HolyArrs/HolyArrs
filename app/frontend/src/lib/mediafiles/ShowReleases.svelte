@@ -11,6 +11,7 @@
 	import type { Choice, ReleasePage, ReleaseView } from '../core/types.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { chosenToast } from './chosen-toast.ts';
 
 	let {
 		titleId,
@@ -108,7 +109,7 @@
 			const ch = await api.post<Choice>(`/releases/${target.id}/choose`, body);
 			chooseDialog?.close();
 			const n = ch.slot_ids?.length ?? 1;
-			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? serverWords(ch.warnings[0]) : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : n > 1 ? { body: t('mediafiles.showReleases.forMany', { n, noun }) } : undefined);
+			chosenToast(ch, n > 1 ? t('mediafiles.showReleases.forMany', { n, noun }) : undefined);
 			onchange();
 			await load();
 		} catch (e) {

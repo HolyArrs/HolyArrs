@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Báðar slóðirnar eru eins, svo þetta par breytir engu. Það segir HolyArrs samt hvar skrár þessa niðurhalsforrits eru, svo þú mátt halda því.",
 	"settings.downloaders.change": "Breyta {name}",
 	"settings.downloaders.whichApp": "Hvaða forrit",
-	"settings.downloaders.torrents": "(torrent)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrent",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Mest notað",
 	"settings.downloaders.name": "Nafn",
 	"settings.downloaders.address": "Vistfang",
 	"settings.downloaders.addressHint": "Vefsíða þess. Fyrir SABnzbd skaltu nota IP-töluna eða leyfa hýsilnafn HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Flokkur eftir innflutning",
 	"settings.downloaders.categoryAfterImportHint": "Þegar torrent hefur verið flutt inn færir HolyArrs það í þennan flokk. Skildu eftir autt til að halda því í aðalflokknum.",
 	"settings.downloaders.ownOnly": "Sýna aðeins atriði HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Atriði annarra forrita í þessum niðurhalara eru falin og HolyArrs breytir þeim ekki."
+	"settings.downloaders.ownOnlyHint": "Atriði annarra forrita í þessum niðurhalara eru falin og HolyArrs breytir þeim ekki.",
+	"settings.downloaders.state.notAnswering": "Svarar ekki",
+	"settings.downloaders.state.paused": "Í bið",
+	"settings.downloaders.state.resting": "Í hvíld",
+	"settings.downloaders.state.signInRefused": "Innskráningu hafnað",
+	"settings.downloaders.state.working": "Virkar"
 }

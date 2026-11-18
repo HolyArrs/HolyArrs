@@ -7,6 +7,7 @@
 	"settings.sources.title": "Източници",
 	"settings.sources.add": "Добавяне на източник",
 	"settings.sources.lead": "Приоритет 1 е пръв. Източник, който не успее, се прескача до шест часа. За сайтове без емисия добавете Jackett или Prowlarr като Torznab емисия.",
+	"settings.sources.builtIn": "За вградените сайтове не са нужни Jackett или Prowlarr: {sites}. Изберете {site} при {kind}.",
 	"settings.sources.change": "Промяна на {name}",
 	"settings.sources.name": "Име",
 	"settings.sources.feedKind": "Вид емисия",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Запазване",
 	"settings.sources.cancel": "Отказ",
 	"settings.sources.none": "Няма източници",
-	"settings.sources.noneText": "Добавете Torznab или Newznab емисия, или Jackett или Prowlarr.",
+	"settings.sources.noneText": "Добавете вграден сайт, Torznab или Newznab емисия, или Jackett или Prowlarr.",
 	"settings.sources.rowTitle": "{url} · приоритет {priority} · {uses}",
 	"settings.sources.priorityUses": "Приоритет {priority} · {uses}",
 	"settings.sources.keyIs": "ключ {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Сайт",
 	"settings.sources.addressSite": "Собственият адрес на сайта. Променяй го само ако сайтът се е преместил.",
 	"settings.sources.siteKeyLabel": "Бисквитка или RSS ключ",
-	"settings.sources.siteKeyHint": "От собствения ти профил: uid и pass от бисквитката в браузъра или u и tp от RSS връзката ти. Пази се шифровано."
+	"settings.sources.siteKeyHint": "От собствения ти профил: uid и pass от бисквитката в браузъра или u и tp от RSS връзката ти. Пази се шифровано.",
+	"settings.sources.sendTo": "Изпращай изтеглянията към",
+	"settings.sources.sendToAny": "Всяка програма за изтегляне",
+	"settings.sources.sendToHint": "Всичко избрано от този източник отива само към тази програма. Ако не работи, изчаква.",
+	"settings.sources.sendToGone": "Избраната програма за изтегляне е премахната. Изтеглянията от този източник вече отиват към всяка програма."
 }

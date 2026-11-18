@@ -7,9 +7,9 @@
 	import { to, appPath } from '#lib/core/paths.ts';
 	import '../app.css';
 	import { onMount, tick, type Snippet } from 'svelte';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import { afterNavigate, beforeNavigate, goto, onNavigate, preloadCode } from '$app/navigation';
-	import { hideReconnecting, loaderReady, navEnded, navStarted, showReconnecting } from '#lib/core/loader.ts';
+	import { hideReconnecting, loaderReady, navEnded, navWatch, showReconnecting } from '#lib/core/loader.ts';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Words from '#lib/ui/Words.svelte';
 	import ToastList from './(frame)/ToastList.svelte';
@@ -23,7 +23,7 @@
 	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
-	import { settingsNow, refreshSettingsStatus, needsAttention } from '#lib/alerts/index.ts';
+	import { settingsNow, refreshSettingsStatus, needsAttention, dotReasons, DotList } from '#lib/alerts/index.ts';
 	import { navigateWithTransition } from '#lib/core/motion.ts';
 	import { installPersonPrefetch, installHeroAhead, checkHero, installScrollBar, showBar, arrived, leaving } from '#lib/discover/index.ts';
 	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen, installArtistVideoPrefetch } from '#lib/music/index.ts';
@@ -44,6 +44,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { trackInputModality } from './(frame)/focus.ts';
 	import { focusField, rememberReturn, searchField } from '#lib/core/search-field.svelte.ts';
+	import AskHost from './(frame)/AskHost.svelte';
 	import {
 		buildNav,
 		currentHref,
@@ -67,6 +68,7 @@
 		if (need === 'staff') return session.can('settings') || session.can('users');
 		if (need === 'manage') return session.can('manage_library') || session.can('approve') || session.can('settings');
 		if (need === 'settings') return session.can('settings');
+		if (need === 'owner') return session.s.role === 'owner';
 		return session.can(need);
 	}
 
@@ -236,7 +238,8 @@
 			showBar();
 			if (!path.startsWith('/search')) rememberReturn();
 			const shown = focusField(true);
-			if (!path.startsWith('/search')) void goto(to(shown && searchField.term.trim() ? `/search?q=${encodeURIComponent(searchField.term.trim())}` : '/search'), { reset: !shown });
+			// A key press means a keyboard is there: when no field showed yet (phones), focus the Search page's field once it opens, so typed words are not lost.
+			if (!path.startsWith('/search')) void goto(to(shown && searchField.term.trim() ? `/search?q=${encodeURIComponent(searchField.term.trim())}` : '/search'), { reset: !shown }).then(() => { if (!shown) void tick().then(() => focusField()); });
 		} else if (e.key === 'Escape' && overlayOpen) {
 			void closeOverlay();
 		}
@@ -257,7 +260,7 @@
 		else if (live.status.state === 'live') hideReconnecting();
 	});
 	beforeNavigate((nav) => {
-		if (!nav.willUnload) navStarted();
+		if (!nav.willUnload) navWatch(nav.complete, () => navigating.to !== null);
 		leaving();
 	});
 	afterNavigate((nav) => {
@@ -276,6 +279,10 @@
 
 	let moreOpen = $state(false);
 	const manager = $derived(allowed('manage'));
+	// What lights the red dot, from one list: the phone Manage tab counts everything, the Settings row only its own items. Tapping the dot shows the same lines.
+	const settingsItems = $derived(settingsOn ? (settingsNow.answer?.items ?? []) : []);
+	const tabReasons = $derived(dotReasons({ settings: settingsItems, decisions: decisions.count, waiting: inbox.waiting, unseen: toasts.unseen(), manager }));
+	const settingsReasons = $derived(dotReasons({ settings: settingsItems, decisions: 0, waiting: 0, unseen: 0, manager: true }));
 	const tabs = $derived.by<Tab[]>(() => {
 		const list: Tab[] = [];
 		const add = (href: string, label: string, icon: Tab['icon']) => list.push({ href: to(href), label, icon, current: href === '/' ? path === '/' : path === href || path.startsWith(href + '/') });
@@ -288,7 +295,7 @@
 		}
 		const tabbed = ['/', '/explore', '/library', '/search', '/requests'];
 		const elsewhere = !tabbed.some((h) => (h === '/' ? path === '/' : path === h || path.startsWith(h + '/')));
-		list.push({ label: manager ? t('frame.nav.manage') : t('frame.layout.more'), icon: manager ? 'inbox' : 'more', current: elsewhere, dot: ((inbox.waiting + decisions.count > 0 || settingsAttention) && manager) || toasts.unseen() > 0, onclick: () => (moreOpen = true) });
+		list.push({ label: manager ? t('frame.nav.manage') : t('frame.layout.more'), icon: manager ? 'inbox' : 'more', current: elsewhere, dot: tabReasons.length > 0, onclick: () => (moreOpen = true) });
 		return list;
 	});
 
@@ -306,6 +313,8 @@
 	const hasFailAlert = $derived(openFixes > 0 || toasts.past.some((p) => p.fresh && p.tone === 'fail'));
 	const accountItems = $derived<MenuItem[]>([
 		{ label: t('frame.layout.account'), icon: 'user', href: to('/account') },
+		// Support sits on the Status page, so only accounts that can open Status see it.
+		...(pageAllowed('/health') ? [{ label: t('frame.layout.support'), icon: 'heart' as const, href: to('/health?tab=support') }] : []),
 		{ kind: 'separator' },
 		{ kind: 'heading', label: t('frame.layout.appearance') },
 		{ label: t('frame.layout.light'), checked: theme.choice === 'light', onselect: () => setTheme('light') },
@@ -459,6 +468,8 @@
 
 <svelte:window onkeydown={keys} />
 
+{#snippet dotPanel(close: () => void)}<DotList reasons={settingsReasons} {link} lead onpick={() => { close(); void closeOverlay(false); }} />{/snippet}
+
 {#snippet account()}
 	<Menu label={t('frame.layout.accountMenu', { name: shownName, role: roleWord })} items={accountItems} variant="row" align="start" placement="above" width={240}>
 		{#snippet trigger()}
@@ -513,6 +524,7 @@
 				ontoggle={toggleSidebar}
 				onpick={() => void closeOverlay(false)}
 				footer={account}
+				{dotPanel}
 			/>
 		{/snippet}
 		{#snippet topbar()}
@@ -537,6 +549,7 @@
 		<!-- Only while open, so a closed sheet adds no second copy of every place to the page. -->
 		{#if moreOpen}
 		<nav class="more" aria-label={t('frame.layout.allPlaces')}>
+			{#if tabReasons.length}<div class="more-sec"><DotList reasons={tabReasons} {link} card onpick={() => (moreOpen = false)} onalerts={() => (alertsPanel.open = true)} /></div>{/if}
 			{#each sections as s (s.id)}
 				<div class="more-sec">
 					{#if s.label}<h3>{s.label}</h3>{/if}
@@ -552,7 +565,7 @@
 			</div>
 			<div class="more-sec">
 				<h3>{t('frame.layout.you')}</h3>
-				<ul><li><SidebarItem href={to('/account')} label={t('frame.layout.accountName', { name: session.s.name })} icon="user" current={path === '/account'} onclick={() => (moreOpen = false)} /></li></ul>
+				<ul><li><SidebarItem href={to('/account')} label={t('frame.layout.accountName', { name: session.s.name })} icon="user" current={path === '/account'} onclick={() => (moreOpen = false)} /></li>{#if pageAllowed('/health')}<li><SidebarItem href={to('/health?tab=support')} label={t('frame.layout.support')} icon="heart" current={false} onclick={() => (moreOpen = false)} /></li>{/if}</ul>
 				<div class="more-theme"><SegmentedControl label={t('frame.layout.appearance')} options={themeOptions} bind:value={themeChoice} onchange={(v) => setTheme(v)} /></div>
 				<Button icon="user" full onclick={() => { moreOpen = false; void switchAccount(); }}>{t('frame.layout.switch')}</Button>
 				<Button variant="destructive" icon="signout" full onclick={() => { moreOpen = false; void signOut(); }}>{t('frame.layout.signOut')}</Button>
@@ -562,6 +575,7 @@
 	</Sheet>
 {/if}
 <ToastList />
+<AskHost />
 <Theater />
 
 <style>

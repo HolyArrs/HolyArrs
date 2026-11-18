@@ -76,7 +76,7 @@
 		{#if phone}
 			<Button size="md" icon="sliders" aria-haspopup="dialog" onclick={() => (sortOpen = true)} data-testid="library-sort-filter">{filtersOn ? t('mediafiles.toolbar.sortFilterN', { n: filtersOn }) : t('mediafiles.toolbar.sortFilter')}</Button>
 		{:else}
-			<Popover label={t('mediafiles.toolbar.sortAndFilter')} variant="button" icon="sliders" text={filtersOn ? t('mediafiles.toolbar.sortFilterN', { n: filtersOn }) : t('mediafiles.toolbar.sortFilter')} width={620} bind:open={sortOpen}>
+			<Popover label={t('mediafiles.toolbar.sortAndFilter')} variant="button" icon="sliders" text={filtersOn ? t('mediafiles.toolbar.sortFilterN', { n: filtersOn }) : t('mediafiles.toolbar.sortFilter')} width={620} panelClass="sf-pop" bind:open={sortOpen}>
 				{#snippet children()}{@render sortFilter()}{/snippet}
 			</Popover>
 		{/if}
@@ -102,6 +102,8 @@
 </div>
 
 <style>
+	/* Sort and filter is two tall columns: give it the room the window has, so the Sort column never scrolls under the saved-filter footer. */
+	:global(.panel.panel.sf-pop) { max-height: min(calc(100dvh - 96px), 760px); }
 	/* One row, and the page has no top bar above it (as on Downloads): search, view and size, sort and filter, columns, select, add. Each group sits in the same glass capsule the Downloads row uses. Pinned, it is one solid band. */
 	.toolbar { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: calc(-1 * var(--s-6, 24px)) calc(-1 * var(--gutter, 0px)) 0; padding: 10px var(--gutter, 0px); background: var(--bg); border-bottom: 1px solid transparent; transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out); }
 	.toolbar.stuck { border-bottom-color: var(--line); box-shadow: 0 10px 24px rgb(0 0 0 / .08); }

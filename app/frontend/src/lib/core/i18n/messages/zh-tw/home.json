@@ -274,5 +274,13 @@
 	"home.sourcesOff": "已在功能模組中關閉",
 	"home.noneForSources": "缺少能處理來源所找內容的下載器",
 	"home.addedTwice": "被重複新增",
-	"home.addedTwiceMany": "被重複新增"
+	"home.addedTwiceMany": "被重複新增",
+	"home.notSetUpYet": "尚未設定",
+	"home.setUpToAdd": "完成設定後即可新增 {name}",
+	"home.comingThisWeek": "本週上線",
+	"home.thisWeek": "本週",
+	"home.landingThisWeek": "本週上線的劇集和電影",
+	"home.popularThisWeek": "本週上線的熱門作品",
+	"home.peopleCheck": "人員檢查",
+	"home.cantReadUsers": "無法讀取使用者清單"
 }

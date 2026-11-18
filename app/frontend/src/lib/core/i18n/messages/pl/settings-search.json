@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Odrzucaj release'y opublikowane przed premierą",
 	"settings.search.refuseEarlyHint": "Prawdopodobnie fałszywki. Wybór release'u nadal je pokazuje, z ostrzeżeniem.",
 	"settings.search.refuseTiny": "Odrzucaj fałszywki według rozmiaru i typu pliku",
-	"settings.search.refuseTinyHint": "Zbyt małe release'y, puste pliki oraz .wmv lub .asf pod nazwami HD",
+	"settings.search.refuseTinyHint": "Zbyt małe release'y, puste pliki, urwane filmy oraz .wmv lub .asf pod nazwami HD",
 	"settings.search.grace": "O ile godzin release może być wcześniejszy",
 	"settings.search.graceHint": "Ze względu na strefy czasowe. Domyślnie 24.",
 	"settings.search.floors": "Sprawdzaj rozmiary plików przy imporcie",

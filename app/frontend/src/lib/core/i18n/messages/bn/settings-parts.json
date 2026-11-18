@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "{name} যুক্ত করা যায়নি",
 	"settings.parts.connected": "{name} যুক্ত হয়েছে",
 	"settings.parts.title": "অংশ",
+	"settings.parts.onOff": "অংশ চালু বা বন্ধ করুন",
 	"settings.parts.ownerOnly": "শুধু ওনার ও অ্যাডমিন",
 	"settings.parts.safeMode": "HolyArrs সেফ মোডে চলছে: শুধু মূল অংশ চলছে, আর স্বাভাবিকভাবে চালু না হওয়া পর্যন্ত অংশের সুইচ ও স্টেজ কন্ট্রোল প্রত্যাখ্যান করা হয়। সেফ মোড থেকে বের হতে <a>ডেঞ্জার জোন</a>-এ <b>HolyArrs রিস্টার্ট করুন</b> ব্যবহার করুন।",
 	"settings.parts.dangerZone": "ডেঞ্জার জোন",

@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "нет",
 	"settings.thisApp.needsRestart": "Нужен перезапуск. HOLYARRS_URL_BASE или -url-base перекрывает это значение.",
 	"settings.thisApp.save": "Сохранить",
-	"settings.thisApp.licence": "HolyArrs это свободное программное обеспечение под лицензией AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs это свободное программное обеспечение под лицензией AGPL-3.0.",
+	"settings.thisApp.proxy": "Прокси",
+	"settings.thisApp.proxyDesc": "Отправлять внешние запросы через прокси. Правила блокировки и домашней сети по-прежнему действуют для настоящего адреса.",
+	"settings.thisApp.proxyType": "Тип",
+	"settings.thisApp.proxyOff": "Выключен",
+	"settings.thisApp.proxyHost": "Хост",
+	"settings.thisApp.proxyPort": "Порт",
+	"settings.thisApp.proxyUser": "Имя пользователя",
+	"settings.thisApp.proxyPasswordLabel": "Пароль",
+	"settings.thisApp.proxyPasswordKept": "Оставьте пустым, чтобы сохранить прежний пароль",
+	"settings.thisApp.proxyBypass": "Не использовать прокси для",
+	"settings.thisApp.proxyBypassHint": "Имена, адреса или диапазоны через запятую. *.example.com охватывает все имена под ним.",
+	"settings.thisApp.proxyBypassLocal": "Не использовать прокси для локальных адресов",
+	"settings.thisApp.proxyBypassLocalHint": "Этот компьютер и домашняя сеть подключаются напрямую",
+	"settings.thisApp.proxySaved": "Прокси сохранён",
+	"settings.thisApp.proxyOffSaved": "Прокси выключен"
 }

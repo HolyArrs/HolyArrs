@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
+	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -12,6 +15,7 @@
 	import type { MediaServerView } from '#lib/mediaservers/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -38,7 +42,8 @@
 		on_delete: true,
 		path_from: '',
 		path_to: '',
-		allow_local_network: true
+		allow_local_network: true,
+		web_url: ''
 	});
 	let form = $state(blank());
 	let busy = $state(false);
@@ -60,8 +65,52 @@
 	}
 	onMount(() => {
 		void load();
-		if (isOwner) void loadWatch();
+		if (isOwner) {
+			void loadWatch();
+			void loadLabels();
+		}
 	});
+
+	// Plex labels: owner only, shown once a Plex server is linked.
+	type LabelSettings = { enabled: boolean; label: string; askers: boolean };
+	let labels = $state<LabelSettings | null>(null);
+	let labelForm = $state<LabelSettings>({ enabled: false, label: 'holyarrs', askers: false });
+	let labelBusy = $state(false);
+	let labelRunBusy = $state(false);
+	const hasPlex = $derived(servers.some((m) => m.kind === 'plex'));
+	const labelsChanged = $derived(!!labels && (labels.enabled !== labelForm.enabled || labels.label !== labelForm.label.trim() || labels.askers !== labelForm.askers));
+	async function loadLabels() {
+		try {
+			labels = await api.get<LabelSettings>('/settings/plex-labels');
+			labelForm = { ...labels };
+		} catch {
+			labels = null;
+		}
+	}
+	async function saveLabels(e: SubmitEvent) {
+		e.preventDefault();
+		labelBusy = true;
+		try {
+			labels = await api.put<LabelSettings>('/settings/plex-labels', { ...labelForm, label: labelForm.label.trim() });
+			labelForm = { ...labels };
+			toasts.push(t('settings.mediaServers.labelSaved'), 'ok');
+		} catch (err) {
+			toasts.push(t('settings.mediaServers.labelFailed'), 'fail', { body: message(err) });
+		} finally {
+			labelBusy = false;
+		}
+	}
+	async function runLabels() {
+		labelRunBusy = true;
+		try {
+			await api.post('/settings/plex-labels/run');
+			toasts.push(t('settings.mediaServers.labelExistingStarted'), 'ok');
+		} catch (err) {
+			toasts.push(t('settings.mediaServers.labelExistingFailed'), 'fail', { body: message(err) });
+		} finally {
+			labelRunBusy = false;
+		}
+	}
 
 	// Read watch history: owner only. Turning it off deletes what was read, so it asks first.
 	const isOwner = $derived(session.s.role === 'owner');
@@ -77,7 +126,7 @@
 	async function setWatch(e: Event) {
 		const box = e.currentTarget as HTMLInputElement;
 		const want = box.checked;
-		if (!want && !confirm(t('settings.mediaServers.watchConfirmOff'))) {
+		if (!want && !(await ask(t('settings.mediaServers.watchConfirmOff'), { yes: t('ui.ask.turnOff'), danger: true }))) {
 			box.checked = true;
 			return;
 		}
@@ -122,6 +171,7 @@
 			toasts.push(t('settings.mediaServers.saved', { name: form.name }), 'ok');
 			editing = null;
 			await load();
+			void recheckSettingsStatus();
 		} catch (err) {
 			formError = message(err);
 		} finally {
@@ -142,14 +192,17 @@
 		} finally {
 			testing = 0;
 			await load();
+			// Its state is read live: one fresh read clears the menu dot at once.
+			void recheckSettingsStatus();
 		}
 	}
 
 	async function remove(m: MediaServerView) {
-		if (!confirm(t('settings.mediaServers.confirmRemove', { name: m.name }))) return;
+		if (!(await ask(t('settings.mediaServers.confirmRemove', { name: m.name }), { yes: t('ui.ask.remove'), danger: true }))) return;
 		try {
 			await api.del(`/media-servers/${m.id}`);
 			await load();
+			void recheckSettingsStatus();
 		} catch (err) {
 			toasts.push(t('settings.mediaServers.couldntRemove'), 'fail', { body: message(err) });
 		}
@@ -193,6 +246,12 @@
 					{form.kind === 'plex' ? t('settings.mediaServers.plexTokenHint') : t('settings.mediaServers.apiKeyHint')}
 				</span>
 			</Field>
+			{#if form.kind !== 'plex'}
+				<Field id="ms-web" label={t('settings.mediaServers.webUrl')}>
+					<input id="ms-web" class="input mono" type="url" bind:value={form.web_url} autocomplete="off" spellcheck="false" placeholder="https://jellyfin.example.com" />
+					<span class="hint">{t('settings.mediaServers.webUrlHint')}</span>
+				</Field>
+			{/if}
 			<fieldset class="when">
 				<legend class="label">{t('settings.mediaServers.after')}</legend>
 				<label class="checkline"><input type="checkbox" bind:checked={form.on_import} /><span><b>{t('settings.mediaServers.anImport')}</b></span></label>
@@ -246,16 +305,16 @@
 				<p class="small muted mono addr">{m.url}</p>
 				<p class="small muted">{moments(m)}{m.path_from ? ` · ${t('settings.mediaServers.pathMap', { from: m.path_from, to: m.path_to })}` : ''}</p>
 				{#if results[m.id] && !results[m.id].ok}
-					<p class="small bad-text" data-testid="media-result">{results[m.id].text}</p>
+					<p class="small bad-text" data-testid="media-result">{serverWords(results[m.id].text)}<ConnectHelp text={results[m.id].text} /></p>
 				{:else if m.last_error}
-					<p class="small bad-text" data-testid="media-result">{t('settings.mediaServers.lastFailed', { error: m.last_error })}</p>
+					<p class="small bad-text" data-testid="media-result">{t('settings.mediaServers.lastFailed', { error: serverWords(m.last_error) })}</p>
 				{:else if m.last_ok_at}
 					<p class="small muted" data-testid="media-result">{t('settings.mediaServers.lastChecked', { ago: ago(m.last_ok_at) })}</p>
 				{/if}
 				<div class="row actions">
 					<Button type="button" disabled={testing === m.id} aria-busy={testing === m.id} onclick={() => test(m)}>{t('settings.mediaServers.test')}</Button>
-					<Button variant="plain" type="button" onclick={() => startChange(m)}>{t('settings.mediaServers.changeButton')}</Button>
-					<Button variant="plain" type="button" onclick={() => remove(m)} aria-label={t('settings.mediaServers.removeName', { name: m.name })}>{t('settings.mediaServers.remove')}</Button>
+					<Button variant="secondary" type="button" onclick={() => startChange(m)}>{t('settings.mediaServers.changeButton')}</Button>
+					<Button variant="secondary" type="button" onclick={() => remove(m)} aria-label={t('settings.mediaServers.removeName', { name: m.name })}>{t('settings.mediaServers.remove')}</Button>
 				</div>
 			</li>
 		{/each}
@@ -270,6 +329,31 @@
 			<span><b>{t('settings.mediaServers.watchRead')}</b><br /><span class="hint">{t('settings.mediaServers.watchHint')}</span></span>
 		</label>
 	</section>
+{/if}
+
+{#if loaded && isOwner && hasPlex && labels && !editing}
+	<form class="card watch" data-testid="plex-labels" onsubmit={saveLabels} aria-label={t('settings.mediaServers.labelTitle')}>
+		<h2 class="h3">{t('settings.mediaServers.labelTitle')}</h2>
+		<label class="checkline">
+			<input type="checkbox" bind:checked={labelForm.enabled} data-testid="plex-labels-switch" />
+			<span><b>{t('settings.mediaServers.labelSwitch')}</b><br /><span class="hint">{t('settings.mediaServers.labelHint')}</span></span>
+		</label>
+		{#if labelForm.enabled}
+			<Field id="ms-label" label={t('settings.mediaServers.labelText')}>
+				<input id="ms-label" class="input" bind:value={labelForm.label} maxlength="64" required autocomplete="off" spellcheck="false" />
+			</Field>
+			<label class="checkline">
+				<input type="checkbox" bind:checked={labelForm.askers} />
+				<span><b>{t('settings.mediaServers.labelAskers')}</b></span>
+			</label>
+		{/if}
+		<div class="row actions">
+			<Button variant="primary" type="submit" disabled={labelBusy || !labelsChanged || (labelForm.enabled && !labelForm.label.trim())} aria-busy={labelBusy}>{t('settings.mediaServers.save')}</Button>
+			{#if labels.enabled}
+				<Button type="button" disabled={labelRunBusy} aria-busy={labelRunBusy} onclick={runLabels} data-testid="plex-labels-run">{t('settings.mediaServers.labelExisting')}</Button>
+			{/if}
+		</div>
+	</form>
 {/if}
 
 <style>

@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Ielīmē ID, piemēram, tmdb:693134 vai tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Vai apraksti to, piemēram, „kosmosa filma ar robotu no 2014. gada”.",
 	"discover.search.lookEverywhere": "Meklēt visur",
-	"discover.search.searchIndexersFor": "Meklēt indeksētājos: „{searched}”",
+	"discover.search.searchIndexersFor": "Pārbaudīt avotus",
 	"discover.search.topMatches": "Labākās atbilstības",
 	"discover.people.goToTheFilmography": "Doties uz filmogrāfiju",
 	"discover.people.filmography": "Filmogrāfija",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Neder šai versijai",
 	"discover.leftovers.reason.movie_has_file": "Filmai jau ir fails",
 	"discover.leftovers.reason.replaced_by_hand": "Aizstāts ar citu failu",
-	"discover.leftovers.reason.unmatched": "Sasaiste noņemta manuāli"
+	"discover.leftovers.reason.unmatched": "Sasaiste noņemta manuāli",
+	"discover.searchSections.genres": "Žanri",
+	"discover.searchSections.moods": "Noskaņas",
+	"discover.searchSections.stories": "Stāsti un tēmas",
+	"discover.searchSections.worlds": "Pasaules un vides",
+	"discover.searchSections.eras": "Laikmeti",
+	"discover.searchSections.world": "No visas pasaules",
+	"discover.searchSections.collections": "Kolekcijas",
+	"discover.popularRail.out": "Iznāk",
+	"discover.popularRail.comingDay": "Drīzumā",
+	"discover.titleLibrary.turnShowOnHint": "Ieslēdziet seriālu, lai sāktu meklēšanu.",
+	"discover.leftovers.reason.seasons_differ": "Atrasts tikai pēc vecās lietotnes TMDB numura: pārbaudiet, vai tas ir tas pats seriāls, un tad sasaistiet failu paši"
 }

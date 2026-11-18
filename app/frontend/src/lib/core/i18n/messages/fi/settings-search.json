@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Hylkää ennen julkaisupäivää julkaistut julkaisut",
 	"settings.search.refuseEarlyHint": "Todennäköisesti väärennöksiä. Julkaisun valinta näyttää ne silti varoituksen kanssa.",
 	"settings.search.refuseTiny": "Hylkää väärennökset koon ja tiedostotyypin mukaan",
-	"settings.search.refuseTinyHint": "Liian pienet julkaisut, tyhjät tiedostot sekä .wmv tai .asf HD-nimien alla",
+	"settings.search.refuseTinyHint": "Liian pienet julkaisut, tyhjät tiedostot, katkenneet videot sekä .wmv tai .asf HD-nimien alla",
 	"settings.search.grace": "Tunnit, jotka julkaisu saa olla etuajassa",
 	"settings.search.graceHint": "Aikavyöhykkeitä varten. Oletus 24.",
 	"settings.search.floors": "Tarkista tiedostokoot tuotaessa",

@@ -18,10 +18,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Licence: AGPL-3.0"></a>
 </p>
 
-<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4: remove any request, and friends' Plex watchlists are read again.** A folder's quality now shows on its card, and Settings got a consistency pass. [See what's new](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.2.0: a red dot shows what needs attention, and connection tests name the exact problem.** Plex labels for requested titles, names in your language, and over 30 fixes. Connect apps over MCP with keys you control. [See what's new](https://holyarrs.com/whats-new/)
 
 > Every poster, trailer and score in your HolyArrs comes from a server I run and pay for myself, so it stays free for everyone. If HolyArrs made movie night a little better, a sponsor keeps the lights on for all of us 💛
 >
@@ -419,11 +419,9 @@ Want to build it into a closed product? Email support@HolyArrs.com for a commerc
 
 HolyArrs is free, but it isn't free to run. By default, each install talks to a metadata server I pay for every month. Sponsors cover that, and buy more hours for the things you vote for.
 
-<p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Sponsor HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Vote on the roadmap" /></picture></a></p>
-
 <!-- sponsors: start. Drawn by the HolyCore bot from the live sponsor list; shows nothing until the first sponsor. -->
 <p align="center">
-  <a href="https://holycore.coderluii.dev/activity/sponsor/list/holyarrs"><picture><source media="(prefers-color-scheme: dark)" srcset="https://holycore.coderluii.dev/activity/sponsor/wall/holyarrs.svg?theme=dark"><img src="https://holycore.coderluii.dev/activity/sponsor/wall/holyarrs.svg?theme=light" width="100%" align="top" alt="HolyArrs supporters"></picture></a><br><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://holycore.coderluii.dev/activity/sponsor/button/github.svg?theme=dark&project=holyarrs"><img src="https://holycore.coderluii.dev/activity/sponsor/button/github.svg?theme=light&project=holyarrs" alt="Sponsor on GitHub" width="50%" align="top"></picture></a><a href="https://buymeacoffee.com/coderluii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://holycore.coderluii.dev/activity/sponsor/button/bmac.svg?theme=dark&project=holyarrs"><img src="https://holycore.coderluii.dev/activity/sponsor/button/bmac.svg?theme=light&project=holyarrs" alt="Buy Me a Coffee" width="50%" align="top"></picture></a>
+  <a href="https://holycore.coderluii.dev/activity/sponsor/list/holyarrs"><picture><source media="(prefers-color-scheme: dark)" srcset="https://holycore.coderluii.dev/activity/sponsor/wall/holyarrs.svg?theme=dark"><img src="https://holycore.coderluii.dev/activity/sponsor/wall/holyarrs.svg?theme=light" width="800" align="top" alt="HolyArrs supporters"></picture></a><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/assets/btn-github-dark.png"><img src=".github/assets/btn-github-light.png" alt="Sponsor on GitHub" width="400" height="34" align="top"></picture></a><a href="https://buymeacoffee.com/coderluii"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/assets/btn-coffee-dark.png"><img src=".github/assets/btn-coffee-light.png" alt="Buy me a coffee" width="400" height="34" align="top"></picture></a>
 </p>
 <!-- sponsors: end -->
 

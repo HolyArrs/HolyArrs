@@ -7,6 +7,7 @@
 	"settings.sources.title": "แหล่งที่มา",
 	"settings.sources.add": "เพิ่มแหล่งที่มา",
 	"settings.sources.lead": "ลำดับ 1 ไปก่อน แหล่งที่มาที่ล้มเหลวจะถูกข้ามนานสูงสุดหกชั่วโมง สำหรับไซต์ที่ไม่มีฟีด ให้เพิ่ม Jackett หรือ Prowlarr เป็นฟีด Torznab",
+	"settings.sources.builtIn": "ไซต์ในตัวไม่ต้องใช้ Jackett หรือ Prowlarr: {sites} เลือก {site} ใน {kind}",
 	"settings.sources.change": "เปลี่ยน {name}",
 	"settings.sources.name": "ชื่อ",
 	"settings.sources.feedKind": "ประเภทของฟีด",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "บันทึก",
 	"settings.sources.cancel": "ยกเลิก",
 	"settings.sources.none": "ไม่มีแหล่งที่มา",
-	"settings.sources.noneText": "เพิ่มฟีด Torznab หรือ Newznab หรือ Jackett หรือ Prowlarr",
+	"settings.sources.noneText": "เพิ่มเว็บไซต์ในตัว ฟีด Torznab หรือ Newznab หรือ Jackett หรือ Prowlarr",
 	"settings.sources.rowTitle": "{url} · ลำดับ {priority} · {uses}",
 	"settings.sources.priorityUses": "ลำดับ {priority} · {uses}",
 	"settings.sources.keyIs": "คีย์ {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "เว็บไซต์",
 	"settings.sources.addressSite": "ที่อยู่ของเว็บไซต์เอง เปลี่ยนเฉพาะเมื่อเว็บไซต์ย้ายไป",
 	"settings.sources.siteKeyLabel": "คุกกี้หรือคีย์ RSS",
-	"settings.sources.siteKeyHint": "จากบัญชีของคุณเอง: uid และ pass จากคุกกี้ของเบราว์เซอร์ หรือ u และ tp จากลิงก์ RSS ของคุณ เก็บแบบเข้ารหัส"
+	"settings.sources.siteKeyHint": "จากบัญชีของคุณเอง: uid และ pass จากคุกกี้ของเบราว์เซอร์ หรือ u และ tp จากลิงก์ RSS ของคุณ เก็บแบบเข้ารหัส",
+	"settings.sources.sendTo": "ส่งการดาวน์โหลดไปที่",
+	"settings.sources.sendToAny": "ตัวดาวน์โหลดใดก็ได้",
+	"settings.sources.sendToHint": "ทุกอย่างที่เลือกจากแหล่งนี้จะไปที่ตัวดาวน์โหลดนี้เท่านั้น ถ้าใช้งานไม่ได้จะรอ",
+	"settings.sources.sendToGone": "ตัวดาวน์โหลดที่เลือกถูกลบแล้ว การดาวน์โหลดจากแหล่งนี้จะไปที่ตัวดาวน์โหลดใดก็ได้"
 }

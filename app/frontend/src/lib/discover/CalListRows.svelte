@@ -66,7 +66,7 @@
 				<b aria-hidden="true">{when.getDate()}</b>
 				<span class="mon" aria-hidden="true">{when.toLocaleDateString(appLocale(), { month: 'short' })}</span>
 				{#if d.day === today}<span class="tag"><Badge label={t('discover.calListRows.today')} /></span>{/if}
-				<span class="n" aria-hidden="true">{d.groups.length}</span>
+				{#if d.groups.length > 1}<span class="n" aria-hidden="true">{d.groups.length}</span>{/if}
 			</header>
 			<ul class="rws">
 				{#each d.groups as g (g.key)}

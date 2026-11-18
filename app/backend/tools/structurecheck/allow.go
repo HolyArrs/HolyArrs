@@ -33,6 +33,7 @@ var layers = map[string]int{
 	"backups":      11,
 	"health":       10,
 	"updates":      11,
+	"plugins":      11, // Plugin Engine: manifests, signed lists, install checks
 	"setup":        11,
 }
 
@@ -47,6 +48,7 @@ var coreRows = map[string]int{
 	"logs":        2,
 	"jobs":        2,
 	"model":       2,
+	"doctor":      2,
 	"webserver":   3,
 	"startup":     3,
 	"parts":       4,
@@ -152,6 +154,7 @@ var tableOwner = map[string]string{
 	// mediaservers
 	"media_servers": "mediaservers",
 	"watch_state":   "mediaservers",
+	"media_labels":  "mediaservers",
 
 	// alerts
 	"alerts": "alerts",

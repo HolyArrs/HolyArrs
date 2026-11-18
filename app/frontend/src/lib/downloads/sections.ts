@@ -2,7 +2,7 @@
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import type { ImportRecord } from './types.ts';
 import { stageOf, statusWord } from './status-tabs.ts';
-import { failReason, statusDetail } from './imports.ts';
+import { failReason, filesGone, statusDetail } from './imports.ts';
 import { size } from './size.ts';
 import { quality } from './columns.ts';
 import type { DownloadRow } from '../core/types.ts';
@@ -87,7 +87,7 @@ export function matches(r: Pick<DownloadRow, 'name' | 'title' | 'covers' | 'albu
 }
 
 /** A History row's text and whether it reads as a failure. */
-export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { text: string; bad: boolean; still?: string } {
+export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { text: string; bad: boolean; still?: string; held?: boolean } {
 	const s = stageOf(r);
 	// A client item has no import, so its word is the client's own state.
 	if (r.client_item) {
@@ -99,9 +99,11 @@ export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { t
 		return { text: why ? t('downloads.fact.failedWhy', { why }) : t('downloads.fact.failed'), bad: true };
 	}
 	if (r.phase === 'removed') return { text: t('downloads.fact.removed'), bad: false };
+	// Let go because another app took the files: not done, the title is wanted again.
+	if ((s === 'done' || s === 'seeding') && filesGone(im)) return { text: t('downloads.step.filesGone'), bad: false, held: true };
 	// Imported, but the Downloader still holds it: HolyArrs tries the clear again.
 	if (r.clear_waiting) return { text: t('downloads.row.imported'), bad: false, still: t('downloads.row.stillIn', { app: r.downloader }) };
-	return { text: s === 'seeding' ? t('downloads.fact.doneSeeding') : t('downloads.fact.done'), bad: false };
+	return { text: s === 'seeding' || r.seeding ? t('downloads.fact.doneSeeding') : t('downloads.fact.done'), bad: false };
 }
 
 /** The details panel as label and value pairs, only those with a value. */

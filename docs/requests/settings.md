@@ -39,6 +39,10 @@ These decide where approved titles go and which Pick rules they get.
 | **Search when approved** | Search as soon as a request is approved. Movies at once, shows at the next feed check | On |
 | **4K copy** | Folder and Pick rules for approved 4K requests, kept as their own copy | Same folder as other requests, and the quality named 4K |
 
+### Approvals
+
+**Approve requests automatically** has one switch per person, the owner included. Off means that person's requests wait for an approver. Titles from a Plex watchlist follow the switch of the account they came in through, so with the owner's switch off, the owner's watchlist titles wait too. The owner starts on; everyone else keeps their own setting from **Users**.
+
 ### What people can ask for
 
 These are the buttons in the **Quality** row on the request sheet, one list for movies and one for shows.

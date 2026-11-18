@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Vant: {name}",
 	"ui.wikiFacts.nominated": "Nominert: {name}",
 	"ui.wikiFacts.andMore": "og {count} til",
-	"ui.pageLoader.loading": "Laster"
+	"ui.pageLoader.loading": "Laster",
+	"ui.connectHelp.link": "Slik fikser du det",
+	"ui.ask.remove": "Fjern",
+	"ui.ask.restore": "Gjenopprett",
+	"ui.ask.stop": "Stopp",
+	"ui.ask.revoke": "Tilbakekall",
+	"ui.ask.replace": "Erstatt",
+	"ui.ask.unlink": "Koble fra",
+	"ui.ask.turnOff": "Slå av",
+	"ui.ask.markFailed": "Merk som mislykket",
+	"ui.ask.reset": "Tilbakestill",
+	"ui.ask.import": "Importer"
 }

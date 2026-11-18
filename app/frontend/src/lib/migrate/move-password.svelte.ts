@@ -5,6 +5,7 @@ import { api, ApiError } from '#lib/core/api.ts';
 import { plainMessage as message } from '#lib/core/settings.ts';
 import { toasts } from '#lib/core/toasts.svelte.ts';
 import { to } from '#lib/core/paths.ts';
+import { outsideWay } from '#lib/ui/sensitive.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createMovePassword(ctx: any) {
@@ -55,6 +56,11 @@ export function createMovePassword(ctx: any) {
 		resumeMove = false;
 		if (ctx.step === 'choose') void ctx.runFlow.start();
 	}
+	/** The import stopped for a check. An owner who came in through Plex, Jellyfin or Emby can only pass it by signing in again, so that is all they are asked, with no password to invent first; anyone else sets a password. */
+	function needsFreshSignIn() {
+		mustSetPw = true;
+		pwStale = !!outsideWay(session.s);
+	}
 	async function signInAgain() {
 		const back = location.pathname + location.search;
 		await session.logout();
@@ -71,6 +77,7 @@ export function createMovePassword(ctx: any) {
 		setFirstPw,
 		settle,
 		waitForCheck,
+		needsFreshSignIn,
 		get pwA() { return pwA; },
 		set pwA(v) { pwA = v; },
 		get pwB() { return pwB; },

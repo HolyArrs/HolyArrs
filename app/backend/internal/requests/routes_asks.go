@@ -74,7 +74,7 @@ func (h *AskHandlers) askError(w http.ResponseWriter, err error) {
 		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
 	case errors.Is(err, ErrNotOpen), errors.Is(err, ErrAskedAgain), errors.Is(err, ErrQualityTaken):
 		webserver.Fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, ErrQualityNotOffered), errors.Is(err, ErrQualityName), errors.Is(err, ErrQualityAllHidden):
+	case errors.Is(err, ErrQualityNotOffered), errors.Is(err, ErrQualityName), errors.Is(err, ErrQualityAllHidden), errors.Is(err, ErrQualityOwnLine), errors.Is(err, ErrQualityTooMany), errors.Is(err, ErrQualityNoneForPerson):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, ErrNotYours), errors.Is(err, ErrAboveLimit):
 		webserver.Fail(w, http.StatusForbidden, err.Error())
@@ -154,8 +154,24 @@ func (h *AskHandlers) listAsks(w http.ResponseWriter, r *http.Request) {
 		webserver.Internal(w, "api", err)
 		return
 	}
+	// The totals of everything the person may see, whatever the list cuts to.
+	counts := map[string]int{"pending": 0, "processing": 0, "done": 0, "failed": 0}
+	for _, v := range vs {
+		switch v.State {
+		case domain.AskAsked:
+			counts["pending"]++
+		case domain.AskApproved:
+			counts["processing"]++
+		default:
+			counts["done"]++
+		}
+		if v.Failed() {
+			counts["failed"]++
+		}
+	}
+	total := len(vs)
 	vs = vs[:min(len(vs), askLimitParam(r, 200))]
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"asks": vs})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"asks": vs, "counts": counts, "total": total})
 }
 
 func (h *AskHandlers) askByID(w http.ResponseWriter, r *http.Request) (View, bool) {
@@ -331,18 +347,23 @@ func (h *AskHandlers) askLimit(w http.ResponseWriter, r *http.Request) {
 		webserver.Internal(w, "api", err)
 		return
 	}
+	p := h.Person(r)
+	if err := loadPersonQualities(r.Context(), h.Svc.Store.Read(), &p); err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
 	for _, kind := range []string{"movie", "show"} {
 		lines, err := qualityLines(r.Context(), h.Svc.Store.Read(), set, kind)
 		if err != nil {
 			webserver.Internal(w, "api", err)
 			return
 		}
-		mine := choicesOf(offered(lines, h.Person(r)))
-		_, fourK := lineByID(offered(lines, h.Person(r)), QualityFourK)
+		mine := offered(lines, p, kind)
+		_, fourK := lineByID(mine, QualityFourK)
 		if kind == "show" {
-			out.Qualities.Show, out.FourK.Show = mine, fourK
+			out.Qualities.Show, out.FourK.Show = choicesOf(mine), fourK
 		} else {
-			out.Qualities.Movie, out.FourK.Movie = mine, fourK
+			out.Qualities.Movie, out.FourK.Movie = choicesOf(mine), fourK
 		}
 	}
 	webserver.WriteJSON(w, http.StatusOK, out)
@@ -371,16 +392,29 @@ func (h *AskHandlers) withdrawAsk(w http.ResponseWriter, r *http.Request) {
 }
 
 // removeAsks removes several asks at once, for people who approve: the
-// ids sent, or every "failed" or "finished" one.
+// ids sent, or every "failed" or "finished" one, or the "failed" ones among
+// the ids (and failed_downloads) sent.
 func (h *AskHandlers) removeAsks(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		IDs    []int64 `json:"ids"`
-		Filter string  `json:"filter"`
+		IDs             []int64 `json:"ids"`
+		Filter          string  `json:"filter"`
+		FailedDownloads []int64 `json:"failed_downloads"`
+		// Only names the kind of clear for these ids: of them, only the asks still failed (or finished) go.
+		// It is a field of its own, with no filter, so that a server that does not know it
+		// (release 1.1.4) removes exactly the ids sent instead of every failed or finished ask.
+		Only string `json:"only"`
 	}
-	if !webserver.Decode(w, r, &in, `send {"ids":[1,2]} or {"filter":"failed"} or {"filter":"finished"}`) {
+	if !webserver.Decode(w, r, &in, `send {"ids":[1,2]} or {"filter":"failed"} or {"filter":"finished"} or {"filter":"failed","ids":[1,2],"failed_downloads":[3]}`) {
 		return
 	}
-	n, err := h.Svc.RemoveMany(r.Context(), h.Person(r), in.IDs, in.Filter)
+	if in.Only != "" {
+		if in.Filter != "" || len(in.IDs) == 0 {
+			webserver.Fail(w, http.StatusBadRequest, "only goes with ids and no filter")
+			return
+		}
+		in.Filter = in.Only
+	}
+	n, err := h.Svc.RemoveMany(r.Context(), h.Person(r), in.IDs, in.Filter, in.FailedDownloads...)
 	if err != nil {
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 		return
@@ -486,6 +520,8 @@ type AskLimitView struct {
 	// Used is how many of their own asks of each kind count this week.
 	Used    map[string]int `json:"used"`
 	NoLimit bool           `json:"no_limit"` // they may approve, so no limit applies
+	// Qualities are the lines they may pick (a kind at null: every line).
+	Qualities PersonQualities `json:"qualities"`
 }
 
 func (h *AskHandlers) listAskLimits(w http.ResponseWriter, r *http.Request) {
@@ -524,9 +560,24 @@ func (h *AskHandlers) listAskLimits(w http.ResponseWriter, r *http.Request) {
 		}
 		x.v.Used = map[string]int{KindMovies: l.Movies.Used, KindShows: l.Shows.Used, KindMusic: l.Music.Used}
 		x.v.NoLimit = p.NoLimit
+		if x.v.Qualities, err = ReadPersonQualities(ctx, h.Store.Read(), x.v.UserID); err != nil {
+			webserver.Internal(w, "api", err)
+			return
+		}
 		out = append(out, x.v)
 	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"limits": out})
+	// Lines are every line of what people can ask for, for the person editor.
+	set, err := ReadSettings(ctx, h.Store.Read())
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	lines, err := resolveQualities(ctx, h.Store.Read(), set)
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"limits": out, "lines": lines})
 }
 
 func (h *AskHandlers) putAskLimit(w http.ResponseWriter, r *http.Request) {
@@ -538,13 +589,24 @@ func (h *AskHandlers) putAskLimit(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		PersonLimit
 		PerWeek *int `json:"per_week"` // older form: the same limit for every kind
+		// Qualities, when sent, are the lines they may pick.
+		Qualities *PersonQualities `json:"qualities"`
 	}
-	if !webserver.Decode(w, r, &body, `send {"movies_per_week": <0 to 1000, 0 is no limit, null for the default>, "shows_per_week": ..., "music_per_week": ...}`) {
+	if !webserver.Decode(w, r, &body, `send {"movies_per_week": <0 to 1000, 0 is no limit, null for the default>, "shows_per_week": ..., "music_per_week": ..., "qualities": {"movie": [line ids] or null for every line, "show": ...}}`) {
 		return
 	}
 	l := body.PersonLimit
 	if body.PerWeek != nil && l.Movies == nil && l.Shows == nil && l.Music == nil {
 		l = PersonLimit{Movies: body.PerWeek, Shows: body.PerWeek, Music: body.PerWeek}
+	}
+	if body.Qualities != nil {
+		if err := SetPersonQualities(r.Context(), h.Store, id, *body.Qualities); errors.Is(err, database.ErrNotFound) {
+			webserver.Fail(w, http.StatusNotFound, "no such user")
+			return
+		} else if err != nil {
+			h.askError(w, err)
+			return
+		}
 	}
 	if err := SetPersonLimit(r.Context(), h.Store, id, l); errors.Is(err, database.ErrNotFound) {
 		webserver.Fail(w, http.StatusNotFound, "no such user")

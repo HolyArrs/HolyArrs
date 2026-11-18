@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Wyłączone w Częściach",
 	"home.noneForSources": "brak dla tego, co znajdują twoje źródła",
 	"home.addedTwice": "jest dodany dwa razy",
-	"home.addedTwiceMany": "są dodane dwa razy"
+	"home.addedTwiceMany": "są dodane dwa razy",
+	"home.notSetUpYet": "Jeszcze nie skonfigurowano",
+	"home.setUpToAdd": "Dokończ konfigurację, aby dodać {name}",
+	"home.comingThisWeek": "W tym tygodniu",
+	"home.thisWeek": "w tym tygodniu",
+	"home.landingThisWeek": "Odcinki i filmy, które wychodzą w tym tygodniu",
+	"home.popularThisWeek": "Popularne premiery w tym tygodniu",
+	"home.peopleCheck": "Sprawdzanie osób",
+	"home.cantReadUsers": "nie można odczytać listy użytkowników"
 }

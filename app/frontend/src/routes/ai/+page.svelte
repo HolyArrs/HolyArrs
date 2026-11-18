@@ -88,7 +88,7 @@
 			</p>
 		{/if}
 		<!-- Allowing makes the app a key, so it takes a fresh password, as making a key does. -->
-		<Confirm action="link" onCancel={cancel}>
+		<Confirm action="link" onCancel={cancel} reveal={false}>
 			<div class="row">
 				<Button variant="primary" type="button" onclick={allow} disabled={busy || !canAllow || (!enabled && !isOwner)} aria-busy={busy}>{t('arrapi.ai.allow')}</Button>
 				<Button variant="plain" type="button" onclick={cancel} disabled={busy}>{t('arrapi.ai.cancel')}</Button>

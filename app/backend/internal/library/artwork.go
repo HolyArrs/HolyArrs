@@ -636,7 +636,7 @@ func (c *ArtworkCache) trim() {
 // posters share one connection to TMDB's picture host).
 func ArtworkClient() *http.Client {
 	d := outbound.PolicyDialer(outbound.PublicOnly)
-	return &http.Client{Timeout: 20 * time.Second, Transport: &http.Transport{Proxy: nil, DialContext: d.DialContext, ForceAttemptHTTP2: true,
+	return &http.Client{Timeout: 20 * time.Second, Transport: &http.Transport{Proxy: nil, DialContext: outbound.WatchFakeIP(d.DialContext), ForceAttemptHTTP2: true,
 		MaxIdleConns: 32, MaxIdleConnsPerHost: 8, IdleConnTimeout: 90 * time.Second,
 		TLSHandshakeTimeout: 10 * time.Second, ResponseHeaderTimeout: 20 * time.Second}}
 }

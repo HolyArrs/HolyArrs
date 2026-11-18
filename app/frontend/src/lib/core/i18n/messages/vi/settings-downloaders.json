@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Hai đường dẫn giống nhau nên cặp này không đổi gì. Nó vẫn cho HolyArrs biết tệp của trình tải này nằm ở đâu, nên bạn có thể giữ lại.",
 	"settings.downloaders.change": "Sửa {name}",
 	"settings.downloaders.whichApp": "Ứng dụng nào",
-	"settings.downloaders.torrents": "(torrent)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrent",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Dùng nhiều nhất",
 	"settings.downloaders.name": "Tên",
 	"settings.downloaders.address": "Địa chỉ",
 	"settings.downloaders.addressHint": "Trang web của nó. Với SABnzbd, hãy dùng IP hoặc cho phép tên host của HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Danh mục sau khi nhập",
 	"settings.downloaders.categoryAfterImportHint": "Khi torrent đã được nhập, HolyArrs chuyển nó sang danh mục này. Để trống để giữ nó ở danh mục chính.",
 	"settings.downloaders.ownOnly": "Chỉ hiện mục của HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Mục của ứng dụng khác trên trình tải này sẽ bị ẩn, và HolyArrs không thay đổi chúng."
+	"settings.downloaders.ownOnlyHint": "Mục của ứng dụng khác trên trình tải này sẽ bị ẩn, và HolyArrs không thay đổi chúng.",
+	"settings.downloaders.state.notAnswering": "Không phản hồi",
+	"settings.downloaders.state.paused": "Đã tạm dừng",
+	"settings.downloaders.state.resting": "Đang nghỉ",
+	"settings.downloaders.state.signInRefused": "Đăng nhập bị từ chối",
+	"settings.downloaders.state.working": "Đang hoạt động"
 }

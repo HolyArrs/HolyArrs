@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "একটি আইডি পেস্ট করুন, যেমন tmdb:693134 বা tvmaze:82।",
 	"discover.search.orDescribeItSuch": "অথবা বর্ণনা করুন, যেমন “২০১৪ সালের রোবটসহ মহাকাশের সিনেমা”।",
 	"discover.search.lookEverywhere": "সব জায়গায় খুঁজুন",
-	"discover.search.searchIndexersFor": "“{searched}”-এর জন্য ইনডেক্সার খুঁজুন",
+	"discover.search.searchIndexersFor": "আপনার উৎসগুলি দেখুন",
 	"discover.search.topMatches": "সেরা মিল",
 	"discover.people.goToTheFilmography": "ফিল্মোগ্রাফিতে যান",
 	"discover.people.filmography": "ফিল্মোগ্রাফি",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "এই সংস্করণের সাথে মেলে না",
 	"discover.leftovers.reason.movie_has_file": "সিনেমাটিতে আগেই ফাইল আছে",
 	"discover.leftovers.reason.replaced_by_hand": "অন্য ফাইল দিয়ে বদলানো হয়েছে",
-	"discover.leftovers.reason.unmatched": "মিল হাতে সরানো হয়েছে"
+	"discover.leftovers.reason.unmatched": "মিল হাতে সরানো হয়েছে",
+	"discover.searchSections.genres": "ধরন",
+	"discover.searchSections.moods": "মেজাজ",
+	"discover.searchSections.stories": "গল্প ও বিষয়",
+	"discover.searchSections.worlds": "জগৎ ও পটভূমি",
+	"discover.searchSections.eras": "যুগ",
+	"discover.searchSections.world": "বিশ্বজুড়ে",
+	"discover.searchSections.collections": "সংগ্রহ",
+	"discover.popularRail.out": "প্রকাশিত",
+	"discover.popularRail.comingDay": "আসছে",
+	"discover.titleLibrary.turnShowOnHint": "খোঁজা শুরু করতে শোটি চালু করুন।",
+	"discover.leftovers.reason.seasons_differ": "শুধু পুরোনো অ্যাপের TMDB নম্বর দিয়ে পাওয়া গেছে: এটি একই শো কি না দেখুন, তারপর ফাইলটি নিজে মিলিয়ে নিন"
 }

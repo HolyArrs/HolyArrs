@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Moodulites välja lülitatud",
 	"home.noneForSources": "puudub selle jaoks, mida su allikad leiavad",
 	"home.addedTwice": "on lisatud kaks korda",
-	"home.addedTwiceMany": "on lisatud kaks korda"
+	"home.addedTwiceMany": "on lisatud kaks korda",
+	"home.notSetUpYet": "Veel seadistamata",
+	"home.setUpToAdd": "Lõpeta seadistus, et lisada {name}",
+	"home.comingThisWeek": "Sel nädalal tulekul",
+	"home.thisWeek": "sel nädalal",
+	"home.landingThisWeek": "Sel nädalal ilmuvad osad ja filmid",
+	"home.popularThisWeek": "Sel nädalal ilmuvad populaarsed uudised",
+	"home.peopleCheck": "Inimeste kontroll",
+	"home.cantReadUsers": "kasutajate loendit ei saa lugeda"
 }

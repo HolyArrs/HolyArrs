@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -19,6 +21,7 @@ func Fail(w http.ResponseWriter, err error) {
 		metadata.WriteSourceOff(w)
 	case errors.Is(err, metadata.ErrNoAccess):
 		webserver.Fail(w, http.StatusNotImplemented, "Explore is not available here")
+	case DetailsBusy(err) && busyRefusal(w):
 	case errors.Is(err, metadata.ErrRateLimited):
 		w.Header().Set("Retry-After", "60")
 		webserver.Fail(w, http.StatusServiceUnavailable, "The movie and show details are busy; try again in a minute")
@@ -46,4 +49,16 @@ func DetailsBusy(err error) bool {
 // or an unknown title.
 func StaleOK(err error) bool {
 	return !errors.Is(err, metadata.ErrNotFound) && !errors.Is(err, metadata.ErrNoAccess)
+}
+
+// busyRefusal answers a busy error while the server asks to wait: its
+// reason in plain words, and Retry-After until the wait ends.
+func busyRefusal(w http.ResponseWriter) bool {
+	line, secs := metadata.BusyLine(time.Now())
+	if secs <= 0 {
+		return false
+	}
+	w.Header().Set("Retry-After", strconv.Itoa(secs))
+	webserver.Fail(w, http.StatusServiceUnavailable, line)
+	return true
 }

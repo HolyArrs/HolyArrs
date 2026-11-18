@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Pois päältä Osissa",
 	"home.noneForSources": "puuttuu siihen, mitä lähteesi löytävät",
 	"home.addedTwice": "on lisätty kahdesti",
-	"home.addedTwiceMany": "on lisätty kahdesti"
+	"home.addedTwiceMany": "on lisätty kahdesti",
+	"home.notSetUpYet": "Ei vielä määritetty",
+	"home.setUpToAdd": "Viimeistele käyttöönotto lisätäksesi {name}",
+	"home.comingThisWeek": "Tulossa tällä viikolla",
+	"home.thisWeek": "tällä viikolla",
+	"home.landingThisWeek": "Tällä viikolla ilmestyvät jaksot ja elokuvat",
+	"home.popularThisWeek": "Tällä viikolla ilmestyvät suositut julkaisut",
+	"home.peopleCheck": "Henkilötarkistus",
+	"home.cantReadUsers": "käyttäjäluetteloa ei voi lukea"
 }

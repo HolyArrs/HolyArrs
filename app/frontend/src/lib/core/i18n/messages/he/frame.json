@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} ממתינות",
 	"frame.nav.new": "{n} חדשות",
 	"frame.nav.manage": "ניהול",
+	"frame.nav.activity": "פעילות",
+	"frame.nav.system": "מערכת",
 	"frame.nav.history": "היסטוריה",
 	"frame.nav.status": "סטטוס",
 	"frame.nav.settings": "הגדרות",
+	"frame.nav.plugins": "תוספים",
 	"frame.nav.goTo": "מעבר אל",
 	"frame.nav.active": "{n} פעילות, {percent}%",
 	"frame.nav.decide": "{n} דורשות החלטה",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "מערכת",
 	"frame.layout.switch": "החלפת חשבון",
 	"frame.layout.signOut": "התנתקות",
+	"frame.layout.support": "תמיכה ב-HolyArrs",
 	"frame.layout.signOutFail": "לא ניתן לאשר את ההתנתקות",
 	"frame.layout.signedOut": "התנתקת",
 	"frame.layout.accountMenu": "{name}, {role}: חשבון ומראה",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs מנסה שוב בעצמו",
 	"frame.feeds.clearNow": "ניקוי עכשיו",
 	"frame.feeds.cleared": "נוקתה מהמוריד",
-	"frame.feeds.clearStill": "עדיין לא נוקתה"
+	"frame.feeds.clearStill": "עדיין לא נוקתה",
+	"frame.error.pageGone": "הדף הזה לא קיים. ייתכן שהקישור ישן או שגוי."
 }

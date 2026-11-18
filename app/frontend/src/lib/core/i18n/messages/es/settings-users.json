@@ -83,6 +83,7 @@
 	"settings.users.preset": "Predefinido",
 	"settings.users.comingSoon": "Próximamente",
 	"settings.users.custom": "Personalizado",
+	"settings.users.customHint": "Tu propia combinación de los interruptores de abajo. Elegir un perfil la sustituye; vuelve a elegir Personalizado para recuperarla.",
 	"settings.users.ageRating": "Clasificación por edad",
 	"settings.users.newPasswordFor": "Contraseña nueva para {name}",
 	"settings.users.passwordNote": "Úsala cuando {name} olvidó la suya. Se cierra su sesión en todas partes y vuelve a entrar con la nueva. Díselo en persona.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "p. ej. Mamá",
 	"settings.users.days": "Días que dura el enlace",
 	"settings.users.makeInvite": "Crear un enlace de invitación",
-	"settings.users.permAuto4k": "Solicitudes 4K aprobadas sin esperar"
+	"settings.users.permAuto4k": "Solicitudes 4K aprobadas sin esperar",
+	"settings.users.serverAccount": "Cuenta del servidor",
+	"settings.users.pickAccount": "Elige una cuenta en un servidor multimedia",
+	"settings.users.accountLinked": "Vinculado a {name}",
+	"settings.users.removedOnServer": "Eliminado en el servidor de {word}, por eso se desactivó aquí",
+	"settings.users.delete": "Eliminar",
+	"settings.users.deleteName": "Eliminar a {name}",
+	"settings.users.confirmDelete": "¿Eliminar a {name}? Se cierra su sesión para siempre y sus claves desaparecen. Sus solicitudes se quedan, como persona eliminada.",
+	"settings.users.deleteYes": "Eliminar persona",
+	"settings.users.keep": "Conservar",
+	"settings.users.deleted": "{name} eliminado",
+	"settings.users.couldntDelete": "No se pudo eliminar",
+	"settings.users.confirmDeleteKeys": "Las claves de Seerr que haya creado dejan de funcionar para todos hasta que se cree una nueva.",
+	"settings.users.qualities": "Calidades",
+	"settings.users.qualitiesHint": "Solo pueden elegir las activadas. Con todas activadas, también se ofrecen las nuevas."
 }

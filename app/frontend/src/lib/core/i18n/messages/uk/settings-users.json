@@ -83,6 +83,7 @@
 	"settings.users.preset": "Шаблон",
 	"settings.users.comingSoon": "Скоро",
 	"settings.users.custom": "Власний",
+	"settings.users.customHint": "Ваш власний набір перемикачів нижче. Вибір шаблону замінить його; виберіть «Власний» ще раз, щоб повернути.",
 	"settings.users.ageRating": "Віковий рейтинг",
 	"settings.users.newPasswordFor": "Новий пароль для {name}",
 	"settings.users.passwordNote": "Скористайся цим, коли {name} забув(ла) свій. Вихід буде виконано скрізь, і людина входить знову з новим паролем. Повідом його особисто.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "напр., Мама",
 	"settings.users.days": "Днів дії посилання",
 	"settings.users.makeInvite": "Створити посилання-запрошення",
-	"settings.users.permAuto4k": "Запити в 4K схвалюються без очікування"
+	"settings.users.permAuto4k": "Запити в 4K схвалюються без очікування",
+	"settings.users.serverAccount": "Обліковий запис сервера",
+	"settings.users.pickAccount": "Виберіть обліковий запис на медіасервері",
+	"settings.users.accountLinked": "Пов'язано з {name}",
+	"settings.users.removedOnServer": "Видалено на сервері {word}, тому вимкнено тут",
+	"settings.users.delete": "Видалити",
+	"settings.users.deleteName": "Видалити {name}",
+	"settings.users.confirmDelete": "Видалити {name}? Людину назавжди буде виведено, її ключі зникнуть. Її запити залишаться, як від видаленої людини.",
+	"settings.users.deleteYes": "Видалити людину",
+	"settings.users.keep": "Залишити",
+	"settings.users.deleted": "{name} видалено",
+	"settings.users.couldntDelete": "Не вдалося видалити",
+	"settings.users.confirmDeleteKeys": "Створені ним ключі Seerr перестануть працювати для всіх, доки не буде створено новий.",
+	"settings.users.qualities": "Якість",
+	"settings.users.qualitiesHint": "Можна вибрати лише ввімкнені. Якщо ввімкнено всі, нові теж пропонуються."
 }

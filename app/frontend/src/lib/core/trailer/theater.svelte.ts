@@ -42,6 +42,12 @@ export function fromHandoff(o: TheaterHandoff) {
 // means the player closes over a page change, so no page transition runs.
 export const theater = $state<{ now: TheaterOpen | null; back: TheaterBack | null; landing: boolean }>({ now: null, back: null, landing: false });
 
+// The scrim's fade frames from where it stands now. The shrink already faded it out, so
+// the closing fade must not bring it back (it flashed black for a moment).
+export function scrimFrames(to: 0 | 1, now: number): { opacity: number }[] {
+	return [{ opacity: now }, { opacity: to }];
+}
+
 let resumed: (() => void) | null = null;
 // Resolves after ms at the latest, so a hero that never resumes cannot hang the close.
 export function waitForResume(ms: number): Promise<void> {

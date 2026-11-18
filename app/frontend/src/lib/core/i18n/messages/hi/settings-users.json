@@ -83,6 +83,7 @@
 	"settings.users.preset": "प्रीसेट",
 	"settings.users.comingSoon": "जल्द आ रहा है",
 	"settings.users.custom": "कस्टम",
+	"settings.users.customHint": "नीचे दिए स्विचों का यह आपका अपना मेल है। प्रीसेट चुनने पर यह बदल जाता है; इसे वापस पाने के लिए फिर से “कस्टम” चुनें।",
 	"settings.users.ageRating": "आयु रेटिंग",
 	"settings.users.newPasswordFor": "{name} के लिए नया पासवर्ड",
 	"settings.users.passwordNote": "जब {name} अपना पासवर्ड भूल जाएं तब इसका इस्तेमाल करें। वे हर जगह से साइन आउट हो जाते हैं और नए पासवर्ड से दोबारा साइन इन करते हैं। उन्हें यह आमने-सामने बताएं।",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "जैसे मम्मी",
 	"settings.users.days": "लिंक कितने दिन चलेगा",
 	"settings.users.makeInvite": "न्योते का लिंक बनाएं",
-	"settings.users.permAuto4k": "4K रिक्वेस्ट बिना इंतज़ार के मंज़ूर"
+	"settings.users.permAuto4k": "4K रिक्वेस्ट बिना इंतज़ार के मंज़ूर",
+	"settings.users.serverAccount": "सर्वर खाता",
+	"settings.users.pickAccount": "किसी मीडिया सर्वर पर खाता चुनें",
+	"settings.users.accountLinked": "{name} से जोड़ा गया",
+	"settings.users.removedOnServer": "{word} सर्वर से हटाया गया, इसलिए यहाँ बंद किया गया",
+	"settings.users.delete": "हटाएँ",
+	"settings.users.deleteName": "{name} को हटाएँ",
+	"settings.users.confirmDelete": "{name} को हटाएँ? वे हमेशा के लिए साइन आउट होंगे और उनकी कुंजियाँ हट जाएँगी। उनके अनुरोध बने रहेंगे, हटाए गए व्यक्ति के रूप में।",
+	"settings.users.deleteYes": "व्यक्ति को हटाएँ",
+	"settings.users.keep": "रखें",
+	"settings.users.deleted": "{name} हटाया गया",
+	"settings.users.couldntDelete": "हटाया नहीं जा सका",
+	"settings.users.confirmDeleteKeys": "उनकी बनाई Seerr कुंजियाँ सभी के लिए काम करना बंद कर देंगी, जब तक नई न बनाई जाए।",
+	"settings.users.qualities": "क्वालिटी",
+	"settings.users.qualitiesHint": "वे सिर्फ़ चालू वाले चुन सकते हैं। सब चालू हों तो नए भी दिखाए जाते हैं।"
 }

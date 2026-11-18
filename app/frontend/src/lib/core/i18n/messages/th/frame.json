@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "รอ {n}",
 	"frame.nav.new": "ใหม่ {n}",
 	"frame.nav.manage": "จัดการ",
+	"frame.nav.activity": "กิจกรรม",
+	"frame.nav.system": "ระบบ",
 	"frame.nav.history": "ประวัติ",
 	"frame.nav.status": "สถานะ",
 	"frame.nav.settings": "ตั้งค่า",
+	"frame.nav.plugins": "ปลั๊กอิน",
 	"frame.nav.goTo": "ไปที่",
 	"frame.nav.active": "กำลังทำงาน {n} รายการ {percent}%",
 	"frame.nav.decide": "{n} รายการรอการตัดสินใจ",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "ตามระบบ",
 	"frame.layout.switch": "สลับบัญชี",
 	"frame.layout.signOut": "ออกจากระบบ",
+	"frame.layout.support": "สนับสนุน HolyArrs",
 	"frame.layout.signOutFail": "ยืนยันการออกจากระบบไม่สำเร็จ",
 	"frame.layout.signedOut": "ออกจากระบบแล้ว",
 	"frame.layout.accountMenu": "{name}, {role}: บัญชีและการแสดงผล",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs จะลองใหม่เอง",
 	"frame.feeds.clearNow": "ล้างเดี๋ยวนี้",
 	"frame.feeds.cleared": "ล้างออกจากตัวดาวน์โหลดแล้ว",
-	"frame.feeds.clearStill": "ยังไม่ได้ล้าง"
+	"frame.feeds.clearStill": "ยังไม่ได้ล้าง",
+	"frame.error.pageGone": "ไม่มีหน้านี้ ลิงก์อาจเก่าหรือพิมพ์ผิด"
 }

@@ -112,7 +112,7 @@ export function createOwnedTitle() {
 			return [
 				{ group: t('discover.titleOwned.groupFind'), items: [
 					{ label: t('discover.titleOwned.searchNow'), icon: 'search', run: () => ownRun('search'), busy: busyAction === 'search' },
-					{ label: t('discover.titleOwned.chooseRelease'), icon: 'grid', run: () => (pickOpen = true) }
+					{ label: t('discover.titleOwned.chooseRelease'), icon: 'grid', run: () => openPick(null) }
 				] },
 				{ group: t('discover.titleOwned.groupFiles'), items: [
 					{ label: t('discover.titleOwned.renameFiles'), icon: 'copy', run: () => (renameOpen = true) },

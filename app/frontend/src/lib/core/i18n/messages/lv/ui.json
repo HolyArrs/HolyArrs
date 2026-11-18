@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Ieguva balvu: {name}",
 	"ui.wikiFacts.nominated": "Nominēts: {name}",
 	"ui.wikiFacts.andMore": "un vēl {count}",
-	"ui.pageLoader.loading": "Ielādē"
+	"ui.pageLoader.loading": "Ielādē",
+	"ui.connectHelp.link": "Kā to labot",
+	"ui.ask.remove": "Noņemt",
+	"ui.ask.restore": "Atjaunot",
+	"ui.ask.stop": "Apturēt",
+	"ui.ask.revoke": "Atsaukt",
+	"ui.ask.replace": "Aizstāt",
+	"ui.ask.unlink": "Atsaistīt",
+	"ui.ask.turnOff": "Izslēgt",
+	"ui.ask.markFailed": "Atzīmēt kā neizdevušos",
+	"ui.ask.reset": "Atiestatīt",
+	"ui.ask.import": "Importēt"
 }

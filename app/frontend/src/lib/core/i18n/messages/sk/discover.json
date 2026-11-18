@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Vložte ID, napríklad tmdb:693134 alebo tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Alebo to opíšte, napríklad „vesmírny film s robotom z roku 2014“.",
 	"discover.search.lookEverywhere": "Hľadať všade",
-	"discover.search.searchIndexersFor": "Hľadať v indexeroch „{searched}“",
+	"discover.search.searchIndexersFor": "Skontrolovať zdroje",
 	"discover.search.topMatches": "Najlepšie zhody",
 	"discover.people.goToTheFilmography": "Prejsť na filmografiu",
 	"discover.people.filmography": "Filmografia",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Nesedí k tejto verzii",
 	"discover.leftovers.reason.movie_has_file": "Film už má súbor",
 	"discover.leftovers.reason.replaced_by_hand": "Nahradené iným súborom",
-	"discover.leftovers.reason.unmatched": "Priradenie zrušené ručne"
+	"discover.leftovers.reason.unmatched": "Priradenie zrušené ručne",
+	"discover.searchSections.genres": "Žánre",
+	"discover.searchSections.moods": "Nálady",
+	"discover.searchSections.stories": "Príbehy a témy",
+	"discover.searchSections.worlds": "Svety a prostredia",
+	"discover.searchSections.eras": "Obdobia",
+	"discover.searchSections.world": "Zo sveta",
+	"discover.searchSections.collections": "Kolekcie",
+	"discover.popularRail.out": "Vychádza",
+	"discover.popularRail.comingDay": "Čoskoro",
+	"discover.titleLibrary.turnShowOnHint": "Zapnite seriál, aby sa začalo hľadanie.",
+	"discover.leftovers.reason.seasons_differ": "Nájdené len podľa čísla TMDB zo starej aplikácie: skontrolujte, či ide o rovnaký seriál, a potom súbor priraďte sami"
 }

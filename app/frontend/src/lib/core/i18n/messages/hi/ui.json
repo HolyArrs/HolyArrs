@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "जीता: {name}",
 	"ui.wikiFacts.nominated": "नामांकित: {name}",
 	"ui.wikiFacts.andMore": "और {count} और",
-	"ui.pageLoader.loading": "लोड हो रहा है"
+	"ui.pageLoader.loading": "लोड हो रहा है",
+	"ui.connectHelp.link": "इसे कैसे ठीक करें",
+	"ui.ask.remove": "हटाएँ",
+	"ui.ask.restore": "पुनर्स्थापित करें",
+	"ui.ask.stop": "रोकें",
+	"ui.ask.revoke": "रद्द करें",
+	"ui.ask.replace": "बदलें",
+	"ui.ask.unlink": "अनलिंक करें",
+	"ui.ask.turnOff": "बंद करें",
+	"ui.ask.markFailed": "विफल चिह्नित करें",
+	"ui.ask.reset": "रीसेट करें",
+	"ui.ask.import": "आयात करें"
 }

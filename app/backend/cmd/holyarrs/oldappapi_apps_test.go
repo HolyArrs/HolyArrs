@@ -546,11 +546,16 @@ func TestOldAppHomepageWidgets(t *testing.T) {
 		t.Errorf("details with show: %v", row)
 	}
 
-	// The Radarr widget's lists wait for the research answer on what it
-	// calls; until then they answer 404, never a pretend success.
-	for _, p := range []string{"wanted/missing", "calendar", "queue/details"} {
-		if st, _, _ := f.arr(f.radarrKey, "GET", "/radarr/api/v3/"+p, ""); st != 404 {
+	// The missing list, the calendar and health on the Radarr side, health on
+	// the Sonarr side, and the download details and counts on both.
+	for _, p := range []string{"wanted/missing", "calendar", "health", "queue/details", "queue/status"} {
+		if st, _, _ := f.arr(f.radarrKey, "GET", "/radarr/api/v3/"+p, ""); st != 200 {
 			t.Errorf("radarr %s: %d", p, st)
+		}
+	}
+	for _, p := range []string{"health", "queue/status"} {
+		if st, _, _ := f.arr(f.sonarrKey, "GET", "/sonarr/api/v3/"+p, ""); st != 200 {
+			t.Errorf("sonarr %s: %d", p, st)
 		}
 	}
 }

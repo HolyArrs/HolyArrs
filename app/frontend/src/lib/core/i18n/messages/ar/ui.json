@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "فاز: {name}",
 	"ui.wikiFacts.nominated": "رُشّح: {name}",
 	"ui.wikiFacts.andMore": "و{count} أخرى",
-	"ui.pageLoader.loading": "جارٍ التحميل"
+	"ui.pageLoader.loading": "جارٍ التحميل",
+	"ui.connectHelp.link": "كيفية الإصلاح",
+	"ui.ask.remove": "إزالة",
+	"ui.ask.restore": "استعادة",
+	"ui.ask.stop": "إيقاف",
+	"ui.ask.revoke": "إلغاء",
+	"ui.ask.replace": "استبدال",
+	"ui.ask.unlink": "إلغاء الربط",
+	"ui.ask.turnOff": "إيقاف التشغيل",
+	"ui.ask.markFailed": "تعليم كفاشل",
+	"ui.ask.reset": "إعادة تعيين",
+	"ui.ask.import": "استيراد"
 }

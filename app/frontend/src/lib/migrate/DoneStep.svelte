@@ -8,7 +8,7 @@
 	import ResultGroups from './ResultGroups.svelte';
 	import FolderOutcome from './FolderOutcome.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { moveCounts, noFolderCount, progressWords, running as isRunning, type Bucket, type Move } from './move.ts';
+	import { doneLook, moveCounts, noFolderCount, progressWords, running as isRunning, seasonsShows, type Bucket, type Move } from './move.ts';
 	import { to } from '../core/paths.ts';
 	import { dateTime } from '../core/format.ts';
 
@@ -43,6 +43,8 @@
 	const detail = $derived(progressWords(note));
 	const plainNext = $derived(!rep || !!rep.undo || rep.lines.length === 0);
 	const noFolder = $derived(noFolderCount(lines));
+	const seasons = $derived(seasonsShows(lines));
+	const look = $derived(doneLook(counts.failed ?? 0, seasons.length));
 </script>
 
 <SettingsCard id="move-step" title={countSteps ? t('migrate.step4Of4') : t('migrate.done')}>
@@ -60,7 +62,7 @@
 			{:else if move.state === 'failed'}
 				<StepCapsule tone="bad" fill={1} status="failed" word={t('migrate.stoppedWithErrors')} detail={moveCounts(move) || undefined} />
 			{:else}
-				<StepCapsule tone={(counts.failed ?? 0) > 0 ? 'bad' : 'ok'} fill={1} status={(counts.failed ?? 0) > 0 ? 'failed' : 'ready'} word={t('migrate.moved')} detail={moveCounts(move) || undefined} />
+				<StepCapsule tone={look.tone} fill={1} status={look.status} word={t('migrate.moved')} detail={look.check ? t('migrate.needsYou') : moveCounts(move) || undefined} />
 			{/if}
 		</div>
 		<span class="hint when">{t('migrate.move2', { id: move.id, date: dateTime(move.created_at) })}</span>
@@ -68,7 +70,7 @@
 </SettingsCard>
 
 {#if rep && !busy}
-	{#if plainNext || noFolder > 0 || openChoices > 0 || (counts.failed ?? 0) > 0}
+	{#if plainNext || noFolder > 0 || openChoices > 0 || (counts.failed ?? 0) > 0 || seasons.length > 0}
 	<SettingsCard id="move-todo" title={t('migrate.needsYou')}>
 		{#if plainNext}
 			{#each rep.next as n (n)}
@@ -87,6 +89,14 @@
 				{/if}
 				{#if openChoices > 0}
 					{@render card(openChoices === 1 ? t('migrate.chooseForPerson', { n: openChoices }) : t('migrate.chooseForPeople', { n: openChoices }), t('migrate.theyStayBehindUntil'), t('migrate.choose'), onchoose)}
+				{/if}
+				{#if seasons.length > 0}
+					{@render card(seasons.length === 1 ? t('migrate.seasonsDifferOne') : t('migrate.seasonsDifferOther', { n: seasons.length }), t('migrate.seasonsDifferWhy', { list: seasons.map((s) => s.name).join(', ') }), seasons.length === 1 && seasons[0].id ? t('migrate.open') : '', seasons.length === 1 && seasons[0].id ? to(`/library/${seasons[0].id}`) : '')}
+					{#if seasons.length > 1}
+						{#each seasons.filter((s) => s.id) as s (s.id)}
+							<div class="box card1" data-testid="seasons-show"><span class="txt"><b>{s.name}</b></span><a class="quiet" href={to(`/library/${s.id}`)}>{t('migrate.open')}</a></div>
+						{/each}
+					{/if}
 				{/if}
 				{#if (counts.failed ?? 0) > 0}
 					{@render card((counts.failed ?? 0) === 1 ? t('migrate.itemFailed', { n: counts.failed ?? 0 }) : t('migrate.itemsFailed', { n: counts.failed ?? 0 }), t('migrate.reasonsMatchByHand'), t('migrate.matchByHand'), to('/library/import'))}

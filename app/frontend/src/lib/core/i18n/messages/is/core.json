@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Leyfðu gervigreindaraðstoðarmönnum að nota HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Lyklar og slóðir fyrir önnur forrit",
+	"core.settings.remoteAccess.label": "Fjaraðgangur",
+	"core.settings.remoteAccess.about": "Notaðu HolyArrs utan heimilis",
 	"core.settings.tmdb.label": "Lýsigögn",
 	"core.settings.tmdb.about": "Hvaðan veggspjöld og nöfn koma",
 	"core.settings.health.label": "Ástandsathuganir",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Einn niðurhalari er ekki með vistunarmöppu, svo HolyArrs getur ekki flutt inn niðurhöl hans sem eru búin.",
 	"core.api.sourceOff": "Sumar raðir eru slökktar í þessari uppsetningu.",
 	"core.plain.noDownloader": "Veiturnar þínar finna niðurhöl sem enginn niðurhalari þinn getur tekið við, svo ekkert er hægt að senda.",
-	"core.plain.sameDownloader": "Tveir niðurhalarar ná í sama niðurhalsforrit, svo niðurhöl geta birst tvisvar."
+	"core.plain.sameDownloader": "Tveir niðurhalarar ná í sama niðurhalsforrit, svo niðurhöl geta birst tvisvar.",
+	"core.plain.peopleCheck": "Ekki er hægt að lesa notendalista miðlaþjónsins, svo ekki er slökkt hér á þeim sem voru fjarlægðir þar.",
+	"core.plain.deleted": "eytt",
+	"core.plain.deletedName": "{name} (eytt)"
 }

@@ -83,6 +83,7 @@
 	"settings.users.preset": "Perfil predefinit",
 	"settings.users.comingSoon": "Properament",
 	"settings.users.custom": "Personalitzat",
+	"settings.users.customHint": "És la teva combinació pròpia dels interruptors de sota. Triar un perfil la substitueix; torna a triar Personalitzat per recuperar-la.",
 	"settings.users.ageRating": "Classificació per edats",
 	"settings.users.newPasswordFor": "Contrasenya nova per a {name}",
 	"settings.users.passwordNote": "Fes-ho servir quan {name} hagi oblidat la seva. Se li tanca la sessió a tot arreu i torna a iniciar-la amb la nova. Dona-li-la en persona.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "p. ex. Mama",
 	"settings.users.days": "Dies que dura l'enllaç",
 	"settings.users.makeInvite": "Crea un enllaç d'invitació",
-	"settings.users.permAuto4k": "Sol·licituds 4K aprovades sense esperar"
+	"settings.users.permAuto4k": "Sol·licituds 4K aprovades sense esperar",
+	"settings.users.serverAccount": "Compte del servidor",
+	"settings.users.pickAccount": "Tria un compte d'un servidor multimèdia",
+	"settings.users.accountLinked": "Enllaçat a {name}",
+	"settings.users.removedOnServer": "Eliminat al servidor de {word}, per això s’ha desactivat aquí",
+	"settings.users.delete": "Suprimeix",
+	"settings.users.deleteName": "Suprimeix {name}",
+	"settings.users.confirmDelete": "Vols suprimir {name}? Se li tanca la sessió per sempre i les seves claus desapareixen. Les seves peticions es queden, com a persona eliminada.",
+	"settings.users.deleteYes": "Suprimeix la persona",
+	"settings.users.keep": "Mantén",
+	"settings.users.deleted": "{name} suprimit",
+	"settings.users.couldntDelete": "No s’ha pogut suprimir",
+	"settings.users.confirmDeleteKeys": "Les claus de Seerr que hagi creat deixen de funcionar per a tothom fins que se'n creï una de nova.",
+	"settings.users.qualities": "Qualitats",
+	"settings.users.qualitiesHint": "Només poden triar les activades. Amb totes activades, també s'ofereixen les noves."
 }

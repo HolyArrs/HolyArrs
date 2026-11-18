@@ -9,6 +9,7 @@
 	import PartsRail from './PartsRail.svelte';
 	import RunsTimeline from './RunsTimeline.svelte';
 	import WhyNote from './WhyNote.svelte';
+	import { supportLinks } from './support-links.ts';
 	import { nextRun, until } from './schedules.ts';
 	import type { Health } from './types.ts';
 	import { atVerb, everyKind, needsAttention, nothingLinked, stopped, type StatusGroup, type StatusRow } from './rows.ts';
@@ -30,6 +31,7 @@
 		{ id: 'parts', label: t('health.sections.tabStatus') },
 		{ id: 'jobs', label: t('health.sections.tabJobs') },
 		{ id: 'updates', label: t('health.sections.tabUpdates') },
+		{ id: 'support', label: t('health.sections.tabSupport') },
 		{ id: 'about', label: t('health.sections.tabAbout') }
 	]);
 	// Names of reads an account may not do, mapped to the kind they remove.
@@ -88,6 +90,8 @@
 	// Library rows are folder and disk checks, so they show in Storage beside each disk.
 	const libRows = $derived(parts.find((g) => g.id === 'library')?.rows ?? []);
 	const backups = $derived(libRows.find((r) => r.key.startsWith('backups')));
+	// The key kit's calm recommendation rides on the Backups line; a real warning is a problem row of its own.
+	const keyKitNote = $derived(libRows.find((r) => r.key === 'backups:key' && r.tone === 'ok' && r.reason)?.reason);
 	const jobs = $derived(groups.find((g) => g.id === 'jobs')?.rows ?? []);
 	const jobsTone = $derived(jobs.some((j) => j.tone === 'fail') ? 'fail' : jobs.some((j) => j.tone === 'wait') ? 'wait' : null);
 	const allRows = $derived(groups.flatMap((g) => g.rows));
@@ -201,15 +205,15 @@
 							{#if r.at}<time class="hat" datetime={r.at} title={dateTime(r.at)}>{when(r)}</time>{/if}
 							{#if canAct}
 								<span class="hacts">
-									{#if r.check}<Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>{r.group === 'jobs' ? t('health.sections.runNow') : t('health.rows.check')}</Button>{/if}
-									{#if r.fix}<Button variant="plain" size="sm" href={to(r.fix)}>{t('health.rows.fix')}</Button>{/if}
+									{#if r.check}<Button variant="secondary" disabled={busy(r.key)} onclick={() => oncheck(r)}>{r.group === 'jobs' ? t('health.sections.runNow') : t('health.rows.check')}</Button>{/if}
+									{#if r.fix}<Button variant="secondary" href={to(r.fix)}>{t('health.rows.fix')}</Button>{/if}
 								</span>
 							{/if}
 						</li>
 					{/each}
 				</ul>
 			{:else if empty}
-				<p class="ok-line"><i class="st-dot idle" aria-hidden="true"></i>{t('health.sections.nothingToCheck')}{#if canAct} <Button variant="plain" size="sm" href={to('/settings/sources')}>{t('health.sections.addSource')}</Button>{/if}</p>
+				<p class="ok-line"><i class="st-dot idle" aria-hidden="true"></i>{t('health.sections.nothingToCheck')}{#if canAct} <Button variant="secondary" href={to('/settings/sources')}>{t('health.sections.addSource')}</Button>{/if}</p>
 			{:else if failed.includes('parts')}
 				<p class="ok-line"><i class="st-dot idle" aria-hidden="true"></i>{t('health.headline.none')}.</p>
 			{:else}
@@ -242,13 +246,13 @@
 								<i style:width="{p ?? 0}%"></i>
 							</div>
 							<div class="dfoot"><span class="mono" title={d.path}>{d.path}</span>{#if p !== null}<span>{t('health.sections.pctUsed', { pct: p })}</span>{/if}</div>
-							{#if w?.reason}<p class="dwhy">{serverWords(w.reason)}{#if canAct && w.fix} <Button variant="plain" size="sm" href={to(w.fix)}>{t('health.rows.fix')}</Button>{/if}</p>{/if}
+							{#if w?.reason}<p class="dwhy">{serverWords(w.reason)}{#if canAct && w.fix} <Button variant="secondary" href={to(w.fix)}>{t('health.rows.fix')}</Button>{/if}</p>{/if}
 						</li>
 					{/each}
 				</ul>
 			{/if}
 			{#if backups}
-				<p class="bk">{t('health.kind.backups')} <span class="chip {backups.tone}">{backups.word}</span>{#if backups.at} · {t('health.sections.lastChecked')} <time datetime={backups.at} title={dateTime(backups.at)}>{ago(backups.at, now)}</time>{/if}{#if backups.reason && backups.tone !== 'ok'} · {serverWords(backups.reason)}{/if}</p>
+				<p class="bk">{t('health.kind.backups')} <span class="chip {backups.tone}">{backups.word}</span>{#if backups.at} · {t('health.sections.lastChecked')} <time datetime={backups.at} title={dateTime(backups.at)}>{ago(backups.at, now)}</time>{/if}{#if backups.reason && backups.tone !== 'ok'} · {serverWords(backups.reason)}{/if}{#if keyKitNote} · <span data-testid="key-kit-note">{keyKitNote}</span>{/if}</p>
 			{/if}
 		</section>
 	{:else if tab === 'jobs'}
@@ -265,10 +269,10 @@
 					{#each jobs as r (r.key)}
 						<tr data-testid="status-row" data-tone={r.tone} data-key={r.key}>
 							<td class="jn">{r.name}{#if r.tone === 'fail' && r.reason}<span class="jr">{serverWords(r.reason)}</span>{/if}</td>
-							<td class="js"><span class="chip {r.tone}">{r.word}</span></td>
+							<td class="js">{#if r.tone !== 'ok'}<span class="chip {r.tone}">{r.word}</span>{/if}</td>
 							<td class="jl"><span class="k">{t('health.sections.lastRun')}</span>{#if r.lastRun}<time datetime={r.lastRun} title={dateTime(r.lastRun)}>{ago(r.lastRun, now)}</time>{:else}{t('health.sections.notYet')}{/if}</td>
 							<td class="jx"><span class="k">{t('health.sections.nextRun')}</span>{nextWord(r)}</td>
-							{#if canAct}<td class="num"><Button variant="plain" size="sm" disabled={busy(r.key)} onclick={() => oncheck(r)}>{t('health.sections.runNow')}</Button></td>{/if}
+							{#if canAct}<td class="num"><Button variant="secondary" disabled={busy(r.key)} onclick={() => oncheck(r)}>{t('health.sections.runNow')}</Button></td>{/if}
 						</tr>
 					{/each}
 				</tbody>
@@ -279,22 +283,43 @@
 		{#if updFailed && !upd}
 			<section class="st-plate" aria-labelledby="s-upd">
 				<h2 id="s-upd">{t('health.groups.app')}</h2>
-				<p class="none fail-line">{t('health.sections.updFailed')} <Button variant="plain" size="sm" onclick={loadUpdate}>{t('health.sections.tryAgain')}</Button></p>
+				<p class="none fail-line">{t('health.sections.updFailed')} <Button variant="secondary" onclick={loadUpdate}>{t('health.sections.tryAgain')}</Button></p>
 			</section>
 		{:else}
 			{@render updates({ upd, docker: about ? about.docker : null, reader, checksKnown: !failed.includes('health checks'), canAct, onupd: (u) => (upd = u) })}
 		{/if}
+	{:else if tab === 'support'}
+		<section class="st-plate give" aria-labelledby="s-give" data-testid="status-support">
+			<h2 id="s-give">{t('health.support.heading')}</h2>
+			<div class="give-text">
+				<p>{t('health.support.p1')}</p>
+				<p>{t('health.support.p2')}</p>
+				<h3>{t('health.support.doesHeading')}</h3>
+				<ul>
+					<li>{t('health.support.does1')}</li>
+					<li>{t('health.support.does2')}</li>
+					<li>{t('health.support.does3')}</li>
+				</ul>
+				<p><strong>{t('health.support.p3Lead')}</strong> {t('health.support.p3')}</p>
+				<p>{t('health.support.p4')}</p>
+			</div>
+			<div class="give-row">
+				{#each supportLinks as l (l.id)}
+					<Button variant={l.id === 'sponsor' ? 'primary' : 'secondary'} icon={l.icon} href={l.href} target={l.newTab ? '_blank' : undefined} rel={l.newTab ? 'noopener' : undefined}>{t(`health.support.${l.id}`)}</Button>
+				{/each}
+			</div>
+		</section>
 	{:else}
 		<section class="st-plate" aria-labelledby="s-about">
 			<h2 id="s-about">{t('health.sections.tabAbout')}</h2>
 			{#if aboutFailed && !about}
-				<p class="none fail-line">{t('health.sections.aboutFailed')} <Button variant="plain" size="sm" onclick={loadAbout}>{t('health.sections.tryAgain')}</Button></p>
+				<p class="none fail-line">{t('health.sections.aboutFailed')} <Button variant="secondary" onclick={loadAbout}>{t('health.sections.tryAgain')}</Button></p>
 			{/if}
 			<dl class="kv">
 				<dt>{t('health.sections.version')}</dt>
 				<dd>
 					<code>{about?.version ?? upd?.version ?? (aboutFailed || aboutDenied ? '-' : '…')}</code>
-					{#if upd?.newer}<span class="chip wait">{t('health.sections.updAvailableChip')}</span><Button variant="plain" size="sm" onclick={() => ontab('updates')}>{t('health.sections.seeUpdate')}</Button>{:else if upd?.on && upd.latest}<span class="chip ok">{t('updates.band.upToDate')}</span>{/if}
+					{#if upd?.newer}<span class="chip wait">{t('health.sections.updAvailableChip')}</span><Button variant="secondary" onclick={() => ontab('updates')}>{t('health.sections.seeUpdate')}</Button>{:else if upd?.on && upd.latest}<span class="chip ok">{t('updates.band.upToDate')}</span>{/if}
 				</dd>
 				{#if about}
 					<dt>Go</dt><dd>{about.go.replace(/^go/, '')}</dd>
@@ -326,12 +351,18 @@
 			<div><h2 id="s-story">{t('health.why.title')}</h2><small>{t('health.sections.note')}</small></div>
 			<button class="why-btn" type="button" aria-haspopup="dialog" onclick={() => why?.open()} data-testid="why-open"><span class="px" aria-hidden="true">&gt;_</span>{t('health.sections.readNote')}</button>
 		</section>
-		<WhyNote bind:this={why} />
 	{/if}
 	</div>
+	<WhyNote bind:this={why} />
 </div>
 
 <style>
+	.give-text { max-width: 65ch; display: grid; gap: var(--s-3); font-size: 14px; line-height: 1.6; color: var(--text-muted); margin-bottom: var(--s-2); }
+	.give-text p, .give-text ul, .give-text h3 { margin: 0; }
+	.give-text h3 { font-size: 15px; font-weight: 600; margin-top: var(--s-2); color: var(--text); }
+	.give-text ul { padding-left: 1.25rem; display: grid; gap: var(--s-2); list-style: disc; }
+	.give-text strong { color: var(--text); font-weight: 600; }
+	.give-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--s-3); margin-top: var(--s-2); }
 	.secs, .panel { display: flex; flex-direction: column; gap: var(--s-4); }
 	ul { list-style: none; margin: 0; padding: 0; }
 	/* Same pill track as the Downloads page. */
@@ -394,7 +425,7 @@
 	}
 	.tbl.jobs { font-size: 13.5px; }
 	.tbl.jobs th { padding: 2px 10px 6px; font-size: 12.5px; }
-	.tbl.jobs td { padding: 0 10px; height: 34px; }
+	.tbl.jobs td { padding: 6px 10px; height: 48px; }
 	.tbl.jobs tr:last-child td { border-bottom: 0; }
 	.tbl .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.mono, code { font-family: var(--font-mono, ui-monospace, monospace); font-size: 12.5px; }

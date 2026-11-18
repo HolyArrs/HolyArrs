@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Κέρδισε: {name}",
 	"ui.wikiFacts.nominated": "Υποψήφιο: {name}",
 	"ui.wikiFacts.andMore": "και {count} ακόμη",
-	"ui.pageLoader.loading": "Φόρτωση"
+	"ui.pageLoader.loading": "Φόρτωση",
+	"ui.connectHelp.link": "Πώς να το διορθώσεις",
+	"ui.ask.remove": "Αφαίρεση",
+	"ui.ask.restore": "Επαναφορά",
+	"ui.ask.stop": "Διακοπή",
+	"ui.ask.revoke": "Ανάκληση",
+	"ui.ask.replace": "Αντικατάσταση",
+	"ui.ask.unlink": "Αποσύνδεση",
+	"ui.ask.turnOff": "Απενεργοποίηση",
+	"ui.ask.markFailed": "Σήμανση ως αποτυχία",
+	"ui.ask.reset": "Επαναφορά ρυθμίσεων",
+	"ui.ask.import": "Εισαγωγή"
 }

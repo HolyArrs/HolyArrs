@@ -25,6 +25,15 @@ To clear a long list, press **Approve all**.
 
 You can undo for a few seconds after you decline.
 
+## Remove a request
+
+New in 1.1.4. People who can approve can remove a request in any state, including old ones brought over from another app.
+
+- **One request:** open it and select **Remove request**.
+- **All failed or all finished:** on **Requests**, select **Clear failed** or **Clear finished**, then **Remove all**. Failed means approved but nothing was added. Finished means ready or turned down.
+
+Removing a request never touches the title or its files. History notes who removed it.
+
 ## Choices
 
 ### What approving changes

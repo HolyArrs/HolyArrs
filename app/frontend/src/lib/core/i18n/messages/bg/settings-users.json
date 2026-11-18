@@ -83,6 +83,7 @@
 	"settings.users.preset": "Шаблон",
 	"settings.users.comingSoon": "Скоро",
 	"settings.users.custom": "По избор",
+	"settings.users.customHint": "Това е вашата собствена комбинация от превключвателите по-долу. Изборът на шаблон я заменя; изберете отново „По избор“, за да я върнете.",
 	"settings.users.ageRating": "Възрастова оценка",
 	"settings.users.newPasswordFor": "Нова парола за {name}",
 	"settings.users.passwordNote": "Ползвайте това, когато {name} е забравил своята. Излиза отвсякъде и влиза отново с новата. Съобщете му я лично.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "напр. Мама",
 	"settings.users.days": "Дни, през които връзката важи",
 	"settings.users.makeInvite": "Създаване на връзка за покана",
-	"settings.users.permAuto4k": "4K заявки, одобрени без чакане"
+	"settings.users.permAuto4k": "4K заявки, одобрени без чакане",
+	"settings.users.serverAccount": "Профил в сървъра",
+	"settings.users.pickAccount": "Изберете профил в медиен сървър",
+	"settings.users.accountLinked": "Свързано с {name}",
+	"settings.users.removedOnServer": "Премахнат от сървъра {word}, затова е изключен тук",
+	"settings.users.delete": "Изтрий",
+	"settings.users.deleteName": "Изтрий {name}",
+	"settings.users.confirmDelete": "Да се изтрие ли {name}? Излиза завинаги и ключовете му се премахват. Заявките му остават, показани като премахнат човек.",
+	"settings.users.deleteYes": "Изтрий човека",
+	"settings.users.keep": "Запази",
+	"settings.users.deleted": "{name} е изтрит",
+	"settings.users.couldntDelete": "Не можа да се изтрие",
+	"settings.users.confirmDeleteKeys": "Ключовете за Seerr, които е създал, спират да работят за всички, докато не се създаде нов.",
+	"settings.users.qualities": "Качества",
+	"settings.users.qualitiesHint": "Могат да избират само включените. Когато всички са включени, се предлагат и новите."
 }

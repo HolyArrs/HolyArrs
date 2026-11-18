@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "الصق معرّفًا، مثل tmdb:693134 أو tvmaze:82.",
 	"discover.search.orDescribeItSuch": "أو صفه، مثل “فيلم فضاء فيه روبوت من 2014”.",
 	"discover.search.lookEverywhere": "ابحث في كل مكان",
-	"discover.search.searchIndexersFor": "ابحث في المفهرسات عن “{searched}”",
+	"discover.search.searchIndexersFor": "تحقق من مصادرك",
 	"discover.search.topMatches": "أفضل النتائج",
 	"discover.people.goToTheFilmography": "انتقل إلى الأعمال",
 	"discover.people.filmography": "الأعمال",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "لا يناسب هذه النسخة",
 	"discover.leftovers.reason.movie_has_file": "الفيلم له ملف بالفعل",
 	"discover.leftovers.reason.replaced_by_hand": "استُبدل بملف آخر",
-	"discover.leftovers.reason.unmatched": "أُلغيت المطابقة يدويًا"
+	"discover.leftovers.reason.unmatched": "أُلغيت المطابقة يدويًا",
+	"discover.searchSections.genres": "الأنواع",
+	"discover.searchSections.moods": "الأمزجة",
+	"discover.searchSections.stories": "القصص والمواضيع",
+	"discover.searchSections.worlds": "العوالم والأماكن",
+	"discover.searchSections.eras": "الحقب",
+	"discover.searchSections.world": "حول العالم",
+	"discover.searchSections.collections": "المجموعات",
+	"discover.popularRail.out": "صدر",
+	"discover.popularRail.comingDay": "قادم",
+	"discover.titleLibrary.turnShowOnHint": "شغّل المسلسل ليبدأ البحث.",
+	"discover.leftovers.reason.seasons_differ": "وُجد فقط برقم TMDB من التطبيق القديم: تأكد أنه المسلسل نفسه، ثم طابق الملف بنفسك"
 }

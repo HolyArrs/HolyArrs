@@ -44,6 +44,14 @@ const verdict = (row: Locator) => row.locator('.rs-verdict');
 test.beforeAll(async ({ browser }) => {
 	page = await fresh(browser);
 	await signIn(page, owner());
+	// The downloaders and downloads projects run first (so Pick has a Downloader) and leave Iron Lullaby's Releases turned down; start from an empty list.
+	await page.goto('/library/turned-down');
+	await expect(page.getByTestId('listed-release').or(page.getByText('Nothing turned down.')).first()).toBeVisible();
+	if (await page.getByTestId('listed-release').count()) {
+		await page.getByRole('button', { name: 'Clear all' }).click();
+		await page.getByTestId('ask-yes').click();
+	}
+	await expect(page.getByText('Nothing turned down.')).toBeVisible();
 });
 
 test('Choose a release shows every Release with its verdict and plain reasons; turn one down; force one that failed', async () => {
@@ -147,8 +155,8 @@ test('clear all empties the Turned down list', async () => {
 	await expect(release(sheet, '.HDCAM.').filter({ has: page.locator('.rs-verdict', { hasText: 'Turned down' }) })).toHaveCount(1);
 	await page.goto('/library/turned-down');
 	await expect(page.getByTestId('listed-release')).toHaveCount(1);
-	page.once('dialog', (d) => d.accept());
 	await page.getByRole('button', { name: 'Clear all' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByText('Nothing turned down.')).toBeVisible();
 });
 

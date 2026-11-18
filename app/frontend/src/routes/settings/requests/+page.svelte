@@ -6,7 +6,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { PlexFriends, qualityName, type AskSettings, type QualityLine } from '#lib/requests/index.ts';
+	import { PlexFriends, QualityLines, approveChanges, approveRows, type ApproveRow, type ApproveUser, type AskSettings, type QualityLine } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
@@ -32,8 +32,13 @@
 		show_four_k_pick_rules_id: 0,
 		plex_watchlists: false,
 		plex_watchlists_everyone: false,
-		plex_friends: false
+		plex_friends: false,
+		owner_auto_approve: true
 	});
+	// "Approve requests automatically": the owner's switch is a Request setting, everyone else's is their own permission.
+	let users = $state<ApproveUser[]>([]);
+	let people = $state<ApproveRow[]>([]);
+	let savedPeople = $state('[]');
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 	let busy = $state(false);
@@ -42,7 +47,7 @@
 	let loading = $state(false);
 	let loadError = $state('');
 	let saved = $state('');
-	const dirty = $derived(loaded && !!saved && JSON.stringify(settings) !== saved);
+	const dirty = $derived(loaded && !!saved && (JSON.stringify(settings) !== saved || JSON.stringify(people) !== savedPeople));
 
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
 	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
@@ -56,13 +61,13 @@
 		{ key: 'music_per_week', id: 'per-week-music', label: t('settings.requests.musicReq'), hint: t('settings.requests.musicReqHint') }
 	] as const);
 
-	// What people can ask for: each line's name and whether people see it. Its Pick rules come from the settings above.
+	// What people can ask for: each line's name, whether it is shown and its place. Standard and 4K take their Pick rules from the settings above; a line the owner added has its own.
 	const lineKinds = $derived([
-		{ kind: 'movie', title: t('settings.requests.movieReq'), plain: settings.pick_rules_id, fourK: settings.four_k_pick_rules_id },
-		{ kind: 'show', title: t('settings.requests.showReq'), plain: settings.show_pick_rules_id, fourK: settings.show_four_k_pick_rules_id }
+		{ kind: 'movie', title: t('settings.requests.movieReq'), plain: settings.pick_rules_id, fourK: settings.four_k_pick_rules_id, rules: movieRules },
+		{ kind: 'show', title: t('settings.requests.showReq'), plain: settings.show_pick_rules_id, fourK: settings.show_four_k_pick_rules_id, rules: showRules }
 	] as const);
 	function lineHint(l: QualityLine, plain: number, fourK: number): string {
-		const id = l.extra ? fourK : plain;
+		const id = l.id.startsWith('own-') ? l.pick_rules_id : l.extra ? fourK : plain;
 		const name = id ? (rules.find((r) => r.id === id)?.name ?? '') : t(l.extra ? 'settings.requests.fourKNamedRules' : 'settings.requests.folderQuality');
 		const line = t(l.extra ? 'settings.requests.choiceOwn' : 'settings.requests.choiceMain', { rules: name });
 		return l.ready ? line : `${line}. ${t('settings.requests.choiceNotReady')}`;
@@ -74,12 +79,28 @@
 		try {
 			settings = await api.get<AskSettings>('/settings/asks');
 			saved = JSON.stringify(settings);
+			await loadPeople().catch(() => {});
 		} catch (e) {
 			loadError = message(e);
 		} finally {
 			loaded = true;
 			loading = false;
 		}
+	}
+
+	async function loadPeople() {
+		if (!session.can('users')) {
+			people = [];
+		} else {
+			users = (await api.get<{ users: ApproveUser[] }>('/users')).users;
+			people = approveRows(users, settings.owner_auto_approve !== false, { id: session.s.id, role: session.s.role });
+		}
+		savedPeople = JSON.stringify(people);
+	}
+
+	function setOn(r: ApproveRow, on: boolean) {
+		r.on = on;
+		if (r.owner) settings.owner_auto_approve = on;
 	}
 
 	onMount(async () => {
@@ -106,6 +127,13 @@
 				music_per_week: Number(settings.music_per_week)
 			});
 			saved = JSON.stringify(settings);
+			try {
+				for (const c of approveChanges(users, JSON.parse(savedPeople), people)) {
+					await api.put(`/users/${c.id}`, { perms: c.perms });
+				}
+			} finally {
+				await loadPeople().catch(() => {});
+			}
 			toasts.push(t('settings.requests.saved'), 'ok');
 		} catch (err) {
 			error = message(err);
@@ -198,6 +226,25 @@
 				</Field>
 			{/snippet}
 		</SettingsCard>
+		<SettingsCard id="approvals" title={t('settings.requests.approvals')}>
+			<h3 class="q-kind">{t('settings.requests.autoApprove')}</h3>
+			{#if people.length}
+				{#each people as r (r.id)}
+					<label class="switch q-shown approve-row">
+						<input type="checkbox" checked={r.on} disabled={r.locked} onchange={(e) => setOn(r, e.currentTarget.checked)} data-testid="auto-approve-{r.id}" />
+						<span class="sw" aria-hidden="true"></span>
+						<span>{r.name}{#if r.owner} · {t('settings.requests.ownerTag')}{/if}</span>
+					</label>
+				{/each}
+			{:else}
+				<label class="switch q-shown approve-row">
+					<input type="checkbox" bind:checked={settings.owner_auto_approve} data-testid="auto-approve-owner" />
+					<span class="sw" aria-hidden="true"></span>
+					<span>{t('settings.requests.ownerTag')}</span>
+				</label>
+			{/if}
+			<p class="hint">{t('settings.requests.autoApproveNote')}</p>
+		</SettingsCard>
 		<SettingsCard id="four-k" title={t('settings.requests.fourK')} description={t('settings.requests.fourKDesc')}>
 			<Field id="ask-4k-folder" label={t('settings.requests.movieFolder')}>
 				<select id="ask-4k-folder" class="input" bind:value={settings.four_k_library_folder_id}>
@@ -235,15 +282,10 @@
 		{#if settings.qualities}
 			<SettingsCard id="ask-qualities" title={t('settings.requests.choices')} description={t('settings.requests.choicesDesc')}>
 				{#each lineKinds as k (k.kind)}
-					<h3 class="q-kind">{k.title}</h3>
-					{#each settings.qualities[k.kind] as l, i (l.id)}
-						<Field id="q-{k.kind}-{l.id}" label={qualityName(l.id)} hint={lineHint(l, k.plain, k.fourK)}>
-							<div class="q-row">
-								<input id="q-{k.kind}-{l.id}" class="input" maxlength="30" placeholder={qualityName(l.id)} aria-describedby="q-{k.kind}-{l.id}-hint" bind:value={settings.qualities[k.kind][i].name} />
-								<label class="switch q-shown"><input type="checkbox" checked={!l.hidden} onchange={(e) => (settings.qualities![k.kind][i].hidden = !e.currentTarget.checked)} data-testid="q-shown-{k.kind}-{l.id}" /><span class="sw" aria-hidden="true"></span><span>{t('settings.requests.choiceShown')}</span></label>
-							</div>
-						</Field>
-					{/each}
+					<div class="q-group">
+						<h3 class="q-kind">{k.title}</h3>
+						<QualityLines bind:lines={settings.qualities[k.kind]} kind={k.kind} rules={k.rules} hint={(l) => lineHint(l, k.plain, k.fourK)} />
+					</div>
 				{/each}
 			</SettingsCard>
 		{/if}
@@ -264,7 +306,7 @@
 		</SettingsCard>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>
-	<SaveBar {dirty} form="wishlist-form" saving={busy} ondiscard={() => (settings = JSON.parse(saved))} />
+	<SaveBar {dirty} form="wishlist-form" saving={busy} ondiscard={() => ((settings = JSON.parse(saved)), (people = JSON.parse(savedPeople)))} />
 {/if}
 
 <style>
@@ -276,21 +318,17 @@
 		padding: 0;
 		margin: 0 0 var(--s-4);
 	}
+	/* One block per kind: its heading, its lines and its Add button, so the card draws one divider per kind, not one per line. */
+	.q-group {
+		display: grid;
+		gap: var(--s-2);
+		padding-block: var(--s-4);
+	}
 	.q-kind {
-		margin: var(--s-3) 0 0;
+		margin: 0;
 		font: var(--t-subhead);
 		font-weight: 600;
 		color: var(--text-muted);
-	}
-	.q-row {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--s-3);
-	}
-	.q-row .input {
-		flex: 1 1 120px;
-		min-width: 0;
 	}
 	.q-shown {
 		display: inline-flex;
@@ -299,6 +337,10 @@
 		min-height: 44px;
 		font: var(--t-callout);
 		white-space: nowrap;
+	}
+	.approve-row {
+		display: flex;
+		white-space: normal;
 	}
 	.kind-row {
 		display: grid;

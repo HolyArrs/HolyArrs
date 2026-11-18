@@ -51,11 +51,11 @@ export interface LifeFacts {
 export const STAGE_WEIGHT = { asked: 8, approved: 30, getting: 45, getting_end: 92, ready: 100 } as const;
 
 /** Places an ask on its line; `facts` adds what is known beyond its state. */
-export function lifecycle(a: Pick<Ask, 'state' | 'title_id'>, facts: LifeFacts = {}): Life {
+export function lifecycle(a: Pick<Ask, 'state' | 'title_id' | 'adding'>, facts: LifeFacts = {}): Life {
 	if (a.state === 'asked') return { stage: 'asked', pct: STAGE_WEIGHT.asked, tone: 'wait', status: 'waiting', label: t('requests.life.waiting') };
 	if (a.state === 'turned_down') return { stage: 'declined', pct: 100, tone: 'off', status: 'declined', label: t('requests.life.declined') };
 	if (a.state === 'available') return ready(facts);
-	if (!a.title_id) return failedLife(facts);
+	if (!a.title_id && !a.adding) return failedLife(facts);
 	const lo = STAGE_WEIGHT.getting;
 	const hi = STAGE_WEIGHT.getting_end;
 	const part = facts.partial;

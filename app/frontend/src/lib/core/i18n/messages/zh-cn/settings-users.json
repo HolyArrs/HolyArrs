@@ -83,6 +83,7 @@
 	"settings.users.preset": "预设",
 	"settings.users.comingSoon": "即将推出",
 	"settings.users.custom": "自定义",
+	"settings.users.customHint": "这是您自己设置的下方开关组合。选择预设会替换它；再次选择“自定义”即可恢复。",
 	"settings.users.ageRating": "年龄分级",
 	"settings.users.newPasswordFor": "{name} 的新密码",
 	"settings.users.passwordNote": "{name} 忘记密码时使用。对方会在所有设备退出登录，并用新密码重新登录。请当面告知对方。",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "例如 妈妈",
 	"settings.users.days": "链接有效天数",
 	"settings.users.makeInvite": "创建邀请链接",
-	"settings.users.permAuto4k": "4K 请求无需等待即获批准"
+	"settings.users.permAuto4k": "4K 请求无需等待即获批准",
+	"settings.users.serverAccount": "服务器账户",
+	"settings.users.pickAccount": "选择媒体服务器上的账户",
+	"settings.users.accountLinked": "已关联 {name}",
+	"settings.users.removedOnServer": "已在 {word} 服务器上删除，因此在此关闭",
+	"settings.users.delete": "删除",
+	"settings.users.deleteName": "删除 {name}",
+	"settings.users.confirmDelete": "删除 {name}？此人会被永久退出登录，密钥也会删除。其请求会保留，显示为已删除的人。",
+	"settings.users.deleteYes": "删除此人",
+	"settings.users.keep": "保留",
+	"settings.users.deleted": "已删除 {name}",
+	"settings.users.couldntDelete": "无法删除",
+	"settings.users.confirmDeleteKeys": "此人创建的 Seerr 密钥会对所有人失效，直到创建新的密钥。",
+	"settings.users.qualities": "画质",
+	"settings.users.qualitiesHint": "只能选择已开启的。全部开启时，新加的也会提供。"
 }

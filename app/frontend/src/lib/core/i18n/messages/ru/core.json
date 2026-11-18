@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Разрешите ИИ-помощникам использовать HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Ключи и маршруты для других приложений",
+	"core.settings.remoteAccess.label": "Удалённый доступ",
+	"core.settings.remoteAccess.about": "Доступ к HolyArrs вне дома",
 	"core.settings.tmdb.label": "Метаданные",
 	"core.settings.tmdb.about": "Откуда берутся постеры и названия",
 	"core.settings.health.label": "Проверки исправности",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Пароль, двухфакторная защита, устройства",
 	"core.api.sourceOff": "Некоторые ряды выключены в этой установке.",
 	"core.plain.noDownloader": "Ваши источники находят загрузки, которые не может принять ни один ваш загрузчик, поэтому ничего нельзя отправить.",
-	"core.plain.sameDownloader": "Два загрузчика ведут к одному приложению загрузки, поэтому загрузки могут показываться дважды."
+	"core.plain.sameDownloader": "Два загрузчика ведут к одному приложению загрузки, поэтому загрузки могут показываться дважды.",
+	"core.plain.peopleCheck": "Не удаётся прочитать список пользователей медиасервера, поэтому удалённые там здесь не отключаются.",
+	"core.plain.deleted": "удалён",
+	"core.plain.deletedName": "{name} (удалён)"
 }

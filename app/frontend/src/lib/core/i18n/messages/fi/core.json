@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Anna tekoälyavustajien käyttää HolyArrsia",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Avaimet ja reitit muille sovelluksille",
+	"core.settings.remoteAccess.label": "Etäkäyttö",
+	"core.settings.remoteAccess.about": "Käytä HolyArrsia kodin ulkopuolelta",
 	"core.settings.tmdb.label": "Metatiedot",
 	"core.settings.tmdb.about": "Mistä julisteet ja nimet tulevat",
 	"core.settings.health.label": "Kuntotarkistukset",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Yhdellä lataajalla ei ole tallennuskansiota, joten HolyArrs ei voi tuoda sen valmiita latauksia.",
 	"core.api.sourceOff": "Jotkin rivit ovat pois päältä tässä asennuksessa.",
 	"core.plain.noDownloader": "Lähteesi löytävät latauksia, joita mikään lataajistasi ei voi ottaa vastaan, joten mitään ei voi lähettää.",
-	"core.plain.sameDownloader": "Kaksi lataajaa yltää samaan lataussovellukseen, joten lataukset voivat näkyä kahdesti."
+	"core.plain.sameDownloader": "Kaksi lataajaa yltää samaan lataussovellukseen, joten lataukset voivat näkyä kahdesti.",
+	"core.plain.peopleCheck": "Mediapalvelimen käyttäjäluetteloa ei voi lukea, joten sieltä poistettuja ei poisteta täällä käytöstä.",
+	"core.plain.deleted": "poistettu",
+	"core.plain.deletedName": "{name} (poistettu)"
 }

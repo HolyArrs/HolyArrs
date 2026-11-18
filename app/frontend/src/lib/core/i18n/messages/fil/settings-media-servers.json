@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Path ng HolyArrs",
 	"settings.mediaServers.pathTo": "Parehong folder sa server",
 	"settings.mediaServers.pathHint": "Kung iba lang ang path na nakikita ng server sa mga file mo",
+	"settings.mediaServers.webUrl": "Address para sa mga browser",
+	"settings.mediaServers.webUrlHint": "Ang address kung saan binubuksan ng lahat ang server sa phone o computer. Nagdadagdag ng Buksan na button sa mga pahina ng title na meron ito. Iwanang blangko kung ayaw ng button.",
 	"settings.mediaServers.local": "Abutin ang local network",
 	"settings.mediaServers.send": "Magpadala ng mga update",
 	"settings.mediaServers.save": "I-save",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "I-off ang kasaysayan ng panonood? Mabubura ang lahat ng nabasa hanggang ngayon.",
 	"settings.mediaServers.watchTurnedOn": "Naka-on ang kasaysayan ng panonood. Ang unang pagbasa ay gagawin sa loob ng 30 minuto.",
 	"settings.mediaServers.watchTurnedOff": "Naka-off ang kasaysayan ng panonood",
-	"settings.mediaServers.watchFailed": "Hindi mapalitan ang kasaysayan ng panonood"
+	"settings.mediaServers.watchFailed": "Hindi mapalitan ang kasaysayan ng panonood",
+	"settings.mediaServers.labelTitle": "Mga label sa Plex",
+	"settings.mediaServers.labelSwitch": "Lagyan ng label ang mga hiniling na title",
+	"settings.mediaServers.labelHint": "Kapag nasa Plex na ang hiniling na pelikula o palabas, nilalagyan ito ng HolyArrs ng label para makapag-filter, makagawa ng koleksyon o makapag-share ka gamit ito sa Plex. Mananatili ang mga dating label.",
+	"settings.mediaServers.labelText": "Label",
+	"settings.mediaServers.labelAskers": "Idagdag din bilang label ang pangalan ng humiling",
+	"settings.mediaServers.labelSaved": "Na-save ang mga label sa Plex",
+	"settings.mediaServers.labelFailed": "Hindi ma-save ang mga label sa Plex",
+	"settings.mediaServers.labelExisting": "Lagyan ng label ang mga dati nang hiniling na title",
+	"settings.mediaServers.labelExistingStarted": "Nagsimula na ang paglalagay ng label. Magkakaroon ng label ang mga title sa loob ng ilang minuto.",
+	"settings.mediaServers.labelExistingFailed": "Hindi masimulan ang paglalagay ng label"
 }

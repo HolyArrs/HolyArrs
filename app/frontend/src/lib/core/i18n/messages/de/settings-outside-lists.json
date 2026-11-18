@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Deine Trakt-Listen können erst gelesen werden, wenn er festgelegt ist.",
 	"settings.outsideLists.replaceKey": "Den Trakt-Schlüssel ersetzen",
 	"settings.outsideLists.pasteKey": "Trakt-Schlüssel einfügen",
+	"settings.outsideLists.mdblistKey": "MDBList-Schlüssel",
+	"settings.outsideLists.mdblistInfo": "Optional. Mit deinem MDBList-API-Schlüssel werden MDBList-Listen über die MDBList-API gelesen, ohne ihn über ihren öffentlichen Link. Er wird verschlüsselt gespeichert und ist derselbe Schlüssel, den externe Bewertungen im Modus „Eigene Schlüssel“ nutzen.",
+	"settings.outsideLists.pasteMdblistKey": "Deinen MDBList-API-Schlüssel einfügen",
+	"settings.outsideLists.replaceMdblistKey": "Den MDBList-Schlüssel ersetzen",
+	"settings.outsideLists.removeMdblistKey": "Den Schlüssel entfernen",
+	"settings.outsideLists.mdblistKeySaved": "MDBList-Schlüssel gespeichert",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList-Schlüssel entfernt; Listen nutzen ihren öffentlichen Link",
 	"settings.outsideLists.replaceVip": "Das VIP-Zugriffstoken ersetzen",
 	"settings.outsideLists.vip": "VIP-Zugriffstoken (optional)",
 	"settings.outsideLists.vipHint": "Fügt Titelseiten einen Trakt-Tab hinzu: Bewertung, Zuschauer und Kommentare",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Zur Nie-hinzufügen-Liste hinzufügen",
 	"settings.outsideLists.showDot": "Serie ·",
 	"settings.outsideLists.takeOff": "{name} entfernen",
-	"settings.outsideLists.empty": "Leer"
+	"settings.outsideLists.empty": "Noch nichts auf dieser Liste"
 }

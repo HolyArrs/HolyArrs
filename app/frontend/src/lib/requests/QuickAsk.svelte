@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
-	import { cardAction, cardTmdb, liveCard, type ExploreCard } from '#lib/ui/title-cards.ts';
+	import { cardAction, cardTmdb, liveCard, liveCards, type ExploreCard } from '#lib/ui/title-cards.ts';
 	import AddMovieDialog from './AddMovieDialog.svelte';
 	import AddShowDialog from './AddShowDialog.svelte';
 	import AskShowDialog from './AskShowDialog.svelte';
 	import AskMovieDialog from './AskMovieDialog.svelte';
+	import AskAllSheet from './AskAllSheet.svelte';
+	import { lineNews, loadChoices, type AskAllLine } from './ask-all.ts';
 	import { loadDetails } from '../metadata/index.ts';
 	import { seasonWords } from '../shows/index.ts';
 	import { savedDefaults } from '../mediafiles/index.ts';
@@ -27,6 +29,8 @@
 
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
+	let foldersLoaded = $state(false);
+	let choicesFailed = $state(false);
 	let gateDefault = $state('released');
 	let showDefaults = $state<ShowSettings | null>(null);
 	let addMovie: ReturnType<typeof AddMovieDialog> | undefined = $state();
@@ -36,6 +40,9 @@
 	/** Cards asked for (with the ask state returned) or found in the Library here, by card key. */
 	let askedHere = $state(new Map<string, { ask?: AskState; titleId?: number }>());
 	let asking = $state('');
+	let askAllSheet: ReturnType<typeof AskAllSheet> | undefined = $state();
+	/** Told of each movie a Request all asks for or puts in the Library, besides the cards here. */
+	let askedMovie: ((tmdb: string, news: { ask?: Ask; titleId?: number }) => void) | undefined;
 	/** Which card the sheet is for, so the card updates once it is asked or added. */
 	let current: ExploreCard | null = null;
 
@@ -52,6 +59,21 @@
 	/** The Library folders and Pick rules the add sheets offer, for other add sheets on the page (music). */
 	export function addChoices(): { folders: LibraryFolder[]; rules: PickRulesView[] } {
 		return { folders, rules };
+	}
+
+	/** Opens Request all (Add all for people who manage the Library) for a series' movies; each one asked for or added is also handed to `each`. */
+	export function askAll(seriesName: string, cards: ExploreCard[], each?: (tmdb: string, news: { ask?: Ask; titleId?: number }) => void, fresh?: () => Promise<ExploreCard[]>) {
+		askedMovie = each;
+		if (manage && (!foldersLoaded || !rules.length)) loadAddChoices();
+		askAllSheet?.open(seriesName, liveCards(cards, live), manage, fresh?.());
+	}
+
+	/** A movie Request all asked for or found in the Library: its card reads so from now on. */
+	function allLine(l: AskAllLine) {
+		const news = lineNews(l);
+		if (!news) return;
+		askedHere = new Map([...askedHere, [l.card.key, news.titleId !== undefined ? { titleId: news.titleId } : { ask: news.ask?.state }]]);
+		askedMovie?.(news.tmdb, news);
 	}
 
 	/** Whether this card's sheet is loading. */
@@ -121,10 +143,18 @@
 		onadded?.(title);
 	}
 
+	/** The Library folders and Pick rules the add sheets offer. Asked for again when Add all opens without them, so a failed load is not a dead end. */
+	const choicesLoad = loadChoices((f) => (choicesFailed = f));
+	function loadAddChoices() {
+		choicesLoad([
+			api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => { folders = r.library_folders; foldersLoaded = true; }),
+			api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules))
+		]);
+	}
+
 	$effect(() => {
 		if (!manage) return;
-		api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
-		api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
+		loadAddChoices();
 		api.get<GateDefaults>('/settings/release-gate').then((r) => (gateDefault = r.release_gate)).catch(() => {});
 		api.get<ShowSettings>('/settings/shows').then((r) => (showDefaults = r)).catch(() => {});
 		// The add dialogs wait for the saved defaults, fetched once per visit.
@@ -136,7 +166,9 @@
 {#if manage}
 	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, title) => added(title)} />
 	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, title) => added(title)} />
+	<AskAllSheet bind:this={askAllSheet} online={allLine} {folders} {rules} {gateDefault} loaded={foldersLoaded} failed={choicesFailed} onretry={loadAddChoices} />
 {:else if mayAsk}
+	<AskAllSheet bind:this={askAllSheet} online={allLine} />
 	<AskMovieDialog bind:this={askMovie} onasked={(_m, r) => asked(r, r.ask.name)} onrefused={(_m, body) => refused(body)} />
 	<AskShowDialog bind:this={askShow} onasked={(_s: LookupShow, r) => asked(r, `${r.ask.name} (${seasonWords(r.ask.seasons)})`)} onrefused={(_s: LookupShow, body: Record<string, unknown>) => refused(body)} />
 {/if}

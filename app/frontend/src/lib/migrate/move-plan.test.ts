@@ -173,6 +173,14 @@ describe('createMovePlan', () => {
 		expect(ctx.trying).toBe(false);
 	});
 
+	it('on the Choose step a new plan runs the test run too, so a show to check is marked before Import', async () => {
+		req.mockResolvedValueOnce({ plan: { n: 1 }, suggested_path_rules: [] }).mockResolvedValueOnce({ report: { lines: [{ key: 't1', attention: 'seasons' }] }, plan_hash: 'h' });
+		const ctx = ctxOf({ step: 'choose' });
+		await createMovePlan(ctx).makePlan();
+		await vi.waitFor(() => expect(ctx.dry?.lines[0].attention).toBe('seasons'));
+		expect((req.mock.calls[1] as any)[0]).toBe('/migrate/dry-run');
+	});
+
 	it('a failed test run says so', async () => {
 		req.mockRejectedValueOnce(new Error('nope'));
 		const ctx = ctxOf({ plan: { n: 1 } });

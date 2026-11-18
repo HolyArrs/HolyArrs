@@ -82,6 +82,11 @@ func (fr fakeRules) fakeFileOf(path string, music bool, minutes int, relName str
 	if size < least {
 		return fmt.Sprintf("the file is %s, too small to be the full video; likely a fake", sizeText(size)), nil
 	}
+	if why, err := mediafiles.Truncated(path); err != nil {
+		return "", err
+	} else if why != "" {
+		return why, nil
+	}
 	if oldContainer[ext] && relName != "" {
 		if r := releasename.Parse(relName, releasename.Hints{}).Resolution; r.Value >= 720 {
 			return fmt.Sprintf("a %s file where the Release said %dp; likely a fake", ext, r.Value), nil
@@ -110,11 +115,11 @@ func (fr fakeRules) claimMismatch(claimed int64, cands []Candidate) string {
 }
 
 func unreadable(err error) string {
-	why := "could not read the file to check it"
+	why := unreadCheckWhy
 	if os.IsNotExist(err) {
-		why = "the file is not in the download folder any more"
+		why = notInFolderWhy
 	} else if os.IsPermission(err) {
-		why = "HolyArrs may not read the file (permissions)"
+		why = noReadCheckWhy
 	}
 	return why
 }

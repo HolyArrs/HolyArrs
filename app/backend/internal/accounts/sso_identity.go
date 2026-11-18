@@ -89,11 +89,7 @@ func (a *Auth) ssoIdentity(ctx context.Context, kind, issuer, subject, display s
 			if !join {
 				return errNotAllowed
 			}
-			base := strings.TrimSpace(display)
-			if !ssoText(base, 200) {
-				base = kind + "-user"
-			}
-			base = truncate(base, 50)
+			base := NewPersonName(display, kind+"-user", 50)
 			for n := 1; ; n++ {
 				name = base
 				if n > 1 {

@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "Čeka: {n}",
 	"frame.nav.new": "Novo: {n}",
 	"frame.nav.manage": "Upravljanje",
+	"frame.nav.activity": "Aktivnost",
+	"frame.nav.system": "Sustav",
 	"frame.nav.history": "Povijest",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Postavke",
+	"frame.nav.plugins": "Dodaci",
 	"frame.nav.goTo": "Idi na",
 	"frame.nav.active": "Aktivno: {n}, {percent}%",
 	"frame.nav.decide": "Odluku čeka: {n}",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Sustav",
 	"frame.layout.switch": "Zamijeni račun",
 	"frame.layout.signOut": "Odjava",
+	"frame.layout.support": "Podržite HolyArrs",
 	"frame.layout.signOutFail": "Odjava se nije mogla potvrditi",
 	"frame.layout.signedOut": "Odjavljen",
 	"frame.layout.accountMenu": "{name}, {role}: račun i izgled",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs pokušava ponovno sam",
 	"frame.feeds.clearNow": "Očisti sada",
 	"frame.feeds.cleared": "Očišćeno iz Preuzimatelja",
-	"frame.feeds.clearStill": "Još nije očišćeno"
+	"frame.feeds.clearStill": "Još nije očišćeno",
+	"frame.error.pageGone": "Ova stranica ne postoji. Poveznica je možda stara ili pogrešno upisana."
 }

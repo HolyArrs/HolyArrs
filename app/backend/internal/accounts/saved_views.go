@@ -20,7 +20,8 @@ import (
 const viewValueMax = 256
 
 // viewNames are the picks a page may save: the Library view per kind, the
-// Import a library view, and the Calendar's view and follows.
+// Import a library view, the Calendar's view and follows, and the Plugins
+// page's view and sort.
 var viewNames = map[string]bool{
 	"library.view.all":    true,
 	"library.view.movie":  true,
@@ -29,6 +30,8 @@ var viewNames = map[string]bool{
 	"library.import.view": true,
 	"calendar.view":       true,
 	"calendar.follows":    true,
+	"plugins.view":        true,
+	"plugins.sort":        true,
 }
 
 func (a *Auth) savedViewRoutes(m *http.ServeMux) {

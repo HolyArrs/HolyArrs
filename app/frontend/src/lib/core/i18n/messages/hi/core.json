@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "AI असिस्टेंट को HolyArrs इस्तेमाल करने दें",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "दूसरे ऐप के लिए कुंजियाँ और रूट",
+	"core.settings.remoteAccess.label": "रिमोट एक्सेस",
+	"core.settings.remoteAccess.about": "घर से बाहर HolyArrs तक पहुँचें",
 	"core.settings.tmdb.label": "मेटाडेटा",
 	"core.settings.tmdb.about": "पोस्टर और नाम कहाँ से आते हैं",
 	"core.settings.health.label": "हेल्थ जाँच",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "पासवर्ड, टू-फ़ैक्टर, डिवाइस",
 	"core.api.sourceOff": "इस इंस्टॉल पर कुछ पंक्तियाँ बंद हैं।",
 	"core.plain.noDownloader": "आपके सोर्स ऐसे डाउनलोड ढूँढते हैं जिन्हें आपका कोई डाउनलोडर नहीं ले सकता, इसलिए कोई भी भेजा नहीं जा सकता।",
-	"core.plain.sameDownloader": "दो डाउनलोडर एक ही डाउनलोड ऐप तक पहुँचते हैं, इसलिए डाउनलोड दो बार दिख सकते हैं।"
+	"core.plain.sameDownloader": "दो डाउनलोडर एक ही डाउनलोड ऐप तक पहुँचते हैं, इसलिए डाउनलोड दो बार दिख सकते हैं।",
+	"core.plain.peopleCheck": "मीडिया सर्वर की उपयोगकर्ता सूची पढ़ी नहीं जा सकती, इसलिए वहाँ हटाए गए लोग यहाँ बंद नहीं होते।",
+	"core.plain.deleted": "हटाया गया",
+	"core.plain.deletedName": "{name} (हटाया गया)"
 }

@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Језик није сачуван",
 	"accounts.language.count.one": "1 језик",
 	"accounts.language.count.other": "Језика: {n}",
-	"accounts.account.watchEveryone": "Власник је ово укључио за све. Искључи оба да зауставиш."
+	"accounts.account.watchEveryone": "Власник је ово укључио за све. Искључи оба да зауставиш.",
+	"accounts.watch.title": "Ознаке гледања",
+	"accounts.watch.hint": "Повежите овде свој налог на медијском серверу да би Библиотека показивала шта сте гледали.",
+	"accounts.watch.as": "{server}, као {name}",
+	"accounts.watch.nameOn": "Име на {server}",
+	"accounts.watch.passwordOnce": "Ваша лозинка иде само на {server} и не чува се.",
+	"accounts.watch.linked": "Повезано са {name} на {server}",
+	"accounts.watch.unlinked": "Веза уклоњена",
+	"accounts.login.importPaused": "Пријава ти је истекла, па је увоз паузиран. Пријави се, отвори Увези библиотеку и притисни Скенирај за наставак."
 }

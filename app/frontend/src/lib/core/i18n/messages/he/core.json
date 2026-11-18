@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "לאפשר לעוזרי AI להשתמש ב־HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "מפתחות ונתיבים לאפליקציות אחרות",
+	"core.settings.remoteAccess.label": "גישה מרחוק",
+	"core.settings.remoteAccess.about": "גישה ל-HolyArrs מחוץ לבית",
 	"core.settings.tmdb.label": "מטא־דאטה",
 	"core.settings.tmdb.about": "מאיפה מגיעים הפוסטרים והשמות",
 	"core.settings.health.label": "בדיקות תקינות",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "לאחד המורידים אין תיקיית שמירה, ולכן HolyArrs לא יכול לייבא את ההורדות שהסתיימו שלו.",
 	"core.api.sourceOff": "חלק מהשורות כבויות בהתקנה הזו.",
 	"core.plain.noDownloader": "המקורות שלך מוצאים הורדות שאף אחד מהמורידים שלך לא יכול לקבל, ולכן אי אפשר לשלוח אף אחת.",
-	"core.plain.sameDownloader": "שני מורידים מגיעים לאותה אפליקציית הורדות, לכן הורדות עלולות להופיע פעמיים."
+	"core.plain.sameDownloader": "שני מורידים מגיעים לאותה אפליקציית הורדות, לכן הורדות עלולות להופיע פעמיים.",
+	"core.plain.peopleCheck": "לא ניתן לקרוא את רשימת המשתמשים של שרת המדיה, ולכן מי שהוסר שם לא מכובה כאן.",
+	"core.plain.deleted": "נמחק",
+	"core.plain.deletedName": "{name} (נמחק)"
 }

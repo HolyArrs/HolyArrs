@@ -2,6 +2,8 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import { press } from '#lib/core/motion.ts';
+	import Popover from '#lib/ui/Popover.svelte';
+	import type { Snippet } from 'svelte';
 
 	// One sidebar row. Collapsed, the label fades out but stays the accessible name, and a tooltip shows it on hover or focus.
 	let {
@@ -17,7 +19,8 @@
 		kbd,
 		onclick,
 		testid,
-		badgeTestid
+		badgeTestid,
+		dotPanel
 	}: {
 		href?: string;
 		label: string;
@@ -35,7 +38,12 @@
 		testid?: string;
 		/** Test id on the count bubble itself. */
 		badgeTestid?: string;
+		/** With the dot: the dot becomes a button that opens this list of what lit it (expanded menu only). */
+		dotPanel?: Snippet<[() => void]>;
 	} = $props();
+	const dotButton = $derived(dot && !(badge > 0) && !collapsed && !!dotPanel);
+	let dotOpen = $state(false);
+	let rowEl = $state<HTMLElement>();
 
 	let tip = $state<{ x: number; y: number } | null>(null);
 	let timer: ReturnType<typeof setTimeout> | undefined;
@@ -62,13 +70,21 @@
 	</span>
 	<span class="label">{label}</span>
 	{#if kbd}<kbd class="label" aria-hidden="true">{kbd}</kbd>{/if}
-	{#if dot && !(badge > 0)}<span class="flag" title={t('frame.sidebar.needsAttention')} aria-hidden="true" data-testid="nav-flag"></span>{/if}
+	{#if dot && !(badge > 0) && !dotButton}<span class="flag" title={t('frame.sidebar.needsAttention')} aria-hidden="true" data-testid="nav-flag"></span>{/if}
 	{#if badge > 0}<b class="count" aria-hidden="true" data-testid={badgeTestid}>{badge > 99 ? '99+' : badge}</b>{/if}
 {/snippet}
 {#if href}
-	<a class="ui-sbi" class:current {href} aria-current={current ? 'page' : undefined} aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</a>
+	<a bind:this={rowEl} class="ui-sbi" class:current {href} aria-current={current ? 'page' : undefined} aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</a>
 {:else}
-	<button class="ui-sbi" class:current type="button" aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</button>
+	<button bind:this={rowEl} class="ui-sbi" class:current type="button" aria-label={collapsed || badge > 0 || dot ? name : undefined} data-testid={testid} {onclick} onpointerenter={show} onpointerleave={hide} onfocus={show} onblur={hide} use:press={'row'}>{@render body()}</button>
+{/if}
+{#if dotButton && dotPanel}
+	<span class="flag-pop">
+		<Popover label={t('alerts.dot.show')} portal width={320} beside={() => rowEl} bind:open={dotOpen}>
+			{#snippet trigger()}<span class="flag" data-testid="nav-flag"></span>{/snippet}
+			{#snippet children(close)}{@render dotPanel(close)}{/snippet}
+		</Popover>
+	</span>
 {/if}
 {#if tip}<span class="tip" role="presentation" style="left: {tip.x}px; top: {tip.y}px">{label}</span>{/if}
 
@@ -89,12 +105,16 @@
 	.current .ic { color: var(--accent); }
 	.label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; transition: opacity var(--dur-fast) var(--ease-out) var(--label-delay, 0ms); }
 	kbd.label { flex: none; color: var(--text-muted); font: var(--t-footnote); }
-	.count { min-width: 22px; height: 20px; padding: 0 7px; display: grid; place-items: center; flex: none; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; transition: opacity var(--dur-fast) var(--ease-out); }
+	.count { min-width: 22px; box-shadow: inset 0 0 0 1px var(--line); height: 20px; padding: 0 7px; display: grid; place-items: center; flex: none; border-radius: 999px; background: var(--surface-3); color: var(--text); font: 600 12px/1 var(--font-ui); font-variant-numeric: tabular-nums; transition: opacity var(--dur-fast) var(--ease-out); }
 	.flag { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--fail); }
 	:global(.ui-sidebar.collapsed) .ui-sbi .flag { position: absolute; top: 6px; inset-inline-end: 8px; }
-	.current .count { background: var(--surface-1); }
 	:global(.ui-sidebar.collapsed) .ui-sbi .label { opacity: 0; }
 	:global(.ui-sidebar.collapsed) .ui-sbi .count { position: absolute; top: 1px; inset-inline: auto 1px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; background: var(--accent-fill); color: var(--text-on-red); }
+	/* The dot as a button: a 44px target over the end of the row, outside the link. */
+	.flag-pop { position: absolute; z-index: 2; inset-inline-end: 0; top: 50%; translate: 0 -50%; }
+	.flag-pop :global(.trigger) { width: 44px; height: 44px; justify-content: center; border-radius: 9px; }
+	.flag-pop :global(.trigger:hover) { background: color-mix(in srgb, var(--surface-3) 70%, transparent); }
+	.flag-pop .flag { width: 9px; height: 9px; }
 	.tip { position: fixed; z-index: 80; translate: 0 -50%; padding: 5px 9px; border-radius: 7px; background: var(--text); color: var(--bg); font: var(--t-footnote); white-space: nowrap; pointer-events: none; box-shadow: var(--shadow-lift); }
 	@media (pointer: coarse) { .ui-sbi { min-height: 44px; } }
 </style>

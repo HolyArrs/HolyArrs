@@ -57,6 +57,9 @@ type Caller struct {
 	// Scopes are an API key's scopes; empty for a session, which holds every
 	// scope.
 	Scopes []string
+	// MCPGroups are the tick boxes of an AI (mcp) key: the groups of
+	// internal/ai/mcpkeys its tools may use. Empty for anything else.
+	MCPGroups []string
 	// MaxRating is a Kid's age-rating limit ("" for no limit) and
 	// RatingCountry the country whose ratings apply. Both are read from the
 	// users row on every request, so a changed limit holds at once.

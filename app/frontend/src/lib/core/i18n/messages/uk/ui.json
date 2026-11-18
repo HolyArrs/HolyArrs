@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Перемога: {name}",
 	"ui.wikiFacts.nominated": "Номінація: {name}",
 	"ui.wikiFacts.andMore": "і ще {count}",
-	"ui.pageLoader.loading": "Завантаження"
+	"ui.pageLoader.loading": "Завантаження",
+	"ui.connectHelp.link": "Як виправити",
+	"ui.ask.remove": "Вилучити",
+	"ui.ask.restore": "Відновити",
+	"ui.ask.stop": "Зупинити",
+	"ui.ask.revoke": "Відкликати",
+	"ui.ask.replace": "Замінити",
+	"ui.ask.unlink": "Від'єднати",
+	"ui.ask.turnOff": "Вимкнути",
+	"ui.ask.markFailed": "Позначити як невдале",
+	"ui.ask.reset": "Скинути",
+	"ui.ask.import": "Імпортувати"
 }

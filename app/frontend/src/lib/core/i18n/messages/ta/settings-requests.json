@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "மக்களுக்குக் காட்டு",
 	"settings.requests.choiceMain": "{rules} · தலைப்பின் முதன்மைப் பிரதி",
 	"settings.requests.choiceOwn": "{rules} · தனிப் பிரதியாக வைக்கப்படும்",
-	"settings.requests.choiceNotReady": "மேலே 4K தரம் அமைக்கப்பட்டதும் வழங்கப்படும்"
+	"settings.requests.choiceNotReady": "மேலே 4K தரம் அமைக்கப்பட்டதும் வழங்கப்படும்",
+	"settings.requests.approvals": "ஒப்புதல்கள்",
+	"settings.requests.autoApprove": "கோரிக்கைகளைத் தானாக ஒப்புக்கொள்",
+	"settings.requests.autoApproveNote": "அணைப்பு = அவர்களின் கோரிக்கைகள் உங்களுக்காகக் காத்திருக்கும். Plex பார்வைப் பட்டியல் தலைப்புகளும் இதே சுவிட்சைப் பின்பற்றும்.",
+	"settings.requests.ownerTag": "உரிமையாளர்",
+	"settings.requests.choiceAdd": "தரத்தைச் சேர்",
+	"settings.requests.choiceNew": "புதிய தரம்",
+	"settings.requests.choiceLabel": "உங்கள் பெயர்",
+	"settings.requests.choiceSeen": "மற்றவர்கள் பார்ப்பது"
 }

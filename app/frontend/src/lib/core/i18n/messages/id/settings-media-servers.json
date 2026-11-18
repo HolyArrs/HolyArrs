@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Path HolyArrs",
 	"settings.mediaServers.pathTo": "Folder yang sama di server",
 	"settings.mediaServers.pathHint": "Hanya jika server melihat file kamu di path lain",
+	"settings.mediaServers.webUrl": "Alamat untuk browser",
+	"settings.mediaServers.webUrlHint": "Alamat tempat semua orang membuka server di ponsel atau komputer. Menambahkan tombol Buka ke halaman judul yang dimilikinya. Biarkan kosong jika tidak ingin ada tombol.",
 	"settings.mediaServers.local": "Jangkau jaringan lokal",
 	"settings.mediaServers.send": "Kirim pembaruan",
 	"settings.mediaServers.save": "Simpan",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Matikan riwayat tontonan? Semua yang sudah dibaca sejauh ini dihapus.",
 	"settings.mediaServers.watchTurnedOn": "Riwayat tontonan menyala. Pembacaan pertama dilakukan dalam 30 menit.",
 	"settings.mediaServers.watchTurnedOff": "Riwayat tontonan mati",
-	"settings.mediaServers.watchFailed": "Tidak bisa mengubah riwayat tontonan"
+	"settings.mediaServers.watchFailed": "Tidak bisa mengubah riwayat tontonan",
+	"settings.mediaServers.labelTitle": "Label Plex",
+	"settings.mediaServers.labelSwitch": "Beri label pada judul yang diminta",
+	"settings.mediaServers.labelHint": "Saat film atau acara yang diminta ada di Plex, HolyArrs menambahkan label padanya agar Anda bisa memfilter, membuat koleksi, atau berbagi dengannya di Plex. Label yang sudah ada tetap.",
+	"settings.mediaServers.labelText": "Label",
+	"settings.mediaServers.labelAskers": "Tambahkan juga nama peminta sebagai label",
+	"settings.mediaServers.labelSaved": "Label Plex disimpan",
+	"settings.mediaServers.labelFailed": "Tidak bisa menyimpan label Plex",
+	"settings.mediaServers.labelExisting": "Beri label pada judul yang sudah diminta",
+	"settings.mediaServers.labelExistingStarted": "Pemberian label dimulai. Judul mendapat labelnya dalam beberapa menit.",
+	"settings.mediaServers.labelExistingFailed": "Tidak bisa memulai pemberian label"
 }

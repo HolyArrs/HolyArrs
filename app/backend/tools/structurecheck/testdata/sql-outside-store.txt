@@ -1,11 +1,13 @@
 app/backend/cmd/holyarrs/main.go
 app/backend/cmd/holyarrs/wire_health.go
+app/backend/internal/accounts/store_delete_person.go
 app/backend/internal/alerts/events.go
 app/backend/internal/alerts/music.go
 app/backend/internal/alerts/service.go
 app/backend/internal/alerts/shows.go
 app/backend/internal/core/jobs/jobs.go
 app/backend/internal/core/jobs/schedule.go
+app/backend/internal/core/parts/control.go
 app/backend/internal/core/secrets/secrets.go
 app/backend/internal/discover/calendar.go
 app/backend/internal/discover/cardart.go
@@ -121,7 +123,6 @@ app/backend/internal/music/music.go
 app/backend/internal/music/pages.go
 app/backend/internal/music/pages_album.go
 app/backend/internal/music/search.go
-app/backend/internal/core/parts/control.go
 app/backend/internal/requests/owner_name.go
 app/backend/internal/requests/store_ask.go
 app/backend/internal/requests/store_ask_episodes.go

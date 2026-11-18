@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n}টি অপেক্ষায়",
 	"frame.nav.new": "{n}টি নতুন",
 	"frame.nav.manage": "পরিচালনা",
+	"frame.nav.activity": "কার্যকলাপ",
+	"frame.nav.system": "সিস্টেম",
 	"frame.nav.history": "হিস্ট্রি",
 	"frame.nav.status": "স্ট্যাটাস",
 	"frame.nav.settings": "সেটিংস",
+	"frame.nav.plugins": "প্লাগইন",
 	"frame.nav.goTo": "যান",
 	"frame.nav.active": "{n}টি সক্রিয়, {percent}%",
 	"frame.nav.decide": "{n}টির সিদ্ধান্ত দরকার",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "সিস্টেম",
 	"frame.layout.switch": "অ্যাকাউন্ট বদলান",
 	"frame.layout.signOut": "সাইন আউট",
+	"frame.layout.support": "HolyArrs-কে সমর্থন করুন",
 	"frame.layout.signOutFail": "সাইন আউট নিশ্চিত করা যায়নি",
 	"frame.layout.signedOut": "সাইন আউট হয়েছে",
 	"frame.layout.accountMenu": "{name}, {role}: অ্যাকাউন্ট ও চেহারা",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs নিজেই আবার চেষ্টা করে",
 	"frame.feeds.clearNow": "এখনই মুছুন",
 	"frame.feeds.cleared": "ডাউনলোডার থেকে মোছা হয়েছে",
-	"frame.feeds.clearStill": "এখনও মোছা হয়নি"
+	"frame.feeds.clearStill": "এখনও মোছা হয়নি",
+	"frame.error.pageGone": "এই পেজটি নেই। লিংকটি পুরনো বা ভুল লেখা হতে পারে।"
 }

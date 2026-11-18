@@ -34,5 +34,6 @@
 	"settings.sourceDetail.what": "Τι",
 	"settings.sourceDetail.result": "Αποτέλεσμα",
 	"settings.sourceDetail.time": "Χρόνος",
-	"settings.sourceDetail.answeredCell": "Απαντήθηκε"
+	"settings.sourceDetail.answeredCell": "Απαντήθηκε",
+	"settings.sourceDetail.noTimes": "Καμία απάντηση ακόμη"
 }

@@ -11,6 +11,7 @@
 	import SettingsTile from '#lib/ui/SettingsTile.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { artGone } from './art-check.ts';
+	import { SvelteSet } from 'svelte/reactivity';
 	import Button from '#lib/ui/Button.svelte';
 	import type { IconName } from '#lib/ui/Icon.svelte';
 	import type { Tint } from '#lib/core/settings.ts';
@@ -43,8 +44,25 @@
 		uncheckedHealth: boolean;
 		health: Health | null;
 		picTile: Snippet<[{ c: HomeCard; label: string }, string, boolean]>;
+		tileArt: { pop: string[]; soon: string[]; week: { count: number; posters: string[] } };
 	};
-	let { overview, disk, admin, settled, attentionView, uncheckedParts, retrying, retry, approver, kid, uncheckedAsks, downloading, mineOpen, mineDeclined, fetchingAll, home, uncheckedDl, now, uncheckedHealth, health, picTile }: Props = $props();
+	let { overview, disk, admin, settled, attentionView, uncheckedParts, retrying, retry, approver, kid, uncheckedAsks, downloading, mineOpen, mineDeclined, fetchingAll, home, uncheckedDl, now, uncheckedHealth, health, picTile, tileArt }: Props = $props();
+	// Tile art: a picture that cannot load drops out and the next takes its place; with none left the tile keeps its plain sheet.
+	const badArt = new SvelteSet<string>();
+	const popArt = $derived(tileArt.pop.find((b) => !badArt.has(b)));
+	// The Calendar tile shows what is next in this Library; an empty Library borrows New & Popular's next releases.
+	const calArt = $derived.by(() => {
+		const own = (home?.soon ?? []).map((c) => c.poster).filter((p): p is string => !!p);
+		return (own.length ? own : tileArt.soon).filter((p) => !badArt.has(p)).slice(0, 3);
+	});
+	// Coming this week: what lands in this Library from now to seven days on; with nothing of its own, New & Popular's releases this week, so the tile is never empty. Both lists already keep to a Kid's limit.
+	const week = $derived.by(() => {
+		const until = now.getTime() + 7 * 86400000;
+		const own = (home?.soon ?? []).filter((c) => c.at && Date.parse(c.at) < until);
+		const mine = own.length > 0;
+		const posters = mine ? own.map((c) => c.poster).filter((p): p is string => !!p) : tileArt.week.posters;
+		return { mine, count: mine ? own.length : tileArt.week.count, posters: posters.filter((p) => !badArt.has(p)).slice(0, 3) };
+	});
 </script>
 
 {#if overview.showOverview}
@@ -181,6 +199,14 @@
 					<span class="num">{n(overview.recentNew)}</span>
 					<span class="sm">{overview.recentArrived.length && home?.new_seasons?.length ? t('home.arrivalsAndNewSeasons') : overview.recentArrived.length ? t('home.arrivedInTheLast') : home?.new_seasons?.length === 1 ? t('home.newSeasonOfA') : t('home.newSeasonsOfShows')}</span>
 				</a>
+			{:else if key === 'setup'}
+				<!-- Before setup: the Library's place says what it needs and opens that step; once only the first title is left, it opens Search. -->
+				{@const missing = attentionView.steps.find((s) => !s.done && s.href !== '/search')}
+				<a class="tile stat {cls}" href={to(missing?.href ?? '/search')} data-testid="home-setup-library">
+					{#if !missing || missing.href === '/settings/library-folders'}{@render head('library', 'indigo', t('home.library'))}{:else}{@render head('download', 'blue', t('home.downloads'))}{/if}
+					<span class="word">{missing ? t('home.notSetUpYet') : t('home.addYourFirstTitle')}</span>
+					<span class="sm">{missing ? missing.text : t('home.searchForSomethingNew')}</span>
+				</a>
 			{:else if key === 'explore'}
 				<a class="tile stat {cls}" href={to('/explore')}>
 					{@render head('compass', 'green', t('home.explore'))}
@@ -188,13 +214,28 @@
 					<span class="sm">{t('home.pickWhatToAsk')}</span>
 				</a>
 			{:else if key === 'popular'}
-				<a class="tile stat {cls}" href={to('/popular')}>
+				<a class="tile stat {cls}" class:art={!!popArt} href={to('/popular')}>
+					{#if popArt}<img class="bg" src={sized(popArt, cls === 'big' ? 'large' : 'backdrop')} alt="" decoding="async" use:artGone={() => badArt.add(popArt)} />{/if}
 					{@render head('star', 'pink', t('home.newPopular'))}
 					<span class="word">{t('home.whatSTrending')}</span>
 					<span class="sm">{t('home.top10sAndComing')}</span>
 				</a>
+			{:else if key === 'week'}
+				<a class="tile stat {cls}" href={to('/calendar')} data-testid="home-week">
+					{@render head('calendar', 'teal', t('home.comingThisWeek'))}
+					{#if !settled}
+						{@render wait()}
+					{:else}
+						<span class="wk">
+							<span class="num">{n(week.count)}<small>{t('home.thisWeek')}</small></span>
+							{#if week.posters.length}<span class="wk-pics" aria-hidden="true">{#each week.posters as p (p)}<img src={sized(p, 'poster', 80)} alt="" decoding="async" use:artGone={() => badArt.add(p)} />{/each}</span>{/if}
+						</span>
+						<span class="sm">{week.mine ? t('home.landingThisWeek') : t('home.popularThisWeek')}</span>
+					{/if}
+				</a>
 			{:else if key === 'calendar'}
-				<a class="tile stat {cls}" href={to('/calendar')}>
+				<a class="tile stat {cls}" class:art={calArt.length > 0} href={to('/calendar')}>
+					{#if calArt.length}<span class="bg posters" aria-hidden="true">{#each calArt as p (p)}<img src={sized(p, 'poster', 400)} alt="" decoding="async" use:artGone={() => badArt.add(p)} />{/each}</span>{/if}
 					{@render head('calendarDay', 'purple', t('home.calendar'))}
 					<span class="word">{t('home.whatSNext')}</span>
 					<span class="sm">{t('home.airDatesAndReleases')}</span>
@@ -316,9 +357,9 @@
 	/* The same sizes as Explore: 279px wide cards at a 1536px window, 5px gaps on wide rows, one 32px rhythm between blocks. The sheet colours live here so the tiles and the Welcome card share them. */
 	.home {
 		container: home / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); --poster-item: 168px; --home-gap: 32px; display: flex; flex-direction: column; gap: var(--home-gap); padding-bottom: 48px;
-		--sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f4f5f8, #151518);
-		--edge: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 6%));
-		--drop: 0 1px 2px light-dark(rgb(20 24 40 / 5%), rgb(0 0 0 / 40%)), 0 18px 32px -20px light-dark(rgb(20 24 40 / 30%), rgb(0 0 0 / 85%));
+		/* One flat card, as in Settings: the panel colour and a hairline, no gradient or long shadow. */ --sheet-a: var(--surface-1); --sheet-b: var(--surface-1);
+		--edge: 0 0 0 1px var(--line);
+		--drop: 0 0 #0000;
 		--well: light-dark(rgb(20 24 40 / 4%), rgb(255 255 255 / 5%));
 		--track: light-dark(rgb(20 24 40 / 9%), rgb(255 255 255 / 12%));
 	}
@@ -329,15 +370,14 @@
 	.bento.gone { position: absolute; inset: 0 0 auto; opacity: 0; translate: 0 6px; visibility: hidden; pointer-events: none; transition: opacity var(--dur) var(--ease-out), translate var(--dur) var(--ease-out), visibility 0s linear var(--dur); }
 	.bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 150px; grid-auto-flow: row dense; gap: 16px; }
 
-	/* The tile is the Requests card's sheet on its own: lit from above, a hairline, and one long soft shadow. A whisper of grain keeps the flat colour from looking printed. */
+	/* The tile is the flat Settings card: the panel colour and a hairline. */
 	.tile {
 		position: relative; isolation: isolate; min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 18px; border: 0; border-radius: 20px; overflow: hidden;
 		color: var(--text); text-align: start; font: inherit; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: var(--edge), var(--drop);
 		transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
 	}
-	.stat::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: .05; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 	a.tile, button.tile { cursor: pointer; }
-	a.tile:hover, button.tile:hover { transform: translateY(var(--lift)); box-shadow: var(--edge), 0 2px 4px light-dark(rgb(20 24 40 / 6%), rgb(0 0 0 / 40%)), 0 26px 40px -22px light-dark(rgb(20 24 40 / 38%), rgb(0 0 0 / 90%)); }
+	a.tile:hover, button.tile:hover { box-shadow: 0 0 0 1px var(--line-strong, var(--line)); }
 	a.tile:focus-visible, button.tile:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.tile.busy { opacity: .6; }
 	.tile.big { grid-column: span 2; grid-row: span 2; }
@@ -350,7 +390,7 @@
 	.num, .word { margin-top: auto; }
 	.num { font: 800 40px / 1 var(--font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.num small { margin-inline-start: 5px; font: 500 13px / 1 var(--font-ui); letter-spacing: 0; color: var(--text-muted); }
-	.word { font: 700 24px / 1.1 var(--font-display); letter-spacing: -0.025em; }
+	.word { font: 700 20px / 1.1 var(--font-display); letter-spacing: -0.025em; }
 	.sm { margin-top: 5px; font: var(--t-footnote); color: var(--text-muted); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
 	.stat > .num + .sm:not(:has(+ .sm)), .stat > .word + .sm:not(:has(+ .sm)) { min-height: 2.6em; }
 	/* Two lines that must both show: the row (cut with an ellipsis if long) and "and N more". */
@@ -374,11 +414,26 @@
 	.life.pips i.off { background: var(--track); }
 	.pic .sm { color: rgb(255 255 255 / 86%); font: 600 12px / 1.3 var(--font-ui); -webkit-line-clamp: 1; line-clamp: 1; }
 
+	/* A count tile with art: the picture fills the sheet and a dark fade from the foot keeps the words white and readable, in both themes. */
+	.tile.art { color: #fff; background: #17181d; }
+	.tile.art .bg { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; }
+	.tile.art .posters { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+	.tile.art .posters img { width: 100%; height: 100%; min-width: 0; object-fit: cover; }
+	.tile.art::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgb(0 0 0 / 85%), rgb(0 0 0 / 45%) 50%, rgb(0 0 0 / 30%)); }
+	.tile.art .lab, .tile.art .go { color: #fff; }
+	.tile.art .sm { color: rgb(255 255 255 / 82%); }
+
 	.ask-stack { margin-top: auto; display: flex; align-items: center; }
 	.ask-stack img { width: 38px; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 7px; margin-inline-start: -12px; background: var(--surface-3); box-shadow: 0 0 0 2.5px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
 	.ask-stack img:first-child { margin-inline-start: 0; }
 	.ask-stack b { min-width: 30px; height: 30px; margin-inline-start: 10px; padding: 0 8px; display: grid; place-items: center; border-radius: 999px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); font: var(--t-footnote); font-weight: 700; font-variant-numeric: tabular-nums; }
 
+	/* Coming this week: the count with the next posters beside it, each a fixed size so nothing moves as they load. */
+	.wk { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; min-width: 0; }
+	.wk .num { margin-top: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.wk-pics { flex: none; display: flex; }
+	.wk-pics img { width: 30px; height: 45px; object-fit: cover; border-radius: 6px; margin-inline-start: -10px; background: var(--surface-3); box-shadow: 0 0 0 2px var(--sheet-b), 0 6px 14px -4px rgb(0 0 0 / 35%); }
+	.wk-pics img:first-child { margin-inline-start: 0; }
 	.dl .num, .dl > .word { margin-top: 14px; }
 	.flow { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 12px; background: var(--well); box-shadow: inset 0 0 0 1px var(--line); }
 	.flow li { position: relative; min-width: 0; padding: 9px 12px; display: flex; flex-direction: column; gap: 2px; }
@@ -391,7 +446,7 @@
 	.dl-list span { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 	.pb { grid-column: 1 / -1; display: block; height: 4px; border-radius: 4px; background: var(--track); overflow: hidden; }
 	.pb i { display: block; height: 100%; border-radius: inherit; background: var(--info); }
-	.quiet { margin-top: auto; font: var(--t-callout); color: var(--text-muted); }
+	.quiet { margin-top: 14px; font: var(--t-callout); color: var(--text-muted); }
 
 	/* Dark theme's red and amber are light colours, so the digits go dark there to stay readable. */
 	.count { flex: none; min-width: 24px; height: 24px; padding: 0 7px; display: grid; place-items: center; border-radius: 999px; background: var(--fail); color: light-dark(#fff, #17171b); font: 700 12px / 1 var(--font-ui); font-variant-numeric: tabular-nums; }
@@ -407,7 +462,7 @@
 	.ft { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 	.ft b { font: 600 14px / 1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.ft > span:last-child { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.fa { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--accent-text); font: 600 13px / 1 var(--font-ui); white-space: nowrap; }
+	.fa { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--text-muted); font: 500 13px / 1 var(--font-ui); white-space: nowrap; }
 	.more { position: relative; margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 2px; min-height: 28px; border-radius: 8px; color: var(--accent-text); font: 600 13px / 1 var(--font-ui); }
 	.more::after { content: ''; position: absolute; inset: -8px 0; }
 	.more:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -422,16 +477,19 @@
 	@container home (max-width: 900px) {
 		.bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 132px; gap: 10px; }
 		.tile.tall { grid-row: span 1; }
+		/* The Calendar keeps its two rows here too; the eight-tile shape leaves room for it. */
+		.tile.tall.keep { grid-row: span 2; }
 		.tile { padding: 12px 14px; border-radius: 18px; }
 		.head { gap: 8px; }
 		.lab { font-size: 13px; }
 		.num { font-size: 30px; }
 		.num small { font-size: 12px; margin-inline-start: 4px; }
-		.word { font-size: 19px; }
+		.word { font-size: 17px; }
 		.life { left: 14px; right: 14px; bottom: 5px; height: 3px; }
 		.sm { line-height: 1.3; }
 		.ask-stack img { width: 32px; margin-inline-start: -10px; border-radius: 6px; }
 		.ask-stack b { min-width: 26px; height: 26px; margin-inline-start: 8px; }
+		.wk-pics img { width: 26px; height: 39px; margin-inline-start: -8px; }
 		.dl .num, .dl > .word { margin-top: 10px; }
 		.flow { margin-top: 10px; }
 		.flow li { padding: 7px 10px; }
@@ -443,6 +501,12 @@
 	@container home (max-width: 560px) {
 		.dl-list li:nth-child(n + 3) { display: none; }
 		.act { display: none; }
+		/* The Downloading tile takes the height its rows need instead of two fixed rows (it left ~90px empty on a phone). */
+		.bento { grid-auto-rows: minmax(132px, auto); }
+		.tile.big.dl { grid-row: span 1; }
+		/* Long words (Hungarian and others): tile names and step names wrap to a second line instead of ending in "...", and every value box is two lines tall and sits right under the name, so the values in a row start on one line whether their word wraps or not. */
+		.lab, .flow span { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: break-word; hyphens: auto; }
+		.stat:not(.dl, .big, .tall) > .num, .stat:not(.dl, .big, .tall) > .word { min-height: 38px; margin-top: 6px; }
 }
 	/* Two columns on a wide screen: a little taller, so pictures are not thin strips. */
 	@container home (min-width: 560px) and (max-width: 900px) {

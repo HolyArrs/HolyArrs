@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -18,12 +17,10 @@ import (
 	"time"
 	"unicode"
 
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
-	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
@@ -87,6 +84,18 @@ var programExt = map[string]bool{".exe": true, ".scr": true, ".bat": true, ".cmd
 	".dll": true, ".jar": true, ".apk": true}
 
 func safeName(s string) string { return mediafiles.CleanName(s) }
+
+// safeFolder is safeName for a movie folder that may sit inside grouping
+// folders: each part is cleaned, and empty or dot parts are dropped.
+func safeFolder(s string) string {
+	var parts []string
+	for _, p := range strings.Split(s, "/") {
+		if p = safeName(p); p != "" && p != "." && p != ".." {
+			parts = append(parts, p)
+		}
+	}
+	return strings.Join(parts, "/")
+}
 
 // FolderName builds the library folder name for a title and year.
 func FolderName(title string, year int) string {
@@ -487,7 +496,7 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 	r := mediafiles.PlaceResult{SourceFile: s.SourceFile, PlacedBy: "none"}
 	sfi, err := os.Lstat(s.SourceFile)
 	if err != nil {
-		r.Outcome, r.Error = "failed", err.Error()
+		r.Outcome, r.Error = "failed", placeWhy(err, err.Error(), s.SourceFile)
 		return r
 	}
 	_, isLink := LinkedFile(s.SourceFile)
@@ -509,7 +518,7 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 			r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
 			return r
 		}
-		r.Outcome, r.Error = "refused", "a file HolyArrs did not place is already at the target"
+		r.Outcome, r.Error = "refused", targetTakenWhy
 		return r
 	}
 	if isLink {
@@ -522,7 +531,7 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 		return r
 	}
 	if err := os.MkdirAll(filepath.Dir(s.TargetPath), 0o777); err != nil {
-		r.Outcome, r.Error = "failed", err.Error()
+		r.Outcome, r.Error = "failed", placeWhy(err, err.Error(), s.SourceFile)
 		return r
 	}
 	moveNote := ""
@@ -553,7 +562,7 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 		return r
 	}
 	if err := ops.Copy(s.SourceFile, s.TargetPath); err != nil {
-		r.Outcome, r.Error = "failed", fmt.Sprintf("hardlink failed (%v), copy failed (%v)", linkErr, err)
+		r.Outcome, r.Error = "failed", placeWhy(err, fmt.Sprintf("hardlink failed (%v), copy failed (%v)", linkErr, err), s.SourceFile)
 		return r
 	}
 	r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
@@ -610,62 +619,13 @@ func candidates(root string, files []domain.SeenFile) ([]Candidate, []mediafiles
 		}
 		if !ok {
 			bad = append(bad, mediafiles.PlanStep{SourceFile: f.Name, TargetSlotIDs: []int64{}, Method: "refuse",
-				Why: []string{"the Downloader reported a file outside the download folder"}})
+				Why: []string{whyOutsideFolder}})
 			continue
 		}
 		cands = append(cands, Candidate{Path: cand, Size: f.Size})
 	}
 	return cands, bad
 }
-
-// sourcesGone reports whether another app took a finished download's files:
-// every file the plan would read is gone while the download's own folder is
-// still there. For a torrent that folder is the Downloader's save folder, so
-// a missing one is a wrong path map or an empty mount, never proof. A Usenet
-// job folder (ownFolder) belongs to the download alone; it may be gone too
-// when the folder above it is still there.
-func sourcesGone(root string, plan []mediafiles.PlanStep, ownFolder bool) bool {
-	if root == "" {
-		return false
-	}
-	if _, err := os.Stat(root); err != nil {
-		if !ownFolder || !errors.Is(err, fs.ErrNotExist) {
-			return false
-		}
-		if _, err := os.Stat(filepath.Dir(root)); err != nil {
-			return false
-		}
-	}
-	seen := false
-	for _, st := range plan {
-		if !filepath.IsAbs(st.SourceFile) {
-			continue
-		}
-		if _, err := os.Lstat(st.SourceFile); !errors.Is(err, fs.ErrNotExist) {
-			return false
-		}
-		seen = true
-	}
-	if !seen {
-		_, err := os.Lstat(root)
-		return errors.Is(err, fs.ErrNotExist)
-	}
-	return true
-}
-
-// markGone records every step that was not placed as gone, with the reason.
-func markGone(res []mediafiles.PlaceResult) {
-	for i := range res {
-		if res[i].Outcome != "placed" && res[i].Outcome != "skipped" {
-			res[i].Outcome, res[i].Error = "gone", FilesGoneReason
-		}
-	}
-}
-
-// FilesGoneReason is why an import let its download go: every file it would
-// read was already removed, as another app sharing the Downloader does after
-// its own import.
-const FilesGoneReason = "the files were removed by another app before HolyArrs could import them"
 
 // Publisher announces import events.
 type Publisher interface {
@@ -743,6 +703,10 @@ func (im *Importer) RequeueStranded(ctx context.Context, enqueue func(ctx contex
 	if err := rows.Err(); err != nil {
 		return 0, err
 	}
+	ids, gaveUp, err := im.leftImporting(ctx, ids)
+	if err != nil {
+		return 0, err
+	}
 	n := 0
 	for _, id := range ids {
 		if wait, err := im.importBackoff(ctx, id); err != nil {
@@ -750,48 +714,14 @@ func (im *Importer) RequeueStranded(ctx context.Context, enqueue func(ctx contex
 		} else if wait {
 			continue
 		}
+		// A gave-up card whose Slots now wait for another download has nothing to import.
+		if im.wakeGaveUp(ctx, id) == 0 && gaveUp[id] {
+			continue
+		}
 		enqueue(ctx, id)
 		n++
 	}
 	return n, nil
-}
-
-func (im *Importer) importBackoff(ctx context.Context, downloadID int64) (bool, error) {
-	var failed int
-	var last sql.NullString
-	err := im.Store.Read().QueryRowContext(ctx, `SELECT count(*), max(ended_at) FROM jobs WHERE kind = ? AND state = 'failed'
-		AND json_extract(subject, '$.type') = 'download' AND json_extract(subject, '$.id') = ?`, KindImport, downloadID).Scan(&failed, &last)
-	if err != nil || failed == 0 || !last.Valid {
-		return false, err
-	}
-	end, err := time.Parse(time.RFC3339Nano, last.String)
-	if err != nil {
-		return false, nil
-	}
-	// The wait doubles per failure from ten minutes and stops at one day.
-	wait := 24 * time.Hour
-	if failed <= 8 {
-		wait = min(wait, 10*time.Minute<<(failed-1))
-	}
-	return time.Since(end) < wait, nil
-}
-
-// HandleJob runs an import job.
-func (im *Importer) HandleJob(ctx context.Context, r *jobs.Run) error {
-	if r.Job.Subject == nil || r.Job.Subject.Type != "download" {
-		return errors.New("import needs a download subject")
-	}
-	dry, _ := r.Job.Params["dry_run"].(bool)
-	imp, err := im.Import(ctx, r.Job.Subject.ID, dry, domain.Actor{Kind: "job", ID: r.Job.ID})
-	if errors.Is(err, ErrEpisodeImport) || errors.Is(err, ErrAlbumImport) || errors.Is(err, ErrPackWaiting) {
-		r.SetResult(map[string]any{"waiting": err.Error()})
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	r.SetResult(map[string]any{"import_id": imp.ID, "state": imp.State})
-	return nil
 }
 
 func mapPath(p string, maps []domain.PathMap) string {

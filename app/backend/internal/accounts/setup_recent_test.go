@@ -130,8 +130,9 @@ func TestSetupMarkEndsWithReauth(t *testing.T) {
 }
 
 // An owner made through Jellyfin has no password to confirm: the setup
-// session lets the first-run steps through; a later Jellyfin sign-in only
-// while it is fresh (see TestNoPasswordOwnerOutsideSignInCounts).
+// session lets the first-run steps through; while the wizard is open the
+// owner's later Jellyfin sign-in does too, and once it is done only while it
+// is fresh (see TestNoPasswordOwnerOutsideSignInCounts).
 func TestOutsideSetupSessionCountsAsRecent(t *testing.T) {
 	ms := fakeSetupServer(t)
 	f := gated(t, Options{})
@@ -157,12 +158,12 @@ func TestOutsideSetupSessionCountsAsRecent(t *testing.T) {
 	}
 	jsonOf(t, out, &v)
 	later := person{c2, v.CSRF}
-	if who := meOf(t, f, later); who.SetupRecent {
-		t.Fatal("a later Jellyfin sign-in counted as setup")
+	if who := meOf(t, f, later); !who.SetupRecent {
+		t.Fatal("the owner's later Jellyfin sign-in did not count as setup while the wizard is open")
 	}
 	f.clock.add(localRecentFor + time.Minute)
-	if newKey(t, f, later) {
-		t.Fatal("a Jellyfin sign-in made a key without a password")
+	if !newKey(t, f, later) {
+		t.Fatal("the owner's later Jellyfin sign-in asked for a password while the wizard is open")
 	}
 	if !newKey(t, f, own) {
 		t.Fatal("the Jellyfin setup session asked for a password")
@@ -172,6 +173,9 @@ func TestOutsideSetupSessionCountsAsRecent(t *testing.T) {
 	}
 	if newKey(t, f, own) {
 		t.Fatal("the Jellyfin setup session made a key after the wizard")
+	}
+	if newKey(t, f, later) {
+		t.Fatal("the owner's later Jellyfin sign-in made a key after the wizard")
 	}
 }
 

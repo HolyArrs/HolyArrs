@@ -3,7 +3,7 @@ import type { EpisodeView, SeasonSummary, ShowInfo } from '../core/types.ts';
 import { date } from '../core/format.ts';
 import { t } from '../core/i18n/i18n.svelte.ts';
 import { episodeCode } from '../core/episodes.ts';
-import { airedEpisodes } from '#lib/mediafiles/index.ts';
+import { airedEpisodes, staleWhileImporting } from '#lib/mediafiles/index.ts';
 
 export { episodeCode };
 
@@ -86,8 +86,8 @@ export function episodeWhy(e: EpisodeView, seasonKept: boolean, showKept: boolea
 	if (!seasonKept) return t('shows.keepOff.season');
 	if (!e.keep_up_to_date) return t('shows.keepOff.episode');
 	if (s?.state === 'not_out_yet') return e.air_date ? t('shows.why.missingOnAir', { date: date(e.air_date) }) : t('shows.why.noAirDate');
-	// Notes like "aired ..." repeat the date already shown beside the episode.
-	if (s?.reason && !/^airs? |^aired /.test(s.reason)) return s.reason;
+	// Notes like "aired ..." repeat the date already shown beside the episode; the card's reason is not shown while its import runs again.
+	if (s?.reason && !/^airs? |^aired /.test(s.reason) && !staleWhileImporting(s)) return s.reason;
 	return '';
 }
 

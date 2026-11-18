@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} en attente",
 	"frame.nav.new": "{n} nouvelles",
 	"frame.nav.manage": "Gérer",
+	"frame.nav.activity": "Activité",
+	"frame.nav.system": "Système",
 	"frame.nav.history": "Historique",
 	"frame.nav.status": "État",
 	"frame.nav.settings": "Paramètres",
+	"frame.nav.plugins": "Plugins",
 	"frame.nav.goTo": "Aller à",
 	"frame.nav.active": "{n} actifs, {percent} %",
 	"frame.nav.decide": "{n} demandent une décision",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Système",
 	"frame.layout.switch": "Changer de compte",
 	"frame.layout.signOut": "Se déconnecter",
+	"frame.layout.support": "Soutenir HolyArrs",
 	"frame.layout.signOutFail": "Impossible de confirmer la déconnexion",
 	"frame.layout.signedOut": "Déconnecté",
 	"frame.layout.accountMenu": "{name}, {role} : compte et apparence",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs réessaie tout seul",
 	"frame.feeds.clearNow": "Retirer maintenant",
 	"frame.feeds.cleared": "Retiré du téléchargeur",
-	"frame.feeds.clearStill": "Pas encore retiré"
+	"frame.feeds.clearStill": "Pas encore retiré",
+	"frame.error.pageGone": "Cette page n'existe pas. Le lien est peut-être ancien ou mal saisi."
 }

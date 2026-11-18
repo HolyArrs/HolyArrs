@@ -37,12 +37,20 @@ type Searcher struct {
 	SourcesOn func() bool
 	// HasDownloader says a Downloader takes the protocol. Nil means yes.
 	HasDownloader func(ctx context.Context, protocol string) bool
+	// SendWait is how long a pick by hand waits for its send, so the page can
+	// say whether the Downloader got it. Zero answers at once.
+	SendWait time.Duration
 
 	mu         sync.Mutex
 	clients    map[int64]*Client
 	onAsk      func(name string)
 	quietMu    sync.Mutex
 	quietCalls map[int64]*quietSourceCalls
+	// names are the Library's show names kept for a short time (libraryNames).
+	namesMu  sync.Mutex
+	names    *sharedNames
+	namesAt  time.Time
+	namesFor time.Duration // how long they are kept; 0: sharedNamesFor
 }
 
 func (s *Searcher) publish(topic string, data any) {
@@ -76,6 +84,13 @@ func (s *Searcher) client(ctx context.Context, src domain.Source) (*Client, erro
 }
 
 func sameConfig(a, b Config) bool {
+	// a went through New, which fills in a timeout and window; do the same to b.
+	if b.Timeout <= 0 {
+		b.Timeout = 30 * time.Second
+	}
+	if b.Window <= 0 {
+		b.Window = time.Hour
+	}
 	proxy := func(c Config) string {
 		if c.Proxy == nil {
 			return ""
@@ -205,6 +220,8 @@ type found struct {
 	item  Item
 	keys  []string
 	relID int64
+	// byID: a stored Release that was matched by the id its Source gave.
+	byID bool
 }
 
 // Handle searches every enabled Source for the job's Slot, judges each
@@ -295,14 +312,24 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		}
 		q = showQuery(ti, ep.ref.Season, ep)
 	}
-	all, failures, answered, skipped, err := s.askAll(ctx, r, q, handSearch, isShow, ti.Tags, c.pr.Body.Tags)
+	q.other = s.nameAsk(ctx, ti, handSearch)
+	all, failures, answered, skipped, note, err := s.askAll(ctx, r, q, handSearch, isShow, ti, c.ver.ID, c.pr.Body.Tags)
 	if err != nil {
 		return err
+	}
+	if keptApart(note) {
+		if !show && from != mediafiles.SlotHeld {
+			_ = mediafiles.MoveSlot(ctx, s.Store, slotID, restState(c, from), note, by)
+			s.publish("slot", map[string]any{"id": slotID, "state": restState(c, from), "reason": note})
+		}
+		s.touchSearched(ctx, c.it.ID)
+		s.keptApartDone(ctx, r, by, ti.ID, slotID, handSearch, note)
+		return nil
 	}
 	// Absolute order also searches by title and running number; a Source
 	// that failed or was skipped is said once.
 	if aq, ok := absoluteQuery(ti, ep); isShow && ok {
-		more, _, n, _, err := s.askAll(ctx, r, aq, handSearch, true, ti.Tags, c.pr.Body.Tags)
+		more, _, n, _, _, err := s.askAll(ctx, r, aq, handSearch, true, ti, c.ver.ID, c.pr.Body.Tags)
 		if err != nil {
 			return err
 		}
@@ -315,7 +342,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 			_ = mediafiles.MoveSlot(ctx, s.Store, slotID, restState(c, from), reason, by)
 			s.publish("slot", map[string]any{"id": slotID, "state": restState(c, from), "reason": reason})
 		}
-		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchFailed, reason, data)
+		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchFailed, reason, noted(data, note))
 		if !failed {
 			return nil
 		}
@@ -378,7 +405,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		if !out {
 			data["warning"] = "the Release gate was skipped"
 		}
-		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventReleaseChosen, fmt.Sprintf("Chose %s out of %d Releases", name, len(all)), data)
+		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventReleaseChosen, fmt.Sprintf("Chose %s out of %d Releases", name, len(all)), noted(data, note))
 		s.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotChosen, "reason": "chose " + name})
 		r.SetResult(result)
 		if s.OnChosen != nil {
@@ -394,7 +421,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 			return err
 		}
 		result["held_release_id"] = ids[winner]
-		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventReleaseHeld, "Holding "+name, map[string]any{"release_id": ids[winner]})
+		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventReleaseHeld, "Holding "+name, noted(map[string]any{"release_id": ids[winner]}, note))
 		s.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotHeld, "reason": "holding " + name})
 		r.SetResult(result)
 	default:
@@ -421,7 +448,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 			}
 			s.publish("slot", map[string]any{"id": slotID, "state": to, "reason": reason})
 		}
-		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchDone, reason, nil)
+		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchDone, reason, noted(nil, note))
 		r.SetResult(result)
 	}
 	return nil
@@ -450,6 +477,9 @@ func (s *Searcher) pause(ctx context.Context, src domain.Source, cause error) {
 	_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		var err error
 		n, until, paused, err = pauseSourceTx(tx, ctx, src.ID, kind, detail, wait)
+		if err == nil && paused {
+			err = setCauseTx(tx, ctx, src.ID, string(CauseOf(cause)))
+		}
 		return err
 	})
 	if !paused {

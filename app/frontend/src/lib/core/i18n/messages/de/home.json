@@ -274,5 +274,13 @@
 	"home.sourcesOff": "In Teile ausgeschaltet",
 	"home.noneForSources": "fehlt für das, was deine Quellen finden",
 	"home.addedTwice": "ist doppelt hinzugefügt",
-	"home.addedTwiceMany": "sind doppelt hinzugefügt"
+	"home.addedTwiceMany": "sind doppelt hinzugefügt",
+	"home.notSetUpYet": "Noch nicht eingerichtet",
+	"home.setUpToAdd": "Einrichtung abschließen, um {name} hinzuzufügen",
+	"home.comingThisWeek": "Diese Woche",
+	"home.thisWeek": "diese Woche",
+	"home.landingThisWeek": "Folgen und Filme, die diese Woche erscheinen",
+	"home.popularThisWeek": "Beliebte Neuerscheinungen dieser Woche",
+	"home.peopleCheck": "Personenprüfung",
+	"home.cantReadUsers": "Benutzerliste nicht lesbar"
 }

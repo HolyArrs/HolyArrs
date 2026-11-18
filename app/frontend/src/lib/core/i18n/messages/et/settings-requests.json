@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Näita inimestele",
 	"settings.requests.choiceMain": "{rules} · pealkirja põhikoopia",
 	"settings.requests.choiceOwn": "{rules} · hoitakse eraldi koopiana",
-	"settings.requests.choiceNotReady": "Pakutakse, kui ülal on 4K kvaliteet seadistatud"
+	"settings.requests.choiceNotReady": "Pakutakse, kui ülal on 4K kvaliteet seadistatud",
+	"settings.requests.approvals": "Kinnitused",
+	"settings.requests.autoApprove": "Kinnita soovid automaatselt",
+	"settings.requests.autoApproveNote": "Väljas = nende soovid ootavad sind. Plexi vaatamisloendi pealkirjad järgivad sama lülitit.",
+	"settings.requests.ownerTag": "Omanik",
+	"settings.requests.choiceAdd": "Lisa kvaliteet",
+	"settings.requests.choiceNew": "Uus kvaliteet",
+	"settings.requests.choiceLabel": "Sinu nimi",
+	"settings.requests.choiceSeen": "Teised näevad"
 }

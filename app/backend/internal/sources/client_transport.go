@@ -1,17 +1,14 @@
 package sources
 
 import (
-	"bufio"
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
@@ -58,7 +55,7 @@ func transport(cfg Config) *http.Transport {
 	if cfg.ProxyAllowLocal {
 		allow = outbound.NotMetadata
 	}
-	d := outbound.PolicyDialer(allow)
+	d := outbound.DirectDialer(allow)
 	p := *cfg.Proxy
 	target := func(ctx context.Context, addr string) (string, error) {
 		host, port, err := net.SplitHostPort(addr)
@@ -83,7 +80,7 @@ func transport(cfg Config) *http.Transport {
 				return nil, err
 			}
 			pass, _ := p.User.Password()
-			if err := socks5Connect(ctx, conn, to, p.User.Username(), pass); err != nil {
+			if err := outbound.SOCKS5Connect(ctx, conn, to, p.User.Username(), pass); err != nil {
 				conn.Close()
 				return nil, err
 			}
@@ -127,6 +124,9 @@ func checkName(ctx context.Context, cfg Config, host string) (net.IP, error) {
 		ips = got
 	}
 	for _, ip := range ips {
+		if outbound.MetadataIP(ip) {
+			return nil, outbound.ErrMetadataRefused
+		}
 		if !cfg.AllowAddr(ip) {
 			return nil, fmt.Errorf("%w: the Source address is on the local network, which this Source may not reach", outbound.ErrAddressRefused)
 		}
@@ -148,36 +148,11 @@ func httpConnect(ctx context.Context, d *net.Dialer, p *url.URL, addr string) (n
 		}
 		conn = tc
 	}
-	if dl, ok := ctx.Deadline(); ok {
-		_ = conn.SetDeadline(dl)
-	} else {
-		_ = conn.SetDeadline(time.Now().Add(30 * time.Second))
-	}
-	req := &http.Request{Method: http.MethodConnect, URL: &url.URL{Opaque: addr}, Host: addr, Header: http.Header{}}
-	if p.User != nil {
-		pass, _ := p.User.Password()
-		req.Header.Set("Proxy-Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(p.User.Username()+":"+pass)))
-	}
-	if err := req.Write(conn); err != nil {
+	pass, _ := p.User.Password()
+	if err := outbound.HTTPConnect(ctx, conn, addr, p.User.Username(), pass); err != nil {
 		conn.Close()
 		return nil, err
 	}
-	br := bufio.NewReader(conn)
-	resp, err := http.ReadResponse(br, req)
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		conn.Close()
-		return nil, errors.New("the proxy could not connect: " + resp.Status)
-	}
-	if br.Buffered() > 0 {
-		conn.Close()
-		return nil, errors.New("the proxy sent data before the tunnel was open")
-	}
-	_ = conn.SetDeadline(time.Time{})
 	return conn, nil
 }
 

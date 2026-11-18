@@ -25,7 +25,9 @@ func ExistingFolder(root, want, name string, year int, taken func(string) bool) 
 	if clean == "" {
 		return want
 	}
-	var exact, loose []string
+	// A folder spelled like the name wins; one spelled as release names
+	// write it ("Schitts Creek", "SWAT") counts only when none is.
+	var exact, loose, nearExact, nearLoose []string
 	for _, e := range ents {
 		if !e.IsDir() {
 			continue
@@ -38,21 +40,29 @@ func ExistingFolder(root, want, name string, year int, taken func(string) bool) 
 			continue
 		}
 		n, y := FolderName(strings.TrimSpace(reIDTag.ReplaceAllString(dir, "")))
-		if releasename.CleanName(n) != clean {
-			continue
+		ex, lo := &exact, &loose
+		if c := releasename.CleanName(n); c != clean {
+			if !releasename.SameName(name, c) {
+				continue
+			}
+			ex, lo = &nearExact, &nearLoose
 		}
 		switch {
 		case y == year:
-			exact = append(exact, dir)
+			*ex = append(*ex, dir)
 		case y == 0 || year == 0:
-			loose = append(loose, dir)
+			*lo = append(*lo, dir)
 		}
 	}
-	switch {
-	case len(exact) == 1:
-		return exact[0]
-	case len(exact) == 0 && len(loose) == 1:
-		return loose[0]
+	for _, set := range [][2][]string{{exact, loose}, {nearExact, nearLoose}} {
+		switch {
+		case len(set[0]) == 1:
+			return set[0][0]
+		case len(set[0]) == 0 && len(set[1]) == 1:
+			return set[1][0]
+		case len(set[0])+len(set[1]) > 0:
+			return want
+		}
 	}
 	return want
 }

@@ -37,7 +37,7 @@ type TrashScored struct {
 var ErrTrashProfile = errors.New("no such TRaSH Guides profile")
 
 // pickMaxTraits matches the Pick rules limit on listed traits.
-const pickMaxTraits = 64
+const pickMaxTraits = mediafiles.MaxTraits
 
 // ApplyTrash applies TRaSH profile profileID (of app sonarr or radarr) to
 // Pick rules id: each format it can test becomes a synced trait (made once,
@@ -122,7 +122,7 @@ func ApplyTrash(ctx context.Context, st *database.Store, c *TrashGuides, id int6
 		// Keep the strongest scores; the rest are reported.
 		sort.SliceStable(add, func(i, j int) bool { return abs(add[i].Points) > abs(add[j].Points) })
 		for _, tp := range add[max(room, 0):] {
-			res.Skipped = append(res.Skipped, TrashSkipped{Name: traitName(plan, keys, tp.Trait), Reason: "Pick rules hold at most 64 traits"})
+			res.Skipped = append(res.Skipped, TrashSkipped{Name: traitName(plan, keys, tp.Trait), Reason: "Pick rules hold at most 256 traits"})
 		}
 		add = add[:max(room, 0)]
 	}

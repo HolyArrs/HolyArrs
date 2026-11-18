@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "Ждут: {n}",
 	"frame.nav.new": "Новых: {n}",
 	"frame.nav.manage": "Управление",
+	"frame.nav.activity": "Активность",
+	"frame.nav.system": "Система",
 	"frame.nav.history": "История",
 	"frame.nav.status": "Статус",
 	"frame.nav.settings": "Настройки",
+	"frame.nav.plugins": "Плагины",
 	"frame.nav.goTo": "Перейти",
 	"frame.nav.active": "Активно: {n}, {percent}%",
 	"frame.nav.decide": "Требуют решения: {n}",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Как в системе",
 	"frame.layout.switch": "Сменить учётную запись",
 	"frame.layout.signOut": "Выйти",
+	"frame.layout.support": "Поддержать HolyArrs",
 	"frame.layout.signOutFail": "Не удалось подтвердить выход",
 	"frame.layout.signedOut": "Вы вышли",
 	"frame.layout.accountMenu": "{name}, {role}: учётная запись и оформление",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs попробует снова сам",
 	"frame.feeds.clearNow": "Убрать сейчас",
 	"frame.feeds.cleared": "Убрано из загрузчика",
-	"frame.feeds.clearStill": "Пока не убрано"
+	"frame.feeds.clearStill": "Пока не убрано",
+	"frame.error.pageGone": "Такой страницы нет. Возможно, ссылка устарела или набрана с ошибкой."
 }

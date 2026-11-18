@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "없음",
 	"settings.thisApp.needsRestart": "다시 시작해야 합니다. HOLYARRS_URL_BASE 또는 -url-base가 우선합니다.",
 	"settings.thisApp.save": "저장",
-	"settings.thisApp.licence": "HolyArrs는 AGPL-3.0 라이선스의 자유 소프트웨어입니다."
+	"settings.thisApp.licence": "HolyArrs는 AGPL-3.0 라이선스의 자유 소프트웨어입니다.",
+	"settings.thisApp.proxy": "프록시",
+	"settings.thisApp.proxyDesc": "외부 호출을 프록시를 통해 보냅니다. 차단 및 홈 네트워크 규칙은 실제 목적지에 계속 적용됩니다.",
+	"settings.thisApp.proxyType": "종류",
+	"settings.thisApp.proxyOff": "끔",
+	"settings.thisApp.proxyHost": "호스트",
+	"settings.thisApp.proxyPort": "포트",
+	"settings.thisApp.proxyUser": "사용자 이름",
+	"settings.thisApp.proxyPasswordLabel": "비밀번호",
+	"settings.thisApp.proxyPasswordKept": "저장된 비밀번호를 유지하려면 비워 두세요",
+	"settings.thisApp.proxyBypass": "프록시 제외 대상",
+	"settings.thisApp.proxyBypassHint": "이름, 주소 또는 범위를 쉼표로 구분합니다. *.example.com은 그 아래의 모든 이름에 해당합니다.",
+	"settings.thisApp.proxyBypassLocal": "로컬 주소는 프록시 제외",
+	"settings.thisApp.proxyBypassLocalHint": "이 기기와 홈 네트워크는 직접 연결됩니다",
+	"settings.thisApp.proxySaved": "프록시 저장됨",
+	"settings.thisApp.proxyOffSaved": "프록시 꺼짐"
 }

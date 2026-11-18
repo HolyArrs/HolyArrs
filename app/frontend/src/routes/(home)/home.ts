@@ -7,6 +7,8 @@ import type { CalendarEntry, HealthCheck, TitleView } from '#lib/core/types.ts';
 import type { Fresh } from '#lib/ui/fresh.ts';
 import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 import { serverWords } from '#lib/core/i18n/server-words.ts';
+import { serverRow, type ServerRow } from '#lib/discover/index.ts';
+import type { ExploreRow } from '#lib/ui/title-cards.ts';
 
 /** downloadLine is the meta line under a download card: percent and time left. */
 export function downloadLine(d: Pick<DownloadRow, 'progress' | 'eta' | 'state' | 'label'>): string {
@@ -107,6 +109,8 @@ export function healthFix(kind: HealthCheck['kind']): string {
 		case 'no_downloader':
 		case 'same_downloader':
 			return '/settings/downloaders';
+		case 'people_check':
+			return '/settings/media-servers';
 		case 'backups':
 			return '/settings/backups';
 		case 'waiting_downloads':
@@ -141,7 +145,8 @@ const healthWords = (): Record<HealthKind, { one: string; many: string; error: [
 	same_downloader: { one: t('home.downloader'), many: t('home.downloaders'), error: [t('home.addedTwice'), t('home.addedTwiceMany')], warning: [t('home.addedTwice'), t('home.addedTwiceMany')] },
 	// The backups:key check: no key kit saved for the current master key.
 	key_kit: { one: t('home.masterKey'), many: t('home.masterKey'), error: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')], warning: [t('home.noKeyKitSaved'), t('home.noKeyKitSaved')] },
-	trailers: { one: t('home.trailers'), many: t('home.trailers'), error: [t('home.notLoading'), t('home.notLoading')], warning: [t('home.lookupsFailing'), t('home.lookupsFailing')] }
+	trailers: { one: t('home.trailers'), many: t('home.trailers'), error: [t('home.notLoading'), t('home.notLoading')], warning: [t('home.lookupsFailing'), t('home.lookupsFailing')] },
+	people_check: { one: t('home.peopleCheck'), many: t('home.peopleCheck'), error: [t('home.cantReadUsers'), t('home.cantReadUsers')], warning: [t('home.cantReadUsers'), t('home.cantReadUsers')] }
 });
 
 /**
@@ -564,4 +569,17 @@ export function freeSpace(folders: { free_space: number }[], zeroIsFull = false)
 	let disks = 1;
 	for (let i = 1; i < sizes.length; i++) if (sizes[i] - sizes[i - 1] > Math.max(sizes[i] * 0.05, 4 * 1024 ** 3)) disks++;
 	return { free: sizes[0], many: disks > 1 };
+}
+
+/** welcomeRows: before setup, Home borrows Explore's first picture rows (Trending and the like, from the metadata server). Only rows of movies and shows with enough titles to fill a shelf; two at most. */
+export function welcomeRows(head: ServerRow[], max = 2, min = 5): (ExploreRow & { wide: boolean; type: string })[] {
+	return head
+		.filter((r) => r.items.filter((i) => (i.kind === 'movie' || i.kind === 'show') && (i.backdrop || i.poster)).length >= min)
+		.slice(0, max)
+		.map(serverRow);
+}
+
+/** setupBlocker: the first setup step still missing that Add needs (a folder, a Source, a Downloader). Search is never a blocker. Empty when Add can work. */
+export function setupBlocker(steps: { href: string; done: boolean }[]): string {
+	return steps.find((s) => !s.done && s.href !== '/search')?.href ?? '';
 }

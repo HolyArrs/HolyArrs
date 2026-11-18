@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Trakt-listene dine kan ikke leses før den er satt.",
 	"settings.outsideLists.replaceKey": "Bytt Trakt-nøkkelen",
 	"settings.outsideLists.pasteKey": "Lim inn Trakt-nøkkelen",
+	"settings.outsideLists.mdblistKey": "MDBList-nøkkel",
+	"settings.outsideLists.mdblistInfo": "Valgfri. Med MDBList-API-nøkkelen din leses MDBList-lister gjennom MDBList-API-et; uten den gjennom den offentlige lenken deres. Den lagres kryptert og er den samme nøkkelen som eksterne vurderinger bruker i modusen Dine egne nøkler.",
+	"settings.outsideLists.pasteMdblistKey": "Lim inn MDBList-API-nøkkelen din",
+	"settings.outsideLists.replaceMdblistKey": "Bytt MDBList-nøkkelen",
+	"settings.outsideLists.removeMdblistKey": "Fjern nøkkelen",
+	"settings.outsideLists.mdblistKeySaved": "MDBList-nøkkel lagret",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList-nøkkel fjernet. Listene bruker den offentlige lenken sin",
 	"settings.outsideLists.replaceVip": "Bytt VIP-tilgangstokenet",
 	"settings.outsideLists.vip": "VIP-tilgangstoken (valgfritt)",
 	"settings.outsideLists.vipHint": "Legger til en Trakt-fane på titelsidene: score, seere og kommentarer",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Legg til i Aldri-legg-til-listen",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "Ta bort {name}",
-	"settings.outsideLists.empty": "Tom"
+	"settings.outsideLists.empty": "Ingenting på listen ennå"
 }

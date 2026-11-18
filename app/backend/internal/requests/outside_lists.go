@@ -14,7 +14,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -22,6 +21,7 @@ import (
 const (
 	ListTMDB        = "tmdb_list"
 	ListTrakt       = "trakt_list"
+	ListMDBList     = "mdblist_list"
 	OutsideListSync = "sync_outside_lists"
 )
 
@@ -33,8 +33,8 @@ const SeasonsFirst = "first"
 var (
 	ErrName       = errors.New("a list needs a name of at most 80 characters")
 	ErrNameTaken  = errors.New("another Outside list has that name")
-	ErrKind       = errors.New("kind must be tmdb_list or trakt_list")
-	ErrRef        = errors.New("for TMDB give the list number or its link; for Trakt give user/list, user/watchlist or the link")
+	ErrKind       = errors.New("kind must be tmdb_list, trakt_list or mdblist_list")
+	ErrRef        = errors.New("for TMDB give the list number or its link; for Trakt give user/list, user/watchlist or the link; for MDBList give user/list or the link")
 	ErrEvery      = errors.New("sync_every_hours must be between 6 and 168")
 	ErrTitleKind  = errors.New("title_kind must be movie or show")
 	ErrSeasons    = errors.New("seasons must be all, future, latest, first or none, and new_seasons all or none")
@@ -47,6 +47,8 @@ var (
 	tmdbRef   = regexp.MustCompile(`^(?:https?://(?:www\.)?themoviedb\.org/list/)?(\d{1,12})(?:[-/?#].*)?$`)
 	traktURL  = regexp.MustCompile(`^https?://(?:www\.|app\.)?trakt\.tv/users/([A-Za-z0-9._-]+)/(?:lists/([A-Za-z0-9._-]+)|(watchlist))/?(?:[?#].*)?$`)
 	traktPair = regexp.MustCompile(`^([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)$`)
+	// An MDBList list page, or its /json feed, with any query or fragment.
+	mdblistURL = regexp.MustCompile(`^(?i:(?:https?://)?(?:www\.)?mdblist\.com)/lists/([A-Za-z0-9._-]+)/([A-Za-z0-9._-]+)(?:/json)?/?(?:[?#].*)?$`)
 )
 
 // OutsideListInput is what a person sets on a list. Zero values take defaults: a movie
@@ -69,8 +71,7 @@ type OutsideListInput struct {
 	SyncEveryHours  int    `json:"sync_every_hours"`
 }
 
-// NormalListRef turns what a person pasted into the stored list reference. Trakt
-// lists are refused while the Trakt lists feature is off.
+// NormalListRef turns what a person pasted into the stored list reference.
 func NormalListRef(kind, ref string) (string, error) {
 	ref = strings.TrimSpace(ref)
 	switch kind {
@@ -79,13 +80,17 @@ func NormalListRef(kind, ref string) (string, error) {
 			return m[1], nil
 		}
 	case ListTrakt:
-		if !startup.FeatureOn(startup.TraktLists) {
-			return "", ErrKind
-		}
 		if m := traktURL.FindStringSubmatch(ref); m != nil {
 			return m[1] + "/" + m[2] + m[3], nil
 		}
 		if m := traktPair.FindStringSubmatch(ref); m != nil {
+			return ref, nil
+		}
+	case ListMDBList:
+		if m := mdblistURL.FindStringSubmatch(ref); m != nil {
+			return m[1] + "/" + m[2], nil
+		}
+		if traktPair.MatchString(ref) {
 			return ref, nil
 		}
 	default:

@@ -3,7 +3,7 @@
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
-export type Need = 'manage_library' | 'settings' | 'wishlist' | 'approve' | 'staff' | 'manage' | null;
+export type Need = 'manage_library' | 'settings' | 'wishlist' | 'approve' | 'staff' | 'manage' | 'owner' | null;
 
 export interface NavItem {
 	href: string;
@@ -21,7 +21,7 @@ export interface NavItem {
 }
 
 export interface NavSection {
-	id: 'top' | 'library' | 'yours' | 'manage';
+	id: 'top' | 'library' | 'yours' | 'activity' | 'system';
 	label: string | null;
 	items: NavItem[];
 }
@@ -96,13 +96,22 @@ export function buildNav(input: NavInput): NavSection[] {
 			]
 		},
 		{
-			id: 'manage',
-			label: t('frame.nav.manage'),
+			id: 'activity',
+			label: t('frame.nav.activity'),
 			items: input.allowed('manage') || input.allowed('staff')
 				? [
 						{ href: '/downloads', label: t('frame.nav.downloads'), icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
-						{ href: '/downloads/history', label: t('frame.nav.history'), icon: 'clock', need: 'manage_library' },
+						{ href: '/downloads/history', label: t('frame.nav.history'), icon: 'clock', need: 'manage_library' }
+					]
+				: []
+		},
+		{
+			id: 'system',
+			label: t('frame.nav.system'),
+			items: input.allowed('manage') || input.allowed('staff')
+				? [
 						{ href: '/health', label: t('frame.nav.status'), icon: 'shield', need: 'manage_library' },
+						{ href: '/plugins', label: t('frame.nav.plugins'), icon: 'grid', need: 'owner' },
 						{ href: '/settings', label: t('frame.nav.settings'), icon: 'settings', need: 'staff', ...(input.settingsAttention && input.allowed('settings') ? { dot: true } : {}) }
 					]
 				: []

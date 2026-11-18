@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -185,7 +186,7 @@
 	}
 
 	async function remove(a: AlertView) {
-		if (!confirm(t('settings.alerts.confirmRemove', { name: a.name }))) return;
+		if (!(await ask(t('settings.alerts.confirmRemove', { name: a.name }), { yes: t('ui.ask.remove'), danger: true }))) return;
 		try {
 			await api.del(`/alerts/${a.id}`);
 			await load();
@@ -369,8 +370,8 @@
 				{/if}
 				<div class="row actions">
 					<Button type="button" disabled={testing === a.id} aria-busy={testing === a.id} onclick={() => test(a)}>{t('settings.alerts.sendTest')}</Button>
-					<Button variant="plain" type="button" onclick={() => startChange(a)}>{t('settings.alerts.changeButton')}</Button>
-					<Button variant="plain" type="button" onclick={() => remove(a)} aria-label={t('settings.alerts.removeName', { name: a.name })}>{t('settings.alerts.remove')}</Button>
+					<Button variant="secondary" type="button" onclick={() => startChange(a)}>{t('settings.alerts.changeButton')}</Button>
+					<Button variant="secondary" type="button" onclick={() => remove(a)} aria-label={t('settings.alerts.removeName', { name: a.name })}>{t('settings.alerts.remove')}</Button>
 				</div>
 			</li>
 		{/each}
@@ -379,9 +380,8 @@
 
 <!-- when both loads fail, the one error above retries both -->
 {#if !(loaded && !hasData && packError)}
-<section class="card packs" id="pack-alerts" tabindex="-1" aria-labelledby="h-packs" data-testid="pack-alerts">
-	<h2 id="h-packs" class="h2">{t('settings.alerts.packs')}</h2>
-	<p class="small muted">{t('settings.alerts.packsNote')}</p>
+<div class="packs" data-testid="pack-alerts">
+<SettingsCard id="pack-alerts" title={t('settings.alerts.packs')} description={t('settings.alerts.packsNote')}>
 	{#if pack === null}
 		{#if packError}
 			<LoadError hasData={false} message={packError} onretry={loadPack} busy={packBusy} />
@@ -401,12 +401,14 @@
 		</label>
 	</fieldset>
 	{/if}
-</section>
+</SettingsCard>
+</div>
 {/if}
 
 <style>
+	/* One gap between the intro, the list and the Season packs card. */
 	.packs {
-		margin-top: var(--s-6);
+		margin-top: var(--s-4);
 	}
 	.pack-choice {
 		border: 0;
@@ -414,7 +416,7 @@
 		margin: 0;
 	}
 	.lead {
-		margin-bottom: var(--s-5);
+		margin-bottom: 0;
 	}
 	.list {
 		display: flex;

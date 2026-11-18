@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Câștigător: {name}",
 	"ui.wikiFacts.nominated": "Nominalizat: {name}",
 	"ui.wikiFacts.andMore": "și încă {count}",
-	"ui.pageLoader.loading": "Se încarcă"
+	"ui.pageLoader.loading": "Se încarcă",
+	"ui.connectHelp.link": "Cum repari",
+	"ui.ask.remove": "Elimină",
+	"ui.ask.restore": "Restaurează",
+	"ui.ask.stop": "Oprește",
+	"ui.ask.revoke": "Revocă",
+	"ui.ask.replace": "Înlocuiește",
+	"ui.ask.unlink": "Deconectează",
+	"ui.ask.turnOff": "Dezactivează",
+	"ui.ask.markFailed": "Marchează ca eșuat",
+	"ui.ask.reset": "Resetează",
+	"ui.ask.import": "Importă"
 }

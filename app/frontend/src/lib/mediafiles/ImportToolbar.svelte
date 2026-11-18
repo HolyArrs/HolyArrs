@@ -105,7 +105,8 @@
 	.phone .gap { flex: 1; }
 	.phone .pv :global(.vs) { --vs-bg: var(--surface-2); }
 	.phone .line > :global(.dlfind) { flex: 1 1 auto; min-width: 0; }
-	.phone .chips { flex: 1; padding: 2px; border-radius: 10px; background: var(--surface-2); overflow-x: auto; scrollbar-width: none; }
+	/* Long labels (German, Finnish, Tamil) wrap to a second line instead of running off the edge. */
+	.phone .chips { flex: 1; flex-wrap: wrap; padding: 2px; border-radius: 10px; background: var(--surface-2); }
 	.phone .chips button { flex: 1 0 auto; justify-content: center; height: 40px; padding: 0 8px; border-radius: 8px; }
 	.phone .chips button[aria-pressed='true'] { background: var(--seg-thumb); box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 0.5px rgb(0 0 0 / 4%); }
 	@media (prefers-reduced-motion: reduce) { .chips button { transition: none; } }

@@ -7,6 +7,7 @@
 	"settings.sources.title": "সোর্স",
 	"settings.sources.add": "একটি সোর্স যোগ করুন",
 	"settings.sources.lead": "অগ্রাধিকার ১ আগে চলে। ব্যর্থ হওয়া সোর্স ছয় ঘণ্টা পর্যন্ত বাদ থাকে। ফিড নেই এমন সাইটের জন্য Jackett বা Prowlarr-কে Torznab ফিড হিসেবে যোগ করুন।",
+	"settings.sources.builtIn": "অন্তর্নির্মিত সাইটগুলোর জন্য Jackett বা Prowlarr লাগে না: {sites}। {kind}-এর অধীনে {site} বেছে নিন।",
 	"settings.sources.change": "{name} বদলান",
 	"settings.sources.name": "নাম",
 	"settings.sources.feedKind": "ফিডের ধরন",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "সেভ করুন",
 	"settings.sources.cancel": "বাতিল",
 	"settings.sources.none": "কোনো সোর্স নেই",
-	"settings.sources.noneText": "একটি Torznab বা Newznab ফিড, অথবা Jackett বা Prowlarr যোগ করুন।",
+	"settings.sources.noneText": "একটি অন্তর্নির্মিত সাইট, একটি Torznab বা Newznab ফিড, অথবা Jackett বা Prowlarr যোগ করুন।",
 	"settings.sources.rowTitle": "{url} · অগ্রাধিকার {priority} · {uses}",
 	"settings.sources.priorityUses": "অগ্রাধিকার {priority} · {uses}",
 	"settings.sources.keyIs": "কী {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "সাইট",
 	"settings.sources.addressSite": "সাইটের নিজস্ব ঠিকানা। সাইট সরে গেলে তবেই বদলান।",
 	"settings.sources.siteKeyLabel": "কুকি বা RSS কী",
-	"settings.sources.siteKeyHint": "আপনার নিজের অ্যাকাউন্ট থেকে: ব্রাউজার কুকি থেকে uid ও pass, অথবা আপনার RSS লিঙ্ক থেকে u ও tp। এনক্রিপ্ট করে রাখা হয়।"
+	"settings.sources.siteKeyHint": "আপনার নিজের অ্যাকাউন্ট থেকে: ব্রাউজার কুকি থেকে uid ও pass, অথবা আপনার RSS লিঙ্ক থেকে u ও tp। এনক্রিপ্ট করে রাখা হয়।",
+	"settings.sources.sendTo": "ডাউনলোড পাঠান",
+	"settings.sources.sendToAny": "যেকোনো ডাউনলোডার",
+	"settings.sources.sendToHint": "এই উৎস থেকে বাছাই করা সবকিছু শুধু এই ডাউনলোডারে যায়। এটি বন্ধ থাকলে অপেক্ষা করে।",
+	"settings.sources.sendToGone": "বাছাই করা ডাউনলোডারটি সরানো হয়েছে। এই উৎসের ডাউনলোড এখন যেকোনো ডাউনলোডারে যায়।"
 }

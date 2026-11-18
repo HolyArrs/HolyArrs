@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "இந்தப் பதிப்புக்கான தேர்வு விதிகள்",
 	"movies.versions.folderLabel": "இந்தப் பதிப்புக்கான நூலகக் கோப்புறை",
 	"movies.versions.cancel": "ரத்துசெய்",
-	"movies.versions.addButton": "பதிப்பைச் சேர்"
+	"movies.versions.addButton": "பதிப்பைச் சேர்",
+	"movies.versions.setEdition": "வெளியீட்டு வடிவத்தை அமை",
+	"movies.versions.editionFileHint": "இந்தக் கோப்பு எந்த வடிவம், எடுத்துக்காட்டாக Theatrical அல்லது Directors Cut. அழிக்க காலியாக விடவும்.",
+	"movies.versions.unprotectConfirm": "{label} இன் பாதுகாப்பை நீக்கவா? சிறந்த பிரதி மீண்டும் இதை மாற்றலாம்.",
+	"movies.versions.editionChars": "அனுமதி இல்லை:",
+	"movies.versions.editionInvalid": "இந்த வெளியீட்டு வடிவத்தைப் பயன்படுத்த முடியாது. சுருக்கமாக வையுங்கள் (உச்சரிப்புக் குறியுடன் கூடிய மற்றும் லத்தீன் அல்லாத எழுத்துகள் அதிக இடம் எடுக்கும்), மேலே பட்டியலிட்ட எழுத்துகளைத் தவிர்த்து, புள்ளியுடன் முடிக்காதீர்கள்.",
+	"movies.versions.editionDevice": "{name} என்ற பெயரை Windows சாதனங்களுக்காக ஒதுக்கி வைத்துள்ளது, எனவே அதைப் பயன்படுத்த முடியாது. வேறொரு பெயரை உள்ளிடுங்கள்."
 }

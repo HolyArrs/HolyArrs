@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} чека",
 	"frame.nav.new": "{n} нових",
 	"frame.nav.manage": "Управљање",
+	"frame.nav.activity": "Активност",
+	"frame.nav.system": "Систем",
 	"frame.nav.history": "Историја",
 	"frame.nav.status": "Статус",
 	"frame.nav.settings": "Подешавања",
+	"frame.nav.plugins": "Додаци",
 	"frame.nav.goTo": "Иди на",
 	"frame.nav.active": "{n} активно, {percent}%",
 	"frame.nav.decide": "{n} захтева одлуку",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Систем",
 	"frame.layout.switch": "Промени налог",
 	"frame.layout.signOut": "Одјави се",
+	"frame.layout.support": "Подржите HolyArrs",
 	"frame.layout.signOutFail": "Одјава није потврђена",
 	"frame.layout.signedOut": "Одјављен си",
 	"frame.layout.accountMenu": "{name}, {role}: налог и изглед",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs покушава поново сам",
 	"frame.feeds.clearNow": "Очисти сада",
 	"frame.feeds.cleared": "Очишћено из Преузимача",
-	"frame.feeds.clearStill": "Још није очишћено"
+	"frame.feeds.clearStill": "Још није очишћено",
+	"frame.error.pageGone": "Ова страница не постоји. Веза је можда стара или погрешно унета."
 }

@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Lascia che gli assistenti IA usino HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Chiavi e percorsi per altre app",
+	"core.settings.remoteAccess.label": "Accesso remoto",
+	"core.settings.remoteAccess.about": "Usa HolyArrs fuori casa",
 	"core.settings.tmdb.label": "Metadati",
 	"core.settings.tmdb.about": "Da dove arrivano locandine e nomi",
 	"core.settings.health.label": "Controlli di stato",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Password, due fattori, dispositivi",
 	"core.api.sourceOff": "Alcune righe sono disattivate in questa installazione.",
 	"core.plain.noDownloader": "Le tue fonti trovano download che nessuno dei tuoi downloader può accettare, quindi non se ne può inviare nessuno.",
-	"core.plain.sameDownloader": "Due Downloader raggiungono la stessa app di download, quindi i download possono comparire due volte."
+	"core.plain.sameDownloader": "Due Downloader raggiungono la stessa app di download, quindi i download possono comparire due volte.",
+	"core.plain.peopleCheck": "L’elenco utenti del server multimediale non è leggibile, quindi chi viene rimosso lì non viene disattivato qui.",
+	"core.plain.deleted": "eliminato",
+	"core.plain.deletedName": "{name} (eliminato)"
 }

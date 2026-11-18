@@ -23,6 +23,7 @@ var wordExceptions = []struct{ file, line, why string }{
 	{"plans/active/2026-10-13-m1-movies.md", "- Words: use glossary terms in code", "the rule naming the words to avoid"},
 	{"plans/active/holyarrs-prephase-design.md", "- **Words.** Ordinary words", "the clean-room rule naming coined terms"},
 	{"plans/active/holyarrs-prephase-design.md", "| 3 | **Seerr** (full)", "research side: names the upstream app's own feature"},
+	{"repo/docs/start/home-and-settings.md", "| **Activity** | Downloads, History |", "user docs name the menu group label the app shows"},
 	{"plans/done/2026-10-10-holyarrs-prephase-run.md", "", "research-side run plan (done) quoting upstream screens"},
 }
 

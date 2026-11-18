@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "இரண்டு பாதைகளும் ஒன்றே, எனவே இந்த ஜோடி எதையும் மாற்றாது. ஆனாலும் இந்த பதிவிறக்கியின் கோப்புகள் எங்கே என்று HolyArrs-க்கு சொல்கிறது, எனவே இதை வைத்திருக்கலாம்.",
 	"settings.downloaders.change": "{name} ஐ மாற்று",
 	"settings.downloaders.whichApp": "எந்த ஆப்",
-	"settings.downloaders.torrents": "(டொரண்டுகள்)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "டொரண்ட்",
+	"settings.downloaders.usenetHead": "யூஸ்நெட்",
+	"settings.downloaders.mostUsed": "அதிகம் பயன்படுவது",
 	"settings.downloaders.name": "பெயர்",
 	"settings.downloaders.address": "முகவரி",
 	"settings.downloaders.addressHint": "அதன் இணையப் பக்கம். SABnzbd க்கு IP ஐப் பயன்படுத்துங்கள் அல்லது HolyArrs இன் ஹோஸ்ட் பெயரை அனுமதியுங்கள்.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "இறக்குமதிக்குப் பின் வகை",
 	"settings.downloaders.categoryAfterImportHint": "டோரன்ட் இறக்குமதியானதும் HolyArrs அதை இந்த வகைக்கு நகர்த்தும். முதன்மை வகையிலேயே வைக்க காலியாக விடுங்கள்.",
 	"settings.downloaders.ownOnly": "HolyArrs உருப்படிகளை மட்டும் காட்டு",
-	"settings.downloaders.ownOnlyHint": "இந்த டவுன்லோடரில் உள்ள மற்ற ஆப்களின் உருப்படிகள் மறைக்கப்படும்; HolyArrs அவற்றை மாற்றாது."
+	"settings.downloaders.ownOnlyHint": "இந்த டவுன்லோடரில் உள்ள மற்ற ஆப்களின் உருப்படிகள் மறைக்கப்படும்; HolyArrs அவற்றை மாற்றாது.",
+	"settings.downloaders.state.notAnswering": "பதிலளிக்கவில்லை",
+	"settings.downloaders.state.paused": "இடைநிறுத்தப்பட்டது",
+	"settings.downloaders.state.resting": "ஓய்வில்",
+	"settings.downloaders.state.signInRefused": "உள்நுழைவு மறுக்கப்பட்டது",
+	"settings.downloaders.state.working": "இயங்குகிறது"
 }

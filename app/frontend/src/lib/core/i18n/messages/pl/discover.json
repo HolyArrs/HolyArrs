@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Wklej identyfikator, na przykład tmdb:693134 lub tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Albo opisz go, na przykład „film kosmiczny z robotem z 2014”.",
 	"discover.search.lookEverywhere": "Szukaj wszędzie",
-	"discover.search.searchIndexersFor": "Szukaj w Źródłach: „{searched}”",
+	"discover.search.searchIndexersFor": "Sprawdź swoje źródła",
 	"discover.search.topMatches": "Najlepsze dopasowania",
 	"discover.people.goToTheFilmography": "Przejdź do filmografii",
 	"discover.people.filmography": "Filmografia",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Nie pasuje do tej wersji",
 	"discover.leftovers.reason.movie_has_file": "Film ma już plik",
 	"discover.leftovers.reason.replaced_by_hand": "Zastąpiony innym plikiem",
-	"discover.leftovers.reason.unmatched": "Dopasowanie cofnięte ręcznie"
+	"discover.leftovers.reason.unmatched": "Dopasowanie cofnięte ręcznie",
+	"discover.searchSections.genres": "Gatunki",
+	"discover.searchSections.moods": "Nastroje",
+	"discover.searchSections.stories": "Historie i motywy",
+	"discover.searchSections.worlds": "Światy i sceneria",
+	"discover.searchSections.eras": "Epoki",
+	"discover.searchSections.world": "Z całego świata",
+	"discover.searchSections.collections": "Kolekcje",
+	"discover.popularRail.out": "Premiera",
+	"discover.popularRail.comingDay": "Wkrótce",
+	"discover.titleLibrary.turnShowOnHint": "Włącz serial, aby zacząć wyszukiwanie.",
+	"discover.leftovers.reason.seasons_differ": "Znaleziono tylko po numerze TMDB ze starej aplikacji: sprawdź, czy to ten sam serial, a potem sam dopasuj plik"
 }

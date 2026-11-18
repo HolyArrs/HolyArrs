@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Cal revisar: {n}",
 	"migrate.needAttentionWhy": "La seva carpeta antiga no és en aquest servidor, així que arriben com a desitjats a una carpeta d'aquí. Corregeix la carpeta o afegeix una regla de camí: {list}",
 	"migrate.leftOutUncheckedN": "Deixats fora: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} està a \"No els incorporis\"; tria-hi una carpeta i importa de nou"
+	"migrate.leftOutUncheckedWhy": "{folder} està a \"No els incorporis\"; tria-hi una carpeta i importa de nou",
+	"migrate.seasonsDifferOne": "Comprova 1 sèrie trobada pel seu número de TMDB",
+	"migrate.seasonsDifferOther": "Comprova {n} sèries trobades pel seu número de TMDB",
+	"migrate.seasonsDifferWhy": "Només el número de TMDB de l'app antiga ha trobat {list}, aquí amb un altre nom. Obre-les una a una i comprova que és la mateixa sèrie. Si ho és, les temporades estan numerades de manera diferent: associa els seus Fitxers sobrants i després activa la sèrie. Si no ho és, elimina-la; els seus fitxers es queden on són.",
+	"migrate.stillChecking": "Sèries que el servidor de metadades encara comprova: {n}. Aquesta llista s'actualitza sola quan acaba.",
+	"migrate.stillCheckingImport": "Sèries que el servidor de metadades encara comprova: {n}. Ja pots importar; es comproven durant la importació."
 }

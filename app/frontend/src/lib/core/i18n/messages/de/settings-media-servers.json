@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs-Pfad",
 	"settings.mediaServers.pathTo": "Derselbe Ordner auf dem Server",
 	"settings.mediaServers.pathHint": "Nur wenn der Server deine Dateien unter einem anderen Pfad sieht",
+	"settings.mediaServers.webUrl": "Adresse für Browser",
+	"settings.mediaServers.webUrlHint": "Unter dieser Adresse öffnen alle den Server auf Handy oder Computer. Titelseiten, die der Server hat, bekommen einen Öffnen-Knopf. Leer lassen für keinen Knopf.",
 	"settings.mediaServers.local": "Lokales Netzwerk erreichen",
 	"settings.mediaServers.send": "Updates senden",
 	"settings.mediaServers.save": "Speichern",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Wiedergabeverlauf ausschalten? Alles bisher Gelesene wird gelöscht.",
 	"settings.mediaServers.watchTurnedOn": "Wiedergabeverlauf an. Das erste Lesen folgt innerhalb von 30 Minuten.",
 	"settings.mediaServers.watchTurnedOff": "Wiedergabeverlauf aus",
-	"settings.mediaServers.watchFailed": "Wiedergabeverlauf konnte nicht geändert werden"
+	"settings.mediaServers.watchFailed": "Wiedergabeverlauf konnte nicht geändert werden",
+	"settings.mediaServers.labelTitle": "Plex-Labels",
+	"settings.mediaServers.labelSwitch": "Angefragte Titel mit Label versehen",
+	"settings.mediaServers.labelHint": "Wenn ein angefragter Film oder eine Serie in Plex ist, fügt HolyArrs ein Label hinzu, damit du in Plex danach filtern, Sammlungen bauen oder teilen kannst. Vorhandene Labels bleiben.",
+	"settings.mediaServers.labelText": "Label",
+	"settings.mediaServers.labelAskers": "Auch den Namen der anfragenden Person als Label hinzufügen",
+	"settings.mediaServers.labelSaved": "Plex-Labels gespeichert",
+	"settings.mediaServers.labelFailed": "Plex-Labels konnten nicht gespeichert werden",
+	"settings.mediaServers.labelExisting": "Bereits angefragte Titel mit Label versehen",
+	"settings.mediaServers.labelExistingStarted": "Labeln gestartet. Die Titel bekommen ihre Labels in wenigen Minuten.",
+	"settings.mediaServers.labelExistingFailed": "Labeln konnte nicht gestartet werden"
 }

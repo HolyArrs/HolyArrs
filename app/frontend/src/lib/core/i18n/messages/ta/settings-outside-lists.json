@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "அது அமைக்கப்படும் வரை உங்கள் Trakt பட்டியல்களைப் படிக்க முடியாது.",
 	"settings.outsideLists.replaceKey": "Trakt விசையை மாற்று",
 	"settings.outsideLists.pasteKey": "Trakt விசையை ஒட்டுங்கள்",
+	"settings.outsideLists.mdblistKey": "MDBList விசை",
+	"settings.outsideLists.mdblistInfo": "விருப்பத்தேர்வு. உங்கள் MDBList API விசையுடன், MDBList பட்டியல்கள் MDBList API வழியாகப் படிக்கப்படும்; அது இல்லாமல், அவற்றின் பொது இணைப்பு வழியாக. அது மறைகுறியாக்கி சேமிக்கப்படும்; உங்கள் சொந்த விசைகள் பயன்முறையில் வெளி மதிப்பீடுகள் பயன்படுத்தும் அதே விசை இது.",
+	"settings.outsideLists.pasteMdblistKey": "உங்கள் MDBList API விசையை ஒட்டுங்கள்",
+	"settings.outsideLists.replaceMdblistKey": "MDBList விசையை மாற்று",
+	"settings.outsideLists.removeMdblistKey": "விசையை நீக்கு",
+	"settings.outsideLists.mdblistKeySaved": "MDBList விசை சேமிக்கப்பட்டது",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList விசை நீக்கப்பட்டது; பட்டியல்கள் அவற்றின் பொது இணைப்பைப் பயன்படுத்தும்",
 	"settings.outsideLists.replaceVip": "VIP அணுகல் டோக்கனை மாற்று",
 	"settings.outsideLists.vip": "VIP அணுகல் டோக்கன் (விருப்பம்)",
 	"settings.outsideLists.vipHint": "தலைப்புப் பக்கங்களில் Trakt தாவலைச் சேர்க்கும்: மதிப்பெண், பார்வையாளர்கள், கருத்துகள்",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "ஒருபோதும் சேர்க்காத பட்டியலில் சேர்",
 	"settings.outsideLists.showDot": "தொடர் ·",
 	"settings.outsideLists.takeOff": "{name} ஐ நீக்கு",
-	"settings.outsideLists.empty": "காலி"
+	"settings.outsideLists.empty": "இந்தப் பட்டியலில் இன்னும் எதுவும் இல்லை"
 }

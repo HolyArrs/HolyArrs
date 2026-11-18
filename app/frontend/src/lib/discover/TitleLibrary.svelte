@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
@@ -6,11 +7,11 @@
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
-	import { airWords, epFile, epQuality, epTone } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
+	import { airWords, epFile, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
 	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, chosenWhy, type SheetEpisode } from '#lib/shows/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
 	import { qualityBadges, ShowDeleteDialog, splitSteps, type RenameStep } from '#lib/mediafiles/index.ts';
-	import { MovieVersions } from '#lib/movies/index.ts';
+	import { copyBadges, MovieVersions } from '#lib/movies/index.ts';
 	import { SubtitlePanel, type TitleSubtitles } from '#lib/subtitles/index.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -36,7 +37,6 @@
 
 	// Routine work stays out of the title page; History shows it all.
 	const ownedRows = $derived(groupDownloads(ownedEvents.filter((e) => !isRoutine(e.Kind))));
-
 	const ownedTitles = $derived(new Map(owned ? [[owned.id, owned]] : []));
 
 	let epOpen = $state(false);
@@ -117,8 +117,8 @@
 		if (!o) return;
 		own.busyAction = key;
 		try {
-			await api.post(`/titles/${o.id}/search`, body);
-			toasts.push(done, 'info');
+			const res = await api.post(`/titles/${o.id}/search`, body);
+			if (searchQueued(res)) toasts.push(done, 'info'); else toasts.push(t(nothingQueuedKey(!!o.keep_up_to_date)), 'info');
 		} catch (e) {
 			toasts.push(t('discover.titleLibrary.couldntStartSearch'), 'fail', { body: message(e) });
 		} finally {
@@ -130,9 +130,7 @@
 	const qOrder = ['Lite', 'Standard', 'Best'];
 
 	const qHints = (): Record<string, string> => ({ Lite: t('discover.titleLibrary.hintLite'), Standard: t('discover.titleLibrary.hintStandard'), Best: t('discover.titleLibrary.hintBest'), '4K': t('discover.titleLibrary.hint4k') });
-
 	const qKind = $derived(rules.filter((r) => r.kinds.includes(owned?.kind ?? '')));
-
 	const qPresets = $derived(qKind.filter((r) => r.preset && r.name !== '4K').sort((a, b) => (qOrder.indexOf(a.name) + 1 || 99) - (qOrder.indexOf(b.name) + 1 || 99)));
 
 	const qOthers = $derived(qKind.filter((r) => !qPresets.includes(r)));
@@ -265,7 +263,7 @@
 	let failing = $state(0);
 
 	async function markFailed(downloadID: number) {
-		if (!confirm(t('discover.titleLibrary.confirmMarkFailed'))) return;
+		if (!(await ask(t('discover.titleLibrary.confirmMarkFailed'), { yes: t('ui.ask.markFailed') }))) return;
 		failing = downloadID;
 		try {
 			await api.post(`/downloads/${downloadID}/mark-failed`);
@@ -320,7 +318,7 @@
 		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
 		const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
-		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: qualityBadges([f]), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
+		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: copyBadges(qualityBadges([f]), m.edition ? String(m.edition) : '', f?.Protected ? t('mediafiles.copy.protectedBadge') : ''), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 
 	let libAll = $state(false);
@@ -420,11 +418,11 @@
 					<h3 class="lib-h">{t('discover.titleLibrary.seasons')}</h3>
 					{#if o.show.episode_group?.name}<span class="lib-fact" data-testid="order-chip">{o.show.episode_group.name}</span>{/if}
 					<span class="lib-head-acts">
-						{#if manage && o.show.in_library < o.show.episodes - (o.show.not_out_yet ?? 0)}<button type="button" class="lib-btn sm" disabled={busyAction === 'all'} onclick={() => epSearch({}, 'all', t('discover.titleLibrary.searchingMissing'))}><Icon name="search" size={15} />{t('discover.titleLibrary.getAllMissing')}</button>{/if}
+						{#if getAllMissingShown(manage, !!o.keep_up_to_date, o.show.seasons)}<button type="button" class="lib-btn sm" disabled={busyAction === 'all'} onclick={() => epSearch({}, 'all', t('discover.titleLibrary.searchingMissing'))}><Icon name="search" size={15} />{t('discover.titleLibrary.getAllMissing')}</button>{/if}
 						<button type="button" class="lib-btn sm" onclick={() => toggleAll(o)}>{openSeasons.size ? t('discover.titleLibrary.collapseAll') : t('discover.titleLibrary.expandAll')}</button>
 					</span>
 				</div>
-				<div class="lib-sl">
+				{#if manage && (showOffHint(!!o.keep_up_to_date, o.show.seasons) || (!o.keep_up_to_date && o.show.in_library < o.show.episodes - (o.show.not_out_yet ?? 0)))}<p class="lib-off-hint" role="note" data-testid="show-off-hint"><Icon name="info" size={15} />{t('discover.titleLibrary.turnShowOnHint')}</p>{/if}<div class="lib-sl">
 					{#each [...o.show.seasons].sort((x, y) => y.number - x.number) as se (se.number)}
 						{@const isOpen = openSeasons.has(se.number)}
 						{@const full = se.episodes > 0 && se.in_library >= se.episodes}
@@ -501,7 +499,7 @@
 					{#each libFiles as f (f.id)}
 							{@const v = o.versions.find((x) => x.id === f.versionId)}
 						<article class="lib-file" data-testid="version-card">
-							<p class="lib-file-top"><b>{f.label}</b>{#each f.badges as b (b)}<span class="lib-badge">{b}</span>{/each}{#if manage && v && !v.main && o.kind !== 'show'}<span class="lib-file-menu"><Menu label={t('discover.titleLibrary.versionActionsFor', { label: v.label })} items={[{ label: t('discover.titleLibrary.removeLabel', { label: v.label }), icon: 'trash', destructive: true, onselect: () => void own.movieVersions?.remove(v) }]} width={220} /></span>{/if}</p>
+							<p class="lib-file-top"><b>{f.label}</b>{#each f.badges as b (b)}<span class="lib-badge">{b}</span>{/each}{#if manage && v && o.kind !== 'show' && (!v.main || f.has)}<span class="lib-file-menu"><Menu label={t('discover.titleLibrary.versionActionsFor', { label: v.label })} items={own.movieVersions?.copyMenu(v, o.slots.find((x) => x.id === f.id)?.file) ?? []} width={360} /></span>{/if}</p>
 							{#if f.has}
 								<div class="lib-tiles"><div><span>{t('discover.titleLibrary.quality')}</span><b>{f.res || '—'}</b></div><div><span>{t('discover.titleLibrary.size')}</span><b>{f.size || '—'}</b></div><div><span>{t('discover.titleLibrary.added')}</span><b>{f.addedOn || '—'}</b></div></div>
 							{:else}<p class="lib-file-meta">{t('discover.titleLibrary.noFileYet', { state: f.state })}</p>{/if}
@@ -648,21 +646,21 @@
 		.lib-side > .lib-h:first-child { margin-top: 0; }
 	}
 	.lib-h { margin: 28px 0 12px; font: 700 20px/1.2 var(--font-ui); letter-spacing: -.01em; }
-	.lib-status { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 22px 24px; border-radius: 18px; background: var(--surface-2); box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--text) 10%, transparent); }
-	.lib-status.failed { background: color-mix(in srgb, var(--fail) 10%, var(--surface-2)); }
+	.lib-status { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 20px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
+	.lib-status.failed { background: color-mix(in srgb, var(--fail) 8%, var(--surface-1)); }
 	.lib-st-text { flex: 1 1 320px; min-width: 0; }
 	.lib-st-title { display: flex; align-items: center; gap: 10px; margin: 0; font: 700 22px/1.2 var(--font-ui); letter-spacing: -.01em; }
 	.lib-facts { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0 20px; }
-	.lib-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: var(--surface-1); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.lib-fact { display: inline-flex; align-items: center; gap: 6px; max-width: 260px; height: 26px; padding: 0 10px; border-radius: 8px; background: var(--surface-2); color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.lib-st-sub { margin: 6px 0 0 20px; color: var(--text-muted); font: 500 14px/1.4 var(--font-ui); }
 	.lib-bar { height: 6px; margin: 12px 0 0 20px; border-radius: 99px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
 	.lib-bar span { display: block; width: 100%; height: 100%; border-radius: 99px; background: var(--info); transition: transform var(--dur-slow) var(--ease-out); }
-	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
+	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
 	.lib-btn.primary { background: var(--text); color: var(--bg); }
 	.lib-btn:hover { filter: brightness(1.08); }
 	.lib-head-acts { display: flex; gap: 8px; }
-	.lib-sl { display: grid; gap: 8px; }
-	.lib-sr { border-radius: 14px; background: var(--surface-2); overflow: hidden; }
+	.lib-sl { display: grid; gap: 8px; } .lib-off-hint { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--text-muted); font: var(--t-footnote); }
+	.lib-sr { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
 	.lib-sr-head { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; min-height: 52px; }
 	.lib-sr-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 4px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 	.lib-sr-main b { font: 650 16px/1 var(--font-ui); white-space: nowrap; }
@@ -697,7 +695,7 @@
 		.lib-head-acts .lib-btn.sm { padding: 0 10px; }
 	}	.lib-eps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	.lib-eps-head .lib-h { margin-bottom: 14px; }
-	.lib-btn.sm { height: 34px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
+	.lib-btn.sm { height: 36px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
 	.lib-eps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 	.lib-ep { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 34px; align-items: center; gap: 14px; padding: 6px; border-radius: 12px; transition: background var(--dur-fast) var(--ease-out); }
 	.lib-ep { position: relative; cursor: pointer; }
@@ -727,7 +725,7 @@
 		.lib-ep-still { grid-row: span 2; }
 	}
 	.lib-files { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
-	.lib-file { display: grid; gap: 8px; align-content: start; padding: 18px 20px; border-radius: 16px; background: var(--surface-2); min-width: 0; }
+	.lib-file { display: grid; gap: 8px; align-content: start; padding: 18px 20px; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); min-width: 0; }
 	.lib-file p { margin: 0; }
 	.lib-file-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 700 16px/1.2 var(--font-ui); }
 	.lib-file-top b { margin-right: 4px; font-weight: 700; }
@@ -745,7 +743,7 @@
 	.lib-file-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 	.lib-file-name { display: flex !important; align-items: center; gap: 8px; margin-top: 2px !important; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
-	.lib-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: 16px; background: var(--surface-2); overflow: hidden; }
+	.lib-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
 	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail-text); }
 	.lib-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }

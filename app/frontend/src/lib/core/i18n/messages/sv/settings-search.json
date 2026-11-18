@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Neka releaser som postats före utgivning",
 	"settings.search.refuseEarlyHint": "Troligen förfalskningar. Välj en release visar dem ändå, med en varning.",
 	"settings.search.refuseTiny": "Neka förfalskningar efter storlek och filtyp",
-	"settings.search.refuseTinyHint": "För små releaser, tomma filer och .wmv eller .asf under HD-namn",
+	"settings.search.refuseTinyHint": "För små releaser, tomma filer, avbrutna videor och .wmv eller .asf under HD-namn",
 	"settings.search.grace": "Timmar en release får vara tidig",
 	"settings.search.graceHint": "För tidszoner. Standard 24.",
 	"settings.search.floors": "Kontrollera filstorlekar vid import",

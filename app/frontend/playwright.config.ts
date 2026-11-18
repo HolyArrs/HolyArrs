@@ -43,6 +43,8 @@ export default defineConfig({
 		{ name: 'phone', testMatch: '**/whole-app/phone.spec.ts', use: { ...devices['Pixel 7'] }, dependencies: ['desktop'] },
 		{ name: 'accounts', testMatch: '**/accounts/accounts.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'plexwatchlist', testMatch: '**/mediaservers/plex-watchlist.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
+		// Open in Jellyfin: a Library movie the fake Jellyfin has gets a button to its details page at the browser address; a phone.
+		{ name: 'openin', testMatch: '**/mediaservers/open-in.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'a11y', testMatch: 'a11y.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'movies', testMatch: '**/movies/movies.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'lists', testMatch: '**/requests/lists.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
@@ -51,7 +53,7 @@ export default defineConfig({
 		// Sources: add, test, a wrong key, pause, the health page, an rss feed.
 		{ name: 'sources', testMatch: '**/sources/sources.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Search: Choose a release, Held and Turned down, Home, Settings > Search.
-		{ name: 'search', testMatch: '**/downloads/search.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['movies', 'sources'] },
+		{ name: 'search', testMatch: '**/downloads/search.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['movies', 'downloads'] },
 		{ name: 'ai', testMatch: '**/ai/ai.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Reported problems: a member reports a problem from a phone, the owner marks it fixed with a reply, the member sees it fixed.
 		{ name: 'reports', testMatch: '**/requests/reports.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
@@ -60,6 +62,8 @@ export default defineConfig({
 		// Downloads screen and Needs a decision: live progress, Remove with its choices, the badge, phone width and accessibility.
 		{ name: 'downloads', testMatch: '**/downloads/downloads.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['downloaders'] },
 		// Organise: import an existing library, rename, delete, naming settings; phone width, accessibility, members see none of it.
+		// Watched by anyone: the owner's Library filter.
+		{ name: 'watchedanyone', testMatch: '**/mediafiles/watched-anyone.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'organise', testMatch: '**/mediafiles/organise.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// History, health, the calendar and its phone feed, webhook Alerts and media servers; phone width and accessibility.
 		{ name: 'history', testMatch: '**/downloads/history.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['organise'] },
@@ -100,6 +104,8 @@ export default defineConfig({
 		{ name: 'home', testMatch: '**/whole-app/home.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'exploremem', testMatch: '**/discover/explore-memory.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'communitybrowse', testMatch: '**/discover/community-browse.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
+		// Explore's hero on the first visit: a placeholder, then the hero without a reload.
+		{ name: 'herofirst', testMatch: '**/discover/hero-first-load.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'appframe', testMatch: '**/whole-app/appframe.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Settings: the seven groups, setting search with a deep link and highlight, the save bar and its leave guard, Advanced kept per person, Danger zone, a phone and accessibility.
 		{ name: 'settings', testMatch: '**/whole-app/settings.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
@@ -109,8 +115,11 @@ export default defineConfig({
 		{ name: 'pickrulestags', testMatch: '**/downloads/pick-rules-tags.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Kid accounts: invite a Kid (PG), join, the Library shows only titles rated up to PG, an R title and an ask for it are refused in plain words, no Music.
 		{ name: 'kid', testMatch: '**/whole-app/kid.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
+		{ name: 'invitebars', testMatch: '**/whole-app/invite-bars.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Trailers: the trailer pass looks titles up on a fake YouTube; the title hero plays the kept address, an age-restricted trailer gives way to the next, removed ones say so on screen, a title not looked up yet plays in YouTube's player.
 		{ name: 'trailers', testMatch: '**/metadata/trailers.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
+		// A router or VPN in fake-IP mode: Settings > Metadata names 198.18.x.x and the host to add, at desktop and phone width.
+		{ name: 'fakeip', testMatch: '**/metadata/fake-ip.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Library tools: Movie series, Recently deleted and Import files by hand from the Add menu; a phone.
 		{ name: 'librarytools', testMatch: /[\\/]library-[a-z0-9-]+\.spec\.ts$/, use: { ...devices['Desktop Chrome'] }, dependencies: ['search', 'kid'] }
 	]

@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "wala",
 	"settings.thisApp.needsRestart": "Kailangan ng restart. Mas nangingibabaw ang HOLYARRS_URL_BASE o -url-base.",
 	"settings.thisApp.save": "I-save",
-	"settings.thisApp.licence": "Ang HolyArrs ay libreng software sa ilalim ng AGPL-3.0."
+	"settings.thisApp.licence": "Ang HolyArrs ay libreng software sa ilalim ng AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Ipadaan sa proxy ang mga tawag palabas. Nananatili ang mga patakaran sa pag-block at home network para sa totoong destinasyon.",
+	"settings.thisApp.proxyType": "Uri",
+	"settings.thisApp.proxyOff": "Naka-off",
+	"settings.thisApp.proxyHost": "Host",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Username",
+	"settings.thisApp.proxyPasswordLabel": "Password",
+	"settings.thisApp.proxyPasswordKept": "Iwanang blangko para panatilihin ang naka-save na password",
+	"settings.thisApp.proxyBypass": "Laktawan ang proxy para sa",
+	"settings.thisApp.proxyBypassHint": "Mga pangalan, address o range, hinati ng kuwit. Saklaw ng *.example.com ang lahat ng pangalan sa ilalim nito.",
+	"settings.thisApp.proxyBypassLocal": "Laktawan ang proxy para sa mga lokal na address",
+	"settings.thisApp.proxyBypassLocalHint": "Direktang kumokonekta ang makinang ito at ang home network mo",
+	"settings.thisApp.proxySaved": "Na-save ang proxy",
+	"settings.thisApp.proxyOffSaved": "Naka-off ang proxy"
 }

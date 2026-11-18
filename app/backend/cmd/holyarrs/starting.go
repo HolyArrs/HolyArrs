@@ -23,6 +23,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // swapHandler lets the listener answer before the app is ready: a small
@@ -71,6 +72,24 @@ func failedHandler(msg string) http.Handler {
 	return holdingPage(http.StatusServiceUnavailable, `{"state":"failed"}`, "HolyArrs did not start: "+msg+"\n")
 }
 
+// keyHeldHandler is the page held for a master key problem. A missing key
+// in /config (Docker) also says, in the browser's language, that HolyArrs
+// looked there; other config folders keep the plain page.
+func keyHeldHandler(err error, configDir string) http.Handler {
+	msg := publicReason(err)
+	plain := failedHandler(msg)
+	if !errors.Is(err, secrets.ErrKeyMissing) || filepath.ToSlash(filepath.Clean(configDir)) != "/config" {
+		return plain
+	}
+	m := http.NewServeMux()
+	m.Handle("GET /healthz", plain)
+	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Vary", "Accept-Language")
+		failedHandler(msg+"\n\n"+keyLine(metadata.TextLanguage(r))).ServeHTTP(w, r)
+	})
+	return m
+}
+
 // publicReason says what went wrong without paths or other details, since
 // the page is open to anyone; the log keeps the full error.
 func publicReason(err error) string {
@@ -94,13 +113,13 @@ func publicReason(err error) string {
 	case errors.Is(err, database.ErrMigration):
 		return "the update of the data failed and the step that failed was undone. You can run the version you had before again (change the image tag back); if it says the data is newer, its page offers to put back the data from before the update." + goBack
 	case errors.Is(err, secrets.ErrKeyMissing):
-		return "the master key file is missing. Put " + secrets.KeyFile + " (or your key kit renamed to " + secrets.KeyFile + ") back in the config folder, then restart. Nothing was changed." + newMachine
+		return "the master key file is missing. " + keyWhere(err) + "Put " + secrets.KeyFile + " (or your key kit renamed to " + secrets.KeyFile + ") back in the config folder, then restart. Nothing was changed." + newMachine
 	case errors.Is(err, secrets.ErrWrongKey):
 		return "the master key does not match this database. Put back the key file that belongs to it, then restart. Nothing was changed." + newMachine
 	case errors.Is(err, secrets.ErrKeyIsFolder):
 		return "the master key path is a folder, not the key file. Docker makes an empty folder there when the host file it should mount did not exist. Remove that folder on the host, put the key file at that path (check the host side of the volume for typos), then restart. Nothing was changed."
 	case errors.Is(err, secrets.ErrKeyUnreadable) && errors.Is(err, fs.ErrNotExist):
-		return "the master key file named in " + secrets.EnvKeyFile + " is not there. Check that the file is mounted at that path, or remove " + secrets.EnvKeyFile + " to use " + secrets.KeyFile + " in the config folder, then restart. Nothing was changed."
+		return "the master key file named in " + secrets.EnvKeyFile + " is not there. " + keyWhere(err) + "Check that the file is mounted at that path, or remove " + secrets.EnvKeyFile + " to use " + secrets.KeyFile + " in the config folder, then restart. Nothing was changed."
 	case errors.Is(err, secrets.ErrKeyUnreadable) && errors.Is(err, fs.ErrPermission):
 		return "the master key file cannot be read by HolyArrs: its owner or mode is wrong. On the host, give it to your PUID and PGID and make it private: chown PUID:PGID " + secrets.KeyFile + " and chmod 600 " + secrets.KeyFile + " (use your own numbers and the file's real path), then restart. Nothing was changed."
 	case errors.Is(err, secrets.ErrKeyUnreadable):
@@ -109,6 +128,17 @@ func publicReason(err error) string {
 		return "the data check after updating failed. You can run the version you had before again (change the image tag back); its page offers to put back the data from before the update." + goBack
 	}
 	return "see the log for details." + goBack
+}
+
+// keyWhere points at the log, which names the path that was looked for and
+// the files that look like it; the page itself shows no path, since it is
+// open to anyone. It is "" when the error carries no such detail.
+func keyWhere(err error) string {
+	var h *secrets.KeyHint
+	if errors.As(err, &h) {
+		return "The log line starting \"holyarrs: not started\" (and holyarrs doctor) names the path HolyArrs looked for and any files that look like it. "
+	}
+	return ""
 }
 
 func holdingPage(healthCode int, health, page string) http.Handler {

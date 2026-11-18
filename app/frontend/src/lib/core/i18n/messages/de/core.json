@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "KI-Assistenten HolyArrs nutzen lassen",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Schlüssel und Routen für andere Apps",
+	"core.settings.remoteAccess.label": "Fernzugriff",
+	"core.settings.remoteAccess.about": "HolyArrs von unterwegs erreichen",
 	"core.settings.tmdb.label": "Metadaten",
 	"core.settings.tmdb.about": "Woher Poster und Namen kommen",
 	"core.settings.health.label": "Zustandsprüfungen",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Passwort, Zwei-Faktor, Geräte",
 	"core.api.sourceOff": "Einige Reihen sind in dieser Installation aus.",
 	"core.plain.noDownloader": "Deine Quellen finden Downloads, die keiner deiner Downloader annehmen kann, daher kann keiner gesendet werden.",
-	"core.plain.sameDownloader": "Zwei Downloader erreichen dieselbe Download-App, daher können Downloads doppelt erscheinen."
+	"core.plain.sameDownloader": "Zwei Downloader erreichen dieselbe Download-App, daher können Downloads doppelt erscheinen.",
+	"core.plain.peopleCheck": "Die Benutzerliste des Medienservers ist nicht lesbar, daher werden dort entfernte Personen hier nicht ausgeschaltet.",
+	"core.plain.deleted": "gelöscht",
+	"core.plain.deletedName": "{name} (gelöscht)"
 }

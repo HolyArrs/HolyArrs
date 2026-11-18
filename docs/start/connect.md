@@ -7,12 +7,12 @@ sidebar: { order: 4, label: "Step 4 of 5: Connect" }
 
 Connect one downloader and one source. When both pass **Test**, HolyArrs can find and fetch titles.
 
-HolyArrs does not download by itself. A **downloader** (qBittorrent, SABnzbd and others) fetches files. A **source** is a feed HolyArrs searches for releases, usually through Prowlarr or Jackett.
+HolyArrs does not download by itself. A **downloader** (qBittorrent, SABnzbd and others) fetches files. A **source** is a feed HolyArrs searches for releases. Four torrent sites are built in (Knaben, TorrentsCSV, SubsPlease and IPTorrents); for other sites, link Prowlarr or Jackett.
 
 ## Before you start
 
 - A downloader running and reachable from HolyArrs, with its address and password or API key.
-- Prowlarr or Jackett with at least one site set up, and its API key.
+- A built-in site, or Prowlarr or Jackett with at least one site set up and its API key. Built-in sites need no Prowlarr or Jackett: see [Built-in sites](../../downloads/built-in-sites/).
 
 ## Connect a downloader
 
@@ -71,6 +71,10 @@ Prowlarr pushes its sites to HolyArrs and keeps them current. HolyArrs pulls fro
 | **Sign-in refused** | Wrong key or password | Copy it again from the app, save, press **Test** |
 | SABnzbd test fails on category | Category does not exist | Make it in SABnzbd under Config > Categories |
 | Prowlarr links but no sources arrive | Prowlarr cannot reach HolyArrs | Press **Change** on the card and give an address Prowlarr can open |
+| A container name like `qbittorrent` is not found | The two apps are not on the same Docker network | Put them on one network, or use the IP and port |
+| A `.local` name like `nas.local` is not found | `.local` names do not work inside Docker | Use the IP |
+| A Pi-hole or router name like `nas.home` is not found | HolyArrs does not ask your Pi-hole or router | Set Pi-hole or the router as the container's DNS, or use the IP |
+| A Tailscale name is not found | The container is not on your tailnet | Use the device's Tailscale IP |
 
 ## For experts
 
@@ -92,7 +96,7 @@ Stored keys are encrypted and never shown again. Moving a downloader to a new ho
 
 <details class="ha-more"><summary>Sources by hand</summary>
 
-HolyArrs reads Torznab (torrents), Newznab (Usenet) and RSS (newest only, no search) feeds itself. **Settings > Sources > Add a Source**, pick **Kind of feed**, paste **Address** and **Key**, tick **Reach the local network** for a feed on your home network, **Save**. It tests right away. Full page: [Sources](../../downloads/sources/).
+HolyArrs reads Torznab (torrents), Newznab (Usenet) and RSS (newest only, no search) feeds itself, and 4 torrent sites directly: pick **Built-in site** under **Kind of feed**, then the **Site**, and skip the **Address** and **Key** (only IPTorrents needs your own cookie or RSS key). **Settings > Sources > Add a Source**, pick **Kind of feed**, paste **Address** and **Key**, tick **Reach the local network** for a feed on your home network, **Save**. It tests right away. Full page: [Sources](../../downloads/sources/).
 
 </details>
 

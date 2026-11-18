@@ -42,6 +42,9 @@ type UserView struct {
 	// MaxRating is a Kid's age-rating limit ("" for no limit).
 	MaxRating     string `json:"max_rating"`
 	RatingCountry string `json:"rating_country"`
+	// OffReason is the kind of media server (jellyfin or emby) their linked
+	// account was removed on, when that turned them off; "" otherwise.
+	OffReason string `json:"off_reason"`
 }
 
 // LinkView is an outside account linked to a user.
