@@ -16,31 +16,31 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// WatchLink is where a person opens one Library title on one media server.
+// WatchLink is where one Library title opens on one media server.
 type WatchLink struct {
 	Server string `json:"server"` // the media server's name
 	Kind   string `json:"kind"`   // jellyfin or emby
 	URL    string `json:"url"`
 }
 
-// indexKeep is how long one server's list of movies or series is reused.
-// A title not in a list older than indexRetry reads the list again, so a
-// title that just arrived shows its button without the wait.
+// A server's movie or series list is reused for indexKeep. A title missing
+// from a list older than indexRetry reads the list again, so a title that
+// just arrived gets its button without waiting for the list to expire.
 var (
 	indexKeep  = 10 * time.Minute
 	indexRetry = 30 * time.Second
 )
 
 // itemIndex is one server's movies or series by id (tmdb:1, tvdb:2,
-// imdb:tt3) and the server's own id, read at a time.
+// imdb:tt3), with the server's own id and when they were read.
 type itemIndex struct {
 	items    map[string]string
 	serverID string
 	at       time.Time
 }
 
-// watchCache keeps the item lists per server and title kind, so opening a
-// title page does not read the whole library each time.
+// watchCache keeps the lists per server and title kind, so opening a title
+// page does not read the whole library every time.
 type watchCache struct {
 	mu sync.Mutex
 	m  map[string]itemIndex // "<server id>|movie" or "<server id>|show"
@@ -62,21 +62,19 @@ func (c *watchCache) put(key string, ix itemIndex) {
 	c.m[key] = ix
 }
 
-// WatchLinks are the switched-on Jellyfin and Emby servers that have the
-// movie or show titleID, with the address that opens it there. Only servers
-// with a browser address count. A server that fails is logged and left out,
-// so one server down never hides the others.
+// WatchLinks are the switched-on Jellyfin and Emby servers with a browser
+// address that have the movie or show titleID, each with the link that
+// opens it there. A server that fails is logged and left out, so one server
+// down never hides the others. Plex is not offered: its web app links need
+// the owner's Plex account rather than the server.
 func (l *Linker) WatchLinks(ctx context.Context, titleID int64) ([]WatchLink, error) {
 	var t mediafiles.Title
 	if err := mediafiles.LoadTitle(ctx, l.Store.Read(), titleID, &t); err != nil {
 		return nil, err
 	}
 	out := []WatchLink{}
-	if t.Kind != "movie" && t.Kind != "show" {
-		return out, nil
-	}
 	ids := showIDs(t.SourceIDs)
-	if len(ids) == 0 {
+	if (t.Kind != "movie" && t.Kind != "show") || len(ids) == 0 {
 		return out, nil
 	}
 	ms, err := enabledServers(ctx, l.Store.Read())
@@ -92,7 +90,7 @@ func (l *Linker) WatchLinks(ctx context.Context, titleID int64) ([]WatchLink, er
 			if ctx.Err() != nil {
 				return nil, ctx.Err()
 			}
-			log.Printf("media servers: %s: watch link: %v", m.Name, err)
+			log.Printf("media servers: %s: open link: %v", m.Name, err)
 			continue
 		}
 		if item != "" {
@@ -102,12 +100,11 @@ func (l *Linker) WatchLinks(ctx context.Context, titleID int64) ([]WatchLink, er
 	return out, nil
 }
 
-// findItem returns the server's item id for the first of ids it knows, and
-// the server's own id; an empty item id when the server lacks the title.
+// findItem returns the server's item id for the first of ids it knows (empty
+// when it lacks the title) and the server's own id.
 func (l *Linker) findItem(ctx context.Context, m domain.MediaServer, kind string, ids []string) (string, string, error) {
 	key := strconv.FormatInt(m.ID, 10) + "|" + kind
-	ix, fresh := l.watch.get(key)
-	if fresh {
+	if ix, fresh := l.watch.get(key); fresh {
 		if it := firstOf(ix.items, ids); it != "" || time.Since(ix.at) < indexRetry {
 			return it, ix.serverID, nil
 		}
@@ -185,8 +182,8 @@ func (l *Linker) jellyServerID(ctx context.Context, m domain.MediaServer) (strin
 	return info.ID, nil
 }
 
-// watchURL is the web app page of item: Jellyfin's details page, or
-// Emby's item page.
+// watchURL is item's page in the server's web app: Jellyfin's details page
+// or Emby's item page.
 func watchURL(m domain.MediaServer, item, serverID string) string {
 	q := "id=" + url.QueryEscape(item) + "&serverId=" + url.QueryEscape(serverID)
 	if m.Kind == "emby" {

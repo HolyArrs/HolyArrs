@@ -34,7 +34,7 @@ func testService(t *testing.T, handler http.HandlerFunc) *Service {
 }
 
 func TestServiceURLAndCredentialBoundaries(t *testing.T) {
-	for _, u := range []string{"", "http://example.com", "http://example.com?x=1", "https://user:pass@example.com", "https://example.com/path", "https://example.com#x", "http://169.254.169.254", "http://100.100.100.200", "https://metadata.google.internal", "http://0.0.0.0", "http://[::]", "http://224.0.0.1"} {
+	for _, u := range []string{"", "http://example.com", "http://example.com?x=1", "https://user:pass@example.com", "https://example.com/path", "https://example.com#x", "http://169.254.169.254", "http://100.100.100.200", "https://metadata.google.internal", "http://0.0.0.0", "http://[::]", "http://224.0.0.1", "https://168.63.129.16", "https://[fd20:ce::254]", "https://[fd00:ec2::23]", "https://169.254.1.2", "https://[64:ff9b::a9fe:a9fe]"} {
 		if _, err := NewService(ServiceOptions{URL: u, HTTP: &http.Client{}, AllowLocal: true, Access: func(context.Context) (string, error) { return "fixture-installation", nil }}); err == nil {
 			t.Fatalf("accepted unsafe URL %q", u)
 		}

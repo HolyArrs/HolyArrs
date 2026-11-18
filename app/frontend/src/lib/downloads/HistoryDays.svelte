@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PersonText from '#lib/ui/PersonText.svelte';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// History grouped by day. Each day has a sticky header with a tally, rows sit on a rail with their clock time, and runs of routine work fold into one line that opens in place. On wide screens the picked row shows in a details panel (arrow keys or j and k move); narrower screens open it in a sheet.
@@ -13,10 +14,10 @@
 	import { EventFeed } from './history-feed.svelte.ts';
 	import type { HistoryFilter, HistoryRow } from './history.ts';
 	import { artOf, burstLine, byWhom, clock, dayLabel, rowTier } from './history-kinds.ts';
-	import { byDay, dayItems, dayLine, type ArtSize } from './history-tabs.ts';
+	import { byDay, dayItems, dayLine, foldSame as foldRepeats, searchNote, type ArtSize } from './history-tabs.ts';
 	import { dropAiTwins, filterVerb } from './history-search.ts';
 	import { FACT_LABEL, glue, panelView, pathBits } from './history-panel.ts';
-	import { rowText, type LineContext, type RowText } from './history-lines.ts';
+	import { rowText, runLine, type LineContext, type RowText } from './history-lines.ts';
 	import { onMount, tick, untrack, type Snippet } from 'svelte';
 	import { slide, fade, type TransitionConfig } from 'svelte/transition';
 	import { to } from '../core/paths.ts';
@@ -139,30 +140,8 @@
 		return out;
 	});
 	const held = $derived(visible !== days);
-	// Back-to-back repeats of one Event (12 sign-ins in a row) fold into one row with a count.
-	type Item = ReturnType<typeof dayItems>[number] | { type: 'same'; key: string; rows: HistoryRow[] };
-	const sameKey = (r: HistoryRow) => (r.steps.length || r.events.length > 1 ? '' : [r.head.Kind, r.head.TitleID ?? 0, r.head.Actor?.kind ?? '', r.head.Actor?.id ?? 0, rowText(r, ctx).line].join('|'));
-	function foldSame(items: ReturnType<typeof dayItems>): Item[] {
-		if (!compact) return items;
-		const out: Item[] = [];
-		for (const it of items) {
-			const last = out[out.length - 1];
-			if (it.type !== 'row') { out.push(it); continue; }
-			const k = sameKey(it.row);
-			if (k && last?.type === 'same' && sameKey(last.rows[0]) === k) {
-				last.rows.push(it.row);
-				// Keyed by the oldest row, so a new repeat on top keeps an open run open.
-				last.key = `s${it.row.key}`;
-				continue;
-			}
-			if (k && last?.type === 'row' && sameKey(last.row) === k) {
-				out[out.length - 1] = { type: 'same', key: `s${it.row.key}`, rows: [last.row, it.row] };
-				continue;
-			}
-			out.push(it);
-		}
-		return out;
-	}
+	// Back-to-back repeats of one Event (12 sign-ins in a row, a search per episode with one note) fold into one row with a count.
+	const foldSame = (items: ReturnType<typeof dayItems>) => (compact ? foldRepeats(items, (r) => rowText(r, ctx).line) : items);
 	// Counts by the Filter's steps, with the mark each row shows, so counts match the list.
 	function tallyOf(rows: HistoryRow[]) {
 		const n = new Map<string, { verb: ReturnType<typeof filterVerb>; count: number }>();
@@ -256,7 +235,7 @@
 		<span class="what"><span class="nm" data-testid="history-title">{w.name}</span>{#each w.bits as b, i (i)}<span class="bit" data-testid={b.kind === 'episode' && i === 0 ? 'history-episode' : b.kind === 'version' ? 'history-version' : undefined}>{` · ${b.text}`}</span>{/each}</span>
 		<StateDot verb={w.tag} />
 	</span>
-	<span class="l2">{serverWords(w.line)}</span>
+	<span class="l2"><PersonText text={serverWords(w.line)} /></span>
 {/snippet}
 
 {#snippet line(r: HistoryRow)}
@@ -293,8 +272,9 @@
 							{:else if it.type === 'same'}
 								{@const on = !!open[it.key]}
 								{@const head = it.rows[0]}
+								{@const noted = !!searchNote(head)}
 								<li class="item fold">
-									<DenseRow row={head} {ctx} {titleById} {who} on={split && picked?.key === head.key} tabindex={split ? (picked?.key === head.key ? 0 : -1) : undefined} count={it.rows.length} expanded={on} controls={wide ? panelId : undefined} onclick={() => { open = { ...open, [it.key]: !on }; if (wide) choose(head); }} />
+									<DenseRow row={noted ? { ...head, head: { ...head.head, episode: undefined } } : head} note={noted ? runLine(it.rows) : undefined} {ctx} {titleById} {who} on={split && picked?.key === head.key} tabindex={split ? (picked?.key === head.key ? 0 : -1) : undefined} count={it.rows.length} expanded={on} controls={wide ? panelId : undefined} onclick={() => { open = { ...open, [it.key]: !on }; if (wide) choose(head); }} />
 									{#if on}
 										<ol class="inner" in:unfold out:fold>
 											{#each it.rows.slice(1) as r (r.key)}<li class="item quiet">{@render line(r)}</li>{/each}
@@ -349,8 +329,8 @@
 									{#if v.art}<span class="part" class:square={v.art.square}><Poster src={v.art.src} name={v.art.name} /></span>{/if}
 									<div class="pw">
 										<VerbMark verb={v.verb} size="sm" />
-										<h2 class="pt">{v.title}</h2>
-										{#if v.meta}<p class="psub">{v.meta}</p>{/if}
+										<h2 class="pt"><PersonText text={v.title} /></h2>
+										{#if v.meta}<p class="psub"><PersonText text={v.meta} /></p>{/if}
 									</div>
 								</div>
 								{#if v.steps.length}
@@ -358,14 +338,14 @@
 										{#each v.steps as st (st.key)}<li class={st.state} data-state={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? 'done' : st.state === 'failed' ? 'failed' : st.state === 'needs' ? 'waiting' : 'not yet'}</span></li>{/each}
 									</ol>
 								{/if}
-								{#if v.line}<p class="psum" class:long={v.long}>{serverWords(v.line)}</p>{/if}
+								{#if v.line}<p class="psum" class:long={v.long} class:full={v.full}><PersonText text={serverWords(v.line)} /></p>{/if}
 								<dl class="pf">
 									{#each v.facts as f (f.label)}
-										<dt>{f.label}</dt>
+										<dt>{FACT_LABEL[f.label]}</dt>
 										<dd class:mono={f.mono} class:one={f.label === 'Release'} title={f.label === 'Release' ? f.value : undefined}>
 											{#if f.at}<time datetime={f.at}>{f.value}</time>{#if f.ago}<span class="ago">{` · ${f.ago}`}</span>{/if}
 											{:else if f.full}<span class="path"><span class="pv" title={f.full}>{#each pathBits(f.value) as b, i (i)}{glue(b)}<wbr>{/each}</span><button type="button" class="cp" aria-label={t('downloads.hes.copyPath')} title={t('downloads.hes.copyPath')} onclick={() => copy(f.full ?? '')}><Icon name="copy" size={14} /></button></span>
-											{:else}{f.value}{/if}
+											{:else}<PersonText text={f.value} />{/if}
 										</dd>
 									{/each}
 								</dl>
@@ -408,7 +388,7 @@
 	.dh:global(.stuck)::after { opacity: 1; }
 	.dh h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	.dl { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.rail { position: relative; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.rail { position: relative; margin: 0; padding: 4px; list-style: none; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); }
 	.rail::before { content: ''; position: absolute; top: 18px; bottom: 18px; left: calc(4px + 10px + var(--clk) + 10px + 5px); width: 2px; border-radius: 1px; background: var(--line); }
 	.item + .item { box-shadow: 0 -1px 0 var(--line); }
 	.hit { position: relative; width: 100%; display: grid; grid-template-columns: var(--clk) 12px var(--art) minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: var(--row); padding: 6px 10px; border: 0; border-radius: var(--r-btn); background: none; color: inherit; text-align: left; font: var(--t-callout); cursor: pointer; transition: background var(--dur-instant) var(--ease-out); }
@@ -432,7 +412,7 @@
 	.nm { color: var(--text); font-weight: 600; }
 	.bit { font-variant-numeric: tabular-nums; }
 	.l1 :global(.st) { flex: none; }
-	.l2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
+	.l2 { min-width: 0; overflow-wrap: anywhere; white-space: normal; color: var(--text-muted); font: var(--t-footnote); }
 	.quiet .nm { color: var(--text-muted); font-weight: 500; }
 	.size-m .hit, .size-l .hit { gap: 14px; padding: 8px 12px; }
 	.size-m .rail::before, .size-l .rail::before { left: calc(4px + 12px + var(--clk) + 14px + 5px); }
@@ -456,7 +436,7 @@
 	/* The panel's top lines up with the first row, at rest and when pinned. */
 	.pane { position: sticky; top: calc(var(--topbar) + var(--pane-drop, 45px)); margin-top: var(--pane-drop, 45px); min-width: 0; max-height: calc(100dvh - var(--topbar) - 65px); overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; transition: opacity var(--dur-base) var(--ease-out), translate var(--dur-base) var(--ease-out), visibility 0s linear 0s; }
 	.pane[hidden] { display: block; visibility: hidden; opacity: 0; translate: 24px 0; padding-inline: 0; overflow: hidden; transition: opacity var(--dur-fast) var(--ease-in), translate var(--dur-fast) var(--ease-in), padding var(--dur-base) var(--ease-out), visibility 0s linear var(--dur-fast); }
-	.card { margin: 0; padding: 20px; border: 0; border-radius: 16px; background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
+	.card { margin: 0; padding: 20px; border: 0; border-radius: 16px; background: var(--surface-1); outline: 1px solid var(--line); }
 	.pin { display: flex; flex-direction: column; min-width: 0; }
 	.dch { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 	.dcn { color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
@@ -490,6 +470,7 @@
 	.steps .needs .pip { background: var(--accent); box-shadow: none; }
 	.psum { margin-top: 12px; color: var(--text); font: var(--t-subhead); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
 	.psum.long { -webkit-line-clamp: 3; line-clamp: 3; }
+	.psum.full { display: block; -webkit-line-clamp: unset; line-clamp: none; overflow: visible; }
 	.pf { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px 12px; margin: 20px 0 0; padding: 0; font: var(--t-footnote); }
 	.pf dt { color: var(--text-muted); }
 	.pf dd { margin: 0; min-width: 0; color: var(--text); font: var(--t-footnote); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -530,7 +511,7 @@
 	}
 
 	.compact { --sheet-a: light-dark(#ffffff, #212126); --sheet-b: light-dark(#f6f7fa, #17171a); --well: light-dark(rgb(20 24 40 / 4%), rgb(255 255 255 / 5%)); }
-	.compact .rail, .compact .card { outline: 0; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b)); box-shadow: inset 0 1px 0 light-dark(rgb(255 255 255 / 95%), rgb(255 255 255 / 10%)), inset 0 0 0 1px light-dark(rgb(30 36 58 / 9%), rgb(255 255 255 / 6%)), 0 1px 2px light-dark(rgb(20 24 40 / 5%), rgb(0 0 0 / 40%)), 0 18px 32px -20px light-dark(rgb(20 24 40 / 30%), rgb(0 0 0 / 85%)); }
+	.compact .rail, .compact .card { outline: 1px solid var(--line); background: var(--surface-1); box-shadow: none; }
 	.compact .rail::before { top: 22px; bottom: 22px; left: calc(4px + 10px + 58px + 10px + 3px); width: 1px; border-radius: 0; }
 	.compact .inner { margin: 0; }
 	.compact { --pane-drop: 41px; }

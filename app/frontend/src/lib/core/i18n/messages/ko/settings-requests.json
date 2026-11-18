@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "사용자에게 표시",
 	"settings.requests.choiceMain": "{rules} · 타이틀의 기본 사본",
 	"settings.requests.choiceOwn": "{rules} · 별도 사본으로 보관",
-	"settings.requests.choiceNotReady": "위에서 4K 품질을 설정하면 제공됩니다"
+	"settings.requests.choiceNotReady": "위에서 4K 품질을 설정하면 제공됩니다",
+	"settings.requests.approvals": "승인",
+	"settings.requests.autoApprove": "요청 자동 승인",
+	"settings.requests.autoApproveNote": "끔 = 해당 사용자의 요청이 승인을 기다립니다. Plex 관심 목록 타이틀도 같은 스위치를 따릅니다.",
+	"settings.requests.ownerTag": "소유자",
+	"settings.requests.choiceAdd": "품질 추가",
+	"settings.requests.choiceNew": "새 품질",
+	"settings.requests.choiceLabel": "내 이름",
+	"settings.requests.choiceSeen": "표시 이름"
 }

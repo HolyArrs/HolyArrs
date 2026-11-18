@@ -18,10 +18,10 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="உரிமம்: AGPL-3.0"></a>
 </p>
 
-<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4: எந்த கோரிக்கையையும் நீக்கலாம், நண்பர்களின் Plex watchlist-கள் மீண்டும் படிக்கப்படுகின்றன.** ஒரு அடைவின் தரம் இப்போது அதன் அட்டையில் தெரிகிறது, Settings ஒரே மாதிரியாக்கப்பட்டது. [புதியவை என்ன](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.2.0: கவனிக்க வேண்டியதை ஒரு சிவப்புப் புள்ளி காட்டுகிறது, இணைப்புச் சோதனை சரியான சிக்கலைச் சொல்கிறது.** கோரிய தலைப்புகளுக்கு Plex லேபிள்கள், உங்கள் மொழியில் பெயர்கள், 30-க்கும் மேற்பட்ட திருத்தங்கள். நீங்கள் கட்டுப்படுத்தும் சாவிகளுடன் MCP வழியாக செயலிகளை இணைக்கவும். [புதியவை என்ன](https://holyarrs.com/whats-new/)
 
 > உங்கள் HolyArrs-இல் உள்ள ஒவ்வொரு போஸ்டர், ட்ரெய்லர், மதிப்பெண்ணும் நானே நடத்தி, நானே பணம் செலுத்தும் ஒரு server-இலிருந்து வருகிறது. அதனால் இது எல்லோருக்கும் இலவசமாகவே இருக்கிறது. HolyArrs உங்கள் திரைப்பட இரவை இன்னும் கொஞ்சம் இனிமையாக்கியிருந்தால், ஒரு sponsor நம் எல்லோருக்கும் விளக்கை எரிய வைக்கிறார் 💛
 >

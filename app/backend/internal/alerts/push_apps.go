@@ -115,6 +115,9 @@ func postApp(a domain.Alert, who string, req *http.Request) (int, []byte, error)
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
+		if errors.Is(err, outbound.ErrMetadataRefused) {
+			return 0, nil, fail("the address is a cloud metadata address, which HolyArrs never connects to", err)
+		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
 			return 0, nil, fail("the "+who+" server is on the local network, which this Alert may not reach", err)
 		}

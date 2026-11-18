@@ -120,7 +120,7 @@ export async function libraryView(scope: Page | Locator, name: 'Banners' | 'Post
 /** openRequests reaches Requests as an approver on a phone: Manage tab, then Requests. */
 export async function openRequests(page: Page) {
 	await page.locator('.ui-tabbar').getByRole('button', { name: /^Manage/ }).click();
-	await page.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: /^Requests/ }).click();
+	await page.getByRole('dialog', { name: 'Manage' }).getByRole('link', { name: /^Requests(,|$)/ }).click();
 	await expect(page).toHaveURL(/requests/);
 }
 

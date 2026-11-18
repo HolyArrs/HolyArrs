@@ -2,20 +2,21 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Shelves under a title: where to stream, reviews, collection, similar and more-from rows.
 	import type { Snippet } from 'svelte';
+	import Button from './Button.svelte';
 	import IconButton from './IconButton.svelte';
 	import Sheet from './Sheet.svelte';
 	import Shelf from './Shelf.svelte';
 	import TitleReviews from './TitleReviews.svelte';
 	import WideCard from './WideCard.svelte';
 	import { defaultRegion, serviceRegion } from './region.ts';
-	import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem, type QuickAskSheet } from './title-cards.ts';
+	import { discoverCard, followsByTmdb, liveCards, ownedMark, type ExploreCard, type ProviderItem, type QuickAskSheet } from './title-cards.ts';
 	import { readInfo, type InfoDetails, type InfoKind } from './title-info.ts';
 	import { audienceOf } from './title-status.ts';
 	import type { FilmographyPage } from './people.ts';
 	import { api } from '../core/api.ts';
-	import { detailPath, to } from '../core/paths.ts';
+	import { detailPath, freshPath, to } from '../core/paths.ts';
 	import { session } from '../core/session.svelte.ts';
-	import type { Ask } from '../core/types.ts';
+	import type { Ask, AskState } from '../core/types.ts';
 
 	let {
 		kind,
@@ -24,7 +25,10 @@
 		middle,
 		band = true,
 		reviewsLast = false,
-		quickAsk: QuickAsk
+		quickAsk: QuickAsk,
+		onasked,
+		onadded,
+		ownAsk
 	}: {
 		kind: InfoKind;
 		tmdb: string | null | undefined;
@@ -33,6 +37,12 @@
 		band?: boolean;
 		reviewsLast?: boolean;
 		quickAsk: QuickAskSheet;
+		/** Told when Request all asks for this page's own movie. */
+		onasked?: (ask: Ask) => void;
+		/** Told when Add all puts this page's own movie in the Library, or finds it there. */
+		onadded?: (titleId: number) => void;
+		/** This page's own movie, when it is already requested by this person. */
+		ownAsk?: AskState;
 	} = $props();
 
 	type Pair = { c: ExploreCard; item: ProviderItem };
@@ -47,6 +57,23 @@
 	const lead = $derived(info?.cast.find((p) => p.id) ?? null);
 	const who = $derived(audienceOf(session.can));
 	const collection = $derived(info?.collection ? pairsOf(info.collection.parts, 'collection') : []);
+	// The series' movies, this page's own included, that this person could still request: with two or more, Request all is offered.
+	const seriesCards = (parts: ProviderItem[] = info?.collection?.parts ?? []): ExploreCard[] => {
+		const cards = parts.map((i) => discoverCard(i, 'collection'));
+		return flow ? liveCards(cards, flow.live, tmdb && ownAsk ? { tmdb, ask: ownAsk } : undefined) : cards;
+	};
+	// The series' movies read again when Request all opens, so what others asked for since the page loaded counts.
+	const seriesNow = async (): Promise<ExploreCard[]> => {
+		const k = kind;
+		const id = tmdb;
+		if (!id) throw new Error('no title');
+		const now = readInfo(k, id, await api.get<Record<string, unknown>>(freshPath(metaPath(k, id))));
+		if (!now.collection) throw new Error('no series');
+		return seriesCards(now.collection.parts);
+	};
+	const metaPath = (k: InfoKind, id: string) => `/metadata/${k}/${encodeURIComponent(id)}?region=${encodeURIComponent(region)}`;
+	const adds = $derived(session.can('manage_library'));
+	const requestable = $derived(info?.collection && flow ? seriesCards().filter((c) => flow?.action(c)) : []);
 	// Titles already in the collection row are dropped so nothing shows twice.
 	const similar = $derived.by(() => {
 		const seen = new Set(collection.map((p) => p.c.key));
@@ -66,7 +93,7 @@
 		info = null;
 		if (!t) return;
 		const ctl = new AbortController();
-		api.get<Record<string, unknown>>(`/metadata/${k}/${encodeURIComponent(t)}?region=${encodeURIComponent(region)}`, ctl.signal)
+		api.get<Record<string, unknown>>(metaPath(k, t), ctl.signal)
 			.then((raw) => (info = readInfo(k, t, raw)))
 			.catch(() => {
 			});
@@ -135,8 +162,14 @@
 
 {#if !reviewsLast}<TitleReviews {kind} {tmdb} />{/if}
 
+{#snippet requestAll()}
+	{#if info?.collection}
+		<Button size="sm" aria-label={t(adds ? 'requests.addAll.title' : 'requests.askAll.title', { name: info.collection.name })} onclick={() => info?.collection && flow?.askAll(info.collection.name, seriesCards(), (id, n) => { if (id !== tmdb) return; if (n.titleId !== undefined) onadded?.(n.titleId); else if (n.ask) onasked?.(n.ask); }, seriesNow)}>{t(adds ? 'requests.addAll.button' : 'requests.askAll.button')}</Button>
+	{/if}
+{/snippet}
+
 {#if info?.collection && collection.length}
-	<Shelf title={info.collection.name} item="var(--title-item)" anchor="title-collection" placeholder="wide" lines={1} whole>
+	<Shelf title={info.collection.name} item="var(--title-item)" anchor="title-collection" placeholder="wide" lines={1} whole tools={requestable.length >= 2 ? requestAll : undefined}>
 		{#each collection as p (p.c.key)}{@render card(p)}{/each}
 	</Shelf>
 {/if}

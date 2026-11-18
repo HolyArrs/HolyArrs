@@ -1,7 +1,6 @@
 package mediaservers
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -22,7 +21,9 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 
@@ -180,13 +181,18 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 		}
 		return updateServer(tx, &m, by)
 	})
+	if err == nil && m.URL != old.URL {
+		forgetPeopleCheck(ctx, s, m.Kind)
+	}
 	return m, err
 }
 
 // Remove deletes a media server and its token.
 func Remove(ctx context.Context, s *database.Store, v *secrets.Vault, id int64) error {
-	return s.Write(ctx, func(tx *sql.Tx) error {
+	var kind string
+	err := s.Write(ctx, func(tx *sql.Tx) error {
 		m, err := getServer(ctx, tx, id)
+		kind = m.Kind
 		if err != nil {
 			return err
 		}
@@ -197,6 +203,22 @@ func Remove(ctx context.Context, s *database.Store, v *secrets.Vault, id int64) 
 		}
 		return deleteServer(tx, id)
 	})
+	if err == nil {
+		forgetPeopleCheck(ctx, s, kind)
+	}
+	return err
+}
+
+// forgetPeopleCheck starts the removed-people check's failed-read count
+// again for a Jellyfin or Emby server that went or moved. The change itself
+// already went through, so a failure here is only logged.
+func forgetPeopleCheck(ctx context.Context, s *database.Store, kind string) {
+	if kind != "jellyfin" && kind != "emby" {
+		return
+	}
+	if err := accounts.ForgetUserListRead(ctx, s, kind); err != nil {
+		log.Printf("media servers: %s people check: %v", kind, err)
+	}
 }
 
 func originOf(raw string) string {
@@ -224,6 +246,12 @@ type Linker struct {
 
 	// watch keeps each server's movie and series lists for WatchLinks.
 	watch watchCache
+	// Asked lists asked-for titles for Plex labels (nil: no labels).
+	Asked AskedFunc
+	// labelling lets one label pass run at a time; stopLabel ends a
+	// background one.
+	labelling sync.Mutex
+	stopLabel context.CancelFunc
 
 	mu      sync.Mutex
 	pending map[string]string // folder -> change
@@ -392,6 +420,9 @@ func (l *Linker) Stop() {
 	if l.stopRead != nil {
 		l.stopRead()
 	}
+	if l.stopLabel != nil {
+		l.stopLabel()
+	}
 	if l.timer == nil || !l.timer.Stop() {
 		return // nothing gathered, or the send already started
 	}
@@ -519,88 +550,38 @@ func (l *Linker) token(ctx context.Context, m domain.MediaServer) (string, error
 func client(m domain.MediaServer) *http.Client {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.Proxy = nil
-	if m.AllowLocal {
-		// The local network, but never link-local or cloud metadata.
-		t.DialContext = outbound.PolicyDialer(outbound.NotMetadata).DialContext
-	} else {
-		t.DialContext = outbound.PolicyDialer(outbound.PublicOnly).DialContext
-	}
+	t.DialContext = dialer(m)
 	return &http.Client{Timeout: 20 * time.Second, Transport: t,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+}
+
+// dialer connects under m's network rule: the local network only when
+// allowed, and never link-local or cloud metadata.
+func dialer(m domain.MediaServer) doctor.Dial {
+	if m.AllowLocal {
+		return outbound.PolicyDialer(outbound.NotMetadata).DialContext
+	}
+	return outbound.PolicyDialer(outbound.PublicOnly).DialContext
 }
 
 // maxAnswer is the most bytes of one media server answer read.
 const maxAnswer = 4 << 20
 
+// ownAlso is the app that may answer for a kind as well: Jellyfin grew out
+// of Emby and still names it.
+var ownAlso = map[string]string{"jellyfin": "emby", "emby": "jellyfin"}
+
 // do sends one request with the server's token and returns the body. The
 // error never holds the address or the token.
 func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path string, body []byte) ([]byte, error) {
-	tok, err := l.token(ctx, m)
+	var b []byte
+	err := l.doStream(ctx, m, method, path, body, maxAnswer, func(r io.Reader) error {
+		var err error
+		b, err = io.ReadAll(r)
+		return err
+	})
 	if err != nil {
 		return nil, err
-	}
-	var rd io.Reader
-	if body != nil {
-		rd = bytes.NewReader(body)
-	}
-	op, err := outbound.Begin(ctx, outbound.Target{Kind: "media_server", Identity: []string{strconv.FormatInt(m.ID, 10), m.Kind, m.URL, tok}})
-	if err != nil {
-		return nil, err
-	}
-	outcome := outbound.Canceled
-	defer func() { op.Finish(outcome) }()
-	rctx, cancel := op.AttemptContext(ctx, 20*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(rctx, method, m.URL+path, rd)
-	if err != nil {
-		outcome = outbound.TerminalFailure
-		return nil, ErrURL
-	}
-	req.Header.Set("Accept", "application/json")
-	if m.Kind == "plex" {
-		req.Header.Set("X-Plex-Token", tok)
-		req.Header.Set("X-Plex-Client-Identifier", "holyarrs")
-		req.Header.Set("Accept", "application/xml")
-	} else if m.Kind == "jellyfin" {
-		req.Header.Set("Authorization", fmt.Sprintf(`MediaBrowser Client="HolyArrs", Device="HolyArrs", DeviceId="holyarrs", Version="1", Token=%q`, tok))
-	} else {
-		req.Header.Set("X-MediaBrowser-Token", tok)
-		req.Header.Set("X-Emby-Token", tok)
-	}
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	resp, err := client(m).Do(req)
-	if err != nil {
-		outcome = outbound.HTTPOutcome(0, err, ctx)
-		var ue *url.Error
-		if errors.As(err, &ue) {
-			err = ue.Err
-		}
-		if errors.Is(err, outbound.ErrAddressRefused) {
-			return nil, errors.New("the server is on the local network, which it may not reach")
-		}
-		return nil, errors.New("the server did not answer")
-	}
-	b, readErr := io.ReadAll(io.LimitReader(resp.Body, maxAnswer+1))
-	if closeErr := resp.Body.Close(); readErr == nil {
-		readErr = closeErr
-	}
-	if readErr != nil {
-		outcome = outbound.HTTPOutcome(resp.StatusCode, readErr, ctx)
-		return nil, errors.New("reading the server answer failed")
-	}
-	if len(b) > maxAnswer {
-		// A cut answer would read as a short list.
-		outcome = outbound.TerminalFailure
-		return nil, errors.New("the server's answer was too big to read")
-	}
-	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
-	switch {
-	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-		return nil, errors.New("the server turned down the token")
-	case resp.StatusCode/100 != 2:
-		return nil, fmt.Errorf("the server answered %d", resp.StatusCode)
 	}
 	return b, nil
 }
@@ -621,10 +602,12 @@ func (l *Linker) plexSections(ctx context.Context, m domain.MediaServer) ([]plex
 		return nil, err
 	}
 	var mc struct {
+		XMLName     xml.Name
 		Directories []plexSection `xml:"Directory"`
 	}
-	if err := xml.Unmarshal(b, &mc); err != nil {
-		return nil, errors.New("the server's answer was not a Plex library list")
+	// A page or list that is not Plex's means another app answers there.
+	if err := xml.Unmarshal(b, &mc); err != nil || mc.XMLName.Local != "MediaContainer" {
+		return nil, doctor.Mark(doctor.WrongApp, nil)
 	}
 	var out []plexSection
 	for _, d := range mc.Directories {
@@ -705,6 +688,12 @@ func (l *Linker) Tell(ctx context.Context, m domain.MediaServer, us []Update) er
 	return nil
 }
 
+// held is a Test line said while calls are held back; it unwraps to
+// outbound.ErrSuppressed as well.
+type held struct{ error }
+
+func (h *held) Unwrap() []error { return []error{h.error, outbound.ErrSuppressed} }
+
 // Test checks the address and token: Plex must list at least one movie,
 // TV or music library; Jellyfin and Emby must answer their system info.
 func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error) {
@@ -731,11 +720,29 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 				ServerName string `json:"ServerName"`
 				Version    string `json:"Version"`
 			}
-			_ = json.Unmarshal(b, &info)
+			if json.Unmarshal(b, &info) != nil || info.Version == "" {
+				// Something answers there, but not as Jellyfin or Emby does.
+				err = doctor.Mark(doctor.WrongApp, nil)
+			}
 			res = strings.TrimSpace(info.ServerName + " " + info.Version)
 		}
 	}
 	now := database.FormatTime(time.Now())
+	if errors.Is(err, outbound.ErrSuppressed) {
+		// Calls are held back after recent failures: say the last known
+		// cause in plain words and keep it stored.
+		if c := doctor.OfText(m.LastError); c != doctor.Unknown {
+			return res, &held{doctor.Mark(c, nil)}
+		}
+		return res, &held{doctor.Mark(doctor.Timeout, nil)}
+	}
+	if c := doctor.Of(err); err != nil {
+		// Only a Test looks at what the name turned into; background calls
+		// stay quick.
+		if line := doctor.NameLine(c, m.URL, dialer(m)); line != "" {
+			err = doctor.Mark(c, errors.New(line))
+		}
+	}
 	if err != nil {
 		log.Printf("media servers: %s: test: %v", m.Name, err)
 		markError(ctx, l.Store, m.ID, err.Error())

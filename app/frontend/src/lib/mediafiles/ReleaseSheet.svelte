@@ -9,8 +9,11 @@
 	import type { Choice, ReleasePage, ReleaseView } from '#lib/core/types.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { chosenToast } from './chosen-toast.ts';
 
-	let { open = $bindable(false), titleId, name, scope = null, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; onchosen?: () => void } = $props();
+	let { open = $bindable(false), titleId, name, scope = null, show = false, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; show?: boolean; onchosen?: () => void } = $props();
+	// A show is searched by season or episode: the whole-show sheet lists what was found and says where to search.
+	const partOnly = $derived(show && !scope);
 
 	let releases = $state<ReleaseView[]>([]);
 	let total = $state(0);
@@ -74,7 +77,7 @@
 			const body: Record<string, unknown> = { force: r.needs_force };
 			if (typeof scope?.body.slot_id === 'number') body.slot_id = scope.body.slot_id;
 			const ch = await api.post<Choice>(`/releases/${r.id}/choose`, body);
-			toasts.push(t('mediafiles.title.sent'), 'ok', ch.warnings.length ? { body: ch.warnings.length === 1 ? serverWords(ch.warnings[0]) : t('mediafiles.title.warnings', { n: ch.warnings.length }) } : undefined);
+			chosenToast(ch);
 			open = false;
 			onchosen?.();
 		} catch (e) {
@@ -153,7 +156,7 @@
 				<button type="button" role="tab" class:on={filter === 'good'} aria-selected={filter === 'good'} onclick={() => (filter = 'good')}>{t('mediafiles.releaseSheet.good')}</button>
 				<button type="button" role="tab" class:on={filter === 'all'} aria-selected={filter === 'all'} onclick={() => (filter = 'all')}>{t('mediafiles.releaseSheet.all')} {total || ''}</button>
 			</div>
-			<button type="button" class="rs-search" disabled={running.length > 0} onclick={search}><Icon name="search" size={15} />{running.length ? t('mediafiles.releaseSheet.searchingDots') : t('mediafiles.releaseSheet.searchAgain')}</button>
+			{#if !partOnly}<button type="button" class="rs-search" disabled={running.length > 0} onclick={search}><Icon name="search" size={15} />{running.length ? t('mediafiles.releaseSheet.searchingDots') : t('mediafiles.releaseSheet.searchAgain')}</button>{/if}
 		</div>
 		{#if running.length}<div class="rs-run" aria-live="polite"><span class="rs-spin" aria-hidden="true"></span>{t('mediafiles.releaseSheet.asking')}</div>{/if}
 
@@ -163,8 +166,12 @@
 			<div class="rs-empty">
 				<Icon name="grid" size={28} />
 				<p><b>{t('mediafiles.releaseSheet.noSearch')}</b></p>
-				<p class="muted">{t('mediafiles.releaseSheet.noSearchHint')}</p>
-				<button type="button" class="rs-primary" onclick={search}><Icon name="search" size={16} />{t('mediafiles.select.searchNow')}</button>
+				{#if partOnly}
+					<p class="muted" data-testid="release-sheet-part">{t('mediafiles.releaseSheet.showPickPart', { choose: t('discover.titleOwned.chooseRelease') })}</p>
+				{:else}
+					<p class="muted">{t('mediafiles.releaseSheet.noSearchHint')}</p>
+					<button type="button" class="rs-primary" onclick={search}><Icon name="search" size={16} />{t('mediafiles.select.searchNow')}</button>
+				{/if}
 			</div>
 		{:else}
 			<ul class="rs-list">

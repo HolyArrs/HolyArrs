@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "Czeka: {n}",
 	"frame.nav.new": "Nowe: {n}",
 	"frame.nav.manage": "Zarządzaj",
+	"frame.nav.activity": "Aktywność",
+	"frame.nav.system": "System",
 	"frame.nav.history": "Historia",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Ustawienia",
+	"frame.nav.plugins": "Wtyczki",
 	"frame.nav.goTo": "Przejdź do",
 	"frame.nav.active": "Aktywne: {n}, {percent}%",
 	"frame.nav.decide": "Czeka na decyzję: {n}",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Systemowy",
 	"frame.layout.switch": "Przełącz konto",
 	"frame.layout.signOut": "Wyloguj się",
+	"frame.layout.support": "Wesprzyj HolyArrs",
 	"frame.layout.signOutFail": "Nie udało się potwierdzić wylogowania",
 	"frame.layout.signedOut": "Wylogowano",
 	"frame.layout.accountMenu": "{name}, {role}: konto i wygląd",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs spróbuje ponownie sam",
 	"frame.feeds.clearNow": "Usuń teraz",
 	"frame.feeds.cleared": "Usunięto z klienta pobierania",
-	"frame.feeds.clearStill": "Jeszcze nieusunięte"
+	"frame.feeds.clearStill": "Jeszcze nieusunięte",
+	"frame.error.pageGone": "Ta strona nie istnieje. Link może być stary lub błędnie wpisany."
 }

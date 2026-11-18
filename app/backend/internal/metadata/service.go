@@ -102,7 +102,7 @@ func NewService(o ServiceOptions) (*Service, error) {
 		return nil, errors.New("metadata service address refused")
 	}
 	ip := net.ParseIP(host)
-	if ip != nil && (ip.IsUnspecified() || ip.IsMulticast() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.Equal(net.ParseIP("100.100.100.200")) || ip.Equal(net.ParseIP("fd00:ec2::254")) || ip.Equal(net.IPv4bcast)) {
+	if ip != nil && (ip.IsUnspecified() || ip.IsMulticast() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || outbound.MetadataIP(ip) || ip.Equal(net.IPv4bcast)) {
 		return nil, errors.New("metadata service address refused")
 	}
 	if u.Scheme != "https" && !(u.Scheme == "http" && o.AllowLocal && ip != nil && (ip.IsLoopback() || ip.IsPrivate())) {

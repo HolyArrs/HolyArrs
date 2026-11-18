@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Lükka tagasi enne ilmumist postitatud väljalasked",
 	"settings.search.refuseEarlyHint": "Tõenäoliselt võltsingud. Valik Vali väljalase näitab neid siiski, hoiatusega.",
 	"settings.search.refuseTiny": "Lükka tagasi võltsingud suuruse ja failitüübi järgi",
-	"settings.search.refuseTinyHint": "Liiga väikesed väljalasked, tühjad failid ning .wmv või .asf HD-nimede all",
+	"settings.search.refuseTinyHint": "Liiga väikesed väljalasked, tühjad failid, pooleli jäänud videod ning .wmv või .asf HD-nimede all",
 	"settings.search.grace": "Tunde, mil väljalase võib olla enneaegne",
 	"settings.search.graceHint": "Ajavööndite jaoks. Vaikimisi 24.",
 	"settings.search.floors": "Kontrolli failide suurust importimisel",

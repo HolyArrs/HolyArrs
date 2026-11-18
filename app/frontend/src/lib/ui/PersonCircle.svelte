@@ -66,6 +66,6 @@
 	a.ui-person:hover .ph { transform: translateY(var(--lift)); box-shadow: var(--shadow-lift), 0 0 0 2px color-mix(in srgb, var(--text) 28%, transparent); }
 	a.ui-person:focus-visible { outline: none; }
 	a.ui-person:focus-visible .ph { box-shadow: var(--focus-ring); }
-	.n { font: var(--t-subhead); font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.n { font: var(--t-subhead); font-weight: 600; max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; }
 	.r { color: var(--text-muted); font: var(--t-footnote); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

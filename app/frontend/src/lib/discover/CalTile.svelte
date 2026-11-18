@@ -5,7 +5,7 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { entryArt, entryHref, itemDot, type Follows } from './calendar.ts';
 	import { dayChip, entryTitle, groupTag, type CalGroup } from './calendar-groups.ts';
-	import { cardLines, rowWords, DEFAULT_LOOK, type CaptionLook } from './calendar-captions.ts';
+	import { cardLines, rowWords, episodeName, DEFAULT_LOOK, type CaptionLook } from './calendar-captions.ts';
 	import FollowWho from './FollowWho.svelte';
 	import CalWindow from './CalWindow.svelte';
 	import { epCode } from './episode-text.svelte.ts';
@@ -41,7 +41,7 @@
 	// A click anywhere on the card opens a window with the details and a way to the page.
 	const isEp = $derived(e.kind === 'episode');
 	const code = $derived(isEp ? epCode(g.entries) : '');
-	const epLines = $derived(isEp ? [[lines[0], code].filter(Boolean).join(' · '), n > 1 ? t('discover.calTile.episodes', { n }) : e.episode_name || lines[1] || ''] : lines);
+	const epLines = $derived(isEp ? [[lines[0], code].filter(Boolean).join(' · '), n > 1 ? t('discover.calTile.episodes', { n }) : episodeName(e.episode_name) || lines[1] || ''] : lines);
 	const words = $derived(rowWords(g, look, today));
 	const page = $derived(to(entryHref(e)));
 	function show(ev: MouseEvent) {

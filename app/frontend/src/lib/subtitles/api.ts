@@ -133,6 +133,7 @@ export interface SubtitleFile {
 	file_id: number;
 	item_id: number;
 	version_id: number;
+	version_label?: string;
 	relative_path: string;
 	wish: Resolved;
 	subtitles: SubtitleRow[];

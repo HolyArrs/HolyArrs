@@ -19,6 +19,7 @@
 		askers: { id: number; name: string }[];
 		series: MovieCollection[];
 		subsTitles: Set<number> | null;
+		anyoneWatched: Set<number> | null;
 		loaded: boolean;
 		myId: number | undefined;
 		canManage: boolean;
@@ -34,7 +35,7 @@
 		syncUrl: () => void;
 		onclose: () => void;
 	};
-	let { kind, sort, filter, counts, askers, series, subsTitles, loaded, myId, canManage, anyPart, deletedCount, groupSets = $bindable(), phone, view, sizeItems, foot, setSort, setFilter, syncUrl, onclose }: Props = $props();
+	let { kind, sort, filter, counts, askers, series, subsTitles, anyoneWatched, loaded, myId, canManage, anyPart, deletedCount, groupSets = $bindable(), phone, view, sizeItems, foot, setSort, setFilter, syncUrl, onclose }: Props = $props();
 
 	// Counts stay blank until the Library has loaded, so a 0 only ever means 0.
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
@@ -57,6 +58,11 @@
 			<span class="sf-sep" aria-hidden="true"></span>
 			{@render sfRow(t('mediafiles.sortFilter.group'), groupSets, () => { groupSets = !groupSets; syncUrl(); })}
 		{/if}
+		{#if canManage && anyPart}
+			<span class="sf-sep" aria-hidden="true"></span>
+			<a class="sf-o sf-link" href={to('/library/deleted')} onclick={onclose} data-testid="library-deleted"><span class="sf-tick" aria-hidden="true"><Icon name="trash" size={14} /></span><span class="sf-l">{t('mediafiles.sortFilter.recentlyDeleted')}</span>{#if deletedCount}<span class="sf-n">{deletedCount}</span>{/if}</a>
+			<a class="sf-o sf-link" href={to('/library/stats')} onclick={onclose} data-testid="library-stats"><span class="sf-tick" aria-hidden="true"><Icon name="gauge" size={14} /></span><span class="sf-l">{t('library.stats.title')}</span></a>
+		{/if}
 	</section>
 	<section class="sf-col sf-filter" aria-label={t('mediafiles.sortFilter.filter')}>
 		<h3 class="sf-h">{t('mediafiles.col.status')}</h3>
@@ -76,7 +82,7 @@
 				{#each askers.filter((p) => p.id !== myId) as p (p.id)}<Chip label={p.name} count={loaded ? (counts.askers.get(p.id) ?? 0) : undefined} selected={filter.asker === String(p.id)} onclick={() => setFilter({ asker: String(p.id) })} />{/each}
 			</div>
 		{/if}
-		{#if kind === 'movie' && counts.codecs.size}
+		{#if kind === 'movie' && (filter.codec || [...counts.codecs.keys()].filter((c) => c !== 'unknown').length > 1)}
 			<h3 class="sf-h">{t('mediafiles.col.codec')}</h3>
 			<div class="sf-chips">
 				{#each [...counts.codecs].toSorted((a, b) => b[1] - a[1]) as [c, n] (c)}<Chip label={codecLabel(c)} count={n} selected={filter.codec === c} onclick={() => setFilter({ codec: filter.codec === c ? '' : c })} />{/each}
@@ -88,6 +94,12 @@
 				<Chip label={t('mediafiles.filter.missing')} icon="subtitle" count={counts.subs} selected={!!filter.subs} onclick={() => setFilter({ subs: !filter.subs })} />
 			</div>
 		{/if}
+		{#if anyoneWatched && kind !== 'artist' && (counts.watched || filter.watched)}
+			<h3 class="sf-h">{t('mediafiles.watched.all')}</h3>
+			<div class="sf-chips">
+				<Chip label={t('mediafiles.watched.byAnyone')} icon="check" count={counts.watched} selected={!!filter.watched} onclick={() => setFilter({ watched: !filter.watched })} />
+			</div>
+		{/if}
 		{#if (kind === 'movie' || kind === 'all') && series.length}
 			<h3 class="sf-h">{t('mediafiles.col.series')}</h3>
 			<div class="sf-well">
@@ -96,11 +108,6 @@
 					{@render sfRow(sr.name, filter.series === sr.id, () => setFilter({ series: sr.id }), countHint(counts.series.get(sr.id) ?? 0))}
 				{/each}
 			</div>
-		{/if}
-		{#if canManage && anyPart}
-			<span class="sf-sep" aria-hidden="true"></span>
-			<a class="sf-o sf-link" href={to('/library/deleted')} onclick={onclose} data-testid="library-deleted"><span class="sf-tick" aria-hidden="true"><Icon name="trash" size={14} /></span><span class="sf-l">{t('mediafiles.sortFilter.recentlyDeleted')}</span>{#if deletedCount}<span class="sf-n">{deletedCount}</span>{/if}</a>
-			<a class="sf-o sf-link" href={to('/library/stats')} onclick={onclose} data-testid="library-stats"><span class="sf-tick" aria-hidden="true"><Icon name="gauge" size={14} /></span><span class="sf-l">{t('library.stats.title')}</span></a>
 		{/if}
 	</section>
 	{#if phone && view === 'posters'}
@@ -116,13 +123,14 @@
 
 <style>
 	/* Sort and filter: one panel in the app's own material. Sort is a ticked list (as in every menu); filters are the same chips the page shows once they are on. */
-	.sf { display: grid; grid-template-columns: 212px minmax(0, 1fr); padding: 6px; }
+	.sf { display: grid; grid-template-columns: minmax(212px, max-content) minmax(0, 1fr); padding: 6px; }
 	.sf-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.sf-sort { padding-right: 12px; }
 	.sf-filter { padding-left: 16px; border-left: 1px solid var(--line); }
 	.sf-h { margin: 10px 8px 6px; color: var(--text-muted); font: 600 11px/1 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
 	.sf-col > .sf-h:first-child { margin-top: 6px; }
 	.sf-filter .sf-h { margin-inline: 2px; }
+	.sf-sort .sf-sep:first-of-type { margin-top: 10px; }
 	.sf-sep { height: 1px; margin: 6px 8px; background: var(--line); }
 	.sf-o { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 0 8px; border-radius: 8px; color: var(--text); font: 500 13.5px/1.2 var(--font-ui); text-align: left; transition: background-color 120ms ease; }
 	.sf-o + .sf-o { margin-top: 2px; }
@@ -135,7 +143,7 @@
 	.sf-l { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sf-x { flex: none; color: var(--accent-text, var(--accent)); font-weight: 700; }
 	.sf-n { flex: none; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; }
-	.sf-dir { margin: 10px 4px 4px; }
+	.sf-dir { margin: 10px 8px 4px; }
 	.sf-dir :global(.ui-seg) { width: 100%; }
 	.sf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 	/* A status chip carries its status colour as a dot, the same colours the rows use. */
@@ -146,7 +154,7 @@
 	.sf-chip.t-better { --dot: var(--info, #409cff); }
 	.sf-chip.t-have { --dot: var(--ok, #2fa36b); }
 	/* The series list is long: it scrolls inside its own well and takes the height the Sort column leaves. */
-	.sf-well { flex: 1 1 0; min-height: 104px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; border-radius: 10px; background: color-mix(in srgb, var(--text) 4%, transparent); box-shadow: inset 0 0 0 1px var(--line); scrollbar-width: thin; scrollbar-color: var(--line-strong, var(--text-faint)) transparent; }
+	.sf-well { flex: 1 1 0; min-height: 104px; overflow-y: auto; overscroll-behavior: contain; margin-inline: -6px; scrollbar-width: thin; scrollbar-color: var(--line-strong, var(--text-faint)) transparent; }
 	@media (pointer: coarse) { .sf-o { min-height: 44px; } }
 	@media (max-width: 639px) {
 		.sf { grid-template-columns: 1fr; padding: 0; }
@@ -154,5 +162,6 @@
 		.sf-filter { margin-top: 10px; padding: 4px 0 0; border-left: 0; border-top: 1px solid var(--line); }
 		.sf-well { flex: none; max-height: 232px; }
 		.sf-size { margin-top: 10px; padding-top: 4px; border-top: 1px solid var(--line); }
+		.sf-sep { margin-inline: 0; }
 	}
 </style>

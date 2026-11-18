@@ -15,7 +15,7 @@ export interface SettingEntry {
 }
 
 /** Search entries for features held back from this release, by anchor. */
-const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'trakt-card': 'trakt_lists', 'emby-card': 'emby_signin' };
+const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'emby-card': 'emby_signin' };
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 
@@ -129,6 +129,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/tmdb', 'metadata-card', 'Metadata server', 'metadata tmdb posters names artwork server'),
 	e('/settings/outside-lists', '', 'Outside lists', 'tmdb list trakt list import list auto add'),
 	e('/settings/outside-lists', 'trakt-card', 'Trakt key', 'trakt key client id vip access token reviews comments'),
+	e('/settings/outside-lists', 'mdblist-card', 'MDBList key', 'mdblist key api key lists'),
 	e('/settings/outside-lists', 'never-card', 'Never-add list', 'never add exclusion block list'),
 
 	e('/settings/sources', '', 'Sources', 'indexer torznab newznab rss tracker usenet add source'),
@@ -202,6 +203,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/api', 'api-start', 'API base address', 'api address url base openapi'),
 	e('/settings/api', 'api-routes', 'Every API route', 'api routes endpoints openapi'),
 	e('/settings/api', 'seerr-card', 'Requests from Seerr and Overseerr', 'seerr overseerr jellyseerr sonarr radarr requests connect'),
+	e('/settings/remote-access', 'remote-access', 'Remote access', 'tailscale remote away from home phone tv vpn tailnet sign in'),
 	e('/settings/move', '', 'Import from other apps', 'import move migrate radarr sonarr lidarr prowlarr bazarr seerr overseerr'),
 
 	e('/settings/backups', 'backup-key', 'Master key', 'master key kit encryption secrets restore another server'),

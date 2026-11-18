@@ -48,6 +48,10 @@ type Choice struct {
 	SlotIDs   []int64  `json:"slot_ids,omitempty"`
 	Forced    bool     `json:"forced"`
 	Warnings  []string `json:"warnings"`
+	// NotSent is why the Downloader did not get the Release; Sending says the
+	// send had not ended when the answer went out.
+	NotSent string `json:"not_sent,omitempty"`
+	Sending bool   `json:"sending,omitempty"`
 }
 
 // ListedRelease is a Release with the names a list shows beside it.
@@ -100,16 +104,33 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 			if ids, album := s.albumSearchSlots(ctx, rel); len(ids) > 0 {
 				return s.chooseMany(ctx, rel, ids, nil, true, force, []string{"its name did not match " + album + "; it was found searching for it"}, by)
 			}
-			return Choice{}, ErrNoSlot
-		}
-		slotID = rel.MatchedSlotIDs[0]
-		for _, id := range rel.MatchedSlotIDs {
-			if !turnedDownFor(rel, id) {
-				slotID = id
-				break
+			// Picked from a season's Choose a release although its year did not match the show: it goes to the episodes it names, with force.
+			// Nothing is sent when it holds another season or no episode would gain, even with force.
+			ids, skipped, show, wider := s.showSearchSlots(ctx, rel)
+			switch {
+			case wider:
+				return Choice{}, &NeedsForceError{Reasons: []string{"it holds more than this season; pick it from a search of the whole show or leave it"}}
+			case len(ids) > 0:
+				return s.chooseMany(ctx, rel, ids, skipped, false, force, []string{"its year did not match " + show + "; it was found searching for it"}, by)
+			case len(skipped) > 0:
+				return Choice{}, &NeedsForceError{Reasons: []string{"nothing would gain: " + strings.Join(skipped, "; ")}}
 			}
+			// Picked from one Slot's Choose a release (a movie) although its name matched nothing: it goes to that Slot, with force.
+			sid := searchedSlot(ctx, s.Store.Read(), rel)
+			if sid == 0 {
+				return Choice{}, ErrNoSlot
+			}
+			slotID = sid
+		} else {
+			slotID = rel.MatchedSlotIDs[0]
+			for _, id := range rel.MatchedSlotIDs {
+				if !turnedDownFor(rel, id) {
+					slotID = id
+					break
+				}
+			}
+			slotID = s.fittingVersion(ctx, rel, slotID)
 		}
-		slotID = s.fittingVersion(ctx, rel, slotID)
 	}
 	c, err := s.loadSlot(ctx, slotID)
 	if err != nil {
@@ -436,13 +457,16 @@ func busySlot(st mediafiles.SlotState) bool {
 	return st == mediafiles.SlotChosen || st == mediafiles.SlotDownloading || st == mediafiles.SlotImporting || st == mediafiles.SlotSearching
 }
 
-// unholdTx sends every Slot that was holding the Release back to looking. A Slot with a file goes to better wanted so the file is kept.
-func unholdTx(tx *sql.Tx, releaseID int64, reason string, by domain.Actor) error {
+// unholdTx sends every Slot that was holding the Release back to looking, or just the Slots in only when some are given. A Slot with a file goes to better wanted so the file is kept.
+func unholdTx(tx *sql.Tx, releaseID int64, reason string, by domain.Actor, only ...int64) error {
 	list, err := mediafiles.SlotsHeldBy(tx, releaseID)
 	if err != nil {
 		return err
 	}
 	for _, h := range list {
+		if len(only) > 0 && !slices.Contains(only, h.ID) {
+			continue
+		}
 		to := mediafiles.SlotWanted
 		if h.HasFile {
 			to = mediafiles.SlotBetterWanted
@@ -672,4 +696,16 @@ func (s *Searcher) chooseMany(ctx context.Context, rel domain.Release, slots []i
 		s.OnChosen(ctx, took[0], rel.ID)
 	}
 	return ch, nil
+}
+
+// searchedSlot is the Slot a search_slot Job looked for when it found rel, or 0.
+func searchedSlot(ctx context.Context, db *sql.DB, rel domain.Release) int64 {
+	if rel.JobID == nil {
+		return 0
+	}
+	var job domain.Job
+	if err := database.Get(ctx, db, "jobs", *rel.JobID, &job); err != nil || job.Kind != jobs.KindSearchSlot || job.Subject == nil || job.Subject.Type != "slot" {
+		return 0
+	}
+	return job.Subject.ID
 }

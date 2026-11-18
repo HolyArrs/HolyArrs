@@ -130,6 +130,10 @@ type FolderInput struct {
 	Kind             string `json:"kind"`
 	Label            string `json:"label"`
 	DefaultPickRules *int64 `json:"default_pick_rules_id"`
+	// NewTitleTags are put on each title added into the folder.
+	NewTitleTags []string `json:"new_title_tags"`
+	// OnlyTaggedSources makes the titles in the folder ask only Sources that share one of these tags.
+	OnlyTaggedSources bool `json:"only_tagged_sources"`
 }
 
 // FullPath reports whether p is a full folder path HolyArrs can use: a
@@ -184,7 +188,8 @@ func AddFolder(ctx context.Context, s *database.Store, in FolderInput, downloadP
 	}
 	now := time.Now().UTC()
 	lf = mediafiles.LibraryFolder{Path: in.Path, Kind: in.Kind, Label: in.Label, DefaultPickRules: in.DefaultPickRules,
-		FreeSpace: max(h.FreeSpace, 0), Health: h.State, HealthReason: h.Reason, HealthCheckedAt: &now, SameDiskAs: []int64{}}
+		FreeSpace: max(h.FreeSpace, 0), Health: h.State, HealthReason: h.Reason, HealthCheckedAt: &now, SameDiskAs: []int64{}, NewTitleTags: mediafiles.CleanTags(in.NewTitleTags)}
+	lf.OnlyTaggedSources = in.OnlyTaggedSources && len(lf.NewTitleTags) > 0
 	err := s.Write(ctx, func(tx *sql.Tx) error {
 		all, err := database.Select[mediafiles.LibraryFolder](ctx, tx, "library_folders", "")
 		if err != nil {
@@ -260,9 +265,11 @@ func pickRulesExist(tx *sql.Tx, id *int64) error {
 // FolderChange is an edit of a Library folder. Its path and kind stay;
 // moving Titles is a separate, dry-run-first Job.
 type FolderChange struct {
-	Label            *string `json:"label"`
-	DefaultPickRules *int64  `json:"default_pick_rules_id"`
-	CopiesExpected   *bool   `json:"copies_expected"`
+	Label             *string   `json:"label"`
+	DefaultPickRules  *int64    `json:"default_pick_rules_id"`
+	CopiesExpected    *bool     `json:"copies_expected"`
+	NewTitleTags      *[]string `json:"new_title_tags"`
+	OnlyTaggedSources *bool     `json:"only_tagged_sources"`
 }
 
 // UpdateFolder changes a Library folder's label, default Pick rules (id 0
@@ -297,9 +304,26 @@ func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChan
 		if c.CopiesExpected != nil {
 			lf.CopiesExpected = *c.CopiesExpected
 		}
+		if c.NewTitleTags != nil {
+			lf.NewTitleTags = mediafiles.CleanTags(*c.NewTitleTags)
+		} else if lf.NewTitleTags == nil {
+			lf.NewTitleTags = []string{}
+		}
+		if c.OnlyTaggedSources != nil {
+			lf.OnlyTaggedSources = *c.OnlyTaggedSources
+		}
+		// Without tags there is nothing to keep to, and a tag typed later must not bring the switch back unasked.
+		if len(lf.NewTitleTags) == 0 {
+			lf.OnlyTaggedSources = false
+		}
 		return database.Update(tx, "library_folders", &lf, by)
 	})
 	return lf, err
+}
+
+// TagsFromFolder is the tags a title added into the folder starts with.
+func TagsFromFolder(lf mediafiles.LibraryFolder) []string {
+	return append([]string{}, lf.NewTitleTags...)
 }
 
 // freeLabel says whether label is free among the folders of kind (skipping

@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Desactivat a Parts",
 	"home.noneForSources": "falta per al que troben les teves fonts",
 	"home.addedTwice": "està afegit dues vegades",
-	"home.addedTwiceMany": "estan afegits dues vegades"
+	"home.addedTwiceMany": "estan afegits dues vegades",
+	"home.notSetUpYet": "Encara no està configurat",
+	"home.setUpToAdd": "Acaba la configuració per afegir {name}",
+	"home.comingThisWeek": "Aquesta setmana",
+	"home.thisWeek": "aquesta setmana",
+	"home.landingThisWeek": "Episodis i pel·lícules que arriben aquesta setmana",
+	"home.popularThisWeek": "Estrenes populars que arriben aquesta setmana",
+	"home.peopleCheck": "Comprovació de persones",
+	"home.cantReadUsers": "no es pot llegir la llista d’usuaris"
 }

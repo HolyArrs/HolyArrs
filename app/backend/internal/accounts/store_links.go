@@ -218,6 +218,31 @@ func linkOwner(ctx context.Context, q conn, provider, extID string) (int64, erro
 	return other, err
 }
 
+// linkedPerson is the person a media server account is linked to.
+type linkedPerson struct {
+	ID   int64
+	Name string
+}
+
+// linkedAccounts maps each linked account id of one provider to its person.
+func linkedAccounts(ctx context.Context, q conn, provider string) (map[string]linkedPerson, error) {
+	rows, err := q.QueryContext(ctx, "SELECT l.external_id, u.id, u.name FROM user_links l JOIN users u ON u.id = l.user_id WHERE l.provider = ?", provider)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]linkedPerson{}
+	for rows.Next() {
+		var ext string
+		var p linkedPerson
+		if err := rows.Scan(&ext, &p.ID, &p.Name); err != nil {
+			return nil, err
+		}
+		out[ext] = p
+	}
+	return out, rows.Err()
+}
+
 // ssoLinkedUser is the person a single sign-on identity is linked to, with
 // their state.
 func ssoLinkedUser(ctx context.Context, q conn, kind, issuer, subject string) (id int64, name, state string, err error) {
@@ -342,7 +367,7 @@ func LinkImported(ctx context.Context, tx *sql.Tx, userID int64, provider, extID
 func waitsForSignIn(ctx context.Context, q conn, userID int64) (bool, error) {
 	var n int
 	err := q.QueryRowContext(ctx, `SELECT count(*) FROM users u WHERE u.id = ? AND u.state = 'disabled' AND u.password_hash = ''
-		AND u.role != 'owner' AND u.updated_at = u.created_at AND EXISTS (SELECT 1 FROM user_links WHERE user_id = u.id)`, userID).Scan(&n)
+		AND u.role != 'owner' AND u.removed_at = '' AND u.updated_at = u.created_at AND EXISTS (SELECT 1 FROM user_links WHERE user_id = u.id)`, userID).Scan(&n)
 	return n > 0, err
 }
 
@@ -353,7 +378,7 @@ func turnOnImported(ctx context.Context, q conn, userID int64, kidPerms, now str
 	res, err := q.ExecContext(ctx, `UPDATE users SET state = 'active',
 			role = CASE WHEN ? != '' THEN 'member' ELSE role END, perms = CASE WHEN ? != '' THEN ? ELSE perms END,
 			max_rating = CASE WHEN ? != '' THEN 'PG' ELSE max_rating END, updated_at = ?, updated_by = ?
-		WHERE id = ? AND state = 'disabled' AND password_hash = '' AND role != 'owner' AND updated_at = created_at`,
+		WHERE id = ? AND state = 'disabled' AND password_hash = '' AND role != 'owner' AND removed_at = '' AND updated_at = created_at`,
 		kidPerms, kidPerms, kidPerms, kidPerms, now, string(who), userID)
 	if err != nil {
 		return false, err
@@ -387,6 +412,31 @@ func LinkedPeople(ctx context.Context, q database.Lister, provider string) (map[
 			return nil, err
 		}
 		out[ext] = p
+	}
+	return out, rows.Err()
+}
+
+// MediaLink is one media server account linked to a person: the server's
+// kind (plex, jellyfin, emby) and the account's id there.
+type MediaLink struct {
+	Provider string
+	ExtID    string
+}
+
+// LinksOfPerson lists the media server accounts linked to one person.
+func LinksOfPerson(ctx context.Context, q database.Lister, userID int64) ([]MediaLink, error) {
+	rows, err := q.QueryContext(ctx, "SELECT provider, external_id FROM user_links WHERE user_id = ? ORDER BY provider, external_id", userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []MediaLink
+	for rows.Next() {
+		var l MediaLink
+		if err := rows.Scan(&l.Provider, &l.ExtID); err != nil {
+			return nil, err
+		}
+		out = append(out, l)
 	}
 	return out, rows.Err()
 }

@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Descartar lanzamientos publicados antes del estreno",
 	"settings.search.refuseEarlyHint": "Probablemente falsos. Elegir un lanzamiento aún los muestra, con una advertencia.",
 	"settings.search.refuseTiny": "Descartar falsos por tamaño y tipo de archivo",
-	"settings.search.refuseTinyHint": "Lanzamientos demasiado pequeños, archivos vacíos y .wmv o .asf con nombres de HD",
+	"settings.search.refuseTinyHint": "Lanzamientos demasiado pequeños, archivos vacíos, vídeos cortados y .wmv o .asf con nombres de HD",
 	"settings.search.grace": "Horas que un lanzamiento puede ir adelantado",
 	"settings.search.graceHint": "Por las zonas horarias. Por defecto 24.",
 	"settings.search.floors": "Comprobar el tamaño de los archivos al importar",

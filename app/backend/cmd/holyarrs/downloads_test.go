@@ -33,7 +33,7 @@ func TestDownloadsView(t *testing.T) {
 	if rr := rates.Downloads[0]; rr.UpSpeed != 512 || rr.Seeds != 40 || rr.Peers != 7 || rates.Totals.Speed != 2048 || rates.Totals.UpSpeed != 512 {
 		t.Fatalf("rates %+v totals %+v", rates.Downloads[0], rates.Totals)
 	}
-	// Once the Downloader is done, the Slot says where it is.
+	// Once the Downloader is done, the Slot says where it is; a finished one may be removed unless its files are being placed.
 	for _, c := range []struct{ dl, slot, phase, label string }{
 		{"finished", "downloading", "waiting_to_import", "Waiting to import"},
 		{"finished", "importing", "importing", "Importing"},
@@ -47,7 +47,7 @@ func TestDownloadsView(t *testing.T) {
 		exec41(t, x.s, "UPDATE downloads SET state = ?", c.dl)
 		exec41(t, x.s, "UPDATE slots SET state = ?", c.slot)
 		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?limit=10", "", 200), &out)
-		if r := out.Downloads[0]; r.Phase != c.phase || r.Label != c.label || r.CanAct != (c.dl == "stalled" || c.dl == "queued") {
+		if r := out.Downloads[0]; r.Phase != c.phase || r.Label != c.label || r.CanAct != (c.dl == "stalled" || c.dl == "queued" || (c.dl == "finished" || c.dl == "seeding") && c.phase != "importing") {
 			t.Errorf("%s/%s: %s %q %v", c.dl, c.slot, r.Phase, r.Label, r.CanAct)
 		}
 	}

@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Vann: {name}",
 	"ui.wikiFacts.nominated": "Tilnefnt: {name}",
 	"ui.wikiFacts.andMore": "og {count} fleiri",
-	"ui.pageLoader.loading": "Hleð"
+	"ui.pageLoader.loading": "Hleð",
+	"ui.connectHelp.link": "Svona lagarðu það",
+	"ui.ask.remove": "Fjarlægja",
+	"ui.ask.restore": "Endurheimta",
+	"ui.ask.stop": "Stöðva",
+	"ui.ask.revoke": "Afturkalla",
+	"ui.ask.replace": "Skipta út",
+	"ui.ask.unlink": "Aftengja",
+	"ui.ask.turnOff": "Slökkva",
+	"ui.ask.markFailed": "Merkja sem mistókst",
+	"ui.ask.reset": "Endurstilla",
+	"ui.ask.import": "Flytja inn"
 }

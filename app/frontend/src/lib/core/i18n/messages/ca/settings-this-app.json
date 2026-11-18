@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "cap",
 	"settings.thisApp.needsRestart": "Cal reiniciar. HOLYARRS_URL_BASE o -url-base ho substitueix.",
 	"settings.thisApp.save": "Desa",
-	"settings.thisApp.licence": "HolyArrs és programari lliure sota l'AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs és programari lliure sota l'AGPL-3.0.",
+	"settings.thisApp.proxy": "Servidor intermediari",
+	"settings.thisApp.proxyDesc": "Envia les crides externes a través d’un servidor intermediari. Les regles de bloqueig i de xarxa local continuen aplicant-se a la destinació real.",
+	"settings.thisApp.proxyType": "Tipus",
+	"settings.thisApp.proxyOff": "Desactivat",
+	"settings.thisApp.proxyHost": "Amfitrió",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Nom d’usuari",
+	"settings.thisApp.proxyPasswordLabel": "Contrasenya",
+	"settings.thisApp.proxyPasswordKept": "Deixa-ho buit per mantenir la contrasenya desada",
+	"settings.thisApp.proxyBypass": "Evita el servidor intermediari per a",
+	"settings.thisApp.proxyBypassHint": "Noms, adreces o rangs, separats per comes. *.example.com cobreix tots els noms de sota.",
+	"settings.thisApp.proxyBypassLocal": "Evita el servidor intermediari per a adreces locals",
+	"settings.thisApp.proxyBypassLocalHint": "Aquest equip i la xarxa de casa es connecten directament",
+	"settings.thisApp.proxySaved": "Servidor intermediari desat",
+	"settings.thisApp.proxyOffSaved": "Servidor intermediari desactivat"
 }

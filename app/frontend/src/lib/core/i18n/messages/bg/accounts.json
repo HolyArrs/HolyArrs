@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Езикът не можа да се запази",
 	"accounts.language.count.one": "1 език",
 	"accounts.language.count.other": "{n} езика",
-	"accounts.account.watchEveryone": "Собственикът го е включил за всички. Изключете и двете, за да спре."
+	"accounts.account.watchEveryone": "Собственикът го е включил за всички. Изключете и двете, за да спре.",
+	"accounts.watch.title": "Отметки за гледано",
+	"accounts.watch.hint": "Свържете тук профила си в медиен сървър, за да показва Библиотеката какво сте гледали.",
+	"accounts.watch.as": "{server}, като {name}",
+	"accounts.watch.nameOn": "Име в {server}",
+	"accounts.watch.passwordOnce": "Паролата ви отива само до {server} и не се пази.",
+	"accounts.watch.linked": "Свързано с {name} в {server}",
+	"accounts.watch.unlinked": "Връзката е премахната",
+	"accounts.login.importPaused": "Вписването ви изтече, затова вносът спря временно. Впишете се, отворете Импорт на библиотека и натиснете Сканиране, за да продължи."
 }

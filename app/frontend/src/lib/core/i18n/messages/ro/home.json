@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Oprit în Module",
 	"home.noneForSources": "lipsește pentru ce găsesc sursele tale",
 	"home.addedTwice": "este adăugat de două ori",
-	"home.addedTwiceMany": "sunt adăugate de două ori"
+	"home.addedTwiceMany": "sunt adăugate de două ori",
+	"home.notSetUpYet": "Încă neconfigurat",
+	"home.setUpToAdd": "Termină configurarea pentru a adăuga {name}",
+	"home.comingThisWeek": "Vine săptămâna asta",
+	"home.thisWeek": "săptămâna asta",
+	"home.landingThisWeek": "Episoade și filme care apar săptămâna asta",
+	"home.popularThisWeek": "Lansări populare care apar săptămâna asta",
+	"home.peopleCheck": "Verificarea persoanelor",
+	"home.cantReadUsers": "lista de utilizatori nu poate fi citită"
 }

@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Traže pažnju: {n}",
 	"migrate.needAttentionWhy": "Njihova stara mapa nije na ovom poslužitelju, pa dolaze kao željeni u mapu ovdje. Ispravite mapu ili dodajte pravilo putanje: {list}",
 	"migrate.leftOutUncheckedN": "Izostavljeno: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} je postavljena na \"Ne dovodi ih\"; odaberite joj mapu i uvezite ponovno"
+	"migrate.leftOutUncheckedWhy": "{folder} je postavljena na \"Ne dovodi ih\"; odaberite joj mapu i uvezite ponovno",
+	"migrate.seasonsDifferOne": "Provjeri 1 seriju pronađenu po TMDB broju",
+	"migrate.seasonsDifferOther": "Serije pronađene po TMDB broju za provjeru: {n}",
+	"migrate.seasonsDifferWhy": "Samo je TMDB broj iz stare aplikacije pronašao {list}, ovdje pod drugim imenom. Otvori svaku i provjeri je li to ista serija. Ako jest, njezine su sezone drukčije numerirane: upari njezine Preostale datoteke i zatim uključi seriju. Ako nije, ukloni je; njezine datoteke ostaju gdje jesu.",
+	"migrate.stillChecking": "Serije koje poslužitelj metapodataka još provjerava: {n}. Popis se sam osvježi kad završi.",
+	"migrate.stillCheckingImport": "Serije koje poslužitelj metapodataka još provjerava: {n}. Možete uvesti odmah; provjeravaju se tijekom uvoza."
 }

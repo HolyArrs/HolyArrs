@@ -10,6 +10,11 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
+// PluginProxyHeader marks a visit a plugin (the Tailscale plugin) handed in
+// from outside. It arrives from inside the machine, so it would look local;
+// any request carrying it, whatever its value, always needs sign-in.
+const PluginProxyHeader = "X-Holyarrs-Plugin-Proxy"
+
 // Middleware lets only signed-in requests through.
 func (a *Auth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +48,11 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		if public(r) {
+			// First-run setup only from the home network, never through a plugin.
+			if setupRoute(r) && r.Header.Get(PluginProxyHeader) != "" {
+				fail(w, http.StatusForbidden, "Finish setup on the home network first.")
+				return
+			}
 			// First-run setup checks the host name itself: a home name is
 			// accepted there with no proxy in between (hosts.go).
 			setup := r.Method == http.MethodPost && r.URL.Path == "/api/v1/auth/setup" || setupOutsidePath(r)
@@ -195,7 +205,7 @@ func (a *Auth) localPeer(r *http.Request) bool {
 // forwarding header would end the skip for the whole household. There only
 // the request that carries the header is refused.
 func (a *Auth) strictLocal(r *http.Request) bool {
-	if !a.skipLocal.Load() || r.Header.Get(outbound.SelfCallHeader) != "" || !a.hostAllowed(r) {
+	if !a.skipLocal.Load() || r.Header.Get(outbound.SelfCallHeader) != "" || r.Header.Get(PluginProxyHeader) != "" || !a.hostAllowed(r) {
 		return false
 	}
 	if h := normHost(r.Host); net.ParseIP(h) == nil && !homeName(h) {

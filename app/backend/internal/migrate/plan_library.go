@@ -645,12 +645,7 @@ func (b *builder) titleList(s *Snapshot) {
 		if tp.Preset == "" && kind != "artist" {
 			tp.Preset = "Standard"
 		}
-		for _, f := range t.Files {
-			if tp.Qualities == nil {
-				tp.Qualities = map[string]string{}
-			}
-			tp.Qualities[f.Name] = f.Quality
-		}
+		tp.Qualities, tp.OldEpisodes = fileFacts(t.Files)
 		for _, se := range t.Seasons {
 			if !se.Monitored && se.Number >= 0 && se.Number < 10000 {
 				tp.SeasonsOff = append(tp.SeasonsOff, se.Number)

@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "設定之前，無法讀取你的 Trakt 清單。",
 	"settings.outsideLists.replaceKey": "替換 Trakt 金鑰",
 	"settings.outsideLists.pasteKey": "貼上 Trakt 金鑰",
+	"settings.outsideLists.mdblistKey": "MDBList 金鑰",
+	"settings.outsideLists.mdblistInfo": "選填。填入你的 MDBList API 金鑰後，MDBList 清單會透過 MDBList API 讀取；未填則透過其公開連結讀取。它會加密儲存，且與「你自己的金鑰」模式下外部評分使用的是同一把金鑰。",
+	"settings.outsideLists.pasteMdblistKey": "貼上你的 MDBList API 金鑰",
+	"settings.outsideLists.replaceMdblistKey": "替換 MDBList 金鑰",
+	"settings.outsideLists.removeMdblistKey": "移除金鑰",
+	"settings.outsideLists.mdblistKeySaved": "MDBList 金鑰已儲存",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList 金鑰已移除；清單將使用其公開連結",
 	"settings.outsideLists.replaceVip": "替換 VIP 存取權杖",
 	"settings.outsideLists.vip": "VIP 存取權杖（可選）",
 	"settings.outsideLists.vipHint": "在項目頁增加一個 Trakt 標籤頁：評分、觀看人數和評論",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "新增到永不新增清單",
 	"settings.outsideLists.showDot": "影集 ·",
 	"settings.outsideLists.takeOff": "移出 {name}",
-	"settings.outsideLists.empty": "空"
+	"settings.outsideLists.empty": "這份清單還沒有內容"
 }

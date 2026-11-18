@@ -83,6 +83,7 @@
 	"settings.users.preset": "Šablonas",
 	"settings.users.comingSoon": "Netrukus",
 	"settings.users.custom": "Pasirinktinis",
+	"settings.users.customHint": "Tai jūsų pačių parinkta toliau esančių jungiklių kombinacija. Pasirinkus šabloną ji pakeičiama; dar kartą pasirinkite Pasirinktinis, kad ją grąžintumėte.",
 	"settings.users.ageRating": "Amžiaus cenzas",
 	"settings.users.newPasswordFor": "Naujas slaptažodis: {name}",
 	"settings.users.passwordNote": "Naudokite, kai {name} pamiršo savąjį. Žmogus atjungiamas visur ir prisijungia iš naujo su nauju. Pasakykite jį gyvai.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "pvz., Mama",
 	"settings.users.days": "Kiek dienų galioja nuoroda",
 	"settings.users.makeInvite": "Sukurti kvietimo nuorodą",
-	"settings.users.permAuto4k": "4K užsakymai patvirtinami nelaukiant"
+	"settings.users.permAuto4k": "4K užsakymai patvirtinami nelaukiant",
+	"settings.users.serverAccount": "Serverio paskyra",
+	"settings.users.pickAccount": "Pasirinkite paskyrą medijos serveryje",
+	"settings.users.accountLinked": "Susieta su {name}",
+	"settings.users.removedOnServer": "Pašalintas iš {word} serverio, todėl čia išjungtas",
+	"settings.users.delete": "Ištrinti",
+	"settings.users.deleteName": "Ištrinti {name}",
+	"settings.users.confirmDelete": "Ištrinti {name}? Jis visam laikui atjungiamas, o jo raktai pašalinami. Jo užklausos lieka, rodomos kaip pašalinto asmens.",
+	"settings.users.deleteYes": "Ištrinti asmenį",
+	"settings.users.keep": "Palikti",
+	"settings.users.deleted": "{name} ištrintas",
+	"settings.users.couldntDelete": "Nepavyko ištrinti",
+	"settings.users.confirmDeleteKeys": "Jo sukurti Seerr raktai nustoja veikti visiems, kol bus sukurtas naujas.",
+	"settings.users.qualities": "Kokybės",
+	"settings.users.qualitiesHint": "Gali rinktis tik įjungtas. Kai įjungtos visos, siūlomos ir naujos."
 }

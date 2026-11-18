@@ -466,7 +466,7 @@
 			{#if sourcesStep.todo.length}
 				<ul class="todo" aria-label={t('welcome.stillToDo')}>
 					{#each sourcesStep.todo as item (item.label)}
-						<li><a href={to(item.path)} onclick={(e) => { e.preventDefault(); void home(item.path); }}><span>{item.label}</span><span class="todo-end"><span class="todo-state">{t('welcome.notSet')}</span><Icon name="chevronRight" size={16} /></span></a></li>
+						<li><a href={to(item.path)} onclick={(e) => { e.preventDefault(); void home(item.path); }}><span>{item.label}</span><span class="todo-end"><Icon name="chevronRight" size={16} /></span></a></li>
 					{/each}
 				</ul>
 			{/if}
@@ -685,7 +685,6 @@
 	.set-name { display: inline-flex; align-items: center; gap: 10px; min-width: 0; overflow-wrap: anywhere; padding: 12px 0; }
 	.set-tick { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; }
 	.todo .set-tick :global(svg) { color: #fff; }
-	.todo-state { color: var(--text-muted); font: 500 14px/1.2 var(--font-ui); }
 	/* Import: the move flow's cards stack inside the glass with plain gaps. */
 	.move { display: flex; flex-direction: column; gap: 18px; }
 	.move .alt { margin-top: 0; }
@@ -772,7 +771,7 @@
 	.glass .media-list, .glass .conn, .glass .todo { border-color: rgb(255 255 255 / 0.1); }
 	.glass .media-list .frow + .frow, .glass .conn > li, .glass .todo > li { border-color: rgb(255 255 255 / 0.1); }
 	.glass .fname, .glass .conn-text b, .glass .path, .glass .todo a, .glass .todo-row { color: #fff; }
-	.glass .ficon, .glass .conn-text .addr, .glass .fsaved, .glass .todo-state, .glass .todo :global(svg) { color: rgb(255 255 255 / 0.6); }
+	.glass .ficon, .glass .conn-text .addr, .glass .fsaved, .glass .todo :global(svg) { color: rgb(255 255 255 / 0.6); }
 	.glass .frow.off .fname { color: rgb(255 255 255 / 0.55); }
 	.glass .set-tick { background: none; width: 18px; }
 	.glass .todo .set-tick :global(svg) { color: #fff; }

@@ -67,7 +67,7 @@ func TestQbitDownloaderKeyOrPassword(t *testing.T) {
 	// A wrong password says so in plain words.
 	do(t, "PUT", base+"/"+itoa(pw.ID), `{"name":"Pw","url":"`+qb.URL+`/","username":"admin","secret":"wrong","allow_local_network":true}`, 200)
 	_ = json.Unmarshal(do(t, "POST", base+"/"+itoa(pw.ID)+"/test", "", 200), &out)
-	if out["ok"] != false || !strings.Contains(out["text"].(string), "turned down") {
+	if out["ok"] != false || !strings.Contains(out["text"].(string), "password refused") {
 		t.Fatalf("wrong password: %v", out)
 	}
 }

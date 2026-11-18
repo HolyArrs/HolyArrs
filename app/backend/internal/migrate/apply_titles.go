@@ -18,6 +18,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
@@ -35,6 +36,15 @@ func (r *run) titleHere(t *TitlePlan) int64 {
 			}
 		}
 		id, _ = library.ShowByIDs(r.ctx, db, ids)
+		// The old app's TMDB id finds a show here only when it is the one an
+		// earlier import brought into this same folder by that id.
+		if v := t.IDs["tmdb"]; id == 0 && v != "" && t.IDs["tvdb"] != "" {
+			if other, _ := library.ShowByIDs(r.ctx, db, map[string]string{"tmdb": v}); other != 0 {
+				if mediafiles.TitleInFolder(r.ctx, db, other, filepath.Clean(filepath.FromSlash(t.Library)), t.Folder) {
+					id = other
+				}
+			}
+		}
 	case "artist":
 		id, _ = library.ArtistByMBID(r.ctx, db, strings.TrimPrefix(t.ID, "mbid:"))
 	}
@@ -104,6 +114,10 @@ func (r *run) title(it Item) (string, string) {
 	// is not on this server at all: it comes over as wanted, of the same
 	// kind, and the report says to fix its folder.
 	fallback := ""
+	// usedHere is set when a same-named folder in the Library folder here is
+	// used instead; wantedLib and wantedDir keep the old place for the
+	// wanted path if adopting it fails.
+	var usedHere, wantedLib, wantedDir string
 	if fi, err := os.Lstat(dir); err != nil || !fi.IsDir() {
 		if err != nil && !errors.Is(err, fs.ErrNotExist) && isDir(lib) {
 			return ResNotFound, "no folder at " + filepath.ToSlash(dir) + " on this server; add a path rule"
@@ -127,9 +141,16 @@ func (r *run) title(it Item) (string, string) {
 		if lfID == 0 {
 			return ResNotFound, "its Library folder " + t.Library + " is not on this server, and there is no " + t.Kind + " Library folder here to add it to; add one and import again"
 		}
-		noFiles = true
-		r.attn, r.attnFolder = AttnUnreachable, filepath.ToSlash(filepath.Clean(lib))
-		fallback = filepath.ToSlash(here)
+		wantedLib, wantedDir = lib, dir
+		// The same folder name in the Library folder here holds the movie
+		// already: it is used where it is, so its files are linked.
+		if t.Kind == "movie" && r.movieFolderHere(lfID, here, t.Folder) {
+			lib, dir, noFiles, usedHere = filepath.FromSlash(here), filepath.Join(filepath.FromSlash(here), t.Folder), false, here
+		} else {
+			noFiles = true
+			r.attn, r.attnFolder = AttnUnreachable, filepath.ToSlash(filepath.Clean(lib))
+			fallback = filepath.ToSlash(here)
+		}
 	}
 	// Brought into a folder here that holds none of the titles of an old
 	// folder this server cannot see: wanted, and it needs attention too.
@@ -137,24 +158,48 @@ func (r *run) title(it Item) (string, string) {
 		r.attn, r.attnFolder = AttnUnreachable, old
 		fallback, dir = filepath.ToSlash(lib), filepath.FromSlash(path.Join(old, t.Folder))
 	}
+	// The dry run looks the show up as the import will (the plan's own
+	// preview does not, to stay quick). A lookup that cannot be made now
+	// (no show source, the metadata server away) leaves the line as it is.
+	other := ""
+	if r.dry && t.Kind == "show" && !r.preview {
+		if err := r.withShowIDs(t, func(sid, o string) error {
+			_, e := r.lookupShow(sid)
+			if e == nil {
+				other = o
+			}
+			return e
+		}); errors.Is(err, errShowNotFound) {
+			return ResFailed, err.Error()
+		} else if errors.Is(err, errNotChecked) {
+			r.unchecked = append(r.unchecked, *t)
+		}
+		if other != "" && r.attn == "" {
+			r.attn = AttnSeasons
+		}
+	}
 	if r.dry {
+		res, d := ResAdopt, "uses the folder "+filepath.ToSlash(dir)+" where it is; no file is moved or renamed"
 		if fallback != "" {
-			return ResCreate, "will be added to " + fallback + " as wanted with no files; needs attention: its old folder " + filepath.ToSlash(dir) + " is not on this server; fix its folder or add a path rule"
+			res, d = ResCreate, "will be added to "+fallback+" as wanted with no files; needs attention: its old folder "+filepath.ToSlash(dir)+" is not on this server; fix its folder or add a path rule"
+		} else if noFiles {
+			res, d = ResCreate, "will be added with no files yet; there is no folder at "+filepath.ToSlash(dir)
 		}
-		if noFiles {
-			return ResCreate, "will be added with no files yet; there is no folder at " + filepath.ToSlash(dir)
+		if other != "" {
+			r.here, d = other, seasonsNote(d, other, res == ResAdopt)
 		}
-		return ResAdopt, "uses the folder " + filepath.ToSlash(dir) + " where it is; no file is moved or renamed"
+		return res, d
 	}
 	var res []library.AdoptResult
 	var err error
 	if noFiles {
 		var id int64
-		err = r.withShowIDs(t, func(sid string) error {
+		err = r.withShowIDs(t, func(sid, o string) error {
 			tt := *t
 			tt.ID = sid
+			other = o
 			var e error
-			id, e = r.addNoFiles(lfID, &tt)
+			id, e = r.addNoFiles(lfID, &tt, o != "")
 			return e
 		})
 		res = []library.AdoptResult{{TitleID: id}}
@@ -163,9 +208,12 @@ func (r *run) title(it Item) (string, string) {
 		if t.Kind == "movie" {
 			c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
 		}
-		err = r.withShowIDs(t, func(sid string) error {
+		err = r.withShowIDs(t, func(sid, o string) error {
 			if t.Kind != "movie" {
-				c.ID = sid
+				// Found only by the old app's TMDB id under another name: its
+				// files wait for the person, never filling episodes by the
+				// old app's season numbers.
+				c.ID, c.SeasonsDiffer, other = sid, o != "", o
 			}
 			var e error
 			res, e = r.m.Library.Adopt(r.ctx, lfID, []library.AdoptChoice{c}, r.by)
@@ -174,6 +222,21 @@ func (r *run) title(it Item) (string, string) {
 			}
 			return e
 		})
+		if err != nil && usedHere != "" {
+			// It comes over as wanted, as it would have without that folder.
+			noFiles, dir, fallback = true, wantedDir, filepath.ToSlash(usedHere)
+			r.attn, r.attnFolder = AttnUnreachable, filepath.ToSlash(filepath.Clean(wantedLib))
+			var id int64
+			err = r.withShowIDs(t, func(sid, o string) error {
+				tt := *t
+				tt.ID = sid
+				other = o
+				var e error
+				id, e = r.addNoFiles(lfID, &tt, o != "")
+				return e
+			})
+			res = []library.AdoptResult{{TitleID: id}}
+		}
 	}
 	if err != nil {
 		return ResFailed, err.Error()
@@ -198,7 +261,9 @@ func (r *run) title(it Item) (string, string) {
 	}
 	pr := r.presetID(t.Preset, t.Kind)
 	err = r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
-		if _, err := tx.Exec("UPDATE titles SET keep_up_to_date = ? WHERE id = ?", t.KeepUpToDate, id); err != nil {
+		// A show whose seasons differ stays not kept up to date until the
+		// owner places its files and turns it on.
+		if err := SetKeepUpToDateTx(tx, id, t.KeepUpToDate && other == ""); err != nil {
 			return err
 		}
 		if t.Music != nil {
@@ -225,8 +290,18 @@ func (r *run) title(it Item) (string, string) {
 		}
 		return ResFailed, "adopted, but its choices were not kept: " + err.Error()
 	}
+	placed := 0
+	if other != "" && !noFiles && fallback == "" {
+		// Read from the old app's list once: a file is placed only where its
+		// episode's air day and name agree with one here.
+		placed, _ = r.m.Library.PlaceByOldEpisodes(r.ctx, id, t.OldEpisodes, r.by)
+	}
+	// The old app's season numbers are not this show's when its seasons
+	// differ, so its season choices are left out.
 	for _, n := range t.SeasonsOff {
-		_ = shows.New(r.m.Library).SetSeason(r.ctx, id, n, false, r.by) // a season the show does not have is fine
+		if other == "" {
+			_ = shows.New(r.m.Library).SetSeason(r.ctx, id, n, false, r.by) // a season the show does not have is fine
+		}
 	}
 	d := "uses the folder " + filepath.ToSlash(dir) + " where it is"
 	if noFiles {
@@ -238,8 +313,18 @@ func (r *run) title(it Item) (string, string) {
 	if res[0].File != "" {
 		d += ", with " + res[0].File
 	}
-	if !t.KeepUpToDate {
+	if !t.KeepUpToDate && other == "" {
 		d += "; Keep up to date off"
+	}
+	if other != "" {
+		if r.attn == "" {
+			r.attn = AttnSeasons
+		}
+		r.attnTitle, r.here = id, other
+		d = seasonsNote(d, other, !noFiles && fallback == "")
+		if placed > 0 {
+			d = fmt.Sprintf("%s. %d of its files were placed, since their air day and name match an episode here", d, placed)
+		}
 	}
 	if noFiles {
 		return ResCreated, d
@@ -249,7 +334,7 @@ func (r *run) title(it Item) (string, string) {
 
 // addNoFiles adds a title whose folder is not on disk the way a request
 // adds one: its ids, its folder name from the old app, and no files.
-func (r *run) addNoFiles(lfID int64, t *TitlePlan) (int64, error) {
+func (r *run) addNoFiles(lfID int64, t *TitlePlan, seasonsDiffer bool) (int64, error) {
 	switch t.Kind {
 	case "movie":
 		if r.m.Library.Metadata == nil {
@@ -265,7 +350,7 @@ func (r *run) addNoFiles(lfID int64, t *TitlePlan) (int64, error) {
 		return id, err
 	case "show":
 		id, _, err := shows.New(r.m.Library).AddShow(r.ctx, t.ID, shows.ShowAddOptions{LibraryFolderID: lfID, WhyAdded: "import",
-			Adopt: &shows.ShowAdoption{FolderName: t.Folder, LibraryPath: filepath.FromSlash(t.Library)}}, r.by)
+			Adopt: &shows.ShowAdoption{FolderName: t.Folder, LibraryPath: filepath.FromSlash(t.Library)}, SeasonsDiffer: seasonsDiffer}, r.by)
 		return id, err
 	case "artist":
 		id, _, err := r.m.Library.AddArtist(r.ctx, t.ID, library.ArtistAddOptions{LibraryFolderID: lfID, WhyAdded: "import",
@@ -281,6 +366,39 @@ func (r *run) addNoFiles(lfID int64, t *TitlePlan) (int64, error) {
 		return id, nil
 	}
 	return 0, errors.New("unknown title kind " + t.Kind)
+}
+
+// movieFolderHere says whether folder in the Library folder here is a real
+// folder (not a link), not owned by another title, holding a main video at
+// its top (not a sample, trailer or other extra).
+func (r *run) movieFolderHere(lfID int64, here, folder string) bool {
+	lib := filepath.FromSlash(here)
+	if r.movieFolders[strings.ToLower(folder)] > 1 {
+		return false // another movie of this import has a folder of that name
+	}
+	if fi, err := os.Lstat(filepath.Join(lib, folder)); err != nil || !fi.IsDir() {
+		return false
+	}
+	if lfID > 0 {
+		if taken, err := library.FolderTaken(r.ctx, r.m.Store.Read(), mediafiles.LibraryFolder{ID: lfID, Path: lib}, folder); err != nil || taken != 0 {
+			return false
+		}
+	}
+	for _, v := range library.ListVideosN(lib, folder, 50) {
+		rel := strings.TrimPrefix(v.Path, folder+"/")
+		if strings.Contains(rel, "/") {
+			continue
+		}
+		base := strings.ToLower(strings.TrimSuffix(rel, path.Ext(rel)))
+		extra := false
+		for _, s := range []string{"-trailer", "-featurette", "-behindthescenes", "-deleted", "-interview", "-scene", "-short", "-other", "-extra"} {
+			extra = extra || strings.HasSuffix(base, s)
+		}
+		if !extra && base != "trailer" {
+			return true
+		}
+	}
+	return false
 }
 
 type musicPartState struct {

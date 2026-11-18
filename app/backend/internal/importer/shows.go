@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -132,6 +133,21 @@ func (t ShowTarget) grabbed(p releasename.Result) []Episode {
 	return want
 }
 
+// extraName reports a file named as a bonus video (featurette, trailer,
+// extras), which a hidden-name fallback must not take for the episode.
+func extraName(path string) bool {
+	words := strings.FieldsFunc(strings.ToLower(filepath.Base(path)), func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
+	})
+	for _, w := range words {
+		switch w {
+		case "featurette", "featurettes", "extras", "extra", "trailer", "bonus", "interview", "deleted", "behindthescenes":
+			return true
+		}
+	}
+	return false
+}
+
 // releaseLabel names the episode numbers a release name gives: S02E06,
 // S02E06E07 or a running number.
 func releaseLabel(p releasename.Result) string {
@@ -163,11 +179,27 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 		refs[i] = e.Ref
 		byItem[e.Ref.ItemID] = e
 	}
+	videos := 0
+	for _, c := range cands {
+		if videoExt[strings.ToLower(filepath.Ext(c.Path))] && !isSample(c.Path, releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true})) {
+			videos++
+		}
+	}
 	var steps []mediafiles.PlanStep
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
 		s := mediafiles.PlanStep{SourceFile: c.Path, TargetSlotIDs: []int64{}, Why: []string{}}
 		p := releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true})
+		if videos == 1 && videoExt[ext] && !p.IsShow() && !isSample(c.Path, p) && !extraName(c.Path) {
+			// Usenet posts often hide the file name; the job folder or the
+			// grabbed release still names the episode, so read it from there.
+			for _, alt := range []string{t.ReleaseName, filepath.Base(filepath.Dir(c.Path))} {
+				if ap := releasename.Parse(alt, releasename.Hints{Size: c.Size, Show: true}); alt != "" && ap.IsShow() && !mediafiles.IsPack(ap) {
+					p = ap
+					break
+				}
+			}
+		}
 		switch {
 		case programExt[ext] || p.Has("executable") || p.Has("double_extension"):
 			s.Method, s.Why = "refuse", []string{"a program file, not a video"}

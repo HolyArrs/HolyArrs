@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "אי אפשר לקרוא את רשימות ה־Trakt שלך עד שיוגדר.",
 	"settings.outsideLists.replaceKey": "החלפת מפתח Trakt",
 	"settings.outsideLists.pasteKey": "הדבק את מפתח Trakt",
+	"settings.outsideLists.mdblistKey": "מפתח MDBList",
+	"settings.outsideLists.mdblistInfo": "אופציונלי. עם מפתח ה־API שלך של MDBList, רשימות MDBList נקראות דרך ה־API של MDBList; בלעדיו, דרך הקישור הציבורי שלהן. הוא נשמר מוצפן והוא אותו מפתח שבו משתמשים הדירוגים החיצוניים במצב המפתחות שלכם.",
+	"settings.outsideLists.pasteMdblistKey": "הדבק את מפתח ה־API שלך של MDBList",
+	"settings.outsideLists.replaceMdblistKey": "החלפת מפתח MDBList",
+	"settings.outsideLists.removeMdblistKey": "הסרת המפתח",
+	"settings.outsideLists.mdblistKeySaved": "מפתח MDBList נשמר",
+	"settings.outsideLists.mdblistKeyRemoved": "מפתח MDBList הוסר; הרשימות משתמשות בקישור הציבורי שלהן",
 	"settings.outsideLists.replaceVip": "החלפת אסימון הגישה של VIP",
 	"settings.outsideLists.vip": "אסימון גישה של VIP (לא חובה)",
 	"settings.outsideLists.vipHint": "מוסיף לשונית Trakt לעמודי כותרים: ציון, צופים ותגובות",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "הוספה לרשימת אל־תוסיף",
 	"settings.outsideLists.showDot": "סדרה ·",
 	"settings.outsideLists.takeOff": "הסרת {name}",
-	"settings.outsideLists.empty": "ריק"
+	"settings.outsideLists.empty": "אין עדיין כלום ברשימה הזו"
 }

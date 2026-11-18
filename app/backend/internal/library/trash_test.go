@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -82,5 +83,41 @@ func TestApplyTrash(t *testing.T) {
 	}
 	if _, err := ApplyTrash(ctx, st, c, p.ID, "sonarr", "nope", domain.System); err != ErrTrashProfile {
 		t.Fatalf("unknown profile: %v", err)
+	}
+}
+
+// A TRaSH profile of 139 formats syncs them all; one of 300 keeps the 256
+// strongest and names each one left out.
+func TestApplyTrashManyFormats(t *testing.T) {
+	for _, tc := range []struct{ n, kept, left int }{{139, 139, 0}, {300, 256, 44}} {
+		files := map[string]string{}
+		items := ""
+		for i := 1; i <= tc.n; i++ {
+			if i > 1 {
+				items += ","
+			}
+			items += fmt.Sprintf(`"Format %03d":"f%d"`, i, i)
+			files[fmt.Sprintf("docs/json/sonarr/cf/f%d.json", i)] = fmt.Sprintf(`{"trash_id":"f%d","name":"Format %03d","trash_scores":{"default":%d},
+				"specifications":[{"name":"x","implementation":"ReleaseTitleSpecification","negate":false,"required":false,"fields":{"value":"\bTAG%03d\b"}}]}`, i, i, 10*i, i)
+		}
+		files["docs/json/sonarr/quality-profiles/big.json"] = `{"trash_id":"pb","name":"Big","minFormatScore":0,"cutoffFormatScore":10000,"minUpgradeFormatScore":1,"formatItems":{` + items + `}}`
+		st := open(t)
+		ctx := context.Background()
+		t.Cleanup(func() { mediafiles.SetOwnTraits(nil) })
+		c := NewTrashGuides()
+		c.Raw, c.API = trashtest.Serve(t, files)
+		body := mediafiles.GoodEveryday()
+		body.Traits = nil
+		p, err := CreatePickRules(ctx, st, PickRulesInput{Name: "Mine", Kinds: []string{"show"}, Body: body}, domain.System)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err := ApplyTrash(ctx, st, c, p.ID, "sonarr", "pb", domain.System)
+		if err != nil {
+			t.Fatalf("%d formats: %v", tc.n, err)
+		}
+		if len(res.Scored) != tc.kept || len(res.Skipped) != tc.left {
+			t.Fatalf("%d formats: scored %d (want %d), left out %d (want %d)", tc.n, len(res.Scored), tc.kept, len(res.Skipped), tc.left)
+		}
 	}
 }

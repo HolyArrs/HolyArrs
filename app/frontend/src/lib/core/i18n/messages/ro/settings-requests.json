@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Arată oamenilor",
 	"settings.requests.choiceMain": "{rules} · copia principală a titlului",
 	"settings.requests.choiceOwn": "{rules} · păstrată ca o copie separată",
-	"settings.requests.choiceNotReady": "Oferit după ce mai sus e setată o calitate 4K"
+	"settings.requests.choiceNotReady": "Oferit după ce mai sus e setată o calitate 4K",
+	"settings.requests.approvals": "Aprobări",
+	"settings.requests.autoApprove": "Aprobă cererile automat",
+	"settings.requests.autoApproveNote": "Oprit = cererile lor te așteaptă. Titlurile din lista Plex urmează același comutator.",
+	"settings.requests.ownerTag": "Proprietar",
+	"settings.requests.choiceAdd": "Adaugă o calitate",
+	"settings.requests.choiceNew": "Calitate nouă",
+	"settings.requests.choiceLabel": "Numele tău",
+	"settings.requests.choiceSeen": "Ceilalți văd"
 }

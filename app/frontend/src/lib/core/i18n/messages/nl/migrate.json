@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Vragen aandacht: {n}",
 	"migrate.needAttentionWhy": "Hun oude map staat niet op deze server, dus komen ze als gewenst in een map hier. Corrigeer de map of voeg een padregel toe: {list}",
 	"migrate.leftOutUncheckedN": "Weggelaten: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} staat op \"Niet overnemen\"; kies er een map voor en importeer opnieuw"
+	"migrate.leftOutUncheckedWhy": "{folder} staat op \"Niet overnemen\"; kies er een map voor en importeer opnieuw",
+	"migrate.seasonsDifferOne": "Controleer 1 serie die via het TMDB-nummer is gevonden",
+	"migrate.seasonsDifferOther": "Controleer {n} series die via hun TMDB-nummer zijn gevonden",
+	"migrate.seasonsDifferWhy": "Alleen het TMDB-nummer van de oude app vond {list}, hier onder een andere naam. Open ze een voor een en controleer of het dezelfde serie is. Zo ja, dan zijn de seizoenen anders genummerd: koppel de Overgebleven bestanden en zet daarna de serie aan. Zo nee, verwijder de serie; de bestanden blijven waar ze zijn.",
+	"migrate.stillChecking": "Series die de metadataserver nog controleert: {n}. Deze lijst werkt zichzelf bij zodra hij klaar is.",
+	"migrate.stillCheckingImport": "Series die de metadataserver nog controleert: {n}. Je kunt nu importeren; ze worden tijdens het importeren gecontroleerd."
 }

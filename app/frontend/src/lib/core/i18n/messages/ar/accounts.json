@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "تعذّر حفظ اللغة",
 	"accounts.language.count.one": "لغة واحدة",
 	"accounts.language.count.other": "{n} لغات",
-	"accounts.account.watchEveryone": "شغّل المالك هذه الميزة للجميع. أوقف الخيارين لإيقافها."
+	"accounts.account.watchEveryone": "شغّل المالك هذه الميزة للجميع. أوقف الخيارين لإيقافها.",
+	"accounts.watch.title": "علامات المشاهدة",
+	"accounts.watch.hint": "اربط حسابك على خادم وسائط هنا لتعرض المكتبة ما شاهدته.",
+	"accounts.watch.as": "{server}، باسم {name}",
+	"accounts.watch.nameOn": "الاسم على {server}",
+	"accounts.watch.passwordOnce": "تذهب كلمة مرورك إلى {server} فقط ولا تُحفظ.",
+	"accounts.watch.linked": "تم الربط مع {name} على {server}",
+	"accounts.watch.unlinked": "أُلغي الربط",
+	"accounts.login.importPaused": "انتهى تسجيل دخولك، لذا توقف الاستيراد مؤقتًا. سجّل الدخول، وافتح استيراد مكتبة واضغط امسح للمتابعة."
 }

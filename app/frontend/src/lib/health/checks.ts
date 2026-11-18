@@ -18,17 +18,19 @@ const kinds: Record<string, string> = {
 	get clear_waiting() { return t('health.kind.clearWaiting'); },
 	get save_folder() { return t('health.kind.saveFolder'); },
 	get same_downloader() { return t('health.kind.sameDownloader'); },
-	get trailers() { return t('health.kind.trailers'); }
+	get trailers() { return t('health.kind.trailers'); },
+	get people_check() { return t('health.kind.peopleCheck'); }
 };
 
 // Stage or linked app kind to its label.
-const linkKinds: Record<StageState['kind'], string> = {
+const linkKinds: Record<StageState['kind'] | 'outside_call', string> = {
 	get stage() { return t('health.link.stage'); },
 	get part() { return t('health.link.part'); },
 	get source() { return t('health.link.source'); },
 	get downloader() { return t('health.link.downloader'); },
 	get subtitle_site() { return t('health.link.subtitleSite'); },
-	get media_server() { return t('health.link.mediaServer'); }
+	get media_server() { return t('health.link.mediaServer'); },
+	get outside_call() { return t('health.link.outsideCall'); }
 };
 
 export function checkLabel(kind: string): string {

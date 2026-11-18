@@ -47,3 +47,22 @@ export function testCount(text: string): string {
 	const m = (text ?? '').match(/\b(\d+) (Releases?|subtitles?|indexers?|sites?)\b/i);
 	return m ? `${m[1]} ${m[2]}` : '';
 }
+
+const connectHelp = 'https://docs.holyarrs.com/start/connect/#if-it-does-not-work';
+
+// The row of the Connect page's "If it does not work" table for a failed test
+// line that shows what an address's name turned into; '' for any other line.
+// The text fragment scrolls the page to that row.
+export function connectHelpUrl(text: string | null | undefined): string {
+	const m = (text ?? '').match(/^(\S+) → (not found\.|\S+ → (?:refused|no answer) on port )/);
+	if (!m) return '';
+	const name = m[1].toLowerCase();
+	let row = 'Not answering';
+	if (m[2] === 'not found.') {
+		if (name.endsWith('.local')) row = 'A .local name like';
+		else if (name.endsWith('.ts.net')) row = 'A Tailscale name';
+		else if (name.includes('.')) row = 'A Pi-hole or router name';
+		else row = 'A container name like';
+	}
+	return `${connectHelp}:~:text=${encodeURIComponent(row).replace(/-/g, '%2D')}`;
+}

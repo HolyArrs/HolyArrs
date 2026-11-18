@@ -38,7 +38,7 @@ func backupsHealth(bm *backups.Manager) func(context.Context) (health.Backups, e
 	return func(ctx context.Context) (health.Backups, error) {
 		newest, every, lastErr, err := bm.State(ctx)
 		return health.Backups{Newest: newest, Every: every, LastErr: lastErr, Started: bm.Passed(),
-			KeyPrint: bm.KeyPrint(), KeyKitPrint: bm.KeyKitPrint(ctx), Off: bm.Off(ctx)}, err
+			KeyKit: bm.KeyKitLevel(ctx), Off: bm.Off(ctx)}, err
 	}
 }
 

@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Beide Pfade sind gleich, dieses Paar ändert also nichts. Es sagt HolyArrs aber, wo die Dateien dieses Download-Clients liegen, du kannst es also behalten.",
 	"settings.downloaders.change": "{name} ändern",
 	"settings.downloaders.whichApp": "Welche App",
-	"settings.downloaders.torrents": "(Torrents)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrents",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Am meisten genutzt",
 	"settings.downloaders.name": "Name",
 	"settings.downloaders.address": "Adresse",
 	"settings.downloaders.addressHint": "Seine Weboberfläche. Nimm bei SABnzbd die IP oder erlaube den Hostnamen von HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategorie nach dem Import",
 	"settings.downloaders.categoryAfterImportHint": "Nach dem Import verschiebt HolyArrs den Torrent in diese Kategorie. Leer lassen, damit er in der Hauptkategorie bleibt.",
 	"settings.downloaders.ownOnly": "Nur HolyArrs-Einträge zeigen",
-	"settings.downloaders.ownOnlyHint": "Einträge anderer Apps in diesem Downloader werden ausgeblendet, und HolyArrs ändert sie nicht."
+	"settings.downloaders.ownOnlyHint": "Einträge anderer Apps in diesem Downloader werden ausgeblendet, und HolyArrs ändert sie nicht.",
+	"settings.downloaders.state.notAnswering": "Antwortet nicht",
+	"settings.downloaders.state.paused": "Pausiert",
+	"settings.downloaders.state.resting": "Ruht",
+	"settings.downloaders.state.signInRefused": "Anmeldung abgelehnt",
+	"settings.downloaders.state.working": "Funktioniert"
 }

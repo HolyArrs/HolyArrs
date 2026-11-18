@@ -83,10 +83,10 @@ func deleteSessionFamily(ctx context.Context, q conn, family string) error {
 	return err
 }
 
-// markSetupDone drops the setup prefix from the family of the session behind
-// hash, so it becomes an ordinary session.
+// markSetupDone drops the setup prefix from every setup family of the person
+// behind the session with this hash, so none of their sessions stays a setup one.
 func markSetupDone(ctx context.Context, q conn, prefixLen int, hash string) error {
-	_, err := q.ExecContext(ctx, `UPDATE sessions SET family = substr(family, ?) WHERE family LIKE 'setup.%' AND family = (SELECT family FROM sessions WHERE hash = ?)`,
+	_, err := q.ExecContext(ctx, `UPDATE sessions SET family = substr(family, ?) WHERE family LIKE 'setup.%' AND user_id = (SELECT user_id FROM sessions WHERE hash = ?)`,
 		prefixLen, hash)
 	return err
 }

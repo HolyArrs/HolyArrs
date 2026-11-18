@@ -94,6 +94,13 @@ func SetSlotReasonTx(tx *sql.Tx, slotID int64, reason string, by database.Actor)
 	return err
 }
 
+// SetWaitingSlotReasonTx replaces the reason of a Slot that waits for a
+// decision and leaves its time as it was; a Slot in another state is left alone.
+func SetWaitingSlotReasonTx(tx *sql.Tx, slotID int64, reason string) error {
+	_, err := tx.Exec("UPDATE slots SET last_reason = ? WHERE id = ? AND state = ?", reason, slotID, SlotNeedsADecision)
+	return err
+}
+
 // TouchItemSearchedTx notes that an Item was searched for at the given time.
 func TouchItemSearchedTx(tx *sql.Tx, itemID int64, at time.Time) error {
 	_, err := tx.Exec("UPDATE items SET last_searched_at = ? WHERE id = ?", database.FormatTime(at), itemID)

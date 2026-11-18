@@ -29,7 +29,7 @@
 </script>
 
 <div class="step-foot" data-testid="step-foot">
-	{#if back}<Button variant="plain" icon="chevronLeft" onclick={back} disabled={backDisabled}>{backLabel ?? t('migrate.back')}</Button>{/if}
+	{#if back}<Button icon="chevronLeft" onclick={back} disabled={backDisabled}>{backLabel ?? t('migrate.back')}</Button>{/if}
 	{#if more}<div class="more">{@render more()}</div>{/if}
 	<div class="go">
 		<p class="reason hint" id="move-reason" aria-live="polite">{reason}</p>

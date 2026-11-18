@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Nepavyko prijungti: {name}",
 	"settings.parts.connected": "{name} prijungta",
 	"settings.parts.title": "Dalys",
+	"settings.parts.onOff": "Įjungti arba išjungti dalis",
 	"settings.parts.ownerOnly": "Tik savininkui ir administratoriams",
 	"settings.parts.safeMode": "HolyArrs veikia saugiuoju režimu: veikia tik šerdis, o Dalių jungikliai ir Etapų valdikliai atmetami iki įprasto paleidimo. Norėdami išeiti iš saugiojo režimo, <a>Pavojingoje zonoje</a> naudokite <b>Paleisti HolyArrs iš naujo</b>.",
 	"settings.parts.dangerZone": "Pavojinga zona",

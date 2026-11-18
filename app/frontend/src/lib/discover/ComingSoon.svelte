@@ -61,7 +61,7 @@
 								{#if d.day === today}<span class="today-tag"><Badge label={t('discover.comingSoon.today')} /></span>{/if}
 							</div>
 							<div class="day">
-								<h4 class="count">{thingCount(d.items.length)}</h4>
+								{#if gs.length > 1}<h4 class="count">{thingCount(d.items.length)}</h4>{/if}
 								<div class="grid" data-testid="cal-day-grid">
 									{#if drawn.has(d.day)}
 										{#each gs as g (g.key)}<CalTile {g} {today} {mode} {look} {onfollow} />{/each}

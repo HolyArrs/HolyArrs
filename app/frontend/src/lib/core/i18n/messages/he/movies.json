@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "כללי בחירה לגרסה הזו",
 	"movies.versions.folderLabel": "תיקיית ספרייה לגרסה הזו",
 	"movies.versions.cancel": "ביטול",
-	"movies.versions.addButton": "הוספת גרסה"
+	"movies.versions.addButton": "הוספת גרסה",
+	"movies.versions.setEdition": "הגדרת מהדורה",
+	"movies.versions.editionFileHint": "איזו מהדורה הקובץ הזה, למשל Theatrical או Directors Cut. השאירו ריק כדי לנקות.",
+	"movies.versions.unprotectConfirm": "להסיר את ההגנה מ-{label}? עותק טוב יותר יוכל שוב להחליף אותו.",
+	"movies.versions.editionChars": "אסור:",
+	"movies.versions.editionInvalid": "אי אפשר להשתמש במהדורה הזאת. שמרו עליה קצרה (אותיות עם סימנים ואותיות לא לטיניות תופסות יותר מקום), השמיטו את התווים שברשימה למעלה ואל תסיימו בנקודה.",
+	"movies.versions.editionDevice": "השם {name} שמור ב-Windows להתקנים, ולכן אי אפשר להשתמש בו. הקלידו שם אחר."
 }

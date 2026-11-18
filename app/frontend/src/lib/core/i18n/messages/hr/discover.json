@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Zalijepi ID, na primjer tmdb:693134 ili tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Ili ga opiši, na primjer „svemirski film s robotom iz 2014.”.",
 	"discover.search.lookEverywhere": "Traži posvuda",
-	"discover.search.searchIndexersFor": "Traži u indekserima: „{searched}”",
+	"discover.search.searchIndexersFor": "Provjeri svoje izvore",
 	"discover.search.topMatches": "Najbolja podudaranja",
 	"discover.people.goToTheFilmography": "Idi na filmografiju",
 	"discover.people.filmography": "Filmografija",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Ne odgovara ovoj verziji",
 	"discover.leftovers.reason.movie_has_file": "Film već ima datoteku",
 	"discover.leftovers.reason.replaced_by_hand": "Zamijenjeno drugom datotekom",
-	"discover.leftovers.reason.unmatched": "Povezivanje uklonjeno ručno"
+	"discover.leftovers.reason.unmatched": "Povezivanje uklonjeno ručno",
+	"discover.searchSections.genres": "Žanrovi",
+	"discover.searchSections.moods": "Raspoloženja",
+	"discover.searchSections.stories": "Priče i teme",
+	"discover.searchSections.worlds": "Svjetovi i okruženja",
+	"discover.searchSections.eras": "Razdoblja",
+	"discover.searchSections.world": "Iz cijelog svijeta",
+	"discover.searchSections.collections": "Kolekcije",
+	"discover.popularRail.out": "Izlazi",
+	"discover.popularRail.comingDay": "Uskoro",
+	"discover.titleLibrary.turnShowOnHint": "Uključite seriju da bi traženje počelo.",
+	"discover.leftovers.reason.seasons_differ": "Pronađena samo po TMDB broju iz stare aplikacije: provjerite je li to ista serija, a zatim sami uparite datoteku"
 }

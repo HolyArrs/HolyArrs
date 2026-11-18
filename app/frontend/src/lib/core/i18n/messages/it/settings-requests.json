@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Mostra alle persone",
 	"settings.requests.choiceMain": "{rules} · la copia principale del titolo",
 	"settings.requests.choiceOwn": "{rules} · tenuta come copia a sé",
-	"settings.requests.choiceNotReady": "Proposto quando sopra è impostata una qualità 4K"
+	"settings.requests.choiceNotReady": "Proposto quando sopra è impostata una qualità 4K",
+	"settings.requests.approvals": "Approvazioni",
+	"settings.requests.autoApprove": "Approva le richieste automaticamente",
+	"settings.requests.autoApproveNote": "Spento = le loro richieste ti aspettano. I titoli della watchlist di Plex seguono lo stesso interruttore.",
+	"settings.requests.ownerTag": "Proprietario",
+	"settings.requests.choiceAdd": "Aggiungi una qualità",
+	"settings.requests.choiceNew": "Nuova qualità",
+	"settings.requests.choiceLabel": "Il tuo nome",
+	"settings.requests.choiceSeen": "Gli altri vedono"
 }

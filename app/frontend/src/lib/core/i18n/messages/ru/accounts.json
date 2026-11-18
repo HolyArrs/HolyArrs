@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Не удалось сохранить язык",
 	"accounts.language.count.one": "1 язык",
 	"accounts.language.count.other": "Языков: {n}",
-	"accounts.account.watchEveryone": "Владелец включил это для всех. Выключите оба, чтобы остановить."
+	"accounts.account.watchEveryone": "Владелец включил это для всех. Выключите оба, чтобы остановить.",
+	"accounts.watch.title": "Отметки о просмотре",
+	"accounts.watch.hint": "Свяжите здесь свою учётную запись на медиасервере, чтобы Библиотека показывала, что вы посмотрели.",
+	"accounts.watch.as": "{server}, как {name}",
+	"accounts.watch.nameOn": "Имя на {server}",
+	"accounts.watch.passwordOnce": "Ваш пароль уходит только на {server} и не сохраняется.",
+	"accounts.watch.linked": "Связано с {name} на {server}",
+	"accounts.watch.unlinked": "Связь удалена",
+	"accounts.login.importPaused": "Ваш вход закончился, поэтому импорт приостановлен. Войдите, откройте «Импорт медиатеки» и нажмите «Сканировать», чтобы продолжить."
 }

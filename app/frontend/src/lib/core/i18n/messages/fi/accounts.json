@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Kielen tallennus ei onnistunut",
 	"accounts.language.count.one": "1 kieli",
 	"accounts.language.count.other": "{n} kieltä",
-	"accounts.account.watchEveryone": "Omistaja otti tämän käyttöön kaikille. Poista molemmat käytöstä lopettaaksesi sen."
+	"accounts.account.watchEveryone": "Omistaja otti tämän käyttöön kaikille. Poista molemmat käytöstä lopettaaksesi sen.",
+	"accounts.watch.title": "Katsottu-merkinnät",
+	"accounts.watch.hint": "Yhdistä tähän tilisi mediapalvelimella, niin Kirjasto näyttää, mitä olet katsonut.",
+	"accounts.watch.as": "{server}, käyttäjänä {name}",
+	"accounts.watch.nameOn": "Nimi palvelimella {server}",
+	"accounts.watch.passwordOnce": "Salasanasi menee vain palvelimelle {server} eikä sitä tallenneta.",
+	"accounts.watch.linked": "Yhdistetty käyttäjään {name} palvelimella {server}",
+	"accounts.watch.unlinked": "Yhteys poistettu",
+	"accounts.login.importPaused": "Kirjautumisesi päättyi, joten tuonti keskeytyi. Kirjaudu sisään, avaa Tuo kirjasto ja jatka painamalla Skannaa."
 }

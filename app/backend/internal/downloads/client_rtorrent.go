@@ -586,7 +586,7 @@ func (r *RTorrent) call(ctx context.Context, method string, params ...any) (any,
 			return nil, ctx.Err()
 		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
-			return nil, outbound.ErrAddressRefused
+			return nil, outbound.Refusal(err)
 		}
 		return nil, errDownloaderUnavailable
 	}

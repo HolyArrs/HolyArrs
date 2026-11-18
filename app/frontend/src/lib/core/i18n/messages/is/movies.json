@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Valreglur fyrir þetta afbrigði",
 	"movies.versions.folderLabel": "Safnmappa fyrir þetta afbrigði",
 	"movies.versions.cancel": "Hætta við",
-	"movies.versions.addButton": "Bæta við afbrigði"
+	"movies.versions.addButton": "Bæta við afbrigði",
+	"movies.versions.setEdition": "Setja útgáfu",
+	"movies.versions.editionFileHint": "Hvaða útgáfa þessi skrá er, til dæmis Theatrical eða Directors Cut. Hafðu reitinn auðan til að hreinsa hana.",
+	"movies.versions.unprotectConfirm": "Fjarlægja vörn af {label}? Betra eintak getur þá tekið stöðu þess aftur.",
+	"movies.versions.editionChars": "Ekki leyft:",
+	"movies.versions.editionInvalid": "Ekki er hægt að nota þessa útgáfu. Hafðu hana stutta (stafir með broddum og ólatneskir stafir taka meira pláss), slepptu táknunum sem talin eru upp hér að ofan og endaðu ekki á punkti.",
+	"movies.versions.editionDevice": "Windows tekur nafnið {name} frá fyrir tæki, svo ekki er hægt að nota það. Sláðu inn annað."
 }

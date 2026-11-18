@@ -24,10 +24,10 @@ func TestSwitchTurnsOneFeatureOn(t *testing.T) {
 	if !FeatureOn(AIApps) || !FeatureOn(GoBack) {
 		t.Fatal("listed switches are not on")
 	}
-	if FeatureOn(TraktLists) {
+	if FeatureOn(EmbySignIn) {
 		t.Fatal("an unlisted switch is on")
 	}
-	if got := FeaturesOff(); slices.Contains(got, AIApps) || !slices.Contains(got, TraktLists) || len(got) != len(HeldFeatures())-2 {
+	if got := FeaturesOff(); slices.Contains(got, AIApps) || !slices.Contains(got, EmbySignIn) || len(got) != len(HeldFeatures())-2 {
 		t.Errorf("FeaturesOff() = %v", got)
 	}
 }
@@ -49,5 +49,15 @@ func TestAlertChannelsAreNotHeld(t *testing.T) {
 	t.Setenv("HOLYARRS_FLAGS", "")
 	if slices.Contains(HeldFeatures(), "alert_channels_more") || slices.Contains(FeaturesOff(), "alert_channels_more") {
 		t.Fatalf("alert channels are still held back: %v", HeldFeatures())
+	}
+}
+
+// Trakt lists, the Trakt key and the VIP token ship on, so no switch is
+// needed for them.
+func TestTraktListsAreNotHeld(t *testing.T) {
+	RegisterHeldFeatures()
+	t.Setenv("HOLYARRS_FLAGS", "")
+	if slices.Contains(HeldFeatures(), "trakt_lists") || slices.Contains(FeaturesOff(), "trakt_lists") {
+		t.Fatalf("Trakt lists are still held back: %v", HeldFeatures())
 	}
 }

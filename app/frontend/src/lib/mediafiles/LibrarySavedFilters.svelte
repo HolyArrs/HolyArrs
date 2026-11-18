@@ -28,9 +28,9 @@
 {#snippet body()}
 <div class="sf-saved">
 	{#each saved as sv (sv.name)}<Chip label={sv.name} icon="star" selected={sameFilter(sv.filter, filter)} onclick={() => setFilter(sv.filter)} onremove={() => forget(sv.name)} />{/each}
-	<Button variant="plain" size="sm" icon="plus" disabled={!filtersOn} onclick={openSave}>{t('mediafiles.dialogs.saveFilter')}</Button>
+	<Button variant="secondary" size="md" icon="plus" disabled={!filtersOn} onclick={openSave}>{t('mediafiles.dialogs.saveFilter')}</Button>
 </div>
-<Button variant="plain" size="sm" disabled={!filtersOn} onclick={clearFilters}>{t('mediafiles.saved.clear')}</Button>
+<Button variant="secondary" size="md" disabled={!filtersOn} onclick={clearFilters}>{t('mediafiles.saved.clear')}</Button>
 {/snippet}
 
 <style>

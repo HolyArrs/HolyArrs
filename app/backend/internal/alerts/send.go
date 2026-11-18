@@ -208,7 +208,7 @@ type Sender struct {
 // dialer connects only to public addresses unless the Alert may reach the
 // local network; the check runs on each address after DNS. Link-local and
 // cloud metadata addresses are refused even then.
-func dialer(a domain.Alert) *net.Dialer {
+func dialer(a domain.Alert) *outbound.Dialer {
 	if a.AllowLocal {
 		return outbound.PolicyDialer(outbound.NotMetadata)
 	}
@@ -445,6 +445,9 @@ func (s *Sender) discord(ctx context.Context, a domain.Alert, m Message) error {
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
+		if errors.Is(err, outbound.ErrMetadataRefused) {
+			return fail("the address is a cloud metadata address, which HolyArrs never connects to", err)
+		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
 			return fail("Discord link points to the local network, which this Alert may not reach", err)
 		}
@@ -577,11 +580,21 @@ func (s *Sender) email(ctx context.Context, a domain.Alert, m Message) error {
 	var conn net.Conn
 	tc := &tls.Config{ServerName: a.SMTPHost, MinVersion: tls.VersionTLS12}
 	if a.SMTPSecurity == "tls" {
-		conn, err = (&tls.Dialer{NetDialer: d, Config: tc}).DialContext(ctx, "tcp", addr)
+		conn, err = d.DialContext(ctx, "tcp", addr)
+		if err == nil {
+			tconn := tls.Client(conn, tc)
+			if err = tconn.HandshakeContext(ctx); err != nil {
+				conn.Close()
+			}
+			conn = tconn
+		}
 	} else {
 		conn, err = d.DialContext(ctx, "tcp", addr)
 	}
 	if err != nil {
+		if errors.Is(err, outbound.ErrMetadataRefused) {
+			return fail("the address is a cloud metadata address, which HolyArrs never connects to", err)
+		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
 			return fail("mail server is on the local network, which this Alert may not reach", err)
 		}

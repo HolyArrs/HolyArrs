@@ -83,6 +83,7 @@
 	"settings.users.preset": "Готово подешавање",
 	"settings.users.comingSoon": "Ускоро",
 	"settings.users.custom": "Прилагођено",
+	"settings.users.customHint": "Ово је ваша сопствена комбинација прекидача испод. Избор шаблона је замењује; поново изаберите Прилагођено да бисте је вратили.",
 	"settings.users.ageRating": "Старосна оцена",
 	"settings.users.newPasswordFor": "Нова лозинка за {name}",
 	"settings.users.passwordNote": "Користи ово кад је {name} заборавио/ла своју. Одјављени су свуда и пријављују се поново новом. Реци им је лично.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "нпр. мама",
 	"settings.users.days": "Дани трајања везе",
 	"settings.users.makeInvite": "Направи везу позивнице",
-	"settings.users.permAuto4k": "4K захтеви се одобравају без чекања"
+	"settings.users.permAuto4k": "4K захтеви се одобравају без чекања",
+	"settings.users.serverAccount": "Налог на серверу",
+	"settings.users.pickAccount": "Изаберите налог на медијском серверу",
+	"settings.users.accountLinked": "Повезано са {name}",
+	"settings.users.removedOnServer": "Уклоњен на {word} серверу, па је овде искључен",
+	"settings.users.delete": "Обриши",
+	"settings.users.deleteName": "Обриши {name}",
+	"settings.users.confirmDelete": "Обрисати {name}? Трајно се одјављује и кључеви нестају. Захтеви остају, приказани као уклоњена особа.",
+	"settings.users.deleteYes": "Обриши особу",
+	"settings.users.keep": "Задржи",
+	"settings.users.deleted": "{name} обрисан",
+	"settings.users.couldntDelete": "Брисање није успело",
+	"settings.users.confirmDeleteKeys": "Кључеви за Seerr које је направио престају да раде за све док се не направи нови.",
+	"settings.users.qualities": "Kvaliteti",
+	"settings.users.qualitiesHint": "Могу да бирају само укључене. Кад су све укључене, нуде се и нове."
 }

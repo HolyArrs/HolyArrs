@@ -14,6 +14,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
 
 // TestChange_KeyAgainWhenProxyOfPlainHTTPSourceChanges checks that a plain http Source needs its key typed again when the proxy changes, and an https Source does not.
@@ -78,7 +79,7 @@ func TestSOCKS5_ChecksReplyVersions(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = socks5Connect(context.Background(), conn, "127.0.0.1:80", user, "p")
+		err = outbound.SOCKS5Connect(context.Background(), conn, "127.0.0.1:80", user, "p")
 		conn.Close()
 		if err == nil {
 			t.Fatalf("%s: a bad answer was taken", name)
@@ -89,7 +90,7 @@ func TestSOCKS5_ChecksReplyVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer conn.Close()
-	if err := socks5Connect(context.Background(), conn, ":80", "", ""); err == nil {
+	if err := outbound.SOCKS5Connect(context.Background(), conn, ":80", "", ""); err == nil {
 		t.Fatal("an empty host was sent")
 	}
 }

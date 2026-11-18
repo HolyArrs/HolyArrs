@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} venter",
 	"frame.nav.new": "{n} nye",
 	"frame.nav.manage": "Administrer",
+	"frame.nav.activity": "Aktivitet",
+	"frame.nav.system": "System",
 	"frame.nav.history": "Historik",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Indstillinger",
+	"frame.nav.plugins": "Plugins",
 	"frame.nav.goTo": "Gå til",
 	"frame.nav.active": "{n} aktive, {percent} %",
 	"frame.nav.decide": "{n} kræver en beslutning",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "System",
 	"frame.layout.switch": "Skift konto",
 	"frame.layout.signOut": "Log ud",
+	"frame.layout.support": "Støt HolyArrs",
 	"frame.layout.signOutFail": "Kunne ikke bekræfte udlogning",
 	"frame.layout.signedOut": "Logget ud",
 	"frame.layout.accountMenu": "{name}, {role}: konto og udseende",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs prøver igen af sig selv",
 	"frame.feeds.clearNow": "Ryd væk nu",
 	"frame.feeds.cleared": "Ryddet væk fra Downloaderen",
-	"frame.feeds.clearStill": "Endnu ikke ryddet væk"
+	"frame.feeds.clearStill": "Endnu ikke ryddet væk",
+	"frame.error.pageGone": "Siden findes ikke. Linket kan være gammelt eller skrevet forkert."
 }

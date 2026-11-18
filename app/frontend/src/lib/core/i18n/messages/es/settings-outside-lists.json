@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Tus listas de Trakt no se pueden leer hasta que esté configurado.",
 	"settings.outsideLists.replaceKey": "Reemplazar la clave de Trakt",
 	"settings.outsideLists.pasteKey": "Pega la clave de Trakt",
+	"settings.outsideLists.mdblistKey": "Clave de MDBList",
+	"settings.outsideLists.mdblistInfo": "Opcional. Con tu clave de API de MDBList, las listas de MDBList se leen a través de la API de MDBList; sin ella, a través de su enlace público. Se guarda cifrada y es la misma clave que usan las valoraciones externas en el modo Tus propias claves.",
+	"settings.outsideLists.pasteMdblistKey": "Pega tu clave de API de MDBList",
+	"settings.outsideLists.replaceMdblistKey": "Reemplazar la clave de MDBList",
+	"settings.outsideLists.removeMdblistKey": "Quitar la clave",
+	"settings.outsideLists.mdblistKeySaved": "Clave de MDBList guardada",
+	"settings.outsideLists.mdblistKeyRemoved": "Clave de MDBList quitada; las listas usan su enlace público",
 	"settings.outsideLists.replaceVip": "Reemplazar el token de acceso VIP",
 	"settings.outsideLists.vip": "Token de acceso VIP (opcional)",
 	"settings.outsideLists.vipHint": "Añade una pestaña de Trakt a las páginas de títulos: puntuación, espectadores y comentarios",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Añadir a la lista de nunca añadir",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "Quitar {name}",
-	"settings.outsideLists.empty": "Vacía"
+	"settings.outsideLists.empty": "Todavía no hay nada en esta lista"
 }

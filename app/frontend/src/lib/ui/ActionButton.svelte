@@ -31,7 +31,7 @@
 {/snippet}
 
 {#if href}
-	<a class="ui-act {cls}" class:primary class:round {href} {target} rel={target ? 'noopener noreferrer' : undefined} aria-label={aria} data-testid={rest['data-testid']} use:press={round ? 'round' : 'button'}>{@render inner()}</a>
+	<a class="ui-act {cls}" class:primary class:round {href} {target} rel={target ? 'noopener noreferrer' : undefined} aria-label={aria} data-testid={rest['data-testid' as keyof typeof rest] as string | undefined} use:press={round ? 'round' : 'button'}>{@render inner()}</a>
 {:else}
 	<button
 		class="ui-act {cls}"

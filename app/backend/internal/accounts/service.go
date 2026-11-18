@@ -101,6 +101,7 @@ type Auth struct {
 	offers          map[string]*importOffer   // last import preview per provider
 	tester          *http.Client              // address tests (providers.go)
 	server          *http.Client              // Jellyfin/Emby calls; never follows redirects
+	media           MediaLinks                // the owner's connected media servers (media_link.go)
 	proxies         []*net.IPNet              // from Options and HOLYARRS_TRUSTED_PROXIES; fixed
 	savedProxies    atomic.Pointer[proxyList] // saved in Settings (trusted_proxies.go)
 	checks          chan struct{}

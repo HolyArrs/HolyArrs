@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Spento in Parti",
 	"home.noneForSources": "manca per ciò che trovano le tue fonti",
 	"home.addedTwice": "è aggiunto due volte",
-	"home.addedTwiceMany": "sono aggiunti due volte"
+	"home.addedTwiceMany": "sono aggiunti due volte",
+	"home.notSetUpYet": "Non ancora configurato",
+	"home.setUpToAdd": "Completa la configurazione per aggiungere {name}",
+	"home.comingThisWeek": "In arrivo questa settimana",
+	"home.thisWeek": "questa settimana",
+	"home.landingThisWeek": "Episodi e film in arrivo questa settimana",
+	"home.popularThisWeek": "Uscite popolari in arrivo questa settimana",
+	"home.peopleCheck": "Controllo persone",
+	"home.cantReadUsers": "elenco utenti non leggibile"
 }

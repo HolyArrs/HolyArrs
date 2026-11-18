@@ -83,6 +83,7 @@
 	"settings.users.preset": "プリセット",
 	"settings.users.comingSoon": "近日公開",
 	"settings.users.custom": "カスタム",
+	"settings.users.customHint": "下のスイッチをあなた自身で組み合わせた設定です。プリセットを選ぶと置き換わります。元に戻すには、もう一度「カスタム」を選んでください。",
 	"settings.users.ageRating": "年齢制限",
 	"settings.users.newPasswordFor": "{name} の新しいパスワード",
 	"settings.users.passwordNote": "{name} がパスワードを忘れたときに使います。本人はすべての場所でサインアウトされ、新しいパスワードでサインインし直します。パスワードは直接伝えてください。",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "例: 母",
 	"settings.users.days": "リンクの有効日数",
 	"settings.users.makeInvite": "招待リンクを作成",
-	"settings.users.permAuto4k": "待たずに承認される 4K リクエスト"
+	"settings.users.permAuto4k": "待たずに承認される 4K リクエスト",
+	"settings.users.serverAccount": "サーバーのアカウント",
+	"settings.users.pickAccount": "メディアサーバーのアカウントを選ぶ",
+	"settings.users.accountLinked": "{name} とリンクしました",
+	"settings.users.removedOnServer": "{word} サーバーで削除されたため、ここでオフにしました",
+	"settings.users.delete": "削除",
+	"settings.users.deleteName": "{name} を削除",
+	"settings.users.confirmDelete": "{name} を削除しますか？完全にサインアウトされ、キーも消えます。リクエストは削除された人として残ります。",
+	"settings.users.deleteYes": "この人を削除",
+	"settings.users.keep": "残す",
+	"settings.users.deleted": "{name} を削除しました",
+	"settings.users.couldntDelete": "削除できませんでした",
+	"settings.users.confirmDeleteKeys": "この人が作った Seerr のキーは、新しいキーを作るまで全員で使えなくなります。",
+	"settings.users.qualities": "画質",
+	"settings.users.qualitiesHint": "オンのものだけ選べます。すべてオンなら、新しいものも表示されます。"
 }

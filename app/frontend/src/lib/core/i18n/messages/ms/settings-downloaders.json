@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Kedua-dua laluan sama, jadi pasangan ini tidak menukar apa-apa. Ia masih memberitahu HolyArrs di mana fail pemuat turun ini, jadi anda boleh menyimpannya.",
 	"settings.downloaders.change": "Ubah {name}",
 	"settings.downloaders.whichApp": "Apl yang mana",
-	"settings.downloaders.torrents": "(torrent)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrent",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Paling banyak digunakan",
 	"settings.downloaders.name": "Nama",
 	"settings.downloaders.address": "Alamat",
 	"settings.downloaders.addressHint": "Halaman webnya. Untuk SABnzbd, gunakan IP atau benarkan nama hos HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategori selepas import",
 	"settings.downloaders.categoryAfterImportHint": "Selepas torrent diimport, HolyArrs memindahkannya ke kategori ini. Biarkan kosong untuk mengekalkannya dalam kategori utama.",
 	"settings.downloaders.ownOnly": "Tunjukkan item HolyArrs sahaja",
-	"settings.downloaders.ownOnlyHint": "Item apl lain pada Downloader ini disembunyikan, dan HolyArrs tidak mengubahnya."
+	"settings.downloaders.ownOnlyHint": "Item apl lain pada Downloader ini disembunyikan, dan HolyArrs tidak mengubahnya.",
+	"settings.downloaders.state.notAnswering": "Tidak menjawab",
+	"settings.downloaders.state.paused": "Dijeda",
+	"settings.downloaders.state.resting": "Berehat",
+	"settings.downloaders.state.signInRefused": "Log masuk ditolak",
+	"settings.downloaders.state.working": "Berfungsi"
 }

@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "καμία",
 	"settings.thisApp.needsRestart": "Χρειάζεται επανεκκίνηση. Το παρακάμπτουν τα HOLYARRS_URL_BASE ή -url-base.",
 	"settings.thisApp.save": "Αποθήκευση",
-	"settings.thisApp.licence": "Το HolyArrs είναι ελεύθερο λογισμικό υπό την AGPL-3.0."
+	"settings.thisApp.licence": "Το HolyArrs είναι ελεύθερο λογισμικό υπό την AGPL-3.0.",
+	"settings.thisApp.proxy": "Διακομιστής μεσολάβησης",
+	"settings.thisApp.proxyDesc": "Αποστολή των εξωτερικών κλήσεων μέσω διακομιστή μεσολάβησης. Οι κανόνες αποκλεισμού και οικιακού δικτύου ισχύουν ακόμα για τον πραγματικό προορισμό.",
+	"settings.thisApp.proxyType": "Τύπος",
+	"settings.thisApp.proxyOff": "Ανενεργό",
+	"settings.thisApp.proxyHost": "Διακομιστής",
+	"settings.thisApp.proxyPort": "Θύρα",
+	"settings.thisApp.proxyUser": "Όνομα χρήστη",
+	"settings.thisApp.proxyPasswordLabel": "Κωδικός",
+	"settings.thisApp.proxyPasswordKept": "Αφήστε κενό για να κρατήσετε τον αποθηκευμένο κωδικό",
+	"settings.thisApp.proxyBypass": "Παράκαμψη για",
+	"settings.thisApp.proxyBypassHint": "Ονόματα, διευθύνσεις ή εύρη, χωρισμένα με κόμματα. Το *.example.com καλύπτει όλα τα ονόματα από κάτω.",
+	"settings.thisApp.proxyBypassLocal": "Παράκαμψη για τοπικές διευθύνσεις",
+	"settings.thisApp.proxyBypassLocalHint": "Αυτό το μηχάνημα και το οικιακό δίκτυο συνδέονται απευθείας",
+	"settings.thisApp.proxySaved": "Ο διακομιστής μεσολάβησης αποθηκεύτηκε",
+	"settings.thisApp.proxyOffSaved": "Ο διακομιστής μεσολάβησης απενεργοποιήθηκε"
 }

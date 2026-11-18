@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Правила за избор за този вариант",
 	"movies.versions.folderLabel": "Папка на библиотеката за този вариант",
 	"movies.versions.cancel": "Отказ",
-	"movies.versions.addButton": "Добавяне на вариант"
+	"movies.versions.addButton": "Добавяне на вариант",
+	"movies.versions.setEdition": "Задаване на издание",
+	"movies.versions.editionFileHint": "Какво е това издание на файла, например Theatrical или Directors Cut. Оставете празно, за да го изчистите.",
+	"movies.versions.unprotectConfirm": "Да се премахне ли защитата от {label}? По-добро копие отново ще може да го замени.",
+	"movies.versions.editionChars": "Не се допускат:",
+	"movies.versions.editionInvalid": "Това издание не може да се използва. Направете го кратко (буквите с диакритици и нелатинските букви заемат повече място), без знаците, изброени по-горе, и без точка накрая.",
+	"movies.versions.editionDevice": "Windows пази името {name} за устройства, затова не може да се използва. Въведете друго."
 }

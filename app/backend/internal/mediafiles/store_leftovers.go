@@ -168,3 +168,54 @@ func slotItems(ctx context.Context, tx *sql.Tx, fileID int64) ([]int64, error) {
 	}
 	return out, rows.Err()
 }
+
+// SeasonsDiffer is the title's mark for seasons the old app numbers
+// differently: 0 none, 1 its files wait to be placed, 2 they have been
+// placed (or left alone). While it is not 0 no episode is ever guessed
+// from the numbers in a file name by hand.
+func SeasonsDiffer(ctx context.Context, q database.Querier, titleID int64) int {
+	var differ int
+	_ = q.QueryRowContext(ctx, `SELECT seasons_differ FROM titles WHERE id = ?`, titleID).Scan(&differ)
+	return differ
+}
+
+// EndSeasonsWaitTx moves the mark from waiting to placed once no file of
+// the title still waits for it (each was matched or left alone).
+func EndSeasonsWaitTx(ctx context.Context, tx *sql.Tx, titleID int64) error {
+	_, err := tx.ExecContext(ctx, `UPDATE titles SET seasons_differ = 2 WHERE id = ? AND seasons_differ = 1 AND NOT EXISTS (
+		SELECT 1 FROM files f JOIN versions v ON v.id = f.version_id WHERE v.title_id = ? AND f.origin = 'found' AND f.state = 'present'
+		AND f.leftover_reason = 'seasons_differ' AND f.leftover_dismissed = 0)`, titleID, titleID)
+	return err
+}
+
+// MarkSeasonsDifferTx marks a title whose files wait because the old app
+// numbers its seasons differently.
+func MarkSeasonsDifferTx(ctx context.Context, tx *sql.Tx, titleID int64) error {
+	_, err := tx.ExecContext(ctx, `UPDATE titles SET seasons_differ = 1 WHERE id = ?`, titleID)
+	return err
+}
+
+// FoundNote is a found file of a version with its leftover reason.
+type FoundNote struct {
+	ID     int64
+	Path   string
+	Reason string
+}
+
+// FoundNotes lists the present found files of a version.
+func FoundNotes(ctx context.Context, q *sql.DB, versionID int64) ([]FoundNote, error) {
+	rows, err := q.QueryContext(ctx, `SELECT id, relative_path, coalesce(leftover_reason, '') FROM files WHERE version_id = ? AND origin = 'found' AND state = 'present'`, versionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []FoundNote
+	for rows.Next() {
+		var n FoundNote
+		if err := rows.Scan(&n.ID, &n.Path, &n.Reason); err != nil {
+			return nil, err
+		}
+		out = append(out, n)
+	}
+	return out, rows.Err()
+}

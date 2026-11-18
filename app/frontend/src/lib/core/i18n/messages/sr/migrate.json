@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Traže pažnju: {n}",
 	"migrate.needAttentionWhy": "Njihova stara fascikla nije na ovom serveru, pa dolaze kao željeni u fasciklu ovde. Ispravite fasciklu ili dodajte pravilo putanje: {list}",
 	"migrate.leftOutUncheckedN": "Изостављено: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} је подешена на „Не преносити их“; изаберите јој фасциклу и увезите поново"
+	"migrate.leftOutUncheckedWhy": "{folder} је подешена на „Не преносити их“; изаберите јој фасциклу и увезите поново",
+	"migrate.seasonsDifferOne": "Провери 1 серију пронађену по TMDB броју",
+	"migrate.seasonsDifferOther": "Серије пронађене по TMDB броју за проверу: {n}",
+	"migrate.seasonsDifferWhy": "Само је TMDB број из старе апликације пронашао {list}, овде под другим именом. Отвори сваку и провери да ли је то иста серија. Ако јесте, њене сезоне су другачије нумерисане: упари њене Преостале датотеке, па укључи серију. Ако није, уклони је; њене датотеке остају где јесу.",
+	"migrate.stillChecking": "Серије које сервер метаподатака још проверава: {n}. Списак ће се сам освежити када заврши.",
+	"migrate.stillCheckingImport": "Серије које сервер метаподатака још проверава: {n}. Можете да увезете одмах; проверавају се током увоза."
 }

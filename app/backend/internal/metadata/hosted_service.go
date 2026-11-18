@@ -71,7 +71,7 @@ func NewHosted(v *secrets.Vault) (*Hosted, error) {
 	// One pooled HTTP/2 transport for every call to the server: text
 	// answers here, and the server's pictures through the artwork client.
 	modes := EnvModes()
-	tr := &Gate{Next: NewServerTransport(d.DialContext), Modes: modes}
+	tr := &Gate{Next: NewServerTransport(outbound.WatchFakeIP(d.DialContext)), Modes: modes}
 	cl := &http.Client{Transport: keyCheck{next: tr, refused: dropUnknownKey(v)}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	h := &Hosted{HTTP: cl, Transport: tr, Gate: tr, Modes: modes, Vault: v}
 	access := installationAccess(v, func(ctx context.Context) (string, error) { return h.Service.Register(ctx) })

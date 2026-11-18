@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Límdu inn auðkenni, eins og tmdb:693134 eða tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Eða lýstu því, eins og „geimmynd með vélmenni frá 2014“.",
 	"discover.search.lookEverywhere": "Leita alls staðar",
-	"discover.search.searchIndexersFor": "Leita í leitarvélum að „{searched}“",
+	"discover.search.searchIndexersFor": "Athuga heimildirnar þínar",
 	"discover.search.topMatches": "Bestu samsvaranir",
 	"discover.people.goToTheFilmography": "Fara á leikaraskrána",
 	"discover.people.filmography": "Leikaraskrá",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Passar ekki við þessa útgáfu",
 	"discover.leftovers.reason.movie_has_file": "Myndin er þegar með skrá",
 	"discover.leftovers.reason.replaced_by_hand": "Skipt út fyrir aðra skrá",
-	"discover.leftovers.reason.unmatched": "Tenging fjarlægð handvirkt"
+	"discover.leftovers.reason.unmatched": "Tenging fjarlægð handvirkt",
+	"discover.searchSections.genres": "Flokkar",
+	"discover.searchSections.moods": "Stemningar",
+	"discover.searchSections.stories": "Sögur og þemu",
+	"discover.searchSections.worlds": "Heimar og sögusvið",
+	"discover.searchSections.eras": "Tímabil",
+	"discover.searchSections.world": "Víða um heim",
+	"discover.searchSections.collections": "Söfn",
+	"discover.popularRail.out": "Kemur út",
+	"discover.popularRail.comingDay": "Væntanlegt",
+	"discover.titleLibrary.turnShowOnHint": "Kveiktu á þáttaröðinni til að byrja að leita.",
+	"discover.leftovers.reason.seasons_differ": "Fannst aðeins eftir TMDB-númeri gamla forritsins: athugaðu hvort þetta sé sami þátturinn og paraðu svo skrána sjálf(ur)"
 }

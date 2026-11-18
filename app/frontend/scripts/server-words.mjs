@@ -18,27 +18,167 @@ const banned = ['Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 
 // Codes and names the scan picks up that no one reads as words (setting values,
 // ids, kinds); they stay out of the file and the check.
 const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 'key', 'movie', 'show', 'artist',
-	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}']);
+	// The audio codec and HDR labels a file name carries (mediafiles/naming_media.go): names, not words to translate.
+	'AAC', 'AC3', 'EAC3', 'DTS', 'DTS-HD', 'TrueHD', 'FLAC', 'ALAC', 'MP3', 'Opus', 'Vorbis', 'PCM', 'DolbyVision', 'HDR10', 'HDR10+', 'HLG',
+	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}',
+	// migrate errNotChecked: a dry run's own marker, never shown (the page says how many shows are still being checked).
+	'still being checked']);
 // Lines the scan cannot put together: a control's Event starts with the person's name (setup ControlEvent)
 // and takes its verb from a map; a removal's reason may name who removed it.
-const handLines = { 'Because you have {name}': 'suggest', 'No Downloader has confirmed this Release yet. You can choose another one.': 'sources', 'Deleted by hand': 'downloads', 'Marked bad': 'downloads',
+const handLines = { 'Because you have {name}': 'suggest', 
+	// suggest rows.go RowTitle/TabTitle, build.go and titles.go fixedSubtitle: the plain row titles and head-row subtitles,
+	// put together from a genre (lower case), a decade or a name. server-words.ts only fills a {genre} with a known genre.
+	...Object.fromEntries(['Top picks for you', 'Trending this week everywhere', 'Because you asked for {name}', 'More from {name}', '{genre} picks for you',
+		'Popular {genre}', 'Popular {decade}s {genre}', '{decade}s {genre}', 'New on your services', 'Best new releases', 'Popular in your household', 'Hidden gems',
+		'Trending on streaming', 'Finish the collection', 'Coming to cinemas and streaming', 'New seasons and premieres', 'Returning soon', 'Classics',
+		'Trending movies this week', 'Trending shows this week', 'Trending movies on streaming', 'Trending shows on streaming',
+		'Matched to your Library and asks', 'This week, mostly {genre}', 'What people watch this week', 'The parts missing from collections you have',
+		'In the next 90 days', 'Shows you have that are airing, then new shows', 'Back in the next two months'].map((l) => [l, 'suggest'])),
+	// discover ttl.go Titles and explore_genre_routes.go: Explore row titles; explore_new.go NewFresh and home.go: card badges ({date} is "Jan 2").
+	...Object.fromEntries(['Trending this week', 'Popular', 'Because you have it', 'More in this genre', 'On your services',
+		'Trending {genre}', 'Best new {genre}', 'Top-rated {genre} classics',
+		'Out {date}', 'Added {n}d ago', 'Season {season}', 'S{season}E{episode} · {date}'].map((l) => [l, 'discover'])),
+	// TMDB departments, a person's line on the people page.
+	...Object.fromEntries(['Acting', 'Directing', 'Writing', 'Production', 'Art', 'Camera', 'Editing', 'Costume & Make-Up', 'Crew', 'Visual Effects',
+		'Lighting', 'Creator'].map((l) => [l, 'metadata'])),
+	
+	// The folder tags note (the scan misreads its two apostrophes) and its older wording, still in stored History.
+	"No Source this search can use has this folder's tags, so Sources without the folder's tags were asked.": 'sources',
+	"No Source this search can use has this folder's tags, so Sources without tags were asked too.": 'sources', 'No Downloader has confirmed this Release yet. You can choose another one.': 'sources', 'Deleted by hand': 'downloads', 'Marked bad': 'downloads',
 	'{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',
 	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads',
+	// outbound.FakeIPMessage: a name that resolved to 198.18.x.x (Clash or Surge fake-IP mode).
+	'Your router or VPN is sending HolyArrs to a fake address (198.18.x.x). This usually comes from Clash or Surge. Add {host} to its direct list.': 'metadata',
+	// A finished download removed by hand: the files it kept, and why a remove is refused (downloads remove_done.go).
+	'Download removed by {name}; its files were kept: {why}': 'downloads', 'Download removed; its files were kept: {why}': 'downloads',
+	// Why the files stayed (seed_cleanup.go keepFilesWhy, remove_done.go doneKeepWhy), said inside the line above.
+	'{path} is a Library folder or is in or around one': 'downloads', '{path} is a whole save folder': 'downloads',
+	'{name} did not say where they are': 'downloads', 'HolyArrs could not read its Library folders': 'downloads',
+	'HolyArrs could not check whether another torrent uses them': 'downloads', 'another torrent in {name} uses {path}': 'downloads',
+	'HolyArrs could not reach {name}': 'downloads',
+	"HolyArrs is putting this download's files in the library; remove it once that is done": 'downloads',
+	'this Downloader is read-only: turn on "HolyArrs can change this Downloader" in its settings to remove it from here': 'downloads',
+	// migrate seasonsNote: a show found only by the old app's TMDB number, with and without files to place.
+	"{d}; found only by the old app's TMDB number, as {other}: check that it is the same show. If it is, its seasons are numbered differently here, so its files wait in Leftover files for you to place; if it is not, remove it. Keep up to date is off and the old app's season choices were not used, so nothing is downloaded until you turn it on": 'migrate',
+	"{d}; found only by the old app's TMDB number, as {other}: check that it is the same show, and remove it if it is not. Its seasons may be numbered differently here, so no file is placed on an episode by its numbers. Keep up to date is off and the old app's season choices were not used, so nothing is downloaded until you turn it on": 'migrate',
 	// metadata.ErrServiceSlow, answered through library.ServiceError.
 	'The metadata server is slow right now. This comes back on its own.': 'metadata',
+	// metadata.BusyLine: the server's reason for asking HolyArrs to wait, answered by discover.Fail and library.ServiceError.
+	'The metadata server is not signing up more installs from this address right now. HolyArrs asks again on its own; keep the /config folder between restarts so this install keeps its sign-up.': 'metadata',
+	'The metadata server has no room for new installs right now. HolyArrs asks again on its own within the hour.': 'metadata',
+	'This address sent the metadata server too many requests. HolyArrs waits and asks again on its own.': 'metadata',
+	'This install sent the metadata server too many requests. HolyArrs waits and asks again on its own.': 'metadata',
+	'The metadata server is busy right now. HolyArrs asks again on its own in a moment.': 'metadata',
 	// requests.ErrNotAddedSlow, answered when an approval could not add its title.
 	'The metadata server did not answer in time. It is back in Waiting; approve it again.': 'requests',
+	// requests views.go: the reason a request whose title was deleted from the Library will not arrive.
+	'It was deleted from the Library after it was approved.': 'requests',
 	// importer.PlaceError, the refusal of a folder Import by hand may not read.
 	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet. Add one in Settings > Library folders.": 'importer',
 	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: {all}": 'importer',
+	// importer refusedMedia: the file name and its refusal, put together at run time.
+	'HolyArrs refused {name}: the Downloader reported a file outside the download folder': 'importer',
+	// place_why.go: why a file was not placed (targetTakenWhy, noWriteWhy, noReadWhy, notThereWhy) and the lead for the system's own words.
+	'a file with the same name that HolyArrs did not place is already in the folder; move it out of the folder, then import again': 'importer',
+	'HolyArrs may not write to the folder this file goes to in the Library; give the user HolyArrs runs as (PUID and PGID) write access to it, then import again': 'importer',
+	'the file could not be placed: {why}': 'importer',
+	'HolyArrs may not read the downloaded file; give the user HolyArrs runs as (PUID and PGID) read access to the file and the folder it is in, then import again': 'importer',
+	'the file could not be placed': 'importer',
+	// place_why.go: what follows that lead when the file was gone or could not be read to check (notInFolderWhy, unreadCheckWhy).
+	'the file is not in the download folder any more': 'importer', 'could not read the file to check it': 'importer',
+	// importer.go place: what else follows that lead; a slot holds the system's own words. shows_import.go: the same lead naming the episode or track.
+	'the source is not a plain file (a symlink or something else)': 'importer', 'a file appeared at the target': 'importer',
+	'hardlink failed ({a}), copy failed ({b})': 'importer', 'hardlink not possible: {why}': 'importer',
+	'the file for {episode} could not be placed: {why}': 'importer',
+	// manual.go: why Import this file was refused, kept on the card after that lead (review_import.go).
+	'the current file is protected; turn its protection off first': 'importer', 'the new path would leave the Library folder': 'importer',
+	'the new path would be too long ({n} characters, the limit here is {max})': 'importer', 'this is the file it already has': 'importer',
+	'this already has a file; replace it or pick another Version': 'importer', 'already a file in the Library': 'importer',
+	'the current file could not be moved to the holding folder: {why}': 'importer',
+	// import_job.go downloadGoneWhy, and downloads.ErrNotWaiting answered to Import again.
+	'the download HolyArrs was importing is gone; search again or import the files by hand': 'importer',
+	'this download does not wait for an import': 'downloads',
+	"HolyArrs can't find the downloaded file where the Downloader says it is; check the path pair in Settings > Downloaders and that the download folder is mounted, then import again": 'importer',
+	// unread_reason.go: no file list and no way to read the download's folder, and the lines when no file matched.
+	"HolyArrs can't read this download's files: HOLYARRS_SAVE_PATH is not set and {name} has no path pair. Set HOLYARRS_SAVE_PATH if both apps see the same download folder, or add a path pair in Settings > Downloaders, then import again": 'importer',
+	"HolyArrs can't read this download's files: HOLYARRS_SAVE_PATH is not set and the Downloader has no path pair. Set HOLYARRS_SAVE_PATH if both apps see the same download folder, or add a path pair in Settings > Downloaders, then import again": 'importer',
+	'no file in the download matched this movie; match the files by hand': 'importer',
+	'no file in the download matched an episode; match the files by hand': 'importer',
+	'no file in the download matched a track; match the files by hand': 'importer',
+	// place_why.go SlowReadWhy: Import again read the download folder for too long.
+	'reading the download folder took too long; try again': 'importer',
+	// fake.go: why a file looks like a fake; a slot holds a size, a file type or a resolution.
+	'the file is empty; likely a fake': 'importer', 'the file is {n} KB, too small to be a track; likely a fake': 'importer',
+	'the file is {size}, too small to be the full video; likely a fake': 'importer',
+	'a {ext} file where the Release said {p}p; likely a fake': 'importer',
+	'the Release said {claimed} but holds {held} of video or audio; likely a fake': 'importer',
 	// Two lines of a Release's reasons (mediafiles judge, sources search_shows), shown in the Release lists.
 	'holds {covered}, not what was searched for': 'sources', 'no Title in the library is called {value}': 'mediafiles',
+	// mediafiles ShowYearMisfit: the year after a show's name is another show's.
+	'the name says {year}; this show began in {began}': 'mediafiles',
 	// requests: the Quality row's refusals and the approver's note (qualities.go, approve.go CopyKept).
 	'a quality name can be at most 30 characters': 'requests', 'keep at least one quality shown for movies and one for shows': 'requests',
+	'give every quality you added a name': 'requests', 'movies and shows can have at most 8 qualities each': 'requests',
+	'leave at least one quality this person can pick for movies and one for shows': 'requests',
 	'that quality cannot be asked for': 'requests', 'someone already asked for this movie in that quality; decide their ask instead': 'requests',
 	'The quality you picked was not used: this title already has that copy.': 'requests',
+	// accounts hosts.go hostRefusedMsg: the name and the env name are joined in.
+	"Saving is blocked because HolyArrs doesn't know the name {host}. Open HolyArrs at its local address and add this name under Settings > Sign-in and security > Allowed host names, or add it to HOLYARRS_ALLOWED_HOSTS.": 'accounts',
+	// sources ask_sources.go folderTagsNote: a search that passed over its Library folder's tags.
+	"No Source this search can use has this folder's tags, so Sources without tags were asked too.": 'sources',
+	// sources copy_sources.go: a folder kept to tagged Sources (a Slot's reason and a search's line, with its three causes), and ask_sources.go noAnswer.
+	"not sent: its Source is not one this folder's tags allow": 'sources',
+	"no Source takes this title's tags: {failures}": 'sources',
+	"This folder only takes Sources tagged {tags}. None can be searched right now ({sources}), so nothing was asked.": 'sources',
+	"{source} only has a feed": 'sources',
+	"{source} has search turned off": 'sources',
+	"{source} is paused": 'sources',
+	"{source} is paused by you": 'sources',
+	"{source}: its tags ({tags}) are not on this title": 'sources',
+	"{source}: its tags ({tags}) are not in the Pick rules' tags ({rules})": 'sources',
+	// downloads grab.go: why no Downloader takes a Release now (its causes are lines of their own), and ask_sources.go noTagsWhy.
+	"no {protocol} Downloader can take it now: {skipped}": 'downloads',
+	"{source}: it has no tags, and the Pick rules only take Sources tagged {rules}": 'sources',
+	// downloads client_choice.go order: a Downloader that rests after failing.
+	"{source} is resting until {time} after failing": 'downloads',
 	// sources choose.go: a forced pick's reasons, each ending in the verdict text.
-	'it was turned down: {d}': 'sources', 'it was turned down for this episode: {d}': 'sources' };
+	// doctor.CategoryLine, the Category line with the missing category's name.
+	'Category missing: {name}. Add it in the download app, or pick another one here.': 'core',
+	// doctor.NameLine, a failed test line that shows what the address's name turned into.
+	"{name} → not found. HolyArrs can't find this name. Use the IP instead.": 'core',
+	'{name} → {ip} → refused on port {port}. The name works, but nothing answers on that port. Check the port.': 'core',
+	'{name} → {ip} → no answer on port {port}. The name works, but nothing answers in time. Check the port, and that no firewall is in the way.': 'core',
+	'it was turned down: {d}': 'sources', 'it was turned down for this episode: {d}': 'sources',
+	// library adopt_why.go: why an imported folder was not brought in, and the scan's line while lookups fail.
+	'The server HolyArrs gets details from is not answering. Scan again in a few minutes to bring this folder in.': 'library',
+	'The server HolyArrs gets details from is not answering, so some folders could not be looked up. Scan again in a few minutes.': 'library',
+	'{name} is already in the Library in another folder': 'library',
+	// updates: in-app update refusals and failures, shown in the Status block and in toasts.
+	...Object.fromEntries([
+		'the download link is not allowed', 'not enough free space in the config folder for the {size} MB download',
+		'the download does not match the update list, so it was deleted', "the download's signature could not be read",
+		'the download is not signed by HolyArrs, so it was deleted', 'the new version could not open your data, so it was not installed: {err}',
+		'the download stopped part way', 'the download has the wrong size, so it was deleted', 'too many redirects',
+		'the download moved to a host that is not allowed', 'the download server did not answer', 'the download server answered {status}',
+		'no update is downloaded and checked yet', 'this build is updated by its package manager', 'a download is already running',
+		"this is the image's own version; there is nothing to go back to", 'still busy with {what}; try again when it finishes', '{n} imports',
+		'the database could not be copied, so nothing was changed: {err}',
+		'this version changed the database and no copy from before it is kept, so going back is not safe',
+		'switching versions in place only works on Linux', 'HOLYARRS_UPDATES sets the update mode, so it cannot be changed here',
+		'the update mode is off, ask or auto', 'no newer version', 'this version was withdrawn', 'you went back from this version, so it is skipped',
+		'this version needs a new image: pull it to update', 'update to {version} first (pull that image), then this one',
+		'this version keeps its data in a new format: pull the new image to update', 'this version has no download for {platform}'
+	].map((line) => [line, 'updates'])),
+	// accounts: what a Jellyfin or Emby address Test answers (media_server_people.go) and the first-run refusal of an address (setup_outside.go).
+	'The server did not answer at this address.': 'accounts', 'Something answered, but it does not look like {word}.': 'accounts',
+	'that address did not answer like {word}; check it and try again': 'accounts',
+	// accounts mediaOffLine: the account is turned off on the Jellyfin or Emby server.
+	'Your account is turned off on the {word} server. Ask the person who runs it to turn it back on.': 'accounts' };
+// mediaservers service.go: why the Test of a media server failed.
+for (const line of ['the server did not answer', 'the server is on the local network, which it may not reach', 'reading the server answer failed',
+	"the server's answer was too big to read", 'the server turned down the token', 'the server answered {code}', 'the token could not be read',
+	"paste the server's token (Plex) or API key (Jellyfin, Emby)", 'the address must be an http or https link with a host, like http://192.168.1.10:32400'])
+	handLines[line] = 'mediaservers';
 // Files whose fmt.Sprintf lines are display text (card lines, labels).
 const display = /(accounts[\\/]events|discover[\\/](home|explore_np|title_view)|shows[\\/]episode_labels|requests[\\/](episodes|follows\w*|reports)|health[\\/](health|routes_settings_status)|migrate[\\/]plan_\w+|metadata[\\/]moods)\.go$/;
 

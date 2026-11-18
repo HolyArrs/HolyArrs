@@ -1,5 +1,6 @@
 // The words for a History row. Line 1 says what it is (the title, the episode or the kind of title), a status tag says what kind of thing happened, and line 2 says what happened in plain words, never repeating the title.
 import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { asActor, bareNames, markAsked, shownPerson } from '#lib/core/plain.ts';
 import { serverWords } from '#lib/core/i18n/server-words.ts';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { dayKey } from './history-kinds.ts';
@@ -122,7 +123,14 @@ export function resolutionOf(release: string): string {
 	return r === '2160p' || r === '4k' || r === 'uhd' ? '4K' : r;
 }
 
+/** A remove from the Downloader: whether its files went, or why they stayed, and a retry that worked later. */
+export function removedLine(d: Record<string, unknown>): string {
+	const kept = typeof d.kept === 'string' && d.kept ? say('downloads.hl.filesKeptWhy', { why: plainWhy(d.kept) }) : '';
+	return join(say(d.retried === true ? 'downloads.hl.removedLater' : 'downloads.hl.removedDl'), kept || (d.delete_files === true && say('downloads.hp.filesDeletedLow')));
+}
 export function plainWhy(reason: string): string {
+	const whole = serverWords(reason.trim());
+	if (whole !== reason.trim()) return whole;
 	let s = reason.trim().replace(/[.;]\s*$/, '');
 	const known = serverWords(s);
 	if (known !== s) return known;
@@ -169,7 +177,8 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 	const bits: Bit[] = [...eps.map((text) => ({ text, kind: 'episode' as const })), ...(what ? [{ text: what, kind: 'what' as const }] : []), ...(e.version ? [{ text: e.version, kind: 'version' as const }] : [])];
 	const t = (tag: Tag, line: string): RowText => ({ name, bits, tag, line: scrub(line, name) });
 	// A line that starts with a member's name keeps the name's own case.
-	const named = (tag: Tag, person: string, ...rest: string[]): RowText => {
+	const named = (tag: Tag, who: string, ...rest: string[]): RowText => {
+		const person = shownPerson(who);
 		const tail = scrub(join(...rest), name);
 		return person ? { name, bits, tag, line: join(person, tail) } : { name, bits, tag, line: tail };
 	};
@@ -181,7 +190,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 			return eps.length || e.episode ? t(TAG.aired, say('downloads.hl.aired', { when: dayWord(e.At, now) })) : t(TAG.out, say('downloads.hl.outToWatch', { when: dayWord(e.At, now) }));
 		case 'title_added': {
 			const by = who(e, ctx);
-			const how = str(d.why_added) === 'import' ? say('downloads.hl.addedImport') : str(d.why_added) === 'ask' ? (by ? say('downloads.hl.addedAskBy', { by }) : say('downloads.hl.addedAsk')) : by ? say('downloads.hl.addedBy', { by }) : say('downloads.hl.addedByApp');
+			const how = str(d.why_added) === 'list' ? (str(d.list_name) ? say('downloads.hl.addedListNamed', { list: str(d.list_name) }) : say('downloads.hl.addedList')) : str(d.why_added) === 'import' ? say('downloads.hl.addedImport') : str(d.why_added) === 'ask' ? (by ? say('downloads.hl.addedAskBy', { by }) : say('downloads.hl.addedAsk')) : by ? say('downloads.hl.addedBy', { by }) : say('downloads.hl.addedByApp');
 			return t(TAG.added, how);
 		}
 		case 'list_synced': return t(TAG.added, say('downloads.hl.addedList'));
@@ -224,19 +233,19 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'search_done': {
 			const m = /\((\d+) found, (\d+) refused\)/.exec(e.Summary);
 			const found = m ? Number(m[1]) : 0;
-			if (/^(Season \d+: )?no Release passed/i.test(e.Summary) || !m) return t(TAG.searched, join(say('downloads.hl.lookedFor'), found ? say('downloads.hl.foundNone', { n: found }) : say('downloads.hl.nothingFound')));
-			return t(TAG.searched, join(say('downloads.hl.lookedFor'), say('downloads.hl.nFound', { n: found })));
+			if (/^(Season \d+: )?no Release passed/i.test(e.Summary) || !m) return t(TAG.searched, join(say('downloads.hl.lookedFor'), found ? say('downloads.hl.foundNone', { n: found }) : say('downloads.hl.nothingFound'), serverWords(str(d.sources_note))));
+			return t(TAG.searched, join(say('downloads.hl.lookedFor'), say('downloads.hl.nFound', { n: found }), serverWords(str(d.sources_note))));
 		}
-		case 'search_failed': return t(TAG.failed, join(say('downloads.hl.searchFailed'), plainWhy(str(d.reason) || str(d.error))));
+		case 'search_failed': return t(TAG.failed, join(say('downloads.hl.searchFailed'), plainWhy(str(d.reason) || str(d.error)), serverWords(str(d.sources_note))));
 		case 'feed_checked': return t(TAG.checked, say('downloads.hl.feeds'));
 		case 'release_chosen':
 		case 'release_chosen_by_hand': {
 			const r = resolutionOf(str(d.release) || e.Summary);
-			return t(TAG.getting, join(k === 'release_chosen_by_hand' ? say('downloads.hl.pickedHand') : say('downloads.hl.picked'), r));
+			return t(TAG.getting, join(k === 'release_chosen_by_hand' ? say('downloads.hl.pickedHand') : say('downloads.hl.picked'), r, serverWords(str(d.sources_note))));
 		}
 		case 'release_turned_down': return t(TAG.declined, join(say('downloads.hl.turnedDown'), plainWhy(str(d.reason))));
 		case 'turned_down_removed': return t(TAG.changed, say('downloads.hl.unblocked'));
-		case 'release_held': return t(TAG.stalled, join(say('downloads.hl.heldBack'), plainWhy(str(d.reason))));
+		case 'release_held': return t(TAG.stalled, join(say('downloads.hl.heldBack'), plainWhy(str(d.reason)), serverWords(str(d.sources_note))));
 		case 'held_removed': return t(TAG.changed, say('downloads.hl.heldGone'));
 		case 'download_sent': return t(TAG.getting, res);
 		case 'download_queued': return t(TAG.getting, join(say('downloads.hl.waiting'), res));
@@ -245,11 +254,11 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'download_paused': return t(TAG.paused, join(num(d.progress) ? say('downloads.hl.pausedAt', { pct: Math.round(num(d.progress) * 100) }) : say('downloads.hl.paused'), res));
 		case 'download_finished': return t(TAG.getting, join(res, sizeOf(d)));
 		case 'download_seeding': return t(TAG.came, join(say('downloads.hl.sharing'), res));
-		case 'download_removed': return t(TAG.changed, say('downloads.hl.removedDl'));
+		case 'download_removed': return t(TAG.changed, removedLine(d));
 		case 'download_changed': return t(TAG.changed, e.Summary || say('downloads.hl.changedDl'));
 		case 'download_failed': return t(TAG.failed, plainWhy(str(d.reason)) || say('downloads.hl.dlFailed'));
 		case 'download_vanished': return t(TAG.failed, say('downloads.hl.vanished'));
-		case 'download_not_removed': return t(TAG.failed, say('downloads.hl.notRemoved'));
+		case 'download_not_removed': return t(TAG.failed, (e.Summary && serverWords(e.Summary.trim())) || say('downloads.hl.notRemoved'));
 		case 'download_not_moved': return t(TAG.failed, say('downloads.hl.notMoved'));
 		case 'import_done': return t(TAG.came, join(resolutionOf(releaseOf([e])), sizeOf(d)));
 		case 'import_partly_done': return t({ ...TAG.came, tone: 'wait' }, join(say('downloads.hl.partly'), say('downloads.hl.needLook')));
@@ -271,20 +280,24 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'health_broken': return t(str(d.state) === 'warning' ? TAG.warning : TAG.failed, plainWhy(str(d.message) || withoutTitle(e.Summary, name)));
 		case 'health_recovered': return t(TAG.fixed, join(say('downloads.hl.workingAgain'), str(d.subject)));
 		// The tag says the step; the line keeps only who and what ("Maya · Every album").
-		case 'ask_made': return named(TAG.asked, who(e, ctx) || str(d.asked_by) || say('downloads.hl.aMember'), cap(str(d.albums) || str(d.seasons)));
-		case 'ask_approved': return d.auto === true ? t(TAG.approved, join(say('downloads.hl.automatic'), str(d.note))) : named(TAG.approved, str(d.approved_by) || who(e, ctx), str(d.note));
-		case 'ask_turned_down': return named(TAG.declined, str(d.turned_down_by) || who(e, ctx), str(d.note));
+		case 'ask_made': return named(TAG.asked, who(e, ctx) || mine(e, str(d.asked_by)) || say('downloads.hl.aMember'), cap(str(d.albums) || str(d.seasons)));
+		case 'ask_approved': return d.auto === true ? t(TAG.approved, join(say('downloads.hl.automatic'), str(d.note))) : named(TAG.approved, mine(e, str(d.approved_by)) || who(e, ctx), str(d.note));
+		case 'ask_turned_down': return named(TAG.declined, mine(e, str(d.turned_down_by)) || who(e, ctx), str(d.note));
 		case 'ask_not_added': return t(TAG.failed, join(say('downloads.hl.notAdded'), d.slow === true ? say('downloads.hl.notAddedSlow') : d.down === true || /dial tcp|connection refused|no such host/.test(str(d.reason)) ? say('downloads.hl.notAddedDown') : plainWhy(str(d.reason))));
 		case 'report_made': return t(TAG.reported, join(problem(d.kind), str(d.note)));
 		case 'report_fixed': return t(TAG.fixed, join(problem(d.kind), str(d.reply)));
 		case 'report_reopened': return t(TAG.reopened, join(problem(d.kind), str(d.note)));
 		// Sign-in names show as they are, never capitalised.
+		case 'account_changed':
+			if (!d.reason) break;
+			return { name, bits, tag: TAG.changed, line: serverWords(e.Summary.trim()) };
 		case 'signed_in':
 		case 'signed_out':
 		case 'sign_in_failed': {
-			const user = str(d.name) || e.actor_name || '';
+			const plain = str(d.name) || bareNames(e.actor_name);
+			const user = (plain && asActor(plain, e.actor_name)) || shownPerson(e.actor_name) || '';
 			const said = e.Summary.trim();
-			return user && said.startsWith(user) ? { name, bits, tag: TAG.changed, line: said } : t(TAG.changed, plainWhy(withoutTitle(said, name)) || say('downloads.hl.somethingChanged'));
+			return plain && said.startsWith(plain) ? { name, bits, tag: TAG.changed, line: user + said.slice(plain.length) } : t(TAG.changed, plainWhy(withoutTitle(said, name)) || say('downloads.hl.somethingChanged'));
 		}
 		case 'library_folder_unreachable': return t(TAG.failed, join(folderName(e), folderGone(e)) || plainWhy(withoutTitle(e.Summary, name)));
 		case 'secrets_imported': return t(TAG.changed, join(say('downloads.hl.settingsImported'), say('downloads.hl.nSet', { n: num(d.set) })));
@@ -302,12 +315,37 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		return t(bad ? { word: say('downloads.hl.tag.subtitles'), icon: 'subtitle', tone: 'wait' } : TAG.changed, withoutTitle(e.Summary, name) || say('downloads.hl.subtitlesChanged'));
 	}
 	if (k.startsWith('library_folder_')) return t(/unreach|missing|fail/.test(k) ? TAG.failed : TAG.checked, plainWhy(withoutTitle(e.Summary, name)));
-	if (k.startsWith('ask_')) return t(TAG.asked, withoutTitle(e.Summary, name));
+	if (k.startsWith('ask_')) return t(TAG.asked, markAsked(withoutTitle(e.Summary, name), e.asked_names));
 	return t(TAG.changed, plainWhy(withoutTitle(e.Summary, name)) || say('downloads.hl.somethingChanged'));
 }
 
 /** The words of a History row; a folded download says how far it got. */
 export function rowText(row: HistoryRow, ctx: LineContext = {}): RowText {
+	const w = foldedText(row, ctx);
+	return { ...w, line: withNote(w.line, row) };
+}
+
+/** What a row's search or pick said about the Sources it asked, in the app's language; '' for nothing. It stays on the row once the download's later steps lead it. */
+export function rowNote(row: HistoryRow): string {
+	return serverWords(str(row.events.find((e) => noteKinds.has(e.Kind) && str(e.Data?.sources_note))?.Data?.sources_note));
+}
+
+// The Events that say which Sources a search asked. A person's own note on an ask or a report sits under another key and stays where it is.
+const noteKinds = new Set(['search_done', 'search_failed', 'feed_checked','release_chosen', 'release_chosen_by_hand', 'release_held']);
+
+/** The line of a folded run of searches that share one note ("41 episodes · note"), the note once. */
+export function runLine(rows: HistoryRow[]): string {
+	const eps = rows.filter((r) => episodeBits(r.head.episode).length).length;
+	return join(eps ? plural(eps, 'episode') : '', rowNote(rows[0]));
+}
+
+/** A row's line with its note after it, once. */
+export function withNote(line: string, row: HistoryRow): string {
+	const note = rowNote(row);
+	return note && !line.includes(note) ? join(line, note) : line;
+}
+
+function foldedText(row: HistoryRow, ctx: LineContext): RowText {
 	const head = eventText(row.head, ctx);
 	if (!row.steps.length) return head;
 	const release = releaseOf(row.events);
@@ -341,12 +379,17 @@ function releaseOf(events: EventRecord[]): string {
 	return '';
 }
 
+// A name saved on the Event, marked deleted when it is the deleted actor's.
+function mine(e: EventRecord, name: string): string {
+	return shownPerson(asActor(name, e.actor_name));
+}
+
 function who(e: EventRecord, ctx: LineContext): string {
 	const d = e.Data ?? {};
-	const named = str(d.asked_by) || (Array.isArray(d.asked_by) ? str(d.asked_by[0]) : '');
+	const named = asActor(str(d.asked_by) || (Array.isArray(d.asked_by) ? str(d.asked_by[0]) : ''), e.actor_name);
 	if (e.Actor?.kind === 'user') {
 		const id = e.Actor.id;
-		return (id != null && ctx.people?.get(id)) || (id != null && id === ctx.me ? 'you' : '') || e.actor_name || named || 'a member';
+		return (id != null && ctx.people?.get(id)) || (id != null && id === ctx.me ? 'you' : '') || shownPerson(e.actor_name) || shownPerson(named) || 'a member';
 	}
 	return '';
 }

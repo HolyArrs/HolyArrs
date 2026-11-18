@@ -13,7 +13,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { appName, cleanPath, folderProblem, folderTo, LEAVE, OTHER, sharedTargets, unseenFolder, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
+	import { appName, cleanPath, folderProblem, folderTo, LEAVE, OTHER, seasonsShows, sharedTargets, unseenFolder, type Line, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 
@@ -38,7 +38,9 @@
 		ongroup,
 		onperson,
 		oncommit,
-		onshow
+		onshow,
+		tried = [],
+		checking = 0
 	}: {
 		plan: Plan | null;
 		planning?: boolean;
@@ -61,6 +63,10 @@
 		onperson: (key: string, c: PersonChoice | null) => void;
 		oncommit: () => void;
 		onshow: ShowList;
+		/** The last test run's lines: a show to check after the import says so here. */
+		tried?: Line[];
+		/** Shows the last test run could not look up in time; it runs again until none is left. */
+		checking?: number;
 	} = $props();
 
 	let open = $state(keepOpen);
@@ -188,6 +194,8 @@
 		const needs = g.items.filter((it) => it.needs);
 		if (needs.length > 0 && g.name === 'people') return { text: t('migrate.inviteAfterTheMove'), warn: true };
 		if (needs.length > 0) return { text: needs.every((it) => /key/i.test(it.needs ?? '')) ? t('migrate.keysAfterTheMove') : t('migrate.keysOrPasswordsAfter'), warn: true };
+		const check = g.name === 'titles' ? g.items.filter((it) => toCheck.has(it.key)).length : 0;
+		if (check > 0) return { text: check === 1 ? t('migrate.seasonsDifferOne') : t('migrate.seasonsDifferOther', { n: check }), warn: true };
 		void n;
 		return { text: '', warn: false };
 	}
@@ -196,8 +204,11 @@
 		const left = it.rules?.skipped?.length ? t('migrate.formatsLeftOut', { list: it.rules.skipped.map((x) => `${x.name} (${serverWords(x.reason)})`).join('; ') }) : '';
 		const lead = it.rules?.body ? [serverWords(it.detail), serverWords(it.why)] : [serverWords(it.why || it.detail)];
 		const hint = [...lead, traits, left, it.needs ? t('migrate.needs', { what: serverWords(it.needs) }) : ''].filter(Boolean).join(' · ');
+		const check = toCheck.get(it.key);
+		if (check) return { key: it.key, name: check.name, hint: serverWords(check.detail), pill: { word: t('migrate.needsALook'), tone: 'warn' as const }, look: true };
 		return { key: it.key, name: serverWords(it.name), hint };
 	}
+	const toCheck = $derived(new Map(seasonsShows(tried).map((s) => [s.key, { name: s.name, detail: tried.find((l) => l.key === s.key)?.detail }])));
 	// Profiles that score formats can bring them as traits; the switch shows while any could.
 	const formatsAsk = $derived(noFormats || (plan?.groups.find((g) => g.name === 'pick_rules')?.items ?? []).some((it) => !!it.rules?.body));
 	function openKeys(k: 'sources' | 'downloaders') {
@@ -255,7 +266,7 @@
 				{/if}
 				{#if err}<p class="form-error" id="{id}-err">{err}</p>{/if}
 				{#if gone}<p class="sub warn note" data-testid="folder-not-here">{t('migrate.notInContainer', { path: ltr(gone) })}{#if seen.length}{' ' + t('migrate.foldersItSees', { list: seen.map(ltr).join(', ') })}{/if}</p>
-					{#if oldRows.length > 0 && !extra.some((r) => r.from === p)}<Button icon="plus" variant="plain" data-testid="folder-not-here-rule" onclick={() => (onextra([...extra, { from: p, to: '' }]), (advOpen = true))}>{t('migrate.addAPathRule')}</Button>{/if}
+					{#if oldRows.length > 0 && !extra.some((r) => r.from === p)}<Button icon="plus" data-testid="folder-not-here-rule" onclick={() => (onextra([...extra, { from: p, to: '' }]), (advOpen = true))}>{t('migrate.addAPathRule')}</Button>{/if}
 				{/if}
 				{#if twins.length}<p class="sub warn note" data-testid="folder-shared">{t('migrate.sameNewFolder', { list: twins.map(ltr).join(', ') })}</p>{/if}
 			</div>
@@ -277,7 +288,7 @@
 			{#if err}<div class="below"><p class="form-error" id="move-rule-{i}-err">{err}</p></div>{/if}
 		</li>
 	{/each}
-	<li class="mrow"><Button icon="plus" variant="plain" onclick={() => onextra([...extra, { from: '', to: '' }])}>{t('migrate.addAPathRule')}</Button></li>
+	<li class="mrow"><Button icon="plus" onclick={() => onextra([...extra, { from: '', to: '' }])}>{t('migrate.addAPathRule')}</Button></li>
 {/snippet}
 
 <div class="choose" class:dim={planning && !!plan} aria-busy={planning}>
@@ -295,6 +306,7 @@
 				{#if restLine}<p class="sub also">{restLine}</p>{/if}
 				<p class="sub also" data-testid="move-files-stay">{t('migrate.titlesAndSettingsOnly')}</p>
 			{/if}
+			{#if checking > 0}<p class="notice still" role="status" data-testid="choose-checking"><Icon name="info" size={18} /><span>{t('migrate.stillChecking', { n: checking })}</span></p>{/if}
 
 			{#if needFolders.length}
 				<h3 class="head">{t('migrate.folders')}</h3>
@@ -472,6 +484,7 @@
 	.tile { padding: 14px 16px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 	.num { font: 700 26px/1.1 var(--font-ui); color: var(--text); }
 	.also { margin: 8px 2px 0; }
+	.still { margin-top: 12px; }
 	.kgroups { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
 	.khead { margin: 8px 2px 2px; color: var(--text-muted); font: var(--t-footnote); }
 	.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
@@ -502,7 +515,7 @@
 	/* Settings pages stretch a switch that sits straight in a list row; here the row's words take that room. */
 	.list > .mrow > label.switch { width: auto; }
 
-	select.pick { flex: none; width: 240px; min-height: 36px; height: 36px; }
+	select.pick { flex: none; width: auto; min-width: 240px; max-width: 100%; min-height: 36px; height: 36px; }
 	.half { flex: 1 1 0; min-width: 0; min-height: 36px; height: 36px; }
 	.wide { width: 100%; max-width: 100%; box-sizing: border-box; min-height: 36px; }
 	.below { flex-basis: 100%; padding-bottom: 6px; }

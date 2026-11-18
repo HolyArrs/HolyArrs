@@ -594,12 +594,13 @@ test("Before you move lists only the problem groups, one line each, with Show", 
 test("no problems: Move tests quietly, confirms once and goes straight to the move", async ({ browser }) => {
   const { ctx, p } = await phone(browser, 390);
   await fixture(p, { clean: true });
+  // A new plan runs the quiet test run as the Choose step opens.
+  const tested = p.waitForRequest("**/api/v1/migrate/dry-run");
   await p.goto("/settings/move?step=choose&read=901,902");
+  await tested;
   await expect(primary(p)).toHaveText("Import");
   await expect(primary(p)).toBeEnabled();
-  const tested = p.waitForRequest("**/api/v1/migrate/dry-run");
   await primary(p).click();
-  await tested;
   const confirm = p.getByRole("dialog", { name: /^Import \d+ items?\?$/ });
   await expect(confirm).toContainText("From Radarr and Seerr.");
   await expect(p.getByRole("dialog", { name: "Before you import" })).toHaveCount(0);
@@ -686,8 +687,9 @@ for (const width of [360, 390]) {
     const { ctx, p } = await phone(browser, width);
     await fixture(p);
     await p.goto("/settings/move");
-    // The rail: only the current step shows its word; the others are 44px squares.
-    const others = p.getByTestId("move-steps").locator("li:not(.now) .st-cap");
+    // The rail: only the current step shows its word; the others are 44px square step buttons.
+    await expect(p.getByTestId("move-steps").locator("li:not(.now) .cap-btn")).toHaveCount(3);
+    const others = p.getByTestId("move-steps").locator("li:not(.now) .cap-btn");
     for (const box of await others.all()) {
       const b = await box.boundingBox();
       expect(Math.round(b?.width ?? 0)).toBe(44);
@@ -735,7 +737,7 @@ test("desktop 1280: the rail capsules are equal, open sheets fit, and accessibil
   await fixture(p);
   await p.goto("/settings/move?step=choose&read=901,902");
   await expect(primary(p)).toBeEnabled();
-  const widths = await p.getByTestId("move-steps").locator(".st-cap").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
+  const widths = await p.getByTestId("move-steps").locator(".cap-btn").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().width)));
   expect(widths).toHaveLength(4);
   expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
   await measuredSymmetry(p);

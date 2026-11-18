@@ -65,6 +65,13 @@
 "settings.outsideLists.traktCannotRead": "Vaše zoznamy Trakt sa nedajú čítať, kým nie je nastavený.",
 "settings.outsideLists.replaceKey": "Vymeniť kľúč Trakt",
 "settings.outsideLists.pasteKey": "Vložte kľúč Trakt",
+"settings.outsideLists.mdblistKey": "Kľúč MDBList",
+"settings.outsideLists.mdblistInfo": "Voliteľné. S vaším kľúčom API MDBList sa zoznamy MDBList čítajú cez API MDBList; bez neho cez ich verejný odkaz. Ukladá sa zašifrovane a je to ten istý kľúč, ktorý používajú externé hodnotenia v režime Vaše vlastné kľúče.",
+"settings.outsideLists.pasteMdblistKey": "Vložte svoj kľúč API MDBList",
+"settings.outsideLists.replaceMdblistKey": "Vymeniť kľúč MDBList",
+"settings.outsideLists.removeMdblistKey": "Odstrániť kľúč",
+"settings.outsideLists.mdblistKeySaved": "Kľúč MDBList uložený",
+"settings.outsideLists.mdblistKeyRemoved": "Kľúč MDBList odstránený; zoznamy používajú svoj verejný odkaz",
 "settings.outsideLists.replaceVip": "Vymeniť prístupový token VIP",
 "settings.outsideLists.vip": "Prístupový token VIP (nepovinné)",
 "settings.outsideLists.vipHint": "Pridá kartu Trakt na stránky titulov: skóre, divákov a komentáre",
@@ -79,5 +86,5 @@
 "settings.outsideLists.addNever": "Pridať do zoznamu Nikdy nepridávať",
 "settings.outsideLists.showDot": "seriál ·",
 "settings.outsideLists.takeOff": "Odstrániť zo zoznamu {name}",
-"settings.outsideLists.empty": "Prázdne"
+"settings.outsideLists.empty": "Na tomto zozname zatiaľ nič nie je"
 }

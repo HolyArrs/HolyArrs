@@ -83,6 +83,7 @@
 	"settings.users.preset": "Forstilling",
 	"settings.users.comingSoon": "Kemur fljótlega",
 	"settings.users.custom": "Sérsniðið",
+	"settings.users.customHint": "Þetta er þín eigin samsetning rofanna hér að neðan. Forstilling kemur í staðinn; veldu Sérsniðið aftur til að fá hana til baka.",
 	"settings.users.ageRating": "Aldurstakmark",
 	"settings.users.newPasswordFor": "Nýtt lykilorð fyrir {name}",
 	"settings.users.passwordNote": "Notaðu þetta þegar {name} gleymdi sínu. Viðkomandi er skráð(ur) út alls staðar og skráir sig inn aftur með nýja lykilorðinu. Segðu viðkomandi það í eigin persónu.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "t.d. Mamma",
 	"settings.users.days": "Dagar sem tengillinn gildir",
 	"settings.users.makeInvite": "Búa til boðstengil",
-	"settings.users.permAuto4k": "4K-beiðnir samþykktar án biðar"
+	"settings.users.permAuto4k": "4K-beiðnir samþykktar án biðar",
+	"settings.users.serverAccount": "Aðgangur á þjóni",
+	"settings.users.pickAccount": "Veldu aðgang á miðlaraþjóni",
+	"settings.users.accountLinked": "Tengt við {name}",
+	"settings.users.removedOnServer": "Fjarlægður á {word}-þjóninum, svo slökkt hér",
+	"settings.users.delete": "Eyða",
+	"settings.users.deleteName": "Eyða {name}",
+	"settings.users.confirmDelete": "Eyða {name}? Viðkomandi er skráður út fyrir fullt og allt og lyklarnir hverfa. Beiðnirnar haldast, sýndar sem fjarlægður einstaklingur.",
+	"settings.users.deleteYes": "Eyða einstaklingi",
+	"settings.users.keep": "Halda",
+	"settings.users.deleted": "{name} eytt",
+	"settings.users.couldntDelete": "Tókst ekki að eyða",
+	"settings.users.confirmDeleteKeys": "Seerr-lyklar sem viðkomandi bjó til hætta að virka fyrir alla þar til nýr er búinn til.",
+	"settings.users.qualities": "Gæði",
+	"settings.users.qualitiesHint": "Þau geta aðeins valið það sem er kveikt á. Ef kveikt er á öllu bjóðast ný líka."
 }

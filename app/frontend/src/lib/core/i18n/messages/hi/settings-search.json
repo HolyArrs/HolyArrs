@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "रिलीज़ से पहले पोस्ट हुई रिलीज़ ठुकराएं",
 	"settings.search.refuseEarlyHint": "ये अक्सर नकली होती हैं। रिलीज़ ख़ुद चुनें में चेतावनी के साथ अब भी दिखती हैं।",
 	"settings.search.refuseTiny": "साइज़ और फ़ाइल टाइप से नकली रिलीज़ ठुकराएं",
-	"settings.search.refuseTinyHint": "बहुत छोटी रिलीज़, खाली फ़ाइलें और HD नाम वाली .wmv या .asf फ़ाइलें",
+	"settings.search.refuseTinyHint": "बहुत छोटी रिलीज़, खाली फ़ाइलें, बीच में कटे वीडियो और HD नाम वाली .wmv या .asf फ़ाइलें",
 	"settings.search.grace": "रिलीज़ कितने घंटे जल्दी आ सकती है",
 	"settings.search.graceHint": "टाइम ज़ोन के लिए। डिफ़ॉल्ट 24।",
 	"settings.search.floors": "इंपोर्ट पर फ़ाइल साइज़ जांचें",

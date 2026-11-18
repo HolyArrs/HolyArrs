@@ -7,6 +7,7 @@
 	"settings.sources.title": "Sumber",
 	"settings.sources.add": "Tambah Sumber",
 	"settings.sources.lead": "Prioritas 1 didahulukan. Sumber yang gagal dilewati hingga enam jam. Untuk situs tanpa feed, tambahkan Jackett atau Prowlarr sebagai feed Torznab.",
+	"settings.sources.builtIn": "Situs bawaan tidak butuh Jackett atau Prowlarr: {sites}. Pilih {site} di {kind}.",
 	"settings.sources.change": "Ubah {name}",
 	"settings.sources.name": "Nama",
 	"settings.sources.feedKind": "Jenis feed",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Simpan",
 	"settings.sources.cancel": "Batal",
 	"settings.sources.none": "Tidak ada Sumber",
-	"settings.sources.noneText": "Tambahkan feed Torznab atau Newznab, atau Jackett atau Prowlarr.",
+	"settings.sources.noneText": "Tambahkan situs bawaan, feed Torznab atau Newznab, atau Jackett atau Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioritas {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioritas {priority} · {uses}",
 	"settings.sources.keyIs": "kunci {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Situs",
 	"settings.sources.addressSite": "Alamat situs itu sendiri. Ubah hanya jika situsnya pindah.",
 	"settings.sources.siteKeyLabel": "Cookie atau kunci RSS",
-	"settings.sources.siteKeyHint": "Dari akun Anda sendiri: uid dan pass dari cookie browser, atau u dan tp dari tautan RSS Anda. Disimpan terenkripsi."
+	"settings.sources.siteKeyHint": "Dari akun Anda sendiri: uid dan pass dari cookie browser, atau u dan tp dari tautan RSS Anda. Disimpan terenkripsi.",
+	"settings.sources.sendTo": "Kirim unduhan ke",
+	"settings.sources.sendToAny": "Pengunduh mana saja",
+	"settings.sources.sendToHint": "Semua yang dipilih dari Sumber ini hanya dikirim ke pengunduh ini. Jika mati, akan menunggu.",
+	"settings.sources.sendToGone": "Pengunduh yang dipilih sudah dihapus. Unduhan dari Sumber ini sekarang ke pengunduh mana saja."
 }

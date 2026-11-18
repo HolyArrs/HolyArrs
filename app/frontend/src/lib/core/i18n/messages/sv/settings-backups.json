@@ -32,11 +32,12 @@
 	"settings.backups.key": "Huvudnyckel",
 	"settings.backups.keyDesc": "Säkerhetskopiorna innehåller inte den här nyckeln. Förvara en kopia på ett säkert ställe.",
 	"settings.backups.noKit": "Inget nyckelpaket är sparat för den här nyckeln ännu. Utan det går det inte att öppna en säkerhetskopias sparade lösenord på en ny maskin.",
+	"settings.backups.kitRecommended": "Rekommenderas: ladda ned ditt nyckelpaket.",
 	"settings.backups.ownerOnlyKit": "Bara ägaren kan ladda ned det; be ägaren göra det.",
 	"settings.backups.fingerprint": "Nyckelns fingeravtryck",
 	"settings.backups.downloadKit": "Ladda ned nyckelpaket",
 	"settings.backups.restoreKey": "För att återställa: byt namn till holyarrs.key och lägg den i konfigurationsmappen",
 	"settings.backups.offPlan": "Av",
-	"settings.backups.offAbout": "Inga schemalagda säkerhetskopior. En kopia görs fortfarande före varje uppdatering.",
+	"settings.backups.offAbout": "Inga automatiska säkerhetskopior, inte ens före en uppdatering. Kopior du gör själv fungerar fortfarande.",
 	"settings.backups.offKeeps": "Av behåller de säkerhetskopior du redan har."
 }

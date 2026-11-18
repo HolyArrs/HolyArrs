@@ -36,5 +36,20 @@
 "settings.thisApp.none": "なし",
 "settings.thisApp.needsRestart": "再起動が必要です。HOLYARRS_URL_BASE または -url-base が優先されます。",
 "settings.thisApp.save": "保存",
-"settings.thisApp.licence": "HolyArrs は AGPL-3.0 のフリーソフトウェアです。"
+"settings.thisApp.licence": "HolyArrs は AGPL-3.0 のフリーソフトウェアです。",
+"settings.thisApp.proxy": "プロキシ",
+"settings.thisApp.proxyDesc": "外部への通信をプロキシ経由で送ります。ブロックとホームネットワークのルールは実際の接続先に引き続き適用されます。",
+"settings.thisApp.proxyType": "種類",
+"settings.thisApp.proxyOff": "オフ",
+"settings.thisApp.proxyHost": "ホスト",
+"settings.thisApp.proxyPort": "ポート",
+"settings.thisApp.proxyUser": "ユーザー名",
+"settings.thisApp.proxyPasswordLabel": "パスワード",
+"settings.thisApp.proxyPasswordKept": "保存済みのパスワードを使うには空欄のままにします",
+"settings.thisApp.proxyBypass": "プロキシを使わない宛先",
+"settings.thisApp.proxyBypassHint": "名前、アドレス、範囲をカンマで区切ります。*.example.com はその下のすべての名前に一致します。",
+"settings.thisApp.proxyBypassLocal": "ローカルアドレスにはプロキシを使わない",
+"settings.thisApp.proxyBypassLocalHint": "このマシンとホームネットワークには直接接続します",
+"settings.thisApp.proxySaved": "プロキシを保存しました",
+"settings.thisApp.proxyOffSaved": "プロキシをオフにしました"
 }

@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "La KI-assistenter bruke HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Nøkler og ruter for andre apper",
+	"core.settings.remoteAccess.label": "Fjerntilgang",
+	"core.settings.remoteAccess.about": "Bruk HolyArrs borte fra hjemmet",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Der plakater og navn kommer fra",
 	"core.settings.health.label": "Helsesjekker",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "En nedlaster har ingen lagringsmappe, så HolyArrs kan ikke importere de ferdige nedlastingene.",
 	"core.api.sourceOff": "Noen rader er av på denne installasjonen.",
 	"core.plain.noDownloader": "Kildene dine finner nedlastinger som ingen av nedlasterne dine kan ta imot, så ingen kan sendes.",
-	"core.plain.sameDownloader": "To nedlastere når samme nedlastingsapp, så nedlastinger kan vises to ganger."
+	"core.plain.sameDownloader": "To nedlastere når samme nedlastingsapp, så nedlastinger kan vises to ganger.",
+	"core.plain.peopleCheck": "Medieserverens brukerliste kan ikke leses, så personer fjernet der slås ikke av her.",
+	"core.plain.deleted": "slettet",
+	"core.plain.deletedName": "{name} (slettet)"
 }

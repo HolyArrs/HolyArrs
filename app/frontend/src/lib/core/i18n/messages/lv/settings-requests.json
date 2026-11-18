@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Rādīt cilvēkiem",
 	"settings.requests.choiceMain": "{rules} · nosaukuma galvenā kopija",
 	"settings.requests.choiceOwn": "{rules} · glabāta kā atsevišķa kopija",
-	"settings.requests.choiceNotReady": "Piedāvā, kad augstāk ir iestatīta 4K kvalitāte"
+	"settings.requests.choiceNotReady": "Piedāvā, kad augstāk ir iestatīta 4K kvalitāte",
+	"settings.requests.approvals": "Apstiprinājumi",
+	"settings.requests.autoApprove": "Apstiprināt pieprasījumus automātiski",
+	"settings.requests.autoApproveNote": "Izslēgts = viņu pieprasījumi gaida jūs. Plex skatīšanās saraksta nosaukumi seko tam pašam slēdzim.",
+	"settings.requests.ownerTag": "Īpašnieks",
+	"settings.requests.choiceAdd": "Pievienot kvalitāti",
+	"settings.requests.choiceNew": "Jauna kvalitāte",
+	"settings.requests.choiceLabel": "Jūsu nosaukums",
+	"settings.requests.choiceSeen": "Citi redz"
 }

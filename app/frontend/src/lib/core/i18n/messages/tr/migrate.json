@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "İlgi gerekiyor: {n}",
 	"migrate.needAttentionWhy": "Eski klasörleri bu sunucuda yok, bu yüzden buradaki bir klasöre istenen olarak geliyorlar. Klasörü düzeltin veya bir yol kuralı ekleyin: {list}",
 	"migrate.leftOutUncheckedN": "Dışarıda bırakıldı: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} \"Getirme\" olarak ayarlı; bunun için bir klasör seçip yeniden içe aktarın"
+	"migrate.leftOutUncheckedWhy": "{folder} \"Getirme\" olarak ayarlı; bunun için bir klasör seçip yeniden içe aktarın",
+	"migrate.seasonsDifferOne": "TMDB numarasıyla bulunan 1 diziyi kontrol et",
+	"migrate.seasonsDifferOther": "TMDB numarasıyla bulunan {n} diziyi kontrol et",
+	"migrate.seasonsDifferWhy": "{list} yalnızca eski uygulamanın TMDB numarasıyla bulundu, burada başka bir adla. Her birini aç ve aynı dizi olduğunu kontrol et. Aynıysa sezonları farklı numaralandırılmış: Artan dosyalarını eşleştir, sonra diziyi aç. Değilse kaldır; dosyaları oldukları yerde kalır.",
+	"migrate.stillChecking": "Meta veri sunucusunun hâlâ kontrol ettiği diziler: {n}. Bu liste bitince kendiliğinden güncellenir.",
+	"migrate.stillCheckingImport": "Meta veri sunucusunun hâlâ kontrol ettiği diziler: {n}. Şimdi içe aktarabilirsin; içe aktarma sırasında kontrol edilirler."
 }

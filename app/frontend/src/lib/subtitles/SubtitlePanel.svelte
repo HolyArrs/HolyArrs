@@ -336,7 +336,7 @@
 				{@const have = present(f.subtitles)}
 				{@const lack = missing(f.subtitles)}
 				<div class="file" data-testid="subtitle-file">
-					<p class="mono xs muted path">{fileName(f.relative_path)}</p>
+					<p class="mono xs muted path">{#if myFiles.length > 1 && f.version_label}<b>{f.version_label === 'Main' ? t('discover.titleLibrary.mainCopy') : f.version_label}</b>{' · '}{/if}{fileName(f.relative_path)}</p>
 					{#if have.length === 0}
 						<p class="small muted">{t('subtitles.panel.noneYet')}</p>
 					{:else}

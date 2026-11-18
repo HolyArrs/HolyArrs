@@ -552,7 +552,7 @@ func (a *Auth) issueAIKey(r *http.Request, c aiCode) (string, error) {
 	var id int64
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		var err error
-		id, err = insertKey(r.Context(), tx, now, string(actor), c.user, c.client.Name, string(scopes), sum(k), k[len(k)-4:])
+		id, err = insertKey(r.Context(), tx, now, string(actor), c.user, c.client.Name, string(scopes), "", sum(k), k[len(k)-4:])
 		return err
 	})
 	if err != nil {

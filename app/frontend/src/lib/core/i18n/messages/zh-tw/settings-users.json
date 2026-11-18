@@ -83,6 +83,7 @@
 	"settings.users.preset": "預設",
 	"settings.users.comingSoon": "即將推出",
 	"settings.users.custom": "自訂",
+	"settings.users.customHint": "這是您自己設定的下方開關組合。選擇預設會取代它；再次選擇「自訂」即可還原。",
 	"settings.users.ageRating": "年齡分級",
 	"settings.users.newPasswordFor": "{name} 的新密碼",
 	"settings.users.passwordNote": "{name} 忘記密碼時使用。對方會在所有裝置登出，並用新密碼重新登入。請當面告知對方。",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "例如 媽媽",
 	"settings.users.days": "連結有效天數",
 	"settings.users.makeInvite": "建立邀請連結",
-	"settings.users.permAuto4k": "4K 請求無需等待即獲核准"
+	"settings.users.permAuto4k": "4K 請求無需等待即獲核准",
+	"settings.users.serverAccount": "伺服器帳號",
+	"settings.users.pickAccount": "選擇媒體伺服器上的帳號",
+	"settings.users.accountLinked": "已連結 {name}",
+	"settings.users.removedOnServer": "已在 {word} 伺服器上移除，因此在此關閉",
+	"settings.users.delete": "刪除",
+	"settings.users.deleteName": "刪除 {name}",
+	"settings.users.confirmDelete": "刪除 {name}？此人會被永久登出，金鑰也會刪除。其請求會保留，顯示為已刪除的人。",
+	"settings.users.deleteYes": "刪除此人",
+	"settings.users.keep": "保留",
+	"settings.users.deleted": "已刪除 {name}",
+	"settings.users.couldntDelete": "無法刪除",
+	"settings.users.confirmDeleteKeys": "此人建立的 Seerr 金鑰會對所有人失效，直到建立新的金鑰。",
+	"settings.users.qualities": "畫質",
+	"settings.users.qualitiesHint": "只能選擇已開啟的。全部開啟時，新加的也會提供。"
 }

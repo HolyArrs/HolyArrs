@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "A(z) {name} csatlakoztatása nem sikerült",
 	"settings.parts.connected": "{name} csatlakoztatva",
 	"settings.parts.title": "Modulok",
+	"settings.parts.onOff": "Modulok be- és kikapcsolása",
 	"settings.parts.ownerOnly": "Csak tulajdonosoknak és adminoknak",
 	"settings.parts.safeMode": "A HolyArrs biztonságos módban fut: csak a mag működik, a modulkapcsolók és a szakaszvezérlők pedig a normál indításig le vannak tiltva. A biztonságos módból a <a>Veszélyzóna</a> <b>HolyArrs újraindítása</b> gombjával léphet ki.",
 	"settings.parts.dangerZone": "Veszélyzóna",

@@ -7,6 +7,7 @@
 	"settings.sources.title": "Quellen",
 	"settings.sources.add": "Quelle hinzufügen",
 	"settings.sources.lead": "Priorität 1 kommt zuerst. Eine Quelle, die ausfällt, wird bis zu sechs Stunden übersprungen. Für Seiten ohne Feed füg Jackett oder Prowlarr als Torznab-Feed hinzu.",
+	"settings.sources.builtIn": "Für die eingebauten Seiten brauchst du weder Jackett noch Prowlarr: {sites}. Wähl {site} bei {kind}.",
 	"settings.sources.change": "{name} ändern",
 	"settings.sources.name": "Name",
 	"settings.sources.feedKind": "Art des Feeds",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Speichern",
 	"settings.sources.cancel": "Abbrechen",
 	"settings.sources.none": "Keine Quellen",
-	"settings.sources.noneText": "Füg einen Torznab- oder Newznab-Feed hinzu, oder Jackett oder Prowlarr.",
+	"settings.sources.noneText": "Füg eine eingebaute Seite, einen Torznab- oder Newznab-Feed hinzu, oder Jackett oder Prowlarr.",
 	"settings.sources.rowTitle": "{url} · Priorität {priority} · {uses}",
 	"settings.sources.priorityUses": "Priorität {priority} · {uses}",
 	"settings.sources.keyIs": "Schlüssel {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Seite",
 	"settings.sources.addressSite": "Die eigene Adresse der Seite. Ändere sie nur, wenn die Seite umgezogen ist.",
 	"settings.sources.siteKeyLabel": "Cookie oder RSS-Schlüssel",
-	"settings.sources.siteKeyHint": "Aus deinem eigenen Konto: uid und pass aus dem Browser-Cookie oder u und tp aus deinem RSS-Link. Wird verschlüsselt gespeichert."
+	"settings.sources.siteKeyHint": "Aus deinem eigenen Konto: uid und pass aus dem Browser-Cookie oder u und tp aus deinem RSS-Link. Wird verschlüsselt gespeichert.",
+	"settings.sources.sendTo": "Downloads senden an",
+	"settings.sources.sendToAny": "Beliebiger Downloader",
+	"settings.sources.sendToHint": "Alles, was von dieser Quelle gewählt wird, geht nur an diesen Downloader. Ist er nicht erreichbar, wird gewartet.",
+	"settings.sources.sendToGone": "Der gewählte Downloader wurde entfernt. Downloads dieser Quelle gehen jetzt an einen beliebigen Downloader."
 }

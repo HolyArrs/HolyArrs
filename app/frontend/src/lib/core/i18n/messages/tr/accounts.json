@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Dil kaydedilemedi",
 	"accounts.language.count.one": "1 dil",
 	"accounts.language.count.other": "{n} dil",
-	"accounts.account.watchEveryone": "Sahip bunu herkes için açtı. Durdurmak için ikisini de kapat."
+	"accounts.account.watchEveryone": "Sahip bunu herkes için açtı. Durdurmak için ikisini de kapat.",
+	"accounts.watch.title": "İzlendi işaretleri",
+	"accounts.watch.hint": "Kütüphane'nin neleri izlediğini göstermesi için bir medya sunucusundaki hesabını buraya bağla.",
+	"accounts.watch.as": "{server}, {name} olarak",
+	"accounts.watch.nameOn": "{server} üzerindeki ad",
+	"accounts.watch.passwordOnce": "Parolan yalnızca {server} sunucusuna gider ve saklanmaz.",
+	"accounts.watch.linked": "{server} üzerinde {name} ile bağlandı",
+	"accounts.watch.unlinked": "Bağlantı kaldırıldı",
+	"accounts.login.importPaused": "Oturumun sona erdi, bu yüzden içe aktarma duraklatıldı. Oturum aç, Kütüphane içe aktar sayfasını aç ve devam etmek için Tara düğmesine bas."
 }

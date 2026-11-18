@@ -206,6 +206,48 @@ func TestConflictNote(t *testing.T) {
 	}
 }
 
+// A repost marker after the release group is not the group: the group before
+// it is, and a name that carries only the marker gives none rather than the
+// half of a hyphenated title.
+func TestRepostMarkerIsNotTheGroup(t *testing.T) {
+	for _, c := range []struct {
+		name  string
+		group string
+		// title, crc and show are checked when set.
+		title string
+		crc   bool
+		show  bool
+	}{
+		{"The.Lantern.Keepers.2021.1080p.WEB-DL.DDP5.1.H.265-QUILL-xpost", "QUILL", "The Lantern Keepers", false, false},
+		{"The.Lantern.Keepers.2021.1080p.WEB-DL.DDP5.1.H.265-QUILL-XPOST", "QUILL", "The Lantern Keepers", false, false},
+		{"The.Lantern.Keepers.2021.1080p.WEB-DL.DDP5.1.H.265-xpost", "", "The Lantern Keepers", false, false},
+		{"The.Lantern.Keepers.S01E01.1080p.WEB-DL.H.265-QUILL-xpost", "QUILL", "The Lantern Keepers", false, true},
+		{"X-Men.1080p.WEB.H264-xpost", "", "X-Men", false, false},
+		{"Show.S01E01.Re-Entry.1080p.WEB.H264-xpost", "", "", false, true},
+		{"AUDiO-QUILL-xpost", "QUILL", "AUDiO", false, false},
+		{"The.Lantern.Keepers.2021.1080p.WEB-DL.H.265-QUILL-xpost.mkv", "QUILL", "The Lantern Keepers", false, false},
+		{"The.Lantern.Keepers.2021.1080p.WEB-DL.H.265-QUILL-xpost [ABCDEF12]", "QUILL", "", true, false},
+		{"[SubsPlease] Show - 01 (1080p) [ABCDEF12]-xpost", "SubsPlease", "", true, true},
+	} {
+		p := Parse(c.name, Hints{})
+		if p.Group.Value != c.group {
+			t.Errorf("%s: group %q, want %q", c.name, p.Group.Value, c.group)
+		}
+		if c.title != "" && p.Title.Value != c.title {
+			t.Errorf("%s: title %q, want %q", c.name, p.Title.Value, c.title)
+		}
+		if c.show != p.IsShow() {
+			t.Errorf("%s: show %v, want %v", c.name, p.IsShow(), c.show)
+		}
+		if c.show && p.Show == nil {
+			t.Errorf("%s: no episode numbers", c.name)
+		}
+		if got := slices.Contains(p.Flags, "crc"); got != c.crc {
+			t.Errorf("%s: crc %v, want %v", c.name, got, c.crc)
+		}
+	}
+}
+
 func BenchmarkParse1000(b *testing.B) {
 	names := make([]string, 1000)
 	for i := range names {
@@ -215,6 +257,30 @@ func BenchmarkParse1000(b *testing.B) {
 	for b.Loop() {
 		for _, n := range names {
 			_ = Parse(n, Hints{})
+		}
+	}
+}
+
+// The HDR words HolyArrs writes in a file name read back, so a Library it
+// named keeps its quality.
+func TestHDRWordsHolyArrsWrites(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		want []string
+	}{
+		{"65 (2023) - [2160p.DolbyVision.WEB-NAISU]", []string{"dv"}},
+		{"Movie (2023) - [2160p.DolbyVisionHDR10.WEB-GRP]", []string{"dv", "hdr10"}},
+		{"Movie (2023) - [2160p.DolbyVisionHDR10+.WEB-GRP]", []string{"dv", "hdr10plus"}},
+		{"Movie (2023) - [2160p.DolbyVisionHLG.WEB-GRP]", []string{"dv", "hlg"}},
+		{"Movie (2023) - [2160p.DolbyVisionHDR10HLG.WEB-GRP]", []string{"dv", "hdr10", "hlg"}},
+		{"Movie (2023) - [2160p.DolbyVisionHDR10+HLG.WEB-GRP]", []string{"dv", "hdr10plus", "hlg"}},
+		{"Movie (2023) - [2160p.HDR10+.WEB-GRP]", []string{"hdr10plus"}},
+		{"Movie (2023) - [2160p.HDR10HLG.WEB-GRP]", []string{"hdr10", "hlg"}},
+		{"Movie (2023) - [2160p.HDR10+HLG.WEB-GRP]", []string{"hdr10plus", "hlg"}},
+		{"Movie (2023) - [2160p.TrueHD.WEB-GRP]", nil},
+	} {
+		if got := Parse(c.name, Hints{}).HDR.Value; !slices.Equal(got, c.want) {
+			t.Errorf("%s: hdr %v, want %v", c.name, got, c.want)
 		}
 	}
 }

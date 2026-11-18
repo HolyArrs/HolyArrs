@@ -252,7 +252,7 @@ func (s *Service) decideAsk(ctx context.Context, id int64, by Person, opt Approv
 		how = "approved straight away (" + by.Name + " may auto-approve)"
 	}
 	s.event(ctx, &domain.Event{Actor: by.actor(), Kind: domain.EventAskApproved, TitleID: &tid, Summary: label(a) + ": " + how,
-		Data: map[string]any{"ask_id": a.ID, "asked_by": names(people), "approved_by": by.Name, "auto": auto, "note": a.Note}, GroupKey: groupKey(a.ID)})
+		Data: map[string]any{"ask_id": a.ID, "asked_by": names(people), "asked_by_ids": userIDs(people), "approved_by": by.Name, "auto": auto, "note": a.Note}, GroupKey: groupKey(a.ID)})
 	text := label(a) + " was approved"
 	if !auto {
 		text += " by " + s.shownAs(ctx, by)
@@ -535,7 +535,7 @@ func (s *Service) TurnDown(ctx context.Context, id int64, by Person, note string
 	}
 	people, _ := s.people(ctx, a.ID)
 	s.event(ctx, &domain.Event{Actor: by.actor(), Kind: domain.EventAskTurnedDown, Summary: label(a) + ": turned down by " + by.Name,
-		Data: map[string]any{"ask_id": a.ID, "asked_by": names(people), "turned_down_by": by.Name, "note": note}, GroupKey: groupKey(a.ID)})
+		Data: map[string]any{"ask_id": a.ID, "asked_by": names(people), "asked_by_ids": userIDs(people), "turned_down_by": by.Name, "note": note}, GroupKey: groupKey(a.ID)})
 	text := label(a) + " was turned down by " + s.shownAs(ctx, by) + "."
 	if note != "" {
 		text += " Note: " + note

@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} menunggu",
 	"frame.nav.new": "{n} baharu",
 	"frame.nav.manage": "Urus",
+	"frame.nav.activity": "Aktiviti",
+	"frame.nav.system": "Sistem",
 	"frame.nav.history": "Sejarah",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Tetapan",
+	"frame.nav.plugins": "Pemalam",
 	"frame.nav.goTo": "Pergi ke",
 	"frame.nav.active": "{n} aktif, {percent}%",
 	"frame.nav.decide": "{n} perlu keputusan",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Sistem",
 	"frame.layout.switch": "Tukar akaun",
 	"frame.layout.signOut": "Log keluar",
+	"frame.layout.support": "Sokong HolyArrs",
 	"frame.layout.signOutFail": "Tidak dapat mengesahkan log keluar",
 	"frame.layout.signedOut": "Telah log keluar",
 	"frame.layout.accountMenu": "{name}, {role}: akaun dan penampilan",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs mencuba semula sendiri",
 	"frame.feeds.clearNow": "Bersihkan sekarang",
 	"frame.feeds.cleared": "Dibersihkan daripada Pemuat turun",
-	"frame.feeds.clearStill": "Belum dibersihkan"
+	"frame.feeds.clearStill": "Belum dibersihkan",
+	"frame.error.pageGone": "Halaman ini tidak wujud. Pautan mungkin lama atau salah taip."
 }

@@ -32,11 +32,12 @@
 	"settings.backups.key": "Peavõti",
 	"settings.backups.keyDesc": "Varukoopiad seda võtit ei sisalda. Hoia koopiat kuskil turvalises kohas.",
 	"settings.backups.noKit": "Selle võtme jaoks pole veel võtmekomplekti salvestatud. Ilma selleta ei saa varukoopia salvestatud paroole uuel masinal avada.",
+	"settings.backups.kitRecommended": "Soovitatav: laadi võtmekomplekt alla.",
 	"settings.backups.ownerOnlyKit": "Selle saab alla laadida ainult omanik; palu tal seda teha.",
 	"settings.backups.fingerprint": "Võtme sõrmejälg",
 	"settings.backups.downloadKit": "Laadi võtmekomplekt alla",
 	"settings.backups.restoreKey": "Taastamiseks: nimeta ümber holyarrs.key ja pane config-kausta",
 	"settings.backups.offPlan": "Väljas",
-	"settings.backups.offAbout": "Ajastatud varukoopiaid pole. Enne iga uuendust tehakse siiski koopia.",
+	"settings.backups.offAbout": "Automaatseid varukoopiaid pole, ka mitte enne uuendust. Ise tehtud varukoopiad töötavad edasi.",
 	"settings.backups.offKeeps": "Väljas säilitab varukoopiad, mis sul juba on."
 }

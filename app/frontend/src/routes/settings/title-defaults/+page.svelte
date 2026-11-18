@@ -201,4 +201,6 @@
 	.narrow { max-width: 160px; }
 	.where { margin-top: 4px; }
 	.where :global(a) { color: var(--accent-text); font-weight: 600; }
+	/* Every on/off row is the same height, with or without a hint line, so the cards keep one rhythm. */
+	.all :global(.checkline:not(.box)) { min-height: 56px; padding-block: 8px; box-sizing: border-box; }
 </style>

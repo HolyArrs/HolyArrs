@@ -79,9 +79,13 @@ export interface Line {
 	detail?: string;
 	needs?: string;
 	choose?: ChooseWhy;
-	/** unreachable: came over as wanted into another folder; unchecked: its folder was left out, so the title stayed behind. */
-	attention?: 'unreachable' | 'unchecked';
+	/** unreachable: came over as wanted into another folder; unchecked: its folder was left out, so the title stayed behind; seasons: came over, its files wait in Leftover files. */
+	attention?: 'unreachable' | 'unchecked' | 'seasons';
 	folder?: string;
+	/** The show here, for a line found only by the old app's TMDB number. */
+	title_id?: number;
+	/** The show's name here when only the old app's TMDB number found it. */
+	here?: string;
 }
 
 export interface FolderOutcome {
@@ -121,6 +125,17 @@ export function usedByMoves(moves: Move[], snapshots: Snapshot[]): Map<number, n
 	return m;
 }
 
+/** Shows found only by the old app's TMDB number under another name, named as they are here with the old name in brackets: the owner checks each. */
+export function seasonsShows(lines: Line[]): { name: string; id?: number; key: string }[] {
+	return lines.filter((l) => l.group === 'titles' && l.here).map((l) => ({ name: `${l.here} (${l.name.replace(/\s*\(\d{4}\)$/, '')})`, id: l.title_id, key: l.key }));
+}
+
+/** The Done headline's look: a show still to check never reads as all clear. */
+export function doneLook(failed: number, seasons: number): { tone: 'ok' | 'wait' | 'bad'; status: 'ready' | 'pending' | 'failed'; check: boolean } {
+	if (failed > 0) return { tone: 'bad', status: 'failed', check: seasons > 0 };
+	return seasons > 0 ? { tone: 'wait', status: 'pending', check: true } : { tone: 'ok', status: 'ready', check: false };
+}
+
 /** Items with no folder on this server: not-found lines, less the Pick rules (no folder of theirs) and the Library folders whose titles came over anyway (they show as needing attention). */
 export function noFolderCount(lines: Line[]): number {
 	const came = folderOutcome(lines).attentionFolders;
@@ -139,6 +154,8 @@ export interface Report {
 	needs_input: string[];
 	notes?: string[];
 	next: string[];
+	// Shows a test run had no time to look up yet; the next run has them.
+	checking?: number;
 }
 
 export interface Move {

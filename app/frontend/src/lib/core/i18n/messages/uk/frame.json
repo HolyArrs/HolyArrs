@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} чекають",
 	"frame.nav.new": "{n} нових",
 	"frame.nav.manage": "Керування",
+	"frame.nav.activity": "Активність",
+	"frame.nav.system": "Система",
 	"frame.nav.history": "Історія",
 	"frame.nav.status": "Стан",
 	"frame.nav.settings": "Налаштування",
+	"frame.nav.plugins": "Плагіни",
 	"frame.nav.goTo": "Перейти до",
 	"frame.nav.active": "{n} активних, {percent}%",
 	"frame.nav.decide": "{n} потребують рішення",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Системна",
 	"frame.layout.switch": "Змінити обліковий запис",
 	"frame.layout.signOut": "Вийти",
+	"frame.layout.support": "Підтримати HolyArrs",
 	"frame.layout.signOutFail": "Не вдалося підтвердити вихід",
 	"frame.layout.signedOut": "Ти вийшов(-ла)",
 	"frame.layout.accountMenu": "{name}, {role}: обліковий запис і вигляд",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs спробує знову сам",
 	"frame.feeds.clearNow": "Прибрати зараз",
 	"frame.feeds.cleared": "Прибрано із завантажувача",
-	"frame.feeds.clearStill": "Ще не прибрано"
+	"frame.feeds.clearStill": "Ще не прибрано",
+	"frame.error.pageGone": "Такої сторінки немає. Можливо, посилання застаріле або набране з помилкою."
 }

@@ -83,6 +83,7 @@
 	"settings.users.preset": "Sagatave",
 	"settings.users.comingSoon": "Drīzumā",
 	"settings.users.custom": "Pielāgots",
+	"settings.users.customHint": "Šī ir jūsu pašu izvēlētā zemāk esošo slēdžu kombinācija. Izvēloties sagatavi, tā tiek aizstāta; vēlreiz izvēlieties Pielāgots, lai to atgūtu.",
 	"settings.users.ageRating": "Vecuma ierobežojums",
 	"settings.users.newPasswordFor": "Jauna parole: {name}",
 	"settings.users.passwordNote": "Izmanto, kad {name} aizmirsis savu. Viņš tiek izrakstīts visur un piesakās ar jauno. Pasaki to klātienē.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "piem., Mamma",
 	"settings.users.days": "Dienas, cik saite darbojas",
 	"settings.users.makeInvite": "Izveidot ielūguma saiti",
-	"settings.users.permAuto4k": "4K pieprasījumi apstiprināti bez gaidīšanas"
+	"settings.users.permAuto4k": "4K pieprasījumi apstiprināti bez gaidīšanas",
+	"settings.users.serverAccount": "Servera konts",
+	"settings.users.pickAccount": "Izvēlieties kontu multivides serverī",
+	"settings.users.accountLinked": "Sasaistīts ar {name}",
+	"settings.users.removedOnServer": "Noņemts {word} serverī, tāpēc šeit izslēgts",
+	"settings.users.delete": "Dzēst",
+	"settings.users.deleteName": "Dzēst {name}",
+	"settings.users.confirmDelete": "Dzēst {name}? Viņš tiek izrakstīts uz visiem laikiem, un viņa atslēgas pazūd. Viņa pieprasījumi paliek, rādīti kā noņemta persona.",
+	"settings.users.deleteYes": "Dzēst personu",
+	"settings.users.keep": "Paturēt",
+	"settings.users.deleted": "{name} izdzēsts",
+	"settings.users.couldntDelete": "Neizdevās izdzēst",
+	"settings.users.confirmDeleteKeys": "Viņa izveidotās Seerr atslēgas pārstāj darboties visiem, līdz tiek izveidota jauna.",
+	"settings.users.qualities": "Kvalitātes",
+	"settings.users.qualitiesHint": "Var izvēlēties tikai ieslēgtās. Ja ieslēgtas visas, tiek piedāvātas arī jaunās."
 }

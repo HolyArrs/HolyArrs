@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "İnsanlara göster",
 	"settings.requests.choiceMain": "{rules} · başlığın ana kopyası",
 	"settings.requests.choiceOwn": "{rules} · ayrı bir kopya olarak tutulur",
-	"settings.requests.choiceNotReady": "Yukarıda bir 4K kalite ayarlanınca sunulur"
+	"settings.requests.choiceNotReady": "Yukarıda bir 4K kalite ayarlanınca sunulur",
+	"settings.requests.approvals": "Onaylar",
+	"settings.requests.autoApprove": "İstekleri otomatik onayla",
+	"settings.requests.autoApproveNote": "Kapalı = istekleri sizi bekler. Plex izleme listesi başlıkları da aynı anahtarı izler.",
+	"settings.requests.ownerTag": "Sahip",
+	"settings.requests.choiceAdd": "Kalite ekle",
+	"settings.requests.choiceNew": "Yeni kalite",
+	"settings.requests.choiceLabel": "Sizin adınız",
+	"settings.requests.choiceSeen": "Başkaları görür"
 }

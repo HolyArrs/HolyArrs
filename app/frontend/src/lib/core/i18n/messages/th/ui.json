@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "ได้รับรางวัล: {name}",
 	"ui.wikiFacts.nominated": "เข้าชิง: {name}",
 	"ui.wikiFacts.andMore": "และอีก {count}",
-	"ui.pageLoader.loading": "กำลังโหลด"
+	"ui.pageLoader.loading": "กำลังโหลด",
+	"ui.connectHelp.link": "วิธีแก้",
+	"ui.ask.remove": "นำออก",
+	"ui.ask.restore": "กู้คืน",
+	"ui.ask.stop": "หยุด",
+	"ui.ask.revoke": "เพิกถอน",
+	"ui.ask.replace": "แทนที่",
+	"ui.ask.unlink": "ยกเลิกการเชื่อมโยง",
+	"ui.ask.turnOff": "ปิด",
+	"ui.ask.markFailed": "ทำเครื่องหมายว่าล้มเหลว",
+	"ui.ask.reset": "รีเซ็ต",
+	"ui.ask.import": "นำเข้า"
 }

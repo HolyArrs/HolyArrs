@@ -18,7 +18,8 @@
 </script>
 
 <span class="ui-actmenu" class:round={isRound}>
-	<Menu {label} {items} {width} {align} bind:open>
+	<!-- At the page's top level, so the sticky top bar never covers the open menu. -->
+	<Menu {label} {items} {width} {align} portal bind:open>
 		{#snippet trigger()}
 			{#if isRound}
 				<Icon name={icon} size={20} />

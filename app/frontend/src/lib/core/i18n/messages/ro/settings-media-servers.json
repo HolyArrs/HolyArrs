@@ -49,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Oprești istoricul vizionărilor? Tot ce s-a citit până acum se șterge.",
 	"settings.mediaServers.watchTurnedOn": "Istoricul vizionărilor este pornit. Prima citire are loc în 30 de minute.",
 	"settings.mediaServers.watchTurnedOff": "Istoricul vizionărilor este oprit",
-	"settings.mediaServers.watchFailed": "Nu s-a putut schimba istoricul vizionărilor"
+	"settings.mediaServers.watchFailed": "Nu s-a putut schimba istoricul vizionărilor",
+	"settings.mediaServers.labelTitle": "Etichete Plex",
+	"settings.mediaServers.labelSwitch": "Etichetează titlurile cerute",
+	"settings.mediaServers.labelHint": "Când un film sau un serial cerut este în Plex, HolyArrs îi adaugă o etichetă, ca să poți filtra, crea colecții sau partaja după ea în Plex. Etichetele existente rămân.",
+	"settings.mediaServers.labelText": "Etichetă",
+	"settings.mediaServers.labelAskers": "Adaugă și numele celui care a cerut ca etichetă",
+	"settings.mediaServers.labelSaved": "Etichetele Plex au fost salvate",
+	"settings.mediaServers.labelFailed": "Etichetele Plex nu au putut fi salvate",
+	"settings.mediaServers.labelExisting": "Etichetează titlurile deja cerute",
+	"settings.mediaServers.labelExistingStarted": "Etichetarea a început. Titlurile primesc etichetele în câteva minute.",
+	"settings.mediaServers.labelExistingFailed": "Etichetarea nu a putut porni"
 }

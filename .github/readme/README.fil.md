@@ -18,10 +18,10 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Lisensya: AGPL-3.0"></a>
 </p>
 
-<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4: alisin ang kahit anong request, at binabasa na ulit ang mga Plex watchlist ng mga kaibigan.** Makikita na sa card ng isang folder ang quality nito, at nagkaroon ng consistency pass ang Settings. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.2.0: may pulang tuldok na nagpapakita kung ano ang kailangang tingnan, at sinasabi ng connection test ang eksaktong problema.** Mga label sa Plex para sa hiniling na pamagat, mga pangalan sa wika mo, at higit 30 ayos. Ikonekta ang mga app sa MCP gamit ang mga key na hawak mo. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
 
 > Ang bawat poster, trailer at score sa HolyArrs mo ay galing sa server na ako mismo ang nagpapatakbo at nagbabayad, kaya nananatili itong libre para sa lahat. Kung napaganda nang kaunti ng HolyArrs ang movie night mo, ang sponsor ang nagpapanatiling bukas ang ilaw para sa ating lahat 💛
 >

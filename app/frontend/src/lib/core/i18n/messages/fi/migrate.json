@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Vaativat huomiota: {n}",
 	"migrate.needAttentionWhy": "Niiden vanhaa kansiota ei ole tällä palvelimella, joten ne tulevat toivottuina täällä olevaan kansioon. Korjaa kansio tai lisää polkusääntö: {list}",
 	"migrate.leftOutUncheckedN": "Jätetty pois: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} on asetettu tilaan \"Älä tuo heitä\"; valitse sille kansio ja tuo uudelleen"
+	"migrate.leftOutUncheckedWhy": "{folder} on asetettu tilaan \"Älä tuo heitä\"; valitse sille kansio ja tuo uudelleen",
+	"migrate.seasonsDifferOne": "Tarkista 1 sarja, joka löytyi TMDB-numerollaan",
+	"migrate.seasonsDifferOther": "Tarkista {n} sarjaa, jotka löytyivät TMDB-numerollaan",
+	"migrate.seasonsDifferWhy": "Vain vanhan sovelluksen TMDB-numero löysi kohteet {list}, täällä toisella nimellä. Avaa jokainen ja tarkista, että se on sama sarja. Jos on, sen kaudet on numeroitu eri tavalla: yhdistä sen Ylijääneet tiedostot ja laita sitten sarja päälle. Jos ei, poista se; sen tiedostot jäävät paikoilleen.",
+	"migrate.stillChecking": "Sarjat, joita metatietopalvelin vielä tarkistaa: {n}. Luettelo päivittyy itsestään, kun se on valmis.",
+	"migrate.stillCheckingImport": "Sarjat, joita metatietopalvelin vielä tarkistaa: {n}. Voit tuoda nyt; ne tarkistetaan tuonnin aikana."
 }

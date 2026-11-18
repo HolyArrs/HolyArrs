@@ -2,7 +2,7 @@
 
 import { api as defaultClient, type Client } from './api';
 
-export type ViewName = `library.view.${'all' | 'movie' | 'show' | 'artist'}` | 'library.import.view' | 'calendar.view' | 'calendar.follows';
+export type ViewName = `library.view.${'all' | 'movie' | 'show' | 'artist'}` | 'library.import.view' | 'calendar.view' | 'calendar.follows' | 'plugins.view' | 'plugins.sort';
 
 /** How long the move of this browser's older picks waits, so the first page loads before it. */
 export const VIEW_SEED_WAIT = 3000;

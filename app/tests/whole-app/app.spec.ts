@@ -28,6 +28,8 @@ test.afterAll(async () => {
 });
 
 test('first run makes the owner, adds the key and folder, then returns Home', async () => {
+	// Home's first visit waits (30 s at most) for Explore's lists, which the fake metadata server is slow to give.
+	test.setTimeout(120_000);
 	await page.goto('/');
 	await expect(page).toHaveURL(/\/login/);
 	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
@@ -69,7 +71,7 @@ test('first run makes the owner, adds the key and folder, then returns Home', as
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
 	await expect(page.getByTestId('home-greeting')).toContainText(/luis/i);
 	const gettingStarted = page.getByRole('region', { name: 'Welcome to HolyArrs' });
-	await expect(gettingStarted.getByText('1 of 4 done', { exact: true })).toBeVisible();
+	await expect(gettingStarted.getByText('1 of 4 done', { exact: true })).toBeVisible({ timeout: 35_000 });
 	await expect(gettingStarted.getByText(/TMDB/)).toHaveCount(0);
 	await expect(page.getByText('Metadata server is down')).toHaveCount(0);
 	await expect(gettingStarted.getByRole('link', { name: /Choose a Library folder.*\(done\)/ })).toBeVisible();
@@ -158,7 +160,9 @@ test('settings pages render their forms', async () => {
 	}
 	await page.goto('/settings/tmdb');
 	await expect(page.getByText('Answering', { exact: true })).toBeVisible();
-	await expect(page.locator('input[type=password]')).toHaveCount(0);
+	// Answering mode shows only the optional TVDB key and PIN; no TMDB token field.
+	await expect(page.locator('#mk-tmdb_token')).toHaveCount(0);
+	await expect(page.locator('input[type=password]')).toHaveCount(2);
 	await expect(page.getByText(/read access token|TMDB key/i)).toHaveCount(0);
 	// No credit lines in the app: they live on GitHub.
 	await page.goto('/settings/backups');
@@ -173,7 +177,8 @@ test('settings pages render their forms', async () => {
 	for (const name of ['Backups', 'Download sync', 'Schedules', 'Session clean-up', 'Core workers']) {
 		await expect(stages.getByTestId('control-stage').filter({ hasText: name })).toHaveAttribute('data-state', 'running');
 	}
-	await expect(stages.getByTestId('control-stage').filter({ hasText: 'Backups' }).locator('.chip')).toHaveText('Running');
+	// A running stage shows no state word (only states that are not the normal one do).
+	await expect(stages.getByTestId('control-stage').filter({ hasText: 'Backups' })).toHaveAttribute('data-state', 'running');
 	await expect(page.getByTestId('control-links').getByRole('heading', { name: 'Linked apps' })).toBeVisible();
 });
 
@@ -189,8 +194,8 @@ test('make and revoke an API key', async () => {
 	await page.getByRole('button', { name: 'Make a key' }).click();
 	await expect(page.getByText('It is shown only once')).toBeVisible();
 	await expect(page.locator('code.key')).toContainText('hak_');
-	page.once('dialog', (d) => d.accept());
 	await page.getByRole('button', { name: 'Revoke' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByText('No API keys')).toBeVisible();
 });
 
@@ -343,7 +348,8 @@ test('a narrow desktop window with long words: the calendar never scrolls sidewa
 			await noSidewaysScroll(page);
 		}
 	} finally {
-		await lang('en');
+		// Back to no kept language (as after the first run), so later specs' browser language choice counts.
+		await lang('');
 		if (size) await page.setViewportSize(size);
 	}
 });

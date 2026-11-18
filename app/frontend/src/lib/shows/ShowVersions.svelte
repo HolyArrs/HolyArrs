@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	// Card and dialog for a show's Versions: list, add, change and remove.
 	import Button from '#lib/ui/Button.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
@@ -89,7 +90,7 @@
 	}
 
 	async function remove(v: VersionView) {
-		if (!confirm(t('shows.versions.stopConfirm', { label: v.label }))) return;
+		if (!(await ask(t('shows.versions.stopConfirm', { label: v.label }), { yes: t('ui.ask.stop') }))) return;
 		try {
 			await api.del(`/titles/${title.id}/versions/${v.id}`);
 			await onchange();

@@ -83,6 +83,7 @@
 	"settings.users.preset": "Forhåndsvalg",
 	"settings.users.comingSoon": "Kommer snart",
 	"settings.users.custom": "Egendefinert",
+	"settings.users.customHint": "Din egen kombinasjon av bryterne nedenfor. Velger du en forhåndsinnstilling, erstattes den; velg Egendefinert igjen for å få den tilbake.",
 	"settings.users.ageRating": "Aldersgrense",
 	"settings.users.newPasswordFor": "Nytt passord for {name}",
 	"settings.users.passwordNote": "Bruk dette når {name} har glemt sitt. Vedkommende logges ut overalt og logger inn igjen med det nye. Si det personlig.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "f.eks. Mamma",
 	"settings.users.days": "Dager lenken varer",
 	"settings.users.makeInvite": "Lag en invitasjonslenke",
-	"settings.users.permAuto4k": "4K-forespørsler godkjennes uten å vente"
+	"settings.users.permAuto4k": "4K-forespørsler godkjennes uten å vente",
+	"settings.users.serverAccount": "Serverkonto",
+	"settings.users.pickAccount": "Velg en konto på en medieserver",
+	"settings.users.accountLinked": "Koblet til {name}",
+	"settings.users.removedOnServer": "Fjernet på {word}-serveren, så slått av her",
+	"settings.users.delete": "Slett",
+	"settings.users.deleteName": "Slett {name}",
+	"settings.users.confirmDelete": "Slette {name}? Personen logges ut for godt og nøklene forsvinner. Forespørslene blir, vist som en fjernet person.",
+	"settings.users.deleteYes": "Slett person",
+	"settings.users.keep": "Behold",
+	"settings.users.deleted": "{name} slettet",
+	"settings.users.couldntDelete": "Kunne ikke slette",
+	"settings.users.confirmDeleteKeys": "Seerr-nøkler personen har laget slutter å virke for alle til en ny lages.",
+	"settings.users.qualities": "Kvaliteter",
+	"settings.users.qualitiesHint": "De kan bare velge de som er på. Er alle på, tilbys nye også."
 }

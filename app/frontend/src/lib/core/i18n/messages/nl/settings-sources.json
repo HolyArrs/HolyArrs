@@ -7,6 +7,7 @@
 	"settings.sources.title": "Bronnen",
 	"settings.sources.add": "Een bron toevoegen",
 	"settings.sources.lead": "Prioriteit 1 gaat eerst. Een bron die faalt, wordt tot zes uur overgeslagen. Voor sites zonder feed voeg je Jackett of Prowlarr toe als Torznab-feed.",
+	"settings.sources.builtIn": "Voor de ingebouwde sites heb je geen Jackett of Prowlarr nodig: {sites}. Kies {site} bij {kind}.",
 	"settings.sources.change": "{name} wijzigen",
 	"settings.sources.name": "Naam",
 	"settings.sources.feedKind": "Soort feed",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Opslaan",
 	"settings.sources.cancel": "Annuleren",
 	"settings.sources.none": "Geen bronnen",
-	"settings.sources.noneText": "Voeg een Torznab- of Newznab-feed toe, of Jackett of Prowlarr.",
+	"settings.sources.noneText": "Voeg een ingebouwde site, een Torznab- of Newznab-feed toe, of Jackett of Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioriteit {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioriteit {priority} · {uses}",
 	"settings.sources.keyIs": "sleutel {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Site",
 	"settings.sources.addressSite": "Het eigen adres van de site. Wijzig het alleen als de site is verhuisd.",
 	"settings.sources.siteKeyLabel": "Cookie of RSS-sleutel",
-	"settings.sources.siteKeyHint": "Uit je eigen account: uid en pass uit je browsercookie, of u en tp uit je RSS-link. Versleuteld bewaard."
+	"settings.sources.siteKeyHint": "Uit je eigen account: uid en pass uit je browsercookie, of u en tp uit je RSS-link. Versleuteld bewaard.",
+	"settings.sources.sendTo": "Downloads sturen naar",
+	"settings.sources.sendToAny": "Elke downloader",
+	"settings.sources.sendToHint": "Alles wat van deze bron gekozen wordt gaat alleen naar deze downloader. Werkt hij niet, dan wacht het.",
+	"settings.sources.sendToGone": "De gekozen downloader is verwijderd. Downloads van deze bron gaan nu naar elke downloader."
 }

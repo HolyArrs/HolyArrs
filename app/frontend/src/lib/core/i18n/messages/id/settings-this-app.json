@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "tidak ada",
 	"settings.thisApp.needsRestart": "Perlu mulai ulang. HOLYARRS_URL_BASE atau -url-base menggantikannya.",
 	"settings.thisApp.save": "Simpan",
-	"settings.thisApp.licence": "HolyArrs adalah perangkat lunak bebas di bawah AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs adalah perangkat lunak bebas di bawah AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Kirim panggilan keluar lewat proxy. Aturan blokir dan jaringan rumah tetap berlaku untuk tujuan sebenarnya.",
+	"settings.thisApp.proxyType": "Jenis",
+	"settings.thisApp.proxyOff": "Mati",
+	"settings.thisApp.proxyHost": "Host",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Nama pengguna",
+	"settings.thisApp.proxyPasswordLabel": "Kata sandi",
+	"settings.thisApp.proxyPasswordKept": "Biarkan kosong untuk menyimpan kata sandi yang ada",
+	"settings.thisApp.proxyBypass": "Lewati proxy untuk",
+	"settings.thisApp.proxyBypassHint": "Nama, alamat, atau rentang, dipisah koma. *.example.com mencakup semua nama di bawahnya.",
+	"settings.thisApp.proxyBypassLocal": "Lewati proxy untuk alamat lokal",
+	"settings.thisApp.proxyBypassLocalHint": "Mesin ini dan jaringan rumah Anda terhubung langsung",
+	"settings.thisApp.proxySaved": "Proxy disimpan",
+	"settings.thisApp.proxyOffSaved": "Proxy mati"
 }

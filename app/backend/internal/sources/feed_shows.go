@@ -77,7 +77,7 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 			}
 		}
 		heldNow := map[int64]int64{}
-		cands := rulesTake(group[0].pr.Body.Tags, fs)
+		cands := copyTakes(group[0], fs)
 		for _, c := range group {
 			if !kept[c.sl.ID] {
 				continue
@@ -89,7 +89,7 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 				for _, f := range cands {
 					dup = dup || f.relID == *c.sl.HeldReleaseID
 				}
-				if f, ok := s.storedFound(ctx, *c.sl.HeldReleaseID); ok && !dup {
+				if f, ok := s.storedFound(ctx, *c.sl.HeldReleaseID); ok && !dup && c.from.takes(f.src.Tags, c.pr.Body.Tags) {
 					cands = append(cands, f)
 				}
 			}
@@ -117,12 +117,18 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 		if err != nil {
 			return chosen, held, stored, err
 		}
+		if err := s.freeUnfilledHeld(ctx, by, heldNow, cands, vs); err != nil {
+			return chosen, held, stored, err
+		}
 		for k := range cands {
 			judged[keyOf(cands[k])] = true
 			if cands[k].relID == 0 {
 				storedID[keyOf(cands[k])] = ids[k]
 				stored++
 			}
+		}
+		if err := s.freeFailedHeld(ctx, by, heldNow, cands, vs); err != nil {
+			return chosen, held, stored, err
 		}
 		keep := picks[:0]
 		for _, pk := range picks {
@@ -137,7 +143,7 @@ func (s *Searcher) feedShow(ctx context.Context, by domain.Actor, jobID *int64, 
 		if beforeSettle != nil {
 			beforeSettle(first)
 		}
-		c1, h1, _ := s.settlePicks(ctx, by, jobID, set.ti.ID, set.labels(), cands, vs, ids, keep, "Feed check")
+		c1, h1, _ := s.settlePicks(ctx, by, jobID, set.ti.ID, set.labels(), cands, vs, ids, keep, "Feed check", group[0].note)
 		chosen, held = chosen+c1, held+h1
 	}
 	return chosen, held, stored, nil

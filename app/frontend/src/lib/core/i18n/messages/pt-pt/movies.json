@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Regras de escolha desta Versão",
 	"movies.versions.folderLabel": "Pasta da Biblioteca desta Versão",
 	"movies.versions.cancel": "Cancelar",
-	"movies.versions.addButton": "Adicionar versão"
+	"movies.versions.addButton": "Adicionar versão",
+	"movies.versions.setEdition": "Definir edição",
+	"movies.versions.editionFileHint": "Que edição é este ficheiro, por exemplo Theatrical ou Directors Cut. Deixe vazio para limpar.",
+	"movies.versions.unprotectConfirm": "Remover a proteção de {label}? Uma cópia melhor poderá voltar a substituí-la.",
+	"movies.versions.editionChars": "Não permitido:",
+	"movies.versions.editionInvalid": "Essa edição não pode ser usada. Mantenha-a curta (as letras acentuadas e não latinas ocupam mais espaço), deixe de fora os carateres indicados acima e não termine com um ponto.",
+	"movies.versions.editionDevice": "O Windows reserva o nome {name} para dispositivos, por isso não pode ser usado. Escreva outro."
 }

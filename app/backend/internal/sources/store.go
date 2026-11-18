@@ -68,7 +68,7 @@ func recoverSourceTx(tx *sql.Tx, ctx context.Context, sourceID int64) error {
 			updated_at = ?, updated_by = ? WHERE id = ? AND state = 'paused'`, now, systemActor(), sourceID); err != nil {
 		return err
 	}
-	_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_remove(extra, '$.failures', '$.block', '$.test_failed'), updated_at = ?, updated_by = ?
+	_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = json_remove(extra, '$.failures', '$.block', '$.test_failed', '$.cause'), updated_at = ?, updated_by = ?
 			WHERE id = ? AND (json_extract(extra, '$.failures') IS NOT NULL OR json_extract(extra, '$.block') IS NOT NULL
 			OR json_extract(extra, '$.test_failed') IS NOT NULL)`, now, systemActor(), sourceID)
 	return err
@@ -82,6 +82,14 @@ func markTestFailedTx(tx *sql.Tx, ctx context.Context, sourceID int64, kind, det
 			extra = CASE WHEN ? = '' THEN json_remove(json_set(extra, '$.test_failed', ?), '$.block') ELSE json_set(extra, '$.test_failed', ?, '$.block', ?) END,
 			updated_at = ?, updated_by = ? WHERE id = ? AND state = 'enabled'`,
 		detail, kind, kind, detail, database.FormatTime(time.Now().UTC()), systemActor(), sourceID)
+	return err
+}
+
+// setCauseTx keeps the doctor cause of a Source's last failure in its extra
+// ("" removes it), so health rows say the same as the Test button.
+func setCauseTx(tx *sql.Tx, ctx context.Context, sourceID int64, cause string) error {
+	_, err := tx.ExecContext(ctx, `UPDATE sources SET extra = CASE WHEN ? = '' THEN json_remove(extra, '$.cause') ELSE json_set(extra, '$.cause', ?) END
+			WHERE id = ?`, cause, cause, sourceID)
 	return err
 }
 
@@ -216,3 +224,8 @@ func TagUses(ctx context.Context, db *sql.DB) (map[string]int, error) {
 	}
 	return out, rows.Err()
 }
+
+// anyState picks every Source, the turned-off ones too: a turned-off Source
+// with a folder's tag still keeps that folder to tagged Sources. Only the
+// ones on or paused are asked.
+const anyState = "state IN ('enabled', 'paused', 'disabled')"

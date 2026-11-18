@@ -20,11 +20,12 @@ import (
 //	{"movie": [{"id": "standard", "name": "HD"}, {"id": "4k", "hidden": true}], "show": [...]}
 //
 // The two built-in lines take their Pick rules and folder from the Request
-// settings (the plain ones, and the four 4K ones), so they never move. Lines
-// added later carry their own pick_rules_id, library_folder_id, extra and
-// who-may-see fields, and a top-level multi flag lets people pick more than
-// one; the array order is the order people see, so reordering is rewriting
-// it. Asks keep the line id, so none of this moves stored asks.
+// settings (the plain ones, and the four 4K ones), so they never move. A line
+// the owner added (its id starts with "own-") carries its name and its own
+// pick_rules_id and asks for the title's main copy. Who may pick which line
+// is set per person (PersonQualities). The array order is the order people see, so
+// reordering is rewriting it. Asks keep the line id, so none of this moves
+// stored asks.
 
 // The built-in lines.
 const (
@@ -42,10 +43,33 @@ const fourKName = "4K"
 // qualityNameMax is the longest name a line may have, in characters.
 const qualityNameMax = 30
 
+// qualityLinesMax is the most lines one kind may have.
+const qualityLinesMax = 8
+
+// ownPrefix starts the id of a line the owner added.
+const ownPrefix = "own-"
+
+// ownLine says id is a line the owner added: "own-" and up to 20 lowercase
+// letters and digits.
+func ownLine(id string) bool {
+	rest, ok := strings.CutPrefix(id, ownPrefix)
+	if !ok || rest == "" || len(rest) > 20 {
+		return false
+	}
+	for _, c := range rest {
+		if (c < 'a' || c > 'z') && (c < '0' || c > '9') {
+			return false
+		}
+	}
+	return true
+}
+
 // Errors from saving the lines and from asking for one.
 var (
 	ErrQualityName       = errors.New("a quality name can be at most 30 characters")
 	ErrQualityAllHidden  = errors.New("keep at least one quality shown for movies and one for shows")
+	ErrQualityOwnLine    = errors.New("give every quality you added a name")
+	ErrQualityTooMany    = errors.New("movies and shows can have at most 8 qualities each")
 	ErrQualityNotOffered = errors.New("that quality cannot be asked for")
 	ErrQualityTaken      = errors.New("someone already asked for this movie in that quality; decide their ask instead")
 )
@@ -54,12 +78,17 @@ var (
 type QualityLine struct {
 	ID string `json:"id"`
 	// Name is what people see; empty shows the built-in name (Standard, 4K).
-	Name   string `json:"name"`
+	Name string `json:"name"`
+	// Label is the owner's own name for it, seen only where lines are set
+	// up; empty shows Name.
+	Label  string `json:"label"`
 	Hidden bool   `json:"hidden"`
 	// Read from the Request settings, never stored for the built-in lines:
 	// the Pick rules (0: the folder's own) and Library folder (0: the
 	// request folder, then the title's), whether it is kept as its own copy,
 	// and whether it can be asked for now (the 4K line needs 4K Pick rules).
+	// A line the owner added stores its Pick rules and is ready while they
+	// are still there.
 	PickRulesID     int64 `json:"pick_rules_id"`
 	LibraryFolderID int64 `json:"library_folder_id"`
 	Extra           bool  `json:"extra"`
@@ -88,9 +117,20 @@ func defaultQualities() QualityLists {
 
 // storedLine is what is stored of a line.
 type storedLine struct {
-	ID     string `json:"id"`
-	Name   string `json:"name,omitempty"`
-	Hidden bool   `json:"hidden,omitempty"`
+	ID          string `json:"id"`
+	Name        string `json:"name,omitempty"`
+	Label       string `json:"label,omitempty"`
+	Hidden      bool   `json:"hidden,omitempty"`
+	PickRulesID int64  `json:"pick_rules_id,omitempty"`
+}
+
+// stored is what is stored of l: the Pick rules only for a line the owner added.
+func stored(l QualityLine) storedLine {
+	s := storedLine{ID: l.ID, Name: strings.TrimSpace(l.Name), Label: strings.TrimSpace(l.Label), Hidden: l.Hidden}
+	if ownLine(l.ID) {
+		s.PickRulesID = l.PickRulesID
+	}
+	return s
 }
 
 // parseQualities reads the stored setting; anything it cannot read gives the
@@ -108,11 +148,15 @@ func parseQualities(v string) QualityLists {
 		out := []QualityLine{}
 		seen := map[string]bool{}
 		for _, l := range ls {
-			if (l.ID != QualityStandard && l.ID != QualityFourK) || seen[l.ID] {
+			if (l.ID != QualityStandard && l.ID != QualityFourK && !ownLine(l.ID)) || seen[l.ID] {
 				continue
 			}
 			seen[l.ID] = true
-			out = append(out, QualityLine{ID: l.ID, Name: strings.TrimSpace(l.Name), Hidden: l.Hidden})
+			line := QualityLine{ID: l.ID, Name: strings.TrimSpace(l.Name), Label: strings.TrimSpace(l.Label), Hidden: l.Hidden}
+			if ownLine(l.ID) {
+				line.PickRulesID = l.PickRulesID
+			}
+			out = append(out, line)
 		}
 		for _, id := range []string{QualityStandard, QualityFourK} {
 			if !seen[id] {
@@ -129,7 +173,7 @@ func storeQualities(q QualityLists) string {
 	keep := func(ls []QualityLine) []storedLine {
 		out := []storedLine{}
 		for _, l := range ls {
-			out = append(out, storedLine{ID: l.ID, Name: strings.TrimSpace(l.Name), Hidden: l.Hidden})
+			out = append(out, stored(l))
 		}
 		return out
 	}
@@ -137,16 +181,18 @@ func storeQualities(q QualityLists) string {
 	return string(b)
 }
 
-// checkQualities checks the lines an owner sends: only the known lines, names
-// of at most 30 characters, and at least one line shown for each kind.
+// checkQualities checks the lines an owner sends: the built-in lines and the
+// owner's own (each with a name and Pick rules), names of at most 30
+// characters, at most 8 lines a kind, and for each kind at least one line
+// shown.
 func checkQualities(q QualityLists) (QualityLists, error) {
 	sent := func(ls []QualityLine) []storedLine {
 		out := []storedLine{}
 		for _, l := range ls {
-			if utf8.RuneCountInString(strings.TrimSpace(l.Name)) > qualityNameMax {
+			if utf8.RuneCountInString(strings.TrimSpace(l.Name)) > qualityNameMax || utf8.RuneCountInString(strings.TrimSpace(l.Label)) > qualityNameMax {
 				return nil
 			}
-			out = append(out, storedLine{ID: l.ID, Name: l.Name, Hidden: l.Hidden})
+			out = append(out, stored(l))
 		}
 		return out
 	}
@@ -157,8 +203,14 @@ func checkQualities(q QualityLists) (QualityLists, error) {
 	b, _ := json.Marshal(map[string][]storedLine{"movie": m, "show": s})
 	out := parseQualities(string(b))
 	for _, ls := range [][]QualityLine{out.Movie, out.Show} {
+		if len(ls) > qualityLinesMax {
+			return out, ErrQualityTooMany
+		}
 		shown := false
 		for _, l := range ls {
+			if ownLine(l.ID) && (l.Name == "" || l.PickRulesID <= 0) {
+				return out, ErrQualityOwnLine
+			}
 			shown = shown || !l.Hidden
 		}
 		if !shown {
@@ -193,6 +245,12 @@ func qualityLines(ctx context.Context, db querier, set Settings, kind string) ([
 			l.PickRulesID, l.LibraryFolderID, l.Extra, l.Ready = plainRules, plainFolder, false, true
 		case QualityFourK:
 			l.PickRulesID, l.LibraryFolderID, l.Extra, l.Ready = rules, folder, true, rules != 0
+		default:
+			var n int
+			if err := db.QueryRowContext(ctx, askedRulesSQL, l.PickRulesID).Scan(&n); err != nil {
+				return nil, err
+			}
+			l.LibraryFolderID, l.Extra, l.Ready = plainFolder, false, n > 0
 		}
 		out = append(out, l)
 	}
@@ -209,16 +267,17 @@ func resolveQualities(ctx context.Context, db querier, set Settings) (QualityLis
 	return QualityLists{Movie: m, Show: s}, err
 }
 
-// offered are the lines p may ask for: shown and ready, in order. A Kid gets
-// the first one only. With none shown and ready, the first line stands in.
-func offered(lines []QualityLine, p Person) []QualityLine {
+// offered are the lines of kind p may ask for: shown, ready and allowed by
+// p's own choice, in order. A Kid gets the first one only. With none left
+// and no choice of p's own, the first line stands in; with a choice, nothing.
+func offered(lines []QualityLine, p Person, kind string) []QualityLine {
 	out := []QualityLine{}
 	for _, l := range lines {
-		if !l.Hidden && l.Ready {
+		if !l.Hidden && l.Ready && p.mayPick(kind, l.ID) {
 			out = append(out, l)
 		}
 	}
-	if len(out) == 0 && len(lines) > 0 {
+	if len(out) == 0 && len(lines) > 0 && p.mayPick(kind, "") {
 		out = lines[:1]
 	}
 	if p.MaxRating != "" && len(out) > 1 {
@@ -277,7 +336,12 @@ func pickQuality(ctx context.Context, db querier, p Person, kind, id string) (Qu
 	if err != nil {
 		return QualityLine{}, err
 	}
-	mine := offered(lines, p)
+	if p.Qualities == nil {
+		if err := loadPersonQualities(ctx, db, &p); err != nil {
+			return QualityLine{}, err
+		}
+	}
+	mine := offered(lines, p, kind)
 	if id == "" && len(mine) > 0 {
 		return mine[0], nil
 	}

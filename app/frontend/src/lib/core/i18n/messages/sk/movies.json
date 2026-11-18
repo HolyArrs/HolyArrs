@@ -33,5 +33,11 @@
 "movies.versions.rulesLabel": "Pravidlá výberu pre túto Verziu",
 "movies.versions.folderLabel": "Priečinok Knižnice pre túto Verziu",
 "movies.versions.cancel": "Zrušiť",
-"movies.versions.addButton": "Pridať verziu"
+"movies.versions.addButton": "Pridať verziu",
+"movies.versions.setEdition": "Nastaviť edíciu",
+"movies.versions.editionFileHint": "Aká edícia je tento súbor, napríklad Theatrical alebo Directors Cut. Nechajte prázdne na vymazanie.",
+"movies.versions.unprotectConfirm": "Odstrániť ochranu z {label}? Lepšia kópia ju bude môcť znova nahradiť.",
+"movies.versions.editionChars": "Nepovolené:",
+"movies.versions.editionInvalid": "Túto edíciu nemožno použiť. Nech je krátka (písmená s diakritikou a nelatinské písmená zaberajú viac miesta), vynechajte znaky uvedené vyššie a nekončite bodkou.",
+"movies.versions.editionDevice": "Názov {name} si Windows vyhradzuje pre zariadenia, takže ho nemožno použiť. Zadajte iný."
 }

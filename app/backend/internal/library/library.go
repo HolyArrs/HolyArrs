@@ -37,6 +37,9 @@ var (
 // AlreadyAddedError says the movie is already in the Library.
 type AlreadyAddedError struct{ TitleID int64 }
 
+// InLibrary is the title already in the Library.
+func (e *AlreadyAddedError) InLibrary() int64 { return e.TitleID }
+
 func (e *AlreadyAddedError) Error() string {
 	return fmt.Sprintf("this movie is already in the Library (Title %d)", e.TitleID)
 }
@@ -66,6 +69,8 @@ type AddOptions struct {
 	MainFourK bool `json:"-"`
 	// WhyAdded records why the movie was added (by_hand when empty).
 	WhyAdded string `json:"-"`
+	// ListName is the Outside list that added the movie, kept in its History line.
+	ListName string `json:"-"`
 	// Adopt keeps a movie folder found on disk as it is.
 	Adopt *Adoption `json:"-"`
 }
@@ -276,7 +281,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		}
 		t := &mediafiles.Title{Kind: "movie", Aliases: aliases, MetadataSource: "tmdb", KeepUpToDate: keep, NewPartsPolicy: "all",
 			ReleaseGate: gate, GateDelayDays: delay, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
-			State: "active", GateDriver: driver, GateOpensAt: opens}
+			State: "active", GateDriver: driver, GateOpensAt: opens, Tags: TagsFromFolder(lf)}
 		applyMovie(t, m, now)
 		if _, err := database.Insert(tx, "titles", t, by); err != nil {
 			return err
@@ -299,6 +304,21 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		folderName := mediafiles.Folder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
 		if opt.Adopt != nil {
 			folderName = opt.Adopt.FolderName
+		} else {
+			// Reuse a folder already there under a slightly different name
+			// (case, accents, dots), like shows do, so no second folder is made.
+			fold := FoldsCase(lf.Path)
+			taken := map[string]bool{}
+			if rows, err := tx.QueryContext(ctx, "SELECT folder_name FROM versions WHERE library_folder_id = ?", lf.ID); err == nil {
+				for rows.Next() {
+					var n string
+					if rows.Scan(&n) == nil {
+						taken[FolderKey(n, fold)] = true
+					}
+				}
+				rows.Close()
+			}
+			folderName = ExistingFolder(lf.Path, folderName, t.Name, year, func(d string) bool { return taken[FolderKey(d, fold)] })
 		}
 		v := &mediafiles.Version{TitleID: t.ID, Label: MainLabel(opt.MainFourK), PickRulesID: prID, LibraryFolderID: lf.ID,
 			FolderName: folderName, KeepUpToDate: keep, IsMain: true, FourK: opt.MainFourK}

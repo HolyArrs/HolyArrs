@@ -373,7 +373,7 @@
 		// A first-ever visit: the list and thumbnails the server put in the page (app.html).
 		const inline = (window as { __holyarrsSigninInline?: { shots: ArtShot[]; thumb: Thumb } }).__holyarrsSigninInline;
 		if (!kept.thumb && inline?.thumb && Array.isArray(inline.shots) && local(inline.thumb.url)) {
-			kept.shots = ownShots(inline.shots, false);
+			kept.shots = ownShots(inline.shots, true);
 			kept.thumb = inline.thumb;
 			kept.first = inline.thumb.url;
 		}

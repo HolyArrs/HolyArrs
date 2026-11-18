@@ -1,7 +1,8 @@
 <script lang="ts">
-	// "Open in Jellyfin" for a Library title: one button per media server that
-	// has it and has a browser address. Nothing shows while it loads, when no
-	// server has the title, or when asking fails.
+	// Open in Jellyfin or Emby for a Library title: one button per media
+	// server that has it and has a browser address. Shown only to people who
+	// manage the Library (the route needs manage_library). Nothing shows while
+	// it loads, when no server has the title, or when asking fails.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import { api } from '#lib/core/api.ts';

@@ -13,6 +13,7 @@
 "settings.parts.couldntConnect": "{name} に接続できませんでした",
 "settings.parts.connected": "{name} に接続しました",
 "settings.parts.title": "パート",
+"settings.parts.onOff": "パートのオン・オフ",
 "settings.parts.ownerOnly": "オーナーと管理者のみ",
 "settings.parts.safeMode": "HolyArrs はセーフモードで動作中です。コアだけが動き、通常起動するまでパートの切り替えとステージの操作は受け付けません。セーフモードを終了するには、<a>危険な操作</a>の<b>HolyArrs を再起動</b>を使います。",
 "settings.parts.dangerZone": "危険な操作",

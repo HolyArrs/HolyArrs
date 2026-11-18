@@ -212,7 +212,7 @@
 		.nm { font-size: 19px; }
 		.sx-card[data-group='library'] .nm { font-size: 24px; }
 		.pp { font-size: 13px; }
-		.chip { top: 14px; right: 14px; }
+		.chip { position: static; align-self: flex-start; margin-top: 6px; }
 	}
 	/* Four groups (a part turned off or not allowed): the last card takes the row, so no cell sits empty. */
 	.bento[data-count='4'] .sx-card:last-child { grid-column: span 2; }

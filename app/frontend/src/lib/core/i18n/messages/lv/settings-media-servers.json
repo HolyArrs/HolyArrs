@@ -49,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Vai izslēgt skatīšanās vēsturi? Viss līdz šim nolasītais tiek izdzēsts.",
 	"settings.mediaServers.watchTurnedOn": "Skatīšanās vēsture ieslēgta. Pirmā nolasīšana notiek 30 minūšu laikā.",
 	"settings.mediaServers.watchTurnedOff": "Skatīšanās vēsture izslēgta",
-	"settings.mediaServers.watchFailed": "Neizdevās mainīt skatīšanās vēsturi"
+	"settings.mediaServers.watchFailed": "Neizdevās mainīt skatīšanās vēsturi",
+	"settings.mediaServers.labelTitle": "Plex birkas",
+	"settings.mediaServers.labelSwitch": "Pievienot birku pieprasītajiem nosaukumiem",
+	"settings.mediaServers.labelHint": "Kad pieprasīta filma vai seriāls ir Plex, HolyArrs tam pievieno birku, lai Plex varētu pēc tās filtrēt, veidot kolekcijas vai kopīgot. Esošās birkas paliek.",
+	"settings.mediaServers.labelText": "Birka",
+	"settings.mediaServers.labelAskers": "Pievienot birkā arī pieprasītāja vārdu",
+	"settings.mediaServers.labelSaved": "Plex birkas saglabātas",
+	"settings.mediaServers.labelFailed": "Neizdevās saglabāt Plex birkas",
+	"settings.mediaServers.labelExisting": "Pievienot birku jau pieprasītajiem nosaukumiem",
+	"settings.mediaServers.labelExistingStarted": "Birku pievienošana sākta. Nosaukumi birkas saņems dažu minūšu laikā.",
+	"settings.mediaServers.labelExistingFailed": "Neizdevās sākt birku pievienošanu"
 }

@@ -140,6 +140,9 @@ func TestShowAskSeasonsJoinApproveAndAskAgain(t *testing.T) {
 	if asked, _ := e.Data["asked_by"].([]any); len(asked) != 2 {
 		t.Fatalf("asked_by %v", e.Data["asked_by"])
 	}
+	if ids := askerIDs(e.Data["asked_by_ids"]); len(ids) != 2 {
+		t.Fatalf("asked_by_ids %v", e.Data["asked_by_ids"])
+	}
 	var msgs int
 	_ = r.st.Read().QueryRow("SELECT count(*) FROM messages WHERE kind = 'approved'").Scan(&msgs)
 	if msgs != 2 {

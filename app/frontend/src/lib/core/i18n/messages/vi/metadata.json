@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Phim",
 	"metadata.health.downTitle": "Metadata ngoại tuyến",
 	"metadata.health.down": "Tìm kiếm và ảnh bìa mới tạm dừng cho đến khi hoạt động lại. Thư viện của bạn vẫn dùng được.",
-	"metadata.health.back": "Metadata đã trực tuyến lại"
+	"metadata.health.back": "Metadata đã trực tuyến lại",
+	"metadata.health.fakeIp": "Router hoặc VPN của bạn đang gửi HolyArrs tới một địa chỉ giả (198.18.x.x). Việc này thường do Clash hoặc Surge. Hãy thêm {host} vào danh sách kết nối trực tiếp của nó."
 }

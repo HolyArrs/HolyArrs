@@ -1,5 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, noFolderCount, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, usedByMoves, type Plan, type Report } from './move.ts';
+import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, doneLook, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, noFolderCount, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, seasonsShows, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, usedByMoves, type Plan, type Report } from './move.ts';
+
+describe('seasonsShows', () => {
+	it("lists every show found only by the old app's TMDB number, by its name here with the old name beside it", () => {
+		const lines = [
+			{ group: 'titles', key: 'a', name: 'Cunk on Earth (2022)', result: 'adopted', attention: 'seasons' as const, title_id: 7, here: 'Cunk on...' },
+			{ group: 'titles', key: 'b', name: 'Severance (2022)', result: 'adopted' },
+			{ group: 'titles', key: 'c', name: 'Lost (2004)', result: 'created', attention: 'unreachable' as const },
+			// Its old folder is not here: it still needs a look.
+			{ group: 'titles', key: 'd', name: 'Other Show (2020)', result: 'created', attention: 'unreachable' as const, title_id: 9, here: 'Something Else' }
+		];
+		expect(seasonsShows(lines)).toEqual([
+			{ name: 'Cunk on... (Cunk on Earth)', id: 7, key: 'a' },
+			{ name: 'Something Else (Other Show)', id: 9, key: 'd' }
+		]);
+	});
+
+	it('says on the Done headline when a show still needs checking, and never reads as all clear then', () => {
+		expect(doneLook(0, 0)).toEqual({ tone: 'ok', status: 'ready', check: false });
+		expect(doneLook(0, 1)).toEqual({ tone: 'wait', status: 'pending', check: true });
+		expect(doneLook(2, 1)).toEqual({ tone: 'bad', status: 'failed', check: true });
+	});
+});
 
 describe('move helpers', () => {
 	it('names apps, with what they bring and their usual port', () => {

@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} bekliyor",
 	"frame.nav.new": "{n} yeni",
 	"frame.nav.manage": "Yönet",
+	"frame.nav.activity": "Etkinlik",
+	"frame.nav.system": "Sistem",
 	"frame.nav.history": "Geçmiş",
 	"frame.nav.status": "Durum",
 	"frame.nav.settings": "Ayarlar",
+	"frame.nav.plugins": "Eklentiler",
 	"frame.nav.goTo": "Git",
 	"frame.nav.active": "{n} etkin, %{percent}",
 	"frame.nav.decide": "{n} tanesi karar bekliyor",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Sistem",
 	"frame.layout.switch": "Hesap değiştir",
 	"frame.layout.signOut": "Çıkış yap",
+	"frame.layout.support": "HolyArrs'ı destekle",
 	"frame.layout.signOutFail": "Çıkış doğrulanamadı",
 	"frame.layout.signedOut": "Çıkış yapıldı",
 	"frame.layout.accountMenu": "{name}, {role}: hesap ve görünüm",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs kendisi yeniden dener",
 	"frame.feeds.clearNow": "Şimdi kaldır",
 	"frame.feeds.cleared": "İndiriciden kaldırıldı",
-	"frame.feeds.clearStill": "Henüz kaldırılmadı"
+	"frame.feeds.clearStill": "Henüz kaldırılmadı",
+	"frame.error.pageGone": "Bu sayfa yok. Bağlantı eski ya da yanlış yazılmış olabilir."
 }

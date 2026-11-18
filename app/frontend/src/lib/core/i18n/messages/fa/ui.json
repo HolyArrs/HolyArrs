@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "برنده: {name}",
 	"ui.wikiFacts.nominated": "نامزد: {name}",
 	"ui.wikiFacts.andMore": "و {count} مورد دیگر",
-	"ui.pageLoader.loading": "در حال بارگیری"
+	"ui.pageLoader.loading": "در حال بارگیری",
+	"ui.connectHelp.link": "چطور درستش کنید",
+	"ui.ask.remove": "حذف",
+	"ui.ask.restore": "بازیابی",
+	"ui.ask.stop": "توقف",
+	"ui.ask.revoke": "لغو",
+	"ui.ask.replace": "جایگزینی",
+	"ui.ask.unlink": "قطع اتصال",
+	"ui.ask.turnOff": "خاموش کردن",
+	"ui.ask.markFailed": "علامت‌گذاری ناموفق",
+	"ui.ask.reset": "بازنشانی",
+	"ui.ask.import": "وارد کردن"
 }

@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "讓 AI 助手使用 HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "供其他應用程式使用的金鑰和路由",
+	"core.settings.remoteAccess.label": "遠端存取",
+	"core.settings.remoteAccess.about": "在外也能使用 HolyArrs",
 	"core.settings.tmdb.label": "中繼資料",
 	"core.settings.tmdb.about": "海報和名稱的來源",
 	"core.settings.health.label": "健康檢查",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "有一個下載器沒有設定儲存資料夾，所以 HolyArrs 無法匯入它已完成的下載。",
 	"core.api.sourceOff": "此安裝中有些列已關閉。",
 	"core.plain.noDownloader": "你的來源找到的下載沒有任何已設定的下載器能接收，所以無法傳送任何下載。",
-	"core.plain.sameDownloader": "兩個下載器連到同一個下載應用程式，因此下載可能顯示兩次。"
+	"core.plain.sameDownloader": "兩個下載器連到同一個下載應用程式，因此下載可能顯示兩次。",
+	"core.plain.peopleCheck": "無法讀取媒體伺服器的使用者清單，因此在那裡移除的人不會在這裡被關閉。",
+	"core.plain.deleted": "已刪除",
+	"core.plain.deletedName": "{name}（已刪除）"
 }

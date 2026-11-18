@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { LOCALES, t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -13,7 +13,7 @@
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 
-	let ns = $state<NamingSettings>({ file_pattern: '', folder_pattern: '', colon: 'smart', illegal: 'replace', rename_on_import: true, adopt_scan_limit: 5000 });
+	let ns = $state<NamingSettings>({ file_pattern: '', folder_pattern: '', colon: 'smart', illegal: 'replace', rename_on_import: true, adopt_scan_limit: 5000, title_language: '' });
 	let fr = $state<FileRules>({ holding_days: 7, min_free_mb: 100, skip_free_space_check: false });
 	let words = $state<Record<string, string>>({});
 	let example = $state('');
@@ -67,6 +67,7 @@
 			colon: ns.colon,
 			illegal: ns.illegal,
 			rename_on_import: ns.rename_on_import,
+			title_language: ns.title_language ?? '',
 			show_folder_pattern: ns.show_folder_pattern,
 			season_folders: ns.season_folders,
 			season_folder_pattern: ns.season_folder_pattern,
@@ -122,7 +123,7 @@
 			error = t('settings.naming.useRange');
 			return;
 		}
-		const musicLimit = Number(ns.music_adopt_scan_limit ?? 200);
+		const musicLimit = Number(ns.music_adopt_scan_limit ?? 50);
 		if (!Number.isInteger(musicLimit) || musicLimit < 10 || musicLimit > 100000) {
 			error = t('settings.naming.useRange');
 			return;
@@ -201,6 +202,12 @@
 			<Field id="folder-pattern" label={t('settings.naming.folderPattern')} hint={t('settings.naming.folderPatternHint')}>
 				<input id="folder-pattern" class="input mono" bind:value={ns.folder_pattern} autocomplete="off" spellcheck="false" />
 			</Field>
+			<Field id="title-language" label={t('settings.naming.titleLanguage')} hint={t('settings.naming.titleLanguageHint')}>
+				<select id="title-language" class="input" bind:value={ns.title_language}>
+					<option value="">{t('settings.naming.titleLanguageDefault')}</option>
+					{#each LOCALES.filter((l) => l.code !== 'en') as l (l.code)}<option value={l.code}>{l.name}</option>{/each}
+				</select>
+			</Field>
 			<div class="example" aria-live="polite" data-testid="naming-example">
 				<p class="xs muted">{t('settings.naming.example')}</p>
 				{#if exampleError}
@@ -269,7 +276,7 @@
 				<summary class="small">{t('settings.naming.wordsEpisodes')}</summary>
 				<dl>
 					{#each Object.entries(words)
-						.filter(([w]) => showWords.includes(w) || ['title', 'year', 'quality', 'group', 'release'].includes(w))
+						.filter(([w]) => showWords.includes(w) || ['title', 'title_first', 'year', 'quality', 'audio', 'hdr', 'group', 'release'].includes(w))
 						.sort() as [w, about] (w)}
 						<dt>
 							<Button variant="plain" class="mono" type="button" onclick={() => addWord('episode_pattern', w)} aria-label={t('settings.naming.addToEpisode', { word: '{' + w + '}' })}
@@ -392,7 +399,7 @@
 	<SettingsCard id="holding-card" title={t('settings.naming.holding')}>
 		<div class="srow">
 			<div class="txt"><span class="label">{t('settings.naming.clearOld')}</span><span class="hint">{t('settings.naming.clearOldHint')}</span></div>
-			<div class="ctl"><Button type="button" size="sm" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>{t('settings.naming.clearNow')}</Button></div>
+			<div class="ctl"><Button type="button" onclick={cleanNow} disabled={cleaning} aria-busy={cleaning}>{t('settings.naming.clearNow')}</Button></div>
 		</div>
 	</SettingsCard>
 	<SaveBar {dirty} form="naming-form" saving={busy} disabled={!!exampleError} ondiscard={discard} />

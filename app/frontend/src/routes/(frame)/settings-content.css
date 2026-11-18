@@ -45,8 +45,8 @@
 /* Lists of switches (Appearance's ratings, About lines): name left, switch right. */
 .settings-content .ui-settings ul:has(> li > label.switch) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
 .settings-content .ui-settings ul > li > label.switch { display: flex; width: 100%; min-height: 40px; padding: 6px 0; }
-.settings-content .ui-settings ul > li > label.switch > .sw { order: 2; margin-left: auto; }
-.settings-content .ui-settings ul > li > label.switch > input { left: auto; right: 0; }
+.settings-content .ui-settings ul > li > label.switch > .sw { order: 2; margin-inline-start: auto; }
+.settings-content .ui-settings ul > li > label.switch > input { inset-inline-start: auto; inset-inline-end: 0; }
 .settings-content .ui-settings ul > li > label.switch .hint { display: block; }
 .settings-content .ui-settings ul > li > label.switch > span:not(.sw) { min-width: 0; }
 .settings-content .ui-settings ul > li > label.switch br { display: none; }
@@ -151,6 +151,13 @@
 }
 .settings-content .checkline:not(.box) > input[type='checkbox']:checked {
 	background: radial-gradient(circle at 28px 50%, #fff 0 8.5px, transparent 9.5px), var(--ha-red-press);
+}
+/* Right to left: the knob starts on the right and moves left when on. */
+[dir='rtl'] .settings-content .checkline:not(.box) > input[type='checkbox'] {
+	background: radial-gradient(circle at 28px 50%, #fff 0 8.5px, transparent 9.5px), var(--line-strong);
+}
+[dir='rtl'] .settings-content .checkline:not(.box) > input[type='checkbox']:checked {
+	background: radial-gradient(circle at 12px 50%, #fff 0 8.5px, transparent 9.5px), var(--ha-red-press);
 }
 .settings-content .checkline:not(.box) > input[type='checkbox']:disabled { opacity: 0.45; cursor: not-allowed; }
 .settings-content .checkline:not(.box) > input[type='checkbox']:focus-visible { outline: none; box-shadow: var(--focus-ring); }

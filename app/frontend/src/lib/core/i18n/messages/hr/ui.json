@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Osvojio: {name}",
 	"ui.wikiFacts.nominated": "Nominiran: {name}",
 	"ui.wikiFacts.andMore": "i još {count}",
-	"ui.pageLoader.loading": "Učitavanje"
+	"ui.pageLoader.loading": "Učitavanje",
+	"ui.connectHelp.link": "Kako to popraviti",
+	"ui.ask.remove": "Ukloni",
+	"ui.ask.restore": "Vrati",
+	"ui.ask.stop": "Zaustavi",
+	"ui.ask.revoke": "Opozovi",
+	"ui.ask.replace": "Zamijeni",
+	"ui.ask.unlink": "Odspoji",
+	"ui.ask.turnOff": "Isključi",
+	"ui.ask.markFailed": "Označi kao neuspjelo",
+	"ui.ask.reset": "Poništi",
+	"ui.ask.import": "Uvezi"
 }

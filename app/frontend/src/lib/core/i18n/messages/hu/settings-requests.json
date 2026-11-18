@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Megjelenítés az embereknek",
 	"settings.requests.choiceMain": "{rules} · a cím fő másolata",
 	"settings.requests.choiceOwn": "{rules} · külön másolatként megtartva",
-	"settings.requests.choiceNotReady": "Akkor kérhető, ha fent be van állítva egy 4K minőség"
+	"settings.requests.choiceNotReady": "Akkor kérhető, ha fent be van állítva egy 4K minőség",
+	"settings.requests.approvals": "Jóváhagyások",
+	"settings.requests.autoApprove": "Kérések automatikus jóváhagyása",
+	"settings.requests.autoApproveNote": "Ki = a kéréseik rád várnak. A Plex figyelőlista címei ugyanezt a kapcsolót követik.",
+	"settings.requests.ownerTag": "Tulajdonos",
+	"settings.requests.choiceAdd": "Minőség hozzáadása",
+	"settings.requests.choiceNew": "Új minőség",
+	"settings.requests.choiceLabel": "Saját név",
+	"settings.requests.choiceSeen": "Mások ezt látják"
 }

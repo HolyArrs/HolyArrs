@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "İki yol da aynı, bu yüzden bu çift hiçbir şeyi değiştirmez. Yine de HolyArrs'a bu indiricinin dosyalarının nerede olduğunu söyler, bu yüzden tutabilirsiniz.",
 	"settings.downloaders.change": "{name} değiştir",
 	"settings.downloaders.whichApp": "Hangi uygulama",
-	"settings.downloaders.torrents": "(torrent'ler)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrentler",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "En çok kullanılan",
 	"settings.downloaders.name": "Ad",
 	"settings.downloaders.address": "Adres",
 	"settings.downloaders.addressHint": "Web sayfası. SABnzbd için IP'yi kullan ya da HolyArrs'ın host adına izin ver.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "İçe aktarmadan sonra kategori",
 	"settings.downloaders.categoryAfterImportHint": "Bir torrent içe aktarıldığında HolyArrs onu bu kategoriye taşır. Ana kategoride kalması için boş bırakın.",
 	"settings.downloaders.ownOnly": "Yalnızca HolyArrs öğelerini göster",
-	"settings.downloaders.ownOnlyHint": "Bu indiricideki diğer uygulamaların öğeleri gizlenir ve HolyArrs onları değiştirmez."
+	"settings.downloaders.ownOnlyHint": "Bu indiricideki diğer uygulamaların öğeleri gizlenir ve HolyArrs onları değiştirmez.",
+	"settings.downloaders.state.notAnswering": "Yanıt vermiyor",
+	"settings.downloaders.state.paused": "Duraklatıldı",
+	"settings.downloaders.state.resting": "Dinleniyor",
+	"settings.downloaders.state.signInRefused": "Oturum açma reddedildi",
+	"settings.downloaders.state.working": "Çalışıyor"
 }

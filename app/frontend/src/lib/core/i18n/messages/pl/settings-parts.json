@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Nie udało się podłączyć: {name}",
 	"settings.parts.connected": "Podłączono: {name}",
 	"settings.parts.title": "Moduły",
+	"settings.parts.onOff": "Włącz lub wyłącz moduły",
 	"settings.parts.ownerOnly": "Tylko właściciel i administratorzy",
 	"settings.parts.safeMode": "HolyArrs działa w trybie awaryjnym: działa tylko rdzeń, a przełączniki modułów i sterowanie etapami są odrzucane do normalnego startu. Aby wyjść z trybu awaryjnego, użyj <b>Zrestartuj HolyArrs</b> w <a>Strefie zagrożenia</a>.",
 	"settings.parts.dangerZone": "Strefa zagrożenia",

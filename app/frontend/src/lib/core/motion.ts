@@ -57,6 +57,50 @@ export function scrollToStart(el: Element | null | undefined): void {
 	el?.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' });
 }
 
+// Brings a prompt that just opened to the middle of the view and puts the cursor in its first field (or its first link), so a step that opens off screen, such as the password asked again, is never missed.
+// Never on a button: one such as "Sign in again with Plex" signs out, and a keyboard user pressing Space to scroll would press it.
+export function askInView(el: HTMLElement | null | undefined, win: MediaWindow | undefined = typeof window === 'undefined' ? undefined : window): void {
+	if (!el) return;
+	el.scrollIntoView({ block: 'center', behavior: reducedMotion(win) ? 'auto' : 'smooth' });
+	const first = el.querySelector<HTMLElement>('input:not([hidden], [type="hidden"], :disabled), a[href]');
+	first?.focus({ preventScroll: true });
+}
+
+// A button that goes busy (disabled) while it waits for the server drops the cursor to the page; remember it until the cursor lands anywhere else, so a prompt that the wait opens can hand it back.
+// Safari never gives a tapped button the cursor, so the last tapped button or link counts too, and a tap elsewhere forgets an older one.
+let dropped: HTMLElement | null = null;
+export function watchFocusDrops(doc: Document): void {
+	doc.addEventListener('pointerdown', (e) => {
+		dropped = ((e.target as Element | null)?.closest?.('button, a[href]') as HTMLElement | null) ?? null;
+	}, true);
+	doc.addEventListener('focusout', (e) => {
+		const el = e.target as HTMLElement & { disabled?: boolean };
+		// Only ever sets: a field left as a button is tapped (Safari) must not wipe the button just remembered.
+		if (!e.relatedTarget && el?.disabled === true) dropped = el;
+	}, true);
+	doc.addEventListener('focusin', () => (dropped = null), true);
+}
+if (typeof document !== 'undefined') watchFocusDrops(document);
+
+// askInView as an action, once the prompt is on the page; `false` keeps it still (a prompt that is part of the page as it loads).
+// When the prompt closes (confirmed or cancelled) the cursor goes back to the control that had it as the prompt opened, if that is still on the page and nothing else took the cursor.
+export const inView: Action<HTMLElement, boolean | undefined> = (node, on) => {
+	if (on === false) return {};
+	const active = typeof document === 'undefined' ? null : (document.activeElement as HTMLElement | null);
+	const back = active && active !== document.body ? active : dropped;
+	const frame = requestAnimationFrame(() => askInView(node));
+	return {
+		destroy: () => {
+			cancelAnimationFrame(frame);
+			if (!back || back === document.body) return;
+			requestAnimationFrame(() => {
+				const now = document.activeElement;
+				if (back.isConnected && (!now || now === document.body || node.contains(now))) back.focus?.();
+			});
+		}
+	};
+};
+
 // Caps the stagger so long lists do not trail for seconds.
 export function staggerDelay(index: number, step = 30, max = 8, reduce = false): number {
 	if (reduce || !Number.isFinite(index) || index <= 0) return 0;

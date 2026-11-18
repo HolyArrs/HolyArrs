@@ -39,6 +39,8 @@ export interface FilterState {
 	codec: string;
 	// Only titles that still miss subtitles.
 	subs: boolean;
+	// Only titles anybody watched on a media server (owner and admins); ignored until that list is known.
+	watched: boolean;
 }
 
 export interface FilterContext {
@@ -47,6 +49,8 @@ export interface FilterContext {
 	seriesOf: (t: TitleView) => number | undefined;
 	// Set only when the subtitles part is on.
 	subsMissing?: (t: TitleView) => boolean;
+	// Set only for the owner and admins while watch history is on.
+	watchedAnyone?: (t: TitleView) => boolean;
 }
 
 export interface FilterCounts {
@@ -56,6 +60,7 @@ export interface FilterCounts {
 	series: Map<number, number>;
 	codecs: Map<string, number>;
 	subs: number;
+	watched: number;
 }
 
 export interface SavedFilter {
@@ -76,7 +81,7 @@ export const columnSort: Partial<Record<ColumnId, SortKey>> = {
 	release: 'release', runtime: 'runtime', network: 'network', rules: 'rules', latest: 'next', score: 'score'
 };
 
-export const noFilter: FilterState = { status: 'all', kept: 'any', asker: 'anyone', series: 0, codec: '', subs: false };
+export const noFilter: FilterState = { status: 'all', kept: 'any', asker: 'anyone', series: 0, codec: '', subs: false, watched: false };
 
 // The label is the column's words in the current language at the time the columns are built.
 const col = (id: ColumnId, width: string, on: boolean, numeric = false): Column => ({ id, label: tr(`mediafiles.col.${id}`), width, on, numeric });
@@ -265,6 +270,7 @@ export function passes(t: TitleView, f: FilterState, ctx: FilterContext, skip?: 
 	if (skip !== 'series' && f.series && ctx.seriesOf(t) !== f.series) return false;
 	if (skip !== 'codec' && f.codec && t.copy?.codec !== f.codec) return false;
 	if (skip !== 'subs' && f.subs && !ctx.subsMissing?.(t)) return false;
+	if (skip !== 'watched' && f.watched && ctx.watchedAnyone && !ctx.watchedAnyone(t)) return false;
 	return true;
 }
 
@@ -275,7 +281,8 @@ export function filterCounts(ts: TitleView[], f: FilterState, ctx: FilterContext
 		askers: new Map(),
 		series: new Map(),
 		codecs: new Map(),
-		subs: 0
+		subs: 0,
+		watched: 0
 	};
 	const statuses: Filter[] = ['all', 'missing', 'not_out_yet', 'better', 'have'];
 	for (const t of ts) {
@@ -291,12 +298,13 @@ export function filterCounts(ts: TitleView[], f: FilterState, ctx: FilterContext
 		}
 		if (t.copy && passes(t, f, ctx, 'codec')) out.codecs.set(t.copy.codec, (out.codecs.get(t.copy.codec) ?? 0) + 1);
 		if (passes(t, f, ctx, 'subs') && ctx.subsMissing?.(t)) out.subs++;
+		if (passes(t, f, ctx, 'watched') && ctx.watchedAnyone?.(t)) out.watched++;
 	}
 	return out;
 }
 
 export function activeCount(f: FilterState): number {
-	return Number(f.status !== 'all') + Number(f.kept !== 'any') + Number(f.asker !== 'anyone') + Number(!!f.series) + Number(!!f.codec) + Number(!!f.subs);
+	return Number(f.status !== 'all') + Number(f.kept !== 'any') + Number(f.asker !== 'anyone') + Number(!!f.series) + Number(!!f.codec) + Number(!!f.subs) + Number(!!f.watched);
 }
 
 export function savedKey(member: number | undefined, kind: string): string {

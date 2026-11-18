@@ -83,6 +83,7 @@
 	"settings.users.preset": "프리셋",
 	"settings.users.comingSoon": "곧 제공",
 	"settings.users.custom": "사용자 지정",
+	"settings.users.customHint": "아래 스위치를 직접 조합한 설정입니다. 프리셋을 고르면 바뀌며, 되돌리려면 “사용자 지정”을 다시 선택하세요.",
 	"settings.users.ageRating": "연령 등급",
 	"settings.users.newPasswordFor": "{name}의 새 비밀번호",
 	"settings.users.passwordNote": "{name}이(가) 비밀번호를 잊었을 때 사용하세요. 모든 기기에서 로그아웃되며 새 비밀번호로 다시 로그인합니다. 직접 만나서 알려 주세요.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "예: 엄마",
 	"settings.users.days": "링크 유효 기간 (일)",
 	"settings.users.makeInvite": "초대 링크 만들기",
-	"settings.users.permAuto4k": "기다리지 않고 4K 요청 승인"
+	"settings.users.permAuto4k": "기다리지 않고 4K 요청 승인",
+	"settings.users.serverAccount": "서버 계정",
+	"settings.users.pickAccount": "미디어 서버의 계정 선택",
+	"settings.users.accountLinked": "{name}에 연결됨",
+	"settings.users.removedOnServer": "{word} 서버에서 삭제되어 여기서 꺼졌습니다",
+	"settings.users.delete": "삭제",
+	"settings.users.deleteName": "{name} 삭제",
+	"settings.users.confirmDelete": "{name}님을 삭제할까요? 영구적으로 로그아웃되고 키가 사라집니다. 요청은 삭제된 사람으로 남습니다.",
+	"settings.users.deleteYes": "사람 삭제",
+	"settings.users.keep": "유지",
+	"settings.users.deleted": "{name}님 삭제됨",
+	"settings.users.couldntDelete": "삭제하지 못했습니다",
+	"settings.users.confirmDeleteKeys": "이 사람이 만든 Seerr 키는 새 키를 만들 때까지 모두에게 작동하지 않습니다.",
+	"settings.users.qualities": "화질",
+	"settings.users.qualitiesHint": "켜진 항목만 고를 수 있어요. 모두 켜져 있으면 새 항목도 보여요."
 }

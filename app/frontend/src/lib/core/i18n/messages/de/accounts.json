@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Die Sprache konnte nicht gespeichert werden",
 	"accounts.language.count.one": "1 Sprache",
 	"accounts.language.count.other": "{n} Sprachen",
-	"accounts.account.watchEveryone": "Der Besitzer hat das für alle aktiviert. Schalte beides aus, um es zu stoppen."
+	"accounts.account.watchEveryone": "Der Besitzer hat das für alle aktiviert. Schalte beides aus, um es zu stoppen.",
+	"accounts.watch.title": "Gesehen-Markierungen",
+	"accounts.watch.hint": "Verknüpfe hier dein Konto auf einem Medienserver, damit die Bibliothek zeigt, was du gesehen hast.",
+	"accounts.watch.as": "{server}, als {name}",
+	"accounts.watch.nameOn": "Name auf {server}",
+	"accounts.watch.passwordOnce": "Dein Passwort geht nur an {server} und wird nicht gespeichert.",
+	"accounts.watch.linked": "Mit {name} auf {server} verknüpft",
+	"accounts.watch.unlinked": "Verknüpfung gelöst",
+	"accounts.login.importPaused": "Deine Anmeldung ist abgelaufen, daher pausiert der Import. Melde dich an, öffne Eine Bibliothek importieren und drücke Scannen, um weiterzumachen."
 }

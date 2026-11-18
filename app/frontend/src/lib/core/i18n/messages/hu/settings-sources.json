@@ -7,6 +7,7 @@
 	"settings.sources.title": "Források",
 	"settings.sources.add": "Forrás hozzáadása",
 	"settings.sources.lead": "Az 1. prioritás megy előre. A hibázó Forrást legfeljebb hat órára kihagyja. Hírcsatorna nélküli oldalakhoz adja hozzá a Jackettet vagy a Prowlarrt Torznab-hírcsatornaként.",
+	"settings.sources.builtIn": "A beépített oldalakhoz nem kell Jackett vagy Prowlarr: {sites}. Válassza a(z) {site} lehetőséget itt: {kind}.",
 	"settings.sources.change": "{name} módosítása",
 	"settings.sources.name": "Név",
 	"settings.sources.feedKind": "Hírcsatorna típusa",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Mentés",
 	"settings.sources.cancel": "Mégse",
 	"settings.sources.none": "Nincs Forrás",
-	"settings.sources.noneText": "Adjon hozzá egy Torznab- vagy Newznab-hírcsatornát, vagy a Jackettet, illetve a Prowlarrt.",
+	"settings.sources.noneText": "Adjon hozzá egy beépített oldalt, egy Torznab- vagy Newznab-hírcsatornát, vagy a Jackettet, illetve a Prowlarrt.",
 	"settings.sources.rowTitle": "{url} · prioritás: {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioritás: {priority} · {uses}",
 	"settings.sources.keyIs": "kulcs: {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Oldal",
 	"settings.sources.addressSite": "Az oldal saját címe. Csak akkor módosítsd, ha az oldal elköltözött.",
 	"settings.sources.siteKeyLabel": "Süti vagy RSS-kulcs",
-	"settings.sources.siteKeyHint": "A saját fiókodból: uid és pass a böngésző sütijéből, vagy u és tp az RSS-linkedből. Titkosítva tároljuk."
+	"settings.sources.siteKeyHint": "A saját fiókodból: uid és pass a böngésző sütijéből, vagy u és tp az RSS-linkedből. Titkosítva tároljuk.",
+	"settings.sources.sendTo": "Letöltések küldése ide",
+	"settings.sources.sendToAny": "Bármelyik letöltő",
+	"settings.sources.sendToHint": "Minden, amit ebből a forrásból választ, csak ehhez a letöltőhöz kerül. Ha nem működik, vár.",
+	"settings.sources.sendToGone": "A választott letöltőt eltávolították. A forrás letöltései most bármelyik letöltőhöz kerülnek."
 }

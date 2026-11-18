@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "none",
 	"settings.thisApp.needsRestart": "Needs a restart. HOLYARRS_URL_BASE or -url-base overrides it.",
 	"settings.thisApp.save": "Save",
-	"settings.thisApp.licence": "HolyArrs is free software under the AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs is free software under the AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Send outside calls through a proxy. Blocked and home-network rules still apply to where each call goes.",
+	"settings.thisApp.proxyType": "Type",
+	"settings.thisApp.proxyOff": "Off",
+	"settings.thisApp.proxyHost": "Host",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Username",
+	"settings.thisApp.proxyPasswordLabel": "Password",
+	"settings.thisApp.proxyPasswordKept": "Leave empty to keep the saved password",
+	"settings.thisApp.proxyBypass": "Skip the proxy for",
+	"settings.thisApp.proxyBypassHint": "Names, addresses or ranges, split by commas. *.example.com covers every name under it.",
+	"settings.thisApp.proxyBypassLocal": "Skip the proxy for local addresses",
+	"settings.thisApp.proxyBypassLocalHint": "This machine and your home network connect directly",
+	"settings.thisApp.proxySaved": "Proxy saved",
+	"settings.thisApp.proxyOffSaved": "Proxy off"
 }

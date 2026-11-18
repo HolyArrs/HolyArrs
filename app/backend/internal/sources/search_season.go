@@ -21,6 +21,8 @@ func showQuery(ti mediafiles.Title, season int, ep *epSlot) Query {
 	q := Query{Title: ti.Name, TV: true, Season: season, Aliases: ti.Aliases}
 	q.TVDB, _ = strconv.Atoi(ti.SourceIDs["tvdb"])
 	q.TVMaze, _ = strconv.Atoi(ti.SourceIDs["tvmaze"])
+	q.IMDb = ti.SourceIDs["imdb"]
+	q.TMDb, _ = strconv.Atoi(ti.SourceIDs["tmdb"])
 	order := "aired"
 	if ti.EpisodeOrder != nil {
 		order = *ti.EpisodeOrder
@@ -269,12 +271,25 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		}
 	}
 
-	found, failures, answered, skipped, err := s.askAll(ctx, r, showQuery(ti, season, nil), hand, true, ti.Tags, set.pr.Body.Tags)
+	sq := showQuery(ti, season, nil)
+	sq.other = s.nameAsk(ctx, ti, hand)
+	found, failures, answered, skipped, note, err := s.askAll(ctx, r, sq, hand, true, ti, ver.ID, set.pr.Body.Tags)
 	if err != nil {
 		return err
 	}
+	if keptApart(note) && len(targets) > 0 {
+		rest(note)
+		ids := make([]int64, 0, len(looking))
+		for _, e := range looking {
+			ids = append(ids, e.it.ID)
+		}
+		s.touchSearched(ctx, ids...)
+		s.keptApartDone(ctx, r, by, ti.ID, targets[0], hand, note)
+		return nil
+	}
 	// Release names may number some episodes in other seasons (an anime
-	// part TMDB keeps inside this one): ask for those seasons too.
+	// part TMDB keeps inside this one): ask for those seasons too, by the
+	// title only, so the other names are asked once a search.
 	asked := map[int]bool{season: true}
 	for _, e := range looking {
 		named, _ := e.ref.Named()
@@ -282,7 +297,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 			continue
 		}
 		asked[named] = true
-		more, _, n, _, err := s.askAll(ctx, r, showQuery(ti, named, nil), hand, true, ti.Tags, set.pr.Body.Tags)
+		more, _, n, _, _, err := s.askAll(ctx, r, showQuery(ti, named, nil), hand, true, ti, ver.ID, set.pr.Body.Tags)
 		if err != nil {
 			return err
 		}
@@ -290,7 +305,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 	}
 	if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
 		rest(reason)
-		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchFailed, reason, data)
+		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchFailed, reason, noted(data, note))
 		if !failed {
 			return nil
 		}
@@ -335,7 +350,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(result)
 		return nil
 	}
-	chosen, held, took := s.settlePicks(ctx, by, &jobID, set.ti.ID, set.labels(), all, vs, ids, picks, "Season search")
+	chosen, held, took := s.settlePicks(ctx, by, &jobID, set.ti.ID, set.labels(), all, vs, ids, picks, "Season search", note)
 	if chosen > 0 {
 		for _, pk := range picks {
 			if took[pk.slots[0]] && !pk.held {
@@ -368,7 +383,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		result["episodes_queued"] = n
 	}
 	if chosen+held == 0 {
-		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchDone, fmt.Sprintf("Season %d: no Release passed the Pick rules (%d found, %d refused)", season, len(all), refused), nil)
+		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchDone, fmt.Sprintf("Season %d: no Release passed the Pick rules (%d found, %d refused)", season, len(all), refused), noted(nil, note))
 	}
 	r.SetResult(result)
 	return nil

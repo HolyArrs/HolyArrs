@@ -29,12 +29,16 @@ test.beforeAll(async ({ browser }) => {
 
 test('the owner adds a Library folder for shows', async () => {
 	await own.goto('/settings/library-folders');
+	// The first run may already have made a shows folder; this one adds one more.
+	const forShows = own.getByTestId('folder-kind').filter({ hasText: 'For shows' });
+	await expect(own.getByTestId('folder-kind').first()).toBeAttached();
+	const before = await forShows.count();
 	await own.getByRole('button', { name: 'Add a folder' }).first().click();
 	await own.getByLabel('Holds').selectOption('show');
 	await own.getByLabel('Folder path').fill(showsDir);
 	await own.getByLabel(/^Name/).fill('Shows');
 	await own.getByRole('button', { name: 'Add', exact: true }).click();
-	await expect(own.getByTestId('folder-kind').filter({ hasText: 'For shows' })).toHaveCount(1);
+	await expect(forShows).toHaveCount(before + 1);
 });
 
 test('the owner finds a show and adds it with only the latest season kept', async () => {

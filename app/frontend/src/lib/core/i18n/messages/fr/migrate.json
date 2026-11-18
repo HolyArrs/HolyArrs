@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "À vérifier : {n}",
 	"migrate.needAttentionWhy": "Leur ancien dossier n'est pas sur ce serveur, ils arrivent donc comme souhaités dans un dossier d'ici. Corrigez le dossier ou ajoutez une règle de chemin : {list}",
 	"migrate.leftOutUncheckedN": "Laissés de côté : {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} est réglé sur « Ne pas les importer » ; choisissez-lui un dossier et importez à nouveau"
+	"migrate.leftOutUncheckedWhy": "{folder} est réglé sur « Ne pas les importer » ; choisissez-lui un dossier et importez à nouveau",
+	"migrate.seasonsDifferOne": "Vérifiez 1 série trouvée par son numéro TMDB",
+	"migrate.seasonsDifferOther": "Vérifiez {n} séries trouvées par leur numéro TMDB",
+	"migrate.seasonsDifferWhy": "Seul le numéro TMDB de l'ancienne application a trouvé {list}, sous un autre nom ici. Ouvrez chacune et vérifiez que c'est la même série. Si oui, ses saisons sont numérotées autrement : associez ses Fichiers restants, puis activez la série. Sinon, retirez-la ; ses fichiers restent où ils sont.",
+	"migrate.stillChecking": "Séries encore en cours de vérification par le serveur de métadonnées : {n}. Cette liste se met à jour d'elle-même une fois terminé.",
+	"migrate.stillCheckingImport": "Séries encore en cours de vérification par le serveur de métadonnées : {n}. Vous pouvez importer maintenant ; elles sont vérifiées pendant l'importation."
 }

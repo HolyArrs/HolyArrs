@@ -34,5 +34,6 @@
 "settings.sourceDetail.what": "Čo",
 "settings.sourceDetail.result": "Výsledok",
 "settings.sourceDetail.time": "Čas",
-"settings.sourceDetail.answeredCell": "Zodpovedané"
+"settings.sourceDetail.answeredCell": "Zodpovedané",
+	"settings.sourceDetail.noTimes": "Zatiaľ žiadne odpovede"
 }

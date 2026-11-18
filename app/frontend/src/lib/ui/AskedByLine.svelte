@@ -1,5 +1,6 @@
 <script lang="ts">
 	// A short "asked by" line that opens a list of who asked and when.
+	import PersonText from './PersonText.svelte';
 	import { askedByDated, askedByTip, firstName, initial, shortDate, WORDS, type Asker } from './asked-by.ts';
 
 	let { askers }: { askers: Asker[] } = $props();
@@ -13,13 +14,13 @@
 {#if askers.length}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="asked" data-testid="asked-by-line" onkeydown={(e) => e.key === 'Escape' && open && ((open = false), e.stopPropagation())}>
-		<button type="button" class="t" aria-expanded={open} aria-controls="{id}-pop" onclick={() => (open = !open)}>{line}</button>
+		<button type="button" class="t" aria-expanded={open} aria-controls="{id}-pop" onclick={() => (open = !open)}><PersonText text={line} /></button>
 		{#if open}
 			<div class="pop" id="{id}-pop">
-				<p>{tip}</p>
+				<p><PersonText text={tip} /></p>
 				{#if askers.length > 1}
 					<ul aria-label={WORDS.listTitle}>
-						{#each askers as a (a.id)}<li><span class="face">{initial(a.name)}</span>{a.me ? WORDS.you : firstName(a.name)}<span class="d">{shortDate(a.asked_at)}</span></li>{/each}
+						{#each askers as a (a.id)}<li><span class="face">{initial(a.name)}</span>{#if a.me}{WORDS.you}{:else}<PersonText text={firstName(a.name)} />{/if}<span class="d">{shortDate(a.asked_at)}</span></li>{/each}
 					</ul>
 				{/if}
 			</div>

@@ -149,9 +149,13 @@ func (s *Service) Add(ctx context.Context, m metadata.Movie, opt AddOptions, by 
 	}
 	var t mediafiles.Title
 	_ = database.Get(ctx, s.Store.Read(), "titles", id, &t)
+	added := map[string]any{"why_added": t.WhyAdded, "release_gate": t.ReleaseGate, "gate_delay_days": t.GateDelayDays,
+		"gate_driver": t.GateDriver, "search_on_add": opt.SearchOnAdd}
+	if opt.ListName != "" {
+		added["list_name"] = opt.ListName
+	}
 	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleAdded, TitleID: &id, Summary: "Added " + t.Name,
-		Data: map[string]any{"why_added": t.WhyAdded, "release_gate": t.ReleaseGate, "gate_delay_days": t.GateDelayDays,
-			"gate_driver": t.GateDriver, "search_on_add": opt.SearchOnAdd}, GroupKey: "title:" + strconv.FormatInt(id, 10)})
+		Data: added, GroupKey: "title:" + strconv.FormatInt(id, 10)})
 	then := []any{KindScanTitle}
 	if opt.SearchOnAdd {
 		then = append(then, KindSearchSlot)

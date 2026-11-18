@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Hiện cho mọi người",
 	"settings.requests.choiceMain": "{rules} · bản chính của tựa",
 	"settings.requests.choiceOwn": "{rules} · giữ thành một bản riêng",
-	"settings.requests.choiceNotReady": "Sẽ có khi đã thiết lập chất lượng 4K ở trên"
+	"settings.requests.choiceNotReady": "Sẽ có khi đã thiết lập chất lượng 4K ở trên",
+	"settings.requests.approvals": "Phê duyệt",
+	"settings.requests.autoApprove": "Tự động duyệt yêu cầu",
+	"settings.requests.autoApproveNote": "Tắt = yêu cầu của họ chờ bạn duyệt. Các tựa từ danh sách xem Plex theo cùng công tắc.",
+	"settings.requests.ownerTag": "Chủ sở hữu",
+	"settings.requests.choiceAdd": "Thêm chất lượng",
+	"settings.requests.choiceNew": "Chất lượng mới",
+	"settings.requests.choiceLabel": "Tên của bạn",
+	"settings.requests.choiceSeen": "Mọi người thấy"
 }

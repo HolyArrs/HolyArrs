@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Απόρριψη κυκλοφοριών που δημοσιεύτηκαν πριν από την κυκλοφορία",
 	"settings.search.refuseEarlyHint": "Πιθανότατα πλαστές. Η Επιλογή κυκλοφορίας τις εμφανίζει ακόμη, με προειδοποίηση.",
 	"settings.search.refuseTiny": "Απόρριψη πλαστών βάσει μεγέθους και τύπου αρχείου",
-	"settings.search.refuseTinyHint": "Υπερβολικά μικρές κυκλοφορίες, κενά αρχεία και .wmv ή .asf με ονόματα HD",
+	"settings.search.refuseTinyHint": "Υπερβολικά μικρές κυκλοφορίες, κενά αρχεία, κομμένα βίντεο και .wmv ή .asf με ονόματα HD",
 	"settings.search.grace": "Ώρες που μπορεί να είναι πρόωρη μια κυκλοφορία",
 	"settings.search.graceHint": "Για τις ζώνες ώρας. Προεπιλογή 24.",
 	"settings.search.floors": "Έλεγχος μεγέθους αρχείων κατά την εισαγωγή",

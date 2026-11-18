@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Hafna útgáfum sem birtar eru fyrir útgáfudag",
 	"settings.search.refuseEarlyHint": "Líklega falsanir. Handvalin útgáfa sýnir þær samt, með viðvörun.",
 	"settings.search.refuseTiny": "Hafna falsanir eftir stærð og skráartegund",
-	"settings.search.refuseTinyHint": "Of litlar útgáfur, tómar skrár og .wmv eða .asf undir HD-nöfnum",
+	"settings.search.refuseTinyHint": "Of litlar útgáfur, tómar skrár, styttar myndskrár og .wmv eða .asf undir HD-nöfnum",
 	"settings.search.grace": "Klukkustundir sem útgáfa má vera snemma",
 	"settings.search.graceHint": "Fyrir tímabelti. Sjálfgefið 24.",
 	"settings.search.floors": "Athuga skráarstærðir við innflutning",

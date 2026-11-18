@@ -83,6 +83,7 @@
 	"settings.users.preset": "Presetare",
 	"settings.users.comingSoon": "În curând",
 	"settings.users.custom": "Personalizat",
+	"settings.users.customHint": "Combinația ta proprie a comutatoarelor de mai jos. Alegerea unui profil o înlocuiește; alege din nou Personalizat ca să o recuperezi.",
 	"settings.users.ageRating": "Limită de vârstă",
 	"settings.users.newPasswordFor": "Parolă nouă pentru {name}",
 	"settings.users.passwordNote": "Folosește asta când {name} și-a uitat parola. Este deconectat peste tot și se autentifică din nou cu cea nouă. Spune-i-o personal.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "ex.: Mama",
 	"settings.users.days": "Zile de valabilitate a linkului",
 	"settings.users.makeInvite": "Creează un link de invitație",
-	"settings.users.permAuto4k": "Cererile 4K sunt aprobate fără așteptare"
+	"settings.users.permAuto4k": "Cererile 4K sunt aprobate fără așteptare",
+	"settings.users.serverAccount": "Cont pe server",
+	"settings.users.pickAccount": "Alege un cont de pe un server media",
+	"settings.users.accountLinked": "Legat de {name}",
+	"settings.users.removedOnServer": "Eliminat de pe serverul {word}, deci oprit aici",
+	"settings.users.delete": "Șterge",
+	"settings.users.deleteName": "Șterge {name}",
+	"settings.users.confirmDelete": "Ștergi {name}? Este deconectat definitiv și cheile lui dispar. Cererile lui rămân, afișate ca persoană eliminată.",
+	"settings.users.deleteYes": "Șterge persoana",
+	"settings.users.keep": "Păstrează",
+	"settings.users.deleted": "{name} a fost șters",
+	"settings.users.couldntDelete": "Nu s-a putut șterge",
+	"settings.users.confirmDeleteKeys": "Cheile Seerr create de el nu mai funcționează pentru nimeni până nu se creează una nouă.",
+	"settings.users.qualities": "Calități",
+	"settings.users.qualitiesHint": "Pot alege doar pe cele pornite. Cu toate pornite, se oferă și cele noi."
 }

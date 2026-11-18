@@ -42,7 +42,7 @@ func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 		out["host_refused"] = echoHost(r.Host)
 	}
 	if !ok {
-		out["setup_ways"] = setupWays
+		out["setup_ways"] = setupWaysNow()
 	}
 	writeJSON(w, http.StatusOK, out)
 }

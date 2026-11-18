@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -110,7 +112,7 @@
 		}
 	}
 	async function unlinkPlex() {
-		if (!confirm(t('settings.signIn.confirmUnlink'))) return;
+		if (!(await ask(t('settings.signIn.confirmUnlink'), { yes: t('ui.ask.unlink'), danger: true }))) return;
 		try {
 			plexOwner = await api.del<{ linked: boolean; name: string; can_import: boolean }>('/auth/plex/link');
 			plexServers = [];
@@ -129,7 +131,7 @@
 			const r = await api.post<{ ok: boolean; name?: string; version?: string; product?: string; message?: string }>(`/auth/media-server/${w}/test`, { url: ways[w].url });
 			// The version leads the tooltip, so a server name with numbers in it is never read as one.
 			const app = r.product || wayWord[w];
-			tested[w] = r.ok ? { ok: true, app, text: `${app}${r.version ? ` ${r.version}` : ''}${r.name ? ` (${r.name})` : ''}` } : { ok: false, text: r.message || t('settings.signIn.noAnswer') };
+			tested[w] = r.ok ? { ok: true, app, text: `${app}${r.version ? ` ${r.version}` : ''}${r.name ? ` (${r.name})` : ''}` } : { ok: false, text: serverWords(r.message) || t('settings.signIn.noAnswer') };
 		} catch (err) {
 			tested[w] = { ok: false, text: strongNote(err) };
 		} finally {
@@ -315,6 +317,7 @@
 
 <PageHeader title={t('settings.signIn.title')} />
 
+<div class="sign-in-page">
 {#if !loaded}
 	<SkSettings rows={3} />
 {:else}
@@ -343,7 +346,7 @@
 	</SettingsCard>
 
 	<SettingsCard id="twofactor-card" title={t('settings.signIn.twoFactor')}>
-		<label class="switch" style="margin-top: var(--s-3)">
+		<label class="switch">
 			<input type="checkbox" checked={requireAdmins} disabled={!isOwner || savingRequire} aria-busy={savingRequire} onchange={(e) => setRequire(e.currentTarget.checked)} />
 			<span class="sw" aria-hidden="true"></span>
 			<span>{t('settings.signIn.adminsMust')}</span>
@@ -373,7 +376,7 @@
 						<div class="link-row">
 							{#if plexOwner.linked}
 								<p class="small"><Words key="settings.signIn.linkedTo" vars={{ name: plexOwner.name }} /></p>
-								{#if isOwner}<Button variant="plain" type="button" onclick={unlinkPlex}>{t('settings.signIn.unlink')}</Button>{/if}
+								{#if isOwner}<Button variant="secondary" type="button" onclick={unlinkPlex}>{t('settings.signIn.unlink')}</Button>{/if}
 							{:else}
 								<p class="small muted">{t('settings.signIn.linkNote')}</p>
 							{/if}
@@ -464,6 +467,7 @@
 		</SettingsCard>
 	</MoreOptions>
 {/if}
+</div>
 
 <Sheet bind:open={importOpen} title={importFor ? t('settings.signIn.importFrom', { app: wayWord[importFor] }) : t('settings.signIn.importMembers')} size="md">
 	{#if importFor && importFor !== 'plex' && !candidates}
@@ -582,6 +586,9 @@
 		gap: 6px 10px;
 	}
 	.passwords fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
-	.pw-ctl { max-width: 120px; }
 	.pw-save { padding: 4px 0 14px; }
+	/* Switches sit at the row's end, as on every other Settings page. */
+	.sign-in-page { display: contents; }
+	.sign-in-page :global(label.switch) { display: flex; flex-direction: row-reverse; justify-content: space-between; width: 100%; margin-top: 0 !important; }
+	.sign-in-page :global(label.switch input) { right: 0; }
 </style>

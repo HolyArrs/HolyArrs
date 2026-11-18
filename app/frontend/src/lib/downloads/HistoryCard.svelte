@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PersonText from '#lib/ui/PersonText.svelte';
 	// One History row: time, a dot on the rail, a small poster, the title with its part, and one line only when it adds something. Ends in the step mark.
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -75,8 +76,8 @@
 	<span class="node" aria-hidden="true"></span>
 	<span class="art" class:square={t?.kind === 'artist'}>{#if bare}<span class="sysi"><Icon name={verb.tone === 'fail' ? 'alert' : 'settings'} size={13} /></span>{:else}<Poster src={artOf(e, titleById) ?? t?.artwork?.[0]} name={e.title_name ?? w.name} />{/if}</span>
 	<span class="tx">
-		<span class="l1"><span class="nm" data-testid="history-title">{name}</span>{#if !bare && part}<span class="sub">{` · ${part}`}</span>{/if}{#if !bare && version}<span class="sub" data-testid="event-version">{' · '}<span data-testid="history-version">{version}</span></span>{/if}{#if count > 1}<span class="cnt" data-testid="history-count-run" aria-hidden="true">{count}</span><span class="vh">, {count} {label !== undefined ? 'updates' : 'times'}</span>{/if}</span>
-		{#if second || (!bare && part)}<span class="l2" class:ponly={!second}>{#if !bare && part}<span class="pp">{part}{second ? ' · ' : ''}</span>{/if}{second}</span>{/if}
+		<span class="l1"><span class="nm" data-testid="history-title"><PersonText text={name} /></span>{#if !bare && part}<span class="sub">{` · ${part}`}</span>{/if}{#if !bare && version}<span class="sub" data-testid="event-version">{' · '}<span data-testid="history-version">{version}</span></span>{/if}{#if count > 1}<span class="cnt" data-testid="history-count-run" aria-hidden="true">{count}</span><span class="vh">, {count} {label !== undefined ? 'updates' : 'times'}</span>{/if}</span>
+		{#if second || (!bare && part)}<span class="l2" class:ponly={!second}>{#if !bare && part}<span class="pp">{part}{second ? ' · ' : ''}</span>{/if}<PersonText text={second} /></span>{/if}
 	</span>
 	<span class="mark">{#if verb.word}<VerbMark {verb} size="sm" />{/if}</span>
 	<!-- Every row keeps the chevron's slot so step marks share a right edge. -->

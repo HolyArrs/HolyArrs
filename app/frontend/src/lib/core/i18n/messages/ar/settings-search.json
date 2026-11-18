@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "استبعد الإصدارات المنشورة قبل موعد الصدور",
 	"settings.search.refuseEarlyHint": "غالبًا مزيفة. اختيار إصدار يدويًا يعرضها مع تحذير.",
 	"settings.search.refuseTiny": "استبعد المزيف بحسب الحجم ونوع الملف",
-	"settings.search.refuseTinyHint": "الإصدارات الصغيرة جدًا والملفات الفارغة وملفات .wmv أو .asf بأسماء HD",
+	"settings.search.refuseTinyHint": "الإصدارات الصغيرة جدًا والملفات الفارغة والفيديوهات المقطوعة وملفات .wmv أو .asf بأسماء HD",
 	"settings.search.grace": "ساعات يجوز فيها أن يكون الإصدار مبكرًا",
 	"settings.search.graceHint": "بسبب المناطق الزمنية. الافتراضي 24.",
 	"settings.search.floors": "افحص أحجام الملفات عند الاستيراد",

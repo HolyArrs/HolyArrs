@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Дозволи AI асистентима да користе HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Кључеви и руте за друге апликације",
+	"core.settings.remoteAccess.label": "Удаљени приступ",
+	"core.settings.remoteAccess.about": "Приступ HolyArrs-у ван куће",
 	"core.settings.tmdb.label": "Метаподаци",
 	"core.settings.tmdb.about": "Одакле долазе постери и називи",
 	"core.settings.health.label": "Провере стања",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Један преузимач нема фасциклу за чување, па HolyArrs не може да увезе његова завршена преузимања.",
 	"core.api.sourceOff": "Неки редови су искључени на овој инсталацији.",
 	"core.plain.noDownloader": "Твоји извори проналазе преузимања која ниједан твој преузимач не може да прими, па ништа не може да се пошаље.",
-	"core.plain.sameDownloader": "Два преузимача воде до исте апликације за преузимање, па се преузимања могу приказати двапут."
+	"core.plain.sameDownloader": "Два преузимача воде до исте апликације за преузимање, па се преузимања могу приказати двапут.",
+	"core.plain.peopleCheck": "Списак корисника медијског сервера не може да се прочита, па се овде не искључују особе уклоњене тамо.",
+	"core.plain.deleted": "obrisan",
+	"core.plain.deletedName": "{name} (obrisan)"
 }

@@ -11,6 +11,7 @@
 
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { createSearchEntry } from '#lib/discover/index.ts';
 	import { artistCard, inLibrary, movieCard, personCard, showCard, type Card, type LibraryAnswer } from '#lib/discover/index.ts';
 	import { createSearchArtists } from '#lib/discover/index.ts';
@@ -28,7 +29,7 @@
 	import { discoverCard, followsByTmdb, ownedMark, type ExploreCard, type ProviderItem } from '#lib/ui/title-cards.ts';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import { MusicTileGrid, musicCardHref, musicImage } from '#lib/music/index.ts';
-	import { MetadataNotice, detailPath } from '#lib/metadata/index.ts';
+	import { MetadataNotice, detailPath, metadataDownText, metadataHealth } from '#lib/metadata/index.ts';
 	import type { LookupArtist, MusicSettings } from '#lib/music/index.ts';
 	import { AddArtistDialog, AskArtistDialog, QuickAsk } from '#lib/requests/index.ts';
 	import { createLatestOnly } from '#lib/downloads/index.ts';
@@ -46,7 +47,6 @@
 	import type { LookupShow } from '#lib/core/types.ts';
 
 	// Search is a page; its one field is the top bar's (on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope live in the address (?q=, ?kind=). Before typing it shows recent searches (this device, per user) and the Browse grid (genres and their moods, per tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results come in as you type. Kid limits are applied by the server on every lookup.
-
 
 	// The words live in the shared field (top bar); a direct link fills it from ?q=.
 	if (!searchField.term.trim()) searchField.term = page.url.searchParams.get('q') ?? '';
@@ -103,6 +103,9 @@
 			{ value: 'music', label: t('discover.search.music'), icon: 'music' }
 		] as { value: SearchScope; label: string; icon: IconName }[]).filter((o) => (o.value === 'show' ? partOn('shows') : o.value === 'movie' ? partOn('movies') : o.value === 'music' ? partOn('music') : true))
 	);
+	// The Browse sections' headings come from the server in English; known ones show in the app's language.
+	const SECTION_KEYS: Record<string, string> = { genres: 'discover.searchSections.genres', moods: 'discover.searchSections.moods', stories: 'discover.searchSections.stories', worlds: 'discover.searchSections.worlds', eras: 'discover.searchSections.eras', world: 'discover.searchSections.world', collections: 'discover.searchSections.collections' };
+	const sectionTitle = (s: { id: string; title: string }) => (SECTION_KEYS[s.id] ? t(SECTION_KEYS[s.id]) : s.title);
 	const labels = $derived<Record<Card['type'], string>>({ show: t('discover.search.tvShows'), movie: t('discover.search.movies'), music: t('discover.search.music'), people: t('discover.search.people') });
 	const order = $derived(scopeOptions.map((o) => o.value).filter((v): v is Card['type'] => v !== 'all'));
 
@@ -135,7 +138,8 @@
 		return () => clearTimeout(t);
 	});
 	const waiting = $derived(!!searchField.term.trim() && (order.some((t) => groups[t] === null) || busy || lib === null) && (freshTotal === 0 || !settleCap));
-	const holding = $derived(waiting && !!stale);
+	// Old answers stay up at most 2.5 s: a slow group then shows the skeleton (and later the empty state), never the previous words' results.
+	const holding = $derived(waiting && !!stale && !settleCap);
 	// A fresh search keeps the page you were on until its answer is slow: the skeleton shows once the request has been out 200 ms (the 250 ms typing pause does not count), so a quick answer swaps straight in.
 	let slow = $state(false);
 	$effect(() => {
@@ -470,7 +474,7 @@
 
 <section class="search" class:calm data-testid="search-page">
 	<h1 class="sr-only">{t('discover.search.search')}</h1>
-	<div class="close-row"><Button variant="plain" icon="x" onclick={entry.exit} data-testid="search-page-close">{t('discover.search.close')}</Button></div>
+	<div class="close-row"><Button variant="secondary" icon="x" onclick={entry.exit} data-testid="search-page-close">{t('discover.search.close')}</Button></div>
 	<div class="phone-field"><SearchField searchKey="" testid="search-box-phone" id="q-phone" closable={false} /></div>
 	<MetadataNotice />
 
@@ -599,7 +603,7 @@
 									<h3 id={`people-${s.id}-h`} class="h1">{s.title}</h3>
 									<ul class="tiles">
 										{#each shown as t, i (t.key)}
-											<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} note={t.note} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
+											<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={serverWords(t.name)} note={t.note} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
 										{/each}
 									</ul>
 									{#if shown.length < people.length}
@@ -617,7 +621,7 @@
 								{#if browse.peopleTiles && browse.peopleTiles.length >= SHELF_MIN}
 									<ul class="tiles">
 										{#each browse.peopleTiles as t, i (t.key)}
-											<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
+											<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={serverWords(t.name)} href={t.href} image={t.image} hue="#555b66" plain row={Math.min(6, Math.floor(i / cols))} /></li>
 										{/each}
 									</ul>
 								{/if}
@@ -649,10 +653,10 @@
 						{@const list = all.slice(0, shownCount(all.length, cols, browse.rowsOf(s.id)))}
 						{#if list.length}
 							<section class="browse-section" aria-labelledby={`browse-${s.id}-h`} data-testid={`search-browse-${s.id}`}>
-								<h3 id={`browse-${s.id}-h`} class="h1">{s.title}</h3>
+								<h3 id={`browse-${s.id}-h`} class="h1">{sectionTitle(s)}</h3>
 								<ul class="tiles">
 									{#each list as t, i (`${t.category ?? ''}:${t.kind}:${t.genre}:${t.mood ?? ''}`)}
-										<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browse.browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+										<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={serverWords(t.name)} href={to(browseHref(t, browse.browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
 									{/each}
 								</ul>
 								{#if list.length < all.length}<div class="more" use:browse.moreRows={s.id}></div>{/if}
@@ -661,8 +665,8 @@
 						{#if st === null}
 							<div class="more" use:browse.near={s.id} aria-live="polite">
 								{#if s.id !== 'genres'}
-									<section class="browse-section" aria-label={t('discover.search.loadingSection', { title: s.title.toLowerCase() })}>
-										<h3 class="h1">{s.title}</h3>
+									<section class="browse-section" aria-label={t('discover.search.loadingSection', { title: sectionTitle(s).toLowerCase() })}>
+										<h3 class="h1">{sectionTitle(s)}</h3>
 										<ul class="tiles" aria-hidden="true">{#each Array(cols * BROWSE_ROWS) as _, i (i)}<li class="ghost sk"></li>{/each}</ul>
 									</section>
 								{/if}
@@ -672,7 +676,7 @@
 					{#if !browse.sections.length}
 						<ul class="tiles">
 							{#each browse.genreTiles as t, i (`${t.kind}:${t.genre}:${t.mood ?? ''}`)}
-								<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={t.name} href={to(browseHref(t, browse.browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
+								<li use:entry.landing={{ row: Math.floor(i / cols), col: i % cols }}><BrowseTile name={serverWords(t.name)} href={to(browseHref(t, browse.browseFor))} image={t.backdrop} hue={tileHue(t.name)} row={Math.min(6, Math.floor(i / cols))} /></li>
 							{/each}
 						</ul>
 					{/if}
@@ -681,7 +685,7 @@
 				{/if}
 			</section>
 		{:else if noTMDB && total === 0}
-			<div class="empty"><h2 class="h2">{t('discover.search.theMetadataServerIs')}</h2><p class="muted">{t('discover.search.searchesAndNewArtwork')}</p></div>
+			<div class="empty"><h2 class="h2">{t('discover.search.theMetadataServerIs')}</h2><p class="muted">{metadataHealth.fakeIP ? metadataDownText() : t('discover.search.searchesAndNewArtwork')}</p></div>
 		{:else if error && total === 0}
 			<p class="notice bad" role="alert">{plainReason(error).text}</p>
 		{:else if total === 0 && (pending || busy)}
@@ -696,7 +700,7 @@
 					<li>{t('discover.search.orDescribeItSuch')}</li>
 				</ul>
 				{#if scope !== 'all'}<Button variant="secondary" onclick={() => setScope('all')}>{t('discover.search.lookEverywhere')}</Button>{/if}
-				{#if manage}<Button variant="primary" icon="search" href={to('/settings/sources')}>{t('discover.search.searchIndexersFor', { searched })}</Button>{/if}
+				{#if manage}<Button variant="primary" icon="search" href={to('/settings/sources')}>{t('discover.search.searchIndexersFor')}</Button>{/if}
 			</div>
 		{:else if scope === 'all'}
 			{@render libraryRow()}
@@ -739,7 +743,7 @@
 	@media (max-width: 767px) { .search { --title-item: calc((100vw - 40px) / 2.3); } }
 	/* Desktop closes from the × in the top-bar field; phones (no top bar) keep this one. */
 	.close-row { display: none; }
-	@media (max-width: 767px) { .close-row { display: flex; justify-content: flex-end; margin-bottom: -16px; } }
+	@media (max-width: 767px) { .close-row { display: flex; justify-content: flex-end; } }
 	/* Phones only: the top bar (and its field) is hidden under 768 px. */
 	.phone-field { display: none; }
 	@media (max-width: 767px) { .phone-field { position: sticky; top: 8px; z-index: 22; display: flex; justify-content: center; } .phone-field :global(.ui-search) { width: 100%; } }
@@ -747,7 +751,8 @@
 	.types { display: flex; justify-content: center; pointer-events: none; }
 	.types :global(.ui-seg) { pointer-events: auto; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 10px 30px rgb(0 0 0 / 0.28), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 6px; } }
-	@media (max-width: 419px) { .types :global(.ui-seg button span) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }
+	/* Narrow phones: the words stay (they say more than the icons), the icons go, so five kinds fit in one row; a long word wraps, never cut. */
+	@media (max-width: 419px) { .types :global(.ui-seg button) { padding: 0 2px; font-size: 12.5px; } .types :global(.ui-seg button .icon), .types :global(.ui-seg button svg) { display: none; } }
 	.results-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; margin-bottom: -12px; }
 	.results-head .count { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.results-head :global(.ui-seg) { flex: none; }

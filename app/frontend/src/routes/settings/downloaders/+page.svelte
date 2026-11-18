@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
@@ -13,9 +14,11 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { emptyForm, samePathPair, formBody, formFrom, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
+	import { AppTiles, emptyForm, samePathPair, formBody, formFrom, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -29,6 +32,8 @@
 	let editing = $state<DownloaderView | null>(null);
 	let isNew = $state(false);
 	let form = $state<DownloaderForm>(emptyForm());
+	// A new Downloader shows only the app tiles until one is picked.
+	let kindChosen = $state(false);
 	let busy = $state(false);
 	let formError = $state('');
 	let testing = $state(0);
@@ -118,6 +123,7 @@
 		editing = { id: 0, name: '' } as DownloaderView;
 		form = emptyForm();
 		formError = '';
+		kindChosen = false;
 	}
 
 	// HOLYARRS_READONLY_DOWNLOADERS keeps a Downloader read only; its switch shows locked.
@@ -139,10 +145,25 @@
 		if (w === 'key') form.username = '';
 	}
 
+	const kindGroups = $derived([
+		{ id: 'torrents', title: t('settings.downloaders.torrentsHead'), tiles: [
+			{ value: 'qbittorrent' as const, name: 'qBittorrent', badge: 'qB', hue: 210, hint: t('settings.downloaders.mostUsed') },
+			{ value: 'transmission' as const, name: 'Transmission', badge: 'Tr', hue: 0 },
+			{ value: 'deluge' as const, name: 'Deluge', badge: 'De', hue: 195 },
+			{ value: 'rtorrent' as const, name: 'rTorrent', badge: 'rT', hue: 270 },
+			{ value: 'aria2' as const, name: 'aria2', badge: 'a2', hue: 30 }
+		] },
+		{ id: 'usenet', title: t('settings.downloaders.usenetHead'), tiles: [
+			{ value: 'sabnzbd' as const, name: 'SABnzbd', badge: 'SB', hue: 45, hint: t('settings.downloaders.mostUsed') },
+			{ value: 'nzbget' as const, name: 'NZBGet', badge: 'NG', hue: 140 }
+		] }
+	]);
+
 	function pickKind(k: DownloaderForm['kind']) {
 		const fresh = emptyForm(k);
 		form = { ...fresh, url: form.url !== 'http://' ? form.url : fresh.url, allow_local_network: form.allow_local_network, writable: form.writable };
 		qbitWay = 'key';
+		kindChosen = true;
 	}
 
 	function hasUsername(kind: DownloaderForm['kind']): boolean {
@@ -207,6 +228,8 @@
 		} finally {
 			testing = 0;
 			await load();
+			// A test that works clears its warning and the menu dot at once.
+			void recheckSettingsStatus('downloader');
 		}
 	}
 
@@ -220,10 +243,11 @@
 	}
 
 	async function remove(d: DownloaderView) {
-		if (!confirm(t('settings.downloaders.confirmRemove', { name: d.name }))) return;
+		if (!(await ask(t('settings.downloaders.confirmRemove', { name: d.name }), { yes: t('ui.ask.remove'), danger: true }))) return;
 		try {
 			await api.del(`/downloaders/${d.id}`);
 			await load();
+			void recheckSettingsStatus('downloader');
 		} catch (err) {
 			toasts.push(t('settings.downloaders.removeFailed'), 'fail', { body: message(err) });
 		}
@@ -231,9 +255,9 @@
 
 	async function abandonAttempt(d: DownloaderView, attempt: DownloaderAttempt) {
 		if (
-			!confirm(
+			!(await ask(
 				t('settings.downloaders.confirmAbandon', { release: attempt.release_id, slot: attempt.slot_id, name: d.name, app: kindWords[d.kind] })
-			)
+			, { yes: t('ui.ask.stop') }))
 		)
 			return;
 		abandoning = attempt.id;
@@ -354,19 +378,12 @@
 	<form class="sc-form" onsubmit={save} aria-label={isNew ? t('settings.downloaders.add') : t('settings.downloaders.change', { name: editing.name })}>
 		<SettingsCard title={isNew ? t('settings.downloaders.add') : t('settings.downloaders.change', { name: editing.name })}>
 			{#if isNew}
-				<fieldset class="group">
+				<fieldset class="group" style="margin-bottom: var(--s-4)">
 					<legend class="label">{t('settings.downloaders.whichApp')}</legend>
-					<div class="row kinds">
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'qbittorrent'} onchange={() => pickKind('qbittorrent')} /><span><b>qBittorrent</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'transmission'} onchange={() => pickKind('transmission')} /><span><b>Transmission</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'deluge'} onchange={() => pickKind('deluge')} /><span><b>Deluge</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'rtorrent'} onchange={() => pickKind('rtorrent')} /><span><b>rTorrent</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'aria2'} onchange={() => pickKind('aria2')} /><span><b>aria2</b> {t('settings.downloaders.torrents')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'sabnzbd'} onchange={() => pickKind('sabnzbd')} /><span><b>SABnzbd</b> {t('settings.downloaders.usenet')}</span></label>
-						<label class="checkline"><input type="radio" name="kind" checked={form.kind === 'nzbget'} onchange={() => pickKind('nzbget')} /><span><b>NZBGet</b> {t('settings.downloaders.usenet')}</span></label>
-					</div>
+					<AppTiles name="kind" groups={kindGroups} value={kindChosen ? form.kind : undefined} onpick={pickKind} />
 				</fieldset>
 			{/if}
+			{#if !isNew || kindChosen}
 			<Field id="dl-name" label={t('settings.downloaders.name')} style="margin-top: var(--s-4)">
 				<input id="dl-name" class="input" bind:value={form.name} maxlength="80" required />
 			</Field>
@@ -449,11 +466,12 @@
 					{/if}
 				</fieldset>
 			{/if}
+			{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
-				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.downloaders.save')}</Button>
-				<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.downloaders.cancel')}</Button>
-				{#if !isNew && editing}{@const cur = editing}<Button variant="plain" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">{t('settings.downloaders.test')}</Button>{/if}
+				{#if !isNew || kindChosen}<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.downloaders.save')}</Button>{/if}
+				<Button variant="secondary" type="button" onclick={() => (editing = null)}>{t('settings.downloaders.cancel')}</Button>
+				{#if !isNew && editing}{@const cur = editing}<Button variant="secondary" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">{t('settings.downloaders.test')}</Button>{/if}
 				{#if !isNew && editing && results[editing.id]}{@const r = results[editing.id]}<TestTag ok={r.ok} text={r.text} app={kindWords[editing.kind]} />{#if !r.ok}<span class="small bad-text">{r.text}</span>{/if}{/if}
 			</div>
 		</SettingsCard>
@@ -486,22 +504,22 @@
 							· {d.writable && !d.writable_locked ? t('settings.downloaders.canChange') : d.writable_locked ? t('settings.downloaders.readOnly') : t('settings.downloaders.handsOff')}
 						</div>
 					</div>
-					<div class="num" title={d.checked_at ? t('settings.downloaders.checked', { ago: ago(d.checked_at) }) : undefined}><b>{d.active_downloads}</b><small>{t('settings.downloaders.active')}</small></div>
-					<span class="st {healthTone(d.health.state)}"><i></i><span data-testid="downloader-state">{d.health.label}</span></span>
+					<div class="num" title={d.checked_at ? t('settings.downloaders.checked', { ago: ago(d.checked_at) }) : undefined}>{#if d.active_downloads > 0}<b>{d.active_downloads}</b><small>{t('settings.downloaders.active')}</small>{/if}</div>
+					{#if d.health.state === 'working'}<span class="st"><span class="sr-only" data-testid="downloader-state">{healthLabel(d.health)}</span></span>{:else}<span class="st {healthTone(d.health.state)}"><i></i><span data-testid="downloader-state">{healthLabel(d.health)}</span></span>{/if}
 					<div class="acts">
-						<Button variant="plain" size="sm" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>{t('settings.downloaders.test')}</Button>
+						<Button variant="secondary" size="sm" type="button" disabled={testing === d.id} aria-busy={testing === d.id} onclick={() => test(d)}>{t('settings.downloaders.test')}</Button>
 						{#if d.health.state === 'paused'}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, false)}>{t('settings.downloaders.resume')}</Button>
+							<Button variant="secondary" size="sm" type="button" onclick={() => setPaused(d, false)}>{t('settings.downloaders.resume')}</Button>
 						{:else}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(d, true)}>{t('settings.downloaders.pause')}</Button>
+							<Button variant="secondary" size="sm" type="button" onclick={() => setPaused(d, true)}>{t('settings.downloaders.pause')}</Button>
 						{/if}
-						<Button variant="plain" size="sm" type="button" onclick={() => startChange(d)}>{t('settings.downloaders.changeButton')}</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => remove(d)} aria-label={t('settings.downloaders.removeName', { name: d.name })}>{t('settings.downloaders.remove')}</Button>
+						<Button variant="secondary" size="sm" type="button" onclick={() => startChange(d)}>{t('settings.downloaders.changeButton')}</Button>
+						<Button variant="secondary" size="sm" type="button" onclick={() => remove(d)} aria-label={t('settings.downloaders.removeName', { name: d.name })}>{t('settings.downloaders.remove')}</Button>
 					</div>
 				</div>
-				{#if d.health.text}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
+				{#if d.health.text && !(results[d.id] && !results[d.id].ok)}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
 				{#if results[d.id] && !results[d.id].ok}
-					<p class="note bad-text" role="status" data-testid="downloader-test">{results[d.id].text}</p>
+					<p class="note bad-text" role="status" data-testid="downloader-test">{serverWords(results[d.id].text)}<ConnectHelp text={results[d.id].text} /></p>
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
 					<section class="notice bad attempt-review" aria-label={t('settings.downloaders.needsDecision')} data-testid="downloader-attempts">
@@ -533,8 +551,8 @@
 	{/if}
 {:else}
 <form class="sc-form settings" id="wrong-form" onsubmit={saveSettings} aria-labelledby="h-wrong">
+	<span id="h-wrong" class="sr-only">{t('settings.downloaders.wrong')}</span>
 	<SettingsCard id="wrong-card" title={t('settings.downloaders.wrong')}>
-		<span id="h-wrong" class="sr-only">{t('settings.downloaders.wrong')}</span>
 		<label class="checkline">
 			<input id="remove-failed" type="checkbox" bind:checked={settings.remove_failed} />
 			<span><b>{t('settings.downloaders.removeFailedDl')}</b><br /><span class="hint">{t('settings.downloaders.removeFailedHint')}</span></span>
@@ -619,7 +637,7 @@
 
 <style>
 	.lead {
-		margin-bottom: var(--s-5);
+		margin-bottom: var(--s-4);
 	}
 	.list {
 		display: flex;
@@ -731,7 +749,7 @@
 	}
 
 	/* The list: one glass sheet, one row per Downloader (the Library folders pattern). */
-	.fl { list-style: none; margin: var(--s-4) 0 0; padding: 0; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); overflow: hidden; }
+	.fl { list-style: none; margin: 0; padding: 0; border: var(--sheet-edge); border-radius: var(--sheet-r); background: var(--sheet-bg);  box-shadow: var(--sheet-shadow); overflow: hidden; }
 	.dl { padding: 14px 16px 14px 18px; }
 	.dl + .dl { box-shadow: inset 0 1px 0 var(--line); }
 	.dl:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
@@ -741,27 +759,28 @@
 	.name { font: 600 15px/1.3 var(--font-ui); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sub { margin-top: 3px; color: var(--text-muted); font: 400 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.facts { margin-top: 2px; color: var(--text-muted); font: 400 12px/1.35 var(--font-ui); }
-	.num { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.num { display: flex; justify-content: flex-end; min-width: 64px; align-items: baseline; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.num b { font: 600 15px/1 var(--font-ui); } .num small { color: var(--text-muted); font: 400 12px/1 var(--font-ui); }
 	.st { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 500 12px/1 var(--font-ui); white-space: nowrap; }
 	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
 	.st.ok i { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
 	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
 	.st.fail i, .st.bad i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
-	.acts { display: flex; align-items: center; gap: 2px; }
+	/* Always shown: on a narrow sheet the buttons wrap instead of running past its clipped edge. */
+	.acts { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; min-width: 0; }
 	@media (hover: hover) and (min-width: 761px) {
 		.dl { position: relative; }
-		.main { grid-template-columns: 24px minmax(0, 1fr) auto auto; }
-		/* Buttons sit over the right edge only while you point at the row; the status keeps the edge otherwise. */
-		.acts { position: absolute; right: 12px; top: 50%; translate: 0 -50%; padding: 4px 4px 4px 28px; border-radius: 999px; background: linear-gradient(90deg, transparent, var(--surface-1) 24px); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-out); }
-		.dl:hover .acts, .dl:focus-within .acts { opacity: 1; pointer-events: auto; }
 	}
 	.note { margin: 8px 0 0 40px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
 	.dl .attempt-review { margin: 10px 0 0 40px; }
 	@media (max-width: 760px) {
-		.main { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic num num' 'ic acts acts'; row-gap: 6px; }
-		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: end; align-self: start; }
-		.main > .num { grid-area: num; } .main > .acts { grid-area: acts; justify-self: start; flex-wrap: wrap; margin-left: -10px; }
-		.note, .dl .attempt-review { margin-left: 0; }
+		/* The name has the whole first line; its chips wrap below it, then the status and count. */
+		.main { grid-template-columns: 24px auto minmax(0, 1fr); grid-template-areas: 'ic grow grow' 'ic st num' 'ic acts acts'; row-gap: 6px; }
+		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: start; }
+		.top { flex-wrap: wrap; row-gap: 4px; } .name { white-space: normal; overflow-wrap: anywhere; }
+		.main > .num { grid-area: num; justify-self: end; } .main > .acts { grid-area: acts; justify-self: stretch; flex-wrap: wrap; margin-top: 4px; }
+		.main > .acts > :global(.ui-btn) { flex: 1 1 auto; }
+		.main > .num { min-width: 0; }
+		/* Notes keep the name column indent, so they line up with the name and buttons. */
 	}
 </style>

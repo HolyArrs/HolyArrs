@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Võitis: {name}",
 	"ui.wikiFacts.nominated": "Nomineeritud: {name}",
 	"ui.wikiFacts.andMore": "ja veel {count}",
-	"ui.pageLoader.loading": "Laadin"
+	"ui.pageLoader.loading": "Laadin",
+	"ui.connectHelp.link": "Kuidas parandada",
+	"ui.ask.remove": "Eemalda",
+	"ui.ask.restore": "Taasta",
+	"ui.ask.stop": "Peata",
+	"ui.ask.revoke": "Tühista",
+	"ui.ask.replace": "Asenda",
+	"ui.ask.unlink": "Eemalda seos",
+	"ui.ask.turnOff": "Lülita välja",
+	"ui.ask.markFailed": "Märgi nurjunuks",
+	"ui.ask.reset": "Lähtesta",
+	"ui.ask.import": "Impordi"
 }

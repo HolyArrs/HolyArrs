@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "需要注意：{n}",
 	"migrate.needAttentionWhy": "它们的旧文件夹不在此服务器上，所以会作为想要的条目进入这里的一个文件夹。请修正文件夹或添加路径规则：{list}",
 	"migrate.leftOutUncheckedN": "未包含：{n}",
-	"migrate.leftOutUncheckedWhy": "{folder} 设为“不迁入”；为它选择一个文件夹后再次导入"
+	"migrate.leftOutUncheckedWhy": "{folder} 设为“不迁入”；为它选择一个文件夹后再次导入",
+	"migrate.seasonsDifferOne": "检查 1 部通过 TMDB 编号找到的剧",
+	"migrate.seasonsDifferOther": "检查 {n} 部通过 TMDB 编号找到的剧",
+	"migrate.seasonsDifferWhy": "{list} 仅通过旧应用的 TMDB 编号找到，在这里用的是另一个名称。逐一打开并确认是同一部剧。如果是，它的季编号不同：匹配它的剩余文件，然后打开这部剧。如果不是，就移除它；它的文件会留在原处。",
+	"migrate.stillChecking": "元数据服务器仍在检查的剧集：{n}。检查完成后此列表会自动更新。",
+	"migrate.stillCheckingImport": "元数据服务器仍在检查的剧集：{n}。现在即可导入；导入时会进行检查。"
 }

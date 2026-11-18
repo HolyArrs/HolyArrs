@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Allen zeigen",
 	"settings.requests.choiceMain": "{rules} · die Hauptkopie des Titels",
 	"settings.requests.choiceOwn": "{rules} · als eigene Kopie behalten",
-	"settings.requests.choiceNotReady": "Wird angeboten, sobald oben eine 4K-Qualität eingerichtet ist"
+	"settings.requests.choiceNotReady": "Wird angeboten, sobald oben eine 4K-Qualität eingerichtet ist",
+	"settings.requests.approvals": "Freigaben",
+	"settings.requests.autoApprove": "Anfragen automatisch freigeben",
+	"settings.requests.autoApproveNote": "Aus = ihre Anfragen warten auf dich. Titel aus der Plex-Merkliste folgen demselben Schalter.",
+	"settings.requests.ownerTag": "Besitzer",
+	"settings.requests.choiceAdd": "Qualität hinzufügen",
+	"settings.requests.choiceNew": "Neue Qualität",
+	"settings.requests.choiceLabel": "Ihr Name",
+	"settings.requests.choiceSeen": "Andere sehen"
 }

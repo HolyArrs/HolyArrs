@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Твоје Trakt листе се не могу читати док се не подеси.",
 	"settings.outsideLists.replaceKey": "Замени Trakt кључ",
 	"settings.outsideLists.pasteKey": "Налепи Trakt кључ",
+	"settings.outsideLists.mdblistKey": "MDBList кључ",
+	"settings.outsideLists.mdblistInfo": "Необавезно. Са твојим MDBList API кључем MDBList листе се читају преко MDBList API-ја; без њега преко њихове јавне везе. Чува се шифрован и исти је кључ који спољне оцене користе у режиму Ваши сопствени кључеви.",
+	"settings.outsideLists.pasteMdblistKey": "Налепи свој MDBList API кључ",
+	"settings.outsideLists.replaceMdblistKey": "Замени MDBList кључ",
+	"settings.outsideLists.removeMdblistKey": "Уклони кључ",
+	"settings.outsideLists.mdblistKeySaved": "MDBList кључ сачуван",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList кључ уклоњен; листе користе своју јавну везу",
 	"settings.outsideLists.replaceVip": "Замени VIP приступни токен",
 	"settings.outsideLists.vip": "VIP приступни токен (опционо)",
 	"settings.outsideLists.vipHint": "Додаје Trakt картицу на странице наслова: оцена, гледаоци и коментари",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Додај на листу никад-не-додај",
 	"settings.outsideLists.showDot": "серија ·",
 	"settings.outsideLists.takeOff": "Скини {name}",
-	"settings.outsideLists.empty": "Празно"
+	"settings.outsideLists.empty": "На овој листи још нема ничега"
 }

@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "As suas listas do Trakt não podem ser lidas até que ela seja definida.",
 	"settings.outsideLists.replaceKey": "Substituir a chave do Trakt",
 	"settings.outsideLists.pasteKey": "Cole a chave do Trakt",
+	"settings.outsideLists.mdblistKey": "Chave do MDBList",
+	"settings.outsideLists.mdblistInfo": "Opcional. Com a sua chave de API do MDBList, as listas do MDBList são lidas através da API do MDBList; sem ela, através do link público delas. Ela é guardada criptografada e é a mesma chave que as classificações externas usam no modo As tuas próprias chaves.",
+	"settings.outsideLists.pasteMdblistKey": "Cole a sua chave de API do MDBList",
+	"settings.outsideLists.replaceMdblistKey": "Substituir a chave do MDBList",
+	"settings.outsideLists.removeMdblistKey": "Remover a chave",
+	"settings.outsideLists.mdblistKeySaved": "Chave do MDBList guardada",
+	"settings.outsideLists.mdblistKeyRemoved": "Chave do MDBList removida; as listas usam o link público delas",
 	"settings.outsideLists.replaceVip": "Substituir o token de acesso VIP",
 	"settings.outsideLists.vip": "Token de acesso VIP (opcional)",
 	"settings.outsideLists.vipHint": "Adiciona um separador do Trakt às páginas de títulos: nota, quem assiste e comentários",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Adicionar à lista de nunca adicionar",
 	"settings.outsideLists.showDot": "série ·",
 	"settings.outsideLists.takeOff": "Tirar {name}",
-	"settings.outsideLists.empty": "Vazia"
+	"settings.outsideLists.empty": "Ainda não há nada nesta lista"
 }

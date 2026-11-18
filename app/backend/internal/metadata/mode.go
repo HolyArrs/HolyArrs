@@ -168,6 +168,9 @@ func unreached(err error) error {
 	if errors.Is(err, ErrSourceOff) {
 		return ErrSourceOff
 	}
+	if h := FakeIPHost(err); h != "" {
+		return fakeIPDown{h}
+	}
 	var te interface{ Timeout() bool }
 	if errors.As(err, &te) && te.Timeout() {
 		return ErrServiceSlow

@@ -155,7 +155,7 @@
 <style>
 	.day { display: flex; flex-direction: column; min-width: 0; height: 100%; container-type: inline-size; }
 	h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 600 13px/1.2 var(--font-ui); color: var(--text-muted); white-space: nowrap; overflow: hidden; min-width: 0; }
-	.rg { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; font-weight: 500; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.rg { min-width: 0; overflow: hidden; font-size: 11.5px; font-weight: 500; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.st { flex: none; }
 	.st { margin-inline-start: auto; padding: 2px 9px; border-radius: var(--r-pill); background: var(--surface-2, var(--surface-1)); font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
 	.st.on { background: color-mix(in srgb, var(--accent, var(--text)) 16%, transparent); color: var(--text); }
@@ -190,7 +190,8 @@
 		font: 500 11.5px/1 var(--font-ui);
 		min-width: 0;
 	}
-	.en { position: relative; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* A long name fades out at the edge (no "..."); the tooltip and a tap below show it whole. */
+	.en { position: relative; flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 14px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 14px), transparent); }
 	.et { position: relative; flex: none; font-size: 10.5px; font-variant-numeric: tabular-nums; }
 
 	/* Finished: grey with a tone stripe. */
@@ -205,7 +206,7 @@
 		.fi { border-radius: inherit; }
 		.hit::after { content: ''; position: absolute; inset-inline: 0; top: 50%; height: 44px; transform: translateY(-50%); }
 	}
-	.pick { flex: none; min-height: 1.3em; margin: 6px 0 0; font: 500 12px/1.3 var(--font-ui); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.pick { flex: none; min-height: 1.3em; margin: 6px 0 0; font: 500 12px/1.3 var(--font-ui); color: var(--text); overflow-wrap: anywhere; }
 	.pick:empty { display: none; }
 	/* Planned: outlined in the row's tone. */
 	.ev.next { background: color-mix(in srgb, var(--c) 9%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent); color: var(--text); }
@@ -216,11 +217,11 @@
 	.fi { position: absolute; inset: 0; background: color-mix(in srgb, var(--accent) 26%, transparent); transform-origin: left center; transition: transform 0.8s linear; }
 	.fi.indet { opacity: 0.5; }
 
+	/* Side by side, a chip keeps the whole name; the ruler and a tap give the time. */
+	.ev.shared .et { display: none; }
 	@container (max-width: 340px) {
 		.col { --rule: 34px; }
 		.nt { font-size: 9.5px; }
-		/* Side by side, a chip keeps the name; the ruler and a tap give the time. */
-		.ev.shared .et { display: none; }
 		.ev.shared { padding: 0 5px 0 7px; }
 	}
 

@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "{name} bağlanamadı",
 	"settings.parts.connected": "{name} bağlandı",
 	"settings.parts.title": "Modüller",
+	"settings.parts.onOff": "Modülleri aç veya kapat",
 	"settings.parts.ownerOnly": "Yalnızca sahip ve yöneticiler",
 	"settings.parts.safeMode": "HolyArrs güvenli modda çalışıyor: yalnızca çekirdek çalışır; normal başlatmaya kadar modül anahtarları ve aşama denetimleri reddedilir. Güvenli moddan çıkmak için <a>Tehlikeli bölge</a>'deki <b>HolyArrs'ı yeniden başlat</b> düğmesini kullan.",
 	"settings.parts.dangerZone": "Tehlikeli bölge",

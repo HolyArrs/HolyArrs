@@ -70,7 +70,7 @@ func TestSourcesAddTestPauseDelete(t *testing.T) {
 	}
 	b = do(t, "POST", srv.URL+"/api/v1/sources/"+id+"/test", "", 200)
 	_ = json.Unmarshal(b, &res)
-	if res.OK || !strings.Contains(res.Text, "turned down the key") || strings.Contains(string(b), wrong) {
+	if res.OK || !strings.Contains(res.Text, "password refused") || strings.Contains(string(b), wrong) {
 		t.Fatalf("wrong key test %s", b)
 	}
 	// The masked placeholder keeps the stored key; a new host needs it again.

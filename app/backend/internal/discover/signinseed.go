@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
@@ -153,12 +154,21 @@ func (s *Signin) makeSigninThumb(original string, size int) (signinThumb, error)
 	return signinThumbOf(b)
 }
 
+// smallClient fetches public pictures through the network policy and the
+// app proxy.
+var smallClient = func() *http.Client {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.Proxy = nil
+	t.DialContext = outbound.PolicyDialer(outbound.PublicOnly).DialContext
+	return &http.Client{Transport: t}
+}()
+
 func fetchSmall(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
-	res, err := http.DefaultClient.Do(req)
+	res, err := smallClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

@@ -11,9 +11,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-// watchLinks answers where a Library title opens on the media servers, for
-// the Open in Jellyfin button: {"links": [{server, kind, url}]}. Anyone
-// signed in may ask; the answer holds no token and no HolyArrs-side address.
+// watchLinks answers where a Library title opens on the media servers:
+// {"links": [{server, kind, url}]}. It names servers and their addresses,
+// so it needs manage_library (see accounts.RoutePerms).
 func (h *Handlers) watchLinks(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.URL.Query().Get("title"), 10, 64)
 	if err != nil || id <= 0 {

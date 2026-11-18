@@ -7,6 +7,7 @@
 	"settings.sources.title": "Źródła",
 	"settings.sources.add": "Dodaj Źródło",
 	"settings.sources.lead": "Priorytet 1 idzie pierwszy. Źródło, które zawodzi, jest pomijane do sześciu godzin. Dla serwisów bez kanału dodaj Jackett lub Prowlarr jako kanał Torznab.",
+	"settings.sources.builtIn": "Wbudowane strony nie wymagają Jacketta ani Prowlarra: {sites}. Wybierz {site} w polu {kind}.",
 	"settings.sources.change": "Zmień: {name}",
 	"settings.sources.name": "Nazwa",
 	"settings.sources.feedKind": "Rodzaj kanału",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Zapisz",
 	"settings.sources.cancel": "Anuluj",
 	"settings.sources.none": "Brak Źródeł",
-	"settings.sources.noneText": "Dodaj kanał Torznab lub Newznab albo Jackett lub Prowlarr.",
+	"settings.sources.noneText": "Dodaj wbudowaną stronę, kanał Torznab lub Newznab albo Jackett lub Prowlarr.",
 	"settings.sources.rowTitle": "{url} · priorytet {priority} · {uses}",
 	"settings.sources.priorityUses": "Priorytet {priority} · {uses}",
 	"settings.sources.keyIs": "klucz {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Strona",
 	"settings.sources.addressSite": "Własny adres strony. Zmień go tylko, jeśli strona się przeniosła.",
 	"settings.sources.siteKeyLabel": "Ciasteczko lub klucz RSS",
-	"settings.sources.siteKeyHint": "Z własnego konta: uid i pass z ciasteczka przeglądarki albo u i tp z linku RSS. Przechowywane w postaci zaszyfrowanej."
+	"settings.sources.siteKeyHint": "Z własnego konta: uid i pass z ciasteczka przeglądarki albo u i tp z linku RSS. Przechowywane w postaci zaszyfrowanej.",
+	"settings.sources.sendTo": "Wysyłaj pobrania do",
+	"settings.sources.sendToAny": "Dowolny downloader",
+	"settings.sources.sendToHint": "Wszystko wybrane z tego źródła trafia tylko do tego downloadera. Gdy nie działa, czeka.",
+	"settings.sources.sendToGone": "Wybrany downloader został usunięty. Pobrania z tego źródła trafiają teraz do dowolnego downloadera."
 }

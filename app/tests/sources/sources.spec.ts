@@ -38,7 +38,7 @@ test('a Source is added, tested, shows a wrong key in plain words, pauses and re
 	await page.getByLabel('API key', { exact: true }).fill('not-the-right-key');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await row.getByRole('button', { name: 'Test' }).click();
-	await expect(row.getByTestId('source-test')).toContainText('turned down the key');
+	await expect(row.getByTestId('source-test')).toContainText('Key or password refused');
 
 	// Back to the right key, then pause and resume.
 	await row.getByRole('button', { name: 'Change' }).click();
@@ -65,13 +65,15 @@ test('the health page shows state, last answer and calls over time', async () =>
 	await expect(page.getByRole('heading', { level: 1, name: 'Lab Torznab' })).toBeVisible();
 	await expect(page.getByTestId('health-state')).toHaveText('Working');
 	await expect(page.getByTestId('last-success')).not.toHaveText('Never');
-	await expect(page.getByTestId('call')).toHaveCount(2);
-	await expect(page.getByTestId('call').first()).toContainText('Test');
+	// Every save tests the Source again: added, wrong key saved, Test pressed, right key saved.
+	await expect(page.getByTestId('call')).toHaveCount(4);
+	await expect(page.getByTestId('call').first()).toContainText('Answered');
+	await expect(page.getByTestId('call').nth(1)).toContainText('Login refused');
 	await page.getByRole('link', { name: 'Sources' }).first().click();
 	const row2 = page.getByTestId('source').filter({ hasText: 'Lab feed' });
-	page.once('dialog', (d) => d.accept());
 	await row2.hover(); // buttons show on hover
 	await row2.getByRole('button', { name: 'Remove Lab feed' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByTestId('source').filter({ hasText: 'Lab feed' })).toHaveCount(0);
 });
 
@@ -145,4 +147,29 @@ test('the Connect card fits a phone and passes the accessibility check', async (
 	await expect(card.getByTestId('bridge-connect')).toBeVisible();
 	expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
 	await page.setViewportSize({ width: 1280, height: 720 });
+});
+
+// A Source tied to a Downloader that was later removed goes back to any
+// Downloader, and its settings say so.
+test('a Source whose chosen Downloader is gone says so and goes back to any', async () => {
+	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	const call = (method: string, path: string, data?: unknown) => page.request.fetch(`/api/v1${path}`, { method, data, headers: { 'X-CSRF-Token': me.csrf } });
+	const list = ((await (await call('GET', '/sources')).json()) as { sources: { id: number; name: string }[] }).sources;
+	const src = list.find((x) => x.name === 'Lab Torznab');
+	if (!src) throw new Error('Lab Torznab is missing');
+	expect((await call('PUT', `/sources/${src.id}`, { name: 'Lab Torznab', downloader_id: 999999 })).ok()).toBe(true);
+
+	await page.goto('/settings/sources');
+	const row = page.getByTestId('source').filter({ hasText: 'Lab Torznab' });
+	await row.hover();
+	await row.getByRole('button', { name: 'Change' }).click();
+	await expect(page.getByTestId('so-send-gone')).toContainText('The chosen Downloader was removed');
+	await expect(page.getByLabel('Send downloads to')).toHaveValue('0');
+	// Read it back only once the save has answered (the row is visible before and after).
+	const put = page.waitForResponse((r) => r.url().includes(`/api/v1/sources/${src.id}`) && r.request().method() === 'PUT');
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
+	expect((await put).ok()).toBe(true);
+	await expect(row).toBeVisible();
+	const saved = ((await (await call('GET', '/sources')).json()) as { sources: { id: number; downloader_id: number }[] }).sources.find((x) => x.id === src.id);
+	expect(saved?.downloader_id).toBe(0);
 });

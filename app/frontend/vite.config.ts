@@ -37,6 +37,9 @@ export default defineConfig({
 	},
 	test: {
 		include: ['src/**/*.test.ts'],
-		environment: 'node'
+		environment: 'node',
+		// The saved-transform cache keys a file by its own text only, so an import.meta.glob
+		// result (packs/*.json present or not) goes stale; node_modules is shared between worktrees.
+		fsModuleCache: false
 	}
 });

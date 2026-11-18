@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Tidak dapat menyimpan bahasa",
 	"accounts.language.count.one": "1 bahasa",
 	"accounts.language.count.other": "{n} bahasa",
-	"accounts.account.watchEveryone": "Pemilik menghidupkan ini untuk semua orang. Matikan kedua-duanya untuk menghentikannya."
+	"accounts.account.watchEveryone": "Pemilik menghidupkan ini untuk semua orang. Matikan kedua-duanya untuk menghentikannya.",
+	"accounts.watch.title": "Tanda sudah ditonton",
+	"accounts.watch.hint": "Pautkan akaun anda pada pelayan media di sini supaya Pustaka menunjukkan apa yang telah anda tonton.",
+	"accounts.watch.as": "{server}, sebagai {name}",
+	"accounts.watch.nameOn": "Nama pada {server}",
+	"accounts.watch.passwordOnce": "Kata laluan anda hanya dihantar ke {server} dan tidak disimpan.",
+	"accounts.watch.linked": "Dipautkan kepada {name} pada {server}",
+	"accounts.watch.unlinked": "Pautan dibuang",
+	"accounts.login.importPaused": "Sesi log masuk anda tamat, jadi import dijeda. Log masuk, buka Import pustaka dan tekan Imbas untuk meneruskan."
 }

@@ -26,13 +26,30 @@ func hasFail(v Verdict, step, prefix string) bool {
 // sumPoints adds in 64 bits and stops at MaxPoints either way, so many
 // large scores cannot wrap around where int is 32 bits (armv7).
 func sumPoints(p releasename.Result, rules PickRulesBody) int {
+	points, _ := scoreTraits(p, rules)
+	return points
+}
+
+// traitHit is one points Trait's test on a Release, kept so the judge
+// tests each Trait once and reuses the answer for the total and the reasons.
+type traitHit struct {
+	ok  bool
+	why string
+}
+
+// scoreTraits tests every points Trait once; it returns the total (see
+// sumPoints) and each Trait's answer, in the order of rules.Traits.
+func scoreTraits(p releasename.Result, rules PickRulesBody) (int, []traitHit) {
 	var n int64
-	for _, tp := range rules.Traits {
-		if ok, _ := traitMatches(tp.Trait, p); ok {
+	hits := make([]traitHit, len(rules.Traits))
+	for i, tp := range rules.Traits {
+		ok, why := traitMatches(tp.Trait, p)
+		hits[i] = traitHit{ok, why}
+		if ok {
 			n += int64(tp.Points)
 		}
 	}
-	return int(max(-MaxPoints, min(MaxPoints, n)))
+	return int(max(-MaxPoints, min(MaxPoints, n))), hits
 }
 
 // gainOver reports whether points beat cur by at least step, worked out in

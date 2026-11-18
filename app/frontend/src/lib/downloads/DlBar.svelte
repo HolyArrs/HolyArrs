@@ -242,7 +242,8 @@
 	.plate { position: absolute; z-index: 0; left: 0; top: 0; width: var(--iw, 0); height: var(--ih, 0); border-radius: 10px; background: var(--seg-thumb); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px rgb(0 0 0 / 0.08); opacity: var(--io, 0); transform: translate(var(--ix, 0), var(--iy, 0)); transition: transform 320ms var(--ez), width 320ms var(--ez), opacity 160ms var(--ease-out); pointer-events: none; }
 	.dlbar .seg .it.on:hover { background: none; }
 	.dlbar .aw { position: relative; }
-	.dlbar .aw :global(.caret) { position: absolute; top: 3px; right: 3px; z-index: 2; width: 16px; height: 16px; min-width: 0; margin: 0; padding: 0; border-radius: 5px; opacity: 0.55; }
+	/* The corner caret keeps a 24px target (WCAG 2.2 target size); its arrow stays small. */
+	.dlbar .aw :global(.caret) { position: absolute; top: -1px; right: -1px; z-index: 2; width: 24px; height: 24px; min-width: 0; margin: 0; padding: 0; border-radius: 7px; opacity: 0.55; }
 	.dlbar .aw :global(.caret:hover) { opacity: 1; background: color-mix(in srgb, var(--text) 10%, transparent); }
 	.dlbar .aw :global(.caret svg) { width: 11px; height: 11px; }
 

@@ -83,6 +83,7 @@
 	"settings.users.preset": "Förinställning",
 	"settings.users.comingSoon": "Kommer snart",
 	"settings.users.custom": "Anpassad",
+	"settings.users.customHint": "Din egen kombination av reglagen nedan. Väljer du en förinställning ersätts den; välj Anpassad igen för att få tillbaka den.",
 	"settings.users.ageRating": "Åldersgräns",
 	"settings.users.newPasswordFor": "Nytt lösenord för {name}",
 	"settings.users.passwordNote": "Använd det här när {name} glömt sitt. De loggas ut överallt och loggar in igen med det nya. Berätta det för dem personligen.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "t.ex. Mamma",
 	"settings.users.days": "Dagar länken gäller",
 	"settings.users.makeInvite": "Skapa en inbjudningslänk",
-	"settings.users.permAuto4k": "4K-förfrågningar godkänns utan att vänta"
+	"settings.users.permAuto4k": "4K-förfrågningar godkänns utan att vänta",
+	"settings.users.serverAccount": "Serverkonto",
+	"settings.users.pickAccount": "Välj ett konto på en mediaserver",
+	"settings.users.accountLinked": "Länkad till {name}",
+	"settings.users.removedOnServer": "Borttagen på {word}-servern, så avstängd här",
+	"settings.users.delete": "Ta bort",
+	"settings.users.deleteName": "Ta bort {name}",
+	"settings.users.confirmDelete": "Ta bort {name}? Personen loggas ut för gott och nycklarna försvinner. Förfrågningarna finns kvar, visade som borttagen person.",
+	"settings.users.deleteYes": "Ta bort person",
+	"settings.users.keep": "Behåll",
+	"settings.users.deleted": "{name} borttagen",
+	"settings.users.couldntDelete": "Kunde inte ta bort",
+	"settings.users.confirmDeleteKeys": "Seerr-nycklar som personen skapat slutar fungera för alla tills en ny skapas.",
+	"settings.users.qualities": "Kvaliteter",
+	"settings.users.qualitiesHint": "De kan bara välja de som är på. Är alla på erbjuds nya också."
 }

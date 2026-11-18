@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Kunne ikke forbinde {name}",
 	"settings.parts.connected": "{name} forbundet",
 	"settings.parts.title": "Dele",
+	"settings.parts.onOff": "Slå dele til eller fra",
 	"settings.parts.ownerOnly": "Kun ejer og administratorer",
 	"settings.parts.safeMode": "HolyArrs kører i sikker tilstand: kun kernen kører, og til/fra-knapper for Dele og styring af Faser afvises, til du starter normalt igen. Brug <b>Genstart HolyArrs</b> i <a>Farezonen</a> for at forlade sikker tilstand.",
 	"settings.parts.dangerZone": "Farezone",

@@ -51,6 +51,7 @@ func StartRunAs(configDir string) error {
 	syscall.Umask(mask)
 	startMask = mask
 	log.Printf("holyarrs: running as %d:%d, umask %04o", os.Geteuid(), os.Getegid(), mask)
+	UseOwnCerts(configDir)
 	return nil
 }
 

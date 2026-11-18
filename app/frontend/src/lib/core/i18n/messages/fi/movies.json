@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Tämän version valintasäännöt",
 	"movies.versions.folderLabel": "Tämän version kirjastokansio",
 	"movies.versions.cancel": "Peruuta",
-	"movies.versions.addButton": "Lisää versio"
+	"movies.versions.addButton": "Lisää versio",
+	"movies.versions.setEdition": "Aseta painos",
+	"movies.versions.editionFileHint": "Mikä painos tämä tiedosto on, esimerkiksi Theatrical tai Directors Cut. Jätä tyhjäksi, jos haluat tyhjentää sen.",
+	"movies.versions.unprotectConfirm": "Poistetaanko suojaus kohteesta {label}? Parempi kopio voi taas korvata sen.",
+	"movies.versions.editionChars": "Ei sallittu:",
+	"movies.versions.editionInvalid": "Tätä painosta ei voi käyttää. Pidä se lyhyenä (korostetut ja ei-latinalaiset kirjaimet vievät enemmän tilaa), jätä pois yllä luetellut merkit äläkä lopeta pisteeseen.",
+	"movies.versions.editionDevice": "Windows varaa nimen {name} laitteille, joten sitä ei voi käyttää. Kirjoita jokin toinen."
 }

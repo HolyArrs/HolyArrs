@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "No s'ha pogut desar l'idioma",
 	"accounts.language.count.one": "1 idioma",
 	"accounts.language.count.other": "{n} idiomes",
-	"accounts.account.watchEveryone": "El propietari ho ha activat per a tothom. Desactiva-ho tot per aturar-ho."
+	"accounts.account.watchEveryone": "El propietari ho ha activat per a tothom. Desactiva-ho tot per aturar-ho.",
+	"accounts.watch.title": "Marques de vist",
+	"accounts.watch.hint": "Enllaça aquí el teu compte d'un servidor multimèdia perquè la Biblioteca mostri el que has vist.",
+	"accounts.watch.as": "{server}, com a {name}",
+	"accounts.watch.nameOn": "Nom a {server}",
+	"accounts.watch.passwordOnce": "La teva contrasenya només va a {server} i no es desa.",
+	"accounts.watch.linked": "Enllaçat a {name} a {server}",
+	"accounts.watch.unlinked": "Enllaç eliminat",
+	"accounts.login.importPaused": "La teva sessió ha acabat, així que la importació s'ha aturat. Inicia la sessió, obre Importa una biblioteca i prem Escaneja per continuar."
 }

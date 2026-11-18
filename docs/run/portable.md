@@ -8,7 +8,7 @@ sidebar: { order: 9 }
 Run HolyArrs as a plain program on Linux or Windows, without Docker. Docker stays the main way to run it.
 
 :::caution
-Nobody publishes portable archives yet, and they are not signed. You build them yourself from the source.
+Since 1.1.3 every release carries plain Linux downloads with a `SHA256SUMS` file; see [Proxmox container](proxmox.md) for a script that uses them. Windows archives are not published, and none are signed. These steps build them yourself from the source.
 :::
 
 ## Before you start

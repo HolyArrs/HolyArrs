@@ -32,11 +32,12 @@
 	"settings.backups.key": "Hlavný kľúč",
 	"settings.backups.keyDesc": "Zálohy tento kľúč neobsahujú. Uchovajte si jeho kópiu na bezpečnom mieste.",
 	"settings.backups.noKit": "Pre tento kľúč nie je uložená žiadna súprava kľúča. Bez nej sa uložené heslá zo zálohy nedajú otvoriť na novom stroji.",
+	"settings.backups.kitRecommended": "Odporúčané: stiahnite si súpravu kľúča.",
 	"settings.backups.ownerOnlyKit": "Môže ju stiahnuť iba vlastník; požiadajte ho o to.",
 	"settings.backups.fingerprint": "Odtlačok kľúča",
 	"settings.backups.downloadKit": "Stiahnuť súpravu kľúča",
 	"settings.backups.restoreKey": "Na obnovu: premenujte na holyarrs.key a vložte do priečinka config",
 	"settings.backups.offPlan": "Vypnuté",
-	"settings.backups.offAbout": "Žiadne plánované zálohy. Kópia sa stále vytvorí pred každou aktualizáciou.",
+	"settings.backups.offAbout": "Žiadne automatické zálohy, ani pred aktualizáciou. Zálohy, ktoré vytvoríte sami, fungujú ďalej.",
 	"settings.backups.offKeeps": "Vypnuté zachová zálohy, ktoré už máte."
 }

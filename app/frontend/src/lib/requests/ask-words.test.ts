@@ -1,4 +1,4 @@
-import { alsoDeclined, approverCounts, approverSort, approverTab, askMoments, askTab, askTabs, askedBy, firstTab, libraryMoments, momentWords, tabCounts, limitLine, limitLines, names, waitWords } from './ask-words.ts';
+import { statesToFill, totalCounts, alsoDeclined, approverCounts, approverSort, approverTab, askMoments, askTab, askTabs, askedBy, firstTab, libraryMoments, momentWords, tabCounts, limitLine, limitLines, names, waitWords } from './ask-words.ts';
 import type { AskKindLimit, AskLimit } from './types.ts';
 import { describe, expect, it } from 'vitest';
 import type { AskState } from '../core/types.ts';
@@ -50,6 +50,8 @@ describe('ask tabs', () => {
 		expect(askTab(a('asked'))).toBe('waiting');
 		expect(askTab(a('approved', 4))).toBe('approved');
 		expect(askTab(a('approved'))).toBe('failed');
+		// Approved a moment ago, its title still being added: not Failed yet.
+		expect(askTab({ state: 'approved', title_id: undefined, adding: true })).toBe('approved');
 		expect(askTab(a('turned_down'))).toBe('declined');
 		expect(askTab(a('available', 4))).toBe('done');
 	});
@@ -115,5 +117,26 @@ describe('Alert moments', () => {
 	});
 	it('puts the download moments between Sent to download and In the Library, as the server lists them', () => {
 		expect(libraryMoments.slice(0, 4)).toEqual(['grab', 'downloaded', 'download_failed', 'import']);
+	});
+});
+
+describe('totalCounts', () => {
+	const c = (pending: number, processing: number, done: number, failed: number) => ({ pending, processing, done, failed });
+	it('says the server totals when nothing on the page is changing', () => {
+		expect(totalCounts(c(5, 254, 250, 250), c(5, 195, 0, 195), c(5, 195, 0, 195))).toEqual(c(5, 254, 250, 250));
+	});
+	it('moves a total by what is changing here, and never below zero', () => {
+		// one waiting request is being approved right now: it counts in Processing already
+		expect(totalCounts(c(5, 254, 250, 250), c(4, 196, 0, 195), c(5, 195, 0, 195))).toEqual(c(4, 255, 250, 250));
+		expect(totalCounts(c(0, 0, 0, 0), c(0, 0, 0, 0), c(1, 1, 1, 1))).toEqual(c(0, 0, 0, 0));
+	});
+});
+
+describe('statesToFill', () => {
+	it('reads a tab the server counts requests in when the list has none of them', () => {
+		const listed = [{ state: 'approved' as const }, { state: 'asked' as const }];
+		expect(statesToFill('done', 250, listed)).toEqual(['available', 'turned_down']);
+		expect(statesToFill('done', 0, listed)).toEqual([]);
+		expect(statesToFill('processing', 254, listed)).toEqual([]);
 	});
 });

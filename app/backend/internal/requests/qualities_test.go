@@ -48,7 +48,7 @@ func TestQualityLinesComeFromTheRequestSettings(t *testing.T) {
 		if ids(ls) != "standard,4k" || ls[0].Extra || !ls[0].Ready || ls[0].PickRulesID != 0 || !ls[1].Extra || !ls[1].Ready || ls[1].PickRulesID != fourK {
 			t.Fatalf("%s lines %+v", kind, ls)
 		}
-		if got := ids(offered(ls, r.ana)); got != "standard,4k" {
+		if got := ids(offered(ls, r.ana, "movie")); got != "standard,4k" {
 			t.Fatalf("%s offered %s", kind, got)
 		}
 	}
@@ -69,7 +69,7 @@ func TestQualityLinesComeFromTheRequestSettings(t *testing.T) {
 	pinExec(t, r, "DELETE FROM pick_rules WHERE name = ?", mediafiles.FourKName)
 	m, _ = qualityLines(ctx, r.st.Read(), set, "movie")
 	s, _ = qualityLines(ctx, r.st.Read(), set, "show")
-	if m[1].Ready || ids(offered(m, r.ana)) != "standard" || !s[1].Ready || ids(offered(s, r.ana)) != "standard,4k" {
+	if m[1].Ready || ids(offered(m, r.ana, "movie")) != "standard" || !s[1].Ready || ids(offered(s, r.ana, "show")) != "standard,4k" {
 		t.Fatalf("not set up: movie %+v show %+v", m, s)
 	}
 }

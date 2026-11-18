@@ -19,4 +19,9 @@ describe('pinned', () => {
 		expect(a.label).toBe('Settings');
 		expect(a.tone).toBe('info');
 	});
+
+	it('keeps a brand name that starts lower-case, like qBittorrent', () => {
+		const [a] = pinned([{ text: 'qBittorrent is not reachable', href: '/settings/new', group: 'x', severity: 'warning' }], pages);
+		expect(a.title).toBe('qBittorrent is not reachable');
+	});
 });

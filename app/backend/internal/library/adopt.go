@@ -1,6 +1,7 @@
 package library
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -95,6 +96,10 @@ type AdoptPlan struct {
 	Limit int    `json:"limit"`
 	More  bool   `json:"more"`
 	Next  string `json:"next,omitempty"`
+	// Total is how many folders the Library folder holds in all; Offset is
+	// how many of them sort before this part.
+	Total  int `json:"total"`
+	Offset int `json:"offset"`
 	// Warning says the Library folder looks like a dropped mount.
 	Warning string `json:"warning,omitempty"`
 	// Partial says the scan stopped (cancelled, or still running) after
@@ -192,7 +197,7 @@ func wordScore(name, other string) float64 {
 	switch {
 	case a == "" || b == "":
 		return 0
-	case a == b:
+	case a == b || releasename.SameName(other, a):
 		return 1
 	}
 	wa, wb := strings.Fields(a), strings.Fields(b)
@@ -288,32 +293,37 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 	if err != nil {
 		return p, err
 	}
+	fold := FoldsCase(lf.Path)
 	for _, v := range vs {
-		known[strings.ToLower(v.FolderName)] = v.TitleID
+		known[FolderKey(v.FolderName, fold)] = v.TitleID
 	}
 	p.Warning = MountWarning(ctx, db, lf, len(ents))
-	total := ScanTotal(ents, after, p.Limit)
+	// Movie folders may sit in letter, genre or collection folders.
+	all := movieFolders(lf.Path, ents)
+	todo := afterIn(all, after)
+	p.Offset, p.Total = len(all)-len(todo), len(all)
+	total := min(len(todo), p.Limit)
 	defer func() { ReportScan(ctx, len(p.Folders), total) }()
-	for _, e := range ents {
-		if !ScanWants(e, after) {
-			continue
-		}
+	ahead := startAhead(ctx, md, scanLookups(todo, p.Limit, known, fold))
+	defer ahead.close()
+	for _, name := range todo {
 		if len(p.Folders) >= p.Limit {
 			p.More, p.Next = true, p.Folders[len(p.Folders)-1].Folder
 			break
 		}
 		ReportScan(ctx, len(p.Folders), total)
-		c := AdoptCandidate{Folder: e.Name(), Videos: listVideos(lf.Path, e.Name()), Others: []AdoptMatch{}}
+		c := AdoptCandidate{Folder: name, Videos: listVideos(lf.Path, name), Others: []AdoptMatch{}}
 		if len(c.Videos) > 0 {
 			c.Main = c.Videos[0].Path
 		}
-		if id, ok := known[strings.ToLower(e.Name())]; ok {
+		if id, ok := known[FolderKey(name, fold)]; ok {
 			c.Status, c.Why, c.TitleID = "in_library", "this folder already belongs to a movie in the Library", id
 			p.Folders = append(p.Folders, c)
 			p.Counts[c.Status]++
 			continue
 		}
-		name, year, ms, err := matchFolder(ctx, md, e.Name())
+		ahead.wait(ctx, path.Base(name))
+		name, year, ms, err := matchFolder(ctx, md, path.Base(name))
 		if err != nil {
 			if ctx.Err() != nil {
 				return p, ctx.Err()
@@ -322,6 +332,9 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 			// unmatched with the reason and can be looked up by hand.
 			c.ParsedName, c.ParsedYear = name, year
 			c.Status, c.Why = "unmatched", "the TMDB lookup failed ("+err.Error()+"); look it up by hand or scan again later"
+			if MetadataDown(err) {
+				c.Status, c.Why, p.Warning = NotLookedUp, MetadataNotAnswering, cmp.Or(p.Warning, MetadataNotAnsweringScan)
+			}
 			p.Folders = append(p.Folders, c)
 			p.Counts[c.Status]++
 			continue
@@ -382,6 +395,20 @@ func ScanTotal(ents []os.DirEntry, after string, limit int) int {
 	return min(n, limit)
 }
 
+// ScanPlace is how many folders a scan from the start reads in all, and
+// how many of them sort at or before after.
+func ScanPlace(ents []os.DirEntry, after string) (before, total int) {
+	for _, e := range ents {
+		if ScanWants(e, "") {
+			total++
+			if after != "" && e.Name() <= after {
+				before++
+			}
+		}
+	}
+	return before, total
+}
+
 type scanProgressKey struct{}
 
 // WithScanProgress makes the folder scans run under ctx tell f how many
@@ -407,6 +434,9 @@ type AdoptChoice struct {
 	// nil: this server's defaults); the move brings them from Radarr.
 	ReleaseGate   string `json:"release_gate,omitempty"`
 	GateDelayDays *int   `json:"gate_delay_days,omitempty"`
+	// SeasonsDiffer leaves every file of a show folder for the person to
+	// place: the old app numbers the show's seasons differently.
+	SeasonsDiffer bool `json:"-"`
 }
 
 // AdoptResult says what happened to one choice.
@@ -429,11 +459,13 @@ func (s *Service) Adopt(ctx context.Context, folderID int64, choices []AdoptChoi
 		return nil, ErrNoFolder
 	}
 	out := make([]AdoptResult, 0, len(choices))
+	defer func() { ReportScan(ctx, len(out), len(choices)) }()
 	for _, c := range choices {
+		ReportScan(ctx, len(out), len(choices))
 		if lf.Kind == "music" {
 			r, err := s.adoptArtistOne(ctx, lf, c, by)
 			if err != nil {
-				r.Error = err.Error()
+				s.adoptFailed(ctx, lf, &r, err)
 			}
 			out = append(out, r)
 			continue
@@ -441,7 +473,7 @@ func (s *Service) Adopt(ctx context.Context, folderID int64, choices []AdoptChoi
 		if lf.Kind == "show" {
 			r, err := s.showParts().AdoptOne(ctx, lf, c, by)
 			if err != nil {
-				r.Error = err.Error()
+				s.adoptFailed(ctx, lf, &r, err)
 			}
 			out = append(out, r)
 			continue
@@ -450,7 +482,7 @@ func (s *Service) Adopt(ctx context.Context, folderID int64, choices []AdoptChoi
 		id, file, err := s.adoptOne(ctx, lf, c, by)
 		r.TitleID, r.File = id, file
 		if err != nil {
-			r.Error = err.Error()
+			s.adoptFailed(ctx, lf, &r, err)
 		}
 		out = append(out, r)
 	}
@@ -458,16 +490,16 @@ func (s *Service) Adopt(ctx context.Context, folderID int64, choices []AdoptChoi
 }
 
 func (s *Service) adoptOne(ctx context.Context, lf mediafiles.LibraryFolder, c AdoptChoice, by domain.Actor) (int64, string, error) {
-	if c.Folder == "" || strings.ContainsAny(c.Folder, `/\`) || !filepath.IsLocal(c.Folder) || strings.HasPrefix(c.Folder, ".") {
+	if !validFolder(c.Folder) {
 		return 0, "", errors.New("the folder must be one folder directly in the Library folder")
 	}
-	if fi, err := os.Lstat(filepath.Join(lf.Path, c.Folder)); err != nil || !fi.IsDir() {
+	if fi, err := os.Lstat(filepath.Join(lf.Path, c.Folder)); err != nil || !fi.IsDir() || !importer.InsideRealFile(lf.Path, filepath.Join(lf.Path, c.Folder)) {
 		return 0, "", errors.New("no such folder in the Library folder")
 	}
-	if taken, err := FolderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil {
-		return 0, "", err
-	} else if taken {
-		return 0, "", errors.New("this folder already belongs to a movie in the Library")
+	// A folder already in the Library (an import run again after a restart)
+	// counts as brought in, so its title is followed too.
+	if id, err := FolderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil || id != 0 {
+		return id, "", err
 	}
 	if s.Metadata == nil {
 		return 0, "", errors.New("no metadata source")

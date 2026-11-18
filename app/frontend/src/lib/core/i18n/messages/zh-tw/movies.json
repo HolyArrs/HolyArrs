@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "此版本的挑選規則",
 	"movies.versions.folderLabel": "此版本的媒體庫資料夾",
 	"movies.versions.cancel": "取消",
-	"movies.versions.addButton": "新增版本"
+	"movies.versions.addButton": "新增版本",
+	"movies.versions.setEdition": "設定剪輯版",
+	"movies.versions.editionFileHint": "這個檔案是哪個剪輯版，例如 Theatrical 或 Directors Cut。留空即可清除。",
+	"movies.versions.unprotectConfirm": "要取消 {label} 的保護嗎？更好的副本之後可以再次取代它。",
+	"movies.versions.editionChars": "不能使用：",
+	"movies.versions.editionInvalid": "無法使用這個剪輯版名稱。請寫得短一些（帶重音符號的字母和非拉丁字母佔用更多空間），不要包含上面列出的字元，也不要以句點結尾。",
+	"movies.versions.editionDevice": "{name} 是 Windows 保留給裝置使用的名稱，無法使用。請輸入其他名稱。"
 }

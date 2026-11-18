@@ -83,6 +83,7 @@
 	"settings.users.preset": "Шаблон",
 	"settings.users.comingSoon": "Скоро",
 	"settings.users.custom": "Свой",
+	"settings.users.customHint": "Ваш собственный набор переключателей ниже. Выбор шаблона заменит его; выберите «Свой» ещё раз, чтобы вернуть.",
 	"settings.users.ageRating": "Возрастной рейтинг",
 	"settings.users.newPasswordFor": "Новый пароль для {name}",
 	"settings.users.passwordNote": "Используйте, если {name} забыл пароль. Выход будет выполнен на всех устройствах, и войти придётся с новым паролем. Сообщите его лично.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "например, Мама",
 	"settings.users.days": "Сколько дней действует ссылка",
 	"settings.users.makeInvite": "Создать ссылку-приглашение",
-	"settings.users.permAuto4k": "Запросы в 4K одобряются без ожидания"
+	"settings.users.permAuto4k": "Запросы в 4K одобряются без ожидания",
+	"settings.users.serverAccount": "Учётная запись сервера",
+	"settings.users.pickAccount": "Выберите учётную запись на медиасервере",
+	"settings.users.accountLinked": "Связано с {name}",
+	"settings.users.removedOnServer": "Удалён на сервере {word}, поэтому отключён здесь",
+	"settings.users.delete": "Удалить",
+	"settings.users.deleteName": "Удалить {name}",
+	"settings.users.confirmDelete": "Удалить {name}? Человек будет навсегда выведен из системы, его ключи удалятся. Его запросы останутся, как от удалённого человека.",
+	"settings.users.deleteYes": "Удалить человека",
+	"settings.users.keep": "Оставить",
+	"settings.users.deleted": "{name} удалён",
+	"settings.users.couldntDelete": "Не удалось удалить",
+	"settings.users.confirmDeleteKeys": "Созданные им ключи Seerr перестанут работать для всех, пока не будет создан новый.",
+	"settings.users.qualities": "Качество",
+	"settings.users.qualitiesHint": "Можно выбрать только включённые. Если включены все, новые тоже предлагаются."
 }

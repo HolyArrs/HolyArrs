@@ -318,8 +318,10 @@ func (s *Service) TellMovieFollows(ctx context.Context) (int, error) {
 
 // WatchTMDBFollows moves the waiting follows of a show onto its Library
 // title once it is added, and tells those people it landed. From then on
-// they hear about its new episodes and seasons like any follower.
+// they hear about its new episodes and seasons like any follower. Old
+// asks for the title find it again too (WatchRelink).
 func (s *Service) WatchTMDBFollows() {
+	s.WatchRelink()
 	s.Store.OnEvent(func(e domain.Event) {
 		if e.Kind != domain.EventTitleAdded || e.TitleID == nil {
 			return
