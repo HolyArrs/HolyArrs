@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "De taal kon niet worden opgeslagen",
 	"accounts.language.count.one": "1 taal",
 	"accounts.language.count.other": "{n} talen",
-	"accounts.account.watchEveryone": "De eigenaar heeft dit voor iedereen aangezet. Zet beide uit om het te stoppen."
+	"accounts.account.watchEveryone": "De eigenaar heeft dit voor iedereen aangezet. Zet beide uit om het te stoppen.",
+	"accounts.watch.title": "Gezien-markeringen",
+	"accounts.watch.hint": "Koppel hier je account op een mediaserver zodat de Bibliotheek toont wat je hebt gezien.",
+	"accounts.watch.as": "{server}, als {name}",
+	"accounts.watch.nameOn": "Naam op {server}",
+	"accounts.watch.passwordOnce": "Je wachtwoord gaat alleen naar {server} en wordt niet bewaard.",
+	"accounts.watch.linked": "Gekoppeld aan {name} op {server}",
+	"accounts.watch.unlinked": "Ontkoppeld",
+	"accounts.login.importPaused": "Je aanmelding is verlopen, dus de import is gepauzeerd. Meld je aan, open Een bibliotheek importeren en druk op Scannen om verder te gaan."
 }

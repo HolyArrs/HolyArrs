@@ -27,6 +27,8 @@
   "settings.mediaServers.pathFrom": "HolyArrs-sti",
   "settings.mediaServers.pathTo": "Samme mappe på serveren",
   "settings.mediaServers.pathHint": "Bare hvis serveren ser filene dine under en annen sti",
+	"settings.mediaServers.webUrl": "Adresse for nettlesere",
+	"settings.mediaServers.webUrlHint": "Der folk åpner serveren på mobilen eller datamaskinen. Legger til en Åpne-knapp på sidene for titler den har. La stå tomt for ingen knapp.",
   "settings.mediaServers.local": "Få tilgang til det lokale nettverket",
   "settings.mediaServers.send": "Send oppdateringer",
   "settings.mediaServers.save": "Lagre",
@@ -47,5 +49,15 @@
   "settings.mediaServers.watchConfirmOff": "Slå av visningshistorikk? Alt som er lest til nå, slettes.",
   "settings.mediaServers.watchTurnedOn": "Visningshistorikk på. Første lesing skjer innen 30 minutter.",
   "settings.mediaServers.watchTurnedOff": "Visningshistorikk av",
-  "settings.mediaServers.watchFailed": "Kunne ikke endre visningshistorikk"
+  "settings.mediaServers.watchFailed": "Kunne ikke endre visningshistorikk",
+  "settings.mediaServers.labelTitle": "Plex-etiketter",
+  "settings.mediaServers.labelSwitch": "Merk ønskede titler med etikett",
+  "settings.mediaServers.labelHint": "Når en ønsket film eller serie er i Plex, gir HolyArrs den en etikett, så du kan filtrere, lage samlinger eller dele etter den i Plex. Etiketter som alt er der, blir værende.",
+  "settings.mediaServers.labelText": "Etikett",
+  "settings.mediaServers.labelAskers": "Legg også til navnet på den som ønsket som etikett",
+  "settings.mediaServers.labelSaved": "Plex-etiketter lagret",
+  "settings.mediaServers.labelFailed": "Kunne ikke lagre Plex-etiketter",
+  "settings.mediaServers.labelExisting": "Merk allerede ønskede titler",
+  "settings.mediaServers.labelExistingStarted": "Merkingen har startet. Titlene får etikettene sine innen noen minutter.",
+  "settings.mediaServers.labelExistingFailed": "Kunne ikke starte merkingen"
 }

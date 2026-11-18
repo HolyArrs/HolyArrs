@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Pad in HolyArrs",
 	"settings.mediaServers.pathTo": "Dezelfde map op de server",
 	"settings.mediaServers.pathHint": "Alleen als de server je bestanden onder een ander pad ziet",
+	"settings.mediaServers.webUrl": "Adres voor browsers",
+	"settings.mediaServers.webUrlHint": "Waar mensen de server openen op hun telefoon of computer. Voegt een Openen-knop toe aan de titelpagina’s die hij heeft. Laat leeg voor geen knop.",
 	"settings.mediaServers.local": "Het lokale netwerk bereiken",
 	"settings.mediaServers.send": "Updates versturen",
 	"settings.mediaServers.save": "Opslaan",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Kijkgeschiedenis uitzetten? Alles wat tot nu toe gelezen is, wordt gewist.",
 	"settings.mediaServers.watchTurnedOn": "Kijkgeschiedenis aan. De eerste keer lezen volgt binnen 30 minuten.",
 	"settings.mediaServers.watchTurnedOff": "Kijkgeschiedenis uit",
-	"settings.mediaServers.watchFailed": "Kijkgeschiedenis kon niet worden gewijzigd"
+	"settings.mediaServers.watchFailed": "Kijkgeschiedenis kon niet worden gewijzigd",
+	"settings.mediaServers.labelTitle": "Plex-labels",
+	"settings.mediaServers.labelSwitch": "Aangevraagde titels labelen",
+	"settings.mediaServers.labelHint": "Als een aangevraagde film of serie in Plex staat, geeft HolyArrs hem een label, zodat je er in Plex op kunt filteren, collecties maken of delen. Labels die er al zijn blijven staan.",
+	"settings.mediaServers.labelText": "Label",
+	"settings.mediaServers.labelAskers": "Ook de naam van de aanvrager als label toevoegen",
+	"settings.mediaServers.labelSaved": "Plex-labels opgeslagen",
+	"settings.mediaServers.labelFailed": "Plex-labels konden niet worden opgeslagen",
+	"settings.mediaServers.labelExisting": "Al aangevraagde titels labelen",
+	"settings.mediaServers.labelExistingStarted": "Labelen gestart. Titels krijgen hun labels binnen een paar minuten.",
+	"settings.mediaServers.labelExistingFailed": "Labelen kon niet starten"
 }

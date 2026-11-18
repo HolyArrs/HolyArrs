@@ -6,6 +6,7 @@ export interface TagUse {
 	titles: number;
 	downloaders: number;
 	sources: number;
+	folders?: number;
 }
 
 export const MAX_TAG = 40;
@@ -43,4 +44,9 @@ export function tagsInUse(): Promise<TagUse[]> {
 
 export function forgetTags() {
 	known = undefined;
+}
+
+/** Whether taking the last tag away switched "only these tags" off: it was on, there were tags, and now there are none. */
+export function switchDropped(was: { tags: string[]; only: boolean }, now: string[]): boolean {
+	return was.only && was.tags.length > 0 && now.length === 0;
 }

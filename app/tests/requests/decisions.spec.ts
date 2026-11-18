@@ -64,8 +64,8 @@ test('turned down with a note; over the weekly limit kim is told when to try aga
 	await expect(row.getByTestId('user-limits')).toContainText('1 movie request of 10');
 	await row.getByRole('button', { name: 'Change kim' }).click();
 	const dlg = own.getByRole('dialog');
-	await expect(dlg.getByLabel('Show requests')).toHaveAttribute('placeholder', 'Default (10)');
-	await dlg.getByLabel('Movie requests').fill('1');
+	await expect(dlg.getByRole('spinbutton', { name: 'Show requests' })).toHaveAttribute('placeholder', 'Default (10)');
+	await dlg.getByRole('spinbutton', { name: 'Movie requests' }).fill('1');
 	await dlg.getByRole('button', { name: 'Save' }).click();
 	await expect(row.getByTestId('user-limits')).toContainText('1 movie request of 1 (own)');
 	await expect(row.getByTestId('user-limits')).toContainText('0 show requests of 10');
@@ -235,13 +235,15 @@ test('a member asks for one album of an artist from its page', async ({ browser 
 test('4K: a member asks for a 4K copy of a movie and of one in the Library; the approver sees 4K', async ({ browser }) => {
 	test.setTimeout(120_000);
 	const gus = await member(browser, 'gus');
-	// Not in the Library: the Ask sheet's 4K box makes it a 4K ask of its own.
+	// Not in the Library: the Ask sheet's Quality row picks 4K, an ask of its own.
 	const ask = await askButton(gus, 'saffron', 'Saffron Tramline');
 	await ask.click();
 	const sheet = gus.getByRole('dialog', { name: /^Ask for Saffron Tramline/ });
-	await sheet.getByTestId('four-k-box').getByRole('checkbox').check();
+	const pick4k = sheet.getByTestId('quality-row').getByRole('radio', { name: '4K', exact: true });
+	await pick4k.click();
+	await expect(pick4k).toHaveAttribute('aria-checked', 'true');
 	await noSidewaysScroll(gus);
-	await sheet.getByRole('button', { name: 'Ask for Saffron Tramline in 4K' }).click();
+	await sheet.getByRole('button', { name: 'Ask for Saffron Tramline', exact: true }).click();
 	await expect(sheet).toBeHidden();
 	await expect(gus.getByTestId('hero-ask-4k')).toHaveAccessibleName('Asked for Saffron Tramline in 4K');
 	await expect(gus.getByTestId('hero-ask-4k')).toBeDisabled();
@@ -255,9 +257,11 @@ test('4K: a member asks for a 4K copy of a movie and of one in the Library; the 
 	await expect(fourK).toHaveAccessibleName('Ask for Juniper Telegraph in 4K');
 	await fourK.click();
 	const only = gus.getByRole('dialog', { name: /^Ask for Juniper Telegraph/ });
-	await expect(only).toContainText('A 4K copy is its own ask');
-	await expect(only.getByTestId('four-k-box')).toHaveCount(0);
-	await only.getByRole('button', { name: 'Ask for Juniper Telegraph in 4K' }).click();
+	// The main copy is in the Library, so only 4K can be picked, and it is.
+	const row = only.getByTestId('quality-row');
+	await expect(row.getByRole('radio', { name: /^Standard/ })).toBeDisabled();
+	await expect(row.getByRole('radio', { name: '4K', exact: true })).toHaveAttribute('aria-checked', 'true');
+	await only.getByRole('button', { name: 'Ask for Juniper Telegraph', exact: true }).click();
 	await expect(only).toBeHidden();
 	await expect(fourK).toHaveAccessibleName('Asked for Juniper Telegraph in 4K');
 	await expect(fourK).toBeDisabled();
@@ -275,12 +279,12 @@ test('4K: a member asks for a 4K copy of a movie and of one in the Library; the 
 	await own.goto('/requests');
 	await own.getByRole('button', { name: /^Waiting/ }).click();
 	for (const name of ['Saffron Tramline', 'Juniper Telegraph']) {
-		await expect(card(own, name).getByTitle('Asked for a 4K copy, approved on its own')).toBeVisible();
+		await expect(card(own, name).getByTitle('Asked for 4K')).toBeVisible();
 	}
 	await noSidewaysScroll(own);
 	await card(own, 'Juniper Telegraph').getByRole('button', { name: 'Open Juniper Telegraph, asked by gus' }).click();
 	const win = own.getByRole('dialog', { name: 'Juniper Telegraph' });
-	await expect(win.getByTestId('ask-banner')).toContainText('4K copy');
+	await expect(win.getByTestId('ask-banner')).toContainText('4K');
 	await own.keyboard.press('Escape');
 	await expect(win).toBeHidden();
 	// Leave no 4K ask waiting: later projects (music) count and step through the Pending ones.
@@ -476,8 +480,11 @@ test('Follow on title pages: a show, a movie that lands later, and an album not 
 	await dot.goto(`/music/artist/${owls}`);
 	const soon = dot.getByRole('button', { name: 'Tell me when Night Fields is out' });
 	await expect(soon).toBeVisible(slow);
+	// The bell turns on at once; the reload waits for the follow to be saved.
+	const saved = dot.waitForResponse((r) => r.url().includes('/follow') && r.request().method() === 'PUT');
 	await soon.click();
 	await expect(dot.getByRole('button', { name: 'Stop following Night Fields' })).toHaveAttribute('aria-pressed', 'true');
+	expect((await saved).ok()).toBe(true);
 	await dot.reload();
 	await expect(dot.getByRole('button', { name: 'Stop following Night Fields' })).toBeVisible(slow);
 	await noSidewaysScroll(dot);
@@ -514,7 +521,7 @@ async function admin(browser: Browser, name: string, shown: string): Promise<Pag
 	await own.goto('/settings/users');
 	await own.getByRole('button', { name: 'Invite someone' }).click();
 	await own.getByLabel('Note for yourself').fill(name);
-	await own.locator('form.invite').getByRole('group', { name: 'Role' }).getByLabel('Admin').check();
+	await own.getByTestId('invite-role').getByRole('radio', { name: 'Admin' }).click();
 	await own.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await own.locator('.fresh code').textContent())!.trim();
 	const p = await fresh(browser);

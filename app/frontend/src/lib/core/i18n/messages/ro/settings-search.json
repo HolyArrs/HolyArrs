@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Respinge Lansările postate înainte de lansare",
 	"settings.search.refuseEarlyHint": "Probabil false. Alege o lansare le arată totuși, cu un avertisment.",
 	"settings.search.refuseTiny": "Respinge falsurile după dimensiune și tip de fișier",
-	"settings.search.refuseTinyHint": "Lansări prea mici, fișiere goale și .wmv sau .asf sub nume HD",
+	"settings.search.refuseTinyHint": "Lansări prea mici, fișiere goale, videoclipuri întrerupte și .wmv sau .asf sub nume HD",
 	"settings.search.grace": "Ore cu care poate fi timpurie o Lansare",
 	"settings.search.graceHint": "Pentru fusuri orare. Implicit 24.",
 	"settings.search.floors": "Verifică dimensiunile fișierelor la import",

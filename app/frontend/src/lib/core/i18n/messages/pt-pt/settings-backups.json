@@ -32,11 +32,12 @@
 	"settings.backups.key": "Chave mestra",
 	"settings.backups.keyDesc": "Os backups não incluem esta chave. Guarde uma cópia em lugar seguro.",
 	"settings.backups.noKit": "Nenhum kit de chave guardado para esta chave ainda. Sem ele, as palavras-passe guardadas de um backup não abrem em outra máquina.",
+	"settings.backups.kitRecommended": "Recomendado: transfira o seu kit de chave.",
 	"settings.backups.ownerOnlyKit": "Só o proprietário pode transferir; peça a ele.",
 	"settings.backups.fingerprint": "Impressão digital da chave",
 	"settings.backups.downloadKit": "Transferir kit de chave",
 	"settings.backups.restoreKey": "Para restaurar: renomeie para holyarrs.key e coloque na pasta config",
 	"settings.backups.offPlan": "Desativado",
-	"settings.backups.offAbout": "Sem cópias de segurança agendadas. Continua a ser feita uma cópia antes de cada atualização.",
+	"settings.backups.offAbout": "Sem cópias de segurança automáticas, nem mesmo antes de uma atualização. As cópias que fizer continuam a funcionar.",
 	"settings.backups.offKeeps": "Desativado mantém as cópias de segurança que já tens."
 }

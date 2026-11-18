@@ -61,14 +61,10 @@ func (hd *Handlers) newHero(r *http.Request, pg newPage, me int64) ([]ItemView, 
 	if hd.KidMax(r) == "" {
 		hd.NoteTrailers(metadata.TrailerLanguage(r), titles)
 	}
-	hd.FillTrailerKeys(r, vs)
-	hd.FillCardArt(r, vs)
+	hd.HeroArt(r, vs)
 	now := hd.Explore.Now().UTC()
 	out := []ItemView{}
-	for _, v := range vs {
-		if len(out) == newHeroMax || v.TrailerKey == "" || !HeroArtReady(v) {
-			continue
-		}
+	for _, v := range HeroReady(vs, newHeroMax) {
 		k := v.Kind + ":" + v.TMDBID
 		if f := NewFresh(pg.Facts[k], now); f != nil {
 			v.Fresh = f

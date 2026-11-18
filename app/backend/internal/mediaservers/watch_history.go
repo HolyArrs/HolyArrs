@@ -255,56 +255,16 @@ func (l *Linker) plexWatchPass(ctx context.Context, m domain.MediaServer, keys m
 // plexTitleKeys maps the ratingKey of every movie and show on the server to
 // its Library title, by the ids in its Guid tags (and old agents' guid).
 func (l *Linker) plexTitleKeys(ctx context.Context, m domain.MediaServer, keys map[string]int64) (movies, shows map[string]int64, err error) {
-	secs, err := l.plexSections(ctx, m)
+	movies, shows = map[string]int64{}, map[string]int64{}
+	err = l.plexItems(ctx, m, keys, func(kind string, it plexItem, title int64) {
+		if kind == "show" {
+			shows[it.ratingKey] = title
+		} else {
+			movies[it.ratingKey] = title
+		}
+	})
 	if err != nil {
 		return nil, nil, err
-	}
-	movies, shows = map[string]int64{}, map[string]int64{}
-	for _, s := range secs {
-		kind, typ, into := "movie", "1", movies
-		switch s.Type {
-		case "movie":
-		case "show":
-			kind, typ, into = "show", "2", shows
-		default:
-			continue
-		}
-		for start := 0; ; start += watchPage {
-			b, err := l.do(ctx, m, http.MethodGet, "/library/sections/"+url.PathEscape(s.Key)+"/all?type="+typ+"&includeGuids=1"+plexRange(start), nil)
-			if err != nil {
-				return nil, nil, err
-			}
-			type entry struct {
-				RatingKey string `xml:"ratingKey,attr"`
-				GUID      string `xml:"guid,attr"`
-				Guids     []struct {
-					ID string `xml:"id,attr"`
-				} `xml:"Guid"`
-			}
-			var mc struct {
-				Videos      []entry `xml:"Video"`
-				Directories []entry `xml:"Directory"`
-			}
-			if err := xml.Unmarshal(b, &mc); err != nil {
-				return nil, nil, errors.New("the server's answer was not a Plex library list")
-			}
-			list := append(mc.Videos, mc.Directories...)
-			for _, d := range list {
-				gs := []string{d.GUID}
-				for _, g := range d.Guids {
-					gs = append(gs, g.ID)
-				}
-				for _, g := range gs {
-					if id := keys[kind+"|"+plexGUID(g)]; id != 0 {
-						into[d.RatingKey] = id
-						break
-					}
-				}
-			}
-			if len(list) < watchPage {
-				break
-			}
-		}
 	}
 	return movies, shows, nil
 }

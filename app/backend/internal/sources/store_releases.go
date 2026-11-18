@@ -206,11 +206,13 @@ func dangerousDownloads(ctx context.Context, db *sql.DB) ([]dangerousPair, error
 
 // updateJudgedTx records a new verdict on a Release that is already stored:
 // its state follows the verdict unless it is chosen, its verdict for this
-// Slot is merged in, and the Slots it matched are added to.
+// Slot is merged in, the Slots it matched are added to, and the Slots it was
+// chosen or held for stay listed.
 func updateJudgedTx(tx *sql.Tx, releaseID int64, state string, hold *time.Time, v mediafiles.Verdict, bySlot map[string]any, by domain.Actor) error {
 	_, err := tx.Exec(`UPDATE releases SET state = CASE WHEN state = 'chosen' THEN state ELSE ? END,
 					hold_until = CASE WHEN state = 'chosen' THEN hold_until ELSE ? END,
-					verdict = json_set(json(?), '$.by_slot', json_patch(COALESCE(json_extract(verdict, '$.by_slot'), '{}'), json(?))),
+					verdict = json_patch(json_set(json(?), '$.by_slot', json_patch(COALESCE(json_extract(verdict, '$.by_slot'), '{}'), json(?))),
+						CASE WHEN json_type(verdict, '$.pick_slot_ids') = 'array' THEN json_object('pick_slot_ids', json_extract(verdict, '$.pick_slot_ids')) ELSE '{}' END),
 					matched_slot_ids = (SELECT json_group_array(value) FROM (SELECT value FROM json_each(matched_slot_ids) UNION SELECT value FROM json_each(?))),
 					updated_at = ?, updated_by = ? WHERE id = ?`,
 		state, timeOrNil(hold), jsonText(toMap(v)), jsonText(bySlot), jsonText(nonNil(v.SlotIDs)), database.FormatTime(time.Now()), actorText(by), releaseID)

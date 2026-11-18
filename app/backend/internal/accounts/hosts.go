@@ -127,7 +127,7 @@ func echoHost(host string) string {
 }
 
 func hostRefusedMsg(host string) string {
-	return "unknown host name " + echoHost(host) + "; open HolyArrs by its IP address and add the name under Allowed host names in Settings, or add it to " + EnvAllowedHosts
+	return "Saving is blocked because HolyArrs doesn't know the name " + echoHost(host) + ". Open HolyArrs at its local address and add this name under Settings > Sign-in and security > Allowed host names, or add it to " + EnvAllowedHosts + "."
 }
 
 // hostAllowed checks the Host header against IP addresses, localhost and
@@ -137,7 +137,7 @@ func (a *Auth) hostAllowed(r *http.Request) bool {
 	if h == "" {
 		return false
 	}
-	if net.ParseIP(h) != nil || a.hosts[h] {
+	if net.ParseIP(h) != nil || a.hosts[h] || pluginHost(r) {
 		return true
 	}
 	if saved := a.savedHosts.Load(); saved != nil {
@@ -173,7 +173,7 @@ func (a *Auth) logRefusedHost(host string) {
 		return
 	}
 	a.refusedHosts[h] = true
-	log.Printf("auth: refused host name %s; add it under Allowed host names in Settings or to %s if it is yours", h, EnvAllowedHosts)
+	log.Printf("auth: refused host name %s; add it under Settings > Sign-in and security > Allowed host names or to %s if it is yours", h, EnvAllowedHosts)
 }
 
 // cleanHostList cleans and checks names from Settings, keeping their order.

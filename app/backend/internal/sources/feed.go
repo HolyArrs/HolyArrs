@@ -205,7 +205,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 	}
 
 	// Match against one small record per Title first. A feed normally names only a few Titles, so loading every Slot would waste memory and queries.
-	refs, err := s.wantedTitleRefs(ctx)
+	refs, copies, err := s.wantedTitleRefs(ctx)
 	if err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			unmatched = append(unmatched, f)
 
 		// A tagged Source's Release goes only to a Title sharing a tag, on the Title or its Pick rules. It is matched against every wanted Title first, so it never lands on a look-alike because the right one was left out.
-		case mediafiles.SourceTakesTitle(f.src.Tags, m.Title.Tags, m.Title.RuleTags):
+		case mediafiles.SourceTakesTitle(f.src.Tags, m.Title.Tags, m.Title.RuleTags, m.Title.TagsOnly):
 			byTitle[m.Title.ID] = append(byTitle[m.Title.ID], f)
 		default:
 			drops.add(f.src, f.item.Title, dropSourceTags)
@@ -239,6 +239,15 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			c, err := s.loadSlot(ctx, sl.ID)
 			if err != nil {
 				return err
+			}
+			// A copy the list does not know picks its Sources by the title's own tags.
+			if cp, ok := copies[c.ver.ID]; ok {
+				c.from = cp
+			} else {
+				c.from = copySources{tags: c.ti.Tags}
+			}
+			if c.from.passed {
+				c.note = folderTagsNote
 			}
 			ctxs[titleID] = append(ctxs[titleID], c)
 		}
@@ -272,14 +281,14 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			continue
 		}
 		for _, c := range ctxs[titleID] {
-			cands := rulesTake(c.pr.Body.Tags, fs)
+			cands := copyTakes(c, fs)
 			for k := range cands {
 				if id := storedID[keyOf(cands[k])]; id > 0 {
 					cands[k].relID = id
 				}
 			}
 			if c.sl.State == mediafiles.SlotHeld && c.sl.HeldReleaseID != nil {
-				if f, ok := s.storedFound(ctx, *c.sl.HeldReleaseID); ok {
+				if f, ok := s.storedFound(ctx, *c.sl.HeldReleaseID); ok && c.from.takes(f.src.Tags, c.pr.Body.Tags) {
 					cands = append(cands, f)
 				}
 			}
@@ -291,6 +300,11 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			ids, err := s.storeAll(ctx, by, &jobID, "feed", c.sl.ID, cands, rels, vs, false)
 			if err != nil {
 				return err
+			}
+			if c.sl.State == mediafiles.SlotHeld && c.sl.HeldReleaseID != nil {
+				if err := s.freeFailedHeld(ctx, by, map[int64]int64{c.sl.ID: *c.sl.HeldReleaseID}, cands, vs); err != nil {
+					return err
+				}
 			}
 			for k := range cands {
 				if cands[k].relID == 0 {
@@ -310,7 +324,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 					return err
 				}
 				chosen++
-				s.addEvent(ctx, by, &jobID, c.ti.ID, c.sl.ID, EventReleaseChosen, "Feed check chose "+name, map[string]any{"release_id": ids[w]})
+				s.addEvent(ctx, by, &jobID, c.ti.ID, c.sl.ID, EventReleaseChosen, "Feed check chose "+name, noted(map[string]any{"release_id": ids[w]}, c.note))
 				s.publish("slot", map[string]any{"id": c.sl.ID, "state": mediafiles.SlotChosen, "reason": "chose " + name})
 				if s.OnChosen != nil {
 					s.OnChosen(ctx, c.sl.ID, ids[w])
@@ -323,7 +337,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 					return err
 				}
 				held++
-				s.addEvent(ctx, by, &jobID, c.ti.ID, c.sl.ID, EventReleaseHeld, "Feed check holding "+name, map[string]any{"release_id": ids[w]})
+				s.addEvent(ctx, by, &jobID, c.ti.ID, c.sl.ID, EventReleaseHeld, "Feed check holding "+name, noted(map[string]any{"release_id": ids[w]}, c.note))
 				s.publish("slot", map[string]any{"id": c.sl.ID, "state": mediafiles.SlotHeld, "reason": "holding " + name})
 			}
 		}
@@ -539,21 +553,51 @@ func Checks(ctx context.Context, db *sql.DB) mediafiles.Checks {
 		EpisodeMinutes: minutes}
 }
 
-// wantedTitleRefs lists one small record per active Title that still has a Slot looking, so a feed can be matched without loading every Slot.
-func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]mediafiles.TitleRef, error) {
+// wantedTitleRefs lists one small record per active Title that still has a Slot looking, so a feed can be matched without loading every Slot. A Title's record takes a Release when any of its copies would; copies says, by Version, how each copy picks its Sources.
+func (s *Searcher) wantedTitleRefs(ctx context.Context) ([]mediafiles.TitleRef, map[int64]copySources, error) {
 	titles, err := mediafiles.TitlesLooking(ctx, s.Store.Read(), lookingStateNames())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	ruleTags, err := mediafiles.LookingRuleTags(ctx, s.Store.Read(), lookingStateNames())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	srcs, err := database.Select[domain.Source](ctx, s.Store.Read(), "sources", anyState)
+	if err != nil {
+		return nil, nil, err
+	}
+	folder, err := mediafiles.FolderSourceTags(ctx, s.Store.Read(), 0)
+	if err != nil {
+		return nil, nil, err
+	}
+	kinds := map[string][][]string{}
+	for _, kind := range []string{"movie", "show", "artist"} {
+		kinds[kind] = kindTags(srcs, kind)
+	}
+	copies := map[int64]copySources{}
 	refs := titleRefs(titles)
 	for i := range refs {
 		refs[i].RuleTags = ruleTags[refs[i].ID]
+		kind := titles[i].Kind
+		if kind != "show" && kind != "artist" {
+			kind = "movie"
+		}
+		all := len(folder[refs[i].ID]) > 0
+		for version, tags := range folder[refs[i].ID] {
+			cp := copyOf(titles[i].Tags, tags, kinds[kind])
+			copies[version] = cp
+			all = all && cp.only
+			// The folder's own tags are added one by one, so none falls off a title that carries as many as it may.
+			for _, tag := range mediafiles.CleanTags(tags) {
+				if !slices.Contains(refs[i].Tags, tag) {
+					refs[i].Tags = append(slices.Clone(refs[i].Tags), tag)
+				}
+			}
+		}
+		refs[i].TagsOnly = all
 	}
-	return refs, nil
+	return refs, copies, nil
 }
 
 // dropUnmatched records the Releases that matched no looking Title. Those
@@ -597,7 +641,30 @@ func (s *Searcher) storedFound(ctx context.Context, id int64) (found, bool) {
 	if rel.InfoHash != nil {
 		it.InfoHash = *rel.InfoHash
 	}
-	return found{src: src, item: it, relID: rel.ID}, true
+	return found{src: src, item: it, relID: rel.ID, byID: matchedByID(rel)}, true
+}
+
+// freeFailedHeld sends Slots back to looking when the Release they wait
+// on was judged again and no longer passes. held maps each waiting Slot to
+// its Release; cands and vs are what was just judged.
+func (s *Searcher) freeFailedHeld(ctx context.Context, by domain.Actor, held map[int64]int64, cands []found, vs []mediafiles.Verdict) error {
+	freed := map[int64]bool{}
+	for _, relID := range held {
+		if freed[relID] {
+			continue
+		}
+		for k := range cands {
+			if cands[k].relID != relID || vs[k].Passed {
+				continue
+			}
+			freed[relID] = true
+			if err := s.Store.Write(ctx, func(tx *sql.Tx) error { return unholdTx(tx, relID, "Held Release no longer passes", by) }); err != nil {
+				return err
+			}
+			break
+		}
+	}
+	return nil
 }
 
 // grabHeld chooses the Held Releases whose wait is over and returns how many Slots were settled.
@@ -613,7 +680,17 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 			continue
 		}
 		var rel domain.Release
-		if err := database.Get(ctx, s.Store.Read(), "releases", *sl.HeldReleaseID, &rel); err != nil || rel.State != "held" {
+		if err := database.Get(ctx, s.Store.Read(), "releases", *sl.HeldReleaseID, &rel); err != nil {
+			continue
+		}
+		// The Release stopped waiting without this Slot (chosen for another, or passed over): its Slots go back to looking.
+		if rel.State != "held" {
+			_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
+				if st, err := releaseStateTx(tx, rel.ID); err != nil || st == "held" {
+					return err
+				}
+				return unholdTx(tx, rel.ID, "Held Release is no longer waiting", by)
+			})
 			continue
 		}
 		// The files turned out to be a program during the wait: refuse the Release and send its Slots back to looking.
@@ -632,12 +709,33 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 			continue
 		}
 
-		// A season pack held for several Slots is chosen for all that still hold it. A Slot missing from the pick list (an old list) is chosen alone.
+		// The show's year or names changed during the wait, or the Release waited from before the year was checked.
+		if s.heldShowMiss(ctx, sl, rel) {
+			_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
+				if err := passOverHeldReleaseTx(tx, rel.ID, by); err != nil {
+					return err
+				}
+				return unholdTx(tx, rel.ID, "Held Release no longer passes", by)
+			})
+			done[sl.ID] = true
+			continue
+		}
+		if !s.heldStillTaken(ctx, sl.ID, rel) {
+			s.dropHeldNotTaken(ctx, sl.ID, rel, by)
+			done[sl.ID] = true
+			continue
+		}
+
+		// A season pack or album held for several Slots is chosen for all on its pick list that still hold it.
+		// A Release with no pick list (one left waiting by an older build) is chosen for every due Slot of this Version that holds it.
+		// A Slot missing from a list that names others is chosen alone.
 		pick := []int64{sl.ID}
-		if many := PickSlots(rel); len(many) > 1 && slices.Contains(many, sl.ID) {
+		many := PickSlots(rel)
+		listed, _ := rel.Verdict["pick_slot_ids"].([]any)
+		if len(many) > 1 && slices.Contains(many, sl.ID) || len(listed) == 0 {
 			pick = pick[:0]
 			for _, o := range slots {
-				if o.HeldReleaseID != nil && *o.HeldReleaseID == rel.ID && slices.Contains(many, o.ID) {
+				if o.HeldReleaseID != nil && *o.HeldReleaseID == rel.ID && (slices.Contains(many, o.ID) || len(listed) == 0 && o.VersionID == sl.VersionID) {
 					pick = append(pick, o.ID)
 				}
 			}
@@ -663,6 +761,24 @@ func (s *Searcher) grabHeld(ctx context.Context, by domain.Actor, jobID *int64, 
 	return n, nil
 }
 
+// freeUnfilledHeld sends a waiting Slot back to looking when the Release it
+// waits on was judged again, still passes, but no longer fills that Slot.
+// held maps each waiting Slot to its Release; cands and vs are what was just judged.
+func (s *Searcher) freeUnfilledHeld(ctx context.Context, by domain.Actor, held map[int64]int64, cands []found, vs []mediafiles.Verdict) error {
+	for slotID, relID := range held {
+		for k := range cands {
+			if cands[k].relID != relID || !vs[k].Passed || slices.Contains(vs[k].SlotIDs, slotID) {
+				continue
+			}
+			if err := s.Store.Write(ctx, func(tx *sql.Tx) error { return unholdTx(tx, relID, "Held Release no longer fills this", by, slotID) }); err != nil {
+				return err
+			}
+			break
+		}
+	}
+	return nil
+}
+
 // movieOut returns a movie's first known release day: cinema, digital or disc.
 func movieOut(t mediafiles.Title) *time.Time {
 	var first *time.Time
@@ -677,16 +793,4 @@ func movieOut(t mediafiles.Title) *time.Time {
 // lookingStateNames is lookingStates as the strings the store compares with.
 func lookingStateNames() [3]string {
 	return [3]string{string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2])}
-}
-
-// rulesTake keeps the feed Releases whose Source these Pick rules may use,
-// the same rule Search follows when it picks Sources to ask.
-func rulesTake(rules []string, fs []found) []found {
-	out := make([]found, 0, len(fs))
-	for _, f := range fs {
-		if mediafiles.RulesTakeSource(f.src.Tags, rules) {
-			out = append(out, f)
-		}
-	}
-	return out
 }

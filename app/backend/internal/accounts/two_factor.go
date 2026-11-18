@@ -296,18 +296,7 @@ func (a *Auth) twoFactorSetup(w http.ResponseWriter, r *http.Request) {
 	out := map[string]any{"secret": secret, "uri": uri}
 	// A code to scan, as rows of "1" (dark) and "0"; left out if the link
 	// is ever too long for one, and the key can still be typed.
-	if m, err := qr.Encode(uri); err == nil {
-		rows := make([]string, len(m))
-		for y, row := range m {
-			b := make([]byte, len(row))
-			for x, dark := range row {
-				b[x] = '0'
-				if dark {
-					b[x] = '1'
-				}
-			}
-			rows[y] = string(b)
-		}
+	if rows := QRRows(uri); rows != nil {
 		out["qr"] = rows
 	}
 	writeJSON(w, http.StatusOK, out)
@@ -481,4 +470,25 @@ func (a *Auth) codeOrFail(w http.ResponseWriter, r *http.Request, who webserver.
 	delete(a.fails, key)
 	a.mu.Unlock()
 	return true
+}
+
+// QRRows draws text as a QR code, rows of "1" (dark) and "0", for the
+// QrCode screen part; nil when text is too long for one.
+func QRRows(text string) []string {
+	m, err := qr.Encode(text)
+	if err != nil {
+		return nil
+	}
+	rows := make([]string, len(m))
+	for y, row := range m {
+		b := make([]byte, len(row))
+		for x, dark := range row {
+			b[x] = '0'
+			if dark {
+				b[x] = '1'
+			}
+		}
+		rows[y] = string(b)
+	}
+	return rows
 }

@@ -7,6 +7,7 @@
 	"settings.sources.title": "Källor",
 	"settings.sources.add": "Lägg till en källa",
 	"settings.sources.lead": "Prioritet 1 går först. En källa som misslyckas hoppas över i upp till sex timmar. För sajter utan flöde lägger du till Jackett eller Prowlarr som ett Torznab-flöde.",
+	"settings.sources.builtIn": "Inbyggda webbplatser behöver varken Jackett eller Prowlarr: {sites}. Välj {site} under {kind}.",
 	"settings.sources.change": "Ändra {name}",
 	"settings.sources.name": "Namn",
 	"settings.sources.feedKind": "Typ av flöde",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Spara",
 	"settings.sources.cancel": "Avbryt",
 	"settings.sources.none": "Inga källor",
-	"settings.sources.noneText": "Lägg till ett Torznab- eller Newznab-flöde, eller Jackett eller Prowlarr.",
+	"settings.sources.noneText": "Lägg till en inbyggd webbplats, ett Torznab- eller Newznab-flöde, eller Jackett eller Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioritet {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioritet {priority} · {uses}",
 	"settings.sources.keyIs": "nyckel {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Webbplats",
 	"settings.sources.addressSite": "Webbplatsens egen adress. Ändra den bara om webbplatsen har flyttat.",
 	"settings.sources.siteKeyLabel": "Cookie eller RSS-nyckel",
-	"settings.sources.siteKeyHint": "Från ditt eget konto: uid och pass från webbläsarens cookie, eller u och tp från din RSS-länk. Sparas krypterad."
+	"settings.sources.siteKeyHint": "Från ditt eget konto: uid och pass från webbläsarens cookie, eller u och tp från din RSS-länk. Sparas krypterad.",
+	"settings.sources.sendTo": "Skicka nedladdningar till",
+	"settings.sources.sendToAny": "Valfri nedladdare",
+	"settings.sources.sendToHint": "Allt som väljs från den här källan går bara till den här nedladdaren. Är den nere väntar det.",
+	"settings.sources.sendToGone": "Den valda nedladdaren togs bort. Nedladdningar från den här källan går nu till valfri nedladdare."
 }

@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "نمایش به افراد",
 	"settings.requests.choiceMain": "{rules} · کپی اصلی عنوان",
 	"settings.requests.choiceOwn": "{rules} · به‌عنوان کپی جداگانه نگه داشته می‌شود",
-	"settings.requests.choiceNotReady": "وقتی کیفیت 4K در بالا تنظیم شود ارائه می‌شود"
+	"settings.requests.choiceNotReady": "وقتی کیفیت 4K در بالا تنظیم شود ارائه می‌شود",
+	"settings.requests.approvals": "تأییدها",
+	"settings.requests.autoApprove": "تأیید خودکار درخواست‌ها",
+	"settings.requests.autoApproveNote": "خاموش = درخواست‌هایشان منتظر شما می‌مانند. عنوان‌های فهرست تماشای Plex از همین کلید پیروی می‌کنند.",
+	"settings.requests.ownerTag": "مالک",
+	"settings.requests.choiceAdd": "افزودن کیفیت",
+	"settings.requests.choiceNew": "کیفیت تازه",
+	"settings.requests.choiceLabel": "نام شما",
+	"settings.requests.choiceSeen": "دیگران می‌بینند"
 }

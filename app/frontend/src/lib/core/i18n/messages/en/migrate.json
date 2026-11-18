@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Need attention: {n}",
 	"migrate.needAttentionWhy": "Their old folder is not on this server, so they come over as wanted into a folder here. Fix the folder or add a path rule: {list}",
 	"migrate.leftOutUncheckedN": "Left out: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} is set to \"Don't bring them\"; pick a folder for it and import again"
+	"migrate.leftOutUncheckedWhy": "{folder} is set to \"Don't bring them\"; pick a folder for it and import again",
+	"migrate.seasonsDifferOne": "Check 1 show found by its TMDB number",
+	"migrate.seasonsDifferOther": "Check {n} shows found by their TMDB number",
+	"migrate.seasonsDifferWhy": "Only the old app's TMDB number found {list}, under another name here. Open each and check it is the same show. If it is, its seasons are numbered differently: match its Leftover files, then turn the show on. If it is not, remove it; its files stay where they are.",
+	"migrate.stillChecking": "Shows still being checked with the metadata server: {n}. This list updates on its own when they are done.",
+	"migrate.stillCheckingImport": "Shows still being checked with the metadata server: {n}. You can import now; they are checked during the import."
 }

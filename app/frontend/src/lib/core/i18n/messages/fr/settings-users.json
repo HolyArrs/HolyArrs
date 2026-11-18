@@ -83,6 +83,7 @@
 	"settings.users.preset": "Préréglage",
 	"settings.users.comingSoon": "Bientôt",
 	"settings.users.custom": "Personnalisé",
+	"settings.users.customHint": "Votre propre combinaison des interrupteurs ci-dessous. Choisir un préréglage la remplace ; choisissez de nouveau Personnalisé pour la retrouver.",
 	"settings.users.ageRating": "Classification par âge",
 	"settings.users.newPasswordFor": "Nouveau mot de passe pour {name}",
 	"settings.users.passwordNote": "À utiliser quand {name} a oublié le sien. Cette personne est déconnectée partout et se reconnecte avec le nouveau. Communiquez-le-lui en personne.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "ex. Maman",
 	"settings.users.days": "Durée de validité du lien (jours)",
 	"settings.users.makeInvite": "Créer un lien d'invitation",
-	"settings.users.permAuto4k": "Demandes 4K approuvées sans attendre"
+	"settings.users.permAuto4k": "Demandes 4K approuvées sans attendre",
+	"settings.users.serverAccount": "Compte du serveur",
+	"settings.users.pickAccount": "Choisir un compte sur un serveur multimédia",
+	"settings.users.accountLinked": "Lié à {name}",
+	"settings.users.removedOnServer": "Supprimé sur le serveur {word}, donc désactivé ici",
+	"settings.users.delete": "Supprimer",
+	"settings.users.deleteName": "Supprimer {name}",
+	"settings.users.confirmDelete": "Supprimer {name} ? Sa session est fermée pour de bon et ses clés disparaissent. Ses demandes restent, affichées comme personne supprimée.",
+	"settings.users.deleteYes": "Supprimer la personne",
+	"settings.users.keep": "Garder",
+	"settings.users.deleted": "{name} supprimé",
+	"settings.users.couldntDelete": "Suppression impossible",
+	"settings.users.confirmDeleteKeys": "Les clés Seerr qu'il a créées cessent de fonctionner pour tout le monde jusqu'à ce qu'une nouvelle soit créée.",
+	"settings.users.qualities": "Qualités",
+	"settings.users.qualitiesHint": "Ils ne peuvent choisir que celles activées. Si toutes le sont, les nouvelles sont aussi proposées."
 }

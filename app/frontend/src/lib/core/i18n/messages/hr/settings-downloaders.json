@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Obje putanje su iste pa ovaj par ništa ne mijenja. Ipak govori HolyArrsu gdje su datoteke ovog klijenta pa ga možete zadržati.",
 	"settings.downloaders.change": "Promijeni {name}",
 	"settings.downloaders.whichApp": "Koja aplikacija",
-	"settings.downloaders.torrents": "(torrenti)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrenti",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Najkorišteniji",
 	"settings.downloaders.name": "Naziv",
 	"settings.downloaders.address": "Adresa",
 	"settings.downloaders.addressHint": "Njegova web stranica. Za SABnzbd koristi IP ili dopusti naziv hosta HolyArrsa.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategorija nakon uvoza",
 	"settings.downloaders.categoryAfterImportHint": "Kad je torrent uvezen, HolyArrs ga premješta u ovu kategoriju. Ostavite prazno da ostane u glavnoj kategoriji.",
 	"settings.downloaders.ownOnly": "Prikaži samo stavke HolyArrsa",
-	"settings.downloaders.ownOnlyHint": "Stavke drugih aplikacija u ovom preuzimaču skrivene su i HolyArrs ih ne mijenja."
+	"settings.downloaders.ownOnlyHint": "Stavke drugih aplikacija u ovom preuzimaču skrivene su i HolyArrs ih ne mijenja.",
+	"settings.downloaders.state.notAnswering": "Ne odgovara",
+	"settings.downloaders.state.paused": "Pauzirano",
+	"settings.downloaders.state.resting": "Odmara",
+	"settings.downloaders.state.signInRefused": "Prijava odbijena",
+	"settings.downloaders.state.working": "Radi"
 }

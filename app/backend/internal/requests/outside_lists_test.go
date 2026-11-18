@@ -335,3 +335,36 @@ func TestHandle_ScheduleReadsOnlyDueEnabledLists(t *testing.T) {
 		t.Fatalf("not synced when due: %d", e.hits.Load())
 	}
 }
+
+func TestNormalMDBListRef(t *testing.T) {
+	const want = "linaspurinis/top-watched-movies-of-the-week"
+	for _, in := range []string{
+		"https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week",
+		"https://www.mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week/",
+		"https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week/json",
+		"https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week?sort=rank",
+		"https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week#top",
+		"HTTPS://MDBList.com/lists/linaspurinis/top-watched-movies-of-the-week",
+		"linaspurinis/top-watched-movies-of-the-week",
+		"  linaspurinis/top-watched-movies-of-the-week  ",
+		"mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week",
+		"www.mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week/json",
+	} {
+		if got, err := NormalListRef(ListMDBList, in); err != nil || got != want {
+			t.Errorf("%q: %q %v", in, got, err)
+		}
+	}
+	for _, in := range []string{
+		"https://trakt.tv/users/a/lists/b",
+		"https://mdblist.evil.com/lists/a/b",
+		"evilmdblist.com/lists/a/b",
+		"https://mdblist.com/lists/onlyuser",
+		"https://mdblist.com/lists/a/b/c",
+		"a b/c",
+		"",
+	} {
+		if got, err := NormalListRef(ListMDBList, in); !errors.Is(err, ErrRef) {
+			t.Errorf("%q: accepted as %q (%v)", in, got, err)
+		}
+	}
+}

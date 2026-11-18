@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -467,6 +468,10 @@ func TestReadyTellsEveryoneWhoAsked(t *testing.T) {
 	e := hasEvent(r.events(t), domain.EventAskAvailable)
 	if e == nil || e.Summary != "Dune: Part Two (2024) is ready for ana, bo" {
 		t.Fatalf("event %+v", e)
+	}
+	// The askers' ids sit next to their names, so a deleted one can be told apart later.
+	if ids := askerIDs(e.Data["asked_by_ids"]); len(ids) != 2 || !slices.Contains(ids, r.ana.UserID) || !slices.Contains(ids, r.bo.UserID) {
+		t.Fatalf("asked_by_ids %v", e.Data["asked_by_ids"])
 	}
 	ms, unread, _ := Messages(ctx, r.st.Read(), r.bo.UserID, 10)
 	if unread != 2 || ms[0].Kind != "ready" {

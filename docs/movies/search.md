@@ -74,9 +74,11 @@ HolyArrs turns these away with a plain reason and takes the next good release.
 | Early | Posted before the movie's first date, beyond 24 h of grace for time zones. When you search yourself, you get a warning and decide. |
 | Too small | Under 1 MB per minute of the movie, or under 20 MB when the length is unknown. |
 | File kind | A program in the name (`movie.mkv.exe`), a password-locked archive, a sample or a disc image. |
-| At import | An empty file, a file far too small for its length, or a download much smaller than its release said. The release is turned down and the next one taken. |
+| At import | An empty file, a file far too small for its length, a download much smaller than its release said, or an MKV or MP4 video that is cut off or has lost its index (a download that stopped early). The release is turned down and the next one taken. |
 
 A file HolyArrs cannot read is not called a fake. It waits for you on [Downloads](downloads.md).
+
+The cut-off check reads only the start and the structure of MKV, WebM and MP4 files. It does not find damage in the middle of a video, and files of other kinds are let through unchecked.
 
 Some Sources give no size or post date. Automatic searches then show "size unknown" or "date unknown" and may still take the release. To decide on those yourself, turn on **Hold Releases of unknown size or date for you**.
 
@@ -111,7 +113,7 @@ The page also has **Check feeds now** and **Find a better copy for all**, which 
 | Check Source feeds every (minutes) | 10 to 120. 0 turns them off. | 15 | A Source limits requests. |
 | Turn down Releases posted before release | The early check. | On | Rarely. |
 | Hours a Release may be early | Grace for time zones, 0 to 720. | 24 | Good releases get turned away as early. |
-| Turn down fakes by size and file type | Size and file kind checks, and the empty file check at import. | On | Rarely. |
+| Turn down fakes by size and file type | Size and file kind checks, and the empty and cut-off file checks at import. | On | Rarely. |
 | Check file sizes at import | Smallest sizes and the release size check at import. | On | Rarely. |
 | Smallest video file to place (MB) | 0 uses 1 MB per minute of the movie. Any other value replaces that. | 0 | Short films get refused. |
 | Hold Releases of unknown size or date for you | Automatic searches keep such releases for your choice. | Off | Your Sources often omit size or date. |

@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "A nyelvet nem sikerült menteni",
 	"accounts.language.count.one": "1 nyelv",
 	"accounts.language.count.other": "{n} nyelv",
-	"accounts.account.watchEveryone": "A tulajdonos mindenkinek bekapcsolta ezt. A leállításhoz kapcsolja ki mindkettőt."
+	"accounts.account.watchEveryone": "A tulajdonos mindenkinek bekapcsolta ezt. A leállításhoz kapcsolja ki mindkettőt.",
+	"accounts.watch.title": "Megnézve jelölések",
+	"accounts.watch.hint": "Kapcsold ide a fiókodat egy médiaszerveren, hogy a Könyvtár mutassa, mit néztél meg.",
+	"accounts.watch.as": "{server}, mint {name}",
+	"accounts.watch.nameOn": "Név itt: {server}",
+	"accounts.watch.passwordOnce": "A jelszavad csak ide megy: {server}, és nem tároljuk.",
+	"accounts.watch.linked": "Összekapcsolva: {name} itt: {server}",
+	"accounts.watch.unlinked": "Leválasztva",
+	"accounts.login.importPaused": "Lejárt a bejelentkezése, ezért az import szünetel. Jelentkezzen be, nyissa meg: Médiatár importálása, és a folytatáshoz nyomja meg: Beolvasás."
 }

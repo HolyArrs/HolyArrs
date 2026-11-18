@@ -17,6 +17,7 @@
 		trying = false,
 		ready = true,
 		notice = '',
+		checking = 0,
 		onchoose,
 		onmove,
 		onshow
@@ -29,6 +30,7 @@
 		trying?: boolean;
 		ready?: boolean;
 		notice?: string;
+		checking?: number;
 		onchoose: (key: string, c: PersonChoice) => void;
 		onmove: () => void;
 		onshow: ShowList;
@@ -53,6 +55,7 @@
 <Sheet bind:open title={t('migrate.beforeYouMove')} description={t('migrate.willMoveTheseWon', { total })} size="md" placement="auto">
 	<div data-testid="before-sheet">
 		{#if notice}<p class="notice warn" role="status">{notice}</p>{/if}
+		{#if checking > 0}<p class="notice" role="status" data-testid="still-checking">{t('migrate.stillChecking', { n: checking })}</p>{/if}
 		<div class="fo-gap"><FolderOutcome lines={groups.flatMap((g) => g.lines)} /></div>
 		{#if problems.length > 0}
 			<ul class="rg">
@@ -78,7 +81,7 @@
 		{/if}
 	</div>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (open = false)}>{t('migrate.goBack')}</Button>
+		<Button onclick={() => (open = false)}>{t('migrate.goBack')}</Button>
 		<Button variant="primary" onclick={onmove} disabled={!ready || trying} busy={trying}>{t('migrate.moveAnyway')}</Button>
 	{/snippet}
 </Sheet>

@@ -15,11 +15,11 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -186,21 +186,13 @@ func (a *Auth) plexUnlink(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, a.plexOwner(ctx))
 }
 
-// testClient calls an address the owner typed. It refuses link-local,
+// testClient calls an address the owner typed. It refuses cloud metadata,
 // multicast and unspecified addresses at dial time (so a name that later
 // points elsewhere is checked too), follows no redirects and gives up
 // after testWait. Home addresses stay allowed: the server is usually there.
 func testClient() *http.Client {
-	d := &net.Dialer{Timeout: testWait, Control: func(_, address string, _ syscall.RawConn) error {
-		host, _, err := net.SplitHostPort(address)
-		if err != nil {
-			return err
-		}
-		if ip := net.ParseIP(host); ip == nil || blockedTestIP(ip) {
-			return fmt.Errorf("address %s is not allowed", host)
-		}
-		return nil
-	}}
+	d := outbound.PolicyDialer(func(ip net.IP) bool { return !blockedTestIP(ip) })
+	d.Timeout = testWait
 	return &http.Client{
 		Timeout:       testWait,
 		Transport:     &http.Transport{DialContext: d.DialContext, Proxy: nil, ResponseHeaderTimeout: testWait},
@@ -209,7 +201,7 @@ func testClient() *http.Client {
 }
 
 func blockedTestIP(ip net.IP) bool {
-	return ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsInterfaceLocalMulticast() || ip.IsMulticast() || ip.IsUnspecified()
+	return !outbound.NotMetadata(ip) || ip.IsLinkLocalMulticast() || ip.IsInterfaceLocalMulticast() || ip.IsMulticast() || ip.IsUnspecified()
 }
 
 // checkServerURL is the shape a Jellyfin or Emby address must have.
@@ -265,7 +257,7 @@ func (a *Auth) mediaServerTest(w http.ResponseWriter, r *http.Request) {
 	}
 	data, _ := io.ReadAll(io.LimitReader(resp.Body, testMax))
 	if resp.StatusCode/100 != 2 || json.Unmarshal(data, &info) != nil || info.ID == "" {
-		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "message": "Something answered, but it does not look like a " + kind + " server."})
+		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "message": "Something answered, but it does not look like " + kindWord[kind] + "."})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "name": truncate(info.ServerName, 120), "version": truncate(info.Version, 40), "product": truncate(info.ProductName, 60)})
@@ -505,10 +497,7 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				skipped++
 				continue
 			}
-			base := strings.TrimSpace(p.Name)
-			if base == "" {
-				base = kind + "-user"
-			}
+			base := NewPersonName(p.Name, kind+"-user", 64)
 			name := base
 			for i := 2; ; i++ {
 				var err error

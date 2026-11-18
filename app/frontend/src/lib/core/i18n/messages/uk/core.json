@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Дозволь ШІ-асистентам користуватися HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Ключі та маршрути для інших застосунків",
+	"core.settings.remoteAccess.label": "Віддалений доступ",
+	"core.settings.remoteAccess.about": "Доступ до HolyArrs поза домом",
 	"core.settings.tmdb.label": "Метадані",
 	"core.settings.tmdb.about": "Звідки беруться постери й назви",
 	"core.settings.health.label": "Перевірки справності",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Пароль, двоетапна перевірка, пристрої",
 	"core.api.sourceOff": "Деякі ряди вимкнено в цьому встановленні.",
 	"core.plain.noDownloader": "Твої джерела знаходять завантаження, які не може прийняти жоден твій завантажувач, тож нічого не можна надіслати.",
-	"core.plain.sameDownloader": "Два завантажувачі ведуть до одного застосунку завантаження, тож завантаження можуть показуватися двічі."
+	"core.plain.sameDownloader": "Два завантажувачі ведуть до одного застосунку завантаження, тож завантаження можуть показуватися двічі.",
+	"core.plain.peopleCheck": "Не вдається прочитати список користувачів медіасервера, тому видалені там тут не вимикаються.",
+	"core.plain.deleted": "видалено",
+	"core.plain.deletedName": "{name} (видалено)"
 }

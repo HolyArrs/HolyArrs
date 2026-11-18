@@ -72,7 +72,7 @@
 </script>
 
 {#if busy}
-	<div class="pl" class:on={stage !== 'hidden'} data-testid="page-loader" aria-label={label}>
+	<div class="pl" class:on={stage !== 'hidden'} data-testid="page-loader" role="progressbar" aria-label={label}>
 		{#if stage !== 'hidden'}
 			<div class="ow" aria-hidden="true">
 				<svg class="ms" viewBox="0 0 100 100"

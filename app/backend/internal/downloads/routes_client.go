@@ -61,7 +61,7 @@ func (a *Web) downloaderNames(ctx context.Context) map[int64]domain.Downloader {
 // clientRow is one client item in the Downloads screen's words.
 func clientRow(d domain.Downloader, j Job) DownloadRow {
 	ph, st, active := clientPhase(j)
-	if d.Protocol == "usenet" && st == "seeding" {
+	if d.Protocol == "usenet" && (st == "seeding" || st == "finished") {
 		st = "done" // Usenet has no sharing after the bytes are in
 	}
 	row := DownloadRow{
@@ -72,6 +72,7 @@ func clientRow(d domain.Downloader, j Job) DownloadRow {
 		QueuePos: j.QueuePos, Tracker: j.Tracker, TrackerProblem: j.TrackerProblem,
 		LimitDown: j.LimitDown, LimitUp: j.LimitUp, LiveKey: LiveKey(d.ID, j.ID),
 	}
+	row.Seeding = st == "seeding"
 	row.Path = j.ContentPath
 	if row.Path == "" {
 		row.Path = j.SavePath
@@ -154,16 +155,27 @@ func clientPhase(j Job) (phase, state string, active bool) {
 	case StateFailed:
 		return "failed", "failed", false
 	case StateFinished:
-		switch j.Detail {
-		case "pausedUP", "stoppedUP":
-			return "done", "paused", false
-		}
-		return "done", "seeding", false
+		return "done", finishedShare(j.Detail), false
 	}
 	if j.Detail == "stalledDL" || j.Detail == "metaDL" && j.Speed == 0 {
 		return "stalled", "stalled", true
 	}
 	return "downloading", "downloading", true
+}
+
+// finishedShare reads each client's own word for a finished torrent:
+// still shared (seeding), stopped there (paused), or done sharing.
+func finishedShare(detail string) string {
+	word, _, _ := strings.Cut(detail, ";") // Transmission adds "; error ..."
+	switch word {
+	case "uploading", "stalledUP", "forcedUP", "queuedUP", "checkingUP", // qBittorrent
+		"5", "6", // Transmission: queued to seed, seeding
+		"Seeding", "seeding": // Deluge; aria2 and rTorrent
+		return "seeding"
+	case "pausedUP", "stoppedUP", "0", "Paused":
+		return "paused"
+	}
+	return "finished"
 }
 
 // knownTitles names the client items HolyArrs already knows by hash (its
@@ -367,7 +379,7 @@ func (a *Web) titleOwner(ctx context.Context, titleID int64) string {
 	var name string
 	_ = a.Store.Read().QueryRowContext(ctx, `SELECT u.name FROM titles t JOIN users u ON u.id = json_extract(t.created_by, '$.id')
 		WHERE t.id = ? AND json_extract(t.created_by, '$.kind') = 'user'`, titleID).Scan(&name)
-	return name
+	return webserver.NameFor(ctx, name)
 }
 
 // rowOwners fills each row's Requested by, in one read: the person who
@@ -395,7 +407,7 @@ func (a *Web) rowOwners(ctx context.Context, rows []DownloadRow) {
 			var id int64
 			var name string
 			if rs.Scan(&id, &name) == nil {
-				who[id] = name
+				who[id] = webserver.NameFor(ctx, name)
 			}
 		}
 	})
@@ -417,7 +429,7 @@ func (a *Web) rowOwners(ctx context.Context, rows []DownloadRow) {
 			var id int64
 			var name string
 			if rs.Scan(&id, &name) == nil {
-				pickers[id] = name
+				pickers[id] = webserver.NameFor(ctx, name)
 			}
 		}
 	})

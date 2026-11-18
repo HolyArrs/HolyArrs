@@ -25,6 +25,7 @@ export interface SourceForm {
 	proxy_password: string;
 	proxy_allow_local_network: boolean;
 	tags: string[];
+	downloader_id: number;
 }
 
 // Getters, so each line follows the language picked when it is read.
@@ -84,7 +85,8 @@ export function emptyForm(): SourceForm {
 		proxy: '',
 		proxy_password: '',
 		proxy_allow_local_network: false,
-		tags: []
+		tags: [],
+		downloader_id: 0
 	};
 }
 
@@ -112,7 +114,8 @@ export function formFrom(s: SourceView): SourceForm {
 		proxy: s.proxy,
 		proxy_password: s.proxy_password,
 		proxy_allow_local_network: s.proxy_allow_local_network,
-		tags: [...(s.tags ?? [])]
+		tags: [...(s.tags ?? [])],
+		downloader_id: s.downloader_id ?? 0
 	};
 }
 
@@ -165,8 +168,20 @@ export function formBody(f: SourceForm): Record<string, unknown> {
 		proxy: f.proxy.trim(),
 		proxy_password: f.proxy_password,
 		proxy_allow_local_network: f.proxy_allow_local_network,
-		tags: f.tags
+		tags: f.tags,
+		downloader_id: Number(f.downloader_id) || 0
 	};
+}
+
+// sendToChoices lists the Downloaders a Source of this kind may send to, and
+// says when the chosen one is gone (removed), so grabs now go to any.
+export function sendToChoices(
+	all: { id: number; name: string; protocol: string }[],
+	protocol: string,
+	chosen: number
+): { choices: { id: number; name: string }[]; missing: boolean } {
+	const choices = all.filter((d) => d.protocol === protocol).map((d) => ({ id: d.id, name: d.name }));
+	return { choices, missing: chosen > 0 && !choices.some((d) => d.id === chosen) };
 }
 
 export function barHeight(n: number, most: number): number {

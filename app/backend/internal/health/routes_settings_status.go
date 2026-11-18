@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"net/http"
 	"slices"
 	"strings"
@@ -60,7 +61,11 @@ type StatusInput struct {
 	// known); MetadataBad is a Docker value that was not understood.
 	MetadataMode string
 	MetadataBad  string
-	UpdateNewer  *bool
+	// FakeIPHost is a host that resolved into the fake-IP range lately;
+	// MetadataFakeIP is the metadata server's host when it did.
+	FakeIPHost     string
+	MetadataFakeIP string
+	UpdateNewer    *bool
 	// GoneDefaults are the plain-words notes for saved Movies and TV
 	// defaults whose folder or Pick rules are gone.
 	GoneDefaults []string
@@ -179,8 +184,15 @@ func SettingsStatus(in StatusInput) StatusAnswer {
 	if in.MetadataUp != nil && (in.MetadataMode == "" || in.MetadataMode == string(metadata.ModeServer)) {
 		known("/settings/tmdb")
 		if !*in.MetadataUp {
-			add(StatusItem{"library", "/settings/tmdb", metadata.Down, "warning"}, "metadata")
+			text := metadata.Down
+			if in.MetadataFakeIP != "" {
+				text = outbound.FakeIPMessage(in.MetadataFakeIP)
+			}
+			add(StatusItem{"library", "/settings/tmdb", text, "warning"}, "metadata")
 		}
+	}
+	if in.FakeIPHost != "" && (in.MetadataFakeIP == "" || !seen["metadata"]) {
+		add(StatusItem{"library", "/settings/tmdb", outbound.FakeIPMessage(in.FakeIPHost), "warning"}, "fake-ip")
 	}
 	if in.NewestBackup != nil {
 		known("/settings/backups")
@@ -416,6 +428,7 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 			in.MetadataUp = &up
 		}
 	}
+	in.FakeIPHost, in.MetadataFakeIP = outbound.FakeIPHost(), metadata.ServerFakeIP()
 	if a.UpdateNewer != nil {
 		newer := a.UpdateNewer(ctx)
 		in.UpdateNewer = &newer

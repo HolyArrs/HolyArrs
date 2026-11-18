@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Ipakita sa mga tao",
 	"settings.requests.choiceMain": "{rules} · ang pangunahing kopya ng title",
 	"settings.requests.choiceOwn": "{rules} · itinatago bilang sariling kopya",
-	"settings.requests.choiceNotReady": "Iaalok kapag may naka-set up nang 4K na kalidad sa itaas"
+	"settings.requests.choiceNotReady": "Iaalok kapag may naka-set up nang 4K na kalidad sa itaas",
+	"settings.requests.approvals": "Mga pag-apruba",
+	"settings.requests.autoApprove": "Awtomatikong aprubahan ang mga request",
+	"settings.requests.autoApproveNote": "Off = naghihintay sa iyo ang mga request nila. Sumusunod sa parehong switch ang mga title mula sa Plex watchlist.",
+	"settings.requests.ownerTag": "May-ari",
+	"settings.requests.choiceAdd": "Magdagdag ng kalidad",
+	"settings.requests.choiceNew": "Bagong kalidad",
+	"settings.requests.choiceLabel": "Pangalan mo",
+	"settings.requests.choiceSeen": "Nakikita ng iba"
 }

@@ -114,7 +114,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 	if futureOnly {
 		want, eps = []int{}, []domain.AskEpisodes{}
 	}
-	open, err := openShowAsks(ctx, db, sh.IDs, q.ID)
+	open, err := openShowAsks(ctx, db, sh.IDs, q)
 	if err != nil {
 		return Result{}, err
 	}
@@ -202,7 +202,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 		// up on one ask, and asks sent at once cannot all pass the limit.
 		// Only an open ask this one would join or widen counts; an
 		// approved ask for other seasons does not stop a new ask.
-		open, err := openShowAsks(ctx, tx, ids, q.ID)
+		open, err := openShowAsks(ctx, tx, ids, q)
 		if err != nil {
 			return err
 		}
@@ -227,8 +227,8 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 		return Result{}, err
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskMade, Summary: p.Name + " asked for " + label(a),
-		Data: map[string]any{"ask_id": a.ID, "show": id, "seasons": askSeasonWords(a), "asked_by": p.Name}, GroupKey: groupKey(a.ID)})
-	if p.autoApproves(fourK) {
+		Data: map[string]any{"ask_id": a.ID, "show": id, "seasons": askSeasonWords(a), "asked_by": p.Name, "asked_by_ids": []int64{p.UserID}}, GroupKey: groupKey(a.ID)})
+	if s.autoApproves(ctx, p, fourK) {
 		if got, _, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
 			return Result{Ask: got}, nil
 		} else {
@@ -291,11 +291,12 @@ func widen(a, b []int) []int {
 	return out
 }
 
-// openShowAsks finds the open asks (waiting or approved) for one line of
-// what people can ask for, for a show with any of ids, oldest first.
-func openShowAsks(ctx context.Context, q database.Lister, ids map[string]string, quality string) ([]domain.Ask, error) {
+// openShowAsks finds the open asks (waiting or approved) for the copy one
+// line of what people can ask for stands for (the lines on the main copy
+// share it), for a show with any of ids, oldest first.
+func openShowAsks(ctx context.Context, q database.Lister, ids map[string]string, line QualityLine) ([]domain.Ask, error) {
 	var or []string
-	args := []any{quality}
+	args := []any{line.ID, line.Extra}
 	for _, k := range []string{"tmdb", "tvdb", "tvmaze", "imdb"} {
 		if ids[k] != "" {
 			or = append(or, "json_extract(source_ids, '$."+k+"') = ?")
@@ -305,7 +306,7 @@ func openShowAsks(ctx context.Context, q database.Lister, ids map[string]string,
 	if len(or) == 0 {
 		return nil, nil
 	}
-	return database.Select[domain.Ask](ctx, q, "asks", "kind = 'show' AND quality = ? AND state IN ('asked', 'approved') AND ("+strings.Join(or, " OR ")+") ORDER BY id", args...)
+	return database.Select[domain.Ask](ctx, q, "asks", "kind = 'show' AND (quality = ? OR (? = 0 AND quality_extra = 0)) AND state IN ('asked', 'approved') AND ("+strings.Join(or, " OR ")+") ORDER BY id", args...)
 }
 
 // joinWider adds p to a waiting show ask that asks for fewer seasons, and
@@ -357,13 +358,13 @@ func (s *Service) joinWiderWith(ctx context.Context, p Person, o domain.Ask, kin
 		s.changed(ctx, cur.ID)
 		return Result{Ask: cur, Already: true}, nil
 	}
-	d := map[string]any{"ask_id": cur.ID, "asked_by": p.Name}
+	d := map[string]any{"ask_id": cur.ID, "asked_by": p.Name, "asked_by_ids": []int64{p.UserID}}
 	for k, v := range data(cur) {
 		d[k] = v
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskJoined, TitleID: cur.TitleID, Summary: p.Name + " also asked for " + label(cur),
 		Data: d, GroupKey: groupKey(cur.ID)})
-	if p.autoApproves(cur.FourK) {
+	if s.autoApproves(ctx, p, cur.FourK) {
 		if got, _, err := s.decide(ctx, cur.ID, p, ApproveOptions{}, true); err == nil {
 			cur = got
 		}

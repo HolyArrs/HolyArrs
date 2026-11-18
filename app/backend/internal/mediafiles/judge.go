@@ -35,8 +35,10 @@ type TitleRef struct {
 	OriginalLanguage string
 	Runtime          int    // minutes
 	Kind             string // "show" for a show, "artist" for an artist; "" or "movie" for a movie
-	// Tags are the title's; a feed matches a tagged Source's releases only to titles sharing one.
+	// Tags are the title's, with those of its copies' Library folders that ask only tagged Sources; a feed matches a tagged Source's releases only to titles sharing one.
 	Tags []string
+	// TagsOnly says an untagged Source serves no copy of the title (already checked against the Sources there are).
+	TagsOnly bool
 	// RuleTags are the tags of the Pick rules its looking Slots use; a tagged Source sharing one also serves the title.
 	RuleTags []string
 }
@@ -162,6 +164,9 @@ func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 		if (t.Kind == "show") != p.IsShow() || t.Kind == "artist" {
 			continue // an episode name never matches a movie, nor a movie name a show; artists only music names
 		}
+		if yearInName(p, t) {
+			return Match{Title: t, Conf: releasename.Sure, Detail: t.Name + " by clean name"}
+		}
 		if releasename.SameName(t.Name, name) {
 			cands = append(cands, t)
 			continue
@@ -172,6 +177,9 @@ func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 				break
 			}
 		}
+	}
+	if p.IsShow() {
+		cands = withTaggedShows(p, name, lib, cands)
 	}
 	if len(cands) == 0 {
 		return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("no Title in the library is called %q", p.Title.Value)}
@@ -449,7 +457,7 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	}
 
 	// 4. Better than what we have.
-	points := sumPoints(p, rules)
+	points, hits := scoreTraits(p, rules)
 	if set.Current != nil && v.Step != nil {
 		set.Current = currentWithTitle(set.Current, p, rules)
 		v.better(rel, rules, set.Current, idx, points)
@@ -459,13 +467,13 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	}
 
 	// 5. Traits and points.
-	for _, tp := range rules.Traits {
-		if ok, why := traitMatches(tp.Trait, p); ok {
+	for i, tp := range rules.Traits {
+		if hits[i].ok {
 			eff := "add"
 			if tp.Points < 0 {
 				eff = "subtract"
 			}
-			v.add("points", "trait:"+tp.Trait, eff, why, tp.Points)
+			v.add("points", "trait:"+tp.Trait, eff, hits[i].why, tp.Points)
 		}
 	}
 	v.Points = points

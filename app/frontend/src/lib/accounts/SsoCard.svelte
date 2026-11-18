@@ -138,7 +138,7 @@
 	<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 		{t('accounts.sso.intro')}
 	</p>
-	<Confirm action="link">
+	<Confirm action="link" reveal={false}>
 		{#if loadError}
 			<p class="notice warn" role="alert">{loadError}</p>
 			<Button type="button" onclick={load}>{t('accounts.sso.tryAgain')}</Button>

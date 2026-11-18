@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} venter",
 	"frame.nav.new": "{n} nye",
 	"frame.nav.manage": "Administrer",
+	"frame.nav.activity": "Aktivitet",
+	"frame.nav.system": "System",
 	"frame.nav.history": "Historikk",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Innstillinger",
+	"frame.nav.plugins": "Utvidelser",
 	"frame.nav.goTo": "Gå til",
 	"frame.nav.active": "{n} aktive, {percent} %",
 	"frame.nav.decide": "{n} trenger en avgjørelse",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "System",
 	"frame.layout.switch": "Bytt konto",
 	"frame.layout.signOut": "Logg ut",
+	"frame.layout.support": "Støtt HolyArrs",
 	"frame.layout.signOutFail": "Kunne ikke bekrefte utlogging",
 	"frame.layout.signedOut": "Logget ut",
 	"frame.layout.accountMenu": "{name}, {role}: konto og utseende",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs prøver igjen av seg selv",
 	"frame.feeds.clearNow": "Rydd bort nå",
 	"frame.feeds.cleared": "Ryddet bort fra Nedlasteren",
-	"frame.feeds.clearStill": "Ikke ryddet bort ennå"
+	"frame.feeds.clearStill": "Ikke ryddet bort ennå",
+	"frame.error.pageGone": "Denne siden finnes ikke. Lenken kan være gammel eller skrevet feil."
 }

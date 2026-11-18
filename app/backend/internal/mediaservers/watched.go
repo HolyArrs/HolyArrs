@@ -314,32 +314,9 @@ func (l *Linker) plexWatched(ctx context.Context, m domain.MediaServer, key stri
 // jellyShows maps the ids of every series on a Jellyfin or Emby server to
 // its item id, and lists the server's users.
 func (l *Linker) jellyShows(ctx context.Context, m domain.MediaServer) (map[string]string, []string, error) {
-	out := map[string]string{}
-	for start := 0; ; start += watchPage {
-		b, err := l.do(ctx, m, http.MethodGet, "/Items?Recursive=true&IncludeItemTypes=Series&Fields=ProviderIds&EnableImages=false&EnableUserData=false"+
-			"&StartIndex="+strconv.Itoa(start)+"&Limit="+strconv.Itoa(watchPage), nil)
-		if err != nil {
-			return nil, nil, err
-		}
-		var r struct {
-			Items []struct {
-				ID          string            `json:"Id"`
-				ProviderIDs map[string]string `json:"ProviderIds"`
-			}
-		}
-		if err := json.Unmarshal(b, &r); err != nil {
-			return nil, nil, errors.New("the server's answer was not a series list")
-		}
-		for _, it := range r.Items {
-			for k, v := range it.ProviderIDs {
-				if k = strings.ToLower(k); v != "" && (k == "tvdb" || k == "tmdb" || k == "imdb") {
-					out[k+":"+v] = it.ID
-				}
-			}
-		}
-		if len(r.Items) < watchPage {
-			break
-		}
+	out, err := l.jellyItems(ctx, m, "Series")
+	if err != nil {
+		return nil, nil, err
 	}
 	b, err := l.do(ctx, m, http.MethodGet, "/Users", nil)
 	if err != nil {

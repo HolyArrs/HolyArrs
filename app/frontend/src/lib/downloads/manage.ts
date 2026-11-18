@@ -211,7 +211,13 @@ export function toolbarTargets<T extends ToolTarget>(picked: T[], open: T | unde
 	const pool = picked.length ? picked : open ? [open] : [];
 	if (!pool.length) return { rows: [], why: t('downloads.target.select') };
 	const live = pool.filter((r) => r.can_act && able(r));
-	if (!live.length) return { rows: [], why: pool.every((r) => !r.can_act || r.client_locked) ? t('downloads.target.readOnly') : t('downloads.target.notFor') };
+	// "Done" only when every blocked row has truly finished; a running row without permission or on a read-only Downloader stays read-only.
+	if (!live.length) {
+		const blocked = pool.filter((r) => !r.can_act);
+		const finished = (r: T) => r.phase === 'done' || r.state === 'finished' || r.state === 'seeding';
+		const why = pool.every((r) => r.client_locked) ? t('downloads.target.readOnly') : blocked.length &&blocked.every((r) => !r.client_locked && finished(r)) ? t('downloads.target.done') : blocked.length ? t('downloads.target.readOnly') : t('downloads.target.notFor');
+		return { rows: [], why };
+	}
 	const rows = want === 'any' ? live : live.filter((r) => (r.state === 'paused') === (want === 'paused'));
 	if (!rows.length) return { rows: [], why: want === 'paused' ? t('downloads.target.paused') : t('downloads.target.running') };
 	return { rows, why: '' };

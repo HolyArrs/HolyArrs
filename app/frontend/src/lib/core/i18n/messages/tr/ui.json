@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Kazandı: {name}",
 	"ui.wikiFacts.nominated": "Aday: {name}",
 	"ui.wikiFacts.andMore": "ve {count} tane daha",
-	"ui.pageLoader.loading": "Yükleniyor"
+	"ui.pageLoader.loading": "Yükleniyor",
+	"ui.connectHelp.link": "Nasıl düzeltilir",
+	"ui.ask.remove": "Kaldır",
+	"ui.ask.restore": "Geri yükle",
+	"ui.ask.stop": "Durdur",
+	"ui.ask.revoke": "İptal et",
+	"ui.ask.replace": "Değiştir",
+	"ui.ask.unlink": "Bağlantıyı kes",
+	"ui.ask.turnOff": "Kapat",
+	"ui.ask.markFailed": "Başarısız olarak işaretle",
+	"ui.ask.reset": "Sıfırla",
+	"ui.ask.import": "İçe aktar"
 }

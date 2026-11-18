@@ -92,7 +92,7 @@ func (h *AskedByHandlers) getAskedBy(w http.ResponseWriter, r *http.Request) {
 		for _, x := range rows {
 			k := strconv.FormatInt(x.titleID, 10)
 			e := out[k]
-			e.Askers = append(e.Askers, askedByPerson{ID: x.userID, Name: x.name, AskedAt: x.at, Me: x.userID == me})
+			e.Askers = append(e.Askers, askedByPerson{ID: x.userID, Name: webserver.NameFor(ctx, x.name), AskedAt: x.at, Me: x.userID == me})
 			out[k] = e
 		}
 	}

@@ -151,8 +151,8 @@ func (s *Service) askArtist(ctx context.Context, p Person, mbid string, albums [
 		return Result{}, err
 	}
 	s.event(ctx, &domain.Event{Actor: p.actor(), Kind: domain.EventAskMade, Summary: p.Name + " asked for " + label(a),
-		Data: map[string]any{"ask_id": a.ID, "artist": a.Ref, "albums": albumWords(a.Albums), "asked_by": p.Name}, GroupKey: groupKey(a.ID)})
-	if p.AutoApprove {
+		Data: map[string]any{"ask_id": a.ID, "artist": a.Ref, "albums": albumWords(a.Albums), "asked_by": p.Name, "asked_by_ids": []int64{p.UserID}}, GroupKey: groupKey(a.ID)})
+	if s.autoApproves(ctx, p, false) {
 		if got, _, err := s.decide(ctx, a.ID, p, ApproveOptions{}, true); err == nil {
 			return Result{Ask: got}, nil
 		} else {

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs পাথ",
 	"settings.mediaServers.pathTo": "সার্ভারে একই ফোল্ডার",
 	"settings.mediaServers.pathHint": "শুধু যদি সার্ভার আপনার ফাইল অন্য পাথে দেখে",
+	"settings.mediaServers.webUrl": "ব্রাউজারের জন্য ঠিকানা",
+	"settings.mediaServers.webUrlHint": "যে ঠিকানায় সবাই ফোন বা কম্পিউটারে সার্ভার খোলে। সার্ভারে থাকা টাইটেলের পেজে খুলুন বোতাম যোগ করে। বোতাম না চাইলে খালি রাখুন।",
 	"settings.mediaServers.local": "লোকাল নেটওয়ার্কে পৌঁছান",
 	"settings.mediaServers.send": "আপডেট পাঠান",
 	"settings.mediaServers.save": "সেভ করুন",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "দেখার ইতিহাস বন্ধ করবেন? এ পর্যন্ত যা পড়া হয়েছে সব মুছে যাবে।",
 	"settings.mediaServers.watchTurnedOn": "দেখার ইতিহাস চালু। প্রথম পড়া ৩০ মিনিটের মধ্যে হয়।",
 	"settings.mediaServers.watchTurnedOff": "দেখার ইতিহাস বন্ধ",
-	"settings.mediaServers.watchFailed": "দেখার ইতিহাস বদলানো যায়নি"
+	"settings.mediaServers.watchFailed": "দেখার ইতিহাস বদলানো যায়নি",
+	"settings.mediaServers.labelTitle": "Plex লেবেল",
+	"settings.mediaServers.labelSwitch": "অনুরোধ করা টাইটেলে লেবেল দিন",
+	"settings.mediaServers.labelHint": "অনুরোধ করা কোনো মুভি বা শো Plex-এ এলে HolyArrs তাতে একটি লেবেল যোগ করে, যাতে Plex-এ এটি দিয়ে ফিল্টার, কালেকশন তৈরি বা শেয়ার করতে পারেন। আগের লেবেলগুলো থাকে।",
+	"settings.mediaServers.labelText": "লেবেল",
+	"settings.mediaServers.labelAskers": "অনুরোধকারীর নামও লেবেল হিসেবে যোগ করুন",
+	"settings.mediaServers.labelSaved": "Plex লেবেল সংরক্ষিত হয়েছে",
+	"settings.mediaServers.labelFailed": "Plex লেবেল সংরক্ষণ করা যায়নি",
+	"settings.mediaServers.labelExisting": "আগে অনুরোধ করা টাইটেলে লেবেল দিন",
+	"settings.mediaServers.labelExistingStarted": "লেবেল দেওয়া শুরু হয়েছে। কয়েক মিনিটের মধ্যে টাইটেলগুলো লেবেল পাবে।",
+	"settings.mediaServers.labelExistingFailed": "লেবেল দেওয়া শুরু করা যায়নি"
 }

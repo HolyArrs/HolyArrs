@@ -39,6 +39,9 @@ export function createMovePlan(ctx: { extra: PathRule[]; skip: string[]; [key: s
 				ctx.picks = next;
 				ctx.changed();
 				void makePlan();
+			} else if (ctx.step === 'choose' && (!ctx.dry || ctx.dryAt !== ctx.changes)) {
+				// The test run marks what needs a look (a show to check) before Import is pressed.
+				void runTry();
 			}
 		} catch (err) {
 			if (seq !== ctx.planSeq || ctx.quiet(err)) return;
@@ -96,6 +99,8 @@ export function createMovePlan(ctx: { extra: PathRule[]; skip: string[]; [key: s
 			const m = new Map(ctx.seen);
 			for (const l of r.report.lines) if (l.choose) m.set(l.key, l);
 			ctx.seen = m;
+			// Shows not looked up in time are looked up meanwhile: run again shortly to show them.
+			if (r.report.checking) setTimeout(() => void (seq === ctx.trySeq && !ctx.destroyed && runTry()), 5000);
 		} catch (err) {
 			if (seq !== ctx.trySeq || ctx.quiet(err)) return;
 			if (err instanceof ApiError && err.status === 404) ctx.gone = true;

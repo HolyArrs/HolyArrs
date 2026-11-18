@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Διαδρομή στο HolyArrs",
 	"settings.mediaServers.pathTo": "Ο ίδιος φάκελος στον διακομιστή",
 	"settings.mediaServers.pathHint": "Μόνο αν ο διακομιστής βλέπει τα αρχεία σας σε άλλη διαδρομή",
+	"settings.mediaServers.webUrl": "Διεύθυνση για προγράμματα περιήγησης",
+	"settings.mediaServers.webUrlHint": "Η διεύθυνση όπου όλοι ανοίγουν τον διακομιστή στο κινητό ή στον υπολογιστή. Προσθέτει κουμπί Άνοιγμα στις σελίδες των τίτλων που έχει. Αφήστε το κενό για να μην υπάρχει κουμπί.",
 	"settings.mediaServers.local": "Πρόσβαση στο τοπικό δίκτυο",
 	"settings.mediaServers.send": "Αποστολή ενημερώσεων",
 	"settings.mediaServers.save": "Αποθήκευση",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Απενεργοποίηση ιστορικού προβολών; Όλα όσα έχουν διαβαστεί μέχρι τώρα διαγράφονται.",
 	"settings.mediaServers.watchTurnedOn": "Το ιστορικό προβολών ενεργοποιήθηκε. Η πρώτη ανάγνωση γίνεται εντός 30 λεπτών.",
 	"settings.mediaServers.watchTurnedOff": "Το ιστορικό προβολών απενεργοποιήθηκε",
-	"settings.mediaServers.watchFailed": "Δεν ήταν δυνατή η αλλαγή του ιστορικού προβολών"
+	"settings.mediaServers.watchFailed": "Δεν ήταν δυνατή η αλλαγή του ιστορικού προβολών",
+	"settings.mediaServers.labelTitle": "Ετικέτες Plex",
+	"settings.mediaServers.labelSwitch": "Ετικέτα στους τίτλους που ζητήθηκαν",
+	"settings.mediaServers.labelHint": "Όταν μια ταινία ή σειρά που ζητήθηκε είναι στο Plex, το HolyArrs της προσθέτει ετικέτα, για να φιλτράρετε, να φτιάχνετε συλλογές ή να μοιράζεστε με αυτή στο Plex. Οι υπάρχουσες ετικέτες μένουν.",
+	"settings.mediaServers.labelText": "Ετικέτα",
+	"settings.mediaServers.labelAskers": "Προσθήκη και του ονόματος του αιτούντος ως ετικέτα",
+	"settings.mediaServers.labelSaved": "Οι ετικέτες Plex αποθηκεύτηκαν",
+	"settings.mediaServers.labelFailed": "Δεν ήταν δυνατή η αποθήκευση των ετικετών Plex",
+	"settings.mediaServers.labelExisting": "Ετικέτα στους ήδη ζητημένους τίτλους",
+	"settings.mediaServers.labelExistingStarted": "Η προσθήκη ετικετών ξεκίνησε. Οι τίτλοι παίρνουν τις ετικέτες τους σε λίγα λεπτά.",
+	"settings.mediaServers.labelExistingFailed": "Δεν ήταν δυνατή η έναρξη της προσθήκης ετικετών"
 }

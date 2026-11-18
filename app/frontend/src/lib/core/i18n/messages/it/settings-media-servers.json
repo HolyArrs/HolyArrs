@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Percorso di HolyArrs",
 	"settings.mediaServers.pathTo": "Stessa cartella sul server",
 	"settings.mediaServers.pathHint": "Solo se il server vede i tuoi file con un altro percorso",
+	"settings.mediaServers.webUrl": "Indirizzo per i browser",
+	"settings.mediaServers.webUrlHint": "Dove le persone aprono il server dal telefono o dal computer. Aggiunge un pulsante Apri alle pagine dei titoli che contiene. Lascia vuoto per nessun pulsante.",
 	"settings.mediaServers.local": "Consenti l'accesso alla rete locale",
 	"settings.mediaServers.send": "Invia gli aggiornamenti",
 	"settings.mediaServers.save": "Salva",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Spegnere la cronologia? Tutto ciò che è stato letto viene cancellato.",
 	"settings.mediaServers.watchTurnedOn": "Cronologia attiva. La prima lettura arriva entro 30 minuti.",
 	"settings.mediaServers.watchTurnedOff": "Cronologia spenta",
-	"settings.mediaServers.watchFailed": "Impossibile cambiare la cronologia"
+	"settings.mediaServers.watchFailed": "Impossibile cambiare la cronologia",
+	"settings.mediaServers.labelTitle": "Etichette Plex",
+	"settings.mediaServers.labelSwitch": "Etichetta i titoli richiesti",
+	"settings.mediaServers.labelHint": "Quando un film o una serie richiesti sono in Plex, HolyArrs vi aggiunge un'etichetta, così puoi filtrare, creare raccolte o condividere in Plex. Le etichette già presenti restano.",
+	"settings.mediaServers.labelText": "Etichetta",
+	"settings.mediaServers.labelAskers": "Aggiungi anche il nome di chi l'ha richiesto come etichetta",
+	"settings.mediaServers.labelSaved": "Etichette Plex salvate",
+	"settings.mediaServers.labelFailed": "Impossibile salvare le etichette Plex",
+	"settings.mediaServers.labelExisting": "Etichetta i titoli già richiesti",
+	"settings.mediaServers.labelExistingStarted": "Etichettatura avviata. I titoli ricevono le etichette entro pochi minuti.",
+	"settings.mediaServers.labelExistingFailed": "Impossibile avviare l'etichettatura"
 }

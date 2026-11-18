@@ -9,16 +9,18 @@ import (
 // LibraryFolder is a folder on disk where finished files of one kind are kept.
 type LibraryFolder struct {
 	database.Meta
-	Path             string     `db:"path"`
-	Kind             string     `db:"kind"` // movie, show, music
-	Label            string     `db:"label"`
-	DefaultPickRules *int64     `db:"default_pick_rules_id"`
-	FreeSpace        int64      `db:"free_space"`
-	Health           string     `db:"health"` // ok, missing, read_only, no_hardlink, unknown
-	HealthCheckedAt  *time.Time `db:"health_checked_at"`
-	SameDiskAs       []int64    `db:"same_disk_as,json"`
-	HealthReason     string     `db:"health_reason"`
-	CopiesExpected   bool       `db:"copies_expected"` // copying without hardlinks is wanted
+	Path              string     `db:"path"`
+	Kind              string     `db:"kind"` // movie, show, music
+	Label             string     `db:"label"`
+	DefaultPickRules  *int64     `db:"default_pick_rules_id"`
+	FreeSpace         int64      `db:"free_space"`
+	Health            string     `db:"health"` // ok, missing, read_only, no_hardlink, unknown
+	HealthCheckedAt   *time.Time `db:"health_checked_at"`
+	SameDiskAs        []int64    `db:"same_disk_as,json"`
+	HealthReason      string     `db:"health_reason"`
+	CopiesExpected    bool       `db:"copies_expected"` // copying without hardlinks is wanted
+	NewTitleTags      []string   `db:"new_title_tags,json"`
+	OnlyTaggedSources bool       `db:"only_tagged_sources"` // titles here ask only Sources sharing these tags
 }
 
 // Title is one movie, show or artist in the Library.

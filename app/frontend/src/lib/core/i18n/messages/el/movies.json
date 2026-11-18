@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Κανόνες επιλογής για αυτήν την παραλλαγή",
 	"movies.versions.folderLabel": "Φάκελος βιβλιοθήκης για αυτήν την παραλλαγή",
 	"movies.versions.cancel": "Ακύρωση",
-	"movies.versions.addButton": "Προσθήκη παραλλαγής"
+	"movies.versions.addButton": "Προσθήκη παραλλαγής",
+	"movies.versions.setEdition": "Ορισμός έκδοσης",
+	"movies.versions.editionFileHint": "Ποια μορφή της ταινίας είναι αυτό το αρχείο, π.χ. Theatrical ή Directors Cut. Αφήστε το κενό για να το καθαρίσετε.",
+	"movies.versions.unprotectConfirm": "Να αφαιρεθεί η προστασία από το {label}; Ένα καλύτερο αντίγραφο θα μπορεί ξανά να το αντικαταστήσει.",
+	"movies.versions.editionChars": "Δεν επιτρέπονται:",
+	"movies.versions.editionInvalid": "Αυτή η έκδοση δεν μπορεί να χρησιμοποιηθεί. Κρατήστε την σύντομη (τα γράμματα με τόνους και τα μη λατινικά γράμματα πιάνουν περισσότερο χώρο), παραλείψτε τους χαρακτήρες που αναγράφονται παραπάνω και μην την τελειώνετε με τελεία.",
+	"movies.versions.editionDevice": "Τα Windows κρατούν το όνομα {name} για συσκευές, γι' αυτό δεν μπορεί να χρησιμοποιηθεί. Πληκτρολογήστε ένα άλλο."
 }

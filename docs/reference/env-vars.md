@@ -90,7 +90,7 @@ What to do instead:
 | `HOLYARRS_METADATA_MODE` | Where details come from: `full` (the HolyArrs server), `own` (your own keys) or `off`. Set, it locks the choice in **Settings > Metadata**. A value HolyArrs does not understand turns lookups off and shows a red line in Health. | the choice in Settings, else `full` |
 | `HOLYARRS_METADATA_URL` | The metadata server address. `off` means your own keys (before 1.1.0 it stopped HolyArrs at start). | `https://api.holyarrs.com` |
 | `HOLYARRS_TMDB_KEY` | Your own TMDB read access token. Set, TMDB reads go straight to TMDB instead of the metadata server. | none |
-| `HOLYARRS_TVDB_URL`, `HOLYARRS_MDBLIST_URL`, `HOLYARRS_FANART_URL` | Stand-in addresses for TheTVDB, MDBList and fanart.tv. For tests only. | none |
+| `HOLYARRS_TVDB_URL`, `HOLYARRS_FANART_URL` | Stand-in addresses for TheTVDB and fanart.tv. For tests only. | none |
 | `HOLYARRS_METADATA_SERVICE_TOKEN_FILE` | File holding this install's metadata server credential, read on each call. Unset, the credential lives in the vault. | none |
 
 What still goes through the metadata server with your own TMDB key, and every other outside address, is in [Outside addresses](../run/outside-hosts.md).

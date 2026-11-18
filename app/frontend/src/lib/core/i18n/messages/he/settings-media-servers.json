@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "נתיב ב־HolyArrs",
 	"settings.mediaServers.pathTo": "אותה תיקייה בשרת",
 	"settings.mediaServers.pathHint": "רק אם השרת רואה את הקבצים שלך בנתיב אחר",
+	"settings.mediaServers.webUrl": "כתובת לדפדפנים",
+	"settings.mediaServers.webUrlHint": "הכתובת שבה כולם פותחים את השרת בטלפון או במחשב. מוסיף כפתור פתיחה לדפי הכותרים שיש בו. השאירו ריק כדי שלא יהיה כפתור.",
 	"settings.mediaServers.local": "גישה לרשת המקומית",
 	"settings.mediaServers.send": "שליחת עדכונים",
 	"settings.mediaServers.save": "שמירה",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "לכבות את היסטוריית הצפייה? כל מה שנקרא עד כה נמחק.",
 	"settings.mediaServers.watchTurnedOn": "היסטוריית הצפייה פועלת. הקריאה הראשונה תתבצע תוך 30 דקות.",
 	"settings.mediaServers.watchTurnedOff": "היסטוריית הצפייה כבויה",
-	"settings.mediaServers.watchFailed": "לא ניתן היה לשנות את היסטוריית הצפייה"
+	"settings.mediaServers.watchFailed": "לא ניתן היה לשנות את היסטוריית הצפייה",
+	"settings.mediaServers.labelTitle": "תוויות Plex",
+	"settings.mediaServers.labelSwitch": "תיוג כותרים שהתבקשו",
+	"settings.mediaServers.labelHint": "כשסרט או סדרה שהתבקשו נמצאים ב-Plex, HolyArrs מוסיף להם תווית, כדי שתוכלו לסנן, לבנות אוספים או לשתף לפיה ב-Plex. תוויות קיימות נשארות.",
+	"settings.mediaServers.labelText": "תווית",
+	"settings.mediaServers.labelAskers": "הוסף גם את שם המבקש כתווית",
+	"settings.mediaServers.labelSaved": "תוויות Plex נשמרו",
+	"settings.mediaServers.labelFailed": "לא ניתן לשמור את תוויות Plex",
+	"settings.mediaServers.labelExisting": "תיוג כותרים שכבר התבקשו",
+	"settings.mediaServers.labelExistingStarted": "התיוג התחיל. הכותרים יקבלו תוויות תוך כמה דקות.",
+	"settings.mediaServers.labelExistingFailed": "לא ניתן להתחיל את התיוג"
 }

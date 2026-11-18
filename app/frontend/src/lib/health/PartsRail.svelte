@@ -82,14 +82,14 @@
 		<div class="pane" role="tabpanel" id="pk-panel" aria-labelledby="pk-tab-{current.id}">
 			<h3>
 				{current.label}<span class="pl">{line(current)}</span>
-				{#if canAct && current.rows.length}<span class="end"><Button variant="plain" size="sm" href={to(meta(current).add)}>{t('health.parts.manage')}</Button></span>{/if}
+				{#if canAct && current.rows.length}<span class="end"><Button variant="secondary" href={to(meta(current).add)}>{t('health.parts.manage')}</Button></span>{/if}
 			</h3>
 			{#if current.rows.length}
 				{#key current.id}<GroupRows rows={current.rows} {canAct} {busy} {oncheck} />{/key}
 			{:else}
 				<p class="emp">
 					<i class="st-dot none" aria-hidden="true"></i>{t('health.parts.noneAdded', { kind: meta(current).one })}
-					{#if canAct}<Button variant="plain" size="sm" href={to(meta(current).add)}>{t('health.parts.add')}</Button>{/if}
+					{#if canAct}<Button variant="secondary" href={to(meta(current).add)}>{t('health.parts.add')}</Button>{/if}
 				</p>
 			{/if}
 		</div>

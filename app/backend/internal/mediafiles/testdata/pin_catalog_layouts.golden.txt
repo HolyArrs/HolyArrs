@@ -10,6 +10,8 @@ HealthCheckedAt *time.Time `db:"health_checked_at"`
 SameDiskAs []int64 `db:"same_disk_as,json"`
 HealthReason string `db:"health_reason"`
 CopiesExpected bool `db:"copies_expected"`
+NewTitleTags []string `db:"new_title_tags,json"`
+OnlyTaggedSources bool `db:"only_tagged_sources"`
 == Title
 Meta Meta ``
 Kind string `db:"kind"`

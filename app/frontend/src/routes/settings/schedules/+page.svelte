@@ -268,10 +268,10 @@
 								</div>
 								<div class="meta">
 								<div class="cell"><span class="k">{t('settings.schedules.howOften')}</span><span>{l.every_s ? often(l.every_s) : t('settings.schedules.allTime')}</span></div>
-								<div class="cell" class:empty={!l.last_pass}><span class="k">{t('settings.schedules.lastRun')}</span>{#if l.last_pass}<time datetime={l.last_pass} title={dateTime(l.last_pass)}>{ago(l.last_pass, now)}</time>{:else}<span class="faint">{t('settings.schedules.notYet')}</span>{/if}</div>
-								<div class="cell" class:empty={!l.next_pass}><span class="k">{t('settings.schedules.nextRun')}</span>{#if l.next_pass}<time datetime={l.next_pass} title={dateTime(l.next_pass)}>{until(l.next_pass, now)}</time>{:else}<span class="faint">{t('settings.schedules.notYet')}</span>{/if}</div>
+								<div class="cell" class:empty={!l.last_pass}><span class="k">{t('settings.schedules.lastRun')}</span>{#if l.last_pass}<time datetime={l.last_pass} title={dateTime(l.last_pass)}>{ago(l.last_pass, now)}</time>{/if}</div>
+								<div class="cell" class:empty={!l.next_pass}><span class="k">{t('settings.schedules.nextRun')}</span>{#if l.next_pass}<time datetime={l.next_pass} title={dateTime(l.next_pass)}>{until(l.next_pass, now)}</time>{/if}</div>
 								</div>
-								<div class="acts"><span class="chip {runTone(l.state)}">{runWord(l)}</span></div>
+								<div class="acts">{#if runTone(l.state) !== 'ok'}<span class="chip {runTone(l.state)}">{runWord(l)}</span>{/if}</div>
 							</div>
 						</li>
 					{/each}
@@ -284,13 +284,14 @@
 <style>
 	/* A grouped list, like a phone's Settings app: a small heading over each rounded card, compact rows with a status dot, and columns on wide screens. */
 	.groups { display: grid; gap: 22px; }
-	.sched-group + .sched-group, .groups + .sched-group { margin-top: 22px; }
-	.group-head { padding: 0 6px 6px; font: var(--t-footnote); font-weight: 600; letter-spacing: 0.01em; color: var(--text-muted); }
+	.groups + .sched-group { margin-top: 22px; }
+	/* The same section label as every Settings sheet header. */
+	.group-head { padding: 0 6px 6px; font: 600 13px/1.2 var(--font-ui); letter-spacing: 0.02em; color: var(--text-muted); }
 	.group-about { margin: -2px 6px 8px; color: var(--text-muted); font: var(--t-footnote); font-weight: 400; }
 	.group-about :global(a) { color: var(--accent-text); font-weight: 600; }
 	.s-card { margin: 0; padding: 0; border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
 	/* Same sheet as every other Settings section. */
-	.sched-card { container-type: inline-size; overflow: hidden; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); }
+	.sched-card { container-type: inline-size; overflow: hidden; border: var(--sheet-edge); border-radius: var(--sheet-r); background: var(--sheet-bg); box-shadow: var(--sheet-shadow); }
 	.sched-card ul { margin: 0; padding: 0; list-style: none; }
 
 	.now { margin-bottom: 22px; }
@@ -323,7 +324,8 @@
 	.acts { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 
 	.dot { position: relative; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--text-faint); }
-	.dot.ok { background: var(--ok); }
+	/* A job that is fine needs no mark; only the ones to look at get a colour. */
+	.dot.ok { background: transparent; }
 	.dot.fail { background: var(--fail); }
 	.dot.off { background: transparent; box-shadow: inset 0 0 0 1.5px var(--text-faint); }
 	.dot.busy { background: var(--wait); }
@@ -353,7 +355,7 @@
 		.cols { display: none; }
 		.line { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'name' 'meta' 'acts'; row-gap: 4px; padding: 10px 12px 10px 14px; }
 		.name { grid-area: name; }
-		.acts { grid-area: acts; justify-content: flex-start; padding-left: 14px; margin-top: 2px; }
+		.acts { grid-area: acts; justify-content: flex-start; padding-left: 20px; margin-top: 2px; }
 		.acts:empty { display: none; }
 		.cell.empty { display: none; }
 		.loop .line { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'name acts' 'meta meta'; }

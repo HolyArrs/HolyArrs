@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "לא ניתן לשמור את השפה",
 	"accounts.language.count.one": "שפה אחת",
 	"accounts.language.count.other": "{n} שפות",
-	"accounts.account.watchEveryone": "הבעלים הפעיל את זה לכולם. כבה את שניהם כדי להפסיק."
+	"accounts.account.watchEveryone": "הבעלים הפעיל את זה לכולם. כבה את שניהם כדי להפסיק.",
+	"accounts.watch.title": "סימוני צפייה",
+	"accounts.watch.hint": "קשרו כאן את החשבון שלכם בשרת מדיה כדי שהספרייה תראה מה צפיתם.",
+	"accounts.watch.as": "{server}, בתור {name}",
+	"accounts.watch.nameOn": "שם ב-{server}",
+	"accounts.watch.passwordOnce": "הסיסמה שלכם נשלחת רק אל {server} ואינה נשמרת.",
+	"accounts.watch.linked": "קושר אל {name} ב-{server}",
+	"accounts.watch.unlinked": "הקישור הוסר",
+	"accounts.login.importPaused": "ההתחברות שלך הסתיימה, ולכן הייבוא הושהה. התחבר, פתח את ייבוא ספרייה ולחץ על סריקה כדי להמשיך."
 }

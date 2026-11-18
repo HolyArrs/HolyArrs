@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "ingen",
 	"settings.thisApp.needsRestart": "Kræver en genstart. HOLYARRS_URL_BASE eller -url-base tilsidesætter den.",
 	"settings.thisApp.save": "Gem",
-	"settings.thisApp.licence": "HolyArrs er gratis software under AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs er gratis software under AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Send udgående kald gennem en proxy. Blokeringer og hjemmenetsregler gælder stadig for det rigtige mål.",
+	"settings.thisApp.proxyType": "Type",
+	"settings.thisApp.proxyOff": "Fra",
+	"settings.thisApp.proxyHost": "Vært",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Brugernavn",
+	"settings.thisApp.proxyPasswordLabel": "Adgangskode",
+	"settings.thisApp.proxyPasswordKept": "Lad stå tomt for at beholde den gemte adgangskode",
+	"settings.thisApp.proxyBypass": "Spring proxyen over for",
+	"settings.thisApp.proxyBypassHint": "Navne, adresser eller intervaller, adskilt med kommaer. *.example.com dækker alle navne under.",
+	"settings.thisApp.proxyBypassLocal": "Spring proxyen over for lokale adresser",
+	"settings.thisApp.proxyBypassLocalHint": "Denne maskine og dit hjemmenet forbinder direkte",
+	"settings.thisApp.proxySaved": "Proxy gemt",
+	"settings.thisApp.proxyOffSaved": "Proxy fra"
 }

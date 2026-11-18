@@ -36,5 +36,20 @@
   "settings.thisApp.none": "ingen",
   "settings.thisApp.needsRestart": "Krever omstart. HOLYARRS_URL_BASE eller -url-base overstyrer den.",
   "settings.thisApp.save": "Lagre",
-  "settings.thisApp.licence": "HolyArrs er fri programvare under AGPL-3.0."
+  "settings.thisApp.licence": "HolyArrs er fri programvare under AGPL-3.0.",
+"settings.thisApp.proxy": "Proxy",
+"settings.thisApp.proxyDesc": "Send utgående kall gjennom en proxy. Sperrer og hjemmenettregler gjelder fortsatt for det virkelige målet.",
+"settings.thisApp.proxyType": "Type",
+"settings.thisApp.proxyOff": "Av",
+"settings.thisApp.proxyHost": "Vert",
+"settings.thisApp.proxyPort": "Port",
+"settings.thisApp.proxyUser": "Brukernavn",
+"settings.thisApp.proxyPasswordLabel": "Passord",
+"settings.thisApp.proxyPasswordKept": "La stå tomt for å beholde det lagrede passordet",
+"settings.thisApp.proxyBypass": "Hopp over proxyen for",
+"settings.thisApp.proxyBypassHint": "Navn, adresser eller områder, skilt med komma. *.example.com dekker alle navn under.",
+"settings.thisApp.proxyBypassLocal": "Hopp over proxyen for lokale adresser",
+"settings.thisApp.proxyBypassLocalHint": "Denne maskinen og hjemmenettet ditt kobler til direkte",
+"settings.thisApp.proxySaved": "Proxy lagret",
+"settings.thisApp.proxyOffSaved": "Proxy av"
 }

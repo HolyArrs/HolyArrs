@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Kikapcsolva a Modulokban",
 	"home.noneForSources": "hiányzik ahhoz, amit a forrásaid találnak",
 	"home.addedTwice": "kétszer van hozzáadva",
-	"home.addedTwiceMany": "kétszer vannak hozzáadva"
+	"home.addedTwiceMany": "kétszer vannak hozzáadva",
+	"home.notSetUpYet": "Még nincs beállítva",
+	"home.setUpToAdd": "Fejezd be a beállítást a(z) {name} hozzáadásához",
+	"home.comingThisWeek": "Ezen a héten",
+	"home.thisWeek": "ezen a héten",
+	"home.landingThisWeek": "Ezen a héten érkező epizódok és filmek",
+	"home.popularThisWeek": "Ezen a héten érkező népszerű megjelenések",
+	"home.peopleCheck": "Személyek ellenőrzése",
+	"home.cantReadUsers": "a felhasználólista nem olvasható"
 }

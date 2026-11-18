@@ -140,8 +140,12 @@ func (s *Store) Events(ctx context.Context, f EventFilter) ([]Event, int, error)
 	if len(f.Kinds) > 0 {
 		var or []string
 		for _, k := range f.Kinds {
-			if p, ok := strings.CutSuffix(k, "*"); ok {
-				or, args = append(or, "kind LIKE ? ESCAPE '\\'"), append(args, strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`).Replace(p)+"%")
+			// "<kind>:noted" keeps only the Events of that kind that say which Sources they left out.
+			if p, ok := strings.CutSuffix(k, ":noted"); ok {
+				or, args = append(or, "(kind = ? AND coalesce(json_extract(data, '$.sources_note'), '') <> '')"), append(args, p)
+			} else if p, ok := strings.CutSuffix(k, "*"); ok {
+				// A range, unlike LIKE, can use the kind index.
+				or, args = append(or, "(kind >= ? AND kind < ?)"), append(args, p, p+"\U0010FFFF")
 			} else {
 				or, args = append(or, "kind = ?"), append(args, k)
 			}

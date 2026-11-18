@@ -1,5 +1,6 @@
 // Where an approved ask is in the pipeline right now, from the local searches and downloads lists (no outside calls): one small entry per Library title.
 import { notAlbumName } from './ask-parts.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 import type { LifeFacts } from './lifecycle.ts';
 import type { AskStep } from '../core/types.ts';
 import type { SearchView } from '../core/types.ts';
@@ -82,7 +83,7 @@ export function stepFacts(step: AskStep | undefined): LifeFacts {
 			return { upcoming: '' };
 		case 'waiting': {
 			const f: LifeFacts = { phase: 'waiting' };
-			if (step.text) f.reason = step.text;
+			if (step.text) f.reason = serverWords(step.text);
 			if (step.searched_at) f.searchedAt = step.searched_at;
 			if (step.next_search) f.nextSearch = step.next_search;
 			return f;

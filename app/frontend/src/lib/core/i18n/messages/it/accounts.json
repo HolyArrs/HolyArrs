@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Non sono riuscito a salvare la lingua",
 	"accounts.language.count.one": "1 lingua",
 	"accounts.language.count.other": "{n} lingue",
-	"accounts.account.watchEveryone": "Il proprietario l'ha attivato per tutti. Disattiva entrambi per fermarlo."
+	"accounts.account.watchEveryone": "Il proprietario l'ha attivato per tutti. Disattiva entrambi per fermarlo.",
+	"accounts.watch.title": "Segni di visione",
+	"accounts.watch.hint": "Collega qui il tuo account su un media server così la Libreria mostra cosa hai guardato.",
+	"accounts.watch.as": "{server}, come {name}",
+	"accounts.watch.nameOn": "Nome su {server}",
+	"accounts.watch.passwordOnce": "La tua password va solo a {server} e non viene conservata.",
+	"accounts.watch.linked": "Collegato a {name} su {server}",
+	"accounts.watch.unlinked": "Scollegato",
+	"accounts.login.importPaused": "Il tuo accesso è scaduto, quindi l'importazione è in pausa. Accedi, apri Importa una libreria e premi Scansiona per continuare."
 }

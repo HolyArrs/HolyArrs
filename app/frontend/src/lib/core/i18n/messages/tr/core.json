@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Yapay zekâ asistanları HolyArrs'ı kullansın",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Diğer uygulamalar için anahtarlar ve rotalar",
+	"core.settings.remoteAccess.label": "Uzaktan erişim",
+	"core.settings.remoteAccess.about": "HolyArrs'a evin dışından erişin",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Afişler ve adlar nereden gelir",
 	"core.settings.health.label": "Sağlık denetimleri",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Parola, iki adımlı giriş, cihazlar",
 	"core.api.sourceOff": "Bu kurulumda bazı satırlar kapalı.",
 	"core.plain.noDownloader": "Kaynakların, hiçbir indiricinin alamayacağı indirmeler buluyor, bu yüzden hiçbiri gönderilemiyor.",
-	"core.plain.sameDownloader": "İki indirici aynı indirme uygulamasına ulaşıyor; bu yüzden indirmeler iki kez görünebilir."
+	"core.plain.sameDownloader": "İki indirici aynı indirme uygulamasına ulaşıyor; bu yüzden indirmeler iki kez görünebilir.",
+	"core.plain.peopleCheck": "Medya sunucusunun kullanıcı listesi okunamıyor, bu yüzden orada kaldırılanlar burada kapatılmıyor.",
+	"core.plain.deleted": "silindi",
+	"core.plain.deletedName": "{name} (silindi)"
 }

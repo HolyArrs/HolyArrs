@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { memberRow, ownerRow, qualityName, qualityTag } from './quality-row.ts';
+import { arrowPill, memberRow, ownerRow, qualityName, qualityTag } from './quality-row.ts';
 import type { QualityChoice } from './types.ts';
 
 const std: QualityChoice = { id: 'standard', name: '', extra: false, pick_rules_id: 0 };
@@ -95,5 +95,23 @@ describe('the quality tag on request cards', () => {
 		expect(qualityName('standard')).toBe('Standard');
 		expect(qualityName('4k')).toBe('4K');
 		expect(qualityName('4k', 'Ultra')).toBe('Ultra');
+	});
+});
+
+describe('arrow keys on the quality tiles', () => {
+	const pills = [
+		{ key: 'a', label: 'A' },
+		{ key: 'b', label: 'B', disabled: true },
+		{ key: 'c', label: 'C' }
+	];
+	it('moves to the next pickable tile, wrapping, and skips ones that cannot be picked', () => {
+		expect(arrowPill(pills, 'a', 'ArrowRight')).toBe('c');
+		expect(arrowPill(pills, 'c', 'ArrowDown')).toBe('a');
+		expect(arrowPill(pills, 'a', 'ArrowLeft')).toBe('c');
+		expect(arrowPill(pills, 'c', 'Home')).toBe('a');
+		expect(arrowPill(pills, 'a', 'End')).toBe('c');
+	});
+	it('leaves other keys alone', () => {
+		expect(arrowPill(pills, 'a', 'Enter')).toBeNull();
 	});
 });

@@ -61,6 +61,8 @@ export function startBellFeeds(canManage: boolean): () => void {
 		// A download that fails pops up with its reason and stays in the list.
 		stops.push(
 			live.on('download', (x) => {
+				// A resync reaches this listener with no download at all.
+				if (!x || typeof x !== 'object') return;
 				const d = x as { State?: string; StateReason?: string | null; state?: string; state_reason?: string | null };
 				if ((d.State ?? d.state) !== 'failed') return;
 				const why = d.StateReason ?? d.state_reason ?? '';

@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Hindi mababasa ang mga listahan mo sa Trakt hangga't hindi ito naitatakda.",
 	"settings.outsideLists.replaceKey": "Palitan ang Trakt key",
 	"settings.outsideLists.pasteKey": "I-paste ang Trakt key",
+	"settings.outsideLists.mdblistKey": "MDBList key",
+	"settings.outsideLists.mdblistInfo": "Opsyonal. Gamit ang MDBList API key mo, binabasa ang mga listahan ng MDBList sa pamamagitan ng MDBList API; kung wala ito, sa pamamagitan ng pampublikong link nila. Naka-encrypt itong nakatago at ito rin ang key na ginagamit ng mga panlabas na rating sa mode na Ang sarili mong mga key.",
+	"settings.outsideLists.pasteMdblistKey": "I-paste ang MDBList API key mo",
+	"settings.outsideLists.replaceMdblistKey": "Palitan ang MDBList key",
+	"settings.outsideLists.removeMdblistKey": "Alisin ang key",
+	"settings.outsideLists.mdblistKeySaved": "Na-save ang MDBList key",
+	"settings.outsideLists.mdblistKeyRemoved": "Inalis ang MDBList key; ginagamit ng mga listahan ang pampublikong link nila",
 	"settings.outsideLists.replaceVip": "Palitan ang VIP access token",
 	"settings.outsideLists.vip": "VIP access token (opsyonal)",
 	"settings.outsideLists.vipHint": "Nagdaragdag ng tab na Trakt sa mga pahina ng title: score, mga nanonood at komento",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Idagdag sa listahan ng Huwag Idagdag",
 	"settings.outsideLists.showDot": "show ·",
 	"settings.outsideLists.takeOff": "Alisin ang {name}",
-	"settings.outsideLists.empty": "Walang laman"
+	"settings.outsideLists.empty": "Wala pang laman ang listahang ito"
 }

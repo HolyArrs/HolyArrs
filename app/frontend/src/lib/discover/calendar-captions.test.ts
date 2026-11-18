@@ -1,5 +1,5 @@
 import { groupDates } from './calendar-groups.ts';
-import { cardLines, rowWords, channelShown, clockTime, episodeWords, fakeEpisodeName, movieCaption, musicCaption, ordinal, runLength, seriesLine, whereOut, type CaptionLook } from './calendar-captions.ts';
+import { episodeName, cardLines, rowWords, channelShown, clockTime, episodeWords, fakeEpisodeName, movieCaption, musicCaption, ordinal, runLength, seriesLine, whereOut, type CaptionLook } from './calendar-captions.ts';
 import { describe, expect, it } from 'vitest';
 import type { CalendarEntry } from '../core/types.ts';
 
@@ -99,3 +99,10 @@ describe('music captions', () => {
 	});
 });
 
+describe('episodeName', () => {
+	it('drops a leading date and keeps the guest', () => {
+		expect(episodeName('November 17, 2026 - Daniel Susskind')).toBe('Daniel Susskind');
+		expect(episodeName('November 17, 2026')).toBe('');
+		expect(episodeName('Part One - The Return')).toBe('Part One - The Return');
+	});
+});

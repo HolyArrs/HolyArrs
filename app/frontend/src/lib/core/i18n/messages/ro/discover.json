@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Lipește un id, de exemplu tmdb:693134 sau tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Sau descrie-l, de exemplu „film SF cu un robot din 2014”.",
 	"discover.search.lookEverywhere": "Caută peste tot",
-	"discover.search.searchIndexersFor": "Caută în indexeri „{searched}”",
+	"discover.search.searchIndexersFor": "Verifică sursele",
 	"discover.search.topMatches": "Cele mai bune potriviri",
 	"discover.people.goToTheFilmography": "Mergi la filmografie",
 	"discover.people.filmography": "Filmografie",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Nu se potrivește cu această versiune",
 	"discover.leftovers.reason.movie_has_file": "Filmul are deja fișier",
 	"discover.leftovers.reason.replaced_by_hand": "Înlocuit de alt fișier",
-	"discover.leftovers.reason.unmatched": "Potrivire anulată manual"
+	"discover.leftovers.reason.unmatched": "Potrivire anulată manual",
+	"discover.searchSections.genres": "Genuri",
+	"discover.searchSections.moods": "Stări",
+	"discover.searchSections.stories": "Povești și teme",
+	"discover.searchSections.worlds": "Lumi și decoruri",
+	"discover.searchSections.eras": "Epoci",
+	"discover.searchSections.world": "Din toată lumea",
+	"discover.searchSections.collections": "Colecții",
+	"discover.popularRail.out": "Apare",
+	"discover.popularRail.comingDay": "În curând",
+	"discover.titleLibrary.turnShowOnHint": "Activează serialul ca să înceapă căutarea.",
+	"discover.leftovers.reason.seasons_differ": "Găsit doar după numărul TMDB din aplicația veche: verifică dacă este același serial, apoi potrivește singur fișierul"
 }

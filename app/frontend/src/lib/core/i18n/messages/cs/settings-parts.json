@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Nepodařilo se připojit {name}",
 	"settings.parts.connected": "{name} připojeno",
 	"settings.parts.title": "Části",
+	"settings.parts.onOff": "Zapnout nebo vypnout části",
 	"settings.parts.ownerOnly": "Jen vlastník a správci",
 	"settings.parts.safeMode": "HolyArrs běží v nouzovém režimu: běží jen jádro a přepínače Částí i ovládání Fází se odmítají do dalšího běžného spuštění. Nouzový režim opustíte tlačítkem <b>Restartovat HolyArrs</b> v <a>Nebezpečné zóně</a>.",
 	"settings.parts.dangerZone": "Nebezpečná zóna",

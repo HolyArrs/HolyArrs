@@ -81,6 +81,7 @@ func (a *handlers) listTitles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := []TitleView{}
+	grid, wantGrid := []gridTitle{}, r.URL.Query().Has("grid")
 	who, signed := webserver.From(r.Context())
 	manage := !signed || who.Has(webserver.PermManageLibrary)
 	ctx, err := discover.WithTitleFacts(discover.WithLookupMemo(r.Context()), a.s.Store.Read())
@@ -109,7 +110,15 @@ func (a *handlers) listTitles(w http.ResponseWriter, r *http.Request) {
 		if !manage {
 			v.Copy = nil
 		}
+		if wantGrid {
+			grid = append(grid, gridOf(v))
+			continue
+		}
 		out = append(out, v)
+	}
+	if wantGrid {
+		webserver.WriteTaggedJSON(w, r, map[string]any{"titles": grid})
+		return
 	}
 	webserver.WriteTaggedJSON(w, r, map[string]any{"titles": out})
 }

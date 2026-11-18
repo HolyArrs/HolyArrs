@@ -12,7 +12,7 @@ const (
 	plainRulesSQL  = "SELECT coalesce(default_pick_rules_id, 0) FROM library_folders WHERE id = ?"
 	plainRulesSQL2 = "SELECT id FROM pick_rules WHERE name = ? ORDER BY id LIMIT 1"
 	mainFolderSQL  = "SELECT library_folder_id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1"
-	askSQL         = "SELECT id FROM asks WHERE kind = 'movie' AND tmdb_id = ? AND quality = ? AND state IN ('asked', 'approved')"
+	askSQL         = "SELECT id FROM asks WHERE kind = 'movie' AND tmdb_id = ? AND (quality = ? OR (? = 0 AND quality_extra = 0)) AND state IN ('asked', 'approved') ORDER BY id LIMIT 1"
 	askSQL2        = "SELECT count(*) FROM slots WHERE state = 'in_library' AND item_id IN (SELECT id FROM items WHERE title_id = ?) AND version_id = ?"
 	askSQL3        = "INSERT INTO ask_people (ask_id, user_id, asked_at, counted) VALUES (?, ?, ?, 1)"
 	joinSQL        = "SELECT count(*) FROM ask_people WHERE ask_id = ? AND user_id = ?"
@@ -39,6 +39,6 @@ const (
 	peopleSQL      = `SELECT u.id, u.name, coalesce(x.email, ''), coalesce(x.discord_id, ''), p.asked_at,
 			EXISTS (SELECT 1 FROM plex_watchlist_items w WHERE w.user_id = p.user_id AND w.ask_id = p.ask_id AND w.state IN ('asked', 'joined'))
 		FROM ask_people p JOIN users u ON u.id = p.user_id LEFT JOIN user_ask_settings x ON x.user_id = u.id
-		WHERE p.ask_id = ? ORDER BY p.asked_at, u.id`
+		WHERE p.ask_id = ? AND u.removed_at = '' ORDER BY p.asked_at, u.id`
 	tellSQL = "INSERT INTO messages (created_at, user_id, kind, text, ask_id, title_id) VALUES (?, ?, ?, ?, ?, ?)"
 )

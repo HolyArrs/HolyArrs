@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Показвай на хората",
 	"settings.requests.choiceMain": "{rules} · основното копие на заглавието",
 	"settings.requests.choiceOwn": "{rules} · пази се като отделно копие",
-	"settings.requests.choiceNotReady": "Предлага се, след като горе е зададено 4K качество"
+	"settings.requests.choiceNotReady": "Предлага се, след като горе е зададено 4K качество",
+	"settings.requests.approvals": "Одобрения",
+	"settings.requests.autoApprove": "Автоматично одобряване на заявките",
+	"settings.requests.autoApproveNote": "Изкл. = заявките му чакат вас. Заглавията от списъка за гледане в Plex следват същия превключвател.",
+	"settings.requests.ownerTag": "Собственик",
+	"settings.requests.choiceAdd": "Добави качество",
+	"settings.requests.choiceNew": "Ново качество",
+	"settings.requests.choiceLabel": "Вашето име",
+	"settings.requests.choiceSeen": "Хората виждат"
 }

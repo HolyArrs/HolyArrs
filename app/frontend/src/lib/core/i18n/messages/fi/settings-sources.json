@@ -7,6 +7,7 @@
 	"settings.sources.title": "Lähteet",
 	"settings.sources.add": "Lisää lähde",
 	"settings.sources.lead": "Prioriteetti 1 menee ensin. Epäonnistunut lähde ohitetaan enintään kuusi tuntia. Sivustoille ilman syötettä lisää Jackett tai Prowlarr Torznab-syötteenä.",
+	"settings.sources.builtIn": "Sisäänrakennetut sivustot eivät tarvitse Jackettia tai Prowlarria: {sites}. Valitse {site} kohdassa {kind}.",
 	"settings.sources.change": "Muuta {name}",
 	"settings.sources.name": "Nimi",
 	"settings.sources.feedKind": "Syötteen tyyppi",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Tallenna",
 	"settings.sources.cancel": "Peruuta",
 	"settings.sources.none": "Ei lähteitä",
-	"settings.sources.noneText": "Lisää Torznab- tai Newznab-syöte tai Jackett tai Prowlarr.",
+	"settings.sources.noneText": "Lisää sisäänrakennettu sivusto, Torznab- tai Newznab-syöte tai Jackett tai Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioriteetti {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioriteetti {priority} · {uses}",
 	"settings.sources.keyIs": "avain {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Sivusto",
 	"settings.sources.addressSite": "Sivuston oma osoite. Muuta sitä vain, jos sivusto on muuttanut.",
 	"settings.sources.siteKeyLabel": "Eväste tai RSS-avain",
-	"settings.sources.siteKeyHint": "Omalta tililtäsi: uid ja pass selaimen evästeestä tai u ja tp RSS-linkistäsi. Tallennetaan salattuna."
+	"settings.sources.siteKeyHint": "Omalta tililtäsi: uid ja pass selaimen evästeestä tai u ja tp RSS-linkistäsi. Tallennetaan salattuna.",
+	"settings.sources.sendTo": "Lähetä lataukset",
+	"settings.sources.sendToAny": "Mikä tahansa lataaja",
+	"settings.sources.sendToHint": "Kaikki tästä lähteestä valittu menee vain tälle lataajalle. Jos se ei toimi, odotetaan.",
+	"settings.sources.sendToGone": "Valittu lataaja poistettiin. Tämän lähteen lataukset menevät nyt mille tahansa lataajalle."
 }

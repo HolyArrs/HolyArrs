@@ -18,8 +18,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"golang.org/x/text/unicode/norm"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Default patterns (the same shape Radarr names movies by default).
@@ -56,17 +59,20 @@ const (
 
 // Words are the words a pattern may use, with what each gives.
 var Words = map[string]string{
-	"title":      "the movie or show name",
-	"sort_title": "the movie or show name with a leading The, A or An moved to the end",
-	"year":       "the year the movie or show came out",
-	"quality":    "resolution and source, such as 1080p BluRay",
-	"resolution": "such as 1080p",
-	"source":     "such as BluRay or WEB",
-	"edition":    "such as Director's Cut, when the release name says so",
-	"group":      "the release group",
-	"tmdb":       "the TMDB id",
-	"imdb":       "the IMDb id",
-	"release":    "the original release name",
+	"title":       "the movie or show name",
+	"sort_title":  "the movie or show name with a leading The, A or An moved to the end",
+	"title_first": "the first letter of the sort title, such as M for The Matrix; 0-9 for a digit, # for anything else",
+	"year":        "the year the movie or show came out",
+	"quality":     "resolution and source, such as 1080p BluRay",
+	"resolution":  "such as 1080p",
+	"source":      "such as BluRay or WEB",
+	"audio":       "the audio codec, such as EAC3 or TrueHD",
+	"hdr":         "the HDR kind, such as DolbyVision or HDR10+; empty for SDR",
+	"edition":     "such as Director's Cut, when the release name says so",
+	"group":       "the release group",
+	"tmdb":        "the TMDB id",
+	"imdb":        "the IMDb id",
+	"release":     "the original release name",
 	// Show words: only the season folder and episode patterns use them.
 	"season":        "the season number, such as 1",
 	"episode":       "season and episode, such as S01E02, or S01E02-E03 for a file holding several",
@@ -125,6 +131,11 @@ type NamingSettings struct {
 	// MusicReadTags lets matching read a track file's own tags (title,
 	// track and disc numbers) when its name is not enough.
 	MusicReadTags bool `json:"music_read_tags"`
+	// TitleLanguage is the app language whose TMDB name new movie and show
+	// names use, when one was kept with the title's details; "" keeps the
+	// stored name (as Radarr's movie title language does). Names already on
+	// disk change only when renamed.
+	TitleLanguage string `json:"title_language"`
 }
 
 // How {episode} writes a file holding episodes 2 to 4 of season 1.
@@ -146,8 +157,9 @@ const (
 const DefaultAdoptScanLimit = 5000
 
 // DefaultMusicAdoptScanLimit is the artist folders one music scan reads
-// unless changed.
-const DefaultMusicAdoptScanLimit = 200
+// unless changed: each costs a few lookups paced seconds apart, so a part
+// finishes in a few minutes.
+const DefaultMusicAdoptScanLimit = 50
 
 // NamingDefaults are the settings before anyone changes them.
 func NamingDefaults() NamingSettings {
@@ -257,6 +269,9 @@ func (s NamingSettings) Validate() error {
 	if s.Illegal != IllegalReplace && s.Illegal != IllegalRemove {
 		return fmt.Errorf("illegal must be replace or remove")
 	}
+	if s.TitleLanguage != "" && !metadata.IsTextLanguage(s.TitleLanguage) {
+		return fmt.Errorf("unknown title language %q", s.TitleLanguage)
+	}
 	return nil
 }
 
@@ -289,11 +304,29 @@ type NameFacts struct {
 	Year    int
 	Step    string // quality step, such as 1080p_bluray
 	Edition string
+	Audio   string // the audio codec, such as EAC3; "" when not known
+	HDR     string // the HDR kinds, such as DolbyVision; "" for SDR
 	Group   string
 	TMDB    string
 	IMDB    string
 	Release string // the release name, without extension
 	Ext     string // with the dot
+}
+
+// TitleNamer gives a title's kept TMDB name in an app language ("" when
+// none was kept); set once at start. It never asks outside.
+var TitleNamer func(kind, tmdbID, lang string) string
+
+// inLanguage swaps f's title for its name in s's title language, when set
+// and kept; kind is "movie" or "show".
+func inLanguage(s NamingSettings, kind string, f NameFacts) NameFacts {
+	if s.TitleLanguage == "" || s.TitleLanguage == "en" || f.TMDB == "" || TitleNamer == nil {
+		return f
+	}
+	if n := strings.TrimSpace(TitleNamer(kind, f.TMDB, s.TitleLanguage)); n != "" {
+		f.Title = n
+	}
+	return f
 }
 
 // MaxComponent is the most bytes one rendered file or folder name may
@@ -303,6 +336,7 @@ const MaxComponent = 200
 // FileName renders a file name (with its extension) from the file pattern,
 // at most MaxComponent bytes with the extension kept.
 func FileName(s NamingSettings, f NameFacts) string {
+	f = inLanguage(s, "movie", f)
 	ext := strings.ToLower(f.Ext)
 	name := capName(render(s, s.FilePattern, f), MaxComponent-len(ext))
 	if name == "" {
@@ -314,6 +348,7 @@ func FileName(s NamingSettings, f NameFacts) string {
 // Folder renders a movie folder name from the folder pattern, at most
 // MaxComponent bytes.
 func Folder(s NamingSettings, f NameFacts) string {
+	f = inLanguage(s, "movie", f)
 	name := capName(render(s, s.FolderPattern, f), MaxComponent)
 	if name == "" {
 		return "Unnamed"
@@ -351,13 +386,14 @@ func values(f NameFacts) map[string]string {
 	if f.Year > 0 {
 		year = fmt.Sprint(f.Year)
 	}
-	return map[string]string{"title": f.Title, "sort_title": sortTitle(f.Title), "year": year, "quality": quality,
-		"resolution": res, "source": src, "edition": f.Edition, "group": f.Group, "tmdb": f.TMDB, "imdb": f.IMDB, "release": f.Release}
+	return map[string]string{"title": f.Title, "sort_title": sortTitle(f.Title), "title_first": titleFirst(f.Title), "year": year, "quality": quality,
+		"resolution": res, "source": src, "audio": f.Audio, "hdr": f.HDR, "edition": f.Edition, "group": f.Group,
+		"tmdb": f.TMDB, "imdb": f.IMDB, "release": f.Release}
 }
 
 func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 	var b strings.Builder
-	for rest := pat; rest != ""; {
+	for rest := dropEmptyGroups(pat, vals); rest != ""; {
 		open := strings.IndexByte(rest, '{')
 		end := -1
 		if open >= 0 {
@@ -367,9 +403,22 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 			b.WriteString(rest)
 			break
 		}
-		b.WriteString(rest[:open])
-		b.WriteString(vals[rest[open+1:open+end]])
+		lit, v := rest[:open], vals[rest[open+1:open+end]]
 		rest = rest[open+end+1:]
+		if v == "" {
+			// A word with no value takes one dot, dash or underscore the
+			// pattern wrote beside it, never a character of another word's
+			// value: "{audio}.{resolution}" without a codec gives "2160p".
+			// It takes a dash after it only when nothing stands before it
+			// to join, so " {edition}-{group}" keeps the group's dash.
+			if n := len(lit); n > 0 && strings.IndexByte("._-", lit[n-1]) >= 0 {
+				lit = lit[:n-1]
+			} else if rest != "" && strings.IndexByte("._-", rest[0]) >= 0 && (rest[0] != '-' || opensName(b.String()+lit)) {
+				rest = rest[1:]
+			}
+		}
+		b.WriteString(lit)
+		b.WriteString(v)
 	}
 	out := b.String()
 	// Words with no value leave empty brackets and lone dashes behind.
@@ -390,6 +439,63 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 		out = t
 	}
 	return clean(s, out)
+}
+
+// dropEmptyGroups removes a [...] or (...) whose words are all empty, with one
+// space beside it, so "[imdbid-{imdb}]" without an id leaves nothing behind.
+func dropEmptyGroups(pat string, vals map[string]string) string {
+	for i := 0; i < len(pat); i++ {
+		c := pat[i]
+		if c != '[' && c != '(' {
+			continue
+		}
+		shut := byte(']')
+		if c == '(' {
+			shut = ')'
+		}
+		j := strings.IndexAny(pat[i+1:], "[]()")
+		if j < 0 || pat[i+1+j] != shut {
+			continue
+		}
+		j += i + 1
+		inner := pat[i+1 : j]
+		if !strings.Contains(inner, "{") || !allEmpty(inner, vals) {
+			continue
+		}
+		start, end := i, j+1
+		if start > 0 && pat[start-1] == ' ' {
+			start--
+		} else if end < len(pat) && pat[end] == ' ' {
+			end++
+		}
+		pat = pat[:start] + pat[end:]
+		i = start - 1
+	}
+	return pat
+}
+
+// allEmpty reports whether every {word} in text has no value.
+func allEmpty(text string, vals map[string]string) bool {
+	for {
+		open := strings.IndexByte(text, '{')
+		if open < 0 {
+			return true
+		}
+		end := strings.IndexByte(text[open:], '}')
+		if end < 0 {
+			return true
+		}
+		if vals[text[open+1:open+end]] != "" {
+			return false
+		}
+		text = text[open+end+1:]
+	}
+}
+
+// opensName reports whether text ends where a name or a bracket starts, so a
+// separator after an empty word there has nothing to join.
+func opensName(text string) bool {
+	return text == "" || strings.IndexByte("[(", text[len(text)-1]) >= 0
 }
 
 func splitStep(step string) (res, src string) {
@@ -418,6 +524,22 @@ func sortTitle(t string) string {
 		}
 	}
 	return t
+}
+
+// titleFirst is the first letter of the sort title with accents dropped, so
+// "Élite" files under E next to other E titles.
+func titleFirst(t string) string {
+	r, _ := utf8.DecodeRuneInString(sortTitle(strings.TrimSpace(t)))
+	switch {
+	case r == utf8.RuneError:
+		return ""
+	case unicode.IsDigit(r):
+		return "0-9"
+	case !unicode.IsLetter(r):
+		return "#"
+	}
+	base, _ := utf8.DecodeRuneInString(norm.NFD.String(string(r)))
+	return string(unicode.ToUpper(base))
 }
 
 func clean(s NamingSettings, name string) string {
@@ -542,6 +664,8 @@ func ReadNaming(ctx context.Context, db database.Lister) (NamingSettings, error)
 			s.DiscFolderPattern = v
 		case "music_read_tags":
 			s.MusicReadTags = v != "false"
+		case "title_language":
+			s.TitleLanguage = v
 		}
 	})
 	if err != nil {
@@ -554,6 +678,9 @@ func ReadNaming(ctx context.Context, db database.Lister) (NamingSettings, error)
 		d.SeasonFolders = s.SeasonFolders
 		d.DiscFolders = s.DiscFolders
 		d.MusicReadTags = s.MusicReadTags
+		if metadata.IsTextLanguage(s.TitleLanguage) {
+			d.TitleLanguage = s.TitleLanguage
+		}
 		return d, nil
 	}
 	if s.AdoptScanLimit == 0 {
@@ -588,7 +715,7 @@ func PutNamingSettings(ctx context.Context, st *database.Store, s NamingSettings
 			"air_date_style": s.AirDateStyle, "absolute_digits": strconv.Itoa(s.AbsoluteDigits),
 			"artist_folder_pattern": s.ArtistFolderPattern, "album_folder_pattern": s.AlbumFolderPattern, "track_pattern": s.TrackPattern,
 			"multi_disc_track_pattern": s.MultiDiscTrackPattern, "disc_folders": fmt.Sprint(s.DiscFolders), "disc_folder_pattern": s.DiscFolderPattern,
-			"music_read_tags": fmt.Sprint(s.MusicReadTags)} {
+			"music_read_tags": fmt.Sprint(s.MusicReadTags), "title_language": s.TitleLanguage} {
 			if err := database.PutSetting(tx, group, k, v, by, now); err != nil {
 				return err
 			}
@@ -605,6 +732,7 @@ func PutNamingSettings(ctx context.Context, st *database.Store, s NamingSettings
 // FactsFrom builds NameFacts from a parsed release name: what an import knows.
 func FactsFrom(title string, year int, ids map[string]string, p releasename.Result, release, ext string) NameFacts {
 	f := NameFacts{Title: title, Year: year, Step: StepFor(p), Group: p.Group.Value, Release: release, Ext: ext,
+		Audio: AudioLabel(p.Audio.Format), HDR: HDRLabel(strings.Join(p.HDR.Value, " ")),
 		TMDB: ids["tmdb"], IMDB: ids["imdb"]}
 	if len(p.Edition) > 0 {
 		f.Edition = strings.Join(p.Edition, " ")

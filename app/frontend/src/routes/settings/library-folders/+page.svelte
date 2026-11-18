@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -10,8 +11,11 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
+	import TagInput from '#lib/ui/TagInput.svelte';
+	import { forgetTags, switchDropped } from '#lib/ui/tags.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { folderMissing, qualityFor, qualityBody, qualityValue, qualityChoices, defaultChoice, savedDefaults } from '#lib/mediafiles/index.ts';
 	import type { TitleDefaults } from '#lib/mediafiles/index.ts';
@@ -42,6 +46,16 @@
 	let label = $state('');
 	let kind = $state<'movie' | 'show' | 'music'>('movie');
 	let quality = $state('');
+	let newTags = $state<string[]>([]);
+	let onlyTagged = $state(false);
+	// Taking the last tag away turns "only these tags" off; the form and the row say so until a tag is there again or the form is done.
+	let addDropped = $state(false);
+	let rowDropped = $state<number[]>([]);
+	function setNewTags(v: string[]) {
+		if (switchDropped({ tags: newTags, only: onlyTagged }, v)) (addDropped = true), (onlyTagged = false);
+		else if (v.length) addDropped = false;
+		newTags = v;
+	}
 	let formError = $state('');
 	let saving = $state(false);
 
@@ -74,7 +88,7 @@
 		busyId = f.id;
 		try {
 			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}/path`, { path: p });
-			folders = folders.map((x) => (x.id === f.id ? n : x));
+			took(n);
 			moving = null;
 			toasts.push(t('settings.libraryFolders.pathChanged'), n.health === 'ok' ? 'ok' : 'info', { body: n.health === 'ok' ? undefined : folderHealth(n.health) });
 		} catch (err) {
@@ -179,13 +193,18 @@
 		}
 		saving = true;
 		try {
-			const f = await api.post<LibraryFolder>('/library-folders', { path: path.trim(), kind, label: label.trim(), ...(quality ? qualityBody(quality) : {}) });
+			const f = await api.post<LibraryFolder>('/library-folders', { path: path.trim(), kind, label: label.trim(), new_title_tags: newTags, only_tagged_sources: newTags.length > 0 && onlyTagged, ...(quality ? qualityBody(quality) : {}) });
 			folders = [...folders, f];
 			path = '';
 			label = '';
 			kind = 'movie';
 			quality = '';
+			newTags = [];
+			onlyTagged = false;
+			addDropped = false;
+			forgetTags();
 			adding = false;
+			void recheckSettingsStatus('library_folder');
 			toasts.push(t('settings.libraryFolders.added'), f.health === 'ok' ? 'ok' : 'info', { body: f.health === 'ok' ? undefined : folderHealth(f.health) });
 		} catch (err) {
 			formError = folderMissing(err, path, kind) ?? message(err);
@@ -194,12 +213,16 @@
 		}
 	}
 
+	// Takes a row the server sent back after another kind of save. The tag choices on screen stay: their own saves look after them, and one may still be on its way.
+	const took = (n: LibraryFolder) => (folders = folders.map((x) => (x.id === n.id ? { ...n, new_title_tags: x.new_title_tags, only_tagged_sources: x.only_tagged_sources } : x)));
+
 	async function recheck(f: LibraryFolder) {
 		busyId = f.id;
 		try {
 			const n = await api.post<LibraryFolder>(`/library-folders/${f.id}/check`);
-			folders = folders.map((x) => (x.id === f.id ? n : x));
+			took(n);
 			toasts.push(t('settings.libraryFolders.checked'), n.health === 'ok' ? 'ok' : 'info', { body: folderHealth(n.health) });
+			void recheckSettingsStatus('library_folder');
 		} catch (err) {
 			toasts.push(t('settings.libraryFolders.checkFailed'), 'fail', { body: message(err) });
 		} finally {
@@ -211,7 +234,7 @@
 		busyId = f.id;
 		try {
 			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, { label: editLabel.trim() });
-			folders = folders.map((x) => (x.id === f.id ? n : x));
+			took(n);
 			editing = null;
 		} catch (err) {
 			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
@@ -229,13 +252,54 @@
 		busyId = f.id;
 		try {
 			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, qualityBody(id));
-			folders = folders.map((x) => (x.id === f.id ? n : x));
+			took(n);
 		} catch (err) {
 			put(was);
 			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
 		}
+	}
+
+	// Each change is saved at once. A folder's saves go one after another and each sends the newest choices, so the last one made is the one kept; when the newest one fails, the row shows what the server has.
+	const tagSeq = new Map<number, number>();
+	const tagQueue = new Map<number, Promise<void>>();
+	function saveFolderTags(f: LibraryFolder, patch: { new_title_tags?: string[]; only_tagged_sources?: boolean }) {
+		const id = f.id;
+		const mine = (tagSeq.get(id) ?? 0) + 1;
+		tagSeq.set(id, mine);
+		const typed = patch.new_title_tags;
+		if (typed) {
+			const dropped = switchDropped({ tags: f.new_title_tags ?? [], only: !!f.only_tagged_sources }, typed);
+			if (dropped) patch = { ...patch, only_tagged_sources: false };
+			if (dropped || typed.length) rowDropped = dropped ? [...rowDropped, id] : rowDropped.filter((x) => x !== id);
+		}
+		folders = folders.map((x) => (x.id === id ? { ...x, ...patch } : x));
+		const run = async () => {
+			const cur = folders.find((x) => x.id === id);
+			if (!cur) return;
+			try {
+				const n = await api.put<LibraryFolder>(`/library-folders/${id}`, { new_title_tags: cur.new_title_tags ?? [], only_tagged_sources: !!cur.only_tagged_sources });
+				if (mine === tagSeq.get(id)) folders = folders.map((x) => (x.id === id ? { ...x, new_title_tags: n.new_title_tags ?? [], only_tagged_sources: !!n.only_tagged_sources } : x));
+				forgetTags();
+			} catch (err) {
+				if (mine === tagSeq.get(id)) {
+					try {
+						const all = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders;
+						const real = all.find((x) => x.id === id);
+						if (real && mine === tagSeq.get(id)) {
+							folders = folders.map((x) => (x.id === id ? { ...x, new_title_tags: real.new_title_tags ?? [], only_tagged_sources: !!real.only_tagged_sources } : x));
+							// The row shows what the server holds again, so the line about the switch no longer applies.
+							rowDropped = rowDropped.filter((x) => x !== id);
+						}
+					} catch {
+						// The error below already tells the person the save failed.
+					}
+				}
+				toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
+			}
+		};
+		tagQueue.set(id, (tagQueue.get(id) ?? Promise.resolve()).then(run));
 	}
 
 	// Copying on purpose (downloads and media on separate disks): the folder then counts as fine.
@@ -248,9 +312,9 @@
 		busyId = f.id;
 		try {
 			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, { copies_expected: on });
-			folders = folders.map((x) => (x.id === f.id ? n : x));
-			// Run the checks again so the Settings badge follows at once.
-			void api.post('/health/checks/run').catch(() => {});
+			took(n);
+			// The folder checks run again, so the warning and the menu dot follow at once.
+			void recheckSettingsStatus('library_folder');
 		} catch (err) {
 			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
 		} finally {
@@ -259,12 +323,13 @@
 	}
 
 	async function remove(f: LibraryFolder) {
-		if (!confirm(t('settings.libraryFolders.confirmRemove', { path: f.path }))) return;
+		if (!(await ask(t('settings.libraryFolders.confirmRemove', { path: f.path }), { yes: t('ui.ask.remove'), danger: true }))) return;
 		busyId = f.id;
 		try {
 			await api.del(`/library-folders/${f.id}`);
 			folders = folders.filter((x) => x.id !== f.id);
 			toasts.push(t('settings.libraryFolders.removed'), 'ok');
+			void recheckSettingsStatus('library_folder');
 		} catch (err) {
 			toasts.push(t('settings.libraryFolders.removeFailed'), 'fail', { body: message(err) });
 		} finally {
@@ -306,10 +371,19 @@
 					</select>
 				</Field>
 			{/if}
+			<Field id="lf-tags" label={t('settings.libraryFolders.newTags')} hint={t('settings.libraryFolders.newTagsHint')}>
+				<TagInput id="lf-tags" bind:value={() => newTags, setNewTags} describedby="lf-tags-hint" testid="lf-tags" />
+			</Field>
+			{#if newTags.length}
+				<label class="only"><input type="checkbox" bind:checked={onlyTagged} aria-describedby="lf-only-hint" data-testid="lf-only" /><span>{t('settings.libraryFolders.onlyTagged')}</span></label>
+				<p class="hint only-hint" id="lf-only-hint">{t('settings.libraryFolders.onlyTaggedHint')}</p>
+			{:else if addDropped}
+				<p class="hint only-off" role="status" data-testid="lf-only-off">{t('settings.libraryFolders.onlyTaggedOff', { label: t('settings.libraryFolders.onlyTagged') })}</p>
+			{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>{t('settings.libraryFolders.addButton')}</Button>
-				<Button variant="plain" type="button" onclick={() => ((adding = false), (formError = ''))}>{t('settings.libraryFolders.cancel')}</Button>
+				<Button type="button" onclick={() => ((adding = false), (formError = ''), (addDropped = false))}>{t('settings.libraryFolders.cancel')}</Button>
 			</div>
 		</SettingsCard>
 	</form>
@@ -331,7 +405,7 @@
 						<label class="sr-only" for="ed-{f.id}">{t('settings.libraryFolders.name')}</label>
 						<input id="ed-{f.id}" class="input" bind:value={editLabel} maxlength="64" />
 						<Button variant="primary" type="submit" disabled={busyId === f.id}>{t('settings.libraryFolders.save')}</Button>
-						<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
+						<Button type="button" onclick={() => (editing = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</form>
 				{:else}
 					<div class="top"><span class="name">{f.label || f.path}</span><span class="kind" data-testid="folder-kind">{f.kind === 'show' ? t('settings.libraryFolders.forShows') : f.kind === 'music' ? t('settings.libraryFolders.forMusic') : t('settings.libraryFolders.forMovies')}</span></div>
@@ -356,18 +430,33 @@
 			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span>{#if f.health === 'no_hardlink'}<a class="why-link" href={copiesDoc} target="_blank" rel="noopener noreferrer">{t('settings.libraryFolders.whyCopies')}</a>{/if}</span>
 			<div class="acts">
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
-				{#if f.health === 'no_hardlink'}<Button variant="plain" size="sm" type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
-				<Button variant="plain" size="sm" type="button" onclick={() => ((editing = f.id), (editLabel = f.label))}>{t('settings.libraryFolders.rename')}</Button>
+				{#if f.health === 'no_hardlink'}<Button type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
+				<IconButton icon="pencil" label={t('settings.libraryFolders.renameOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => ((editing = f.id), (editLabel = f.label))} />
 				<IconButton icon="folderMove" label={t('settings.libraryFolders.changePathOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} aria-expanded={moving === f.id} onclick={() => openMove(f)} />
 				<IconButton icon="trash" label={t('settings.libraryFolders.removePath', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
 			</div>
+			{#if canEdit || f.new_title_tags?.length}
+				<div class="nt" data-testid="folder-tags">
+					<label class="ql" for="nt-{f.id}">{t('settings.libraryFolders.newTags')}</label>
+					<div class="nv">
+						<TagInput id="nt-{f.id}" bind:value={() => f.new_title_tags ?? [], (v) => saveFolderTags(f, { new_title_tags: v })} disabled={!canEdit} describedby="nt-{f.id}-hint" testid="nt-{f.id}" />
+						<p class="hint" id="nt-{f.id}-hint">{t('settings.libraryFolders.newTagsHint')}</p>
+						{#if f.new_title_tags?.length}
+							<label class="only"><input type="checkbox" checked={!!f.only_tagged_sources} disabled={!canEdit} onchange={(e) => saveFolderTags(f, { only_tagged_sources: e.currentTarget.checked })} aria-describedby="nt-only-{f.id}-hint" data-testid="nt-only-{f.id}" /><span>{t('settings.libraryFolders.onlyTagged')}</span></label>
+							<p class="hint only-hint" id="nt-only-{f.id}-hint">{t('settings.libraryFolders.onlyTaggedHint')}</p>
+						{:else if rowDropped.includes(f.id)}
+							<p class="hint only-off" role="status" data-testid="nt-only-off-{f.id}">{t('settings.libraryFolders.onlyTaggedOff', { label: t('settings.libraryFolders.onlyTagged') })}</p>
+						{/if}
+					</div>
+				</div>
+			{/if}
 			{#if moving === f.id}
 				<form class="mv" onsubmit={(e) => (e.preventDefault(), changePath(f))} aria-label={t('settings.libraryFolders.changePath')}>
 					<label for="mv-{f.id}">{t('settings.libraryFolders.newPath')}</label>
 					<div class="mv-row">
 						<input id="mv-{f.id}" class="input mono" dir="ltr" bind:value={movePath} autocomplete="off" spellcheck="false" disabled={moveBusy} aria-describedby="mv-{f.id}-hint" />
-						<Button variant="primary" size="sm" type="submit" busy={moveBusy} disabled={moveBusy}>{moveBusy ? t('settings.libraryFolders.checkingFiles') : t('settings.libraryFolders.changePath')}</Button>
-						<Button variant="plain" size="sm" type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
+						<Button variant="primary" type="submit" busy={moveBusy} disabled={moveBusy}>{moveBusy ? t('settings.libraryFolders.checkingFiles') : t('settings.libraryFolders.changePath')}</Button>
+						<Button type="button" disabled={moveBusy} onclick={() => (moving = null)}>{t('settings.libraryFolders.cancel')}</Button>
 					</div>
 					<p class="hint" id="mv-{f.id}-hint">{t('settings.libraryFolders.changePathHint')}</p>
 					{#if moveError}<p class="form-error" role="alert">{moveError}</p>{/if}
@@ -468,6 +557,25 @@
 	.acts { display: flex; align-items: center; gap: 2px; }
 	.ed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 	.ed .input { max-width: 240px; min-height: 36px; }
+	/* New-title tags: a full-width line under the row, label left of the field. */
+	.folder .nt { grid-column: 2 / -1; display: grid; grid-template-columns: 232px minmax(0, 1fr); align-items: start; column-gap: 16px; row-gap: 4px; min-width: 0; padding: 6px 0 0 0; }
+	.nt .ql { padding: 10px 8px 0 8px; }
+	.nt .nv { min-width: 0; }
+	.only { display: flex; align-items: flex-start; gap: 8px; margin-top: 8px; font: 400 14px/1.4 var(--font-ui); color: var(--text); }
+	.only input { margin-top: 3px; flex: none; }
+	.only-hint { margin: 2px 0 0 24px; color: var(--text-muted); font: 400 12px/1.4 var(--font-ui); }
+	.only-off { margin: 6px 0 0; color: var(--text-muted); font: 400 12px/1.4 var(--font-ui); }
+	/* On a touch screen the checkbox row and the tag box are as tall as the Quality row. */
+	@media (pointer: coarse) {
+		.only { align-items: center; min-height: 44px; margin-top: 4px; }
+		.only input { margin-top: 0; }
+		.sc-form :global(.ti .input), .nt .nv :global(.input) { min-height: 44px; height: 44px; }
+	}
+	.nt .hint { margin: 2px 0 0; color: var(--text-muted); font: 400 12px/1.4 var(--font-ui); }
+	/* The chips and the box share one wrapping line. */
+	.nt .nv :global(.ti) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+	.nt .nv :global(.chips) { display: contents; }
+	.nt .nv :global(.input) { flex: 1 1 140px; min-width: 0; min-height: 36px; height: 36px; }
 	/* Change path: a full-width line under the row. */
 	.folder .mv { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 6px; }
 	.mv label { color: var(--text-muted); font: 500 12px/1.3 var(--font-ui); }
@@ -477,10 +585,10 @@
 	.mv .form-error { margin: 0; overflow-wrap: anywhere; }
 	/* Glass sheet shared by the folder rows. */
 	.fl {
-		border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px;
-		background: color-mix(in srgb, var(--surface-1) 60%, transparent);
-		-webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6);
-		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45);
+		border: var(--sheet-edge); border-radius: var(--sheet-r);
+		background: var(--sheet-bg);
+		
+		box-shadow: var(--sheet-shadow);
 		overflow: hidden;
 	}
 
@@ -494,7 +602,9 @@
 	.kind { display: none; }
 
 	@container settings (max-width: 640px) {
-		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic q q' 'ic free acts'; row-gap: 6px; }
+		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic q q' 'ic free acts' 'ic nt nt'; row-gap: 6px; }
+		.folder .nt { grid-area: nt; grid-template-columns: minmax(0, 1fr); }
+		.nt .ql { padding: 0; font: 400 15px/1.3 var(--font-ui); color: var(--text); }
 		.folder .qpick { grid-area: q; width: auto; border-block: 1px solid var(--line); }
 		.qpick :global(.ui-pop) { width: 100%; }
 		.qpick :global(.trigger.row), .qro { width: 100%; max-width: none; min-height: 44px; padding: 0; border-radius: 0; }
@@ -514,7 +624,7 @@
 	/* Phones: the buttons take their own line at the row's end (change path, then remove, last), so a long Rename label cannot squeeze the name. */
 	/* The state takes its own line too, so a long state never squeezes the name. */
 	@container settings (max-width: 440px) {
-		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic q q' 'ic acts acts'; }
+		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic q q' 'ic acts acts' 'ic nt nt'; }
 		.folder .st { justify-self: start; white-space: normal; line-height: 1.3; }
 		.folder .acts { justify-self: end; flex-wrap: wrap; justify-content: flex-end; margin-inline-end: -8px; }
 	}

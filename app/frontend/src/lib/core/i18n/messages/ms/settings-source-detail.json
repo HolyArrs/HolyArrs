@@ -34,5 +34,6 @@
 	"settings.sourceDetail.what": "Apa",
 	"settings.sourceDetail.result": "Hasil",
 	"settings.sourceDetail.time": "Masa",
-	"settings.sourceDetail.answeredCell": "Dijawab"
+	"settings.sourceDetail.answeredCell": "Dijawab",
+	"settings.sourceDetail.noTimes": "Belum ada jawapan"
 }

@@ -22,6 +22,10 @@ func fieldErr(field, format string, args ...any) error {
 	return &FieldError{Field: field, Text: fmt.Sprintf(format, args...)}
 }
 
+// MaxTraits bounds the traits a Pick rules list holds: the points list, must-have
+// and never. Pushed and synced profiles carry hundreds of formats.
+const MaxTraits = 256
+
 // MaxPoints bounds every points value in Pick rules, both ways: a 32-bit
 // number, as Sonarr and Radarr keep format scores.
 const MaxPoints = math.MaxInt32
@@ -106,8 +110,8 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 	if !steps[b.GoodEnoughAt] || !goodEnoughAllowed {
 		return fieldErr("body.good_enough_at", "Good enough must be one of the allowed quality steps.")
 	}
-	if len(b.Traits) > pickMaxNested {
-		return fieldErr("body.traits", "List at most 64 traits.")
+	if len(b.Traits) > MaxTraits {
+		return fieldErr("body.traits", "List at most 256 traits.")
 	}
 	seen := map[string]bool{}
 	// An own trait is checked by its key's form; one deleted later
@@ -127,8 +131,8 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 		values []string
 		safety bool
 	}{{"body.must_have", b.MustHave, false}, {"body.never", b.Never, true}} {
-		if len(l.values) > pickMaxNested {
-			return fieldErr(l.field, "List at most 64 traits.")
+		if len(l.values) > MaxTraits {
+			return fieldErr(l.field, "List at most 256 traits.")
 		}
 		seen := map[string]bool{}
 		for _, trait := range l.values {

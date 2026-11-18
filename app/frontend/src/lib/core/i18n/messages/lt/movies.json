@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Šios Versijos Pasirinkimo taisyklės",
 	"movies.versions.folderLabel": "Šios Versijos Bibliotekos aplankas",
 	"movies.versions.cancel": "Atšaukti",
-	"movies.versions.addButton": "Pridėti versiją"
+	"movies.versions.addButton": "Pridėti versiją",
+	"movies.versions.setEdition": "Nustatyti leidimą",
+	"movies.versions.editionFileHint": "Koks tai failo leidimas, pavyzdžiui, Theatrical arba Directors Cut. Palikite tuščią, kad išvalytumėte.",
+	"movies.versions.unprotectConfirm": "Pašalinti {label} apsaugą? Geresnė kopija vėl galės ją pakeisti.",
+	"movies.versions.editionChars": "Neleidžiama:",
+	"movies.versions.editionInvalid": "Šio leidimo naudoti negalima. Rašykite trumpai (raidės su diakritiniais ženklais ir ne lotyniškos raidės užima daugiau vietos), nenaudokite aukščiau išvardytų simbolių ir nebaikite taškų.",
+	"movies.versions.editionDevice": "„Windows“ pavadinimą {name} skiria įrenginiams, todėl jo naudoti negalima. Įveskite kitą."
 }

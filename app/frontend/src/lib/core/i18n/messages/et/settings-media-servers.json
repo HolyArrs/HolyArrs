@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrsi tee",
 	"settings.mediaServers.pathTo": "Sama kaust serveris",
 	"settings.mediaServers.pathHint": "Ainult siis, kui server näeb sinu faile mõne teise tee all",
+	"settings.mediaServers.webUrl": "Aadress brauseritele",
+	"settings.mediaServers.webUrlHint": "Aadress, kust inimesed serveri telefonis või arvutis avavad. Lisab Ava-nupu nende pealkirjade lehtedele, mis serveris on. Jäta tühjaks, kui nuppu pole vaja.",
 	"settings.mediaServers.local": "Luba ligipääs kohtvõrku",
 	"settings.mediaServers.send": "Saada uuendusi",
 	"settings.mediaServers.save": "Salvesta",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Kas lülitada vaatamisajalugu välja? Kõik seni loetu kustutatakse.",
 	"settings.mediaServers.watchTurnedOn": "Vaatamisajalugu on sees. Esimene lugemine toimub 30 minuti jooksul.",
 	"settings.mediaServers.watchTurnedOff": "Vaatamisajalugu on väljas",
-	"settings.mediaServers.watchFailed": "Vaatamisajaloo muutmine ebaõnnestus"
+	"settings.mediaServers.watchFailed": "Vaatamisajaloo muutmine ebaõnnestus",
+	"settings.mediaServers.labelTitle": "Plexi sildid",
+	"settings.mediaServers.labelSwitch": "Lisa soovitud pealkirjadele silt",
+	"settings.mediaServers.labelHint": "Kui soovitud film või sari on Plexis, lisab HolyArrs sellele sildi, et saaksid Plexis selle järgi filtreerida, kogusid teha või jagada. Olemasolevad sildid jäävad.",
+	"settings.mediaServers.labelText": "Silt",
+	"settings.mediaServers.labelAskers": "Lisa sildina ka soovija nimi",
+	"settings.mediaServers.labelSaved": "Plexi sildid salvestatud",
+	"settings.mediaServers.labelFailed": "Plexi silte ei saanud salvestada",
+	"settings.mediaServers.labelExisting": "Lisa silt juba soovitud pealkirjadele",
+	"settings.mediaServers.labelExistingStarted": "Siltide lisamine algas. Pealkirjad saavad sildid mõne minuti jooksul.",
+	"settings.mediaServers.labelExistingFailed": "Siltide lisamist ei saanud alustada"
 }

@@ -32,11 +32,12 @@
 	"settings.backups.key": "Khóa chính",
 	"settings.backups.keyDesc": "Bản sao lưu không chứa khóa này. Hãy giữ một bản ở nơi an toàn.",
 	"settings.backups.noKit": "Chưa lưu bộ khóa nào cho khóa này. Thiếu bộ khóa, các mật khẩu đã lưu trong bản sao lưu sẽ không mở được trên máy mới.",
+	"settings.backups.kitRecommended": "Nên làm: tải bộ khóa của bạn.",
 	"settings.backups.ownerOnlyKit": "Chỉ chủ sở hữu mới tải được; hãy nhờ họ.",
 	"settings.backups.fingerprint": "Dấu vân tay của khóa",
 	"settings.backups.downloadKit": "Tải bộ khóa",
 	"settings.backups.restoreKey": "Để khôi phục: đổi tên thành holyarrs.key và đặt vào thư mục config",
 	"settings.backups.offPlan": "Tắt",
-	"settings.backups.offAbout": "Không có bản sao lưu theo lịch. Vẫn có một bản sao được tạo trước mỗi lần cập nhật.",
+	"settings.backups.offAbout": "Không có bản sao lưu tự động, kể cả trước khi cập nhật. Bản sao lưu bạn tự tạo vẫn dùng được.",
 	"settings.backups.offKeeps": "Tắt giữ nguyên các bản sao lưu bạn đã có."
 }

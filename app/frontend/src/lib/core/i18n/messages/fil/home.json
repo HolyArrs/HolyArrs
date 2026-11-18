@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Naka-off sa Mga Bahagi",
 	"home.noneForSources": "wala para sa nahahanap ng mga Source mo",
 	"home.addedTwice": "ay dalawang beses idinagdag",
-	"home.addedTwiceMany": "ay dalawang beses idinagdag"
+	"home.addedTwiceMany": "ay dalawang beses idinagdag",
+	"home.notSetUpYet": "Hindi pa naka-set up",
+	"home.setUpToAdd": "Tapusin ang setup para idagdag ang {name}",
+	"home.comingThisWeek": "Darating ngayong linggo",
+	"home.thisWeek": "ngayong linggo",
+	"home.landingThisWeek": "Mga episode at pelikulang darating ngayong linggo",
+	"home.popularThisWeek": "Mga sikat na release na darating ngayong linggo",
+	"home.peopleCheck": "Pagsusuri ng mga tao",
+	"home.cantReadUsers": "hindi mabasa ang listahan ng user"
 }

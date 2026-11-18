@@ -63,6 +63,11 @@ describe('show words', () => {
 			'searching shows comes later'
 		);
 		expect(episodeWhy(ep(), true, true)).toBe('');
+		// An episode whose import runs again does not show the reason of the card it came from.
+		const again = { id: 1, version: 'Main', version_id: 1, state_label: 'Importing', reason: 'HolyArrs may not read the downloaded file; give the user HolyArrs runs as (PUID and PGID) read access to the file and the folder it is in, then import again' };
+		expect(episodeWhy(ep({ slots: [{ ...again, state: 'importing' }] }), true, true)).toBe('');
+		expect(episodeWhy(ep({ slots: [{ ...again, state: 'needs_a_decision' }] }), true, true)).toBe(again.reason);
+		expect(episodeWhy(ep({ slots: [{ ...again, state: 'importing', reason: 'importing' }] }), true, true)).toBe('importing');
 	});
 });
 

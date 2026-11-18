@@ -5,6 +5,7 @@
 </script>
 
 <script lang="ts">
+	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { createExploreGenre } from '#lib/discover/index.ts';
 	import { createExploreStrip } from '#lib/discover/index.ts';
@@ -51,6 +52,9 @@
 	let tail = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
 	let hero = $state<ExploreCard[]>([]);
 	let heroAt = $state(0);
+	// First visit: the server may still be fetching the hero's pictures, so the page keeps a same-size placeholder and asks again a few times.
+	let heroWait = $state(0);
+	const HERO_TRIES = 5;
 	let headLoaded = $state(false);
 	let tailPageNext = 0;
 	let tailMore = $state(false);
@@ -353,9 +357,14 @@
 			tailMore = a.tail_rows > 0;
 			failed = false;
 			okOnce = true;
+			heroWait = !a.building && hero.length === 0 && head.length > 0 && tries < HERO_TRIES ? tries + 1 : 0;
 			if (a.building && tries < 24) poll = setTimeout(() => void loadHead(tries + 1), 5000);
+			else if (heroWait) poll = setTimeout(() => void loadHead(tries + 1), 3000);
 		} catch {
-			if (n === headAsk) failed = true;
+			if (n === headAsk) {
+				failed = true;
+				heroWait = 0;
+			}
 		} finally {
 			if (n === headAsk) headLoaded = true;
 		}
@@ -488,7 +497,7 @@
 			clearTimeout(poll);
 			stripView.stripShown.flush();
 			gone.abort();
-			if (headLoaded && !failed && type !== 'music') kept = { key: JSON.stringify(query()), at: Date.now(), rows: $state.snapshot({ head, tail, hero, heroAt, tailPageNext, tailMore, headOrder }) };
+			if (headLoaded && !failed && type !== 'music' && hero.length > 0) kept = { key: JSON.stringify(query()), at: Date.now(), rows: $state.snapshot({ head, tail, hero, heroAt, tailPageNext, tailMore, headOrder }) };
 		};
 	});
 </script>
@@ -611,6 +620,8 @@
 						{#if why.length}<ul class="why" aria-label={t('discover.explore.whyItIsFeatured')}>{#each why as w (w.kind)}<li class="why-{w.kind}">{w.text}</li>{/each}</ul>{/if}
 					{/snippet}
 				</ExploreHero>
+			{:else if heroWait && !genreView.genreOn}
+				<div class="hero-wait" data-testid="hero-placeholder" aria-hidden="true"><Skeleton shape="block" /></div>
 			{/if}
 			{#if bannerView.bannerOn && bannerView.favourite}
 				<GenreBanner
@@ -709,6 +720,8 @@
 <QuickAsk bind:this={flow} onadded={() => void load()} />
 
 <style>
+	.hero-wait { margin: 8px 0 0; border-radius: 24px; overflow: hidden; min-height: max(380px, min(77svh, calc((100vw - var(--gutter) * 2) / 2.18))); display: grid; }
+	.hero-wait :global(.ui-sk) { height: auto; border-radius: 0; }
 	.explore { container: explore / inline-size; /* One size for every title row: 279px cards at a 1536px window, sized from the window (the page has no sidebar), never under 200px. */
 		--title-item: max(200px, calc((100vw - 96px) / 5.16)); --explore-item: 168px; display: flex; flex-direction: column; gap: 32px; padding-bottom: 48px; }
 	.explore > :global(.ui-head) { margin-bottom: -8px; }
@@ -723,6 +736,8 @@
 	.types.stuck { --seg-hit: 49px; }
 	/* Reduced motion: the same compact size, without the animation. */
 	@media (prefers-reduced-motion: reduce) { .types :global(.ui-seg), .types :global(.ui-seg .thumb), .genre-pick :global(.trigger) { transition: none; } }
+	/* Phones have no top bar: the pills sit at the top of the page above the hero, not 56px down over it. */
+	@media (max-width: 767px) { .types { top: max(16px, env(safe-area-inset-top)); } }
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; } .music-banner { margin-top: 28px; } }
 	/* Phones: the pills share the row with Genres (never wider than the screen); a long genre name ends in an ellipsis. */
 	@media (max-width: 767px) { .types { max-width: 100%; } .types :global(.ui-seg) { flex: 1 1 auto; width: auto; min-width: 0; } .genre-pick { flex: none; min-width: 0; } .genre-pick :global(.trigger) { max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }

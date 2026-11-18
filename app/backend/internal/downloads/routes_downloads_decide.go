@@ -52,11 +52,11 @@ func (a *Web) removeDownload(w http.ResponseWriter, r *http.Request) {
 	if p, ok := webserver.From(r.Context()); ok {
 		who = p.Name
 	}
-	err = a.Manager().Remove(r.Context(), id, c, actor(r), who)
+	note, err := a.Manager().RemoveSaid(r.Context(), id, c, actor(r), who)
 	switch {
 	case errors.Is(err, database.ErrNotFound), errors.Is(err, sql.ErrNoRows):
 		webserver.Fail(w, http.StatusNotFound, "no such download")
-	case errors.Is(err, ErrNotActive):
+	case errors.Is(err, ErrNotActive), errors.Is(err, ErrImporting), errors.Is(err, ErrDownloaderReadOnly):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case err != nil:
 		webserver.Internal(w, "api", err)
@@ -71,7 +71,11 @@ func (a *Web) removeDownload(w http.ResponseWriter, r *http.Request) {
 		if d.StateReason != nil {
 			v.Text = upperFirst(*d.StateReason) + "."
 		}
-		webserver.WriteJSON(w, http.StatusOK, v)
+		// The Downloader's refusal, so the page can say it at once.
+		webserver.WriteJSON(w, http.StatusOK, struct {
+			DownloadView
+			ClientNote string `json:"client_note,omitempty"`
+		}{v, note})
 	}
 }
 
@@ -103,7 +107,7 @@ type DecisionView struct {
 	Year        *int      `json:"year,omitempty"`
 	Version     string    `json:"version"`
 	Versions    int       `json:"versions"` // how many Versions the Title has
-	Why         string    `json:"why"`      // ran_out, conflict, not_replaced, not_sent, taken
+	Why         string    `json:"why"`      // ran_out, conflict, not_replaced, not_sent, link_refused, taken
 	Reason      string    `json:"reason"`
 	ReleaseID   *int64    `json:"release_id,omitempty"`
 	ReleaseName string    `json:"release_name,omitempty"`
@@ -125,16 +129,18 @@ type DecisionView struct {
 	// ImportFolder is the finished download's folder as HolyArrs sees it:
 	// Review opens Import files by hand there to match the files.
 	ImportFolder string `json:"import_folder,omitempty"`
+	// Reading: Import again reads the download's folder right now.
+	Reading bool `json:"reading,omitempty"`
 }
 
 // why sorts a Slot's last reason into the ways it ends up waiting.
 func why(reason string) string {
 	switch {
-	case strings.Contains(reason, "could not be placed") && filesTaken(reason):
-		// An older import whose files another app had already taken.
-		return "taken"
 	case strings.Contains(reason, "not replaced (setting)"):
 		return "not_replaced"
+	case strings.HasPrefix(reason, "not sent: the Release link"):
+		// The Release link led to an address HolyArrs may not reach.
+		return "link_refused"
 	case strings.HasPrefix(reason, "not sent:"):
 		// No Downloader takes the title's tags.
 		return "not_sent"
@@ -147,18 +153,6 @@ func why(reason string) string {
 		return "conflict"
 	}
 	return "ran_out"
-}
-
-// filesTaken reports whether a placing error says the download's file was
-// no longer there.
-func filesTaken(reason string) bool {
-	r := strings.ToLower(reason)
-	for _, w := range []string{"no such file or directory", "cannot find the file", "cannot find the path", "not in the download folder any more"} {
-		if strings.Contains(r, w) {
-			return true
-		}
-	}
-	return false
 }
 
 func (a *Web) decisions(ctx context.Context, slotID int64) ([]DecisionView, error) {
@@ -234,6 +228,7 @@ func (a *Web) decisions(ctx context.Context, slotID int64) ([]DecisionView, erro
 		}
 		if out[i].DownloadID != nil {
 			out[i].ImportFolder = a.importer().ReviewFolder(ctx, *out[i].DownloadID)
+			out[i].Reading = a.Manager().Rereading(*out[i].DownloadID)
 		}
 		if out[i].Reason != "" {
 			out[i].Reason = upperFirst(out[i].Reason) + "."

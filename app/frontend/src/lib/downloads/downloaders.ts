@@ -161,6 +161,20 @@ export const kindWords: Record<DownloaderView['kind'], string> = {
 	aria2: 'aria2'
 };
 
+const stateKeys: Record<DownloaderHealth['state'], string> = {
+	working: 'settings.downloaders.state.working',
+	paused: 'settings.downloaders.state.paused',
+	resting: 'settings.downloaders.state.resting',
+	not_answering: 'settings.downloaders.state.notAnswering',
+	sign_in_refused: 'settings.downloaders.state.signInRefused'
+};
+
+/** A Downloader's health chip word in the app's language; the server's word for a state the page does not know. */
+export function healthLabel(h: Pick<DownloaderHealth, 'state' | 'label'>): string {
+	const key = stateKeys[h.state];
+	return key ? t(key) : h.label;
+}
+
 /** Colours a Downloader's health chip. */
 export function healthTone(state: DownloaderHealth['state']): Tone {
 	if (state === 'working') return 'ok';
@@ -397,6 +411,8 @@ export function whyWords(d: Pick<Decision, 'why' | 'has_copy'>): string {
 			return t('downloads.why.notReplaced');
 		case 'not_sent':
 			return t('downloads.why.notSent');
+		case 'link_refused':
+			return t('downloads.why.linkRefused');
 		case 'taken':
 			return t('downloads.why.taken');
 	}
@@ -404,8 +420,27 @@ export function whyWords(d: Pick<Decision, 'why' | 'has_copy'>): string {
 }
 
 /** removeFilesWords says what "Also delete files" deletes: the folder of
- * each row when known, otherwise its files in the Downloader. */
-export function removeFilesWords(rows: Pick<DownloadRow, 'path' | 'downloader'>[]): string {
+ * each row when known, otherwise its files in the Downloader. Files the
+ * server keeps (in or around a Library folder) are named as kept. */
+export function removeFilesWords(all: Pick<DownloadRow, 'path' | 'downloader' | 'files_stay'>[]): string {
+	const rows = all.filter((r) => !r.files_stay);
+	const stay = all.length - rows.length;
+	if (stay === 1 && all.length === 1 && all[0].path) return t('downloads.rm.keepsPath', { path: all[0].path });
+	const kept = stay ? t('downloads.rm.keepsSome') : '';
+	return [deleteWords(rows), kept].filter(Boolean).join(' ');
+}
+
+/** Whether the Remove button says it deletes files: the choice is on and at least one row's files do not stay. */
+export function removeDeletesFiles(on: boolean, rows: Pick<DownloadRow, 'files_stay'>[]): boolean {
+	return on && rows.some((r) => !r.files_stay);
+}
+
+/** The rows Remove sends: torrents HolyArrs did not send stay unless the user has the settings permission. */
+export function removeSent<T extends Pick<DownloadRow, 'outside'>>(rows: T[], canSettings: boolean): T[] {
+	return canSettings ? rows : rows.filter((r) => !r.outside);
+}
+
+function deleteWords(rows: Pick<DownloadRow, 'path' | 'downloader'>[]): string {
 	if (!rows.length) return '';
 	if (rows.length === 1) {
 		const r = rows[0];
@@ -418,4 +453,27 @@ export function removeFilesWords(rows: Pick<DownloadRow, 'path' | 'downloader'>[
 	const shown = paths.slice(0, 3).join(', ');
 	const rest = rows.length - Math.min(paths.length, 3);
 	return rest ? t('downloads.rm.shownMore', { shown, rest, clients }) : t('downloads.rm.shown', { shown, clients });
+}
+
+type DoneBits = Pick<DownloadRow, 'phase' | 'state' | 'seeding' | 'protocol' | 'downloader' | 'client_item' | 'episodes'>;
+
+/** finishedOwn is a finished download HolyArrs sent (seeding, or done in its Downloader). */
+export const finishedOwn = (r: Pick<DownloadRow, 'state' | 'client_item'>) => !r.client_item && (r.state === 'finished' || r.state === 'seeding');
+
+/** doneInLibrary is a finished download HolyArrs sent whose import is done: its files are in the library. */
+export const doneInLibrary = (r: DoneBits) => finishedOwn(r) && r.phase === 'done';
+
+/** doneLine is what the Remove dialog says about a finished, imported
+ * download: removing stops its seeding (or clears it from a Usenet
+ * Downloader or a torrent that stopped seeding) and the library copy stays.
+ * Empty for any other row, so a download whose import failed or waits for a
+ * person never says it is in the library. */
+export function doneLine(r: DoneBits): string {
+	if (!doneInLibrary(r)) return '';
+	const name = r.downloader || t('downloads.rm.theDownloader');
+	const seeding = r.protocol !== 'usenet' && (r.seeding === true || r.state === 'seeding');
+	const eps = r.episodes ?? [];
+	const part = eps.length > 1 && eps.some((e) => e.state !== 'in_library' && e.state !== 'better_wanted');
+	if (part) return t(seeding ? 'downloads.rm.partSeeding' : 'downloads.rm.partIdle', { name });
+	return t(seeding ? 'downloads.rm.doneSeeding' : 'downloads.rm.doneIdle', { name });
 }

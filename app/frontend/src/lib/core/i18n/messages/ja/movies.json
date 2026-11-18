@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "このバージョンの選定ルール",
 	"movies.versions.folderLabel": "このバージョンのライブラリフォルダー",
 	"movies.versions.cancel": "キャンセル",
-	"movies.versions.addButton": "バージョンを追加"
+	"movies.versions.addButton": "バージョンを追加",
+	"movies.versions.setEdition": "版を設定",
+	"movies.versions.editionFileHint": "このファイルがどの版か。例: Theatrical、Directors Cut。空欄にすると消去されます。",
+	"movies.versions.unprotectConfirm": "{label} の保護を解除しますか？ より良いコピーで再び置き換えられるようになります。",
+	"movies.versions.editionChars": "使えない文字:",
+	"movies.versions.editionInvalid": "この版は使えません。短くし（アクセント付きの文字やラテン文字以外は長く数えられます）、上に挙げた文字は使わず、末尾にドットを付けないでください。",
+	"movies.versions.editionDevice": "{name} は Windows がデバイス用に予約している名前のため使えません。別の名前を入力してください。"
 }

@@ -16,8 +16,9 @@ import (
 // TestMain keeps the update check off the real network: the release feed
 // points at a loopback address the public-only policy refuses before dialing,
 // and the artist picture source is off. Held-back features are tested
-// switched on, the music cover preload runs only where a test asks, and
-// YouTube is never asked (fakeReader stands in). A full run fails when a
+// switched on, and so is the lab switch for the fake subtitle sites. The music
+// cover preload runs only where a test asks, and YouTube is never asked
+// (fakeReader stands in). A full run fails when a
 // registered route was never served to a test request.
 func TestMain(m *testing.M) {
 	_ = os.Setenv("HOLYARRS_RELEASE_FEED", "http://127.0.0.1:1/no-network-in-tests")
@@ -25,7 +26,7 @@ func TestMain(m *testing.M) {
 	startup.RegisterHeldFeatures()
 	parts.Register()
 	registerHooks()
-	_ = os.Setenv("HOLYARRS_FLAGS", strings.Join(startup.HeldFeatures(), ","))
+	_ = os.Setenv("HOLYARRS_FLAGS", strings.Join(append(startup.HeldFeatures(), startup.Lab), ","))
 	wrapMux = webserver.RecordRouteHits
 	music.SetPreloadOn(false)
 	metadata.UseReader(&youtube.Reader{Base: "http://127.0.0.1:1"})

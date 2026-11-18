@@ -7,6 +7,7 @@
 	"settings.sources.title": "Kilder",
 	"settings.sources.add": "Tilføj en Kilde",
 	"settings.sources.lead": "Prioritet 1 kommer først. En Kilde, der fejler, springes over i op til seks timer. Til sites uden feed kan du tilføje Jackett eller Prowlarr som Torznab-feed.",
+	"settings.sources.builtIn": "Indbyggede sider kræver ikke Jackett eller Prowlarr: {sites}. Vælg {site} under {kind}.",
 	"settings.sources.change": "Ændr {name}",
 	"settings.sources.name": "Navn",
 	"settings.sources.feedKind": "Type feed",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Gem",
 	"settings.sources.cancel": "Annuller",
 	"settings.sources.none": "Ingen Kilder",
-	"settings.sources.noneText": "Tilføj en Torznab- eller Newznab-feed eller Jackett eller Prowlarr.",
+	"settings.sources.noneText": "Tilføj en indbygget side, en Torznab- eller Newznab-feed eller Jackett eller Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioritet {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioritet {priority} · {uses}",
 	"settings.sources.keyIs": "nøgle {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Side",
 	"settings.sources.addressSite": "Sidens egen adresse. Ret den kun, hvis siden er flyttet.",
 	"settings.sources.siteKeyLabel": "Cookie eller RSS-nøgle",
-	"settings.sources.siteKeyHint": "Fra din egen konto: uid og pass fra browserens cookie, eller u og tp fra dit RSS-link. Gemmes krypteret."
+	"settings.sources.siteKeyHint": "Fra din egen konto: uid og pass fra browserens cookie, eller u og tp fra dit RSS-link. Gemmes krypteret.",
+	"settings.sources.sendTo": "Send downloads til",
+	"settings.sources.sendToAny": "Enhver downloader",
+	"settings.sources.sendToHint": "Alt valgt fra denne kilde går kun til denne downloader. Er den nede, venter det.",
+	"settings.sources.sendToGone": "Den valgte downloader blev fjernet. Downloads fra denne kilde går nu til enhver downloader."
 }

@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "জিতেছে: {name}",
 	"ui.wikiFacts.nominated": "মনোনীত: {name}",
 	"ui.wikiFacts.andMore": "আরও {count}টি",
-	"ui.pageLoader.loading": "লোড হচ্ছে"
+	"ui.pageLoader.loading": "লোড হচ্ছে",
+	"ui.connectHelp.link": "কীভাবে ঠিক করবেন",
+	"ui.ask.remove": "সরান",
+	"ui.ask.restore": "পুনরুদ্ধার",
+	"ui.ask.stop": "থামান",
+	"ui.ask.revoke": "বাতিল করুন",
+	"ui.ask.replace": "প্রতিস্থাপন",
+	"ui.ask.unlink": "লিঙ্ক সরান",
+	"ui.ask.turnOff": "বন্ধ করুন",
+	"ui.ask.markFailed": "ব্যর্থ চিহ্নিত করুন",
+	"ui.ask.reset": "রিসেট",
+	"ui.ask.import": "ইমপোর্ট"
 }

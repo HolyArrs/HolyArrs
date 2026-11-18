@@ -35,7 +35,7 @@ test('history: day by day, with a Filter, one title and a details panel', async 
 	await expect(page.getByTestId('history-search-bar')).toBeVisible();
 	const rows = page.getByTestId('history-row');
 	await expect(rows.first()).toBeVisible();
-	await expect(page.getByTestId('history-count')).toContainText(' of ');
+	await expect(page.getByTestId('history-count')).toHaveText(/^\d+ Events?$/);
 
 	// Filter, then Renamed: only renames, kept in the address and shown as a chip.
 	await page.getByTestId('history-search-bar').getByRole('button', { name: /^Filter/ }).click();
@@ -141,7 +141,7 @@ test('calendar: cards and list views, a movie on the day it is out to watch', as
 
 test('alerts: add a webhook with Library moments, send a test, the receiver gets a signed message', async () => {
 	await page.goto('/settings/alerts');
-	await page.getByRole('button', { name: 'Add an Alert' }).first().click();
+	await page.getByRole('button', { name: 'Add an alert' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Home server hook');
 	await page.getByLabel('Kind').selectOption('webhook');
 	await page.getByLabel('Webhook link').fill(`http://127.0.0.1:${discordPort}/hook`);
@@ -172,7 +172,7 @@ test('alerts: add a webhook with Library moments, send a test, the receiver gets
 
 test('alerts: add a Telegram bot, send a test, the chat gets the text', async () => {
 	await page.goto('/settings/alerts');
-	await page.getByRole('button', { name: 'Add an Alert' }).first().click();
+	await page.getByRole('button', { name: 'Add an alert' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Family Telegram');
 	await page.getByLabel('Kind').selectOption('telegram');
 	await page.getByLabel('Bot token').fill(['123456789', 'AAHstandInTokenForE2eTests_0123'].join(':'));
@@ -197,7 +197,7 @@ test('alerts: add a Telegram bot, send a test, the chat gets the text', async ()
 
 test('alerts: add an ntfy topic, send a test, the topic gets the text', async () => {
 	await page.goto('/settings/alerts');
-	await page.getByRole('button', { name: 'Add an Alert' }).first().click();
+	await page.getByRole('button', { name: 'Add an alert' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Phone ntfy');
 	await page.getByLabel('Kind').selectOption('ntfy');
 	await page.getByLabel('Server address').fill(`http://127.0.0.1:${discordPort}`);
@@ -230,7 +230,7 @@ test('media servers: add Jellyfin, test it, a wrong key is said plainly', async 
 	await page.getByRole('button', { name: 'Add a media server' }).first().click();
 	await page.getByLabel('Name', { exact: true }).fill('Lab Jellyfin');
 	await page.getByLabel('Kind').selectOption('jellyfin');
-	await page.getByLabel('Address').fill(`http://127.0.0.1:${jellyfinPort}`);
+	await page.getByLabel('Address', { exact: true }).fill(`http://127.0.0.1:${jellyfinPort}`);
 	await page.getByLabel('API key').fill(jellyKey);
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	const card = page.getByTestId('media-server').filter({ hasText: 'Lab Jellyfin' });
@@ -243,7 +243,7 @@ test('media servers: add Jellyfin, test it, a wrong key is said plainly', async 
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await card.getByRole('button', { name: 'Test' }).click();
 	await expect(card.getByTestId('media-test')).toHaveText('Not connected');
-	await expect(card.getByTestId('media-result')).toContainText(/the server turned down the token/i);
+	await expect(card.getByTestId('media-result')).toContainText(/Key or password refused/i);
 });
 
 test('red buttons keep their contrast on hover', async () => {
@@ -253,11 +253,15 @@ test('red buttons keep their contrast on hover', async () => {
 });
 
 test('the new screens at phone width: no sideways scroll, no serious accessibility issues', async ({ browser }) => {
+	// Seven pages, each loaded and scanned, and Home's first-visit wait: more than the default half minute.
+	test.setTimeout(150_000);
 	const ph = await fresh(browser, 390);
 	await signIn(ph, owner());
 	for (const url of ['/downloads/history', '/calendar', '/calendar?month=2014-02', '/settings/this-app', '/settings/alerts', '/settings/media-servers', '/']) {
 		await ph.goto(url);
 		await ph.waitForLoadState('networkidle');
+		// Home's first visit keeps its loader up until its pictures are in, 30 s at most; scan the page, not its fade-in.
+		await expect(ph.locator('#main[aria-busy="true"]'), url + ' still loading').toHaveCount(0, { timeout: 40_000 });
 		await noSidewaysScroll(ph);
 		await axe(ph, url + ' (phone)');
 	}

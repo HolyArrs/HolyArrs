@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/arrapi"
-
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
 	"io"
@@ -23,9 +21,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/music"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
@@ -76,7 +74,11 @@ func run(c config) error {
 	startup.UseMemoryMode()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	return serve(ctx, c, runOpts{})
+	err := serve(ctx, c, runOpts{})
+	if err == nil && updateRun != nil {
+		updateRun.CleanStop()
+	}
+	return err
 }
 
 // serve runs HolyArrs until ctx ends or a restart is asked for.
@@ -258,7 +260,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		// mount, an owner fixed on the host), then exit so the restart
 		// policy starts the app with it.
 		log.Printf("holyarrs: not started: %v", err)
-		swap.set(webserver.UnderURLBase(c.URLBase, failedHandler(publicReason(err))))
+		swap.set(webserver.UnderURLBase(c.URLBase, keyHeldHandler(err, c.ConfigDir)))
 		p := named
 		if p == "" {
 			p = filepath.Join(c.ConfigDir, secrets.KeyFile)
@@ -277,7 +279,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			}
 		}
 	}
-	vault, err := secrets.Open(ctx, s, key)
+	vault, err := openVault(ctx, s, key)
 	if err != nil {
 		return keyRefused(err)
 	}
@@ -356,7 +358,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	im := &importer.Importer{Store: s, Live: hub, SavePath: c.SavePath}
 	// Safe mode holds every part's work already; it says nothing about Sources.
 	sourcesOn := func() bool { return c.SafeMode || pc.On(parts.Sources) }
-	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, HasDownloader: dm.HasDownloader, SourcesOn: sourcesOn, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, HasDownloader: dm.HasDownloader, SourcesOn: sourcesOn, SendWait: 20 * time.Second, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		enqueue(ctx, downloads.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, downloads.GrabKey(slotID, releaseID))
 	}}
 	// A rejected Import turned its Release down: remove the Download from
@@ -395,9 +397,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			log.Printf("search after a failed download: %v", err)
 		}
 	}
-	dm.OnFinished = func(ctx context.Context, downloadID int64) {
-		enqueue(ctx, importer.KindImport, domain.Subject{Type: "download", ID: downloadID}, nil, fmt.Sprintf("import:%d", downloadID))
-	}
+	wireImports(dm, q)
 	sr.Register(q)
 	q.ProbeSchedule(jobs.KindFeedCheck, sr.ProbeFeed)
 	q.ProbeSchedule(jobs.KindGrabHeld, sr.ProbeGrabHeld)
@@ -507,28 +507,14 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		log.Printf("renames cut off by a stop: %d finished, error %v", n, err)
 	}
 	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBRoute: hosted.ListRoute,
-		TraktBase:   os.Getenv("HOLYARRS_TRAKT_URL"),
-		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }}
+		TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MDBListBase: os.Getenv(metadata.EnvMDBListURL), MDBListSite: os.Getenv("HOLYARRS_MDBLIST_SITE_URL"),
+		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }, MDBListKey: hosted.KeyReader(metadata.KeyMDBList)}
 	ol.Register(q)
 	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
-	he := &health.Engine{Store: s, Version: version, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
+	he := &health.Engine{Store: s, Version: version, UnreadUserLists: func(ctx context.Context) map[string]string { return accounts.UnreadUserLists(ctx, s.Read()) }, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
 		Backups: backupsHealth(bm), SourcesOn: sourcesOn, SavePath: c.SavePath}
-	// The update check: once a day from the release feed, through the
-	// network policy (public only unless the setting allows the local
-	// network; never cloud metadata addresses). HOLYARRS_RELEASE_FEED
-	// points it elsewhere (tests).
-	uc := &updates.Checker{Store: s, Version: version}
-	uc.ReleaseFeed = env("HOLYARRS_RELEASE_FEED", updates.DefaultReleaseFeed)
-	uc.ClientFor = func(allowLocal bool) *http.Client {
-		allow := outbound.PublicOnly
-		if allowLocal {
-			allow = outbound.NotMetadata
-		}
-		t := http.DefaultTransport.(*http.Transport).Clone()
-		t.Proxy = nil
-		t.DialContext = outbound.PolicyDialer(allow).DialContext
-		return &http.Client{Transport: t, Timeout: 15 * time.Second}
-	}
+	uc := newUpdateChecker(s)
+	switching := wireInstaller(c, s, uc, stop)
 	WireUpdateChecks(he, uc)
 	he.Register(q)
 	// History clean-up: once a day, old Events past their keep time.
@@ -611,7 +597,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}})
 	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
-
 	sso, err := accounts.SSOFromEnv(c.URLBase)
 	if err != nil {
 		return err
@@ -650,8 +635,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) }}
 	sender.Watch(ctx)
-	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode}
+	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode, Asked: requests.AskedForLabels(s)}
 	reg.AlsoWait(func() { media.Stop(); media.Wait() })
+	au.SetMediaLinks(accounts.MediaLinks{Servers: media.LinkServers, Accounts: media.ServerAccounts, Linked: media.ReadWatchHistorySoon})
 	reg.AlsoWait(he.Wait)
 	if !c.SafeMode {
 		media.Watch(ctx)
@@ -663,8 +649,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		return media.AdvancePacks(ctx, ids, dm.Advance)
 	}})
-	// Only reads while the owner keeps watch history on.
-	optional(jobs.Loop{Name: "watch_history", Label: "Watch history read", Every: 30 * time.Minute, Run: media.ReadWatchHistory})
+	// People removed on the server are turned off; history only while it is on.
+	optional(jobs.Loop{Name: "watch_history", Label: "Watch history read", Every: 30 * time.Minute, Run: media.CheckPeopleAndHistory})
+	optional(jobs.Loop{Name: "plex_labels", Label: "Plex labels", Every: 15 * time.Minute, Run: media.LabelPass}) // only while the owner keeps it on
 	defer sender.Wait()
 	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(requestsSvc)
@@ -708,7 +695,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// the hosted music source answers from them first.
 	pkgs, own := &music.PackageSync{Store: s, Source: hosted.Service}, ownExtras(hosted)
 	hosted.Service.SetLocalMusic(pkgs)
-	a := buildHandlers(services{Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
+	a := buildHandlers(services{Plugins: startPlugins(ctx, c), Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: metadataUp(hosted), MetadataModes: hosted.Modes, MetadataTest: hosted.TestKey, MetadataEnvKey: hosted.OwnKey, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
@@ -748,11 +735,15 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if o.ready != nil {
 		o.ready(reg, ln.Addr().String())
 	}
+	markReady(ctx, ln.Addr().String()+c.URLBase)
 	if err := <-served; err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	if restarting.Load() {
 		return errRestart
+	}
+	if switching.Load() {
+		return errSwitch
 	}
 	if code := exitCode.Load(); code >= 0 {
 		return errAppExit{int(code)}
@@ -761,6 +752,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 }
 
 func main() {
+	plugins.RunSandboxHelper()
 	if len(os.Args) > 1 && os.Args[1] == "-healthcheck" {
 		os.Exit(healthcheckCmd())
 	}
@@ -780,6 +772,9 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "import-secrets" {
 		os.Exit(importSecrets(os.Args[2:], os.Stdout, os.Stderr))
 	}
+	if len(os.Args) > 1 && os.Args[1] == updates.CheckCommand {
+		os.Exit(updateCheckCmd(os.Args[2:], os.Stderr))
+	}
 	if len(os.Args) > 1 && os.Args[1] == "doctor" {
 		os.Exit(doctorCmd(os.Args[2:], os.Stdout, os.Stderr))
 	}
@@ -787,10 +782,13 @@ func main() {
 	if err != nil {
 		os.Exit(2)
 	}
+	launchUpdate(c)
 	var ex errAppExit
 	if err := run(c); errors.Is(err, errRestart) {
 		log.Printf("holyarrs: stopping so the restore is put in place on the next start")
 		os.Exit(exitRestart)
+	} else if errors.Is(err, errSwitch) {
+		switchVersion()
 	} else if errors.As(err, &ex) {
 		log.Printf("holyarrs: stopped as asked for from the controls (exit %d)", ex.code)
 		os.Exit(ex.code)

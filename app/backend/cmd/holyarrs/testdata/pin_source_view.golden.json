@@ -41,5 +41,6 @@
     "failures_24h": 0,
     "avg_ms_24h": 0
   },
-  "tags": []
+  "tags": [],
+  "downloader_id": 0
 }

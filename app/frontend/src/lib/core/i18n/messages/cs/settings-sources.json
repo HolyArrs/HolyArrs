@@ -7,6 +7,7 @@
 	"settings.sources.title": "Zdroje",
 	"settings.sources.add": "Přidat Zdroj",
 	"settings.sources.lead": "Priorita 1 jde první. Zdroj, který selže, se až na šest hodin přeskočí. Pro weby bez kanálu přidejte Jackett nebo Prowlarr jako kanál Torznab.",
+	"settings.sources.builtIn": "Vestavěné weby nepotřebují Jackett ani Prowlarr: {sites}. Vyberte {site} u položky {kind}.",
 	"settings.sources.change": "Změnit {name}",
 	"settings.sources.name": "Název",
 	"settings.sources.feedKind": "Druh kanálu",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Uložit",
 	"settings.sources.cancel": "Zrušit",
 	"settings.sources.none": "Žádné Zdroje",
-	"settings.sources.noneText": "Přidejte kanál Torznab nebo Newznab, nebo Jackett či Prowlarr.",
+	"settings.sources.noneText": "Přidejte vestavěný web, kanál Torznab nebo Newznab, nebo Jackett či Prowlarr.",
 	"settings.sources.rowTitle": "{url} · priorita {priority} · {uses}",
 	"settings.sources.priorityUses": "Priorita {priority} · {uses}",
 	"settings.sources.keyIs": "klíč {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Web",
 	"settings.sources.addressSite": "Vlastní adresa webu. Změňte ji jen tehdy, když se web přestěhoval.",
 	"settings.sources.siteKeyLabel": "Cookie nebo klíč RSS",
-	"settings.sources.siteKeyHint": "Z vlastního účtu: uid a pass z cookie prohlížeče, nebo u a tp z vašeho odkazu RSS. Uloženo šifrovaně."
+	"settings.sources.siteKeyHint": "Z vlastního účtu: uid a pass z cookie prohlížeče, nebo u a tp z vašeho odkazu RSS. Uloženo šifrovaně.",
+	"settings.sources.sendTo": "Posílat stahování do",
+	"settings.sources.sendToAny": "Libovolný stahovač",
+	"settings.sources.sendToHint": "Vše vybrané z tohoto zdroje jde jen do tohoto stahovače. Když neběží, čeká se.",
+	"settings.sources.sendToGone": "Vybraný stahovač byl odebrán. Stahování z tohoto zdroje teď jde do libovolného stahovače."
 }

@@ -4,6 +4,7 @@ import { titleStatus } from '#lib/ui/title-status.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { askedBy as askedByRaw, alsoDeclined as alsoDeclinedRaw } from './ask-words.ts';
 import { liveFacts } from './live.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 import { askArtist, askDetails } from './details.svelte.ts';
 import { profile } from '#lib/accounts/index.ts';
 import { seasonWords } from '#lib/shows/index.ts';
@@ -55,7 +56,7 @@ export function createAskCards(ctx: { approver: boolean; titleLive: Map<number, 
 	/** Why an approved ask is stuck (the server's reason when it has one); '' when nothing failed. */
 	function whyFailed(a: Ask): string {
 		if (a.state !== 'approved') return '';
-		if (a.problem) return a.problem;
+		if (a.problem) return serverWords(a.problem);
 		if (!a.title_id) return t('requests.cards.couldNotAdd');
 		const f = liveFacts(ctx.titleLive.get(a.title_id));
 		return f.phase === 'failed' ? `${t('requests.cards.downloadFailed')}${f.reason ? ` ${f.reason}` : ''}` : '';

@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} 个待处理",
 	"frame.nav.new": "{n} 个新的",
 	"frame.nav.manage": "管理",
+	"frame.nav.activity": "活动",
+	"frame.nav.system": "系统",
 	"frame.nav.history": "历史",
 	"frame.nav.status": "状态",
 	"frame.nav.settings": "设置",
+	"frame.nav.plugins": "插件",
 	"frame.nav.goTo": "前往",
 	"frame.nav.active": "{n} 个进行中，{percent}%",
 	"frame.nav.decide": "{n} 项待你决定",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "跟随系统",
 	"frame.layout.switch": "切换账户",
 	"frame.layout.signOut": "退出登录",
+	"frame.layout.support": "支持 HolyArrs",
 	"frame.layout.signOutFail": "无法确认已退出登录",
 	"frame.layout.signedOut": "已退出登录",
 	"frame.layout.accountMenu": "{name}，{role}：账户和外观",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs 会自动重试",
 	"frame.feeds.clearNow": "立即清除",
 	"frame.feeds.cleared": "已从下载器清除",
-	"frame.feeds.clearStill": "尚未清除"
+	"frame.feeds.clearStill": "尚未清除",
+	"frame.error.pageGone": "此页面不存在。链接可能已过期或输入有误。"
 }

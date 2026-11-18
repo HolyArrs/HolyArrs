@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "需要注意：{n}",
 	"migrate.needAttentionWhy": "它們的舊資料夾不在此伺服器上，所以會作為想要的項目進入這裡的一個資料夾。請修正資料夾或新增路徑規則：{list}",
 	"migrate.leftOutUncheckedN": "未包含：{n}",
-	"migrate.leftOutUncheckedWhy": "{folder} 設為「不遷入」；為它選擇一個資料夾後再次匯入"
+	"migrate.leftOutUncheckedWhy": "{folder} 設為「不遷入」；為它選擇一個資料夾後再次匯入",
+	"migrate.seasonsDifferOne": "檢查 1 部透過 TMDB 編號找到的劇",
+	"migrate.seasonsDifferOther": "檢查 {n} 部透過 TMDB 編號找到的劇",
+	"migrate.seasonsDifferWhy": "{list} 僅透過舊應用程式的 TMDB 編號找到，在這裡用的是另一個名稱。逐一開啟並確認是同一部劇。如果是，它的季編號不同：配對它的剩餘檔案，然後開啟這部劇。如果不是，就移除它；它的檔案會留在原處。",
+	"migrate.stillChecking": "中繼資料伺服器仍在檢查的影集：{n}。檢查完成後此清單會自動更新。",
+	"migrate.stillCheckingImport": "中繼資料伺服器仍在檢查的影集：{n}。現在即可匯入；匯入時會進行檢查。"
 }

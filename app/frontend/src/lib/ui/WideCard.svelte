@@ -16,7 +16,7 @@
 	import { press, viewTransitionName } from '../core/motion.ts';
 	import { sized } from '../core/tmdb-image.ts';
 	import { prefetchTrailer, watchTrailer } from '../core/trailer/autoplay.svelte.ts';
-	import { dwell, finePointer, HOVER_DELAY, scrollHold } from '../core/trailer/trailer.ts';
+	import { dwell, finePointer, HOVER_DELAY, modalOpen, scrollHold } from '../core/trailer/trailer.ts';
 
 	let {
 		title,
@@ -126,12 +126,19 @@
 	$effect(() => {
 		if (root) cw = root.clientWidth;
 	});
+	// A dialog that opens takes focus, so an open preview shuts with it.
+	$effect(() => {
+		if (!open) return;
+		const off = () => modalOpen() && shut();
+		window.addEventListener('focusin', off, true);
+		return () => window.removeEventListener('focusin', off, true);
+	});
 
 	// A drag on the row must not open previews under the pointer.
 	const dragging = () => !!root?.closest('.dragging');
 	// svelte-ignore state_referenced_locally
 	const opener = dwell(cover ? GROW_DELAY : HOVER_DELAY, () => {
-		if (dragging() || scrollHold()) return;
+		if (dragging() || scrollHold() || modalOpen()) return;
 		leaving = false;
 		open = true;
 	});
@@ -139,7 +146,7 @@
 	const closer = dwell(cover ? 60 : 140, () => (cover ? (leaving = true) : (open = false)));
 	const near = shelfNear();
 	function enter() {
-		if (!preview || !finePointer() || dragging() || scrollHold()) return;
+		if (!preview || !finePointer() || dragging() || scrollHold() || modalOpen()) return;
 		closer.cancel();
 		if (open && leaving) leaving = false;
 		if (!open) {
@@ -184,10 +191,11 @@
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !src || failed || !loaded}<ArtPlaceholder name={title} shape="wide" loading={!!src && !failed && near() && !loaded} />{/if}
 			{#if src && !failed && near()}{#key art}<img src={art} class:in={loaded} class:tall alt="" loading="lazy" decoding="async" use:whenLoaded={(e) => { tall = !!e && e.naturalHeight > e.naturalWidth; loaded = true; }} onerror={artError} />{/key}{/if}
-			{#if tpl && (tpl.variant !== 'titled' || !loaded)}
+			<!-- Only a logo goes on the art: the name is already written under the card, so a plain-word title there would say it twice. -->
+			{#if tpl && coverLogo && (tpl.variant !== 'titled' || !loaded)}
 				<span class="scrim" aria-hidden="true"></span>
 				{#if !inset}<span class="name" class:lifted={!!strip} aria-hidden="true">
-					{#if coverLogo}<img class="logo" src={cardLogo ?? coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />{:else}<span class="word" dir="auto">{title}</span>{/if}
+					<img class="logo" src={cardLogo ?? coverLogo} alt="" loading="lazy" decoding="async" onerror={() => (logoFailed = true)} />
 				</span>{/if}
 			{/if}
 			{#if badges.length || status}
@@ -265,8 +273,6 @@
 	/* Height in cqw keeps the logo box in step with the card width. */
 	.name { position: absolute; left: 6%; bottom: 9%; z-index: 1; width: 40%; height: 13cqw; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; }
 	.name.lifted { bottom: 20%; }
-	.name:has(.word) { width: 62%; }
-	.word { font: 700 clamp(13px, 5.2cqw, 24px)/1.05 var(--font-display); letter-spacing: -0.02em; color: #fff; text-shadow: 0 2px 10px rgb(0 0 0 / 0.55); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; }
 	.cover .art :global(.mark) { width: 22px; height: 22px; }
 	.cover .art :global(.mark svg) { width: 13px; height: 13px; }
 	.cover .art :global(.mark.downloading svg) { width: 18px; height: 18px; }

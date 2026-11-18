@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Couldn't save the language",
 	"accounts.language.count.one": "1 language",
 	"accounts.language.count.other": "{n} languages",
-	"accounts.account.watchEveryone": "The owner turned this on for everyone. Turn both off to stop it."
+	"accounts.account.watchEveryone": "The owner turned this on for everyone. Turn both off to stop it.",
+	"accounts.watch.title": "Watched marks",
+	"accounts.watch.hint": "Link your account on a media server here so the Library shows what you watched.",
+	"accounts.watch.as": "{server}, as {name}",
+	"accounts.watch.nameOn": "Name on {server}",
+	"accounts.watch.passwordOnce": "Your password goes only to {server} and is not kept.",
+	"accounts.watch.linked": "Linked to {name} on {server}",
+	"accounts.watch.unlinked": "Unlinked",
+	"accounts.login.importPaused": "Your sign-in ended, so the import paused. Sign in, open Import a library and press Scan to go on."
 }

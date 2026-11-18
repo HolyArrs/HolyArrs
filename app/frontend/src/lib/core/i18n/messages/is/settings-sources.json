@@ -7,6 +7,7 @@
 	"settings.sources.title": "Heimildir",
 	"settings.sources.add": "Bæta við heimild",
 	"settings.sources.lead": "Forgangur 1 fer fyrst. Heimild sem bilar er sleppt í allt að sex klukkustundir. Fyrir síður án straums skaltu bæta við Jackett eða Prowlarr sem Torznab-straum.",
+	"settings.sources.builtIn": "Innbyggðar síður þurfa hvorki Jackett né Prowlarr: {sites}. Veldu {site} undir {kind}.",
 	"settings.sources.change": "Breyta {name}",
 	"settings.sources.name": "Nafn",
 	"settings.sources.feedKind": "Tegund straums",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Vista",
 	"settings.sources.cancel": "Hætta við",
 	"settings.sources.none": "Engar heimildir",
-	"settings.sources.noneText": "Bættu við Torznab- eða Newznab-streymi, eða Jackett eða Prowlarr.",
+	"settings.sources.noneText": "Bættu við innbyggðri síðu, Torznab- eða Newznab-streymi, eða Jackett eða Prowlarr.",
 	"settings.sources.rowTitle": "{url} · forgangur {priority} · {uses}",
 	"settings.sources.priorityUses": "Forgangur {priority} · {uses}",
 	"settings.sources.keyIs": "lykill {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Síða",
 	"settings.sources.addressSite": "Eigið vistfang síðunnar. Breyttu því aðeins ef síðan hefur flutt.",
 	"settings.sources.siteKeyLabel": "Vafrakaka eða RSS-lykill",
-	"settings.sources.siteKeyHint": "Af þínum eigin aðgangi: uid og pass úr vafrakökunni, eða u og tp úr RSS-tenglinum þínum. Geymt dulkóðað."
+	"settings.sources.siteKeyHint": "Af þínum eigin aðgangi: uid og pass úr vafrakökunni, eða u og tp úr RSS-tenglinum þínum. Geymt dulkóðað.",
+	"settings.sources.sendTo": "Senda niðurhöl til",
+	"settings.sources.sendToAny": "Hvaða niðurhalari sem er",
+	"settings.sources.sendToHint": "Allt sem er valið frá þessari uppsprettu fer aðeins til þessa niðurhalara. Ef hann liggur niðri er beðið.",
+	"settings.sources.sendToGone": "Valinn niðurhalari var fjarlægður. Niðurhöl frá þessari uppsprettu fara nú til hvaða niðurhalara sem er."
 }

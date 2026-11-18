@@ -274,5 +274,13 @@
 	"home.sourcesOff": "متوقف في الأجزاء",
 	"home.noneForSources": "مفقود لما تجده مصادرك",
 	"home.addedTwice": "مضاف مرتين",
-	"home.addedTwiceMany": "مضافة مرتين"
+	"home.addedTwiceMany": "مضافة مرتين",
+	"home.notSetUpYet": "لم يُعدّ بعد",
+	"home.setUpToAdd": "أكمل الإعداد لإضافة {name}",
+	"home.comingThisWeek": "قادم هذا الأسبوع",
+	"home.thisWeek": "هذا الأسبوع",
+	"home.landingThisWeek": "حلقات وأفلام تصل هذا الأسبوع",
+	"home.popularThisWeek": "إصدارات رائجة تصل هذا الأسبوع",
+	"home.peopleCheck": "فحص الأشخاص",
+	"home.cantReadUsers": "تعذّرت قراءة قائمة المستخدمين"
 }

@@ -65,7 +65,8 @@ test.beforeAll(async ({ browser }) => {
 	await own.getByLabel('Note for yourself').fill('Reports');
 	await own.getByRole('button', { name: 'Make an invite link' }).click();
 	const link = (await own.locator('.fresh code').textContent())!.trim();
-	member = await fresh(browser, phone);
+	// A real phone: touch and overlay scrollbars, so the page keeps its full width (desktop Chrome keeps a scrollbar gutter).
+	member = await (await browser.newContext({ viewport: phone, isMobile: true, hasTouch: true })).newPage();
 	await member.goto(new URL(link).pathname);
 	await member.getByLabel('Name', { exact: true }).fill(memberName);
 	await member.getByLabel('Password', { exact: true }).fill(memberPw);

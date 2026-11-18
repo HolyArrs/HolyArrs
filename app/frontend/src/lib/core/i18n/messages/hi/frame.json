@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} इंतज़ार में",
 	"frame.nav.new": "{n} नए",
 	"frame.nav.manage": "मैनेज",
+	"frame.nav.activity": "गतिविधि",
+	"frame.nav.system": "सिस्टम",
 	"frame.nav.history": "हिस्ट्री",
 	"frame.nav.status": "स्टेटस",
 	"frame.nav.settings": "सेटिंग",
+	"frame.nav.plugins": "प्लगइन",
 	"frame.nav.goTo": "यहां जाएं",
 	"frame.nav.active": "{n} चालू, {percent}%",
 	"frame.nav.decide": "{n} पर फ़ैसला चाहिए",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "सिस्टम",
 	"frame.layout.switch": "अकाउंट बदलें",
 	"frame.layout.signOut": "साइन आउट करें",
+	"frame.layout.support": "HolyArrs का समर्थन करें",
 	"frame.layout.signOutFail": "साइन आउट पक्का नहीं हो सका",
 	"frame.layout.signedOut": "साइन आउट हो गया",
 	"frame.layout.accountMenu": "{name}, {role}: अकाउंट और दिखावट",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs खुद फिर कोशिश करता है",
 	"frame.feeds.clearNow": "अभी हटाएँ",
 	"frame.feeds.cleared": "डाउनलोडर से हटाया गया",
-	"frame.feeds.clearStill": "अभी हटाया नहीं गया"
+	"frame.feeds.clearStill": "अभी हटाया नहीं गया",
+	"frame.error.pageGone": "यह पेज मौजूद नहीं है। लिंक पुराना या गलत लिखा हो सकता है।"
 }

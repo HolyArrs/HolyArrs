@@ -95,7 +95,8 @@ func (s *Service) handleAdopt(ctx context.Context, r *jobs.Run) error {
 		id, _ := m["id"].(string)
 		cs = append(cs, AdoptChoice{Folder: f, TMDB: t, ID: id})
 	}
-	res, err := s.Adopt(ctx, r.Job.Subject.ID, cs, JobActor(r))
+	// The page shows how many folders of this part are done, as a scan's.
+	res, err := s.Adopt(WithScanProgress(ctx, scanProgress(ctx, r, time.Now)), r.Job.Subject.ID, cs, JobActor(r))
 	adopted := 0
 	for _, x := range res {
 		if x.TitleID != 0 {

@@ -48,3 +48,19 @@ export function epFile(e: SheetEpisode): string {
 }
 
 export const epTone = (st: string, hasFile = false) => (st === 'have' || st === 'imported' || st === 'in_library' || st === 'kept' || (hasFile && st !== 'downloading' && st !== 'importing' && st !== 'searching') ? 'have' : st === 'downloading' || st === 'importing' || st === 'searching' ? 'downloading' : st === 'failed' ? 'failed' : 'missing');
+
+/** A season switched on does nothing while the show itself is off: the season list says to turn the show on. */
+export const showOffHint = (showKept: boolean, seasons: { keep_up_to_date: boolean }[]) => !showKept && seasons.some((s) => s.keep_up_to_date);
+
+/** "Get all missing" only while the show is on and a kept season still misses aired episodes; anything else queues nothing. */
+export const getAllMissingShown = (manage: boolean, showKept: boolean, seasons: { keep_up_to_date: boolean; in_library: number; episodes: number; not_out_yet?: number }[]) =>
+	manage && showKept && seasons.some((s) => s.keep_up_to_date && s.in_library < s.episodes - (s.not_out_yet ?? 0));
+
+/** The words when a search queued nothing: an off show needs turning on, an on show had nothing to look for. */
+export const nothingQueuedKey = (showKept: boolean) => (showKept ? 'shows.page.nothingToSearch' : 'discover.titleLibrary.turnShowOnHint');
+
+/** A search answer with an empty job list started nothing; an answer without a list is taken as started. */
+export const searchQueued = (res: unknown) => {
+	const ids = (res as { job_ids?: unknown } | null | undefined)?.job_ids;
+	return ids === undefined || (Array.isArray(ids) && ids.length > 0);
+};

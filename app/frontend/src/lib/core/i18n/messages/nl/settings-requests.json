@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Tonen aan mensen",
 	"settings.requests.choiceMain": "{rules} · de hoofdkopie van de titel",
 	"settings.requests.choiceOwn": "{rules} · bewaard als eigen kopie",
-	"settings.requests.choiceNotReady": "Wordt aangeboden zodra hierboven een 4K-kwaliteit is ingesteld"
+	"settings.requests.choiceNotReady": "Wordt aangeboden zodra hierboven een 4K-kwaliteit is ingesteld",
+	"settings.requests.approvals": "Goedkeuringen",
+	"settings.requests.autoApprove": "Verzoeken automatisch goedkeuren",
+	"settings.requests.autoApproveNote": "Uit = hun verzoeken wachten op jou. Titels van de Plex-kijklijst volgen dezelfde schakelaar.",
+	"settings.requests.ownerTag": "Eigenaar",
+	"settings.requests.choiceAdd": "Kwaliteit toevoegen",
+	"settings.requests.choiceNew": "Nieuwe kwaliteit",
+	"settings.requests.choiceLabel": "Jouw naam",
+	"settings.requests.choiceSeen": "Anderen zien"
 }

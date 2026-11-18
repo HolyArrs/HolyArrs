@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Вставте ідентифікатор, наприклад tmdb:693134 або tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Або опиши, наприклад «космічний фільм із роботом 2014 року».",
 	"discover.search.lookEverywhere": "Шукати всюди",
-	"discover.search.searchIndexersFor": "Шукати в індексаторах: «{searched}»",
+	"discover.search.searchIndexersFor": "Перевірити джерела",
 	"discover.search.topMatches": "Найкращі збіги",
 	"discover.people.goToTheFilmography": "Перейти до фільмографії",
 	"discover.people.filmography": "Фільмографія",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Не підходить до цієї версії",
 	"discover.leftovers.reason.movie_has_file": "Фільм уже має файл",
 	"discover.leftovers.reason.replaced_by_hand": "Замінено іншим файлом",
-	"discover.leftovers.reason.unmatched": "Зіставлення знято вручну"
+	"discover.leftovers.reason.unmatched": "Зіставлення знято вручну",
+	"discover.searchSections.genres": "Жанри",
+	"discover.searchSections.moods": "Настрої",
+	"discover.searchSections.stories": "Історії та теми",
+	"discover.searchSections.worlds": "Світи та місця дії",
+	"discover.searchSections.eras": "Епохи",
+	"discover.searchSections.world": "З усього світу",
+	"discover.searchSections.collections": "Добірки",
+	"discover.popularRail.out": "Виходить",
+	"discover.popularRail.comingDay": "Незабаром",
+	"discover.titleLibrary.turnShowOnHint": "Увімкніть серіал, щоб почати пошук.",
+	"discover.leftovers.reason.seasons_differ": "Знайдено лише за номером TMDB зі старого застосунку: перевірте, що це той самий серіал, потім зіставте файл самі"
 }

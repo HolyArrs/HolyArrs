@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Изключено в Части",
 	"home.noneForSources": "липсва за това, което намират източниците ви",
 	"home.addedTwice": "е добавена два пъти",
-	"home.addedTwiceMany": "са добавени два пъти"
+	"home.addedTwiceMany": "са добавени два пъти",
+	"home.notSetUpYet": "Още не е настроено",
+	"home.setUpToAdd": "Завършете настройката, за да добавите {name}",
+	"home.comingThisWeek": "Идва тази седмица",
+	"home.thisWeek": "тази седмица",
+	"home.landingThisWeek": "Епизоди и филми, които излизат тази седмица",
+	"home.popularThisWeek": "Популярни заглавия, които излизат тази седмица",
+	"home.peopleCheck": "Проверка на хората",
+	"home.cantReadUsers": "списъкът с потребители не може да се прочете"
 }

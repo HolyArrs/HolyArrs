@@ -32,11 +32,12 @@
 	"settings.backups.key": "Pääavain",
 	"settings.backups.keyDesc": "Varmuuskopiot eivät sisällä tätä avainta. Säilytä kopio turvallisessa paikassa.",
 	"settings.backups.noKit": "Tälle avaimelle ei ole vielä tallennettu avainpakettia. Ilman sitä varmuuskopion tallennettuja salasanoja ei voi avata uudella koneella.",
+	"settings.backups.kitRecommended": "Suositus: lataa avainpaketti.",
 	"settings.backups.ownerOnlyKit": "Vain omistaja voi ladata sen; pyydä häntä tekemään se.",
 	"settings.backups.fingerprint": "Avaimen sormenjälki",
 	"settings.backups.downloadKit": "Lataa avainpaketti",
 	"settings.backups.restoreKey": "Palauttaaksesi: nimeä uudelleen muotoon holyarrs.key ja aseta config-kansioon",
 	"settings.backups.offPlan": "Pois",
-	"settings.backups.offAbout": "Ei ajastettuja varmuuskopioita. Kopio tehdään silti ennen jokaista päivitystä.",
+	"settings.backups.offAbout": "Ei automaattisia varmuuskopioita, ei edes ennen päivitystä. Itse tehdyt varmuuskopiot toimivat edelleen.",
 	"settings.backups.offKeeps": "Pois päältä säilyttää jo olevat varmuuskopiot."
 }

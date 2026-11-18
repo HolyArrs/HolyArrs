@@ -18,7 +18,8 @@
 		ontoggle,
 		onpick,
 		toggle = $bindable(),
-		footer
+		footer,
+		dotPanel
 	}: {
 		id?: string;
 		sections: NavSection[];
@@ -35,6 +36,8 @@
 		onpick?: () => void;
 		toggle?: HTMLElement;
 		footer?: Snippet;
+		/** The list a row's red dot opens. */
+		dotPanel?: Snippet<[() => void]>;
 	} = $props();
 
 	let list = $state<HTMLElement>();
@@ -50,7 +53,9 @@
 			const row = list?.querySelector<HTMLElement>('[aria-current="page"]');
 			if (!row || !list) return void (pill = { ...pill, on: false });
 			const first = !pill.on;
-			pill = { top: row.offsetTop, height: row.offsetHeight, on: true, still: first };
+			// Measure against the list: the row's own offsetTop is relative to its positioned <li>, which is always 0.
+			const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+			pill = { top, height: row.offsetHeight, on: true, still: first };
 		});
 		return () => cancelAnimationFrame(raf);
 	});
@@ -75,7 +80,7 @@
 					<ul>
 						{#each s.items as item (key(s, item))}
 							<li>
-								<SidebarItem href={link(item.href)} label={item.label} icon={item.icon} current={currentHref === item.href} {collapsed} badge={item.badge} badgeLabel={item.badgeLabel} ring={item.ring} dot={item.dot} badgeTestid={item.href === '/downloads' ? 'nav-decide' : undefined} onclick={onpick} />
+								<SidebarItem href={link(item.href)} label={item.label} icon={item.icon} current={currentHref === item.href} {collapsed} badge={item.badge} badgeLabel={item.badgeLabel} ring={item.ring} dot={item.dot} {dotPanel} badgeTestid={item.href === '/downloads' ? 'nav-decide' : undefined} onclick={onpick} />
 							</li>
 						{/each}
 					</ul>
@@ -127,6 +132,7 @@
 	.collapsed .div { opacity: 1; }
 	.collapsed .section + .section { margin-top: 6px; }
 	ul { display: flex; flex-direction: column; gap: 2px; }
+	li { position: relative; }
 	.foot { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 	@media (max-width: 767px) { .ui-sidebar { display: none; } }
 </style>

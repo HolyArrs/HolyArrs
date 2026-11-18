@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Abu keliai vienodi, todėl ši pora nieko nepakeičia. Vis tiek ji nurodo HolyArrs, kur yra šios programos failai, todėl galite ją palikti.",
 	"settings.downloaders.change": "Keisti: {name}",
 	"settings.downloaders.whichApp": "Kuri programa",
-	"settings.downloaders.torrents": "(torentai)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torentai",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Populiariausias",
 	"settings.downloaders.name": "Pavadinimas",
 	"settings.downloaders.address": "Adresas",
 	"settings.downloaders.addressHint": "Jo tinklalapis. SABnzbd atveju naudokite IP arba leiskite HolyArrs pagrindinio kompiuterio pavadinimą.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Kategorija po importo",
 	"settings.downloaders.categoryAfterImportHint": "Kai torentas importuotas, HolyArrs perkelia jį į šią kategoriją. Palikite tuščią, kad liktų pagrindinėje kategorijoje.",
 	"settings.downloaders.ownOnly": "Rodyti tik HolyArrs elementus",
-	"settings.downloaders.ownOnlyHint": "Kitų programų elementai šiame atsisiuntimo kliente paslėpti, ir HolyArrs jų nekeičia."
+	"settings.downloaders.ownOnlyHint": "Kitų programų elementai šiame atsisiuntimo kliente paslėpti, ir HolyArrs jų nekeičia.",
+	"settings.downloaders.state.notAnswering": "Neatsako",
+	"settings.downloaders.state.paused": "Pristabdyta",
+	"settings.downloaders.state.resting": "Ilsisi",
+	"settings.downloaders.state.signInRefused": "Prisijungimas atmestas",
+	"settings.downloaders.state.working": "Veikia"
 }

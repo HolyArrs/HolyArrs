@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrsin polku",
 	"settings.mediaServers.pathTo": "Sama kansio palvelimella",
 	"settings.mediaServers.pathHint": "Vain jos palvelin näkee tiedostosi toisen polun alla",
+	"settings.mediaServers.webUrl": "Osoite selaimille",
+	"settings.mediaServers.webUrlHint": "Osoite, josta ihmiset avaavat palvelimen puhelimella tai tietokoneella. Lisää Avaa-painikkeen niiden nimikkeiden sivuille, jotka palvelimella on. Jätä tyhjäksi, jos et halua painiketta.",
 	"settings.mediaServers.local": "Yhteys paikalliseen verkkoon",
 	"settings.mediaServers.send": "Lähetä päivitykset",
 	"settings.mediaServers.save": "Tallenna",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Poistetaanko katseluhistoria käytöstä? Kaikki tähän mennessä luettu poistetaan.",
 	"settings.mediaServers.watchTurnedOn": "Katseluhistoria päällä. Ensimmäinen luku tehdään 30 minuutin kuluessa.",
 	"settings.mediaServers.watchTurnedOff": "Katseluhistoria pois päältä",
-	"settings.mediaServers.watchFailed": "Katseluhistoriaa ei voitu muuttaa"
+	"settings.mediaServers.watchFailed": "Katseluhistoriaa ei voitu muuttaa",
+	"settings.mediaServers.labelTitle": "Plex-tunnisteet",
+	"settings.mediaServers.labelSwitch": "Merkitse pyydetyt nimikkeet tunnisteella",
+	"settings.mediaServers.labelHint": "Kun pyydetty elokuva tai sarja on Plexissä, HolyArrs lisää siihen tunnisteen, jotta voit suodattaa, tehdä kokoelmia tai jakaa sen mukaan Plexissä. Olemassa olevat tunnisteet säilyvät.",
+	"settings.mediaServers.labelText": "Tunniste",
+	"settings.mediaServers.labelAskers": "Lisää myös pyytäjän nimi tunnisteeksi",
+	"settings.mediaServers.labelSaved": "Plex-tunnisteet tallennettu",
+	"settings.mediaServers.labelFailed": "Plex-tunnisteiden tallennus epäonnistui",
+	"settings.mediaServers.labelExisting": "Merkitse jo pyydetyt nimikkeet",
+	"settings.mediaServers.labelExistingStarted": "Merkitseminen alkoi. Nimikkeet saavat tunnisteensa muutamassa minuutissa.",
+	"settings.mediaServers.labelExistingFailed": "Merkitsemistä ei voitu aloittaa"
 }

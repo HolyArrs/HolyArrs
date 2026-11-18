@@ -27,6 +27,8 @@
 "settings.mediaServers.pathFrom": "HolyArrs 側のパス",
 "settings.mediaServers.pathTo": "サーバー側の同じフォルダー",
 "settings.mediaServers.pathHint": "サーバーがファイルを別のパスで見ている場合のみ",
+	"settings.mediaServers.webUrl": "ブラウザー用のアドレス",
+	"settings.mediaServers.webUrlHint": "みんながスマホやパソコンでサーバーを開くアドレスです。サーバーにある作品のページに「開く」ボタンが付きます。ボタンが不要なら空欄のままにします。",
 "settings.mediaServers.local": "ローカルネットワークに接続",
 "settings.mediaServers.send": "更新を送信",
 "settings.mediaServers.save": "保存",
@@ -47,5 +49,15 @@
 "settings.mediaServers.watchConfirmOff": "視聴履歴をオフにしますか？これまでに読み取った内容はすべて削除されます。",
 "settings.mediaServers.watchTurnedOn": "視聴履歴をオンにしました。最初の読み取りは30分以内です。",
 "settings.mediaServers.watchTurnedOff": "視聴履歴をオフにしました",
-"settings.mediaServers.watchFailed": "視聴履歴を変更できませんでした"
+"settings.mediaServers.watchFailed": "視聴履歴を変更できませんでした",
+"settings.mediaServers.labelTitle": "Plex のラベル",
+"settings.mediaServers.labelSwitch": "リクエストされた作品にラベルを付ける",
+"settings.mediaServers.labelHint": "リクエストされた映画や番組が Plex に入ると、HolyArrs がラベルを付けます。Plex でそのラベルで絞り込み、コレクション作成、共有ができます。既存のラベルはそのまま残ります。",
+"settings.mediaServers.labelText": "ラベル",
+"settings.mediaServers.labelAskers": "リクエストした人の名前もラベルとして付ける",
+"settings.mediaServers.labelSaved": "Plex のラベルを保存しました",
+"settings.mediaServers.labelFailed": "Plex のラベルを保存できませんでした",
+"settings.mediaServers.labelExisting": "リクエスト済みの作品にラベルを付ける",
+"settings.mediaServers.labelExistingStarted": "ラベル付けを始めました。数分以内に作品にラベルが付きます。",
+"settings.mediaServers.labelExistingFailed": "ラベル付けを開始できませんでした"
 }

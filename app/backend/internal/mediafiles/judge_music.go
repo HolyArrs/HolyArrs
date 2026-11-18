@@ -138,8 +138,13 @@ func matchArtist(p releasename.Result, lib []TitleRef) Match {
 		whole := releasename.CleanName(m.Artist)
 		for i := range lib {
 			t := &lib[i]
-			if n := releasename.CleanName(t.Name); t.Kind == "artist" && n != "" && strings.HasPrefix(whole+" ", n+" ") {
-				return Match{Title: t, Conf: releasename.Sure, Detail: t.Name + " by the start of the name"}
+			if t.Kind != "artist" {
+				continue
+			}
+			for _, n := range releasename.NameForms(t.Name) {
+				if n != "" && strings.HasPrefix(whole+" ", n+" ") {
+					return Match{Title: t, Conf: releasename.Sure, Detail: t.Name + " by the start of the name"}
+				}
 			}
 		}
 	}
@@ -163,14 +168,17 @@ func albumNames(p releasename.Result, artist string) []string {
 	m := p.Music
 	out := []string{m.Album}
 	for _, a := range m.Alts {
-		if releasename.CleanName(a.Artist) == releasename.CleanName(artist) {
+		if releasename.SameName(artist, releasename.CleanName(a.Artist)) {
 			out = append(out, a.Album)
 		}
 	}
 	if m.Conf == releasename.Guess {
-		whole, n := releasename.CleanName(m.Artist), releasename.CleanName(artist)
-		if rest, ok := strings.CutPrefix(whole, n+" "); ok {
-			out = append(out, rest)
+		whole := releasename.CleanName(m.Artist)
+		for _, n := range releasename.NameForms(artist) {
+			if rest, ok := strings.CutPrefix(whole, n+" "); ok && n != "" {
+				out = append(out, rest)
+				break
+			}
 		}
 	}
 	return out

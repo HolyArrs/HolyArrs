@@ -11,7 +11,7 @@
 	import { bytes, date } from '#lib/core/format.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { plainReason } from '#lib/core/plain.ts';
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { appLocale, t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	// Recently deleted: files waiting in the holding folder. Pick some and Restore puts them back where they were; a deleted title comes back too.
 
@@ -68,7 +68,7 @@
 
 <svelte:head><title>{t('library.deleted.title')} · HolyArrs</title></svelte:head>
 
-<LibraryToolPage title={t('library.deleted.title')} count={loaded && !error && files.length ? t('mediafiles.unit.file.' + (files.length === 1 ? 'one' : 'other'), { n: files.length }) : ''}>
+<LibraryToolPage title={t('library.deleted.title')} count={loaded && !error && files.length ? t('mediafiles.unit.file.' + (files.length === 1 ? 'one' : 'other'), { n: files.length.toLocaleString(appLocale()) }) : ''}>
 	{#snippet bar()}
 		<span class="tp-gap"></span>
 		<span class="tp-cap">

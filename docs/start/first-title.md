@@ -41,7 +41,7 @@ On the movie, press **Choose a release**. HolyArrs lists every result with a lab
 
 ### Search later
 
-Untick **Search when added** to add now and search later with **Search now** on the movie. Every day HolyArrs also searches for up to 20 missing titles by itself.
+Untick **Search when added** to add now and search later with **Search now** on the movie. The add dialog remembers your choice for the next movie or show, and it is the same setting as in **Settings > Movies and TV defaults**. Every day HolyArrs also searches for up to 20 missing titles by itself.
 
 ## If it does not work
 

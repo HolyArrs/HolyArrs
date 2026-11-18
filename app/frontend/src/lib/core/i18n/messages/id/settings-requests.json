@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Tampilkan ke orang",
 	"settings.requests.choiceMain": "{rules} · salinan utama judul",
 	"settings.requests.choiceOwn": "{rules} · disimpan sebagai salinan sendiri",
-	"settings.requests.choiceNotReady": "Ditawarkan setelah kualitas 4K diatur di atas"
+	"settings.requests.choiceNotReady": "Ditawarkan setelah kualitas 4K diatur di atas",
+	"settings.requests.approvals": "Persetujuan",
+	"settings.requests.autoApprove": "Setujui permintaan secara otomatis",
+	"settings.requests.autoApproveNote": "Mati = permintaan mereka menunggu Anda. Judul dari watchlist Plex mengikuti sakelar yang sama.",
+	"settings.requests.ownerTag": "Pemilik",
+	"settings.requests.choiceAdd": "Tambah kualitas",
+	"settings.requests.choiceNew": "Kualitas baru",
+	"settings.requests.choiceLabel": "Nama Anda",
+	"settings.requests.choiceSeen": "Orang lain melihat"
 }

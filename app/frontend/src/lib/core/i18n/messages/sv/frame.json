@@ -2,7 +2,7 @@
   "frame.nav.movies": "Filmer",
   "frame.nav.shows": "TV-serier",
   "frame.nav.music": "Musik",
-	"frame.nav.stats": "Statistik",
+  "frame.nav.stats": "Statistik",
   "frame.nav.home": "Hem",
   "frame.nav.explore": "Utforska",
   "frame.nav.newPopular": "Nytt och populärt",
@@ -14,9 +14,12 @@
   "frame.nav.waiting": "{n} väntar",
   "frame.nav.new": "{n} nya",
   "frame.nav.manage": "Hantera",
+  "frame.nav.activity": "Aktivitet",
+  "frame.nav.system": "System",
   "frame.nav.history": "Historik",
   "frame.nav.status": "Status",
   "frame.nav.settings": "Inställningar",
+  "frame.nav.plugins": "Tillägg",
   "frame.nav.goTo": "Gå till",
   "frame.nav.active": "{n} aktiva, {percent} %",
   "frame.nav.decide": "{n} behöver ett beslut",
@@ -76,6 +79,7 @@
   "frame.layout.system": "System",
   "frame.layout.switch": "Byt konto",
   "frame.layout.signOut": "Logga ut",
+  "frame.layout.support": "Stöd HolyArrs",
   "frame.layout.signOutFail": "Det gick inte att bekräfta utloggningen",
   "frame.layout.signedOut": "Utloggad",
   "frame.layout.accountMenu": "{name}, {role}: konto och utseende",
@@ -98,5 +102,6 @@
   "frame.feeds.clearBody": "HolyArrs försöker igen av sig själv",
   "frame.feeds.clearNow": "Rensa nu",
   "frame.feeds.cleared": "Rensad från Nedladdaren",
-  "frame.feeds.clearStill": "Inte rensad än"
+  "frame.feeds.clearStill": "Inte rensad än",
+	"frame.error.pageGone": "Sidan finns inte. Länken kan vara gammal eller felskriven."
 }

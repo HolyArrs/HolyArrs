@@ -373,7 +373,7 @@ func personOf(id int64, name, role, perms, maxRating string) *Person {
 	if !has("ask") {
 		return nil
 	}
-	p := &Person{UserID: id, Name: name, AutoApprove: has("auto_approve"), AutoApproveFourK: has("auto_approve_four_k"), NoLimit: has("approve")}
+	p := &Person{UserID: id, Name: name, AutoApprove: has("auto_approve"), AutoApproveFourK: has("auto_approve_four_k"), NoLimit: has("approve"), Owner: role == "owner"}
 	if role == "member" {
 		p.MaxRating = maxRating
 	}
@@ -393,6 +393,10 @@ func (w *Watchlists) act(ctx context.Context, p Person, e watchEntry) (state, re
 		_ = db.QueryRowContext(ctx, actSQL, tmdb, p.UserID).Scan(&before)
 		if before != 0 {
 			return WatchAlready, ref, &before, ""
+		}
+		if !w.standardOK(ctx, &p, "movie") {
+			r, err := w.Asks.AskQuality(ctx, p, tmdb, "")
+			return outcome(r, err, ref)
 		}
 		r, err := w.Asks.Ask(ctx, p, tmdb)
 		return outcome(r, err, ref)
@@ -419,8 +423,21 @@ func (w *Watchlists) act(ctx context.Context, p Person, e watchEntry) (state, re
 	if before != 0 {
 		return WatchAlready, ref, &before, ""
 	}
+	if !w.standardOK(ctx, &p, "show") {
+		r, err := w.Asks.AskShowQuality(ctx, p, ref, nil, nil, false, "")
+		return outcome(r, err, ref)
+	}
 	r, err := w.Asks.AskShow(ctx, p, ref, nil)
 	return outcome(r, err, ref)
+}
+
+// standardOK says p's own choice allows the Standard line of kind; one that
+// does not asks on p's first allowed line instead.
+func (w *Watchlists) standardOK(ctx context.Context, p *Person, kind string) bool {
+	if p.Qualities == nil && loadPersonQualities(ctx, w.Asks.Store.Read(), p) != nil {
+		return false
+	}
+	return p.mayPick(kind, QualityStandard)
 }
 
 // outcome turns an ask's answer into an entry state.
@@ -443,7 +460,7 @@ func outcome(r Result, err error, ref string) (string, string, *int64, string) {
 		return WatchLimit, ref, nil, err.Error()
 	case errors.Is(err, library.ErrNeverAdd), errors.Is(err, shows.ErrShowNeverAdd):
 		return WatchSkipped, ref, nil, "It is on the Never add list."
-	case errors.Is(err, ErrAboveLimit):
+	case errors.Is(err, ErrAboveLimit), errors.Is(err, ErrQualityNotOffered):
 		return WatchSkipped, ref, nil, err.Error()
 	}
 	return WatchFailed, ref, nil, err.Error()

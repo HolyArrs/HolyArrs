@@ -53,6 +53,7 @@ describe('history filters', () => {
 		expect(textMatches(e, 'geek')).toBe(true);
 		expect(textMatches(e, 'luis', new Map([[2, 'Luis']]))).toBe(true);
 		expect(textMatches(e, 'alien')).toBe(false);
+		expect(textMatches(ev('title_added', { Data: { why_added: 'list', list_name: 'Weekend shows' } }), 'weekend')).toBe(true);
 		expect(typeMatches('artist', 'music')).toBe(true);
 		expect(typeMatches('show', 'movies')).toBe(false);
 	});
@@ -81,6 +82,10 @@ describe('search look rows', () => {
 		expect(rowExtra(ask, rowStep(ask), who)).toBe('Maya');
 		const chose = one(ev('release_chosen', { Data: { release: 'Show.S01E01.1080p.WEB' } }));
 		expect(rowExtra(chose, rowStep(chose))).toBe('1080p');
+		// A pick made after the folder's tags were passed over says so on its row.
+		const note = "No Source this search can use has this folder's tags, so Sources without tags were asked too.";
+		const passed = one(ev('release_chosen', { TitleID: 1, title_name: 'Dune', Summary: 'Chose Dune.2021.1080p.WEB out of 3 Releases', Data: { sources_note: note, release: 'Dune.2021.1080p.WEB' } }));
+		expect(rowExtra(passed, rowStep(passed))).toBe(`1080p · ${note}`);
 		const decide = one(ev('needs_decision', { Data: { reason: 'nothing could be placed; look at the import plan' } }));
 		expect(rowExtra(decide, rowStep(decide))).toBe('Nothing could be placed');
 		const gone = one(ev('file_missing', { Data: {} }));
@@ -93,6 +98,12 @@ describe('search look rows', () => {
 		expect(rowExtra(sub, rowStep(sub))).toBe('en');
 		const bad = dl(ev('download_failed', { Data: { reason: 'Tracker said no.' } }), ev('download_sent'));
 		expect(rowExtra(bad, rowStep(bad))).toBe('Tracker said no');
+		const listed = one(ev('title_added', { TitleID: 2, Actor: { kind: 'system' }, Data: { why_added: 'list', list_name: 'Weekend picks' } }));
+		expect(rowExtra(listed, rowStep(listed), () => '')).toBe('From the list Weekend picks');
+		const sameAsWord = one(ev('title_added', { TitleID: 2, Actor: { kind: 'system' }, Data: { why_added: 'list', list_name: 'Movies' } }));
+		expect(rowExtra(sameAsWord, rowStep(sameAsWord), () => '')).toBe('From the list Movies');
+		const unnamed = one(ev('title_added', { TitleID: 2, Actor: { kind: 'system' }, Data: { why_added: 'list' } }));
+		expect(rowExtra(unnamed, rowStep(unnamed), () => '')).toBe('');
 		const ren = one(ev('renamed'));
 		expect(rowExtra(ren, rowStep(ren))).toBe('');
 		const up = one(ev('file_replaced', { Data: { old_quality: '720p HDTV', new_quality: '1080p WEB-DL' } }));
@@ -180,6 +191,17 @@ describe('history detail actions', () => {
 		expect(canFind(row(ev('health_broken', { DownloadID: 2 })))).toBe(false);
 		expect(canFind(row(ev('ask_made')))).toBe(false);
 		expect(canFind(row(ev('title_refreshed')))).toBe(false);
+	});
+	it('never offers Find another when only the remove from the Downloader was refused (the copy is in the library)', () => {
+		expect(canFind(row(ev('download_not_removed', { DownloadID: 4, Data: { release: 'Dune.2021.1080p', release_id: 5 } }), ev('import_done', { DownloadID: 4, Data: { release: 'Dune.2021.1080p' } })))).toBe(false);
+		expect(canFind(row(ev('download_not_removed', { DownloadID: 4 }), ev('download_failed', { DownloadID: 4 })))).toBe(true);
+	});
+	it('a removal waiting on a down Downloader says its own sentence on the list row', () => {
+		const r = row(ev('download_not_removed', { TitleID: 2, DownloadID: 4, Summary: 'qBit is not answering right now; HolyArrs tries again on the next sync' }));
+		const s = rowStep(r);
+		expect(s.label).not.toMatch(/Removed|Deleted/);
+		expect(rowExtra(r, s)).toBe('qBit is not answering right now; HolyArrs tries again on the next sync');
+		expect(rowExtra(row(ev('download_not_removed', { TitleID: 2, Summary: '' })), s)).toBe('Could not remove it from the downloader');
 	});
 	it('tells routine work apart', () => {
 		expect(isRoutine('title_refreshed')).toBe(true);

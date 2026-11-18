@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} bíða",
 	"frame.nav.new": "{n} ný",
 	"frame.nav.manage": "Stjórna",
+	"frame.nav.activity": "Virkni",
+	"frame.nav.system": "Kerfi",
 	"frame.nav.history": "Ferill",
 	"frame.nav.status": "Staða",
 	"frame.nav.settings": "Stillingar",
+	"frame.nav.plugins": "Viðbætur",
 	"frame.nav.goTo": "Fara á",
 	"frame.nav.active": "{n} virk, {percent}%",
 	"frame.nav.decide": "{n} þarfnast ákvörðunar",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Kerfi",
 	"frame.layout.switch": "Skipta um aðgang",
 	"frame.layout.signOut": "Skrá út",
+	"frame.layout.support": "Styðja HolyArrs",
 	"frame.layout.signOutFail": "Ekki tókst að staðfesta útskráningu",
 	"frame.layout.signedOut": "Skráð út",
 	"frame.layout.accountMenu": "{name}, {role}: aðgangur og útlit",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs reynir aftur sjálft",
 	"frame.feeds.clearNow": "Hreinsa núna",
 	"frame.feeds.cleared": "Hreinsað úr Niðurhalaranum",
-	"frame.feeds.clearStill": "Ekki hreinsað enn"
+	"frame.feeds.clearStill": "Ekki hreinsað enn",
+	"frame.error.pageGone": "Þessi síða er ekki til. Tengillinn gæti verið gamall eða rangt skrifaður."
 }

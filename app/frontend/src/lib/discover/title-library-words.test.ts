@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { airWords, dayWords, epTone } from './title-library-words.ts';
+import { airWords, dayWords, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint } from './title-library-words.ts';
 
 describe('dayWords', () => {
 	const zone = process.env.TZ;
@@ -55,6 +55,15 @@ describe('episode row tone with a file', () => {
 	});
 });
 
+describe('showOffHint', () => {
+	it('shows while the show is off and a season is on, and turns nothing on', () => {
+		expect(showOffHint(false, [{ keep_up_to_date: true }, { keep_up_to_date: false }])).toBe(true);
+		expect(showOffHint(true, [{ keep_up_to_date: true }])).toBe(false);
+		expect(showOffHint(false, [{ keep_up_to_date: false }])).toBe(false);
+		expect(showOffHint(false, [])).toBe(false);
+	});
+});
+
 describe('airWords: the date and "not out yet" come from the same moment', () => {
 	const zone = process.env.TZ;
 	afterEach(() => {
@@ -79,5 +88,36 @@ describe('airWords: the date and "not out yet" come from the same moment', () =>
 		expect(airWords('2026-11-12', '2026-11-13T02:00:00Z')).toBe('Yesterday');
 		expect(airWords('2026-11-20', '2026-11-21T02:00:00Z')).toBe(dayWords('2026-11-20'));
 		expect(airWords(undefined, undefined)).toBe('');
+	});
+});
+
+describe('getAllMissingShown', () => {
+	const se = (keep: boolean, in_library: number, episodes = 10, not_out_yet = 0) => ({ keep_up_to_date: keep, in_library, episodes, not_out_yet });
+	it('hides the button while the show is off', () => {
+		expect(getAllMissingShown(true, false, [se(true, 2)])).toBe(false);
+		expect(getAllMissingShown(true, true, [se(true, 2)])).toBe(true);
+		expect(getAllMissingShown(true, true, [se(true, 10)])).toBe(false);
+		expect(getAllMissingShown(false, true, [se(true, 2)])).toBe(false);
+	});
+	it('needs a kept season with missing aired episodes', () => {
+		expect(getAllMissingShown(true, true, [se(false, 2), se(true, 10)])).toBe(false);
+		expect(getAllMissingShown(true, true, [se(true, 8, 10, 2)])).toBe(false);
+		expect(getAllMissingShown(true, true, [se(false, 2), se(true, 7, 10, 2)])).toBe(true);
+	});
+});
+
+describe('searchQueued', () => {
+	it('is false when no job was queued', () => {
+		expect(searchQueued({ job_ids: [] })).toBe(false);
+		expect(searchQueued({ job_ids: null })).toBe(false);
+		expect(searchQueued({ job_ids: [4] })).toBe(true);
+		expect(searchQueued(undefined)).toBe(true);
+	});
+});
+
+describe('nothingQueuedKey', () => {
+	it('says turn the show on while it is off, else that nothing needed a search', () => {
+		expect(nothingQueuedKey(false)).toBe('discover.titleLibrary.turnShowOnHint');
+		expect(nothingQueuedKey(true)).toBe('shows.page.nothingToSearch');
 	});
 });

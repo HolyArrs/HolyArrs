@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Nu s-a putut salva limba",
 	"accounts.language.count.one": "1 limbă",
 	"accounts.language.count.other": "Limbi: {n}",
-	"accounts.account.watchEveryone": "Proprietarul a pornit asta pentru toată lumea. Oprește ambele ca să o oprești."
+	"accounts.account.watchEveryone": "Proprietarul a pornit asta pentru toată lumea. Oprește ambele ca să o oprești.",
+	"accounts.watch.title": "Marcaje de vizionare",
+	"accounts.watch.hint": "Leagă aici contul tău de pe un server media, ca Biblioteca să arate ce ai văzut.",
+	"accounts.watch.as": "{server}, ca {name}",
+	"accounts.watch.nameOn": "Nume pe {server}",
+	"accounts.watch.passwordOnce": "Parola ta merge doar la {server} și nu este păstrată.",
+	"accounts.watch.linked": "Legat de {name} pe {server}",
+	"accounts.watch.unlinked": "Legătură ștearsă",
+	"accounts.login.importPaused": "Autentificarea ta a expirat, așa că importul s-a oprit temporar. Autentifică-te, deschide Importă o bibliotecă și apasă Scanează ca să continue."
 }

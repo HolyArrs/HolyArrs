@@ -220,7 +220,7 @@ func (s *Service) CheckReady(ctx context.Context) (int, error) {
 		n++
 		people, _ := s.people(ctx, a.ID)
 		s.event(ctx, &domain.Event{Kind: domain.EventAskAvailable, TitleID: a.TitleID, Summary: label(a) + " is ready for " + strings.Join(names(people), ", "),
-			Data: map[string]any{"ask_id": a.ID, "asked_by": names(people)}, GroupKey: groupKey(a.ID)})
+			Data: map[string]any{"ask_id": a.ID, "asked_by": names(people), "asked_by_ids": userIDs(people)}, GroupKey: groupKey(a.ID)})
 		if a.Kind == "artist" {
 			s.tell(ctx, a, people, alerts.MomentReady, "Ready to listen: "+label(a), label(a)+" is in the Library and ready to listen to.")
 		} else {
@@ -268,6 +268,17 @@ type person struct {
 	AskedAt   time.Time
 	// FromWatchlist: they asked (or joined) from their Plex watchlist.
 	FromWatchlist bool
+}
+
+// userIDs are the askers' user ids, saved next to their names so History can mark
+// one who is deleted later. Events saved before this keep only names and stay plain,
+// since two people with the same name can't be told apart safely.
+func userIDs(ps []person) []int64 {
+	out := []int64{}
+	for _, p := range ps {
+		out = append(out, p.ID)
+	}
+	return out
 }
 
 func names(ps []person) []string {

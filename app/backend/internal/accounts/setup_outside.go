@@ -19,6 +19,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -42,7 +43,34 @@ const (
 // setupWays are the ways the first-run screen offers to make the owner.
 var setupWays = []string{"password", ProviderPlex, ProviderJellyfin, ProviderEmby}
 
+// setupWaysNow is setupWays without Emby while Emby sign-in is held back: an
+// owner made through Emby then could never sign in again.
+func setupWaysNow() []string {
+	if startup.FeatureOn(startup.EmbySignIn) {
+		return setupWays
+	}
+	return slices.DeleteFunc(slices.Clone(setupWays), func(w string) bool { return w == ProviderEmby })
+}
+
 var kindWord = map[string]string{ProviderJellyfin: "Jellyfin", ProviderEmby: "Emby"}
+
+// mediaOffLine tells someone their account is turned off on the Jellyfin or
+// Emby server, and what to do next.
+func mediaOffLine(kind string) string {
+	return "Your account is turned off on the " + kindWord[kind] + " server. Ask the person who runs it to turn it back on."
+}
+
+// mediaOff says whether a 403 sign-in answer is the server itself refusing
+// a turned-off account, by the text it sends: Emby says so in words,
+// Jellyfin sends its plain error text. A 403 page from a proxy or firewall
+// in front of the server says neither.
+func mediaOff(code int, body []byte) bool {
+	if code != http.StatusForbidden {
+		return false
+	}
+	b := strings.TrimSpace(string(body))
+	return b == "Error processing request." || strings.Contains(strings.ToLower(b), "account has been disabled")
+}
 
 // foundServer is a Jellyfin or Emby server that answered the network search.
 type foundServer struct {
@@ -99,11 +127,7 @@ func (a *Auth) makeOwnerTx(tx *sql.Tx, provider, extName, newHost string) (int64
 	if n > 0 {
 		return 0, "", nil, errOwnerExists
 	}
-	base := strings.TrimSpace(extName)
-	if base == "" {
-		base = provider + "-user"
-	}
-	base = truncate(base, 56)
+	base := NewPersonName(extName, provider+"-user", 56)
 	name := base
 	for i := 2; ; i++ {
 		c, err := countUsersNamed(context.Background(), tx, name)
@@ -264,7 +288,7 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	kind := r.PathValue("kind")
 	word := kindWord[kind]
-	if word == "" {
+	if word == "" || !slices.Contains(setupWaysNow(), kind) {
 		fail(w, http.StatusNotFound, "no such sign-in way")
 		return
 	}
@@ -318,14 +342,18 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 	}
 	// The address is typed before any owner exists, so the call goes through the
 	// address-test client, which refuses link-local and metadata addresses.
-	code, err := a.call(ctx, a.tester, http.MethodPost, addr+"/Users/AuthenticateByName", hdr, map[string]string{"Username": body.Name, "Pw": body.Password}, &got)
-	notServer := "that address did not answer like a " + word + " server; check it and try again"
+	var refusal []byte
+	code, err := a.call(ctx, a.tester, http.MethodPost, addr+"/Users/AuthenticateByName", hdr, map[string]string{"Username": body.Name, "Pw": body.Password}, keepRefusal{&got, &refusal})
+	notServer := "that address did not answer like " + word + "; check it and try again"
 	switch {
 	case err != nil && code == 0:
 		log.Printf("auth: setup %s at %s: %v", kind, addr, err)
 		fail(w, http.StatusBadGateway, "could not reach "+addr+"; check the address and that the server is on")
 		return
-	case code == http.StatusNotFound || code == http.StatusMethodNotAllowed || code/100 == 3:
+	case mediaOff(code, refusal):
+		fail(w, http.StatusForbidden, mediaOffLine(kind))
+		return
+	case code == http.StatusNotFound || code == http.StatusMethodNotAllowed || code == http.StatusForbidden || code/100 == 3:
 		fail(w, http.StatusBadGateway, notServer)
 		return
 	case code/100 == 4:
@@ -343,7 +371,7 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 		_, _ = a.call(context.WithoutCancel(ctx), a.tester, http.MethodPost, addr+"/Sessions/Logout", lh, nil, nil)
 	}
 	if got.User.Policy.IsDisabled {
-		fail(w, http.StatusForbidden, "this account is turned off on the "+word+" server")
+		fail(w, http.StatusForbidden, mediaOffLine(kind))
 		return
 	}
 	if !got.User.Policy.IsAdministrator {

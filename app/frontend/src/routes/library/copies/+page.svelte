@@ -12,7 +12,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { plainReason } from '#lib/core/plain.ts';
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { appLocale, t } from '#lib/core/i18n/i18n.svelte.ts';
 
 	const pageSize = 50;
 	let page = $state<LibraryCopyPage>({ copies: [], total: 0, limit: pageSize, offset: 0, codecs: {} });
@@ -106,7 +106,7 @@
 
 <svelte:head><title>{t('library.copies.title')} · HolyArrs</title></svelte:head>
 
-<LibraryToolPage title={t('library.copies.title')} count={loaded && !error ? t('mediafiles.unit.file.' + (page.total === 1 ? 'one' : 'other'), { n: page.total }) : ''}>
+<LibraryToolPage title={t('library.copies.title')} count={loaded && !error ? t('mediafiles.unit.file.' + (page.total === 1 ? 'one' : 'other'), { n: page.total.toLocaleString(appLocale()) }) : ''}>
 	{#snippet bar()}
 		{#if session.can('manage_library')}
 			<DlFind bind:term={() => q, setQ} shown={page.copies.length} total={page.total} searchKey="" placeholder={t('library.copies.search')} testid="copies-find" />
@@ -123,7 +123,7 @@
 			</span>
 			<span class="tp-gap"></span>
 			<span class="tp-cap">
-				<span class="tp-val" aria-live="polite">{t('mediafiles.select.count', { n: selected.length })}</span>
+				<span class="tp-val" aria-live="polite">{t('mediafiles.select.count', { n: selected.length.toLocaleString(appLocale()) })}</span>
 				<Button variant="primary" disabled={selected.length === 0 || busy} onclick={review}>{t('library.copies.review')}</Button>
 			</span>
 		{/if}
@@ -137,7 +137,7 @@
 
 	{#if preview}
 		<section class="tp-sheet tp-pad review" aria-labelledby="review-title">
-			<h2 id="review-title">{t(preview.copies.length === 1 ? 'library.copies.searchAgainOne' : 'library.copies.searchAgainMany', { n: preview.copies.length })}</h2>
+			<h2 id="review-title">{t(preview.copies.length === 1 ? 'library.copies.searchAgainOne' : 'library.copies.searchAgainMany', { n: preview.copies.length.toLocaleString(appLocale()) })}</h2>
 			<p class="tp-note">{t(preview.slot_count === 1 ? 'library.copies.withRulesOne' : 'library.copies.withRulesMany', { n: preview.slot_count })}</p>
 			<ul>{#each preview.copies as copy (copyKey(copy))}<li><b>{copy.title}</b><span>{copy.version} · {codecLabel(copy.codec)}</span></li>{/each}</ul>
 			<div class="actions"><Button variant="plain" onclick={() => preview = null}>{t('mediafiles.dialogs.cancel')}</Button><Button variant="primary" disabled={busy} onclick={search}>{t('library.copies.start')}</Button></div>

@@ -24,7 +24,8 @@ func MoveSlot(ctx context.Context, s *database.Store, slotID int64, to SlotState
 // MoveSlotTx is MoveSlot inside a write transaction the caller already holds.
 func MoveSlotTx(tx *sql.Tx, slotID int64, to SlotState, reason string, by database.Actor) error {
 	var from string
-	if err := tx.QueryRow("SELECT state FROM slots WHERE id = ?", slotID).Scan(&from); err != nil {
+	var was sql.NullString
+	if err := tx.QueryRow("SELECT state, last_reason FROM slots WHERE id = ?", slotID).Scan(&from, &was); err != nil {
 		if err == sql.ErrNoRows {
 			return database.ErrNotFound
 		}
@@ -39,7 +40,10 @@ func MoveSlotTx(tx *sql.Tx, slotID int64, to SlotState, reason string, by databa
 	}
 	_, err := tx.Exec("UPDATE slots SET state = ?, last_reason = ?, updated_at = ?, updated_by = ? WHERE id = ?",
 		string(to), r, database.FormatTime(time.Now()), actorJSON(by), slotID)
-	if err == nil && to == SlotNeedsADecision && from != string(to) {
+	// An import asked for again keeps the Slot's reason while it runs: landing
+	// on that same reason is the card the person already knows, not a new one.
+	again := from == string(SlotImporting) && was.Valid && was.String == reason
+	if err == nil && to == SlotNeedsADecision && from != string(to) && !again {
 		needsDecision(tx, slotID, reason, by)
 	}
 	return err

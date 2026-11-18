@@ -134,6 +134,7 @@
 		return { duration: calm || step === firstStep ? 0 : 300 };
 	});
 	let leaving = $state(false);
+	let importPaused = $state(false);
 	let panelEl = $state<HTMLDivElement>();
 	let coverEl = $state<HTMLDivElement>();
 	let left = false;
@@ -177,6 +178,11 @@
 			if (saved) {
 				sessionStorage.removeItem('holyarrs-2fa-ticket');
 				ticket = saved;
+			}
+			// An import that stopped because the sign-in ended says so here.
+			if (sessionStorage.getItem('holyarrs-import-paused')) {
+				sessionStorage.removeItem('holyarrs-import-paused');
+				importPaused = true;
 			}
 		} catch {
 			// No storage: they sign in again.
@@ -454,6 +460,7 @@
 			<div class="sk" class:tall={recent.length > 1} style="border-radius: var(--r-card)"></div>
 			{#if ssoFinishing}<p class="small muted" role="status">{t('accounts.login.finishing')}</p>{/if}
 		{:else}
+			{#if importPaused}<p class="form-error" role="status" data-testid="import-paused">{t('accounts.login.importPaused')}</p>{/if}
 			{#key step}
 				<div class="step" in:pixelIn={rise}>
 					{#if plexWaiting}

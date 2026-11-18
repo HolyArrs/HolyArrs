@@ -305,7 +305,7 @@
 <style>
 	/* dark logos turn white, wide ones get a size floor so they stay legible */
 	.bb-logo.dark :global(img) { filter: brightness(0) invert(1) drop-shadow(0 2px 10px rgb(0 0 0 / .45)); }
-	.bb-logo.wide :global(img) { min-height: clamp(40px, 3.4vw, 64px); max-width: min(92vw, 760px) !important; }
+	.bb-logo.wide :global(img) { min-height: clamp(40px, 3.4vw, 64px); max-width: min(100%, 760px) !important; }
 	/* backdrop is dimmed so the text on top stays readable */
 	.bd { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; filter: saturate(1.1) brightness(.75); }
 	.bd.square { object-position: center 35%; }

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "مسیر HolyArrs",
 	"settings.mediaServers.pathTo": "همان پوشه در سرور",
 	"settings.mediaServers.pathHint": "فقط اگر سرور فایل‌هایت را زیر مسیر دیگری می‌بیند",
+	"settings.mediaServers.webUrl": "نشانی برای مرورگرها",
+	"settings.mediaServers.webUrlHint": "نشانی‌ای که همه سرور را با آن روی گوشی یا رایانه باز می‌کنند. دکمهٔ باز کردن را به صفحهٔ عنوان‌هایی که دارد اضافه می‌کند. برای نداشتن دکمه خالی بگذارید.",
 	"settings.mediaServers.local": "دسترسی به شبکه محلی",
 	"settings.mediaServers.send": "ارسال به‌روزرسانی‌ها",
 	"settings.mediaServers.save": "ذخیره",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "تاریخچه تماشا خاموش شود؟ همه چیزهایی که تا حالا خوانده شده حذف می‌شود.",
 	"settings.mediaServers.watchTurnedOn": "تاریخچه تماشا روشن شد. اولین خواندن ظرف ۳۰ دقیقه انجام می‌شود.",
 	"settings.mediaServers.watchTurnedOff": "تاریخچه تماشا خاموش شد",
-	"settings.mediaServers.watchFailed": "تاریخچه تماشا تغییر نکرد"
+	"settings.mediaServers.watchFailed": "تاریخچه تماشا تغییر نکرد",
+	"settings.mediaServers.labelTitle": "برچسب‌های Plex",
+	"settings.mediaServers.labelSwitch": "برچسب زدن به عنوان‌های درخواستی",
+	"settings.mediaServers.labelHint": "وقتی فیلم یا سریال درخواستی در Plex باشد، HolyArrs به آن برچسب می‌زند تا بتوانید در Plex با آن فیلتر کنید، مجموعه بسازید یا اشتراک بگذارید. برچسب‌های موجود می‌مانند.",
+	"settings.mediaServers.labelText": "برچسب",
+	"settings.mediaServers.labelAskers": "نام درخواست‌کننده را هم به‌عنوان برچسب اضافه کن",
+	"settings.mediaServers.labelSaved": "برچسب‌های Plex ذخیره شد",
+	"settings.mediaServers.labelFailed": "ذخیره برچسب‌های Plex ممکن نشد",
+	"settings.mediaServers.labelExisting": "برچسب زدن به عنوان‌های درخواستی موجود",
+	"settings.mediaServers.labelExistingStarted": "برچسب‌زنی شروع شد. عنوان‌ها ظرف چند دقیقه برچسب می‌گیرند.",
+	"settings.mediaServers.labelExistingFailed": "شروع برچسب‌زنی ممکن نشد"
 }

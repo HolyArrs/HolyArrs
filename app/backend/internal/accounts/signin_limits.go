@@ -150,7 +150,10 @@ func limitAddr(addr string) string {
 
 // eventAddr is the exact caller address, for the Events log.
 func (a *Auth) eventAddr(r *http.Request) string {
-	addr, _ := a.clientAddr(r)
+	addr, _, unsure := a.clientAddrUnsure(r)
+	if unsure && r.Header.Get(PluginProxyHeader) != "" {
+		return "" // a plugin visit with no verified address: no place at all
+	}
 	if ip := net.ParseIP(addr); ip != nil {
 		return ip.String()
 	}

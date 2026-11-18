@@ -14,11 +14,14 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
-// Another app (Sonarr sharing the Downloader category) imported the pack and
-// removed it before HolyArrs got to it: the episodes are let go, not parked
+// Another app (Sonarr sharing the Usenet Downloader's category) imported the
+// job and removed it before HolyArrs got to it: the episodes are let go, not parked
 // for a person, and the Release is not turned down.
 func TestShowImportFilesTakenByAnotherApp(t *testing.T) {
 	w := showSetup(t, []int{1, 2}, ep(1), ep(2))
+	if err := execSQL(w.s, "UPDATE downloaders SET protocol = 'usenet', adapter = 'sabnzbd'"); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.RemoveAll(filepath.Join(w.dl, packName)); err != nil {
 		t.Fatal(err)
 	}
@@ -117,6 +120,9 @@ func TestUsenetImportJobFolderTakenByAnotherApp(t *testing.T) {
 
 func TestMovieImportFilesTakenByAnotherApp(t *testing.T) {
 	w := setup(t)
+	if err := execSQL(w.s, "UPDATE downloaders SET protocol = 'usenet', adapter = 'sabnzbd'"); err != nil {
+		t.Fatal(err)
+	}
 	ctx := context.Background()
 	if err := execSQL(w.s, "UPDATE slots SET active_download_id = ? WHERE id = ?", w.dlID, w.slotID); err != nil {
 		t.Fatal(err)
@@ -147,4 +153,30 @@ func TestMovieImportFilesTakenByAnotherApp(t *testing.T) {
 
 func execSQL(s *database.Store, q string, args ...any) error {
 	return s.Write(context.Background(), func(tx *sql.Tx) error { _, err := tx.Exec(q, args...); return err })
+}
+
+// A torrent the Downloader still lists whose video is missing was not taken
+// by another app (they link or copy from a seeding torrent): like Sonarr and
+// Radarr, the movie waits for a decision on the missing file.
+func TestTorrentWithMissingFileWaitsForADecision(t *testing.T) {
+	w := setup(t)
+	if err := execSQL(w.s, "UPDATE slots SET active_download_id = ? WHERE id = ?", w.dlID, w.slotID); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(w.dl, relName+".mkv")); err != nil {
+		t.Fatal(err)
+	}
+	gone := 0
+	im := &Importer{Store: w.s, OnFilesGone: func(context.Context, int64) { gone++ }}
+	imp, err := im.Import(context.Background(), w.dlID, false, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sl mediafiles.Slot
+	if err := database.Get(context.Background(), w.s.Read(), "slots", w.slotID, &sl); err != nil {
+		t.Fatal(err)
+	}
+	if gone != 0 || sl.State != mediafiles.SlotNeedsADecision || sl.LastReason == nil || *sl.LastReason == FilesGoneReason {
+		t.Fatalf("import %s slot %s reason %v, gone %d", imp.State, sl.State, ptrText(sl.LastReason), gone)
+	}
 }

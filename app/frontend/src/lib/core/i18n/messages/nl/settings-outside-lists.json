@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Je Trakt-lijsten kunnen pas worden gelezen als dit is ingesteld.",
 	"settings.outsideLists.replaceKey": "De Trakt-sleutel vervangen",
 	"settings.outsideLists.pasteKey": "Plak de Trakt-sleutel",
+	"settings.outsideLists.mdblistKey": "MDBList-sleutel",
+	"settings.outsideLists.mdblistInfo": "Optioneel. Met je MDBList-API-sleutel worden MDBList-lijsten via de MDBList-API gelezen; zonder via hun openbare link. Hij wordt versleuteld bewaard en is dezelfde sleutel die externe beoordelingen gebruiken in de modus Eigen sleutels.",
+	"settings.outsideLists.pasteMdblistKey": "Plak je MDBList-API-sleutel",
+	"settings.outsideLists.replaceMdblistKey": "De MDBList-sleutel vervangen",
+	"settings.outsideLists.removeMdblistKey": "De sleutel verwijderen",
+	"settings.outsideLists.mdblistKeySaved": "MDBList-sleutel opgeslagen",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList-sleutel verwijderd; lijsten gebruiken hun openbare link",
 	"settings.outsideLists.replaceVip": "De VIP-toegangstoken vervangen",
 	"settings.outsideLists.vip": "VIP-toegangstoken (optioneel)",
 	"settings.outsideLists.vipHint": "Voegt een tabblad Trakt toe aan titelpagina's: score, kijkers en reacties",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Toevoegen aan de Nooit-toevoegen-lijst",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "{name} van de lijst halen",
-	"settings.outsideLists.empty": "Leeg"
+	"settings.outsideLists.empty": "Nog niets op deze lijst"
 }

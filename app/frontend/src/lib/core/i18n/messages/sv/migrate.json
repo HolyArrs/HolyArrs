@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Behöver åtgärd: {n}",
 	"migrate.needAttentionWhy": "Deras gamla mapp finns inte på den här servern, så de kommer som önskade till en mapp här. Rätta mappen eller lägg till en sökvägsregel: {list}",
 	"migrate.leftOutUncheckedN": "Utelämnade: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} står på \"Ta inte med dem\"; välj en mapp för den och importera igen"
+	"migrate.leftOutUncheckedWhy": "{folder} står på \"Ta inte med dem\"; välj en mapp för den och importera igen",
+	"migrate.seasonsDifferOne": "Kolla 1 serie som hittades via sitt TMDB-nummer",
+	"migrate.seasonsDifferOther": "Kolla {n} serier som hittades via sitt TMDB-nummer",
+	"migrate.seasonsDifferWhy": "Bara den gamla appens TMDB-nummer hittade {list}, under ett annat namn här. Öppna var och en och kolla att det är samma serie. Om det är det är säsongerna numrerade annorlunda: matcha dess Överblivna filer och slå sedan på serien. Om inte, ta bort den; dess filer ligger kvar där de är.",
+	"migrate.stillChecking": "Serier som metadataservern fortfarande kontrollerar: {n}. Listan uppdateras av sig själv när den är klar.",
+	"migrate.stillCheckingImport": "Serier som metadataservern fortfarande kontrollerar: {n}. Du kan importera nu; de kontrolleras under importen."
 }

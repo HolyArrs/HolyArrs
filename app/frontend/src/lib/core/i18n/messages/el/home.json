@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Απενεργοποιημένο στις Ενότητες",
 	"home.noneForSources": "λείπει για ό,τι βρίσκουν οι πηγές σας",
 	"home.addedTwice": "προστέθηκε δύο φορές",
-	"home.addedTwiceMany": "προστέθηκαν δύο φορές"
+	"home.addedTwiceMany": "προστέθηκαν δύο φορές",
+	"home.notSetUpYet": "Δεν έχει ρυθμιστεί ακόμα",
+	"home.setUpToAdd": "Ολοκληρώστε τη ρύθμιση για να προσθέσετε {name}",
+	"home.comingThisWeek": "Έρχεται αυτή την εβδομάδα",
+	"home.thisWeek": "αυτή την εβδομάδα",
+	"home.landingThisWeek": "Επεισόδια και ταινίες που βγαίνουν αυτή την εβδομάδα",
+	"home.popularThisWeek": "Δημοφιλείς κυκλοφορίες αυτής της εβδομάδας",
+	"home.peopleCheck": "Έλεγχος ατόμων",
+	"home.cantReadUsers": "η λίστα χρηστών δεν διαβάζεται"
 }

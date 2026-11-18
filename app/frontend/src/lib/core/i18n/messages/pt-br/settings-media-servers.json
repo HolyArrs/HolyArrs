@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Caminho no HolyArrs",
 	"settings.mediaServers.pathTo": "Mesma pasta no servidor",
 	"settings.mediaServers.pathHint": "Só se o servidor vê seus arquivos em outro caminho",
+	"settings.mediaServers.webUrl": "Endereço para navegadores",
+	"settings.mediaServers.webUrlHint": "Onde as pessoas abrem o servidor no celular ou computador. Adiciona um botão Abrir nas páginas dos títulos que ele tem. Deixe vazio para não mostrar o botão.",
 	"settings.mediaServers.local": "Acessar a rede local",
 	"settings.mediaServers.send": "Enviar atualizações",
 	"settings.mediaServers.save": "Salvar",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Desligar o histórico? Tudo o que foi lido até agora é apagado.",
 	"settings.mediaServers.watchTurnedOn": "Histórico ligado. A primeira leitura chega em até 30 minutos.",
 	"settings.mediaServers.watchTurnedOff": "Histórico desligado",
-	"settings.mediaServers.watchFailed": "Não foi possível mudar o histórico"
+	"settings.mediaServers.watchFailed": "Não foi possível mudar o histórico",
+	"settings.mediaServers.labelTitle": "Etiquetas do Plex",
+	"settings.mediaServers.labelSwitch": "Etiquetar títulos pedidos",
+	"settings.mediaServers.labelHint": "Quando um filme ou série pedido está no Plex, o HolyArrs adiciona uma etiqueta a ele, para você filtrar, montar coleções ou compartilhar por ela no Plex. As etiquetas que já existem ficam.",
+	"settings.mediaServers.labelText": "Etiqueta",
+	"settings.mediaServers.labelAskers": "Adicionar também o nome de quem pediu como etiqueta",
+	"settings.mediaServers.labelSaved": "Etiquetas do Plex salvas",
+	"settings.mediaServers.labelFailed": "Não foi possível salvar as etiquetas do Plex",
+	"settings.mediaServers.labelExisting": "Etiquetar títulos já pedidos",
+	"settings.mediaServers.labelExistingStarted": "Etiquetagem iniciada. Os títulos recebem as etiquetas em poucos minutos.",
+	"settings.mediaServers.labelExistingFailed": "Não foi possível iniciar a etiquetagem"
 }

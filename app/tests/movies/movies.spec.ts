@@ -47,9 +47,8 @@ test('add a movie by name with folder, Pick rules and Release gate in under a mi
 test('add by tmdb: and imdb: id; the last Release gate is remembered, the rest start from the Movies and TV defaults', async () => {
 	const dialog = await addFromSearch(page, 'tmdb:900002', 'Paper Harbour');
 	await expect(dialog.getByLabel('Release gate')).toHaveValue('in_cinemas');
-	// Search when added is not remembered: it starts from the defaults (on for movies when nothing is saved).
-	await expect(dialog.getByLabel('Search when added')).toBeChecked();
-	await dialog.getByLabel('Search when added').uncheck();
+	// Search when added is remembered: the last add turned it off.
+	await expect(dialog.getByLabel('Search when added')).not.toBeChecked();
 	await dialog.getByLabel('Release gate').selectOption('released');
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(page).toHaveURL(/\/library\/\d+/);
@@ -178,9 +177,9 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await vd.getByLabel('Version name').fill('Small');
 	await vd.getByRole('button', { name: 'Add version' }).click();
 	await expect(versions).toHaveCount(3);
-	page.once('dialog', (d) => d.accept());
 	await page.getByRole('button', { name: 'Version actions for Small' }).click();
 	await page.getByRole('menuitem', { name: 'Remove Small' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(versions).toHaveCount(2);
 	await expect(page.getByRole('button', { name: 'Remove Main' })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: /^Version actions for Main/ })).toHaveCount(0);

@@ -140,6 +140,36 @@ var missingSorts = map[string][2]string{
 // missingDefaultSize is the missing list's page size when none is sent.
 const missingDefaultSize = 10
 
+// paging is what the missing lists read from the request: the page and
+// its size, the sort direction in its own and the answered word, and
+// monitored (default true).
+type paging struct {
+	page, size int
+	asc        bool
+	word       string
+	kept       bool
+}
+
+func pagingOf(r *http.Request) paging {
+	dir := strings.ToLower(query(r, "sortDirection"))
+	p := paging{asc: dir == "ascending" || dir == "default", word: "descending", size: missingDefaultSize, page: 1, kept: true}
+	if p.asc {
+		p.word = "ascending"
+	}
+	if n, err := strconv.Atoi(query(r, "pageSize")); err == nil && n > 0 {
+		p.size = min(n, 10000)
+	}
+	if n, err := strconv.ParseInt(query(r, "page"), 10, 32); (err == nil || errors.Is(err, strconv.ErrRange)) && n > 0 {
+		p.page = int(min(n, math.MaxInt32)) // past the end on a 32-bit build too
+	}
+	if v := query(r, "monitored"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			p.kept = b
+		}
+	}
+	return p
+}
+
 // missingEpisodes pages the aired episodes with no file in the main
 // Version. monitored defaults to true and keeps the episodes kept up to
 // date with their season and show. false gives the others. Sorting
@@ -153,26 +183,8 @@ func (h *handler) missingEpisodes(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		sort = missingSorts["episodes.airdateutc"]
 	}
-	dir := strings.ToLower(query(r, "sortDirection"))
-	asc := dir == "ascending" || dir == "default"
-	word := "descending"
-	if asc {
-		word = "ascending"
-	}
-	size := missingDefaultSize
-	if n, err := strconv.Atoi(query(r, "pageSize")); err == nil && n > 0 {
-		size = min(n, 10000)
-	}
-	page := 1
-	if n, err := strconv.ParseInt(query(r, "page"), 10, 32); (err == nil || errors.Is(err, strconv.ErrRange)) && n > 0 {
-		page = int(min(n, math.MaxInt32)) // past the end on a 32-bit build too
-	}
-	kept := true
-	if v := query(r, "monitored"); v != "" {
-		if b, err := strconv.ParseBool(v); err == nil {
-			kept = b
-		}
-	}
+	pg := pagingOf(r)
+	asc, word, size, page, kept := pg.asc, pg.word, pg.size, pg.page, pg.kept
 	found, err := library.MissingEpisodes(ctx, h.Store.Read(), kept, sort[1], !asc, h.now(), page, size)
 	if err != nil {
 		internalError(w, err)
@@ -258,7 +270,8 @@ func (h *handler) calendarEpisodes(w http.ResponseWriter, r *http.Request) {
 }
 
 // queueDetails answers the download list unpaged. It gives every row, or
-// those of one show with seriesId, or of some episodes with episodeIds.
+// on the Sonarr side those of one show with seriesId, or of some episodes
+// with episodeIds, and on the Radarr side those of one movie with movieId.
 // includeEpisode and includeSeries add the episode and the show.
 func (h *handler) queueDetails(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -267,14 +280,18 @@ func (h *handler) queueDetails(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	if v := query(r, "seriesId"); v != "" {
+	if v := query(r, "movieId"); v != "" && h.side == "radarr" {
+		id := atoi64(v)
+		rows = slices.DeleteFunc(rows, func(q queueRow) bool { return q.MovieID != id })
+	}
+	if v := query(r, "seriesId"); v != "" && h.side == "sonarr" {
 		id := atoi64(v)
 		rows = slices.DeleteFunc(rows, func(q queueRow) bool { return q.SeriesID != id })
 	}
-	if ids := idsParam(r, "episodeIds"); len(ids) > 0 {
+	if ids := idsParam(r, "episodeIds"); len(ids) > 0 && h.side == "sonarr" {
 		rows = slices.DeleteFunc(rows, func(q queueRow) bool { return !slices.Contains(ids, q.EpisodeID) })
 	}
-	if queryBool(r, "includeSeries") && len(rows) > 0 {
+	if queryBool(r, "includeSeries") && h.side == "sonarr" && len(rows) > 0 {
 		ids := make([]int64, 0, len(rows))
 		for _, q := range rows {
 			ids = append(ids, q.SeriesID)
@@ -291,4 +308,26 @@ func (h *handler) queueDetails(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeJSON(w, http.StatusOK, rows)
+}
+
+// queueStatus counts the download list the way the old apps do: all rows,
+// and how many carry an error or a warning. HolyArrs has no unknown-series
+// rows, so those counts are zero.
+func (h *handler) queueStatus(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.queueRows(r.Context(), false)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	var errs, warns int
+	for _, q := range rows {
+		switch q.TrackedDownloadStatus {
+		case "error":
+			errs++
+		case "warning":
+			warns++
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"totalCount": len(rows), "count": len(rows), "unknownCount": 0,
+		"errors": errs, "warnings": warns, "unknownErrors": 0, "unknownWarnings": 0})
 }

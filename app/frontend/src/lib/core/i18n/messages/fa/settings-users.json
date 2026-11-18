@@ -83,6 +83,7 @@
 	"settings.users.preset": "از پیش تعیین‌شده",
 	"settings.users.comingSoon": "به‌زودی",
 	"settings.users.custom": "سفارشی",
+	"settings.users.customHint": "این ترکیب شخصی شما از کلیدهای زیر است. انتخاب یک الگوی آماده آن را جایگزین می‌کند؛ برای بازگرداندنش دوباره «سفارشی» را انتخاب کنید.",
 	"settings.users.ageRating": "رده سنی",
 	"settings.users.newPasswordFor": "رمز عبور تازه برای {name}",
 	"settings.users.passwordNote": "وقتی {name} رمزش را فراموش کرده از این استفاده کن. از همه‌جا خارج می‌شود و با رمز تازه دوباره وارد می‌شود. رمز را حضوری به او بگو.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "مثلاً مامان",
 	"settings.users.days": "چند روز پیوند معتبر باشد",
 	"settings.users.makeInvite": "ساخت پیوند دعوت",
-	"settings.users.permAuto4k": "درخواست‌های 4K بدون انتظار تأیید می‌شوند"
+	"settings.users.permAuto4k": "درخواست‌های 4K بدون انتظار تأیید می‌شوند",
+	"settings.users.serverAccount": "حساب سرور",
+	"settings.users.pickAccount": "یک حساب روی سرور رسانه انتخاب کنید",
+	"settings.users.accountLinked": "به {name} پیوند خورد",
+	"settings.users.removedOnServer": "از سرور {word} حذف شد، پس اینجا خاموش شد",
+	"settings.users.delete": "حذف",
+	"settings.users.deleteName": "حذف {name}",
+	"settings.users.confirmDelete": "{name} حذف شود؟ برای همیشه از حساب خارج می‌شود و کلیدهایش حذف می‌شوند. درخواست‌هایش می‌مانند و به نام شخص حذف‌شده نشان داده می‌شوند.",
+	"settings.users.deleteYes": "حذف شخص",
+	"settings.users.keep": "نگه داشتن",
+	"settings.users.deleted": "{name} حذف شد",
+	"settings.users.couldntDelete": "حذف ممکن نشد",
+	"settings.users.confirmDeleteKeys": "کلیدهای Seerr که ساخته است برای همه از کار می‌افتند تا کلید تازه‌ای ساخته شود.",
+	"settings.users.qualities": "کیفیت‌ها",
+	"settings.users.qualitiesHint": "فقط موارد روشن را می‌توانند انتخاب کنند. وقتی همه روشن باشند، موارد تازه هم پیشنهاد می‌شوند."
 }

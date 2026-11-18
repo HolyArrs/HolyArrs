@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Perlu perhatian: {n}",
 	"migrate.needAttentionWhy": "Folder lama mereka tiada di pelayan ini, jadi ia masuk sebagai dikehendaki ke folder di sini. Betulkan folder atau tambah peraturan laluan: {list}",
 	"migrate.leftOutUncheckedN": "Ditinggalkan: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} ditetapkan kepada \"Jangan bawa mereka\"; pilih folder untuknya dan import semula"
+	"migrate.leftOutUncheckedWhy": "{folder} ditetapkan kepada \"Jangan bawa mereka\"; pilih folder untuknya dan import semula",
+	"migrate.seasonsDifferOne": "Semak 1 rancangan yang ditemui melalui nombor TMDB",
+	"migrate.seasonsDifferOther": "Semak {n} rancangan yang ditemui melalui nombor TMDB",
+	"migrate.seasonsDifferWhy": "Hanya nombor TMDB aplikasi lama yang menemui {list}, dengan nama lain di sini. Buka setiap satu dan pastikan ini rancangan yang sama. Jika ya, musimnya dinomborkan secara berbeza: padankan Fail berbakinya, kemudian hidupkan rancangan itu. Jika tidak, buangnya; failnya kekal di tempatnya.",
+	"migrate.stillChecking": "Rancangan yang masih disemak oleh pelayan metadata: {n}. Senarai ini dikemas kini sendiri apabila selesai.",
+	"migrate.stillCheckingImport": "Rancangan yang masih disemak oleh pelayan metadata: {n}. Anda boleh import sekarang; ia disemak semasa import."
 }

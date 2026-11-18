@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "הצג לאנשים",
 	"settings.requests.choiceMain": "{rules} · העותק הראשי של הכותר",
 	"settings.requests.choiceOwn": "{rules} · נשמר כעותק נפרד",
-	"settings.requests.choiceNotReady": "יוצע אחרי שתוגדר איכות 4K למעלה"
+	"settings.requests.choiceNotReady": "יוצע אחרי שתוגדר איכות 4K למעלה",
+	"settings.requests.approvals": "אישורים",
+	"settings.requests.autoApprove": "אישור בקשות אוטומטית",
+	"settings.requests.autoApproveNote": "כבוי = הבקשות שלהם ממתינות לך. כותרים מרשימת הצפייה של Plex פועלים לפי אותו מתג.",
+	"settings.requests.ownerTag": "בעלים",
+	"settings.requests.choiceAdd": "הוסף איכות",
+	"settings.requests.choiceNew": "איכות חדשה",
+	"settings.requests.choiceLabel": "השם שלך",
+	"settings.requests.choiceSeen": "אחרים רואים"
 }

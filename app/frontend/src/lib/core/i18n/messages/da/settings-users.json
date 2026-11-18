@@ -83,6 +83,7 @@
 	"settings.users.preset": "Forudindstilling",
 	"settings.users.comingSoon": "Kommer snart",
 	"settings.users.custom": "Tilpasset",
+	"settings.users.customHint": "Din egen kombination af kontakterne nedenfor. Vælger du en forudindstilling, erstattes den; vælg Tilpasset igen for at få den tilbage.",
 	"settings.users.ageRating": "Aldersgrænse",
 	"settings.users.newPasswordFor": "Ny adgangskode til {name}",
 	"settings.users.passwordNote": "Brug dette, når {name} har glemt sin. Vedkommende logges ud overalt og logger ind igen med den nye. Fortæl vedkommende den personligt.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "f.eks. Mor",
 	"settings.users.days": "Dage linket gælder",
 	"settings.users.makeInvite": "Lav et invitationslink",
-	"settings.users.permAuto4k": "4K-anmodninger godkendt uden ventetid"
+	"settings.users.permAuto4k": "4K-anmodninger godkendt uden ventetid",
+	"settings.users.serverAccount": "Serverkonto",
+	"settings.users.pickAccount": "Vælg en konto på en medieserver",
+	"settings.users.accountLinked": "Tilknyttet {name}",
+	"settings.users.removedOnServer": "Fjernet på {word}-serveren, så slået fra her",
+	"settings.users.delete": "Slet",
+	"settings.users.deleteName": "Slet {name}",
+	"settings.users.confirmDelete": "Slet {name}? Personen logges ud for altid, og nøglerne forsvinder. Anmodningerne bliver, vist som en fjernet person.",
+	"settings.users.deleteYes": "Slet person",
+	"settings.users.keep": "Behold",
+	"settings.users.deleted": "{name} slettet",
+	"settings.users.couldntDelete": "Kunne ikke slette",
+	"settings.users.confirmDeleteKeys": "Seerr-nøgler, personen har lavet, holder op med at virke for alle, indtil der laves en ny.",
+	"settings.users.qualities": "Kvaliteter",
+	"settings.users.qualitiesHint": "De kan kun vælge dem, der er slået til. Er alle slået til, tilbydes nye også."
 }

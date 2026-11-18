@@ -45,9 +45,16 @@ type OutsideLists struct {
 	// TMDBRoute, when set, says where TMDB lists are read now (the metadata
 	// mode): the address, the credential and the client, in place of
 	// TMDBBase, TMDBToken and HTTP. metadata.ErrSourceOff: lookups are off.
-	TMDBRoute func(ctx context.Context) (string, func(context.Context) (string, error), *http.Client, error)
-	HTTP      *http.Client
-	Now       func() time.Time
+	TMDBRoute func(ctx context.Context) (metadata.TMDBRoute, error)
+	// MDBListBase (the API, default https://api.mdblist.com) and MDBListSite
+	// (the public site, default https://mdblist.com) are pointed at
+	// stand-ins by tests. MDBListKey reads the owner's MDBList key, the one
+	// outside ratings use; with no key, lists are read by their public link.
+	MDBListBase string
+	MDBListSite string
+	MDBListKey  func(ctx context.Context) (string, error)
+	HTTP        *http.Client
+	Now         func() time.Time
 }
 
 // ErrListsOff means TMDB lists are not read: lookups are off on this install.
@@ -100,6 +107,8 @@ func (s *OutsideLists) Sync(ctx context.Context, id int64, by domain.Actor) (Out
 		es, err = s.fetchTMDB(ctx, l.Ref, l.TitleKind)
 	case ListTrakt:
 		es, err = s.fetchTrakt(ctx, l.Ref, l.TitleKind)
+	case ListMDBList:
+		es, err = s.fetchMDBList(ctx, l.Ref, l.TitleKind)
 	default:
 		err = ErrKind
 	}
@@ -214,7 +223,7 @@ func (s *OutsideLists) addOne(ctx context.Context, l domain.OutsideList, e entry
 		return "failed", "", err
 	}
 	opt := library.AddOptions{LibraryFolderID: l.LibraryFolderID, KeepUpToDate: &l.KeepUpToDate, ReleaseGate: l.ReleaseGate,
-		SearchOnAdd: l.SearchOnAdd, WhyAdded: "list"}
+		SearchOnAdd: l.SearchOnAdd, WhyAdded: "list", ListName: l.Name}
 	if l.PickRulesID != nil {
 		opt.PickRulesID = *l.PickRulesID
 	}
@@ -263,7 +272,7 @@ func (s *OutsideLists) addShow(ctx context.Context, l domain.OutsideList, e entr
 		return "never_add", "", nil
 	}
 	opt := shows.ShowAddOptions{LibraryFolderID: l.LibraryFolderID, KeepUpToDate: &l.KeepUpToDate, Seasons: l.Seasons,
-		NewSeasons: l.NewSeasons, SearchOnAdd: l.SearchOnAdd, WhyAdded: "list"}
+		NewSeasons: l.NewSeasons, SearchOnAdd: l.SearchOnAdd, WhyAdded: "list", ListName: l.Name}
 	if l.Seasons == SeasonsFirst {
 		opt.Seasons, opt.FirstSeason = "", true
 	}
@@ -317,12 +326,14 @@ func (s *OutsideLists) get(ctx context.Context, what, endpoint, u string, head m
 	return s.getWith(ctx, s.client(), what, endpoint, u, head, into)
 }
 
-// getWith is get through the client cl.
-func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpoint, u string, head map[string]string, into any) (http.Header, error) {
+// getWith is get through the client cl. extra joins the retry identity: a
+// key that travels in the address rather than a header.
+func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpoint, u string, head map[string]string, into any, extra ...string) (http.Header, error) {
 	identity := []string{what, endpoint}
 	for _, k := range []string{"Authorization", "trakt-api-key", "X-Trakt-Client-Id"} {
 		identity = append(identity, head[k])
 	}
+	identity = append(identity, extra...)
 	op, err := outbound.Begin(ctx, outbound.Target{Kind: "outside_list", Identity: identity})
 	if err != nil {
 		return nil, err
@@ -334,7 +345,7 @@ func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpo
 	req, err := http.NewRequestWithContext(rctx, http.MethodGet, u, nil)
 	if err != nil {
 		outcome = outbound.TerminalFailure
-		return nil, err
+		return nil, fmt.Errorf("%s did not answer", what)
 	}
 	req.Header.Set("Accept", "application/json")
 	for k, v := range head {
@@ -358,6 +369,8 @@ func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpo
 	}
 	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	switch {
+	case (resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden) && len(head)+len(extra) == 0:
+		return nil, fmt.Errorf("%s refused the request", what) // no key was sent, so none to check
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 		return nil, fmt.Errorf("%s refused the key; check it in Settings", what)
 	case resp.StatusCode == http.StatusNotFound:
@@ -380,18 +393,19 @@ func (s *OutsideLists) getWith(ctx context.Context, cl *http.Client, what, endpo
 // fetchTMDB reads a TMDB list. A list can mix movies and shows, so only the
 // ones of the list's kind are kept.
 func (s *OutsideLists) fetchTMDB(ctx context.Context, ref, titleKind string) ([]entry, error) {
-	base, token, cl := s.TMDBBase, s.TMDBToken, s.client()
+	route := metadata.TMDBRoute{Base: s.TMDBBase, Access: s.TMDBToken}
 	if s.TMDBRoute != nil {
 		var err error
-		if base, token, cl, err = s.TMDBRoute(ctx); err != nil {
+		if route, err = s.TMDBRoute(ctx); err != nil {
 			if errors.Is(err, metadata.ErrSourceOff) {
 				return nil, ErrListsOff
 			}
 			return nil, err
 		}
-		if cl == nil {
-			cl = s.client()
-		}
+	}
+	base, token, cl := route.Base, route.Access, route.HTTP
+	if cl == nil {
+		cl = s.client()
 	}
 	if token == nil {
 		return nil, metadata.ErrNoAccess
@@ -416,7 +430,8 @@ func (s *OutsideLists) fetchTMDB(ctx context.Context, ref, titleKind string) ([]
 			} `json:"items"`
 		}
 		u := base + "/list/" + url.PathEscape(ref) + "?page=" + strconv.Itoa(page)
-		if _, err := s.getWith(ctx, cl, "TMDB", base, u, map[string]string{"Authorization": "Bearer " + tok}, &body); err != nil {
+		u, hdr := route.ListAuth(u, tok)
+		if _, err := s.getWith(ctx, cl, "TMDB", base, u, hdr, &body); err != nil {
 			return nil, err
 		}
 		for _, it := range body.Items {

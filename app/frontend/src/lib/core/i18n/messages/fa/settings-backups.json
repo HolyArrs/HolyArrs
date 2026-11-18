@@ -32,11 +32,12 @@
 	"settings.backups.key": "کلید اصلی",
 	"settings.backups.keyDesc": "پشتیبان‌ها این کلید را شامل نمی‌شوند. یک کپی از آن را جای امنی نگه دار.",
 	"settings.backups.noKit": "هنوز بسته کلیدی برای این کلید ذخیره نشده. بدون آن، رمزهای عبور ذخیره‌شده در پشتیبان روی دستگاه جدید باز نمی‌شوند.",
+	"settings.backups.kitRecommended": "پیشنهادی: بسته کلید را دانلود کن.",
 	"settings.backups.ownerOnlyKit": "فقط مالک می‌تواند آن را دانلود کند؛ از او بخواه.",
 	"settings.backups.fingerprint": "اثر انگشت کلید",
 	"settings.backups.downloadKit": "دانلود بسته کلید",
 	"settings.backups.restoreKey": "برای بازیابی: نامش را به holyarrs.key تغییر بده و در پوشه config بگذار",
 	"settings.backups.offPlan": "خاموش",
-	"settings.backups.offAbout": "پشتیبان‌گیری زمان‌بندی‌شده‌ای نیست. هنوز پیش از هر به‌روزرسانی یک نسخه ساخته می‌شود.",
+	"settings.backups.offAbout": "هیچ پشتیبان خودکاری ساخته نمی‌شود، حتی پیش از به‌روزرسانی. پشتیبان‌هایی که خودتان می‌سازید همچنان کار می‌کنند.",
 	"settings.backups.offKeeps": "«خاموش» پشتیبان‌هایی را که از قبل دارید نگه می‌دارد."
 }

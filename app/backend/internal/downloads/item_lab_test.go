@@ -84,10 +84,10 @@ func TestLabQbitClientItem(t *testing.T) {
 		}
 	}
 	act(func(c Controller, h string) error { return c.PauseItem(ctx, h) })
-	j = wait("stopped", func(j Job, _ bool) bool { return j.Detail == "stoppedDL" || j.Detail == "stoppedUP" })
+	j = wait("stopped", func(j Job, _ bool) bool { return labStopped(j.Detail) })
 	t.Logf("after pause: %s (%s)", j.State, j.Detail)
 	act(func(c Controller, h string) error { return c.ResumeItem(ctx, h) })
-	j = wait("started", func(j Job, _ bool) bool { return j.Detail != "stoppedDL" && j.Detail != "stoppedUP" })
+	j = wait("started", func(j Job, _ bool) bool { return !labStopped(j.Detail) })
 	t.Logf("after resume: %s (%s)", j.State, j.Detail)
 	if err := m.ControlItem(ctx, did, "all", true, func(Engine, string) error { return nil }); err != ErrNotFound {
 		t.Fatalf("all: %v", err)

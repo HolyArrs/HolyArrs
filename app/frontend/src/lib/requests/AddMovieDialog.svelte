@@ -4,7 +4,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
-	import { loadChoices, saveChoices, secondVersion, builtInDefaults, gateChoices as gates, startChoices, savedDefaults } from '../mediafiles/index.ts';
+	import { loadChoices, saveChoices, secondVersion, builtInDefaults, gateChoices as gates, startChoices, savedDefaults, saveSearchChoice } from '../mediafiles/index.ts';
 	import type { TitleDefaults } from '../mediafiles/index.ts';
 	import { to } from '../core/paths.ts';
 	import { api, message } from '../core/api.ts';
@@ -94,6 +94,7 @@
 				search_on_add: searchOnAdd,
 				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : []
 			});
+			void saveSearchChoice('movie', searchOnAdd);
 			saveChoices({ release_gate: gate });
 			addOpen = false;
 			onadded(picked, r.title);

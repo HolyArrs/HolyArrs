@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} vár",
 	"frame.nav.new": "{n} új",
 	"frame.nav.manage": "Kezelés",
+	"frame.nav.activity": "Tevékenység",
+	"frame.nav.system": "Rendszer",
 	"frame.nav.history": "Előzmények",
 	"frame.nav.status": "Állapot",
 	"frame.nav.settings": "Beállítások",
+	"frame.nav.plugins": "Bővítmények",
 	"frame.nav.goTo": "Ugrás ide:",
 	"frame.nav.active": "{n} aktív, {percent}%",
 	"frame.nav.decide": "{n} döntésre vár",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Rendszer",
 	"frame.layout.switch": "Fiókváltás",
 	"frame.layout.signOut": "Kijelentkezés",
+	"frame.layout.support": "HolyArrs támogatása",
 	"frame.layout.signOutFail": "A kijelentkezést nem sikerült megerősíteni",
 	"frame.layout.signedOut": "Kijelentkezett",
 	"frame.layout.accountMenu": "{name}, {role}: fiók és megjelenés",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "A HolyArrs magától újra próbálja",
 	"frame.feeds.clearNow": "Törlés most",
 	"frame.feeds.cleared": "Törölve a Letöltőből",
-	"frame.feeds.clearStill": "Még nincs törölve"
+	"frame.feeds.clearStill": "Még nincs törölve",
+	"frame.error.pageGone": "Ez az oldal nem létezik. Lehet, hogy a link régi vagy elgépelt."
 }

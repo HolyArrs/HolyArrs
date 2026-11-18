@@ -1,4 +1,4 @@
-import { every, listLink, listSeasons, titleKinds } from './lists.ts';
+import { every, listKinds, listLink, listSeasons, titleKinds } from './lists.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('outside lists', () => {
@@ -7,6 +7,11 @@ describe('outside lists', () => {
 		expect(listLink('trakt_list', 'ana/favourites')).toBe('https://trakt.tv/users/ana/lists/favourites');
 		expect(listLink('trakt_list', 'ana/watchlist')).toBe('https://trakt.tv/users/ana/watchlist');
 		expect(listLink('trakt_list', 'broken')).toBe('');
+		expect(listLink('mdblist_list', 'lab/top-picks')).toBe('https://mdblist.com/lists/lab/top-picks');
+		expect(listLink('mdblist_list', 'bad')).toBe('');
+	});
+	it('offers MDBList lists beside TMDB and Trakt', () => {
+		expect(listKinds.map(([k]) => k)).toEqual(['tmdb_list', 'trakt_list', 'mdblist_list']);
 	});
 	it('offers the show season choices plus the first season', () => {
 		expect(listSeasons.map(([v]) => v)).toEqual(['all', 'future', 'latest', 'first', 'none']);

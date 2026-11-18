@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "{name} से जुड़ नहीं सके",
 	"settings.parts.connected": "{name} जुड़ गया",
 	"settings.parts.title": "हिस्से",
+	"settings.parts.onOff": "हिस्से चालू या बंद करें",
 	"settings.parts.ownerOnly": "सिर्फ़ ओनर और एडमिन के लिए",
 	"settings.parts.safeMode": "HolyArrs सेफ़ मोड में चल रहा है: सिर्फ़ कोर चलता है, और सामान्य शुरुआत तक हिस्सों के स्विच और स्टेज के कंट्रोल नहीं चलेंगे। सेफ़ मोड से निकलने के लिए <a>डेंजर ज़ोन</a> में <b>HolyArrs रीस्टार्ट करें</b> दबाएं।",
 	"settings.parts.dangerZone": "डेंजर ज़ोन",

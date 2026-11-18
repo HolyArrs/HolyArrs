@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { owner, signIn } from '../helpers/helpers.ts';
-import { traktKey } from '../fakes/index.mjs';
+import { mdblistKey, mdblistPort, traktKey } from '../fakes/index.mjs';
 
 // Outside lists settings against the fake TMDB and fake Trakt in fakes/.
 // Runs after the movie tests, so the owner, the Movies folder and the TMDB
@@ -64,6 +64,38 @@ test('a Trakt list needs the Trakt key, then adds its movie', async () => {
 	await expect(page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Northern Kettle' })).toBeVisible();
 });
 
+test('an MDBList list adds its movie without a key, then reads through the API once a key is saved', async () => {
+	const hits = async () => (await (await fetch(`http://127.0.0.1:${mdblistPort}/hits`)).json()) as { site: number; api: number };
+	await page.goto('/settings/outside-lists');
+	const card = page.locator('#mdblist-card');
+	await expect(card).toContainText('Not set');
+	await page.getByRole('button', { name: 'Add a list' }).first().click();
+	await page.getByLabel('Name', { exact: true }).first().fill('MDB picks');
+	await page.getByLabel('Kind').selectOption('mdblist_list');
+	await page.getByLabel('Which list').fill('https://mdblist.com/lists/lab/mdb-picks');
+	await page.locator('form.sc-form').getByRole('button', { name: 'Save', exact: true }).click();
+	const row = page.getByTestId('outside-list').filter({ hasText: 'MDB picks' });
+	await expect(row.getByTestId('list-result')).toContainText('1 added', { timeout: 15_000 });
+	expect((await hits()).api).toBe(0);
+
+	await card.getByLabel('Paste your MDBList API key').fill(mdblistKey);
+	await card.getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(page.getByText('MDBList key saved').first()).toBeVisible();
+	await expect(card).toContainText('Saved');
+	await expect(page.locator('body')).not.toContainText(mdblistKey);
+	const before = await hits();
+	await row.getByRole('button', { name: 'Read now' }).click();
+	await expect(row.getByTestId('list-result')).toContainText('1 already in the Library', { timeout: 15_000 });
+	const after = await hits();
+	expect(after.api).toBeGreaterThan(before.api);
+	expect(after.site).toBe(before.site);
+
+	await card.getByRole('button', { name: 'Remove the key' }).click();
+	await expect(card).toContainText('Not set');
+	await page.goto('/library');
+	await expect(page.locator('[data-testid="library-card"], [data-testid="library-row"]', { hasText: 'Hollow Barometer' })).toBeVisible();
+});
+
 test('change, turn off and remove a list; take a movie off the Never-add list', async () => {
 	await page.goto('/settings/outside-lists');
 	const row = page.getByTestId('outside-list').filter({ hasText: 'Lab list' });
@@ -75,8 +107,8 @@ test('change, turn off and remove a list; take a movie off the Never-add list', 
 	await expect(row).toContainText('Off');
 	await expect(row.getByRole('button', { name: 'Read now' })).toBeDisabled();
 
-	page.once('dialog', (d) => d.accept());
 	await row.getByRole('button', { name: 'Remove' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByTestId('outside-list').filter({ hasText: 'Lab list' })).toHaveCount(0);
 
 	await page.getByRole('button', { name: 'Take off Salt Choir' }).click();

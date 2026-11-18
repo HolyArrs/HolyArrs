@@ -4,7 +4,6 @@
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { pageLine } from './history.ts';
 	import type { EventFeed } from './history-feed.svelte.ts';
 	import type { Snippet } from 'svelte';
 
@@ -50,7 +49,7 @@
 	</div>
 {:else}
 	{#if feed.error}<LoadError hasData message={t('downloads.hf.couldNot')} onretry={onretry} />{/if}
-	<p class="count" class:gone={!count} aria-live="polite" data-testid="history-count">{t('downloads.hf.events', { range: pageLine(feed.total, 0, feed.events.length) })}</p>
+	<p class="count" class:gone={!count} aria-live="polite" data-testid="history-count">{feed.total === 0 ? t('downloads.hd.noEvents') : t(feed.total === 1 ? 'downloads.hdays.event' : 'downloads.hdays.events', { count: feed.total })}</p>
 	{@render children()}
 	{#if held || feed.events.length < feed.total}
 		<div class="more"><Button variant="secondary" busy={feed.busy} disabled={feed.busy} onclick={onmore}>{t('downloads.hf.showMore')}</Button></div>

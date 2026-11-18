@@ -30,6 +30,25 @@ type EventView struct {
 	// ActorName is the member who did it, so History can say who without
 	// the admin-only member list.
 	ActorName string `json:"actor_name,omitempty"`
+	// AskedNames are the askers' current names, read by the ids the Event saved,
+	// so a deleted asker shows as deleted. Older Events saved names only and get none.
+	AskedNames []string `json:"asked_names,omitempty"`
+}
+
+// askerIDs reads the asked_by_ids an Event saved.
+func askerIDs(e domain.Event) []int64 {
+	var out []int64
+	switch l := e.Data["asked_by_ids"].(type) {
+	case []any:
+		for _, x := range l {
+			if f, ok := x.(float64); ok && f > 0 {
+				out = append(out, int64(f))
+			}
+		}
+	case []int64:
+		out = append(out, l...)
+	}
+	return out
 }
 
 // parseDay reads a date (2 January 2006) or a full RFC 3339 time.
@@ -190,7 +209,7 @@ func listEvents(store *database.Store, w http.ResponseWriter, r *http.Request) {
 	// unless the kinds ask for them.
 	f.HideFeed = q.Get("feed") == "0"
 	for _, k := range f.Kinds {
-		if k == "feed_checked" || k == "feed_*" {
+		if k == "feed_checked" || k == "feed_*" || k == "feed_checked:noted" {
 			f.HideFeed = false
 		}
 	}
@@ -261,6 +280,11 @@ func listEvents(store *database.Store, w http.ResponseWriter, r *http.Request) {
 		if (e.Actor.Kind == "user" || e.Actor.Kind == "ai") && e.Actor.ID != 0 && !slices.Contains(people, e.Actor.ID) {
 			people = append(people, e.Actor.ID)
 		}
+		for _, id := range askerIDs(e) {
+			if !slices.Contains(people, id) {
+				people = append(people, id)
+			}
+		}
 	}
 	names := map[int64]string{}
 	_ = eachIn(r.Context(), store.Read(), `SELECT id, name FROM users WHERE id IN (%s)`, people, func(rs *sql.Rows) error {
@@ -276,7 +300,12 @@ func listEvents(store *database.Store, w http.ResponseWriter, r *http.Request) {
 	for _, e := range es {
 		v := EventView{Event: e}
 		if e.Actor.Kind == "user" || e.Actor.Kind == "ai" {
-			v.ActorName = names[e.Actor.ID]
+			v.ActorName = webserver.NameFor(r.Context(), names[e.Actor.ID])
+		}
+		for _, id := range askerIDs(e) {
+			if n, ok := names[id]; ok {
+				v.AskedNames = append(v.AskedNames, webserver.NameFor(r.Context(), n))
+			}
 		}
 		if e.TitleID != nil {
 			v.TitleName = page.TitleName(e)

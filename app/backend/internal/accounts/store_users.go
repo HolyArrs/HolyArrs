@@ -44,7 +44,7 @@ func reauthRow(ctx context.Context, q conn, id int64) (name, hash string, err er
 // hasPassword says whether a person has a password set.
 func hasPassword(ctx context.Context, q conn, id int64) (bool, error) {
 	var has bool
-	err := q.QueryRowContext(ctx, "SELECT password_hash != '' FROM users WHERE id = ?", id).Scan(&has)
+	err := q.QueryRowContext(ctx, "SELECT password_hash != '' FROM users WHERE id = ? AND removed_at = ''", id).Scan(&has)
 	return has, err
 }
 
@@ -65,7 +65,7 @@ func nameOfUser(ctx context.Context, q conn, id int64) (string, error) {
 // roleOfUser is the role of a person.
 func roleOfUser(ctx context.Context, q conn, id int64) (string, error) {
 	var role string
-	err := q.QueryRowContext(ctx, "SELECT role FROM users WHERE id = ?", id).Scan(&role)
+	err := q.QueryRowContext(ctx, "SELECT role FROM users WHERE id = ? AND removed_at = ''", id).Scan(&role)
 	return role, err
 }
 
@@ -79,14 +79,14 @@ func realNameRows(ctx context.Context, q conn) (*sql.Rows, error) {
 // stateOfUser is the state (active or turned off) of a person.
 func stateOfUser(ctx context.Context, q conn, id int64) (string, error) {
 	var state string
-	err := q.QueryRowContext(ctx, "SELECT state FROM users WHERE id = ?", id).Scan(&state)
+	err := q.QueryRowContext(ctx, "SELECT state FROM users WHERE id = ? AND removed_at = ''", id).Scan(&state)
 	return state, err
 }
 
 // passwordHashOf is a person's password hash, "" when none is set.
 func passwordHashOf(ctx context.Context, q conn, id int64) (string, error) {
 	var hash string
-	err := q.QueryRowContext(ctx, "SELECT password_hash FROM users WHERE id = ?", id).Scan(&hash)
+	err := q.QueryRowContext(ctx, "SELECT password_hash FROM users WHERE id = ? AND removed_at = ''", id).Scan(&hash)
 	return hash, err
 }
 
@@ -106,7 +106,7 @@ func resetOwnerRow(ctx context.Context, q conn, name, hash, now, by string, id i
 
 // setPasswordHash replaces a person's password hash.
 func setPasswordHash(ctx context.Context, q conn, hash, now string, id int64) error {
-	_, err := q.ExecContext(ctx, "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?", hash, now, id)
+	_, err := q.ExecContext(ctx, "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ? AND removed_at = ''", hash, now, id)
 	return err
 }
 
@@ -114,8 +114,9 @@ func setPasswordHash(ctx context.Context, q conn, hash, now string, id int64) er
 func listUserViews(ctx context.Context, q conn) ([]UserView, error) {
 	rows, err := q.QueryContext(ctx, `SELECT u.id, u.name, u.role, u.state, u.perms, u.totp_secret_id IS NOT NULL,
 		u.password_hash != '', u.created_at, (SELECT max(last_seen_at) FROM sessions WHERE user_id = u.id), u.max_rating, u.rating_country,
+		CASE WHEN u.state = 'disabled' AND u.off_reason IN ('jellyfin', 'emby') THEN u.off_reason ELSE '' END,
 		(SELECT etag FROM user_avatars WHERE user_id = u.id)
-		FROM users u ORDER BY CASE u.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, u.name`)
+		FROM users u WHERE u.removed_at = '' ORDER BY CASE u.role WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END, u.name`)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +126,7 @@ func listUserViews(ctx context.Context, q conn) ([]UserView, error) {
 		var u UserView
 		var perms string
 		var seen, tag sql.NullString
-		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.State, &perms, &u.TwoFactor, &u.Password, &u.CreatedAt, &seen, &u.MaxRating, &u.RatingCountry, &tag); err != nil {
+		if err := rows.Scan(&u.ID, &u.Name, &u.Role, &u.State, &perms, &u.TwoFactor, &u.Password, &u.CreatedAt, &seen, &u.MaxRating, &u.RatingCountry, &u.OffReason, &tag); err != nil {
 			return nil, err
 		}
 		u.Perms = webserver.Caller{Role: u.Role, Perms: parsePerms(perms)}.Effective()
@@ -143,21 +144,22 @@ func listUserViews(ctx context.Context, q conn) ([]UserView, error) {
 
 // userForEdit reads what an edit of a person starts from.
 func userForEdit(ctx context.Context, q conn, id int64) (role, state, perms, maxRating, country string, err error) {
-	err = q.QueryRowContext(ctx, "SELECT role, state, perms, max_rating, rating_country FROM users WHERE id = ?", id).
+	err = q.QueryRowContext(ctx, "SELECT role, state, perms, max_rating, rating_country FROM users WHERE id = ? AND removed_at = ''", id).
 		Scan(&role, &state, &perms, &maxRating, &country)
 	return role, state, perms, maxRating, country, err
 }
 
 // updateUserRow sets a person's role, permissions, state and Kid limit.
 func updateUserRow(ctx context.Context, q conn, role, perms, state, maxRating, country, now, by string, id int64) error {
-	_, err := q.ExecContext(ctx, "UPDATE users SET role = ?, perms = ?, state = ?, max_rating = ?, rating_country = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-		role, perms, state, maxRating, country, now, by, id)
+	_, err := q.ExecContext(ctx, `UPDATE users SET role = ?, perms = ?, state = ?, off_reason = CASE WHEN ? = 'active' AND off_reason IN ('jellyfin', 'emby') THEN 'kept:' || off_reason ELSE off_reason END,
+		max_rating = ?, rating_country = ?, updated_at = ?, updated_by = ? WHERE id = ? AND removed_at = ''`,
+		role, perms, state, state, maxRating, country, now, by, id)
 	return err
 }
 
 // roleAndPerms is a person's role and stored permissions.
 func roleAndPerms(ctx context.Context, q conn, id int64) (role, perms string, err error) {
-	err = q.QueryRowContext(ctx, "SELECT role, perms FROM users WHERE id = ?", id).Scan(&role, &perms)
+	err = q.QueryRowContext(ctx, "SELECT role, perms FROM users WHERE id = ? AND removed_at = ''", id).Scan(&role, &perms)
 	return role, perms, err
 }
 
@@ -177,7 +179,7 @@ func countActiveOwners(ctx context.Context, q conn) (int, error) {
 
 // nameAndState is the name and state of a person.
 func nameAndState(ctx context.Context, q conn, id int64) (name, state string, err error) {
-	err = q.QueryRowContext(ctx, "SELECT name, state FROM users WHERE id = ?", id).Scan(&name, &state)
+	err = q.QueryRowContext(ctx, "SELECT name, state FROM users WHERE id = ? AND removed_at = ''", id).Scan(&name, &state)
 	return name, state, err
 }
 

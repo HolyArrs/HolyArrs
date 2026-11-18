@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs-slóð",
 	"settings.mediaServers.pathTo": "Sama mappa á þjóninum",
 	"settings.mediaServers.pathHint": "Aðeins ef þjónninn sér skrárnar þínar undir annarri slóð",
+	"settings.mediaServers.webUrl": "Vistfang fyrir vafra",
+	"settings.mediaServers.webUrlHint": "Þar sem fólk opnar þjóninn í síma eða tölvu. Bætir við Opna-hnappi á síður titla sem hann hefur. Hafðu autt fyrir engan hnapp.",
 	"settings.mediaServers.local": "Ná til staðarnetsins",
 	"settings.mediaServers.send": "Senda uppfærslur",
 	"settings.mediaServers.save": "Vista",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Slökkva á áhorfssögu? Öllu sem hefur verið lesið hingað til er eytt.",
 	"settings.mediaServers.watchTurnedOn": "Kveikt á áhorfssögu. Fyrsti lestur fer fram innan 30 mínútna.",
 	"settings.mediaServers.watchTurnedOff": "Slökkt á áhorfssögu",
-	"settings.mediaServers.watchFailed": "Gat ekki breytt áhorfssögu"
+	"settings.mediaServers.watchFailed": "Gat ekki breytt áhorfssögu",
+	"settings.mediaServers.labelTitle": "Plex-merki",
+	"settings.mediaServers.labelSwitch": "Merkja umbeðna titla",
+	"settings.mediaServers.labelHint": "Þegar umbeðin kvikmynd eða þáttaröð er komin í Plex bætir HolyArrs merki við hana svo þú getir síað, búið til söfn eða deilt eftir því í Plex. Merki sem eru fyrir haldast.",
+	"settings.mediaServers.labelText": "Merki",
+	"settings.mediaServers.labelAskers": "Bæta líka nafni þess sem bað um við sem merki",
+	"settings.mediaServers.labelSaved": "Plex-merki vistuð",
+	"settings.mediaServers.labelFailed": "Ekki tókst að vista Plex-merki",
+	"settings.mediaServers.labelExisting": "Merkja titla sem þegar var beðið um",
+	"settings.mediaServers.labelExistingStarted": "Merking hafin. Titlarnir fá merkin sín innan fárra mínútna.",
+	"settings.mediaServers.labelExistingFailed": "Ekki tókst að hefja merkingu"
 }

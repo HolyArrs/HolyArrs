@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Menang: {name}",
 	"ui.wikiFacts.nominated": "Dicalonkan: {name}",
 	"ui.wikiFacts.andMore": "dan {count} lagi",
-	"ui.pageLoader.loading": "Memuatkan"
+	"ui.pageLoader.loading": "Memuatkan",
+	"ui.connectHelp.link": "Cara membaikinya",
+	"ui.ask.remove": "Alih keluar",
+	"ui.ask.restore": "Pulihkan",
+	"ui.ask.stop": "Hentikan",
+	"ui.ask.revoke": "Batalkan",
+	"ui.ask.replace": "Ganti",
+	"ui.ask.unlink": "Nyahpaut",
+	"ui.ask.turnOff": "Matikan",
+	"ui.ask.markFailed": "Tandakan gagal",
+	"ui.ask.reset": "Tetap semula",
+	"ui.ask.import": "Import"
 }

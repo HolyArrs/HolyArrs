@@ -83,6 +83,7 @@
 	"settings.users.preset": "Cấu hình sẵn",
 	"settings.users.comingSoon": "Sắp ra mắt",
 	"settings.users.custom": "Tùy chỉnh",
+	"settings.users.customHint": "Tổ hợp công tắc bên dưới do bạn tự chọn. Chọn một mẫu có sẵn sẽ thay thế nó; chọn lại Tùy chỉnh để lấy lại.",
 	"settings.users.ageRating": "Xếp hạng độ tuổi",
 	"settings.users.newPasswordFor": "Mật khẩu mới cho {name}",
 	"settings.users.passwordNote": "Dùng khi {name} quên mật khẩu. Họ bị đăng xuất khỏi mọi nơi và đăng nhập lại bằng mật khẩu mới. Hãy nói cho họ trực tiếp.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "ví dụ Mẹ",
 	"settings.users.days": "Số ngày liên kết có hiệu lực",
 	"settings.users.makeInvite": "Tạo một liên kết mời",
-	"settings.users.permAuto4k": "Yêu cầu 4K được duyệt không cần chờ"
+	"settings.users.permAuto4k": "Yêu cầu 4K được duyệt không cần chờ",
+	"settings.users.serverAccount": "Tài khoản máy chủ",
+	"settings.users.pickAccount": "Chọn một tài khoản trên máy chủ media",
+	"settings.users.accountLinked": "Đã liên kết với {name}",
+	"settings.users.removedOnServer": "Đã bị xóa trên máy chủ {word}, nên bị tắt ở đây",
+	"settings.users.delete": "Xóa",
+	"settings.users.deleteName": "Xóa {name}",
+	"settings.users.confirmDelete": "Xóa {name}? Người này bị đăng xuất vĩnh viễn và khóa của họ bị xóa. Các yêu cầu vẫn giữ lại, hiển thị là người đã bị xóa.",
+	"settings.users.deleteYes": "Xóa người này",
+	"settings.users.keep": "Giữ lại",
+	"settings.users.deleted": "Đã xóa {name}",
+	"settings.users.couldntDelete": "Không xóa được",
+	"settings.users.confirmDeleteKeys": "Các khóa Seerr người này tạo sẽ ngừng hoạt động với mọi người cho đến khi tạo khóa mới.",
+	"settings.users.qualities": "Chất lượng",
+	"settings.users.qualitiesHint": "Họ chỉ chọn được mục đang bật. Khi bật tất cả, mục mới cũng được đưa ra."
 }

@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "aucune",
 	"settings.thisApp.needsRestart": "Demande un redémarrage. HOLYARRS_URL_BASE ou -url-base la remplace.",
 	"settings.thisApp.save": "Enregistrer",
-	"settings.thisApp.licence": "HolyArrs est un logiciel libre sous licence AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs est un logiciel libre sous licence AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Faire passer les appels sortants par un proxy. Les règles de blocage et de réseau local s’appliquent toujours à la vraie destination.",
+	"settings.thisApp.proxyType": "Type",
+	"settings.thisApp.proxyOff": "Désactivé",
+	"settings.thisApp.proxyHost": "Hôte",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Nom d’utilisateur",
+	"settings.thisApp.proxyPasswordLabel": "Mot de passe",
+	"settings.thisApp.proxyPasswordKept": "Laissez vide pour garder le mot de passe enregistré",
+	"settings.thisApp.proxyBypass": "Contourner le proxy pour",
+	"settings.thisApp.proxyBypassHint": "Noms, adresses ou plages, séparés par des virgules. *.example.com couvre tous les noms en dessous.",
+	"settings.thisApp.proxyBypassLocal": "Contourner le proxy pour les adresses locales",
+	"settings.thisApp.proxyBypassLocalHint": "Cette machine et votre réseau local se connectent directement",
+	"settings.thisApp.proxySaved": "Proxy enregistré",
+	"settings.thisApp.proxyOffSaved": "Proxy désactivé"
 }

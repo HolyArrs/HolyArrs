@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
+	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
 	import { barHeight, ms, opWords, uses, healthTone, healthWord, pausedUntil } from '#lib/sources/index.ts';
 	import type { SourceCall, SourceDay, SourceView } from '#lib/sources/index.ts';
 	import { page } from '$app/state';
@@ -89,8 +91,8 @@
 		<div class="card tile">
 			<span class="label">{t('settings.sourceDetail.state')}</span>
 			<span class="big">{healthWord(src.health)}</span>
-			<span class="xs muted">{src.health.text}{#if pausedUntil(src.health)} {pausedUntil(src.health)}.{/if}</span>
-			{#if tried}<span class="testline" data-testid="source-tried"><TestTag ok={tried.ok} text={tried.text} hover={tried.hover} extra={tried.extra} />{#if !tried.ok}<span class="xs bad-text">{tried.text}</span>{/if}</span>{/if}
+			<span class="xs muted">{[serverWords(src.health.text), pausedUntil(src.health) ? `${pausedUntil(src.health)}.` : ''].filter(Boolean).join(' ')}</span>
+			{#if tried}<span class="testline" data-testid="source-tried"><TestTag ok={tried.ok} text={tried.text} hover={tried.hover} extra={tried.extra} />{#if !tried.ok}<span class="xs bad-text">{serverWords(tried.text)}<ConnectHelp text={tried.text} /></span>{/if}</span>{/if}
 		</div>
 		<div class="card tile">
 			<span class="label">{t('settings.sourceDetail.lastAnswer')}</span>
@@ -99,8 +101,8 @@
 		</div>
 		<div class="card tile">
 			<span class="label">{t('settings.sourceDetail.today')}</span>
-			<span class="big">{ms(src.summary.avg_ms_24h)}</span>
-			<span class="xs muted">{t('settings.sourceDetail.average')}</span>
+			<span class="big">{src.summary.avg_ms_24h ? ms(src.summary.avg_ms_24h) : t('settings.sourceDetail.noTimes')}</span>
+			{#if src.summary.avg_ms_24h}<span class="xs muted">{t('settings.sourceDetail.average')}</span>{/if}
 		</div>
 		<div class="card tile">
 			<span class="label">{t('settings.sourceDetail.lastDays', { n: span })}</span>
@@ -138,12 +140,16 @@
 			{/each}
 		</div>
 		<h3 class="h3" style="margin-top: var(--s-5)">{t('settings.sourceDetail.responseTime')}</h3>
+		{#if slowest === 0}
+			<p class="small muted empty-chart">{t('settings.sourceDetail.noTimes')}</p>
+		{:else}
 		<div class="bars short" role="img" aria-label={t('settings.sourceDetail.timeLabel')}>
 			{#each days as d (d.day)}
 				<div class="day" title={t('settings.sourceDetail.timeTitle', { day: dayLabel(d.day), avg: ms(d.avg_ms) })}><div class="stack"><span class="bar time" style="height: {barHeight(d.avg_ms, slowest)}%"></span></div></div>
 			{/each}
 		</div>
 		<div class="ends xs muted"><span>{days.length ? dayLabel(days[0].day) : ''}</span><span>{days.length ? dayLabel(days[days.length - 1].day) : ''}</span></div>
+		{/if}
 		{/if}
 	</section>
 
@@ -272,15 +278,14 @@
 	}
 	.calls-table {
 		width: 100%;
-		min-width: 30rem;
 		border-collapse: collapse;
-		margin-top: var(--s-3);
 		font-size: 0.9rem;
 	}
 	.calls-table th,
 	.calls-table td {
 		text-align: left;
 		padding: var(--s-2) var(--s-2);
+		overflow-wrap: anywhere;
 		border-bottom: 1px solid var(--line);
 	}
 	.bad-text {

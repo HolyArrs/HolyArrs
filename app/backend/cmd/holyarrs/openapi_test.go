@@ -12,13 +12,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
 // routePackages are the packages that register /api/v1 routes on the
 // server's mux. Every such route must be in openapi.json; that each one is
 // served to at least one test request is checked by each package's
 // TestMain (internal/routehits), not by comments.
-var routePackages = []string{".", "../../internal/accounts", "../../internal/backups", "../../internal/alerts", "../../internal/health", "../../internal/updates", "../../internal/mediaservers", "../../internal/metadata", "../../internal/sources", "../../internal/subtitles", "../../internal/ai", "../../internal/arrapi", "../../internal/migrate", "../../internal/movies", "../../internal/shows", "../../internal/library", "../../internal/mediafiles", "../../internal/mediafiles/datapack", "../../internal/importer", "../../internal/setup", "../../internal/downloads", "../../internal/requests", "../../internal/music", "../../internal/discover", "../../internal/core/webserver"}
+var routePackages = []string{".", "../../internal/accounts", "../../internal/backups", "../../internal/alerts", "../../internal/health", "../../internal/updates", "../../internal/plugins", "../../internal/mediaservers", "../../internal/metadata", "../../internal/sources", "../../internal/subtitles", "../../internal/ai", "../../internal/arrapi", "../../internal/migrate", "../../internal/movies", "../../internal/shows", "../../internal/library", "../../internal/mediafiles", "../../internal/mediafiles/datapack", "../../internal/importer", "../../internal/setup", "../../internal/downloads", "../../internal/requests", "../../internal/music", "../../internal/discover", "../../internal/core/webserver"}
 
 type openapiOp struct {
 	Summary    string         `json:"summary"`
@@ -149,6 +150,34 @@ func TestOpenAPIGenerated(t *testing.T) {
 				t.Errorf("%s %s: needs a summary and responses", strings.ToUpper(method), path)
 			}
 		}
+	}
+}
+
+// TestOpenAPISubtitleSiteKinds keeps the documented subtitle-site kinds equal
+// to the kinds every install offers; the lab's fake sites stay out.
+func TestOpenAPISubtitleSiteKinds(t *testing.T) {
+	t.Parallel()
+	var doc struct {
+		Components struct {
+			Schemas map[string]struct {
+				Properties map[string]struct {
+					Enum []string `json:"enum"`
+				} `json:"properties"`
+			} `json:"schemas"`
+		} `json:"components"`
+	}
+	if err := json.Unmarshal(readSpec(t), &doc); err != nil {
+		t.Fatal(err)
+	}
+	var want []string
+	for _, k := range sites.Kinds {
+		if !k.Lab {
+			want = append(want, k.Kind)
+		}
+	}
+	got := doc.Components.Schemas["SubtitleSiteInput"].Properties["kind"].Enum
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Fatalf("SubtitleSiteInput kind enum = %v, want %v", got, want)
 	}
 }
 

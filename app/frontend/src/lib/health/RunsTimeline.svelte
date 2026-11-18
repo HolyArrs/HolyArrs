@@ -27,7 +27,7 @@
 					<time class="tm" datetime={r.lastRun} title={dateTime(r.lastRun)}>{ago(r.lastRun, now)}</time>
 					<i class="st-dot {res.tone}" aria-hidden="true"></i>
 					<span class="nm">{r.name}</span>
-					<span class="chip {res.tone}">{res.word}</span>
+					{#if res.tone !== 'ok'}<span class="chip {res.tone}">{res.word}</span>{/if}
 				</li>
 			{/each}
 			<li class="nowline" aria-label={t('health.timeline.now')}><span class="tm">{t('health.timeline.now')}</span><i class="nowd pulse" aria-hidden="true"></i><span class="hr"></span></li>
@@ -51,7 +51,7 @@
 	.tl .st-dot:not(.fail) { box-shadow: 0 0 0 4px color-mix(in srgb, var(--surface-1) 90%, transparent); }
 	/* The dot shows the state, so the chip keeps only its word. */
 	.tl .chip::before { display: none; }
-	.nm { min-width: 0; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.nm { min-width: 0; font-size: 14px; color: var(--text); overflow-wrap: anywhere; }
 	.tm { font-size: 12.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 	.none { font-size: 14px; color: var(--text-muted); }
 

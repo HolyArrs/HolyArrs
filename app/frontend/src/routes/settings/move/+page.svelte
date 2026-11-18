@@ -10,7 +10,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
-	import { MoveSteps, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, leaveFolders, latestPerInstance, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, stepGate, usedByMoves, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
+	import { MoveSteps, PasswordCheck, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, leaveFolders, latestPerInstance, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, seasonsShows, stepGate, usedByMoves, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -41,7 +41,7 @@
 		const onReauth = (e: Event) => {
 			const path = (e as CustomEvent<{ path?: string }>).detail?.path ?? '';
 			if (!session.s.hasPassword && path.startsWith('/migrate')) {
-				passwordFlow.mustSetPw = true;
+				passwordFlow.needsFreshSignIn();
 				// Pressed Move (in Before you move or the confirm): ask right there, then carry on.
 				if (beforeOpen || confirmMove || path === '/migrate/moves') {
 					beforeOpen = false;
@@ -179,6 +179,7 @@
 	const withItems = $derived((plan?.groups ?? []).filter((g) => g.items.length > 0 && g.name !== 'other'));
 	const moveRunning = $derived(!!current && running(current) && !current.undo_state);
 	const total = $derived(moveTotal(dry?.counts ?? {}));
+	const toCheck = $derived(seasonsShows(dry?.lines ?? []));
 	// Lines that will not move as asked: not found here, won't work, or a person still to choose.
 	const problems = $derived((dry?.lines ?? []).filter((l) => l.result === 'not_found' || l.result === 'failed').length + openChoices);
 	const gate = $derived(
@@ -443,7 +444,7 @@
 		set trySeq(v) { trySeq = v; },
 		get tryCtrl() { return tryCtrl; },
 		set tryCtrl(v) { tryCtrl = v; },
-		get changes() { return changes; },
+		get changes() { return changes; }, get step() { return step; },
 		get trying() { return trying; },
 		set trying(v) { trying = v; },
 		get tryFailed() { return tryFailed; },
@@ -613,16 +614,8 @@
 {:else}
 	{#if !embedded}<MoveSteps {step} busy={railBusy} fill={railFill} locked={moveRunning && step === 'move'} onpick={back} />{/if}
 	{#if passwordFlow.mustSetPw && !passwordFlow.pwSheet}
-		<SettingsCard id="move-password" title={t('settings.move.setPasswordFirst')} icon="shield">
-			<form class="setpw" onsubmit={passwordFlow.setFirstPw}>
-				<input class="input" type="password" bind:value={passwordFlow.pwA} placeholder={t('settings.move.passwordLabel')} aria-label={t('settings.move.passwordLabel')} autocomplete="new-password" />
-				<input class="input" type="password" bind:value={passwordFlow.pwB} placeholder={t('settings.move.confirmPasswordLabel')} aria-label={t('settings.move.confirmPasswordLabel')} autocomplete="new-password" />
-				<Button variant="primary" type="submit" busy={passwordFlow.pwBusy} disabled={passwordFlow.pwBusy}>{t('settings.move.setPasswordLabel')}</Button>
-			</form>
-			{#if passwordFlow.pwStale}
-				<p class="form-error" role="alert">{t('settings.move.signInAgainNote')}</p>
-				<div><Button onclick={passwordFlow.signInAgain}>{t('settings.move.signInAgain')}</Button></div>
-			{:else if passwordFlow.pwErr}<p class="form-error" role="alert">{passwordFlow.pwErr}</p>{/if}
+		<SettingsCard id="move-password" title={passwordFlow.pwStale ? t('ui.confirm.confirmItSYou') : t('settings.move.setPasswordFirst')} icon="shield">
+			<PasswordCheck flow={passwordFlow} submit={t('settings.move.setPasswordLabel')} />
 		</SettingsCard>
 	{/if}
 
@@ -664,6 +657,7 @@
 			onperson={planFlow.onperson}
 			oncommit={() => planFlow.replan(false)}
 			onshow={show}
+			tried={dry?.lines ?? []} checking={dry?.checking ?? 0}
 		/>
 		{#if planError}<p class="form-error" role="alert">{planError}</p>{/if}
 	{:else if step === 'move'}
@@ -726,21 +720,13 @@
 		{#if forgetError}<p class="form-error" role="alert">{forgetError}</p>{/if}
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (forgetOpen = false)}>{t('settings.move.cancel')}</Button>
+		<Button onclick={() => (forgetOpen = false)}>{t('settings.move.cancel')}</Button>
 		<Button variant="destructive" type="submit" form="move-forget-form" busy={forgetBusy}>{t('settings.move.remove')}</Button>
 	{/snippet}
 </Sheet>
 
-<Sheet bind:open={passwordFlow.pwSheet} title={t('settings.move.setPasswordFirst')} size="sm">
-	<form class="setpw one-col" onsubmit={passwordFlow.setFirstPw}>
-		<input class="input" type="password" bind:value={passwordFlow.pwA} placeholder={t('settings.move.passwordLabel')} aria-label={t('settings.move.passwordLabel')} autocomplete="new-password" />
-		<input class="input" type="password" bind:value={passwordFlow.pwB} placeholder={t('settings.move.confirmPasswordLabel')} aria-label={t('settings.move.confirmPasswordLabel')} autocomplete="new-password" />
-		{#if passwordFlow.pwStale}
-			<p class="form-error" role="alert">{t('settings.move.signInAgainNote')}</p>
-			<Button onclick={passwordFlow.signInAgain}>{t('settings.move.signInAgain')}</Button>
-		{:else if passwordFlow.pwErr}<p class="form-error" role="alert">{passwordFlow.pwErr}</p>{/if}
-		<Button variant="primary" type="submit" busy={passwordFlow.pwBusy} disabled={passwordFlow.pwBusy}>{t('settings.move.setPasswordMove')}</Button>
-	</form>
+<Sheet bind:open={passwordFlow.pwSheet} title={passwordFlow.pwStale ? t('ui.confirm.confirmItSYou') : t('settings.move.setPasswordFirst')} size="sm">
+	<PasswordCheck flow={passwordFlow} submit={t('settings.move.setPasswordMove')} oneCol />
 </Sheet>
 
 <BeforeSheet
@@ -752,6 +738,7 @@
 	{trying}
 	ready={!!dry && !stale && !tryFailed}
 	notice={tryNotice}
+	checking={dry?.checking ?? 0}
 	onchoose={planFlow.onchoose}
 	onmove={runFlow.moveAnyway}
 	onshow={show}
@@ -760,10 +747,12 @@
 <Sheet bind:open={confirmMove} title={t('settings.move.moveItems', { items: plural(total, 'item') })} size="sm">
 	<form id="move-confirm-form" onsubmit={runFlow.startMove}>
 		{#if tryNotice}<p class="notice warn" role="status">{tryNotice}</p>{/if}
+		{#if (dry?.checking ?? 0) > 0}<p class="notice warn" role="status" data-testid="confirm-checking"><span>{t('migrate.stillCheckingImport', { n: dry?.checking ?? 0 })}</span></p>{/if}
+		{#if toCheck.length > 0}<p class="notice warn" role="status" data-testid="confirm-check"><span><b>{toCheck.length === 1 ? t('migrate.seasonsDifferOne') : t('migrate.seasonsDifferOther', { n: toCheck.length })}</b> {t('migrate.seasonsDifferWhy', { list: toCheck.map((s) => s.name).join(', ') })}</span></p>{/if}
 		<p class="small muted">{fromApps ? t('settings.move.from', { apps: fromApps }) + ' ' : ''}{embedded ? t('settings.move.undoLaterEmbedded') : t('settings.move.undoLaterPage')}</p>
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (confirmMove = false)}>{t('settings.move.cancel')}</Button>
+		<Button onclick={() => (confirmMove = false)}>{t('settings.move.cancel')}</Button>
 		<Button variant="primary" type="submit" form="move-confirm-form">{t('settings.move.move')}</Button>
 	{/snippet}
 </Sheet>
@@ -773,15 +762,12 @@
 		<p class="small muted">{t('settings.move.undoNote')}</p>
 	</form>
 	{#snippet footer()}
-		<Button variant="plain" onclick={() => (confirmUndo = false)}>{t('settings.move.cancel')}</Button>
+		<Button onclick={() => (confirmUndo = false)}>{t('settings.move.cancel')}</Button>
 		<Button variant="destructive" type="submit" form="move-undo-form" disabled={undoing}>{t('settings.move.undoMove')}</Button>
 	{/snippet}
 </Sheet>
 
 <style>
-	.setpw { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
-	.setpw.one-col { grid-template-columns: 1fr; }
-	@media (max-width: 600px) { .setpw { grid-template-columns: 1fr; } }
 	.sk-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 	.sk-rail .sk { display: block; height: 40px; border-radius: 12px; }
 	@media (pointer: coarse) {

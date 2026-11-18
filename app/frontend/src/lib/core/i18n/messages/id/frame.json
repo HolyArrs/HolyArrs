@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} menunggu",
 	"frame.nav.new": "{n} baru",
 	"frame.nav.manage": "Kelola",
+	"frame.nav.activity": "Aktivitas",
+	"frame.nav.system": "Sistem",
 	"frame.nav.history": "Riwayat",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Pengaturan",
+	"frame.nav.plugins": "Plugin",
 	"frame.nav.goTo": "Buka",
 	"frame.nav.active": "{n} aktif, {percent}%",
 	"frame.nav.decide": "{n} perlu keputusan",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Sistem",
 	"frame.layout.switch": "Ganti akun",
 	"frame.layout.signOut": "Keluar",
+	"frame.layout.support": "Dukung HolyArrs",
 	"frame.layout.signOutFail": "Tidak bisa memastikan keluar",
 	"frame.layout.signedOut": "Sudah keluar",
 	"frame.layout.accountMenu": "{name}, {role}: akun dan tampilan",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs mencoba lagi sendiri",
 	"frame.feeds.clearNow": "Bersihkan sekarang",
 	"frame.feeds.cleared": "Dibersihkan dari Pengunduh",
-	"frame.feeds.clearStill": "Belum dibersihkan"
+	"frame.feeds.clearStill": "Belum dibersihkan",
+	"frame.error.pageGone": "Halaman ini tidak ada. Tautannya mungkin lama atau salah ketik."
 }

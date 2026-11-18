@@ -7,6 +7,7 @@
 	"settings.sources.title": "Sumber",
 	"settings.sources.add": "Tambah Sumber",
 	"settings.sources.lead": "Keutamaan 1 didahulukan. Sumber yang gagal dilangkau sehingga enam jam. Untuk laman tanpa suapan, tambah Jackett atau Prowlarr sebagai suapan Torznab.",
+	"settings.sources.builtIn": "Laman terbina dalam tidak perlukan Jackett atau Prowlarr: {sites}. Pilih {site} di bawah {kind}.",
 	"settings.sources.change": "Ubah {name}",
 	"settings.sources.name": "Nama",
 	"settings.sources.feedKind": "Jenis suapan",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Simpan",
 	"settings.sources.cancel": "Batal",
 	"settings.sources.none": "Tiada Sumber",
-	"settings.sources.noneText": "Tambah suapan Torznab atau Newznab, atau Jackett atau Prowlarr.",
+	"settings.sources.noneText": "Tambah laman terbina dalam, suapan Torznab atau Newznab, atau Jackett atau Prowlarr.",
 	"settings.sources.rowTitle": "{url} · keutamaan {priority} · {uses}",
 	"settings.sources.priorityUses": "Keutamaan {priority} · {uses}",
 	"settings.sources.keyIs": "kunci {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Laman",
 	"settings.sources.addressSite": "Alamat laman itu sendiri. Tukar hanya jika laman telah berpindah.",
 	"settings.sources.siteKeyLabel": "Kuki atau kunci RSS",
-	"settings.sources.siteKeyHint": "Daripada akaun anda sendiri: uid dan pass daripada kuki pelayar, atau u dan tp daripada pautan RSS anda. Disimpan secara tersulit."
+	"settings.sources.siteKeyHint": "Daripada akaun anda sendiri: uid dan pass daripada kuki pelayar, atau u dan tp daripada pautan RSS anda. Disimpan secara tersulit.",
+	"settings.sources.sendTo": "Hantar muat turun ke",
+	"settings.sources.sendToAny": "Mana-mana pemuat turun",
+	"settings.sources.sendToHint": "Semua yang dipilih daripada Sumber ini hanya dihantar ke pemuat turun ini. Jika ia tidak berfungsi, ia menunggu.",
+	"settings.sources.sendToGone": "Pemuat turun yang dipilih telah dibuang. Muat turun daripada Sumber ini kini ke mana-mana pemuat turun."
 }

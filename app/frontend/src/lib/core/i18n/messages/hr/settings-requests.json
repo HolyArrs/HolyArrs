@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Prikaži ljudima",
 	"settings.requests.choiceMain": "{rules} · glavna kopija naslova",
 	"settings.requests.choiceOwn": "{rules} · čuva se kao zasebna kopija",
-	"settings.requests.choiceNotReady": "Nudi se kad se gore postavi 4K kvaliteta"
+	"settings.requests.choiceNotReady": "Nudi se kad se gore postavi 4K kvaliteta",
+	"settings.requests.approvals": "Odobrenja",
+	"settings.requests.autoApprove": "Automatski odobri zahtjeve",
+	"settings.requests.autoApproveNote": "Isključeno = njihovi zahtjevi čekaju vas. Naslovi s Plex popisa prate isti prekidač.",
+	"settings.requests.ownerTag": "Vlasnik",
+	"settings.requests.choiceAdd": "Dodaj kvalitetu",
+	"settings.requests.choiceNew": "Nova kvaliteta",
+	"settings.requests.choiceLabel": "Vaš naziv",
+	"settings.requests.choiceSeen": "Drugi vide"
 }

@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Dine Trakt-lister kan ikke læses, før den er angivet.",
 	"settings.outsideLists.replaceKey": "Udskift Trakt-nøglen",
 	"settings.outsideLists.pasteKey": "Indsæt Trakt-nøglen",
+	"settings.outsideLists.mdblistKey": "MDBList-nøgle",
+	"settings.outsideLists.mdblistInfo": "Valgfri. Med din MDBList-API-nøgle læses MDBList-lister via MDBList-API'et; uden den via deres offentlige link. Den gemmes krypteret og er den samme nøgle, som eksterne bedømmelser bruger i tilstanden Dine egne nøgler.",
+	"settings.outsideLists.pasteMdblistKey": "Indsæt din MDBList-API-nøgle",
+	"settings.outsideLists.replaceMdblistKey": "Udskift MDBList-nøglen",
+	"settings.outsideLists.removeMdblistKey": "Fjern nøglen",
+	"settings.outsideLists.mdblistKeySaved": "MDBList-nøgle gemt",
+	"settings.outsideLists.mdblistKeyRemoved": "MDBList-nøgle fjernet. Lister bruger deres offentlige link",
 	"settings.outsideLists.replaceVip": "Udskift VIP-adgangstokenet",
 	"settings.outsideLists.vip": "VIP-adgangstoken (valgfrit)",
 	"settings.outsideLists.vipHint": "Tilføjer en Trakt-fane til titelsider: score, seere og kommentarer",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Føj til Aldrig-tilføj-listen",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "Tag {name} af",
-	"settings.outsideLists.empty": "Tom"
+	"settings.outsideLists.empty": "Der er intet på listen endnu"
 }

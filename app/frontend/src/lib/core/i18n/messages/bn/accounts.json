@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "ভাষা সেভ করা যায়নি",
 	"accounts.language.count.one": "১টি ভাষা",
 	"accounts.language.count.other": "{n}টি ভাষা",
-	"accounts.account.watchEveryone": "ওনার এটি সবার জন্য চালু করেছেন। বন্ধ করতে দুটোই বন্ধ করুন।"
+	"accounts.account.watchEveryone": "ওনার এটি সবার জন্য চালু করেছেন। বন্ধ করতে দুটোই বন্ধ করুন।",
+	"accounts.watch.title": "দেখা চিহ্ন",
+	"accounts.watch.hint": "এখানে কোনো মিডিয়া সার্ভারে আপনার অ্যাকাউন্ট যুক্ত করুন যাতে লাইব্রেরি দেখায় আপনি কী দেখেছেন।",
+	"accounts.watch.as": "{server}, {name} হিসেবে",
+	"accounts.watch.nameOn": "{server}-এ নাম",
+	"accounts.watch.passwordOnce": "আপনার পাসওয়ার্ড শুধু {server}-এ যায় এবং রাখা হয় না।",
+	"accounts.watch.linked": "{server}-এ {name}-এর সাথে যুক্ত",
+	"accounts.watch.unlinked": "সংযোগ সরানো হয়েছে",
+	"accounts.login.importPaused": "আপনার সাইন-ইন শেষ হয়ে গেছে, তাই ইমপোর্ট থেমে আছে। সাইন ইন করুন, একটি লাইব্রেরি ইমপোর্ট করুন খুলুন আর চালিয়ে যেতে স্ক্যান চাপুন।"
 }

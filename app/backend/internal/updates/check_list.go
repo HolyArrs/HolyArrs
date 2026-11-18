@@ -75,6 +75,10 @@ func (e *Checker) readList(ctx context.Context) (latest, link, notes string, non
 	fails, _ := strconv.Atoi(e.setting(ctx, settingListFailures))
 
 	best, serr := e.fetchList(ctx, e.listURL(), keys, minSerial)
+	var bestData, bestSig []byte
+	if best != nil {
+		bestData, bestSig = e.lastData, e.lastSig
+	}
 	// Once the server has failed often, the Pages copy is read too (until
 	// the server answers again), so a frozen server loses to a newer copy.
 	tryCopy := fails >= listFailuresForCopy || errors.Is(serr, ErrSignature)
@@ -86,7 +90,7 @@ func (e *Checker) readList(ctx context.Context) (latest, link, notes string, non
 	_ = e.saveSetting(ctx, settingListFailures, strconv.Itoa(fails))
 	if cp := e.listCopyURL(); cp != "" && (tryCopy || fails >= listFailuresForCopy) {
 		if l, cerr := e.fetchList(ctx, cp, keys, minSerial); cerr == nil && (best == nil || l.Serial > best.Serial) {
-			best = l
+			best, bestData, bestSig = l, e.lastData, e.lastSig
 		}
 	}
 	if best == nil {
@@ -108,6 +112,7 @@ func (e *Checker) readList(ctx context.Context) (latest, link, notes string, non
 	if !ok {
 		return "", "", "", true, nil
 	}
+	e.offered(ctx, best, bestData, bestSig, c)
 	return c.Version, c.ChangelogURL, c.NotesShort, false, nil
 }
 
@@ -120,7 +125,11 @@ func (e *Checker) fetchList(ctx context.Context, link string, keys []PublicKey, 
 	if err != nil {
 		return nil, err
 	}
-	return Parse(data, sig, keys, e.now(), minSerial)
+	l, err := Parse(data, sig, keys, e.now(), minSerial)
+	if err == nil {
+		e.lastData, e.lastSig = data, sig
+	}
+	return l, err
 }
 
 func (e *Checker) fetch(ctx context.Context, link string) ([]byte, error) {

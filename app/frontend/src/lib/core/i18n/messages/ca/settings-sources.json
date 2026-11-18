@@ -7,6 +7,7 @@
 	"settings.sources.title": "Fonts",
 	"settings.sources.add": "Afegeix una Font",
 	"settings.sources.lead": "La prioritat 1 va primer. Una Font que falla s'omet fins a sis hores. Per a llocs sense feed, afegeix Jackett o Prowlarr com a feed Torznab.",
+	"settings.sources.builtIn": "Els llocs integrats no necessiten Jackett ni Prowlarr: {sites}. Tria {site} a {kind}.",
 	"settings.sources.change": "Canvia {name}",
 	"settings.sources.name": "Nom",
 	"settings.sources.feedKind": "Tipus de feed",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Desa",
 	"settings.sources.cancel": "Cancel·la",
 	"settings.sources.none": "Cap Font",
-	"settings.sources.noneText": "Afegeix un feed Torznab o Newznab, o Jackett o Prowlarr.",
+	"settings.sources.noneText": "Afegeix un lloc integrat, un feed Torznab o Newznab, o Jackett o Prowlarr.",
 	"settings.sources.rowTitle": "{url} · prioritat {priority} · {uses}",
 	"settings.sources.priorityUses": "Prioritat {priority} · {uses}",
 	"settings.sources.keyIs": "clau {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Lloc",
 	"settings.sources.addressSite": "L’adreça pròpia del lloc. Canvia-la només si el lloc s’ha traslladat.",
 	"settings.sources.siteKeyLabel": "Galeta o clau RSS",
-	"settings.sources.siteKeyHint": "Del teu propi compte: uid i pass de la galeta del navegador, o u i tp del teu enllaç RSS. Es desa xifrada."
+	"settings.sources.siteKeyHint": "Del teu propi compte: uid i pass de la galeta del navegador, o u i tp del teu enllaç RSS. Es desa xifrada.",
+	"settings.sources.sendTo": "Envia les baixades a",
+	"settings.sources.sendToAny": "Qualsevol gestor de baixades",
+	"settings.sources.sendToHint": "Tot el que es tria d'aquesta font va només a aquest gestor. Si no funciona, espera.",
+	"settings.sources.sendToGone": "El gestor de baixades triat s'ha eliminat. Les baixades d'aquesta font ara van a qualsevol gestor."
 }

@@ -93,3 +93,31 @@ func inChunks(ids []int64, fn func(part []any, marks string) error) error {
 	}
 	return nil
 }
+
+// GoneDownloads reports which of the Downloads had their newest Import let go
+// because another app took every file first (outcome "gone"), and no earlier
+// Import of the same Download placed anything.
+func GoneDownloads(ctx context.Context, q database.Lister, ids []int64) (map[int64]bool, error) {
+	out := map[int64]bool{}
+	err := inChunks(ids, func(part []any, marks string) error {
+		rows, err := q.QueryContext(ctx, `SELECT i.download_id FROM imports i WHERE i.download_id IN (`+marks+`)
+			AND i.id = (SELECT MAX(id) FROM imports WHERE download_id = i.download_id)
+			AND EXISTS (SELECT 1 FROM json_each(i.result) r WHERE json_extract(r.value, '$.outcome') = 'gone')
+			AND NOT EXISTS (SELECT 1 FROM json_each(i.result) r WHERE json_extract(r.value, '$.outcome') NOT IN ('gone', 'skipped'))
+			AND NOT EXISTS (SELECT 1 FROM imports e, json_each(e.result) r WHERE e.download_id = i.download_id AND e.id < i.id
+				AND json_extract(r.value, '$.outcome') = 'placed')`, part...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var id int64
+			if err := rows.Scan(&id); err != nil {
+				return err
+			}
+			out[id] = true
+		}
+		return rows.Err()
+	})
+	return out, err
+}

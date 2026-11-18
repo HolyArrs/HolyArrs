@@ -15,8 +15,17 @@ test.beforeAll(async ({ browser }) => {
 	const body = await res.json();
 	const list = (body.pick_rules ?? body) as { id: number; name: string }[];
 	id = list.find((r) => r.name === 'Standard')!.id;
+	// A language kept on the account wins over this browser's; an earlier spec may have kept one, so clear it and let each test pick.
+	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	expect((await page.request.put('/api/v1/my/language', { data: { language: '' }, headers: { 'X-CSRF-Token': me.csrf } })).ok()).toBe(true);
 });
 test.afterAll(async () => {
+	// Standard is shared by every later spec: a tag left on it limits searches to tagged Sources, so take it off again.
+	const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrf: string };
+	const d = (await (await page.request.get(`/api/v1/pick-rules/${id}`)).json()) as { name: string; kinds: string[]; body: { tags?: string[] } };
+	d.body.tags = [];
+	const put = await page.request.put(`/api/v1/pick-rules/${id}`, { data: { name: d.name, kinds: d.kinds, body: d.body }, headers: { 'X-CSRF-Token': me.csrf } });
+	expect(put.ok(), await put.text()).toBe(true);
 	await page.context().close();
 });
 
@@ -28,7 +37,8 @@ test('tags on Pick rules save and come back after a reload', async () => {
 	await input.fill('anime');
 	await input.press('Enter');
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByText('Saved', { exact: false }).first()).toBeVisible();
+	// The save's own toast (the save bar keeps a hidden "not saved yet" line that also says saved).
+	await expect(page.getByRole('status')).toContainText('Quality set saved');
 	await page.reload();
 	await expect(page.locator('#rules-sources')).toContainText('anime');
 	const saved = await (await page.request.get(`/api/v1/pick-rules/${id}`)).json();

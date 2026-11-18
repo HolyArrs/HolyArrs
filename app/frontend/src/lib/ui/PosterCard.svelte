@@ -15,7 +15,7 @@
 	import { sized } from '../core/tmdb-image.ts';
 	import { pictureOf } from '../core/pictures.ts';
 	import { prefetchTrailer, watchTrailer } from '../core/trailer/autoplay.svelte.ts';
-	import { dwell, finePointer, scrollHold } from '../core/trailer/trailer.ts';
+	import { dwell, finePointer, modalOpen, scrollHold } from '../core/trailer/trailer.ts';
 
 	let {
 		title,
@@ -90,7 +90,7 @@
 	let second = $state(false);
 	// Open waits for a pause; close waits a beat so moving between card and tile does not flicker.
 	const opener = dwell(GROW_DELAY, () => {
-		if (scrollHold()) return;
+		if (scrollHold() || modalOpen()) return;
 		leaving = false;
 		open = true;
 	});
@@ -114,9 +114,17 @@
 		if (root && preview) return watchTrailer(root, preview.kind, preview.tmdb);
 	});
 
+	// A dialog that opens takes focus, so an open preview shuts with it.
+	$effect(() => {
+		if (!open) return;
+		const off = () => modalOpen() && shut();
+		window.addEventListener('focusin', off, true);
+		return () => window.removeEventListener('focusin', off, true);
+	});
+
 	function enter() {
 		hot = true;
-		if (!preview || !finePointer() || scrollHold()) return;
+		if (!preview || !finePointer() || scrollHold() || modalOpen()) return;
 		closer.cancel();
 		if (open && leaving) leaving = false;
 		if (!open) {

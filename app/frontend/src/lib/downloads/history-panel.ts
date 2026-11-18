@@ -1,7 +1,8 @@
 // Content of the History details panel, shared by the desktop pane and the phone sheet: the step mark, title, meta line, art, a download's steps, one line of new facts, the facts, and where to go.
 import { t as say, lang, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { asActor, shownPerson } from '#lib/core/plain.ts';
 import { artOf, byWhom, clock, dayKey, titleHref, type Verb } from './history-kinds.ts';
-import { cap, episodeBits, missingLine, folderGone, folderName, plainWhy, resolutionOf, rowText, type LineContext } from './history-lines.ts';
+import { cap, episodeBits, missingLine, folderGone, folderName, plainWhy, removedLine, resolutionOf, rowNote, rowText, withNote, type LineContext } from './history-lines.ts';
 import { canFind, filterVerb, rowLinks, type GoLink } from './history-search.ts';
 import type { HistoryRow, StepKey } from './history.ts';
 import { bytes } from '../core/format.ts';
@@ -36,6 +37,8 @@ export interface PanelView {
 	line: string;
 	/** A reported note may use three lines. */
 	long: boolean;
+	/** A line with a Sources note is shown in full, never cut. */
+	full: boolean;
 	facts: Fact[];
 	/** Find another (rows about a release). */
 	find: boolean;
@@ -184,7 +187,11 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 		steps = [{ key: 'sent', label: say('downloads.hk.sent'), state: 'done' }, { key: 'downloaded', label: say('downloads.hk.downloaded'), state: 'done' }, { key: 'imported', label: say('downloads.hl.tag.needs'), state: 'needs' }];
 	const failedAt = row.steps.find((s) => s.state === 'failed')?.key ?? '';
 
-	const { line, long } = lineOf(row, ctx, failedAt, own ? w.line : '');
+	const said = lineOf(row, ctx, failedAt, own ? w.line : '');
+	const line = withNote(said.line, row);
+	// The note is a whole sentence: it is shown in full.
+	const full = !!rowNote(row);
+	const long = said.long || full;
 
 	// Each fact only when the Events kept it, in one fixed order.
 	const wants = new Set(factSet(row, failedAt));
@@ -214,7 +221,7 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	const wl = plainWhy(why).toLowerCase(), ll = line.toLowerCase();
 	if (why && !ll.includes(wl) && !(ll && wl.includes(ll)) && !title.toLowerCase().includes(wl)) add('Why', cap(plainWhy(why)));
 
-	return { verb, title, meta, art, steps, line, long, facts, find: canFind(row), actions: rowLinks(row, titleHref(e.TitleID, ctx.titles)) };
+	return { verb, title, meta, art, steps, line, long, full, facts, find: canFind(row), actions: rowLinks(row, titleHref(e.TitleID, ctx.titles)) };
 }
 
 function first(row: HistoryRow, read: (d: Record<string, unknown>, e: EventRecord) => string): string {
@@ -232,17 +239,17 @@ function person(e: EventRecord, ctx: PanelContext): string {
 	const d = e.Data ?? {};
 	if (d.auto === true) return '';
 	const id = e.Actor.id;
-	const named = (v: unknown) => (typeof v === 'string' ? v : Array.isArray(v) && typeof v[0] === 'string' ? v[0] : '');
+	const named = (v: unknown) => shownPerson(asActor(typeof v === 'string' ? v : Array.isArray(v) && typeof v[0] === 'string' ? v[0] : '', e.actor_name));
 	const k = e.Kind;
 	const own = k === 'ask_made' ? named(d.asked_by) : k === 'ask_approved' ? named(d.approved_by) : k === 'ask_turned_down' ? named(d.turned_down_by) : k === 'report_made' ? named(d.made_by) : k === 'report_fixed' ? named(d.fixed_by) : k === 'report_reopened' ? named(d.reopened_by) : '';
-	return own || e.actor_name || (id != null ? ctx.people?.get(id) : '') || '';
+	return own || shownPerson(e.actor_name) || (id != null ? ctx.people?.get(id) : '') || '';
 }
 
 /** The subject of an Event with no title: the folder, person or downloader it is about. */
 function subject(e: EventRecord): string {
 	const d = e.Data ?? {};
 	const k = e.Kind;
-	if (/^sign/.test(k)) return str(d.name) || e.actor_name || '';
+	if (/^sign/.test(k)) return (str(d.name) && asActor(str(d.name), e.actor_name)) || shownPerson(e.actor_name) || '';
 	if (k.startsWith('library_folder_')) return folderName(e) || (shortPath(str(d.path)) ? say('downloads.hp.folderOf', { name: shortPath(str(d.path)) }) : '');
 	if (k === 'health_broken') {
 		// What the check is about, with the word before it when the message has one ("Downloader NZBGet").
@@ -297,7 +304,7 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 		case 'gate_opened': return { line: e.episode ? say('downloads.hl.tag.aired') : say('downloads.hp.released'), long: false };
 		case 'title_added': {
 			const why = str(d.why_added);
-			return { line: why === 'import' ? say('downloads.hp.fromImport') : why === 'ask' ? say('downloads.hp.fromRequest') : why === 'list' ? say('downloads.hp.fromList') : '', long: false };
+			return { line: why === 'import' ? say('downloads.hp.fromImport') : why === 'ask' ? say('downloads.hp.fromRequest') : why === 'list' ? (str(d.list_name) ? say('downloads.hp.fromListNamed', { list: str(d.list_name) }) : say('downloads.hp.fromList')) : '', long: false };
 		}
 		case 'library_folder_unreachable': return { line: folderGone(e), long: false };
 		case 'health_broken': {
@@ -328,7 +335,7 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 			return { line: was && now ? `${was} → ${now}` : '', long: false };
 		}
 		case 'title_removed': return { line: d.delete_files === true ? say('downloads.hp.filesDeleted') : say('downloads.hp.filesKept'), long: false };
-		case 'download_removed': return { line: join(say('downloads.hl.removedDl'), d.delete_files === true && say('downloads.hp.filesDeletedLow')), long: false };
+		case 'download_removed': return { line: removedLine(d), long: false };
 		case 'ask_made':
 		case 'ai_ask_made': return { line: cap(str(d.albums) || str(d.seasons)), long: false };
 		case 'ask_approved':

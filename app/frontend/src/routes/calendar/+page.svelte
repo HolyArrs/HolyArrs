@@ -574,6 +574,7 @@
 	.cal-main { min-width: 0; }
 	.side { position: sticky; top: calc(var(--topbar) + 16px); padding: 14px; border-radius: var(--r-panel); background: var(--surface-1); outline: 1px solid var(--line); box-shadow: var(--shadow-card); }
 	.phone-only { display: none; }
+	.wide-only:empty { display: none; }
 	.sheet-mini, .sheet-filters { display: flex; flex-direction: column; gap: 16px; padding: 4px 0 12px; }
 	.sheet-mini .range-nav { justify-content: space-between; }
 	.sheet-mini .range { flex: 1; min-width: 0; font: var(--t-headline); }
@@ -672,6 +673,8 @@
 	.it a { color: var(--text); font: var(--t-headline); font-size: 15px; overflow-wrap: anywhere; }
 	.it a:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.sub { color: var(--text-muted); font: var(--t-subhead); font-weight: 400; min-height: 1lh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	/* Phones: the episode range wraps instead of losing its end to "…". */
+	@media (max-width: 767px) { .sub { white-space: normal; overflow: visible; text-overflow: clip; } }
 	.sub.first { color: var(--text); }
 	/* One size for times and words (8 PM, In theaters, Streaming, Album), wide enough for the longest. */
 	/* Set like the row's title (same face, weight and size) so it reads as part of the row. */

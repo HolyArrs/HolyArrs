@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} σε αναμονή",
 	"frame.nav.new": "{n} νέα",
 	"frame.nav.manage": "Διαχείριση",
+	"frame.nav.activity": "Δραστηριότητα",
+	"frame.nav.system": "Σύστημα",
 	"frame.nav.history": "Ιστορικό",
 	"frame.nav.status": "Κατάσταση",
 	"frame.nav.settings": "Ρυθμίσεις",
+	"frame.nav.plugins": "Πρόσθετα",
 	"frame.nav.goTo": "Μετάβαση σε",
 	"frame.nav.active": "{n} ενεργές, {percent}%",
 	"frame.nav.decide": "{n} χρειάζονται απόφαση",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Σύστημα",
 	"frame.layout.switch": "Αλλαγή λογαριασμού",
 	"frame.layout.signOut": "Αποσύνδεση",
+	"frame.layout.support": "Υποστηρίξτε το HolyArrs",
 	"frame.layout.signOutFail": "Δεν ήταν δυνατή η επιβεβαίωση της αποσύνδεσης",
 	"frame.layout.signedOut": "Έχετε αποσυνδεθεί",
 	"frame.layout.accountMenu": "{name}, {role}: λογαριασμός και εμφάνιση",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "Το HolyArrs ξαναδοκιμάζει μόνο του",
 	"frame.feeds.clearNow": "Καθαρισμός τώρα",
 	"frame.feeds.cleared": "Καθαρίστηκε από το Πρόγραμμα λήψης",
-	"frame.feeds.clearStill": "Δεν έχει καθαριστεί ακόμα"
+	"frame.feeds.clearStill": "Δεν έχει καθαριστεί ακόμα",
+	"frame.error.pageGone": "Αυτή η σελίδα δεν υπάρχει. Ο σύνδεσμος ίσως είναι παλιός ή λάθος."
 }

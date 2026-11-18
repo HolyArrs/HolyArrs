@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Mag-paste ng id, tulad ng tmdb:693134 o tvmaze:82.",
 	"discover.search.orDescribeItSuch": "O ilarawan ito, tulad ng “space movie na may robot mula 2014”.",
 	"discover.search.lookEverywhere": "Maghanap kahit saan",
-	"discover.search.searchIndexersFor": "Hanapin sa mga indexer ang “{searched}”",
+	"discover.search.searchIndexersFor": "Suriin ang iyong mga source",
 	"discover.search.topMatches": "Mga nangungunang tugma",
 	"discover.people.goToTheFilmography": "Pumunta sa filmography",
 	"discover.people.filmography": "Filmography",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Hindi tugma sa bersyong ito",
 	"discover.leftovers.reason.movie_has_file": "May file na ang pelikula",
 	"discover.leftovers.reason.replaced_by_hand": "Pinalitan ng ibang file",
-	"discover.leftovers.reason.unmatched": "Inalis ang pagtutugma nang manu-mano"
+	"discover.leftovers.reason.unmatched": "Inalis ang pagtutugma nang manu-mano",
+	"discover.searchSections.genres": "Mga genre",
+	"discover.searchSections.moods": "Mga mood",
+	"discover.searchSections.stories": "Mga kuwento at tema",
+	"discover.searchSections.worlds": "Mga mundo at tagpuan",
+	"discover.searchSections.eras": "Mga panahon",
+	"discover.searchSections.world": "Mula sa buong mundo",
+	"discover.searchSections.collections": "Mga koleksiyon",
+	"discover.popularRail.out": "Labas",
+	"discover.popularRail.comingDay": "Darating",
+	"discover.titleLibrary.turnShowOnHint": "I-on ang palabas para magsimulang maghanap.",
+	"discover.leftovers.reason.seasons_differ": "Nahanap lang gamit ang TMDB number ng lumang app: tiyaking iisang palabas ito, saka ikaw mismo ang magtugma ng file"
 }

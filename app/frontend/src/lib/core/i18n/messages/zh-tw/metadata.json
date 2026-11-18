@@ -3,5 +3,6 @@
 	"metadata.details.movie": "電影",
 	"metadata.health.downTitle": "中繼資料服務已離線",
 	"metadata.health.down": "還原之前，搜尋和新海報會暫停。媒體庫仍可正常使用。",
-	"metadata.health.back": "中繼資料服務已還原線上"
+	"metadata.health.back": "中繼資料服務已還原線上",
+	"metadata.health.fakeIp": "你的路由器或 VPN 把 HolyArrs 指向了一個假位址（198.18.x.x）。這通常來自 Clash 或 Surge。請把 {host} 加入它的直連清單。"
 }

@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Rodyti žmonėms",
 	"settings.requests.choiceMain": "{rules} · pagrindinė pavadinimo kopija",
 	"settings.requests.choiceOwn": "{rules} · laikoma kaip atskira kopija",
-	"settings.requests.choiceNotReady": "Siūloma, kai aukščiau nustatoma 4K kokybė"
+	"settings.requests.choiceNotReady": "Siūloma, kai aukščiau nustatoma 4K kokybė",
+	"settings.requests.approvals": "Patvirtinimai",
+	"settings.requests.autoApprove": "Patvirtinti užklausas automatiškai",
+	"settings.requests.autoApproveNote": "Išjungta = jų užklausos laukia jūsų. Plex žiūrėjimo sąrašo pavadinimai paklūsta tam pačiam jungikliui.",
+	"settings.requests.ownerTag": "Savininkas",
+	"settings.requests.choiceAdd": "Pridėti kokybę",
+	"settings.requests.choiceNew": "Nauja kokybė",
+	"settings.requests.choiceLabel": "Jūsų pavadinimas",
+	"settings.requests.choiceSeen": "Kiti mato"
 }

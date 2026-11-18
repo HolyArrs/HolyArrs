@@ -11,6 +11,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
@@ -332,26 +333,37 @@ func (a *Web) abandonDownloaderAttempt(w http.ResponseWriter, r *http.Request) {
 
 // explainDownloader says a failed test in plain words. The error never
 // holds a key: adapters strip addresses from network errors.
-func explainDownloader(err error) string {
+// A known cause gets the doctor's line, the same for every kind of app; the
+// two qBittorrent sign-in refusals keep their own, which say more.
+func explainDownloader(err error, rawURL string, allowLocal bool) (doctor.Cause, string) {
 	switch {
 	case errors.Is(err, ErrQbitBanned):
-		return "qBittorrent has banned this address after too many wrong passwords. Wait for the ban to end (an hour by default), check the password, then test again."
+		return doctor.Auth, "qBittorrent has banned this address after too many wrong passwords. Wait for the ban to end (an hour by default), check the password, then test again."
 	case errors.Is(err, ErrQbitKeyRefused):
-		return "qBittorrent turned down the API key. Check the key; the API key needs qBittorrent 5.2 or newer, so on an older qBittorrent sign in with user name and password instead."
+		return doctor.Auth, "qBittorrent turned down the API key. Check the key; the API key needs qBittorrent 5.2 or newer, so on an older qBittorrent sign in with user name and password instead."
 	case errors.Is(err, ErrAuth):
-		return "It turned down the key or sign-in. Check them and test again."
+		return doctor.Auth, doctor.Line(doctor.Auth)
 	case errors.Is(err, ErrNoCategory):
-		return "It answered, but " + err.Error() + "."
+		name := ""
+		if msg := err.Error(); strings.HasSuffix(msg, ")") {
+			if i := strings.LastIndex(msg, " ("); i >= 0 {
+				name = msg[i+2 : len(msg)-1]
+			}
+		}
+		return doctor.Category, doctor.CategoryLine(name)
+	case errors.Is(err, outbound.ErrMetadataRefused):
+		return doctor.Blocked, "That address is a cloud metadata address, which HolyArrs never connects to."
 	case errors.Is(err, outbound.ErrAddressRefused):
-		return "The address is on this machine or the local network. Turn on May reach the local network if that is where it runs."
-	case errors.Is(err, context.DeadlineExceeded):
-		return "It did not answer within 20 seconds."
+		return doctor.Blocked, doctor.Line(doctor.Blocked)
 	}
-	msg := firstLine(err.Error())
-	if strings.Contains(msg, "connection refused") {
-		return "Nothing answers at that address and port. Is it running?"
+	if c := secondLook(err, rawURL, allowLocal); c != doctor.Unknown {
+		if line := doctor.NameLine(c, rawURL, probeDial(allowLocal)); line != "" {
+			return c, line
+		}
+		return c, doctor.Line(c)
 	}
-	return "It did not answer: " + msg
+	// The raw error (addresses, Go words) stays in the log.
+	return doctor.Unknown, "It did not answer the last check. The log has the details."
 }
 
 // mayKeepSaveRoot says whether a test may store the save root. Like an edit,
@@ -381,7 +393,11 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 	h, err := m.CheckNow(ctx, d)
 	out := map[string]any{"ok": err == nil, "ms": time.Since(start).Milliseconds()}
 	if err != nil {
-		out["text"] = explainDownloader(err)
+		cause, text := explainDownloader(err, d.URL, d.AllowLocal)
+		out["text"], out["cause"] = text, cause
+		if cause != doctor.Unknown {
+			m.noteCause(ctx, id, text) // Health then says what Test found.
+		}
 	} else {
 		out["text"] = "It answered: " + d.Adapter + " " + h.Version + "."
 		out["version"] = h.Version
@@ -442,6 +458,8 @@ type DownloadView struct {
 	PeersTotal int    `json:"peers_total,omitempty"`
 	ETA        *int64 `json:"eta,omitempty"`
 	Active     bool   `json:"active"`
+	// Seeding says a finished torrent is still shared in its Downloader.
+	Seeding bool `json:"seeding,omitempty"`
 	// Pack is set for a season pack fetched a few episodes at a time.
 	Pack *PackRange `json:"pack,omitempty"`
 }
@@ -701,4 +719,26 @@ func orZero(p *float64) *float64 {
 		return new(float64)
 	}
 	return p
+}
+
+// secondLook is the cause of err, with a second look at the address for one
+// that has none or only timed out: a plain port that sits silent on a TLS
+// hello times out, yet answers plain http.
+func secondLook(err error, rawURL string, allowLocal bool) doctor.Cause {
+	c := doctor.Of(err)
+	if c == doctor.Timeout {
+		if p := doctor.At(doctor.Unknown, err.Error(), rawURL, probeDial(allowLocal)); p != doctor.Unknown {
+			return p
+		}
+		return c
+	}
+	return doctor.At(c, err.Error(), rawURL, probeDial(allowLocal))
+}
+
+// probeDial is the Downloader's own way out, for a second look at its address.
+func probeDial(allowLocal bool) doctor.Dial {
+	if allowLocal {
+		return policyDial(outbound.NotMetadata)
+	}
+	return policyDial(outbound.PublicOnly)
 }

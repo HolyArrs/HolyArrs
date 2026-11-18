@@ -105,9 +105,21 @@ describe('status rows', () => {
 			]
 		});
 		expect(rows.map((r) => [r.name, r.group, r.tone, r.reason, r.fix])).toEqual([
-			['Usenet Downloader', 'downloaders', 'wait', 'Your Sources find Usenet downloads, but no Usenet Downloader is set up, so none can be sent. Add one in Settings › Downloaders.', '/settings/downloaders'],
-			['Torrent Downloader', 'downloaders', 'ok', '', '/settings/downloaders']
+			['Usenet Downloader', 'downloaders', 'wait', 'Your Sources find Usenet downloads, but no Usenet Downloader is set up, so none can be sent. Add one in Settings › Downloaders.', '/settings/downloaders']
 		]);
+	});
+
+	it('shows no Downloader-group check row when it passes, so it never looks like a Downloader (#413)', () => {
+		const rows = buildRows({
+			states: [link('downloader', 1, 'running')],
+			checks: [
+				{ key: 'no_downloader:torrent', kind: 'no_downloader', subject: 'torrent', state: 'ok', message: '' } as never,
+				{ key: 'save_folder:1', kind: 'save_folder', subject: 'qBittorrent', state: 'ok', message: '' } as never,
+				{ key: 'same_downloader:1', kind: 'same_downloader', subject: 'qBittorrent', state: 'ok', message: '' } as never,
+				{ key: 'save_folder:2', kind: 'save_folder', subject: 'SABnzbd', state: 'warning', message: '' } as never
+			]
+		});
+		expect(rows.filter((r) => r.group === 'downloaders').map((r) => r.key)).toEqual(['link:downloader:1', 'save_folder:2']);
 	});
 
 	it('names a Downloader added twice, fixed in Settings > Downloaders', () => {

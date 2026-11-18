@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "puudub",
 	"settings.thisApp.needsRestart": "Vajab taaskäivitust. HOLYARRS_URL_BASE või -url-base kirjutab selle üle.",
 	"settings.thisApp.save": "Salvesta",
-	"settings.thisApp.licence": "HolyArrs on vaba tarkvara AGPL-3.0 litsentsi all."
+	"settings.thisApp.licence": "HolyArrs on vaba tarkvara AGPL-3.0 litsentsi all.",
+	"settings.thisApp.proxy": "Puhverserver",
+	"settings.thisApp.proxyDesc": "Saada välised päringud puhverserveri kaudu. Blokeeringu- ja koduvõrgu reeglid kehtivad endiselt tegeliku sihtkoha kohta.",
+	"settings.thisApp.proxyType": "Tüüp",
+	"settings.thisApp.proxyOff": "Väljas",
+	"settings.thisApp.proxyHost": "Host",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Kasutajanimi",
+	"settings.thisApp.proxyPasswordLabel": "Parool",
+	"settings.thisApp.proxyPasswordKept": "Jäta tühjaks, et salvestatud parool alles jääks",
+	"settings.thisApp.proxyBypass": "Jäta puhverserver vahele",
+	"settings.thisApp.proxyBypassHint": "Nimed, aadressid või vahemikud komadega eraldatult. *.example.com katab kõik selle all olevad nimed.",
+	"settings.thisApp.proxyBypassLocal": "Jäta puhverserver kohalike aadresside puhul vahele",
+	"settings.thisApp.proxyBypassLocalHint": "See masin ja sinu koduvõrk ühenduvad otse",
+	"settings.thisApp.proxySaved": "Puhverserver salvestatud",
+	"settings.thisApp.proxyOffSaved": "Puhverserver väljas"
 }

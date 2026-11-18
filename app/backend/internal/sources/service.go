@@ -10,7 +10,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"net"
 	"net/url"
 	"slices"
 	"strconv"
@@ -20,7 +19,9 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
@@ -78,6 +79,9 @@ type Input struct {
 	ProxyAllowLocal *bool                `json:"proxy_allow_local_network"`
 	// Tags limit the Source to titles that share one of them. Nil keeps the stored tags.
 	Tags []string `json:"tags"`
+	// DownloaderID picks the one Downloader this Source's grabs go to; 0 is
+	// any Downloader and nil keeps the stored choice.
+	DownloaderID *int64 `json:"downloader_id"`
 }
 
 // queryErr is the error behind ErrQuery.
@@ -300,30 +304,93 @@ func ConfigFor(ctx context.Context, src domain.Source, sec SecretReader) (Config
 	return cfg, nil
 }
 
+// CauseOf names why a call to a Source failed, in the doctor's causes
+// shared with Downloaders and media servers. A bot check or a slow-down ask
+// has no cause there: it is the site, not the connection.
+func CauseOf(err error) doctor.Cause {
+	var se *Error
+	if !errors.As(err, &se) {
+		return doctor.Of(err)
+	}
+	switch se.Kind {
+	case KindRateLimited:
+		return doctor.Unknown
+	case KindLoginRefused:
+		return doctor.Auth
+	case KindBlocked:
+		if se.Detail != "" || strings.Contains(se.Msg, "looked up") {
+			return doctor.Unknown
+		}
+		return doctor.Blocked
+	case KindBroken:
+		if se.cause != nil && doctor.Of(se.cause) == doctor.WrongApp {
+			return doctor.WrongApp
+		}
+		if c := doctor.OfText(se.Msg); c == doctor.NotFound {
+			return c
+		}
+		if strings.Contains(se.Msg, "not valid XML") {
+			return doctor.WrongApp
+		}
+		return doctor.Unknown
+	}
+	if se.cause != nil {
+		if c := doctor.Of(se.cause); c != doctor.Unknown {
+			return c
+		}
+	}
+	return doctor.OfText(se.Msg)
+}
+
+// CauseAt is CauseOf for a call to rawURL: a connection closed without an
+// answer reads as an http/https or port mix-up. dial is ProbeDial.
+func CauseAt(err error, rawURL string, dial doctor.Dial) doctor.Cause {
+	if err == nil {
+		return doctor.Unknown
+	}
+	return doctor.At(CauseOf(err), err.Error(), rawURL, dial)
+}
+
+// ProbeDial is the way a second look at x may connect: through its network
+// rule, and not at all when a proxy carries its calls.
+func ProbeDial(x domain.Source) doctor.Dial {
+	if x.ProxyURL != "" {
+		return nil
+	}
+	allow := outbound.PublicOnly
+	if x.AllowLocal {
+		allow = outbound.NotMetadata
+	}
+	return outbound.PolicyDialer(allow).DialContext
+}
+
+// probeDialOf is ProbeDial; tests swap it to count the looks.
+var probeDialOf = ProbeDial
+
+// metadataLine answers a refused cloud metadata address, which no switch allows.
+const metadataLine = "That address is a cloud metadata address, which HolyArrs never connects to."
+
 // Explain turns a failed call into plain words for the person.
 // It never includes the address or the key.
 func Explain(err error) string {
+	if se := (*Error)(nil); errors.As(err, &se) && strings.Contains(se.Msg, "cloud metadata address") {
+		return metadataLine
+	}
+	if line := doctor.Line(CauseOf(err)); line != "" {
+		return line
+	}
 	var se *Error
 	if !errors.As(err, &se) {
-		var ne net.Error
-		if errors.As(err, &ne) && ne.Timeout() {
-			return "The Source took too long to answer."
-		}
 		return "HolyArrs could not reach the Source."
 	}
 	if t := blockText[se.Detail]; t != "" {
 		return t
 	}
 	switch se.Kind {
-	case KindLoginRefused:
-		return "The Source turned down the key (" + se.Msg + "). Check the key."
 	case KindRateLimited:
 		return "The Source asked HolyArrs to slow down. Try again later."
 	case KindBlocked:
-		if strings.Contains(se.Msg, "looked up") {
-			return "HolyArrs could not look up the Source's name, so it cannot check where it leads; the proxy was not asked."
-		}
-		return "The address is on the local network. Tick \"May reach the local network\" if that is meant."
+		return "HolyArrs could not look up the Source's name, so it cannot check where it leads; the proxy was not asked."
 	case KindBroken:
 		return "The Source answered, but not with a feed HolyArrs can read (" + se.Msg + ")."
 	}
@@ -331,14 +398,31 @@ func Explain(err error) string {
 }
 
 // ExplainVia is Explain for one Source: when it searches through Prowlarr or
-// Jackett and cannot be reached, it names that app and what to do.
-func ExplainVia(sourceURL string, err error) string {
+// Jackett and that app does not answer, it names that app and what to do.
+func ExplainVia(sourceURL string, err error, dial doctor.Dial) string {
+	return explainWith(sourceURL, err, CauseAt(err, sourceURL, dial), dial)
+}
+
+// explainWith is ExplainVia with the cause already worked out.
+func explainWith(sourceURL string, err error, c doctor.Cause, dial doctor.Dial) string {
 	text := Explain(err)
-	if !strings.HasPrefix(text, "HolyArrs could not reach the Source") && !strings.HasPrefix(text, "The Source took too long") {
+	if text == metadataLine {
+		return text
+	}
+	if line := doctor.Line(c); line != "" {
+		text = line
+	}
+	switch {
+	case c == doctor.Refused, c == doctor.Timeout, c == doctor.DNS:
+	case c == doctor.Unknown && strings.HasPrefix(text, "HolyArrs could not reach the Source"):
+	default:
 		return text
 	}
 	via := bridgeOf(sourceURL)
 	if via == "" {
+		if line := doctor.NameLine(c, sourceURL, dial); line != "" {
+			return line
+		}
 		return text
 	}
 	return via + " isn't answering. Sources brought in from " + via + " search through it, so keep " + via + " running, or change the address."
@@ -525,6 +609,13 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 	}
 	if in.Tags != nil || isNew || src.Tags == nil {
 		src.Tags = mediafiles.CleanTags(in.Tags)
+	}
+	if in.DownloaderID != nil {
+		src.DownloaderID = nil
+		if *in.DownloaderID > 0 {
+			id := *in.DownloaderID
+			src.DownloaderID = &id
+		}
 	}
 	if in.Priority != nil {
 		if *in.Priority < 1 || *in.Priority > 50 {

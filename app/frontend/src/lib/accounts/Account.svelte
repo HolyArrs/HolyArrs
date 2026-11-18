@@ -295,7 +295,7 @@
 			<Button variant="plain" type="button" onclick={clearPick} disabled={avatarBusy}>{t('accounts.signin.cancel')}</Button>
 		{:else}
 			<Button type="button" onclick={() => avatarInput?.click()} disabled={avatarBusy}>{session.s.avatar ? t('accounts.account.changePicture') : t('accounts.account.addPicture')}</Button>
-			{#if session.s.avatar}<Button variant="plain" type="button" onclick={removeAvatar} disabled={avatarBusy}>{t('accounts.account.remove')}</Button>{/if}
+			{#if session.s.avatar}<Button variant="secondary" type="button" onclick={removeAvatar} disabled={avatarBusy}>{t('accounts.account.remove')}</Button>{/if}
 		{/if}
 		<span class="hint" title={t('accounts.account.picTip')}>{t('accounts.account.picUpTo')}</span>
 	</div>
@@ -312,7 +312,7 @@
 			{:else}
 				<div class="line">
 					<span class="value">{profile.displayName || session.s.name}</span>
-					<Button variant="plain" type="button" onclick={startName} data-testid="edit-display-name">{t('accounts.account.change')}</Button>
+					<Button variant="secondary" type="button" onclick={startName} data-testid="edit-display-name">{t('accounts.account.change')}</Button>
 				</div>
 			{/if}
 		</div>
@@ -338,7 +338,7 @@
 			<span class="label">{t('accounts.signin.passwordLabel')}</span>
 			{#if !session.s.hasPassword && !session.s.localRecent && outsideWay(session.s)}
 				<!-- Not fresh enough to set one: sign in again with Plex, Jellyfin or Emby first ("link" asks whenever the proof is stale). -->
-				<Confirm action="link">{#snippet children()}{/snippet}</Confirm>
+				<Confirm action="link" reveal={false}>{#snippet children()}{/snippet}</Confirm>
 			{:else if !session.s.hasPassword && !session.s.localRecent}
 				<span class="hint">{t('accounts.account.noneYet', { method: authMethodWord(session.s.authMethod) })}</span>
 			{:else if !session.s.hasPassword && !pwOpen}
@@ -485,6 +485,11 @@
 	.acct { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: stretch; }
 	.acct > :global(*) { margin: 0; }
 	.pfp { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+	/* Picture row and the boxes keep the sheet's row padding, so nothing sits on the card edge. */
+	.pfp { padding-block: 14px; }
+	.boxes { padding-block: 14px; }
+	/* The Discord box is as wide as the Email box and shows its whole example. */
+	.acct :global(.srow > .ctl > #tg-discord) { width: 260px; }
 	.value { font: var(--t-callout); font-weight: 400; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
 	.boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
 	.box {
@@ -492,9 +497,7 @@
 		flex-direction: column;
 		gap: 2px;
 		min-width: 0;
-		padding: 8px 12px 9px;
-		border-radius: 10px;
-		background: var(--surface-2);
+		padding: 8px 0 9px;
 		transition: background var(--dur-fast) var(--ease-out);
 	}
 	.box.wide { grid-column: 1 / -1; }

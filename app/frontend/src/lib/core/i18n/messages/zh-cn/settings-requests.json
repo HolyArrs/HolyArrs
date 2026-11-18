@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "向大家显示",
 	"settings.requests.choiceMain": "{rules} · 作品的主副本",
 	"settings.requests.choiceOwn": "{rules} · 作为单独副本保留",
-	"settings.requests.choiceNotReady": "在上方设置 4K 画质后才会提供"
+	"settings.requests.choiceNotReady": "在上方设置 4K 画质后才会提供",
+	"settings.requests.approvals": "审批",
+	"settings.requests.autoApprove": "自动批准请求",
+	"settings.requests.autoApproveNote": "关闭 = 其请求需等待你批准。Plex 观看列表中的作品也遵循同一开关。",
+	"settings.requests.ownerTag": "所有者",
+	"settings.requests.choiceAdd": "添加画质",
+	"settings.requests.choiceNew": "新画质",
+	"settings.requests.choiceLabel": "你的名称",
+	"settings.requests.choiceSeen": "他人看到"
 }

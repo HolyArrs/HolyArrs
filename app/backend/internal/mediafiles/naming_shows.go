@@ -108,6 +108,7 @@ func episodeTitles(ts []string) string {
 // pattern of the show's episode order, at most MaxComponent bytes.
 func EpisodeFile(s NamingSettings, f EpisodeFacts) string {
 	s.fillShows()
+	f.NameFacts = inLanguage(s, "show", f.NameFacts)
 	pat := s.EpisodePattern
 	switch {
 	case f.Order == OrderDaily && f.AirDate != "" && f.Season > 0:
@@ -146,6 +147,7 @@ func SeasonFolder(s NamingSettings, season int) string {
 // ShowFolder renders a show folder name from the show folder pattern.
 func ShowFolder(s NamingSettings, f NameFacts) string {
 	s.fillShows()
+	f = inLanguage(s, "show", f)
 	name := capName(render(s, s.ShowFolderPattern, f), MaxComponent)
 	if name == "" {
 		return "Unnamed"

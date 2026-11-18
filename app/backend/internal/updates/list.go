@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -61,10 +62,28 @@ type Channel struct {
 	RolloutPercent *int              `json:"rollout_percent"`
 	Hold           bool              `json:"hold"`
 	Digests        map[string]string `json:"digests"`
+	// Files are the bare programs an in-app update installs, by platform
+	// ("linux-amd64", "linux-arm64", "linux-armv7").
+	Files map[string]File `json:"files,omitempty"`
+	// DataCompat is the data format number; a program only installs a
+	// release with its own number (0 counts as 1).
+	DataCompat int `json:"data_compat,omitempty"`
+	// ImageRequired says only a new image can bring this release.
+	ImageRequired bool `json:"image_required,omitempty"`
+}
+
+// File is one downloadable program.
+type File struct {
+	URL    string `json:"url"`
+	Size   int64  `json:"size"`
+	SHA256 string `json:"sha256"`
 }
 
 // Channels the app knows.
 var Channels = []string{"stable", "beta", "nightly"}
+
+// versionRe is a release version; it is used as a folder name.
+var versionRe = regexp.MustCompile(`^v?\d+\.\d+\.\d+(-[A-Za-z0-9.]+)?$`)
 
 // Parse verifies the signature with keys and applies the rules: no future
 // generated_at (over MaxFuture ahead of now), serial not below minSerial,
@@ -95,9 +114,18 @@ func Parse(data, sig []byte, keys []PublicKey, now time.Time, minSerial int64) (
 			continue
 		}
 		c.Version = Plain(c.Version, 40)
+		if !versionRe.MatchString(c.Version) {
+			delete(l.Channels, name) // becomes a folder name: never a path
+			continue
+		}
 		c.MinFrom = Plain(c.MinFrom, 40)
 		c.NotesShort = Plain(c.NotesShort, MaxNotes)
 		c.ChangelogURL = Changelog(c.ChangelogURL)
+		for k, f := range c.Files {
+			if !DownloadAllowed(f.URL) || f.Size <= 0 || len(f.SHA256) != 64 {
+				delete(c.Files, k)
+			}
+		}
 		for k, v := range c.Digests {
 			c.Digests[k] = Plain(v, 200)
 		}

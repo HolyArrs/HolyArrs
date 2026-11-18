@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Let AI assistants use HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Keys and routes for other apps",
+	"core.settings.remoteAccess.label": "Remote access",
+	"core.settings.remoteAccess.about": "Reach HolyArrs away from home",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Where posters and names come from",
 	"core.settings.health.label": "Health checks",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Password, two-factor, devices",
 	"core.api.sourceOff": "Some rows are off on this install.",
 	"core.plain.noDownloader": "Your Sources find downloads that no Downloader you set up can take, so none can be sent.",
-	"core.plain.sameDownloader": "Two Downloaders reach the same download app, so downloads can show twice."
+	"core.plain.sameDownloader": "Two Downloaders reach the same download app, so downloads can show twice.",
+	"core.plain.peopleCheck": "The media server's user list can't be read, so people removed there are not turned off here.",
+	"core.plain.deleted": "deleted",
+	"core.plain.deletedName": "{name} (deleted)"
 }

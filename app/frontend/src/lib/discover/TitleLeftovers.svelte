@@ -9,7 +9,7 @@
 	import { bytes } from '#lib/core/format.ts';
 	import { followJob, type JobView } from '#lib/mediafiles/index.ts';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
-	import { fileName, reasonKey, shiftGuess, type Leftover, type MatchEpisode, type ShiftGuess } from './leftovers.ts';
+	import { fileName, namePick, reasonKey, shiftGuess, type Leftover, type MatchEpisode, type ShiftGuess } from './leftovers.ts';
 
 	let { own }: { own: OwnedTitle } = $props();
 	const o = $derived(own.owned);
@@ -145,6 +145,7 @@
 		chosen.length = 0;
 		if (o?.kind !== 'show') return void send([{ file_id: l.file_id, episode_ids: [] }], false);
 		season = l.guess && seasons.includes(l.guess.season) ? l.guess.season : (seasons.find((s) => s > 0) ?? seasons[0] ?? 1);
+		chosen.push(...namePick(l, episodes));
 		matchOpen = true;
 	}
 

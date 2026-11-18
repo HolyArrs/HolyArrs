@@ -65,6 +65,13 @@
 	"settings.outsideLists.traktCannotRead": "Senarai Trakt anda tidak boleh dibaca sehingga ia ditetapkan.",
 	"settings.outsideLists.replaceKey": "Ganti kunci Trakt",
 	"settings.outsideLists.pasteKey": "Tampal kunci Trakt",
+	"settings.outsideLists.mdblistKey": "Kunci MDBList",
+	"settings.outsideLists.mdblistInfo": "Pilihan. Dengan kunci API MDBList anda, senarai MDBList dibaca melalui API MDBList; tanpanya, melalui pautan awamnya. Ia disimpan dengan penyulitan dan merupakan kunci yang sama yang digunakan oleh penilaian luar dalam mod Kunci anda sendiri.",
+	"settings.outsideLists.pasteMdblistKey": "Tampal kunci API MDBList anda",
+	"settings.outsideLists.replaceMdblistKey": "Ganti kunci MDBList",
+	"settings.outsideLists.removeMdblistKey": "Buang kunci",
+	"settings.outsideLists.mdblistKeySaved": "Kunci MDBList disimpan",
+	"settings.outsideLists.mdblistKeyRemoved": "Kunci MDBList dibuang; senarai menggunakan pautan awamnya",
 	"settings.outsideLists.replaceVip": "Ganti token akses VIP",
 	"settings.outsideLists.vip": "Token akses VIP (pilihan)",
 	"settings.outsideLists.vipHint": "Menambah tab Trakt pada halaman tajuk: skor, penonton dan komen",
@@ -79,5 +86,5 @@
 	"settings.outsideLists.addNever": "Tambah ke Senarai jangan tambah",
 	"settings.outsideLists.showDot": "siri ·",
 	"settings.outsideLists.takeOff": "Keluarkan {name}",
-	"settings.outsideLists.empty": "Kosong"
+	"settings.outsideLists.empty": "Belum ada apa-apa dalam senarai ini"
 }

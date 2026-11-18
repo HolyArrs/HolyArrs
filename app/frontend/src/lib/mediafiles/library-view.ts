@@ -2,7 +2,7 @@
 import { fade, slide } from 'svelte/transition';
 import { ago, bytes, date } from '../core/format.ts';
 import { reducedMotion } from '../core/motion.ts';
-import { peopleNames } from '../core/plain.ts';
+import { peopleNames, shownPerson } from '../core/plain.ts';
 import { DUR, easeOut } from '../core/transitions.ts';
 import type { TitleView } from '../core/types.ts';
 import { quality } from '#lib/ui/title-cards.ts';
@@ -10,11 +10,275 @@ import { t as tr } from '../core/i18n/i18n.svelte.ts';
 import { codecLabel, languageName } from './copies.ts';
 import { libraryState } from './library-state.ts';
 import { shownScore } from '../core/rating.ts';
-import { progressOf, releaseDate, type Column } from './table.ts';
+import { progressOf, releaseDate, type Column, type FilterState } from './table.ts';
 
 export type View = 'rows' | 'table' | 'posters' | 'overview';
 
 export type Entry = { type: 'head'; key: string; id: number; name: string; count: number } | { type: 'row'; key: string; t: TitleView };
+
+/** How many poster columns fit the width, as the grid's auto-fill counts them. */
+export const posterCols = (width: number, min: number, gap: number) => Math.max(1, Math.floor((width + gap) / (min + gap)));
+
+/** A poster row's height before it is drawn: the tallest art, the caption line (14 px at 1.35), any 12 px lines under it, and the gap below. */
+export function posterRowGuess(cards: { square: boolean; lines: number }[], colW: number, gap: number): number {
+	let h = 0;
+	for (const c of cards) h = Math.max(h, colW * (c.square ? 1 : 1.5) + 6 + 3 + 18.9 + c.lines * (3 + 15.6));
+	return h + gap;
+}
+
+/** The first line whose bottom is below `y`, from the running tops (`offsets[i]` is line i's top, the last is the end). */
+export function lineAt(offsets: number[], y: number): number {
+	let lo = 0;
+	let hi = offsets.length - 1;
+	while (lo < hi) {
+		const mid = (lo + hi) >> 1;
+		if (offsets[mid + 1] <= y) lo = mid + 1;
+		else hi = mid;
+	}
+	return lo;
+}
+
+/** The lines to draw with the list scrolled to `top`: the screen and a margin above and below it. */
+export function drawRange(offsets: number[], top: number, viewH: number, margin = 800): { start: number; end: number } {
+	const n = offsets.length - 1;
+	return { start: Math.max(0, lineAt(offsets, top - margin)), end: Math.min(n, lineAt(offsets, top + viewH + margin) + 1) };
+}
+
+/** A measured poster row's key: the same row redrawn with other columns, details or width starts again from its guess. */
+export const posterRowKey = (cols: number, detail: string, guess: number, firstId: number) => `p${cols}:${detail}:${Math.round(guess)}:${firstId}`;
+
+type FrameHost = Pick<typeof globalThis, 'requestAnimationFrame' | 'cancelAnimationFrame' | 'addEventListener' | 'removeEventListener'>;
+const STOP_ON = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
+// A modifier alone or a held key's repeat is not the person moving on (Alt is often still held from Alt+Left, going back).
+const QUIET = new Set(['Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'CapsLock']);
+const SIDEWAYS = new Set(['ArrowLeft', 'ArrowRight']);
+/** The browser's own back and forward: Alt with an arrow, Cmd with an arrow or a bracket, the mouse's back and forward buttons. They leave the page rather than move it. */
+const goesBackOrForward = (e: Event) => {
+	const k = e as KeyboardEvent;
+	if (e.type === 'pointerdown') return (e as PointerEvent).button > 2;
+	return e.type === 'keydown' && ((k.altKey && SIDEWAYS.has(k.key)) || (k.metaKey && (SIDEWAYS.has(k.key) || k.key === '[' || k.key === ']')));
+};
+
+/** Calls `stop` at the first scroll, tap or key that moves the page on. Returns the unlisten. */
+function onMove(win: Pick<FrameHost, 'addEventListener' | 'removeEventListener'>, stop: () => void): () => void {
+	const f = (e: Event) => {
+		const k = e as KeyboardEvent;
+		if (!(e.type === 'keydown' && (k.repeat || QUIET.has(k.key))) && !goesBackOrForward(e)) stop();
+	};
+	for (const e of STOP_ON) win.addEventListener(e, f, { capture: true, passive: true });
+	return () => {
+		for (const e of STOP_ON) win.removeEventListener(e, f, true);
+	};
+}
+
+/** Runs `step` now and then once a frame until it says it is done, the time is up, or the person scrolls, taps or types. Returns a stop. */
+export function untilSettled(step: () => boolean, ms: number, onEnd = () => {}, win: FrameHost = globalThis): () => void {
+	const until = performance.now() + ms;
+	let raf = 0;
+	let over = false;
+	const stop = () => {
+		if (over) return;
+		over = true;
+		win.cancelAnimationFrame(raf);
+		off();
+		onEnd();
+	};
+	const off = onMove(win, stop);
+	const run = () => {
+		if (over) return;
+		if (step() || performance.now() >= until) stop();
+		else raf = win.requestAnimationFrame(run);
+	};
+	run();
+	return stop;
+}
+
+/** A restored place has landed: within a pixel of it (`goal`, when the place moves as rows are measured) on a page that kept its height since the last frame (a list that just appeared is laid out again once its width is measured), or at the end of a page that has not grown for `calm` ms (`room` is how far the page scrolls; a slow read can still lengthen a short list). */
+export function lander(want: number, calm = 500, now = () => performance.now()): (at: number, room: number, goal?: number) => boolean {
+	let lastRoom = -1;
+	let since = 0;
+	return (at, room, goal = want) => {
+		const same = room === lastRoom;
+		if (!same) [lastRoom, since] = [room, now()];
+		return (same && Math.abs(at - goal) <= 1) || (at >= room - 1 && now() - since >= calm);
+	};
+}
+
+export type Anchor = { id: number; top: number };
+
+/** Where a saved place goes back to: the same spot at the list width it was saved at. At another width (a turned phone, a resized window, the sidebar shown or hidden) rows hold other numbers of titles, so the row of the title kept with it (`a`), as high on screen as that title was (no lower than the middle of a screen `viewH` tall, which may be shorter now), once the list knows where that row is. */
+export function placeTop(p: { y: number; w?: number; a?: Anchor }, width: number, rowTop: (id: number) => number | null | undefined, viewH = Infinity): number {
+	const top = p.w !== undefined && p.a && p.w !== width ? rowTop(p.a.id) : null;
+	return top == null || !p.a ? p.y : Math.max(0, top - Math.min(p.a.top, viewH / 2));
+}
+
+/** The title a place is kept by, with its top on screen: the one being opened when it is drawn, else the first on screen. */
+export function anchorOf(cards: Element[], viewH: number, opened: number | null): Anchor | null {
+	const el = cards.find((c) => opened !== null && (c as HTMLElement).dataset.titleId === String(opened));
+	if (el) return { id: Number(opened), top: el.getBoundingClientRect().top };
+	const first = firstOnScreen(cards, viewH);
+	return first && { id: first.id, top: first.top };
+}
+
+type Waits = { subs: boolean; sets: boolean };
+
+/** The list is not whole yet: a filter or grouping needs data that is still on its way (titles that want subtitles, the movie series). Posters are never grouped. */
+export const listWaits = (f: Pick<FilterState, 'subs' | 'series'>, grouped: boolean, view: View, wait: Waits) => (f.subs && wait.subs) || ((!!f.series || (grouped && view !== 'posters')) && wait.sets);
+
+/** Marks a read as on its way until it answers or fails. */
+export function reading<T>(wait: Waits, which: keyof Waits, p: Promise<T>): Promise<T> {
+	wait[which] = true;
+	return p.finally(() => (wait[which] = false));
+}
+
+/** A saved place that waits for the list to be whole. The first scroll, tap or key drops it, and so do a list other than the one it was saved on (`key`), the page moved half a screen some other way (a scrollbar drag, find in page), and 8 s of waiting once the titles are here (`loaded`; a big library may take longer to load). `take` gives it once nothing is on its way; `peek` shows it while it waits; `stop` drops it. */
+export function placeGate<P>(place: P, key: string, win: FrameHost & Pick<typeof globalThis, 'scrollY' | 'innerHeight'> = globalThis) {
+	let left: P | null = place;
+	// Where the page sits a frame after it is shown (the browser may have put it somewhere first).
+	let from: number | null = null;
+	const raf = win.requestAnimationFrame(() => (from = win.scrollY));
+	let late: ReturnType<typeof setTimeout> | undefined;
+	const stop = () => {
+		left = null;
+		win.cancelAnimationFrame(raf);
+		clearTimeout(late);
+		off();
+	};
+	const off = onMove(win, stop);
+	const moved = () => from !== null && Math.abs(win.scrollY - from) > win.innerHeight / 2;
+	return {
+		take(now: string, waits: boolean, loaded = true): P | null {
+			if (now !== key || moved()) stop();
+			if (left && loaded && late === undefined) late = setTimeout(stop, 8000);
+			if (!left || waits) return null;
+			const p = left;
+			stop();
+			return p;
+		},
+		peek(): P | null {
+			if (moved()) stop();
+			return left;
+		},
+		stop
+	};
+}
+
+export type Place = { id: number; at: number; top: number };
+
+/** The first card at least half on screen: its title, its place in the list and its top on screen. */
+export function firstOnScreen(cards: Iterable<Element>, viewH: number): Place | null {
+	for (const el of cards) {
+		const r = el.getBoundingClientRect();
+		if (r.top + r.height / 2 < 0) continue;
+		return r.top < viewH ? { id: Number((el as HTMLElement).dataset.titleId), at: Number(el.getAttribute('aria-posinset')) - 1, top: r.top } : null;
+	}
+	return null;
+}
+
+/** One frame of keeping a title at `want` on screen, given where it is (null while not drawn: then `guess`, its row's place). True once it stayed put two frames, or when someone else moved the page or it cannot move further. */
+export function holder(want: number, page: { y: () => number; by: (dy: number) => void }): (top: number | null, guess: number) => boolean {
+	let at = page.y();
+	let still = 0;
+	return (top, guess) => {
+		if (Math.abs(page.y() - at) > 1) return true;
+		const d = (top ?? guess) - want;
+		// Settled only once the title itself is drawn in place; a guessed row alone may still be off.
+		if (Math.abs(d) < 1) return top !== null && ++still >= 2;
+		still = 0;
+		page.by(d);
+		const moved = Math.abs(page.y() - at) >= 0.5;
+		at = page.y();
+		// Stuck at an end of the page: done once the title is drawn; a guess for an undrawn one may have overshot, so keep going.
+		return !moved && top !== null;
+	};
+}
+
+/** A focused card about to leave the drawn rows hands focus to its grid, so focus never drops to the page. */
+export function holdFocus(grid: HTMLElement | undefined, drawn: { id: number }[]) {
+	const li = grid?.contains(document.activeElement) ? document.activeElement?.closest<HTMLElement>('li') : null;
+	if (li && !drawn.some((t) => String(t.id) === li.dataset.titleId)) grid?.focus({ preventScroll: true });
+}
+
+/** Keeps the first title on screen where it was while the poster rows change shape (columns, size, details, a live update), as the browser does for a plain page. `rowTop` is where a title's row now is on screen, or null when it left the list or moved far. */
+export function placeKeeper(grid: () => HTMLElement | undefined, rowTop: (p: Place) => number | null) {
+	let hold: Place | null = null;
+	let last: Place | null = null;
+	let stop = () => {};
+	const seen = () => {
+		const g = grid();
+		return g ? firstOnScreen(g.children, innerHeight) : null;
+	};
+	let lastW: number | undefined;
+	const mark = (force?: unknown) => {
+		if (hold) return;
+		// While the grid is another width than when the place was seen, a resize is under way (and the browser may scroll meanwhile): keep the place seen before it.
+		const w = grid()?.clientWidth;
+		if (force !== true && last && w !== lastW) return;
+		last = seen();
+		lastW = w;
+	};
+	// A remembered place counts while its title is still drawn within the drawn rows' reach of where it was seen: a resize moves it at most that far, a jump much further.
+	const near = (p: Place | null) => {
+		const r = p && grid()?.querySelector(`[data-title-id="${p.id}"]`)?.getBoundingClientRect();
+		return !!p && !!r && Math.abs(r.top - p.top) < innerHeight + 1600;
+	};
+	let notes = 0;
+	let kept = 0;
+	let restarting = false;
+	// A pointer held down (a scrollbar drag, a finger on the screen) is the person moving the page: no hold starts or restarts until it lets go.
+	let pressed = false;
+	const down = () => (pressed = true);
+	// A move with no button down also clears it, should a release be missed.
+	const up = (e?: PointerEvent) => {
+		if (!(e?.type === 'pointermove' && e.buttons)) pressed = false;
+	};
+	const PRESS = [['pointerdown', down], ['pointerup', up], ['pointercancel', up], ['pointermove', up]] as const;
+	for (const [e, f] of PRESS) globalThis.addEventListener?.(e, f as EventListener, { capture: true, passive: true });
+	/** A finished hold notes the held title while it sits where it was held; the first card on screen would creep to the start of its row with every change. */
+	const settle = (h: Place) => {
+		const el = grid()?.querySelector(`[data-title-id="${h.id}"]`);
+		const top = el?.getBoundingClientRect().top;
+		if (!el || top === undefined || Math.abs(top - h.top) >= 1) return mark(true);
+		last = { id: h.id, at: Number(el.getAttribute('aria-posinset')) - 1, top };
+		lastW = grid()?.clientWidth;
+	};
+	/** After: bring it back to the same height, until it stays put (a second at most). */
+	const keep = () => {
+		kept = notes;
+		const h = hold;
+		restarting = true;
+		stop();
+		restarting = false;
+		if (!h || pressed || rowTop(h) === null) return void (hold = null);
+		hold = h;
+		const step = holder(h.top, { y: () => scrollY, by: (top) => scrollBy({ top, behavior: 'instant' }) });
+		stop = untilSettled(() => step(grid()?.querySelector(`[data-title-id="${h.id}"]`)?.getBoundingClientRect().top ?? null, rowTop(h) ?? h.top), 1000, () => {
+			// Restarting for the next change keeps the place; only a finished hold notes the new one.
+			if (restarting) return;
+			hold = null;
+			settle(h);
+		});
+	};
+	return {
+		/** While scrolling and once rows are measured: the place to go back to, since a resize moves the cards before the rows change. */
+		mark,
+		/** Before the rows change. */
+		note() {
+			if (!hold) hold = (near(last) ? last : null) ?? seen();
+			// The new width is taken in hand: scrolling notes the place again from here on.
+			lastW = grid()?.clientWidth;
+			// Svelte can run the after-step of an update before its before-step: keep right after the update then, so a noted place is never left waiting for a later change.
+			const n = ++notes;
+			queueMicrotask(() => void (kept < n && keep()));
+		},
+		keep,
+		/** The list is gone: stop holding and stop listening. */
+		stop: () => {
+			stop();
+			for (const [e, f] of PRESS) globalThis.removeEventListener?.(e, f as EventListener, true);
+		}
+	};
+}
 
 // Rows of chips and folds grow in; a fade under reduced motion.
 export const grow = (n: Element) => (reducedMotion() ? fade(n, { duration: DUR.fast }) : slide(n, { duration: DUR.base, easing: easeOut }));
@@ -24,7 +288,7 @@ export function linkedPeople(t: TitleView) {
 	const people = new Map<number, { id: number; name: string }>();
 	for (const ask of t.asks ?? []) {
 		if (ask.title_id !== t.id) continue;
-		for (const person of [ask.asked_by, ...ask.people]) if (person.name.trim()) people.set(person.id, person);
+		for (const person of [ask.asked_by, ...ask.people]) if (person.name.trim()) people.set(person.id, { ...person, name: shownPerson(person.name) });
 	}
 	return [...people.values()];
 }
@@ -59,7 +323,7 @@ export function tone(t: TitleView): 'full' | 'gap' | 'none' | 'later' {
 
 function movieOut(t: TitleView): string {
 	const now = Date.now();
-	if (t.digital_date) return Date.parse(t.digital_date) <= now ? tr('mediafiles.view.out', { date: date(t.digital_date) }) : tr('mediafiles.view.homeRelease', { date: date(t.digital_date) });
+	if (t.digital_date) return Date.parse(t.digital_date) <= now ? date(t.digital_date) : tr('mediafiles.view.homeRelease', { date: date(t.digital_date) });
 	if (t.cinema_date) return Date.parse(t.cinema_date) <= now ? tr('mediafiles.view.inCinemas', { date: date(t.cinema_date) }) : tr('mediafiles.view.cinemas', { date: date(t.cinema_date) });
 	return date(releaseDate(t)) || tr('mediafiles.view.notKnown');
 }

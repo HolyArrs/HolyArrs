@@ -59,6 +59,18 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(map[string]any{"not_sent": sg.Error()})
 		return nil
 	}
+	if rr, ok := linkRefused(err); ok {
+		// The Release link led to an address HolyArrs may not reach. Another Release
+		// from the same Source would likely fail the same way, so the Slot waits for a
+		// person with the reason instead of being searched again unseen.
+		reason := "not sent: " + rr.msg
+		if mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, reason, domain.Actor{Kind: "job", ID: r.Job.ID}) == nil {
+			m.publish("slot", map[string]any{"id": r.Job.Subject.ID, "state": mediafiles.SlotNeedsADecision, "reason": reason})
+			m.notSentEvent(ctx, r.Job.Subject.ID, int64(relID), rr.msg, domain.Actor{Kind: "job", ID: r.Job.ID})
+		}
+		r.SetResult(map[string]any{"not_sent": rr.msg})
+		return nil
+	}
 	var fe interface{ Final() bool }
 	if errors.As(err, &fe) && fe.Final() {
 		// The Release can never be sent, so it is turned down and the Slot is searched
@@ -98,6 +110,25 @@ func (g grabFailed) Error() string {
 		s[i] = e.Error()
 	}
 	return strings.Join(s, "; ")
+}
+
+// linkRefused finds a refusal of the Release link's address in err, also
+// inside the failures of several Downloaders.
+func linkRefused(err error) (releaseRefused, bool) {
+	var g grabFailed
+	if errors.As(err, &g) {
+		for _, e := range g {
+			if rr, ok := linkRefused(e); ok {
+				return rr, true
+			}
+		}
+		return releaseRefused{}, false
+	}
+	var rr releaseRefused
+	if errors.As(err, &rr) && (rr == errLinkLocal || rr == errLinkOtherLocal) {
+		return rr, true
+	}
+	return releaseRefused{}, false
 }
 
 func (g grabFailed) Final() bool {
@@ -202,6 +233,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	} else {
 		var dls []domain.Downloader
 		var skipped []string
+		tryOne := false
 		if attempt != nil {
 			window = 0
 			var original domain.Downloader
@@ -223,6 +255,12 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 				return 0, err
 			}
 			fit := mediafiles.Downloaders(all, titleTags, func(d domain.Downloader) []string { return d.Tags })
+			// A Source tied to one Downloader sends there whatever the tags, and
+			// never on to another when that one is down.
+			if own := sourceDownloader(ctx, db, rel, all); own != nil {
+				fit = []domain.Downloader{*own}
+				tryOne = true
+			}
 			if len(fit) == 0 && len(all) > 0 {
 				return 0, &TagsError{Protocol: rel.Protocol, Title: titleTags}
 			}
@@ -246,7 +284,7 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 		// When one cannot take the Release, the next of the same protocol is tried
 		// (setting try_next_downloader, default on), and the error says why each one
 		// failed.
-		tryNext := true
+		tryNext := !tryOne
 		var v string
 		if db.QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = 'what_to_pick' AND key = 'try_next_downloader'").Scan(&v) == nil && v == "false" {
 			tryNext = false
@@ -668,4 +706,20 @@ func (m *Manager) settleLostChoices(ctx context.Context) {
 		log.Printf("downloads: warning: Release %d chosen for Slot %d was never sent to a Downloader; the Slot goes back to wanted", p[1], p[0])
 		m.giveUp(ctx, p[0], p[1], lostChoiceReason, false, domain.System)
 	}
+}
+
+// sourceDownloader is the one Downloader the Release's Source sends to, or nil
+// for any. A chosen Downloader that was removed, or is for the other protocol,
+// counts as any.
+func sourceDownloader(ctx context.Context, db database.Querier, rel domain.Release, all []domain.Downloader) *domain.Downloader {
+	var src domain.Source
+	if database.Get(ctx, db, "sources", rel.SourceID, &src) != nil || src.DownloaderID == nil {
+		return nil
+	}
+	for i := range all {
+		if all[i].ID == *src.DownloaderID {
+			return &all[i]
+		}
+	}
+	return nil
 }

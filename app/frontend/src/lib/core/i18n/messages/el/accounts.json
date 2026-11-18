@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Δεν ήταν δυνατή η αποθήκευση της γλώσσας",
 	"accounts.language.count.one": "1 γλώσσα",
 	"accounts.language.count.other": "{n} γλώσσες",
-	"accounts.account.watchEveryone": "Ο ιδιοκτήτης το ενεργοποίησε για όλους. Απενεργοποιήστε και τα δύο για να σταματήσει."
+	"accounts.account.watchEveryone": "Ο ιδιοκτήτης το ενεργοποίησε για όλους. Απενεργοποιήστε και τα δύο για να σταματήσει.",
+	"accounts.watch.title": "Σημάδια προβολής",
+	"accounts.watch.hint": "Συνδέστε εδώ τον λογαριασμό σας σε διακομιστή πολυμέσων ώστε η Βιβλιοθήκη να δείχνει τι έχετε δει.",
+	"accounts.watch.as": "{server}, ως {name}",
+	"accounts.watch.nameOn": "Όνομα στο {server}",
+	"accounts.watch.passwordOnce": "Ο κωδικός σας πηγαίνει μόνο στο {server} και δεν κρατιέται.",
+	"accounts.watch.linked": "Συνδέθηκε με {name} στο {server}",
+	"accounts.watch.unlinked": "Η σύνδεση αφαιρέθηκε",
+	"accounts.login.importPaused": "Η σύνδεσή σας έληξε, οπότε η εισαγωγή σταμάτησε προσωρινά. Συνδεθείτε, ανοίξτε την Εισαγωγή βιβλιοθήκης και πατήστε Σάρωση για να συνεχίσει."
 }

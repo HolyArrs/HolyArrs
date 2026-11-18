@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Šīs Versijas izvēles noteikumi",
 	"movies.versions.folderLabel": "Šīs Versijas Bibliotēkas mape",
 	"movies.versions.cancel": "Atcelt",
-	"movies.versions.addButton": "Pievienot versiju"
+	"movies.versions.addButton": "Pievienot versiju",
+	"movies.versions.setEdition": "Iestatīt izdevumu",
+	"movies.versions.editionFileHint": "Kāds izdevums ir šis fails, piemēram, Theatrical vai Directors Cut. Atstājiet tukšu, lai notīrītu.",
+	"movies.versions.unprotectConfirm": "Vai noņemt {label} aizsardzību? Labāka kopija atkal varēs to aizstāt.",
+	"movies.versions.editionChars": "Nav atļauts:",
+	"movies.versions.editionInvalid": "Šo izdevumu nevar izmantot. Veidojiet to īsu (burti ar diakritiskajām zīmēm un nelatīņu burti aizņem vairāk vietas), neizmantojiet iepriekš uzskaitītās rakstzīmes un nebeidziet ar punktu.",
+	"movies.versions.editionDevice": "Windows nosaukumu {name} patur ierīcēm, tāpēc to nevar izmantot. Ierakstiet citu."
 }

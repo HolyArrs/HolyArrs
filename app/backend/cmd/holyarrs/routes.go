@@ -94,6 +94,18 @@ func buildHandlers(s services) *handlers {
 	a.mf.DetailsRating = a.detailsRating
 	a.mf.KindShown = a.kindShown
 	a.mf.TitleBatch = discover.WithLookupMemo
+	md := s.Metadata
+	mediafiles.TitleNamer = func(kind, tmdbID, lang string) string {
+		if md == nil {
+			return ""
+		}
+		ctx := context.Background()
+		if x, ok := metadata.TexterFor(ctx, md); ok {
+			t, _ := x.KeptText(ctx, kind, tmdbID, lang)
+			return t.Name
+		}
+		return ""
+	}
 	a.mf.AlbumNames = a.albumNames
 	a.mf.TitleView = func(ctx context.Context, t mediafiles.Title) (any, error) { return a.titleView(ctx, t) }
 	a.mf.CardArt = a.explore.Cards.Library

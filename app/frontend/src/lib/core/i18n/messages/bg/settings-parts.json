@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Не можа да се свърже {name}",
 	"settings.parts.connected": "{name} е свързано",
 	"settings.parts.title": "Части",
+	"settings.parts.onOff": "Включване или изключване на части",
 	"settings.parts.ownerOnly": "Само за собственика и администраторите",
 	"settings.parts.safeMode": "HolyArrs работи в безопасен режим: работи само ядрото, а превключвателите на части и контролите на етапите се отказват до нормално стартиране. За излизане от безопасен режим използвайте <b>Рестартиране на HolyArrs</b> в <a>Опасната зона</a>.",
 	"settings.parts.dangerZone": "Опасна зона",

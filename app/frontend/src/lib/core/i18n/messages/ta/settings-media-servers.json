@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs பாதை",
 	"settings.mediaServers.pathTo": "சேவையகத்திலும் அதே கோப்புறை",
 	"settings.mediaServers.pathHint": "சேவையகம் உங்கள் கோப்புகளை வேறு பாதையில் பார்த்தால் மட்டும்",
+	"settings.mediaServers.webUrl": "உலாவிகளுக்கான முகவரி",
+	"settings.mediaServers.webUrlHint": "அனைவரும் தொலைபேசி அல்லது கணினியில் சர்வரைத் திறக்கும் முகவரி. சர்வரில் உள்ள தலைப்புகளின் பக்கங்களில் திற பொத்தானைச் சேர்க்கும். பொத்தான் வேண்டாமெனில் காலியாக விடுங்கள்.",
 	"settings.mediaServers.local": "உள்ளூர் வலையை அடை",
 	"settings.mediaServers.send": "புதுப்பிப்புகளை அனுப்பு",
 	"settings.mediaServers.save": "சேமி",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "பார்வை வரலாற்றை அணைக்கவா? இதுவரை படித்த அனைத்தும் நீக்கப்படும்.",
 	"settings.mediaServers.watchTurnedOn": "பார்வை வரலாறு இயக்கப்பட்டது. முதல் வாசிப்பு 30 நிமிடங்களுக்குள் நடக்கும்.",
 	"settings.mediaServers.watchTurnedOff": "பார்வை வரலாறு அணைக்கப்பட்டது",
-	"settings.mediaServers.watchFailed": "பார்வை வரலாற்றை மாற்ற முடியவில்லை"
+	"settings.mediaServers.watchFailed": "பார்வை வரலாற்றை மாற்ற முடியவில்லை",
+	"settings.mediaServers.labelTitle": "Plex லேபிள்கள்",
+	"settings.mediaServers.labelSwitch": "கோரப்பட்ட தலைப்புகளுக்கு லேபிள் இடு",
+	"settings.mediaServers.labelHint": "கோரப்பட்ட திரைப்படம் அல்லது நிகழ்ச்சி Plex-இல் வந்ததும், HolyArrs அதற்கு ஒரு லேபிள் சேர்க்கும்; அதன் மூலம் Plex-இல் வடிகட்ட, தொகுப்புகள் உருவாக்க அல்லது பகிர முடியும். ஏற்கனவே உள்ள லேபிள்கள் அப்படியே இருக்கும்.",
+	"settings.mediaServers.labelText": "லேபிள்",
+	"settings.mediaServers.labelAskers": "கோரியவரின் பெயரையும் லேபிளாகச் சேர்",
+	"settings.mediaServers.labelSaved": "Plex லேபிள்கள் சேமிக்கப்பட்டன",
+	"settings.mediaServers.labelFailed": "Plex லேபிள்களைச் சேமிக்க முடியவில்லை",
+	"settings.mediaServers.labelExisting": "ஏற்கனவே கோரப்பட்ட தலைப்புகளுக்கு லேபிள் இடு",
+	"settings.mediaServers.labelExistingStarted": "லேபிள் இடுதல் தொடங்கியது. சில நிமிடங்களில் தலைப்புகளுக்கு லேபிள்கள் கிடைக்கும்.",
+	"settings.mediaServers.labelExistingFailed": "லேபிள் இடுதலைத் தொடங்க முடியவில்லை"
 }

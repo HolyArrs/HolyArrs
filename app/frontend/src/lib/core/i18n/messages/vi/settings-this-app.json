@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "không có",
 	"settings.thisApp.needsRestart": "Cần khởi động lại. HOLYARRS_URL_BASE hoặc -url-base sẽ ghi đè.",
 	"settings.thisApp.save": "Lưu",
-	"settings.thisApp.licence": "HolyArrs là phần mềm tự do theo giấy phép AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs là phần mềm tự do theo giấy phép AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Gửi các lệnh gọi ra ngoài qua proxy. Quy tắc chặn và mạng gia đình vẫn áp dụng cho đích thật.",
+	"settings.thisApp.proxyType": "Loại",
+	"settings.thisApp.proxyOff": "Tắt",
+	"settings.thisApp.proxyHost": "Máy chủ",
+	"settings.thisApp.proxyPort": "Cổng",
+	"settings.thisApp.proxyUser": "Tên người dùng",
+	"settings.thisApp.proxyPasswordLabel": "Mật khẩu",
+	"settings.thisApp.proxyPasswordKept": "Để trống để giữ mật khẩu đã lưu",
+	"settings.thisApp.proxyBypass": "Bỏ qua proxy cho",
+	"settings.thisApp.proxyBypassHint": "Tên, địa chỉ hoặc dải, cách nhau bằng dấu phẩy. *.example.com bao gồm mọi tên bên dưới.",
+	"settings.thisApp.proxyBypassLocal": "Bỏ qua proxy cho địa chỉ nội bộ",
+	"settings.thisApp.proxyBypassLocalHint": "Máy này và mạng gia đình kết nối trực tiếp",
+	"settings.thisApp.proxySaved": "Đã lưu proxy",
+	"settings.thisApp.proxyOffSaved": "Đã tắt proxy"
 }

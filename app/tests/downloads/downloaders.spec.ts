@@ -1,7 +1,17 @@
 import AxeBuilder from '@axe-core/playwright';
 import { devices, expect, test, type Page } from '@playwright/test';
 import { noSidewaysScroll, owner, signIn, openAdvanced, addFromSearch } from '../helpers/helpers.ts';
+import { createServer } from 'node:net';
 import { movieReleaseHash, qbitPort, sabKey, sabPort } from '../fakes/index.mjs';
+
+// A port nothing listens on right now: taken from the system, then let go (a fixed number can belong to another app).
+async function closedPort(): Promise<number> {
+	const s = createServer();
+	await new Promise<void>((ok) => s.listen(0, '127.0.0.1', ok));
+	const port = (s.address() as { port: number }).port;
+	await new Promise((ok) => s.close(ok));
+	return port;
+}
 
 // Settings > Downloaders against the fake qBittorrent and SABnzbd in
 // fakes/, then a movie whose download is marked failed: the next
@@ -48,7 +58,7 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('API key', { exact: true }).fill('not-the-key');
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(r.getByTestId('downloader-test')).toContainText('turned down the key');
+	await expect(r.getByTestId('downloader-test')).toContainText('Key or password refused');
 	await expect(r.getByTestId('downloader-state')).toHaveText('Sign-in refused');
 
 	// A category SABnzbd does not have.
@@ -57,10 +67,26 @@ test('a SABnzbd is added and tested, a wrong key is said in plain words, it paus
 	await page.getByLabel('API key', { exact: true }).fill(sabKey);
 	await page.getByLabel('Category', { exact: true }).fill('holyarrs');
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
-	await expect(r.getByTestId('downloader-test')).toContainText('category does not exist in SABnzbd');
+	await expect(r.getByTestId('downloader-test')).toContainText('Category missing');
 	await r.hover(); // row buttons show on hover
 	await r.getByRole('button', { name: 'Change' }).click();
 	await page.getByLabel('Category', { exact: true }).fill('movies');
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(r.getByTestId('downloader-state')).toHaveText('Working');
+
+	// A name with nothing behind its port: the line shows what the name turned into and links to the fix.
+	await r.hover(); // row buttons show on hover
+	await r.getByRole('button', { name: 'Change' }).click();
+	const shut = await closedPort();
+	await page.getByLabel('Address', { exact: true }).fill(`http://localhost:${shut}`);
+	await page.getByLabel('API key', { exact: true }).fill(sabKey);
+	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(r.getByTestId('downloader-test')).toContainText(new RegExp(`localhost → \\S+ → refused on port ${shut}\\. The name works`));
+	await expect(r.getByTestId('connect-help')).toHaveAttribute('href', /docs\.holyarrs\.com\/start\/connect\/#if-it-does-not-work:~:text=Not%20answering$/);
+	await r.hover(); // row buttons show on hover
+	await r.getByRole('button', { name: 'Change' }).click();
+	await page.getByLabel('Address', { exact: true }).fill(`http://127.0.0.1:${sabPort}`);
+	await page.getByLabel('API key', { exact: true }).fill(sabKey);
 	await page.locator('form.sc-form').first().getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(r.getByTestId('downloader-state')).toHaveText('Working');
 
@@ -119,10 +145,10 @@ test('a movie downloads through qBittorrent; Mark failed sends the next Release 
 	let state = await (await fetch(`${qbit}/state`)).json();
 	expect(state.added.filter((hash: string) => hash === first)).toHaveLength(1);
 
-	page.once('dialog', (d) => d.accept());
 	await dl.getByTestId('dl-line').click();
 	await page.getByTestId('dl-pane').getByRole('button', { name: 'More actions' }).click();
 	await page.getByRole('menuitem', { name: 'Mark failed' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByText('Marked failed')).toBeVisible();
 	// The failed one leaves qBittorrent and the 720p copy is sent instead.
 	await expect.poll(async () => {

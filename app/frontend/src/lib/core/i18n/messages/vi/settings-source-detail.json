@@ -34,5 +34,6 @@
 	"settings.sourceDetail.what": "Việc gì",
 	"settings.sourceDetail.result": "Kết quả",
 	"settings.sourceDetail.time": "Thời gian",
-	"settings.sourceDetail.answeredCell": "Đã phản hồi"
+	"settings.sourceDetail.answeredCell": "Đã phản hồi",
+	"settings.sourceDetail.noTimes": "Chưa có phản hồi"
 }

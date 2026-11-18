@@ -83,6 +83,7 @@
 	"settings.users.preset": "Hazır ayar",
 	"settings.users.comingSoon": "Yakında",
 	"settings.users.custom": "Özel",
+	"settings.users.customHint": "Aşağıdaki anahtarların kendi ayarladığınız birleşimi. Hazır ayar seçmek bunu değiştirir; geri getirmek için yeniden Özel'i seçin.",
 	"settings.users.ageRating": "Yaş sınırı",
 	"settings.users.newPasswordFor": "{name} için yeni parola",
 	"settings.users.passwordNote": "{name} parolasını unuttuğunda kullan. Her yerden çıkış yapılır ve yeni parolayla tekrar giriş yapar. Ona yüz yüze söyle.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "örn. Annem",
 	"settings.users.days": "Bağlantının geçerli olacağı gün",
 	"settings.users.makeInvite": "Davet bağlantısı oluştur",
-	"settings.users.permAuto4k": "Beklemeden onaylanan 4K istekleri"
+	"settings.users.permAuto4k": "Beklemeden onaylanan 4K istekleri",
+	"settings.users.serverAccount": "Sunucu hesabı",
+	"settings.users.pickAccount": "Bir medya sunucusunda hesap seç",
+	"settings.users.accountLinked": "{name} ile bağlandı",
+	"settings.users.removedOnServer": "{word} sunucusunda kaldırıldı, bu yüzden burada kapatıldı",
+	"settings.users.delete": "Sil",
+	"settings.users.deleteName": "{name} kişisini sil",
+	"settings.users.confirmDelete": "{name} silinsin mi? Oturumu kalıcı olarak kapanır ve anahtarları silinir. İstekleri kalır, kaldırılmış kişi olarak görünür.",
+	"settings.users.deleteYes": "Kişiyi sil",
+	"settings.users.keep": "Tut",
+	"settings.users.deleted": "{name} silindi",
+	"settings.users.couldntDelete": "Silinemedi",
+	"settings.users.confirmDeleteKeys": "Oluşturduğu Seerr anahtarları, yenisi oluşturulana kadar herkes için çalışmaz.",
+	"settings.users.qualities": "Kaliteler",
+	"settings.users.qualitiesHint": "Yalnızca açık olanları seçebilirler. Hepsi açıksa yeniler de sunulur."
 }

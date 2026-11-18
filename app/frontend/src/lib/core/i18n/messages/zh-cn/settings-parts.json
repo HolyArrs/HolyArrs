@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "无法连接 {name}",
 	"settings.parts.connected": "{name} 已连接",
 	"settings.parts.title": "功能模块",
+	"settings.parts.onOff": "开启或关闭功能模块",
 	"settings.parts.ownerOnly": "仅限所有者和管理员",
 	"settings.parts.safeMode": "HolyArrs 正以安全模式运行：只运行核心，在正常启动之前，功能模块开关和环节控制都会被拒绝。要退出安全模式，请在<a>危险操作</a>中使用<b>重启 HolyArrs</b>。",
 	"settings.parts.dangerZone": "危险操作",

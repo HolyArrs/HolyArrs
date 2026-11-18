@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "HolyArrs-útvonal",
 	"settings.mediaServers.pathTo": "Ugyanaz a mappa a szerveren",
 	"settings.mediaServers.pathHint": "Csak ha a szerver a fájlokat másik útvonalon látja",
+	"settings.mediaServers.webUrl": "Cím böngészőknek",
+	"settings.mediaServers.webUrlHint": "Ezen a címen nyitják meg a szervert telefonon vagy számítógépen. Megnyitás gombot tesz azoknak a címeknek az oldalára, amelyek a szerveren vannak. Hagyd üresen, ha nem kell gomb.",
 	"settings.mediaServers.local": "Elérés a helyi hálózaton",
 	"settings.mediaServers.send": "Frissítések küldése",
 	"settings.mediaServers.save": "Mentés",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Kikapcsolod a megtekintési előzményeket? Minden eddig beolvasott törlődik.",
 	"settings.mediaServers.watchTurnedOn": "A megtekintési előzmények be vannak kapcsolva. Az első beolvasás 30 percen belül megtörténik.",
 	"settings.mediaServers.watchTurnedOff": "A megtekintési előzmények ki vannak kapcsolva",
-	"settings.mediaServers.watchFailed": "A megtekintési előzményeket nem sikerült módosítani"
+	"settings.mediaServers.watchFailed": "A megtekintési előzményeket nem sikerült módosítani",
+	"settings.mediaServers.labelTitle": "Plex-címkék",
+	"settings.mediaServers.labelSwitch": "Kért címek felcímkézése",
+	"settings.mediaServers.labelHint": "Ha egy kért film vagy sorozat bekerül a Plexbe, a HolyArrs címkét tesz rá, hogy a Plexben szűrhess, gyűjteményt építhess vagy megoszthass vele. A meglévő címkék maradnak.",
+	"settings.mediaServers.labelText": "Címke",
+	"settings.mediaServers.labelAskers": "A kérő nevét is add hozzá címkeként",
+	"settings.mediaServers.labelSaved": "Plex-címkék mentve",
+	"settings.mediaServers.labelFailed": "A Plex-címkék mentése nem sikerült",
+	"settings.mediaServers.labelExisting": "Már kért címek felcímkézése",
+	"settings.mediaServers.labelExistingStarted": "A címkézés elindult. A címek néhány percen belül megkapják a címkéiket.",
+	"settings.mediaServers.labelExistingFailed": "A címkézés nem indult el"
 }

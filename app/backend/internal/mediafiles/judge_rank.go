@@ -3,7 +3,6 @@ package mediafiles
 import (
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
@@ -58,7 +57,9 @@ func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst boo
 			}
 		}
 		pa, pb := rels[a].Parse, rels[b].Parse
-		if pa.Group.Value != "" && strings.EqualFold(pa.Group.Value, pb.Group.Value) && pa.Fix != pb.Fix {
+		// Compared across groups (as Sonarr does): a same-group-only key made the
+		// order depend on the other releases in the list.
+		if rules.ProperPolicy.Mode != "ignore" && pa.Fix != pb.Fix {
 			if pa.Fix > pb.Fix {
 				return -1, "on fix number"
 			}

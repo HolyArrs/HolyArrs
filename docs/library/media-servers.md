@@ -38,9 +38,23 @@ Pick which changes the server hears about: **An import**, **A rename**, **A dele
 
 Fill **HolyArrs path** and **Same folder on the server** only when the two see files under different paths. If HolyArrs sees `/movies` and the server sees `/media/movies`, enter `/movies` first and `/media/movies` second. Fill both or neither.
 
+### Address for browsers
+
+Jellyfin and Emby only. Enter the address people open the server at on their phone or computer, like `https://jellyfin.example.com`. Library title pages the server has then show an **Open in Jellyfin** (or **Open in Emby**) button that opens the title in the server's web app, in a new tab. Only people who manage the Library see the button. Leave it empty for no button. Plex has no button.
+
+### Plex labels
+
+Plex only. Turn on **Label requested titles** and HolyArrs adds a label to every requested movie or show once it is in Plex. Use the label in Plex to filter, build a collection or share with someone.
+
+- **Label** is the label text. It is `holyarrs` unless you type your own.
+- **Also add the requester's name as a label** adds the name of each person who asked. People who were deleted are left out.
+- **Label existing requested titles** labels what was requested before you turned this on. It takes a few minutes.
+
+Labels already on a title in Plex stay.
+
 ### Reach the local network
 
-On by default, since media servers are almost always at home. Turn it off for a server on the internet. HolyArrs never calls link-local or cloud metadata addresses, whatever this says.
+On by default, since media servers are almost always at home. Turn it off for a server on the internet. HolyArrs never calls cloud metadata addresses, whatever this says.
 
 ### Send updates
 
@@ -62,6 +76,8 @@ The card shows the last check or the last error. Each update also lands in [Hist
 | "the server has no movie, TV or music library" | Add a library in Plex, then test again |
 | "type the token again when the server address changes" | Paste the token again and save |
 | "give both sides of the path map, or neither" | Fill both path boxes, or clear both |
+| "the browser address must be an http or https link with a host" | Enter the full address with `http://` or `https://` |
+| No Open in button on a title page | The server lacks that title, or its address for browsers is empty, or the server did not answer |
 | The server scans, but nothing new shows | The paths differ. Set the path pair |
 
 ## For experts

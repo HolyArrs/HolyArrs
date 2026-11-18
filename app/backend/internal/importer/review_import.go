@@ -2,7 +2,9 @@ package importer
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"log"
 	"os"
 	"path/filepath"
 	"slices"
@@ -110,6 +112,12 @@ func (im *Importer) ImportReviewFile(ctx context.Context, slotID, downloadID int
 	}
 	src := im.ReviewFile(ctx, downloadID)
 	if src == "" {
+		// The video this card offered is not there any more: the card says so, not why an earlier try failed.
+		if err := im.Store.Write(ctx, func(tx *sql.Tx) error {
+			return mediafiles.SetWaitingSlotReasonTx(tx, slotID, couldNotPlace(ErrNoReviewFile.Error()))
+		}); err != nil {
+			log.Printf("importer: review import of slot %d: keeping its reason: %v", slotID, err)
+		}
 		return ByHandResult{Outcome: "refused", Error: ErrNoReviewFile.Error()}, nil
 	}
 	unlock := im.Store.LockFiles()
@@ -126,7 +134,15 @@ func (im *Importer) ImportReviewFile(ctx context.Context, slotID, downloadID int
 	it := ByHandItem{Path: src, SlotID: slotID, Replace: replace, fromDownload: downloadID}
 	r, err := im.importOneByHand(ctx, db, ns, folders, ByHandPlaces{}, it, by)
 	if err != nil {
-		r.Outcome, r.Error = "failed", err.Error()
+		// The system's words of a fault that is not a placing go to the log, never onto the card.
+		log.Printf("importer: review import of slot %d: %v", slotID, err)
+		r.Outcome, r.Error = "failed", wentWrongWhy
+	}
+	// Why this try failed replaces the movie's older line in Review, so the card never keeps the reason of an earlier try.
+	if r.Outcome != "placed" && r.Error != "" {
+		if err := im.Store.Write(ctx, func(tx *sql.Tx) error { return mediafiles.SetWaitingSlotReasonTx(tx, slotID, couldNotPlace(r.Error)) }); err != nil {
+			log.Printf("importer: review import of slot %d: keeping its reason: %v", slotID, err)
+		}
 	}
 	if r.Outcome == "placed" && im.OnImported != nil {
 		im.OnImported(ctx, downloadID)

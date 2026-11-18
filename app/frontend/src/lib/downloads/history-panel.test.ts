@@ -54,6 +54,12 @@ describe('panelView', () => {
 		expect(facts(v).map((f) => f[0])).toEqual(['When']);
 		expect(v.actions).toEqual([]);
 	});
+	it("a deleted person's sign-in: the title is marked", () => {
+		const v = panelView(one(ev('signed_in', { Summary: 'maria signed in', Actor: { kind: 'user', id: 7 }, actor_name: 'maria⁣7', Data: { name: 'maria' } })), ctx);
+		expect(v.title).toBe('⁣maria⁤');
+		const w = panelView(one(ev('signed_in', { Summary: 'maria signed in', Actor: { kind: 'user', id: 9 }, actor_name: 'maria', Data: { name: 'maria' } })), ctx);
+		expect(w.title).toBe('maria');
+	});
 	it('a download: the steps instead of a line, the download facts', () => {
 		const [row] = groupDownloads([
 			ev('download_sent', { TitleID: 1, title_name: 'Slow Horses', episode: 'S03E04 Uninvited Guests', DownloadID: 14, Actor: { kind: 'system' }, Data: { downloader: 'Stand-in', release: 'Slow.Horses.S03E04.1080p.WEB-DL', release_id: 14, save_path: `${root}\\downloads`, size_bytes: 8.1 * 1024 ** 3, source_name: 'Lab' } })
@@ -87,6 +93,10 @@ describe('panelView', () => {
 		expect([v.verb.word, v.line]).toEqual(['Deleted', 'Files kept']);
 		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['By', 'home']]);
 	});
+	it('a remove from the Downloader: files deleted, or kept and why', () => {
+		expect(panelView(one(ev('download_removed', { DownloadID: 3, Data: { delete_files: true } })), ctx).line).toBe('Removed from downloader · files deleted');
+		expect(panelView(one(ev('download_removed', { DownloadID: 3, Data: { delete_files: false, kept: 'qBittorrent did not say where they are' } })), ctx).line).toBe('Removed from downloader · files kept: qBittorrent did not say where they are');
+	});
 	it('a rename: the new name and the old one', () => {
 		const v = panelView(one(ev('renamed', { TitleID: 2, title_name: 'Blade Runner', Actor: { kind: 'job', id: 1 }, Data: { from: 'Blade Runner (1982)/a 720p.mkv', to: 'Blade Runner (1982)/a.mkv' } })), ctx);
 		expect([v.verb.word, v.line]).toEqual(['Renamed', '']);
@@ -97,6 +107,10 @@ describe('panelView', () => {
 		expect([v.verb.word, v.title, v.meta, v.line, v.art]).toEqual(['Asked', 'Tame Impala', 'Artist', 'Every album', null]);
 		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['By', 'Maya']]);
 		expect(v.actions.map((a) => a.label)).toEqual(['Requests']);
+	});
+	it('an ask by a deleted person: By keeps the deleted mark', () => {
+		const v = panelView(one(ev('ask_made', { Summary: 'maria asked for Tame Impala', Actor: { kind: 'user', id: 7 }, actor_name: 'maria⁣2', Data: { albums: 'every album', artist: 'mbid:x', ask_id: 12, asked_by: 'maria' } })), ctx);
+		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['By', '⁣maria⁤']]);
 	});
 	it('an approval: By for a person, Automatic and no By for an automatic one', () => {
 		const by = panelView(one(ev('ask_approved', { TitleID: 1, title_name: 'Ted Lasso', Actor: { kind: 'user', id: 2 }, actor_name: 'home', Data: { approved_by: 'home', auto: false, note: '' } })), ctx);
@@ -146,10 +160,35 @@ describe('panelView', () => {
 		const k = panelView(one(ev('report_made', { TitleID: 2, title_name: 'Interstellar', version: '4K', Actor: { kind: 'user', id: 5 }, actor_name: 'agent-check', Data: { kind: 'sound' } })), ctx);
 		expect(k.meta).toBe('4K');
 	});
+	it('names the list a title was added from', () => {
+		const named = panelView(one(ev('title_added', { TitleID: 2, title_name: 'Heat', Actor: { kind: 'system' }, Data: { why_added: 'list', list_name: 'Weekend picks' } })), ctx);
+		expect(named.line).toBe('From the list Weekend picks');
+		const plain = panelView(one(ev('title_added', { TitleID: 2, title_name: 'Heat', Actor: { kind: 'system' }, Data: { why_added: 'list' } })), ctx);
+		expect(plain.line).toBe('From a list');
+	});
 	it('never names HolyArrs as a title or a person', () => {
 		const v = panelView(one(ev('title_added', { TitleID: 2, title_name: 'Heat', Actor: { kind: 'system' }, Data: { why_added: 'by_hand' } })), ctx);
 		expect(v.facts.some((f) => f.label === 'By')).toBe(false);
 		const s = panelView(one(ev('health_broken', { Summary: 'YouTube asks to confirm', Actor: { kind: 'system' }, Data: { message: 'YouTube asks to confirm' } })), ctx);
 		expect(s.title).not.toBe('HolyArrs');
+	});
+});
+
+describe('a removal waiting on a Downloader that is down', () => {
+	it('the panel says the event’s own sentence and is not titled Removed', () => {
+		const v = panelView(one(ev('download_not_removed', { TitleID: 2, title_name: 'Heat', DownloadID: 4, Actor: { kind: 'user', id: 3 }, actor_name: 'Maya', Summary: 'qBit is not answering right now; HolyArrs tries again on the next sync' })), ctx);
+		expect(v.line).toBe('qBit is not answering right now; HolyArrs tries again on the next sync');
+		expect(v.verb.word).not.toMatch(/Removed|Deleted/);
+	});
+});
+
+describe('a pick that passed over the folder tags', () => {
+	it('says so in the details', () => {
+		const note = "No Source this search can use has this folder's tags, so Sources without tags were asked too.";
+		const pick = ev('release_chosen', { TitleID: 2, title_name: 'Dune', Summary: 'Chose Dune.2021.1080p.WEB out of 3 Releases', Data: { sources_note: note } });
+		expect(panelView(one(pick), ctx).line).toContain(note);
+		const sent = ev('download_sent', { TitleID: 2, title_name: 'Dune', Data: { release: 'Dune.2021.1080p.WEB' } });
+		expect(panelView({ key: 'd1', head: sent, events: [sent, pick], steps: [{ key: 'sent', label: 'Sent', state: 'done' }] }, ctx).line).toContain(note);
+		expect(panelView(one(ev('release_chosen', { TitleID: 2, title_name: 'Dune', Summary: 'Chose Dune.2021.1080p.WEB out of 3 Releases' })), ctx).line).not.toContain('Source');
 	});
 });

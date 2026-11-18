@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} 件待ち",
 	"frame.nav.new": "新着 {n} 件",
 	"frame.nav.manage": "管理",
+	"frame.nav.activity": "アクティビティ",
+	"frame.nav.system": "システム",
 	"frame.nav.history": "履歴",
 	"frame.nav.status": "ステータス",
 	"frame.nav.settings": "設定",
+	"frame.nav.plugins": "プラグイン",
 	"frame.nav.goTo": "移動",
 	"frame.nav.active": "{n} 件実行中、{percent}%",
 	"frame.nav.decide": "{n} 件が判断待ち",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "システム",
 	"frame.layout.switch": "アカウントを切り替え",
 	"frame.layout.signOut": "サインアウト",
+	"frame.layout.support": "HolyArrs を支援",
 	"frame.layout.signOutFail": "サインアウトを確認できませんでした",
 	"frame.layout.signedOut": "サインアウトしました",
 	"frame.layout.accountMenu": "{name}、{role}: アカウントと外観",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs が自動で再試行します",
 	"frame.feeds.clearNow": "今すぐ消去",
 	"frame.feeds.cleared": "ダウンローダーから消去しました",
-	"frame.feeds.clearStill": "まだ消去されていません"
+	"frame.feeds.clearStill": "まだ消去されていません",
+	"frame.error.pageGone": "このページはありません。リンクが古いか、入力が間違っている可能性があります。"
 }

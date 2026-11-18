@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Nechajte asistentov AI používať HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Kľúče a cesty pre iné aplikácie",
+	"core.settings.remoteAccess.label": "Vzdialený prístup",
+	"core.settings.remoteAccess.about": "Prístup k HolyArrs mimo domova",
 	"core.settings.tmdb.label": "Metadáta",
 	"core.settings.tmdb.about": "Odkiaľ pochádzajú plagáty a názvy",
 	"core.settings.health.label": "Kontroly stavu",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Jeden Sťahovač nemá nastavený priečinok na ukladanie, takže HolyArrs nemôže importovať jeho dokončené sťahovania.",
 	"core.api.sourceOff": "Niektoré riadky sú v tejto inštalácii vypnuté.",
 	"core.plain.noDownloader": "Vaše zdroje nachádzajú sťahovania, ktoré nemôže prevziať žiadny z vašich sťahovačov, takže nič nemožno odoslať.",
-	"core.plain.sameDownloader": "Dva sťahovače vedú k rovnakej sťahovacej aplikácii, preto sa sťahovania môžu zobraziť dvakrát."
+	"core.plain.sameDownloader": "Dva sťahovače vedú k rovnakej sťahovacej aplikácii, preto sa sťahovania môžu zobraziť dvakrát.",
+	"core.plain.peopleCheck": "Zoznam používateľov mediálneho servera sa nedá prečítať, preto sa tu nevypínajú ľudia, ktorí tam boli odstránení.",
+	"core.plain.deleted": "zmazaný",
+	"core.plain.deletedName": "{name} (zmazaný)"
 }

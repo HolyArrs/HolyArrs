@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -83,7 +81,9 @@ type DownloadRow struct {
 	// ClientItem rows have no HolyArrs download id (ID 0) and are addressed
 	// by DownloaderID and Hash; Outside says HolyArrs never sent it.
 	ClientItem bool `json:"client_item,omitempty"`
-	Outside    bool `json:"outside,omitempty"`
+	// FilesStay: Remove keeps this finished download's files (in or around a Library folder).
+	FilesStay bool `json:"files_stay,omitempty"`
+	Outside   bool `json:"outside,omitempty"`
 	// Linked says an outside torrent is matched to a Library title (a
 	// client_links row): Title, Kind and Covers come from that link.
 	Linked       bool   `json:"linked,omitempty"`
@@ -292,6 +292,9 @@ var PhaseLabels = map[string]string{
 	"importing": "Importing", "needs_a_decision": "Review", "import_refused": "Import refused", "done": "Done",
 }
 
+// FilesGoneText is a finished download's row when another app took its files first.
+const FilesGoneText = "Another app took the files before HolyArrs could import them."
+
 // phase is a Download's place in plain words: its own state while it
 // downloads, then where its Slot is once the Downloader is done.
 func phase(d domain.Download, slot string) string {
@@ -364,7 +367,7 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	// One read per related table for the whole page (no read per row).
 	names := a.downloaderNames(ctx)
-	relIDs, slotIDs, doneIDs := []int64{}, []int64{}, []int64{}
+	relIDs, slotIDs, doneIDs, endIDs := []int64{}, []int64{}, []int64{}, []int64{}
 	for _, d := range ds {
 		if d.ReleaseID != nil {
 			relIDs = append(relIDs, *d.ReleaseID)
@@ -372,6 +375,9 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 		slotIDs = append(slotIDs, d.SlotIDs...)
 		if d.State == "finished" {
 			doneIDs = append(doneIDs, d.ID)
+		}
+		if d.State == "finished" || d.State == "seeding" {
+			endIDs = append(endIDs, d.ID)
 		}
 	}
 	rels := releaseNames(ctx, db, relIDs)
@@ -381,6 +387,7 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	if len(doneIDs) > 0 {
 		refused, _ = mediafiles.RefusedDownloads(ctx, db, doneIDs)
 	}
+	gone, _ := mediafiles.GoneDownloads(ctx, db, endIDs)
 	slots := slotInfos(ctx, db, slotIDs)
 	waits := ClearWaits(ctx, db)
 	rows := make([]DownloadRow, 0, len(ds))
@@ -455,9 +462,11 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		row.Label = PhaseLabels[row.Phase]
-		row.CanAct = row.Active && manage
+		ended := finishedState(d.State)
+		// A finished one may be removed while its Downloader may be changed
+		// and no import is placing its files.
+		row.CanAct = (row.Active || ended && !ReadOnlyFor(n) && row.Phase != "importing") && manage
 		row.ClientLocked = ReadOnlyFor(n)
-		ended := d.State == "finished" || d.State == "seeding"
 		if n.ID == 0 || n.Removed {
 			// Its Downloader was removed: only HolyArrs' own record can change,
 			// and a finished one can still be removed.
@@ -486,6 +495,9 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 			}
 		case "done":
 			row.Text = "In the library."
+			if gone[d.ID] {
+				row.Text = FilesGoneText
+			}
 		}
 		if t := showText(row.Phase, row.Episodes); t != "" && d.State != "cleaned" && !row.Active {
 			row.Text = t
@@ -513,8 +525,10 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 				if s := a.storeSize(rows[i].DownloaderID, rows[i].Hash); s > 0 && rows[i].Protocol == "torrent" {
 					rows[i].Size = s
 				}
+				a.storeLive(&rows[i])
 			}
 		}
+		a.markFilesStay(ctx, rows, names)
 	}
 	// Totals count every row, before the outside rows are paged: download
 	// speed from what is moving, upload from everything that sends (seeding
@@ -778,12 +792,4 @@ func linesOf(ids []int64, slots map[int64]slotInfo) []EpisodeLine {
 	}
 	SortLines(out)
 	return out
-}
-
-func upperFirst(s string) string {
-	r, n := utf8.DecodeRuneInString(s)
-	if n == 0 {
-		return s
-	}
-	return string(unicode.ToUpper(r)) + s[n:]
 }

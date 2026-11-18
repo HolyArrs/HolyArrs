@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Atmesti Leidimus, paskelbtus prieš išleidimą",
 	"settings.search.refuseEarlyHint": "Tikriausiai netikri. Pasirinkus leidimą jie vis tiek rodomi su įspėjimu.",
 	"settings.search.refuseTiny": "Atmesti netikrus pagal dydį ir failo tipą",
-	"settings.search.refuseTinyHint": "Per maži Leidimai, tušti failai ir .wmv ar .asf su HD pavadinimais",
+	"settings.search.refuseTinyHint": "Per maži Leidimai, tušti failai, nutrūkę vaizdo įrašai ir .wmv ar .asf su HD pavadinimais",
 	"settings.search.grace": "Kiek valandų Leidimas gali būti ankstyvas",
 	"settings.search.graceHint": "Dėl laiko juostų. Numatyta 24.",
 	"settings.search.floors": "Tikrinti failų dydžius importuojant",

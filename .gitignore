@@ -19,3 +19,7 @@ bin/
 /app/tests/.tmp-*/
 /app/tests/whole-app/live-push.spec.ts-snapshots/
 releases/out/
+
+# built plugin binaries
+app/plugins/*/*.exe
+app/plugins/*/tailscale
