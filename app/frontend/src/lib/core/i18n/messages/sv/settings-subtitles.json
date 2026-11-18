@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Av: bara när du klickar på Översätt. Bildundertexter hoppas alltid över.",
 	"settings.subtitles.trSaved": "Översättare sparad",
 	"settings.subtitles.machineMade": "Maskingjorda undertexter",
-	"settings.subtitles.machineMadeHint": "Används bara när ingen fil gjord av en människa finns. En människas fil ersätter den senare."
+	"settings.subtitles.machineMadeHint": "Används bara när ingen fil gjord av en människa finns. En människas fil ersätter den senare.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

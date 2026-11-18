@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Rimosso qui; il downloader lo ha ancora",
 	"downloads.status.doneSeeding": "Fatto · in condivisione",
 	"downloads.rm.keepsPath": "Mantiene {path}: si trova dentro o intorno a una cartella della Libreria.",
-	"downloads.rm.keepsSome": "Mantiene i file che si trovano dentro o intorno a una cartella della Libreria."
+	"downloads.rm.keepsSome": "Mantiene i file che si trovano dentro o intorno a una cartella della Libreria.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "இங்கே நீக்கப்பட்டது; பதிவிறக்கியில் இன்னும் உள்ளது",
 	"downloads.status.doneSeeding": "முடிந்தது · சீட் செய்கிறது",
 	"downloads.rm.keepsPath": "{path} வைத்திருக்கும்: இது ஒரு நூலகக் கோப்புறையின் உள்ளே அல்லது சுற்றி உள்ளது.",
-	"downloads.rm.keepsSome": "நூலகக் கோப்புறையின் உள்ளே அல்லது சுற்றியுள்ள கோப்புகளை வைத்திருக்கும்."
+	"downloads.rm.keepsSome": "நூலகக் கோப்புறையின் உள்ளே அல்லது சுற்றியுள்ள கோப்புகளை வைத்திருக்கும்.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

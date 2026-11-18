@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Ki: csak a Fordítás gombra kattintva. A képfeliratokat mindig kihagyja.",
 	"settings.subtitles.trSaved": "Fordító mentve",
 	"settings.subtitles.machineMade": "Gépi feliratok",
-	"settings.subtitles.machineMadeHint": "Csak akkor használja, ha nincs ember készítette fájl. Az ember fájlja később leváltja."
+	"settings.subtitles.machineMadeHint": "Csak akkor használja, ha nincs ember készítette fájl. Az ember fájlja később leváltja.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

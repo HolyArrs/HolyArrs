@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Poistettu täältä; lataaja pitää sen yhä",
 	"downloads.status.doneSeeding": "Valmis · jaetaan",
 	"downloads.rm.keepsPath": "Säilyttää {path}: se on kirjastokansiossa tai sen ympärillä.",
-	"downloads.rm.keepsSome": "Säilyttää tiedostot, jotka ovat kirjastokansiossa tai sen ympärillä."
+	"downloads.rm.keepsSome": "Säilyttää tiedostot, jotka ovat kirjastokansiossa tai sen ympärillä.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

@@ -87,8 +87,15 @@ func (a *Handlers) getSubtitleSettings(w http.ResponseWriter, r *http.Request) {
 
 func (a *Handlers) putSubtitleSettings(w http.ResponseWriter, r *http.Request) {
 	st := ReadSettings(r.Context(), a.store.Read()) // fields the request leaves out keep their current value
-	if !webserver.Decode(w, r, &st, `send any of languages, pass_mark_movie, pass_mark_episode, use_built_in, ignore_picture_tracks, hi_suffix, search_hours, better, better_hours, better_days, batch, adaptive, sync_from_fps, sync_to_fps, sync_step_ms`) {
+	// Decoding into a filled map would only add rows, so a sent cleanup
+	// replaces the rows whole, and a missing one keeps them.
+	kept := st.Cleanup
+	st.Cleanup = nil
+	if !webserver.Decode(w, r, &st, `send any of languages, pass_mark_movie, pass_mark_episode, use_built_in, ignore_picture_tracks, hi_suffix, search_hours, better, better_hours, better_days, batch, adaptive, sync_from_fps, sync_to_fps, sync_step_ms, cleanup`) {
 		return
+	}
+	if st.Cleanup == nil {
+		st.Cleanup = kept
 	}
 	if err := SaveSettings(r.Context(), a.store, st, actorOf(r)); err != nil {
 		webserver.Fail(w, http.StatusBadRequest, err.Error())

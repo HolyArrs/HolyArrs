@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Inalis dito; nasa Downloader pa rin ito",
 	"downloads.status.doneSeeding": "Tapos na · nagsi-seed",
 	"downloads.rm.keepsPath": "Pinapanatili ang {path}: nasa loob o paligid ito ng isang Library folder.",
-	"downloads.rm.keepsSome": "Pinapanatili ang mga file na nasa loob o paligid ng isang Library folder."
+	"downloads.rm.keepsSome": "Pinapanatili ang mga file na nasa loob o paligid ng isang Library folder.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

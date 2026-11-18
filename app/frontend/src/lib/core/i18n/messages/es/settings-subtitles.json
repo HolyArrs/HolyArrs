@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Desactivado: solo al pulsar Traducir. Los de imagen siempre se omiten.",
 	"settings.subtitles.trSaved": "Traductor guardado",
 	"settings.subtitles.machineMade": "Incluir subtítulos automáticos",
-	"settings.subtitles.machineMadeHint": "Solo se usan si no hay un archivo hecho por una persona, que luego lo sustituye."
+	"settings.subtitles.machineMadeHint": "Solo se usan si no hay un archivo hecho por una persona, que luego lo sustituye.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

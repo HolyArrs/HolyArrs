@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Desactivat: només quan fas clic a Tradueix. Els subtítols en imatge sempre s'ometen.",
 	"settings.subtitles.trSaved": "Traductor desat",
 	"settings.subtitles.machineMade": "Subtítols fets per màquina",
-	"settings.subtitles.machineMadeHint": "S'usen només quan no hi ha un fitxer fet per una persona. El fitxer d'una persona els substitueix més tard."
+	"settings.subtitles.machineMadeHint": "S'usen només quan no hi ha un fitxer fet per una persona. El fitxer d'una persona els substitueix més tard.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

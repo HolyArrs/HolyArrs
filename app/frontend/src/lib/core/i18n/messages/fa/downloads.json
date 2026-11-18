@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "اینجا حذف شد؛ دانلودر هنوز آن را دارد",
 	"downloads.status.doneSeeding": "انجام شد · در حال seed",
 	"downloads.rm.keepsPath": "{path} را نگه می‌دارد: درون یا پیرامون یک پوشه کتابخانه است.",
-	"downloads.rm.keepsSome": "فایل‌هایی را که درون یا پیرامون یک پوشه کتابخانه‌اند نگه می‌دارد."
+	"downloads.rm.keepsSome": "فایل‌هایی را که درون یا پیرامون یک پوشه کتابخانه‌اند نگه می‌دارد.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

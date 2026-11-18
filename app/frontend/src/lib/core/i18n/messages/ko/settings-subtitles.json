@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "끄면 번역을 누를 때만 번역합니다. 이미지 자막은 항상 건너뜁니다.",
 	"settings.subtitles.trSaved": "번역기 저장됨",
 	"settings.subtitles.machineMade": "기계 생성 자막 포함",
-	"settings.subtitles.machineMadeHint": "사람이 만든 파일이 없을 때만 쓰고, 나중에 그 파일로 바뀝니다."
+	"settings.subtitles.machineMadeHint": "사람이 만든 파일이 없을 때만 쓰고, 나중에 그 파일로 바뀝니다.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

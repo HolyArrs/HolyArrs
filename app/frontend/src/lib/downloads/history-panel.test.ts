@@ -192,3 +192,34 @@ describe('a pick that passed over the folder tags', () => {
 		expect(panelView(one(ev('release_chosen', { TitleID: 2, title_name: 'Dune', Summary: 'Chose Dune.2021.1080p.WEB out of 3 Releases' })), ctx).line).not.toContain('Source');
 	});
 });
+
+describe('subtitle cleanup', () => {
+	const held = '.holyarrs-replaced/2026-11-18/Cars (2006)/Cars (2006).en.srt';
+	const saved = (cleanup?: Record<string, unknown>) =>
+		panelView(one(ev('subtitle_saved', { TitleID: 2, title_name: 'Cars', Data: { language: 'en', site: 'Lab subtitle site', path: 'Cars (2006)/Cars (2006).en.srt', ...(cleanup ? { cleanup } : {}) } })), ctx);
+
+	it('says what cleanup did and where the original is held', () => {
+		const v = saved({ removed: 14, changed: 3, steps: { remove_ads: 2, remove_hi: 12 }, held });
+		expect(v.line).toBe('en · Cleanup removed 14 lines and changed 3. The original is in the holding folder.');
+		expect(v.long).toBe(true);
+		const o = v.facts.find((f) => f.label === 'Original');
+		expect(o).toMatchObject({ value: held, mono: true, full: held });
+	});
+
+	it('names only what happened, with one line said as one', () => {
+		expect(saved({ removed: 1, changed: 0, held }).line).toBe('en · Cleanup removed 1 line. The original is in the holding folder.');
+		expect(saved({ removed: 0, changed: 3, held }).line).toBe('en · Cleanup changed 3 lines. The original is in the holding folder.');
+		// No held original: the counts alone, and no Original fact.
+		const v = saved({ removed: 2, changed: 1 });
+		expect(v.line).toBe('en · Cleanup removed 2 lines and changed 1.');
+		expect(facts(v).map(([l]) => l)).not.toContain('Original');
+	});
+
+	it('says nothing more when cleanup changed nothing or did not run', () => {
+		for (const v of [saved(), saved({ skipped: 'only SRT subtitles are cleaned' }), saved({ removed: 0, changed: 0 })]) {
+			expect(v.line).toBe('en');
+			expect(v.long).toBe(false);
+			expect(facts(v).map(([l]) => l)).not.toContain('Original');
+		}
+	});
+});

@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Kapalı: yalnızca Çevir'e tıklayınca. Görüntü altyazıları hep atlanır.",
 	"settings.subtitles.trSaved": "Çevirmen kaydedildi",
 	"settings.subtitles.machineMade": "Makine yapımı altyazılar",
-	"settings.subtitles.machineMadeHint": "Yalnızca insan yapımı dosya yoksa kullanılır. Sonra o dosya yerini alır."
+	"settings.subtitles.machineMadeHint": "Yalnızca insan yapımı dosya yoksa kullanılır. Sonra o dosya yerini alır.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

@@ -32,6 +32,20 @@ export interface SubtitleSettings {
 	sync_from_fps: number;
 	sync_to_fps: number;
 	sync_step_ms: number;
+	// Cleanup steps by language code; '*' is the row for every other language.
+	cleanup: Record<string, CleanupOptions>;
+}
+
+// The cleanup steps for one language, all off until the owner turns one on.
+export interface CleanupOptions {
+	remove_ads: boolean;
+	remove_hi: boolean;
+	remove_tags: boolean;
+	remove_emoji: boolean;
+	ocr_fixes: boolean;
+	common_fixes: boolean;
+	fix_uppercase: boolean;
+	fix_overlaps: boolean;
 }
 
 export interface SiteLimits {
@@ -482,4 +496,41 @@ export function translatorBody(f: TranslatorForm): Record<string, unknown> {
 	if (f.key.trim()) b.key = f.key.trim();
 	else if (f.clear_key) b.clear_key = true;
 	return b;
+}
+
+// The cleanup steps in the order the card lists them.
+export const cleanupSteps = ['remove_ads', 'remove_hi', 'remove_tags', 'remove_emoji', 'ocr_fixes', 'common_fixes', 'fix_uppercase', 'fix_overlaps'] as const;
+export type CleanupStep = (typeof cleanupSteps)[number];
+
+// The cleanup key for every language without a row of its own.
+export const cleanupAll = '*';
+
+export function noCleanup(): CleanupOptions {
+	return Object.fromEntries(cleanupSteps.map((k) => [k, false])) as unknown as CleanupOptions;
+}
+
+// cleanupKeys lists the rows with the one for every other language first, then by language name.
+export function cleanupKeys(c: Record<string, CleanupOptions>, langs: Language[]): string[] {
+	return Object.keys(c).sort((a, b) => (a === cleanupAll ? -1 : b === cleanupAll ? 1 : langName(a, langs).localeCompare(langName(b, langs))));
+}
+
+// nextCleanupLanguage picks the language a new row starts with: every other language first, then a common one.
+export function nextCleanupLanguage(c: Record<string, CleanupOptions>, langs: Language[]): string {
+	const used = new Set(Object.keys(c));
+	for (const k of [cleanupAll, 'en', 'es', 'fr', 'de', ...langs.map((l) => l.code)]) if (!used.has(k)) return k;
+	return '';
+}
+
+// renameCleanup moves a row to another language. A language that already has a row keeps it.
+export function renameCleanup(c: Record<string, CleanupOptions>, from: string, to: string): void {
+	if (from === to || !(from in c) || to in c) return;
+	c[to] = c[from];
+	delete c[from];
+}
+
+// cleanupBody sends every row with all eight steps as plain true or false.
+export function cleanupBody(c: Record<string, CleanupOptions> | undefined): Record<string, CleanupOptions> {
+	const out: Record<string, CleanupOptions> = {};
+	for (const [k, o] of Object.entries(c ?? {})) out[k] = Object.fromEntries(cleanupSteps.map((s) => [s, !!o?.[s]])) as unknown as CleanupOptions;
+	return out;
 }

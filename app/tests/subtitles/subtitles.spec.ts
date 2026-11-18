@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { subsPort } from '../fakes/index.mjs';
 import { moviesDir, noSidewaysScroll, owner, signIn, libraryTool, openSeasonNamed, episodeAction, openAdvanced, openLibraryTab, openSubtitles } from '../helpers/helpers.ts';
@@ -22,6 +22,14 @@ const files = {
 	episode: join(showsDir, 'Fennel Clock (2020)', 'Season 1', 'Fennel.Clock.S01E01.1080p.WEB-DL.H264-LAB.mkv')
 };
 const siteURL = `http://127.0.0.1:${subsPort}`;
+
+// filesUnder lists the files below dir whose path matches re.
+function filesUnder(dir: string, re: RegExp): string[] {
+	return readdirSync(dir, { recursive: true, withFileTypes: true })
+		.filter((e) => e.isFile())
+		.map((e) => join(e.parentPath, e.name))
+		.filter((p) => re.test(p));
+}
 
 async function fresh(browser: Browser, width = 1280) {
 	const ctx = await browser.newContext({ viewport: { width, height: 900 } });
@@ -74,11 +82,19 @@ test('Settings > Subtitles: English and Spanish become the default languages; th
 	await expect(page.getByTestId('pass-mark-help')).toContainText('match score from 0 to 100');
 	await expect(page.getByLabel('Frame rate from')).toHaveValue('25');
 	await expect(page.getByLabel('Frame rate to')).toHaveValue('23.976');
+	// Cleanup starts with nothing on; ads and credits go for every language.
+	const cleanup = page.getByTestId('cleanup-editor');
+	await expect(cleanup).toContainText('No cleanup: subtitles are saved as they come.');
+	await page.getByRole('button', { name: 'Add cleanup for a language' }).click();
+	await expect(page.locator('#cleanup-lang-0')).toHaveValue('*');
+	await cleanup.getByTestId('cleanup-remove_ads').check();
+	await expect(cleanup.getByTestId('cleanup-remove_hi')).not.toBeChecked();
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Subtitle settings saved')).toBeVisible();
 	await page.reload();
 	await expect(page.locator('#def-lang-0')).toHaveValue('en');
 	await expect(page.locator('#def-lang-1')).toHaveValue('es');
+	await expect(page.getByTestId('cleanup-editor').getByTestId('cleanup-remove_ads')).toBeChecked();
 	await axe(page, 'settings subtitles');
 });
 
@@ -188,6 +204,12 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 	await expect(page.getByRole('status').filter({ hasText: 'Subtitle saved' })).toContainText(/\.fr\.srt/, { timeout: 30_000 });
 	const fr = card.getByTestId('subtitle-row').filter({ hasText: 'French' });
 	await expect(fr).toContainText('Chosen by hand from Lab subtitle site');
+	// Cleanup took the site's credit off the saved file and kept the original in the holding folder.
+	const [saved] = filesUnder(moviesDir, /Quill Atlas.*\.fr\.srt$/).filter((p) => !p.includes('.holyarrs-replaced'));
+	expect(readFileSync(saved, 'utf8')).not.toContain('www.labsubs.example');
+	expect(readFileSync(saved, 'utf8')).toContain("L'atlas est perdu.");
+	const [held] = filesUnder(join(moviesDir, '.holyarrs-replaced'), /\.fr\.srt$/);
+	expect(readFileSync(held, 'utf8')).toContain('www.labsubs.example');
 
 	// Sync fix: one second later.
 	await fr.getByRole('button', { name: 'Sync fix for French' }).click();

@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Tắt: chỉ khi bạn bấm Dịch. Phụ đề hình ảnh luôn bị bỏ qua.",
 	"settings.subtitles.trSaved": "Đã lưu trình dịch",
 	"settings.subtitles.machineMade": "Phụ đề do máy tạo",
-	"settings.subtitles.machineMadeHint": "Chỉ dùng khi không có tệp do người làm. Tệp của người sẽ thay thế nó sau."
+	"settings.subtitles.machineMadeHint": "Chỉ dùng khi không có tệp do người làm. Tệp của người sẽ thay thế nó sau.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

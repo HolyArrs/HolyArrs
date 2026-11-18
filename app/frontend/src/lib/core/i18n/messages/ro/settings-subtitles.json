@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Oprit: doar când apeși Traduce. Subtitrările imagine sunt mereu omise.",
 	"settings.subtitles.trSaved": "Traducător salvat",
 	"settings.subtitles.machineMade": "Subtitrări făcute de mașină",
-	"settings.subtitles.machineMadeHint": "Folosite doar când nu există un fișier făcut de un om. Fișierul unui om îl înlocuiește mai târziu."
+	"settings.subtitles.machineMadeHint": "Folosite doar când nu există un fișier făcut de un om. Fișierul unui om îl înlocuiește mai târziu.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

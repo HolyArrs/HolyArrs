@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "أُزيل هنا؛ لكن برنامج التنزيل ما زال يحتفظ به",
 	"downloads.status.doneSeeding": "تم · قيد البذر",
 	"downloads.rm.keepsPath": "يُبقي {path}: إنه داخل مجلد مكتبة أو حوله.",
-	"downloads.rm.keepsSome": "يُبقي الملفات الموجودة داخل مجلد مكتبة أو حوله."
+	"downloads.rm.keepsSome": "يُبقي الملفات الموجودة داخل مجلد مكتبة أو حوله.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

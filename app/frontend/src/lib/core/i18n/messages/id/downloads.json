@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Dihapus di sini; Pengunduh masih menyimpannya",
 	"downloads.status.doneSeeding": "Selesai · seeding",
 	"downloads.rm.keepsPath": "Menyimpan {path}: berada di dalam atau sekitar folder pustaka.",
-	"downloads.rm.keepsSome": "Menyimpan file yang berada di dalam atau sekitar folder pustaka."
+	"downloads.rm.keepsSome": "Menyimpan file yang berada di dalam atau sekitar folder pustaka.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

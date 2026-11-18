@@ -161,5 +161,18 @@
 	"subtitles.panel.translateFrom": "Tõlgi keelest",
 	"subtitles.panel.translateQueued": "Tõlgin",
 	"subtitles.panel.translateQueuedBody": "{name} subtiitrid ilmuvad siia, kui need on valmis.",
-	"subtitles.panel.translating": "Ühtegi ei leitud, nii et sinu tõlkija teeb need."
+	"subtitles.panel.translating": "Ühtegi ei leitud, nii et sinu tõlkija teeb need.",
+	"subtitles.cleanup.language": "Language",
+	"subtitles.cleanup.all": "Every other language",
+	"subtitles.cleanup.add": "Add cleanup for a language",
+	"subtitles.cleanup.empty": "No cleanup: subtitles are saved as they come.",
+	"subtitles.cleanup.takeOff": "Remove cleanup for {name}",
+	"subtitles.cleanup.removeAds": "Remove ads and credits",
+	"subtitles.cleanup.removeHi": "Remove sound descriptions and speaker names",
+	"subtitles.cleanup.removeTags": "Remove formatting",
+	"subtitles.cleanup.removeEmoji": "Remove emoji",
+	"subtitles.cleanup.ocrFixes": "Fix OCR mistakes",
+	"subtitles.cleanup.commonFixes": "Fix spacing and punctuation",
+	"subtitles.cleanup.fixUppercase": "Fix lines in capitals",
+	"subtitles.cleanup.fixOverlaps": "Fix overlapping lines"
 }

@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
 // Schedule kinds.
@@ -52,13 +54,61 @@ type Settings struct {
 	SyncFromFPS float64 `json:"sync_from_fps"`
 	SyncToFPS   float64 `json:"sync_to_fps"`
 	SyncStepMS  int     `json:"sync_step_ms"`
+	// Cleanup holds the cleanup steps run on each SRT subtitle HolyArrs saves,
+	// by language code. CleanupAll is the row for languages without their own.
+	// It starts empty, so nothing is cleaned until the owner turns a step on.
+	Cleanup map[string]subtext.CleanupOptions `json:"cleanup"`
 }
+
+// CleanupAll is the Cleanup key for every language without its own row.
+const CleanupAll = "*"
+
+// maxCleanupRows caps the Cleanup rows, one per language plus CleanupAll.
+const maxCleanupRows = 100
 
 // DefaultSettings returns the settings in use before anyone changes them.
 func DefaultSettings() Settings {
 	return Settings{Languages: []Want{}, PassMarkMovie: 70, PassMarkEpisode: 90, UseBuiltIn: true, HISuffix: "hi",
 		SearchHours: 6, Better: true, BetterHours: 12, BetterDays: 7, Batch: 100, Adaptive: true,
-		SyncFromFPS: 25, SyncToFPS: 23.976, SyncStepMS: 500}
+		SyncFromFPS: 25, SyncToFPS: 23.976, SyncStepMS: 500, Cleanup: map[string]subtext.CleanupOptions{}}
+}
+
+// CleanCleanup checks the Cleanup rows and returns them keyed by language
+// code, so "eng" and "English" both land on en. Two rows for one language are
+// refused, since only one of them could apply.
+func CleanCleanup(rows map[string]subtext.CleanupOptions) (map[string]subtext.CleanupOptions, error) {
+	if len(rows) > maxCleanupRows {
+		return nil, fmt.Errorf("cleanup can have at most %d languages", maxCleanupRows)
+	}
+	out := make(map[string]subtext.CleanupOptions, len(rows))
+	for k, o := range rows {
+		code := CleanupAll
+		if k != CleanupAll {
+			if code = NormLanguage(k); code == "" {
+				return nil, fmt.Errorf("cleanup: %w: %q", ErrBadLanguage, k)
+			}
+		}
+		if _, dup := out[code]; dup {
+			return nil, fmt.Errorf("cleanup lists %s twice", code)
+		}
+		out[code] = o
+	}
+	return out, nil
+}
+
+// CleanupFor returns the cleanup steps for a subtitle in lang: its own row,
+// then the row of its base language (pt for pt-br), then CleanupAll.
+func (s Settings) CleanupFor(lang string) subtext.CleanupOptions {
+	code := NormLanguage(lang)
+	if o, ok := s.Cleanup[code]; ok && code != "" {
+		return o
+	}
+	if base, _, ok := strings.Cut(code, "-"); ok {
+		if o, ok := s.Cleanup[base]; ok {
+			return o
+		}
+	}
+	return s.Cleanup[CleanupAll]
 }
 
 // Validate checks every field.
@@ -68,6 +118,9 @@ func (s *Settings) Validate() error {
 		return err
 	}
 	s.Languages = ws
+	if s.Cleanup, err = CleanCleanup(s.Cleanup); err != nil {
+		return err
+	}
 	switch {
 	case s.PassMarkMovie < 0 || s.PassMarkMovie > 100, s.PassMarkEpisode < 0 || s.PassMarkEpisode > 100:
 		return fmt.Errorf("pass marks must be 0 to 100")
@@ -91,7 +144,7 @@ func (s *Settings) Validate() error {
 
 var settingKeys = []string{"subtitle_languages", "subtitle_pass_mark_movie", "subtitle_pass_mark_episode", "subtitle_use_built_in",
 	"subtitle_ignore_picture_tracks", "subtitle_hi_suffix", "subtitle_better", "subtitle_better_days", "subtitle_batch", "subtitle_adaptive",
-	"subtitle_sync_from_fps", "subtitle_sync_to_fps", "subtitle_sync_step_ms"}
+	"subtitle_sync_from_fps", "subtitle_sync_to_fps", "subtitle_sync_step_ms", "subtitle_cleanup"}
 
 // ReadSettings reads the subtitle settings. Unset or odd values keep their
 // defaults so a bad row never breaks subtitles.
@@ -164,6 +217,13 @@ func ReadSettings(ctx context.Context, db *sql.DB) Settings {
 				if nerr == nil && n >= 10 && n <= 60000 {
 					s.SyncStepMS = n
 				}
+			case "subtitle_cleanup":
+				var rows map[string]subtext.CleanupOptions
+				if json.Unmarshal([]byte(v), &rows) == nil {
+					if c, err := CleanCleanup(rows); err == nil {
+						s.Cleanup = c
+					}
+				}
 			}
 		}
 	}
@@ -183,7 +243,9 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 		return err
 	}
 	langs, _ := json.Marshal(s.Languages)
+	cleanup, _ := json.Marshal(s.Cleanup)
 	vals := map[string]string{
+		"subtitle_cleanup":   string(cleanup),
 		"subtitle_languages": string(langs), "subtitle_pass_mark_movie": strconv.Itoa(s.PassMarkMovie),
 		"subtitle_pass_mark_episode": strconv.Itoa(s.PassMarkEpisode), "subtitle_use_built_in": strconv.FormatBool(s.UseBuiltIn),
 		"subtitle_ignore_picture_tracks": strconv.FormatBool(s.IgnorePictureTracks), "subtitle_hi_suffix": s.HISuffix,

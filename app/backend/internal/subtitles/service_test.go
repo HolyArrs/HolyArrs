@@ -196,7 +196,7 @@ func TestService_PassMarkZipAndFoundFiles(t *testing.T) {
 	}
 	// Saving over the name of a found file is refused.
 	fc, _ := s.load(ctx, f.movieFile)
-	_, err = s.save(ctx, fc, &Subtitle{FileID: f.movieFile, Language: "de", Place: "beside", Origin: "fetched", State: "present", Sync: map[string]any{}},
+	_, _, err = s.save(ctx, fc, &Subtitle{FileID: f.movieFile, Language: "de", Place: "beside", Origin: "fetched", State: "present", Sync: map[string]any{}},
 		fakesite.Cue("x", 0), "srt", DefaultSettings(), nil, domain.System)
 	if err != ErrNotOurs {
 		t.Fatalf("over a found file: %v", err)
@@ -463,13 +463,13 @@ func TestService_SaveFailurePutsHeldFileBack(t *testing.T) {
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
 	fc, _ := s.load(ctx, f.movieFile)
-	rel, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("first", 0), "srt", DefaultSettings(), nil, domain.System)
+	rel, _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("first", 0), "srt", DefaultSettings(), nil, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
 	renameInto = func(from, to string) error { return errors.New("disk full") }
 	defer func() { renameInto = os.Rename }()
-	if _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("second", 0), "srt", DefaultSettings(), nil, domain.System); err == nil {
+	if _, _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("second", 0), "srt", DefaultSettings(), nil, domain.System); err == nil {
 		t.Fatal("no error")
 	}
 	if b, _ := os.ReadFile(f.abs(rel)); !strings.Contains(string(b), "first") {
@@ -491,7 +491,7 @@ func TestService_SaveCutOffBeforeRowIsRecoveredOnLook(t *testing.T) {
 	ctx := context.Background()
 	fc, _ := s.load(ctx, f.movieFile)
 	saveCrash = func() error { return errors.New("power cut") }
-	rel, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("first", 0), "srt", DefaultSettings(), nil, domain.System)
+	rel, _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("first", 0), "srt", DefaultSettings(), nil, domain.System)
 	saveCrash = nil
 	if err == nil {
 		t.Fatal("no crash")
@@ -509,7 +509,7 @@ func TestService_SaveCutOffBeforeRowIsRecoveredOnLook(t *testing.T) {
 		t.Fatalf("origin %q, want fetched", origin)
 	}
 	fc, _ = s.load(ctx, f.movieFile)
-	if _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("second", 0), "srt", DefaultSettings(), nil, domain.System); err != nil {
+	if _, _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("second", 0), "srt", DefaultSettings(), nil, domain.System); err != nil {
 		t.Fatalf("our own file was not overwritable: %v", err)
 	}
 }
@@ -519,7 +519,7 @@ func TestService_ReplacementCutOffAfterInstallRecoversNewSubtitle(t *testing.T) 
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
 	fc, _ := s.load(ctx, f.movieFile)
-	rel, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("first", 0), "srt", DefaultSettings(), nil, domain.System)
+	rel, _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("first", 0), "srt", DefaultSettings(), nil, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -529,7 +529,7 @@ func TestService_ReplacementCutOffAfterInstallRecoversNewSubtitle(t *testing.T) 
 	}
 	saveCrash = func() error { return errors.New("power cut after install") }
 	t.Cleanup(func() { saveCrash = nil })
-	_, err = s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("second", 0), "srt", DefaultSettings(), &old[0], domain.System)
+	_, _, err = s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("second", 0), "srt", DefaultSettings(), &old[0], domain.System)
 	saveCrash = nil
 	if err == nil {
 		t.Fatal("no crash")
@@ -584,7 +584,7 @@ func TestService_SaveCutOffAfterHoldRestoresOldSubtitleOnLook(t *testing.T) {
 	s, _ := svc(t, f, fakesite.Lab())
 	ctx := context.Background()
 	fc, _ := s.load(ctx, f.movieFile)
-	rel, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("first", 0), "srt", DefaultSettings(), nil, domain.System)
+	rel, _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("first", 0), "srt", DefaultSettings(), nil, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -594,7 +594,7 @@ func TestService_SaveCutOffAfterHoldRestoresOldSubtitleOnLook(t *testing.T) {
 	}
 	saveHoldCrash = func(int) error { return errors.New("power cut after hold") }
 	t.Cleanup(func() { saveHoldCrash = nil })
-	_, err = s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("second", 0), "srt", DefaultSettings(), &old[0], domain.System)
+	_, _, err = s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("second", 0), "srt", DefaultSettings(), &old[0], domain.System)
 	saveHoldCrash = nil
 	if err == nil {
 		t.Fatal("no crash")
@@ -624,11 +624,11 @@ func TestService_SaveCutOffMidHoldDoesNotMistakeOldTargetForNewSubtitle(t *testi
 	fc, _ := s.load(ctx, f.movieFile)
 	hi := fetchedRow(f.movieFile, "en")
 	hi.HearingImpaired = true
-	hiRel, err := s.save(ctx, fc, hi, fakesite.Cue("hearing impaired old", 0), "srt", DefaultSettings(), nil, domain.System)
+	hiRel, _, err := s.save(ctx, fc, hi, fakesite.Cue("hearing impaired old", 0), "srt", DefaultSettings(), nil, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
-	plainRel, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("plain old", 0), "srt", DefaultSettings(), nil, domain.System)
+	plainRel, _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("plain old", 0), "srt", DefaultSettings(), nil, domain.System)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -643,7 +643,7 @@ func TestService_SaveCutOffMidHoldDoesNotMistakeOldTargetForNewSubtitle(t *testi
 		return nil
 	}
 	t.Cleanup(func() { saveHoldCrash = nil })
-	_, err = s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("new", 0), "srt", DefaultSettings(), &old[0], domain.System)
+	_, _, err = s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("new", 0), "srt", DefaultSettings(), &old[0], domain.System)
 	saveHoldCrash = nil
 	if err == nil {
 		t.Fatal("no crash")
@@ -695,7 +695,7 @@ func TestService_ChoicesAfterAHandPick(t *testing.T) {
 	wishAll(t, f, Want{Language: "en"})
 	ctx := context.Background()
 	fc, _ := s.load(ctx, f.movieFile)
-	if _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("picked", 0), "srt", DefaultSettings(), nil, domain.System); err != nil {
+	if _, _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("picked", 0), "srt", DefaultSettings(), nil, domain.System); err != nil {
 		t.Fatal(err)
 	}
 	if err := f.st.Write(ctx, func(tx *sql.Tx) error {

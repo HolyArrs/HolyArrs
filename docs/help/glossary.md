@@ -15,6 +15,7 @@ One line per word. Where older apps such as Sonarr and Radarr use another name, 
 | **Alert** | An outgoing message, such as a webhook, Discord or email. | Connect, notification |
 | **Approve** | An owner or admin says yes to a request, which adds the title and starts searching. | |
 | **Choose a release** | Picking one download by hand from the search results. | Interactive search |
+| **Cleanup** | Steps that tidy each SRT subtitle HolyArrs saves, such as removing ads or sound descriptions. | Subtitle mods |
 | **Download** | One job in a downloader. | Queue item |
 | **Downloader** | The app that downloads for HolyArrs, such as qBittorrent or SABnzbd. | Download client |
 | **Episode order** | Which numbering a show follows: aired, absolute, DVD or daily. | |

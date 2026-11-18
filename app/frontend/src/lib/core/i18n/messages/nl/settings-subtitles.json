@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Uit: alleen als je op Vertalen klikt. Beeldondertitels worden altijd overgeslagen.",
 	"settings.subtitles.trSaved": "Vertaler opgeslagen",
 	"settings.subtitles.machineMade": "Machinale ondertitels",
-	"settings.subtitles.machineMadeHint": "Alleen gebruikt als er geen bestand van een mens is. Dat vervangt het later."
+	"settings.subtitles.machineMadeHint": "Alleen gebruikt als er geen bestand van een mens is. Dat vervangt het later.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

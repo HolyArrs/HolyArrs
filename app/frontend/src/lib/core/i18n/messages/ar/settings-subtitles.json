@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "متوقف: فقط عند النقر على ترجمة. تُتخطى الترجمات المصورة دائمًا.",
 	"settings.subtitles.trSaved": "تم حفظ المترجم",
 	"settings.subtitles.machineMade": "تضمين الترجمات الآلية",
-	"settings.subtitles.machineMadeHint": "تُستخدم فقط عند غياب ملف صنعه شخص، ويحل محلها لاحقًا."
+	"settings.subtitles.machineMadeHint": "تُستخدم فقط عند غياب ملف صنعه شخص، ويحل محلها لاحقًا.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

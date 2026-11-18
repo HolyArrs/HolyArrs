@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Uklonjeno ovdje; preuzimatelj ga još ima",
 	"downloads.status.doneSeeding": "Gotovo · seeda se",
 	"downloads.rm.keepsPath": "Zadržava {path}: nalazi se u mapi biblioteke ili oko nje.",
-	"downloads.rm.keepsSome": "Zadržava datoteke koje su u mapi biblioteke ili oko nje."
+	"downloads.rm.keepsSome": "Zadržava datoteke koje su u mapi biblioteke ili oko nje.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

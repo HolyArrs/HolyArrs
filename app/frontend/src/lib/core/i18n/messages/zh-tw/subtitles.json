@@ -161,5 +161,18 @@
 	"subtitles.panel.translateFrom": "翻譯自",
 	"subtitles.panel.translateQueued": "翻譯中",
 	"subtitles.panel.translateQueuedBody": "{name}字幕完成後會顯示在這裡。",
-	"subtitles.panel.translating": "找不到字幕，因此你的翻譯器正在製作一份。"
+	"subtitles.panel.translating": "找不到字幕，因此你的翻譯器正在製作一份。",
+	"subtitles.cleanup.language": "Language",
+	"subtitles.cleanup.all": "Every other language",
+	"subtitles.cleanup.add": "Add cleanup for a language",
+	"subtitles.cleanup.empty": "No cleanup: subtitles are saved as they come.",
+	"subtitles.cleanup.takeOff": "Remove cleanup for {name}",
+	"subtitles.cleanup.removeAds": "Remove ads and credits",
+	"subtitles.cleanup.removeHi": "Remove sound descriptions and speaker names",
+	"subtitles.cleanup.removeTags": "Remove formatting",
+	"subtitles.cleanup.removeEmoji": "Remove emoji",
+	"subtitles.cleanup.ocrFixes": "Fix OCR mistakes",
+	"subtitles.cleanup.commonFixes": "Fix spacing and punctuation",
+	"subtitles.cleanup.fixUppercase": "Fix lines in capitals",
+	"subtitles.cleanup.fixOverlaps": "Fix overlapping lines"
 }

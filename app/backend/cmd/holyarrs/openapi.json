@@ -6170,6 +6170,44 @@
         },
         "type": "object"
       },
+      "SubtitleCleanupOptions": {
+        "description": "The cleanup steps for one language. Every step is off by default.",
+        "properties": {
+          "common_fixes": {
+            "description": "Tidy spacing, punctuation, dialogue dashes and ellipses.",
+            "type": "boolean"
+          },
+          "fix_overlaps": {
+            "description": "End a cue a little before the next one when they overlap.",
+            "type": "boolean"
+          },
+          "fix_uppercase": {
+            "description": "Turn lines written all in capitals into sentence case.",
+            "type": "boolean"
+          },
+          "ocr_fixes": {
+            "description": "Mend letters OCR often mistakes, such as l for I and 0 for O.",
+            "type": "boolean"
+          },
+          "remove_ads": {
+            "description": "Remove ad and credit cues near the start and the end.",
+            "type": "boolean"
+          },
+          "remove_emoji": {
+            "description": "Remove emoji. Music notes stay.",
+            "type": "boolean"
+          },
+          "remove_hi": {
+            "description": "Remove sound descriptions and speaker names. Never done for a hearing-impaired only wish or a forced subtitle.",
+            "type": "boolean"
+          },
+          "remove_tags": {
+            "description": "Remove formatting tags such as italics and colours.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
       "SubtitleFileView": {
         "properties": {
           "file_id": {
@@ -6369,6 +6407,13 @@
             "maximum": 168,
             "minimum": 6,
             "type": "integer"
+          },
+          "cleanup": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SubtitleCleanupOptions"
+            },
+            "description": "Cleanup steps run on each SRT subtitle HolyArrs saves, by language code, with * for every language without its own row. Sending it replaces every row; leaving it out keeps them.",
+            "type": "object"
           },
           "hi_suffix": {
             "enum": [

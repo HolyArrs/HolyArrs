@@ -94,6 +94,36 @@ Each subtitle site has **Machine-made subtitles**. Off by default. On, a site's 
 
 How scoring works, when HolyArrs searches, and the sites it uses are in [Subtitle scoring and sites](subtitle-scoring.md).
 
+### Cleanup
+
+In **Settings > Subtitles > Cleanup**, pick what HolyArrs tidies in each subtitle it saves: from a site, chosen by hand, or made by your translator. Nothing is on until you turn it on.
+
+1. Click **Add cleanup for a language**. The first row is **Every other language**; add rows for languages that need different steps.
+2. Tick the steps you want.
+3. Click **Save**. Subtitles saved from now on are cleaned. Files already saved stay as they are.
+
+| Step | What it does |
+|---|---|
+| **Remove ads and credits** | Removes lines near the start and the end that name a subtitle site, a web address or a credit such as "Subtitles by". The words it looks for are in English; web addresses and site names are found in any language. |
+| **Remove sound descriptions and speaker names** | Removes text in square brackets or parentheses, such as `[door slams]`, and names in capitals before a colon, such as `JOHN:`. The file is then saved as a normal subtitle, without `.hi`. |
+| **Remove formatting** | Removes italics, bold, colours and on-screen positions. |
+| **Remove emoji** | Removes emoji. Music notes stay. |
+| **Fix OCR mistakes** | Mends letters often misread from picture subtitles, such as `G0D` for `GOD`, and in English `l'm` for `I'm`. |
+| **Fix spacing and punctuation** | Removes double spaces and spaces before punctuation, adds the missing space after a comma, writes dialogue dashes as `- ` and long rows of dots as `...`. French keeps its space before `!`, `?`, `;` and `:`. |
+| **Fix lines in capitals** | Turns lines written all in capitals into normal sentences. Short lines such as `FBI` stay. |
+| **Fix overlapping lines** | Ends a line a little before the next one starts when the two overlap. Lines that start together stay, since some subtitles show two at once on purpose. |
+
+What cleanup never does:
+
+- It cleans only `.srt` files. Other formats are saved as they came.
+- It never touches a subtitle file HolyArrs did not save, or a subtitle inside the video.
+- **Forced only** subtitles keep their sound descriptions, capitals, and first and last lines.
+- A language set to **Hearing-impaired only** keeps its sound descriptions.
+
+Before a cleaned file is saved, the file as it came goes to the holding folder. The title's **History** says how many lines were removed or changed and where the original is.
+
+With **Remove ads and credits** on, a translation also leaves out the source's ads and credits, so your translator never spends lines on them.
+
 ## If it does not work
 
 **Symptom:** nothing is listed as missing.
@@ -112,6 +142,13 @@ How scoring works, when HolyArrs searches, and the sites it uses are in [Subtitl
 **Symptom:** an existing subtitle was not replaced.
 **Cause:** HolyArrs never overwrites subtitle files it did not save.
 
+**Symptom:** cleanup removed a line you wanted.
+**Cause:** the line looked like a credit, a sound description or a speaker name.
+**Fix:** the file as it came is in the holding folder, see the subtitle's entry in **History**. Turn that step off for the language under **Settings > Subtitles > Cleanup**.
+
+**Symptom:** a saved subtitle was not cleaned.
+**Cause:** it is not an `.srt` file, it has text between its lines that HolyArrs can't place in a line, or no step is on for its language. The subtitle's entry in **History** says which.
+
 ## For experts
 
 <details class="ha-more"><summary>Settings reference</summary>
@@ -122,6 +159,7 @@ How scoring works, when HolyArrs searches, and the sites it uses are in [Subtitl
 | **Hearing-impaired** file ending | `.hi` | `.hi`, `.cc`, `.sdh` |
 | **Count subtitles inside the video** | On | On or Off |
 | **Leave out picture subtitles** | Off | On or Off |
+| **Cleanup** | every step off | each step On or Off, per language |
 
 Scoring, schedule and Sync fix settings are in [Subtitle scoring and sites](subtitle-scoring.md).
 

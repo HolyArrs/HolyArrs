@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Eliminat aquí; el gestor de baixades encara el té",
 	"downloads.status.doneSeeding": "Fet · sembrant",
 	"downloads.rm.keepsPath": "Conserva {path}: és dins o al voltant d'una carpeta de la Biblioteca.",
-	"downloads.rm.keepsSome": "Conserva els fitxers que són dins o al voltant d'una carpeta de la Biblioteca."
+	"downloads.rm.keepsSome": "Conserva els fitxers que són dins o al voltant d'una carpeta de la Biblioteca.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

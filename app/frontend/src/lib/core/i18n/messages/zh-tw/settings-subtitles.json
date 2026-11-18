@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "關閉：僅在你按下「翻譯」時。圖片字幕一律略過。",
 	"settings.subtitles.trSaved": "翻譯器已儲存",
 	"settings.subtitles.machineMade": "機器製作的字幕",
-	"settings.subtitles.machineMadeHint": "僅在沒有人工製作的檔案時使用。之後人工檔案會取代它。"
+	"settings.subtitles.machineMadeHint": "僅在沒有人工製作的檔案時使用。之後人工檔案會取代它。",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Borttagen här; nedladdaren har den kvar",
 	"downloads.status.doneSeeding": "Klar · seedar",
 	"downloads.rm.keepsPath": "Behåller {path}: den ligger i eller runt en biblioteksmapp.",
-	"downloads.rm.keepsSome": "Behåller filerna som ligger i eller runt en biblioteksmapp."
+	"downloads.rm.keepsSome": "Behåller filerna som ligger i eller runt en biblioteksmapp.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

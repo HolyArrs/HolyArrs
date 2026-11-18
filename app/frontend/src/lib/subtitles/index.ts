@@ -1,5 +1,7 @@
 export { accountMissing } from './api.ts';
 export { accountWords } from './api.ts';
+export { cleanupBody } from './api.ts';
+export { default as CleanupEditor } from './CleanupEditor.svelte';
 export { default as LanguageWants } from './LanguageWants.svelte';
 export { default as SubtitlePanel } from './SubtitlePanel.svelte';
 export { jobsDone } from './api.ts';
@@ -14,6 +16,7 @@ export { siteState } from './api.ts';
 export { translatorBody } from './api.ts';
 export { wantLabel } from './api.ts';
 export { wishProblem } from './api.ts';
+export type { CleanupOptions } from './api.ts';
 export type { Language } from './api.ts';
 export type { MissingRow } from './api.ts';
 export type { MissingTitle } from './api.ts';

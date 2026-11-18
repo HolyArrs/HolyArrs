@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "כבוי: רק כשלוחצים על \"תרגום\". כתוביות תמונה תמיד מדולגות.",
 	"settings.subtitles.trSaved": "המתרגם נשמר",
 	"settings.subtitles.machineMade": "כתוביות שנוצרו במכונה",
-	"settings.subtitles.machineMadeHint": "משמשות רק כשאין קובץ שנוצר על ידי אדם. קובץ של אדם יחליף אותן בהמשך."
+	"settings.subtitles.machineMadeHint": "משמשות רק כשאין קובץ שנוצר על ידי אדם. קובץ של אדם יחליף אותן בהמשך.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "여기서는 삭제했지만 다운로더에는 아직 남아 있습니다",
 	"downloads.status.doneSeeding": "완료 · 시딩 중",
 	"downloads.rm.keepsPath": "{path}은(는) 남깁니다: 라이브러리 폴더 안이나 주변에 있습니다.",
-	"downloads.rm.keepsSome": "라이브러리 폴더 안이나 주변에 있는 파일은 남깁니다."
+	"downloads.rm.keepsSome": "라이브러리 폴더 안이나 주변에 있는 파일은 남깁니다.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

@@ -104,5 +104,8 @@
   "settings.subtitles.trBuiltInHint": "Av: bare når du klikker Oversett. Bildeundertekster hoppes alltid over.",
   "settings.subtitles.trSaved": "Oversetter lagret",
   "settings.subtitles.machineMade": "Maskinlagde undertekster",
-  "settings.subtitles.machineMadeHint": "Brukes bare når ingen fil laget av et menneske finnes. Et menneskes fil erstatter den senere."
+  "settings.subtitles.machineMadeHint": "Brukes bare når ingen fil laget av et menneske finnes. Et menneskes fil erstatter den senere.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

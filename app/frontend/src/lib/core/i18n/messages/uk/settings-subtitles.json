@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Вимк.: лише за кнопкою «Перекласти». Субтитри-зображення завжди пропускаються.",
 	"settings.subtitles.trSaved": "Перекладача збережено",
 	"settings.subtitles.machineMade": "Включати машинні субтитри",
-	"settings.subtitles.machineMadeHint": "Лише якщо немає файлу від людини. Такий файл потім замінить його."
+	"settings.subtitles.machineMadeHint": "Лише якщо немає файлу від людини. Такий файл потім замінить його.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

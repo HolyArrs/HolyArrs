@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Odebráno zde; stahovač ho stále má",
 	"downloads.status.doneSeeding": "Hotovo · sdílí se",
 	"downloads.rm.keepsPath": "Ponechá {path}: je ve složce knihovny nebo kolem ní.",
-	"downloads.rm.keepsSome": "Ponechá soubory, které jsou ve složce knihovny nebo kolem ní."
+	"downloads.rm.keepsSome": "Ponechá soubory, které jsou ve složce knihovny nebo kolem ní.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

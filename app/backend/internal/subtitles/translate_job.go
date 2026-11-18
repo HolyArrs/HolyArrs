@@ -74,6 +74,9 @@ type TranslateResult struct {
 	Translated int    `json:"translated"`
 	Partial    bool   `json:"partial,omitempty"`
 	Skipped    string `json:"skipped,omitempty"`
+
+	// cleanup is what cleanup did to the saved file, for its Event.
+	cleanup map[string]any
 }
 
 // translateFailed is a translation that ran and failed. The Job is not tried
@@ -212,6 +215,15 @@ func (s *Service) Translate(ctx context.Context, fileID int64, req TranslateRequ
 	if err != nil {
 		return res, err
 	}
+	// A site's credits in the source would come back translated, where the
+	// target language's ad words no longer find them, so they go first. The
+	// cues are only read here, so this works for any source format and never
+	// changes the source file. Forced subtitles keep theirs, as when saved.
+	set := ReadSettings(ctx, s.Store.Read())
+	sourceAds := 0
+	if set.CleanupFor(req.Language).RemoveAds && !req.Forced {
+		cues, sourceAds = subtext.RemoveAds(cues, src.language)
+	}
 	job := translate.Job{Batch: translate.Batch{From: src.language, To: req.Language, FromName: LanguageName(src.language), ToName: LanguageName(req.Language),
 		Title: fc.title.Name, Kind: fc.item.Kind, MediaID: fc.title.ID}}
 	for i, c := range cues {
@@ -247,11 +259,17 @@ func (s *Service) Translate(ctx context.Context, fileID int64, req TranslateRequ
 	}
 	row := Subtitle{FileID: fc.file.ID, Language: req.Language, Forced: req.Forced, HearingImpaired: src.hi, Place: "beside",
 		SiteName: &name, SiteKey: &src.language, Score: &score, ScoreParts: []Part{}, Origin: "fetched", State: "present", Sync: map[string]any{}, Made: &made}
-	p, err := s.save(ctx, fc, &row, subtext.WriteSRT(cues), subtext.SRT, ReadSettings(ctx, s.Store.Read()), old, by)
+	p, cl, err := s.save(ctx, fc, &row, subtext.WriteSRT(cues), subtext.SRT, set, old, by)
 	if err != nil {
 		return res, err
 	}
-	res.Path = p
+	if sourceAds > 0 {
+		if cl == nil {
+			cl = map[string]any{}
+		}
+		cl["source_ads_removed"] = sourceAds
+	}
+	res.Path, res.cleanup = p, cl
 	s.translateEvent(ctx, fc, req, src, res, "", by)
 	return res, nil
 }
@@ -293,6 +311,9 @@ func (s *Service) translateEvent(ctx context.Context, fc *fileCtx, req Translate
 	data := map[string]any{"file_id": fileID, "language": req.Language, "from": src.language, "source": src.kind, "lines": res.Lines,
 		"translated": res.Translated, "by_hand": req.ByHand}
 	group := "subtitles:" + itoa(fileID)
+	if res.cleanup != nil && why == "" {
+		data["cleanup"] = res.cleanup
+	}
 	var e *domain.Event
 	switch {
 	case why != "":

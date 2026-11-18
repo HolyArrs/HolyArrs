@@ -46,6 +46,9 @@ type Outcome struct {
 	Reason  string   `json:"reason,omitempty"`
 	Made    string   `json:"made,omitempty"`    // a machine-made file stood in, see Subtitle.Made
 	Choices []Scored `json:"choices,omitempty"` // filled only for Show searches
+
+	// cleanup is what cleanup did to the saved file, for its Event.
+	cleanup map[string]any
 }
 
 // SearchResult is the outcome of searching one File.
@@ -211,12 +214,12 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 			if c.Score.Refused != "" || c.Score.Total < pass || c.Score.Total <= t.beat {
 				break // the list is ranked, so nothing after this is better
 			}
-			p, err := s.fetchAndSave(ctx, fc, t, c, bySite[c.Site], set, by)
+			p, cl, err := s.fetchAndSave(ctx, fc, t, c, bySite[c.Site], set, by)
 			if err != nil {
 				out.Reason = err.Error()
 				continue
 			}
-			out.Result, out.Path, out.Score, out.Site, out.Reason = "saved", p, c.Score.Total, c.Site, ""
+			out.Result, out.Path, out.Score, out.Site, out.Reason, out.cleanup = "saved", p, c.Score.Total, c.Site, "", cl
 			if t.old != nil {
 				out.Result = "upgraded"
 			}
@@ -247,9 +250,13 @@ func (s *Service) afterTarget(ctx context.Context, fc *fileCtx, t target, out *O
 		if out.Result == "upgraded" {
 			kind, verb = EventUpgraded, "Saved a better"
 		}
+		data := map[string]any{"file_id": fileID, "language": t.want.Language, "path": out.Path, "score": out.Score, "site": out.Site}
+		if out.cleanup != nil {
+			data["cleanup"] = out.cleanup
+		}
 		s.event(ctx, &domain.Event{Actor: by, Kind: kind, TitleID: &titleID, SlotID: &slotID,
 			Summary: fmt.Sprintf("%s %s subtitle from %s (score %d)", verb, fmtWant(t.want), out.Site, out.Score),
-			Data:    map[string]any{"file_id": fileID, "language": t.want.Language, "path": out.Path, "score": out.Score, "site": out.Site}, GroupKey: "subtitles:" + itoa(fileID)})
+			Data:    data, GroupKey: "subtitles:" + itoa(fileID)})
 	case "none_good_enough", "translating":
 		next := now().Add(time.Duration(set.SearchHours) * time.Hour)
 		_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -276,30 +283,31 @@ func (s *Service) afterTarget(ctx context.Context, fc *fileCtx, t target, out *O
 }
 
 // fetchAndSave downloads a candidate, checks it and saves it beside the video,
-// holding any replaced subtitle aside. It returns the saved path.
-func (s *Service) fetchAndSave(ctx context.Context, fc *fileCtx, t target, c Scored, r SiteRow, set Settings, by domain.Actor) (string, error) {
+// holding any replaced subtitle aside. It returns the saved path and what
+// cleanup did.
+func (s *Service) fetchAndSave(ctx context.Context, fc *fileCtx, t target, c Scored, r SiteRow, set Settings, by domain.Actor) (string, map[string]any, error) {
 	site, err := s.client(ctx, r)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	if !s.countDownload(ctx, r) {
-		return "", errors.New("the site's downloads for today are used up")
+		return "", nil, errors.New("the site's downloads for today are used up")
 	}
 	data, err := site.Download(ctx, c.Candidate)
 	if err != nil {
 		s.pause(ctx, r, err)
-		return "", err
+		return "", nil, err
 	}
 	entries, err := subtext.Unpack(data, c.Key+"."+c.Format)
 	if err != nil {
 		s.failed(ctx, fc, t.want, c.Site, err, by)
-		return "", err
+		return "", nil, err
 	}
 	e := pickEntry(entries)
 	text, err := subtext.Clean(e.Data, e.Format)
 	if err != nil {
 		s.failed(ctx, fc, t.want, c.Site, err, by)
-		return "", err
+		return "", nil, err
 	}
 	siteID := r.ID
 	// The file keeps the language the site gave, so a pt-BR file found for a pt
@@ -319,11 +327,11 @@ func (s *Service) fetchAndSave(ctx context.Context, fc *fileCtx, t target, c Sco
 	if siteID != 0 {
 		row.SiteID = &siteID
 	}
-	p, err := s.save(ctx, fc, &row, text, e.Format, set, t.old, by)
+	p, cl, err := s.save(ctx, fc, &row, text, e.Format, set, t.old, by)
 	if err != nil {
 		s.failed(ctx, fc, t.want, c.Site, err, by)
 	}
-	return p, err
+	return p, cl, err
 }
 
 // pickEntry prefers an SRT entry and falls back to the first one.
@@ -372,10 +380,20 @@ var ErrNotOurs = errors.New("a subtitle file HolyArrs did not save is at that na
 // importer's safe-write rules. The path must stay inside the Library folder
 // with links followed. The text goes to a temporary file that is synced and
 // then renamed into place. A file already at the name is held aside in the
-// holding folder if the app saved it; otherwise the save is refused.
-func (s *Service) save(ctx context.Context, fc *fileCtx, row *Subtitle, text, format string, set Settings, old *Subtitle, by domain.Actor) (string, error) {
+// holding folder if the app saved it; otherwise the save is refused. The
+// owner's cleanup runs first, with the uncleaned text kept in the holding
+// folder. The returned note says what cleanup did, for the save's Event.
+func (s *Service) save(ctx context.Context, fc *fileCtx, row *Subtitle, text, format string, set Settings, old *Subtitle, by domain.Actor) (string, map[string]any, error) {
+	cl := s.cleanup(ctx, fc, row, text, format, set)
+	// Named after cleanup, which may have made a hearing-impaired file a normal one.
 	rel := SubtitleName(fc.file.RelativePath, row.Language, row.HearingImpaired, row.Forced, set.HISuffix, format)
-	return s.writeAt(ctx, fc, row, text, rel, old, by)
+	text, held := cl.hold(fc.lib, rel, text)
+	p, err := s.writeAt(ctx, fc, row, text, rel, old, by)
+	if err != nil {
+		unhold(held)
+		return p, nil, err
+	}
+	return p, cl.note, nil
 }
 
 type heldSubtitle struct {

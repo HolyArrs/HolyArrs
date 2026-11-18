@@ -104,5 +104,8 @@
 "settings.subtitles.trBuiltInHint": "オフ：翻訳を押したときだけ。画像字幕は常にスキップします。",
 "settings.subtitles.trSaved": "翻訳ツールを保存しました",
 "settings.subtitles.machineMade": "機械生成の字幕も含める",
-"settings.subtitles.machineMadeHint": "人が作ったファイルがないときだけ使い、後で置き換えます。"
+"settings.subtitles.machineMadeHint": "人が作ったファイルがないときだけ使い、後で置き換えます。",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

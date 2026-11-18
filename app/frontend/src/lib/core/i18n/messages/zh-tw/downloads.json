@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "已在此處移除；下載器中仍有它",
 	"downloads.status.doneSeeding": "已完成 · 做種中",
 	"downloads.rm.keepsPath": "保留 {path}：它位於媒體庫資料夾之內或外圍。",
-	"downloads.rm.keepsSome": "保留位於媒體庫資料夾之內或外圍的檔案。"
+	"downloads.rm.keepsSome": "保留位於媒體庫資料夾之內或外圍的檔案。",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Išjungta: tik kai spustelite Versti. Vaizdiniai subtitrai visada praleidžiami.",
 	"settings.subtitles.trSaved": "Vertėjas išsaugotas",
 	"settings.subtitles.machineMade": "Mašinos sukurti subtitrai",
-	"settings.subtitles.machineMadeHint": "Naudojami tik tada, kai nėra žmogaus sukurto failo. Žmogaus failas juos vėliau pakeičia."
+	"settings.subtitles.machineMadeHint": "Naudojami tik tada, kai nėra žmogaus sukurto failo. Žmogaus failas juos vėliau pakeičia.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

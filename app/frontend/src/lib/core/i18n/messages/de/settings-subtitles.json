@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Aus: nur wenn du auf Übersetzen klickst. Bilduntertitel werden immer übersprungen.",
 	"settings.subtitles.trSaved": "Übersetzer gespeichert",
 	"settings.subtitles.machineMade": "Maschinelle Untertitel",
-	"settings.subtitles.machineMadeHint": "Nur genutzt, wenn keine Datei von einem Menschen da ist. Eine solche ersetzt sie später."
+	"settings.subtitles.machineMadeHint": "Nur genutzt, wenn keine Datei von einem Menschen da ist. Eine solche ersetzt sie später.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

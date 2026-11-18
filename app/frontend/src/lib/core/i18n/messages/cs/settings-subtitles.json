@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Vypnuto: jen když kliknete na Přeložit. Obrázkové titulky se vždy přeskakují.",
 	"settings.subtitles.trSaved": "Překladač uložen",
 	"settings.subtitles.machineMade": "Strojově vytvořené titulky",
-	"settings.subtitles.machineMadeHint": "Použijí se, jen když neexistuje soubor od člověka. Soubor od člověka je později nahradí."
+	"settings.subtitles.machineMadeHint": "Použijí se, jen když neexistuje soubor od člověka. Soubor od člověka je později nahradí.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

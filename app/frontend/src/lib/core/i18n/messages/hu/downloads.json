@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Itt eltávolítva; a Letöltőben még megvan",
 	"downloads.status.doneSeeding": "Kész · seedelés",
 	"downloads.rm.keepsPath": "Megtartja: {path}, mert médiatár-mappában vagy körülötte van.",
-	"downloads.rm.keepsSome": "Megtartja a médiatár-mappában vagy körülötte lévő fájlokat."
+	"downloads.rm.keepsSome": "Megtartja a médiatár-mappában vagy körülötte lévő fájlokat.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

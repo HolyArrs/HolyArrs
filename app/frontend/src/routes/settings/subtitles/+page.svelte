@@ -12,7 +12,7 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
-	import { LanguageWants as WishEditor, accountMissing, accountWords, kindCovers, siteBody, siteForm, siteState, translatorBody, wishProblem, type Language, type Translator, type TranslatorForm, type SiteForm, type SiteKind, type SiteView, type SubtitleSettings } from '#lib/subtitles/index.ts';
+	import { CleanupEditor, LanguageWants as WishEditor, accountMissing, cleanupBody, accountWords, kindCovers, siteBody, siteForm, siteState, translatorBody, wishProblem, type Language, type Translator, type TranslatorForm, type SiteForm, type SiteKind, type SiteView, type SubtitleSettings } from '#lib/subtitles/index.ts';
 	import { onMount } from 'svelte';
 	import { testCount } from '#lib/core/test-tag.ts';
 	import { api } from '#lib/core/api.ts';
@@ -132,6 +132,7 @@
 		try {
 			const body = { ...settings };
 			for (const k of ['pass_mark_movie', 'pass_mark_episode', 'search_hours', 'better_hours', 'better_days', 'batch', 'sync_from_fps', 'sync_to_fps', 'sync_step_ms'] as const) body[k] = Number(body[k]);
+			body.cleanup = cleanupBody(settings.cleanup);
 			settings = await api.put<SubtitleSettings>('/settings/subtitles', body);
 			saved = JSON.stringify(settings);
 			toasts.push(t('settings.subtitles.saved'), 'ok');
@@ -262,6 +263,10 @@
 				</details>
 	
 			{/snippet}
+		</SettingsCard>
+		<SettingsCard id="cleanup-card" title={t('settings.subtitles.cleanup')} description={t('settings.subtitles.cleanupDesc')}>
+			<CleanupEditor bind:rows={settings.cleanup} {langs} id="cleanup" />
+			{#if Object.keys(settings.cleanup).length}<p class="xs muted hint-block">{t('settings.subtitles.cleanupHint')}</p>{/if}
 		</SettingsCard>
 		{#if setError}<p class="form-error" role="alert">{setError}</p>{/if}
 	</form>

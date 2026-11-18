@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "அணை: நீங்கள் மொழிபெயர் என்பதைக் கிளிக் செய்யும்போது மட்டும். பட வசனங்கள் எப்போதும் தவிர்க்கப்படும்.",
 	"settings.subtitles.trSaved": "மொழிபெயர்ப்பாளர் சேமிக்கப்பட்டார்",
 	"settings.subtitles.machineMade": "இயந்திரம் உருவாக்கிய வசனங்கள்",
-	"settings.subtitles.machineMadeHint": "மனிதர் உருவாக்கிய கோப்பு இல்லாதபோது மட்டுமே பயன்படுத்தப்படும். பின்னர் மனிதரின் கோப்பு இதை மாற்றும்."
+	"settings.subtitles.machineMadeHint": "மனிதர் உருவாக்கிய கோப்பு இல்லாதபோது மட்டுமே பயன்படுத்தப்படும். பின்னர் மனிதரின் கோப்பு இதை மாற்றும்.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

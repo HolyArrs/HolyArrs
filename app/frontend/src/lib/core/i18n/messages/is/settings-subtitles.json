@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Af: aðeins þegar þú smellir á Þýða. Myndatexta er alltaf sleppt.",
 	"settings.subtitles.trSaved": "Þýðandi vistaður",
 	"settings.subtitles.machineMade": "Vélgerðir textar",
-	"settings.subtitles.machineMadeHint": "Notað aðeins þegar engin skrá gerð af manneskju er til. Skrá manneskju kemur í staðinn síðar."
+	"settings.subtitles.machineMadeHint": "Notað aðeins þegar engin skrá gerð af manneskju er til. Skrá manneskju kemur í staðinn síðar.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

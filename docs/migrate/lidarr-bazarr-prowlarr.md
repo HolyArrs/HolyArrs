@@ -33,7 +33,7 @@ Stays behind: metadata profiles, import lists for music, custom formats, release
 | Default language profile | Default subtitle languages. |
 | Podnapisi and Gestdown | **Subtitle sites**, one of each kind. A kind already here is left alone. |
 
-Stays behind: other subtitle sites and their accounts. HolyArrs reaches Addic7ed through Gestdown with no account, so add Gestdown under **Settings > Subtitles**. For a site with an account, type it there or use [Import keys from a file](import-secrets.md).
+Stays behind: other subtitle sites and their accounts, and subtitle mods. Turn on the matching steps under **Settings > Subtitles > Cleanup**. HolyArrs reaches Addic7ed through Gestdown with no account, so add Gestdown under **Settings > Subtitles**. For a site with an account, type it there or use [Import keys from a file](import-secrets.md).
 
 ## Prowlarr
 

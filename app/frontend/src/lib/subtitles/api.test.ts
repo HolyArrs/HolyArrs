@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
 	accountMissing,
+	cleanupBody,
+	cleanupKeys,
+	nextCleanupLanguage,
+	noCleanup,
+	renameCleanup,
 	fromWords,
 	jobsDone,
 	kindCovers,
@@ -26,6 +31,7 @@ import {
 	translateBody,
 	translateSources,
 	translatorBody,
+	type CleanupOptions,
 	type SiteKind,
 	type SubtitleRow
 } from './api.ts';
@@ -187,5 +193,43 @@ describe('translation', () => {
 	it('sends the machine-made switch with a site', () => {
 		const k: SiteKind = { kind: 'opensubtitles', name: 'OpenSubtitles', movies: true, shows: true, needs_account: false };
 		expect(siteBody({ ...siteForm(k), machine_made: true }).machine_made).toBe(true);
+	});
+});
+
+describe('cleanup rows', () => {
+	const langs = [
+		{ code: 'en', name: 'English' },
+		{ code: 'de', name: 'German' },
+		{ code: 'fr', name: 'French' }
+	];
+
+	it('lists every other language first, then by name', () => {
+		expect(cleanupKeys({ fr: noCleanup(), '*': noCleanup(), de: noCleanup() }, langs)).toEqual(['*', 'fr', 'de']);
+	});
+
+	it('starts a new row with every other language, then a common one not yet used', () => {
+		expect(nextCleanupLanguage({}, langs)).toBe('*');
+		expect(nextCleanupLanguage({ '*': noCleanup(), en: noCleanup(), es: noCleanup() }, langs)).toBe('fr');
+		expect(nextCleanupLanguage({ '*': noCleanup(), en: noCleanup(), fr: noCleanup(), de: noCleanup() }, langs)).toBe('es');
+		const all = Object.fromEntries(['*', 'en', 'es', 'fr', 'de'].map((k) => [k, noCleanup()]));
+		expect(nextCleanupLanguage(all, langs)).toBe('');
+	});
+
+	it('moves a row to another language, never over one that has a row', () => {
+		const c: Record<string, CleanupOptions> = { en: { ...noCleanup(), remove_ads: true }, fr: noCleanup() };
+		renameCleanup(c, 'en', 'de');
+		expect(Object.keys(c).sort()).toEqual(['de', 'fr']);
+		expect(c.de.remove_ads).toBe(true);
+		renameCleanup(c, 'de', 'fr');
+		expect(c.de.remove_ads).toBe(true);
+		expect(c.fr.remove_ads).toBe(false);
+	});
+
+	it('sends all eight steps of every row as true or false, and keeps a row with all off', () => {
+		const body = cleanupBody({ en: { remove_hi: true } as never, '*': noCleanup() });
+		expect(body.en).toEqual({ ...noCleanup(), remove_hi: true });
+		expect(Object.keys(body.en)).toHaveLength(8);
+		expect(body['*']).toEqual(noCleanup());
+		expect(cleanupBody(undefined)).toEqual({});
 	});
 });

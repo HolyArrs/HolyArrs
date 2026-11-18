@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Mati: hanya saat Anda mengeklik Terjemahkan. Subtitel gambar selalu dilewati.",
 	"settings.subtitles.trSaved": "Penerjemah disimpan",
 	"settings.subtitles.machineMade": "Subtitel buatan mesin",
-	"settings.subtitles.machineMadeHint": "Dipakai hanya bila tidak ada file buatan manusia. File buatan manusia menggantikannya nanti."
+	"settings.subtitles.machineMadeHint": "Dipakai hanya bila tidak ada file buatan manusia. File buatan manusia menggantikannya nanti.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

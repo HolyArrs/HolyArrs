@@ -10,13 +10,13 @@ import type { EventRecord, TitleView } from '../core/types.ts';
 
 /** One fact row: label, value and how the value is set. */
 export interface Fact {
-	label: 'When' | 'By' | 'Quality' | 'Size' | 'Source' | 'Downloader' | 'Release' | 'File' | 'From' | 'Folder' | 'Why';
+	label: 'When' | 'By' | 'Quality' | 'Size' | 'Source' | 'Downloader' | 'Release' | 'File' | 'From' | 'Folder' | 'Original' | 'Why';
 	value: string;
 	/** The muted relative part of When ("36 min ago"), same day only. */
 	ago?: string;
 	/** The datetime for a When value. */
 	at?: string;
-	/** Release, File, From and Folder are set in mono. */
+	/** Release, File, From, Folder and Original are set in mono. */
 	mono?: boolean;
 	/** A path: the full path, for the hover title and the copy button. */
 	full?: string;
@@ -78,6 +78,7 @@ export const FACT_LABEL: Record<Fact['label'], string> = {
 	get File() { return say('downloads.hp.file'); },
 	get From() { return say('downloads.hp.from'); },
 	get Folder() { return say('downloads.pf.folder'); },
+	get Original() { return say('downloads.hp.original'); },
 	get Why() { return say('downloads.hp.why'); }
 };
 
@@ -216,6 +217,8 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	path('File', first(row, (x, ev) => str(pathsOf(x).find((p) => str(p.to))?.to) || (isRename || /^file_(missing|back)$/.test(ev.Kind) ? str(x.to) || str(x.path) : '') || str(x.file)));
 	path('From', isRename ? str(d.from) : fromFile || first(row, (x) => str(x.from)));
 	path('Folder', str(d.folder) || str(d.path) || str(d.save_path));
+	// Where a cleaned subtitle's original is kept, from the Library folder down.
+	path('Original', str(cleanupOf(d)?.held));
 	const why = str(d.reason) || str(d.error) || str(d.message);
 	// Say the reason once: no Why when the line or title already says it.
 	const wl = plainWhy(why).toLowerCase(), ll = line.toLowerCase();
@@ -281,7 +284,7 @@ function factSet(row: HistoryRow, failedAt: StepKey | ''): Label[] {
 	if (/^(title_removed|episodes_removed|file_held|holding_cleaned)$/.test(k)) return ['By'];
 	if (/^download_(removed|not_removed)$/.test(k)) return ['By', 'Downloader'];
 	if (/^(ai_)?(ask|report)_/.test(k)) return ['By'];
-	if (k.startsWith('subtitle_')) return ['Source'];
+	if (k.startsWith('subtitle_')) return ['Source', 'Original'];
 	if (k === 'adopted' || k.startsWith('library_folder_')) return ['Folder'];
 	if (k === 'file_missing' || k === 'file_back') return ['File'];
 	if (k === 'gate_opened' || /^sign/.test(k)) return [];
@@ -364,7 +367,26 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 	}
 	if (k.startsWith('subtitle_')) {
 		const langs = Array.isArray(d.languages) ? (d.languages as unknown[]).map(str).filter(Boolean).join(', ') : str(d.language);
-		return { line: langs || fallback, long: false };
+		const cleaned = cleanupLine(d);
+		// The cleanup sentence needs room for its second line.
+		return { line: join(langs || fallback, cleaned), long: !!cleaned };
 	}
 	return { line: fallback, long: false };
+}
+
+/** The cleanup note a subtitle save Event keeps, or null. */
+function cleanupOf(d: Record<string, unknown>): Record<string, unknown> | null {
+	return d.cleanup && typeof d.cleanup === 'object' && !Array.isArray(d.cleanup) ? (d.cleanup as Record<string, unknown>) : null;
+}
+
+/** What cleanup did to a saved subtitle, from the counts in its save Event, and that the original is kept. Empty when cleanup changed nothing. */
+export function cleanupLine(d: Record<string, unknown>): string {
+	const c = cleanupOf(d);
+	if (!c) return '';
+	const removed = num(c.removed), changed = num(c.changed);
+	const did = removed && changed ? say('downloads.hp.cleanupBoth', { removed: plural(removed, 'line'), changed: count(changed) })
+		: removed ? say('downloads.hp.cleanupRemoved', { removed: plural(removed, 'line') })
+		: changed ? say('downloads.hp.cleanupChanged', { changed: plural(changed, 'line') })
+		: '';
+	return did && str(c.held) ? `${did} ${say('downloads.hp.cleanupHeld')}` : did;
 }

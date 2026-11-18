@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "关闭：仅在点击翻译时。图像字幕始终跳过。",
 	"settings.subtitles.trSaved": "已保存翻译工具",
 	"settings.subtitles.machineMade": "包含机器生成的字幕",
-	"settings.subtitles.machineMadeHint": "仅在没有人工字幕时使用，之后由人工字幕替换。"
+	"settings.subtitles.machineMadeHint": "仅在没有人工字幕时使用，之后由人工字幕替换。",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

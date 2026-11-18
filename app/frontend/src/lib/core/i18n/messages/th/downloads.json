@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "ลบที่นี่แล้ว แต่ตัวดาวน์โหลดยังมีอยู่",
 	"downloads.status.doneSeeding": "เสร็จแล้ว · กำลังซีด",
 	"downloads.rm.keepsPath": "เก็บ {path} ไว้: อยู่ข้างในหรือรอบโฟลเดอร์ไลบรารี",
-	"downloads.rm.keepsSome": "เก็บไฟล์ที่อยู่ข้างในหรือรอบโฟลเดอร์ไลบรารีไว้"
+	"downloads.rm.keepsSome": "เก็บไฟล์ที่อยู่ข้างในหรือรอบโฟลเดอร์ไลบรารีไว้",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

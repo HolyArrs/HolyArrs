@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "এখানে সরানো হয়েছে; ডাউনলোডারে এখনও আছে",
 	"downloads.status.doneSeeding": "শেষ · সিডিং",
 	"downloads.rm.keepsPath": "{path} রাখে: এটি একটি লাইব্রেরি ফোল্ডারের ভেতরে বা চারপাশে।",
-	"downloads.rm.keepsSome": "লাইব্রেরি ফোল্ডারের ভেতরে বা চারপাশের ফাইলগুলো রাখে।"
+	"downloads.rm.keepsSome": "লাইব্রেরি ফোল্ডারের ভেতরে বা চারপাশের ফাইলগুলো রাখে।",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

@@ -323,6 +323,7 @@ chosen_by
 cinema_date
 cipher
 ciphertext
+cleanup
 clear_app_token
 clear_finished
 clear_key
@@ -351,6 +352,7 @@ colon
 color
 commandName
 comment
+common_fixes
 complete
 complete_path
 completed
@@ -632,6 +634,8 @@ first_release_date
 first_tried_at
 first_year
 fix
+fix_overlaps
+fix_uppercase
 fixed
 flags
 flap_guard
@@ -1152,6 +1156,7 @@ nzbget
 nzo_id
 nzo_ids
 occupied
+ocr_fixes
 off
 off_reason
 official
@@ -1450,9 +1455,13 @@ remoteUrl
 remote_path
 remote_path_mappings
 remove
+remove_ads
 remove_delete_files
+remove_emoji
 remove_failed
+remove_hi
 remove_search_again
+remove_tags
 remove_turn_down
 removed
 rename_on_import

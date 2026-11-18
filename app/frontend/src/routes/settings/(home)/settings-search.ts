@@ -115,6 +115,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/subtitles', 'lang-card', 'Default subtitle languages', 'subtitles languages english spanish'),
 	e('/settings/subtitles', 'pm-ep', 'Pass mark for episodes', 'subtitles score minimum episodes', true),
 	e('/settings/subtitles', 'pm-mov', 'Pass mark for movies', 'subtitles score minimum movies', true),
+	e('/settings/subtitles', 'cleanup-card', 'Subtitle cleanup', 'subtitles cleanup ads credits hearing impaired sdh speaker tags emoji ocr capitals uppercase overlap'),
 	e('/settings/subtitles', 'embedded', 'Count subtitles inside the video', 'subtitles embedded inside', true),
 	e('/settings/subtitles', 'no-picture', 'Leave out picture subtitles', 'subtitles pgs vobsub image', true),
 	e('/settings/subtitles', 'hi-suffix', 'Hearing-impaired file names', 'subtitles hi cc sdh deaf', true),

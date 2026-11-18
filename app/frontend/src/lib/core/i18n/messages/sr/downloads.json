@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Уклоњено овде; преузимач га још има",
 	"downloads.status.doneSeeding": "Готово · дели се",
 	"downloads.rm.keepsPath": "Задржава {path}: налази се у фасцикли библиотеке или око ње.",
-	"downloads.rm.keepsSome": "Задржава датотеке које су у фасцикли библиотеке или око ње."
+	"downloads.rm.keepsSome": "Задржава датотеке које су у фасцикли библиотеке или око ње.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

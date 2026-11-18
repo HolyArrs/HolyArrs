@@ -67,12 +67,16 @@ func Cue(line string, startMS int) string {
 }
 
 // Lab returns the lab catalog: the open movies of the lab library with made-up
-// text, one of them two seconds out of sync and one packed in a zip.
+// text, one of them two seconds out of sync and one packed in a zip, and a
+// French file for the browser tests' Quill Atlas that opens with a site's
+// credit, for subtitle cleanup to remove.
 func Lab() *Site {
 	return &Site{Echo: true, Subs: []Sub{
 		{ID: "bbb-en", Kind: "movie", Language: "en", Release: "Big.Buck.Bunny.2008.1080p.BluRay.x264-LAB", Title: "Big Buck Bunny", Year: 2008, Trusted: true, Format: "srt", Text: Cue("A big rabbit wakes up.", 1000), Downloads: 40},
 		{ID: "bbb-es", Kind: "movie", Language: "es", Release: "Big.Buck.Bunny.2008.1080p.BluRay.x264-LAB", Title: "Big Buck Bunny", Year: 2008, Format: "srt", Text: Cue("Un gran conejo despierta.", 3000), Downloads: 9, Zipped: true},
 		{ID: "ed-en", Kind: "movie", Language: "en", Release: "Elephants.Dream.2006.720p.WEB.x264-LAB", Title: "Elephants Dream", Year: 2006, Format: "srt", Text: Cue("The machine never sleeps.", 1000)},
+		{ID: "qa-fr", Kind: "movie", Language: "fr", Release: "Quill.Atlas.2011.1080p.BluRay.x264-LAB", Title: "Quill Atlas", Year: 2011, Trusted: true, Format: "srt",
+			Text: Cue("Sous-titres : www.labsubs.example", 0) + "\r\n" + Cue("L'atlas est perdu.", 2000)},
 	}}
 }
 

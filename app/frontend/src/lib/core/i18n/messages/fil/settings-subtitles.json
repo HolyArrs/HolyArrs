@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Off: kapag nag-click ka lang ng I-translate. Palaging nilalaktawan ang mga subtitle na larawan.",
 	"settings.subtitles.trSaved": "Na-save ang translator",
 	"settings.subtitles.machineMade": "Mga subtitle na gawa ng makina",
-	"settings.subtitles.machineMadeHint": "Ginagamit lang kapag walang file na gawa ng tao. Papalitan ito ng file ng tao sa susunod."
+	"settings.subtitles.machineMadeHint": "Ginagamit lang kapag walang file na gawa ng tao. Papalitan ito ng file ng tao sa susunod.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

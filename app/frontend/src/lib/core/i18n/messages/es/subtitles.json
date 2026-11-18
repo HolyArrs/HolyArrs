@@ -161,5 +161,18 @@
 	"subtitles.panel.translateFrom": "Traducir desde",
 	"subtitles.panel.translateQueued": "Traduciendo",
 	"subtitles.panel.translateQueuedBody": "El subtítulo en {name} aparece aquí al terminar.",
-	"subtitles.panel.translating": "No se encontró ninguno: tu traductor está creando uno."
+	"subtitles.panel.translating": "No se encontró ninguno: tu traductor está creando uno.",
+	"subtitles.cleanup.language": "Language",
+	"subtitles.cleanup.all": "Every other language",
+	"subtitles.cleanup.add": "Add cleanup for a language",
+	"subtitles.cleanup.empty": "No cleanup: subtitles are saved as they come.",
+	"subtitles.cleanup.takeOff": "Remove cleanup for {name}",
+	"subtitles.cleanup.removeAds": "Remove ads and credits",
+	"subtitles.cleanup.removeHi": "Remove sound descriptions and speaker names",
+	"subtitles.cleanup.removeTags": "Remove formatting",
+	"subtitles.cleanup.removeEmoji": "Remove emoji",
+	"subtitles.cleanup.ocrFixes": "Fix OCR mistakes",
+	"subtitles.cleanup.commonFixes": "Fix spacing and punctuation",
+	"subtitles.cleanup.fixUppercase": "Fix lines in capitals",
+	"subtitles.cleanup.fixOverlaps": "Fix overlapping lines"
 }

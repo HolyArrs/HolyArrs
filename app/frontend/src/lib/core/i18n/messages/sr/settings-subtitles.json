@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Искључено: само када кликнете на Преведи. Титлови у слици се увек прескачу.",
 	"settings.subtitles.trSaved": "Преводилац сачуван",
 	"settings.subtitles.machineMade": "Титлови направљени машински",
-	"settings.subtitles.machineMadeHint": "Користе се само када не постоји датотека коју је направила особа. Датотека особе их касније замењује."
+	"settings.subtitles.machineMadeHint": "Користе се само када не постоји датотека коју је направила особа. Датотека особе их касније замењује.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

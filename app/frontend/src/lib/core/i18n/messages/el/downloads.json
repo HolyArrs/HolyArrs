@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Αφαιρέθηκε εδώ· το πρόγραμμα λήψης το έχει ακόμη",
 	"downloads.status.doneSeeding": "Ολοκληρώθηκε · seeding",
 	"downloads.rm.keepsPath": "Κρατά το {path}: βρίσκεται μέσα ή γύρω από φάκελο βιβλιοθήκης.",
-	"downloads.rm.keepsSome": "Κρατά τα αρχεία που βρίσκονται μέσα ή γύρω από φάκελο βιβλιοθήκης."
+	"downloads.rm.keepsSome": "Κρατά τα αρχεία που βρίσκονται μέσα ή γύρω από φάκελο βιβλιοθήκης.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

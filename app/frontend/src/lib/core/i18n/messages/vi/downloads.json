@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Đã gỡ ở đây; Trình tải vẫn còn giữ",
 	"downloads.status.doneSeeding": "Xong · đang seed",
 	"downloads.rm.keepsPath": "Giữ {path}: nó nằm trong hoặc quanh một thư mục thư viện.",
-	"downloads.rm.keepsSome": "Giữ các tệp nằm trong hoặc quanh một thư mục thư viện."
+	"downloads.rm.keepsSome": "Giữ các tệp nằm trong hoặc quanh một thư mục thư viện.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

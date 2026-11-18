@@ -161,5 +161,18 @@
 	"subtitles.panel.translateFrom": "Преведи са",
 	"subtitles.panel.translateQueued": "Преводим",
 	"subtitles.panel.translateQueuedBody": "Титл {name} се приказује овде када буде готов.",
-	"subtitles.panel.translating": "Ниједан није пронађен, па га прави ваш преводилац."
+	"subtitles.panel.translating": "Ниједан није пронађен, па га прави ваш преводилац.",
+	"subtitles.cleanup.language": "Language",
+	"subtitles.cleanup.all": "Every other language",
+	"subtitles.cleanup.add": "Add cleanup for a language",
+	"subtitles.cleanup.empty": "No cleanup: subtitles are saved as they come.",
+	"subtitles.cleanup.takeOff": "Remove cleanup for {name}",
+	"subtitles.cleanup.removeAds": "Remove ads and credits",
+	"subtitles.cleanup.removeHi": "Remove sound descriptions and speaker names",
+	"subtitles.cleanup.removeTags": "Remove formatting",
+	"subtitles.cleanup.removeEmoji": "Remove emoji",
+	"subtitles.cleanup.ocrFixes": "Fix OCR mistakes",
+	"subtitles.cleanup.commonFixes": "Fix spacing and punctuation",
+	"subtitles.cleanup.fixUppercase": "Fix lines in capitals",
+	"subtitles.cleanup.fixOverlaps": "Fix overlapping lines"
 }

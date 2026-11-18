@@ -161,5 +161,18 @@
 	"subtitles.panel.translateFrom": "இதிலிருந்து மொழிபெயர்",
 	"subtitles.panel.translateQueued": "மொழிபெயர்க்கிறது",
 	"subtitles.panel.translateQueuedBody": "{name} வசனம் தயாரானதும் இங்கே தோன்றும்.",
-	"subtitles.panel.translating": "எதுவும் கிடைக்கவில்லை, எனவே உங்கள் மொழிபெயர்ப்பாளர் ஒன்றை உருவாக்குகிறார்."
+	"subtitles.panel.translating": "எதுவும் கிடைக்கவில்லை, எனவே உங்கள் மொழிபெயர்ப்பாளர் ஒன்றை உருவாக்குகிறார்.",
+	"subtitles.cleanup.language": "Language",
+	"subtitles.cleanup.all": "Every other language",
+	"subtitles.cleanup.add": "Add cleanup for a language",
+	"subtitles.cleanup.empty": "No cleanup: subtitles are saved as they come.",
+	"subtitles.cleanup.takeOff": "Remove cleanup for {name}",
+	"subtitles.cleanup.removeAds": "Remove ads and credits",
+	"subtitles.cleanup.removeHi": "Remove sound descriptions and speaker names",
+	"subtitles.cleanup.removeTags": "Remove formatting",
+	"subtitles.cleanup.removeEmoji": "Remove emoji",
+	"subtitles.cleanup.ocrFixes": "Fix OCR mistakes",
+	"subtitles.cleanup.commonFixes": "Fix spacing and punctuation",
+	"subtitles.cleanup.fixUppercase": "Fix lines in capitals",
+	"subtitles.cleanup.fixOverlaps": "Fix overlapping lines"
 }

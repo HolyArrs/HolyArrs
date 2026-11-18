@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "ここでは削除しましたが、ダウンローダーにはまだ残っています",
 	"downloads.status.doneSeeding": "完了 · シード中",
 	"downloads.rm.keepsPath": "{path} は残します: ライブラリフォルダーの中か周りにあります。",
-	"downloads.rm.keepsSome": "ライブラリフォルダーの中か周りにあるファイルは残します。"
+	"downloads.rm.keepsSome": "ライブラリフォルダーの中か周りにあるファイルは残します。",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

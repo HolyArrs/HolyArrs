@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Removed here; the Downloader still has it",
 	"downloads.status.doneSeeding": "Done · seeding",
 	"downloads.rm.keepsPath": "Keeps {path}: it is in or around a Library folder.",
-	"downloads.rm.keepsSome": "Keeps the files that are in or around a Library folder."
+	"downloads.rm.keepsSome": "Keeps the files that are in or around a Library folder.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

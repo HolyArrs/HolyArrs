@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Quitada aquí; el gestor de descargas aún la tiene",
 	"downloads.status.doneSeeding": "Hecha · sembrando",
 	"downloads.rm.keepsPath": "Conserva {path}: está dentro o alrededor de una carpeta de la Biblioteca.",
-	"downloads.rm.keepsSome": "Conserva los archivos que están dentro o alrededor de una carpeta de la Biblioteca."
+	"downloads.rm.keepsSome": "Conserva los archivos que están dentro o alrededor de una carpeta de la Biblioteca.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

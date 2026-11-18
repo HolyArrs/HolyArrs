@@ -104,5 +104,8 @@
 	"settings.subtitles.trBuiltInHint": "Izslēgts: tikai tad, kad noklikšķināt uz Tulkot. Attēlu subtitri vienmēr tiek izlaisti.",
 	"settings.subtitles.trSaved": "Tulkotājs saglabāts",
 	"settings.subtitles.machineMade": "Mašīnas veidoti subtitri",
-	"settings.subtitles.machineMadeHint": "Izmanto tikai tad, ja nav cilvēka veidota faila. Cilvēka fails tos vēlāk aizstāj."
+	"settings.subtitles.machineMadeHint": "Izmanto tikai tad, ja nav cilvēka veidota faila. Cilvēka fails tos vēlāk aizstāj.",
+	"settings.subtitles.cleanup": "Cleanup",
+	"settings.subtitles.cleanupDesc": "Tidies each SRT subtitle HolyArrs saves. The original is kept in the holding folder.",
+	"settings.subtitles.cleanupHint": "Only SRT files are cleaned. Forced subtitles keep their sound descriptions, capitals and first and last lines. A language set to Hearing-impaired only keeps its sound descriptions."
 }

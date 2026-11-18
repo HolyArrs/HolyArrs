@@ -161,5 +161,18 @@
 	"subtitles.panel.translateFrom": "الترجمة من",
 	"subtitles.panel.translateQueued": "جارٍ الترجمة",
 	"subtitles.panel.translateQueuedBody": "تظهر ترجمة {name} هنا عند اكتمالها.",
-	"subtitles.panel.translating": "لم يُعثر على شيء، فالمترجم يصنع واحدة."
+	"subtitles.panel.translating": "لم يُعثر على شيء، فالمترجم يصنع واحدة.",
+	"subtitles.cleanup.language": "Language",
+	"subtitles.cleanup.all": "Every other language",
+	"subtitles.cleanup.add": "Add cleanup for a language",
+	"subtitles.cleanup.empty": "No cleanup: subtitles are saved as they come.",
+	"subtitles.cleanup.takeOff": "Remove cleanup for {name}",
+	"subtitles.cleanup.removeAds": "Remove ads and credits",
+	"subtitles.cleanup.removeHi": "Remove sound descriptions and speaker names",
+	"subtitles.cleanup.removeTags": "Remove formatting",
+	"subtitles.cleanup.removeEmoji": "Remove emoji",
+	"subtitles.cleanup.ocrFixes": "Fix OCR mistakes",
+	"subtitles.cleanup.commonFixes": "Fix spacing and punctuation",
+	"subtitles.cleanup.fixUppercase": "Fix lines in capitals",
+	"subtitles.cleanup.fixOverlaps": "Fix overlapping lines"
 }

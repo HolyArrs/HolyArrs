@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Noņemts šeit; lejupielādētājam tas vēl ir",
 	"downloads.status.doneSeeding": "Gatavs · sēž",
 	"downloads.rm.keepsPath": "Patur {path}: tas atrodas bibliotēkas mapē vai ap to.",
-	"downloads.rm.keepsSome": "Patur failus, kas atrodas bibliotēkas mapē vai ap to."
+	"downloads.rm.keepsSome": "Patur failus, kas atrodas bibliotēkas mapē vai ap to.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "यहाँ से हटाया गया; डाउनलोडर में अभी भी है",
 	"downloads.status.doneSeeding": "हो गया · सीड हो रहा है",
 	"downloads.rm.keepsPath": "{path} रखता है: यह किसी लाइब्रेरी फ़ोल्डर के अंदर या आसपास है।",
-	"downloads.rm.keepsSome": "लाइब्रेरी फ़ोल्डर के अंदर या आसपास की फ़ाइलें रखता है।"
+	"downloads.rm.keepsSome": "लाइब्रेरी फ़ोल्डर के अंदर या आसपास की फ़ाइलें रखता है।",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

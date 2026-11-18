@@ -1296,5 +1296,12 @@
 	"downloads.rm.clientRefused": "Pašalinta čia; atsisiuntėjas jį dar turi",
 	"downloads.status.doneSeeding": "Atlikta · dalijama",
 	"downloads.rm.keepsPath": "Palieka {path}: jis yra bibliotekos aplanke arba aplink jį.",
-	"downloads.rm.keepsSome": "Palieka failus, esančius bibliotekos aplanke arba aplink jį."
+	"downloads.rm.keepsSome": "Palieka failus, esančius bibliotekos aplanke arba aplink jį.",
+	"downloads.hl.pl.line.one": "{count} line",
+	"downloads.hl.pl.line.other": "{count} lines",
+	"downloads.hp.original": "Original",
+	"downloads.hp.cleanupBoth": "Cleanup removed {removed} and changed {changed}.",
+	"downloads.hp.cleanupRemoved": "Cleanup removed {removed}.",
+	"downloads.hp.cleanupChanged": "Cleanup changed {changed}.",
+	"downloads.hp.cleanupHeld": "The original is in the holding folder."
 }

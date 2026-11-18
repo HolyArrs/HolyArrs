@@ -169,7 +169,7 @@ func (s *Service) Choose(ctx context.Context, fileID int64, siteName, key string
 						break
 					}
 				}
-				p, err := s.fetchAndSave(ctx, fc, t, c, r, set, by)
+				p, cl, err := s.fetchAndSave(ctx, fc, t, c, r, set, by)
 				if err != nil {
 					return "", err
 				}
@@ -177,7 +177,7 @@ func (s *Service) Choose(ctx context.Context, fileID int64, siteName, key string
 					_, err := tx.ExecContext(ctx, "UPDATE subtitles SET origin = 'by_hand' WHERE file_id = ? AND relative_path = ? AND state = 'present'", fileID, p)
 					return err
 				})
-				out := Outcome{Want: o.Want, Result: "saved", Path: p, Score: c.Score.Total, Site: c.Site}
+				out := Outcome{Want: o.Want, Result: "saved", Path: p, Score: c.Score.Total, Site: c.Site, cleanup: cl}
 				s.afterTarget(ctx, fc, t, &out, set, by)
 				return p, nil
 			}
