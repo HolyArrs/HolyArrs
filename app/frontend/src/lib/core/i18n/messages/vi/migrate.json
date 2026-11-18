@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Cần chú ý: {n}",
 	"migrate.needAttentionWhy": "Thư mục cũ của chúng không có trên máy chủ này, nên chúng được đưa vào một thư mục ở đây dưới dạng cần tìm. Hãy sửa thư mục hoặc thêm quy tắc đường dẫn: {list}",
 	"migrate.leftOutUncheckedN": "Bị bỏ ra: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} đang đặt là \"Không đưa họ vào\"; hãy chọn thư mục cho nó rồi nhập lại"
+	"migrate.leftOutUncheckedWhy": "{folder} đang đặt là \"Không đưa họ vào\"; hãy chọn thư mục cho nó rồi nhập lại",
+	"migrate.seasonsDifferOne": "Kiểm tra 1 chương trình tìm thấy qua số TMDB",
+	"migrate.seasonsDifferOther": "Kiểm tra {n} chương trình tìm thấy qua số TMDB",
+	"migrate.seasonsDifferWhy": "Chỉ số TMDB của ứng dụng cũ tìm thấy {list}, dưới tên khác ở đây. Mở từng cái và kiểm tra đó có đúng là cùng một chương trình không. Nếu đúng, các mùa của nó được đánh số khác: ghép Tệp còn sót của nó rồi bật chương trình. Nếu không, hãy xóa nó; các tệp của nó vẫn ở nguyên chỗ.",
+	"migrate.stillChecking": "Chương trình máy chủ siêu dữ liệu vẫn đang kiểm tra: {n}. Danh sách này tự cập nhật khi xong.",
+	"migrate.stillCheckingImport": "Chương trình máy chủ siêu dữ liệu vẫn đang kiểm tra: {n}. Bạn có thể nhập ngay bây giờ; chúng sẽ được kiểm tra trong lúc nhập."
 }

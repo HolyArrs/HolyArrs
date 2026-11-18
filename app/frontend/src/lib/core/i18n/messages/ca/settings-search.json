@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Descarta els Llançaments publicats abans de l'estrena",
 	"settings.search.refuseEarlyHint": "Probablement són falsos. Tria un llançament els continua mostrant, amb un avís.",
 	"settings.search.refuseTiny": "Descarta els falsos per mida i tipus de fitxer",
-	"settings.search.refuseTinyHint": "Llançaments massa petits, fitxers buits i .wmv o .asf amb noms d'HD",
+	"settings.search.refuseTinyHint": "Llançaments massa petits, fitxers buits, vídeos tallats i .wmv o .asf amb noms d'HD",
 	"settings.search.grace": "Hores que un Llançament pot ser anticipat",
 	"settings.search.graceHint": "Per als fusos horaris. Per defecte, 24.",
 	"settings.search.floors": "Comprova la mida dels fitxers en importar",

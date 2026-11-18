@@ -213,5 +213,16 @@
 "ui.wikiFacts.won": "受賞: {name}",
 "ui.wikiFacts.nominated": "ノミネート: {name}",
 "ui.wikiFacts.andMore": "ほか {count} 件",
-"ui.pageLoader.loading": "読み込み中"
+"ui.pageLoader.loading": "読み込み中",
+"ui.connectHelp.link": "直し方",
+"ui.ask.remove": "削除",
+"ui.ask.restore": "復元",
+"ui.ask.stop": "停止",
+"ui.ask.revoke": "取り消す",
+"ui.ask.replace": "置き換える",
+"ui.ask.unlink": "リンク解除",
+"ui.ask.turnOff": "オフにする",
+"ui.ask.markFailed": "失敗にする",
+"ui.ask.reset": "リセット",
+"ui.ask.import": "インポート"
 }

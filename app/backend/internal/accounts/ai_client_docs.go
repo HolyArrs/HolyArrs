@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
@@ -44,23 +42,12 @@ type cimdEntry struct {
 	until time.Time
 }
 
-func publicOnly(_, address string, _ syscall.RawConn) error {
-	host, _, err := net.SplitHostPort(address)
-	if err != nil {
-		return err
-	}
-	ip := net.ParseIP(host)
-	if ip == nil || !outbound.PublicOnly(ip) {
-		return errPrivate
-	}
-	return nil
-}
-
 func (c *aiCIMD) fetcher() *http.Client {
 	if c.http != nil {
 		return c.http
 	}
-	d := &net.Dialer{Timeout: cimdTimeout, Control: publicOnly}
+	d := outbound.PolicyDialer(outbound.PublicOnly)
+	d.Timeout = cimdTimeout
 	return &http.Client{
 		Timeout:       cimdTimeout,
 		Transport:     &http.Transport{DialContext: d.DialContext, Proxy: nil, TLSHandshakeTimeout: cimdTimeout},

@@ -157,9 +157,16 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 		attempt++
 	}
 	id := nzbgetID(r, attempt)
-	payload, err := fetchRelease(ctx, r.URL, r.AllowLocal, nzbgetMaxNZB)
+	// Read the file like the SABnzbd path does: a redirect to another site (a
+	// Prowlarr link pointing at its indexer) is followed, while every hop still
+	// passes the address, scheme and redirect checks. Only the Source's own host
+	// may be on the home network, and only when the Source allows it.
+	payload, magnet, err := fetchGrabLink(ctx, r.URL, nzbgetMaxNZB, nil, sourceLocalHost(r.SourceURL, r.AllowLocal))
 	if err != nil {
 		return "", err
+	}
+	if magnet != "" {
+		return "", errors.New("the Release file is not an NZB document")
 	}
 	if !validNZB(payload) {
 		return "", errors.New("the Release file is not an NZB document")
@@ -169,7 +176,7 @@ func (n *NZBGet) Add(ctx context.Context, r AddRequest) (string, error) {
 		name += ".nzb"
 	}
 	params := []any{name, base64.StdEncoding.EncodeToString(payload), r.Category, 0, false, false, "", 0, "SCORE", false,
-		[][]string{{nzbgetMarker, id}}}
+		[]map[string]string{{"Name": nzbgetMarker, "Value": id}}}
 	var native int
 	if err := n.appendRPC(ctx, params, &native); err != nil {
 		if ctx.Err() == nil {
@@ -349,7 +356,7 @@ func (n *NZBGet) rpc(ctx context.Context, method string, params []any, out any) 
 			return ctx.Err()
 		}
 		if errors.Is(err, outbound.ErrAddressRefused) {
-			return outbound.ErrAddressRefused
+			return outbound.Refusal(err)
 		}
 		return errDownloaderUnavailable
 	}
@@ -520,11 +527,25 @@ func nzbgetSize(lo, hi uint64) int64 {
 	return int64(n)
 }
 
+// nzbgetMarkerID finds HolyArrs's marker on a job. The marker is sent as the
+// documented {Name, Value} struct. Apps that follow the API store it as
+// HolyArrsID=<id>; NZBGet itself (26.3) stores each struct member as its own
+// parameter, Name=HolyArrsID and Value=<id>, so that pair counts too.
 func nzbgetMarkerID(ps []nzbParam) string {
+	named, value := false, ""
 	for _, p := range ps {
 		if p.Name == nzbgetMarker && strings.HasPrefix(p.Value, "nzbget-") {
 			return p.Value
 		}
+		if p.Name == "Name" && p.Value == nzbgetMarker {
+			named = true
+		}
+		if p.Name == "Value" && strings.HasPrefix(p.Value, "nzbget-") {
+			value = p.Value
+		}
+	}
+	if named {
+		return value
 	}
 	return ""
 }

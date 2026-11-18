@@ -256,8 +256,8 @@ func TestMDBListOffSendsNothing(t *testing.T) {
 	for _, key := range []string{"", fakeMDBListKey} {
 		e := setup(t)
 		f := withMDBList(t, e, key)
-		e.svc.TMDBRoute = func(context.Context) (string, func(context.Context) (string, error), *http.Client, error) {
-			return "", nil, nil, metadata.ErrSourceOff
+		e.svc.TMDBRoute = func(context.Context) (metadata.TMDBRoute, error) {
+			return metadata.TMDBRoute{}, metadata.ErrSourceOff
 		}
 		if _, err := e.svc.fetchMDBList(context.Background(), "lab/mixed", "movie"); !errors.Is(err, ErrListsOff) {
 			t.Fatalf("key %q: %v", key, err)
@@ -311,5 +311,31 @@ func TestMDBListSiteRefusalDoesNotBlameAKey(t *testing.T) {
 	_, err := e.svc.fetchMDBList(context.Background(), "lab/mixed", "movie")
 	if err == nil || strings.Contains(err.Error(), "key") || !strings.Contains(err.Error(), "MDBList refused the request") {
 		t.Fatalf("err %v", err)
+	}
+}
+
+// A redirect from the MDBList API to another host is not followed, so the
+// key in the query never reaches that host.
+func TestMDBListKeyNotSentOnRedirect(t *testing.T) {
+	e := setup(t)
+	var leaked atomic.Int32
+	other := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.RawQuery, fakeMDBListKey) {
+			leaked.Add(1)
+		}
+		_, _ = w.Write([]byte(`{"movies":[],"shows":[]}`))
+	}))
+	t.Cleanup(other.Close)
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, other.URL+r.URL.RequestURI(), http.StatusFound)
+	}))
+	t.Cleanup(api.Close)
+	e.svc.MDBListSite, e.svc.MDBListBase = api.URL, api.URL+"/api"
+	e.svc.MDBListKey = func(context.Context) (string, error) { return fakeMDBListKey, nil }
+	if _, err := e.svc.fetchMDBList(context.Background(), "lab/mixed", "movie"); err == nil {
+		t.Fatal("followed a redirect to another host")
+	}
+	if leaked.Load() != 0 {
+		t.Fatal("the key went to another host")
 	}
 }

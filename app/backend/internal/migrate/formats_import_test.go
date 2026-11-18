@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -344,5 +345,33 @@ func TestOneIndexerInTwoApps(t *testing.T) {
 	p = BuildPlan([]Input{{1, &Snapshot{Kind: Sonarr, Indexers: []Provider{ix}}}, {2, &Snapshot{Kind: Radarr, Indexers: []Provider{ix2}}}}, Choices{})
 	if _, ok := notMoved(p, "radarr indexers[0]"); !ok {
 		t.Fatal("a second address under one name was not listed")
+	}
+}
+
+// A profile scoring 139 formats imports them all; one scoring 300 keeps
+// the 256 strongest and names each one left out.
+func TestImportedRulesKeepManyFormats(t *testing.T) {
+	for _, tc := range []struct{ n, kept, left int }{{139, 139, 0}, {300, 256, 44}} {
+		scores := map[string]int{}
+		var formats []Named
+		for i := 1; i <= tc.n; i++ {
+			name := fmt.Sprintf("Format %03d", i)
+			formats = append(formats, Named{ID: int64(i), Name: name, Items: []map[string]any{{"name": name, "kind": "ReleaseTitleSpecification", "value.value": fmt.Sprintf("tag%03d", i)}}})
+			scores[name] = 10 * i
+		}
+		p := Profile{ID: 7, Name: "HD", UpgradeAllowed: true, Qualities: []string{"WEBDL-1080p"}, CutoffQualities: []string{"WEBDL-1080p"}, Scores: scores}
+		rp := planRules(t, Radarr, p, formats...)
+		if len(rp.Traits) != tc.kept {
+			t.Fatalf("%d formats: kept %d, want %d", tc.n, len(rp.Traits), tc.kept)
+		}
+		left := 0
+		for _, sk := range rp.Skipped {
+			if strings.Contains(sk.Reason, "at most 256") {
+				left++
+			}
+		}
+		if left != tc.left {
+			t.Fatalf("%d formats: %d left out, want %d", tc.n, left, tc.left)
+		}
 	}
 }

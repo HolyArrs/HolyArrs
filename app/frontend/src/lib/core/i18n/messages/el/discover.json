@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Επικολλήστε ένα id, όπως tmdb:693134 ή tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Ή περιγράψτε το, όπως «ταινία επιστημονικής φαντασίας με ρομπότ από το 2014».",
 	"discover.search.lookEverywhere": "Αναζήτηση παντού",
-	"discover.search.searchIndexersFor": "Αναζήτηση στους indexers για «{searched}»",
+	"discover.search.searchIndexersFor": "Έλεγχος των πηγών σας",
 	"discover.search.topMatches": "Κορυφαία αποτελέσματα",
 	"discover.people.goToTheFilmography": "Μετάβαση στη φιλμογραφία",
 	"discover.people.filmography": "Φιλμογραφία",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Δεν ταιριάζει σε αυτή την έκδοση",
 	"discover.leftovers.reason.movie_has_file": "Η ταινία έχει ήδη αρχείο",
 	"discover.leftovers.reason.replaced_by_hand": "Αντικαταστάθηκε από άλλο αρχείο",
-	"discover.leftovers.reason.unmatched": "Η αντιστοίχιση αφαιρέθηκε με το χέρι"
+	"discover.leftovers.reason.unmatched": "Η αντιστοίχιση αφαιρέθηκε με το χέρι",
+	"discover.searchSections.genres": "Είδη",
+	"discover.searchSections.moods": "Διαθέσεις",
+	"discover.searchSections.stories": "Ιστορίες και θέματα",
+	"discover.searchSections.worlds": "Κόσμοι και σκηνικά",
+	"discover.searchSections.eras": "Εποχές",
+	"discover.searchSections.world": "Από όλο τον κόσμο",
+	"discover.searchSections.collections": "Συλλογές",
+	"discover.popularRail.out": "Κυκλοφορεί",
+	"discover.popularRail.comingDay": "Έρχεται",
+	"discover.titleLibrary.turnShowOnHint": "Ενεργοποιήστε τη σειρά για να ξεκινήσει η αναζήτηση.",
+	"discover.leftovers.reason.seasons_differ": "Βρέθηκε μόνο από τον αριθμό TMDB της παλιάς εφαρμογής: έλεγξε ότι είναι η ίδια σειρά και μετά αντιστοίχισε το αρχείο μόνος σου"
 }

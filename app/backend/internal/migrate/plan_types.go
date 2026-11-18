@@ -236,6 +236,9 @@ type TitlePlan struct {
 	// Qualities is the quality the old app recorded for each file, by the
 	// file's base name ("WEBDL-1080p").
 	Qualities map[string]string `json:"qualities,omitempty"`
+	// OldEpisodes are the old app's episodes in each file, by the file's
+	// base name: a show whose seasons differ places a file by them.
+	OldEpisodes map[string][]OldEpisode `json:"old_episodes,omitempty"`
 }
 
 // MusicPolicyPlan is the supported part of an artist's Lidarr monitoring

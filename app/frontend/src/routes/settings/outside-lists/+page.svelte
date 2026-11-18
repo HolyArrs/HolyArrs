@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
@@ -171,7 +172,7 @@
 	}
 
 	async function remove(l: OutsideList) {
-		if (!confirm(l.title_kind === 'show' ? t('settings.outsideLists.confirmRemoveShows', { name: l.name }) : t('settings.outsideLists.confirmRemoveMovies', { name: l.name }))) return;
+		if (!(await ask(l.title_kind === 'show' ? t('settings.outsideLists.confirmRemoveShows', { name: l.name }) : t('settings.outsideLists.confirmRemoveMovies', { name: l.name }), { yes: t('ui.ask.remove'), danger: true }))) return;
 		busyId = l.id;
 		try {
 			await api.del(`/outside-lists/${l.id}`);
@@ -269,7 +270,7 @@
 			</Field>
 			<Field id="ol-kind" label={t('settings.outsideLists.kind')}>
 				<select id="ol-kind" class="input" bind:value={kind}>
-					{#each listKinds.filter(([k]) => k !== 'trakt_list' || !session.held('trakt_lists')) as [k, label] (k)}<option value={k}>{label}</option>{/each}
+					{#each listKinds as [k, label] (k)}<option value={k}>{label}</option>{/each}
 				</select>
 			</Field>
 			<Field id="ol-holds" label={t('settings.outsideLists.adds')}>
@@ -342,7 +343,7 @@
 	{#if lists.length === 0 && !formOpen}
 		<EmptyState icon="inbox" title={t('settings.outsideLists.none')} text={t('settings.outsideLists.noneText')} action={{ label: t('settings.outsideLists.add'), onclick: () => openForm(), icon: 'plus' }} />
 	{:else if lists.length}
-		<ul class="card rows" aria-label={t('settings.outsideLists.title')}>
+		<ul class="card rows lists-card" aria-label={t('settings.outsideLists.title')}>
 			{#each lists as l (l.id)}
 				<li class="list" data-testid="outside-list">
 					<div class="grow">
@@ -366,24 +367,19 @@
 					</div>
 					<div class="row acts">
 						<Button icon="refresh" type="button" onclick={() => syncNow(l)} disabled={busyId === l.id || !l.enabled} aria-busy={busyId === l.id}>{t('settings.outsideLists.readNow')}</Button>
-						<Button variant="plain" type="button" onclick={() => openForm(l)}>{t('settings.outsideLists.changeButton')}</Button>
-						<Button variant="plain" type="button" onclick={() => remove(l)} disabled={busyId === l.id}>{t('settings.outsideLists.remove')}</Button>
+						<Button type="button" onclick={() => openForm(l)}>{t('settings.outsideLists.changeButton')}</Button>
+						<Button type="button" onclick={() => remove(l)} disabled={busyId === l.id}>{t('settings.outsideLists.remove')}</Button>
 					</div>
 				</li>
 			{/each}
 		</ul>
 	{/if}
 
-	{#if !session.held('trakt_lists')}
-	<section class="card" id="trakt-card" aria-labelledby="h-trakt">
-		<div class="card-head">
-			<h2 id="h-trakt" class="h2">{t('settings.outsideLists.traktKey')}</h2>
-			<span class="chip {traktMasked ? 'ok' : ''}">{traktMasked ? t('settings.outsideLists.keySaved') : t('settings.outsideLists.notSet')}</span>
-		</div>
+	<SettingsCard id="trakt-card" title={t('settings.outsideLists.traktKey')} description={traktMasked ? t('settings.outsideLists.keySaved') : t('settings.outsideLists.notSet')}>
 		<p class="small muted">
 			{t('settings.outsideLists.traktInfo')}{hasTrakt && !traktMasked ? ' ' + t('settings.outsideLists.traktCannotRead') : ''}
 		</p>
-		<form onsubmit={saveTrakt} style="margin-top: var(--s-4)">
+		<form onsubmit={saveTrakt}>
 			<Field id="trakt" label={traktMasked ? t('settings.outsideLists.replaceKey') : t('settings.outsideLists.pasteKey')}>
 				<input id="trakt" class="input mono" type="password" bind:value={traktKey} autocomplete="off" spellcheck="false" />
 			</Field>
@@ -393,18 +389,12 @@
 				</Field>
 			{/if}
 			{#if traktError}<p class="form-error" role="alert">{traktError}</p>{/if}
-			<Button type="submit" disabled={traktSaving} aria-busy={traktSaving}>{t('settings.outsideLists.save')}</Button>
+			<div class="row"><Button type="submit" disabled={traktSaving} aria-busy={traktSaving}>{t('settings.outsideLists.save')}</Button></div>
 		</form>
-	</section>
-	{/if}
+	</SettingsCard>
 
-	<section class="card" id="mdblist-card" aria-labelledby="h-mdblist">
-		<div class="card-head">
-			<h2 id="h-mdblist" class="h2">{t('settings.outsideLists.mdblistKey')}</h2>
-			<span class="chip {mdblistMasked ? 'ok' : ''}">{mdblistMasked ? t('settings.outsideLists.keySaved') : t('settings.outsideLists.notSet')}</span>
-		</div>
-		<p class="small muted">{t('settings.outsideLists.mdblistInfo')}</p>
-		<form onsubmit={(e) => saveMDBList(e)} style="margin-top: var(--s-4)">
+	<SettingsCard id="mdblist-card" title={t('settings.outsideLists.mdblistKey')} description={`${mdblistMasked ? t('settings.outsideLists.keySaved') : t('settings.outsideLists.notSet')}. ${t('settings.outsideLists.mdblistInfo')}`}>
+		<form onsubmit={(e) => saveMDBList(e)}>
 			<Field id="mdblist" label={mdblistMasked ? t('settings.outsideLists.replaceMdblistKey') : t('settings.outsideLists.pasteMdblistKey')}>
 				<input id="mdblist" class="input mono" type="password" bind:value={mdblistKey} autocomplete="off" spellcheck="false" />
 			</Field>
@@ -414,7 +404,7 @@
 				{#if mdblistMasked}<Button type="button" variant="plain" disabled={mdblistSaving} onclick={() => saveMDBList(null, true)}>{t('settings.outsideLists.removeMdblistKey')}</Button>{/if}
 			</div>
 		</form>
-	</section>
+	</SettingsCard>
 
 	<SettingsCard id="never-card" title={t('settings.outsideLists.never')} description={t('settings.outsideLists.neverDesc')}>
 		<form class="never-form" onsubmit={addNever}>
@@ -434,30 +424,34 @@
 				<label for="na-reason">{t('settings.outsideLists.reason')} <span class="muted">{t('settings.outsideLists.optional')}</span></label>
 				<input id="na-reason" class="input" bind:value={naReason} maxlength="200" />
 			</div>
-			<div class="na-act"><Button type="submit">{t('settings.outsideLists.addNever')}</Button></div>
+			<div class="row"><Button type="submit">{t('settings.outsideLists.addNever')}</Button></div>
 		</form>
 		{#if naError}<p class="form-error" role="alert">{naError}</p>{/if}
 		{#if never.length}
 			<ul class="never" aria-label={t('settings.outsideLists.never')}>
 				{#each never as n (n.id)}
 					<li data-testid="never-add">
-						<span class="grow"><b>{n.name}</b> <span class="xs muted mono">{n.kind === 'show' ? t('settings.outsideLists.showDot') + ' ' : ''}tmdb:{n.ids.tmdb}</span>{#if n.reason}<span class="xs muted"> · {n.reason}</span>{/if}</span>
-						<Button variant="plain" type="button" onclick={() => removeNever(n)}>{t('settings.outsideLists.takeOff', { name: n.name })}</Button>
+						<span class="grow never-name"><b>{n.name}</b> <span class="xs muted mono">{n.kind === 'show' ? t('settings.outsideLists.showDot') + ' ' : ''}tmdb:{n.ids.tmdb}</span>{#if n.reason}<span class="xs muted"> · {n.reason}</span>{/if}</span>
+						<Button type="button" aria-label={t('settings.outsideLists.takeOff', { name: n.name })} onclick={() => removeNever(n)}>{t('settings.outsideLists.remove')}</Button>
 					</li>
 				{/each}
 			</ul>
 		{:else}
-			<p class="small muted" style="margin-top: var(--s-3)">{t('settings.outsideLists.empty')}</p>
+			<p class="empty-row">{t('settings.outsideLists.empty')}</p>
 		{/if}
 	</SettingsCard>
 {/if}
 
 <style>
+	/* Same inner padding as the Never-add card: the card gives the side space, each row only its top and bottom. */
+	.lists-card {
+		padding-block: var(--s-1);
+	}
 	.list {
 		display: flex;
 		gap: var(--s-4);
 		align-items: flex-start;
-		padding: var(--s-4);
+		padding: var(--s-4) 0;
 	}
 	.list + .list {
 		border-top: 1px solid var(--line);
@@ -472,17 +466,18 @@
 	.bad-text {
 		color: var(--fail-text);
 	}
-	.never-form {
-		margin-top: var(--s-4);
-	}
-	.na-act {
-		margin-top: var(--s-4);
-	}
 	.never li {
 		display: flex;
 		gap: var(--s-3);
 		align-items: center;
 		padding: var(--s-2) 0;
+	}
+	.never-name {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+	.never li :global(.ui-btn) {
+		flex: none;
 	}
 	.never li + li {
 		border-top: 1px solid var(--line);
@@ -494,5 +489,9 @@
 		.acts {
 			flex-wrap: wrap;
 		}
+	}
+	/* Buttons keep their full label; the row wraps instead. */
+	.acts :global(.ui-btn) {
+		flex: none;
 	}
 </style>

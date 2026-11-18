@@ -18,10 +18,10 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Licență: AGPL-3.0"></a>
 </p>
 
-<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4: elimină orice cerere, iar listele de vizionare din Plex ale prietenilor se citesc din nou.** Calitatea unui dosar apare acum pe cardul lui, iar Settings a fost uniformizat. [Vezi ce e nou](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.2.0: un punct roșu arată ce cere atenție, iar testul de conexiune numește problema exactă.** Etichete Plex pentru titlurile cerute, nume în limba ta și peste 30 de remedieri. Conectează aplicații prin MCP cu chei pe care le controlezi. [Vezi ce e nou](https://holyarrs.com/whats-new/)
 
 > Fiecare poster, trailer și scor din HolyArrs-ul tău vine de la un server pe care îl țin și îl plătesc eu, ca să rămână gratuit pentru toată lumea. Dacă HolyArrs ți-a făcut seara de film puțin mai frumoasă, un sponsor ține luminile aprinse pentru noi toți 💛
 >

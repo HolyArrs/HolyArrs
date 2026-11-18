@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Film",
 	"metadata.health.downTitle": "Metadata är offline",
 	"metadata.health.down": "Sökning och ny grafik pausas tills den är tillbaka. Ditt Bibliotek fungerar fortfarande.",
-	"metadata.health.back": "Metadata är online igen"
+	"metadata.health.back": "Metadata är online igen",
+	"metadata.health.fakeIp": "Din router eller VPN skickar HolyArrs till en falsk adress (198.18.x.x). Det kommer oftast från Clash eller Surge. Lägg till {host} i dess direktlista."
 }

@@ -21,7 +21,8 @@ describe('buildNav', () => {
 			[null, ['Home', 'Explore', 'New & Popular']],
 			['Library', ['Movies', 'TV shows', 'Music', 'Stats']],
 			['Your stuff', ['Calendar', 'Requests']],
-			['Manage', ['Downloads', 'History', 'Status', 'Settings']]
+			['Activity', ['Downloads', 'History']],
+			['System', ['Status', 'Plugins', 'Settings']]
 		]);
 	});
 	it('lists Library stats only for people who manage the Library', () => {
@@ -43,13 +44,14 @@ describe('buildNav', () => {
 	it('shows each Manage item by its own permission', () => {
 		const approverOnly = new Set(['approve', 'manage', 'wishlist']);
 		const nav = buildNav({ ...owner, allowed: (n) => approverOnly.has(n) });
-		expect(nav.find((s) => s.id === 'manage')).toBeUndefined();
+		expect(nav.find((s) => s.id === 'activity')).toBeUndefined();
+		expect(nav.find((s) => s.id === 'system')).toBeUndefined();
 		expect(nav.find((s) => s.id === 'yours')?.items.map((i) => i.label)).toEqual(['Downloads', 'Calendar', 'Requests']);
 	});
 	it('shows Settings to someone who only manages users', () => {
 		const usersOnly = new Set(['staff']);
 		const nav = buildNav({ ...owner, allowed: (n) => usersOnly.has(n) });
-		expect(nav.find((s) => s.id === 'manage')?.items.map((i) => i.label)).toEqual(['Settings']);
+		expect(nav.find((s) => s.id === 'system')?.items.map((i) => i.label)).toEqual(['Settings']);
 	});
 	it('drops places whose part is off', () => {
 		const nav = buildNav({ ...owner, kinds: ['show'], off: (h) => h === '/requests' });
@@ -58,7 +60,7 @@ describe('buildNav', () => {
 	});
 	it('carries the badge counts', () => {
 		const nav = buildNav(owner);
-		const manage = nav.find((s) => s.id === 'manage')!;
+		const manage = nav.find((s) => s.id === 'activity')!;
 		expect(nav.find((s) => s.id === 'yours')!.items.find((i) => i.label === 'Requests')?.badge).toBe(3);
 		expect(manage.items.find((i) => i.label === 'Downloads')?.badge).toBe(1);
 	});

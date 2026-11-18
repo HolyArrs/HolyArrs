@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Правила вибору для цього Варіанта",
 	"movies.versions.folderLabel": "Тека бібліотеки для цього Варіанта",
 	"movies.versions.cancel": "Скасувати",
-	"movies.versions.addButton": "Додати Варіант"
+	"movies.versions.addButton": "Додати Варіант",
+	"movies.versions.setEdition": "Указати видання",
+	"movies.versions.editionFileHint": "Яке це видання файлу, наприклад Theatrical або Directors Cut. Залиште порожнім, щоб очистити.",
+	"movies.versions.unprotectConfirm": "Зняти захист із {label}? Краща копія знову зможе його замінити.",
+	"movies.versions.editionChars": "Не можна використовувати:",
+	"movies.versions.editionInvalid": "Це видання використати не можна. Зробіть назву коротшою (літери з діакритикою та нелатинські літери займають більше місця), приберіть символи зі списку вище й не ставте крапку в кінці.",
+	"movies.versions.editionDevice": "Windows резервує ім'я {name} для пристроїв, тому його використати не можна. Введіть інше."
 }

@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "ปฏิเสธรีลีสที่โพสต์ก่อนวันวางจำหน่าย",
 	"settings.search.refuseEarlyHint": "น่าจะเป็นของปลอม การเลือกรีลีสเองจะยังแสดงให้เห็นพร้อมคำเตือน",
 	"settings.search.refuseTiny": "ปฏิเสธของปลอมจากขนาดและชนิดไฟล์",
-	"settings.search.refuseTinyHint": "รีลีสที่เล็กเกินไป ไฟล์ว่าง และ .wmv หรือ .asf ที่ใช้ชื่อแบบ HD",
+	"settings.search.refuseTinyHint": "รีลีสที่เล็กเกินไป ไฟล์ว่าง วิดีโอที่ขาดตอน และ .wmv หรือ .asf ที่ใช้ชื่อแบบ HD",
 	"settings.search.grace": "ชั่วโมงที่รีลีสออกก่อนกำหนดได้",
 	"settings.search.graceHint": "สำหรับเขตเวลา ค่าเริ่มต้น 24",
 	"settings.search.floors": "ตรวจขนาดไฟล์ตอนนำเข้า",

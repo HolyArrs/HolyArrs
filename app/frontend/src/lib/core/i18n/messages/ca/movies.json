@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Regles d'elecció d'aquesta Versió",
 	"movies.versions.folderLabel": "Carpeta de la Biblioteca d'aquesta Versió",
 	"movies.versions.cancel": "Cancel·la",
-	"movies.versions.addButton": "Afegeix la versió"
+	"movies.versions.addButton": "Afegeix la versió",
+	"movies.versions.setEdition": "Defineix l'edició",
+	"movies.versions.editionFileHint": "El muntatge que és aquest fitxer, com Theatrical o Directors Cut. Deixa-ho buit per esborrar-ho.",
+	"movies.versions.unprotectConfirm": "Vols treure la protecció de {label}? Una còpia millor podrà tornar-la a substituir.",
+	"movies.versions.editionChars": "No es permet:",
+	"movies.versions.editionInvalid": "Aquesta edició no es pot fer servir. Mantén-la curta (les lletres amb accent i no llatines ocupen més espai), deixa fora els caràcters indicats a dalt i no l'acabis amb un punt.",
+	"movies.versions.editionDevice": "Windows reserva el nom {name} per a dispositius, així que no es pot fer servir. Escriu-ne un altre."
 }

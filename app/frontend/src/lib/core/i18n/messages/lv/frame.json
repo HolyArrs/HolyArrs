@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "Gaida: {n}",
 	"frame.nav.new": "Jauni: {n}",
 	"frame.nav.manage": "Pārvaldīt",
+	"frame.nav.activity": "Darbības",
+	"frame.nav.system": "Sistēma",
 	"frame.nav.history": "Vēsture",
 	"frame.nav.status": "Statuss",
 	"frame.nav.settings": "Iestatījumi",
+	"frame.nav.plugins": "Spraudņi",
 	"frame.nav.goTo": "Pāriet uz",
 	"frame.nav.active": "Aktīvi: {n}, {percent}%",
 	"frame.nav.decide": "Jālemj: {n}",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Sistēma",
 	"frame.layout.switch": "Mainīt kontu",
 	"frame.layout.signOut": "Izrakstīties",
+	"frame.layout.support": "Atbalstīt HolyArrs",
 	"frame.layout.signOutFail": "Neizdevās apstiprināt izrakstīšanos",
 	"frame.layout.signedOut": "Izrakstījies",
 	"frame.layout.accountMenu": "{name}, {role}: konts un izskats",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs mēģina vēlreiz pats",
 	"frame.feeds.clearNow": "Notīrīt tagad",
 	"frame.feeds.cleared": "Notīrīts no Lejupielādētāja",
-	"frame.feeds.clearStill": "Vēl nav notīrīts"
+	"frame.feeds.clearStill": "Vēl nav notīrīts",
+	"frame.error.pageGone": "Šīs lapas nav. Saite var būt veca vai nepareizi ierakstīta."
 }

@@ -44,7 +44,15 @@
         "files": [
           {
             "name": "s",
-            "quality": "s"
+            "quality": "s",
+            "episodes": [
+              {
+                "season": 7,
+                "number": 7,
+                "air_date": "s",
+                "title": "s"
+              }
+            ]
           }
         ]
       }

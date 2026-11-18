@@ -38,8 +38,14 @@ type ShowAddOptions struct {
 	MainFourK bool `json:"-"`
 	// WhyAdded records why the show was added (by_hand when empty).
 	WhyAdded string `json:"-"`
+	// ListName is the Outside list that added the show, kept in its History line.
+	ListName string `json:"-"`
 	// Adopt keeps a show folder found on disk as it is, with its files.
 	Adopt *ShowAdoption `json:"-"`
+	// SeasonsDiffer: the old app numbers this show's seasons differently.
+	// The show is not kept up to date, and no file in its folder is ever
+	// put on an episode by the numbers in its name.
+	SeasonsDiffer bool `json:"-"`
 	// SeasonNumbers, when not nil, are exactly the seasons kept up to
 	// date (Seasons is then none): the arr API's per-season choice.
 	SeasonNumbers []int `json:"-"`
@@ -59,6 +65,9 @@ type ShowAddOptions struct {
 
 // ShowAlreadyAddedError says the show is already in the Library.
 type ShowAlreadyAddedError struct{ TitleID int64 }
+
+// InLibrary is the title already in the Library.
+func (e *ShowAlreadyAddedError) InLibrary() int64 { return e.TitleID }
 
 func (e *ShowAlreadyAddedError) Error() string {
 	return fmt.Sprintf("this show is already in the Library (Title %d)", e.TitleID)
@@ -163,7 +172,9 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	default:
 		return 0, 0, library.ErrUnknownWhyAdded
 	}
-	keep := opt.KeepUpToDate == nil || *opt.KeepUpToDate
+	// A show whose seasons the old app numbers differently arrives not kept
+	// up to date: nothing is searched while its files wait to be placed.
+	keep := (opt.KeepUpToDate == nil || *opt.KeepUpToDate) && !opt.SeasonsDiffer
 
 	var lf mediafiles.LibraryFolder
 	if opt.LibraryFolderID == 0 {
@@ -213,6 +224,12 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	var adoptFiles []library.AdoptEpisodeFile
 	if opt.Adopt != nil {
 		adoptFiles = mapEpisodeFiles(library.ListVideosN(lf.Path, opt.Adopt.FolderName, maxShowVideos), sh, opt.EpisodeOrder)
+		for i := range adoptFiles {
+			if opt.SeasonsDiffer {
+				adoptFiles[i].Keys, adoptFiles[i].Episodes, adoptFiles[i].Why = nil, []string{}, "the old app numbers this show's seasons differently"
+			}
+		}
+		opt.Adopt.SeasonsDiffer = opt.SeasonsDiffer
 	}
 	now := s.Clock()
 	var t mediafiles.Title
@@ -248,10 +265,15 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		}
 		t = mediafiles.Title{Kind: "show", Aliases: aliases, MetadataSource: opt.Source, EpisodeOrder: &order, KeepUpToDate: keep,
 			NewPartsPolicy: opt.NewSeasons, ReleaseGate: library.GateReleased, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
-			State: "active", GateDriver: "none", SeasonChoice: &choice, FutureFrom: from, RefreshedAt: &now}
+			State: "active", GateDriver: "none", SeasonChoice: &choice, FutureFrom: from, RefreshedAt: &now, Tags: library.TagsFromFolder(lf)}
 		applyShow(&t, sh)
 		if _, err := database.Insert(tx, "titles", &t, by); err != nil {
 			return err
+		}
+		if opt.SeasonsDiffer {
+			if err := mediafiles.MarkSeasonsDifferTx(ctx, tx, t.ID); err != nil {
+				return err
+			}
 		}
 		year := 0
 		if t.Year != nil {
@@ -327,10 +349,13 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		return 0, 0, err
 	}
 	s.CachePoster(ctx, t.ID, sh.Poster, by)
+	added := map[string]any{"why_added": t.WhyAdded, "seasons": opt.Seasons, "new_seasons": opt.NewSeasons, "episode_order": opt.EpisodeOrder,
+		"details_source": opt.Source, "episodes": sync.EpisodesAdded, "wanted": countWanted(ctx, s.Store.Read(), t.ID)}
+	if opt.ListName != "" {
+		added["list_name"] = opt.ListName
+	}
 	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleAdded, TitleID: &t.ID, Summary: "Added " + t.Name,
-		Data: map[string]any{"why_added": t.WhyAdded, "seasons": opt.Seasons, "new_seasons": opt.NewSeasons, "episode_order": opt.EpisodeOrder,
-			"details_source": opt.Source, "episodes": sync.EpisodesAdded, "wanted": countWanted(ctx, s.Store.Read(), t.ID)},
-		GroupKey: library.GroupKey(t.ID)})
+		Data: added, GroupKey: library.GroupKey(t.ID)})
 	var params map[string]any
 	if opt.SearchOnAdd {
 		params = map[string]any{"then": []any{library.StepSearchShow}}

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"slices"
+	"sort"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -47,6 +49,8 @@ func (s *Service) Leftovers(ctx context.Context, titleID int64) ([]LeftoverView,
 		return nil, err
 	}
 	out := make([]LeftoverView, 0, len(ls))
+	var eps []mediafiles.Item
+	var t mediafiles.Title
 	for _, l := range ls {
 		f := l.File
 		v := LeftoverView{FileID: f.ID, RelativePath: f.RelativePath, Size: f.Size, Resolution: f.Quality.Resolution, Dismissed: f.LeftoverDismissed, Reason: "episode_not_listed"}
@@ -64,12 +68,84 @@ func (s *Service) Leftovers(ctx context.Context, titleID int64) ([]LeftoverView,
 		if v.Resolution == 0 {
 			v.Resolution = p.Resolution.Value
 		}
-		if p.Show != nil && len(p.Show.Seasons) == 1 && len(p.Show.Episodes) > 0 {
+		switch {
+		case v.Reason == "seasons_differ":
+			// The numbers in its name are the old app's: only the one episode
+			// whose own name is in the file name is offered.
+			if eps == nil {
+				if eps, err = database.Select[mediafiles.Item](ctx, s.Store.Read(), "items", "title_id = ? AND kind = 'episode'", titleID); err != nil {
+					return nil, err
+				}
+				if err = database.Get(ctx, s.Store.Read(), "titles", titleID, &t); err != nil {
+					return nil, err
+				}
+			}
+			v.Guess = guessByName(path.Base(f.RelativePath), eps, append([]string{t.Name, strings.Split(f.RelativePath, "/")[0]}, t.Aliases...)...)
+		case p.Show != nil && len(p.Show.Seasons) == 1 && len(p.Show.Episodes) > 0:
 			v.Guess = &LeftoverGuess{Season: p.Show.Seasons[0], Episodes: append([]int{}, p.Show.Episodes...)}
 		}
 		out = append(out, v)
 	}
 	return out, nil
+}
+
+// guessByName is the one episode whose name the file name holds, or nil.
+// The show's names (its own, other ones, its folder's) are taken out of
+// the file name first, and names match as whole words. When several names
+// fit, the longest counts only if it holds all the others ("In the
+// Beginnings" over "Beginnings"). Names that only count ("Episode 3") and
+// specials never match.
+func guessByName(file string, eps []mediafiles.Item, shows ...string) *LeftoverGuess {
+	words := func(s string) []string {
+		return strings.FieldsFunc(strings.ToLower(s), func(c rune) bool {
+			return !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c > 127)
+		})
+	}
+	// at is where the run of words want starts in have, or -1.
+	at := func(have, want []string) int {
+		for i := 0; len(want) > 0 && i+len(want) <= len(have); i++ {
+			if slices.Equal(have[i:i+len(want)], want) {
+				return i
+			}
+		}
+		return -1
+	}
+	name := words(file)
+	sort.Slice(shows, func(i, j int) bool { return len(shows[i]) > len(shows[j]) })
+	for _, sh := range shows {
+		if w := words(sh); len(w) > 0 {
+			if i := at(name, w); i >= 0 {
+				name = append(append([]string{}, name[:i]...), name[i+len(w):]...)
+			}
+		}
+	}
+	var best []string
+	var found *LeftoverGuess
+	var fits [][]string
+	for _, e := range eps {
+		if e.Name == nil || e.Numbers.Season == nil || e.Numbers.Episode == nil || *e.Numbers.Season == 0 {
+			continue
+		}
+		n := words(*e.Name)
+		joined := strings.Join(n, "")
+		if len(joined) < 4 || strings.Trim(strings.TrimPrefix(joined, "episode"), "0123456789") == "" || at(name, n) < 0 {
+			continue
+		}
+		fits = append(fits, n)
+		if len(n) > len(best) || len(n) == len(best) && len(joined) > len(strings.Join(best, "")) {
+			best, found = n, &LeftoverGuess{Season: *e.Numbers.Season, Episodes: []int{*e.Numbers.Episode}}
+		}
+	}
+	same := 0
+	for _, n := range fits {
+		if slices.Equal(n, best) {
+			same++ // two episodes of that name: no telling which
+		}
+		if at(best, n) < 0 || same > 1 {
+			return nil
+		}
+	}
+	return found
 }
 
 // LeftoverMatch links one leftover to episodes (none for a movie).
@@ -94,6 +170,12 @@ func (e errRefused) Error() string { return e.key }
 // files lie: nothing moves on disk. An episode another file fills is refused
 // unless replace is set; then that file becomes a found note.
 func (s *Service) MatchLeftovers(ctx context.Context, titleID int64, items []LeftoverMatch, replace bool, by domain.Actor) ([]MatchOutcome, error) {
+	return s.matchLeftovers(ctx, titleID, items, replace, by, true)
+}
+
+// matchLeftovers is MatchLeftovers; byHand is false when the import placed
+// them by the old app's episode days and names.
+func (s *Service) matchLeftovers(ctx context.Context, titleID int64, items []LeftoverMatch, replace bool, by domain.Actor, byHand bool) ([]MatchOutcome, error) {
 	unlock := s.Store.LockFiles()
 	defer unlock()
 	var t mediafiles.Title
@@ -139,7 +221,7 @@ func (s *Service) MatchLeftovers(ctx context.Context, titleID int64, items []Lef
 				}
 				out[i].Linked = true
 			}
-			return nil
+			return mediafiles.EndSeasonsWaitTx(ctx, tx, titleID)
 		})
 		if err != nil {
 			return nil, err
@@ -152,8 +234,13 @@ func (s *Service) MatchLeftovers(ctx context.Context, titleID int64, items []Lef
 		}
 	}
 	if n > 0 {
-		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAdopted, TitleID: &titleID, Summary: fmt.Sprintf("%s: %d files matched by hand", t.Name, n),
-			Data: map[string]any{"matched": n, "by_hand": true}, GroupKey: GroupKey(titleID)})
+		if byHand {
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAdopted, TitleID: &titleID, Summary: fmt.Sprintf("%s: %d files matched by hand", t.Name, n),
+				Data: map[string]any{"matched": n, "by_hand": true}, GroupKey: GroupKey(titleID)})
+		} else {
+			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAdopted, TitleID: &titleID, Summary: fmt.Sprintf("%s: %d files placed by their air day and name", t.Name, n),
+				Data: map[string]any{"matched": n}, GroupKey: GroupKey(titleID)})
+		}
 	}
 	return out, nil
 }
@@ -272,7 +359,12 @@ func (s *Service) DismissLeftover(ctx context.Context, titleID, fileID int64, di
 	if _, _, err := ownedFile(ctx, s.Store.Read(), titleID, fileID); err != nil {
 		return err
 	}
-	return s.Store.Write(ctx, func(tx *sql.Tx) error { return mediafiles.SetLeftoverDismissed(ctx, tx, fileID, dismissed) })
+	return s.Store.Write(ctx, func(tx *sql.Tx) error {
+		if err := mediafiles.SetLeftoverDismissed(ctx, tx, fileID, dismissed); err != nil {
+			return err
+		}
+		return mediafiles.EndSeasonsWaitTx(ctx, tx, titleID)
+	})
 }
 
 // RescanTitle rescans only one title's files in each of its Library

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import './anton.css';
 	import Shelf from '#lib/ui/Shelf.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -21,12 +22,12 @@
 	// The minimal look draws plain tiles with no stills, so none are fetched.
 	const minimal = $derived(minimalLook());
 	const entries = $derived<Entry[]>(genres ? [
-		...genres.map((g) => ({ key: g.key, name: g.name, label: t('discover.categoryStrip.genre'), href: g.href, art: g.art, tint: tint(g.hue) })),
+		...genres.map((g) => ({ key: g.key, name: serverWords(g.name), label: t('discover.categoryStrip.genre'), href: g.href, art: g.art, tint: tint(g.hue) })),
 		{ key: 'all', name: t('discover.categoryStrip.allGenres'), label: t('discover.categoryStrip.browse'), href: to('/search?kind=music'), art: '', all: true }
 	] : [
 		...tiles.map((t) => ({
 			key: t.category ?? `${t.kind}:${t.genre}:${t.mood ?? ''}`,
-			name: t.name,
+			name: serverWords(t.name),
 			label: SECTION_LABEL[t.section] ?? '',
 			href: to(browseHref(t, type)),
 			// A 142 to 236 px grey still: w780 through HolyArrs' artwork cache, never TMDB's original.

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Ścieżka w HolyArrs",
 	"settings.mediaServers.pathTo": "Ten sam folder na serwerze",
 	"settings.mediaServers.pathHint": "Tylko jeśli serwer widzi twoje pliki pod inną ścieżką",
+	"settings.mediaServers.webUrl": "Adres dla przeglądarek",
+	"settings.mediaServers.webUrlHint": "Adres, pod którym wszyscy otwierają serwer na telefonie lub komputerze. Dodaje przycisk Otwórz na stronach tytułów, które ma serwer. Zostaw puste, aby nie było przycisku.",
 	"settings.mediaServers.local": "Dostęp do sieci lokalnej",
 	"settings.mediaServers.send": "Wysyłaj aktualizacje",
 	"settings.mediaServers.save": "Zapisz",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Wyłączyć historię oglądania? Wszystko, co odczytano, zostanie usunięte.",
 	"settings.mediaServers.watchTurnedOn": "Historia oglądania włączona. Pierwszy odczyt nastąpi w ciągu 30 minut.",
 	"settings.mediaServers.watchTurnedOff": "Historia oglądania wyłączona",
-	"settings.mediaServers.watchFailed": "Nie udało się zmienić historii oglądania"
+	"settings.mediaServers.watchFailed": "Nie udało się zmienić historii oglądania",
+	"settings.mediaServers.labelTitle": "Etykiety Plex",
+	"settings.mediaServers.labelSwitch": "Oznaczaj zamówione tytuły etykietą",
+	"settings.mediaServers.labelHint": "Gdy zamówiony film lub serial jest w Plex, HolyArrs dodaje mu etykietę, żeby w Plex filtrować, tworzyć kolekcje lub udostępniać według niej. Istniejące etykiety zostają.",
+	"settings.mediaServers.labelText": "Etykieta",
+	"settings.mediaServers.labelAskers": "Dodaj też imię zamawiającego jako etykietę",
+	"settings.mediaServers.labelSaved": "Zapisano etykiety Plex",
+	"settings.mediaServers.labelFailed": "Nie udało się zapisać etykiet Plex",
+	"settings.mediaServers.labelExisting": "Oznacz już zamówione tytuły",
+	"settings.mediaServers.labelExistingStarted": "Oznaczanie rozpoczęte. Tytuły dostaną etykiety w ciągu kilku minut.",
+	"settings.mediaServers.labelExistingFailed": "Nie udało się rozpocząć oznaczania"
 }

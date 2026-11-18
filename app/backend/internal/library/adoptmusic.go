@@ -1,6 +1,7 @@
 package library
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"errors"
@@ -368,6 +369,12 @@ func planMusicAdopt(ctx context.Context, db Reader, artists metadata.ArtistProvi
 		known[FolderKey(v.FolderName, fold)] = v.TitleID
 	}
 	p.Warning = MountWarning(ctx, db, lf, len(ents))
+	p.Offset, p.Total = ScanPlace(ents, after)
+	p.Offset -= min(p.Offset, len(p.Folders)) // a restarted scan's finished folders are in this part
+	// The page shows how many artist folders of this part are read, as a movie scan's.
+	total := min(p.Limit, len(p.Folders)+ScanTotal(ents, after, p.Limit))
+	ReportScan(ctx, len(p.Folders), total)
+	defer func() { ReportScan(ctx, len(p.Folders), total) }()
 	var saveErr error
 	add := func(c AdoptCandidate) {
 		if len(c.Files) > maxAlbumFileDetail {
@@ -375,6 +382,7 @@ func planMusicAdopt(ctx context.Context, db Reader, artists metadata.ArtistProvi
 		}
 		p.Folders = append(p.Folders, c)
 		p.Counts[c.Status]++
+		ReportScan(ctx, len(p.Folders), total)
 		if save != nil && saveErr == nil {
 			part := p
 			part.More, part.Next, part.Partial = true, c.Folder, true
@@ -404,6 +412,9 @@ func planMusicAdopt(ctx context.Context, db Reader, artists metadata.ArtistProvi
 				return p, ctx.Err()
 			}
 			c.Status, c.Why = "unmatched", "the MusicBrainz lookup failed ("+err.Error()+"); look it up by hand or scan again later"
+			if MetadataDown(err) {
+				c.Status, c.Why, p.Warning = NotLookedUp, MetadataNotAnswering, cmp.Or(p.Warning, MetadataNotAnsweringScan)
+			}
 			add(c)
 			continue
 		}
@@ -433,6 +444,9 @@ func planMusicAdopt(ctx context.Context, db Reader, artists metadata.ArtistProvi
 				return p, ctx.Err()
 			}
 			c.Status, c.Why = "unmatched", "the album list could not be read ("+err.Error()+"); scan again later"
+			if MetadataDown(err) {
+				c.Status, c.Why, p.Warning = NotLookedUp, MetadataNotAnswering, cmp.Or(p.Warning, MetadataNotAnsweringScan)
+			}
 			add(c)
 			continue
 		}
@@ -565,10 +579,11 @@ func (s *Service) adoptArtistOne(ctx context.Context, lf mediafiles.LibraryFolde
 	if fi, err := os.Lstat(filepath.Join(lf.Path, c.Folder)); err != nil || !fi.IsDir() {
 		return r, errors.New("no such folder in the Library folder")
 	}
-	if taken, err := FolderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil {
+	// A folder already in the Library (an import run again after a restart)
+	// counts as brought in, so its title is followed too.
+	if id, err := FolderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil || id != 0 {
+		r.TitleID = id
 		return r, err
-	} else if taken {
-		return r, errors.New("this folder already belongs to an artist in the Library")
 	}
 	a := &MusicAdoption{FolderName: c.Folder}
 	id, _, err := s.AddArtist(ctx, c.ID, ArtistAddOptions{LibraryFolderID: lf.ID, WhyAdded: "import", Adopt: a}, by)

@@ -34,8 +34,8 @@ func TestMainWiresEveryMusicDep(t *testing.T) {
 	}
 }
 
-// The health card is built from the Manager's own state, with the key and
-// key-kit fingerprints in the right fields.
+// The health card is built from the Manager's own state, with the key
+// kit reminder level from the Manager.
 func TestBackupsHealthFromManager(t *testing.T) {
 	dir := t.TempDir()
 	s, err := database.Open(dir, database.Options{})
@@ -65,14 +65,11 @@ func TestBackupsHealthFromManager(t *testing.T) {
 	if h.Started != bm.Passed() {
 		t.Fatalf("started %v", h.Started)
 	}
-	if h.KeyPrint == "" || h.KeyPrint != bm.KeyPrint() {
-		t.Fatalf("key print %q", h.KeyPrint)
-	}
-	if h.KeyKitPrint != "" {
-		t.Fatalf("key kit print %q before any download", h.KeyKitPrint)
+	if h.KeyKit == "" || h.KeyKit != bm.KeyKitLevel(ctx) {
+		t.Fatalf("key kit level %q before any download", h.KeyKit)
 	}
 
-	// Downloading the key kit fills in KeyKitPrint, equal to KeyPrint.
+	// Downloading the key kit clears the reminder.
 	mux := http.NewServeMux()
 	bm.Routes(mux, nil)
 	rec := httptest.NewRecorder()
@@ -84,8 +81,8 @@ func TestBackupsHealthFromManager(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h.KeyKitPrint == "" || h.KeyKitPrint != h.KeyPrint {
-		t.Fatalf("after download: key %q kit %q", h.KeyPrint, h.KeyKitPrint)
+	if h.KeyKit != "" {
+		t.Fatalf("after download: key kit level %q", h.KeyKit)
 	}
 }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LibraryDialogs, LibraryList, LibrarySavedFilters, LibrarySelectBar, LibrarySortFilter, LibraryToolbar, grow, linkedPeople, noFilter, partOff, shrink, type View } from '#lib/mediafiles/index.ts';
+	import { LibraryDialogs, LibraryList, LibrarySavedFilters, LibrarySelectBar, LibrarySortFilter, LibraryToolbar, anchorOf, grow, lander, linkedPeople, listWaits, noFilter, partOff, placeGate, placeTop, reading, shrink, untilSettled, type Anchor, type View } from '#lib/mediafiles/index.ts';
 		import Icon from '#lib/ui/Icon.svelte';
 	import Chip from '#lib/ui/Chip.svelte';
 	import Button from '#lib/ui/Button.svelte';
@@ -8,7 +8,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import { densityLabels, loadDensity, loadPosterSize, posterLabels, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/ui/library-art.ts';
-	import { libraryTitles, filters, kinds, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind, activeCount, filterCounts, loadColumns, loadSaved, passes, saveColumns, saveSaved, sortTitles, sortsFor, startDir, chosenColumns, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, detailLabels, flipFrom, loadPosterDetail, savePosterDetail, type PosterDetail, rememberLibraryKind, partsNow, codecLabel, copyCodecs, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
+	import { libraryGrid, filters, kinds, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind, activeCount, filterCounts, loadColumns, loadSaved, passes, saveColumns, saveSaved, sortTitles, sortsFor, startDir, chosenColumns, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, detailLabels, flipFrom, loadPosterDetail, savePosterDetail, type PosterDetail, rememberLibraryKind, partsNow, codecLabel, copyCodecs, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
 	import { episodeLabel, showProgress } from '#lib/shows/index.ts';
 	import { artistProgress, artistHref } from '#lib/music/index.ts';
 	import { DlFind, searchShortcut, dlTop } from '#lib/downloads/index.ts';
@@ -22,12 +22,12 @@
 	import { date } from '#lib/core/format.ts';
 	import { reducedMotion } from '#lib/core/motion.ts';
 	import { DUR, EASE } from '#lib/core/transitions.ts';
-	import { plainReason } from '#lib/core/plain.ts';
+	import { bareNames, plainReason } from '#lib/core/plain.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { views as savedViews } from '#lib/core/views.svelte.ts';
 	import type { TitleView } from '#lib/core/types.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
+	import { appLocale, t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 	import { shelfEntries } from '#lib/mediafiles/index.ts';
 	let titles = $state<TitleView[]>([]);
 	let loaded = $state(false);
@@ -38,8 +38,10 @@
 	let loadRevision = $state(0);
 	let searchRun = 0;
 	let searchPending = $state(false);
-	let restoreScroll = $state<{ x: number; y: number } | null>(null);
+	let restoreScroll = $state.raw<ReturnType<typeof placeGate<{ x: number; y: number; w?: number; a?: Anchor }>> | null>(null);
+	let stopRestore = () => {};
 	let lastOpenedId = $state<number | null>(null);
+	let list = $state<ReturnType<typeof LibraryList>>();
 	let myId = $state<number | undefined>();
 
 	function params() {
@@ -59,6 +61,7 @@
 		return {
 			codec: k === 'movie' && codec !== 'all' && (copyCodecs as readonly string[]).includes(codec) ? codec : '',
 			subs: (k === 'movie' || k === 'show') && p.get('subs') === 'missing',
+			watched: k !== 'artist' && p.get('watched') === 'anyone',
 			status: filters.some(([f]) => f === status) ? status : 'all',
 			kept: kept === 'on' || kept === 'off' ? kept : 'any',
 			asker: asker === 'me' || (asker && /^[1-9]\d*$/.test(asker)) ? asker : 'anyone',
@@ -95,6 +98,7 @@
 		set('series', filter.series ? String(filter.series) : null);
 		set('codec', filter.codec || null);
 		set('subs', filter.subs ? 'missing' : null);
+		set('watched', filter.watched ? 'anyone' : null);
 		set('q', q || null);
 		const d = defaultSort(kind === 'all' ? 'all' : kind);
 		set('sort', sort.key === d.key ? null : sort.key);
@@ -202,10 +206,12 @@
 	let series = $state<MovieCollection[]>([]);
 	let seriesOfTitle = $state<Map<number, number>>(new Map());
 	let seriesLoaded = false;
+	// A read still on its way that the list may need (series here, subtitles below): a saved place waits for it.
+	let waiting = $state({ subs: false, sets: false });
 	async function loadSets() {
 		if (seriesLoaded || !moviesOn) return;
 		seriesLoaded = true;
-		try {
+		await reading(waiting, 'sets', (async () => {
 			const list = (await api.get<{ collections: MovieCollection[] }>('/collections')).collections;
 			// The list carries each series' movie ids; older servers need one read per series.
 			const details = list.every((c) => c.title_ids) ? [] : await Promise.all(list.map((c) => api.get<CollectionDetail>(`/collections/${c.id}`).catch(() => null)));
@@ -214,9 +220,7 @@
 			for (const d of details) for (const t of d?.titles ?? []) map.set(t.id, d!.id);
 			series = list;
 			seriesOfTitle = map;
-		} catch {
-			seriesLoaded = false;
-		}
+		})()).catch(() => (seriesLoaded = false));
 	}
 	$effect(() => {
 		if (mounted && (kind === 'movie' || kind === 'all')) void loadSets();
@@ -225,18 +229,21 @@
 
 	// Titles with subtitles still wanted (movies and TV shows), from the same list the subtitles search uses.
 	let subsTitles = $state<Set<number> | null>(null);
-	const ctx = $derived<FilterContext>({ askers: (t) => linkedPeople(t).map((p) => p.id), me: myId, seriesOf: (t) => seriesOfTitle.get(t.id), subsMissing: (t) => !!subsTitles?.has(t.id) });
+	// Titles anybody watched, for the owner's and admins' filter; null while watch history is off or unread.
+	let anyoneWatched = $state<Set<number> | null>(null);
+	const seesAnyone = $derived(session.can('users') && !session.kid);
+	const ctx = $derived<FilterContext>({ askers: (t) => linkedPeople(t).map((p) => p.id), me: myId, seriesOf: (t) => seriesOfTitle.get(t.id), subsMissing: (t) => !!subsTitles?.has(t.id), watchedAnyone: anyoneWatched ? (t) => anyoneWatched!.has(t.id) : undefined });
 	const ofThisKind = $derived(titles.filter((t) => ofKind(t, kind) && matchesTitleQuery(t, query, indexedIds)));
 	const counts = $derived(filterCounts(ofThisKind, filter, ctx));
 	const shown = $derived(sortTitles(ofThisKind.filter((t) => passes(t, filter, ctx)), sort.key, sort.dir));
-	const askers = $derived([...new Map(ofThisKind.flatMap((t) => linkedPeople(t)).map((p) => [p.id, p])).values()].sort((a, b) => a.name.localeCompare(b.name)));
+	const askers = $derived([...new Map(ofThisKind.flatMap((t) => linkedPeople(t)).map((p) => [p.id, p])).values()].sort((a, b) => bareNames(a.name).localeCompare(bareNames(b.name))));
 	const filtersOn = $derived(activeCount(filter));
 
 	const kindTotal = $derived(titles.filter((t) => ofKind(t, kind)).length);
 	const countText = $derived.by(() => {
 		const k = ['movie', 'show', 'artist'].includes(kind) ? kind : 'all';
-		if (filtersOn || q) return tr(`library.count.${k}.${kindTotal === 1 ? 'ofOne' : 'ofOther'}`, { n: shown.length, total: kindTotal });
-		return tr(`library.count.${k}.${shown.length === 1 ? 'one' : 'other'}`, { n: shown.length });
+		if (filtersOn || q) return tr(`library.count.${k}.${kindTotal === 1 ? 'ofOne' : 'ofOther'}`, { n: shown.length.toLocaleString(appLocale()), total: kindTotal.toLocaleString(appLocale()) });
+		return tr(`library.count.${k}.${shown.length === 1 ? 'one' : 'other'}`, { n: shown.length.toLocaleString(appLocale()) });
 	});
 	// The Library has no top bar: its own row carries the search (as on Downloads). Ctrl K and "/" focus it.
 	const findWords = $derived(kind === 'movie' ? tr('library.page.findMovies') : kind === 'show' ? tr('library.page.findShows') : kind === 'artist' ? tr('library.page.findMusic') : tr('library.page.findLibrary'));
@@ -312,7 +319,7 @@
 		saved = saved.filter((s) => s.name !== name);
 		saveSaved(myId, kind, saved);
 	}
-	const sameFilter = (a: FilterState, b: FilterState) => a.status === b.status && a.kept === b.kept && a.asker === b.asker && a.series === b.series && (a.codec ?? '') === (b.codec ?? '') && !!a.subs === !!b.subs;
+	const sameFilter = (a: FilterState, b: FilterState) => a.status === b.status && a.kept === b.kept && a.asker === b.asker && a.series === b.series && (a.codec ?? '') === (b.codec ?? '') && !!a.subs === !!b.subs && !!a.watched === !!b.watched;
 
 	// Counts stay blank until the Library has loaded, so a 0 only ever means 0.
 	const countHint = (n: number) => (loaded ? String(n) : undefined);
@@ -341,7 +348,7 @@
 	let folders = $state<{ id: number; path: string; kind: string; label: string }[]>([]);
 	const pickedShown = $derived(shown.filter((t) => picked.has(t.id)));
 	const allPicked = $derived(shown.length > 0 && pickedShown.length === shown.length);
-	const deleteWord = $derived(deleteIds.length === 1 ? (titles.find((t) => t.id === deleteIds[0])?.name ?? tr('library.page.oneTitle')) : tr('library.page.nTitles', { n: deleteIds.length }));
+	const deleteWord = $derived(deleteIds.length === 1 ? (titles.find((t) => t.id === deleteIds[0])?.name ?? tr('library.page.oneTitle')) : tr('library.page.nTitles', { n: deleteIds.length.toLocaleString(appLocale()) }));
 	function togglePick(id: number) {
 		const next = new Set(picked);
 		if (next.has(id)) next.delete(id);
@@ -375,7 +382,7 @@
 	function report(action: string, failed: number, total: number, note?: string, vars: Record<string, string> = {}) {
 		const base = `library.report.${action}`;
 		if (failed) toasts.push(tr(`${base}.${total === 1 ? 'partOne' : 'partMany'}`, { ok: total - failed, total, ...vars }), 'info', { body: tr('library.report.failedBody', { n: failed }) });
-		else toasts.push(tr(`${base}.${total === 1 ? 'one' : 'many'}`, { n: total, ...vars }), 'ok', note ? { body: note } : undefined);
+		else toasts.push(tr(`${base}.${total === 1 ? 'one' : 'many'}`, { n: total.toLocaleString(appLocale()), ...vars }), 'ok', note ? { body: note } : undefined);
 	}
 	async function setKeep(ids: number[], keep: boolean) {
 		busy = true;
@@ -432,7 +439,14 @@
 		if (!canManage || !(kind === 'movie' || kind === 'show') || !!partOff('subtitles')) return;
 		if (Date.now() - subsAt < 60_000) return;
 		subsAt = Date.now();
-		void api.get<{ titles: { id: number }[] }>('/subtitles/missing?limit=1').then((r) => (subsTitles = new Set((r.titles ?? []).map((x) => x.id))), () => {});
+		void reading(waiting, 'subs', api.get<{ titles: { id: number }[] }>('/subtitles/missing?limit=1')).then((r) => (subsTitles = new Set((r.titles ?? []).map((x) => x.id))), () => {});
+	});
+	// What anybody watched: read at most once a minute.
+	let anyoneAt = 0;
+	$effect(() => {
+		if (!seesAnyone || Date.now() - anyoneAt < 60_000) return;
+		anyoneAt = Date.now();
+		void api.get<{ enabled: boolean; titles: number[] }>('/library/watched-by-anyone').then((r) => (anyoneWatched = r.enabled ? new Set(r.titles ?? []) : null), () => {});
 	});
 	async function searchMissingSubs() {
 		subsSearching = true;
@@ -462,7 +476,7 @@
 		searchingAll = true;
 		try {
 			await api.post('/search/missing', kind === 'all' ? undefined : { kind });
-			toasts.push(tr(missingCount === 1 ? 'library.page.searchingMissingOne' : 'library.page.searchingMissingMany', { n: missingCount }), 'info');
+			toasts.push(tr(missingCount === 1 ? 'library.page.searchingMissingOne' : 'library.page.searchingMissingMany', { n: missingCount.toLocaleString(appLocale()) }), 'info');
 			missingDialog?.close();
 		} catch (e) {
 			toasts.push(tr('mediafiles.title.startFailed'), 'fail', { body: plainReason(message(e)).text });
@@ -509,7 +523,7 @@
 	});
 	// Phones get the bar's actions as one menu (Downloads does the same).
 	const phoneActs = $derived<MenuItem[]>([
-		{ label: allPicked ? tr('mediafiles.select.none') : tr('mediafiles.select.all', { n: shown.length }), icon: 'check', onselect: pickAll },
+		{ label: allPicked ? tr('mediafiles.select.none') : tr('mediafiles.select.all', { n: shown.length.toLocaleString(appLocale()) }), icon: 'check', onselect: pickAll },
 		{ kind: 'separator' },
 		{ label: tr('mediafiles.select.keep'), icon: 'bellOn', disabled: busy || !pickedShown.length, onselect: () => setKeep(pickedShown.map((t) => t.id), true) },
 		{ label: tr('mediafiles.select.stopKeeping'), icon: 'bell', disabled: busy || !pickedShown.length, onselect: () => setKeep(pickedShown.map((t) => t.id), false) },
@@ -538,7 +552,7 @@
 		const controller = new AbortController();
 		const timer = setTimeout(async () => {
 			try {
-				const found = await api.get<{ titles: TitleView[] }>(`/titles?q=${encodeURIComponent(query)}`, controller.signal);
+				const found = await api.get<{ titles: { id: number }[] }>(`/titles?brief=1&q=${encodeURIComponent(query)}`, controller.signal);
 				if (run === searchRun) indexedIds = new Set(found.titles.map((t) => t.id));
 			} catch (e) {
 				if (!controller.signal.aborted && run === searchRun) searchError = message(e);
@@ -559,8 +573,11 @@
 		if (!target || target.url.pathname === page.url.pathname) return;
 		try {
 			const suffix = target.url.pathname.slice(page.url.pathname.length + 1);
-			const titleId = target.url.pathname.startsWith(`${page.url.pathname}/`) && /^\d+$/.test(suffix) ? Number(suffix) : lastOpenedId;
-			const saved = { key: scrollKey(), x: window.scrollX, y: window.scrollY, titleId };
+			const opened = target.url.pathname.startsWith(`${page.url.pathname}/`) && /^\d+$/.test(suffix) ? Number(suffix) : null;
+			// Kept with the place: the list's width (it sets the columns) and a title on screen, to come back by at another width.
+			const here = { x: window.scrollX, y: window.scrollY, w: listWidth, a: anchorOf([...document.querySelectorAll('.library [data-title-id]')], window.innerHeight, opened) ?? undefined };
+			// A place still waiting for the list is the place: leaving again before it is put back keeps it, not the top.
+			const saved = { key: scrollKey(), ...(restoreScroll?.peek() ?? here), titleId: opened ?? lastOpenedId };
 			sessionStorage.setItem('holyarrs.preview.library-scroll', JSON.stringify(saved));
 			const url = page.shallow?.url ?? page.url;
 			const views = JSON.parse(sessionStorage.getItem('holyarrs.preview.library-views') ?? '{}');
@@ -569,15 +586,23 @@
 		} catch { /* Scroll memory is optional when storage is unavailable. */ }
 	});
 	$effect(() => {
-		if (!loaded || searchPending || !restoreScroll) return;
-		const position = restoreScroll;
-		restoreScroll = null;
-		void tick().then(() => requestAnimationFrame(() => window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' })));
+		const position = restoreScroll?.take(scrollKey(), !loaded || searchPending || listWaits(filter, grouped, view, waiting), loaded);
+		if (!position) return;
+		// The list may need a frame or two to reach its full length: keep the place until it lands (at most 4 s), and let go at the first scroll, tap or key.
+		const at = lander(position.y);
+		const step = () => {
+			const y = placeTop(position, listWidth, (id) => list?.topOf(id), window.innerHeight);
+			window.scrollTo({ left: position.x, top: y, behavior: 'instant' });
+			return at(window.scrollY, document.documentElement.scrollHeight - window.innerHeight, y);
+		};
+		void tick().then(() => {
+			if (mounted) stopRestore = untilSettled(step, 4000);
+		});
 	});
 	async function load() {
 		try {
 			// My id comes from the session (the layout already read /auth/me).
-			titles = await libraryTitles();
+			titles = await libraryGrid();
 			myId = session.s.id;
 			error = '';
 			loadRevision++;
@@ -586,6 +611,14 @@
 		} finally {
 			loaded = true;
 		}
+	}
+	// A burst of events asks once, and once more if more arrived meanwhile.
+	let reloading = false, reloadAgain = false;
+	async function reload() {
+		if (reloading) { reloadAgain = true; return; }
+		reloading = true;
+		try { await load(); } finally { reloading = false; }
+		if (reloadAgain) { reloadAgain = false; await reload(); }
 	}
 	async function retryLoad() {
 		loaded = false;
@@ -597,13 +630,20 @@
 			const views = JSON.parse(sessionStorage.getItem('holyarrs.preview.library-views') ?? '{}');
 			const saved = views[kind] ?? JSON.parse(sessionStorage.getItem('holyarrs.preview.library-scroll') ?? 'null');
 			if (saved?.key === scrollKey() && Number.isFinite(saved.x) && Number.isFinite(saved.y) && saved.x >= 0 && saved.y >= 0) {
-				restoreScroll = { x: saved.x, y: saved.y };
+				// Until it is put back, the first scroll, tap or key drops it, as does another list (filter, kind or view).
+				const a = Number.isSafeInteger(saved.a?.id) && Number.isFinite(saved.a?.top) ? { id: saved.a.id, top: saved.a.top } : undefined;
+				restoreScroll = placeGate({ x: saved.x, y: saved.y, w: Number.isFinite(saved.w) ? saved.w : undefined, a }, saved.key);
 				lastOpenedId = Number.isSafeInteger(saved.titleId) && saved.titleId > 0 ? saved.titleId : null;
 			}
 		} catch { /* Start normally if a saved position is unavailable. */ }
 		void load();
-		const offs = [live.on('title', load), live.on('slot', load), live.on('resync', load)];
-		return () => offs.forEach((off) => off());
+		const offs = [live.on('title', reload), live.on('slot', reload), live.on('resync', reload)];
+		return () => {
+			offs.forEach((off) => off());
+			restoreScroll?.stop();
+			stopRestore();
+			mounted = false;
+		};
 	});
 </script>
 
@@ -628,6 +668,7 @@
 			{#if filter.series}<Chip label={tr('library.page.collectionChip', { name: seriesName(filter.series) })} selected onclick={() => setFilter({ series: 0 })} onremove={() => setFilter({ series: 0 })} />{/if}
 			{#if filter.codec}<Chip label={codecLabel(filter.codec)} selected onclick={() => setFilter({ codec: '' })} onremove={() => setFilter({ codec: '' })} />{/if}
 			{#if filter.subs}<Chip label={tr('library.page.missingSubs')} selected onclick={() => setFilter({ subs: false })} onremove={() => setFilter({ subs: false })} />{/if}
+			{#if filter.watched}<Chip label={tr('mediafiles.watched.byAnyone')} selected onclick={() => setFilter({ watched: false })} onremove={() => setFilter({ watched: false })} />{/if}
 			{#if q}<Chip label={tr('library.page.searchChip', { q })} selected onclick={clearSearch} onremove={clearSearch} />{/if}
 			{#if grouped}<Chip label={tr('library.page.grouped')} selected onclick={() => { groupSets = false; syncUrl(); }} onremove={() => { groupSets = false; syncUrl(); }} />{/if}
 			<Button variant="plain" size="md" onclick={clearFilters}>{tr('library.page.clear')}</Button>
@@ -637,7 +678,7 @@
 	{/if}
 	{#if searchError && !error}<p class="search-error" role="alert"><Icon name="alert" size={16} />{plainReason(searchError).text}</p>{/if}
 
-	<LibraryList {titles} {shown} {loaded} {error} {view} {kind} {libKind} {filter} {sort} {grouped} {kindTitle} {q} {filtersOn} {who} {canManage} {selecting} {picked} {lastOpenedId} {chosenCols} {density} {posterSize} {posterDetail} {seriesOfTitle} {seriesName} {phone} bind:listWidth bind:gridEl bind:listEl {progressText} {artistHref} {episodeLabel} {retryLoad} {clearFilters} {togglePick} {startSelecting} {setSort} {searchTitles} {setKeep} {refreshTitle} />
+	<LibraryList bind:this={list} {titles} {shown} {loaded} {error} {view} {kind} {libKind} {filter} {sort} {grouped} {kindTitle} {q} {filtersOn} {who} {canManage} {selecting} {picked} {lastOpenedId} {chosenCols} {density} {posterSize} {posterDetail} {seriesOfTitle} {seriesName} {phone} bind:listWidth bind:gridEl bind:listEl {progressText} {artistHref} {episodeLabel} {retryLoad} {clearFilters} {togglePick} {startSelecting} {setSort} {searchTitles} {setKeep} {refreshTitle} />
 
 	<LibrarySelectBar {selecting} {phone} {kind} {busy} pickedCount={pickedShown.length} pickedIds={pickedShown.map((t) => t.id)} shownCount={shown.length} {allPicked} copyPicksCount={copyPicks.length} {phoneActs} {moveItems} {rulesItems} {pickAll} {setKeep} {searchTitles} {reviewCopies} {askDelete} {stopSelecting} />
 </div>
@@ -645,7 +686,7 @@
 <LibraryDialogs bind:deleteDialog bind:copyDialog bind:missingDialog bind:saveDialog bind:copyPreview bind:saveName {deleteIds} {deleteWord} {busy} {missingCount} {searchingAll} {confirmDelete} {findCopies} {searchAllMissing} {saveCurrent} />
 
 {#snippet sortFilter()}
-	<LibrarySortFilter {kind} {sort} {filter} {counts} {askers} {series} {subsTitles} {loaded} {myId} {canManage} anyPart={!partOff('movies') || !partOff('shows') || !partOff('music')} {deletedCount} bind:groupSets {phone} {view} {sizeItems} foot={panelFoot} {setSort} {setFilter} {syncUrl} onclose={() => (sortOpen = false)} />
+	<LibrarySortFilter {kind} {sort} {filter} {counts} {askers} {series} {subsTitles} {anyoneWatched} {loaded} {myId} {canManage} anyPart={!partOff('movies') || !partOff('shows') || !partOff('music')} {deletedCount} bind:groupSets {phone} {view} {sizeItems} foot={panelFoot} {setSort} {setFilter} {syncUrl} onclose={() => (sortOpen = false)} />
 {/snippet}
 
 {#snippet panelFoot()}{@render savedFilters(false)}{/snippet}

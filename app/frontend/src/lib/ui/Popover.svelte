@@ -4,7 +4,7 @@
 	import Icon, { type IconName } from './Icon.svelte';
 	import { popIn, popOut } from '../core/transitions.ts';
 	import { press } from '../core/motion.ts';
-	import { placePanel } from './popover-place.ts';
+	import { placePanel, placeSide } from './popover-place.ts';
 
 	let {
 		label,
@@ -23,7 +23,8 @@
 		ontriggerkey,
 		tabindex,
 		portal = false,
-		panelClass = ''
+		panelClass = '',
+		beside
 	}: {
 		label: string;
 		icon?: IconName;
@@ -43,6 +44,8 @@
 		/** Moves the panel to the page's top level so a clipping or blurred parent cannot cut it off. */
 		portal?: boolean;
 		panelClass?: string;
+		/** Opens beside this element (a menu row) instead of under the button, top aligned to it. */
+		beside?: () => HTMLElement | null | undefined;
 	} = $props();
 
 	const id = $props.id();
@@ -121,6 +124,15 @@
 		const vh = window.innerHeight;
 		panel.style.maxHeight = '';
 		const rtl = getComputedStyle(button).direction === 'rtl';
+		const row = beside?.();
+		if (row) {
+			const sp = placeSide(row.getBoundingClientRect(), width, panel.offsetHeight, { width: document.documentElement.clientWidth, height: vh }, rtl);
+			const so = panel.offsetParent && panel.offsetParent !== document.body && panel.offsetParent !== document.documentElement ? panel.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
+			flip = false;
+			originX = sp.originX;
+			pos = `left: ${sp.left - so.left}px; top: ${sp.top - so.top}px;` + (sp.maxHeight === undefined ? '' : ` max-height: ${sp.maxHeight}px;`);
+			return;
+		}
 		const p = placePanel(b, width, panel.offsetHeight, { width: document.documentElement.clientWidth, height: vh }, { align, placement, rtl });
 		flip = p.up !== (placement === 'above');
 		originX = p.originX;

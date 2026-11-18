@@ -12,7 +12,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -665,7 +664,7 @@ func (h *Handlers) reviewHandlers() *metadata.ReviewHandlers {
 		Provider:      h.Metadata,
 		Secrets:       h.Secrets,
 		TraktBase:     h.TraktBase,
-		TraktOn:       func() bool { return startup.FeatureOn(startup.TraktLists) },
+		TraktOn:       func() bool { return true },
 		PartOn:        func(kind string) bool { return len(h.KindsOn(kind)) > 0 },
 		KidLimited:    h.KidLimited,
 		KidMax:        h.KidMax,

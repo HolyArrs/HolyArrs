@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
@@ -535,9 +536,9 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	return true
 }
 
-// metadataHost says an address names a link-local or cloud metadata
-// address (the list NotMetadata in core/outbound refuses), which no Source or
-// Downloader may reach.
+// metadataHost says an address names a cloud metadata address (the list
+// NotMetadata in core/outbound refuses), which no Source or Downloader may
+// reach.
 func metadataHost(raw string) bool {
 	u, err := url.Parse(raw)
 	if err != nil {
@@ -545,7 +546,7 @@ func metadataHost(raw string) bool {
 	}
 	h := strings.TrimSuffix(strings.ToLower(u.Hostname()), ".")
 	if ip := net.ParseIP(h); ip != nil {
-		return ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.Equal(net.ParseIP("fd00:ec2::254")) || ip.Equal(net.ParseIP("100.100.100.200"))
+		return ip.IsLinkLocalMulticast() || outbound.MetadataIP(ip)
 	}
 	return h == "metadata" || strings.HasPrefix(h, "metadata.") || strings.HasPrefix(h, "instance-data")
 }

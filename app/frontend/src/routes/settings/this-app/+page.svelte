@@ -9,6 +9,7 @@
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import type { Health } from '#lib/health/index.ts';
+	import { ProxyCard } from '#lib/health/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api, ApiError } from '#lib/core/api.ts';
@@ -180,8 +181,8 @@
 {:else}
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	{#if uiLoaded}
-		<section class="card" id="history-keep-card" aria-labelledby="h-history-keep" data-testid="history-keep-setting">
-			<div class="card-head"><h2 id="h-history-keep" class="h2">{t('settings.thisApp.history')}</h2></div>
+		<div data-testid="history-keep-setting">
+		<SettingsCard id="history-keep-card" title={t('settings.thisApp.history')}>
 			<label class="checkline">
 				<select class="input" aria-label={t('settings.thisApp.keepRoutine')} value={keepRoutine} disabled={uiBusy} onchange={(e) => saveKeep('history_routine_days', Number(e.currentTarget.value), e.currentTarget)}>
 					{#each keepChoices.includes(keepRoutine) ? keepChoices : [...keepChoices, keepRoutine] as d (d)}<option value={d}>{keepWord(d)}</option>{/each}
@@ -194,7 +195,8 @@
 				</select>
 				<span><b>{t('settings.thisApp.keepOther')}</b><br /><span class="hint">{t('settings.thisApp.keepOtherHint')}</span></span>
 			</label>
-		</section>
+		</SettingsCard>
+		</div>
 	{/if}
 
 	{#if session.can('settings')}
@@ -261,6 +263,7 @@
 				</form>
 			</SettingsCard>
 		{/if}
+		{#if session.s.role === 'owner'}<ProxyCard />{/if}
 		</MoreOptions>
 	{:else}
 		<div data-testid="storage">
@@ -322,6 +325,11 @@
 		}
 		.checks .grow {
 			width: 100%;
+		}
+		.checks li > .muted {
+			text-align: start;
+			align-self: flex-start;
+			margin-inline: 0;
 		}
 		.checks li > :global(.chip) {
 			align-self: flex-start;

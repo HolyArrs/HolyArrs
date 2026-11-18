@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+// Lab is the switch for parts made only for HolyArrs's own tests and the lab,
+// such as the lab's fake subtitle sites. It is not a held-back feature: the
+// web app is never told about it, and a real install leaves it off.
+const Lab = "lab"
+
 var heldFeatures []string
 
 // RegisterFeature adds a held-back feature to the list. A held-back feature

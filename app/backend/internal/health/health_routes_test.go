@@ -2,6 +2,7 @@ package health
 
 import (
 	"encoding/json"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
 	"strings"
 	"testing"
 
@@ -96,7 +97,7 @@ func TestHealthStatesOverHTTP(t *testing.T) {
 	if st := got.States[0]; st.Key != "stage:backups" || st.State != jobs.Retrying || st.Reason != "the disk is full" {
 		t.Fatalf("stage %+v", st)
 	}
-	if l := got.States[1]; l.Key != "link:downloader:1" || l.State != jobs.Failed || !strings.Contains(l.Reason, "turned down the sign-in") {
+	if l := got.States[1]; l.Key != "link:downloader:1" || l.State != jobs.Failed || l.Reason != doctor.Line(doctor.Auth) {
 		t.Fatalf("link %+v", l)
 	}
 	// Without a Registry the list still answers, as an empty list.

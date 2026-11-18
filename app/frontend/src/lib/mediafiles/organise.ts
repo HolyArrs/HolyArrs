@@ -1,9 +1,9 @@
 // Types and helpers for naming, adopting and removing files in the Library.
-import { t } from '../core/i18n/i18n.svelte.ts';
+import { appLocale, t } from '../core/i18n/i18n.svelte.ts';
 
 /** A counted noun in the person's language, like "3 files". */
 export function unit(name: 'track' | 'album' | 'file' | 'episode' | 'download' | 'day', n: number): string {
-	return t(`mediafiles.unit.${name}.${n === 1 ? 'one' : 'other'}`, { n });
+	return t(`mediafiles.unit.${name}.${n === 1 ? 'one' : 'other'}`, { n: n.toLocaleString(appLocale()) });
 }
 
 // A [value, label] choice whose label reads its words when used, so it follows the language.
@@ -45,7 +45,8 @@ export interface AdoptMatch {
 	poster?: string;
 }
 
-export type AdoptStatus = 'matched' | 'unsure' | 'unmatched' | 'no_video' | 'in_library' | 'never_add';
+// not_looked_up: the metadata server did not answer for this folder, so it is not known whether it matches.
+export type AdoptStatus = 'matched' | 'unsure' | 'unmatched' | 'not_looked_up' | 'no_video' | 'in_library' | 'never_add';
 
 export interface AdoptCandidate {
 	folder: string;
@@ -106,6 +107,9 @@ export interface AdoptPlan {
 	more: boolean;
 	next?: string;
 	partial?: boolean;
+	/** Folders in the Library folder in all, and how many sort before this part. */
+	total?: number;
+	offset?: number;
 }
 
 export interface AdoptResult {
@@ -149,6 +153,8 @@ export interface NamingSettings {
 	colon: string;
 	illegal: string;
 	rename_on_import: boolean;
+	// App language whose name new movie and show names use; '' keeps English.
+	title_language?: string;
 	adopt_scan_limit: number;
 	music_adopt_scan_limit?: number;
 	show_folder_pattern?: string;

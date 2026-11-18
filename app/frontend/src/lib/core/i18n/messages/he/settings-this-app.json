@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "אין",
 	"settings.thisApp.needsRestart": "דורש הפעלה מחדש. HOLYARRS_URL_BASE או -url-base עוקפים אותו.",
 	"settings.thisApp.save": "שמירה",
-	"settings.thisApp.licence": "HolyArrs היא תוכנה חופשית תחת רישיון AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs היא תוכנה חופשית תחת רישיון AGPL-3.0.",
+	"settings.thisApp.proxy": "פרוקסי",
+	"settings.thisApp.proxyDesc": "שליחת קריאות חיצוניות דרך פרוקסי. כללי החסימה והרשת הביתית עדיין חלים על היעד האמיתי.",
+	"settings.thisApp.proxyType": "סוג",
+	"settings.thisApp.proxyOff": "כבוי",
+	"settings.thisApp.proxyHost": "מארח",
+	"settings.thisApp.proxyPort": "פורט",
+	"settings.thisApp.proxyUser": "שם משתמש",
+	"settings.thisApp.proxyPasswordLabel": "סיסמה",
+	"settings.thisApp.proxyPasswordKept": "השאירו ריק כדי לשמור את הסיסמה השמורה",
+	"settings.thisApp.proxyBypass": "לדלג על הפרוקסי עבור",
+	"settings.thisApp.proxyBypassHint": "שמות, כתובות או טווחים, מופרדים בפסיקים. ‎*.example.com מכסה כל שם מתחתיו.",
+	"settings.thisApp.proxyBypassLocal": "לדלג על הפרוקסי לכתובות מקומיות",
+	"settings.thisApp.proxyBypassLocalHint": "המחשב הזה והרשת הביתית מתחברים ישירות",
+	"settings.thisApp.proxySaved": "הפרוקסי נשמר",
+	"settings.thisApp.proxyOffSaved": "הפרוקסי כבוי"
 }

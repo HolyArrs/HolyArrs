@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Valgregler for denne Version",
 	"movies.versions.folderLabel": "Biblioteksmappe til denne Version",
 	"movies.versions.cancel": "Annuller",
-	"movies.versions.addButton": "Tilføj version"
+	"movies.versions.addButton": "Tilføj version",
+	"movies.versions.setEdition": "Angiv udgave",
+	"movies.versions.editionFileHint": "Hvilken udgave filen er, fx Theatrical eller Directors Cut. Lad feltet stå tomt for at rydde det.",
+	"movies.versions.unprotectConfirm": "Fjern beskyttelsen fra {label}? En bedre kopi kan så erstatte den igen.",
+	"movies.versions.editionChars": "Ikke tilladt:",
+	"movies.versions.editionInvalid": "Den udgave kan ikke bruges. Hold den kort (bogstaver med accent og ikke-latinske bogstaver fylder mere), udelad tegnene nævnt ovenfor, og afslut ikke med punktum.",
+	"movies.versions.editionDevice": "Windows reserverer navnet {name} til enheder, så det kan ikke bruges. Skriv et andet."
 }

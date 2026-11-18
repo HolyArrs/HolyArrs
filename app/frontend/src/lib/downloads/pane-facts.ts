@@ -1,4 +1,5 @@
 import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
+import { shownPerson } from '#lib/core/plain.ts';
 import { size as bytes, protocolOf } from './size.ts';
 import { swarmLine } from './panel-words.ts';
 import { shortAge } from './columns.ts';
@@ -81,7 +82,7 @@ export function infoGroups(r: DownloadRow, d: Detail | undefined): { cap: string
 		f(say('downloads.pf.release'), r.name, 'dl-info-release', true),
 		f(say('downloads.pf.savePath'), t?.save_path, undefined, true),
 		f(say('downloads.col.proto'), d?.downloader || r.downloader),
-		f(say('downloads.col.requested'), d?.requested_by, 'dl-info-asker')
+		f(say('downloads.col.requested'), shownPerson(d?.requested_by), 'dl-info-asker')
 	];
 	const caps = r.limit_down || r.limit_up ? `${r.limit_down ? say('downloads.pf.capDown', { speed: `${bytes(r.limit_down)}/s` }) : say('downloads.pf.noCapDown')} · ${r.limit_up ? say('downloads.pf.capUp', { speed: `${bytes(r.limit_up)}/s` }) : say('downloads.pf.noCapUp')}` : '';
 	const rules = [f(say('downloads.steer.speed'), caps, 'dl-info-caps'), f(say('downloads.steer.seed'), r.limits ? limitsWords(r.limits) : '', 'dl-info-limits')];
@@ -102,7 +103,7 @@ export function usenetGroups(r: DownloadRow, d: Detail | undefined, im: ImportRe
 	const transfer = [f(done ? say('downloads.pf.size') : say('downloads.pf.downloaded'), got), f(say('downloads.pf.down'), r.speed ? `${bytes(r.speed)}/s` : ''), f(say('downloads.pf.timeLeft'), !done && r.eta ? duration(r.eta) : '')];
 	const dates = [f(say('downloads.pf.posted'), r.posted_at ? say('downloads.pf.ago', { age: shortAge(r.posted_at) }) : ''), f(say('downloads.pf.added'), dateTime(r.started_at)), f(say('downloads.pf.done'), dateTime(r.finished_at))];
 	const folder = im?.Plan?.find((p) => p.target_path)?.target_path || r.path;
-	const where = [f(say('downloads.pf.release'), r.name, 'dl-info-release', true), f(say('downloads.col.proto'), d?.downloader || r.downloader), f(say('downloads.col.category'), r.category), f(say('downloads.pf.folder'), folder, undefined, true), f(say('downloads.col.requested'), d?.requested_by || r.requested_by, 'dl-info-asker')];
+	const where = [f(say('downloads.pf.release'), r.name, 'dl-info-release', true), f(say('downloads.col.proto'), d?.downloader || r.downloader), f(say('downloads.col.category'), r.category), f(say('downloads.pf.folder'), folder, undefined, true), f(say('downloads.col.requested'), shownPerson(d?.requested_by || r.requested_by), 'dl-info-asker')];
 	const keep = (xs: (Fact | null)[]) => xs.filter((x): x is Fact => !!x);
 	return [
 		{ cap: say('downloads.pf.capTransfer'), rows: keep(transfer) },

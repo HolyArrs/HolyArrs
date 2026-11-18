@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "tmdb:693134 ya da tvmaze:82 gibi bir kimlik yapıştır.",
 	"discover.search.orDescribeItSuch": "Ya da “2014'ten robotlu uzay filmi” gibi tarif et.",
 	"discover.search.lookEverywhere": "Her yerde ara",
-	"discover.search.searchIndexersFor": "“{searched}” için indeksleyicilerde ara",
+	"discover.search.searchIndexersFor": "Kaynaklarınızı kontrol edin",
 	"discover.search.topMatches": "En iyi eşleşmeler",
 	"discover.people.goToTheFilmography": "Filmografiye git",
 	"discover.people.filmography": "Filmografi",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Bu sürüme uymuyor",
 	"discover.leftovers.reason.movie_has_file": "Filmin zaten dosyası var",
 	"discover.leftovers.reason.replaced_by_hand": "Başka bir dosyayla değiştirildi",
-	"discover.leftovers.reason.unmatched": "Eşleştirme elle kaldırıldı"
+	"discover.leftovers.reason.unmatched": "Eşleştirme elle kaldırıldı",
+	"discover.searchSections.genres": "Türler",
+	"discover.searchSections.moods": "Ruh halleri",
+	"discover.searchSections.stories": "Hikâyeler ve temalar",
+	"discover.searchSections.worlds": "Dünyalar ve mekânlar",
+	"discover.searchSections.eras": "Dönemler",
+	"discover.searchSections.world": "Dünyadan",
+	"discover.searchSections.collections": "Koleksiyonlar",
+	"discover.popularRail.out": "Çıkıyor",
+	"discover.popularRail.comingDay": "Yakında",
+	"discover.titleLibrary.turnShowOnHint": "Aramaya başlamak için diziyi açın.",
+	"discover.leftovers.reason.seasons_differ": "Yalnızca eski uygulamanın TMDB numarasıyla bulundu: aynı dizi olduğunu kontrol et, sonra dosyayı kendin eşleştir"
 }

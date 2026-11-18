@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "无",
 	"settings.thisApp.needsRestart": "需要重启。HOLYARRS_URL_BASE 或 -url-base 会覆盖它。",
 	"settings.thisApp.save": "保存",
-	"settings.thisApp.licence": "HolyArrs 是自由软件，采用 AGPL-3.0 许可。"
+	"settings.thisApp.licence": "HolyArrs 是自由软件，采用 AGPL-3.0 许可。",
+	"settings.thisApp.proxy": "代理",
+	"settings.thisApp.proxyDesc": "通过代理发送对外请求。屏蔽和家庭网络规则仍适用于真实目标。",
+	"settings.thisApp.proxyType": "类型",
+	"settings.thisApp.proxyOff": "关闭",
+	"settings.thisApp.proxyHost": "主机",
+	"settings.thisApp.proxyPort": "端口",
+	"settings.thisApp.proxyUser": "用户名",
+	"settings.thisApp.proxyPasswordLabel": "密码",
+	"settings.thisApp.proxyPasswordKept": "留空以保留已保存的密码",
+	"settings.thisApp.proxyBypass": "不使用代理的地址",
+	"settings.thisApp.proxyBypassHint": "名称、地址或网段，用逗号分隔。*.example.com 涵盖其下所有名称。",
+	"settings.thisApp.proxyBypassLocal": "本地地址不使用代理",
+	"settings.thisApp.proxyBypassLocalHint": "本机和家庭网络直接连接",
+	"settings.thisApp.proxySaved": "代理已保存",
+	"settings.thisApp.proxyOffSaved": "代理已关闭"
 }

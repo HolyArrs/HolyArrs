@@ -100,7 +100,7 @@ func TestRemoveAndMarkFailedLeaveFinishedDownloads(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: true}, luis, "luis"); !errors.Is(err, ErrNotActive) {
+	if err := m.Remove(context.Background(), id, RemoveChoice{DeleteFiles: true}, luis, "luis"); !errors.Is(err, ErrDownloaderReadOnly) {
 		t.Fatalf("remove: %v", err)
 	}
 	if err := m.MarkFailed(context.Background(), id, luis, "luis"); !errors.Is(err, ErrNotActive) {

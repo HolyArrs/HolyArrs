@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Beide paden zijn gelijk, dus dit paar verandert niets. Het vertelt HolyArrs wel waar de bestanden van deze downloader staan, dus je kunt het laten staan.",
 	"settings.downloaders.change": "{name} wijzigen",
 	"settings.downloaders.whichApp": "Welke app",
-	"settings.downloaders.torrents": "(torrents)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrents",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Meest gebruikt",
 	"settings.downloaders.name": "Naam",
 	"settings.downloaders.address": "Adres",
 	"settings.downloaders.addressHint": "De webpagina ervan. Gebruik voor SABnzbd het IP-adres of sta de hostnaam van HolyArrs toe.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Categorie na import",
 	"settings.downloaders.categoryAfterImportHint": "Zodra een torrent is geïmporteerd, verplaatst HolyArrs hem naar deze categorie. Laat leeg om hem in de hoofdcategorie te houden.",
 	"settings.downloaders.ownOnly": "Alleen HolyArrs-items tonen",
-	"settings.downloaders.ownOnlyHint": "Items van andere apps op deze downloader worden verborgen en HolyArrs wijzigt ze niet."
+	"settings.downloaders.ownOnlyHint": "Items van andere apps op deze downloader worden verborgen en HolyArrs wijzigt ze niet.",
+	"settings.downloaders.state.notAnswering": "Geen antwoord",
+	"settings.downloaders.state.paused": "Gepauzeerd",
+	"settings.downloaders.state.resting": "Rust",
+	"settings.downloaders.state.signInRefused": "Aanmelding geweigerd",
+	"settings.downloaders.state.working": "Werkt"
 }

@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "इस वर्ज़न के चुनाव के नियम",
 	"movies.versions.folderLabel": "इस वर्ज़न का लाइब्रेरी फ़ोल्डर",
 	"movies.versions.cancel": "रद्द करें",
-	"movies.versions.addButton": "वर्ज़न जोड़ें"
+	"movies.versions.addButton": "वर्ज़न जोड़ें",
+	"movies.versions.setEdition": "एडिशन तय करें",
+	"movies.versions.editionFileHint": "यह फ़ाइल कौन-सा कट है, जैसे Theatrical या Directors Cut। हटाने के लिए खाली छोड़ें।",
+	"movies.versions.unprotectConfirm": "{label} की सुरक्षा हटाएं? कोई बेहतर कॉपी इसकी जगह फिर से ले सकेगी।",
+	"movies.versions.editionChars": "अनुमति नहीं:",
+	"movies.versions.editionInvalid": "यह एडिशन इस्तेमाल नहीं किया जा सकता। इसे छोटा रखें (उच्चारण चिह्न वाले और गैर-लैटिन अक्षर ज़्यादा जगह लेते हैं), ऊपर सूचीबद्ध वर्ण न रखें और अंत में बिंदु न लगाएँ।",
+	"movies.versions.editionDevice": "Windows {name} नाम को डिवाइस के लिए रखता है, इसलिए इसे इस्तेमाल नहीं किया जा सकता। कोई दूसरा नाम लिखें।"
 }

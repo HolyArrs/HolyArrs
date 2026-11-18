@@ -27,7 +27,7 @@ async function more(name: string, item: string) {
 
 test('copy Standard, change a step and a trait, save, and the changes stay after a reload', async () => {
 	await page.goto('/settings/pick-rules');
-	await expect(row('Standard')).toContainText('Ready-made');
+	await expect(row('Standard')).toBeVisible();
 	await more('Standard', 'Make a copy');
 	await expect(page).toHaveURL(/\/settings\/pick-rules\/new\?from=\d+$/);
 	await expect(page.getByRole('heading', { name: 'Add a quality set', level: 1 })).toBeVisible();

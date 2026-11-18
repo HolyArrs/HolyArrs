@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} warten",
 	"frame.nav.new": "{n} neu",
 	"frame.nav.manage": "Verwalten",
+	"frame.nav.activity": "Aktivität",
+	"frame.nav.system": "System",
 	"frame.nav.history": "Verlauf",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Einstellungen",
+	"frame.nav.plugins": "Plugins",
 	"frame.nav.goTo": "Gehe zu",
 	"frame.nav.active": "{n} aktiv, {percent} %",
 	"frame.nav.decide": "{n} brauchen eine Entscheidung",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "System",
 	"frame.layout.switch": "Konto wechseln",
 	"frame.layout.signOut": "Abmelden",
+	"frame.layout.support": "HolyArrs unterstützen",
 	"frame.layout.signOutFail": "Abmeldung konnte nicht bestätigt werden",
 	"frame.layout.signedOut": "Abgemeldet",
 	"frame.layout.accountMenu": "{name}, {role}: Konto und Aussehen",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs versucht es selbst erneut",
 	"frame.feeds.clearNow": "Jetzt entfernen",
 	"frame.feeds.cleared": "Aus dem Downloader entfernt",
-	"frame.feeds.clearStill": "Noch nicht entfernt"
+	"frame.feeds.clearStill": "Noch nicht entfernt",
+	"frame.error.pageGone": "Diese Seite gibt es nicht. Der Link ist vielleicht alt oder falsch geschrieben."
 }

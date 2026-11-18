@@ -32,11 +32,12 @@
 	"settings.backups.key": "Hovednøgle",
 	"settings.backups.keyDesc": "Sikkerhedskopier indeholder ikke denne nøgle. Gem en kopi et sikkert sted.",
 	"settings.backups.noKit": "Intet nøglesæt er gemt for denne nøgle endnu. Uden det kan en sikkerhedskopis gemte adgangskoder ikke åbnes på en ny maskine.",
+	"settings.backups.kitRecommended": "Anbefalet: download dit nøglesæt.",
 	"settings.backups.ownerOnlyKit": "Kun ejeren kan downloade det; bed vedkommende om det.",
 	"settings.backups.fingerprint": "Nøglens fingeraftryk",
 	"settings.backups.downloadKit": "Download nøglesæt",
 	"settings.backups.restoreKey": "Sådan gendanner du: omdøb til holyarrs.key, læg i mappen config",
 	"settings.backups.offPlan": "Fra",
-	"settings.backups.offAbout": "Ingen planlagte sikkerhedskopier. Der laves stadig en kopi før hver opdatering.",
+	"settings.backups.offAbout": "Ingen automatiske sikkerhedskopier, heller ikke før en opdatering. Kopier, du selv laver, virker stadig.",
 	"settings.backups.offKeeps": "Fra beholder de sikkerhedskopier, du allerede har."
 }

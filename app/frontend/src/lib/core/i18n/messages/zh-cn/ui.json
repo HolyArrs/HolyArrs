@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "获奖：{name}",
 	"ui.wikiFacts.nominated": "提名：{name}",
 	"ui.wikiFacts.andMore": "另有 {count} 项",
-	"ui.pageLoader.loading": "加载中"
+	"ui.pageLoader.loading": "加载中",
+	"ui.connectHelp.link": "如何修复",
+	"ui.ask.remove": "移除",
+	"ui.ask.restore": "恢复",
+	"ui.ask.stop": "停止",
+	"ui.ask.revoke": "撤销",
+	"ui.ask.replace": "替换",
+	"ui.ask.unlink": "取消关联",
+	"ui.ask.turnOff": "关闭",
+	"ui.ask.markFailed": "标记为失败",
+	"ui.ask.reset": "重置",
+	"ui.ask.import": "导入"
 }

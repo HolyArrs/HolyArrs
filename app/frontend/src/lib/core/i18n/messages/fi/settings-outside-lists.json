@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "Lisää Ei-lisättävien listalle",
 	"settings.outsideLists.showDot": "sarja ·",
 	"settings.outsideLists.takeOff": "Poista listalta {name}",
-	"settings.outsideLists.empty": "Tyhjä"
+	"settings.outsideLists.empty": "Tällä listalla ei ole vielä mitään"
 }

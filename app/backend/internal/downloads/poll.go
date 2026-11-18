@@ -205,8 +205,16 @@ func (m *Manager) Run(ctx context.Context) {
 }
 
 func (m *Manager) event(ctx context.Context, d *domain.Download, kind, summary string) {
+	m.eventWith(ctx, d, kind, summary, nil)
+}
+
+// eventWith is event with extra data keys for the History row.
+func (m *Manager) eventWith(ctx context.Context, d *domain.Download, kind, summary string, extra map[string]any) {
 	id := d.ID
 	data := map[string]any{"state": d.State, "progress": d.Progress, "save_path": d.SavePath}
+	for k, v := range extra {
+		data[k] = v
+	}
 	if d.StateReason != nil {
 		data["reason"] = *d.StateReason
 	}

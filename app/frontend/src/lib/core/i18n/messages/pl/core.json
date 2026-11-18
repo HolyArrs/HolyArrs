@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Pozwól asystentom AI korzystać z HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Klucze i trasy dla innych aplikacji",
+	"core.settings.remoteAccess.label": "Dostęp zdalny",
+	"core.settings.remoteAccess.about": "Korzystaj z HolyArrs poza domem",
 	"core.settings.tmdb.label": "Metadane",
 	"core.settings.tmdb.about": "Skąd biorą się plakaty i nazwy",
 	"core.settings.health.label": "Kontrole kondycji",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Hasło, uwierzytelnianie dwuskładnikowe, urządzenia",
 	"core.api.sourceOff": "Niektóre rzędy są wyłączone w tej instalacji.",
 	"core.plain.noDownloader": "Twoje źródła znajdują pobrania, których nie może przyjąć żaden z twoich downloaderów, więc nic nie może zostać wysłane.",
-	"core.plain.sameDownloader": "Dwa Downloadery łączą się z tą samą aplikacją do pobierania, więc pobrania mogą pojawiać się podwójnie."
+	"core.plain.sameDownloader": "Dwa Downloadery łączą się z tą samą aplikacją do pobierania, więc pobrania mogą pojawiać się podwójnie.",
+	"core.plain.peopleCheck": "Nie można odczytać listy użytkowników serwera multimediów, więc osoby tam usunięte nie są tu wyłączane.",
+	"core.plain.deleted": "usunięty",
+	"core.plain.deletedName": "{name} (usunięty)"
 }

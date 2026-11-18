@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const store = new Map<string, string>();
 (globalThis as { localStorage?: unknown }).localStorage = {
 	getItem: (k: string) => store.get(k) ?? null,
@@ -6,7 +6,8 @@ const store = new Map<string, string>();
 	clear: () => store.clear()
 };
 
-import { forgetPerson, recentPeople, rememberPerson, setPersonPic } from './recent-people.ts';
+import { forgetPerson, keepPersonPic, recentPeople, rememberPerson, setPersonPic } from './recent-people.ts';
+import { setBase } from '#lib/core/paths.ts';
 
 describe('recent people', () => {
 	beforeEach(() => localStorage.clear());
@@ -48,5 +49,23 @@ describe('recent people', () => {
 		expect(recentPeople()).toEqual([]);
 		localStorage.setItem('holyarrs.recent-people', '{bad');
 		expect(recentPeople()).toEqual([]);
+	});
+});
+
+describe('keeping a picture copy under a URL base', () => {
+	beforeEach(() => localStorage.clear());
+	afterEach(() => {
+		setBase('');
+		vi.unstubAllGlobals();
+	});
+	it('loads the picture from the address with the base in front', async () => {
+		const asked: string[] = [];
+		vi.stubGlobal('Image', class { decode = async () => {}; set src(u: string) { asked.push(u); } });
+		vi.stubGlobal('document', { createElement: () => ({ getContext: () => ({ drawImage() {} }), toDataURL: () => 'data:image/jpeg;base64,AAAA' }) });
+		setBase('/holyarrs');
+		rememberPerson('ana');
+		await keepPersonPic('ana', '/api/v1/users/2/avatar?v=a');
+		expect(asked).toEqual(['/holyarrs/api/v1/users/2/avatar?v=a']);
+		expect(recentPeople()[0]).toMatchObject({ pic: 'data:image/jpeg;base64,AAAA', picFrom: '/api/v1/users/2/avatar?v=a' });
 	});
 });

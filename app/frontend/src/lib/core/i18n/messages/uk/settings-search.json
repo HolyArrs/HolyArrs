@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Відкидати релізи, опубліковані до виходу",
 	"settings.search.refuseEarlyHint": "Імовірно, фейки. «Вибрати реліз» усе одно показує їх із попередженням.",
 	"settings.search.refuseTiny": "Відкидати фейки за розміром і типом файлу",
-	"settings.search.refuseTinyHint": "Замалі релізи, порожні файли та .wmv чи .asf під назвами HD",
+	"settings.search.refuseTinyHint": "Замалі релізи, порожні файли, обірвані відео та .wmv чи .asf під назвами HD",
 	"settings.search.grace": "Годин, на які реліз може бути раннім",
 	"settings.search.graceHint": "Через часові пояси. Типово 24.",
 	"settings.search.floors": "Перевіряти розміри файлів під час імпорту",

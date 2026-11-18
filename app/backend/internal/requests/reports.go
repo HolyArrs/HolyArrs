@@ -17,6 +17,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // Reports: anyone signed in tells the owner and admins about a
@@ -291,7 +292,7 @@ func (s *Service) FixReport(ctx context.Context, by Person, id int64, reply stri
 	}
 	who := ""
 	if v.MadeBy != nil {
-		who = v.MadeBy.Name
+		who = webserver.OutsideName(v.MadeBy.Name)
 	}
 	s.event(ctx, &domain.Event{Actor: by.actor(), Kind: domain.EventReportFixed, TitleID: &r.TitleID, SlotID: s.reportSlot(ctx, r),
 		Summary: v.label() + ": " + v.KindLabel + " problem fixed by " + by.Name,
@@ -420,6 +421,7 @@ func (s *Service) ReportViews(ctx context.Context, where string, args ...any) ([
 		n, ok := names[*id]
 		if !ok {
 			_ = db.QueryRowContext(ctx, reportViewsSQL, *id).Scan(&n)
+			n = webserver.NameFor(ctx, n)
 			names[*id] = n
 		}
 		return &Who{ID: *id, Name: n}

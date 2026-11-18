@@ -10,8 +10,10 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { inView } from '#lib/core/motion.ts';
 
-	let { action, onCancel, children }: { action: Sensitive; onCancel?: () => void; children: Snippet } = $props();
+	// The prompt can open far from the button that needed it (Settings asks above the page), so it comes into view with its field focused; reveal={false} keeps a prompt that is part of the page as it loads still.
+	let { action, onCancel, reveal = true, children }: { action: Sensitive; onCancel?: () => void; reveal?: boolean; children: Snippet } = $props();
 	const id = $props.id();
 
 	let typed = $state('');
@@ -50,7 +52,7 @@
 </script>
 
 {#if need && signInLink}
-	<div class="confirm" data-testid="confirm-local-visit">
+	<div class="confirm" use:inView={reveal} data-testid="confirm-local-visit">
 		<p class="hint">{t('ui.confirm.localVisit')}</p>
 		<div class="row acts">
 			<Button size="sm" variant="primary" href={to(signInLink)}>{t('ui.confirm.signInFirst')}</Button>
@@ -58,7 +60,7 @@
 		</div>
 	</div>
 {:else if need && way}
-	<div class="confirm" data-testid="confirm-outside">
+	<div class="confirm" use:inView={reveal} data-testid="confirm-outside">
 		<p class="hint">{t('ui.confirm.outsideAgain', { method: way })}</p>
 		<div class="row acts">
 			<Button size="sm" variant="primary" type="button" onclick={signInAgain}>{t('ui.confirm.signInAgainWith', { method: way })}</Button>
@@ -66,12 +68,12 @@
 		</div>
 	</div>
 {:else if need}
-	<form class="confirm" onsubmit={submit} novalidate data-testid="confirm-sign-in">
-		<p class="hint">{t('ui.confirm.confirmItSYou')}</p>
+	<form class="confirm" onsubmit={submit} novalidate use:inView={reveal} data-testid="confirm-sign-in">
+		<p class="hint" id="{id}-hint">{t('ui.confirm.confirmItSYou')}</p>
 		<input type="text" name="username" autocomplete="username" value={session.s.name} hidden readonly />
 		<div class="field">
 			<label for="{id}-pw">{t('ui.confirm.holyArrsPasswordLabel')}</label>
-			<input id="{id}-pw" class="input" type="password" bind:value={typed} autocomplete="current-password" required />
+			<input id="{id}-pw" class="input" type="password" aria-describedby="{id}-hint" bind:value={typed} autocomplete="current-password" required />
 		</div>
 		{#if session.s.twoFactor}
 			<div class="field">

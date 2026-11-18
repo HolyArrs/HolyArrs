@@ -11,12 +11,13 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
-// TagUse is one tag in use and how many titles, Downloaders and Sources have it.
+// TagUse is one tag in use and how many titles, Downloaders, Sources and Library folders have it.
 type TagUse struct {
 	Label       string `json:"label"`
 	Titles      int    `json:"titles"`
 	Downloaders int    `json:"downloaders"`
 	Sources     int    `json:"sources"`
+	Folders     int    `json:"folders"`
 }
 
 // TagHandlers serves the tag list.
@@ -40,6 +41,7 @@ func (h *TagHandlers) listTags(w http.ResponseWriter, r *http.Request) {
 		{mediafiles.TitleTagUses, func(u *TagUse, n int) { u.Titles += n }},
 		{DownloaderTagUses, func(u *TagUse, n int) { u.Downloaders += n }},
 		{sources.TagUses, func(u *TagUse, n int) { u.Sources += n }},
+		{mediafiles.FolderTagUses, func(u *TagUse, n int) { u.Folders += n }},
 	} {
 		got, err := q.read(r.Context(), h.DB)
 		if err != nil {

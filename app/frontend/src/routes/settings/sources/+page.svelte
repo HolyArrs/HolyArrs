@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { ask } from '#lib/ui/ask.svelte.ts';
+	import { ltr, t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
 	import TagInput from '#lib/ui/TagInput.svelte';
@@ -11,13 +13,15 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
+	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
 	import { ConnectBridge } from '#lib/sources/index.ts';
 	import { partOff } from '#lib/mediafiles/index.ts';
-	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, builtInSites, pickSite, type SourceForm } from '#lib/sources/index.ts';
+	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, builtInSites, pickSite, sendToChoices, type SourceForm } from '#lib/sources/index.ts';
 	import type { SourceHealth, SourceView } from '#lib/sources/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago, words } from '#lib/core/format.ts';
 	import { testCount } from '#lib/core/test-tag.ts';
@@ -33,6 +37,8 @@
 	let busy = $state(false);
 	let formError = $state('');
 	let testing = $state(0);
+	let downloaders = $state<{ id: number; name: string; protocol: string }[] | null>(null);
+	let sendGone = $state(false);
 	let results = $state<Record<number, { ok: boolean; text: string; extra?: string; hover?: string }>>({});
 
 	async function load() {
@@ -45,12 +51,24 @@
 			loaded = true;
 		}
 	}
-	onMount(load);
+	// Not every account may list Downloaders; then the choice stays hidden.
+	async function loadDownloaders() {
+		try {
+			downloaders = (await api.get<{ downloaders: { id: number; name: string; protocol: string }[] }>('/downloaders')).downloaders ?? [];
+		} catch {
+			downloaders = null;
+		}
+	}
+	onMount(() => {
+		load();
+		loadDownloaders();
+	});
 
 	function startAdd() {
 		isNew = true;
 		editing = { id: 0, name: '' } as SourceView;
 		form = emptyForm();
+		sendGone = false;
 		formError = '';
 	}
 
@@ -58,9 +76,20 @@
 		isNew = false;
 		editing = s;
 		form = formFrom(s);
+		sendGone = false;
 		formError = '';
 	}
 
+	const sendProto = $derived(form.format === 'site' ? 'torrent' : form.protocol);
+	const sendTo = $derived(sendToChoices(downloaders ?? [], sendProto, form.downloader_id));
+	// A chosen Downloader that is not on the list (removed, or of the other
+	// kind after a switch) means any Downloader. Only a removed one is worth a
+	// warning.
+	$effect(() => {
+		if (!downloaders || !sendTo.missing) return;
+		sendGone = !!editing && sendProto === editing.protocol && form.downloader_id === (editing.downloader_id ?? 0);
+		form.downloader_id = 0;
+	});
 	const siteNeedsKey = $derived(builtInSites.find((x) => x.id === form.site)?.key ?? false);
 
 	function setFormat(v: string) {
@@ -102,6 +131,8 @@
 		} finally {
 			testing = 0;
 			await load();
+			// A test that works clears its warning and the menu dot at once.
+			void recheckSettingsStatus('source');
 		}
 	}
 
@@ -115,10 +146,11 @@
 	}
 
 	async function remove(s: SourceView) {
-		if (!confirm(t('settings.sources.confirmRemove', { name: s.name }))) return;
+		if (!(await ask(t('settings.sources.confirmRemove', { name: s.name }), { yes: t('ui.ask.remove'), danger: true }))) return;
 		try {
 			await api.del(`/sources/${s.id}`);
 			await load();
+			void recheckSettingsStatus('source');
 		} catch (err) {
 			toasts.push(t('settings.sources.removeFailed'), 'fail', { body: message(err) });
 		}
@@ -140,6 +172,7 @@
 
 <p class="small muted lead">
 	{t('settings.sources.lead')}
+	{t('settings.sources.builtIn', { sites: ltr(builtInSites.map((x) => x.name).join(', ')), site: t('settings.sources.site'), kind: t('settings.sources.feedKind') })}
 </p>
 
 {#if editing}
@@ -216,6 +249,15 @@
 			<Field id="so-tags" label={t('settings.sources.tags')} hint={t('settings.sources.tagsHint')}>
 				<TagInput id="so-tags" bind:value={form.tags} describedby="so-tags-hint" testid="so-tags" />
 			</Field>
+			{#if downloaders}
+				<Field id="so-send" label={t('settings.sources.sendTo')} hint={t('settings.sources.sendToHint')}>
+					<select id="so-send" class="input" bind:value={form.downloader_id} aria-describedby="so-send-hint" data-testid="so-send">
+						<option value={0}>{t('settings.sources.sendToAny')}</option>
+						{#each sendTo.choices as d (d.id)}<option value={d.id}>{d.name}</option>{/each}
+					</select>
+				</Field>
+				{#if sendGone}<p class="notice warn" role="status" data-testid="so-send-gone">{t('settings.sources.sendToGone')}</p>{/if}
+			{/if}
 			<details class="more">
 				<summary>{t('settings.sources.limits')}</summary>
 				<div class="two">
@@ -253,7 +295,7 @@
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.sources.save')}</Button>
-				<Button variant="plain" type="button" onclick={() => (editing = null)}>{t('settings.sources.cancel')}</Button>
+				<Button variant="secondary" type="button" onclick={() => (editing = null)}>{t('settings.sources.cancel')}</Button>
 			</div>
 		</SettingsCard>
 	</form>
@@ -282,7 +324,7 @@
 				<div class="main">
 					<span class="ic"><Icon name="source" size={20} /></span>
 					<div class="grow">
-						<div class="top"><a class="name" href={to(`/settings/sources/${s.id}`)}>{s.name}</a></div>
+						<div class="top"><a class="name" href={to(`/settings/sources/${s.id}`)}>{s.name}</a>{#if results[s.id]}<span data-testid={results[s.id].ok ? 'source-test' : undefined}><TestTag ok={results[s.id].ok} text={results[s.id].text} hover={results[s.id].hover} extra={results[s.id].extra} /></span>{/if}</div>
 						<div class="sub">{s.format === 'rss' ? 'RSS' : s.format === 'site' ? (builtInSites.find((x) => x.id === s.site)?.name ?? t('settings.sources.site')) : words(s.format)} · {words(s.protocol)}</div>
 						<div class="sr-only">{s.url}{#if s.format === 'rss' && s.api_key}?{s.api_key}{/if} · 
 							{t('settings.sources.priorityUses', { priority: s.priority, uses: uses(s) })}
@@ -292,25 +334,25 @@
 							{#if s.tags?.length} · <span data-testid="source-tags">{t('settings.sources.tagsList', { tags: s.tags.join(', ') })}</span>{/if}
 						</div>
 					</div>
-					{#if s.summary.calls_24h > 0}<div class="num" title={t('settings.sources.lastAnswer', { ago: s.summary.last_success ? ago(s.summary.last_success) : t('settings.sources.never'), failed: s.summary.failures_24h, calls: s.summary.calls_24h })}><b>{ms(s.summary.avg_ms_24h)}</b><small>{t('settings.sources.avg')}</small></div>{/if}
-					<span class="st {healthTone(s.health)}"><i></i><span data-testid="source-state">{healthWord(s.health)}</span></span>
+					<div class="num">{#if s.summary.calls_24h > 0 && s.summary.avg_ms_24h}<span class="numin" title={t('settings.sources.lastAnswer', { ago: s.summary.last_success ? ago(s.summary.last_success) : t('settings.sources.never'), failed: s.summary.failures_24h, calls: s.summary.calls_24h })}><b>{ms(s.summary.avg_ms_24h)}</b><small>{t('settings.sources.avg')}</small></span>{/if}</div>
+					{#if healthTone(s.health) === 'ok'}<span class="st"><span class="sr-only" data-testid="source-state">{healthWord(s.health)}</span></span>{:else}<span class="st {healthTone(s.health)}"><i></i><span data-testid="source-state">{healthWord(s.health)}</span></span>{/if}
 					<div class="acts">
-						<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>{t('settings.sources.test')}</Button>
+						<Button variant="secondary" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s)}>{t('settings.sources.test')}</Button>
 						{#if s.state === 'disabled'}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, false)}>{t('settings.sources.resume')}</Button>
+							<Button variant="secondary" size="sm" type="button" onclick={() => setPaused(s, false)}>{t('settings.sources.resume')}</Button>
 						{:else}
-							<Button variant="plain" size="sm" type="button" onclick={() => setPaused(s, true)}>{t('settings.sources.pause')}</Button>
-							{#if s.state === 'paused'}<Button variant="plain" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">{t('settings.sources.tryNow')}</Button>{/if}
+							<Button variant="secondary" size="sm" type="button" onclick={() => setPaused(s, true)}>{t('settings.sources.pause')}</Button>
+							{#if s.state === 'paused'}<Button variant="secondary" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">{t('settings.sources.tryNow')}</Button>{/if}
 						{/if}
-						<Button variant="plain" size="sm" href={to(`/settings/sources/${s.id}`)}>{t('settings.sources.health')}</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => startChange(s)}>{t('settings.sources.changeButton')}</Button>
-						<Button variant="plain" size="sm" type="button" onclick={() => remove(s)} aria-label={t('settings.sources.removeName', { name: s.name })}>{t('settings.sources.remove')}</Button>
+						<Button variant="secondary" size="sm" href={to(`/settings/sources/${s.id}`)}>{t('settings.sources.health')}</Button>
+						<Button variant="secondary" size="sm" type="button" onclick={() => startChange(s)}>{t('settings.sources.changeButton')}</Button>
+						<Button variant="secondary" size="sm" type="button" onclick={() => remove(s)} aria-label={t('settings.sources.removeName', { name: s.name })}>{t('settings.sources.remove')}</Button>
 					</div>
 				</div>
-				<p class="note" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} class:sr-only={s.health.state === 'working' || s.health.state === 'disabled' || s.state === 'paused'} data-testid="source-text">{s.health.text}{until(s.health)}</p>
+				<p class="note" class:bad-text={s.health.state !== 'working' && s.health.state !== 'disabled'} class:sr-only={s.health.state === 'working' || s.health.state === 'disabled' || s.state === 'paused' || (results[s.id] && !results[s.id].ok)} data-testid="source-text">{serverWords(s.health.text)}{until(s.health)}</p>
 				{#if s.health.block === 'bot_check' || results[s.id]?.text.includes("site's bot check")}<p class="note"><a href="#connect-bridge" data-testid="source-bridge-link">{t('settings.sources.bridge')}</a></p>{/if}
 				{#if results[s.id]}
-					<div class="testline note" data-testid="source-test"><TestTag ok={results[s.id].ok} text={results[s.id].text} hover={results[s.id].hover} extra={results[s.id].extra} />{#if !results[s.id].ok}<span class="small bad-text">{results[s.id].text}</span>{/if}</div>
+					{#if !results[s.id].ok}<p class="note bad-text" role="status" data-testid="source-test">{serverWords(results[s.id].text)}<ConnectHelp text={results[s.id].text} /></p>{/if}
 				{/if}
 			</li>
 		{/each}
@@ -324,7 +366,7 @@
 <style>
 	.testline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 	.lead {
-		margin-bottom: var(--s-5);
+		margin-bottom: var(--s-4);
 	}
 	.list {
 		display: flex;
@@ -391,7 +433,7 @@
 	}
 
 	/* The list: one glass sheet, one row per Source (the Library folders pattern). */
-	.fl { list-style: none; margin: var(--s-4) 0 0; padding: 0; border: 1px solid color-mix(in srgb, var(--text) 10%, transparent); border-radius: 20px; background: color-mix(in srgb, var(--surface-1) 60%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 24px 50px -32px rgb(0 0 0 / 0.45); overflow: hidden; }
+	.fl { list-style: none; margin: 0; padding: 0; border: var(--sheet-edge); border-radius: var(--sheet-r); background: var(--sheet-bg);  box-shadow: var(--sheet-shadow); overflow: hidden; }
 	.dl { padding: 14px 16px 14px 18px; }
 	.dl + .dl { box-shadow: inset 0 1px 0 var(--line); }
 	.dl:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
@@ -401,28 +443,28 @@
 	.name { font: 600 15px/1.3 var(--font-ui); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.sub { margin-top: 3px; color: var(--text-muted); font: 400 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.facts { margin-top: 2px; color: var(--text-muted); font: 400 12px/1.35 var(--font-ui); }
-	.num { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+	.num { display: flex; justify-content: flex-end; min-width: 72px; }
+	.numin { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.num b { font: 600 15px/1 var(--font-ui); } .num small { color: var(--text-muted); font: 400 12px/1 var(--font-ui); }
 	.st { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 500 12px/1 var(--font-ui); white-space: nowrap; }
 	.st i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
 	.st.ok i { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent); }
 	.st.wait i { background: var(--wait); box-shadow: 0 0 0 3px color-mix(in srgb, var(--wait) 22%, transparent); }
 	.st.fail i, .st.bad i { background: var(--fail); box-shadow: 0 0 0 3px color-mix(in srgb, var(--fail) 22%, transparent); }
-	.acts { display: flex; align-items: center; gap: 2px; }
+	/* Always shown: on a narrow sheet the buttons wrap instead of running past its clipped edge. */
+	.acts { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; min-width: 0; }
 	@media (hover: hover) and (min-width: 761px) {
 		.dl { position: relative; }
-		.main { grid-template-columns: 24px minmax(0, 1fr) auto auto; }
-		/* Buttons sit over the right edge only while you point at the row; the status keeps the edge otherwise. */
-		.acts { position: absolute; right: 12px; top: 50%; translate: 0 -50%; padding: 4px 4px 4px 28px; border-radius: 999px; background: linear-gradient(90deg, transparent, var(--surface-1) 24px); opacity: 0; pointer-events: none; transition: opacity var(--dur-fast) var(--ease-out); }
-		.dl:hover .acts, .dl:focus-within .acts { opacity: 1; pointer-events: auto; }
 	}
 	.note { margin: 8px 0 0 40px; font: 400 13px/1.35 var(--font-ui); color: var(--text-muted); }
 	.dl .attempt-review { margin: 10px 0 0 40px; }
 	@media (max-width: 760px) {
-		.main { grid-template-columns: 24px minmax(0, 1fr) auto; grid-template-areas: 'ic grow st' 'ic num num' 'ic acts acts'; row-gap: 6px; }
-		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: end; align-self: start; }
-		.main > .num { grid-area: num; } .main > .acts { grid-area: acts; justify-self: start; flex-wrap: wrap; margin-left: -10px; }
-		.note, .dl .attempt-review { margin-left: 0; }
+		.main { grid-template-columns: 24px auto minmax(0, 1fr); grid-template-areas: 'ic grow grow' 'ic st num' 'ic acts acts'; row-gap: 6px; }
+		.main > .ic { grid-area: ic; align-self: start; } .main > .grow { grid-area: grow; } .main > .st { grid-area: st; justify-self: start; }
+		.main > .num { grid-area: num; justify-self: end; min-width: 0; } .main > .acts { grid-area: acts; justify-self: stretch; flex-wrap: wrap; margin-top: 4px; }
+		.top { flex-wrap: wrap; row-gap: 4px; } .name { white-space: normal; overflow-wrap: anywhere; }
+		.main > .acts > :global(.ui-btn) { flex: 1 1 auto; }
+		/* Notes keep the name column indent, so they line up with the name and buttons. */
 	}
 	.name { color: inherit; text-decoration: none; } .name:hover { text-decoration: underline; }
 	.note { margin-top: 6px; }

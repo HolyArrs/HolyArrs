@@ -1,3 +1,5 @@
+import { toOwn } from '#lib/core/paths.ts';
+
 export type RecentWay = 'password' | 'plex' | 'jellyfin' | 'emby' | 'oidc';
 
 // `login` is the name typed for a Jellyfin or Emby account, when it differs; `pic` a small JPEG of their profile picture, as a data: address, and `picFrom` the picture address it was copied from (it changes with the picture).
@@ -64,7 +66,7 @@ export async function keepPersonPic(name: string, src: string | null) {
 	if (p.pic && p.picFrom === src) return;
 	try {
 		const img = new Image();
-		img.src = src;
+		img.src = toOwn(src);
 		await img.decode();
 		const c = document.createElement('canvas');
 		c.width = c.height = 96;

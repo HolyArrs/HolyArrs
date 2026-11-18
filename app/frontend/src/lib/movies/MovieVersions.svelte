@@ -1,15 +1,19 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import Button from '#lib/ui/Button.svelte';
-	import Menu from '#lib/ui/Menu.svelte';
+	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import { shortFolder } from '#lib/ui/TitleHero.svelte';
-	import { api, message } from '../core/api.ts';
+	import { api, ApiError, message } from '../core/api.ts';
 	import { bytes, date, tone, words } from '../core/format.ts';
 	import { secondVersion } from '../mediafiles/index.ts';
+	import { copyActions, editionDevice, editionProblem, editionRefused, saveThenReload, showSaved } from './copy-menu.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView, VersionView } from '../core/types.ts';
+
+	type SlotFile = NonNullable<TitleView['slots'][number]['file']>;
 
 	let { list = true, title, onchange }: { list?: boolean; title: TitleView; onchange: () => void | Promise<void> } = $props();
 
@@ -25,12 +29,19 @@
 	let vFolder = $state(0);
 	let vError = $state('');
 	let vBusy = $state(false);
+	let keepFile = $state(0);
+	let editDialog: HTMLDialogElement | undefined = $state();
+	let editFile = $state<SlotFile | null>(null);
+	let editValue = $state('');
+	let editError = $state('');
+	let editBusy = $state(false);
 
 	const lead = $derived((title.versions.find((v) => v.main) ?? title.versions[0])?.id);
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
 
-	export async function openAdd() {
+	export async function openAdd(keepFileId = 0) {
 		vError = '';
+		keepFile = keepFileId;
 		try {
 			if (!rules.length) rules = (await api.get<{ pick_rules: PickRulesView[] }>('/pick-rules')).pick_rules.filter((r) => !r.kinds.length || r.kinds.includes('movie'));
 			if (!folders.length) folders = (await api.get<{ library_folders: LibraryFolder[] }>('/library-folders')).library_folders;
@@ -51,28 +62,79 @@
 
 	async function add(e: SubmitEvent) {
 		e.preventDefault();
+		vError = editionError(vEdition);
+		if (vError) return;
 		vBusy = true;
-		vError = '';
 		try {
-			await api.post(`/titles/${title.id}/versions`, { label: vLabel.trim(), pick_rules_id: vRules, library_folder_id: vFolder, edition: vEdition.trim(), audio_languages: vAudio.split(/[,\s]+/).filter(Boolean), folder_name: vFolderName });
+			await api.post(keepFile ? `/titles/${title.id}/files/${keepFile}/keep-and-add` : `/titles/${title.id}/versions`, { label: vLabel.trim(), pick_rules_id: vRules, library_folder_id: vFolder, edition: vEdition.trim(), audio_languages: vAudio.split(/[,\s]+/).filter(Boolean), folder_name: vFolderName });
 			dialog?.close();
 			all = true;
 			await onchange();
 		} catch (err) {
-			vError = message(err);
+			vError = err instanceof ApiError && editionRefused(err.status, err.message) ? t('movies.versions.editionInvalid') : message(err);
 		} finally {
 			vBusy = false;
 		}
 	}
 
 	export async function remove(v: VersionView) {
-		if (!confirm(t('movies.versions.stopConfirm', { label: v.label }))) return;
+		if (!(await ask(t('movies.versions.stopConfirm', { label: v.label }), { yes: t('ui.ask.stop') }))) return;
 		try {
 			await api.del(`/titles/${title.id}/versions/${v.id}`);
 			await onchange();
 		} catch (e) {
 			toasts.push(t('movies.versions.removeFailed'), 'fail', { body: message(e) });
 		}
+	}
+
+	// Why an edition can't be saved, or nothing when it can.
+	function editionError(edition: string): string {
+		const device = editionDevice(edition);
+		if (device) return t('movies.versions.editionDevice', { name: device });
+		return editionProblem(edition) ? t('movies.versions.editionInvalid') : '';
+	}
+
+	async function putChoice(file: SlotFile, body: object) {
+		// The card shows the answer at once; the reload brings the rest.
+		await saveThenReload(async () => showSaved(title.slots, await api.put<SlotFile>(`/titles/${title.id}/files/${file.ID}/choices`, body)), onchange);
+		toasts.push(t('mediafiles.title.saved', { name: title.name }), 'ok');
+	}
+
+	async function saveEdition(e: SubmitEvent) {
+		e.preventDefault();
+		if (!editFile || editBusy) return;
+		editError = editionError(editValue);
+		if (editError) return;
+		editBusy = true;
+		try {
+			await putChoice(editFile, { edition: editValue.trim() });
+			editDialog?.close();
+		} catch (err) {
+			editError = err instanceof ApiError && editionRefused(err.status, err.message) ? t('movies.versions.editionInvalid') : message(err);
+		} finally {
+			editBusy = false;
+		}
+	}
+
+	async function setProtection(file: SlotFile, on: boolean, label: string) {
+		if (!on && !confirm(t('movies.versions.unprotectConfirm', { label }))) return;
+		try {
+			await putChoice(file, on ? { protected: true } : { protected: false, acknowledge_protection: true });
+		} catch (e) {
+			toasts.push(t('mediafiles.copy.protectFailed'), 'fail', { body: message(e) });
+		}
+	}
+
+	// The actions on one movie copy's card.
+	export function copyMenu(v: VersionView, file?: SlotFile | null): MenuItem[] {
+		const items: Record<string, MenuItem> = {
+			edition: { label: t('movies.versions.setEdition'), icon: 'film', onselect: () => { editFile = file ?? null; editValue = typeof file?.MediaInfo?.edition === 'string' ? file.MediaInfo.edition : ''; editError = ''; editDialog?.showModal(); } },
+			protect: { label: t('mediafiles.copy.protect'), icon: 'shield', onselect: () => file && void setProtection(file, true, v.label) },
+			unprotect: { label: t('mediafiles.copy.removeProtection'), icon: 'shield', onselect: () => file && void setProtection(file, false, v.main ? t('discover.titleLibrary.mainCopy') : v.label) },
+			keepAdd: { label: t('mediafiles.copy.keepAdd'), icon: 'plus', onselect: () => void openAdd(file?.ID ?? 0) },
+			remove: { label: t('movies.versions.remove', { label: v.label }), icon: 'trash', destructive: true, onselect: () => remove(v) }
+		};
+		return copyActions(v, file).map((a) => items[a]);
 	}
 
 	const slotOf = (v: VersionView) => title.slots.find((s) => s.version_id === v.id);
@@ -85,7 +147,7 @@
 			{#if title.versions.length > 1}
 				<Button variant="plain" aria-expanded={all} aria-controls="movie-versions-list" onclick={() => (all = !all)}>{all ? t('movies.versions.showLess') : t('movies.versions.seeAll', { count: title.versions.length })}</Button>
 			{/if}
-			<Button icon="plus" onclick={openAdd}>{t('movies.versions.add')}</Button>
+			<Button icon="plus" onclick={() => openAdd()}>{t('movies.versions.add')}</Button>
 		</div>
 	{/snippet}
 	<ul class="tp-list tp-vrow" id="movie-versions-list" aria-label={t('movies.versions.title')}>
@@ -114,8 +176,8 @@
 				</div>
 				<div class="tp-row-end">
 					{#if s}<span class="chip {tone(s.state)}">{serverWords(s.state_label)}</span>{/if}
-					{#if !v.main}
-						<Menu label={t('movies.versions.actionsFor', { label: v.label })} items={[{ label: t('movies.versions.remove', { label: v.label }), icon: 'trash', destructive: true, onselect: () => remove(v) }]} width={220} />
+					{#if !v.main || f}
+						<Menu label={t('movies.versions.actionsFor', { label: v.label })} items={copyMenu(v, f)} width={360} />
 					{/if}
 				</div>
 			</li>
@@ -126,7 +188,7 @@
 
 <dialog bind:this={dialog} aria-labelledby="movie-version-title" class="modal">
 	<form onsubmit={add}>
-		<h2 id="movie-version-title" class="h2">{t('movies.versions.addOf', { name: title.name })}</h2>
+		<h2 id="movie-version-title" class="h2">{keepFile ? t('mediafiles.copy.keepAdd') : t('movies.versions.addOf', { name: title.name })}</h2>
 		<p class="small muted">{t('movies.versions.addIntro')}</p>
 		<div class="field" style="margin-top: var(--s-5)">
 			<label for="mv-label">{t('movies.versions.name')}</label>
@@ -135,7 +197,7 @@
 		<div class="field">
 			<label for="mv-edition">{t('movies.versions.edition')}</label>
 			<input id="mv-edition" class="input" bind:value={vEdition} maxlength="40" placeholder={t('movies.versions.editionExample')} />
-			<span class="hint">{t('movies.versions.editionHint')}</span>
+			<span class="hint">{t('movies.versions.editionHint')} {t('movies.versions.editionChars')} <bdi dir="ltr">/ \ : * ? " &lt; &gt; | [ ] &#123; &#125;</bdi></span>
 		</div>
 		<div class="field">
 			<label for="mv-audio">{t('movies.versions.audioLabel')}</label>
@@ -162,7 +224,23 @@
 		{#if vError}<p class="form-error" role="alert">{vError}</p>{/if}
 		<div class="row modal-actions">
 			<Button variant="plain" onclick={() => dialog?.close()}>{t('movies.versions.cancel')}</Button>
-			<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>{t('movies.versions.addButton')}</Button>
+			<Button variant="primary" type="submit" disabled={vBusy || !vLabel.trim()} busy={vBusy}>{keepFile ? t('mediafiles.copy.protectAdd') : t('movies.versions.addButton')}</Button>
+		</div>
+	</form>
+</dialog>
+
+<dialog bind:this={editDialog} aria-labelledby="movie-edition-title" class="modal">
+	<form onsubmit={saveEdition}>
+		<h2 id="movie-edition-title" class="h2">{t('movies.versions.setEdition')}</h2>
+		<div class="field" style="margin-top: var(--s-5)">
+			<label for="mv-file-edition">{t('movies.versions.edition')}</label>
+			<input id="mv-file-edition" class="input" bind:value={editValue} maxlength="40" placeholder={t('movies.versions.editionExample')} />
+			<span class="hint">{t('movies.versions.editionFileHint')} {t('movies.versions.editionChars')} <bdi dir="ltr">/ \ : * ? " &lt; &gt; | [ ] &#123; &#125;</bdi></span>
+		</div>
+		{#if editError}<p class="form-error" role="alert">{editError}</p>{/if}
+		<div class="row modal-actions">
+			<Button variant="plain" onclick={() => editDialog?.close()}>{t('movies.versions.cancel')}</Button>
+			<Button variant="primary" type="submit" busy={editBusy}>{t('mediafiles.dialogs.save')}</Button>
 		</div>
 	</form>
 </dialog>

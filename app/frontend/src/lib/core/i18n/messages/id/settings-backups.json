@@ -32,11 +32,12 @@
 	"settings.backups.key": "Kunci utama",
 	"settings.backups.keyDesc": "Cadangan tidak menyertakan kunci ini. Simpan salinannya di tempat aman.",
 	"settings.backups.noKit": "Belum ada paket kunci tersimpan untuk kunci ini. Tanpa itu, kata sandi tersimpan dalam cadangan tidak bisa dibuka di mesin baru.",
+	"settings.backups.kitRecommended": "Disarankan: unduh paket kunci Anda.",
 	"settings.backups.ownerOnlyKit": "Hanya pemilik yang bisa mengunduhnya; mintalah kepada mereka.",
 	"settings.backups.fingerprint": "Sidik jari kunci",
 	"settings.backups.downloadKit": "Unduh paket kunci",
 	"settings.backups.restoreKey": "Untuk memulihkan: ganti nama menjadi holyarrs.key, taruh di folder config",
 	"settings.backups.offPlan": "Mati",
-	"settings.backups.offAbout": "Tidak ada cadangan terjadwal. Salinan tetap dibuat sebelum setiap pembaruan.",
+	"settings.backups.offAbout": "Tidak ada cadangan otomatis, bahkan sebelum pembaruan. Cadangan yang Anda buat sendiri tetap berfungsi.",
 	"settings.backups.offKeeps": "Mati mempertahankan cadangan yang sudah Anda miliki."
 }

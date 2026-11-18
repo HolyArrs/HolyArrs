@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Gewonnen: {name}",
 	"ui.wikiFacts.nominated": "Genomineerd: {name}",
 	"ui.wikiFacts.andMore": "en nog {count}",
-	"ui.pageLoader.loading": "Laden"
+	"ui.pageLoader.loading": "Laden",
+	"ui.connectHelp.link": "Zo los je het op",
+	"ui.ask.remove": "Verwijderen",
+	"ui.ask.restore": "Herstellen",
+	"ui.ask.stop": "Stoppen",
+	"ui.ask.revoke": "Intrekken",
+	"ui.ask.replace": "Vervangen",
+	"ui.ask.unlink": "Ontkoppelen",
+	"ui.ask.turnOff": "Uitzetten",
+	"ui.ask.markFailed": "Markeren als mislukt",
+	"ui.ask.reset": "Resetten",
+	"ui.ask.import": "Importeren"
 }

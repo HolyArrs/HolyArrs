@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Bu versiyon için Seçim kuralları",
 	"movies.versions.folderLabel": "Bu versiyon için Kütüphane klasörü",
 	"movies.versions.cancel": "Vazgeç",
-	"movies.versions.addButton": "Versiyon ekle"
+	"movies.versions.addButton": "Versiyon ekle",
+	"movies.versions.setEdition": "Baskıyı ayarla",
+	"movies.versions.editionFileHint": "Bu dosyanın hangi baskı olduğu, örneğin Theatrical veya Directors Cut. Temizlemek için boş bırakın.",
+	"movies.versions.unprotectConfirm": "{label} koruması kaldırılsın mı? Daha iyi bir kopya onun yerini yeniden alabilir.",
+	"movies.versions.editionChars": "İzin verilmeyenler:",
+	"movies.versions.editionInvalid": "Bu baskı kullanılamaz. Kısa tutun (aksanlı ve Latin olmayan harfler daha çok yer kaplar), yukarıda sıralanan karakterleri kullanmayın ve nokta ile bitirmeyin.",
+	"movies.versions.editionDevice": "Windows {name} adını aygıtlar için ayırır, bu yüzden kullanılamaz. Başka bir ad yazın."
 }

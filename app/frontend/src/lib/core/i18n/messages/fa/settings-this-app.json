@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "هیچ",
 	"settings.thisApp.needsRestart": "به راه‌اندازی مجدد نیاز دارد. HOLYARRS_URL_BASE یا -url-base آن را بازنویسی می‌کند.",
 	"settings.thisApp.save": "ذخیره",
-	"settings.thisApp.licence": "HolyArrs نرم‌افزار آزاد تحت مجوز AGPL-3.0 است."
+	"settings.thisApp.licence": "HolyArrs نرم‌افزار آزاد تحت مجوز AGPL-3.0 است.",
+	"settings.thisApp.proxy": "پراکسی",
+	"settings.thisApp.proxyDesc": "تماس‌های بیرونی از راه پراکسی فرستاده شوند. قانون‌های مسدودسازی و شبکه خانگی همچنان برای مقصد واقعی اجرا می‌شوند.",
+	"settings.thisApp.proxyType": "نوع",
+	"settings.thisApp.proxyOff": "خاموش",
+	"settings.thisApp.proxyHost": "میزبان",
+	"settings.thisApp.proxyPort": "درگاه",
+	"settings.thisApp.proxyUser": "نام کاربری",
+	"settings.thisApp.proxyPasswordLabel": "گذرواژه",
+	"settings.thisApp.proxyPasswordKept": "برای نگه داشتن گذرواژه ذخیره‌شده خالی بگذارید",
+	"settings.thisApp.proxyBypass": "رد شدن از پراکسی برای",
+	"settings.thisApp.proxyBypassHint": "نام‌ها، نشانی‌ها یا بازه‌ها، جداشده با ویرگول. ‎*.example.com همه نام‌های زیر آن را می‌پوشاند.",
+	"settings.thisApp.proxyBypassLocal": "رد شدن از پراکسی برای نشانی‌های محلی",
+	"settings.thisApp.proxyBypassLocalHint": "این دستگاه و شبکه خانگی شما مستقیم وصل می‌شوند",
+	"settings.thisApp.proxySaved": "پراکسی ذخیره شد",
+	"settings.thisApp.proxyOffSaved": "پراکسی خاموش"
 }

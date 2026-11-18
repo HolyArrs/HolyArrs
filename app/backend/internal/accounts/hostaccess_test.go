@@ -228,7 +228,9 @@ func TestRefusedHostEchoIsCleanedAndCapped(t *testing.T) {
 		if w.Code != 403 || !strings.Contains(msg, EnvAllowedHosts) {
 			t.Errorf("%.40q: %d %q, want 403 naming %s", host, w.Code, msg, EnvAllowedHosts)
 		}
-		if strings.ContainsAny(msg, "<>\"") || strings.Contains(msg, "example/") || len(msg) > 300 || strings.Contains(msg, long) {
+		// The fixed text names the Settings path with '>'; only the echoed name is checked.
+		name := strings.TrimPrefix(strings.SplitN(msg, ". Open HolyArrs", 2)[0], "Saving is blocked because HolyArrs doesn't know the name ")
+		if strings.ContainsAny(name, "<>\"") || strings.Contains(msg, "example/") || len(name) > 110 || strings.Contains(msg, long) {
 			t.Errorf("%.40q: echoed host not cleaned or capped: %q", host, msg)
 		}
 		if ct := w.Header().Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {

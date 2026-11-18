@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Mga panuntunan sa pagpili para sa Bersyong ito",
 	"movies.versions.folderLabel": "Library folder para sa Bersyong ito",
 	"movies.versions.cancel": "Kanselahin",
-	"movies.versions.addButton": "Idagdag ang bersyon"
+	"movies.versions.addButton": "Idagdag ang bersyon",
+	"movies.versions.setEdition": "Itakda ang edisyon",
+	"movies.versions.editionFileHint": "Aling cut ang file na ito, tulad ng Theatrical o Directors Cut. Iwanang walang laman para alisin ito.",
+	"movies.versions.unprotectConfirm": "Alisin ang proteksyon sa {label}? Maaari itong palitan muli ng mas magandang kopya.",
+	"movies.versions.editionChars": "Hindi pinapayagan:",
+	"movies.versions.editionInvalid": "Hindi magagamit ang edisyong iyon. Gawing maikli (mas malaki ang espasyong kinukuha ng mga letrang may tuldik at hindi Latin), huwag isama ang mga karakter na nakalista sa itaas, at huwag tapusin sa tuldok.",
+	"movies.versions.editionDevice": "Inilalaan ng Windows ang pangalang {name} para sa mga device, kaya hindi ito magagamit. Mag-type ng iba."
 }

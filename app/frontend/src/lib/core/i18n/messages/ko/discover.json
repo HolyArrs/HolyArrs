@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "tmdb:693134 또는 tvmaze:82 같은 ID를 붙여 넣어 보세요.",
 	"discover.search.orDescribeItSuch": "또는 “2014년 로봇이 나오는 우주 영화”처럼 설명해 보세요.",
 	"discover.search.lookEverywhere": "전체에서 찾기",
-	"discover.search.searchIndexersFor": "인덱서에서 “{searched}” 검색",
+	"discover.search.searchIndexersFor": "소스 확인",
 	"discover.search.topMatches": "가장 일치하는 결과",
 	"discover.people.goToTheFilmography": "필모그래피로 이동",
 	"discover.people.filmography": "필모그래피",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "이 버전에 맞지 않아요",
 	"discover.leftovers.reason.movie_has_file": "영화에 이미 파일이 있어요",
 	"discover.leftovers.reason.replaced_by_hand": "다른 파일로 바뀌었어요",
-	"discover.leftovers.reason.unmatched": "직접 연결을 풀었어요"
+	"discover.leftovers.reason.unmatched": "직접 연결을 풀었어요",
+	"discover.searchSections.genres": "장르",
+	"discover.searchSections.moods": "분위기",
+	"discover.searchSections.stories": "이야기와 주제",
+	"discover.searchSections.worlds": "세계관과 배경",
+	"discover.searchSections.eras": "시대",
+	"discover.searchSections.world": "세계 각국",
+	"discover.searchSections.collections": "컬렉션",
+	"discover.popularRail.out": "공개",
+	"discover.popularRail.comingDay": "공개 예정",
+	"discover.titleLibrary.turnShowOnHint": "찾기를 시작하려면 프로그램을 켜세요.",
+	"discover.leftovers.reason.seasons_differ": "이전 앱의 TMDB 번호로만 찾았어요. 같은 쇼인지 확인한 뒤 파일을 직접 맞춰 주세요"
 }

@@ -238,7 +238,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if !music && copyWhy == "" {
 			facts := InspectFacts(plan[i].SourceFile)
 			inspected[plan[i].SourceFile] = facts
-			copyWhy = copyRefusal(ver, filepath.Base(plan[i].SourceFile), relName, "", facts)
+			copyWhy = unreadOr(copyRefusal(ver, filepath.Base(plan[i].SourceFile), relName, "", facts), facts, plan[i].SourceFile)
 		}
 		if copyWhy != "" {
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
@@ -505,16 +505,16 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			ss.outcome, ss.reason = "lied", ss.lie
 		case ss.step >= 0:
 			ss.outcome = "stuck"
-			ss.reason = "the file could not be placed: " + imp.Result[ss.step].Error
+			ss.reason = episodeNotPlacedWhy(root, plan[ss.step], imp.Result[ss.step])
 		case matched:
 			ss.outcome, ss.reason = "missing", "the download did not hold "+refLabel(ss.it)
 			for i, st := range plan {
 				if slices.Contains(st.TargetSlotIDs, ss.sl.ID) {
-					ss.outcome, ss.reason = "stuck", "the file for "+refLabel(ss.it)+" could not be placed: "+strings.Join(plan[i].Why, "; ")
+					ss.outcome, ss.reason = "stuck", episodeRefusedWhy(root, refLabel(ss.it), plan[i].Why)
 				}
 			}
 		default:
-			ss.outcome, ss.reason = "stuck", im.nothingMatched(dr, files, music)
+			ss.outcome, ss.reason = "stuck", im.nothingMatchedIn(dr, files, music, root, rootOK, plan, len(cands) == 0)
 			if unpackWhy != "" {
 				ss.reason = unpackWhy
 			}

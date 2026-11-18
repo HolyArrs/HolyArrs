@@ -183,7 +183,7 @@
 	</div>
 {/snippet}
 
-<span class="ui-langpick {variant}" {id} tabindex="-1" data-testid="language-picker">
+<span class="ui-langpick {variant}" class:end={align === 'end'} {id} tabindex="-1" data-testid="language-picker">
 	{#if wide}
 		<Popover
 			label={name}
@@ -233,6 +233,8 @@
 
 <style>
 	.ui-langpick { display: inline-flex; max-width: 100%; outline: none; }
+	/* Placed at the end of a row, the button sits at the end even when the box is stretched. */
+	.ui-langpick.end { justify-content: flex-end; justify-items: end; }
 	.trigger { display: inline-flex; align-items: center; gap: 6px; color: var(--text); }
 	.trigger:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.trigger.button { min-height: 36px; padding: 0 12px 0 14px; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-headline); font-size: 15px; white-space: nowrap; }

@@ -51,6 +51,13 @@ func (a *Auth) listInvites(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "invites", err)
 		return
 	}
+	for i := range out {
+		out[i].CreatedBy = webserver.NameFor(r.Context(), out[i].CreatedBy)
+		if out[i].UsedBy != nil {
+			n := webserver.NameFor(r.Context(), *out[i].UsedBy)
+			out[i].UsedBy = &n
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"invites": out})
 }
 

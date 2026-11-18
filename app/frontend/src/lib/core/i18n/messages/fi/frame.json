@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} odottaa",
 	"frame.nav.new": "{n} uutta",
 	"frame.nav.manage": "Hallinta",
+	"frame.nav.activity": "Toiminta",
+	"frame.nav.system": "Järjestelmä",
 	"frame.nav.history": "Historia",
 	"frame.nav.status": "Tila",
 	"frame.nav.settings": "Asetukset",
+	"frame.nav.plugins": "Laajennukset",
 	"frame.nav.goTo": "Siirry",
 	"frame.nav.active": "{n} aktiivista, {percent} %",
 	"frame.nav.decide": "{n} vaatii päätöksen",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Järjestelmä",
 	"frame.layout.switch": "Vaihda tiliä",
 	"frame.layout.signOut": "Kirjaudu ulos",
+	"frame.layout.support": "Tue HolyArrsia",
 	"frame.layout.signOutFail": "Uloskirjautumista ei voitu vahvistaa",
 	"frame.layout.signedOut": "Kirjauduttu ulos",
 	"frame.layout.accountMenu": "{name}, {role}: tili ja ulkoasu",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs yrittää uudelleen itse",
 	"frame.feeds.clearNow": "Poista nyt",
 	"frame.feeds.cleared": "Poistettu Lataajasta",
-	"frame.feeds.clearStill": "Ei vielä poistettu"
+	"frame.feeds.clearStill": "Ei vielä poistettu",
+	"frame.error.pageGone": "Tätä sivua ei ole. Linkki voi olla vanha tai kirjoitettu väärin."
 }

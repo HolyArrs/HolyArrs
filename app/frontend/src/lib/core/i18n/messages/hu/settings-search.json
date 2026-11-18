@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "A megjelenés előtt feltöltött release-ek elvetése",
 	"settings.search.refuseEarlyHint": "Valószínű hamisítványok. A Release kiválasztása ezeket is megmutatja, figyelmeztetéssel.",
 	"settings.search.refuseTiny": "Hamisítványok elvetése méret és fájltípus alapján",
-	"settings.search.refuseTinyHint": "Túl kicsi release-ek, üres fájlok, valamint HD nevű .wmv vagy .asf fájlok",
+	"settings.search.refuseTinyHint": "Túl kicsi release-ek, üres fájlok, megszakadt videók, valamint HD nevű .wmv vagy .asf fájlok",
 	"settings.search.grace": "Ennyi órával lehet korai egy release",
 	"settings.search.graceHint": "Időzónák miatt. Alapértelmezés: 24.",
 	"settings.search.floors": "Fájlméretek ellenőrzése importáláskor",

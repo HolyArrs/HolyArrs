@@ -35,6 +35,8 @@ export interface QualityChoice {
 
 /** A line of what people can ask for, as Request rules edits it. */
 export interface QualityLine extends QualityChoice {
+	/** The owner's own name for it, seen only where lines are set up; '' shows `name`. */
+	label: string;
 	hidden: boolean;
 	library_folder_id: number;
 	/** It can be asked for now (the 4K line needs 4K quality set up). */
@@ -69,6 +71,8 @@ export interface AskSettings {
 	plex_watchlists_everyone?: boolean;
 	/** Also read the watchlists of people imported from Plex, with the owner's Plex link. */
 	plex_friends?: boolean;
+	/** The owner's own requests, Plex watchlist ones too, are approved straight away. */
+	owner_auto_approve?: boolean;
 	/** What people can ask for: the Quality buttons, per kind. Only names and hidden are saved. */
 	qualities?: { movie: QualityLine[]; show: QualityLine[] };
 }
@@ -104,4 +108,10 @@ export interface NeverAddEntry {
 	name: string;
 	reason: string;
 	created_at: string;
+}
+
+/** The lines one person may pick, per kind; null is every line that is shown. */
+export interface PersonQualities {
+	movie: string[] | null;
+	show: string[] | null;
 }

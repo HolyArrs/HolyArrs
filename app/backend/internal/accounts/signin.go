@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log"
@@ -98,7 +99,31 @@ func (a *Auth) startSession(w http.ResponseWriter, r *http.Request, userID int64
 // the request presents an existing session, its complete rotation family is
 // deleted before the replacement is made.
 func (a *Auth) startSessionAs(w http.ResponseWriter, r *http.Request, userID int64, name string, code int, method string) {
-	a.startSessionIn(w, r, userID, name, code, method, newFamily())
+	family := newFamily()
+	// While first-run setup is open, the owner who has no password and signs in
+	// again through Plex, Jellyfin or Emby stays in the setup session's standing,
+	// so a long Import review is not refused after ten minutes.
+	if a.setupOwnerOutside(r.Context(), userID, method) {
+		family = setupFamily + family
+	}
+	a.startSessionIn(w, r, userID, name, code, method, family)
+}
+
+// setupOwnerOutside says whether this sign-in is the first-run owner, with no
+// password, coming back through a media server before the wizard is finished.
+func (a *Auth) setupOwnerOutside(ctx context.Context, userID int64, method string) bool {
+	switch method {
+	case ProviderPlex, ProviderJellyfin, ProviderEmby:
+	default:
+		return false
+	}
+	if role, err := roleOfUser(ctx, a.s.Read(), userID); err != nil || role != webserver.RoleOwner {
+		return false
+	}
+	if has, err := hasPassword(ctx, a.s.Read(), userID); err != nil || has {
+		return false
+	}
+	return database.SettingOr(ctx, a.s.Read(), settingsGroup, settingFirstRunDone, "") != "1"
 }
 
 // startSetupSession starts the session first-run owner setup hands out; its

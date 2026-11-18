@@ -65,8 +65,14 @@ type Checker struct {
 	// Now is the clock (nil means time.Now).
 	Now func() time.Time
 
+	// Installer installs releases in the app when the mode allows it (nil:
+	// notices only).
+	Installer *Installer
+
 	updMu sync.Mutex
 	upd   *UpdateInfo
+	// lastData and lastSig are the last list read that passed its checks.
+	lastData, lastSig []byte
 }
 
 // UpdateDays are the allowed values of update_check_every_days.

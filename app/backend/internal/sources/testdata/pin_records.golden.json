@@ -84,6 +84,7 @@
     "ProxySecretRef": null,
     "ProxyAllowLocal": false,
     "PathSecretRef": null,
-    "Tags": null
+    "Tags": null,
+    "DownloaderID": null
   }
 }

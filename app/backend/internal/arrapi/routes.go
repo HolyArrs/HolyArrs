@@ -98,7 +98,6 @@ func Sonarr(d Deps) http.Handler {
 	mux.HandleFunc("PUT /episode/monitor", h.monitorEpisodes)
 	mux.HandleFunc("GET /wanted/missing", h.missingEpisodes)
 	mux.HandleFunc("GET /calendar", h.calendarEpisodes)
-	mux.HandleFunc("GET /queue/details", h.queueDetails)
 	mux.HandleFunc("GET /importlistexclusion/paged", h.neverAddPage)
 	return h.serve(mux)
 }
@@ -116,12 +115,15 @@ func Radarr(d Deps) http.Handler {
 	mux.HandleFunc("PUT /movie/{id}", h.putMovie)
 	mux.HandleFunc("DELETE /movie/{id}", h.deleteTitle)
 	mux.HandleFunc("GET /exclusions/paged", h.neverAddPage)
+	mux.HandleFunc("GET /wanted/missing", h.missingMovies)
+	mux.HandleFunc("GET /calendar", h.calendarMovies)
 	return h.serve(mux)
 }
 
 // common adds the routes both sides answer.
 func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("GET /system/status", h.status)
+	mux.HandleFunc("GET /health", h.systemHealth)
 	mux.HandleFunc("GET /qualityprofile", h.qualityProfiles)
 	mux.HandleFunc("GET /qualityprofile/{id}", h.qualityProfile)
 	mux.HandleFunc("POST /qualityprofile", h.addProfile)
@@ -140,6 +142,8 @@ func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE /tag/{id}", h.removeTag)
 	mux.HandleFunc("GET /tag/detail", h.tagDetail)
 	mux.HandleFunc("GET /queue", h.queue)
+	mux.HandleFunc("GET /queue/details", h.queueDetails)
+	mux.HandleFunc("GET /queue/status", h.queueStatus)
 	mux.HandleFunc("POST /command", h.command)
 	mux.HandleFunc("GET /command/{id}", h.getCommand)
 	mux.HandleFunc("GET /mediacover/{id}/{file}", h.cover)

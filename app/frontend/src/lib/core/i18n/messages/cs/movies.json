@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Pravidla výběru pro tuto Verzi",
 	"movies.versions.folderLabel": "Složka knihovny pro tuto Verzi",
 	"movies.versions.cancel": "Zrušit",
-	"movies.versions.addButton": "Přidat Verzi"
+	"movies.versions.addButton": "Přidat Verzi",
+	"movies.versions.setEdition": "Nastavit edici",
+	"movies.versions.editionFileHint": "Jaká edice tento soubor je, například Theatrical nebo Directors Cut. Nechte prázdné pro vymazání.",
+	"movies.versions.unprotectConfirm": "Odebrat ochranu z {label}? Lepší kopie ji pak bude moci znovu nahradit.",
+	"movies.versions.editionChars": "Nepovoleno:",
+	"movies.versions.editionInvalid": "Tuto edici nelze použít. Držte ji krátkou (písmena s diakritikou a nelatinská písmena zabírají víc místa), vynechte znaky uvedené výše a nekončete tečkou.",
+	"movies.versions.editionDevice": "Název {name} si Windows vyhrazuje pro zařízení, takže ho nelze použít. Zadejte jiný."
 }

@@ -24,6 +24,7 @@
 	import TitleTrailers from './TitleTrailers.svelte';
 	import { createOwnedTitle } from './title-owned.svelte.ts';
 	import { NoDownloaderNote } from '#lib/downloads/index.ts';
+	import { WatchLinks } from '#lib/mediaservers/index.ts';
 	import TitleLibrary from './TitleLibrary.svelte';
 	import TitleOwnedSheets from './TitleOwnedSheets.svelte';
 	import { SearchOutcomeLine, keptSeasons, completeSeasons, seasonsToAsk, QuickAsk, AddMovieDialog, AddShowDialog, AskShowDialog, AskMovieDialog, fourKReady } from '#lib/requests/index.ts';
@@ -220,6 +221,11 @@
 	function added(title: TitleView) {
 		toasts.push(t('discover.titlePage.added2', { name: title.name }), 'ok');
 		void goto(to(`/library/${title.id}`));
+	}
+	/** Add all put this page's own movie in the Library: the page shows it as owned, without leaving. */
+	function ownAdded(id: number) {
+		if (details) details = { ...details, titleId: id };
+		if (own.ownedFor !== id) void own.loadOwned(id);
 	}
 	function movieAsked(r: { ask: Ask; joined: boolean; already: boolean }) {
 		const brief = { id: r.ask.id, state: r.ask.state, state_label: r.ask.state_label, mine: true, people: r.ask.people.length };
@@ -420,6 +426,7 @@
 			{#snippet actions()}
 				{#if owned}
 					<ActionButton icon={ownState.kind === 'have' ? 'check' : ownState.kind === 'failed' ? 'refresh' : ownState.kind === 'downloading' ? 'download' : 'search'} label={ownState.label} caption={ownState.kind === 'failed' && manage ? t('discover.titlePage.retry') : ownState.kind === 'missing' && manage ? t('discover.titlePage.searchNow') : ownState.label} primary onclick={() => (manage && (ownState.kind === 'failed' || ownState.kind === 'missing') ? own.ownRun('search') : own.setTab('library'))} data-testid="hero-library" />
+					{#if manage && ownState.kind !== 'missing'}<WatchLinks titleId={owned.id} />{/if}
 					{#if manage || mayReport || mayHide}<ActionMenu label={t('discover.titlePage.moreActions')} caption={t('discover.titlePage.more')} icon="more" items={titleMenu} />{/if}
 					{#if mayAsk}{@render ask4kButton(d)}{/if}
 					{#if mayAsk && d.kind === 'show' && d.show && !d.neverAdd && askable.length > 0}
@@ -512,7 +519,7 @@
 		{@render trailers()}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
-		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} quickAsk={QuickAsk} />
+		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} quickAsk={QuickAsk} ownAsk={d.kind === 'movie' && d.ask?.mine ? d.ask.state : undefined} onasked={(a) => { if (details && !a.four_k) details = { ...details, ask: { id: a.id, state: a.state, state_label: a.state_label, mine: true, people: a.people.length } }; }} onadded={ownAdded} />
 			<!-- About band: a lighter strip to the page edges, a row of cards (the title, every score, awards), three columns of label and value facts, then links out. -->
 			<section class="atv" data-testid="title-ledger">
 				<h2 class="atv-h">{t('discover.titlePage.about')}</h2>
@@ -597,7 +604,12 @@
 	@keyframes own-pulse { 50% { opacity: .35; } }
 	
 	.own-badge { margin-left: 6px; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--fail); color: #fff; font-size: 11px; }
-	.calm-meta .sep { margin: 0 8px; color: var(--text-faint); }
+	/* Every separator is one fixed 21px lead before its item, and the row is pulled 21px left and clipped there, so a line that wraps never starts with a lone dot. */
+	.calm-meta .sep { flex: none; width: 21px; text-align: center; color: var(--text-faint); }
+	.calm-meta { margin: 0; margin-inline-start: -21px; clip-path: inset(-8px -8px -8px 21px); }
+	.calm-meta > :first-child { margin-inline-start: 21px; }
+	.calm-meta :global(.mono li + li) { margin-left: 0; }
+	.calm-meta :global(.mono li + li::before) { flex: none; width: 16px; margin: 0; text-align: center; }
 	.side-credits dt { color: var(--text-muted); font-weight: 500; }
 	.side-credits a { color: inherit; }
 	.side { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px 48px; align-items: start; padding-bottom: 8px; }
@@ -605,7 +617,7 @@
 	.side-credits div { display: flex; flex-wrap: wrap; gap: 0 6px; }
 	.side-credits dd { margin: 0; color: var(--text); }
 	@media (max-width: 899px) { .side { grid-template-columns: minmax(0, 1fr); } }
-	.calm-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 15.5px/1.4 var(--font-ui); }
+	.calm-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; color: var(--text-muted); font: 500 15.5px/1.4 var(--font-ui); }
 	.d-left .tagchips.quiet { margin-top: -6px; }
 	.atv { position: relative; margin-top: 32px; padding: 32px 0 40px; background: var(--atv-band); box-shadow: 0 0 0 100vmax var(--atv-band); clip-path: inset(0 -100vmax -100vmax -100vmax); --atv-band: color-mix(in srgb, var(--text) 7%, var(--bg)); --atv-card: rgb(255 255 255 / 10%); }
 	:global([data-theme='light']) .atv { --atv-band: color-mix(in srgb, var(--text) 5%, var(--bg)); --atv-card: var(--bg); }

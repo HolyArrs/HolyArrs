@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "اتصال {name} انجام نشد",
 	"settings.parts.connected": "{name} متصل شد",
 	"settings.parts.title": "بخش‌ها",
+	"settings.parts.onOff": "روشن یا خاموش کردن بخش‌ها",
 	"settings.parts.ownerOnly": "فقط مالک و مدیران",
 	"settings.parts.safeMode": "HolyArrs در حالت امن اجرا می‌شود: فقط هسته کار می‌کند و تا شروع عادی، کلیدهای بخش‌ها و کنترل مرحله‌ها پذیرفته نمی‌شوند. برای خروج از حالت امن، در <a>منطقه خطر</a> روی <b>راه‌اندازی مجدد HolyArrs</b> بزن.",
 	"settings.parts.dangerZone": "منطقه خطر",

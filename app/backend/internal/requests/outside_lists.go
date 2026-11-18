@@ -14,7 +14,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -72,8 +71,7 @@ type OutsideListInput struct {
 	SyncEveryHours  int    `json:"sync_every_hours"`
 }
 
-// NormalListRef turns what a person pasted into the stored list reference. Trakt
-// lists are refused while the Trakt lists feature is off.
+// NormalListRef turns what a person pasted into the stored list reference.
 func NormalListRef(kind, ref string) (string, error) {
 	ref = strings.TrimSpace(ref)
 	switch kind {
@@ -82,9 +80,6 @@ func NormalListRef(kind, ref string) (string, error) {
 			return m[1], nil
 		}
 	case ListTrakt:
-		if !startup.FeatureOn(startup.TraktLists) {
-			return "", ErrKind
-		}
 		if m := traktURL.FindStringSubmatch(ref); m != nil {
 			return m[1] + "/" + m[2] + m[3], nil
 		}

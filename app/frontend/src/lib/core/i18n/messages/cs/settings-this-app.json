@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "žádný",
 	"settings.thisApp.needsRestart": "Vyžaduje restart. Přepíše ho HOLYARRS_URL_BASE nebo -url-base.",
 	"settings.thisApp.save": "Uložit",
-	"settings.thisApp.licence": "HolyArrs je svobodný software pod licencí AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs je svobodný software pod licencí AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Posílat vnější volání přes proxy. Blokování a pravidla domácí sítě stále platí pro skutečný cíl.",
+	"settings.thisApp.proxyType": "Typ",
+	"settings.thisApp.proxyOff": "Vypnuto",
+	"settings.thisApp.proxyHost": "Hostitel",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Uživatelské jméno",
+	"settings.thisApp.proxyPasswordLabel": "Heslo",
+	"settings.thisApp.proxyPasswordKept": "Ponechte prázdné, aby zůstalo uložené heslo",
+	"settings.thisApp.proxyBypass": "Obejít proxy pro",
+	"settings.thisApp.proxyBypassHint": "Názvy, adresy nebo rozsahy oddělené čárkami. *.example.com pokrývá všechny názvy pod ním.",
+	"settings.thisApp.proxyBypassLocal": "Obejít proxy pro místní adresy",
+	"settings.thisApp.proxyBypassLocalHint": "Tento počítač a domácí síť se připojují přímo",
+	"settings.thisApp.proxySaved": "Proxy uloženo",
+	"settings.thisApp.proxyOffSaved": "Proxy vypnuto"
 }

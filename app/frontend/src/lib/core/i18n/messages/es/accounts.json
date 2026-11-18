@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "No se pudo guardar el idioma",
 	"accounts.language.count.one": "1 idioma",
 	"accounts.language.count.other": "{n} idiomas",
-	"accounts.account.watchEveryone": "El propietario lo activó para todos. Desactiva ambos para detenerlo."
+	"accounts.account.watchEveryone": "El propietario lo activó para todos. Desactiva ambos para detenerlo.",
+	"accounts.watch.title": "Marcas de visto",
+	"accounts.watch.hint": "Vincula aquí tu cuenta de un servidor multimedia para que la Biblioteca muestre lo que has visto.",
+	"accounts.watch.as": "{server}, como {name}",
+	"accounts.watch.nameOn": "Nombre en {server}",
+	"accounts.watch.passwordOnce": "Tu contraseña solo va a {server} y no se guarda.",
+	"accounts.watch.linked": "Vinculado a {name} en {server}",
+	"accounts.watch.unlinked": "Desvinculado",
+	"accounts.login.importPaused": "Tu sesión terminó, así que la importación se pausó. Inicia sesión, abre Importar una biblioteca y pulsa Escanear para seguir."
 }

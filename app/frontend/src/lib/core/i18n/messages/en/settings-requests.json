@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Show to people",
 	"settings.requests.choiceMain": "{rules} · the title's main copy",
 	"settings.requests.choiceOwn": "{rules} · kept as its own copy",
-	"settings.requests.choiceNotReady": "Offered once a 4K quality is set up above"
+	"settings.requests.choiceNotReady": "Offered once a 4K quality is set up above",
+	"settings.requests.approvals": "Approvals",
+	"settings.requests.autoApprove": "Approve requests automatically",
+	"settings.requests.autoApproveNote": "Off = their requests wait for you. Plex watchlist titles follow the same switch.",
+	"settings.requests.ownerTag": "Owner",
+	"settings.requests.choiceAdd": "Add a quality",
+	"settings.requests.choiceNew": "New quality",
+	"settings.requests.choiceLabel": "Your name",
+	"settings.requests.choiceSeen": "People see"
 }

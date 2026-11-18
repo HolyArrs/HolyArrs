@@ -3,5 +3,6 @@
 	"metadata.details.movie": "Elokuva",
 	"metadata.health.downTitle": "Metadata ei ole yhteydessä",
 	"metadata.health.down": "Haku ja uudet kuvat odottavat, kunnes yhteys palaa. Kirjastosi toimii silti.",
-	"metadata.health.back": "Metadata on taas yhteydessä"
+	"metadata.health.back": "Metadata on taas yhteydessä",
+	"metadata.health.fakeIp": "Reitittimesi tai VPN ohjaa HolyArrsin väärennettyyn osoitteeseen (198.18.x.x). Syy on yleensä Clash tai Surge. Lisää {host} sen suorien yhteyksien listaan."
 }

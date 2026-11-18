@@ -8,6 +8,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
 // StateLabels are the words people see for ask states.
@@ -79,6 +80,9 @@ type View struct {
 	// Problem says why an approved ask will not reach the Library, when the
 	// server knows (the people who asked see it on Requests).
 	Problem string `json:"problem,omitempty"`
+	// Adding is true for an approved ask with no title yet, decided less than
+	// approveAddLimit ago: its title is still being added, so it is not Failed.
+	Adding bool `json:"adding,omitempty"`
 	// Mine says the person reading asked for it too (set by the API).
 	Mine bool `json:"mine"`
 }
@@ -98,6 +102,7 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		}
 		var n string
 		_ = db.QueryRowContext(ctx, viewsSQL, id).Scan(&n)
+		n = webserver.NameFor(ctx, n)
 		names[id] = n
 		return n
 	}
@@ -162,6 +167,9 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 				v.Problem = "It was deleted from the Library after it was approved."
 			}
 		}
+		if a.State == domain.AskApproved && a.TitleID == nil && a.DecidedAt != nil && s.now().Sub(*a.DecidedAt) < approveAddLimit {
+			v.Adding = true
+		}
 		if a.DecidedBy != nil {
 			v.DecidedBy = &Who{ID: *a.DecidedBy, Name: userName(*a.DecidedBy), DisplayName: displayName(*a.DecidedBy)}
 		}
@@ -190,7 +198,7 @@ func (s *Service) AddAlsoDeclined(ctx context.Context, vs []View) {
 		w := Who{ID: id}
 		_ = db.QueryRowContext(ctx, addAlsoDeclinedSQL, id).Scan(&w.Name)
 		_ = db.QueryRowContext(ctx, addAlsoDeclinedSQL2, id).Scan(&w.DisplayName)
-		w.DisplayName = strings.TrimSpace(w.DisplayName)
+		w.Name, w.DisplayName = webserver.NameFor(ctx, w.Name), strings.TrimSpace(w.DisplayName)
 		shown[id] = w
 		return w
 	}

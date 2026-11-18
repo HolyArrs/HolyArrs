@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "Laisser les assistants d'IA utiliser HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Clés et routes pour d'autres applications",
+	"core.settings.remoteAccess.label": "Accès à distance",
+	"core.settings.remoteAccess.about": "Accéder à HolyArrs hors de chez vous",
 	"core.settings.tmdb.label": "Métadonnées",
 	"core.settings.tmdb.about": "D'où viennent les affiches et les noms",
 	"core.settings.health.label": "Vérifications d'état",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "Mot de passe, double authentification, appareils",
 	"core.api.sourceOff": "Certaines rangées sont désactivées sur cette installation.",
 	"core.plain.noDownloader": "Vos sources trouvent des téléchargements qu'aucun de vos clients de téléchargement ne peut prendre, donc aucun ne peut être envoyé.",
-	"core.plain.sameDownloader": "Deux clients de téléchargement atteignent la même application, les téléchargements peuvent donc apparaître deux fois."
+	"core.plain.sameDownloader": "Deux clients de téléchargement atteignent la même application, les téléchargements peuvent donc apparaître deux fois.",
+	"core.plain.peopleCheck": "La liste d’utilisateurs du serveur multimédia est illisible, donc les personnes supprimées là-bas ne sont pas désactivées ici.",
+	"core.plain.deleted": "supprimé",
+	"core.plain.deletedName": "{name} (supprimé)"
 }

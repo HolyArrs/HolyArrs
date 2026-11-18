@@ -32,11 +32,12 @@
 	"settings.backups.key": "Aðallykill",
 	"settings.backups.keyDesc": "Afrit innihalda ekki þennan lykil. Geymdu eintak á öruggum stað.",
 	"settings.backups.noKit": "Enginn lyklapakki er vistaður fyrir þennan lykil enn. Án hans er ekki hægt að opna vistuð lykilorð afrits á nýrri vél.",
+	"settings.backups.kitRecommended": "Mælt með: sæktu lyklapakkann.",
 	"settings.backups.ownerOnlyKit": "Aðeins eigandinn getur sótt hann; biddu hann um það.",
 	"settings.backups.fingerprint": "Fingrafar lykils",
 	"settings.backups.downloadKit": "Sækja lyklapakka",
 	"settings.backups.restoreKey": "Til að endurheimta: endurnefndu í holyarrs.key og settu í config-möppuna",
 	"settings.backups.offPlan": "Af",
-	"settings.backups.offAbout": "Engin tímasett öryggisafrit. Afrit er samt gert fyrir hverja uppfærslu.",
+	"settings.backups.offAbout": "Engin sjálfvirk öryggisafrit, ekki einu sinni fyrir uppfærslu. Afrit sem þú gerir sjálf(ur) virka áfram.",
 	"settings.backups.offKeeps": "Af heldur öryggisafritunum sem þú átt nú þegar."
 }

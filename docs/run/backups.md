@@ -22,8 +22,10 @@ Keep a copy of your setup to put back after a bad update, a broken disk or a mov
 
 Backups never hold the master key, which opens the passwords and API keys in your settings. Without the matching key, a restored backup cannot read them.
 
+A new install with nothing saved does not ask for the key kit. Once you save a password or API key, or make a backup yourself, **Settings > Backups** recommends it. When saved passwords and backups have both been there for 7 days without a key kit, it becomes a warning on **Settings** and in the health checks.
+
 1. Under **Master key**, the owner selects **Download key kit**.
-2. Keep the file away from the server and apart from your backups. You should see the key kit warning leave **Settings > Backups** and the health checks.
+2. Keep the file away from the server and apart from your backups. You should see the key kit reminder leave **Settings > Backups** and the health checks.
 
 To use it later, rename it to `holyarrs.key` and put it in the config folder. Not the owner? Ask the owner to download it.
 

@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} ang naghihintay",
 	"frame.nav.new": "{n} bago",
 	"frame.nav.manage": "Pamahalaan",
+	"frame.nav.activity": "Aktibidad",
+	"frame.nav.system": "Sistema",
 	"frame.nav.history": "History",
 	"frame.nav.status": "Status",
 	"frame.nav.settings": "Mga Setting",
+	"frame.nav.plugins": "Mga plugin",
 	"frame.nav.goTo": "Pumunta sa",
 	"frame.nav.active": "{n} aktibo, {percent}%",
 	"frame.nav.decide": "{n} ang kailangan ng desisyon",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "System",
 	"frame.layout.switch": "Lumipat ng account",
 	"frame.layout.signOut": "Mag-sign out",
+	"frame.layout.support": "Suportahan ang HolyArrs",
 	"frame.layout.signOutFail": "Hindi makumpirma ang pag-sign out",
 	"frame.layout.signedOut": "Naka-sign out na",
 	"frame.layout.accountMenu": "{name}, {role}: account at hitsura",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "Sinusubukan ulit ng HolyArrs nang mag-isa",
 	"frame.feeds.clearNow": "I-clear na ngayon",
 	"frame.feeds.cleared": "Na-clear mula sa Downloader",
-	"frame.feeds.clearStill": "Hindi pa na-clear"
+	"frame.feeds.clearStill": "Hindi pa na-clear",
+	"frame.error.pageGone": "Wala ang page na ito. Maaaring luma o mali ang pagkakasulat ng link."
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { outcomeLine, whyWords, type SearchOutcome } from './search-outcome.ts';
+	import { outcomeLine, outcomeNote, whyWords, type SearchOutcome } from './search-outcome.ts';
 	import { api } from '../core/api.ts';
 	import { to } from '../core/paths.ts';
 
@@ -16,6 +16,7 @@
 		return () => (live = false);
 	});
 	const line = $derived(outcomeLine(o));
+	const note = $derived(outcomeNote(o));
 </script>
 
 {#if line}
@@ -24,6 +25,7 @@
 		{#each o?.sources ?? [] as s, i (s.id)}
 			<span>{i ? ', ' : ' '}<a href={to('/settings/sources/' + s.id)}>{s.name}</a> {whyWords(s.why)}</span>
 		{/each}
+		{#if note}<span data-testid="search-outcome-note"> · {note}</span>{/if}
 	</p>
 {/if}
 

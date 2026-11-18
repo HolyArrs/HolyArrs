@@ -45,6 +45,10 @@ var textLanguages = []string{"ar", "bg", "bn", "ca", "cs", "da", "de", "el", "en
 	"id", "is", "it", "ja", "ko", "lt", "lv", "ms", "nb", "nl", "pl", "pt-br", "pt-pt", "ro", "ru", "sk", "sr", "sv", "ta", "th", "tr", "uk", "vi",
 	"zh-cn", "zh-tw"}
 
+// IsTextLanguage says whether lang is one of the app languages titles have
+// texts in (de, pt-br, zh-tw).
+func IsTextLanguage(lang string) bool { return slices.Contains(textLanguages, lang) }
+
 // tmdbRegion is the country whose TMDB text a language reads first, where
 // it is not the language code itself (de-DE, fr-FR).
 var tmdbRegion = map[string]string{"en": "US", "es": "ES", "pt-br": "BR", "pt-pt": "PT", "zh-cn": "CN", "zh-tw": "TW", "nb": "NO",

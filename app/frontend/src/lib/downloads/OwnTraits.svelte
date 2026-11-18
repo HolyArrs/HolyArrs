@@ -2,7 +2,6 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Your own traits: words or release groups you name once, then give points, make a must-have or put in Never in any Pick rules. A sheet makes or changes one; removing one also takes it out of every Pick rule.
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
-	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
@@ -139,7 +138,8 @@
 	{:else if list}
 		{#if error}<LoadError hasData message={error} onretry={load} busy={loading} />{/if}
 		{#if handMade.length === 0}
-			<EmptyState icon="star" title={t('downloads.ot.none')} text={t('downloads.ot.noneText')} action={mayEdit ? { label: t('downloads.ot.make'), icon: 'plus', onclick: () => openSheet(null) } : undefined} />
+			<div class="empty-row" data-testid="own-traits-none"><span><span class="empty-title">{t('downloads.ot.none')}</span><br /><span class="hint">{t('downloads.ot.noneText')}</span></span></div>
+			{#if mayEdit}<div><Button icon="plus" onclick={() => openSheet(null)} data-testid="own-trait-add">{t('downloads.ot.make')}</Button></div>{/if}
 		{:else}
 			<ul class="rows" data-testid="own-traits">
 				{#each handMade as o (o.id)}
@@ -149,7 +149,7 @@
 							<span class="xs muted meta">{summary(o)}</span>
 						</span>
 						{#if mayEdit}<span class="acts">
-								<Button variant="plain" onclick={() => openSheet(o)}>{t('sources.bridge.change')}</Button>
+								<Button variant="secondary" size="sm" onclick={() => openSheet(o)}>{t('sources.bridge.change')}</Button>
 								<Menu label={t('downloads.ot.moreFor', { name: o.name })} items={[{ label: t('downloads.act.remove'), icon: 'trash', destructive: true, onselect: () => ((removing = o), (removeError = ''), (removeOpen = true)) }]} />
 							</span>{/if}
 					</li>
@@ -242,6 +242,7 @@
 </Sheet>
 
 <style>
+	.empty-title { color: var(--text); font-weight: 600; }
 	.form { display: flex; flex-direction: column; gap: 16px; }
 	.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 	.synced > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }

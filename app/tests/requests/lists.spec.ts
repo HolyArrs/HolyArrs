@@ -107,8 +107,8 @@ test('change, turn off and remove a list; take a movie off the Never-add list', 
 	await expect(row).toContainText('Off');
 	await expect(row.getByRole('button', { name: 'Read now' })).toBeDisabled();
 
-	page.once('dialog', (d) => d.accept());
 	await row.getByRole('button', { name: 'Remove' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(page.getByTestId('outside-list').filter({ hasText: 'Lab list' })).toHaveCount(0);
 
 	await page.getByRole('button', { name: 'Take off Salt Choir' }).click();

@@ -1,9 +1,11 @@
 <script lang="ts">
+	import PersonText from '#lib/ui/PersonText.svelte';
 	import { createAskChoices, qualityTag } from '#lib/requests/index.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { personText, shownPerson } from '#lib/core/plain.ts';
 	import { createDeclineDialog } from '#lib/requests/index.ts';
 	import { createAskLive } from '#lib/requests/index.ts';
-	import { createTakeBack, createRemoveFlow } from '#lib/requests/index.ts';
+	import { createTakeBack, createRemoveFlow, anyShared } from '#lib/requests/index.ts';
 	import { createAskCards } from '#lib/requests/index.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
@@ -13,7 +15,7 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { SearchOutcomeLine, approverCounts as approverCountsOf, approverSort, approverTab as approverTabOf, askTab, askTabs, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab, markRead, listReports, liveFacts, stepFacts, askHref, type BoardCtx, type DecideOptions, type Member, artistPhoto, askDetails, askInfo, seasonEpisodes, wantDetails, askedByOne, askers, RequestsBoard } from '#lib/requests/index.ts';
+	import { SearchOutcomeLine, approverCounts as approverCountsOf, totalCounts, statesToFill, approverSort, approverTab as approverTabOf, askTab, askTabs, firstTab, limitLines, limitKinds, tabCounts, type ApproverTab, type AskTab, markRead, listReports, liveFacts, stepFacts, askHref, type BoardCtx, type DecideOptions, type Member, artistPhoto, askDetails, askInfo, seasonEpisodes, wantDetails, askedByOne, askers, RequestsBoard } from '#lib/requests/index.ts';
 	import { loadProfile, kidLabel, watchlistLine } from '#lib/accounts/index.ts';
 	import { partsNow } from '#lib/mediafiles/index.ts';
 	import type { AskLimit } from '#lib/requests/index.ts';
@@ -26,12 +28,20 @@
 	import { api, ApiError, message } from '#lib/core/api.ts';
 	import { ago, dateTime } from '#lib/core/format.ts';
 	import { live } from '#lib/core/live.svelte.ts';
+	import { coalesce } from '#lib/requests/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { Ask, LibraryFolder, PickRulesView } from '#lib/core/types.ts';
 
 	const approver = $derived(session.can('approve'));
 	let asks = $state<Ask[]>([]);
+	// Requests of the open tab that the list (cut to its newest) does not carry, read by their own state.
+	let more = $state<Ask[]>([]);
+	const allAsks = $derived.by(() => {
+		if (!more.length) return asks;
+		const have = new Set(asks.map((a) => a.id));
+		return [...asks, ...more.filter((m) => !have.has(m.id))];
+	});
 	let loaded = $state(false);
 	let error = $state('');
 	let tab = $state<AskTab>('waiting');
@@ -44,7 +54,7 @@
 
 	// Asked by: one person's asks (0 is everyone's), for the Inbox filter.
 	let person = $state(0);
-	const ofKind = $derived((kind === 'all' ? asks : asks.filter((a) => a.kind === kind)).filter((a) => !person || askedByOne(a, person)));
+	const ofKind = $derived((kind === 'all' ? allAsks : allAsks.filter((a) => a.kind === kind)).filter((a) => !person || askedByOne(a, person)));
 	// A decision waiting out its Undo time already shows in its new tab.
 	type Pending = { mode: 'approve' | 'turn_down'; note: string; rulesId: number; quality?: string; langs: string[]; seasons?: number[]; episodes?: { season: number; episodes: number[] }[]; albums?: string[]; songs?: { album: string; recordings: string[] }[]; timer: ReturnType<typeof setTimeout>; sending?: boolean };
 	let pending = $state<Record<number, Pending>>({});
@@ -55,7 +65,10 @@
 	};
 	const viewed = $derived(ofKind.map(viewOf));
 	const shown = $derived(approver ? approverSort(apTab, viewed.filter((a) => approverTabOf(a) === apTab)) : viewed.filter((a) => askTab(a) === tab));
-	const apCounts = $derived(approverCountsOf(viewed));
+	// The list holds only the newest requests; the server also sends the totals of every one the person may see. With no type or person filter on, the tab counts are those totals, moved by what is changing on this page right now (viewed against the list as read).
+	let served = $state<{ counts: { pending: number; processing: number; done: number; failed: number }; total: number } | null>(null);
+	const totalsKnown = $derived(!!served && approver && kind === 'all' && !person);
+	const apCounts = $derived(totalsKnown && served ? totalCounts(served.counts, approverCountsOf(viewed), approverCountsOf(allAsks)) : approverCountsOf(viewed));
 	// Members see Failed only when one of their asks failed (else it would hide there unseen).
 	const tabs = $derived(askTabs.filter((t) => approver || t.tab !== 'failed' || counts.failed > 0));
 	// The kind chips show once asks of more than one kind are listed.
@@ -102,7 +115,7 @@
 				}
 				const declined = now?.state === 'turned_down';
 				const by = now && (declined || !now.auto_approved) ? askCards.decidedBy(now) : '';
-				toasts.push(by ? t(declined ? 'requests.page.alreadyDeclined' : 'requests.page.alreadyApproved', { name }) : t('requests.page.alreadyAnswered', { name }), 'info', by ? { body: t('requests.board.by', { name: by }) } : {});
+				toasts.push(by ? t(declined ? 'requests.page.alreadyDeclined' : 'requests.page.alreadyApproved', { name }) : t('requests.page.alreadyAnswered', { name }), 'info', by ? { body: personText(t('requests.board.by', { name: by })) } : {});
 				return;
 			}
 			toasts.push(t(p.mode === 'approve' ? 'requests.page.couldNotApprove' : 'requests.page.couldNotDecline', { name }), 'fail', { body: message(err), action: { label: t('requests.board.requests'), run: () => void goto(to(`/requests?ask=${id}`)) } });
@@ -164,14 +177,34 @@
 	let folders = $state<LibraryFolder[]>([]);
 	let rules = $state<PickRulesView[]>([]);
 
+	let fillGen = 0;
+	/** A tab the server counts requests in but the cut list has none of: read that tab's own requests, so its cards can be opened and removed. */
+	async function fillTab() {
+		const gen = ++fillGen;
+		const states = approver && served ? statesToFill(apTab, served.counts[apTab], asks) : [];
+		if (!states.length) {
+			more = [];
+			return;
+		}
+		try {
+			const rs = await Promise.all(states.map((s) => api.get<{ asks: Ask[] }>(`/asks?state=${s}`)));
+			if (gen === fillGen) more = rs.flatMap((r) => r.asks);
+		} catch {
+			if (gen === fillGen) more = [];
+		}
+	}
+
 	let loadGen = 0;
 	/** Reads the list; quiet (a poll) keeps a failed read to itself. */
 	async function load(quiet = false) {
 		const gen = ++loadGen;
 		try {
-			const r = await api.get<{ asks: Ask[] }>('/asks');
+			const r = await api.get<{ asks: Ask[]; counts?: { pending: number; processing: number; done: number; failed: number }; total?: number }>('/asks');
 			if (gen !== loadGen) return;
 			asks = r.asks;
+			// An older server sends no totals: the tabs then count what is listed.
+			served = r.counts && typeof r.total === 'number' ? { counts: r.counts, total: r.total } : null;
+			void fillTab();
 			error = '';
 		} catch (e) {
 			// A background refresh that fails keeps the list on screen and says so once; a poll says nothing and tries again on its next turn.
@@ -224,6 +257,7 @@
 				.catch(() => {});
 		}
 		void askLive.loadLive();
+		const readAgain = coalesce(() => void load(), 400);
 		const offs = [
 			live.on('ask', () => void load()),
 			// A slot moving (a search found nothing, an import waits on a person) changes an ask's step.
@@ -234,12 +268,16 @@
 					void load();
 				}, 2000);
 			}),
-			live.on('ask_removed', () => void load()),
+			// Removing many sends one event each: read the list once when they stop.
+			live.on('ask_removed', readAgain),
 			...['download', 'slot', 'import', 'resync'].map((t) => live.on(t, () => void askLive.loadLive())),
 			// Members get their own downloads as dl patches: read again when one changes.
 			live.on('dl', askLive.onDlPatch)
 		];
-		return () => offs.forEach((off) => off());
+		return () => {
+			offs.forEach((off) => off());
+			readAgain.cancel();
+		};
 	});
 
 	// A dl patch with rows in it means a download moved; one read for a burst of them.
@@ -304,7 +342,7 @@
 	const ctx: BoardCtx = {
 		get shown() { return shown; },
 		live: (a) => {
-			if (a.problem) return { phase: 'failed', reason: a.problem };
+			if (a.problem) return { phase: 'failed', reason: serverWords(a.problem) };
 			// The page's own live search or download first, else the server's step.
 			const f = liveFacts(a.title_id ? askLive.titleLive.get(a.title_id) : undefined);
 			return f.phase ? f : { ...f, ...stepFacts(a.step) };
@@ -315,7 +353,9 @@
 		setTab: (t) => ((tab = t), (chosen = new Set())),
 		get approverTab() { return apTab; },
 		get approverCounts() { return apCounts; },
-		setApproverTab: (t) => ((apTab = t), (chosen = new Set())),
+		get totalsKnown() { return totalsKnown; },
+		get listCap() { return served && served.total > allAsks.length ? { shown: allAsks.length, total: served.total } : null; },
+		setApproverTab: (t) => ((apTab = t), (chosen = new Set()), void fillTab()),
 		get approver() { return approver; },
 		get choosable() { return choosable; },
 		isChosen: (id) => chosen.has(id),
@@ -337,7 +377,8 @@
 		review: () => {},
 		takeBack: (a) => takeBackFlow.askTakeBack(a),
 		removeAsk: (a) => removeFlow.ask({ one: a }),
-		clearAll: (which, n) => removeFlow.ask({ all: which, n }),
+		// With no type, person or status filter on, the server clears everything in that state; with one on, only the shown cards go, re-read when the owner confirms.
+		clearAll: (which, current, n, narrowed) => removeFlow.ask({ all: which, n, current, filtered: kind !== 'all' || !!person || !!narrowed, shared: anyShared(current()) }),
 		foldersFor: askChoices.foldersOf,
 		qualityRow: askChoices.qualityRowOf,
 		who: (a) => {
@@ -345,7 +386,7 @@
 			const m = askChoices.members[p.id];
 			const kid = kidLabel(m?.max_rating);
 			// The Kid badge says it already: no "(Kid)" in the name beside it.
-			const name = askCards.plain(p.name);
+			const name = askCards.plain(shownPerson(p.name));
 			return { id: p.id, name: kid ? name.replace(/\s*\(kid\)\s*$/i, '') || name : name, avatar: m?.avatar ?? null, kid };
 		},
 		what: askCards.what,
@@ -376,8 +417,8 @@
 
 <div class="ap-top" class:mem={!approver}>
 <h1 class="sr-only">{t('requests.board.requests')}</h1>
-<!-- Reports: approvers get it in the cards' toolbar; this link covers no toolbar (no asks yet, or no approving). -->
-{#if session.can('manage_library') && (!approver || (loaded && asks.length === 0))}<a class="rp-link" href={to('/requests/reports')} data-testid="reports-link">{t('requests.reports.title')}{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> {t('requests.page.ofProblems')}</span></a>{/if}
+<!-- Reports: approvers get it in the cards' toolbar; this link covers no toolbar (no approving, or no asks but open reports). An empty board shows no lone chip. -->
+{#if session.can('manage_library') && (!approver || (loaded && asks.length === 0 && inbox.reports > 0))}<a class="rp-link" href={to('/requests/reports')} data-testid="reports-link">{t('requests.reports.title')}{#if inbox.reports}{' '}({inbox.reports}){/if}<span class="sr-only"> {t('requests.page.ofProblems')}</span></a>{/if}
 {#if (session.can('ask') && !approver) || myReports > 0}
 	<div class="ask-actions">
 		{#if session.can('ask') && !approver}
@@ -495,12 +536,12 @@
 						<div class="lines">
 							{#if askCards.what(a)}<p class="line what" data-testid={a.kind === 'artist' ? 'ask-albums' : 'ask-seasons'}>{t('requests.page.askedFor', { what: askCards.what(a) })}</p>{/if}
 							<p class="line muted" data-testid="asked-by">
-								{askCards.askedBy(a)} · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time>
+								<PersonText text={askCards.askedBy(a)} /> · <time datetime={a.asked_at} title={dateTime(a.asked_at)}>{ago(a.asked_at)}</time>
 							</p>
 							{#if watchlistLine(a.people, session.s.id)}<p class="line muted" data-testid="ask-from-watchlist">{watchlistLine(a.people, session.s.id)}</p>{/if}
 							{#if askCards.decided(a)}
 								<p class="line muted" data-testid="decided-by">
-									{askCards.decided(a)}{#if a.decided_at}{' '}· <time datetime={a.decided_at} title={dateTime(a.decided_at)}>{ago(a.decided_at)}</time>{/if}
+									<PersonText text={askCards.decided(a)} />{#if a.decided_at}{' '}· <time datetime={a.decided_at} title={dateTime(a.decided_at)}>{ago(a.decided_at)}</time>{/if}
 								</p>
 							{/if}
 							{#if a.note}<p class="line note">“{a.note}”</p>{/if}
@@ -552,7 +593,7 @@
 >
 	<form class="decide" onsubmit={declineFlow.confirmDecline}>
 		<div class="field">
-			<label for="dc-why">{t('requests.page.reasonOptional', { who: declineFlow.declineList.length === 1 ? ctx.who(declineFlow.declineList[0]).name : t('requests.page.thePeople') })}</label>
+			<label for="dc-why">{t('requests.page.reasonOptional', { who: declineFlow.declineList.length === 1 ? personText(ctx.who(declineFlow.declineList[0]).name) : t('requests.page.thePeople') })}</label>
 			<textarea id="dc-why" class="input" rows="3" maxlength="500" placeholder={t('requests.page.reasonPlaceholder')} bind:this={declineFlow.whyBox} bind:value={declineFlow.declineWhy} data-testid="decline-why"></textarea>
 			<div class="why-chips" role="group" aria-label={t('requests.page.quickReasons')}>
 				{#each declineFlow.reasons as why (why)}
@@ -561,7 +602,7 @@
 			</div>
 		</div>
 		<div class="decide-actions">
-			<Button variant="plain" type="button" onclick={() => (declineFlow.declineOpen = false)}>{t('requests.add.cancel')}</Button>
+			<Button variant="secondary" type="button" onclick={() => (declineFlow.declineOpen = false)}>{t('requests.add.cancel')}</Button>
 			<Button variant="destructive" type="submit">{t('requests.window.decline')}</Button>
 		</div>
 	</form>
@@ -571,17 +612,17 @@
 	{#if takeBackFlow.takeBackAsk}
 		{#if takeBackFlow.takeBackError}<p class="form-error" role="alert" data-testid="take-back-error">{takeBackFlow.takeBackError}</p>{/if}
 		<div class="decide-actions">
-			<Button variant="plain" type="button" onclick={() => (takeBackFlow.takeBackOpen = false)}>{t('requests.page.keepIt')}</Button>
+			<Button variant="secondary" type="button" onclick={() => (takeBackFlow.takeBackOpen = false)}>{t('requests.page.keepIt')}</Button>
 			<Button variant="destructive" type="button" busy={takingBack.has(takeBackFlow.takeBackAsk.id)} onclick={() => takeBackFlow.takeBackAsk && void takeBackFlow.takeBack(takeBackFlow.takeBackAsk)}>{t('requests.page.takeBack')}</Button>
 		</div>
 	{/if}
 </Sheet>
 
-<Sheet bind:open={removeFlow.open} size="sm" title={removeFlow.what ? ('one' in removeFlow.what ? t('requests.page.removeTitle') : t(removeFlow.what.all === 'failed' ? 'requests.board.clearFailedTitle' : 'requests.board.clearFinishedTitle', { n: removeFlow.what.n })) : t('requests.page.removeRequest')} description={removeFlow.what ? ('one' in removeFlow.what ? t('requests.page.removeDesc') : t(removeFlow.what.all === 'failed' ? 'requests.board.clearFailedDesc' : 'requests.board.clearFinishedDesc')) : ''}>
+<Sheet bind:open={removeFlow.open} size="sm" title={removeFlow.what ? ('one' in removeFlow.what ? t('requests.page.removeTitle') : t(removeFlow.what.all === 'failed' ? 'requests.board.clearFailedTitle' : 'requests.board.clearFinishedTitle', { n: removeFlow.what.n })) : t('requests.page.removeRequest')} description={removeFlow.what ? ('one' in removeFlow.what ? t('requests.page.removeDesc') : t(removeFlow.what.all === 'failed' ? 'requests.board.clearFailedDesc' : 'requests.board.clearFinishedDesc') + (removeFlow.what.shared ? ` ${t('requests.board.clearShared')}` : '')) : ''}>
 	{#if removeFlow.what}
 		{#if removeFlow.error}<p class="form-error" role="alert" data-testid="remove-error">{removeFlow.error}</p>{/if}
 		<div class="decide-actions">
-			<Button variant="plain" type="button" onclick={() => (removeFlow.open = false)}>{t('requests.page.keepIt')}</Button>
+			<Button variant="secondary" type="button" onclick={() => (removeFlow.open = false)}>{t('requests.page.keepIt')}</Button>
 			<Button variant="destructive" type="button" busy={removeFlow.busy} data-testid="remove-confirm" onclick={() => void removeFlow.confirm()}>{'one' in removeFlow.what ? t('requests.page.removeRequest') : t('requests.board.clearConfirm')}</Button>
 		</div>
 	{/if}

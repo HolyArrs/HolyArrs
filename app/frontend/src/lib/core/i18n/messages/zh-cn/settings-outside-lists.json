@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "添加到永不添加列表",
 	"settings.outsideLists.showDot": "剧集 ·",
 	"settings.outsideLists.takeOff": "移出 {name}",
-	"settings.outsideLists.empty": "空"
+	"settings.outsideLists.empty": "此列表中还没有内容"
 }

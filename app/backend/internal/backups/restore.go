@@ -73,6 +73,27 @@ func (m *Manager) AdoptMigrationCopies() (int, error) {
 		}
 		raws = append(raws, c)
 	}
+	if m.Store != nil && m.Off(context.Background()) {
+		// Backups are off: a copy that only guarded an update this start
+		// finished and checked goes; any other is still the way back.
+		checked := map[string]bool{}
+		for _, p := range m.Store.CheckedUpdateCopies() {
+			checked[filepath.Clean(p)] = true
+		}
+		keep := raws[:0]
+		for _, c := range raws {
+			if !checked[filepath.Clean(c.path)] {
+				keep = append(keep, c)
+				continue
+			}
+			if err := os.Remove(c.path); err != nil {
+				return 0, err
+			}
+			_ = os.Remove(c.path + ".sha256")
+			log.Printf("backup: backups are off, so the checked copy from before the update was removed")
+		}
+		raws = keep
+	}
 	sort.SliceStable(raws, func(i, j int) bool { return raws[i].mod.After(raws[j].mod) })
 	// The newest copy of each database together, every other copy on its
 	// own; older groups first, so backup times keep their order.
@@ -192,7 +213,7 @@ func (m *Manager) AfterStart(ctx context.Context) error {
 	if last == m.Version {
 		return nil
 	}
-	if last != "" {
+	if last != "" && !m.Off(ctx) {
 		b, err := m.Create(ctx, KindUpdate)
 		if err != nil {
 			return fmt.Errorf("backup before update: %w", err)

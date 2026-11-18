@@ -1,16 +1,19 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import Icon from '#lib/ui/Icon.svelte';
+	import Isolated from '#lib/ui/Isolated.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
-	import { LibraryToolPage, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, type ByHandFile, type ByHandResult, type ByHandScan, type Pick } from '#lib/mediafiles/index.ts';
+	import { LibraryToolPage, adoptParts, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, oneTickPerTrack, type ByHandFile, type ByHandResult, type ByHandScan, type Pick } from '#lib/mediafiles/index.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { bytes } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import type { EpisodeView, TitleView } from '#lib/core/types.ts';
-	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
+	import type { AlbumSummary, EpisodeView, TitleView } from '#lib/core/types.ts';
+	import type { TrackView } from '#lib/music/index.ts';
+	import { appLocale, ltr, t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 
@@ -19,6 +22,7 @@
 	let scan = $state<ByHandScan | null>(null);
 	let picks = $state<Record<string, Pick | null>>({});
 	let ticked = $state<Record<string, boolean>>({});
+	let held = $state<Record<string, boolean>>({});
 	let results = $state<Record<string, ByHandResult>>({});
 	let importing = $state(false);
 	let error = $state('');
@@ -34,11 +38,18 @@
 	let versionId = $state(0);
 	let season = $state<number | undefined>(undefined);
 	let episode = $state<number | undefined>(undefined);
+	// Music: the artist's albums and the picked album's tracks.
+	let albums = $state<AlbumSummary[]>([]);
+	let albumId = $state<number | undefined>(undefined);
+	let tracks = $state<TrackView[]>([]);
+	let trackId = $state<number | undefined>(undefined);
 
 	const files = $derived(scan?.files ?? []);
 	const items = $derived(itemsFor(files, picks, ticked));
 	const seasons = $derived([...new Set(episodes.map((e) => e.season))].sort((a, b) => a - b));
 	const seasonEps = $derived(episodes.filter((e) => e.season === season));
+	const pickedTrack = $derived(tracks.find((x) => x.id === trackId));
+	const discs = $derived(Math.max(1, ...tracks.map((x) => x.disc)));
 
 	// Review's Import files by hand sends ?path= (the download's folder): look in it straight away.
 	onMount(() => {
@@ -64,6 +75,7 @@
 				p[f.path] = startPick(f);
 				t[f.path] = startTicked(f, p[f.path]);
 			}
+			held = oneTickPerTrack(s.files, p, t);
 			picks = p;
 			ticked = t;
 			scan = s;
@@ -83,6 +95,8 @@
 		lookError = '';
 		chosen = null;
 		episodes = [];
+		albums = [];
+		tracks = [];
 		if (p) void choose(p.title_id, p);
 	}
 
@@ -93,8 +107,8 @@
 		lookError = '';
 		try {
 			const r = await api.get<{ titles: TitleView[] }>(`/library/search?q=${encodeURIComponent(term.trim())}&kind=all`);
-			found = r.titles.filter((t) => t.kind === 'movie' || t.kind === 'show');
-			if (!found.length) lookError = tr('library.byHand.nothingByName');
+			found = r.titles.filter((t) => t.kind === 'movie' || t.kind === 'show' || t.kind === 'artist');
+			if (!found.length) lookError = tr('library.byHand.nothingByNameAll');
 		} catch (err) {
 			lookError = message(err);
 		} finally {
@@ -107,6 +121,11 @@
 		try {
 			const t = await api.get<TitleView>(`/titles/${id}`);
 			episodes = t.kind === 'show' ? (await api.get<{ episodes: EpisodeView[] }>(`/titles/${id}/episodes`)).episodes : [];
+			albums = t.kind === 'artist' ? (await api.get<{ albums: AlbumSummary[] }>(`/titles/${id}/albums`)).albums.filter((a) => !a.dropped) : [];
+			tracks = [];
+			trackId = undefined;
+			albumId = t.kind === 'artist' ? from?.album_id : undefined;
+			if (albumId) await pickAlbum(albumId, from?.slot_id);
 			chosen = t;
 			versionId = from?.version_id ?? t.versions.find((v) => v.main)?.id ?? t.versions[0]?.id ?? 0;
 			season = from?.season ?? seasons[0];
@@ -116,8 +135,25 @@
 		}
 	}
 
+	async function pickAlbum(id: number | undefined, slot?: number) {
+		tracks = [];
+		trackId = undefined;
+		if (!id) return;
+		try {
+			tracks = (await api.get<{ tracks: TrackView[] }>(`/albums/${id}/tracks`)).tracks.filter((x) => !x.dropped);
+			trackId = slot ? tracks.find((x) => x.slots.some((s) => s.id === slot))?.id : undefined;
+		} catch (err) {
+			lookError = message(err);
+		}
+	}
+
+	function trackSlot(x: TrackView | undefined) {
+		return x?.slots.find((s) => s.version_id === versionId) ?? x?.slots[0];
+	}
+
 	function hasFile(): boolean {
 		if (!chosen) return false;
+		if (chosen.kind === 'artist') return !!trackSlot(pickedTrack)?.file_id;
 		if (chosen.kind === 'show') {
 			const ep = episodes.find((e) => e.season === season && e.episode === episode);
 			return !!ep?.slots.find((s) => s.version_id === versionId)?.file_id;
@@ -128,7 +164,21 @@
 	function useMatch() {
 		if (!editFor || !chosen) return;
 		const show = chosen.kind === 'show';
+		const album = albums.find((a) => a.id === albumId);
+		const music =
+			chosen.kind === 'artist' && album && pickedTrack
+				? {
+						album_id: album.id,
+						album_name: album.name,
+						album_year: album.release_date ? Number(album.release_date.slice(0, 4)) : undefined,
+						disc: pickedTrack.disc,
+						track: pickedTrack.number,
+						track_name: pickedTrack.name,
+						slot_id: trackSlot(pickedTrack)?.id
+					}
+				: {};
 		picks[editFor] = {
+			...music,
 			title_id: chosen.id,
 			title_name: chosen.name,
 			title_kind: chosen.kind,
@@ -140,6 +190,7 @@
 		};
 		const f = files.find((x) => x.path === editFor);
 		ticked[editFor] = !!f && !blocker(f, picks[editFor]);
+		held[editFor] = false;
 		editFor = null;
 	}
 
@@ -153,26 +204,30 @@
 	async function doImport() {
 		if (!items.length) return;
 		const swaps = items.filter((x) => x.replace).length;
-		if (swaps && !confirm(tr(swaps === 1 ? 'library.byHand.askReplaceOne' : 'library.byHand.askReplaceMany', { n: swaps }))) return;
+		if (swaps && !(await ask(tr(swaps === 1 ? 'library.byHand.askReplaceOne' : 'library.byHand.askReplaceMany', { n: swaps }), { yes: tr('ui.ask.import') }))) return;
 		importing = true;
 		error = '';
+		const next = { ...results };
+		let n = 0;
 		try {
-			const r = await api.post<{ results: ByHandResult[]; placed: number }>('/manual-import', { items });
-			const next = { ...results };
-			for (const x of r.results) {
-				next[x.path] = x;
-				if (x.outcome === 'placed') {
-					ticked[x.path] = false;
-					const p = picks[x.path];
-					if (p) picks[x.path] = { ...p, has_file: true, replace: false };
+			// Many files go in parts, so no request comes near the server's size limit.
+			for (const part of adoptParts(items)) {
+				const r = await api.post<{ results: ByHandResult[]; placed: number }>('/manual-import', { items: part });
+				for (const x of r.results) {
+					next[x.path] = x;
+					if (x.outcome === 'placed') {
+						ticked[x.path] = false;
+						const p = picks[x.path];
+						if (p) picks[x.path] = { ...p, has_file: true, replace: false };
+					}
 				}
+				n += r.placed;
 			}
-			results = next;
-			const n = r.placed;
-			toasts.push(tr(n === 1 ? 'library.byHand.importedOne' : 'library.byHand.importedMany', { n }), n ? 'ok' : 'info');
 		} catch (err) {
 			error = message(err);
 		} finally {
+			results = next;
+			if (n || !error) toasts.push(tr(n === 1 ? 'library.byHand.importedOne' : 'library.byHand.importedMany', { n }), n ? 'ok' : 'info');
 			importing = false;
 		}
 	}
@@ -205,9 +260,9 @@
 				<EmptyState compact icon="folder" title={tr('library.byHand.noFiles')} text={tr('library.byHand.noFilesHint')} />
 			{:else}
 				<p class="small muted">
-					{tr(files.length === 1 ? 'library.byHand.filesInOne' : 'library.byHand.filesInMany', { n: files.length, path: scan.path })}
+					<Isolated text={tr(files.length === 1 ? 'library.byHand.filesInOne' : 'library.byHand.filesInMany', { n: files.length.toLocaleString(appLocale()), path: ltr(scan.path) })} />
 				</p>
-				{#if scan.more}<p class="notice">{tr('library.byHand.onlyFirst', { n: files.length })}</p>{/if}
+				{#if scan.more}<p class="notice">{tr('library.byHand.onlyFirst', { n: files.length.toLocaleString(appLocale()) })}</p>{/if}
 				<ul class="list">
 					{#each files as f (f.path)}
 						{@const p = picks[f.path] ?? null}
@@ -216,25 +271,25 @@
 						<li data-testid="import-file">
 							<div class="top">
 								<label class="tick">
-									<input type="checkbox" bind:checked={ticked[f.path]} disabled={!!why || importing} aria-label={tr('library.byHand.importName', { name: f.name })} />
+									<input type="checkbox" bind:checked={ticked[f.path]} disabled={!!why || importing} aria-label={tr('library.byHand.importName', { name: ltr(f.name) })} />
 									<span class="mono small path">{f.name}</span>
 								</label>
 								<span class="meta xs muted">{bytes(f.size)}{#if f.quality}{' · '}{f.quality}{/if}</span>
 							</div>
-							{#if f.kind === 'video'}
+							{#if f.kind === 'video' || p || f.guess.title_id || f.guess.reason}
 								<div class="match">
 									<b class="small">{pickLine(p)}</b>
-									{#if p && f.guess.title_id === p.title_id && f.guess.confidence > 0 && f.guess.confidence < 1}<Badge label={f.guess.confidence >= 0.7 ? tr('library.byHand.likely') : tr('library.byHand.guess')} />{/if}
+									{#if p && f.guess.title_id === p.title_id && (p.title_kind !== 'artist' || p.slot_id === f.guess.slot_id) && f.guess.confidence > 0 && f.guess.confidence < 1}<Badge label={f.guess.confidence >= 0.7 ? tr('library.byHand.likely') : tr('library.byHand.guess')} />{/if}
 									{#if !f.in_library && editFor !== f.path}<Button variant="plain" size="sm" onclick={() => openEditor(f)} disabled={importing}>{tr('shows.versions.change')}</Button>{/if}
 								</div>
 							{/if}
-							{#if p?.has_file && f.kind === 'video' && !f.in_library && !done}
+							{#if p?.has_file && !f.in_library && !done}
 								<label class="tick swap">
 									<input type="checkbox" checked={!!p.replace} onchange={(e) => setReplace(f, e.currentTarget.checked)} disabled={importing} />
 									<span class="small">{tr('mediafiles.byHand.replace')}</span>
 								</label>
 							{/if}
-							{#if why}<p class="xs muted">{why}</p>{:else if f.note}<p class="xs muted">{f.note}</p>{/if}
+							{#if done?.outcome !== 'placed'}{#if why}<p class="xs muted">{why}</p>{:else if f.note}<p class="xs muted">{f.note}</p>{:else if held[f.path] && !ticked[f.path] && !done}<p class="xs muted">{tr('mediafiles.byHand.music.sameTrack')}</p>{/if}{/if}
 							{#if done}
 								<p class="xs" class:ok-text={done.outcome === 'placed'} class:bad-text={done.outcome !== 'placed'} role="status">
 									{resultLine(done)}{#if done.title_id && done.outcome === 'placed'}{' · '}<a href={to(`/library/${done.title_id}`)}>{tr('mediafiles.poster.open')}</a>{/if}
@@ -243,8 +298,8 @@
 							{#if editFor === f.path}
 								<div class="editor">
 									<form class="look" onsubmit={lookup}>
-										<label class="sr-only" for="look-{f.path}">{tr('library.byHand.lookFor', { name: f.name })}</label>
-										<input id="look-{f.path}" class="input" bind:value={term} placeholder={tr('library.byHand.placeholder')} autocomplete="off" />
+										<label class="sr-only" for="look-{f.path}"><Isolated text={tr('library.byHand.lookFor', { name: ltr(f.name) })} /></label>
+										<input id="look-{f.path}" class="input" bind:value={term} placeholder={tr('library.byHand.placeholderAll')} autocomplete="off" />
 										<Button type="submit" busy={looking}>{tr('library.byHand.lookUp')}</Button>
 										<Button variant="plain" onclick={() => (editFor = null)}>{tr('shows.page.close')}</Button>
 									</form>
@@ -253,7 +308,7 @@
 										<ul class="found">
 											{#each found as t (t.id)}
 												<li>
-													<span class="small">{t.name}{t.year ? ` (${t.year})` : ''} <span class="muted xs">{tr(t.kind === 'show' ? 'mediafiles.kindCap.show' : 'mediafiles.kindCap.movie')}</span></span>
+													<span class="small">{t.name}{t.year ? ` (${t.year})` : ''} <span class="muted xs">{tr(t.kind === 'show' ? 'mediafiles.kindCap.show' : t.kind === 'artist' ? 'mediafiles.kindCap.artist' : 'mediafiles.kindCap.movie')}</span></span>
 													<Button variant="plain" size="sm" onclick={() => choose(t.id)}>{chosen?.id === t.id ? tr('library.byHand.picked') : tr('mediafiles.releaseSheet.pick')}</Button>
 												</li>
 											{/each}
@@ -261,7 +316,7 @@
 									{/if}
 									{#if chosen}
 										<div class="row picks">
-											{#if chosen.versions.length > 1}
+											{#if chosen.versions.length > 1 && chosen.kind !== 'artist'}
 												<div class="field">
 													<label class="xs" for="ver-{f.path}">{tr('library.byHand.version')}</label>
 													<select id="ver-{f.path}" class="input" bind:value={versionId}>
@@ -284,10 +339,26 @@
 													</select>
 												</div>
 											{/if}
+											{#if chosen.kind === 'artist'}
+												<div class="field">
+													<label class="xs" for="alb-{f.path}">{tr('library.byHand.album')}</label>
+													<select id="alb-{f.path}" class="input" bind:value={albumId} onchange={() => pickAlbum(albumId)}>
+														<option value={undefined}>{tr('library.byHand.pickOne')}</option>
+														{#each albums as a (a.id)}<option value={a.id}>{a.name}{a.release_date ? ` (${a.release_date.slice(0, 4)})` : ''}</option>{/each}
+													</select>
+												</div>
+												<div class="field">
+													<label class="xs" for="trk-{f.path}">{tr('library.byHand.track')}</label>
+													<select id="trk-{f.path}" class="input" bind:value={trackId} disabled={!tracks.length}>
+														<option value={undefined}>{tr('library.byHand.pickOne')}</option>
+														{#each tracks as x (x.id)}<option value={x.id}>{discs > 1 ? `${x.disc}-` : ''}{String(x.number).padStart(2, '0')}{x.name ? ` · ${x.name}` : ''}</option>{/each}
+													</select>
+												</div>
+											{/if}
 										</div>
 										<div class="row end tight">
-											<span class="small muted">{chosen.name}{chosen.kind === 'show' && episode !== undefined ? ` · ${episodeCode(season, episode)}` : ''}</span>
-											<Button variant="primary" size="sm" onclick={useMatch} disabled={chosen.kind === 'show' && (season === undefined || episode === undefined)}>{tr('library.byHand.useThis')}</Button>
+											<span class="small muted">{chosen.name}{chosen.kind === 'show' && episode !== undefined ? ` · ${episodeCode(season, episode)}` : ''}{chosen.kind === 'artist' && pickedTrack ? ` · ${String(pickedTrack.number).padStart(2, '0')}${pickedTrack.name ? ` ${pickedTrack.name}` : ''}` : ''}</span>
+											<Button variant="primary" size="sm" onclick={useMatch} disabled={(chosen.kind === 'show' && (season === undefined || episode === undefined)) || (chosen.kind === 'artist' && !trackSlot(pickedTrack))}>{tr('library.byHand.useThis')}</Button>
 										</div>
 									{/if}
 								</div>
@@ -295,10 +366,11 @@
 						</li>
 					{/each}
 				</ul>
+				<p class="xs muted" data-testid="where-placed">{tr('library.byHand.wherePlaced')}</p>
 				<div class="row end">
-					<span class="small muted">{tr('library.byHand.ticked', { n: items.length })}</span>
+					<span class="small muted">{tr('library.byHand.ticked', { n: items.length.toLocaleString(appLocale()) })}</span>
 					<Button variant="primary" icon="download" onclick={doImport} disabled={!items.length} busy={importing}>
-						{tr(items.length === 1 ? 'library.byHand.importOne' : 'library.byHand.importMany', { n: items.length })}
+						{tr(items.length === 1 ? 'library.byHand.importOne' : 'library.byHand.importMany', { n: items.length.toLocaleString(appLocale()) })}
 					</Button>
 				</div>
 			{/if}

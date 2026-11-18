@@ -4,10 +4,12 @@ import { session } from '#lib/core/session.svelte.ts';
 import { createMovePassword } from './move-password.svelte.ts';
 import { createMoveRun } from './move-run.svelte.ts';
 
-const start = { hasPassword: session.s.hasPassword, localRecent: session.s.localRecent };
+const start = { hasPassword: session.s.hasPassword, localRecent: session.s.localRecent, via: session.s.via, authMethod: session.s.authMethod };
 afterEach(() => {
 	session.s.hasPassword = start.hasPassword;
 	session.s.localRecent = start.localRecent;
+	session.s.via = start.via;
+	session.s.authMethod = start.authMethod;
 	vi.restoreAllMocks();
 });
 
@@ -66,5 +68,29 @@ describe('the password check while importing', () => {
 		session.s.localRecent = true;
 		pw.settle();
 		expect(post).not.toHaveBeenCalled();
+	});
+
+	it('asks an owner with no password to sign in again, not to invent a password first', () => {
+		session.s.hasPassword = false;
+		session.s.via = 'session';
+		session.s.authMethod = 'jellyfin';
+		const post = vi.spyOn(api, 'post');
+		const { pw } = pageOf();
+		// The import stopped for a check this owner can only pass with a fresh Plex, Jellyfin or Emby sign-in.
+		pw.needsFreshSignIn();
+		expect(pw.mustSetPw).toBe(true);
+		expect(pw.pwStale).toBe(true);
+		// Nothing was sent: no password is made up, and nobody is signed out until they press the button.
+		expect(post).not.toHaveBeenCalled();
+	});
+
+	it('still asks an owner with no password and no media-server sign-in to set one', () => {
+		session.s.hasPassword = false;
+		session.s.via = 'session';
+		session.s.authMethod = 'oidc';
+		const { pw } = pageOf();
+		pw.needsFreshSignIn();
+		expect(pw.mustSetPw).toBe(true);
+		expect(pw.pwStale).toBe(false);
 	});
 });

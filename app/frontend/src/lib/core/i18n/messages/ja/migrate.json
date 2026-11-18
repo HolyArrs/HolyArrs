@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "要確認: {n}",
 	"migrate.needAttentionWhy": "古いフォルダーがこのサーバーにないため、欲しいものとしてここのフォルダーに入ります。フォルダーを直すか、パスルールを追加してください: {list}",
 	"migrate.leftOutUncheckedN": "対象外: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} は「引き継がない」になっています。フォルダーを選んでもう一度インポートしてください"
+	"migrate.leftOutUncheckedWhy": "{folder} は「引き継がない」になっています。フォルダーを選んでもう一度インポートしてください",
+	"migrate.seasonsDifferOne": "TMDB 番号で見つかった 1 件の番組を確認",
+	"migrate.seasonsDifferOther": "TMDB 番号で見つかった {n} 件の番組を確認",
+	"migrate.seasonsDifferWhy": "{list} は元のアプリの TMDB 番号でのみ見つかり、ここでは別の名前になっています。それぞれ開いて、同じ番組か確認してください。同じなら、シーズンの番号の付け方が違います。残りのファイルを割り当ててから、番組をオンにしてください。違うなら削除してください。ファイルはそのまま残ります。",
+	"migrate.stillChecking": "メタデータサーバーで確認中の番組: {n}。終わるとこの一覧は自動で更新されます。",
+	"migrate.stillCheckingImport": "メタデータサーバーで確認中の番組: {n}。今すぐインポートできます。インポート中に確認されます。"
 }

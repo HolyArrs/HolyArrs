@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Không thể lưu ngôn ngữ",
 	"accounts.language.count.one": "1 ngôn ngữ",
 	"accounts.language.count.other": "{n} ngôn ngữ",
-	"accounts.account.watchEveryone": "Chủ sở hữu đã bật việc này cho mọi người. Hãy tắt cả hai để dừng."
+	"accounts.account.watchEveryone": "Chủ sở hữu đã bật việc này cho mọi người. Hãy tắt cả hai để dừng.",
+	"accounts.watch.title": "Dấu đã xem",
+	"accounts.watch.hint": "Liên kết tài khoản của bạn trên máy chủ media tại đây để Thư viện hiển thị những gì bạn đã xem.",
+	"accounts.watch.as": "{server}, với tên {name}",
+	"accounts.watch.nameOn": "Tên trên {server}",
+	"accounts.watch.passwordOnce": "Mật khẩu của bạn chỉ gửi tới {server} và không được lưu.",
+	"accounts.watch.linked": "Đã liên kết với {name} trên {server}",
+	"accounts.watch.unlinked": "Đã gỡ liên kết",
+	"accounts.login.importPaused": "Phiên đăng nhập của bạn đã hết nên lượt nhập đã tạm dừng. Hãy đăng nhập, mở Nhập một thư viện và nhấn Quét để tiếp tục."
 }

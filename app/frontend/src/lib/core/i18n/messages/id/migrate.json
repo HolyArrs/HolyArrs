@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Perlu perhatian: {n}",
 	"migrate.needAttentionWhy": "Folder lamanya tidak ada di server ini, jadi masuk sebagai dicari ke folder di sini. Perbaiki foldernya atau tambahkan aturan jalur: {list}",
 	"migrate.leftOutUncheckedN": "Ditinggalkan: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} diatur ke \"Jangan bawa mereka\"; pilih folder untuknya lalu impor lagi"
+	"migrate.leftOutUncheckedWhy": "{folder} diatur ke \"Jangan bawa mereka\"; pilih folder untuknya lalu impor lagi",
+	"migrate.seasonsDifferOne": "Periksa 1 serial yang ditemukan lewat nomor TMDB-nya",
+	"migrate.seasonsDifferOther": "Periksa {n} serial yang ditemukan lewat nomor TMDB-nya",
+	"migrate.seasonsDifferWhy": "Hanya nomor TMDB dari aplikasi lama yang menemukan {list}, dengan nama lain di sini. Buka masing-masing dan pastikan ini serial yang sama. Kalau ya, musimnya dinomori secara berbeda: cocokkan File sisa-nya, lalu nyalakan serialnya. Kalau bukan, hapus; file-filenya tetap di tempatnya.",
+	"migrate.stillChecking": "Acara yang masih diperiksa server metadata: {n}. Daftar ini diperbarui sendiri setelah selesai.",
+	"migrate.stillCheckingImport": "Acara yang masih diperiksa server metadata: {n}. Anda bisa mengimpor sekarang; acara ini diperiksa selama impor."
 }

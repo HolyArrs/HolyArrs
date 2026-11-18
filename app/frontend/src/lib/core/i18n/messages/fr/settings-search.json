@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Écarter les releases publiées avant la sortie",
 	"settings.search.refuseEarlyHint": "Probablement des fausses. Choisir une release les montre quand même, avec un avertissement.",
 	"settings.search.refuseTiny": "Écarter les fausses selon la taille et le type de fichier",
-	"settings.search.refuseTinyHint": "Releases trop petites, fichiers vides et .wmv ou .asf sous des noms HD",
+	"settings.search.refuseTinyHint": "Releases trop petites, fichiers vides, vidéos coupées et .wmv ou .asf sous des noms HD",
 	"settings.search.grace": "Heures d'avance permises à une release",
 	"settings.search.graceHint": "Pour les fuseaux horaires. 24 par défaut.",
 	"settings.search.floors": "Vérifier la taille des fichiers à l'import",

@@ -83,6 +83,7 @@
 	"settings.users.preset": "Preset",
 	"settings.users.comingSoon": "Coming soon",
 	"settings.users.custom": "Custom",
+	"settings.users.customHint": "Your own mix of the switches below. Picking a preset replaces it; pick Custom again to get it back.",
 	"settings.users.ageRating": "Age rating",
 	"settings.users.newPasswordFor": "New password for {name}",
 	"settings.users.passwordNote": "Use this when {name} forgot theirs. They are signed out everywhere and sign in again with the new one. Tell them it in person.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "e.g. Mum",
 	"settings.users.days": "Days the link lasts",
 	"settings.users.makeInvite": "Make an invite link",
-	"settings.users.permAuto4k": "4K requests approved without waiting"
+	"settings.users.permAuto4k": "4K requests approved without waiting",
+	"settings.users.serverAccount": "Server account",
+	"settings.users.pickAccount": "Pick an account on a media server",
+	"settings.users.accountLinked": "Linked to {name}",
+	"settings.users.removedOnServer": "Removed on the {word} server, so turned off here",
+	"settings.users.delete": "Delete",
+	"settings.users.deleteName": "Delete {name}",
+	"settings.users.confirmDelete": "Delete {name}? They're signed out for good and their keys go. Their requests stay, shown as a removed person.",
+	"settings.users.deleteYes": "Delete person",
+	"settings.users.keep": "Keep",
+	"settings.users.deleted": "{name} deleted",
+	"settings.users.couldntDelete": "Couldn't delete",
+	"settings.users.confirmDeleteKeys": "Any Seerr keys they made stop working for everyone until a new one is made.",
+	"settings.users.qualities": "Qualities",
+	"settings.users.qualitiesHint": "They can pick only the ones on. With all on, new ones are offered too."
 }

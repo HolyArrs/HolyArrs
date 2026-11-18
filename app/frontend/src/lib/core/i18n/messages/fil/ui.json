@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Nanalo: {name}",
 	"ui.wikiFacts.nominated": "Nominado: {name}",
 	"ui.wikiFacts.andMore": "at {count} pa",
-	"ui.pageLoader.loading": "Naglo-load"
+	"ui.pageLoader.loading": "Naglo-load",
+	"ui.connectHelp.link": "Paano ayusin",
+	"ui.ask.remove": "Alisin",
+	"ui.ask.restore": "Ibalik",
+	"ui.ask.stop": "Ihinto",
+	"ui.ask.revoke": "Bawiin",
+	"ui.ask.replace": "Palitan",
+	"ui.ask.unlink": "I-unlink",
+	"ui.ask.turnOff": "I-off",
+	"ui.ask.markFailed": "Markahang bigo",
+	"ui.ask.reset": "I-reset",
+	"ui.ask.import": "I-import"
 }

@@ -3,6 +3,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Releases from './Releases.svelte';
 	import GoBack from './GoBack.svelte';
+	import InApp from './InApp.svelte';
 	import { RELEASE_PAGES, plainVersion, releaseLink } from './update-notice.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { page } from '$app/state';
@@ -100,6 +101,8 @@
 	</section>
 {/if}
 
+<InApp {canAct} />
+
 {#if !session.held('go_back')}<GoBack version={real?.version} {canAct} />{/if}
 
 <Releases {upd} />
@@ -107,12 +110,15 @@
 <style>
 	ul { margin: 0; padding: 0; list-style: none; }
 
-	.band { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 28px; padding: 20px 24px; }
+	.band { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'vers acts' 'say say'; align-items: center; gap: 12px 28px; padding: 20px 24px; }
+	.vers { grid-area: vers; min-width: 0; flex-wrap: wrap; }
+	.say { grid-area: say; }
+	.acts { grid-area: acts; }
 	.band[data-standing='behind'] { border-color: color-mix(in srgb, var(--wait) 45%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--wait) 10%, color-mix(in srgb, var(--surface-1) 55%, transparent)), color-mix(in srgb, var(--surface-1) 55%, transparent) 55%); }
 	.vers { display: flex; align-items: center; gap: 16px; }
 	.v { display: flex; flex-direction: column; gap: 2px; }
 	.v small { font-size: 12px; color: var(--text-muted); }
-	.v b { font: 600 28px/1.1 var(--font-ui); letter-spacing: -0.01em; color: var(--text); font-variant-numeric: tabular-nums; }
+	.v b { font: 600 28px/1.1 var(--font-ui); letter-spacing: -0.01em; color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 	.v.new b { color: var(--wait-text, var(--text)); }
 	.arrow { display: grid; place-items: center; width: 28px; height: 28px; margin-top: 14px; color: var(--text-muted); }
 	.arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -132,7 +138,7 @@
 	.notes li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent, var(--text)); }
 
 	@media (max-width: 900px) {
-		.band { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 18px 20px; }
+		.band { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'vers' 'say' 'acts'; gap: 10px; padding: 18px 20px; }
 		.acts { justify-content: flex-start; }
 		.when { flex-basis: 100%; margin: 0; }
 	}

@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "yok",
 	"settings.thisApp.needsRestart": "Yeniden başlatma gerekir. HOLYARRS_URL_BASE ya da -url-base bunu geçersiz kılar.",
 	"settings.thisApp.save": "Kaydet",
-	"settings.thisApp.licence": "HolyArrs, AGPL-3.0 altında özgür bir yazılımdır."
+	"settings.thisApp.licence": "HolyArrs, AGPL-3.0 altında özgür bir yazılımdır.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Dış çağrıları bir proxy üzerinden gönder. Engelleme ve ev ağı kuralları gerçek hedef için geçerli olmaya devam eder.",
+	"settings.thisApp.proxyType": "Tür",
+	"settings.thisApp.proxyOff": "Kapalı",
+	"settings.thisApp.proxyHost": "Sunucu",
+	"settings.thisApp.proxyPort": "Port",
+	"settings.thisApp.proxyUser": "Kullanıcı adı",
+	"settings.thisApp.proxyPasswordLabel": "Parola",
+	"settings.thisApp.proxyPasswordKept": "Kayıtlı parolayı korumak için boş bırakın",
+	"settings.thisApp.proxyBypass": "Proxy’yi atla",
+	"settings.thisApp.proxyBypassHint": "Adlar, adresler veya aralıklar, virgülle ayrılmış. *.example.com altındaki tüm adları kapsar.",
+	"settings.thisApp.proxyBypassLocal": "Yerel adresler için proxy’yi atla",
+	"settings.thisApp.proxyBypassLocalHint": "Bu makine ve ev ağınız doğrudan bağlanır",
+	"settings.thisApp.proxySaved": "Proxy kaydedildi",
+	"settings.thisApp.proxyOffSaved": "Proxy kapalı"
 }

@@ -350,7 +350,7 @@ func (tr *Transmission) call(ctx context.Context, method string, args map[string
 				return ctx.Err()
 			}
 			if errors.Is(err, outbound.ErrAddressRefused) {
-				return outbound.ErrAddressRefused
+				return outbound.Refusal(err)
 			}
 			return errDownloaderUnavailable
 		}

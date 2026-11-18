@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Valregler för den här versionen",
 	"movies.versions.folderLabel": "Biblioteksmapp för den här versionen",
 	"movies.versions.cancel": "Avbryt",
-	"movies.versions.addButton": "Lägg till version"
+	"movies.versions.addButton": "Lägg till version",
+	"movies.versions.setEdition": "Ange utgåva",
+	"movies.versions.editionFileHint": "Vilken utgåva filen är, till exempel Theatrical eller Directors Cut. Lämna tomt för att rensa.",
+	"movies.versions.unprotectConfirm": "Ta bort skyddet från {label}? En bättre kopia kan då ersätta den igen.",
+	"movies.versions.editionChars": "Inte tillåtet:",
+	"movies.versions.editionInvalid": "Den utgåvan kan inte användas. Håll den kort (bokstäver med accent och icke-latinska bokstäver tar mer plats), utelämna tecknen som anges ovan och avsluta inte med punkt.",
+	"movies.versions.editionDevice": "Windows reserverar namnet {name} för enheter, så det kan inte användas. Skriv ett annat."
 }

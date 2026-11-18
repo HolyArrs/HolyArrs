@@ -278,7 +278,7 @@ func musicExamples(ns mediafiles.NamingSettings) map[string]string {
 // episodeExamples names sample episodes by the show patterns: one episode,
 // a multi-episode file, a daily show and an anime running number.
 func episodeExamples(ns mediafiles.NamingSettings) map[string]string {
-	show := mediafiles.NameFacts{Title: "Copper Valley", Year: 2025, Step: "1080p_web", Group: "HOLYARRS", Ext: ".mkv"}
+	show := mediafiles.NameFacts{Title: "Copper Valley", Year: 2025, Step: "1080p_web", Group: "HOLYARRS", Audio: "EAC3", Ext: ".mkv"}
 	folder := mediafiles.ShowFolder(ns, show)
 	return map[string]string{
 		"show_folder": folder,
@@ -294,7 +294,7 @@ func episodeExamples(ns mediafiles.NamingSettings) map[string]string {
 // show what a pattern gives.
 func namingExamples(ns mediafiles.NamingSettings) (file, folder string) {
 	file = mediafiles.FileName(ns, mediafiles.NameFacts{Title: "Dune: Part Two", Year: 2024, Step: "1080p_bluray", Group: "HOLYARRS", TMDB: "693134",
-		IMDB: "tt15239678", Release: "Dune.Part.Two.2024.1080p.BluRay.x264-HOLYARRS", Ext: ".mkv"})
+		IMDB: "tt15239678", Audio: "EAC3", Release: "Dune.Part.Two.2024.1080p.BluRay.x264-HOLYARRS", Ext: ".mkv"})
 	folder = mediafiles.Folder(ns, mediafiles.NameFacts{Title: "Dune: Part Two", Year: 2024, TMDB: "693134", IMDB: "tt15239678"})
 	return file, folder
 }

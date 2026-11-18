@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Không thể kết nối {name}",
 	"settings.parts.connected": "Đã kết nối {name}",
 	"settings.parts.title": "Các Phần",
+	"settings.parts.onOff": "Bật hoặc tắt các phần",
 	"settings.parts.ownerOnly": "Chỉ chủ sở hữu và quản trị viên",
 	"settings.parts.safeMode": "HolyArrs đang chạy ở chế độ an toàn: chỉ phần lõi chạy, công tắc Phần và điều khiển Công đoạn bị từ chối cho đến lần khởi động bình thường. Dùng <b>Khởi động lại HolyArrs</b> trong <a>Vùng nguy hiểm</a> để thoát chế độ an toàn.",
 	"settings.parts.dangerZone": "Vùng nguy hiểm",

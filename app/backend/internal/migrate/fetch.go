@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 )
 
@@ -148,6 +149,8 @@ func (c *apiClient) do(ctx context.Context, method, path string, q url.Values, f
 func plainNetErr(err error) string {
 	s := err.Error()
 	switch {
+	case errors.Is(err, outbound.ErrMetadataRefused):
+		return "the address is a cloud metadata address, which HolyArrs never connects to"
 	case strings.Contains(s, "refused by the network policy"):
 		return "the address is on the local network or not allowed; turn on local network for this read"
 	case strings.Contains(s, "another address"):

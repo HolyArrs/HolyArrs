@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Оба пути одинаковые, поэтому эта пара ничего не меняет. Но она сообщает HolyArrs, где лежат файлы этого клиента, так что её можно оставить.",
 	"settings.downloaders.change": "Изменить {name}",
 	"settings.downloaders.whichApp": "Какое приложение",
-	"settings.downloaders.torrents": "(торренты)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Торренты",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "Самый популярный",
 	"settings.downloaders.name": "Название",
 	"settings.downloaders.address": "Адрес",
 	"settings.downloaders.addressHint": "Его веб-страница. Для SABnzbd укажите IP или разрешите имя хоста HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Категория после импорта",
 	"settings.downloaders.categoryAfterImportHint": "После импорта HolyArrs переносит торрент в эту категорию. Оставьте пустым, чтобы он остался в основной категории.",
 	"settings.downloaders.ownOnly": "Показывать только элементы HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Элементы других приложений в этом загрузчике скрыты, и HolyArrs их не меняет."
+	"settings.downloaders.ownOnlyHint": "Элементы других приложений в этом загрузчике скрыты, и HolyArrs их не меняет.",
+	"settings.downloaders.state.notAnswering": "Не отвечает",
+	"settings.downloaders.state.paused": "Приостановлен",
+	"settings.downloaders.state.resting": "Отдыхает",
+	"settings.downloaders.state.signInRefused": "Вход отклонён",
+	"settings.downloaders.state.working": "Работает"
 }

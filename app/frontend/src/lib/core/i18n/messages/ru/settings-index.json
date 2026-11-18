@@ -299,6 +299,8 @@
 	"settings.index.api.api-routes.every-api-route.words": "api маршруты эндпоинты openapi",
 	"settings.index.api.seerr-card.requests-from-seerr-and-overseerr.label": "Запросы из Seerr и Overseerr",
 	"settings.index.api.seerr-card.requests-from-seerr-and-overseerr.words": "seerr overseerr jellyseerr sonarr radarr запросы подключить",
+	"settings.index.remote-access.remote-access.remote-access.label": "Удалённый доступ",
+	"settings.index.remote-access.remote-access.remote-access.words": "tailscale удалённый телефон тв вне дома",
 	"settings.index.move.page.move-from-other-apps.label": "Импорт из других приложений",
 	"settings.index.move.page.move-from-other-apps.words": "импорт перенос миграция radarr sonarr lidarr prowlarr bazarr seerr overseerr",
 	"settings.index.backups.backup-key.master-key.label": "Главный ключ",

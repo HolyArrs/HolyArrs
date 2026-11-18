@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "Laukia: {n}",
 	"frame.nav.new": "Naujų: {n}",
 	"frame.nav.manage": "Tvarkyti",
+	"frame.nav.activity": "Veikla",
+	"frame.nav.system": "Sistema",
 	"frame.nav.history": "Istorija",
 	"frame.nav.status": "Būsena",
 	"frame.nav.settings": "Nustatymai",
+	"frame.nav.plugins": "Papildiniai",
 	"frame.nav.goTo": "Eiti į",
 	"frame.nav.active": "Aktyvių: {n}, {percent}%",
 	"frame.nav.decide": "Reikia sprendimo: {n}",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Sistemos",
 	"frame.layout.switch": "Pakeisti paskyrą",
 	"frame.layout.signOut": "Atsijungti",
+	"frame.layout.support": "Paremti HolyArrs",
 	"frame.layout.signOutFail": "Nepavyko patvirtinti atsijungimo",
 	"frame.layout.signedOut": "Atsijungta",
 	"frame.layout.accountMenu": "{name}, {role}: paskyra ir išvaizda",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs bando iš naujo pats",
 	"frame.feeds.clearNow": "Išvalyti dabar",
 	"frame.feeds.cleared": "Išvalyta iš Atsisiuntėjo",
-	"frame.feeds.clearStill": "Dar neišvalyta"
+	"frame.feeds.clearStill": "Dar neišvalyta",
+	"frame.error.pageGone": "Šio puslapio nėra. Nuoroda gali būti sena arba neteisingai įvesta."
 }

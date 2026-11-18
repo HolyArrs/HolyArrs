@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Hindi nakakonekta ang {name}",
 	"settings.parts.connected": "Nakakonekta ang {name}",
 	"settings.parts.title": "Mga Bahagi",
+	"settings.parts.onOff": "I-on o i-off ang mga bahagi",
 	"settings.parts.ownerOnly": "Para lang sa owner at mga admin",
 	"settings.parts.safeMode": "Nasa safe mode ang HolyArrs: ang core lang ang gumagana, at tinatanggihan ang mga switch ng Bahagi at kontrol ng Yugto hangga't hindi pa ito nagsisimulang normal. Gamitin ang <b>I-restart ang HolyArrs</b> sa <a>Danger zone</a> para umalis sa safe mode.",
 	"settings.parts.dangerZone": "Danger zone",

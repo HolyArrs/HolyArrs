@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Näytä ihmisille",
 	"settings.requests.choiceMain": "{rules} · nimikkeen pääkopio",
 	"settings.requests.choiceOwn": "{rules} · pidetään omana kopionaan",
-	"settings.requests.choiceNotReady": "Tarjotaan, kun 4K-laatu on asetettu yllä"
+	"settings.requests.choiceNotReady": "Tarjotaan, kun 4K-laatu on asetettu yllä",
+	"settings.requests.approvals": "Hyväksynnät",
+	"settings.requests.autoApprove": "Hyväksy pyynnöt automaattisesti",
+	"settings.requests.autoApproveNote": "Pois = heidän pyyntönsä odottavat sinua. Plex-katselulistan nimikkeet seuraavat samaa kytkintä.",
+	"settings.requests.ownerTag": "Omistaja",
+	"settings.requests.choiceAdd": "Lisää laatu",
+	"settings.requests.choiceNew": "Uusi laatu",
+	"settings.requests.choiceLabel": "Oma nimesi",
+	"settings.requests.choiceSeen": "Muut näkevät"
 }

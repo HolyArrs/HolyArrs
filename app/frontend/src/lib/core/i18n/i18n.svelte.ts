@@ -76,6 +76,16 @@ export function t(key: string, vars?: Record<string, string | number>): string {
 	return vars ? line.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m)) : line;
 }
 
+/** The key for a number's plural form in a language: `base.one`, `base.few`, `base.other`... Every form exists in every language. */
+export function pluralKey(base: string, n: number, l: string = lang.value): string {
+	return `${base}.${new Intl.PluralRules(l === 'en' ? 'en' : bcp47(l as Locale)).select(n)}`;
+}
+
+/** A counted line with the right plural form for the app's language. */
+export function tn(base: string, n: number): string {
+	return t(pluralKey(base, n), { n });
+}
+
 /** A path or other left-to-right text kept in its own order inside a right-to-left line (Arabic, Hebrew, Persian); unchanged elsewhere. */
 export function ltr(s: string): string {
 	// Left-to-right isolate (U+2066) ... pop directional isolate (U+2069).

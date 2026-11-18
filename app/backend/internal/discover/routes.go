@@ -34,15 +34,19 @@ type Deps struct {
 	Actor  func(*http.Request) domain.Actor
 	PartOn func(parts.Part) bool
 	// Parts says whether safe mode is on (every part shown on Home).
-	Parts          *parts.Control
-	TitleAllowed   func(*http.Request, mediafiles.Title) bool
-	LibraryRating  func(ctx context.Context, kind, tmdbID string) (string, bool)
-	KidItems       func(ctx context.Context, max string, items []metadata.DiscoverItem, n int) []metadata.DiscoverItem
-	CardFresh      func(ctx context.Context, it metadata.DiscoverItem, titleID int64) (*engine.Fresh, error)
-	WithFreshRow   func(ctx context.Context, row string) context.Context
-	OpenAsk        func(ctx context.Context, tmdbID string, me int64) (*requests.AskBrief, error)
-	OpenShowAsk    func(ctx context.Context, ids map[string]string, me int64) (*requests.AskBrief, error)
-	FillCardArt    func(r *http.Request, items []ItemView)
+	Parts         *parts.Control
+	TitleAllowed  func(*http.Request, mediafiles.Title) bool
+	LibraryRating func(ctx context.Context, kind, tmdbID string) (string, bool)
+	KidItems      func(ctx context.Context, max string, items []metadata.DiscoverItem, n int) []metadata.DiscoverItem
+	CardFresh     func(ctx context.Context, it metadata.DiscoverItem, titleID int64) (*engine.Fresh, error)
+	WithFreshRow  func(ctx context.Context, row string) context.Context
+	OpenAsk       func(ctx context.Context, tmdbID string, me int64) (*requests.AskBrief, error)
+	OpenShowAsk   func(ctx context.Context, ids map[string]string, me int64) (*requests.AskBrief, error)
+	FillCardArt   func(r *http.Request, items []ItemView)
+	// FillCardArtNow is FillCardArt after fetching missing picks now (the
+	// hero); TrailersNow looks the hero's trailers up now, in the background.
+	FillCardArtNow func(r *http.Request, items []ItemView)
+	TrailersNow    func(lang string, titles [][2]string)
 	QueueCardItems func(ctx context.Context, items []engine.Item)
 	// ServiceTop gives the metadata server's per-service top list reader
 	// (nil when there is none); ServiceTopCache and WatchOn are api's caches.

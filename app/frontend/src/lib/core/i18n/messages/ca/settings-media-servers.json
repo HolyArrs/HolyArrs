@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Ruta a HolyArrs",
 	"settings.mediaServers.pathTo": "La mateixa carpeta al servidor",
 	"settings.mediaServers.pathHint": "Només si el servidor veu els teus fitxers sota una altra ruta",
+	"settings.mediaServers.webUrl": "Adreça per als navegadors",
+	"settings.mediaServers.webUrlHint": "On la gent obre el servidor al mòbil o a l’ordinador. Afegeix un botó Obre a les pàgines dels títols que té. Deixa-ho buit per no mostrar cap botó.",
 	"settings.mediaServers.local": "Accedeix a la xarxa local",
 	"settings.mediaServers.send": "Envia actualitzacions",
 	"settings.mediaServers.save": "Desa",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Vols desactivar l'historial de visualització? Tot el que s'ha llegit fins ara s'esborra.",
 	"settings.mediaServers.watchTurnedOn": "Historial de visualització activat. La primera lectura es fa en un termini de 30 minuts.",
 	"settings.mediaServers.watchTurnedOff": "Historial de visualització desactivat",
-	"settings.mediaServers.watchFailed": "No s'ha pogut canviar l'historial de visualització"
+	"settings.mediaServers.watchFailed": "No s'ha pogut canviar l'historial de visualització",
+	"settings.mediaServers.labelTitle": "Etiquetes de Plex",
+	"settings.mediaServers.labelSwitch": "Etiqueta els títols demanats",
+	"settings.mediaServers.labelHint": "Quan una pel·lícula o sèrie demanada és a Plex, HolyArrs hi afegeix una etiqueta, perquè hi puguis filtrar, fer col·leccions o compartir a Plex. Les etiquetes que ja hi són es queden.",
+	"settings.mediaServers.labelText": "Etiqueta",
+	"settings.mediaServers.labelAskers": "Afegeix també el nom de qui ho ha demanat com a etiqueta",
+	"settings.mediaServers.labelSaved": "Etiquetes de Plex desades",
+	"settings.mediaServers.labelFailed": "No s'han pogut desar les etiquetes de Plex",
+	"settings.mediaServers.labelExisting": "Etiqueta els títols ja demanats",
+	"settings.mediaServers.labelExistingStarted": "Etiquetatge iniciat. Els títols tindran les etiquetes en uns minuts.",
+	"settings.mediaServers.labelExistingFailed": "No s'ha pogut iniciar l'etiquetatge"
 }

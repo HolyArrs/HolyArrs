@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Hayaang gamitin ng mga AI assistant ang HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Mga key at route para sa ibang app",
+	"core.settings.remoteAccess.label": "Remote access",
+	"core.settings.remoteAccess.about": "Gamitin ang HolyArrs kahit wala sa bahay",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Kung saan galing ang mga poster at pangalan",
 	"core.settings.health.label": "Mga health check",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "May Downloader na walang save folder, kaya hindi ma-import ng HolyArrs ang mga tapos na download nito.",
 	"core.api.sourceOff": "Naka-off ang ilang row sa installation na ito.",
 	"core.plain.noDownloader": "Nakakahanap ang mga Source mo ng mga download na hindi kayang tanggapin ng alinman sa mga Downloader mo, kaya walang maipapadala.",
-	"core.plain.sameDownloader": "Dalawang Downloader ang umaabot sa iisang download app, kaya puwedeng dalawang beses lumabas ang mga download."
+	"core.plain.sameDownloader": "Dalawang Downloader ang umaabot sa iisang download app, kaya puwedeng dalawang beses lumabas ang mga download.",
+	"core.plain.peopleCheck": "Hindi mabasa ang listahan ng user ng media server, kaya hindi pinapatay dito ang mga inalis doon.",
+	"core.plain.deleted": "binura",
+	"core.plain.deletedName": "{name} (binura)"
 }

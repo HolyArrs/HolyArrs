@@ -38,8 +38,9 @@
 "settings.downloaders.samePair": "両方のパスが同じなので、このペアは何も置き換えません。それでもこのダウンローダーのファイルの場所を HolyArrs に伝えるので、残しておけます。",
 "settings.downloaders.change": "{name} を変更",
 "settings.downloaders.whichApp": "アプリ",
-"settings.downloaders.torrents": "(トレント)",
-"settings.downloaders.usenet": "(Usenet)",
+"settings.downloaders.torrentsHead": "トレント",
+"settings.downloaders.usenetHead": "Usenet",
+"settings.downloaders.mostUsed": "いちばん人気",
 "settings.downloaders.name": "名前",
 "settings.downloaders.address": "アドレス",
 "settings.downloaders.addressHint": "その Web ページです。SABnzbd では、IP を使うか、HolyArrs のホスト名を許可してください。",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "インポート後のカテゴリー",
 	"settings.downloaders.categoryAfterImportHint": "トレントのインポートが終わると、HolyArrs はこのカテゴリーへ移します。空のままにするとメインのカテゴリーに残ります。",
 	"settings.downloaders.ownOnly": "HolyArrs の項目だけを表示",
-	"settings.downloaders.ownOnlyHint": "このダウンローダー上の他のアプリの項目は非表示になり、HolyArrs は変更しません。"
+	"settings.downloaders.ownOnlyHint": "このダウンローダー上の他のアプリの項目は非表示になり、HolyArrs は変更しません。",
+	"settings.downloaders.state.notAnswering": "応答なし",
+	"settings.downloaders.state.paused": "一時停止中",
+	"settings.downloaders.state.resting": "休止中",
+	"settings.downloaders.state.signInRefused": "サインインが拒否されました",
+	"settings.downloaders.state.working": "正常"
 }

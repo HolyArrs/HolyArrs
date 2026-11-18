@@ -2,6 +2,7 @@
 // Wording and helpers for the "who asked for this title" labels.
 
 import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
+import { bareNames, shownPerson } from '#lib/core/plain.ts';
 export type Asker = { id: number; name: string; asked_at: string; me: boolean };
 export type AskedByAnswer = { titles: Record<string, { askers: Asker[] }> };
 
@@ -24,6 +25,9 @@ export const WORDS = {
 
 // Falls back to the full name when it is blank so a label never shows empty.
 export function firstName(name: string): string {
+	// A deleted person's name is shown whole, with its deleted mark.
+	const shown = shownPerson(name);
+	if (shown !== name) return shown;
 	return (name || '').trim().split(/\s+/)[0] || name;
 }
 
@@ -67,7 +71,7 @@ export function askedByDated(askers: Asker[]): string {
 }
 
 export function initial(name: string): string {
-	return (firstName(name)[0] || '?').toUpperCase();
+	return (bareNames(firstName(name))[0] || '?').toUpperCase();
 }
 
 // The server caps one request, so ids are deduped and cut to 200.

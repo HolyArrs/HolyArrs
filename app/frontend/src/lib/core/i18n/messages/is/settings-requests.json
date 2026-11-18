@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Sýna fólki",
 	"settings.requests.choiceMain": "{rules} · aðaleintak titilsins",
 	"settings.requests.choiceOwn": "{rules} · geymt sem sérstakt eintak",
-	"settings.requests.choiceNotReady": "Boðið þegar 4K-gæði hafa verið stillt hér að ofan"
+	"settings.requests.choiceNotReady": "Boðið þegar 4K-gæði hafa verið stillt hér að ofan",
+	"settings.requests.approvals": "Samþykktir",
+	"settings.requests.autoApprove": "Samþykkja beiðnir sjálfkrafa",
+	"settings.requests.autoApproveNote": "Af = beiðnir þeirra bíða eftir þér. Titlar af Plex-áhorfslista fylgja sama rofa.",
+	"settings.requests.ownerTag": "Eigandi",
+	"settings.requests.choiceAdd": "Bæta við gæðum",
+	"settings.requests.choiceNew": "Ný gæði",
+	"settings.requests.choiceLabel": "Þitt nafn",
+	"settings.requests.choiceSeen": "Aðrir sjá"
 }

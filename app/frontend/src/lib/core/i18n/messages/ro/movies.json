@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Reguli de alegere pentru această Versiune",
 	"movies.versions.folderLabel": "Dosar de bibliotecă pentru această Versiune",
 	"movies.versions.cancel": "Anulează",
-	"movies.versions.addButton": "Adaugă versiunea"
+	"movies.versions.addButton": "Adaugă versiunea",
+	"movies.versions.setEdition": "Setează ediția",
+	"movies.versions.editionFileHint": "Ce ediție este acest fișier, de exemplu Theatrical sau Directors Cut. Lasă gol pentru a o șterge.",
+	"movies.versions.unprotectConfirm": "Elimini protecția de la {label}? O copie mai bună o va putea înlocui din nou.",
+	"movies.versions.editionChars": "Nepermis:",
+	"movies.versions.editionInvalid": "Această ediție nu poate fi folosită. Păstreaz-o scurtă (literele cu diacritice și cele nelatine ocupă mai mult loc), lasă deoparte caracterele enumerate mai sus și nu o termina cu punct.",
+	"movies.versions.editionDevice": "Windows rezervă numele {name} pentru dispozitive, așa că nu poate fi folosit. Scrie altul."
 }

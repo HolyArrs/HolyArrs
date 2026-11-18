@@ -131,7 +131,8 @@
 	.danger { color: var(--fail-text); }
 	.ic { width: 20px; display: grid; place-items: center; color: var(--text-muted); flex: none; }
 	.danger .ic { color: inherit; }
-	.grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* Long labels wrap onto a second line instead of being cut. */
+	.grow { flex: 1; min-width: 0; padding-block: 6px; overflow-wrap: break-word; }
 	.sep { height: 1px; margin: 5px 8px; background: var(--line); }
 	/* Left padding lines the heading up with item labels past the icon column. */
 	.heading { padding-block: 8px 4px; padding-inline: 38px 10px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }

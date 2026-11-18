@@ -142,13 +142,17 @@
 		{:else}
 			<ul class="rows checks">
 				{#each checks.checks as c (c.key)}
+					{@const nm = c.key === 'backups:key' ? { label: t('settings.backups.key'), subject: '' } : checkName(c.kind, c.subject)}
 					<li data-testid="health-check" data-state={c.state}>
 						<span class="grow small">
-							<b>{checkName(c.kind, c.subject).label}</b>{#if checkName(c.kind, c.subject).subject}{' '}<span class="subj" title={checkName(c.kind, c.subject).subject}>{shortPath(checkName(c.kind, c.subject).subject)}</span>{/if}
+							<b>{nm.label}</b>{#if nm.subject}{' '}<span class="subj" title={nm.subject}>{shortPath(nm.subject)}</span>{/if}
 							{#if c.message}<br /><span class="muted">{c.message}</span>{/if}
 						</span>
-						<span class="chip {c.state === 'ok' ? 'ok' : c.state === 'warning' ? 'wait' : 'fail'}">{stateWord(c.state)}</span>
-						<time class="xs muted" datetime={c.since} title={t('settings.health.since')}>{ago(c.since)}</time>
+						<!-- A fine check says nothing more: the card's heading already says Fine. -->
+						{#if c.state !== 'ok'}
+							<span class="chip {c.state === 'warning' ? 'wait' : 'fail'}">{stateWord(c.state)}</span>
+							<time class="xs muted" datetime={c.since} title={t('settings.health.since')}>{ago(c.since)}</time>
+						{/if}
 					</li>
 				{/each}
 			</ul>

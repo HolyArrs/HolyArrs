@@ -27,7 +27,8 @@ export const LAYER: Record<string, number> = {
 	backups: 9,
 	health: 9,
 	updates: 9,
-	setup: 9
+	setup: 9,
+	plugins: 9
 };
 
 export function listFiles(dir = SRC, out: string[] = []): string[] {
@@ -90,6 +91,7 @@ const ROUTES: [RegExp, string][] = [
 	[/^routes\/settings\/alerts/, 'alerts'],
 	[/^routes\/settings\/api/, 'arrapi'],
 	[/^routes\/settings\/(backups|danger)/, 'backups'],
+	[/^routes\/plugins\b/, 'plugins'],
 	[/^routes\/(status|health)\b|^routes\/settings\/(health|logs|this-app|schedules)/, 'health'],
 	[/^routes\/settings\/move/, 'migrate'],
 	[/^routes\/settings\/media-servers/, 'mediaservers'],

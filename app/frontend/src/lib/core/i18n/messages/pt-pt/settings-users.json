@@ -83,6 +83,7 @@
 	"settings.users.preset": "Predefinição",
 	"settings.users.comingSoon": "Em breve",
 	"settings.users.custom": "Personalizado",
+	"settings.users.customHint": "A sua própria combinação dos interruptores abaixo. Escolher um perfil substitui-a; escolha Personalizado outra vez para a recuperar.",
 	"settings.users.ageRating": "Classificação indicativa",
 	"settings.users.newPasswordFor": "Nova palavra-passe para {name}",
 	"settings.users.passwordNote": "Use quando {name} esquecer a palavra-passe. A pessoa sai de todos os lugares e entra novamente com a nova. Diga a palavra-passe pessoalmente.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "ex.: Mãe",
 	"settings.users.days": "Dias de validade do link",
 	"settings.users.makeInvite": "Criar um link de convite",
-	"settings.users.permAuto4k": "Pedidos 4K aprovados sem esperar"
+	"settings.users.permAuto4k": "Pedidos 4K aprovados sem esperar",
+	"settings.users.serverAccount": "Conta do servidor",
+	"settings.users.pickAccount": "Escolha uma conta num servidor multimédia",
+	"settings.users.accountLinked": "Associado a {name}",
+	"settings.users.removedOnServer": "Removido no servidor {word}, por isso desativado aqui",
+	"settings.users.delete": "Eliminar",
+	"settings.users.deleteName": "Eliminar {name}",
+	"settings.users.confirmDelete": "Eliminar {name}? A sessão é terminada para sempre e as chaves desaparecem. Os pedidos ficam, mostrados como pessoa removida.",
+	"settings.users.deleteYes": "Eliminar pessoa",
+	"settings.users.keep": "Manter",
+	"settings.users.deleted": "{name} eliminado",
+	"settings.users.couldntDelete": "Não foi possível eliminar",
+	"settings.users.confirmDeleteKeys": "As chaves do Seerr que a pessoa criou deixam de funcionar para todos até ser criada uma nova.",
+	"settings.users.qualities": "Qualidades",
+	"settings.users.qualitiesHint": "Só podem escolher as ativadas. Com todas ativadas, as novas também são oferecidas."
 }

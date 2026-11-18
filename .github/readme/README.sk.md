@@ -18,10 +18,10 @@
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/licence-AGPL--3.0-3b82f6?style=flat-square" alt="Licencia: AGPL-3.0"></a>
 </p>
 
-<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="HolyArrs/HolyArrs on Trendshift" width="250" height="55"></a></p>
+<p align="center"><a href="https://news.ycombinator.com/item?id=50439000"><img src="https://hackergit.org/badge/HolyArrs/HolyArrs.svg?style=rank" alt="#1 on Show HN" width="250" height="55"></a>&nbsp;&nbsp;<a href="https://trendshift.io/repositories/347687?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-347687"><img src="https://trendshift.io/api/badge/trendshift/repositories/347687/daily?language=Go" alt="Trending on Trendshift" width="250" height="55"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.1.4: odstráň ľubovoľnú požiadavku a zoznamy na pozretie z Plexu priateľov sa zase čítajú.** Kvalita priečinka sa teraz zobrazuje na jeho karte a Settings sa zjednotilo. [Pozri, čo je nové](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.2.0: červená bodka ukáže, čo chce pozornosť, a test pripojenia pomenuje presný problém.** Štítky v Plexe pre vyžiadané tituly, názvy vo vašom jazyku a viac ako 30 opráv. Prepojte aplikácie cez MCP kľúčmi, ktoré máte pod kontrolou. [Pozri, čo je nové](https://holyarrs.com/whats-new/)
 
 > Každý plagát, trailer a hodnotenie v tvojom HolyArrs pochádza zo servera, ktorý prevádzkujem a platím sám, aby zostal zadarmo pre všetkých. Ak HolyArrs spravil tvoj filmový večer o trochu lepším, sponzorstvo nám všetkým udrží svetlá zapnuté 💛
 >

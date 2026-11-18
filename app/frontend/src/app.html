@@ -62,7 +62,7 @@
 					} else if ((m = /^\/library\/([1-9][0-9]*)$/.exec(path))) {
 						asks.push('/titles/' + m[1]);
 					} else if (path === '/library') {
-						asks.push('/titles', '/collections');
+						asks.push('/titles?grid=1', '/collections');
 					} else if ((m = /^\/people\/([1-9][0-9]*)$/.exec(path))) {
 						// lib/person-prefetch.ts firstPageURL with peopleSort.
 						var sort = saved('holyarrs.people.sort');
@@ -161,7 +161,8 @@
 								// Same as lib/signinArt.ts pickSize: the smallest served size that covers, else the largest.
 								for (var i = 0; i < sz.length; i++) if (sz[i] <= im.w) { pw = sz[i]; if (sz[i] >= need) break; }
 								if (pw < need && im.w > pw) pw = -1;
-								var u = pw < 0 ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/original/') : pw ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/w' + pw + '/') : im.url;
+								// The server names its pictures from the root: put the URL base (the path in front of /login) before them.
+								var u = location.pathname.replace(/\/login\/?$/, '') + (pw < 0 ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/original/') : pw ? im.url.replace(/\/t\/p\/[^/]+\//, '/t/p/w' + pw + '/') : im.url);
 								a = { first: u, thumb: { url: u, t24: d.seed[kind].t24, t64: d.seed[kind].t64, pos: kind === 'poster' ? '50% 20%' : '50% 30%' } };
 								window.__holyarrsSigninInline = { shots: d.shots, thumb: a.thumb };
 							}

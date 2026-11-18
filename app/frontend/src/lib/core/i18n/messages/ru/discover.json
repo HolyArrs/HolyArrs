@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Вставьте ID, например tmdb:693134 или tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Или опишите, например «фантастика с роботом 2014 года».",
 	"discover.search.lookEverywhere": "Искать везде",
-	"discover.search.searchIndexersFor": "Искать в индексаторах: «{searched}»",
+	"discover.search.searchIndexersFor": "Проверить источники",
 	"discover.search.topMatches": "Лучшие совпадения",
 	"discover.people.goToTheFilmography": "Перейти к фильмографии",
 	"discover.people.filmography": "Фильмография",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Не подходит к этому варианту",
 	"discover.leftovers.reason.movie_has_file": "У фильма уже есть файл",
 	"discover.leftovers.reason.replaced_by_hand": "Заменён другим файлом",
-	"discover.leftovers.reason.unmatched": "Сопоставление снято вручную"
+	"discover.leftovers.reason.unmatched": "Сопоставление снято вручную",
+	"discover.searchSections.genres": "Жанры",
+	"discover.searchSections.moods": "Настроения",
+	"discover.searchSections.stories": "Истории и темы",
+	"discover.searchSections.worlds": "Миры и места действия",
+	"discover.searchSections.eras": "Эпохи",
+	"discover.searchSections.world": "Со всего мира",
+	"discover.searchSections.collections": "Подборки",
+	"discover.popularRail.out": "Выходит",
+	"discover.popularRail.comingDay": "Скоро",
+	"discover.titleLibrary.turnShowOnHint": "Включите сериал, чтобы начать поиск.",
+	"discover.leftovers.reason.seasons_differ": "Найден только по номеру TMDB из старого приложения: проверьте, что это тот же сериал, затем сопоставьте файл сами"
 }

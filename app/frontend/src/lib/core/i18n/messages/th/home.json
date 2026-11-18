@@ -274,5 +274,13 @@
 	"home.sourcesOff": "ปิดอยู่ในส่วนเสริม",
 	"home.noneForSources": "ไม่มีสำหรับสิ่งที่แหล่งที่มาของคุณพบ",
 	"home.addedTwice": "ถูกเพิ่มซ้ำ",
-	"home.addedTwiceMany": "ถูกเพิ่มซ้ำ"
+	"home.addedTwiceMany": "ถูกเพิ่มซ้ำ",
+	"home.notSetUpYet": "ยังไม่ได้ตั้งค่า",
+	"home.setUpToAdd": "ตั้งค่าให้เสร็จเพื่อเพิ่ม {name}",
+	"home.comingThisWeek": "มาสัปดาห์นี้",
+	"home.thisWeek": "สัปดาห์นี้",
+	"home.landingThisWeek": "ตอนและภาพยนตร์ที่มาสัปดาห์นี้",
+	"home.popularThisWeek": "ผลงานยอดนิยมที่มาสัปดาห์นี้",
+	"home.peopleCheck": "ตรวจสอบผู้ใช้",
+	"home.cantReadUsers": "อ่านรายชื่อผู้ใช้ไม่ได้"
 }

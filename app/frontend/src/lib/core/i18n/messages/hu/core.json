@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "AI-asszisztensek használhatják a HolyArrst",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Kulcsok és útvonalak más alkalmazásoknak",
+	"core.settings.remoteAccess.label": "Távoli elérés",
+	"core.settings.remoteAccess.about": "Érd el a HolyArrst otthonon kívülről",
 	"core.settings.tmdb.label": "Metaadatok",
 	"core.settings.tmdb.about": "Innen jönnek a plakátok és a nevek",
 	"core.settings.health.label": "Állapot-ellenőrzések",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "Egy letöltőnek nincs mentési mappája, így a HolyArrs nem tudja importálni a kész letöltéseit.",
 	"core.api.sourceOff": "Néhány sor ki van kapcsolva ezen a telepítésen.",
 	"core.plain.noDownloader": "A forrásaid olyan letöltéseket találnak, amelyeket egyik letöltőd sem tud fogadni, így egyik sem küldhető el.",
-	"core.plain.sameDownloader": "Két letöltő ugyanahhoz a letöltő alkalmazáshoz kapcsolódik, így a letöltések kétszer is megjelenhetnek."
+	"core.plain.sameDownloader": "Két letöltő ugyanahhoz a letöltő alkalmazáshoz kapcsolódik, így a letöltések kétszer is megjelenhetnek.",
+	"core.plain.peopleCheck": "A médiaszerver felhasználólistája nem olvasható, ezért az ott eltávolítottak itt nincsenek kikapcsolva.",
+	"core.plain.deleted": "törölve",
+	"core.plain.deletedName": "{name} (törölve)"
 }

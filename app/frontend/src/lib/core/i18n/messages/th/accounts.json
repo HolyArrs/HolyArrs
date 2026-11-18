@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "บันทึกภาษาไม่สำเร็จ",
 	"accounts.language.count.one": "1 ภาษา",
 	"accounts.language.count.other": "{n} ภาษา",
-	"accounts.account.watchEveryone": "เจ้าของเปิดสิ่งนี้ให้ทุกคน ปิดทั้งสองอย่างเพื่อหยุด"
+	"accounts.account.watchEveryone": "เจ้าของเปิดสิ่งนี้ให้ทุกคน ปิดทั้งสองอย่างเพื่อหยุด",
+	"accounts.watch.title": "เครื่องหมายดูแล้ว",
+	"accounts.watch.hint": "เชื่อมบัญชีของคุณบนเซิร์ฟเวอร์สื่อที่นี่ เพื่อให้คลังแสดงสิ่งที่คุณดูแล้ว",
+	"accounts.watch.as": "{server} ในชื่อ {name}",
+	"accounts.watch.nameOn": "ชื่อบน {server}",
+	"accounts.watch.passwordOnce": "รหัสผ่านของคุณส่งไปที่ {server} เท่านั้นและไม่ถูกเก็บไว้",
+	"accounts.watch.linked": "เชื่อมกับ {name} บน {server} แล้ว",
+	"accounts.watch.unlinked": "ยกเลิกการเชื่อมแล้ว",
+	"accounts.login.importPaused": "การลงชื่อเข้าใช้ของคุณหมดอายุ การนำเข้าจึงหยุดชั่วคราว ลงชื่อเข้าใช้ เปิด นำเข้าไลบรารี แล้วกด สแกน เพื่อทำต่อ"
 }

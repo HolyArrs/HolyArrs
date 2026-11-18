@@ -8,7 +8,7 @@
 "welcome.whichAppDownloads": "どのアプリでダウンロードしますか?",
 "welcome.connectTheOneYou": "お使いのものを接続します。",
 "welcome.whereShouldWeSearch": "どこを検索しますか?",
-"welcome.linkProwlarrOrJackett": "Prowlarr または Jackett を連携すると、サイトも一緒に使えます。",
+"welcome.linkProwlarrOrJackett": "Prowlarr または Jackett を連携すると、サイトも一緒に使えます。スキップして、設定 › ソースで組み込みサイトを追加することもできます。",
 "welcome.bringYourApps": "アプリを引き継ぐ",
 "welcome.weOnlyReadThem": "読み取るだけです。メディアファイルは移動しません。",
 "welcome.youReSet": "準備完了です",

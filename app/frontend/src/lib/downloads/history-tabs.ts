@@ -180,5 +180,47 @@ export function dayItems(rows: HistoryRow[]): DayItem[] {
 	return out;
 }
 
+/** A run of back-to-back repeats folded into one row with a count. */
+export type SameItem = { type: 'same'; key: string; rows: HistoryRow[] };
+
+const noteSearches = new Set(['search_done', 'search_failed', 'feed_checked']);
+
+/** The Sources note of a one-Event search or feed check; '' for any other row. */
+export function searchNote(r: HistoryRow): string {
+	return !r.steps.length && r.events.length === 1 && noteSearches.has(r.head.Kind) ? str(r.head.Data?.sources_note) : '';
+}
+
+/** What makes two rows repeats: one Event each, same kind, title, person and line. A search with a Sources note matches on its title and note, so one search per episode folds. */
+export function sameKey(r: HistoryRow, line: (r: HistoryRow) => string): string {
+	if (r.steps.length || r.events.length > 1) return '';
+	const note = searchNote(r);
+	if (note) return ['noted', r.head.Kind, r.head.TitleID ?? 0, r.head.Actor?.kind ?? '', r.head.Actor?.id ?? 0, note].join('|');
+	return [r.head.Kind, r.head.TitleID ?? 0, r.head.Actor?.kind ?? '', r.head.Actor?.id ?? 0, line(r)].join('|');
+}
+
+/** Folds back-to-back repeats of one Event (12 sign-ins in a row, a search per episode) into one row with a count. */
+export function foldSame(items: DayItem[], line: (r: HistoryRow) => string): (DayItem | SameItem)[] {
+	const out: (DayItem | SameItem)[] = [];
+	for (const it of items) {
+		const last = out[out.length - 1];
+		if (it.type !== 'row') { out.push(it); continue; }
+		const k = sameKey(it.row, line);
+		if (k && last?.type === 'same' && sameKey(last.rows[0], line) === k) {
+			last.rows.push(it.row);
+			// Keyed by the oldest row, so a new repeat on top keeps an open run open.
+			last.key = `s${it.row.key}`;
+			continue;
+		}
+		if (k && last?.type === 'row' && sameKey(last.row, line) === k) {
+			out[out.length - 1] = { type: 'same', key: `s${it.row.key}`, rows: [last.row, it.row] };
+			continue;
+		}
+		out.push(it);
+	}
+	return out;
+}
+
+const str = (v: unknown) => (typeof v === 'string' ? v : '');
+
 const WHY = new Set(['Why', 'Error', 'Message']);
 

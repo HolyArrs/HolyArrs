@@ -213,5 +213,16 @@
 	"ui.wikiFacts.won": "Vinto: {name}",
 	"ui.wikiFacts.nominated": "Candidato: {name}",
 	"ui.wikiFacts.andMore": "e altri {count}",
-	"ui.pageLoader.loading": "Caricamento"
+	"ui.pageLoader.loading": "Caricamento",
+	"ui.connectHelp.link": "Come risolvere",
+	"ui.ask.remove": "Rimuovi",
+	"ui.ask.restore": "Ripristina",
+	"ui.ask.stop": "Interrompi",
+	"ui.ask.revoke": "Revoca",
+	"ui.ask.replace": "Sostituisci",
+	"ui.ask.unlink": "Scollega",
+	"ui.ask.turnOff": "Disattiva",
+	"ui.ask.markFailed": "Segna come non riuscito",
+	"ui.ask.reset": "Reimposta",
+	"ui.ask.import": "Importa"
 }

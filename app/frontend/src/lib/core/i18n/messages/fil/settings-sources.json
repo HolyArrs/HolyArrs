@@ -7,6 +7,7 @@
 	"settings.sources.title": "Mga Source",
 	"settings.sources.add": "Magdagdag ng Source",
 	"settings.sources.lead": "Una ang Priyoridad 1. Lalaktawan nang hanggang anim na oras ang Source na nabigo. Para sa mga site na walang feed, idagdag ang Jackett o Prowlarr bilang Torznab feed.",
+	"settings.sources.builtIn": "Hindi kailangan ng Jackett o Prowlarr para sa mga built-in na site: {sites}. Piliin ang {site} sa {kind}.",
 	"settings.sources.change": "Baguhin ang {name}",
 	"settings.sources.name": "Pangalan",
 	"settings.sources.feedKind": "Uri ng feed",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "I-save",
 	"settings.sources.cancel": "Kanselahin",
 	"settings.sources.none": "Walang Source",
-	"settings.sources.noneText": "Magdagdag ng Torznab o Newznab feed, o Jackett o Prowlarr.",
+	"settings.sources.noneText": "Magdagdag ng built-in na site, Torznab o Newznab feed, o Jackett o Prowlarr.",
 	"settings.sources.rowTitle": "{url} · priyoridad {priority} · {uses}",
 	"settings.sources.priorityUses": "Priyoridad {priority} · {uses}",
 	"settings.sources.keyIs": "key {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Site",
 	"settings.sources.addressSite": "Ang sariling address ng site. Palitan lang kung lumipat ang site.",
 	"settings.sources.siteKeyLabel": "Cookie o RSS key",
-	"settings.sources.siteKeyHint": "Mula sa sarili mong account: uid at pass mula sa cookie ng browser, o u at tp mula sa iyong RSS link. Naka-encrypt ang pagkakatago."
+	"settings.sources.siteKeyHint": "Mula sa sarili mong account: uid at pass mula sa cookie ng browser, o u at tp mula sa iyong RSS link. Naka-encrypt ang pagkakatago.",
+	"settings.sources.sendTo": "Ipadala ang mga download sa",
+	"settings.sources.sendToAny": "Kahit anong Downloader",
+	"settings.sources.sendToHint": "Lahat ng napili mula sa Source na ito ay papunta lang sa Downloader na ito. Kung sira ito, maghihintay.",
+	"settings.sources.sendToGone": "Inalis ang napiling Downloader. Ang mga download mula sa Source na ito ay papunta na sa kahit anong Downloader."
 }

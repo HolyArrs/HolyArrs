@@ -157,3 +157,23 @@ func SnapshotKind(ctx context.Context, q database.Querier, id int64) (kind, addr
 	err = q.QueryRowContext(ctx, "SELECT app_kind, address FROM migrate_snapshots WHERE id = ?", id).Scan(&kind, &address)
 	return kind, address, err
 }
+
+// SetKeepUpToDateTx sets whether a title is kept up to date.
+func SetKeepUpToDateTx(tx *sql.Tx, titleID int64, keep bool) error {
+	_, err := tx.Exec(`UPDATE titles SET keep_up_to_date = ? WHERE id = ?`, keep, titleID)
+	return err
+}
+
+// liveNamed is the id of the person here (not deleted) with this name, any
+// case, or 0.
+func liveNamed(ctx context.Context, db *sql.DB, name string) int64 {
+	var id int64
+	_ = db.QueryRowContext(ctx, "SELECT id FROM users WHERE name = ? COLLATE NOCASE AND removed_at = ''", name).Scan(&id)
+	return id
+}
+
+// nameTaken says whether any row, a deleted person's included, holds name.
+func nameTaken(ctx context.Context, db *sql.DB, name string) bool {
+	var id int64
+	return db.QueryRowContext(ctx, "SELECT id FROM users WHERE name = ? COLLATE NOCASE", name).Scan(&id) == nil
+}

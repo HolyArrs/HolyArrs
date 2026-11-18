@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Illesszen be azonosítót, például tmdb:693134 vagy tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Vagy írja le, például „űrfilm egy robottal 2014-ből”.",
 	"discover.search.lookEverywhere": "Keresés mindenhol",
-	"discover.search.searchIndexersFor": "Keresés a Forrásokban: „{searched}”",
+	"discover.search.searchIndexersFor": "Források ellenőrzése",
 	"discover.search.topMatches": "Legjobb találatok",
 	"discover.people.goToTheFilmography": "Ugrás a filmográfiához",
 	"discover.people.filmography": "Filmográfia",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Nem illik ehhez a változathoz",
 	"discover.leftovers.reason.movie_has_file": "A filmnek már van fájlja",
 	"discover.leftovers.reason.replaced_by_hand": "Másik fájl váltotta fel",
-	"discover.leftovers.reason.unmatched": "Hozzárendelés kézzel törölve"
+	"discover.leftovers.reason.unmatched": "Hozzárendelés kézzel törölve",
+	"discover.searchSections.genres": "Műfajok",
+	"discover.searchSections.moods": "Hangulatok",
+	"discover.searchSections.stories": "Történetek és témák",
+	"discover.searchSections.worlds": "Világok és helyszínek",
+	"discover.searchSections.eras": "Korszakok",
+	"discover.searchSections.world": "A nagyvilágból",
+	"discover.searchSections.collections": "Gyűjtemények",
+	"discover.popularRail.out": "Megjelenik",
+	"discover.popularRail.comingDay": "Érkezik",
+	"discover.titleLibrary.turnShowOnHint": "Kapcsold be a sorozatot, hogy elinduljon a keresés.",
+	"discover.leftovers.reason.seasons_differ": "Csak a régi alkalmazás TMDB-száma alapján található meg: ellenőrizd, hogy ugyanaz a sorozat-e, majd párosítsd a fájlt magad"
 }

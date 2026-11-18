@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barHeight, emptyForm, formBody, formFrom, ms, sourceTone, uses } from './api.ts';
+import { barHeight, emptyForm, formBody, formFrom, ms, sendToChoices, sourceTone, uses } from './api.ts';
 import type { SourceView } from './types.ts';
 
 const saved: SourceView = {
@@ -50,6 +50,21 @@ describe('sources', () => {
 		expect(b.use_for).toEqual({ feed: true, auto_search: false, hand_search: true });
 		expect(b.priority).toBe(10);
 		expect(b.proxy).toBe('socks5://me@10.0.0.2:1080');
+	});
+
+	it('keeps the Downloader a Source sends to', () => {
+		expect(emptyForm().downloader_id).toBe(0);
+		expect(formBody(formFrom({ ...saved, downloader_id: 4 })).downloader_id).toBe(4);
+	});
+
+	it('offers only live Downloaders of the same kind and spots a removed one', () => {
+		const list = [
+			{ id: 1, name: 'Public', protocol: 'torrent' },
+			{ id: 2, name: 'SAB', protocol: 'usenet' }
+		];
+		expect(sendToChoices(list, 'torrent', 1)).toEqual({ choices: [{ id: 1, name: 'Public' }], missing: false });
+		expect(sendToChoices(list, 'torrent', 9).missing).toBe(true);
+		expect(sendToChoices(list, 'torrent', 0).missing).toBe(false);
 	});
 
 	it('keeps an rss Source to the newest list', () => {

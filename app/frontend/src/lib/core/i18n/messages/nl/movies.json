@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Keuzeregels voor deze variant",
 	"movies.versions.folderLabel": "Bibliotheekmap voor deze variant",
 	"movies.versions.cancel": "Annuleren",
-	"movies.versions.addButton": "Variant toevoegen"
+	"movies.versions.addButton": "Variant toevoegen",
+	"movies.versions.setEdition": "Editie instellen",
+	"movies.versions.editionFileHint": "Welke editie dit bestand is, bijvoorbeeld Theatrical of Directors Cut. Laat leeg om het te wissen.",
+	"movies.versions.unprotectConfirm": "Bescherming van {label} verwijderen? Een betere kopie kan het dan weer vervangen.",
+	"movies.versions.editionChars": "Niet toegestaan:",
+	"movies.versions.editionInvalid": "Deze editie kan niet worden gebruikt. Houd hem kort (letters met accenten en niet-Latijnse letters nemen meer ruimte in), laat de hierboven genoemde tekens weg en eindig niet met een punt.",
+	"movies.versions.editionDevice": "Windows reserveert de naam {name} voor apparaten, dus die kan niet worden gebruikt. Typ een andere."
 }

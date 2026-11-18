@@ -64,6 +64,7 @@ export interface SourceView {
 	min_seeders: number | null;
 	limits: SourceLimits;
 	tags?: string[];
+	downloader_id?: number;
 	state: string;
 	health: SourceHealth;
 	priority: number;

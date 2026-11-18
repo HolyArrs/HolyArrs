@@ -52,7 +52,7 @@ test('edition decision requires the check and retries with the confirmed edition
 	let decided = false;
 	let body: Record<string, unknown> | undefined;
 	await page.route('**/api/v1/needs-decision', (route) => route.fulfill({ json: decided ? { items: [], count: 0 } : {
-		items: [{ slot_id: 900, title_id: 1, title: 'Paper Harbour', year: 2023, version: 'HD', versions: 1, why: 'conflict', reason: 'The edition needs checking.', has_copy: false, since: '2026-10-15T12:00:00Z', kind: 'movie', download_id: 800 }],
+		items: [{ slot_id: 900, title_id: 1, title: 'Paper Harbour', year: 2023, version: 'HD', versions: 1, why: 'conflict', reason: 'file and release name disagree about the edition; confirm it explicitly', has_copy: false, since: '2026-10-15T12:00:00Z', kind: 'movie', download_id: 800 }],
 		count: 1
 	} }));
 	await page.route('**/api/v1/downloads/800/edition', async (route) => {

@@ -13,6 +13,7 @@
 	"settings.parts.couldntConnect": "Није успело повезивање: {name}",
 	"settings.parts.connected": "{name} је повезан",
 	"settings.parts.title": "Делови",
+	"settings.parts.onOff": "Укључи или искључи делове",
 	"settings.parts.ownerOnly": "Само власник и администратори",
 	"settings.parts.safeMode": "HolyArrs ради у безбедном режиму: ради само језгро, а прекидачи делова и управљање етапама се одбијају до нормалног покретања. Користи <b>Поново покрени HolyArrs</b> у <a>Опасној зони</a> да изађеш из безбедног режима.",
 	"settings.parts.dangerZone": "Опасна зона",

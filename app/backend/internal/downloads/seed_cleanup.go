@@ -265,10 +265,8 @@ func (m *Manager) keepFilesWhy(ctx context.Context, e Engine, dr domain.Download
 	if err != nil {
 		return "HolyArrs could not read its Library folders"
 	}
-	for _, k := range keep {
-		if k = strings.TrimSpace(k); k != "" && (underAny(local, []string{k}) || underAny(filepath.Clean(k), []string{local})) {
-			return local + " is a Library folder or is in or around one"
-		}
+	if inLibrary(local, keep) {
+		return local + " is a Library folder or is in or around one"
 	}
 	roots := []string{m.SavePath}
 	for _, pm := range dr.PathMap {
@@ -278,6 +276,10 @@ func (m *Manager) keepFilesWhy(ctx context.Context, e Engine, dr domain.Download
 		if r = strings.TrimSpace(r); r != "" && filepath.Clean(r) == local {
 			return local + " is a whole save folder"
 		}
+	}
+	// Usenet jobs never share their files with another job.
+	if dr.Protocol == "usenet" {
+		return ""
 	}
 	all, err := listEverything(ctx, e, dr)
 	if err != nil {

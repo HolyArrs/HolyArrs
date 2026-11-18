@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} در انتظار",
 	"frame.nav.new": "{n} جدید",
 	"frame.nav.manage": "مدیریت",
+	"frame.nav.activity": "فعالیت",
+	"frame.nav.system": "سیستم",
 	"frame.nav.history": "تاریخچه",
 	"frame.nav.status": "وضعیت",
 	"frame.nav.settings": "تنظیمات",
+	"frame.nav.plugins": "افزونه‌ها",
 	"frame.nav.goTo": "برو به",
 	"frame.nav.active": "{n} فعال، {percent}%",
 	"frame.nav.decide": "{n} مورد نیاز به تصمیم دارد",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "سیستم",
 	"frame.layout.switch": "تعویض حساب",
 	"frame.layout.signOut": "خروج",
+	"frame.layout.support": "حمایت از HolyArrs",
 	"frame.layout.signOutFail": "خروج تأیید نشد",
 	"frame.layout.signedOut": "خارج شدی",
 	"frame.layout.accountMenu": "{name}، {role}: حساب و ظاهر",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs خودش دوباره تلاش می‌کند",
 	"frame.feeds.clearNow": "همین حالا پاک شود",
 	"frame.feeds.cleared": "از دانلودر پاک شد",
-	"frame.feeds.clearStill": "هنوز پاک نشده"
+	"frame.feeds.clearStill": "هنوز پاک نشده",
+	"frame.error.pageGone": "این صفحه وجود ندارد. شاید پیوند قدیمی یا اشتباه باشد."
 }

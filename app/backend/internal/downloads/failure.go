@@ -15,6 +15,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
@@ -96,19 +97,38 @@ func (m *Manager) Discard(ctx context.Context, downloadID int64) error {
 // Remove ends an active download at the user's request. The row and slots change first and the client call comes after, so a client that is down cannot block the user; a retry is queued through removal_pending.
 // TurnDown also rejects the Release. With SearchAgain the slots stay failed and OnFailed looks for another Release; otherwise they go back to wanted.
 func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, by domain.Actor, who string) error {
+	_, err := m.RemoveSaid(ctx, downloadID, c, by, who)
+	return err
+}
+
+// RemoveSaid is Remove that also returns the Downloader's refusal in words, or "".
+func (m *Manager) RemoveSaid(ctx context.Context, downloadID int64, c RemoveChoice, by domain.Actor, who string) (string, error) {
 	var d domain.Download
 	if err := database.Get(ctx, m.Store.Read(), "downloads", downloadID, &d); err != nil {
-		return err
+		return "", err
 	}
 	// A finished download whose Downloader was removed may go too: nothing
 	// else can end it. Only HolyArrs' own record changes then.
 	dr, gone, err := m.downloaderGone(ctx, d.DownloaderID)
 	if err != nil {
-		return err
+		return "", err
 	}
-	removable := func(state string) bool { return isActive(state) || gone && (state == "finished" || state == "seeding") }
+	// A finished download on a Downloader HolyArrs may change goes too: the
+	// person stops its seeding or clears it, and the Library copy stays.
+	removable := func(state string) bool { return isActive(state) || finishedState(state) }
 	if !removable(d.State) {
-		return ErrNotActive
+		return "", ErrNotActive
+	}
+	kept, later := "", false
+	if finishedState(d.State) && !gone {
+		if err := m.doneRemovable(ctx, dr, d, &c); err != nil {
+			return "", err
+		}
+		if c.DeleteFiles {
+			if kept, later = m.doneKeepWhy(ctx, dr, d); kept != "" {
+				c.DeleteFiles = false
+			}
+		}
 	}
 	reason := "removed"
 	if who != "" {
@@ -132,7 +152,13 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 			return err
 		}
 		if !gone {
-			if _, err := tx.Exec("UPDATE downloads SET removal_pending = ? WHERE id = ?", c.DeleteFiles, d.ID); err != nil {
+			pending := 0
+			if later {
+				pending = removalCheckLater
+			} else if c.DeleteFiles {
+				pending = 1
+			}
+			if _, err := tx.Exec("UPDATE downloads SET removal_pending = ? WHERE id = ?", pending, d.ID); err != nil {
 				return err
 			}
 		}
@@ -170,12 +196,26 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 		return nil
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 	m.publish("download", next)
-	m.event(ctx, &next, "download_removed", "Download "+reason)
-	if !gone {
-		m.removeFromClient(ctx, dr, d.ID, &next, c.DeleteFiles)
+	said := "Download " + reason
+	extra := map[string]any{"delete_files": c.DeleteFiles}
+	if kept != "" {
+		said += "; its files were kept: " + kept
+		extra["kept"] = kept
+	}
+	note := ""
+	if later {
+		// Nothing is removed yet: History says so now and says what
+		// happened to the files once the later try works.
+		note = dr.Name + " is not answering right now; HolyArrs tries again on the next sync"
+		m.event(ctx, &next, "download_not_removed", note)
+	} else {
+		m.eventWith(ctx, &next, "download_removed", said, extra)
+	}
+	if !gone && !later {
+		note = m.removeFromClient(ctx, dr, d.ID, &next, c.DeleteFiles)
 	}
 	for _, sid := range moved {
 		if search {
@@ -187,21 +227,27 @@ func (m *Manager) Remove(ctx context.Context, downloadID int64, c RemoveChoice, 
 		}
 		m.publish("slot", map[string]any{"id": sid, "state": rest[sid], "reason": reason})
 	}
-	return nil
+	return note, nil
 }
 
 // removeFromClient asks the Downloader to drop a removed download; a refusal
 // stays in removal_pending and is asked again on the next sync.
-func (m *Manager) removeFromClient(ctx context.Context, dr domain.Downloader, id int64, next *domain.Download, deleteFiles bool) {
+// It returns that refusal in words, or "".
+func (m *Manager) removeFromClient(ctx context.Context, dr domain.Downloader, id int64, next *domain.Download, deleteFiles bool) string {
 	e, err := m.engine(ctx, dr)
-	if err != nil {
-		return
+	if err == nil {
+		err = e.Remove(ctx, next.ExternalID, deleteFiles)
 	}
-	if err := e.Remove(ctx, next.ExternalID, deleteFiles); err != nil && !errors.Is(err, ErrNotFound) {
-		m.event(ctx, next, "download_not_removed", fmt.Sprintf("Could not remove the download from %s: %v; HolyArrs tries again on the next sync", dr.Name, firstLine(err.Error())))
-	} else {
-		m.removalDone(ctx, id)
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		summary := fmt.Sprintf("Could not remove the download from %s: %v; HolyArrs tries again on the next sync", dr.Name, firstLine(err.Error()))
+		if errors.Is(err, outbound.ErrSuppressed) {
+			summary = dr.Name + " is not answering right now; HolyArrs tries again on the next sync"
+		}
+		m.event(ctx, next, "download_not_removed", summary)
+		return summary
 	}
+	m.removalDone(ctx, id)
+	return ""
 }
 
 // dangerous returns names of files that run code or hide their type. The bidi control characters reverse text, so a name can look like a harmless extension.
@@ -399,6 +445,11 @@ func (m *Manager) failDead(ctx context.Context, dr domain.Downloader, d domain.D
 
 // readFinished finds the final files of a finished job. It reads the disk through the path maps and never leaves the save root or the mapped roots, so a client cannot point HolyArrs at other files. If the path is not visible here, it falls back to the name and size the client gave.
 func readFinished(j Job, pm []domain.PathMap, saveRoot string) (string, []File) {
+	return readFinishedIn(context.Background(), j, pm, saveRoot)
+}
+
+// readFinishedIn is readFinished that stops walking a folder when ctx ends; what it read until then is not the whole list.
+func readFinishedIn(ctx context.Context, j Job, pm []domain.PathMap, saveRoot string) (string, []File) {
 	content := j.ContentPath
 	if content == "" {
 		return j.SavePath, nil
@@ -422,7 +473,7 @@ func readFinished(j Job, pm []domain.PathMap, saveRoot string) (string, []File) 
 	case err == nil && fi.IsDir():
 		var out []File
 		_ = filepath.WalkDir(local, func(p string, d fs.DirEntry, err error) error {
-			if len(out) >= walkMaxFiles {
+			if len(out) >= walkMaxFiles || ctx.Err() != nil {
 				return fs.SkipAll
 			}
 			// Symlinks are skipped so the walk cannot leave the roots.
@@ -492,7 +543,7 @@ func (m *Manager) retryRemovals(ctx context.Context) {
 	type pending struct {
 		id, downloader int64
 		external       string
-		deleteFiles    bool
+		pending        int64
 	}
 	rows, err := m.Store.Read().QueryContext(ctx, "SELECT id, downloader_id, external_id, removal_pending FROM downloads WHERE removal_pending IS NOT NULL ORDER BY id")
 	if err != nil {
@@ -501,7 +552,7 @@ func (m *Manager) retryRemovals(ctx context.Context) {
 	var list []pending
 	for rows.Next() {
 		var p pending
-		if rows.Scan(&p.id, &p.downloader, &p.external, &p.deleteFiles) == nil {
+		if rows.Scan(&p.id, &p.downloader, &p.external, &p.pending) == nil {
 			list = append(list, p)
 		}
 	}
@@ -518,8 +569,25 @@ func (m *Manager) retryRemovals(ctx context.Context) {
 		if err != nil {
 			continue
 		}
-		if err := e.Remove(ctx, p.external, p.deleteFiles); err == nil || errors.Is(err, ErrNotFound) {
+		deleteFiles, kept := p.pending != 0, ""
+		if p.pending == removalCheckLater {
+			var ok bool
+			if kept, ok = m.laterKeepWhy(ctx, e, dr, p.external); !ok {
+				continue
+			}
+			deleteFiles = kept == ""
+		}
+		if err := e.Remove(ctx, p.external, deleteFiles); err == nil || errors.Is(err, ErrNotFound) {
 			m.removalDone(ctx, p.id)
+			var d domain.Download
+			if database.Get(ctx, m.Store.Read(), "downloads", p.id, &d) == nil {
+				said, extra := "Removed from "+dr.Name+" on a later try", map[string]any{"delete_files": deleteFiles, "retried": true}
+				if kept != "" {
+					said += "; its files were kept: " + kept
+					extra["kept"] = kept
+				}
+				m.eventWith(ctx, &d, "download_removed", said, extra)
+			}
 		}
 	}
 }

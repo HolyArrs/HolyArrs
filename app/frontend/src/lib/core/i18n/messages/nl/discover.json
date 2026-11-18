@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Plak een ID, zoals tmdb:693134 of tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Of beschrijf het, zoals “ruimtefilm met een robot uit 2014”.",
 	"discover.search.lookEverywhere": "Overal zoeken",
-	"discover.search.searchIndexersFor": "Bronnen doorzoeken naar “{searched}”",
+	"discover.search.searchIndexersFor": "Controleer je bronnen",
 	"discover.search.topMatches": "Beste overeenkomsten",
 	"discover.people.goToTheFilmography": "Ga naar de filmografie",
 	"discover.people.filmography": "Filmografie",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Past niet bij deze versie",
 	"discover.leftovers.reason.movie_has_file": "De film heeft al een bestand",
 	"discover.leftovers.reason.replaced_by_hand": "Vervangen door een ander bestand",
-	"discover.leftovers.reason.unmatched": "Koppeling met de hand opgeheven"
+	"discover.leftovers.reason.unmatched": "Koppeling met de hand opgeheven",
+	"discover.searchSections.genres": "Genres",
+	"discover.searchSections.moods": "Stemmingen",
+	"discover.searchSections.stories": "Verhalen en thema's",
+	"discover.searchSections.worlds": "Werelden en decors",
+	"discover.searchSections.eras": "Tijdperken",
+	"discover.searchSections.world": "Uit de hele wereld",
+	"discover.searchSections.collections": "Collecties",
+	"discover.popularRail.out": "Verschijnt",
+	"discover.popularRail.comingDay": "Binnenkort",
+	"discover.titleLibrary.turnShowOnHint": "Zet de serie aan om te beginnen met zoeken.",
+	"discover.leftovers.reason.seasons_differ": "Alleen gevonden via het TMDB-nummer van de oude app: controleer of het dezelfde serie is en koppel het bestand dan zelf"
 }

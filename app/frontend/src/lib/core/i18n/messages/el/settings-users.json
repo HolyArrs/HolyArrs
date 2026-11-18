@@ -83,6 +83,7 @@
 	"settings.users.preset": "Προεπιλογή",
 	"settings.users.comingSoon": "Σύντομα",
 	"settings.users.custom": "Προσαρμοσμένο",
+	"settings.users.customHint": "Ο δικός σας συνδυασμός των διακοπτών παρακάτω. Η επιλογή προεπιλογής τον αντικαθιστά· επιλέξτε ξανά Προσαρμοσμένο για να τον επαναφέρετε.",
 	"settings.users.ageRating": "Ηλικιακή αξιολόγηση",
 	"settings.users.newPasswordFor": "Νέος κωδικός για τον χρήστη {name}",
 	"settings.users.passwordNote": "Χρησιμοποιήστε το όταν ο χρήστης {name} ξέχασε τον δικό του. Αποσυνδέεται από παντού και συνδέεται ξανά με τον νέο. Πείτε του τον κωδικό από κοντά.",
@@ -101,5 +102,19 @@
 	"settings.users.noteExample": "π.χ. Μαμά",
 	"settings.users.days": "Ημέρες ισχύος του συνδέσμου",
 	"settings.users.makeInvite": "Δημιουργία συνδέσμου πρόσκλησης",
-	"settings.users.permAuto4k": "Αιτήματα 4K που εγκρίνονται χωρίς αναμονή"
+	"settings.users.permAuto4k": "Αιτήματα 4K που εγκρίνονται χωρίς αναμονή",
+	"settings.users.serverAccount": "Λογαριασμός διακομιστή",
+	"settings.users.pickAccount": "Επιλέξτε λογαριασμό σε διακομιστή πολυμέσων",
+	"settings.users.accountLinked": "Συνδέθηκε με {name}",
+	"settings.users.removedOnServer": "Αφαιρέθηκε από τον διακομιστή {word}, γι’ αυτό απενεργοποιήθηκε εδώ",
+	"settings.users.delete": "Διαγραφή",
+	"settings.users.deleteName": "Διαγραφή {name}",
+	"settings.users.confirmDelete": "Διαγραφή του {name}; Αποσυνδέεται οριστικά και τα κλειδιά του αφαιρούνται. Τα αιτήματά του μένουν, ως αφαιρεμένο άτομο.",
+	"settings.users.deleteYes": "Διαγραφή ατόμου",
+	"settings.users.keep": "Διατήρηση",
+	"settings.users.deleted": "Ο {name} διαγράφηκε",
+	"settings.users.couldntDelete": "Δεν ήταν δυνατή η διαγραφή",
+	"settings.users.confirmDeleteKeys": "Τα κλειδιά Seerr που δημιούργησε σταματούν να λειτουργούν για όλους μέχρι να δημιουργηθεί νέο.",
+	"settings.users.qualities": "Ποιότητες",
+	"settings.users.qualitiesHint": "Μπορούν να διαλέξουν μόνο τις ενεργές. Με όλες ενεργές, προσφέρονται και οι νέες."
 }

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { bareNames, personText, shownPerson } from '#lib/core/plain.ts';
+	import PersonText from '#lib/ui/PersonText.svelte';
 	// The Requests page for approvers. One toolbar like Downloads: the status tabs as a pill group on the left, the Filter button (status and type) on the right. Each card is a small window: a dark card with the title's wide art and a frosted sheet holding who asked and the answers.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
@@ -13,6 +15,7 @@
 	import { lifecycle, upcoming, type Life } from './lifecycle.ts';
 	import { approverTabs, askTab, approverTab as tabOfAsk, type ApproverTab } from './ask-words.ts';
 	import { askedFor } from './asked-for.ts';
+	import { clearScope } from './remove-flow.svelte.ts';
 	import { qualityTag } from './quality-row.ts';
 	import { watchlistLine } from '../accounts/index.ts';
 	import { onDestroy, tick } from 'svelte';
@@ -83,7 +86,7 @@
 	const stDeclinedBy = (a: Ask) => {
 		if (!a.decided_by || a.state !== 'turned_down') return '';
 		const name = ctx.decidedBy(a);
-		return name && name !== a.decided_by.name ? name : '';
+		return name && name !== shownPerson(a.decided_by.name) ? name : '';
 	};
 	/** The detail after the word, from what the ask really carries. */
 	const stDetail = (a: Ask, l: Life) => {
@@ -148,7 +151,17 @@
 	const isFailed = (a: Ask) => lifeOf(a).stage === 'failed';
 	const ordered = $derived(ctx.approverTab === 'processing' ? [...list].sort((x, y) => Number(isFailed(y)) - Number(isFailed(x))) : list);
 	const cardsShown = $derived(status ? ordered.filter((a) => statusOf(a) === status) : ordered);
-	const failedCount = $derived(ctx.viewed.filter((a) => tabOfAsk(a) === 'processing' && isFailed(a)).length);
+	// The Failed cards: the tab's dot, and what Clear failed counts and removes (by id, so they always agree).
+	const failedAsks = $derived(ctx.viewed.filter((a) => tabOfAsk(a) === 'processing' && isFailed(a)));
+	const failedCount = $derived(failedAsks.length);
+	const doneAsks = $derived(ctx.viewed.filter((a) => tabOfAsk(a) === 'done'));
+	// With no type or person filter on, the tab counts are the server's totals of every request (the list holds only the newest 200), so the Clear buttons say the same number the clear takes. A Failed card whose download failed is known to this page alone, so those are added.
+	const dlFailed = $derived(failedAsks.filter((a) => a.title_id && !a.problem).length);
+	const failedTotal = $derived(ctx.totalsKnown ? ctx.approverCounts.failed + dlFailed : failedCount);
+	const doneTotal = $derived(ctx.totalsKnown ? ctx.approverCounts.done : doneAsks.length);
+	// A status picked narrows the Clear buttons to the cards it shows (the tab's dot still counts every failed one).
+	const failedClear = $derived(clearScope(failedAsks, statusOf, status, failedTotal));
+	const doneClear = $derived(clearScope(doneAsks, statusOf, status, doneTotal));
 	// Approve all: the waiting cards, minus any already in their Approved beat.
 	const toApprove = $derived(cardsShown.filter((x) => waiting(x) && !approving.has(x.id)));
 
@@ -321,7 +334,7 @@
 		<div class="tabs" role="group" aria-label={t('requests.board.status')}>
 			{#each approverTabs as tb (tb.tab)}
 				{@const n = ctx.approverCounts[tb.tab] ?? 0}
-				{@const bad = tb.tab === 'processing' ? failedCount : 0}
+				{@const bad = tb.tab === 'processing' ? failedTotal : 0}
 				{@const here = ctx.approverTab === tb.tab}
 				<div class="pw" class:on={here} role="presentation">
 					<button type="button" class="tab" class:zero={!n} aria-pressed={here} aria-label={t('requests.board.tabLabel', { label: tb.label, n }) + (bad ? t('requests.board.tabFailed', { n: bad }) : '') + (here && status ? t('requests.board.tabShowing', { status }) : '')} onclick={() => pickTab(tb.tab)}>{tb.label}<span class="n" class:wait={tb.tab === 'pending' && n}>{n}</span>{#if bad}<span class="fail-dot" aria-hidden="true"></span>{/if}</button>
@@ -336,14 +349,15 @@
 			{#if ctx.approverTab === 'pending' && toApprove.length > 1}
 				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />{t('requests.board.approveAll')}<span class="aa-n">{toApprove.length}</span></button>
 			{/if}
-			{#if ctx.approverTab === 'processing' && (ctx.approverCounts.failed ?? 0) > 0}
-				<button type="button" class="approve-all clear" in:fade={{ duration: ms(200) }} data-testid="clear-failed" onclick={() => ctx.clearAll('failed', ctx.approverCounts.failed)}><Icon name="trash" size={16} />{t('requests.board.clearFailed')}<span class="aa-n">{ctx.approverCounts.failed}</span></button>
-			{:else if ctx.approverTab === 'done' && (ctx.approverCounts.done ?? 0) > 0}
-				<button type="button" class="approve-all clear" in:fade={{ duration: ms(200) }} data-testid="clear-finished" onclick={() => ctx.clearAll('finished', ctx.approverCounts.done)}><Icon name="trash" size={16} />{t('requests.board.clearFinished')}<span class="aa-n">{ctx.approverCounts.done}</span></button>
+			{#if ctx.approverTab === 'processing' && failedClear.n > 0}
+				<button type="button" class="approve-all clear" in:fade={{ duration: ms(200) }} data-testid="clear-failed" onclick={() => ctx.clearAll('failed', () => failedClear.asks, failedClear.n, failedClear.narrowed)}><Icon name="trash" size={16} />{t('requests.board.clearFailed')}<span class="aa-n">{failedClear.n}</span></button>
+			{:else if ctx.approverTab === 'done' && doneClear.n > 0}
+				<button type="button" class="approve-all clear" in:fade={{ duration: ms(200) }} data-testid="clear-finished" onclick={() => ctx.clearAll('finished', () => doneClear.asks, doneClear.n, doneClear.narrowed)}><Icon name="trash" size={16} />{t('requests.board.clearFinished')}<span class="aa-n">{doneClear.n}</span></button>
 			{/if}
 			<RequestsFilter {ctx} {types} {subs} {hasSubs} {subsTotal} {filterCount} {status} {toneOf} {setStatus} {ms} bind:open={sfMenu} bind:btn={sfBtn} />
 		</div>
 	</div>
+		{#if ctx.listCap}<p class="capped" data-testid="requests-capped">{t('requests.board.capped', { shown: ctx.listCap.shown, total: ctx.listCap.total })}</p>{/if}
 		{#snippet stDecline(a: Ask)}
 			<button type="button" class="b no" aria-label={t('requests.window.declineName', { name: a.name })} data-testid="ask-decline" onclick={() => ctx.turnDown([a])}><Icon name="x" size={15} /><span class="bl">{t('requests.window.decline')}</span></button>
 		{/snippet}
@@ -356,12 +370,12 @@
 			{#if stChip(l)}
 				<span class="st-chip st-{stTone(l.tone)}">
 					<span class="st-sq">{@render stIc(l, 16)}</span>
-					<span class="st-id"><b>{stWord(l)}</b>{#if d}<span class="st-d">{d}</span>{/if}</span>
+					<span class="st-id"><b>{stWord(l)}</b>{#if d}<span class="st-d"><PersonText text={d} /></span>{/if}</span>
 				</span>
 			{:else}
 				<span class="st-cap st-{stTone(l.tone)}" class:st-half={can} class:st-live={l.stage === 'searching' || l.stage === 'downloading'} style:--st-fill={stFill(l)}>
 					<span class="st-meter" aria-hidden="true"></span>
-					{@render stIc(l, 16)}<span class="st-tx" title={l.stage === 'failed' && d ? d : undefined}><b>{stWord(l)}</b>{#if d}<span class="st-d">{d}</span>{/if}</span>
+					{@render stIc(l, 16)}<span class="st-tx" title={l.stage === 'failed' && d ? personText(d) : undefined}><b>{stWord(l)}</b>{#if d}<span class="st-d"><PersonText text={d} /></span>{/if}</span>
 				</span>
 				{#if can}{@render stDecline(a)}{/if}
 			{/if}
@@ -377,7 +391,7 @@
 				{@const wide = proxied(banner(a)) || null}
 				<li class="bc" data-ask={a.id} class:music={a.kind === 'artist'} class:answered={!waiting(a)} class:st-row={!waiting(a) && !ctx.isPending(a.id)} animate:rowGlide={{ duration: ms(340) }} in:fade={{ duration: ms(150) }} out:fade={{ duration: ms(220) }}>
 					<!-- The whole card opens the window; the answers sit above this layer. -->
-					<button type="button" class="open" aria-label={t('requests.board.open', { name: a.name, who: w.name })} aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
+					<button type="button" class="open" aria-label={t('requests.board.open', { name: a.name, who: personText(w.name) })} aria-haspopup="dialog" onclick={(e) => void show(a, e.currentTarget)}></button>
 					{#if askHref(a)}<a class="cl-go" href={to(askHref(a))} aria-label={t(a.kind === 'artist' ? 'requests.board.pageForArtist' : a.kind === 'show' ? 'requests.board.pageForShow' : 'requests.board.pageForMovie', { name: a.name })} title={t(a.kind === 'artist' ? 'requests.window.pageArtist' : a.kind === 'show' ? 'requests.window.pageShow' : 'requests.window.pageMovie')}><Icon name="arrowUpRight" size={16} /></a>{/if}
 					<div class="ban" class:noart={!wide && !photo && !a.poster}>
 						{#if wide}<img class="ban-img" src={wide} alt="" loading="lazy" decoding="async" />{:else if photo}<span class="ban-img" aria-hidden="true" style:background-image={`url("${photo}")`}></span>{:else if a.poster}<span class="ban-img soft" aria-hidden="true" style:background-image={`url("${proxied(a.poster)}")`}></span>{/if}
@@ -387,7 +401,7 @@
 					</div>
 					<div class="sheet-b">
 					<div class="body">
-						<span class="who"><Avatar name={w.name} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b>{w.name.replace(/\s*\(kid\)\s*$/i, '')}</b>{#if isKid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</span><span class="gl-when"><span class="gl-ask">{t('requests.board.asked')}{' '}</span><time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time>{#if watchlistLine(a.people, undefined)}<span data-testid="ask-from-watchlist">{` · ${t('requests.board.fromPlex')}`}</span>{/if}</span></span></span>
+						<span class="who"><Avatar name={bareNames(w.name)} src={w.avatar} size={26} /><span class="gl-id"><span class="gl-n"><b><PersonText text={w.name.replace(/\s*\(kid\)\s*$/i, '')} /></b>{#if isKid}<KidMark label={t('requests.window.kid')} size="sm" />{/if}</span><span class="gl-when"><span class="gl-ask">{t('requests.board.asked')}{' '}</span><time datetime={a.asked_at} title={dateTime(a.asked_at)}>{agoLong(a.asked_at)}</time>{#if watchlistLine(a.people, undefined)}<span data-testid="ask-from-watchlist">{` · ${t('requests.board.fromPlex')}`}</span>{/if}</span></span></span>
 					</div>
 					<div class="foot" inert={approving.has(a.id)}>
 						{#if waiting(a)}
@@ -472,7 +486,7 @@
 	.tab:hover:not([aria-pressed='true']) { background: color-mix(in srgb, var(--text) 6%, transparent); }
 	.tab.zero:not([aria-pressed='true']):not(:hover) { color: var(--text-muted); }
 	.n { font-weight: 600; font-variant-numeric: tabular-nums; }
-	.n.wait { color: var(--wait-text, var(--wait)); opacity: 1; }
+	.n.wait { opacity: 1; }
 	/* On the raised thumb (dark) the amber needs to be lighter to read. */
 	:global(:root[data-theme='dark']) .pw.on .n.wait { color: #ffd08a; }
 	@media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .pw.on .n.wait { color: #ffd08a; } }
@@ -486,6 +500,7 @@
 	/* Narrow phones: the three toolbar buttons drop their icons together so each word fits. */
 	@media (max-width: 379px) { .right .approve-all :global(svg), .right .rp-btn :global(svg), .right :global(.sf-btn .sf-funnel) { display: none; } }
 	.new-mark { align-self: flex-start; margin-bottom: 4px; padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/16px var(--font-ui); }
+	.capped { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
 	.approve-all:active { transform: scale(0.96); }
 	.aa-n { margin-left: -2px; font-variant-numeric: tabular-nums; }
 
@@ -593,11 +608,16 @@
 		.tabs { width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 		.tabs::-webkit-scrollbar { display: none; }
 		.tab { flex: none; padding: 0 12px; }
-		.right { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; margin-left: 0; }
+		.right { display: flex; flex-wrap: wrap; gap: 10px; margin-left: 0; }
+		/* Each button sizes to its words (long German labels keep their side padding) and the row shares what is left. */
+		.right > :global(*) { flex: 1 1 auto; }
 		.approve-all, .rp-btn { justify-content: center; }
 		/* Three buttons share the phone row: the count is on the Pending tab already. */
 		.approve-all { white-space: nowrap; }
+		.rp-v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		/* The count is on the Pending tab already, so only the Clear buttons say it. */
 		.aa-n { display: none; }
+		.approve-all.clear .aa-n { display: inline; }
 		.approve-all, .rp-btn { padding-inline: 10px; gap: 5px; }
 		.right :global(.sf-anchor), .right :global(.sf-anchor .sf-btn) { width: 100%; }
 		.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }

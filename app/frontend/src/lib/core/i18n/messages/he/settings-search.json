@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "דחיית ריליזים שפורסמו לפני היציאה",
 	"settings.search.refuseEarlyHint": "כנראה מזויפים. בחירת ריליז ידנית עדיין מציגה אותם, עם אזהרה.",
 	"settings.search.refuseTiny": "דחיית זיופים לפי גודל וסוג קובץ",
-	"settings.search.refuseTinyHint": "ריליזים קטנים מדי, קבצים ריקים וקובצי wmv או asf בשמות HD",
+	"settings.search.refuseTinyHint": "ריליזים קטנים מדי, קבצים ריקים, סרטונים חתוכים וקובצי wmv או asf בשמות HD",
 	"settings.search.grace": "שעות שריליז רשאי להיות מוקדם",
 	"settings.search.graceHint": "בגלל אזורי זמן. ברירת מחדל 24.",
 	"settings.search.floors": "בדיקת גודל קבצים בייבוא",

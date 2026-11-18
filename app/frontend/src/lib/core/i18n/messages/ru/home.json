@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Выключено в разделе «Части»",
 	"home.noneForSources": "нет для того, что находят ваши источники",
 	"home.addedTwice": "добавлен дважды",
-	"home.addedTwiceMany": "добавлены дважды"
+	"home.addedTwiceMany": "добавлены дважды",
+	"home.notSetUpYet": "Ещё не настроено",
+	"home.setUpToAdd": "Завершите настройку, чтобы добавить {name}",
+	"home.comingThisWeek": "На этой неделе",
+	"home.thisWeek": "на этой неделе",
+	"home.landingThisWeek": "Серии и фильмы, которые выходят на этой неделе",
+	"home.popularThisWeek": "Популярные премьеры этой недели",
+	"home.peopleCheck": "Проверка людей",
+	"home.cantReadUsers": "не удаётся прочитать список пользователей"
 }

@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Selle versiooni valikureeglid",
 	"movies.versions.folderLabel": "Selle versiooni meediakogu kaust",
 	"movies.versions.cancel": "Tühista",
-	"movies.versions.addButton": "Lisa versioon"
+	"movies.versions.addButton": "Lisa versioon",
+	"movies.versions.setEdition": "Määra väljaanne",
+	"movies.versions.editionFileHint": "Milline lõige see fail on, näiteks Theatrical või Directors Cut. Tühjendamiseks jäta tühjaks.",
+	"movies.versions.unprotectConfirm": "Kas eemaldada kaitse faililt {label}? Parem koopia võib selle taas asendada.",
+	"movies.versions.editionChars": "Pole lubatud:",
+	"movies.versions.editionInvalid": "Seda väljaannet ei saa kasutada. Hoidke see lühike (rõhumärkidega ja mittelatiinatähed võtavad rohkem ruumi), jätke välja ülal loetletud märgid ja ärge lõpetage punktiga.",
+	"movies.versions.editionDevice": "Windows hoiab nime {name} seadmete jaoks, seega ei saa seda kasutada. Sisestage mõni teine."
 }

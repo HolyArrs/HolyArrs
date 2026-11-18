@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -18,6 +19,7 @@
 	import { bytes, dateTime, words } from '#lib/core/format.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { freshAsk } from '#lib/backups/index.ts';
+	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { goto } from '$app/navigation';
 
 	type Preset = 'balanced' | 'light' | 'careful' | 'off';
@@ -32,7 +34,7 @@
 	let preset = $state<Preset>('balanced');
 	let waiting = $state(false);
 	let keyNote = $state('');
-	let keyKit = $state<{ needed: boolean; fingerprint: string } | null>(null);
+	let keyKit = $state<{ needed: boolean; fingerprint: string; level?: string } | null>(null);
 	let gettingKit = $state(false);
 	let loaded = $state(false);
 	let missing = $state(false);
@@ -45,7 +47,7 @@
 
 	async function load() {
 		try {
-			const r = await api.get<{ backups: BackupInfo[]; preset: Preset; restore_waiting: boolean; key_note: string; key_kit?: { needed: boolean; fingerprint: string } }>('/backups');
+			const r = await api.get<{ backups: BackupInfo[]; preset: Preset; restore_waiting: boolean; key_note: string; key_kit?: { needed: boolean; fingerprint: string; level?: string } }>('/backups');
 			backups = r.backups;
 			preset = r.preset;
 			waiting = r.restore_waiting;
@@ -75,7 +77,6 @@
 		window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method: 'POST' } }));
 		if (need === 'set') toasts.push(t('settings.layout.setPasswordFirst'), 'warn', { body: t('settings.layout.setPasswordDesc'), action: { label: t('settings.layout.setPasswordLabel'), run: () => void goto(to('/account')) } });
 		else toasts.push(t('settings.layout.confirmPasswordLabel'), 'info', { body: t('settings.layout.confirmPasswordDesc') });
-		requestAnimationFrame(() => document.getElementById('settings-reauth')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
 		return true;
 	}
 
@@ -100,8 +101,10 @@
 			a.download = name;
 			a.click();
 			setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-			if (keyKit) keyKit = { ...keyKit, needed: false };
+			if (keyKit) keyKit = { ...keyKit, needed: false, level: '' };
 			toasts.push(t('settings.backups.kitDownloaded'), 'ok', { body: t('settings.backups.kitApart') });
+			// The key kit warning and the menu dot go out now, not at the next timed check.
+			void recheckSettingsStatus('backups');
 		} catch (e) {
 			toasts.push(t('settings.backups.kitFailed'), 'fail', { body: message(e) });
 		} finally {
@@ -139,7 +142,7 @@
 	}
 
 	async function remove(b: BackupInfo) {
-		if (!confirm(t('settings.backups.confirmRemove', { name: b.name }))) return;
+		if (!(await ask(t('settings.backups.confirmRemove', { name: b.name }), { yes: t('ui.ask.remove'), danger: true }))) return;
 		try {
 			await api.del(`/backups/${encodeURIComponent(b.name)}`);
 			backups = backups.filter((x) => x.name !== b.name);
@@ -152,7 +155,7 @@
 	async function restore(e: Event) {
 		const file = (e.currentTarget as HTMLInputElement).files?.[0];
 		if (!file) return;
-		if (!confirm(t('settings.backups.confirmRestore', { name: file.name }))) {
+		if (!(await ask(t('settings.backups.confirmRestore', { name: file.name }), { yes: t('ui.ask.restore'), danger: true }))) {
 			(e.currentTarget as HTMLInputElement).value = '';
 			return;
 		}
@@ -212,13 +215,13 @@
 							<div class="mono small bname" title={b.name}>{b.name}</div>
 							<div class="xs muted">{dateTime(b.created_at)} · {bytes(b.size)} · {b.detail || words(b.kind)}</div>
 						</div>
-						<AdminLinkButton variant="plain" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download onclick={download}>{t('settings.backups.download')}</AdminLinkButton>
+						<AdminLinkButton variant="secondary" href={to(`/api/v1/backups/${encodeURIComponent(b.name)}`)} download onclick={download}>{t('settings.backups.download')}</AdminLinkButton>
 						<IconButton icon="trash" label={t('settings.backups.delete', { name: b.name })} tipSide="below-end" type="button" onclick={() => remove(b)} />
 					</li>
 				{/each}
 			</ul>
 		{/if}
-		{#if keyNote}<p class="xs muted keynote">{keyNote}</p>{/if}
+		{#if keyNote && !keyKit?.fingerprint}<p class="xs muted keynote">{keyNote}</p>{/if}
 	</section>
 
 	<SettingsCard id="backup-often" title={t('settings.backups.often')} description={t('settings.backups.offKeeps')}>
@@ -236,9 +239,10 @@
 	{#if keyKit?.fingerprint}
 		<SettingsCard id="backup-key" title={t('settings.backups.key')} description={t('settings.backups.keyDesc')}>
 			{#if keyKit.needed}
-				<p class="notice warn" role="status">
+				<!-- A calm note until saved secrets and backups have gone a while without a kit. -->
+				<p class="notice" class:warn={keyKit.level === 'warn'} role="status" data-testid="key-kit-note" data-level={keyKit.level === 'warn' ? 'warn' : 'recommend'}>
 					<Icon name="info" size={18} /><span
-						>{t('settings.backups.noKit')}{#if session.s.role !== 'owner'}
+						>{keyKit.level === 'warn' ? t('settings.backups.noKit') : t('settings.backups.kitRecommended')}{#if session.s.role !== 'owner'}
 							{t('settings.backups.ownerOnlyKit')}{/if}</span
 					>
 				</p>

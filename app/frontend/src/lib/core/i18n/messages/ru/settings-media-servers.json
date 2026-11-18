@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Путь в HolyArrs",
 	"settings.mediaServers.pathTo": "Та же папка на сервере",
 	"settings.mediaServers.pathHint": "Нужно, только если сервер видит ваши файлы по другому пути",
+	"settings.mediaServers.webUrl": "Адрес для браузеров",
+	"settings.mediaServers.webUrlHint": "Адрес, по которому все открывают сервер на телефоне или компьютере. Добавляет кнопку «Открыть» на страницы тайтлов, которые есть на сервере. Оставьте пустым, чтобы кнопки не было.",
 	"settings.mediaServers.local": "Доступ к локальной сети",
 	"settings.mediaServers.send": "Отправлять обновления",
 	"settings.mediaServers.save": "Сохранить",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Выключить историю просмотров? Всё прочитанное будет удалено.",
 	"settings.mediaServers.watchTurnedOn": "История просмотров включена. Первое чтение — в течение 30 минут.",
 	"settings.mediaServers.watchTurnedOff": "История просмотров выключена",
-	"settings.mediaServers.watchFailed": "Не удалось изменить историю просмотров"
+	"settings.mediaServers.watchFailed": "Не удалось изменить историю просмотров",
+	"settings.mediaServers.labelTitle": "Метки Plex",
+	"settings.mediaServers.labelSwitch": "Добавлять метку запрошенным тайтлам",
+	"settings.mediaServers.labelHint": "Когда запрошенный фильм или сериал появляется в Plex, HolyArrs добавляет ему метку, чтобы в Plex можно было фильтровать, собирать коллекции или делиться по ней. Существующие метки остаются.",
+	"settings.mediaServers.labelText": "Метка",
+	"settings.mediaServers.labelAskers": "Также добавлять имя запросившего как метку",
+	"settings.mediaServers.labelSaved": "Метки Plex сохранены",
+	"settings.mediaServers.labelFailed": "Не удалось сохранить метки Plex",
+	"settings.mediaServers.labelExisting": "Добавить метку уже запрошенным тайтлам",
+	"settings.mediaServers.labelExistingStarted": "Расстановка меток началась. Тайтлы получат метки в течение нескольких минут.",
+	"settings.mediaServers.labelExistingFailed": "Не удалось начать расстановку меток"
 }

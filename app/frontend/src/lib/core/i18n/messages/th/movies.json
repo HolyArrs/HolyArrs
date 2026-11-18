@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "กฎการเลือกของเวอร์ชันนี้",
 	"movies.versions.folderLabel": "โฟลเดอร์ไลบรารีของเวอร์ชันนี้",
 	"movies.versions.cancel": "ยกเลิก",
-	"movies.versions.addButton": "เพิ่มเวอร์ชัน"
+	"movies.versions.addButton": "เพิ่มเวอร์ชัน",
+	"movies.versions.setEdition": "ตั้งค่าฉบับ",
+	"movies.versions.editionFileHint": "ไฟล์นี้เป็นฉบับไหน เช่น Theatrical หรือ Directors Cut เว้นว่างไว้เพื่อล้างค่า",
+	"movies.versions.unprotectConfirm": "ยกเลิกการป้องกัน {label} ไหม สำเนาที่ดีกว่าจะแทนที่ได้อีกครั้ง",
+	"movies.versions.editionChars": "ห้ามใช้:",
+	"movies.versions.editionInvalid": "ใช้ฉบับนี้ไม่ได้ ตั้งให้สั้น (ตัวอักษรที่มีเครื่องหมายและตัวอักษรที่ไม่ใช่ละตินใช้พื้นที่มากกว่า) เว้นอักขระที่ระบุไว้ด้านบน และอย่าลงท้ายด้วยจุด",
+	"movies.versions.editionDevice": "Windows สงวนชื่อ {name} ไว้สำหรับอุปกรณ์ จึงใช้ไม่ได้ พิมพ์ชื่ออื่น"
 }

@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "geen",
 	"settings.thisApp.needsRestart": "Vraagt een herstart. HOLYARRS_URL_BASE of -url-base overschrijft dit.",
 	"settings.thisApp.save": "Opslaan",
-	"settings.thisApp.licence": "HolyArrs is vrije software onder de AGPL-3.0."
+	"settings.thisApp.licence": "HolyArrs is vrije software onder de AGPL-3.0.",
+	"settings.thisApp.proxy": "Proxy",
+	"settings.thisApp.proxyDesc": "Stuur externe verzoeken via een proxy. Blokkades en thuisnetwerkregels gelden nog steeds voor de echte bestemming.",
+	"settings.thisApp.proxyType": "Soort",
+	"settings.thisApp.proxyOff": "Uit",
+	"settings.thisApp.proxyHost": "Host",
+	"settings.thisApp.proxyPort": "Poort",
+	"settings.thisApp.proxyUser": "Gebruikersnaam",
+	"settings.thisApp.proxyPasswordLabel": "Wachtwoord",
+	"settings.thisApp.proxyPasswordKept": "Laat leeg om het opgeslagen wachtwoord te houden",
+	"settings.thisApp.proxyBypass": "Proxy overslaan voor",
+	"settings.thisApp.proxyBypassHint": "Namen, adressen of bereiken, gescheiden door komma’s. *.example.com dekt alle namen eronder.",
+	"settings.thisApp.proxyBypassLocal": "Proxy overslaan voor lokale adressen",
+	"settings.thisApp.proxyBypassLocalHint": "Deze machine en je thuisnetwerk verbinden direct",
+	"settings.thisApp.proxySaved": "Proxy opgeslagen",
+	"settings.thisApp.proxyOffSaved": "Proxy uit"
 }

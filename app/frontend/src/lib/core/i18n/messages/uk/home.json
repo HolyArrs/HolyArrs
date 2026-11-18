@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Вимкнено в розділі «Частини»",
 	"home.noneForSources": "немає для того, що знаходять твої джерела",
 	"home.addedTwice": "додано двічі",
-	"home.addedTwiceMany": "додано двічі"
+	"home.addedTwiceMany": "додано двічі",
+	"home.notSetUpYet": "Ще не налаштовано",
+	"home.setUpToAdd": "Завершіть налаштування, щоб додати {name}",
+	"home.comingThisWeek": "Цього тижня",
+	"home.thisWeek": "цього тижня",
+	"home.landingThisWeek": "Серії та фільми, що виходять цього тижня",
+	"home.popularThisWeek": "Популярні прем'єри цього тижня",
+	"home.peopleCheck": "Перевірка людей",
+	"home.cantReadUsers": "не вдається прочитати список користувачів"
 }

@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "إظهار للناس",
 	"settings.requests.choiceMain": "{rules} · النسخة الرئيسية للعنوان",
 	"settings.requests.choiceOwn": "{rules} · تُحفظ كنسخة مستقلة",
-	"settings.requests.choiceNotReady": "يظهر بعد إعداد جودة 4K أعلاه"
+	"settings.requests.choiceNotReady": "يظهر بعد إعداد جودة 4K أعلاه",
+	"settings.requests.approvals": "الموافقات",
+	"settings.requests.autoApprove": "الموافقة على الطلبات تلقائيًا",
+	"settings.requests.autoApproveNote": "إيقاف = تنتظر طلباته موافقتك. عناوين قائمة مشاهدة Plex تتبع المفتاح نفسه.",
+	"settings.requests.ownerTag": "المالك",
+	"settings.requests.choiceAdd": "إضافة جودة",
+	"settings.requests.choiceNew": "جودة جديدة",
+	"settings.requests.choiceLabel": "اسمك",
+	"settings.requests.choiceSeen": "يراه الناس"
 }

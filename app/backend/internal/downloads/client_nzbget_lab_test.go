@@ -55,8 +55,8 @@ func TestNZBGetLab(t *testing.T) {
 </nzb>`))
 		}))
 		defer source.Close()
-		id, err := n.Add(ctx, AddRequest{URL: source.URL + "/acceptance.nzb", Name: "HolyArrs.NZBGet.Acceptance", Category: "holyarrs",
-			AttemptMarker: marker, AllowLocal: true})
+		id, err := n.Add(ctx, ownSource(AddRequest{URL: source.URL + "/acceptance.nzb", Name: "HolyArrs.NZBGet.Acceptance", Category: "holyarrs",
+			AttemptMarker: marker, AllowLocal: true}))
 		if err != nil || id == "" {
 			t.Fatalf("add %q: %v", id, err)
 		}
@@ -183,7 +183,7 @@ func labNZBGetClearFinished(t *testing.T, n *NZBGet) {
 	src := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(nzb)) }))
 	defer src.Close()
 	marker := fmt.Sprintf("nzbget-%032x", time.Now().UnixNano())
-	id, err := n.Add(ctx, AddRequest{URL: src.URL + "/lab.nzb", Name: labNZBGetRel, Category: "holyarrs", AttemptMarker: marker, AllowLocal: true})
+	id, err := n.Add(ctx, ownSource(AddRequest{URL: src.URL + "/lab.nzb", Name: labNZBGetRel, Category: "holyarrs", AttemptMarker: marker, AllowLocal: true}))
 	if err != nil {
 		t.Fatalf("add: %v", err)
 	}

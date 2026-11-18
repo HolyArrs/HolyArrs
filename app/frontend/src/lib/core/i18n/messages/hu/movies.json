@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Kiválasztási szabályok ehhez a Változathoz",
 	"movies.versions.folderLabel": "Médiatár-mappa ehhez a Változathoz",
 	"movies.versions.cancel": "Mégse",
-	"movies.versions.addButton": "Változat hozzáadása"
+	"movies.versions.addButton": "Változat hozzáadása",
+	"movies.versions.setEdition": "Kiadás megadása",
+	"movies.versions.editionFileHint": "Melyik kiadás ez a fájl, például Theatrical vagy Directors Cut. Hagyja üresen a törléséhez.",
+	"movies.versions.unprotectConfirm": "Eltávolítja a védelmet erről: {label}? Egy jobb másolat újra lecserélheti.",
+	"movies.versions.editionChars": "Nem engedélyezett:",
+	"movies.versions.editionInvalid": "Ez a kiadás nem használható. Tartsa rövidnek (az ékezetes és nem latin betűk több helyet foglalnak), hagyja ki a fent felsorolt karaktereket, és ne zárja ponttal.",
+	"movies.versions.editionDevice": "A(z) {name} nevet a Windows eszközöknek tartja fenn, ezért nem használható. Írjon be egy másikat."
 }

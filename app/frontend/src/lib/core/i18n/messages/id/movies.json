@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Aturan pilihan untuk Versi ini",
 	"movies.versions.folderLabel": "Folder pustaka untuk Versi ini",
 	"movies.versions.cancel": "Batal",
-	"movies.versions.addButton": "Tambah versi"
+	"movies.versions.addButton": "Tambah versi",
+	"movies.versions.setEdition": "Atur edisi",
+	"movies.versions.editionFileHint": "Edisi file ini, misalnya Theatrical atau Directors Cut. Kosongkan untuk menghapusnya.",
+	"movies.versions.unprotectConfirm": "Hapus perlindungan dari {label}? Salinan yang lebih baik dapat menggantikannya lagi.",
+	"movies.versions.editionChars": "Tidak boleh:",
+	"movies.versions.editionInvalid": "Edisi itu tidak dapat dipakai. Buat singkat (huruf beraksen dan non-Latin memakan lebih banyak ruang), jangan pakai karakter yang tercantum di atas, dan jangan akhiri dengan titik.",
+	"movies.versions.editionDevice": "Windows memakai nama {name} untuk perangkat, jadi tidak dapat dipakai. Ketik nama lain."
 }

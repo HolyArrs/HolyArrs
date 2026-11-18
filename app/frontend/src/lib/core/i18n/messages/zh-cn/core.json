@@ -131,6 +131,8 @@
 	"core.settings.ai.about": "让 AI 助手使用 HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "供其他应用使用的密钥和路由",
+	"core.settings.remoteAccess.label": "远程访问",
+	"core.settings.remoteAccess.about": "在外也能使用 HolyArrs",
 	"core.settings.tmdb.label": "元数据",
 	"core.settings.tmdb.about": "海报和名称的来源",
 	"core.settings.health.label": "健康检查",
@@ -147,5 +149,8 @@
 	"core.settings.account.about": "密码、双重验证、设备",
 	"core.api.sourceOff": "此安装中部分行已关闭。",
 	"core.plain.noDownloader": "你的来源找到的下载没有任何已设置的下载器能接收，所以无法发送任何下载。",
-	"core.plain.sameDownloader": "两个下载器连接到同一个下载应用，因此下载可能显示两次。"
+	"core.plain.sameDownloader": "两个下载器连接到同一个下载应用，因此下载可能显示两次。",
+	"core.plain.peopleCheck": "无法读取媒体服务器的用户列表，因此在那里删除的人不会在这里被关闭。",
+	"core.plain.deleted": "已删除",
+	"core.plain.deletedName": "{name}（已删除）"
 }

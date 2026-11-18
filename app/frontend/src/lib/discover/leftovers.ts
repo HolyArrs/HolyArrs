@@ -29,8 +29,16 @@ const REASONS = new Set([
 	'movie_copy_choice',
 	'movie_has_file',
 	'replaced_by_hand',
-	'unmatched'
+	'unmatched',
+	'seasons_differ'
 ]);
+
+/** The episode a file numbered by the old app's other seasons is pre-picked for: only the one the server found by its name. Other files pre-pick none. */
+export function namePick(l: Pick<Leftover, 'reason' | 'guess'>, episodes: MatchEpisode[]): number[] {
+	if (l.reason !== 'seasons_differ' || !l.guess) return [];
+	const g = l.guess;
+	return episodes.filter((e) => e.season === g.season && g.episodes.includes(e.episode)).map((e) => e.id);
+}
 
 export function reasonKey(l: Pick<Leftover, 'reason' | 'dropped_season'>): string {
 	if (l.reason === 'episode_not_listed' && l.dropped_season != null && l.dropped_season >= 0) return 'discover.leftovers.reason.season_not_listed';

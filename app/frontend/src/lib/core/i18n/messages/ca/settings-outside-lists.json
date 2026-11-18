@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "Afegeix a la llista de no afegir mai",
 	"settings.outsideLists.showDot": "sèrie ·",
 	"settings.outsideLists.takeOff": "Treu {name}",
-	"settings.outsideLists.empty": "Buida"
+	"settings.outsideLists.empty": "Encara no hi ha res en aquesta llista"
 }

@@ -84,7 +84,8 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 	if opt.Better || opt.Show {
 		// A person choosing by hand may swap their own earlier pick too; timed
 		// better searches leave hand picks alone.
-		origins := "origin = 'fetched'"
+		// A subtitle whose timing was moved by hand is kept the same way.
+		origins := "origin = 'fetched' AND json_extract(sync, '$.from_subtitle_id') IS NULL"
 		if opt.Show {
 			origins = "origin IN ('fetched', 'by_hand')"
 		}

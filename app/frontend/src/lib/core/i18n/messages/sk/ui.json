@@ -213,5 +213,16 @@
 "ui.wikiFacts.won": "Vyhralo: {name}",
 "ui.wikiFacts.nominated": "Nominované: {name}",
 "ui.wikiFacts.andMore": "a ďalších: {count}",
-"ui.pageLoader.loading": "Načítava sa"
+"ui.pageLoader.loading": "Načítava sa",
+"ui.connectHelp.link": "Ako to opraviť",
+"ui.ask.remove": "Odstrániť",
+"ui.ask.restore": "Obnoviť",
+"ui.ask.stop": "Zastaviť",
+"ui.ask.revoke": "Zrušiť",
+"ui.ask.replace": "Nahradiť",
+"ui.ask.unlink": "Odpojiť",
+"ui.ask.turnOff": "Vypnúť",
+"ui.ask.markFailed": "Označiť ako neúspešné",
+"ui.ask.reset": "Resetovať",
+"ui.ask.import": "Importovať"
 }

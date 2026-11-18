@@ -13,9 +13,9 @@ export type Picked = { name: string; year?: number; score?: number; poster: stri
 type BannerTitle = Pick<TitleView, 'kind' | 'name' | 'ids' | 'artist' | 'artwork' | 'backdrop' | 'logo'>;
 
 // Folders that need a look come first, then the sure ones, then the ones left alone.
-const listOrder: AdoptStatus[] = ['unsure', 'unmatched', 'matched', 'in_library', 'never_add', 'no_video'];
+const listOrder: AdoptStatus[] = ['unsure', 'unmatched', 'not_looked_up', 'matched', 'in_library', 'never_add', 'no_video'];
 // The filter keeps the scan's own order of the groups.
-const filterOrder: AdoptStatus[] = ['matched', 'unsure', 'unmatched', 'in_library', 'never_add', 'no_video'];
+const filterOrder: AdoptStatus[] = ['matched', 'unsure', 'unmatched', 'not_looked_up', 'in_library', 'never_add', 'no_video'];
 
 export function readImportView(v: unknown): ImportView {
 	return v === 'banners' || v === 'posters' || v === 'overview' ? v : 'rows';
@@ -31,7 +31,22 @@ export function pickedOf(f: AdoptCandidate, id: string | undefined, named: Recor
 	if (m) return { name: m.name, year: m.year || undefined, score: m.score, poster: m.poster ?? '' };
 	const n = id ? named[id] : undefined;
 	if (n) return { name: n.name, year: n.year, poster: n.poster ?? '' };
-	return { name: f.parsed_name || f.folder, year: f.parsed_year, poster: '' };
+	return { name: f.parsed_name || folderParts(f.folder).name, year: f.parsed_year, poster: '' };
+}
+
+// The folder line under a title: the parent path when the folder's own
+// name only repeats the title, else the whole folder; empty when the title
+// already says it all.
+export function placeText(folder: string, name: string, year?: number): string {
+	const { name: own, parent } = folderParts(folder);
+	const same = own === name || (!!year && own === `${name} (${year})`);
+	return same ? parent : folder;
+}
+
+// A folder inside grouping folders: its own name and the folders around it.
+export function folderParts(folder: string): { name: string; parent: string } {
+	const i = folder.lastIndexOf('/');
+	return i < 0 ? { name: folder, parent: '' } : { name: folder.slice(i + 1), parent: folder.slice(0, i) };
 }
 
 // Unsure folders first, then by title; the folder name settles ties.
@@ -40,7 +55,7 @@ export function sortFolders(folders: AdoptCandidate[], locale?: string): AdoptCa
 		const i = listOrder.indexOf(f.status);
 		return i < 0 ? listOrder.length : i;
 	};
-	const title = (f: AdoptCandidate) => f.match?.name || f.parsed_name || f.folder;
+	const title = (f: AdoptCandidate) => f.match?.name || f.parsed_name || folderParts(f.folder).name;
 	return [...folders].sort((a, b) => rank(a) - rank(b) || title(a).localeCompare(title(b), locale) || a.folder.localeCompare(b.folder, locale));
 }
 
@@ -54,6 +69,15 @@ export function findFolders(folders: AdoptCandidate[], words: string, filter: Im
 		const hay = fold([f.folder, f.parsed_name, f.parsed_year ?? '', m?.name ?? '', m?.year ?? ''].join(' '));
 		return want.every((w) => hay.includes(w));
 	});
+}
+
+// The folders the metadata server did not answer for, out of those a scan looks up; null when none.
+// every: no folder of the scan was read at all, so scanning more would only fail the same way.
+export function lookFail(folders: AdoptCandidate[]): { n: number; of: number; all: boolean; every: boolean } | null {
+	const n = folders.filter((f) => f.status === 'not_looked_up').length;
+	if (!n) return null;
+	const of = folders.filter((f) => f.status !== 'in_library' && f.status !== 'never_add' && f.status !== 'no_video').length;
+	return { n, of, all: n === of, every: n === folders.length };
 }
 
 // One count per status found, in the filter's order.

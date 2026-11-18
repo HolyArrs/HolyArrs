@@ -2,6 +2,87 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## 1.2.0
+
+### Added
+
+- Tap the red dot to see what needs attention. Fixed warnings clear. ([#409](https://github.com/HolyArrs/HolyArrs/issues/409)) ([#410](https://github.com/HolyArrs/HolyArrs/issues/410))
+- Connection tests name the exact problem and what a name became. ([#411](https://github.com/HolyArrs/HolyArrs/issues/411)) ([#434](https://github.com/HolyArrs/HolyArrs/issues/434))
+- Plex labels requested titles with your own label text. ([#407](https://github.com/HolyArrs/HolyArrs/issues/407))
+- The owner's requests can wait for approval too. ([#421](https://github.com/HolyArrs/HolyArrs/issues/421))
+- Add dialogs remember your last Search when added choice. ([#437](https://github.com/HolyArrs/HolyArrs/issues/437))
+- New names can use your language, and {title_first} for first letters. ([#437](https://github.com/HolyArrs/HolyArrs/issues/437))
+- File names can carry {audio} and {hdr}; dotted names lose double dots. ([#397](https://github.com/HolyArrs/HolyArrs/issues/397))
+- Import files by hand works for music. ([#406](https://github.com/HolyArrs/HolyArrs/issues/406))
+- Broken files are checked after download. ([#138](https://github.com/HolyArrs/HolyArrs/issues/138))
+- See which Trakt list added a title. ([#124](https://github.com/HolyArrs/HolyArrs/issues/124))
+- Shows can be kept apart from anime. ([#361](https://github.com/HolyArrs/HolyArrs/issues/361))
+- A Watched mark on titles, and a Watched by anyone filter. ([#385](https://github.com/HolyArrs/HolyArrs/issues/385))
+- Big libraries scan in minutes on first import. ([#425](https://github.com/HolyArrs/HolyArrs/issues/425))
+- Send a Source's grabs to one chosen Downloader. ([#402](https://github.com/HolyArrs/HolyArrs/issues/402))
+- Delete a person from Users. ([#378](https://github.com/HolyArrs/HolyArrs/issues/378))
+- Connect apps over MCP with keys you control. ([#81](https://github.com/HolyArrs/HolyArrs/issues/81))
+- Badges, dates and row titles show in all 44 languages. ([#352](https://github.com/HolyArrs/HolyArrs/issues/352))
+- Say so when a router's proxy sends lookups to a fake address. ([#432](https://github.com/HolyArrs/HolyArrs/issues/432))
+- Saving says why when HolyArrs is opened by an unknown name. ([#436](https://github.com/HolyArrs/HolyArrs/issues/436))
+- Add your own certificate authority to the container. ([#389](https://github.com/HolyArrs/HolyArrs/issues/389))
+- Run HolyArrs as a Proxmox LXC. ([#348](https://github.com/HolyArrs/HolyArrs/issues/348))
+- Open a title in Jellyfin or Emby from its page. ([#415](https://github.com/HolyArrs/HolyArrs/issues/415))
+- Outside lists can read MDBList lists. ([#417](https://github.com/HolyArrs/HolyArrs/issues/417))
+- arr API works with more dashboards and phone apps. ([#333](https://github.com/HolyArrs/HolyArrs/issues/333))
+
+### Changed
+
+- A bracket in a file name drops out when all its words are empty, such as `[imdbid-{imdb}]` with no IMDb id. ([#397](https://github.com/HolyArrs/HolyArrs/pull/397))
+- A torrent whose files are gone from the download folder waits in Review and names the missing file.
+- The menu groups Downloads and History under Activity, and Status and Settings under System.
+- Status has a Support tab with ways to help HolyArrs, and Support HolyArrs sits in the account menu.
+- Phone layouts fit better: tighter tops on Home, Explore and New & Popular, and long tile names wrap.
+- Small polish across Home, Library, Downloads, History and Settings: long labels wrap instead of being cut, one button and count style, a 24px Downloads menu target, and the More actions menu opens above the top bar.
+
+### Fixed
+
+- Requests no longer stay Failed after a movie is added back. ([#408](https://github.com/HolyArrs/HolyArrs/issues/408))
+- Requests that came from Seerr can be removed. ([#365](https://github.com/HolyArrs/HolyArrs/issues/365))
+- Movies reuse a folder that differs only by case or accents. ([#437](https://github.com/HolyArrs/HolyArrs/issues/437))
+- Import a library looks in subfolders. ([#379](https://github.com/HolyArrs/HolyArrs/issues/379))
+- Import a library handles huge libraries. ([#374](https://github.com/HolyArrs/HolyArrs/issues/374))
+- Radarr imports link the files already on disk. ([#391](https://github.com/HolyArrs/HolyArrs/issues/391))
+- Movie import uses title aliases, and Review can import the file. ([#308](https://github.com/HolyArrs/HolyArrs/issues/308))
+- The Movies page opens fast. ([#363](https://github.com/HolyArrs/HolyArrs/issues/363))
+- Poster pictures use the URL base. ([#336](https://github.com/HolyArrs/HolyArrs/issues/336))
+- Cunk on Earth and similar shows import. ([#339](https://github.com/HolyArrs/HolyArrs/issues/339))
+- Pick anyway on a movie sends it, with no episode error. ([#438](https://github.com/HolyArrs/HolyArrs/issues/438))
+- NZBGet grabs work when a link redirects to another host. ([#423](https://github.com/HolyArrs/HolyArrs/issues/423))
+- NZBGet gets post-processing settings in the right form. ([#422](https://github.com/HolyArrs/HolyArrs/issues/422))
+- rdt-client imports with a leading slash work. ([#377](https://github.com/HolyArrs/HolyArrs/issues/377))
+- The ghost torrent Downloader is gone. ([#413](https://github.com/HolyArrs/HolyArrs/issues/413))
+- Downloads buttons work right after you allow changes. ([#395](https://github.com/HolyArrs/HolyArrs/issues/395))
+- SABnzbd episodes import when the file name hides the episode. ([#312](https://github.com/HolyArrs/HolyArrs/issues/312))
+- Shows with a country tag, like The Office (US), match releases. ([#424](https://github.com/HolyArrs/HolyArrs/issues/424))
+- A REPACK ranks above the plain copy. ([#412](https://github.com/HolyArrs/HolyArrs/issues/412))
+- 720p is no longer read as UHD; HUN reads as Hungarian. ([#414](https://github.com/HolyArrs/HolyArrs/issues/414))
+- Show searches send IMDb and TMDB ids. ([#390](https://github.com/HolyArrs/HolyArrs/issues/390))
+- A repost marker after the group is no longer the group. ([#400](https://github.com/HolyArrs/HolyArrs/issues/400))
+- User invite settings are clearer. ([#337](https://github.com/HolyArrs/HolyArrs/issues/337))
+- Make key in Linked apps works on phones. ([#384](https://github.com/HolyArrs/HolyArrs/issues/384))
+- Explore waits when the metadata server says it is busy. ([#420](https://github.com/HolyArrs/HolyArrs/issues/420))
+- Your own TMDB v3 key works. ([#403](https://github.com/HolyArrs/HolyArrs/issues/403))
+- Turned-off backups stop making backups. ([#388](https://github.com/HolyArrs/HolyArrs/issues/388))
+- The master key no longer reads missing after a restart. ([#366](https://github.com/HolyArrs/HolyArrs/issues/366))
+- First-run Sonarr and Radarr import no longer signs the owner out. ([#345](https://github.com/HolyArrs/HolyArrs/issues/345))
+- Allow local network blocks only local addresses. ([#373](https://github.com/HolyArrs/HolyArrs/issues/373))
+- Hover previews stay behind the More like this popup. ([#394](https://github.com/HolyArrs/HolyArrs/issues/394))
+- Test-only subtitle sites are gone from Settings. ([#383](https://github.com/HolyArrs/HolyArrs/issues/383))
+
+### Docs
+
+- Why an app name works or not when connecting. ([#433](https://github.com/HolyArrs/HolyArrs/issues/433))
+
+### Thanks
+
+Thanks to [@Yakouaho](https://github.com/HolyArrs/HolyArrs/issues/437), [@mrijke](https://github.com/HolyArrs/HolyArrs/pull/397), [@Jaylouisw](https://github.com/HolyArrs/HolyArrs/pull/405), [@biacz](https://github.com/HolyArrs/HolyArrs/pull/415), [@chadouming](https://github.com/HolyArrs/HolyArrs/pull/417), [@danielbaercgn](https://github.com/HolyArrs/HolyArrs/issues/308), [@krayhons](https://github.com/HolyArrs/HolyArrs/issues/308#issuecomment-6862553238), [@JulianAtkins](https://github.com/HolyArrs/HolyArrs/issues/325), [@johngully](https://github.com/HolyArrs/HolyArrs/issues/336), [@zaldev](https://github.com/HolyArrs/HolyArrs/issues/339), [@mimedo](https://github.com/HolyArrs/HolyArrs/issues/348#issuecomment-6862124869), [@stormbyte](https://github.com/HolyArrs/HolyArrs/issues/361), [@ArChAnG3LsFuRy](https://github.com/HolyArrs/HolyArrs/issues/363#issuecomment-6872787622), [@Cavamania](https://github.com/HolyArrs/HolyArrs/issues/373), [@riquecouto](https://github.com/HolyArrs/HolyArrs/issues/377), [@Nviviri](https://github.com/HolyArrs/HolyArrs/issues/390), [@chevalierbenoit](https://github.com/HolyArrs/HolyArrs/issues/390#issuecomment-6912724999), [@irwinthetapemeasure](https://github.com/HolyArrs/HolyArrs/issues/402), [@atocqueville](https://github.com/HolyArrs/HolyArrs/issues/413), [@levaib-git](https://github.com/HolyArrs/HolyArrs/issues/414), [@erichobson](https://github.com/HolyArrs/HolyArrs/issues/378), [@jorgytim](https://github.com/HolyArrs/HolyArrs/issues/379), [@michaeljmcauliffe-ctrl](https://github.com/HolyArrs/HolyArrs/issues/391), and to Nippo, 405 left hands, tekhop, Tharkys and GreyJoshy94 on Discord.
+
 ## 1.1.4
 
 ### Added

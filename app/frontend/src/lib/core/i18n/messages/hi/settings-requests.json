@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "लोगों को दिखाएँ",
 	"settings.requests.choiceMain": "{rules} · टाइटल की मुख्य कॉपी",
 	"settings.requests.choiceOwn": "{rules} · अलग कॉपी के रूप में रखी जाती है",
-	"settings.requests.choiceNotReady": "ऊपर 4K क्वालिटी सेट होने पर दिखेगा"
+	"settings.requests.choiceNotReady": "ऊपर 4K क्वालिटी सेट होने पर दिखेगा",
+	"settings.requests.approvals": "स्वीकृतियाँ",
+	"settings.requests.autoApprove": "अनुरोध अपने-आप स्वीकृत करें",
+	"settings.requests.autoApproveNote": "बंद = उनके अनुरोध आपकी प्रतीक्षा करते हैं। Plex वॉचलिस्ट के शीर्षक भी इसी स्विच को मानते हैं।",
+	"settings.requests.ownerTag": "मालिक",
+	"settings.requests.choiceAdd": "क्वालिटी जोड़ें",
+	"settings.requests.choiceNew": "नई क्वालिटी",
+	"settings.requests.choiceLabel": "आपका नाम",
+	"settings.requests.choiceSeen": "लोग देखते हैं"
 }

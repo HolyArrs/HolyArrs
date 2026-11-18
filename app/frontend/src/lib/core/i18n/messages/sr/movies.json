@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Правила избора за ову Верзију",
 	"movies.versions.folderLabel": "Фасцикла библиотеке за ову Верзију",
 	"movies.versions.cancel": "Откажи",
-	"movies.versions.addButton": "Додај верзију"
+	"movies.versions.addButton": "Додај верзију",
+	"movies.versions.setEdition": "Постави издање",
+	"movies.versions.editionFileHint": "Које је ово издање датотеке, на пример Theatrical или Directors Cut. Оставите празно да обришете.",
+	"movies.versions.unprotectConfirm": "Уклонити заштиту са {label}? Боља копија ће моћи поново да је замени.",
+	"movies.versions.editionChars": "Није дозвољено:",
+	"movies.versions.editionInvalid": "Ово издање се не може користити. Нека буде кратко (слова са дијакритицима и нелатинична слова заузимају више места), изоставите знакове наведене изнад и не завршавајте тачком.",
+	"movies.versions.editionDevice": "Windows чува назив {name} за уређаје, па се не може користити. Унесите неки други."
 }

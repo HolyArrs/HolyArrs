@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"sync/atomic"
 	"testing"
 
@@ -24,8 +25,8 @@ func TestTMDBListsGoTheModesWay(t *testing.T) {
 	base := e.svc.TMDBBase
 	via := &countingTransport{}
 	e.svc.TMDBBase, e.svc.TMDBToken = "", nil
-	e.svc.TMDBRoute = func(context.Context) (string, func(context.Context) (string, error), *http.Client, error) {
-		return base, func(context.Context) (string, error) { return fakeTMDBToken, nil }, &http.Client{Transport: via}, nil
+	e.svc.TMDBRoute = func(context.Context) (metadata.TMDBRoute, error) {
+		return metadata.TMDBRoute{Base: base, Access: func(context.Context) (string, error) { return fakeTMDBToken, nil }, HTTP: &http.Client{Transport: via}}, nil
 	}
 	got, err := e.svc.fetchTMDB(ctx, "42", "movie")
 	if err != nil || len(got) != 2 {
@@ -35,13 +36,35 @@ func TestTMDBListsGoTheModesWay(t *testing.T) {
 		t.Fatalf("the route's client carried %d requests, want 2", via.n.Load())
 	}
 	before := e.hits.Load()
-	e.svc.TMDBRoute = func(context.Context) (string, func(context.Context) (string, error), *http.Client, error) {
-		return "", nil, nil, metadata.ErrSourceOff
+	e.svc.TMDBRoute = func(context.Context) (metadata.TMDBRoute, error) {
+		return metadata.TMDBRoute{}, metadata.ErrSourceOff
 	}
 	if _, err := e.svc.fetchTMDB(ctx, "42", "movie"); !errors.Is(err, ErrListsOff) {
 		t.Fatalf("off: %v", err)
 	}
 	if e.hits.Load() != before {
 		t.Fatal("a request went out while lookups are off")
+	}
+}
+
+// An own v3 API key read straight from TMDB goes as api_key, never as Bearer.
+func TestTMDBListsSendV3KeyAsAPIKey(t *testing.T) {
+	e := setup(t)
+	const key = "0123456789abcdef0123456789abcdef"
+	var auth, q atomic.Value
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth.Store(r.Header.Get("Authorization"))
+		q.Store(r.URL.Query().Get("api_key"))
+		_, _ = w.Write([]byte(`{"total_pages":1,"items":[{"id":1,"media_type":"movie","title":"A"}]}`))
+	}))
+	defer srv.Close()
+	e.svc.TMDBRoute = func(context.Context) (metadata.TMDBRoute, error) {
+		return metadata.TMDBRoute{Base: srv.URL, Access: func(context.Context) (string, error) { return key, nil }, Direct: true}, nil
+	}
+	if _, err := e.svc.fetchTMDB(context.Background(), "42", "movie"); err != nil {
+		t.Fatal(err)
+	}
+	if auth.Load() != "" || q.Load() != key {
+		t.Fatalf("auth %q api_key %q", auth.Load(), q.Load())
 	}
 }

@@ -676,9 +676,10 @@ func TestShowQuery_ReleaseNumbersAndRunningNumber(t *testing.T) {
 				setAlt(t, f, "S01E02", 3, 1)
 			}
 			runKind(t, f.fixture, &Searcher{Store: f.s}, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: f.slots["S01E02"]}, nil)
-			want := 1
+			// The id search finds nothing, so it is asked again by title.
+			want := 2
 			if c.text {
-				want = 2
+				want = 3
 			}
 			if len(ts.queries) != want {
 				t.Fatalf("queries %v", ts.queries)
@@ -686,10 +687,13 @@ func TestShowQuery_ReleaseNumbersAndRunningNumber(t *testing.T) {
 			if q := ts.queries[0]; q.Get("tvdbid") != "4242" || q.Get("season") != c.season || q.Get("ep") != c.ep {
 				t.Fatalf("first query %v", q)
 			}
+			if q := ts.queries[1]; q.Get("q") != "Copper Valley" || q.Has("tvdbid") {
+				t.Fatalf("title query %v", q)
+			}
 			if !c.text {
 				return
 			}
-			if q := ts.queries[1]; q.Get("t") != "tvsearch" || q.Get("q") != "Copper Valley 02" || q.Has("season") || q.Has("ep") || q.Has("tvdbid") {
+			if q := ts.queries[2]; q.Get("t") != "tvsearch" || q.Get("q") != "Copper Valley 02" || q.Has("season") || q.Has("ep") || q.Has("tvdbid") {
 				t.Fatalf("running number query %v", q)
 			}
 			if st := f.state(t, "S01E02"); st != mediafiles.SlotChosen {
@@ -724,12 +728,12 @@ func TestHandleSeason_AsksReleaseSeasons(t *testing.T) {
 			seasons = append(seasons, q.Get("season"))
 		}
 		if !mapped {
-			if !slices.Equal(seasons, []string{"1"}) {
+			if !slices.Equal(seasons, []string{"1", "1"}) {
 				t.Fatalf("without release numbers: %v", seasons)
 			}
 			continue
 		}
-		if !slices.Equal(seasons, []string{"1", "3"}) {
+		if !slices.Equal(seasons, []string{"1", "1", "3"}) {
 			t.Fatalf("seasons asked %v", seasons)
 		}
 		r := relByName(t, f.fixture, "Copper.Valley.S03.1080p.WEB-DL.H.264-QUILL")

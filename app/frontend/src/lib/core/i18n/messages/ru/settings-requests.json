@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Показывать людям",
 	"settings.requests.choiceMain": "{rules} · основная копия тайтла",
 	"settings.requests.choiceOwn": "{rules} · хранится как отдельная копия",
-	"settings.requests.choiceNotReady": "Станет доступно, когда выше будет задано качество 4K"
+	"settings.requests.choiceNotReady": "Станет доступно, когда выше будет задано качество 4K",
+	"settings.requests.approvals": "Одобрение",
+	"settings.requests.autoApprove": "Одобрять запросы автоматически",
+	"settings.requests.autoApproveNote": "Выкл. = их запросы ждут вас. Названия из списка Plex подчиняются тому же переключателю.",
+	"settings.requests.ownerTag": "Владелец",
+	"settings.requests.choiceAdd": "Добавить качество",
+	"settings.requests.choiceNew": "Новое качество",
+	"settings.requests.choiceLabel": "Ваше название",
+	"settings.requests.choiceSeen": "Видят другие"
 }

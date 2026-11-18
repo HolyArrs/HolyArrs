@@ -37,21 +37,30 @@ func (h *FolderHandlers) Routes(m *http.ServeMux) {
 
 // FolderView is a Library folder as the API shows it.
 type FolderView struct {
-	ID               int64      `json:"id"`
-	Path             string     `json:"path"`
-	Kind             string     `json:"kind"`
-	Label            string     `json:"label"`
-	DefaultPickRules *int64     `json:"default_pick_rules_id"`
-	FreeSpace        int64      `json:"free_space"`
-	Health           string     `json:"health"`
-	HealthReason     string     `json:"health_reason"`
-	HealthCheckedAt  *time.Time `json:"health_checked_at,omitempty"`
-	CopiesExpected   bool       `json:"copies_expected"`
+	ID                int64      `json:"id"`
+	Path              string     `json:"path"`
+	Kind              string     `json:"kind"`
+	Label             string     `json:"label"`
+	DefaultPickRules  *int64     `json:"default_pick_rules_id"`
+	FreeSpace         int64      `json:"free_space"`
+	Health            string     `json:"health"`
+	HealthReason      string     `json:"health_reason"`
+	HealthCheckedAt   *time.Time `json:"health_checked_at,omitempty"`
+	CopiesExpected    bool       `json:"copies_expected"`
+	NewTitleTags      []string   `json:"new_title_tags"`
+	OnlyTaggedSources bool       `json:"only_tagged_sources"`
+}
+
+func nonNilTags(t []string) []string {
+	if t == nil {
+		return []string{}
+	}
+	return t
 }
 
 func folderView(f mf.LibraryFolder) FolderView {
 	return FolderView{ID: f.ID, Path: f.Path, Kind: f.Kind, Label: f.Label, DefaultPickRules: f.DefaultPickRules, FreeSpace: f.FreeSpace,
-		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt, CopiesExpected: f.CopiesExpected}
+		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt, CopiesExpected: f.CopiesExpected, NewTitleTags: nonNilTags(f.NewTitleTags), OnlyTaggedSources: f.OnlyTaggedSources}
 }
 
 // NeverAddView is a Never-add entry as the API shows it.
@@ -100,7 +109,7 @@ func (h *FolderHandlers) editFolder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var c FolderChange
-	if !webserver.Decode(w, r, &c, `send {"label": "...", "default_pick_rules_id": <id>, "copies_expected": true}`) {
+	if !webserver.Decode(w, r, &c, `send {"label": "...", "default_pick_rules_id": <id>, "copies_expected": true, "new_title_tags": ["anime"], "only_tagged_sources": true}`) {
 		return
 	}
 	lf, err := UpdateFolder(r.Context(), h.Store, id, c, h.Actor(r))

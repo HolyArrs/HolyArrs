@@ -224,13 +224,12 @@ async function verifyUncertainSendRecovery(page: Page) {
 		if (request.method() === 'POST') posts.push(new URL(request.url()).pathname);
 	};
 	page.on('request', rememberPost);
-	page.once('dialog', async (dialog) => {
-		expect(dialog.message()).toContain(`Release ${releaseID}`);
-		expect(dialog.message()).toContain(`Slot ${slotID}`);
-		expect(dialog.message()).toContain('does not cancel anything in NZBGet');
-		await dialog.accept();
-	});
 	await warning.getByRole('button', { name: 'Give up on it' }).click();
+	const asked = page.getByTestId('ask-text');
+	await expect(asked).toContainText(`Release ${releaseID}`);
+	await expect(asked).toContainText(`Slot ${slotID}`);
+	await expect(asked).toContainText('does not cancel anything in NZBGet');
+	await page.getByTestId('ask-yes').click();
 	await expect(warning).toHaveCount(0);
 	page.off('request', rememberPost);
 	expect(abandonPosts).toBe(1);

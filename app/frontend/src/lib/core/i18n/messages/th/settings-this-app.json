@@ -36,5 +36,20 @@
 	"settings.thisApp.none": "ไม่มี",
 	"settings.thisApp.needsRestart": "ต้องรีสตาร์ต HOLYARRS_URL_BASE หรือ -url-base จะมีผลเหนือกว่า",
 	"settings.thisApp.save": "บันทึก",
-	"settings.thisApp.licence": "HolyArrs เป็นซอฟต์แวร์เสรีภายใต้ AGPL-3.0"
+	"settings.thisApp.licence": "HolyArrs เป็นซอฟต์แวร์เสรีภายใต้ AGPL-3.0",
+	"settings.thisApp.proxy": "พร็อกซี",
+	"settings.thisApp.proxyDesc": "ส่งการเรียกภายนอกผ่านพร็อกซี กฎการบล็อกและเครือข่ายในบ้านยังใช้กับปลายทางจริง",
+	"settings.thisApp.proxyType": "ประเภท",
+	"settings.thisApp.proxyOff": "ปิด",
+	"settings.thisApp.proxyHost": "โฮสต์",
+	"settings.thisApp.proxyPort": "พอร์ต",
+	"settings.thisApp.proxyUser": "ชื่อผู้ใช้",
+	"settings.thisApp.proxyPasswordLabel": "รหัสผ่าน",
+	"settings.thisApp.proxyPasswordKept": "เว้นว่างไว้เพื่อใช้รหัสผ่านที่บันทึกไว้",
+	"settings.thisApp.proxyBypass": "ข้ามพร็อกซีสำหรับ",
+	"settings.thisApp.proxyBypassHint": "ชื่อ ที่อยู่ หรือช่วง คั่นด้วยจุลภาค *.example.com ครอบคลุมทุกชื่อที่อยู่ใต้มัน",
+	"settings.thisApp.proxyBypassLocal": "ข้ามพร็อกซีสำหรับที่อยู่ภายใน",
+	"settings.thisApp.proxyBypassLocalHint": "เครื่องนี้และเครือข่ายในบ้านเชื่อมต่อโดยตรง",
+	"settings.thisApp.proxySaved": "บันทึกพร็อกซีแล้ว",
+	"settings.thisApp.proxyOffSaved": "ปิดพร็อกซีแล้ว"
 }

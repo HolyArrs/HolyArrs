@@ -3,6 +3,7 @@ package requests
 import (
 	"context"
 	"errors"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -47,7 +48,7 @@ func (it mdblistItem) entry(titleKind string) entry {
 // lookups are off.
 func (s *OutsideLists) fetchMDBList(ctx context.Context, ref, titleKind string) ([]entry, error) {
 	if s.TMDBRoute != nil {
-		if _, _, _, err := s.TMDBRoute(ctx); errors.Is(err, metadata.ErrSourceOff) {
+		if _, err := s.TMDBRoute(ctx); errors.Is(err, metadata.ErrSourceOff) {
 			return nil, ErrListsOff
 		}
 	}
@@ -103,7 +104,7 @@ func (s *OutsideLists) fetchMDBListAPI(ctx context.Context, path, key, titleKind
 			} `json:"pagination"`
 		}
 		q := url.Values{"apikey": {key}, "limit": {strconv.Itoa(mdblistPage)}, "offset": {strconv.Itoa(offset)}}
-		if _, err := s.getWith(ctx, s.client(), "MDBList", base, base+path+"/items?"+q.Encode(), nil, &body, key); err != nil {
+		if _, err := s.getWith(ctx, sameHost(s.client()), "MDBList", base, base+path+"/items?"+q.Encode(), nil, &body, key); err != nil {
 			return nil, err
 		}
 		items := body.Movies
@@ -121,4 +122,17 @@ func (s *OutsideLists) fetchMDBListAPI(ctx context.Context, path, key, titleKind
 		}
 	}
 	return out, nil
+}
+
+// sameHost is c refusing redirects to another host: the MDBList key rides
+// in the query, which a followed redirect would carry along.
+func sameHost(c *http.Client) *http.Client {
+	cp := *c
+	cp.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if len(via) >= 10 || req.URL.Host != via[0].URL.Host {
+			return http.ErrUseLastResponse
+		}
+		return nil
+	}
+	return &cp
 }

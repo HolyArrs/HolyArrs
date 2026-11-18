@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "AI সহকারীদের HolyArrs ব্যবহার করতে দিন",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "অন্য অ্যাপের জন্য কী ও রুট",
+	"core.settings.remoteAccess.label": "রিমোট অ্যাক্সেস",
+	"core.settings.remoteAccess.about": "বাড়ির বাইরে থেকে HolyArrs ব্যবহার করুন",
 	"core.settings.tmdb.label": "মেটাডেটা",
 	"core.settings.tmdb.about": "পোস্টার ও নাম যেখান থেকে আসে",
 	"core.settings.health.label": "হেলথ চেক",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "একটি ডাউনলোডারের সেভ ফোল্ডার সেট করা নেই, তাই HolyArrs এর শেষ হওয়া ডাউনলোড ইমপোর্ট করতে পারে না।",
 	"core.api.sourceOff": "এই ইনস্টলে কিছু সারি বন্ধ আছে।",
 	"core.plain.noDownloader": "আপনার সোর্সগুলো এমন ডাউনলোড খুঁজে পায় যা আপনার সেট আপ করা কোনো ডাউনলোডার নিতে পারে না, তাই কোনোটিই পাঠানো যায় না।",
-	"core.plain.sameDownloader": "দুটি ডাউনলোডার একই ডাউনলোড অ্যাপে পৌঁছায়, তাই ডাউনলোড দুবার দেখা যেতে পারে।"
+	"core.plain.sameDownloader": "দুটি ডাউনলোডার একই ডাউনলোড অ্যাপে পৌঁছায়, তাই ডাউনলোড দুবার দেখা যেতে পারে।",
+	"core.plain.peopleCheck": "মিডিয়া সার্ভারের ব্যবহারকারী তালিকা পড়া যাচ্ছে না, তাই সেখানে সরানো লোকদের এখানে বন্ধ করা হচ্ছে না।",
+	"core.plain.deleted": "মুছে ফেলা",
+	"core.plain.deletedName": "{name} (মুছে ফেলা)"
 }

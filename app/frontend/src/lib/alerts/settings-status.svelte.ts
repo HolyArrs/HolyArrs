@@ -12,3 +12,12 @@ export async function refreshSettingsStatus(): Promise<void> {
 	}
 	settingsNow.answer = fromServer(await api.get<ServerStatus>('/settings/status').catch(() => null));
 }
+
+/** The group of health checks a fix changes; none means nothing to re-run, only a fresh read. */
+export type CheckGroup = 'backups' | 'library_folder' | 'source' | 'downloader';
+
+// After a fix made on a settings page: just that group of checks runs again (which also drops the server's kept answer), then one read, so the warning and the menu dot go out at once instead of at the next timed check.
+export async function recheckSettingsStatus(only?: CheckGroup): Promise<void> {
+	if (only) await api.post(`/health/checks/run?only=${only}`, {}).catch(() => {});
+	await refreshSettingsStatus();
+}

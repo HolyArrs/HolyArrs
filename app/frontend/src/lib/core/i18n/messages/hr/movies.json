@@ -33,5 +33,11 @@
 	"movies.versions.rulesLabel": "Pravila odabira za ovu verziju",
 	"movies.versions.folderLabel": "Mapa biblioteke za ovu verziju",
 	"movies.versions.cancel": "Odustani",
-	"movies.versions.addButton": "Dodaj verziju"
+	"movies.versions.addButton": "Dodaj verziju",
+	"movies.versions.setEdition": "Postavi izdanje",
+	"movies.versions.editionFileHint": "Koje je izdanje ova datoteka, na primjer Theatrical ili Directors Cut. Ostavite prazno za brisanje.",
+	"movies.versions.unprotectConfirm": "Ukloniti zaštitu s {label}? Bolja kopija opet će je moći zamijeniti.",
+	"movies.versions.editionChars": "Nije dopušteno:",
+	"movies.versions.editionInvalid": "Ovo izdanje nije moguće koristiti. Neka bude kratko (slova s dijakriticima i nelatinična slova zauzimaju više mjesta), izostavite znakove navedene gore i ne završavajte točkom.",
+	"movies.versions.editionDevice": "Windows čuva naziv {name} za uređaje, pa ga nije moguće koristiti. Upišite neki drugi."
 }

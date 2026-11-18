@@ -310,5 +310,10 @@
 	"migrate.needAttentionN": "Prasa uzmanību: {n}",
 	"migrate.needAttentionWhy": "Viņu vecās mapes šajā serverī nav, tāpēc tie nonāk kā vēlami mapē šeit. Izlabo mapi vai pievieno ceļa kārtulu: {list}",
 	"migrate.leftOutUncheckedN": "Izlaisti: {n}",
-	"migrate.leftOutUncheckedWhy": "{folder} ir iestatīta uz \"Neienest\"; izvēlies tai mapi un importē vēlreiz"
+	"migrate.leftOutUncheckedWhy": "{folder} ir iestatīta uz \"Neienest\"; izvēlies tai mapi un importē vēlreiz",
+	"migrate.seasonsDifferOne": "Pārbaudi 1 seriālu, kas atrasts pēc TMDB numura",
+	"migrate.seasonsDifferOther": "Pēc TMDB numura atrastie seriāli, kas jāpārbauda: {n}",
+	"migrate.seasonsDifferWhy": "{list} atrada tikai vecās lietotnes TMDB numurs, šeit ar citu nosaukumu. Atver katru un pārbaudi, vai tas ir tas pats seriāls. Ja ir, tā sezonas ir numurētas citādi: sasaisti tā Atlikušos failus un tad ieslēdz seriālu. Ja nav, noņem to; tā faili paliek savā vietā.",
+	"migrate.stillChecking": "Seriāli, kurus metadatu serveris vēl pārbauda: {n}. Saraksts atjaunosies pats, kad tas būs pabeigts.",
+	"migrate.stillCheckingImport": "Seriāli, kurus metadatu serveris vēl pārbauda: {n}. Varat importēt jau tagad; tie tiks pārbaudīti importēšanas laikā."
 }

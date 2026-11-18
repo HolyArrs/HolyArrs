@@ -299,6 +299,8 @@
 	"settings.index.api.api-routes.every-api-route.words": "api مسارات نقاط نهاية openapi",
 	"settings.index.api.seerr-card.requests-from-seerr-and-overseerr.label": "طلبات من Seerr وOverseerr",
 	"settings.index.api.seerr-card.requests-from-seerr-and-overseerr.words": "seerr overseerr jellyseerr sonarr radarr طلبات ربط",
+	"settings.index.remote-access.remote-access.remote-access.label": "الوصول عن بُعد",
+	"settings.index.remote-access.remote-access.remote-access.words": "tailscale عن بعد هاتف تلفاز خارج المنزل",
 	"settings.index.move.page.move-from-other-apps.label": "الاستيراد من تطبيقات أخرى",
 	"settings.index.move.page.move-from-other-apps.words": "استيراد انتقال ترحيل import migrate move radarr sonarr lidarr prowlarr bazarr seerr overseerr",
 	"settings.index.backups.backup-key.master-key.label": "المفتاح الرئيسي",

@@ -7,6 +7,7 @@
 	"settings.sources.title": "Πηγές",
 	"settings.sources.add": "Προσθήκη Πηγής",
 	"settings.sources.lead": "Η προτεραιότητα 1 πηγαίνει πρώτη. Μια Πηγή που αποτυγχάνει παραλείπεται έως και έξι ώρες. Για ιστότοπους χωρίς ροή, προσθέστε το Jackett ή το Prowlarr ως ροή Torznab.",
+	"settings.sources.builtIn": "Οι ενσωματωμένοι ιστότοποι δεν χρειάζονται Jackett ή Prowlarr: {sites}. Επιλέξτε {site} στο {kind}.",
 	"settings.sources.change": "Αλλαγή: {name}",
 	"settings.sources.name": "Όνομα",
 	"settings.sources.feedKind": "Είδος ροής",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "Αποθήκευση",
 	"settings.sources.cancel": "Ακύρωση",
 	"settings.sources.none": "Καμία Πηγή",
-	"settings.sources.noneText": "Προσθέστε μια ροή Torznab ή Newznab, ή το Jackett ή το Prowlarr.",
+	"settings.sources.noneText": "Προσθέστε έναν ενσωματωμένο ιστότοπο, μια ροή Torznab ή Newznab, ή το Jackett ή το Prowlarr.",
 	"settings.sources.rowTitle": "{url} · προτεραιότητα {priority} · {uses}",
 	"settings.sources.priorityUses": "Προτεραιότητα {priority} · {uses}",
 	"settings.sources.keyIs": "κλειδί {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "Ιστότοπος",
 	"settings.sources.addressSite": "Η διεύθυνση του ίδιου του ιστότοπου. Αλλάξτε τη μόνο αν ο ιστότοπος μετακόμισε.",
 	"settings.sources.siteKeyLabel": "Cookie ή κλειδί RSS",
-	"settings.sources.siteKeyHint": "Από τον δικό σας λογαριασμό: uid και pass από το cookie του προγράμματος περιήγησης ή u και tp από τον σύνδεσμο RSS σας. Φυλάσσεται κρυπτογραφημένο."
+	"settings.sources.siteKeyHint": "Από τον δικό σας λογαριασμό: uid και pass από το cookie του προγράμματος περιήγησης ή u και tp από τον σύνδεσμο RSS σας. Φυλάσσεται κρυπτογραφημένο.",
+	"settings.sources.sendTo": "Αποστολή λήψεων σε",
+	"settings.sources.sendToAny": "Οποιοδήποτε πρόγραμμα λήψης",
+	"settings.sources.sendToHint": "Ό,τι επιλέγεται από αυτή την πηγή πηγαίνει μόνο σε αυτό το πρόγραμμα. Αν δεν λειτουργεί, περιμένει.",
+	"settings.sources.sendToGone": "Το επιλεγμένο πρόγραμμα λήψης αφαιρέθηκε. Οι λήψεις από αυτή την πηγή πηγαίνουν τώρα σε οποιοδήποτε πρόγραμμα."
 }

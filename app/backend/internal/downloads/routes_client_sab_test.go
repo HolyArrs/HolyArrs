@@ -18,7 +18,7 @@ func TestClientRowUsenetWords(t *testing.T) {
 	if done.State == "seeding" || done.Phase != "done" {
 		t.Fatalf("finished usenet %q/%q", done.State, done.Phase)
 	}
-	tor := clientRow(domain.Downloader{Writable: true, ID: 78, Protocol: "torrent"}, Job{ID: "c", State: StateFinished})
+	tor := clientRow(domain.Downloader{Writable: true, ID: 78, Protocol: "torrent"}, Job{ID: "c", State: StateFinished, Detail: "uploading"})
 	if tor.State != "seeding" {
 		t.Fatalf("torrent %q", tor.State)
 	}

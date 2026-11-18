@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Vor der Veröffentlichung gepostete Releases verwerfen",
 	"settings.search.refuseEarlyHint": "Wahrscheinlich Fälschungen. Release auswählen zeigt sie trotzdem, mit einer Warnung.",
 	"settings.search.refuseTiny": "Fälschungen nach Größe und Dateityp verwerfen",
-	"settings.search.refuseTinyHint": "Zu kleine Releases, leere Dateien und .wmv oder .asf unter HD-Namen",
+	"settings.search.refuseTinyHint": "Zu kleine Releases, leere Dateien, abgeschnittene Videos und .wmv oder .asf unter HD-Namen",
 	"settings.search.grace": "Stunden, die ein Release zu früh sein darf",
 	"settings.search.graceHint": "Wegen Zeitzonen. Standard 24.",
 	"settings.search.floors": "Dateigrößen beim Import prüfen",

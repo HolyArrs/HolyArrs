@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "新增到永不新增清單",
 	"settings.outsideLists.showDot": "影集 ·",
 	"settings.outsideLists.takeOff": "移出 {name}",
-	"settings.outsideLists.empty": "空"
+	"settings.outsideLists.empty": "這份清單還沒有內容"
 }

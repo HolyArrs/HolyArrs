@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { builtInDefaults, changedParts, defaultsLoader, foldersFor, rulesFor, startChoices } from './title-defaults.ts';
+import { builtInDefaults, changedParts, defaultsLoader, foldersFor, rulesFor, startChoices, rememberSearch } from './title-defaults.ts';
 import type { LibraryFolder, PickRulesView } from '../core/types.ts';
 import type { TitleDefaults } from './types.ts';
 
@@ -115,5 +115,20 @@ describe('defaultsLoader', () => {
 		});
 		expect(await l.load()).toBeNull();
 		expect(await l.load()).toEqual(saved);
+	});
+});
+
+describe('rememberSearch', () => {
+	it('returns the defaults with the new search choice for that kind only', () => {
+		const next = rememberSearch(builtInDefaults, 'movie', false);
+		expect(next?.movie.search_on_add).toBe(false);
+		expect(next?.show).toEqual(builtInDefaults.show);
+		expect(next?.movie.keep_up_to_date).toBe(builtInDefaults.movie.keep_up_to_date);
+	});
+	it('returns null when the choice did not change', () => {
+		expect(rememberSearch(builtInDefaults, 'show', builtInDefaults.show.search_on_add)).toBeNull();
+	});
+	it('starts from built-in defaults when none are loaded', () => {
+		expect(rememberSearch(null, 'show', true)?.show.search_on_add).toBe(true);
 	});
 });

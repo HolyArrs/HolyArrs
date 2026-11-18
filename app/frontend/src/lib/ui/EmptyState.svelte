@@ -2,21 +2,23 @@
 	// Centered placeholder with icon, text and one optional action.
 	import Icon, { type IconName } from './Icon.svelte';
 	import Button from './Button.svelte';
+	import type { Snippet } from 'svelte';
 
 	let {
 		icon = 'info',
 		title,
 		text,
 		action,
-		compact = false
-	}: { icon?: IconName; title: string; text?: string; action?: { label: string; href?: string; onclick?: () => void; icon?: IconName }; compact?: boolean } = $props();
+		compact = false,
+		children
+	}: { icon?: IconName; title: string; text?: string; action?: { label: string; href?: string; onclick?: () => void; icon?: IconName }; compact?: boolean; children?: Snippet } = $props();
 </script>
 
 <div class="ui-empty" class:compact>
 	<span class="ic"><Icon name={icon} size={compact ? 22 : 28} /></span>
 	<h2>{title}</h2>
 	{#if text}<p>{text}</p>{/if}
-	{#if action}<div class="act"><Button variant="primary" href={action.href} icon={action.icon} onclick={action.onclick}>{action.label}</Button></div>{/if}
+	{#if action || children}<div class="act">{#if action}<Button variant="primary" href={action.href} icon={action.icon} onclick={action.onclick}>{action.label}</Button>{/if}{@render children?.()}</div>{/if}
 </div>
 
 <style>
@@ -27,5 +29,5 @@
 	.compact .ic { width: 44px; height: 44px; }
 	h2 { font: var(--t-title3); letter-spacing: var(--t-title3-track); }
 	p { color: var(--text-muted); font: var(--t-body); }
-	.act { margin-top: 10px; }
+	.act { margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 </style>

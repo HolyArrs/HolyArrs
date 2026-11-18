@@ -325,3 +325,29 @@ func SetEpisodeGroup(ctx context.Context, st *database.Store, titleID int64, id 
 		return database.Update(tx, "titles", &t, by)
 	})
 }
+
+// folderOwner is a title that keeps a version in a folder of that name.
+type folderOwner struct {
+	Name    string
+	TitleID int64
+}
+
+// folderOwners lists the titles still in the Library whose folder in a
+// Library folder has this name, whatever its letter case.
+func folderOwners(ctx context.Context, db Reader, libraryFolderID int64, folder string) ([]folderOwner, error) {
+	rows, err := db.QueryContext(ctx, `SELECT folder_name, title_id FROM versions WHERE library_folder_id = ? AND lower(folder_name) = lower(?)
+		AND title_id IN (SELECT id FROM titles WHERE state != 'removed')`, libraryFolderID, folder)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []folderOwner
+	for rows.Next() {
+		var o folderOwner
+		if err := rows.Scan(&o.Name, &o.TitleID); err != nil {
+			return nil, err
+		}
+		out = append(out, o)
+	}
+	return out, rows.Err()
+}

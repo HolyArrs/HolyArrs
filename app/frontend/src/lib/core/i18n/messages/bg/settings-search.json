@@ -22,7 +22,7 @@
 	"settings.search.refuseEarly": "Отхвърляне на релийзи, качени преди излизането",
 	"settings.search.refuseEarlyHint": "Вероятни фалшификати. „Избор на релийз“ ги показва пак, с предупреждение.",
 	"settings.search.refuseTiny": "Отхвърляне на фалшификати по размер и тип файл",
-	"settings.search.refuseTinyHint": "Твърде малки релийзи, празни файлове и .wmv или .asf под HD имена",
+	"settings.search.refuseTinyHint": "Твърде малки релийзи, празни файлове, прекъснати видеа и .wmv или .asf под HD имена",
 	"settings.search.grace": "Часове, с които релийз може да е ранен",
 	"settings.search.graceHint": "За часови зони. По подразбиране 24.",
 	"settings.search.floors": "Проверка на размерите на файловете при импорт",

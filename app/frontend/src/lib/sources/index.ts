@@ -13,4 +13,5 @@ export { opWords } from './api.ts';
 export { pausedUntil } from './health.ts';
 export { reasonWords } from './health.ts';
 export { uses } from './api.ts';
+export { sendToChoices } from './api.ts';
 export type { SourceForm } from './api.ts';

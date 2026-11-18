@@ -32,11 +32,12 @@
 	"settings.backups.key": "Kunci induk",
 	"settings.backups.keyDesc": "Sandaran tidak termasuk kunci ini. Simpan satu salinan di tempat yang selamat.",
 	"settings.backups.noKit": "Belum ada kit kunci disimpan untuk kunci ini. Tanpanya, kata laluan tersimpan dalam sandaran tidak dapat dibuka pada mesin baharu.",
+	"settings.backups.kitRecommended": "Disyorkan: muat turun kit kunci anda.",
 	"settings.backups.ownerOnlyKit": "Hanya pemilik boleh memuat turunnya; minta mereka melakukannya.",
 	"settings.backups.fingerprint": "Cap jari kunci",
 	"settings.backups.downloadKit": "Muat turun kit kunci",
 	"settings.backups.restoreKey": "Untuk memulihkan: namakan semula kepada holyarrs.key, letakkan dalam folder config",
 	"settings.backups.offPlan": "Mati",
-	"settings.backups.offAbout": "Tiada sandaran berjadual. Satu salinan masih dibuat sebelum setiap kemas kini.",
+	"settings.backups.offAbout": "Tiada sandaran automatik, walaupun sebelum kemas kini. Sandaran yang anda buat sendiri masih berfungsi.",
 	"settings.backups.offKeeps": "Mati mengekalkan sandaran yang telah anda ada."
 }

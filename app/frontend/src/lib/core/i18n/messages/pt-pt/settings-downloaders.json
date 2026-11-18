@@ -38,8 +38,9 @@
 	"settings.downloaders.samePair": "Os dois caminhos são iguais, por isso este par não altera nada. Ainda assim indica ao HolyArrs onde estão os ficheiros deste cliente, por isso pode mantê-lo.",
 	"settings.downloaders.change": "Alterar {name}",
 	"settings.downloaders.whichApp": "Qual app",
-	"settings.downloaders.torrents": "(torrents)",
-	"settings.downloaders.usenet": "(Usenet)",
+	"settings.downloaders.torrentsHead": "Torrents",
+	"settings.downloaders.usenetHead": "Usenet",
+	"settings.downloaders.mostUsed": "O mais usado",
 	"settings.downloaders.name": "Nome",
 	"settings.downloaders.address": "Endereço",
 	"settings.downloaders.addressHint": "A página web dele. Para o SABnzbd, use o IP ou permita o nome do host do HolyArrs.",
@@ -138,5 +139,10 @@
 	"settings.downloaders.categoryAfterImport": "Categoria após importar",
 	"settings.downloaders.categoryAfterImportHint": "Depois de um torrent ser importado, o HolyArrs move-o para esta categoria. Deixe vazio para o manter na categoria principal.",
 	"settings.downloaders.ownOnly": "Mostrar só itens do HolyArrs",
-	"settings.downloaders.ownOnlyHint": "Os itens de outras apps neste gestor de transferências ficam ocultos e o HolyArrs não os altera."
+	"settings.downloaders.ownOnlyHint": "Os itens de outras apps neste gestor de transferências ficam ocultos e o HolyArrs não os altera.",
+	"settings.downloaders.state.notAnswering": "Sem resposta",
+	"settings.downloaders.state.paused": "Pausada",
+	"settings.downloaders.state.resting": "Em pausa",
+	"settings.downloaders.state.signInRefused": "Início de sessão recusado",
+	"settings.downloaders.state.working": "A funcionar"
 }

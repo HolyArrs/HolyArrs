@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Vis for folk",
 	"settings.requests.choiceMain": "{rules} · titlens hovedkopi",
 	"settings.requests.choiceOwn": "{rules} · gemmes som sin egen kopi",
-	"settings.requests.choiceNotReady": "Tilbydes, når en 4K-kvalitet er sat op ovenfor"
+	"settings.requests.choiceNotReady": "Tilbydes, når en 4K-kvalitet er sat op ovenfor",
+	"settings.requests.approvals": "Godkendelser",
+	"settings.requests.autoApprove": "Godkend anmodninger automatisk",
+	"settings.requests.autoApproveNote": "Fra = deres anmodninger venter på dig. Titler fra Plex-watchlisten følger samme kontakt.",
+	"settings.requests.ownerTag": "Ejer",
+	"settings.requests.choiceAdd": "Tilføj en kvalitet",
+	"settings.requests.choiceNew": "Ny kvalitet",
+	"settings.requests.choiceLabel": "Dit navn",
+	"settings.requests.choiceSeen": "Folk ser"
 }

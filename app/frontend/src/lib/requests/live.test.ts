@@ -1,6 +1,8 @@
 import { liveByTitle, liveFacts, partialFacts, realAlbum, stepFacts } from './live.ts';
 import { lifecycle } from './lifecycle.ts';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import en from '#lib/core/i18n/messages/en/server-lines.json';
+import { lang } from '#lib/core/i18n/i18n.svelte.ts';
 
 const dl = (title_id: number, phase: string, progress = 0) => ({ title_id, phase, progress });
 const se = (title_id: number, state = 'running', kind = 'search_slot') => ({ title_id, state, kind }) as Parameters<typeof liveByTitle>[1][number];
@@ -110,6 +112,18 @@ describe('a download waiting on a person', () => {
 	});
 	it('a copy still downloading wins over a stuck one', () => {
 		expect(liveByTitle([dl(7, 'needs_a_decision', 1), dl(7, 'downloading', 0.4)], []).get(7)?.download?.phase).toBe('downloading');
+	});
+});
+
+describe('the reason a waiting request gives', () => {
+	const start = { value: lang.value, words: lang.words };
+	afterEach(() => { lang.value = start.value; lang.words = start.words; });
+	it('is said in the picked language when the server line is known', () => {
+		const key = Object.keys(en).find((k) => (en as Record<string, string>)[k] === 'Deleted by hand')!;
+		lang.value = 'de';
+		lang.words = { ...(en as Record<string, string>), [key]: 'Von Hand gelöscht' };
+		expect(stepFacts({ kind: 'waiting', text: 'Deleted by hand' }).reason).toBe('Von Hand gelöscht');
+		expect(stepFacts({ kind: 'waiting', text: 'something unknown' }).reason).toBe('something unknown');
 	});
 });
 

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Шлях HolyArrs",
 	"settings.mediaServers.pathTo": "Та сама тека на сервері",
 	"settings.mediaServers.pathHint": "Лише якщо сервер бачить твої файли за іншим шляхом",
+	"settings.mediaServers.webUrl": "Адреса для браузерів",
+	"settings.mediaServers.webUrlHint": "Адреса, за якою всі відкривають сервер на телефоні чи комп’ютері. Додає кнопку «Відкрити» на сторінки тайтлів, які є на сервері. Залиште порожнім, щоб кнопки не було.",
 	"settings.mediaServers.local": "Доступ до локальної мережі",
 	"settings.mediaServers.send": "Надсилати оновлення",
 	"settings.mediaServers.save": "Зберегти",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Вимкнути історію переглядів? Усе прочитане буде видалено.",
 	"settings.mediaServers.watchTurnedOn": "Історію переглядів увімкнено. Перше читання — протягом 30 хвилин.",
 	"settings.mediaServers.watchTurnedOff": "Історію переглядів вимкнено",
-	"settings.mediaServers.watchFailed": "Не вдалося змінити історію переглядів"
+	"settings.mediaServers.watchFailed": "Не вдалося змінити історію переглядів",
+	"settings.mediaServers.labelTitle": "Мітки Plex",
+	"settings.mediaServers.labelSwitch": "Додавати мітку запитаним тайтлам",
+	"settings.mediaServers.labelHint": "Коли запитаний фільм чи серіал з'являється в Plex, HolyArrs додає йому мітку, щоб у Plex можна було фільтрувати, створювати колекції або ділитися за нею. Наявні мітки залишаються.",
+	"settings.mediaServers.labelText": "Мітка",
+	"settings.mediaServers.labelAskers": "Також додавати ім'я того, хто запитав, як мітку",
+	"settings.mediaServers.labelSaved": "Мітки Plex збережено",
+	"settings.mediaServers.labelFailed": "Не вдалося зберегти мітки Plex",
+	"settings.mediaServers.labelExisting": "Додати мітку вже запитаним тайтлам",
+	"settings.mediaServers.labelExistingStarted": "Розставлення міток почалося. Тайтли отримають мітки протягом кількох хвилин.",
+	"settings.mediaServers.labelExistingFailed": "Не вдалося почати розставлення міток"
 }

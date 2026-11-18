@@ -48,5 +48,13 @@
 	"settings.requests.choiceShown": "Mostra a la gent",
 	"settings.requests.choiceMain": "{rules} · la còpia principal del títol",
 	"settings.requests.choiceOwn": "{rules} · es desa com a còpia pròpia",
-	"settings.requests.choiceNotReady": "Es mostra quan hi hagi una qualitat 4K configurada a dalt"
+	"settings.requests.choiceNotReady": "Es mostra quan hi hagi una qualitat 4K configurada a dalt",
+	"settings.requests.approvals": "Aprovacions",
+	"settings.requests.autoApprove": "Aprova les sol·licituds automàticament",
+	"settings.requests.autoApproveNote": "Desactivat = les seves sol·licituds t’esperen. Els títols de la llista de Plex segueixen el mateix interruptor.",
+	"settings.requests.ownerTag": "Propietari",
+	"settings.requests.choiceAdd": "Afegeix una qualitat",
+	"settings.requests.choiceNew": "Qualitat nova",
+	"settings.requests.choiceLabel": "El vostre nom",
+	"settings.requests.choiceSeen": "La gent veu"
 }

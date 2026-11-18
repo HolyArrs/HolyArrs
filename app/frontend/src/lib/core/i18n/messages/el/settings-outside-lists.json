@@ -86,5 +86,5 @@
 	"settings.outsideLists.addNever": "Προσθήκη στη λίστα μη προσθήκης",
 	"settings.outsideLists.showDot": "σειρά ·",
 	"settings.outsideLists.takeOff": "Αφαίρεση του «{name}»",
-	"settings.outsideLists.empty": "Κενή"
+	"settings.outsideLists.empty": "Δεν υπάρχει τίποτα ακόμα σε αυτή τη λίστα"
 }

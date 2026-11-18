@@ -7,6 +7,7 @@
 	"settings.sources.title": "來源",
 	"settings.sources.add": "新增來源",
 	"settings.sources.lead": "優先順序 1 最先使用。失敗的來源最多會被跳過六小時。沒有訂閱來源的網站，可以把 Jackett 或 Prowlarr 作為 Torznab 訂閱來源新增。",
+	"settings.sources.builtIn": "內建網站不需要 Jackett 或 Prowlarr：{sites}。在{kind}中選擇{site}。",
 	"settings.sources.change": "更改 {name}",
 	"settings.sources.name": "名稱",
 	"settings.sources.feedKind": "訂閱來源類型",
@@ -50,7 +51,7 @@
 	"settings.sources.save": "儲存",
 	"settings.sources.cancel": "取消",
 	"settings.sources.none": "沒有來源",
-	"settings.sources.noneText": "新增 Torznab 或 Newznab 訂閱來源，或者 Jackett、Prowlarr。",
+	"settings.sources.noneText": "新增內建網站、Torznab 或 Newznab 訂閱來源，或者 Jackett、Prowlarr。",
 	"settings.sources.rowTitle": "{url} · 優先順序 {priority} · {uses}",
 	"settings.sources.priorityUses": "優先順序 {priority} · {uses}",
 	"settings.sources.keyIs": "金鑰 {key}",
@@ -77,5 +78,9 @@
 	"settings.sources.siteLabel": "網站",
 	"settings.sources.addressSite": "網站本身的位址。只有在網站搬家時才變更。",
 	"settings.sources.siteKeyLabel": "Cookie 或 RSS 金鑰",
-	"settings.sources.siteKeyHint": "來自你自己的帳號：瀏覽器 Cookie 中的 uid 和 pass，或 RSS 連結中的 u 和 tp。加密保存。"
+	"settings.sources.siteKeyHint": "來自你自己的帳號：瀏覽器 Cookie 中的 uid 和 pass，或 RSS 連結中的 u 和 tp。加密保存。",
+	"settings.sources.sendTo": "下載傳送到",
+	"settings.sources.sendToAny": "任意下載器",
+	"settings.sources.sendToHint": "從此來源選中的內容只傳送到這個下載器。它停止時會等待。",
+	"settings.sources.sendToGone": "所選下載器已被刪除。此來源的下載現在傳送到任意下載器。"
 }

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
+	import { bareNames, personText, shownPerson } from '#lib/core/plain.ts';
+	import PersonText from '#lib/ui/PersonText.svelte';
 	import Poster from '#lib/ui/Poster.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu from '#lib/ui/Menu.svelte';
@@ -77,7 +79,7 @@
 			{@const hs = hist && stageOf(r) !== 'failed' ? historyStatus(r, importOf.get(r.id)) : null}
 			{@const raw = percent(r.progress)}
 			{@const pct = hs && !hs.bad ? 100 : raw}
-			{@const tone = hs ? (hs.bad ? 'bad' : 'done') : stageOf(r) === 'paused' ? 'paused' : barTone(r)}
+			{@const tone = hs ? (hs.bad ? 'bad' : hs.held ? 'held' : 'done') : stageOf(r) === 'paused' ? 'paused' : statusDetail(r, importOf.get(r.id)) === t('downloads.detail.filesGone') ? 'held' : barTone(r)}
 			{@const dn = (r.speed ?? 0) >= 1024}
 			{@const upOn = (r.up_speed ?? 0) >= 1024}
 			{@const eta = r.active && r.eta ? duration(r.eta) : ''}
@@ -87,10 +89,10 @@
 			{@const s = historyStatus(r, importOf.get(r.id))}
 			{@const cut = s.text.indexOf(': ')}
 			{@const reason = cut > 0 ? shortReason(s.text.slice(cut + 2)) : ''}
-			<span class="st" class:ph class:bad={s.bad} class:two={!!reason} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{serverWords(reason)}</span>{/if}</span></span>
+			<span class="st" class:ph class:bad={s.bad} class:held={s.held} class:two={!!reason} data-col="status" title={s.text}><span class="dot" aria-hidden="true"></span><span class="tx"><span class="sw">{cut > 0 ? s.text.slice(0, cut) : s.text}</span>{#if reason}<span class="why" data-testid="dl-why">{serverWords(reason)}</span>{/if}</span></span>
 		{:else}
-			{@const tn = barTone(r)}
 			{@const detail = statusDetail(r, importOf.get(r.id))}
+			{@const tn = detail === t('downloads.detail.filesGone') ? 'held' : barTone(r)}
 			{@const more = detail || statusHint(r)}
 			{@const why = problem(r)}
 			<!-- The line shows the problem, else the queue place, else the current step. -->
@@ -117,9 +119,9 @@
 		<span class="txt" class:ph data-col="tracker" title={r.tracker ?? ''}>{r.tracker || dash}</span>
 	{:else if id === 'requested'}
 		<!-- A person, HolyArrs itself (a title it grabbed on its own), or Outside (added in the client). -->
-		{@const person = !r.outside && r.requested_by ? r.requested_by : ''}
+		{@const person = !r.outside && r.requested_by ? shownPerson(r.requested_by) : ''}
 		{@const who = r.outside ? t('downloads.row.outside') : person || (session.can('manage_library') ? 'HolyArrs' : '')}
-		<span class="txt rq" class:ph class:soft={!person} data-col="requested" title={who}>{#if person}<i class="av" aria-hidden="true">{person.slice(0, 1).toUpperCase()}</i>{/if}{who || dash}</span>
+		<span class="txt rq" class:ph class:soft={!person} data-col="requested" title={personText(who)}>{#if person}<i class="av" aria-hidden="true">{bareNames(person).slice(0, 1).toUpperCase()}</i>{/if}{#if who}<PersonText text={who} />{:else}{dash}{/if}</span>
 	{:else if id === 'source'}
 		<span class="txt" class:ph data-col="source" title={r.source_name ?? ''}>{#if r.source_name && r.source_id && session.can('settings')}<a href="/settings/sources/{r.source_id}" onclick={(e) => e.stopPropagation()}>{r.source_name}</a>{:else}{r.source_name || dash}{/if}</span>
 	{:else if id === 'category'}
@@ -190,7 +192,8 @@
 	.bl { font-weight: 600; text-shadow: 0 0 3px var(--surface-1); }
 	.st { display: flex; align-items: center; gap: 6px; min-width: 0; font: var(--t-footnote); }
 	.st .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-	.st .sw, .st .why { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.st .sw { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.st .why { overflow-wrap: anywhere; white-space: normal; } /* A problem reason is shown in full, wrapped, never cut. */
 	.st .why { color: var(--text-muted); font: var(--t-caption); }
 	.st.two { align-items: flex-start; }
 	.st.two .dot { margin-top: 4px; }

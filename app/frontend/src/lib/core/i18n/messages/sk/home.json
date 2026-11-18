@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Vypnuté v Častiach",
 	"home.noneForSources": "chýba pre to, čo nachádzajú vaše zdroje",
 	"home.addedTwice": "je pridaný dvakrát",
-	"home.addedTwiceMany": "sú pridané dvakrát"
+	"home.addedTwiceMany": "sú pridané dvakrát",
+	"home.notSetUpYet": "Zatiaľ nenastavené",
+	"home.setUpToAdd": "Dokončite nastavenie a pridajte {name}",
+	"home.comingThisWeek": "Tento týždeň",
+	"home.thisWeek": "tento týždeň",
+	"home.landingThisWeek": "Diely a filmy, ktoré vyjdú tento týždeň",
+	"home.popularThisWeek": "Obľúbené novinky, ktoré vyjdú tento týždeň",
+	"home.peopleCheck": "Kontrola ľudí",
+	"home.cantReadUsers": "zoznam používateľov sa nedá prečítať"
 }

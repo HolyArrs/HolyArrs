@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TitleView } from '../core/types.ts';
-import { applyLayout, chosenColumns, columnsFor, columnSort, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortLabel, sortLabels, sortsFor, sortTitles, startDir, tableMinWidth, type FilterContext } from './table.ts';
+import { activeCount, applyLayout, chosenColumns, columnsFor, columnSort, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortLabel, sortLabels, sortsFor, sortTitles, startDir, tableMinWidth, type FilterContext } from './table.ts';
 
 function memory() {
 	const m = new Map<string, string>();
@@ -128,13 +128,21 @@ describe('filter counts', () => {
 		expect(Object.fromEntries(c.codecs)).toEqual({ h264: 1 });
 		expect(c.subs).toBe(1);
 	});
+	it('filters titles anybody watched, and ignores the filter until that list is known', () => {
+		const films = [movie(20, 'Seen'), movie(21, 'Unseen')];
+		const any: FilterContext = { ...ctx, watchedAnyone: (t) => t.id === 20 };
+		expect(films.filter((t) => passes(t, { ...noFilter, watched: true }, any)).map((t) => t.id)).toEqual([20]);
+		expect(filterCounts(films, noFilter, any).watched).toBe(1);
+		expect(films.filter((t) => passes(t, { ...noFilter, watched: true }, ctx)).length).toBe(2);
+		expect(activeCount({ ...noFilter, watched: true })).toBe(1);
+	});
 });
 
 describe('saved filters', () => {
 	it('round-trip per member and library, filling choices added later', () => {
 		const store = memory();
 		saveSaved(3, 'show', [{ name: 'Missing, kept', filter: { ...noFilter, status: 'missing', kept: 'on' } }], store);
-		expect(loadSaved(3, 'show', store)).toEqual([{ name: 'Missing, kept', filter: { status: 'missing', kept: 'on', asker: 'anyone', series: 0, codec: '', subs: false } }]);
+		expect(loadSaved(3, 'show', store)).toEqual([{ name: 'Missing, kept', filter: { status: 'missing', kept: 'on', asker: 'anyone', series: 0, codec: '', subs: false, watched: false } }]);
 		expect(loadSaved(3, 'movie', store)).toEqual([]);
 		store.setItem('holyarrs.library-filters.3.movie', JSON.stringify([{ name: 'Old', filter: { status: 'have' } }, { bad: 1 }]));
 		expect(loadSaved(3, 'movie', store)).toEqual([{ name: 'Old', filter: { ...noFilter, status: 'have' } }]);

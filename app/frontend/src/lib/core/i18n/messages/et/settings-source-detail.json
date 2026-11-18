@@ -34,5 +34,6 @@
 	"settings.sourceDetail.what": "Mida",
 	"settings.sourceDetail.result": "Tulemus",
 	"settings.sourceDetail.time": "Aeg",
-	"settings.sourceDetail.answeredCell": "Vastatud"
+	"settings.sourceDetail.answeredCell": "Vastatud",
+	"settings.sourceDetail.noTimes": "Vastuseid veel pole"
 }

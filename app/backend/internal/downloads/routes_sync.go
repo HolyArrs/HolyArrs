@@ -123,6 +123,25 @@ func (a *Web) storeSize(downloaderID int64, hash string) int64 {
 	return a.DLSync.Store.Current(downloaderID).Items[strings.ToLower(hash)].Size
 }
 
+// storeLive marks one of HolyArrs' own finished torrents still seeding, and
+// names it where the client holds it now (its own file or folder), from the
+// reader's snapshot.
+func (a *Web) storeLive(r *DownloadRow) {
+	if r.Hash == "" || r.Protocol != "torrent" {
+		return
+	}
+	j, ok := a.DLSync.Store.Current(r.DownloaderID).Items[strings.ToLower(r.Hash)]
+	if !ok {
+		return
+	}
+	if _, st, _ := clientPhase(j); finishedState(r.State) && j.State == StateFinished {
+		r.Seeding = st == "seeding"
+	}
+	if j.ContentPath != "" {
+		r.Path = j.ContentPath
+	}
+}
+
 func sortDownloaders(ds []domain.Downloader) {
 	sort.Slice(ds, func(i, j int) bool {
 		if ds[i].Priority != ds[j].Priority {

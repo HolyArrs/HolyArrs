@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "Neizdevās saglabāt valodu",
 	"accounts.language.count.one": "1 valoda",
 	"accounts.language.count.other": "Valodas: {n}",
-	"accounts.account.watchEveryone": "Īpašnieks to ieslēdza visiem. Lai to apturētu, izslēdz abus."
+	"accounts.account.watchEveryone": "Īpašnieks to ieslēdza visiem. Lai to apturētu, izslēdz abus.",
+	"accounts.watch.title": "Skatīts atzīmes",
+	"accounts.watch.hint": "Sasaistiet šeit savu kontu multivides serverī, lai Bibliotēka rādītu, ko esat skatījies.",
+	"accounts.watch.as": "{server}, kā {name}",
+	"accounts.watch.nameOn": "Vārds serverī {server}",
+	"accounts.watch.passwordOnce": "Jūsu parole tiek nosūtīta tikai uz {server} un netiek glabāta.",
+	"accounts.watch.linked": "Sasaistīts ar {name} serverī {server}",
+	"accounts.watch.unlinked": "Saite noņemta",
+	"accounts.login.importPaused": "Tava pierakstīšanās beidzās, tāpēc imports ir apturēts. Pieraksties, atver Importēt bibliotēku un nospied Skenēt, lai turpinātu."
 }

@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "Čaká: {n}",
 	"frame.nav.new": "Nové: {n}",
 	"frame.nav.manage": "Správa",
+	"frame.nav.activity": "Aktivita",
+	"frame.nav.system": "Systém",
 	"frame.nav.history": "História",
 	"frame.nav.status": "Stav",
 	"frame.nav.settings": "Nastavenia",
+	"frame.nav.plugins": "Pluginy",
 	"frame.nav.goTo": "Prejsť na",
 	"frame.nav.active": "Aktívne: {n}, {percent} %",
 	"frame.nav.decide": "Vyžaduje rozhodnutie: {n}",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Systémový",
 	"frame.layout.switch": "Prepnúť účet",
 	"frame.layout.signOut": "Odhlásiť sa",
+	"frame.layout.support": "Podporiť HolyArrs",
 	"frame.layout.signOutFail": "Odhlásenie sa nepodarilo potvrdiť",
 	"frame.layout.signedOut": "Odhlásený",
 	"frame.layout.accountMenu": "{name}, {role}: účet a vzhľad",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs to skúsi znova sám",
 	"frame.feeds.clearNow": "Vyčistiť teraz",
 	"frame.feeds.cleared": "Vyčistené zo Sťahovača",
-	"frame.feeds.clearStill": "Zatiaľ nevyčistené"
+	"frame.feeds.clearStill": "Zatiaľ nevyčistené",
+	"frame.error.pageGone": "Táto stránka neexistuje. Odkaz môže byť starý alebo zle napísaný."
 }

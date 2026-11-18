@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PersonText from '#lib/ui/PersonText.svelte';
+	import { personText } from '#lib/core/plain.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
@@ -32,15 +34,15 @@
 	}
 </script>
 
-<Sheet bind:open title={v?.title ?? t('downloads.hes.event')} placement="auto" size="md" hideTitle onclose={() => (row = null)}>
+<Sheet bind:open title={v?.title ? personText(v.title) : t('downloads.hes.event')} placement="auto" size="md" hideTitle onclose={() => (row = null)}>
 	{#if row && v}
 		<div class="es" data-testid="hv-sheet">
 			<div class="head">
 				{#if v.art}<span class="art" class:square={v.art.square}><Poster src={v.art.src} name={v.art.name} /></span>{/if}
 				<div class="hw">
 					<VerbMark verb={v.verb} size="sm" />
-					<p class="ttl">{v.title}</p>
-					{#if v.meta}<p class="sub">{v.meta}</p>{/if}
+					<p class="ttl"><PersonText text={v.title} /></p>
+					{#if v.meta}<p class="sub"><PersonText text={v.meta} /></p>{/if}
 				</div>
 				<IconButton icon="x" label={t('health.why.close')} variant="tinted" size="sm" tooltip={false} onclick={() => (open = false)} />
 			</div>
@@ -49,14 +51,14 @@
 					{#each v.steps as st (st.key)}<li class={st.state}><span class="pip" aria-hidden="true"></span>{st.label}<span class="sr-only">: {st.state === 'done' ? t('downloads.hes.done') : st.state === 'failed' ? t('downloads.hes.failed') : st.state === 'needs' ? t('downloads.hes.waiting') : t('downloads.hes.notYet')}</span></li>{/each}
 				</ol>
 			{/if}
-			{#if v.line}<p class="sum" class:long={v.long}>{serverWords(v.line)}</p>{/if}
+			{#if v.line}<p class="sum" class:long={v.long} class:full={v.full}><PersonText text={serverWords(v.line)} /></p>{/if}
 			<dl class="pf">
 				{#each v.facts as f (f.label)}
 					<dt>{FACT_LABEL[f.label]}</dt>
 					<dd class:mono={f.mono} class:one={f.label === 'Release'} title={f.label === 'Release' ? f.value : undefined}>
 						{#if f.at}<time datetime={f.at}>{f.value}</time>{#if f.ago}<span class="ago">{` · ${f.ago}`}</span>{/if}
 						{:else if f.full}<span class="path"><span class="pv" title={f.full}>{#each pathBits(f.value) as b, i (i)}{glue(b)}<wbr>{/each}</span><button type="button" class="cp" aria-label={t('downloads.hes.copyPath')} onclick={() => copy(f.full ?? '')}><Icon name="copy" size={14} /></button></span>
-						{:else}{f.value}{/if}
+						{:else}<PersonText text={f.value} />{/if}
 					</dd>
 				{/each}
 			</dl>
@@ -93,6 +95,7 @@
 	.steps .needs .pip { background: var(--accent); box-shadow: none; }
 	.sum { margin: 12px 0 0; color: var(--text); font: var(--t-subhead); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
 	.sum.long { -webkit-line-clamp: 3; line-clamp: 3; }
+	.sum.full { display: block; -webkit-line-clamp: unset; line-clamp: none; overflow: visible; }
 	.pf { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px 12px; margin: 20px 0 0; padding: 0; font: var(--t-footnote); }
 	.pf dt { color: var(--text-muted); }
 	.pf dd { margin: 0; min-width: 0; color: var(--text); font: var(--t-footnote); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

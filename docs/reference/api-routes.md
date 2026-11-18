@@ -741,6 +741,8 @@ The Auth column is the permission a caller needs, as pinned in the snapshot. The
 | PUT | `/api/v1/settings/old-app-api` | settings |  |
 | POST | `/api/v1/settings/old-app-api/keys/{side}` | settings |  |
 | DELETE | `/api/v1/settings/old-app-api/keys/{side}` | settings |  |
+| GET | `/api/v1/settings/proxy` | settings |  |
+| PUT | `/api/v1/settings/proxy` | settings |  |
 | GET | `/api/v1/settings/release-gate` | manage_library |  |
 | PUT | `/api/v1/settings/release-gate` | settings |  |
 | GET | `/api/v1/settings/search` | settings |  |

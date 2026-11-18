@@ -262,7 +262,7 @@ func metadataClient() *http.Client {
 		allow = outbound.MetadataServiceLocal
 	}
 	return &http.Client{
-		Transport:     metadata.NewServerTransport(outbound.PolicyDialer(allow).DialContext),
+		Transport:     metadata.NewServerTransport(outbound.WatchFakeIP(outbound.PolicyDialer(allow).DialContext)),
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 }

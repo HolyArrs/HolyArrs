@@ -14,9 +14,12 @@
 	"frame.nav.waiting": "{n} ootel",
 	"frame.nav.new": "{n} uut",
 	"frame.nav.manage": "Haldus",
+	"frame.nav.activity": "Tegevus",
+	"frame.nav.system": "Süsteem",
 	"frame.nav.history": "Ajalugu",
 	"frame.nav.status": "Olek",
 	"frame.nav.settings": "Seaded",
+	"frame.nav.plugins": "Pluginad",
 	"frame.nav.goTo": "Mine",
 	"frame.nav.active": "{n} aktiivset, {percent}%",
 	"frame.nav.decide": "{n} vajab otsust",
@@ -76,6 +79,7 @@
 	"frame.layout.system": "Süsteem",
 	"frame.layout.switch": "Vaheta kontot",
 	"frame.layout.signOut": "Logi välja",
+	"frame.layout.support": "Toeta HolyArrsi",
 	"frame.layout.signOutFail": "Väljalogimist ei õnnestunud kinnitada",
 	"frame.layout.signedOut": "Välja logitud",
 	"frame.layout.accountMenu": "{name}, {role}: konto ja välimus",
@@ -98,5 +102,6 @@
 	"frame.feeds.clearBody": "HolyArrs proovib ise uuesti",
 	"frame.feeds.clearNow": "Tühjenda kohe",
 	"frame.feeds.cleared": "Allalaadijast tühjendatud",
-	"frame.feeds.clearStill": "Pole veel tühjendatud"
+	"frame.feeds.clearStill": "Pole veel tühjendatud",
+	"frame.error.pageGone": "Seda lehte pole olemas. Link võib olla vana või valesti kirjutatud."
 }

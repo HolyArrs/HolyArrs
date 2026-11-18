@@ -373,5 +373,13 @@
 	"accounts.language.saveFailed": "言語を保存できませんでした",
 	"accounts.language.count.one": "1 件の言語",
 	"accounts.language.count.other": "{n} 件の言語",
-	"accounts.account.watchEveryone": "オーナーが全員に対してオンにしました。止めるには両方をオフにしてください。"
+	"accounts.account.watchEveryone": "オーナーが全員に対してオンにしました。止めるには両方をオフにしてください。",
+	"accounts.watch.title": "視聴済みマーク",
+	"accounts.watch.hint": "ここでメディアサーバーのアカウントをリンクすると、ライブラリに視聴済みのものが表示されます。",
+	"accounts.watch.as": "{server}（{name} として）",
+	"accounts.watch.nameOn": "{server} での名前",
+	"accounts.watch.passwordOnce": "パスワードは {server} にだけ送られ、保存されません。",
+	"accounts.watch.linked": "{server} の {name} とリンクしました",
+	"accounts.watch.unlinked": "リンクを解除しました",
+	"accounts.login.importPaused": "サインインが切れたため、インポートは一時停止しています。サインインして ライブラリをインポート を開き、スキャン を押すと続きます。"
 }

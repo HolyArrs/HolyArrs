@@ -129,6 +129,8 @@
 	"core.settings.ai.about": "Lad AI-assistenter bruge HolyArrs",
 	"core.settings.api.label": "API",
 	"core.settings.api.about": "Nøgler og ruter til andre apps",
+	"core.settings.remoteAccess.label": "Fjernadgang",
+	"core.settings.remoteAccess.about": "Brug HolyArrs væk fra hjemmet",
 	"core.settings.tmdb.label": "Metadata",
 	"core.settings.tmdb.about": "Hvor plakater og navne kommer fra",
 	"core.settings.health.label": "Sundhedstjek",
@@ -147,5 +149,8 @@
 	"core.plain.saveFolder": "En downloader har ingen gemmemappe, så HolyArrs kan ikke importere dens færdige downloads.",
 	"core.api.sourceOff": "Nogle rækker er slået fra på denne installation.",
 	"core.plain.noDownloader": "Dine kilder finder downloads, som ingen af dine downloadere kan tage imod, så ingen kan sendes.",
-	"core.plain.sameDownloader": "To Downloadere når den samme download-app, så downloads kan blive vist to gange."
+	"core.plain.sameDownloader": "To Downloadere når den samme download-app, så downloads kan blive vist to gange.",
+	"core.plain.peopleCheck": "Medieserverens brugerliste kan ikke læses, så personer fjernet der slås ikke fra her.",
+	"core.plain.deleted": "slettet",
+	"core.plain.deletedName": "{name} (slettet)"
 }

@@ -28,6 +28,7 @@ func (h *Handlers) chooseRelease(w http.ResponseWriter, r *http.Request) {
 		SearchError(w, err)
 		return
 	}
+	h.search().waitSend(r.Context(), &ch)
 	webserver.WriteJSON(w, http.StatusOK, ch)
 }
 

@@ -27,6 +27,8 @@
 	"settings.mediaServers.pathFrom": "Đường dẫn trong HolyArrs",
 	"settings.mediaServers.pathTo": "Cùng thư mục trên máy chủ",
 	"settings.mediaServers.pathHint": "Chỉ khi máy chủ thấy tệp của bạn ở một đường dẫn khác",
+	"settings.mediaServers.webUrl": "Địa chỉ cho trình duyệt",
+	"settings.mediaServers.webUrlHint": "Địa chỉ mọi người dùng để mở máy chủ trên điện thoại hoặc máy tính. Thêm nút Mở vào trang của các tựa phim máy chủ có. Để trống nếu không muốn có nút.",
 	"settings.mediaServers.local": "Truy cập mạng nội bộ",
 	"settings.mediaServers.send": "Gửi cập nhật",
 	"settings.mediaServers.save": "Lưu",
@@ -47,5 +49,15 @@
 	"settings.mediaServers.watchConfirmOff": "Tắt lịch sử xem? Mọi thứ đã đọc đến giờ sẽ bị xóa.",
 	"settings.mediaServers.watchTurnedOn": "Lịch sử xem đã bật. Lần đọc đầu tiên diễn ra trong vòng 30 phút.",
 	"settings.mediaServers.watchTurnedOff": "Lịch sử xem đã tắt",
-	"settings.mediaServers.watchFailed": "Không đổi được lịch sử xem"
+	"settings.mediaServers.watchFailed": "Không đổi được lịch sử xem",
+	"settings.mediaServers.labelTitle": "Nhãn Plex",
+	"settings.mediaServers.labelSwitch": "Gắn nhãn cho các tựa được yêu cầu",
+	"settings.mediaServers.labelHint": "Khi phim hoặc chương trình được yêu cầu đã có trong Plex, HolyArrs sẽ gắn nhãn cho nó để bạn có thể lọc, tạo bộ sưu tập hoặc chia sẻ theo nhãn đó trong Plex. Các nhãn có sẵn vẫn được giữ.",
+	"settings.mediaServers.labelText": "Nhãn",
+	"settings.mediaServers.labelAskers": "Gắn thêm tên người yêu cầu làm nhãn",
+	"settings.mediaServers.labelSaved": "Đã lưu nhãn Plex",
+	"settings.mediaServers.labelFailed": "Không thể lưu nhãn Plex",
+	"settings.mediaServers.labelExisting": "Gắn nhãn cho các tựa đã được yêu cầu",
+	"settings.mediaServers.labelExistingStarted": "Đã bắt đầu gắn nhãn. Các tựa sẽ có nhãn trong vài phút.",
+	"settings.mediaServers.labelExistingFailed": "Không thể bắt đầu gắn nhãn"
 }

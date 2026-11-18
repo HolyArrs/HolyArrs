@@ -172,6 +172,7 @@ func (a *Web) downloadDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	if d.StartedBy.Kind == "user" {
 		_ = db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", d.StartedBy.ID).Scan(&out.RequestedBy)
+		out.RequestedBy = webserver.NameFor(ctx, out.RequestedBy)
 	}
 	if out.RequestedBy == "" && len(d.SlotIDs) > 0 {
 		// No person picked it: name the person who added the Library title, if a person did.

@@ -168,7 +168,7 @@
 	"discover.search.pasteAnIdSuch": "Įklijuokite ID, pavyzdžiui tmdb:693134 ar tvmaze:82.",
 	"discover.search.orDescribeItSuch": "Arba apibūdinkite, pavyzdžiui „kosminis filmas su robotu iš 2014“.",
 	"discover.search.lookEverywhere": "Ieškoti visur",
-	"discover.search.searchIndexersFor": "Ieškoti indeksuotojuose: „{searched}“",
+	"discover.search.searchIndexersFor": "Patikrinti šaltinius",
 	"discover.search.topMatches": "Geriausi atitikmenys",
 	"discover.people.goToTheFilmography": "Eiti į filmografiją",
 	"discover.people.filmography": "Filmografija",
@@ -771,5 +771,16 @@
 	"discover.leftovers.reason.movie_copy_choice": "Netinka šiai versijai",
 	"discover.leftovers.reason.movie_has_file": "Filmas jau turi failą",
 	"discover.leftovers.reason.replaced_by_hand": "Pakeistas kitu failu",
-	"discover.leftovers.reason.unmatched": "Susiejimas atšauktas rankiniu būdu"
+	"discover.leftovers.reason.unmatched": "Susiejimas atšauktas rankiniu būdu",
+	"discover.searchSections.genres": "Žanrai",
+	"discover.searchSections.moods": "Nuotaikos",
+	"discover.searchSections.stories": "Istorijos ir temos",
+	"discover.searchSections.worlds": "Pasauliai ir aplinkos",
+	"discover.searchSections.eras": "Epochos",
+	"discover.searchSections.world": "Iš viso pasaulio",
+	"discover.searchSections.collections": "Rinkiniai",
+	"discover.popularRail.out": "Išeina",
+	"discover.popularRail.comingDay": "Netrukus",
+	"discover.titleLibrary.turnShowOnHint": "Įjunkite serialą, kad prasidėtų paieška.",
+	"discover.leftovers.reason.seasons_differ": "Rastas tik pagal senos programos TMDB numerį: patikrinkite, ar tai tas pats serialas, tada patys susiekite failą"
 }

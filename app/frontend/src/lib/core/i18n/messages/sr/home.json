@@ -274,5 +274,13 @@
 	"home.sourcesOff": "Искључено у Деловима",
 	"home.noneForSources": "недостаје за оно што твоји извори проналазе",
 	"home.addedTwice": "је додат двапут",
-	"home.addedTwiceMany": "су додати двапут"
+	"home.addedTwiceMany": "су додати двапут",
+	"home.notSetUpYet": "Још није подешено",
+	"home.setUpToAdd": "Завршите подешавање да бисте додали {name}",
+	"home.comingThisWeek": "Стиже ове недеље",
+	"home.thisWeek": "ове недеље",
+	"home.landingThisWeek": "Епизоде и филмови који стижу ове недеље",
+	"home.popularThisWeek": "Популарна издања која стижу ове недеље",
+	"home.peopleCheck": "Провера особа",
+	"home.cantReadUsers": "списак корисника не може да се прочита"
 }

@@ -152,6 +152,24 @@ test('Save in the bar saves through the page form, with a toast', async () => {
 	await expect(page.getByText('Request settings saved').first()).toBeVisible();
 });
 
+test('Approvals lists the owner with their own switch, on by default, and saves it', async () => {
+	await page.goto('/settings/requests');
+	const card = page.locator('#approvals');
+	await expect(card.getByText('Approve requests automatically')).toBeVisible();
+	await expect(card.getByText('Off = their requests wait for you. Plex watchlist titles follow the same switch.')).toBeVisible();
+	const owner = card.getByRole('checkbox').first();
+	await expect(owner).toBeChecked();
+	await owner.uncheck();
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByText('Request settings saved').first()).toBeVisible();
+	await page.reload();
+	await expect(card.getByRole('checkbox').first()).not.toBeChecked();
+	expect((await (await page.request.get('/api/v1/settings/asks')).json()).owner_auto_approve).toBe(false);
+	await card.getByRole('checkbox').first().check();
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByTestId('savebar')).toHaveCount(0);
+});
+
 test('Advanced starts closed and stays as the person left it', async () => {
 	await page.goto('/settings/search');
 	const card = page.locator('#early-fake');
@@ -178,15 +196,14 @@ test('Movies and TV defaults: saved choices are where the add movie dialog start
 	const movies = page.locator('#movie-defaults');
 	const folder = movies.getByLabel('Library folder');
 	await expect(folder).toHaveValue('0');
-	await expect(movies.getByLabel('Search when added')).toBeChecked();
-	await expect(page.locator('#show-defaults').getByLabel('Search when added')).not.toBeChecked();
+	// Search when added starts from the last add's choice, so it is not checked here.
 
 	// A folder and Pick rules of its own, Keep up to date and Search when added off.
 	const first = (await folder.locator('option').nth(1).getAttribute('value'))!;
 	await folder.selectOption(first);
 	await movies.getByLabel('Quality', { exact: true }).selectOption({ label: '4K' });
 	await movies.getByLabel('Keep up to date').uncheck();
-	await movies.getByLabel('Search when added').uncheck();
+	await movies.getByLabel('Search when added').setChecked(false);
 	const bar = page.getByTestId('savebar');
 	await bar.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByText('Movies and TV defaults saved')).toBeVisible();
@@ -309,8 +326,8 @@ test('Requests from Seerr and Overseerr: switch on, make a key shown once, remov
 	await expect(card.getByTestId('seerr-key-sonarr')).toContainText(key.slice(-4));
 	await expect(card).not.toContainText(key);
 
-	page.once('dialog', (d) => void d.accept());
 	await card.getByTestId('seerr-side-sonarr').getByRole('button', { name: 'Remove key' }).click();
+	await page.getByTestId('ask-yes').click();
 	await expect(card.getByTestId('seerr-side-sonarr')).toContainText('No key');
 	await card.getByTestId('seerr-on').uncheck();
 	await expect(card.getByTestId('seerr-side-sonarr')).toHaveCount(0);
