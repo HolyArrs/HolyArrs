@@ -223,6 +223,11 @@ func Plan(cands []Candidate, t Target) []mediafiles.PlanStep {
 					}
 				}
 			}
+			if m.Title == nil {
+				if gp, gm, ok := withoutLeadGroup(filepath.Base(c.Path), releasename.Hints{Size: c.Size}, []mediafiles.TitleRef{ref}); ok {
+					p, m = gp, gm
+				}
+			}
 			s.Confidence = confidence(m.Conf)
 			if m.Title == nil {
 				s.Method, s.Why = "refuse", []string{"does not match the Title: " + m.Detail}

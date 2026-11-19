@@ -225,6 +225,11 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 				}
 			}
 			if m.Title == nil {
+				if gp, gm, ok := withoutLeadGroup(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true}, lib); ok && gp.IsShow() && !mediafiles.IsPack(gp) {
+					p, m = gp, gm
+				}
+			}
+			if m.Title == nil {
 				s.Method, s.Why = "refuse", []string{"does not match the show: " + m.Detail}
 				break
 			}
