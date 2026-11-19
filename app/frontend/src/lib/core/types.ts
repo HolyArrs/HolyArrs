@@ -133,6 +133,7 @@ export interface SeasonSummary {
 }
 
 export interface ShowInfo {
+ issues?: { state: string; reason: string }[];
 	details_source: string;
 	episode_order: string;
 	episode_group?: { id: string; name: string; type: number } | null;

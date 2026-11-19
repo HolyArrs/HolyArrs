@@ -91,7 +91,7 @@ const time = (s?: string) => (s ? Date.parse(s) || 0 : 0);
 export function columnsFor(kind: LibKind): Column[] {
 	if (kind === 'show')
 		return [
-			col('status', '200px', true),
+			col('status', '320px', true),
 			col('episodes', '150px', true),
 			col('next', '118px', true, true),
 			col('rules', '120px', true),
@@ -126,7 +126,7 @@ export function columnsFor(kind: LibKind): Column[] {
 			col('path', 'minmax(160px, 1fr)', false)
 		];
 	return [
-		col('status', '200px', true),
+		col('status', '320px', true),
 		col('release', '176px', true),
 		col('rules', '120px', true),
 		col('size', '84px', true, true),

@@ -106,15 +106,15 @@
 		return out;
 	});
 	const hiddenCols = $derived(chosenCols.length - shownCols.length);
-	// As many facts as the list is wide enough for: three on a wide screen, down to one. The Rows grid: poster 52, title >= 120, status 168, each fact 150, actions (wider on touch screens), 12 px gaps.
+	// As many facts as the list is wide enough for: three on a wide screen, none when space is tight. The Rows grid: poster 52, title >= 120, status up to 320, each fact 150, actions (wider on touch screens), 12 px gaps.
 	const actsW = $derived(96 + (touchActs ? 48 : 0));
 	const factCols = $derived(chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept'));
 	const rowCols = $derived.by(() => {
-		let room = listWidth - 10 - 52 - 120 - 168 - actsW - 12 * 3 - (selecting ? 28 + 12 : 0);
+		let room = listWidth - 10 - 52 - 120 - 320 - actsW - 12 * 3 - (selecting ? 28 + 12 : 0);
 		const out: Column[] = [];
 		// All mixes kinds, so its rows show only the score, and only while sorted by it.
 		for (const c of kind === 'all' ? factCols.filter((c) => c.id === 'score' && sort.key === 'score') : factCols) {
-			if (out.length === 3 || (out.length && room < colPx(c) + 12)) break;
+			if (out.length === 3 || room < colPx(c) + 12) break;
 			out.push(c);
 			room -= colPx(c) + 12;
 		}
@@ -478,7 +478,7 @@
 												{#if phone}{@const fc = rowCols.find((c) => !isProgressCol(c)) ?? rowCols[0]}<span class="lsub"><PersonText text={[ls?.label, fc ? rowCell(t, fc, p, seriesOf(t)) : ''].filter(Boolean).join(' · ')} /></span>{/if}
 											</span>
 											{#if !phone}
-												<span class="ls {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}><i class="dot" aria-hidden="true"></i>{ls?.label ?? '—'}</span>
+												<span class="ls {ls?.tone ?? 'idle'}" title={ls?.detail ?? ls?.label} data-testid="library-status" data-state={ls?.key}><i class="dot" aria-hidden="true"></i>{ls?.label ?? '—'}</span>
 												{#each rowCols as c (c.id)}<span class="lc" title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}><PersonText text={rowCell(t, c, p, seriesOf(t)) || '—'} /></span>{/each}
 												<span class="acts">
 													{#if canManage && !selecting}
@@ -503,14 +503,14 @@
 												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												<span class="sub">
 													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{#if sort.key === 'score' && !phone && scoreText(t)} · ★ {scoreText(t)}{/if}{/if}
-													{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
+													{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" title={ls?.detail ?? ls?.label} data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
 												</span>
 												{#if phone}<span class="facts"><PersonText text={factCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c, seriesOf(t)))).filter(Boolean).join(' · ')} /></span>{/if}
 											</span>
 											{#if kind !== 'all'}
 												{#each shownCols as c (c.id)}
 													{#if c.id === 'status'}
-														<span class="c lstate {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}>
+														<span class="c lstate {ls?.tone ?? 'idle'}" title={ls?.detail ?? ls?.label} data-testid="library-status" data-state={ls?.key}>
 															{#if ls}
 																<span class="ls-line ls {ls.tone}"><i class="dot" aria-hidden="true"></i><span class="ls-t">{ls.label}</span></span>
 																{#if ls.percent !== undefined}<span class="meter ls-bar" aria-hidden="true"><i style="width: {ls.percent}%"></i></span>{/if}
@@ -606,13 +606,13 @@
 	.content { min-width: 0; }
 	.with-rail { min-width: 0; }
 	.with-rail.has-rail { display: grid; grid-template-columns: minmax(0, 1fr) 26px; gap: 12px; align-items: start; }
-	/* Rows: a ledger. 54 px a title, a small poster, the name and year, the status with its colour dot, three facts, the actions. */
-	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
-	.rows.has-select .lh, .rows.has-select .lr { grid-template-columns: 28px 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); }
+	/* Rows: a ledger. At least 54 px a title, a small poster, the name and year, the status with its colour dot, three facts, the actions. */
+	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) minmax(200px, 320px) var(--facts, 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
+	.rows.has-select .lh, .rows.has-select .lr { grid-template-columns: 28px 52px minmax(120px, 1fr) minmax(200px, 320px) var(--facts, 150px) var(--acts-w, 96px); }
 	.lsel { display: grid; place-items: center; padding-inline-start: 10px; }
 	.lr { position: relative; }
 	.lh { position: relative; height: 40px; padding-inline-end: 10px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
-	.lr { height: var(--row-h, 54px); padding-inline-end: 10px; }
+	.lr { min-height: var(--row-h, 54px); padding: 10px 10px 10px 0; box-sizing: border-box; }
 	.rows.v-rows .entry::before { left: 0; right: 0; }
 	.lp { position: relative; display: block; width: 32px; margin-inline-start: 10px; border-radius: 5px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
 	.lp.round { border-radius: 50%; }
@@ -621,7 +621,7 @@
 	.lt a { min-width: 0; color: var(--text); font: 600 14px/1.25 var(--font-ui); text-decoration: none; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
 	.lt a:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.lt small { flex: none; color: var(--text-muted); font: 500 12.5px/1 var(--font-ui); }
-	.ls { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--text); font: var(--t-callout); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ls { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--text); font: var(--t-callout); white-space: normal; overflow-wrap: anywhere; }
 	.ls .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); }
 	.ls.ok .dot { background: var(--ok); }
 	.ls.info .dot { background: var(--info); }
@@ -632,12 +632,12 @@
 	.lc { min-width: 0; color: var(--text-muted); font: var(--t-callout); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lr .acts { top: 50%; }
 	/* Phone rows (chosen by the list's own width): the poster, the name over "status · fact", the year at the right. */
-	.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; height: 60px; padding-inline-end: 12px; }
+	.lr.ph { grid-template-columns: 50px minmax(0, 1fr) auto; min-height: 60px; padding-inline-end: 12px; }
 	.rows.has-select .lr.ph { grid-template-columns: 28px 50px minmax(0, 1fr) auto; }
 	.lr.ph .lp { width: 36px; margin-inline-start: 8px; }
 	.lr.ph .lt { flex-direction: column; align-items: flex-start; gap: 3px; }
 	.lr.ph .lt a { max-width: 100%; }
-	.lsub { color: var(--text-muted); font: var(--t-footnote); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+	.lsub { color: var(--text-muted); font: var(--t-footnote); white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
 	.lyr { color: var(--text-muted); font: 500 12px/1 var(--font-ui); }
 
 	.rows { position: relative; isolation: isolate; min-width: 0; border-radius: 20px; background: linear-gradient(180deg, var(--sheet-a), var(--sheet-b) 420px); box-shadow: var(--edge), var(--drop); overflow: clip; }
@@ -695,9 +695,9 @@
 	.c { min-width: 0; color: var(--text); font: var(--t-callout); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.c.path { color: var(--text-muted); font: var(--t-footnote); font-family: var(--font-mono, ui-monospace, monospace); direction: rtl; text-align: left; }
 	.prog { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
-	.lstate { display: flex; flex-direction: column; gap: 5px; }
+	.lstate { display: flex; flex-direction: column; gap: 5px; overflow: visible; white-space: normal; padding-block: 10px; }
 	.ls-line { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-	.ls-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ls-t { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 	.lstate.ok .ls-line :global(svg) { color: var(--ok); }
 	.lstate.info .ls-line :global(svg) { color: var(--info); }
 	.lstate.wait .ls-line :global(svg) { color: var(--wait); }

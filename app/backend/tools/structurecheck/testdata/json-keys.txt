@@ -818,6 +818,7 @@ is_private
 iso_3166_1
 iso_639_1
 issuer
+issues
 item
 item_id
 item_ids

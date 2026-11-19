@@ -558,20 +558,21 @@ func (s *Service) SetEpisode(ctx context.Context, itemID int64, keep bool, by do
 
 // SeasonSummary is one season of a show with its episode counts.
 type SeasonSummary struct {
-	Number       int        `json:"number"`
-	Name         string     `json:"name"`
-	KeepUpToDate bool       `json:"keep_up_to_date"`
-	Episodes     int        `json:"episodes"`
-	Aired        int        `json:"aired"`
-	InLibrary    int        `json:"in_library"`    // episodes with a file in the main Version
-	Missing      int        `json:"missing"`       // aired, kept up to date, no file yet
-	BetterWanted int        `json:"better_wanted"` // in the Library, a better copy is sought
-	NotOutYet    int        `json:"not_out_yet"`
-	Downloading  int        `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
-	Failed       int        `json:"failed"`      // the download failed or its import needs a decision
-	NextAirDate  *time.Time `json:"next_air_date,omitempty"`
-	NextAirDay   string     `json:"next_air_day,omitempty"` // the show's own air day of that episode
-	Dropped      bool       `json:"dropped,omitempty"`
+	Issues       []StatusIssue `json:"-"`
+	Number       int           `json:"number"`
+	Name         string        `json:"name"`
+	KeepUpToDate bool          `json:"keep_up_to_date"`
+	Episodes     int           `json:"episodes"`
+	Aired        int           `json:"aired"`
+	InLibrary    int           `json:"in_library"`    // episodes with a file in the main Version
+	Missing      int           `json:"missing"`       // aired, kept up to date, no file yet
+	BetterWanted int           `json:"better_wanted"` // in the Library, a better copy is sought
+	NotOutYet    int           `json:"not_out_yet"`
+	Downloading  int           `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
+	Failed       int           `json:"failed"`      // the download failed or its import needs a decision
+	NextAirDate  *time.Time    `json:"next_air_date,omitempty"`
+	NextAirDay   string        `json:"next_air_day,omitempty"` // the show's own air day of that episode
+	Dropped      bool          `json:"dropped,omitempty"`
 }
 
 // Seasons summarises a show's seasons from its episodes and the main
@@ -598,7 +599,7 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 	}
 	// One query for every season of the show instead of one per season. The
 	// main Version is looked up once (by the show's id), not once per episode.
-	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL FROM items i
+	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL, COALESCE(s.last_reason, '') FROM items i
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
 		WHERE i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season')`, titleID, titleID)
 	if err != nil {
@@ -610,9 +611,9 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 		var air sql.NullString
 		var day string
 		var keep bool
-		var state string
+		var state, reason string
 		var hasFile bool
-		if err := rows.Scan(&part, &air, &day, &keep, &state, &hasFile); err != nil {
+		if err := rows.Scan(&part, &air, &day, &keep, &state, &hasFile, &reason); err != nil {
 			return nil, err
 		}
 		idx, ok := index[part]
@@ -620,6 +621,7 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 			continue
 		}
 		out[idx].tally(air, day, keep, state, hasFile, now)
+		out[idx].Issues = addStatusIssue(out[idx].Issues, state, reason)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
