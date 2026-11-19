@@ -106,3 +106,23 @@ describe('source health by reason', async () => {
 		expect(pausedUntil({ until: '2026-11-02T14:05:00Z' })).toMatch(/^Paused until /);
 	});
 });
+
+describe('a built-in site that asks for a user id', async () => {
+	const { builtInSites, pickSite } = await import('./api.ts');
+	it('sends the user id beside the passkey for IPTorrents only', () => {
+		const f = emptyForm();
+		f.format = 'site';
+		pickSite(f, 'iptorrents');
+		f.site_user = ' 2134 ';
+		f.api_key = 'passkey';
+		expect(formBody(f)).toMatchObject({ site: 'iptorrents', site_user: '2134', api_key: 'passkey', protocol: 'torrent' });
+		pickSite(f, 'knaben');
+		expect(formBody(f)).not.toHaveProperty('site_user');
+		expect(builtInSites.filter((s) => s.user).map((s) => s.id)).toEqual(['iptorrents']);
+	});
+	it('shows the stored user id when a Source is edited', () => {
+		const view = { name: 'IPT', format: 'site', site: 'iptorrents', site_user: '2134', protocol: 'torrent', url: 'https://iptorrents.com', api_key: 'kept', priority: 25 } as unknown as SourceView;
+		expect(formFrom(view).site_user).toBe('2134');
+		expect(formFrom({ ...view, site_user: undefined }).site_user).toBe('');
+	});
+});

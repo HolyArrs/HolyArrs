@@ -16,7 +16,7 @@ Each one becomes an ordinary Source. Priority, use and limits work as on any oth
 | Knaben | Movies, shows, music | Nothing | Yes |
 | TorrentsCSV | Movies, shows, music | Nothing | No, search only |
 | SubsPlease | Shows (anime) | Nothing | Yes |
-| IPTorrents | Movies, shows, music | Your own cookie or RSS key | Yes |
+| IPTorrents | Movies, shows, music | Your own user ID and passkey | Yes |
 
 All 4 hand out torrents, so you need a torrent Downloader. See [Downloaders](downloaders.md).
 
@@ -29,7 +29,7 @@ All 4 hand out torrents, so you need a torrent Downloader. See [Downloaders](dow
 
    You should see the name, **Address** and limits filled in for you.
 
-5. For IPTorrents only, fill in **Cookie or RSS key**. See below.
+5. For IPTorrents only, fill in **User ID** and **Passkey**. See below.
 6. Press **Save**. HolyArrs tests it right away.
 
    You should see **Working** under it.
@@ -46,26 +46,29 @@ After saving, you cannot change the site of a Source. To switch, add a new one.
 
 **SubsPlease** searches by the show's title alone, because it numbers episodes its own way. Its newest list shows the latest episodes.
 
-**IPTorrents** is a private site. It searches with your own account and sorts by seeders.
+**IPTorrents** is a private site. It searches with your own account, through the site's own RSS. A search gives the 100 newest matches, with their seeders.
 
-## IPTorrents: cookie or RSS key
+## IPTorrents: user ID and passkey
 
-HolyArrs never signs in for you. Give it one of these from your own account:
+HolyArrs never signs in for you. Give it these 2 things from your own account:
 
-| Option | What to paste | Where to find it |
+| Field | What it is | Where to find it |
 |---|---|---|
-| Cookie | `uid=...; pass=...` | Your browser's cookies for the site, after you sign in |
-| RSS key | `u=...; tp=...` | The RSS link the site gives you |
+| **User ID** | Your account number, digits only | Open your profile on the site. It is the number in the page's address |
+| **Passkey** | The key the site puts in your download links | On your profile page on the site |
 
-You can paste both in one line. HolyArrs keeps it encrypted.
+HolyArrs keeps the passkey encrypted. The passkey does not run out, so you set this up once. If you reset it on the site, type the new one here.
 
-With the cookie, HolyArrs reads the site's own search pages. With only the RSS key, it uses the site's RSS search.
+Treat the passkey like a password. Anyone who has it can download as you.
+
+A Source you added earlier with a cookie keeps working. To switch it, open it, fill in **User ID** and type your passkey into **Passkey**.
 
 ## If it does not work
 
 | You see | Try |
 |---|---|
-| IPTorrents says it needs your cookie or RSS key | Paste `uid` and `pass`, or `u` and `tp`, into **Cookie or RSS key** |
+| IPTorrents says it needs your user ID and your passkey | Fill in both **User ID** and **Passkey** |
+| IPTorrents refused the user ID or the passkey | Check both against your profile page. The user ID is digits only |
 | TorrentsCSV never grabs new episodes on its own | Expected. It has no newest list. Searches still work |
 | The site answers with something odd | The site may be down or have moved. Try **Test** later, or fix the **Address** |
 | Nothing is found for music on SubsPlease | Expected. SubsPlease only has shows |

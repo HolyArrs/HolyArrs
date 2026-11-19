@@ -83,6 +83,8 @@ type Config struct {
 	PathKeys []string
 	// Site names the built-in site a site-format Source reads (see sites.go).
 	Site string
+	// SiteUser is the person's user id on that site, for a site that asks for one beside the key.
+	SiteUser string
 }
 
 // Client is a Torznab/Newznab client for one Source. It is safe for
