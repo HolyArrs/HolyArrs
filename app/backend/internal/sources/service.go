@@ -46,6 +46,7 @@ var (
 	ErrKeyAgainProxy = errors.New("the proxy changed and the Source address is plain http, so the new proxy would see the key; type the key again")
 	ErrNoVault       = errors.New("keys cannot be stored: the secrets vault is not open")
 	ErrSeeders       = errors.New("min_seeders must be 0 or more")
+	ErrSiteUser      = errors.New("site_user is your user id on the site: digits only")
 )
 
 // AllKinds lists the media types a Source may serve.
@@ -62,7 +63,10 @@ type Input struct {
 	Format string `json:"format"`
 	// Site names the built-in site a site-format Source reads (knaben,
 	// torrentscsv, subsplease, iptorrents). It is set when the Source is added.
-	Site            string               `json:"site,omitempty"`
+	Site string `json:"site,omitempty"`
+	// SiteUser is the person's user id on a built-in site that asks for one
+	// beside its key (IPTorrents: the passkey goes in APIKey). Nil keeps it.
+	SiteUser        *string              `json:"site_user,omitempty"`
 	Protocol        string               `json:"protocol"`
 	URL             string               `json:"url"`
 	APIKey          string               `json:"api_key"`
@@ -264,7 +268,7 @@ func SetPaused(ctx context.Context, s *database.Store, id int64, paused bool, by
 
 // ConfigFor builds the Client settings for a Source and opens its key, passkey and proxy password.
 func ConfigFor(ctx context.Context, src domain.Source, sec SecretReader) (Config, error) {
-	cfg := Config{Site: src.Extra[extraSiteKind], URL: src.URL, AllowLocal: src.AllowLocal, Protocol: src.Protocol, Format: src.Format,
+	cfg := Config{Site: src.Extra[extraSiteKind], SiteUser: src.Extra[extraSiteUser], URL: src.URL, AllowLocal: src.AllowLocal, Protocol: src.Protocol, Format: src.Format,
 		GapMS: src.Limits.GapMS, PerWindow: src.Limits.SearchesPerWindow, ProxyAllowLocal: src.ProxyAllowLocal,
 		Window: time.Duration(src.Limits.WindowSeconds) * time.Second, Timeout: time.Duration(src.Limits.TimeoutMS) * time.Millisecond}
 	open := func(ref *int64) (string, error) {
@@ -651,6 +655,17 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 			src.Extra = map[string]string{}
 		}
 		src.Extra[extraSiteKind] = site.ID
+		if in.SiteUser != nil {
+			user := strings.TrimSpace(*in.SiteUser)
+			if len(user) > 20 || strings.Trim(user, "0123456789") != "" {
+				return "", "", ErrSiteUser
+			}
+			if user == "" {
+				delete(src.Extra, extraSiteUser)
+			} else {
+				src.Extra[extraSiteUser] = user
+			}
+		}
 	}
 	return key, proxyPass, nil
 }

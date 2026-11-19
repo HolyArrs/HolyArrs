@@ -91,6 +91,7 @@
 		form.downloader_id = 0;
 	});
 	const siteNeedsKey = $derived(builtInSites.find((x) => x.id === form.site)?.key ?? false);
+	const siteNeedsUser = $derived(builtInSites.find((x) => x.id === form.site)?.user ?? false);
 
 	function setFormat(v: string) {
 		form.format = v as SourceForm['format'];
@@ -212,6 +213,11 @@
 				</span>
 			</Field>
 			{#if form.format === 'site'}
+				{#if siteNeedsUser}
+					<Field id="so-user" label={t('settings.sources.siteUserLabel')} hint={t('settings.sources.siteUserHint')}>
+						<input id="so-user" class="input mono" bind:value={form.site_user} inputmode="numeric" pattern="[0-9]*" autocomplete="off" spellcheck="false" />
+					</Field>
+				{/if}
 				{#if siteNeedsKey}
 					<Field id="so-key" label={t('settings.sources.siteKeyLabel')} hint={t('settings.sources.siteKeyHint')}>
 						<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />

@@ -1631,6 +1631,7 @@ site_language
 site_link
 site_score
 site_url
+site_user
 sites
 sites_asked
 size

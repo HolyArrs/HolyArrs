@@ -56,6 +56,8 @@ export interface SourceView {
 	protocol: 'torrent' | 'usenet';
 	format: 'torznab' | 'newznab' | 'rss' | 'bridge' | 'site';
 	site?: string;
+	// site_user is the person's user id on a built-in site that asks for one beside the key.
+	site_user?: string;
 	url: string;
 	api_key: string;
 	use_for: SourceUse;

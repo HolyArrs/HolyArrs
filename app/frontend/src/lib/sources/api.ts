@@ -7,6 +7,8 @@ export interface SourceForm {
 	format: 'torznab' | 'newznab' | 'rss' | 'site';
 	// site is the built-in site a site Source reads.
 	site: string;
+	// site_user is the person's user id on a built-in site that asks for one beside the key.
+	site_user: string;
 	protocol: 'torrent' | 'usenet';
 	url: string;
 	api_key: string;
@@ -68,6 +70,7 @@ export function emptyForm(): SourceForm {
 		name: '',
 		format: 'torznab',
 		site: '',
+		site_user: '',
 		protocol: 'torrent',
 		url: '',
 		api_key: '',
@@ -97,6 +100,7 @@ export function formFrom(s: SourceView): SourceForm {
 		name: s.name,
 		format: s.format === 'bridge' ? 'torznab' : s.format,
 		site: s.site ?? '',
+		site_user: s.site_user ?? '',
 		protocol: s.protocol,
 		url: s.url,
 		api_key: s.api_key,
@@ -120,12 +124,14 @@ export function formFrom(s: SourceView): SourceForm {
 }
 
 // The built-in sites a Source can read directly, with their polite limits.
+// key says the site asks for a key (IPTorrents: the passkey), user that it
+// also asks for the person's user id there.
 // Names are the sites' own names, so they are not translated.
 export const builtInSites = [
-	{ id: 'knaben', name: 'Knaben', url: 'https://api.knaben.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'torrentscsv', name: 'TorrentsCSV', url: 'https://torrents-csv.com', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'subsplease', name: 'SubsPlease', url: 'https://subsplease.org', key: false, kinds: ['tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'iptorrents', name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 }
+	{ id: 'knaben', user: false, name: 'Knaben', url: 'https://api.knaben.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'torrentscsv', user: false, name: 'TorrentsCSV', url: 'https://torrents-csv.com', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'subsplease', user: false, name: 'SubsPlease', url: 'https://subsplease.org', key: false, kinds: ['tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'iptorrents', user: true, name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 }
 ] as const;
 
 // pickSite fills a new form with a built-in site's address and limits.
@@ -151,6 +157,7 @@ export function formBody(f: SourceForm): Record<string, unknown> {
 		name: f.name.trim(),
 		format: f.format,
 		...(f.format === 'site' ? { site: f.site } : {}),
+		...(f.format === 'site' && builtInSites.find((x) => x.id === f.site)?.user ? { site_user: f.site_user.trim() } : {}),
 		protocol: f.format === 'site' ? 'torrent' : f.protocol,
 		url: f.url.trim(),
 		api_key: f.api_key,

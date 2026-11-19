@@ -121,7 +121,11 @@ func secretValues(cfg Config) []string {
 		}
 	} else {
 		for _, part := range strings.FieldsFunc(cfg.APIKey, func(r rune) bool { return r == '&' || r == ';' }) {
-			_, v, _ := strings.Cut(part, "=")
+			_, v, named := strings.Cut(part, "=")
+			if !named {
+				// A built-in site's key stored on its own, such as a passkey.
+				v = strings.TrimSpace(part)
+			}
 			if u, err := url.QueryUnescape(v); err == nil {
 				v = u
 			}
