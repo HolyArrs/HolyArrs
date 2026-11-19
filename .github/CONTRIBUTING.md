@@ -2,20 +2,21 @@
 
 Thanks for wanting to help. This page gets you from a fresh clone to a pull request.
 
-## Before you write code
+## How it works
 
 1. Open an issue first, or comment on one that exists. Say what you want to change and why.
-2. Wait for a reply, so you don't build something that won't be merged.
-3. Keep the pull request small. One fix or one feature per pull request.
+2. Then open your pull request and link it to that issue (write `Refs #123` in the description). You don't need to wait for a reply before opening it.
+3. Every issue and pull request gets reviewed by hand before anything is merged. Nothing merges on its own.
+4. Keep the pull request small. One fix or one feature per pull request.
 
-Questions go to [Discord](https://discord.com/invite/mthsvesKpC). Ideas go to [r/HolyArrs](https://www.reddit.com/r/HolyArrs/). Issues are for bugs and the roadmap.
+Questions and ideas go to the [community forum](https://community.holyarrs.com). Issues are for bugs, roadmap items and anything you plan to build.
 
 ## Setup
 
 You need Go (version in `go.mod`), Node.js 22 and make.
 
     git clone https://github.com/HolyArrs/HolyArrs.git
-    cd holyarrs
+    cd HolyArrs
     make ui build
 
 That builds the web app and the program into `bin/holyarrs`. On Windows without make, run the two steps by hand:
