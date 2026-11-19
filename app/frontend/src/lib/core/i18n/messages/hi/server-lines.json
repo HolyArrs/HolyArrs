@@ -823,7 +823,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "फ़ॉर्मैट स्कोर के नियम इंपोर्ट नहीं होते; चुनाव के नियम खूबियों की तय सूची को स्कोर करते हैं",
 	"server.migrate.from-the-default-wait-rule-of": "{and} के डिफ़ॉल्ट इंतज़ार नियम से: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "कुंजी के साथ पता दें, या बैकअप का पाथ",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs के अलर्ट सिर्फ़ Discord, वेबहुक या ईमेल पर जाते हैं",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs के अलर्ट सिर्फ़ Discord, वेबहुक, ईमेल, Telegram, ntfy, Gotify या Pushover पर जाते हैं",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs नहीं बता सकता कि यह वही व्यक्ति है या नहीं। \"वही व्यक्ति\" या \"छोड़ दें\" चुनें।",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs नहीं बता सकता कि यह रिक्वेस्ट किसने की। उस व्यक्ति के लिए \"वही व्यक्ति\" या \"छोड़ दें\" चुनें, फिर दोबारा इंपोर्ट करें।",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs में अभी इस प्रकार की सबटाइटल साइट नहीं है",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "स्ट्रीमिंग पर ट्रेंडिंग टीवी शो",
 	"server.suggest.trending-on-streaming": "स्ट्रीमिंग पर ट्रेंडिंग",
 	"server.discover.popular": "लोकप्रिय",
-	"server.metadata.creator": "क्रिएटर"
+	"server.metadata.creator": "क्रिएटर",
+	"server.migrate.its-bot-token-line": "इसका बॉट टोकन",
+	"server.migrate.its-bot-token-and-chat": "इसका बॉट टोकन और चैट",
+	"server.migrate.its-server-and-app-token-line": "इसका सर्वर और ऐप टोकन",
+	"server.migrate.its-server-and-topic": "इसका सर्वर और टॉपिक",
+	"server.migrate.its-user-key-and-app-token-line": "इसकी यूज़र कुंजी और ऐप टोकन"
 }

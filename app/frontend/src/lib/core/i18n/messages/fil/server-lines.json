@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "hindi ini-import ang mga panuntunan sa format scoring; nagsa-score ang Pick rules ng nakapirming listahan ng mga katangian",
 	"server.migrate.from-the-default-wait-rule-of": "mula sa default na panuntunan sa paghihintay ng {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "magbigay ng address na may key, o backup path",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "sa Discord, webhook o email lang pumupunta ang mga Alerto ng HolyArrs",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "sa Discord, webhook, email, Telegram, ntfy, Gotify o Pushover lang pumupunta ang mga Alerto ng HolyArrs",
 	"server.migrate.holyarrs-can-t-tell-if-this": "Hindi matukoy ng HolyArrs kung iisang tao ito. Piliin ang Iisang tao o Huwag isama.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "Hindi matukoy ng HolyArrs kung sino ang humiling nito. Piliin ang Iisang tao o Huwag isama para sa taong iyon, pagkatapos mag-import ulit.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "wala pang subtitle site ang HolyArrs na ganitong uri",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Trending na show sa streaming",
 	"server.suggest.trending-on-streaming": "Trending sa streaming",
 	"server.discover.popular": "Sikat",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.migrate.its-bot-token-line": "bot token nito",
+	"server.migrate.its-bot-token-and-chat": "bot token at chat nito",
+	"server.migrate.its-server-and-app-token-line": "server at app token nito",
+	"server.migrate.its-server-and-topic": "server at topic nito",
+	"server.migrate.its-user-key-and-app-token-line": "user key at app token nito"
 }

@@ -363,13 +363,14 @@ type AskSettingsPlan struct {
 
 // AlertPlan is an Alert to add (always off until its secret is typed).
 type AlertPlan struct {
-	Kind         string `json:"kind"` // discord, webhook, email
+	Kind         string `json:"kind"` // discord, webhook, email, telegram, ntfy, gotify, pushover
 	SMTPHost     string `json:"smtp_host,omitempty"`
 	SMTPPort     int    `json:"smtp_port,omitempty"`
 	SMTPSecurity string `json:"smtp_security,omitempty"`
 	SMTPFrom     string `json:"smtp_from,omitempty"`
 	SMTPUser     string `json:"smtp_user,omitempty"`
 	StaffTo      string `json:"staff_to,omitempty"`
+	ChatID       string `json:"chat_id,omitempty"` // telegram
 }
 
 // Group returns the named group (nil when there is none).

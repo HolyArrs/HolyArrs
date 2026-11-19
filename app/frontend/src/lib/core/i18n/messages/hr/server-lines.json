@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "pravila ocjenjivanja formata ne uvoze se; pravila odabira ocjenjuju fiksni popis osobina",
 	"server.migrate.from-the-default-wait-rule-of": "iz zadanog pravila čekanja {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "upiši adresu s ključem ili putanju sigurnosne kopije",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs obavijesti idu samo na Discord, webhook ili e-poštu",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs obavijesti idu samo na Discord, webhook, e-poštu, Telegram, ntfy, Gotify ili Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs ne može utvrditi je li ovo ista osoba. Odaberi Ista osoba ili Izostavi.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs ne može utvrditi tko je ovo zatražio. Za tu osobu odaberi Ista osoba ili Izostavi, pa ponovno uvezi.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs još nema stranicu titlova ove vrste",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Serije u trendu na streamingu",
 	"server.suggest.trending-on-streaming": "U trendu na streamingu",
 	"server.discover.popular": "Popularno",
-	"server.metadata.creator": "Autor"
+	"server.metadata.creator": "Autor",
+	"server.migrate.its-bot-token-line": "njegov token bota",
+	"server.migrate.its-bot-token-and-chat": "njegov token bota i razgovor",
+	"server.migrate.its-server-and-app-token-line": "njegov poslužitelj i token aplikacije",
+	"server.migrate.its-server-and-topic": "njegov poslužitelj i tema",
+	"server.migrate.its-user-key-and-app-token-line": "njegov korisnički ključ i token aplikacije"
 }

@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "a formátum-pontozási szabályok nem importálódnak; a Kiválasztási szabályok jellemzők rögzített listáját pontozzák",
 	"server.migrate.from-the-default-wait-rule-of": "a(z) {and} alapértelmezett várakozási szabályából: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "adjon meg egy címet kulccsal, vagy egy biztonsági mentési útvonalat",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "a HolyArrs Értesítései csak Discordra, webhookra vagy e-mailre mennek",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "a HolyArrs Értesítései csak Discordra, webhookra, e-mailre, Telegramra, ntfy-ra, Gotifyra vagy Pushoverre mennek",
 	"server.migrate.holyarrs-can-t-tell-if-this": "A HolyArrs nem tudja eldönteni, hogy ugyanaz a személy-e. Válassza az Ugyanaz a személy vagy a Kihagyás lehetőséget.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "A HolyArrs nem tudja, ki kérte ezt. Válassza az Ugyanaz a személy vagy a Kihagyás lehetőséget annál a személynél, majd importáljon újra.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "a HolyArrsnak még nincs ilyen fajtájú felirat-oldala",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Felkapott sorozatok a streamingen",
 	"server.suggest.trending-on-streaming": "Felkapott a streamingen",
 	"server.discover.popular": "Népszerű",
-	"server.metadata.creator": "Alkotó"
+	"server.metadata.creator": "Alkotó",
+	"server.migrate.its-bot-token-line": "a bottokenje",
+	"server.migrate.its-bot-token-and-chat": "a bottokenje és a csevegése",
+	"server.migrate.its-server-and-app-token-line": "a szervere és az alkalmazástokenje",
+	"server.migrate.its-server-and-topic": "a szervere és a témája",
+	"server.migrate.its-user-key-and-app-token-line": "a felhasználói kulcsa és az alkalmazástokenje"
 }

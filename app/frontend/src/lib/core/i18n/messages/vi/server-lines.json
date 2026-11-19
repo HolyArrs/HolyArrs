@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "các quy tắc chấm điểm định dạng không được nhập; Quy tắc chọn chấm điểm một danh sách đặc điểm cố định",
 	"server.migrate.from-the-default-wait-rule-of": "từ quy tắc chờ mặc định của {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "hãy nhập một địa chỉ kèm khóa, hoặc một đường dẫn sao lưu",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "Cảnh báo của HolyArrs chỉ đi tới Discord, webhook hoặc email",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "Cảnh báo của HolyArrs chỉ đi tới Discord, webhook, email, Telegram, ntfy, Gotify hoặc Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs không biết đây có phải cùng một người không. Hãy chọn Cùng một người hoặc Bỏ qua.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs không biết ai đã yêu cầu mục này. Hãy chọn Cùng một người hoặc Bỏ qua cho người đó, rồi nhập lại.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs chưa có trang phụ đề loại này",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Phim bộ đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.suggest.trending-on-streaming": "Đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.discover.popular": "Phổ biến",
-	"server.metadata.creator": "Người sáng tạo"
+	"server.metadata.creator": "Người sáng tạo",
+	"server.migrate.its-bot-token-line": "token bot của nó",
+	"server.migrate.its-bot-token-and-chat": "token bot và cuộc trò chuyện của nó",
+	"server.migrate.its-server-and-app-token-line": "máy chủ và token ứng dụng của nó",
+	"server.migrate.its-server-and-topic": "máy chủ và chủ đề của nó",
+	"server.migrate.its-user-key-and-app-token-line": "khóa người dùng và token ứng dụng của nó"
 }

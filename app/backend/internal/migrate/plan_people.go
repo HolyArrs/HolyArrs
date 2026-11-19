@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
@@ -326,12 +327,32 @@ func (b *builder) alerts(s *Snapshot) {
 			}
 			ap = &AlertPlan{Kind: "email", SMTPHost: clip(setStr(n.Settings, "server", "host"), 200), SMTPPort: int(port), SMTPSecurity: sec,
 				SMTPFrom: clip(setStr(n.Settings, "from"), 200), SMTPUser: clip(setStr(n.Settings, "username", "user"), 200), StaffTo: clip(to, 200)}
+		case "telegram":
+			// The bot token is a secret and never comes over; the chat does
+			// when it is one HolyArrs can write to.
+			ap = &AlertPlan{Kind: "telegram"}
+			if chat := strings.TrimSpace(setStr(n.Settings, "chatId")); alerts.CheckTelegramChat(chat) == nil {
+				ap.ChatID = chat
+			}
+		case "ntfy":
+			// The server and topics are links or tokens in disguise, so the
+			// read drops them (linkSafe); they are typed again.
+			ap = &AlertPlan{Kind: "ntfy"}
+		case "gotify":
+			ap = &AlertPlan{Kind: "gotify"}
+		case "pushover":
+			ap = &AlertPlan{Kind: "pushover"}
 		}
 		if ap == nil {
-			b.not(GroupAlerts, from, n.Name, "HolyArrs Alerts go to Discord, a webhook or email only")
+			b.not(GroupAlerts, from, n.Name, "HolyArrs Alerts go to Discord, a webhook, email, Telegram, ntfy, Gotify or Pushover only")
 			continue
 		}
-		needs := map[string]string{"discord": "its Discord link", "webhook": "its address", "email": "the mail password"}[ap.Kind]
+		needs := map[string]string{"discord": "its Discord link", "webhook": "its address", "email": "the mail password",
+			"telegram": "its bot token", "ntfy": "its server and topic", "gotify": "its server and app token",
+			"pushover": "its user key and app token"}[ap.Kind]
+		if ap.Kind == "telegram" && ap.ChatID == "" {
+			needs = "its bot token and chat"
+		}
 		b.addTagged(s.Kind, GroupAlerts, Item{Key: "alert:" + strings.ToLower(clip(n.Name, 80)), Name: clip(n.Name, 80), From: from, Alert: ap,
 			Detail: ap.Kind + "; added off until you type " + needs, Needs: needs,
 			Why: "Alerts speak for every moment at first; pick the moments again"}, n.Tags)

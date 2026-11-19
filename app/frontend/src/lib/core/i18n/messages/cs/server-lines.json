@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "pravidla skóre formátů se neimportují; Pravidla výběru hodnotí pevný seznam vlastností",
 	"server.migrate.from-the-default-wait-rule-of": "z výchozího pravidla čekání pro {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "zadejte adresu s klíčem, nebo cestu k záloze",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "Upozornění HolyArrs jdou jen na Discord, webhook nebo e-mail",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "Upozornění HolyArrs jdou jen na Discord, webhook, e-mail, Telegram, ntfy, Gotify nebo Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs nepozná, zda je to stejný člověk. Vyberte Stejný člověk nebo Vynechat.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs nepozná, kdo o to požádal. Pro tuto osobu vyberte Stejný člověk nebo Vynechat a pak importujte znovu.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs zatím nemá web s titulky tohoto druhu",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Trendy seriály ve streamování",
 	"server.suggest.trending-on-streaming": "Trendy ve streamování",
 	"server.discover.popular": "Oblíbené",
-	"server.metadata.creator": "Tvůrce"
+	"server.metadata.creator": "Tvůrce",
+	"server.migrate.its-bot-token-line": "jeho token bota",
+	"server.migrate.its-bot-token-and-chat": "jeho token bota a chat",
+	"server.migrate.its-server-and-app-token-line": "jeho server a token aplikace",
+	"server.migrate.its-server-and-topic": "jeho server a téma",
+	"server.migrate.its-user-key-and-app-token-line": "jeho uživatelský klíč a token aplikace"
 }

@@ -38,7 +38,7 @@ func fullSnapshots() []Input {
 		RemotePathMappings: []RemotePathMapping{{Host: "qbit", RemotePath: "/downloads/", LocalPath: "/data/downloads/"},
 			{Host: "elsewhere", RemotePath: "/dl", LocalPath: "/data/dl"}, {Host: "qbit", RemotePath: "relative", LocalPath: "/data/x"}},
 		ImportLists:   []Provider{prov("Trakt", "TraktListImport", nil, "accessToken")},
-		Notifications: []Provider{prov("Discord", "Discord", nil, "webHookUrl"), prov("Mail", "Email", map[string]any{"server": "smtp.example", "port": int64(465), "useEncryption": "1", "from": "a@example.org", "to": []any{"b@example.org"}}, "password"), prov("Push", "Pushover", nil)},
+		Notifications: []Provider{prov("Discord", "Discord", nil, "webHookUrl"), prov("Mail", "Email", map[string]any{"server": "smtp.example", "port": int64(465), "useEncryption": "1", "from": "a@example.org", "to": []any{"b@example.org"}}, "password"), prov("Chat", "Slack", nil, "webHookUrl")},
 		Metadata:      []Provider{prov("Kodi", "XbmcMetadata", nil)},
 		Settings:      map[string]any{"availability_delay": int64(7)},
 		NeedsReentry:  []string{`indexer "Nyaa": apiKey`, `import list "Trakt": accessToken`},
@@ -363,13 +363,13 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if sh := item(t, p, GroupRequests, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || !sh.FourK {
 		t.Fatalf("show ask %+v", sh)
 	}
-	// Alerts: Discord and email (off until their secret), others listed.
+	// Alerts: Discord and email (off until their secret), kinds HolyArrs has no Alert for listed.
 	if al := item(t, p, GroupAlerts, "alert:mail").Alert; al.SMTPHost != "smtp.example" || al.SMTPPort != 465 || al.SMTPSecurity != "tls" || al.StaffTo != "b@example.org" {
 		t.Fatalf("email %+v", al)
 	}
 	item(t, p, GroupAlerts, "alert:discord")
 	if _, ok := notMoved(p, "radarr notifications[2]"); !ok {
-		t.Fatal("pushover must be listed")
+		t.Fatal("slack must be listed")
 	}
 	// Never-add list.
 	if n := item(t, p, GroupNeverAdd, "never_add:movie:tmdb:999").NeverAdd; n.Kind != "movie" {
@@ -492,6 +492,45 @@ func TestPlanImportListLines(t *testing.T) {
 	for _, n := range p.NeedsInput {
 		if strings.Contains(n, "import list") {
 			t.Fatalf("an import list secret is asked for: %v", p.NeedsInput)
+		}
+	}
+}
+
+// Telegram, ntfy, Gotify and Pushover connections come over as Alerts, off
+// until their secrets are typed. A Telegram chat comes with them when HolyArrs
+// can write to it; the read already dropped every link and token.
+func TestPlanAlertAppKinds(t *testing.T) {
+	s := &Snapshot{Kind: Sonarr, Notifications: []Provider{
+		{Name: "Tele", Kind: "Telegram", Settings: map[string]any{"chatId": "-1001234567890", "sendSilently": false}, NeedsReentry: []string{"botToken"}},
+		{Name: "Tele bad", Kind: "Telegram", Settings: map[string]any{"chatId": "not a chat"}, NeedsReentry: []string{"botToken"}},
+		{Name: "Ntfy", Kind: "Ntfy", Settings: map[string]any{"priority": int64(3)}, NeedsReentry: []string{"serverUrl", "topics"}},
+		{Name: "Gotify", Kind: "Gotify", Settings: map[string]any{"priority": int64(5)}, NeedsReentry: []string{"appToken", "server"}},
+		{Name: "Push", Kind: "Pushover", Settings: map[string]any{"priority": int64(0)}, NeedsReentry: []string{"apiKey", "userKey"}},
+		{Name: "Box", Kind: "Apprise"},
+	}}
+	p := BuildPlan([]Input{{1, s}}, Choices{})
+	for _, c := range []struct{ key, kind, chat, needs string }{
+		{"alert:tele", "telegram", "-1001234567890", "its bot token"},
+		{"alert:tele bad", "telegram", "", "its bot token and chat"},
+		{"alert:ntfy", "ntfy", "", "its server and topic"},
+		{"alert:gotify", "gotify", "", "its server and app token"},
+		{"alert:push", "pushover", "", "its user key and app token"},
+	} {
+		it := item(t, p, GroupAlerts, c.key)
+		if it.Alert.Kind != c.kind || it.Alert.ChatID != c.chat || it.Needs != c.needs {
+			t.Errorf("%s: %+v needs %q", c.key, it.Alert, it.Needs)
+		}
+		if want := c.kind + "; added off until you type " + c.needs; it.Detail != want {
+			t.Errorf("%s detail %q, want %q", c.key, it.Detail, want)
+		}
+	}
+	n, ok := notMoved(p, "sonarr notifications[5]")
+	if !ok || n.Group != GroupAlerts || !strings.Contains(n.Why, "Telegram, ntfy, Gotify or Pushover") {
+		t.Errorf("apprise %+v", n)
+	}
+	for i := 0; i < 5; i++ {
+		if n, ok := notMoved(p, fmt.Sprintf("sonarr notifications[%d]", i)); ok {
+			t.Errorf("notifications[%d] listed as not moved: %+v", i, n)
 		}
 	}
 }

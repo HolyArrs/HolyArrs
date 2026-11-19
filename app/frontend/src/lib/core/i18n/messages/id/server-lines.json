@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "aturan skor format tidak diimpor; Aturan pilihan menilai daftar ciri yang tetap",
 	"server.migrate.from-the-default-wait-rule-of": "dari aturan tunggu bawaan {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "beri alamat beserta kunci, atau path backup",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "Peringatan HolyArrs hanya dikirim ke Discord, webhook, atau email",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "Peringatan HolyArrs hanya dikirim ke Discord, webhook, email, Telegram, ntfy, Gotify, atau Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs tidak bisa memastikan apakah ini orang yang sama. Pilih Orang yang sama atau Lewatkan.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs tidak bisa tahu siapa yang meminta ini. Pilih Orang yang sama atau Lewatkan untuk orang itu, lalu impor lagi.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs belum punya situs subtitel jenis ini",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Serial yang sedang tren di streaming",
 	"server.suggest.trending-on-streaming": "Tren di streaming",
 	"server.discover.popular": "Populer",
-	"server.metadata.creator": "Kreator"
+	"server.metadata.creator": "Kreator",
+	"server.migrate.its-bot-token-line": "token bot-nya",
+	"server.migrate.its-bot-token-and-chat": "token bot dan obrolannya",
+	"server.migrate.its-server-and-app-token-line": "server dan token aplikasinya",
+	"server.migrate.its-server-and-topic": "server dan topiknya",
+	"server.migrate.its-user-key-and-app-token-line": "kunci pengguna dan token aplikasinya"
 }

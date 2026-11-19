@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "ไม่นำเข้ากฎการให้คะแนนฟอร์แมต กฎการเลือกให้คะแนนรายการลักษณะที่กำหนดไว้",
 	"server.migrate.from-the-default-wait-rule-of": "จากกฎการรอเริ่มต้นของ {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "ใส่ที่อยู่พร้อมคีย์ หรือพาธข้อมูลสำรอง",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "การแจ้งเตือนของ HolyArrs ไปที่ Discord, webhook หรืออีเมลเท่านั้น",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "การแจ้งเตือนของ HolyArrs ไปที่ Discord, webhook, อีเมล, Telegram, ntfy, Gotify หรือ Pushover เท่านั้น",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs บอกไม่ได้ว่าเป็นคนเดียวกันหรือไม่ เลือกคนเดียวกันหรือข้ามไว้",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs บอกไม่ได้ว่าใครขอเรื่องนี้ เลือกคนเดียวกันหรือข้ามไว้สำหรับคนนั้น แล้วนำเข้าอีกครั้ง",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs ยังไม่มีเว็บไซต์คำบรรยายชนิดนี้",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "ซีรีส์ที่กำลังมาแรงบนสตรีมมิง",
 	"server.suggest.trending-on-streaming": "กำลังมาแรงบนสตรีมมิง",
 	"server.discover.popular": "ยอดนิยม",
-	"server.metadata.creator": "ผู้สร้าง"
+	"server.metadata.creator": "ผู้สร้าง",
+	"server.migrate.its-bot-token-line": "โทเคนบอตของมัน",
+	"server.migrate.its-bot-token-and-chat": "โทเคนบอตและแชตของมัน",
+	"server.migrate.its-server-and-app-token-line": "เซิร์ฟเวอร์และโทเคนแอปของมัน",
+	"server.migrate.its-server-and-topic": "เซิร์ฟเวอร์และหัวข้อของมัน",
+	"server.migrate.its-user-key-and-app-token-line": "คีย์ผู้ใช้และโทเคนแอปของมัน"
 }

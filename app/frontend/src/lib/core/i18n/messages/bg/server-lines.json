@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "правилата за оценяване на формати не се импортират; правилата за избор оценяват фиксиран списък от признаци",
 	"server.migrate.from-the-default-wait-rule-of": "от правилото за чакане по подразбиране на {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "въведете адрес с ключ или път до резервно копие",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "Известията на HolyArrs отиват само в Discord, webhook или имейл",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "Известията на HolyArrs отиват само в Discord, webhook, имейл, Telegram, ntfy, Gotify или Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs не може да познае дали това е същият човек. Изберете „Същият човек“ или „Пропускане“.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs не може да познае кой е заявил това. Изберете „Същият човек“ или „Пропускане“ за този човек, после импортирайте отново.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs още няма сайт за субтитри от този вид",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Актуални сериали в стрийминг",
 	"server.suggest.trending-on-streaming": "Актуално в стрийминг",
 	"server.discover.popular": "Популярни",
-	"server.metadata.creator": "Създател"
+	"server.metadata.creator": "Създател",
+	"server.migrate.its-bot-token-line": "токенът му за бота",
+	"server.migrate.its-bot-token-and-chat": "токенът му за бота и чатът",
+	"server.migrate.its-server-and-app-token-line": "сървърът му и токенът за приложението",
+	"server.migrate.its-server-and-topic": "сървърът му и темата",
+	"server.migrate.its-user-key-and-app-token-line": "потребителският му ключ и токенът за приложението"
 }

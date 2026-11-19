@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "les regles de puntuació de format no s'importen; les Regles d'elecció puntuen una llista fixa de trets",
 	"server.migrate.from-the-default-wait-rule-of": "de la regla d'espera per defecte de {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "indica una adreça amb una clau, o una ruta de còpia de seguretat",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "Els Avisos de HolyArrs només van a Discord, a un webhook o al correu electrònic",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "Els Avisos de HolyArrs només van a Discord, a un webhook, al correu electrònic, a Telegram, a ntfy, a Gotify o a Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs no pot saber si és la mateixa persona. Tria Mateixa persona o Deixa-ho fora.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs no pot saber qui ho ha sol·licitat. Tria Mateixa persona o Deixa-ho fora per a aquella persona, i torna a importar.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs encara no té cap lloc de subtítols d'aquest tipus",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Sèries en tendència en streaming",
 	"server.suggest.trending-on-streaming": "Tendència en streaming",
 	"server.discover.popular": "Populars",
-	"server.metadata.creator": "Creador"
+	"server.metadata.creator": "Creador",
+	"server.migrate.its-bot-token-line": "el seu testimoni de bot",
+	"server.migrate.its-bot-token-and-chat": "el seu testimoni de bot i el xat",
+	"server.migrate.its-server-and-app-token-line": "el seu servidor i el testimoni de l'app",
+	"server.migrate.its-server-and-topic": "el seu servidor i el tema",
+	"server.migrate.its-user-key-and-app-token-line": "la seva clau d'usuari i el testimoni de l'app"
 }

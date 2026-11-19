@@ -823,7 +823,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "format scoring rules are not imported; Pick rules score a fixed list of traits",
 	"server.migrate.from-the-default-wait-rule-of": "from the default wait rule of {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "give an address with a key, or a backup path",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs Alerts go to Discord, a webhook or email only",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs Alerts go to Discord, a webhook, email, Telegram, ntfy, Gotify or Pushover only",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs can't tell if this is the same person. Choose Same person or Leave out.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs can't tell who asked for this. Choose Same person or Leave out for that person, then import again.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs has no subtitle site of this kind yet",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Trending shows on streaming",
 	"server.suggest.trending-shows-this-week": "Trending shows this week",
 	"server.suggest.trending-this-week-everywhere": "Trending this week everywhere",
-	"server.suggest.what-people-watch-this-week": "What people watch this week"
+	"server.suggest.what-people-watch-this-week": "What people watch this week",
+	"server.migrate.its-bot-token-line": "its bot token",
+	"server.migrate.its-bot-token-and-chat": "its bot token and chat",
+	"server.migrate.its-server-and-app-token-line": "its server and app token",
+	"server.migrate.its-server-and-topic": "its server and topic",
+	"server.migrate.its-user-key-and-app-token-line": "its user key and app token"
 }

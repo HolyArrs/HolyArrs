@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "قوانین امتیازدهی قالب وارد نمی‌شوند؛ قوانین انتخاب فهرست ثابتی از ویژگی‌ها را امتیاز می‌دهند",
 	"server.migrate.from-the-default-wait-rule-of": "از قانون انتظار پیش‌فرض {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "یک آدرس همراه با کلید، یا یک مسیر پشتیبان بده",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "هشدارهای HolyArrs فقط به Discord، webhook یا ایمیل می‌روند",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "هشدارهای HolyArrs فقط به Discord، webhook، ایمیل، Telegram، ntfy، Gotify یا Pushover می‌روند",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs نمی‌تواند بفهمد این همان فرد است یا نه. «همان فرد» یا «کنار بگذار» را انتخاب کن.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs نمی‌تواند بفهمد چه کسی این را درخواست کرده. برای آن فرد «همان فرد» یا «کنار بگذار» را انتخاب کن، بعد دوباره وارد کن.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs هنوز سایت زیرنویسی از این نوع ندارد",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "سریال‌های پرطرفدار در پخش آنلاین",
 	"server.suggest.trending-on-streaming": "پرطرفدار در پخش آنلاین",
 	"server.discover.popular": "محبوب",
-	"server.metadata.creator": "سازنده"
+	"server.metadata.creator": "سازنده",
+	"server.migrate.its-bot-token-line": "توکن ربات آن",
+	"server.migrate.its-bot-token-and-chat": "توکن ربات و گفتگوی آن",
+	"server.migrate.its-server-and-app-token-line": "سرور آن و توکن برنامه",
+	"server.migrate.its-server-and-topic": "سرور و موضوع آن",
+	"server.migrate.its-user-key-and-app-token-line": "کلید کاربری آن و توکن برنامه"
 }

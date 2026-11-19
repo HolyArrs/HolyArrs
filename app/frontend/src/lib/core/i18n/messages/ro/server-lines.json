@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "regulile de scor pentru format nu se importă; Regulile de alegere punctează o listă fixă de trăsături",
 	"server.migrate.from-the-default-wait-rule-of": "din regula de așteptare implicită a {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "dă o adresă cu o cheie sau o cale de copie de siguranță",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "Alertele HolyArrs merg doar la Discord, un webhook sau e-mail",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "Alertele HolyArrs merg doar la Discord, un webhook, e-mail, Telegram, ntfy, Gotify sau Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs nu poate spune dacă e aceeași persoană. Alege Aceeași persoană sau Lasă deoparte.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs nu poate spune cine a cerut asta. Alege Aceeași persoană sau Lasă deoparte pentru acea persoană, apoi importă din nou.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs nu are încă un site de subtitrări de acest fel",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Seriale în trend pe streaming",
 	"server.suggest.trending-on-streaming": "În trend pe streaming",
 	"server.discover.popular": "Populare",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.migrate.its-bot-token-line": "tokenul lui de bot",
+	"server.migrate.its-bot-token-and-chat": "tokenul lui de bot și chatul",
+	"server.migrate.its-server-and-app-token-line": "serverul lui și tokenul de aplicație",
+	"server.migrate.its-server-and-topic": "serverul lui și subiectul",
+	"server.migrate.its-user-key-and-app-token-line": "cheia lui de utilizator și tokenul de aplicație"
 }

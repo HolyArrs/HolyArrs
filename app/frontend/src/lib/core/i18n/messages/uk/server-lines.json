@@ -823,7 +823,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "правила оцінки форматів не імпортуються; правила вибору оцінюють фіксований набір ознак",
 	"server.migrate.from-the-default-wait-rule-of": "із типового правила очікування {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "вкажи адресу з ключем або шлях до резервної копії",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "Сповіщення HolyArrs надходять лише в Discord, через вебхук або на пошту",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "Сповіщення HolyArrs надходять лише в Discord, через вебхук, на пошту, в Telegram, ntfy, Gotify або Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs не може визначити, чи це та сама людина. Обери «Та сама людина» або «Пропустити».",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs не може визначити, хто це запитував. Обери «Та сама людина» або «Пропустити» для цієї людини, потім імпортуй знову.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "у HolyArrs поки немає сайту субтитрів такого виду",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Серіали в тренді на стрімінгу",
 	"server.suggest.trending-on-streaming": "У тренді на стрімінгу",
 	"server.discover.popular": "Популярне",
-	"server.metadata.creator": "Автор"
+	"server.metadata.creator": "Автор",
+	"server.migrate.its-bot-token-line": "його токен бота",
+	"server.migrate.its-bot-token-and-chat": "його токен бота і чат",
+	"server.migrate.its-server-and-app-token-line": "його сервер і токен застосунку",
+	"server.migrate.its-server-and-topic": "його сервер і тема",
+	"server.migrate.its-user-key-and-app-token-line": "його ключ користувача і токен застосунку"
 }

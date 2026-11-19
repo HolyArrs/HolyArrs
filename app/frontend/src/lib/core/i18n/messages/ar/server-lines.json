@@ -823,7 +823,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "قواعد تسجيل الصيغ لا تُستورد؛ تقيّم قواعد الاختيار قائمة ثابتة من السمات",
 	"server.migrate.from-the-default-wait-rule-of": "من قاعدة الانتظار الافتراضية في {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "أدخل عنوانًا مع مفتاح، أو مسار نسخة احتياطية",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "تذهب تنبيهات HolyArrs إلى Discord أو webhook أو البريد فقط",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "تذهب تنبيهات HolyArrs إلى Discord أو webhook أو البريد أو Telegram أو ntfy أو Gotify أو Pushover فقط",
 	"server.migrate.holyarrs-can-t-tell-if-this": "لا يستطيع HolyArrs معرفة ما إذا كان هذا الشخص نفسه. اختر الشخص نفسه أو استبعد.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "لا يستطيع HolyArrs معرفة من طلب هذا. اختر الشخص نفسه أو استبعد لهذا الشخص، ثم استورد من جديد.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "لا يملك HolyArrs موقع ترجمات من هذا النوع بعد",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "المسلسلات الرائجة على منصات البث",
 	"server.suggest.trending-on-streaming": "رائج على منصات البث",
 	"server.discover.popular": "الرائج",
-	"server.metadata.creator": "المبتكر"
+	"server.metadata.creator": "المبتكر",
+	"server.migrate.its-bot-token-line": "رمز البوت الخاص به",
+	"server.migrate.its-bot-token-and-chat": "رمز البوت الخاص به ومحادثته",
+	"server.migrate.its-server-and-app-token-line": "خادمه ورمز التطبيق الخاص به",
+	"server.migrate.its-server-and-topic": "خادمه وموضوعه",
+	"server.migrate.its-user-key-and-app-token-line": "مفتاح المستخدم الخاص به ورمز التطبيق"
 }

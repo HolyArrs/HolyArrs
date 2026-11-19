@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "כללי ציון פורמט לא מיובאים; כללי בחירה מדרגים רשימה קבועה של מאפיינים",
 	"server.migrate.from-the-default-wait-rule-of": "מכלל ההמתנה ברירת המחדל של {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "הזן כתובת עם מפתח, או נתיב גיבוי",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "התראות HolyArrs הולכות רק ל־Discord, ל־webhook או לאימייל",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "התראות HolyArrs הולכות רק ל־Discord, ל־webhook, לאימייל, ל־Telegram, ל־ntfy, ל־Gotify או ל־Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs לא יכול לדעת אם זה אותו אדם. בחר אותו אדם או השמטה.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs לא יכול לדעת מי ביקש את זה. בחר עבור האדם הזה אותו אדם או השמטה, ואז ייבא שוב.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "ל־HolyArrs עדיין אין אתר כתוביות מהסוג הזה",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "סדרות בטרנד בסטרימינג",
 	"server.suggest.trending-on-streaming": "בטרנד בסטרימינג",
 	"server.discover.popular": "פופולרי",
-	"server.metadata.creator": "יוצר"
+	"server.metadata.creator": "יוצר",
+	"server.migrate.its-bot-token-line": "אסימון הבוט שלו",
+	"server.migrate.its-bot-token-and-chat": "אסימון הבוט והצ׳אט שלו",
+	"server.migrate.its-server-and-app-token-line": "השרת ואסימון האפליקציה שלו",
+	"server.migrate.its-server-and-topic": "השרת והנושא שלו",
+	"server.migrate.its-user-key-and-app-token-line": "מפתח המשתמש ואסימון האפליקציה שלו"
 }

@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "formātu vērtēšanas noteikumi netiek importēti; Izvēles noteikumi vērtē fiksētu pazīmju sarakstu",
 	"server.migrate.from-the-default-wait-rule-of": "no noklusējuma gaidīšanas noteikuma: {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "norādi adresi ar atslēgu vai dublējuma ceļu",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs paziņojumi iet tikai uz Discord, webhook vai e-pastu",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs paziņojumi iet tikai uz Discord, webhook, e-pastu, Telegram, ntfy, Gotify vai Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs nevar noteikt, vai tas ir tas pats cilvēks. Izvēlies Tas pats cilvēks vai Izlaist.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs nevar noteikt, kas to pieprasīja. Šim cilvēkam izvēlies Tas pats cilvēks vai Izlaist, tad importē vēlreiz.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs vēl nav šāda veida subtitru vietnes",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Tendencēs seriāli straumēšanā",
 	"server.suggest.trending-on-streaming": "Tendences straumēšanā",
 	"server.discover.popular": "Populārs",
-	"server.metadata.creator": "Veidotājs"
+	"server.metadata.creator": "Veidotājs",
+	"server.migrate.its-bot-token-line": "tā bota marķieris",
+	"server.migrate.its-bot-token-and-chat": "tā bota marķieris un tērzēšana",
+	"server.migrate.its-server-and-app-token-line": "tā serveris un lietotnes marķieris",
+	"server.migrate.its-server-and-topic": "tā serveris un tēma",
+	"server.migrate.its-user-key-and-app-token-line": "tā lietotāja atslēga un lietotnes marķieris"
 }

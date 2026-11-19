@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "வடிவ மதிப்பெண் விதிகள் இறக்குமதி செய்யப்படாது; தேர்வு விதிகள் ஒரு நிலையான பண்புப் பட்டியலை மதிப்பிடும்",
 	"server.migrate.from-the-default-wait-rule-of": "{and} இன் இயல்புநிலைக் காத்திருப்பு விதியிலிருந்து: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "ஒரு விசையுடன் முகவரி, அல்லது ஒரு காப்புப்பிரதிப் பாதையைத் தாருங்கள்",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs அறிவிப்புகள் Discord, ஒரு வெப்ஹூக் அல்லது மின்னஞ்சலுக்கு மட்டுமே செல்லும்",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs அறிவிப்புகள் Discord, ஒரு வெப்ஹூக், மின்னஞ்சல், Telegram, ntfy, Gotify அல்லது Pushover-க்கு மட்டுமே செல்லும்",
 	"server.migrate.holyarrs-can-t-tell-if-this": "இது அதே நபரா என HolyArrs ஆல் சொல்ல முடியாது. அதே நபர் அல்லது விடு என்பதைத் தேர்ந்தெடுங்கள்.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "இதை யார் கோரினார் என HolyArrs ஆல் சொல்ல முடியாது. அந்த நபருக்கு அதே நபர் அல்லது விடு என்பதைத் தேர்ந்தெடுத்து, மீண்டும் இறக்குமதி செய்யுங்கள்.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "இந்த வகையின் வசனத் தளம் HolyArrs இல் இன்னும் இல்லை",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "ஸ்ட்ரீமிங்கில் டிரெண்டிங் தொடர்கள்",
 	"server.suggest.trending-on-streaming": "ஸ்ட்ரீமிங்கில் டிரெண்டிங்",
 	"server.discover.popular": "பிரபலமானவை",
-	"server.metadata.creator": "படைப்பாளர்"
+	"server.metadata.creator": "படைப்பாளர்",
+	"server.migrate.its-bot-token-line": "அதன் பாட் டோக்கன்",
+	"server.migrate.its-bot-token-and-chat": "அதன் பாட் டோக்கன் மற்றும் அரட்டை",
+	"server.migrate.its-server-and-app-token-line": "அதன் சர்வர் மற்றும் ஆப் டோக்கன்",
+	"server.migrate.its-server-and-topic": "அதன் சர்வர் மற்றும் தலைப்பு",
+	"server.migrate.its-user-key-and-app-token-line": "அதன் பயனர் விசை மற்றும் ஆப் டோக்கன்"
 }

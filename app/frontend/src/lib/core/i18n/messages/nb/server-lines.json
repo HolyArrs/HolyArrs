@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "formatscoringsregler importeres ikke. Valgregler gir poeng for en fast liste med egenskaper",
 	"server.migrate.from-the-default-wait-rule-of": "fra standard venteregel for {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "oppgi en adresse med en nøkkel, eller en sikkerhetskopisti",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs-varsler går bare til Discord, en webhook eller e-post",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs-varsler går bare til Discord, en webhook, e-post, Telegram, ntfy, Gotify eller Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs kan ikke avgjøre om dette er den samme personen. Velg Samme person eller Utelat.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs kan ikke se hvem som ba om dette. Velg Samme person eller Utelat for den personen, og importer så igjen.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs har ingen undertekstside av denne typen ennå",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Trendy serier på strømming",
 	"server.suggest.trending-on-streaming": "Trendy på strømming",
 	"server.discover.popular": "Populært",
-	"server.metadata.creator": "Skaper"
+	"server.metadata.creator": "Skaper",
+	"server.migrate.its-bot-token-line": "bot-tokenet",
+	"server.migrate.its-bot-token-and-chat": "bot-tokenet og chatten",
+	"server.migrate.its-server-and-app-token-line": "serveren og app-tokenet",
+	"server.migrate.its-server-and-topic": "serveren og emnet",
+	"server.migrate.its-user-key-and-app-token-line": "brukernøkkelen og app-tokenet"
 }

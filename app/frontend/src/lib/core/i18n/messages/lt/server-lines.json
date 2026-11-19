@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "formatų vertinimo taisyklės neimportuojamos; Pasirinkimo taisyklės vertina fiksuotą ypatybių sąrašą",
 	"server.migrate.from-the-default-wait-rule-of": "iš numatytosios laukimo taisyklės ({and}): {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "nurodykite adresą su raktu arba atsarginės kopijos kelią",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs Pranešimai siunčiami tik į Discord, webhook ar el. paštą",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs Pranešimai siunčiami tik į Discord, webhook, el. paštą, Telegram, ntfy, Gotify ar Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs negali pasakyti, ar tai tas pats žmogus. Pasirinkite Tas pats žmogus arba Praleisti.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs negali pasakyti, kas tai užsakė. To žmogaus atžvilgiu pasirinkite Tas pats žmogus arba Praleisti, tada importuokite dar kartą.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs dar neturi tokios rūšies subtitrų svetainės",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Populiarūs serialai srautinėse platformose",
 	"server.suggest.trending-on-streaming": "Populiaru srautinėse platformose",
 	"server.discover.popular": "Populiaru",
-	"server.metadata.creator": "Kūrėjas"
+	"server.metadata.creator": "Kūrėjas",
+	"server.migrate.its-bot-token-line": "jos roboto žetonas",
+	"server.migrate.its-bot-token-and-chat": "jos roboto žetonas ir pokalbis",
+	"server.migrate.its-server-and-app-token-line": "jos serveris ir programos žetonas",
+	"server.migrate.its-server-and-topic": "jos serveris ir tema",
+	"server.migrate.its-user-key-and-app-token-line": "jos naudotojo raktas ir programos žetonas"
 }

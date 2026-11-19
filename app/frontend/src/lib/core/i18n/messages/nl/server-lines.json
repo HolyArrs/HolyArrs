@@ -823,7 +823,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "regels voor formaatscores worden niet geïmporteerd; Keuzeregels beoordelen een vaste lijst kenmerken",
 	"server.migrate.from-the-default-wait-rule-of": "uit de standaard wachtregel van {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "geef een adres met een sleutel, of een pad naar een backup",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "Meldingen van HolyArrs gaan alleen naar Discord, een webhook of e-mail",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "Meldingen van HolyArrs gaan alleen naar Discord, een webhook, e-mail, Telegram, ntfy, Gotify of Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs kan niet zien of dit dezelfde persoon is. Kies Dezelfde persoon of Weglaten.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs kan niet zien wie dit heeft aangevraagd. Kies Dezelfde persoon of Weglaten voor die persoon en importeer dan opnieuw.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs heeft nog geen ondertitelsite van dit soort",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Trending series op streaming",
 	"server.suggest.trending-on-streaming": "Trending op streaming",
 	"server.discover.popular": "Populair",
-	"server.metadata.creator": "Maker"
+	"server.metadata.creator": "Maker",
+	"server.migrate.its-bot-token-line": "de bottoken",
+	"server.migrate.its-bot-token-and-chat": "de bottoken en chat",
+	"server.migrate.its-server-and-app-token-line": "de server en app-token",
+	"server.migrate.its-server-and-topic": "de server en het onderwerp",
+	"server.migrate.its-user-key-and-app-token-line": "de gebruikerssleutel en app-token"
 }

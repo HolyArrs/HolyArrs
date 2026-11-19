@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "οι κανόνες βαθμολόγησης μορφών δεν εισάγονται· οι κανόνες επιλογής βαθμολογούν μια σταθερή λίστα χαρακτηριστικών",
 	"server.migrate.from-the-default-wait-rule-of": "από τον προεπιλεγμένο κανόνα αναμονής του {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "δώστε μια διεύθυνση με κλειδί, ή μια διαδρομή αντιγράφου ασφαλείας",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "Οι Ειδοποιήσεις του HolyArrs πηγαίνουν μόνο σε Discord, webhook ή email",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "Οι Ειδοποιήσεις του HolyArrs πηγαίνουν μόνο σε Discord, webhook, email, Telegram, ntfy, Gotify ή Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "Το HolyArrs δεν μπορεί να καταλάβει αν πρόκειται για το ίδιο άτομο. Επιλέξτε Το ίδιο άτομο ή Εξαίρεση.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "Το HolyArrs δεν μπορεί να καταλάβει ποιος το ζήτησε. Επιλέξτε Το ίδιο άτομο ή Εξαίρεση για αυτό το άτομο και μετά εισαγάγετε ξανά.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "Το HolyArrs δεν έχει ακόμη ιστότοπο υποτίτλων αυτού του είδους",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Σειρές που κάνουν τάση στο streaming",
 	"server.suggest.trending-on-streaming": "Τάσεις στο streaming",
 	"server.discover.popular": "Δημοφιλή",
-	"server.metadata.creator": "Δημιουργός"
+	"server.metadata.creator": "Δημιουργός",
+	"server.migrate.its-bot-token-line": "το διακριτικό του bot του",
+	"server.migrate.its-bot-token-and-chat": "το διακριτικό του bot του και η συνομιλία",
+	"server.migrate.its-server-and-app-token-line": "ο διακομιστής του και το διακριτικό εφαρμογής",
+	"server.migrate.its-server-and-topic": "ο διακομιστής του και το θέμα",
+	"server.migrate.its-user-key-and-app-token-line": "το κλειδί χρήστη του και το διακριτικό εφαρμογής"
 }

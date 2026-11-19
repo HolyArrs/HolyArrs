@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "reglur um sniðstig eru ekki fluttar inn; valreglur gefa stig fyrir fastan lista eiginleika",
 	"server.migrate.from-the-default-wait-rule-of": "úr sjálfgefnu biðreglunni fyrir {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "gefðu upp vistfang með lykli, eða afritsslóð",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs-tilkynningar fara aðeins til Discord, webhook eða tölvupósts",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs-tilkynningar fara aðeins til Discord, webhook, tölvupósts, Telegram, ntfy, Gotify eða Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs getur ekki sagt hvort þetta er sama manneskjan. Veldu Sama manneskja eða Skilja eftir.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs getur ekki sagt hver bað um þetta. Veldu Sama manneskja eða Skilja eftir fyrir þá manneskju og fluttu svo inn aftur.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs hefur enga skjátextasíðu af þessari tegund enn",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Vinsælir þættir á streymi",
 	"server.suggest.trending-on-streaming": "Vinsælt á streymi",
 	"server.discover.popular": "Vinsælt",
-	"server.metadata.creator": "Höfundur"
+	"server.metadata.creator": "Höfundur",
+	"server.migrate.its-bot-token-line": "bot-tákn þess",
+	"server.migrate.its-bot-token-and-chat": "bot-tákn þess og spjall",
+	"server.migrate.its-server-and-app-token-line": "þjón þess og forritstákn",
+	"server.migrate.its-server-and-topic": "þjón þess og efni",
+	"server.migrate.its-user-key-and-app-token-line": "notandalykil þess og forritstákn"
 }

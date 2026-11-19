@@ -76,8 +76,9 @@ func newMoveLabWith(t *testing.T, change func(radarr, bazarr, seerr *Snapshot)) 
 		Exclusions:      []Exclusion{{IDs: map[string]string{"tmdb": "999"}, Name: "Bad Movie"}},
 		Indexers:        []Provider{{Name: "Nyaa", Kind: "Torznab", Enabled: true, Priority: 25, Settings: map[string]any{"baseUrl": "http://prowlarr:9696/1/"}, NeedsReentry: []string{"apiKey"}}},
 		DownloadClients: []Provider{{Name: "qBit", Kind: "QBittorrent", Enabled: true, Priority: 1, Settings: map[string]any{"host": "qbit", "port": int64(8080), "username": "admin"}, NeedsReentry: []string{"password"}}},
-		Notifications:   []Provider{{Name: "Discord", Kind: "Discord", Enabled: true, NeedsReentry: []string{"webHookUrl"}}},
-		Naming:          map[string]any{"renameMovies": false, "standardMovieFormat": "{Movie Title} ({Release Year}) {Quality Full}"},
+		Notifications: []Provider{{Name: "Discord", Kind: "Discord", Enabled: true, NeedsReentry: []string{"webHookUrl"}},
+			{Name: "Tele", Kind: "Telegram", Enabled: true, Settings: map[string]any{"chatId": "@holyarrs_news"}, NeedsReentry: []string{"botToken"}}},
+		Naming: map[string]any{"renameMovies": false, "standardMovieFormat": "{Movie Title} ({Release Year}) {Quality Full}"},
 	}
 	bazarr := &Snapshot{Kind: Bazarr, Subtitles: &SubtitleSetup{Languages: []string{"en", "es"}, Providers: []Provider{{Name: "podnapisi", Kind: "podnapisi"}}}}
 	seerr := &Snapshot{Kind: Seerr,
@@ -206,7 +207,7 @@ func TestDryRunChangesNothing(t *testing.T) {
 	rep := l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)
 	for key, want := range map[string]string{
 		"folder:" + filepath.ToSlash(l.movies): ResCreate, "title:movie:tmdb:603": ResAdopt, "source:nyaa": ResCreate,
-		"downloader:http://qbit:8080": ResCreate, "alert:discord": ResCreate, "naming:radarr": ResChange, "subtitles:languages": ResChange,
+		"downloader:http://qbit:8080": ResCreate, "alert:discord": ResCreate, "alert:tele": ResCreate, "naming:radarr": ResChange, "subtitles:languages": ResChange,
 		"subtitle_site:podnapisi": ResCreate, "person:seerr:1": ResMatched, "person:seerr:2": ResCreate, "ask:seerr:7": ResCreate,
 		"never_add:movie:tmdb:999": ResCreate, "pick_rules:1:radarr:2": ResMatched,
 	} {
@@ -273,6 +274,9 @@ func TestMoveAppliesOnceAndUndoes(t *testing.T) {
 	}
 	if n := l.count(t, "SELECT count(*) FROM alerts WHERE enabled = 0 AND kind = 'discord'"); n != 1 {
 		t.Fatal("alert not off")
+	}
+	if n := l.count(t, "SELECT count(*) FROM alerts WHERE enabled = 0 AND kind = 'telegram' AND chat_id = '@holyarrs_news'"); n != 1 {
+		t.Fatal("telegram alert not off with its chat")
 	}
 	var ana int64
 	if err := l.st.Read().QueryRow("SELECT id FROM users WHERE name = 'Ana' AND state = 'disabled' AND password_hash = '' AND role = 'member'").Scan(&ana); err != nil {

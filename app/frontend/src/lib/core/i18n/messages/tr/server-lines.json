@@ -823,7 +823,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "format puanlama kuralları içe aktarılmaz; Seçim kuralları sabit bir özellik listesini puanlar",
 	"server.migrate.from-the-default-wait-rule-of": "{and} varsayılan bekleme kuralından: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "bir anahtarla birlikte adres ya da bir yedek yolu yaz",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs Uyarıları yalnızca Discord'a, bir webhook'a ya da e-postaya gider",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs Uyarıları yalnızca Discord'a, bir webhook'a, e-postaya, Telegram'a, ntfy'ye, Gotify'a ya da Pushover'a gider",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs bunun aynı kişi olup olmadığını anlayamıyor. Aynı kişi ya da Dışarıda bırak seç.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs bunu kimin istediğini anlayamıyor. O kişi için Aynı kişi ya da Dışarıda bırak seç, sonra yeniden içe aktar.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs'ta henüz bu türde bir altyazı sitesi yok",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Yayın servislerinde öne çıkan diziler",
 	"server.suggest.trending-on-streaming": "Yayın servislerinde öne çıkanlar",
 	"server.discover.popular": "Popüler",
-	"server.metadata.creator": "Yaratıcı"
+	"server.metadata.creator": "Yaratıcı",
+	"server.migrate.its-bot-token-line": "bot token'ı",
+	"server.migrate.its-bot-token-and-chat": "bot token'ı ve sohbeti",
+	"server.migrate.its-server-and-app-token-line": "sunucusu ve uygulama token'ı",
+	"server.migrate.its-server-and-topic": "sunucusu ve konusu",
+	"server.migrate.its-user-key-and-app-token-line": "kullanıcı anahtarı ve uygulama token'ı"
 }

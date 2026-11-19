@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "格式評分規則不會匯入；挑選規則按固定的特徵清單評分",
 	"server.migrate.from-the-default-wait-rule-of": "來自 {and} 的預設等待規則：{p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "請提供帶金鑰的位址，或備份路徑",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs 的通知只會發到 Discord、webhook 或電子郵件",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs 的通知只會發到 Discord、webhook、電子郵件、Telegram、ntfy、Gotify 或 Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs 無法判斷這是不是同一個人。請選擇「是同一個人」或「排除」。",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs 無法判斷是誰提出了這個請求。請為該成員選擇「是同一個人」或「排除」，然後再次匯入。",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs 暫時還沒有這種字幕站",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "流媒體熱播影集",
 	"server.suggest.trending-on-streaming": "流媒體熱播",
 	"server.discover.popular": "熱門",
-	"server.metadata.creator": "創作者"
+	"server.metadata.creator": "創作者",
+	"server.migrate.its-bot-token-line": "它的機器人權杖",
+	"server.migrate.its-bot-token-and-chat": "它的機器人權杖和聊天",
+	"server.migrate.its-server-and-app-token-line": "它的伺服器和應用程式權杖",
+	"server.migrate.its-server-and-topic": "它的伺服器和主題",
+	"server.migrate.its-user-key-and-app-token-line": "它的使用者金鑰和應用程式權杖"
 }

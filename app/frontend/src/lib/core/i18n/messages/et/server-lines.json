@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "vormingu hindamisreegleid ei imporditud; valikureeglid hindavad kindlat tunnuste nimekirja",
 	"server.migrate.from-the-default-wait-rule-of": "vaikimisi ooteregli järgi: {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "anna aadress koos võtmega või varukoopia tee",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrsi teavitused lähevad ainult Discordi, veebihaaku või e-posti",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrsi teavitused lähevad ainult Discordi, veebihaaku, e-posti, Telegrami, ntfy-sse, Gotifysse või Pushoverisse",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs ei oska öelda, kas see on sama inimene. Vali Sama inimene või Jäta välja.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs ei oska öelda, kes seda taotles. Vali selle inimese jaoks Sama inimene või Jäta välja ja impordi siis uuesti.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrsil pole veel selle liigi subtiitrisaiti",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Menukad sarjad voogedastuses",
 	"server.suggest.trending-on-streaming": "Menukas voogedastuses",
 	"server.discover.popular": "Populaarsed",
-	"server.metadata.creator": "Looja"
+	"server.metadata.creator": "Looja",
+	"server.migrate.its-bot-token-line": "selle boti tunnus",
+	"server.migrate.its-bot-token-and-chat": "selle boti tunnus ja vestlus",
+	"server.migrate.its-server-and-app-token-line": "selle server ja rakenduse tunnus",
+	"server.migrate.its-server-and-topic": "selle server ja teema",
+	"server.migrate.its-user-key-and-app-token-line": "selle kasutajavõti ja rakenduse tunnus"
 }

@@ -595,7 +595,7 @@ func (r *run) alert(it Item) (string, string) {
 		return ResCreate, what
 	}
 	row := domain.Alert{Name: it.Name, Kind: a.Kind, Enabled: false, Moments: append([]string{}, alerts.Moments...), SMTPHost: a.SMTPHost,
-		SMTPPort: 587, SMTPSecurity: "starttls", SMTPFrom: a.SMTPFrom, SMTPUser: a.SMTPUser, StaffTo: a.StaffTo, WebhookAuth: "sign"}
+		SMTPPort: 587, SMTPSecurity: "starttls", SMTPFrom: a.SMTPFrom, SMTPUser: a.SMTPUser, StaffTo: a.StaffTo, WebhookAuth: "sign", ChatID: a.ChatID}
 	if a.SMTPPort > 0 {
 		row.SMTPPort = a.SMTPPort
 	}

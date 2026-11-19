@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "muotopisteytyssääntöjä ei tuoda; valintasäännöt pisteyttävät kiinteän listan ominaisuuksia",
 	"server.migrate.from-the-default-wait-rule-of": "oletusodotussäännöstä {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "anna osoite ja avain tai varmuuskopion polku",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrsin ilmoitukset menevät vain Discordiin, webhookiin tai sähköpostiin",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrsin ilmoitukset menevät vain Discordiin, webhookiin, sähköpostiin, Telegramiin, ntfy:hyn, Gotifyyn tai Pushoveriin",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs ei osaa sanoa, onko tämä sama henkilö. Valitse Sama henkilö tai Jätä pois.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs ei osaa sanoa, kuka tätä pyysi. Valitse Sama henkilö tai Jätä pois kyseiselle henkilölle ja tuo sitten uudelleen.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrsissa ei ole vielä tämän tyyppistä tekstityssivustoa",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Nousussa olevat sarjat suoratoistossa",
 	"server.suggest.trending-on-streaming": "Nousussa suoratoistossa",
 	"server.discover.popular": "Suosittua",
-	"server.metadata.creator": "Tekijä"
+	"server.metadata.creator": "Tekijä",
+	"server.migrate.its-bot-token-line": "sen botin tunniste",
+	"server.migrate.its-bot-token-and-chat": "sen botin tunniste ja keskustelu",
+	"server.migrate.its-server-and-app-token-line": "sen palvelin ja sovellustunniste",
+	"server.migrate.its-server-and-topic": "sen palvelin ja aihe",
+	"server.migrate.its-user-key-and-app-token-line": "sen käyttäjäavain ja sovellustunniste"
 }

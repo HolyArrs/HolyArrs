@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "formatpoängsregler importeras inte; valregler poängsätter en fast lista med egenskaper",
 	"server.migrate.from-the-default-wait-rule-of": "från standardväntregeln för {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "ange en adress med en nyckel, eller en säkerhetskopiasökväg",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs aviseringar går bara till Discord, en webhook eller e-post",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs aviseringar går bara till Discord, en webhook, e-post, Telegram, ntfy, Gotify eller Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs kan inte avgöra om det här är samma person. Välj Samma person eller Utelämna.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs kan inte avgöra vem som efterfrågade det här. Välj Samma person eller Utelämna för den personen och importera sedan igen.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs har ännu ingen undertextsajt av den här typen",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Trendande serier på streaming",
 	"server.suggest.trending-on-streaming": "Trendar på streaming",
 	"server.discover.popular": "Populärt",
-	"server.metadata.creator": "Skapare"
+	"server.metadata.creator": "Skapare",
+	"server.migrate.its-bot-token-line": "dess bottoken",
+	"server.migrate.its-bot-token-and-chat": "dess bottoken och chatt",
+	"server.migrate.its-server-and-app-token-line": "dess server och apptoken",
+	"server.migrate.its-server-and-topic": "dess server och ämne",
+	"server.migrate.its-user-key-and-app-token-line": "dess användarnyckel och apptoken"
 }

@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "as regras de nota de formato não são importadas; as Regras de escolha avaliam uma lista fixa de características",
 	"server.migrate.from-the-default-wait-rule-of": "da regra de espera predefinida de {and}: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "indique um endereço com uma chave, ou o caminho de um backup",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "os Alertas do HolyArrs vão só para o Discord, um webhook ou e-mail",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "os Alertas do HolyArrs vão só para o Discord, um webhook, e-mail, Telegram, ntfy, Gotify ou Pushover",
 	"server.migrate.holyarrs-can-t-tell-if-this": "O HolyArrs não sabe dizer se é a mesma pessoa. Escolha Mesma pessoa ou Deixar de fora.",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "O HolyArrs não sabe dizer quem fez este pedido. Escolha Mesma pessoa ou Deixar de fora para essa pessoa e importe novamente.",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "o HolyArrs ainda não tem um site de legendas deste tipo",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "Séries em alta no streaming",
 	"server.suggest.trending-on-streaming": "Em alta no streaming",
 	"server.discover.popular": "Popular",
-	"server.metadata.creator": "Criador"
+	"server.metadata.creator": "Criador",
+	"server.migrate.its-bot-token-line": "o token do bot dele",
+	"server.migrate.its-bot-token-and-chat": "o token do bot e a conversa dele",
+	"server.migrate.its-server-and-app-token-line": "o servidor e o token da app dele",
+	"server.migrate.its-server-and-topic": "o servidor e o tópico dele",
+	"server.migrate.its-user-key-and-app-token-line": "a chave de utilizador e o token da app dele"
 }

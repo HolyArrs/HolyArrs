@@ -819,7 +819,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "ফরম্যাট স্কোরের নিয়ম ইমপোর্ট হয় না; বাছাইয়ের নিয়ম বৈশিষ্ট্যের একটি নির্দিষ্ট তালিকায় স্কোর দেয়",
 	"server.migrate.from-the-default-wait-rule-of": "{and}-এর ডিফল্ট অপেক্ষার নিয়ম থেকে: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "একটি কীসহ ঠিকানা, বা একটি ব্যাকআপ পাথ দিন",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs অ্যালার্ট শুধু Discord, ওয়েবহুক বা ইমেইলে যায়",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs অ্যালার্ট শুধু Discord, ওয়েবহুক, ইমেইল, Telegram, ntfy, Gotify বা Pushover-এ যায়",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs বলতে পারছে না এটি একই ব্যক্তি কি না। একই ব্যক্তি বা বাদ দিন বাছুন।",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs বলতে পারছে না এটি কে রিকোয়েস্ট করেছে। ওই ব্যক্তির জন্য একই ব্যক্তি বা বাদ দিন বাছুন, তারপর আবার ইমপোর্ট করুন।",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs-এর এই ধরনের কোনো সাবটাইটেল সাইট এখনো নেই",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "স্ট্রিমিংয়ে ট্রেন্ডিং শো",
 	"server.suggest.trending-on-streaming": "স্ট্রিমিংয়ে ট্রেন্ডিং",
 	"server.discover.popular": "জনপ্রিয়",
-	"server.metadata.creator": "নির্মাতা"
+	"server.metadata.creator": "নির্মাতা",
+	"server.migrate.its-bot-token-line": "এর বট টোকেন",
+	"server.migrate.its-bot-token-and-chat": "এর বট টোকেন ও চ্যাট",
+	"server.migrate.its-server-and-app-token-line": "এর সার্ভার ও অ্যাপ টোকেন",
+	"server.migrate.its-server-and-topic": "এর সার্ভার ও টপিক",
+	"server.migrate.its-user-key-and-app-token-line": "এর ইউজার কী ও অ্যাপ টোকেন"
 }

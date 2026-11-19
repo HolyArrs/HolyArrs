@@ -823,7 +823,7 @@
 	"server.migrate.format-scoring-rules-are-not-imported": "形式のスコアのルールはインポートしません。選定ルールは決まった一覧の特徴で採点します",
 	"server.migrate.from-the-default-wait-rule-of": "{and} の初期の待ち時間ルールより: {p}{notes}",
 	"server.migrate.give-an-address-with-a-key-line": "キー付きのアドレス、またはバックアップのパスを入力してください",
-	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs の通知の送り先は Discord、Webhook、メールだけです",
+	"server.migrate.holyarrs-alerts-go-to-discord-a": "HolyArrs の通知の送り先は Discord、Webhook、メール、Telegram、ntfy、Gotify、Pushover だけです",
 	"server.migrate.holyarrs-can-t-tell-if-this": "HolyArrs では同じ人かどうか判断できません。「同じ人」か「対象外にする」を選んでください。",
 	"server.migrate.holyarrs-can-t-tell-who-asked": "HolyArrs では誰がリクエストしたか判断できません。そのユーザーについて「同じ人」か「対象外にする」を選んでから、もう一度インポートしてください。",
 	"server.migrate.holyarrs-has-no-subtitle-site-of": "HolyArrs には、この種類の字幕サイトはまだありません",
@@ -1579,5 +1579,10 @@
 	"server.suggest.trending-shows-on-streaming": "配信でトレンドの番組",
 	"server.suggest.trending-on-streaming": "配信でトレンド",
 	"server.discover.popular": "人気",
-	"server.metadata.creator": "原作者"
+	"server.metadata.creator": "原作者",
+	"server.migrate.its-bot-token-line": "そのボットのトークン",
+	"server.migrate.its-bot-token-and-chat": "そのボットのトークンとチャット",
+	"server.migrate.its-server-and-app-token-line": "そのサーバーとアプリのトークン",
+	"server.migrate.its-server-and-topic": "そのサーバーとトピック",
+	"server.migrate.its-user-key-and-app-token-line": "そのユーザーキーとアプリのトークン"
 }

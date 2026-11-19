@@ -283,7 +283,8 @@
             "smtp_security": "s",
             "smtp_from": "s",
             "smtp_user": "s",
-            "staff_to": "s"
+            "staff_to": "s",
+            "chat_id": "s"
           }
         }
       ]
