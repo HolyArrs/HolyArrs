@@ -28,7 +28,7 @@ describe('decision panel', () => {
 		expect(fn).toContain('api.post(`/downloads/${d.download_id}/import`)');
 		expect(fn).toContain('await refreshDecisions()');
 		expect(src).toContain("{:else if fix === 'again'}");
-		expect(src.split('function more(')[1]?.split('\n\t}\n')[0] ?? '').toContain("canImportAgain(d) && fix !== 'again'");
+		expect(src.split('function more(')[1]?.split('\n\t}\n')[0] ?? '').toContain("mayImportAgain(d) && fix !== 'again'");
 	});
 	it('shows every likely-a-fake line in German, with no English part', () => {
 		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('../core/i18n/messages/de/server-lines.json', { eager: true })).map((f) => f.default));

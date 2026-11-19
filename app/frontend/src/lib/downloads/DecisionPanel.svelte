@@ -6,7 +6,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { decisionName, groupDecisions, manyWords, whyWords, type DecisionGroup } from './downloaders.ts';
-	import { canImportAgain, decisionFix, packImportAgain, noMatchKind, reasonKind, reasonWords, refusedLine, type Fix } from './decision-fix.ts';
+	import { mayImportAgain, decisionFix, packImportAgain, noMatchKind, reasonKind, reasonWords, refusedLine, type Fix } from './decision-fix.ts';
 	import { refreshDecisions } from './decisions.svelte.ts';
 	import { editionDecisionBody } from '../mediafiles/index.ts';
 	import { to } from '../core/paths.ts';
@@ -112,7 +112,7 @@
 	const versionLabel = (d: Decision) => (d.versions > 1 ? t('downloads.dp.anotherVersion') : t('downloads.dp.addVersion'));
 	function more(d: Decision, key: string, fix: Fix): MenuItem[] {
 		const out: MenuItem[] = [];
-		if (canImportAgain(d) && fix !== 'again') out.push({ label: t('downloads.act.importAgain'), disabled: !!d.reading, onselect: () => importAgain(d, key) });
+		if (mayImportAgain(d) && fix !== 'again') out.push({ label: t('downloads.act.importAgain'), disabled: !!d.reading, onselect: () => importAgain(d, key) });
 		if (d.import_file && fix !== 'import') out.push({ label: t('downloads.dp.importFile'), onselect: () => importFile(d, key) });
 		if (d.import_folder && fix !== 'match') out.push({ label: t('downloads.dp.importByHand'), href: byHandHref(d) });
 		if (fix !== 'search') out.push({ label: t('downloads.dp.searchAgain'), onselect: () => act(d, 'search', false, key) });

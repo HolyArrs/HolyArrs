@@ -32,6 +32,14 @@ export function canImportAgain(d: D): boolean {
 	return !!d.download_id && (noSaveFolder(r) || noAccess(r) || gaveUp(r) || slowRead(r));
 }
 
+// No file matched: the same download can also be imported again from the menu (its archives are unpacked again); Import files by hand still leads.
+const noMatchAgain = (r: string) => /^\s*no file in the download matched (this movie|an episode|a track); match the files by hand\.?\s*$/i.test(r);
+
+// Import again is offered: as the lead fix (canImportAgain) or, when no file matched, in the menu.
+export function mayImportAgain(d: D): boolean {
+	return canImportAgain(d) || (!!d.download_id && noMatchAgain(d.reason ?? ''));
+}
+
 // Every file of one download waits on the same reason Import again answers: one press imports the whole download again.
 export function packImportAgain(items: D[]): boolean {
 	const [a] = items;
