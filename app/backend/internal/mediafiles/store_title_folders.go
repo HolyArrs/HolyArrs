@@ -97,3 +97,22 @@ func TitleInFolder(ctx context.Context, db database.Querier, titleID int64, root
 		WHERE v.title_id = ? AND f.path = ? AND v.folder_name = ?`, titleID, root, folder).Scan(&id)
 	return id != 0
 }
+
+// VersionFolderNames returns all folders claimed by versions in a Library
+// folder. Callers can check ownership inside their existing write transaction.
+func VersionFolderNames(ctx context.Context, db database.Lister, libraryID int64) ([]string, error) {
+	rows, err := db.QueryContext(ctx, "SELECT folder_name FROM versions WHERE library_folder_id = ?", libraryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	return names, rows.Err()
+}

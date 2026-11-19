@@ -5,25 +5,21 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"strings"
 )
 
 func tvFolderAvailable(ctx context.Context, tx *sql.Tx, libraryID int64, folder string, fold bool) error {
-	rows, err := tx.QueryContext(ctx, "SELECT folder_name FROM versions WHERE library_folder_id = ?", libraryID)
+	names, err := mediafiles.VersionFolderNames(ctx, tx, libraryID)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
 	key := library.FolderKey(folder, fold)
-	for rows.Next() {
-		var existing string
-		if err := rows.Scan(&existing); err != nil {
-			return err
-		}
+	for _, existing := range names {
 		other := library.FolderKey(existing, fold)
 		if key == other || strings.HasPrefix(key, other+"/") || strings.HasPrefix(other, key+"/") {
 			return fmt.Errorf("this folder overlaps a show already in the Library")
 		}
 	}
-	return rows.Err()
+	return nil
 }
