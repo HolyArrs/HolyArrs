@@ -14,6 +14,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
@@ -382,32 +383,69 @@ func (q *Qbittorrent) callRaw(ctx context.Context, path, ctype string, payload [
 	return code, b, err
 }
 
+// deadConnection says whether a request died before an answer arrived, so that
+// sending a GET again cannot have done anything twice. A POST must never be
+// retried on this test: torrents/add sent twice would add the torrent twice.
+func deadConnection(err error) bool {
+	var ue *url.Error
+	if errors.As(err, &ue) {
+		err = ue.Err
+	}
+	return errors.Is(err, io.EOF) ||
+		errors.Is(err, io.ErrUnexpectedEOF) ||
+		errors.Is(err, syscall.ECONNRESET) ||
+		errors.Is(err, syscall.ECONNABORTED)
+}
+
 // doRaw sends one request. okCodes are statuses the caller wants to read as answers. The Referer header is what qBittorrent's CSRF check wants when no key is used.
 // Answers are capped so a broken or hostile server cannot fill memory. Torrent lists can be large, so they get a bigger cap.
 func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.Values, ctype string, payload []byte, okCodes ...int) (int, []byte, error) {
-	var body io.Reader
 	u := q.base + "/api/v2/" + path
+	body := ""
 	if payload != nil {
-		body = strings.NewReader(string(payload))
+		body = string(payload)
 	} else if method == http.MethodGet && len(form) > 0 {
 		u += "?" + form.Encode()
 	} else if form != nil {
-		body = strings.NewReader(form.Encode())
+		body = form.Encode()
 		ctype = "application/x-www-form-urlencoded"
 	}
-	req, err := http.NewRequestWithContext(ctx, method, u, body)
+	// Building the request is separate from sending it so a GET can be sent
+	// twice with the same body when the first try finds a dead connection.
+	newReq := func() (*http.Request, error) {
+		var r io.Reader
+		if body != "" {
+			r = strings.NewReader(body)
+		}
+		req, err := http.NewRequestWithContext(ctx, method, u, r)
+		if err != nil {
+			return nil, err
+		}
+		if r != nil && ctype != "" {
+			req.Header.Set("Content-Type", ctype)
+		}
+		if q.key != "" {
+			req.Header.Set("Authorization", "Bearer "+q.key)
+		} else {
+			req.Header.Set("Referer", q.base)
+		}
+		return req, nil
+	}
+	req, err := newReq()
 	if err != nil {
 		return 0, nil, err
 	}
-	if body != nil && ctype != "" {
-		req.Header.Set("Content-Type", ctype)
-	}
-	if q.key != "" {
-		req.Header.Set("Authorization", "Bearer "+q.key)
-	} else {
-		req.Header.Set("Referer", q.base)
-	}
 	resp, err := q.http.Do(req)
+	if err != nil && method == http.MethodGet && ctx.Err() == nil && deadConnection(err) {
+		// This client keeps connections alive between polls and qBittorrent
+		// closes idle ones, so the next GET on a pooled connection can read EOF
+		// without the request ever reaching the server. One more try costs a
+		// round trip; failing it marks the Downloader unreachable and stops
+		// every grab until the app is restarted. A GET has no effect to repeat.
+		if again, rerr := newReq(); rerr == nil {
+			resp, err = q.http.Do(again)
+		}
+	}
 	if err != nil {
 		var ue *url.Error
 		if errors.As(err, &ue) {
