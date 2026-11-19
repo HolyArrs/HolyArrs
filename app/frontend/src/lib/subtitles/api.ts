@@ -32,7 +32,7 @@ export interface SubtitleSettings {
 	sync_from_fps: number;
 	sync_to_fps: number;
 	sync_step_ms: number;
-	// Cleanup steps by language code; '*' is the row for every other language.
+	// Cleanup steps by language code; '*' is the All languages row.
 	cleanup: Record<string, CleanupOptions>;
 }
 
@@ -502,19 +502,19 @@ export function translatorBody(f: TranslatorForm): Record<string, unknown> {
 export const cleanupSteps = ['remove_ads', 'remove_hi', 'remove_tags', 'remove_emoji', 'ocr_fixes', 'common_fixes', 'fix_uppercase', 'fix_overlaps'] as const;
 export type CleanupStep = (typeof cleanupSteps)[number];
 
-// The cleanup key for every language without a row of its own.
+// The cleanup key for All languages: used for any language without a row of its own.
 export const cleanupAll = '*';
 
 export function noCleanup(): CleanupOptions {
 	return Object.fromEntries(cleanupSteps.map((k) => [k, false])) as unknown as CleanupOptions;
 }
 
-// cleanupKeys lists the rows with the one for every other language first, then by language name.
+// cleanupKeys lists the rows with All languages first, then by language name.
 export function cleanupKeys(c: Record<string, CleanupOptions>, langs: Language[]): string[] {
 	return Object.keys(c).sort((a, b) => (a === cleanupAll ? -1 : b === cleanupAll ? 1 : langName(a, langs).localeCompare(langName(b, langs))));
 }
 
-// nextCleanupLanguage picks the language a new row starts with: every other language first, then a common one.
+// nextCleanupLanguage picks the language a new row starts with: All languages first, then a common one.
 export function nextCleanupLanguage(c: Record<string, CleanupOptions>, langs: Language[]): string {
 	const used = new Set(Object.keys(c));
 	for (const k of [cleanupAll, 'en', 'es', 'fr', 'de', ...langs.map((l) => l.code)]) if (!used.has(k)) return k;

@@ -203,11 +203,11 @@ describe('cleanup rows', () => {
 		{ code: 'fr', name: 'French' }
 	];
 
-	it('lists every other language first, then by name', () => {
+	it('lists All languages first, then by name', () => {
 		expect(cleanupKeys({ fr: noCleanup(), '*': noCleanup(), de: noCleanup() }, langs)).toEqual(['*', 'fr', 'de']);
 	});
 
-	it('starts a new row with every other language, then a common one not yet used', () => {
+	it('starts a new row with All languages, then a common one not yet used', () => {
 		expect(nextCleanupLanguage({}, langs)).toBe('*');
 		expect(nextCleanupLanguage({ '*': noCleanup(), en: noCleanup(), es: noCleanup() }, langs)).toBe('fr');
 		expect(nextCleanupLanguage({ '*': noCleanup(), en: noCleanup(), fr: noCleanup(), de: noCleanup() }, langs)).toBe('es');

@@ -98,7 +98,9 @@ How scoring works, when HolyArrs searches, and the sites it uses are in [Subtitl
 
 In **Settings > Subtitles > Cleanup**, pick what HolyArrs tidies in each subtitle it saves: from a site, chosen by hand, or made by your translator. Nothing is on until you turn it on.
 
-1. Click **Add cleanup for a language**. The first row is **Every other language**; add rows for languages that need different steps.
+1. Click **Add cleanup for a language**. The first row is **All languages**, used for any language without its own row. Add rows for languages that need different steps.
+
+   A subtitle uses one row: the row for its exact language, then the row for its base language (a Portuguese row covers Portuguese (Brazil)), then **All languages**. A language's own row replaces **All languages** for that language; it does not add to it. To keep a step from **All languages** for a language with its own row, tick it in that row too.
 2. Tick the steps you want.
 3. Click **Save**. Subtitles saved from now on are cleaned. Files already saved stay as they are.
 

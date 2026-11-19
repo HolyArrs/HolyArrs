@@ -86,7 +86,11 @@ test('Settings > Subtitles: English and Spanish become the default languages; th
 	const cleanup = page.getByTestId('cleanup-editor');
 	await expect(cleanup).toContainText('No cleanup: subtitles are saved as they come.');
 	await page.getByRole('button', { name: 'Add cleanup for a language' }).click();
+	// The first row is All languages, stored under '*', with a line saying what it covers.
 	await expect(page.locator('#cleanup-lang-0')).toHaveValue('*');
+	await expect(page.locator('#cleanup-lang-0 option:checked')).toHaveText('All languages');
+	await expect(cleanup.getByTestId('cleanup-all-hint')).toHaveText('Used for any language without its own row');
+	await expect(page.locator('#cleanup-lang-0')).toHaveAccessibleDescription('Used for any language without its own row');
 	await cleanup.getByTestId('cleanup-remove_ads').check();
 	await expect(cleanup.getByTestId('cleanup-remove_hi')).not.toBeChecked();
 	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();

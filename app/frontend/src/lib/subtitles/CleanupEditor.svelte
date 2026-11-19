@@ -4,7 +4,7 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import { cleanupAll, cleanupKeys, cleanupSteps, langName, nextCleanupLanguage, noCleanup, renameCleanup, type CleanupOptions, type CleanupStep, type Language } from './api.ts';
 
-	// rows is the cleanup setting itself: one row of steps per language, '*' for every other language.
+	// rows is the cleanup setting itself: one row of steps per language, '*' for All languages.
 	let { rows = $bindable(), langs, id }: { rows: Record<string, CleanupOptions>; langs: Language[]; id: string } = $props();
 
 	const keys = $derived(cleanupKeys(rows, langs));
@@ -33,13 +33,14 @@
 			<div class="head">
 				<div class="field">
 					<label for="{id}-lang-{i}">{t('subtitles.cleanup.language')}</label>
-					<select id="{id}-lang-{i}" class="input" value={k} onchange={(e) => renameCleanup(rows, k, e.currentTarget.value)}>
+					<select id="{id}-lang-{i}" class="input" value={k} onchange={(e) => renameCleanup(rows, k, e.currentTarget.value)} aria-describedby={k === cleanupAll ? `${id}-all-hint` : undefined}>
 						<option value={cleanupAll} disabled={k !== cleanupAll && cleanupAll in rows}>{t('subtitles.cleanup.all')}</option>
 						{#each langs as l (l.code)}<option value={l.code} disabled={l.code !== k && l.code in rows}>{l.name}</option>{/each}
 					</select>
 				</div>
 				<IconButton icon="x" variant="tinted" tooltip={false} onclick={() => delete rows[k]} label={t('subtitles.cleanup.takeOff', { name: name(k) })} />
 			</div>
+			{#if k === cleanupAll}<p id="{id}-all-hint" class="hint xs muted" data-testid="cleanup-all-hint">{t('subtitles.cleanup.allHint')}</p>{/if}
 			<div class="steps">
 				{#each cleanupSteps as s (s)}
 					<label class="checkline">
@@ -88,6 +89,9 @@
 		margin-top: 0;
 		padding: 0 !important;
 		border-top: 0 !important;
+	}
+	.hint {
+		margin: 6px 0 0;
 	}
 	.steps {
 		display: grid;
