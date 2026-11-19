@@ -49,19 +49,22 @@
 	// The saved defaults once they are in; the sheet shows a placeholder until then.
 	let titleDefaults = $state<TitleDefaults | null>(null);
 	let ready = $state(false);
+	// Track opens independently of the selected object's reactive proxy.
+	let opened = 0;
 
 	const showFolders = $derived(folders.filter((f) => f.kind === 'show'));
 	const showRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('show')));
 
 	/** Shows the dialog for one looked-up show. */
 	export async function open(s: LookupShow) {
+		const mine = ++opened;
 		follow = true;
 		picked = s;
 		error = '';
 		ready = false;
 		sheetOpen = true;
 		const d = await savedDefaults.load();
-		if (picked !== s) return;
+		if (mine !== opened || !sheetOpen) return;
 		titleDefaults = d;
 		const start = startChoices(titleDefaults, folders, rules, 'show');
 		folderId = start.folderId;
