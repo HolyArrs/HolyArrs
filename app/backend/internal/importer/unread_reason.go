@@ -31,6 +31,15 @@ func (im *Importer) unreadReason(dr domain.Downloader, files []domain.SeenFile) 
 		"Set HOLYARRS_SAVE_PATH if both apps see the same download folder, or add a path pair in Settings > Downloaders, then import again"
 }
 
+// The reasons of an import that matched no file. The download may be imported
+// again as it is: its files are still there, and what kept them from matching
+// (a name HolyArrs could not read, archives it could not unpack) may be gone.
+const (
+	noMovieWhy   = "no file in the download matched this movie; match the files by hand"
+	noTrackWhy   = "no file in the download matched a track; match the files by hand"
+	noEpisodeWhy = "no file in the download matched an episode; match the files by hand"
+)
+
 // nothingPlaced is a movie import's reason when nothing could be placed.
 func (im *Importer) nothingPlaced(dr domain.Downloader, files []domain.SeenFile, plan []mediafiles.PlanStep) string {
 	if why := im.unreadReason(dr, files); why != "" {
@@ -39,7 +48,7 @@ func (im *Importer) nothingPlaced(dr domain.Downloader, files []domain.SeenFile,
 	if why := refusedMedia(plan); why != "" {
 		return why
 	}
-	return "no file in the download matched this movie; match the files by hand"
+	return noMovieWhy
 }
 
 // nothingMatched is an episode or album import's reason when no file
@@ -52,9 +61,9 @@ func (im *Importer) nothingMatched(dr domain.Downloader, files []domain.SeenFile
 		return why
 	}
 	if music {
-		return "no file in the download matched a track; match the files by hand"
+		return noTrackWhy
 	}
-	return "no file in the download matched an episode; match the files by hand"
+	return noEpisodeWhy
 }
 
 // whyOutsideFolder is the refusal for a reported file that would leave the

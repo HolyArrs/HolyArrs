@@ -1,4 +1,4 @@
-import { canImportAgain, decisionFix, noMatchKind, packImportAgain, reasonKind, reasonWords, refusedLine } from './decision-fix.ts';
+import { canImportAgain, mayImportAgain, decisionFix, noMatchKind, packImportAgain, reasonKind, reasonWords, refusedLine } from './decision-fix.ts';
 import { lang } from '#lib/core/i18n/i18n.svelte.ts';
 import en from '../core/i18n/messages/en/server-lines.json';
 import { plainReason } from '../core/plain.ts';
@@ -219,5 +219,16 @@ describe('album or season card', () => {
 		expect(packImportAgain(tracks(() => 'no file in the download matched a track'))).toBe(false);
 		expect(packImportAgain(tracks(() => write, (i) => (i === 0 ? 7 : 8)))).toBe(false);
 		expect(packImportAgain([])).toBe(false);
+	});
+});
+
+describe('Import again when no file matched', () => {
+	it('is offered in the menu and Import files by hand still leads', () => {
+		const d = { kind: 'show', why: 'ran_out', download_id: 7, import_folder: '/dl/x', reason: 'no file in the download matched an episode; match the files by hand' } as Parameters<typeof mayImportAgain>[0];
+		expect(mayImportAgain(d)).toBe(true);
+		expect(canImportAgain(d)).toBe(false);
+		expect(decisionFix(d)).toBe('match');
+		expect(mayImportAgain({ ...d, download_id: undefined })).toBe(false);
+		expect(mayImportAgain({ ...d, reason: 'nothing could be placed' })).toBe(false);
 	});
 });
