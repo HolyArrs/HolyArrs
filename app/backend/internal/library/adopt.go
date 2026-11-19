@@ -322,7 +322,7 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 			p.Counts[c.Status]++
 			continue
 		}
-		ahead.wait(ctx, path.Base(name))
+		ahead.wait(ctx, name)
 		name, year, ms, err := matchFolder(ctx, md, path.Base(name))
 		if err != nil {
 			if ctx.Err() != nil {
