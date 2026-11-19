@@ -58,6 +58,10 @@ func showID(sh metadata.Show) string {
 
 // matchShowFolder looks a show folder up at the details source.
 func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string) (string, int, []library.AdoptMatch, error) {
+	return newTVMatcher(p).match(ctx, folder)
+}
+func (matcher *tvMatcher) match(ctx context.Context, folder string) (string, int, []library.AdoptMatch, error) {
+	p := matcher.provider
 	if m := reShowTag.FindStringSubmatch(folder); m != nil {
 		kind := strings.ToLower(m[1])
 		sh, err := p.Show(ctx, kind+":"+m[2])
@@ -74,17 +78,41 @@ func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string
 		}
 	}
 	name, year := showFolderName(strings.TrimSpace(reShowTag.ReplaceAllString(folder, "")))
-	shs, err := p.SearchShows(ctx, name)
+	shs, err := matcher.search(ctx, name, false)
 	if err != nil {
 		return name, year, nil, err
 	}
+	acceptable := false
+	for _, sh := range shs {
+		acceptable = acceptable || tvNameScore(name, year, sh) >= library.MatchUnsure
+	}
+	if !acceptable {
+		// Do not append into a cached provider slice's backing array.
+		shs = append([]metadata.Show(nil), shs...)
+		for _, query := range tvFallbackQueries(name) {
+			more, err := matcher.search(ctx, query, true)
+			if err != nil {
+				return name, year, nil, err
+			}
+			shs = append(shs, more...)
+		}
+	}
 	var out []library.AdoptMatch
+	seen := map[string]int{}
 	for _, sh := range shs {
 		id := showID(sh)
 		if id == "" {
 			continue
 		}
-		out = append(out, library.AdoptMatch{ID: id, TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: library.NameScore(name, year, sh.Name, sh.Year), Poster: sh.Poster})
+		match := library.AdoptMatch{ID: id, TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: tvNameScore(name, year, sh), Poster: sh.Poster}
+		if i, ok := seen[id]; ok {
+			if match.Score > out[i].Score {
+				out[i] = match
+			}
+			continue
+		}
+		seen[id] = len(out)
+		out = append(out, match)
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Score > out[j].Score })
 	if len(out) > 4 {
@@ -191,6 +219,7 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 	folders = folders[p.Offset:]
 	total := min(len(folders), p.Limit)
 	defer func() { library.ReportScan(ctx, len(p.Folders), total) }()
+	matcher := newTVMatcher(src)
 	for _, folder := range folders {
 		if err := ctx.Err(); err != nil {
 			return p, err
@@ -208,7 +237,7 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 			p.Counts[c.Status]++
 			continue
 		}
-		name, year, ms, err := matchShowFolder(ctx, src, tvLookupName(folder))
+		name, year, ms, err := matcher.matchFolder(ctx, tvLookupName(folder), vids)
 		c.ParsedName, c.ParsedYear = name, year
 		if err != nil {
 			if ctx.Err() != nil {

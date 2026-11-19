@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
@@ -22,7 +23,29 @@ var (
 	reTVPackIndex    = regexp.MustCompile(`^\d{1,2}[a-z]?[.\-]\s+`)
 )
 
+var reTVLeadingTag = regexp.MustCompile(`^\s*\[[^\]]+\]\s*`)
+var reTVEpisodeRange = regexp.MustCompile(`(?i)[ ._-]+EP?\d{2,4}\s*-\s*\d{2,4}\b.*$`)
+
 func cleanTVPackName(s string) string {
+	// A list of entries is not a title: use its first recognizable episode.
+	parts := strings.Split(s, ",")
+	if len(parts) > 1 && tvAuxiliary(strings.TrimSpace(parts[0])) {
+		for _, part := range parts[1:] {
+			p := releasename.Parse(strings.TrimSpace(part), releasename.Hints{Show: true})
+			if p.IsShow() && len(p.Show.Episodes) > 0 && p.Title.Value != "" {
+				s = part
+				break
+			}
+		}
+	}
+	for reTVLeadingTag.MatchString(s) {
+		trimmed := reTVLeadingTag.ReplaceAllString(s, "")
+		if strings.TrimSpace(trimmed) == "" {
+			break
+		}
+		s = trimmed
+	}
+	s = reTVEpisodeRange.ReplaceAllString(s, "")
 	// Separators in the title are spaces; keep parenthesized qualifiers intact.
 	at := strings.IndexAny(s, "([")
 	if at < 0 {
@@ -31,6 +54,11 @@ func cleanTVPackName(s string) string {
 	s = strings.NewReplacer(".", " ", "_", " ").Replace(s[:at]) + s[at:]
 	s = reTVQualityBlock.ReplaceAllString(s, "")
 	s = reTVRange.ReplaceAllString(s, " ($1)")
+	if at := reTVPackSuffix.FindStringIndex(s); at != nil && at[0] > 0 {
+		s = s[:at[0]]
+	}
+	// Removing a season suffix can expose a preceding Complete marker.
+	s = strings.TrimSpace(s)
 	if at := reTVPackSuffix.FindStringIndex(s); at != nil && at[0] > 0 {
 		s = s[:at[0]]
 	}
