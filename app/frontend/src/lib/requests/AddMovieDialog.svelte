@@ -43,18 +43,21 @@
 	// The saved defaults once they are in; the sheet shows a placeholder until then.
 	let titleDefaults = $state<TitleDefaults | null>(null);
 	let ready = $state(false);
+	// Track opens independently of the selected object's reactive proxy.
+	let opened = 0;
 
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
 	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
 
 	export async function open(m: LookupMovie) {
+		const mine = ++opened;
 		follow = true;
 		picked = m;
 		addError = '';
 		ready = false;
 		addOpen = true;
 		const d = await savedDefaults.load();
-		if (picked !== m) return;
+		if (mine !== opened || !addOpen) return;
 		titleDefaults = d;
 		const start = startChoices(titleDefaults, folders, rules, 'movie');
 		folderId = start.folderId;
