@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -33,6 +32,7 @@ var reShowTag = regexp.MustCompile(`(?i)[\[{(]?(tvdb|tmdb|tvmaze|imdb)(?:id)?[-_
 // showFolderName reads "Name (Year)", a bare name or a release-style name
 // from a show folder name.
 func showFolderName(s string) (string, int) {
+	s = cleanTVPackName(s)
 	if library.ReFolderYear.MatchString(s) {
 		return library.FolderName(s)
 	}
@@ -111,6 +111,8 @@ func mapEpisodeFiles(vids []library.AdoptVideo, sh metadata.Show, order string) 
 		switch {
 		case !p.IsShow():
 			f.Why = "the file name gives no episode numbers"
+		case tvExtraPath(v.Path):
+			f.Why = "bonus material is left for manual episode assignment"
 		case mediafiles.IsPack(p):
 			f.Why = "the file name names whole seasons, not episodes"
 		default:
@@ -180,27 +182,33 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 		known[library.FolderKey(v.FolderName, fold)] = v.TitleID
 	}
 	p.Warning = library.MountWarning(ctx, db, lf, len(ents))
-	p.Offset, p.Total = library.ScanPlace(ents, after)
-	total := library.ScanTotal(ents, after, p.Limit)
+	folders, err := tvFolders(ctx, lf.Path, ents, known, fold)
+	if err != nil {
+		return p, err
+	}
+	p.Total = len(folders)
+	p.Offset = sort.Search(len(folders), func(i int) bool { return folders[i] > after })
+	folders = folders[p.Offset:]
+	total := min(len(folders), p.Limit)
 	defer func() { library.ReportScan(ctx, len(p.Folders), total) }()
-	for _, e := range ents {
-		if !library.ScanWants(e, after) {
-			continue
+	for _, folder := range folders {
+		if err := ctx.Err(); err != nil {
+			return p, err
 		}
 		if len(p.Folders) >= p.Limit {
 			p.More, p.Next = true, p.Folders[len(p.Folders)-1].Folder
 			break
 		}
 		library.ReportScan(ctx, len(p.Folders), total)
-		vids := library.ListVideosN(lf.Path, e.Name(), maxShowVideos)
-		c := library.AdoptCandidate{Folder: e.Name(), Videos: vids, Others: []library.AdoptMatch{}}
-		if id, ok := known[library.FolderKey(e.Name(), fold)]; ok {
+		vids := library.ListVideosN(lf.Path, folder, maxShowVideos)
+		c := library.AdoptCandidate{Folder: folder, Videos: vids, Others: []library.AdoptMatch{}}
+		if id, ok := known[library.FolderKey(folder, fold)]; ok {
 			c.Status, c.Why, c.TitleID = "in_library", "this folder already belongs to a show in the Library", id
 			p.Folders = append(p.Folders, c)
 			p.Counts[c.Status]++
 			continue
 		}
-		name, year, ms, err := matchShowFolder(ctx, src, e.Name())
+		name, year, ms, err := matchShowFolder(ctx, src, tvLookupName(folder))
 		c.ParsedName, c.ParsedYear = name, year
 		if err != nil {
 			if ctx.Err() != nil {
@@ -269,7 +277,7 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 			c.Status, c.Why, c.TitleID = "in_library", "this show is already in the Library in another folder", inLib
 		case never:
 			c.Status, c.Why = "never_add", "this show is on the Never-add list"
-		case len(vids) == 0:
+		case !tvHasMainVideo(vids):
 			c.Status, c.Why = "no_video", "no video file in the folder; adopting adds the show with every episode missing"
 		case c.Match.Score < library.MatchSure || close:
 			c.Status, c.Why = "unsure", fmt.Sprintf("best match %s at %.0f%%; check it", label, c.Match.Score*100)
@@ -389,12 +397,10 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 // they are.
 func (s *Service) adoptShowOne(ctx context.Context, lf mediafiles.LibraryFolder, c library.AdoptChoice, by domain.Actor) (library.AdoptResult, error) {
 	r := library.AdoptResult{Folder: c.Folder}
-	if c.Folder == "" || strings.ContainsAny(c.Folder, `/\`) || !filepath.IsLocal(c.Folder) || strings.HasPrefix(c.Folder, ".") {
-		return r, errors.New("the folder must be one folder directly in the Library folder")
+	if !validTVFolder(lf.Path, c.Folder) {
+		return r, errors.New("no safe show folder inside the Library folder")
 	}
-	if fi, err := os.Lstat(filepath.Join(lf.Path, c.Folder)); err != nil || !fi.IsDir() {
-		return r, errors.New("no such folder in the Library folder")
-	}
+
 	// A folder already in the Library (an import run again after a restart)
 	// counts as brought in, so its title is followed too.
 	if id, err := library.FolderTaken(ctx, s.Store.Read(), lf, c.Folder); err != nil || id != 0 {

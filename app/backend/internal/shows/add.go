@@ -282,6 +282,9 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		folder := mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
 		if opt.Adopt != nil {
 			folder = opt.Adopt.FolderName
+			if err := tvFolderAvailable(ctx, tx, lf.ID, folder, library.FoldsCase(lf.Path)); err != nil {
+				return err
+			}
 		} else {
 			// A folder for this show already on disk under a slightly different
 			// name is used as is, so the scan after the add finds its files.
