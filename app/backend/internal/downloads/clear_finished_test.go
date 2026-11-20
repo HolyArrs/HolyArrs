@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
 type removeSpy struct {
@@ -292,3 +293,34 @@ func countEvents(t *testing.T, w *world, kind string, id int64) int {
 }
 
 func jsonStr(s string) string { b, _ := json.Marshal(s); return string(b) }
+
+// Files placed as links need the download, so a job in a link folder, or one
+// whose place is unknown while links are on, is never cleared.
+func TestClearFinishedLeavesLinkedDownloadAlone(t *testing.T) {
+	old := importer.LinkPaths
+	defer func() { importer.LinkPaths = old }()
+	mount := t.TempDir()
+	importer.LinkPaths = []string{mount}
+
+	w, m, id, spy := usenetDownload(t)
+	spy.content = filepath.Join(mount, "complete", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS")
+	m.ClearFinished(context.Background(), id)
+	if len(spy.removed) != 0 {
+		t.Fatalf("a job in a link folder was removed: %v", spy.removed)
+	}
+
+	// Place unknown (the Downloader cannot say): with links on, leave it.
+	spy.content = ""
+	m.ClearFinished(context.Background(), id)
+	if len(spy.removed) != 0 {
+		t.Fatalf("a job of unknown place was removed: %v", spy.removed)
+	}
+
+	// Outside every link folder nothing changes.
+	spy.content = filepath.Join(t.TempDir(), "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS")
+	m.ClearFinished(context.Background(), id)
+	if len(spy.removed) != 1 {
+		t.Fatalf("a job outside the link folders should be cleared as before: %v", spy.removed)
+	}
+	_ = w
+}

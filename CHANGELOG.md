@@ -2,6 +2,12 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- Downloads on a mounted streaming drive are placed in the Library as links, not copied. Set `HOLYARRS_LINK_PATHS` to the drive's folders. ([#548](https://github.com/HolyArrs/HolyArrs/issues/548))
+
 ## 1.2.0
 
 ### Added

@@ -13,6 +13,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
 var jobSuffix = regexp.MustCompile(`\.\d{1,3}$`)
@@ -42,6 +43,12 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	if err == nil {
 		if j, gerr := e.Get(ctx, d.ExternalID); gerr == nil {
 			folder = j.ContentPath
+		}
+		// Files placed as links need the download: leave the job alone when
+		// it sits in a link folder, or when links are on and its place is unknown.
+		if len(importer.LinkPaths) > 0 && (folder == "" || importer.InLinkPath(filepath.Clean(mapLocal(folder, dr.PathMap)))) {
+			m.clearDone(ctx, d.ID)
+			return
 		}
 		err = e.Remove(ctx, d.ExternalID, true)
 	}

@@ -530,6 +530,24 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 		r.Outcome, r.PlacedBy = "placed", "copy" // placed_by has no link kind; a link is a copy of the entry
 		return r
 	}
+	if InLinkPath(s.SourceFile) {
+		// A file on a mounted streaming drive is linked, not copied: a copy
+		// would read the whole release again and write it to local disk.
+		if err := os.MkdirAll(filepath.Dir(s.TargetPath), 0o777); err != nil {
+			r.Outcome, r.Error = "failed", placeWhy(err, err.Error(), s.SourceFile)
+			return r
+		}
+		if err := os.Symlink(s.SourceFile, s.TargetPath); err != nil {
+			if errors.Is(err, fs.ErrExist) {
+				r.Outcome, r.Error = "refused", "a file appeared at the target"
+			} else {
+				r.Outcome, r.Error = "failed", err.Error()
+			}
+			return r
+		}
+		r.Outcome, r.PlacedBy = "placed", "copy" // placed_by has no link kind; a link is a copy of the entry
+		return r
+	}
 	if err := os.MkdirAll(filepath.Dir(s.TargetPath), 0o777); err != nil {
 		r.Outcome, r.Error = "failed", placeWhy(err, err.Error(), s.SourceFile)
 		return r

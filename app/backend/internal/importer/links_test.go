@@ -55,3 +55,75 @@ func mustReal(t *testing.T, p string) string {
 	}
 	return r
 }
+
+// A file inside a link folder is placed as a link to it and never copied;
+// the same file outside one is placed as before.
+func TestPlaceFromLinkPath(t *testing.T) {
+	mount, other, lib := t.TempDir(), t.TempDir(), t.TempDir()
+	inMount := filepath.Join(mount, "Movie.2020", "Movie.2020.mkv")
+	if err := os.MkdirAll(filepath.Dir(inMount), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(inMount, []byte("video"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(other, "Movie.2020.mkv")
+	if err := os.WriteFile(outside, []byte("video"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldPaths, oldFollow := LinkPaths, FollowLinks
+	defer func() { LinkPaths, FollowLinks = oldPaths, oldFollow }()
+	LinkPaths, FollowLinks = []string{mount}, true
+
+	target := filepath.Join(lib, "Movie (2020)", "Movie (2020).mkv")
+	r := place(mediafiles.PlanStep{SourceFile: inMount, TargetPath: target, Method: "hardlink", Move: true}, Ops{}, time.Time{})
+	if r.Outcome != "placed" {
+		t.Fatalf("want placed, got %+v", r)
+	}
+	fi, err := os.Lstat(target)
+	if err != nil || fi.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("want a symlink at the target, got %v %v", fi, err)
+	}
+	if got, _ := os.Readlink(target); got != inMount {
+		t.Fatalf("link points to %q, want %q", got, inMount)
+	}
+	if _, err := os.Stat(inMount); err != nil {
+		t.Fatalf("the download must stay: %v", err)
+	}
+
+	// A second placement at the same target is refused, not overwritten.
+	if r := place(mediafiles.PlanStep{SourceFile: inMount, TargetPath: target, Method: "hardlink"}, Ops{}, time.Time{}); r.Outcome == "failed" {
+		t.Fatalf("want refused or placed again, got %+v", r)
+	}
+
+	// Outside a link folder nothing changes: a plain hardlink.
+	t2 := filepath.Join(lib, "Other (2020)", "Other (2020).mkv")
+	r = place(mediafiles.PlanStep{SourceFile: outside, TargetPath: t2, Method: "hardlink"}, Ops{Link: os.Link, Copy: copyFile}, time.Time{})
+	if r.Outcome != "placed" {
+		t.Fatalf("want placed, got %+v", r)
+	}
+	if fi, err := os.Lstat(t2); err != nil || fi.Mode()&os.ModeSymlink != 0 {
+		t.Fatalf("a file outside the link folder must not become a symlink: %v %v", fi, err)
+	}
+}
+
+func TestInLinkPath(t *testing.T) {
+	old := LinkPaths
+	defer func() { LinkPaths = old }()
+	LinkPaths = parseLinkPaths(" /mnt/a/ , relative/ignored,/mnt/b")
+	if len(LinkPaths) != 2 {
+		t.Fatalf("want two absolute folders, got %v", LinkPaths)
+	}
+	for p, want := range map[string]bool{
+		"/mnt/a/x/y.mkv": true, "/mnt/b/y.mkv": true,
+		"/mnt/a": false, "/mnt/ab/y.mkv": false, "/mnt/c/y.mkv": false, "/mnt/a/../c/y.mkv": false,
+	} {
+		if got := InLinkPath(p); got != want {
+			t.Errorf("InLinkPath(%q) = %v, want %v", p, got, want)
+		}
+	}
+	LinkPaths = nil
+	if InLinkPath("/mnt/a/x.mkv") {
+		t.Error("no folders set: nothing is in a link folder")
+	}
+}
