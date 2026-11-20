@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Fallit: {why}",
 	"downloads.fact.name": "Nom",
 	"downloads.fact.path": "Ruta",
-	"downloads.fact.removed": "Eliminat",
 	"downloads.fact.size": "Mida",
 	"downloads.fact.source": "Font",
 	"downloads.fact.status": "Estat",

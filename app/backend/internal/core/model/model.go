@@ -259,6 +259,7 @@ type Download struct {
 	FinishedAt       *time.Time `db:"finished_at"`
 	StartedBy        Actor      `db:"started_by,json"`
 	ProgressAt       *time.Time `db:"progress_at"` // last time progress went up; the stall timers count from here
+	CleanedAt        *time.Time `db:"cleaned_at"`  // when the row was marked cleaned up (removed)
 	ConfirmedEdition string     `db:"confirmed_edition"`
 	// PackFiles is set (not nil) for a season pack fetched a few episodes at a
 	// time, in episode order; empty while its file list is not known yet.

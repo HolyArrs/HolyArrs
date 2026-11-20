@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Selhalo: {why}",
 	"downloads.fact.name": "Název",
 	"downloads.fact.path": "Cesta",
-	"downloads.fact.removed": "Odebráno",
 	"downloads.fact.size": "Velikost",
 	"downloads.fact.source": "Zdroj",
 	"downloads.fact.status": "Stav",

@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Mislukt: {why}",
 	"downloads.fact.name": "Naam",
 	"downloads.fact.path": "Pad",
-	"downloads.fact.removed": "Verwijderd",
 	"downloads.fact.size": "Grootte",
 	"downloads.fact.source": "Bron",
 	"downloads.fact.status": "Status",

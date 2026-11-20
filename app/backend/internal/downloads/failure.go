@@ -136,6 +136,8 @@ func (m *Manager) RemoveSaid(ctx context.Context, downloadID int64, c RemoveChoi
 	}
 	next := d
 	next.State, next.StateReason, next.Speed, next.UpSpeed, next.Seeds, next.Peers, next.ETA = "cleaned", &reason, 0, 0, 0, 0, nil
+	cleanNow := m.now()
+	next.CleanedAt = &cleanNow
 	search := c.TurnDown && c.SearchAgain
 	var moved []int64
 	rest := map[int64]mediafiles.SlotState{}

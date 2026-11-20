@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "נכשל: {why}",
 	"downloads.fact.name": "שם",
 	"downloads.fact.path": "נתיב",
-	"downloads.fact.removed": "הוסר",
 	"downloads.fact.size": "גודל",
 	"downloads.fact.source": "מקור",
 	"downloads.fact.status": "סטטוס",

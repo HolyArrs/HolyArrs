@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Gagal: {why}",
 	"downloads.fact.name": "Nama",
 	"downloads.fact.path": "Path",
-	"downloads.fact.removed": "Dihapus",
 	"downloads.fact.size": "Ukuran",
 	"downloads.fact.source": "Sumber",
 	"downloads.fact.status": "Status",

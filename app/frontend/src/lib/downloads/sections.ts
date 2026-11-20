@@ -28,7 +28,7 @@ export interface Fact {
 	value: string;
 }
 
-/** Done, seeding, failed and removed downloads; everything else is in the Queue. */
+/** Done, seeding and failed downloads; everything else is in the Queue. */
 export function inHistory(r: Bits): boolean {
 	const s = stageOf(r);
 	return s === 'done' || s === 'seeding' || s === 'failed';
@@ -98,7 +98,6 @@ export function historyStatus(r: DownloadRow, im: ImportRecord | undefined): { t
 		const why = failReason(im) ?? statusDetail(r, im);
 		return { text: why ? t('downloads.fact.failedWhy', { why }) : t('downloads.fact.failed'), bad: true };
 	}
-	if (r.phase === 'removed') return { text: t('downloads.fact.removed'), bad: false };
 	// Let go because another app took the files: not done, the title is wanted again.
 	if ((s === 'done' || s === 'seeding') && filesGone(im)) return { text: t('downloads.step.filesGone'), bad: false, held: true };
 	// Imported, but the Downloader still holds it: HolyArrs tries the clear again.

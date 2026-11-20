@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "ล้มเหลว: {why}",
 	"downloads.fact.name": "ชื่อ",
 	"downloads.fact.path": "พาธ",
-	"downloads.fact.removed": "ลบแล้ว",
 	"downloads.fact.size": "ขนาด",
 	"downloads.fact.source": "แหล่งที่มา",
 	"downloads.fact.status": "สถานะ",

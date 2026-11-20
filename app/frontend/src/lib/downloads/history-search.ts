@@ -396,16 +396,18 @@ export interface GoLink {
 /** The import plan for a decision, the title page, Downloads for releases and downloads (opening the download if known), Requests for asks and Problems for reports. */
 export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	const out: GoLink[] = [];
+	// A removed download leaves the Downloads list, so opening it by id would go nowhere.
+	const left = /^(download_removed|download_not_removed)$/.test(row.head.Kind) && row.head.Data?.state === 'cleaned';
 	const decide = row.events.find((e) => e.Kind === 'needs_decision');
 	if (decide) {
 		const slot = decide.SlotID ?? 0;
 		const id = decide.DownloadID ?? (typeof decide.Data?.download_id === 'number' ? decide.Data.download_id : 0);
-		out.push({ key: 'plan', get label() { return W('Import plan'); }, href: slot ? `/downloads?slot=${slot}` : id ? `/downloads?open=${id}` : '/downloads' });
+		out.push({ key: 'plan', get label() { return W('Import plan'); }, href: slot ? `/downloads?slot=${slot}` : id ? (left ? '/downloads' : `/downloads?open=${id}`) : '/downloads' });
 	}
 	if (titleHref) out.push({ key: 'title', get label() { return W('Title page'); }, href: titleHref });
 	const dl = row.events.map((e) => e.DownloadID ?? (typeof e.Data?.download_id === 'number' ? e.Data.download_id : null)).find((v) => v != null);
 	// Only rows about a release or a download lead to Downloads; a sign-in does not.
-	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', get label() { return W('Downloads'); }, href: dl ? `/downloads?open=${dl}` : '/downloads' });
+	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', get label() { return W('Downloads'); }, href: dl != null && !left ? `/downloads?open=${dl}` : '/downloads' });
 	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
 	if (row.events.some((e) => /^(ai_)?ask_/.test(e.Kind))) out.push({ key: 'requests', get label() { return W('Requests'); }, href: ask ? `/requests?ask=${ask}` : '/requests' });
 	if (row.events.some((e) => /^report_/.test(e.Kind))) out.push({ key: 'reports', get label() { return W('Problems'); }, href: '/requests/reports?show=all' });

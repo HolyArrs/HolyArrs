@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Nije uspjelo: {why}",
 	"downloads.fact.name": "Naziv",
 	"downloads.fact.path": "Putanja",
-	"downloads.fact.removed": "Uklonjeno",
 	"downloads.fact.size": "Veličina",
 	"downloads.fact.source": "Izvor",
 	"downloads.fact.status": "Status",

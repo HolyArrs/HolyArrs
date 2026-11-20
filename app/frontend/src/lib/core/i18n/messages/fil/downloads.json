@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Nabigo: {why}",
 	"downloads.fact.name": "Pangalan",
 	"downloads.fact.path": "Path",
-	"downloads.fact.removed": "Inalis",
 	"downloads.fact.size": "Laki",
 	"downloads.fact.source": "Source",
 	"downloads.fact.status": "Status",

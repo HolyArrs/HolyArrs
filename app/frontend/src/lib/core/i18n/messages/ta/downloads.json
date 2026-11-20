@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "தோல்வி: {why}",
 	"downloads.fact.name": "பெயர்",
 	"downloads.fact.path": "பாதை",
-	"downloads.fact.removed": "நீக்கப்பட்டது",
 	"downloads.fact.size": "அளவு",
 	"downloads.fact.source": "மூலம்",
 	"downloads.fact.status": "நிலை",

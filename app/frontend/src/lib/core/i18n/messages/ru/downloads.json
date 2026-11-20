@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Не удалось: {why}",
 	"downloads.fact.name": "Название",
 	"downloads.fact.path": "Путь",
-	"downloads.fact.removed": "Удалено",
 	"downloads.fact.size": "Размер",
 	"downloads.fact.source": "Источник",
 	"downloads.fact.status": "Статус",

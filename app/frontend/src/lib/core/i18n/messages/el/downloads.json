@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Απέτυχε: {why}",
 	"downloads.fact.name": "Όνομα",
 	"downloads.fact.path": "Διαδρομή",
-	"downloads.fact.removed": "Αφαιρέθηκε",
 	"downloads.fact.size": "Μέγεθος",
 	"downloads.fact.source": "Πηγή",
 	"downloads.fact.status": "Κατάσταση",

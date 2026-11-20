@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Sikertelen: {why}",
 	"downloads.fact.name": "Név",
 	"downloads.fact.path": "Útvonal",
-	"downloads.fact.removed": "Eltávolítva",
 	"downloads.fact.size": "Méret",
 	"downloads.fact.source": "Forrás",
 	"downloads.fact.status": "Állapot",

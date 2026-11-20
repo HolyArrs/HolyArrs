@@ -219,6 +219,12 @@ describe('history detail actions', () => {
 		const plan = rowLinks(row(ev('needs_decision', { SlotID: 8, title_name: 'Arrival' })), '/library/4');
 		expect(plan.map((l) => [l.label, l.href])).toEqual([['Import plan', '/downloads?slot=8'], ['Title page', '/library/4']]);
 	});
+	it('does not open a removed download that has left the Downloads list', () => {
+		expect(rowLinks(row(ev('download_removed', { DownloadID: 7, Data: { state: 'cleaned' } }))).map((l) => l.href)).toEqual(['/downloads']);
+		expect(rowLinks(row(ev('download_not_removed', { DownloadID: 7, Data: { state: 'cleaned' } }))).map((l) => l.href)).toEqual(['/downloads']);
+		// Clearing an imported job leaves its download row on the page.
+		expect(rowLinks(row(ev('download_removed', { DownloadID: 7, Data: { state: 'finished' } }))).map((l) => l.href)).toEqual(['/downloads?open=7']);
+	});
 });
 
 describe('reported problems in History', () => {

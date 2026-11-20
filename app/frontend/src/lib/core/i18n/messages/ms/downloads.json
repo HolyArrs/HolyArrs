@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Gagal: {why}",
 	"downloads.fact.name": "Nama",
 	"downloads.fact.path": "Laluan",
-	"downloads.fact.removed": "Dibuang",
 	"downloads.fact.size": "Saiz",
 	"downloads.fact.source": "Sumber",
 	"downloads.fact.status": "Status",

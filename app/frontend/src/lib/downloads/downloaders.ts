@@ -346,7 +346,6 @@ export function phaseTone(phase: string): Tone {
 		case 'needs_a_decision':
 		case 'import_refused':
 			return 'fail';
-		case 'removed':
 		case 'paused':
 			return 'idle';
 	}

@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Başarısız: {why}",
 	"downloads.fact.name": "Ad",
 	"downloads.fact.path": "Yol",
-	"downloads.fact.removed": "Kaldırıldı",
 	"downloads.fact.size": "Boyut",
 	"downloads.fact.source": "Kaynak",
 	"downloads.fact.status": "Durum",

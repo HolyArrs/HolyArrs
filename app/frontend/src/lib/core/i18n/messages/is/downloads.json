@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Mistókst: {why}",
 	"downloads.fact.name": "Nafn",
 	"downloads.fact.path": "Slóð",
-	"downloads.fact.removed": "Fjarlægt",
 	"downloads.fact.size": "Stærð",
 	"downloads.fact.source": "Heimild",
 	"downloads.fact.status": "Staða",

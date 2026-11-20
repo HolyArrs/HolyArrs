@@ -17,6 +17,7 @@ StartedAt *time.Time db="started_at" json=""
 FinishedAt *time.Time db="finished_at" json=""
 StartedBy database.Actor db="started_by,json" json=""
 ProgressAt *time.Time db="progress_at" json=""
+CleanedAt *time.Time db="cleaned_at" json=""
 ConfirmedEdition string db="confirmed_edition" json=""
 PackFiles []model.PackFile db="pack_files,json" json=""
 --

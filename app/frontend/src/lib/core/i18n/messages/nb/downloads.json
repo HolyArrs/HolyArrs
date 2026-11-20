@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Feilet: {why}",
 	"downloads.fact.name": "Navn",
 	"downloads.fact.path": "Sti",
-	"downloads.fact.removed": "Fjernet",
 	"downloads.fact.size": "Størrelse",
 	"downloads.fact.source": "Kilde",
 	"downloads.fact.status": "Status",

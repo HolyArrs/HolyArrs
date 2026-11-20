@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Misslyckades: {why}",
 	"downloads.fact.name": "Namn",
 	"downloads.fact.path": "Sökväg",
-	"downloads.fact.removed": "Borttagen",
 	"downloads.fact.size": "Storlek",
 	"downloads.fact.source": "Källa",
 	"downloads.fact.status": "Status",

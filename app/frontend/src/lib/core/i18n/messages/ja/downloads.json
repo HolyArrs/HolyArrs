@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "失敗: {why}",
 	"downloads.fact.name": "名前",
 	"downloads.fact.path": "パス",
-	"downloads.fact.removed": "削除済み",
 	"downloads.fact.size": "サイズ",
 	"downloads.fact.source": "ソース",
 	"downloads.fact.status": "ステータス",

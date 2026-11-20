@@ -228,6 +228,8 @@ func (m *Manager) removeSeeded(ctx context.Context, dr domain.Downloader, e Engi
 	reason := "removed after seeding: " + why
 	next := d
 	next.State, next.StateReason, next.Speed, next.UpSpeed, next.Seeds, next.Peers, next.ETA = "cleaned", &reason, 0, 0, 0, 0, nil
+	cleanNow := m.now()
+	next.CleanedAt = &cleanNow
 	var done bool
 	if err := m.Store.Write(ctx, func(tx *sql.Tx) error {
 		var err error

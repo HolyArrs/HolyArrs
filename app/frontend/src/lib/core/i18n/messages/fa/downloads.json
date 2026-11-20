@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "ناموفق: {why}",
 	"downloads.fact.name": "نام",
 	"downloads.fact.path": "مسیر",
-	"downloads.fact.removed": "حذف شد",
 	"downloads.fact.size": "حجم",
 	"downloads.fact.source": "منبع",
 	"downloads.fact.status": "وضعیت",

@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Neizdevās: {why}",
 	"downloads.fact.name": "Nosaukums",
 	"downloads.fact.path": "Ceļš",
-	"downloads.fact.removed": "Noņemts",
 	"downloads.fact.size": "Izmērs",
 	"downloads.fact.source": "Avots",
 	"downloads.fact.status": "Statuss",

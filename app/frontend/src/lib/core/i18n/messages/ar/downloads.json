@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "فشل: {why}",
 	"downloads.fact.name": "الاسم",
 	"downloads.fact.path": "المسار",
-	"downloads.fact.removed": "أُزيل",
 	"downloads.fact.size": "الحجم",
 	"downloads.fact.source": "المصدر",
 	"downloads.fact.status": "الحالة",

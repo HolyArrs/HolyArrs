@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Ebaõnnestus: {why}",
 	"downloads.fact.name": "Nimi",
 	"downloads.fact.path": "Tee",
-	"downloads.fact.removed": "Eemaldatud",
 	"downloads.fact.size": "Suurus",
 	"downloads.fact.source": "Allikas",
 	"downloads.fact.status": "Olek",

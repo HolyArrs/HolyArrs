@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Nepavyko: {why}",
 	"downloads.fact.name": "Pavadinimas",
 	"downloads.fact.path": "Kelias",
-	"downloads.fact.removed": "Pašalinta",
 	"downloads.fact.size": "Dydis",
 	"downloads.fact.source": "Šaltinis",
 	"downloads.fact.status": "Būsena",

@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Epäonnistui: {why}",
 	"downloads.fact.name": "Nimi",
 	"downloads.fact.path": "Polku",
-	"downloads.fact.removed": "Poistettu",
 	"downloads.fact.size": "Koko",
 	"downloads.fact.source": "Lähde",
 	"downloads.fact.status": "Tila",

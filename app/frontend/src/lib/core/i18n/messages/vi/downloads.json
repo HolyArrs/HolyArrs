@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Thất bại: {why}",
 	"downloads.fact.name": "Tên",
 	"downloads.fact.path": "Đường dẫn",
-	"downloads.fact.removed": "Đã xóa",
 	"downloads.fact.size": "Dung lượng",
 	"downloads.fact.source": "Nguồn",
 	"downloads.fact.status": "Trạng thái",

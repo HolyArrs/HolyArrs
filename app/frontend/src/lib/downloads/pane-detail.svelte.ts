@@ -20,7 +20,7 @@ export type PaneContext = {
 };
 
 // The client is read live while it may hold the torrent: downloading, finished or seeding.
-export const live = (r: DownloadRow) => !!r.client_item || (r.phase !== 'removed' && r.phase !== 'vanished');
+export const live = (r: DownloadRow) => !!r.client_item || r.phase !== 'vanished';
 
 const trPath = (r: DownloadRow) => `/downloaders/${r.downloader_id}/items/${r.hash}/trackers`;
 

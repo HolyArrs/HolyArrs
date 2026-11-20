@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "失敗：{why}",
 	"downloads.fact.name": "名稱",
 	"downloads.fact.path": "路徑",
-	"downloads.fact.removed": "已移除",
 	"downloads.fact.size": "大小",
 	"downloads.fact.source": "來源",
 	"downloads.fact.status": "狀態",

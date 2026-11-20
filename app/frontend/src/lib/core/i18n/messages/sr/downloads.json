@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Неуспешно: {why}",
 	"downloads.fact.name": "Назив",
 	"downloads.fact.path": "Путања",
-	"downloads.fact.removed": "Уклоњено",
 	"downloads.fact.size": "Величина",
 	"downloads.fact.source": "Извор",
 	"downloads.fact.status": "Статус",

@@ -49,7 +49,9 @@ func (a *Web) storeRows(ctx context.Context, names map[int64]domain.Downloader, 
 		}
 		sortClientRows(out)
 		if len(out) > 0 {
-			a.knownTitles(ctx, d.ID, out)
+			out = goneRows(out, a.knownTitles(ctx, d.ID, out))
+		}
+		if len(out) > 0 {
 			a.linkedTitles(ctx, d.ID, out)
 			a.rowOwners(ctx, out)
 			rows = append(rows, out...)

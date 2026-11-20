@@ -124,7 +124,6 @@ describe('the Downloads screen', () => {
 		expect(phaseTone('done')).toBe('ok');
 		expect(phaseTone('vanished')).toBe('fail');
 		expect(phaseTone('needs_a_decision')).toBe('fail');
-		expect(phaseTone('removed')).toBe('idle');
 		expect(phaseTone('importing')).toBe('wait');
 	});
 	it('splits moving rows from finished ones', () => {

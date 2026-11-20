@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "실패: {why}",
 	"downloads.fact.name": "이름",
 	"downloads.fact.path": "경로",
-	"downloads.fact.removed": "제거됨",
 	"downloads.fact.size": "크기",
 	"downloads.fact.source": "소스",
 	"downloads.fact.status": "상태",

@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Fehlgeschlagen: {why}",
 	"downloads.fact.name": "Name",
 	"downloads.fact.path": "Pfad",
-	"downloads.fact.removed": "Entfernt",
 	"downloads.fact.size": "Größe",
 	"downloads.fact.source": "Quelle",
 	"downloads.fact.status": "Status",

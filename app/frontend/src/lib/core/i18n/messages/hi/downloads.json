@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "फ़ेल: {why}",
 	"downloads.fact.name": "नाम",
 	"downloads.fact.path": "पाथ",
-	"downloads.fact.removed": "हटाया गया",
 	"downloads.fact.size": "साइज़",
 	"downloads.fact.source": "सोर्स",
 	"downloads.fact.status": "स्टेटस",

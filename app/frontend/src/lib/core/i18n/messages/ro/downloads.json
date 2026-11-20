@@ -211,7 +211,6 @@
 	"downloads.fact.failedWhy": "Eșuat: {why}",
 	"downloads.fact.name": "Nume",
 	"downloads.fact.path": "Cale",
-	"downloads.fact.removed": "Eliminat",
 	"downloads.fact.size": "Mărime",
 	"downloads.fact.source": "Sursă",
 	"downloads.fact.status": "Stare",
