@@ -301,6 +301,7 @@ GET /movie auth=unlisted scope=admin assurance=false part=-
 GET /movie/lookup auth=unlisted scope=admin assurance=false part=-
 GET /movie/{id} auth=unlisted scope=admin assurance=false part=-
 GET /notification auth=unlisted scope=admin assurance=false part=-
+GET /notification/schema auth=unlisted scope=admin assurance=false part=-
 GET /oauth/authorize auth=public scope=admin assurance=false part=core
 GET /qualitydefinition auth=unlisted scope=admin assurance=false part=-
 GET /qualitydefinition/{id} auth=unlisted scope=admin assurance=false part=-

@@ -165,6 +165,7 @@ func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /notification/{id}", h.putHook)
 	mux.HandleFunc("DELETE /notification/{id}", h.deleteHook)
 	mux.HandleFunc("POST /notification/test", h.testHook)
+	mux.HandleFunc("GET /notification/schema", h.hookSchema)
 	h.configRoutes(mux)
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { notFound(w) })
 }

@@ -7,6 +7,14 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
+// DownloadClient is a Download's id in its Downloader and that Downloader's
+// kind. A Download the Downloader has not named yet is an error.
+func DownloadClient(ctx context.Context, q database.Querier, id int64) (externalID, kind string, err error) {
+	err = q.QueryRowContext(ctx, "SELECT d.external_id, w.kind FROM downloads d JOIN downloaders w ON w.id = d.downloader_id WHERE d.id = ?",
+		id).Scan(&externalID, &kind)
+	return externalID, kind, err
+}
+
 // ExternalIDs is each of these Downloads' id in its Downloader, empty when it
 // has none yet. It returns the rows read so far along with any error.
 func ExternalIDs(ctx context.Context, q database.Lister, ids []int64) (map[int64]string, error) {

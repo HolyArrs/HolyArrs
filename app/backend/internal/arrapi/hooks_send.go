@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"path"
 	"slices"
 	"strconv"
 	"sync"
@@ -28,7 +29,11 @@ import (
 type hookSeries struct {
 	ID     int64    `json:"id"`
 	Title  string   `json:"title"`
+	Path   string   `json:"path,omitempty"`
 	TvdbID int64    `json:"tvdbId"`
+	TmdbID int64    `json:"tmdbId,omitempty"`
+	ImdbID string   `json:"imdbId,omitempty"`
+	Year   int      `json:"year,omitempty"`
 	Tags   []string `json:"tags"`
 }
 
@@ -37,7 +42,9 @@ type hookEpisode struct {
 	SeasonNumber  int    `json:"seasonNumber"`
 	EpisodeNumber int    `json:"episodeNumber"`
 	Title         string `json:"title"` // empty text when the episode has no name; Pulsarr needs the field
+	AirDate       string `json:"airDate,omitempty"`
 	AirDateUtc    *utc   `json:"airDateUtc,omitempty"`
+	SeriesID      int64  `json:"seriesId,omitempty"`
 }
 
 type hookFile struct {
@@ -49,10 +56,13 @@ type hookFile struct {
 }
 
 type hookMovie struct {
-	ID     int64    `json:"id"`
-	Title  string   `json:"title"`
-	TmdbID int64    `json:"tmdbId"`
-	Tags   []string `json:"tags"`
+	ID         int64    `json:"id"`
+	Title      string   `json:"title"`
+	Year       int      `json:"year,omitempty"`
+	FolderPath string   `json:"folderPath,omitempty"`
+	TmdbID     int64    `json:"tmdbId"`
+	ImdbID     string   `json:"imdbId,omitempty"`
+	Tags       []string `json:"tags"`
 }
 
 type hookEvent struct {
@@ -88,11 +98,12 @@ type hookSender struct {
 	wg      sync.WaitGroup
 }
 
-// watch sends each import Event the store records, on its own goroutine;
-// ending base stops the sends and their new tries.
+// watch sends each Event the store records that hooks can take, on its
+// own goroutine; ending base stops the sends and their new tries.
 func (s *hookSender) watch(base context.Context) {
 	s.store.OnEvent(func(e domain.Event) {
-		if (e.Kind != "import_done" && e.Kind != "import_partly_done") || e.TitleID == nil {
+		imp := e.Kind == "import_done" || e.Kind == "import_partly_done"
+		if imp && e.TitleID == nil || !imp && hookSwitches[e.Kind] == nil {
 			return
 		}
 		s.wg.Add(1)
@@ -101,7 +112,11 @@ func (s *hookSender) watch(base context.Context) {
 			jobs.Guard("arrapi hooks", func() {
 				ctx, cancel := context.WithTimeout(base, 10*time.Minute)
 				defer cancel()
-				s.deliver(ctx, e)
+				if imp {
+					s.deliver(ctx, e)
+				} else {
+					s.deliverOther(ctx, e)
+				}
 			})
 		}()
 	})
@@ -121,15 +136,6 @@ func (s *hookSender) deliver(ctx context.Context, e domain.Event) {
 	if side == "" || !s.allowed(ctx, side) {
 		return
 	}
-	hooks, err := listHookRows(ctx, db, side)
-	if err != nil {
-		log.Printf("arrapi: hooks: %v", err)
-		return
-	}
-	hooks = slices.DeleteFunc(hooks, func(hk hook) bool { return !hk.OnImport })
-	if len(hooks) == 0 {
-		return
-	}
 	notes, err := s.notesFor(ctx, e, t)
 	if err != nil {
 		log.Printf("arrapi: hooks for title %d: %v", t.ID, err)
@@ -138,9 +144,29 @@ func (s *hookSender) deliver(ctx context.Context, e domain.Event) {
 	if len(notes) == 0 {
 		return
 	}
-	tags, err := tagsOf(ctx, db, []int64{t.ID})
+	s.fanOut(ctx, side, t.ID, notes, func(hk hook, n hookNote) bool { return hk.OnImport && (!n.upgrade || hk.OnUpgrade) })
+}
+
+// fanOut sends notes to every hook of a side that wants them. A hook with
+// tags takes only the events of a title with one of its tags; titleID 0 is
+// an event of no title, which every hook may take.
+func (s *hookSender) fanOut(ctx context.Context, side string, titleID int64, notes []hookNote, want func(hook, hookNote) bool) {
+	if !s.allowed(ctx, side) {
+		return
+	}
+	db := s.store.Read()
+	hooks, err := listHookRows(ctx, db, side)
 	if err != nil {
-		log.Printf("arrapi: hooks for title %d: %v", t.ID, err)
+		log.Printf("arrapi: hooks: %v", err)
+		return
+	}
+	hooks = slices.DeleteFunc(hooks, func(hk hook) bool { return !slices.ContainsFunc(notes, func(n hookNote) bool { return want(hk, n) }) })
+	if len(hooks) == 0 {
+		return
+	}
+	tags, err := tagsOf(ctx, db, []int64{titleID})
+	if err != nil {
+		log.Printf("arrapi: hooks for title %d: %v", titleID, err)
 		return
 	}
 	// Each hook gets its own goroutine, so one that keeps failing does not
@@ -148,7 +174,7 @@ func (s *hookSender) deliver(ctx context.Context, e domain.Event) {
 	var each sync.WaitGroup
 	defer each.Wait()
 	for _, hk := range hooks {
-		if len(hk.Tags) > 0 && !slices.ContainsFunc(hk.Tags, func(id int64) bool { return slices.Contains(tags[t.ID], id) }) {
+		if titleID > 0 && len(hk.Tags) > 0 && !slices.ContainsFunc(hk.Tags, func(id int64) bool { return slices.Contains(tags[titleID], id) }) {
 			continue
 		}
 		sec, err := hookSecretOf(ctx, s.vault, hk)
@@ -161,11 +187,11 @@ func (s *hookSender) deliver(ctx context.Context, e domain.Event) {
 			defer each.Done()
 			jobs.Guard("arrapi hooks", func() {
 				for _, n := range notes {
-					if n.upgrade && !hk.OnUpgrade {
+					if !want(hk, n) {
 						continue
 					}
 					if err := s.send(ctx, hk, sec, n.body); err != nil {
-						log.Printf("arrapi: hook %d (%s side): an import event was not taken: %v", hk.ID, hk.Side, err)
+						log.Printf("arrapi: hook %d (%s side): an event was not taken: %v", hk.ID, hk.Side, err)
 					}
 				}
 			})
@@ -283,38 +309,20 @@ func (s *hookSender) notesFor(ctx context.Context, e domain.Event, t mediafiles.
 		mf := mediaFileOf(map[string]string{"show": "sonarr", "movie": "radarr"}[t.Kind], f, lf.Path, main.FolderName)
 		quality := mf.Quality["quality"].(wireQuality).Name
 		ev := hookEvent{EventType: "Download", InstanceName: eventName, IsUpgrade: st.upgrade}
+		folder := path.Join(lf.Path, main.FolderName)
 		if t.Kind == "movie" {
-			ev.Movie = &hookMovie{ID: t.ID, Title: t.Name, TmdbID: sourceID(t.SourceIDs, "tmdb"), Tags: labels}
+			ev.Movie = &hookMovie{ID: t.ID, Title: t.Name, Year: derefInt(t.Year), FolderPath: folder, TmdbID: sourceID(t.SourceIDs, "tmdb"), ImdbID: t.SourceIDs["imdb"], Tags: labels}
 		} else {
-			ev.Series = &hookSeries{ID: t.ID, Title: t.Name, TvdbID: sourceID(t.SourceIDs, "tvdb"), Tags: labels}
+			ev.Series = &hookSeries{ID: t.ID, Title: t.Name, Path: folder, TvdbID: sourceID(t.SourceIDs, "tvdb"), TmdbID: sourceID(t.SourceIDs, "tmdb"),
+				ImdbID: t.SourceIDs["imdb"], Year: derefInt(t.Year), Tags: labels}
 			ev.EpisodeFile = &hookFile{ID: f.ID, RelativePath: mf.RelativePath, Quality: quality, QualityVersion: 1, Size: f.Size}
 			items := make([]int64, 0, len(slots))
 			for _, sl := range slots {
 				items = append(items, sl.ItemID)
 			}
-			its, err := database.Select[mediafiles.Item](ctx, db, "items", "kind = 'episode' AND id IN "+idList(items))
-			if err != nil {
+			if ev.Episodes, err = episodesOfItems(ctx, db, t.ID, items); err != nil {
 				return nil, err
 			}
-			for _, it := range its {
-				ep := hookEpisode{ID: it.ID, AirDateUtc: utcPtr(it.AirDate)}
-				if it.Numbers.Season != nil {
-					ep.SeasonNumber = *it.Numbers.Season
-				}
-				if it.Numbers.Episode != nil {
-					ep.EpisodeNumber = *it.Numbers.Episode
-				}
-				if it.Name != nil {
-					ep.Title = *it.Name
-				}
-				ev.Episodes = append(ev.Episodes, ep)
-			}
-			slices.SortFunc(ev.Episodes, func(a, b hookEpisode) int {
-				if a.SeasonNumber != b.SeasonNumber {
-					return a.SeasonNumber - b.SeasonNumber
-				}
-				return a.EpisodeNumber - b.EpisodeNumber
-			})
 			if len(ev.Episodes) == 0 {
 				continue // Pulsarr refuses an import with no episodes
 			}

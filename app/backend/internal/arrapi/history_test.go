@@ -102,6 +102,28 @@ func TestPhoneAppLists(t *testing.T) {
 	pinGoldenShape(t, "sonarr_history", func() []byte { _, b := r.get("history?pageSize=1"); return b }())
 }
 
+// The notification schema lists the webhook, the one kind HolyArrs keeps,
+// with every field and event switch a phone app such as Helmarr decodes.
+func TestHookSchema(t *testing.T) {
+	r := newPinRig(t)
+	st, b := r.get("notification/schema")
+	var kinds []map[string]any
+	if st != 200 || json.Unmarshal(b, &kinds) != nil || len(kinds) != 1 {
+		t.Fatalf("schema: %d %s", st, b)
+	}
+	k := kinds[0]
+	if k["implementation"] != "Webhook" || k["configContract"] != "WebhookSettings" || k["supportsOnDownload"] != true || k["supportsOnGrab"] != true || k["supportsOnApplicationUpdate"] != false || k["onSeriesAdd"] != false {
+		t.Fatalf("webhook kind: %v", k)
+	}
+	var names []string
+	for _, f := range k["fields"].([]any) {
+		names = append(names, f.(map[string]any)["name"].(string))
+	}
+	if strings.Join(names, ",") != "url,method,username,password,headers" {
+		t.Fatalf("fields: %v", names)
+	}
+}
+
 // The addresses outside the API a phone app checks first answer as in
 // Sonarr, and Bazarr's probe still gets a bare 404.
 func TestOutsideAPIAddresses(t *testing.T) {

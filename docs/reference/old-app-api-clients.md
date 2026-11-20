@@ -127,7 +127,7 @@ Helmarr is a phone app for Sonarr and Radarr. Add HolyArrs to it as both.
 2. Add a **Radarr** instance with `/radarr` and the Radarr-side key.
 3. Open each instance. You should see your shows and movies.
 
-Searching and adding titles, the calendar, the download list, History, episode files, disk space and health all work. History lists sends to a Downloader, imports, failures and renames.
+Searching and adding titles, the calendar, the download list, History, episode files, disk space and health all work. History lists sends to a Downloader, imports, failures and renames. Push alerts work: Helmarr adds its own hook, and HolyArrs tells it about grabs, imports, upgrades, renames, titles added or deleted, deleted episode files, health problems and fixes, and items that need a decision. Application updates are not sent: HolyArrs is updated with its image.
 
 ## Homepage
 

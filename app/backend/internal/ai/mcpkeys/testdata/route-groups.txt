@@ -301,6 +301,7 @@ GET /movie see
 GET /movie/lookup see
 GET /movie/{id} see
 GET /notification see
+GET /notification/schema see
 GET /oauth/authorize admin
 GET /qualitydefinition see
 GET /qualitydefinition/{id} see
