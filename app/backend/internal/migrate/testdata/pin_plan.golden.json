@@ -203,7 +203,9 @@
             "min_seeders": 7,
             "priority": 7,
             "needs_key": true,
-            "on": true
+            "on": true,
+            "site": "s",
+            "flaresolverr": "s"
           },
           "downloader": {
             "kind": "s",

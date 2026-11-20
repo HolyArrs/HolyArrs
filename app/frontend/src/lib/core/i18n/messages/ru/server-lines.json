@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Сериалы в тренде на стримингах",
 	"server.suggest.trending-on-streaming": "В тренде на стримингах",
 	"server.discover.popular": "Популярные",
-	"server.metadata.creator": "Создатель"
+	"server.metadata.creator": "Создатель",
+	"server.migrate.built-in-site-read-directly-with": "встроенный сайт {name}, читается напрямую без Prowlarr; добавлен на паузе: проверьте его и возобновите сами"
 }

@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Populiarūs serialai srautinėse platformose",
 	"server.suggest.trending-on-streaming": "Populiaru srautinėse platformose",
 	"server.discover.popular": "Populiaru",
-	"server.metadata.creator": "Kūrėjas"
+	"server.metadata.creator": "Kūrėjas",
+	"server.migrate.built-in-site-read-directly-with": "įtaisyta svetainė {name}, skaitoma tiesiogiai be Prowlarr; pridėta pristabdyta: patikrinkite ir pratęskite patys"
 }

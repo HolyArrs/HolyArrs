@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "स्ट्रीमिंग पर ट्रेंडिंग टीवी शो",
 	"server.suggest.trending-on-streaming": "स्ट्रीमिंग पर ट्रेंडिंग",
 	"server.discover.popular": "लोकप्रिय",
-	"server.metadata.creator": "क्रिएटर"
+	"server.metadata.creator": "क्रिएटर",
+	"server.migrate.built-in-site-read-directly-with": "बिल्ट-इन साइट {name}, बिना Prowlarr के सीधे पढ़ी जाती है; रुकी हुई जोड़ी गई: खुद जाँचें और फिर चालू करें"
 }

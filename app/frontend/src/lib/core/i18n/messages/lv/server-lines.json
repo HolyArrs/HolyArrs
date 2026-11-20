@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Tendencēs seriāli straumēšanā",
 	"server.suggest.trending-on-streaming": "Tendences straumēšanā",
 	"server.discover.popular": "Populārs",
-	"server.metadata.creator": "Veidotājs"
+	"server.metadata.creator": "Veidotājs",
+	"server.migrate.built-in-site-read-directly-with": "iebūvēta vietne {name}, lasīta tieši bez Prowlarr; pievienota apturēta: pārbaudiet to un atsāciet paši"
 }

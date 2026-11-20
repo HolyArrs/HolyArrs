@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Vinsælir þættir á streymi",
 	"server.suggest.trending-on-streaming": "Vinsælt á streymi",
 	"server.discover.popular": "Vinsælt",
-	"server.metadata.creator": "Höfundur"
+	"server.metadata.creator": "Höfundur",
+	"server.migrate.built-in-site-read-directly-with": "innbyggður vefur {name}, lesinn beint án Prowlarr; bætt við í biðstöðu: athugaðu hann og haltu áfram sjálf(ur)"
 }

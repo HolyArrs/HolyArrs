@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "سریال‌های پرطرفدار در پخش آنلاین",
 	"server.suggest.trending-on-streaming": "پرطرفدار در پخش آنلاین",
 	"server.discover.popular": "محبوب",
-	"server.metadata.creator": "سازنده"
+	"server.metadata.creator": "سازنده",
+	"server.migrate.built-in-site-read-directly-with": "سایت داخلی {name}، مستقیم و بدون Prowlarr خوانده می‌شود؛ متوقف اضافه شد: خودتان بررسی و ادامه دهید"
 }

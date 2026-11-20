@@ -266,7 +266,7 @@ type NeverAddPlan struct {
 
 // SourcePlan is a Source to add.
 type SourcePlan struct {
-	Format     string           `json:"format"`   // torznab, newznab, rss
+	Format     string           `json:"format"`   // torznab, newznab, rss, site
 	Protocol   string           `json:"protocol"` // torrent, usenet
 	URL        string           `json:"url"`
 	Kinds      []string         `json:"kinds"`
@@ -275,6 +275,10 @@ type SourcePlan struct {
 	Priority   int              `json:"priority"`
 	NeedsKey   bool             `json:"needs_key"`
 	On         bool             `json:"on"`
+	// Site is the built-in site a site Source reads, for a Prowlarr site
+	// HolyArrs has built in; FlareSolverr is the Prowlarr FlareSolverr it used.
+	Site         string `json:"site,omitempty"`
+	FlareSolverr string `json:"flaresolverr,omitempty"`
 }
 
 // DownloaderPlan is a Downloader to add.

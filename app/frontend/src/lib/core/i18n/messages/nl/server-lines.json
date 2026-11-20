@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Trending series op streaming",
 	"server.suggest.trending-on-streaming": "Trending op streaming",
 	"server.discover.popular": "Populair",
-	"server.metadata.creator": "Maker"
+	"server.metadata.creator": "Maker",
+	"server.migrate.built-in-site-read-directly-with": "ingebouwde site {name}, direct gelezen zonder Prowlarr; gepauzeerd toegevoegd: controleer hem en hervat hem zelf"
 }

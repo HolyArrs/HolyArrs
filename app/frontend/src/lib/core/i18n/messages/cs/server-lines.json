@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Trendy seriály ve streamování",
 	"server.suggest.trending-on-streaming": "Trendy ve streamování",
 	"server.discover.popular": "Oblíbené",
-	"server.metadata.creator": "Tvůrce"
+	"server.metadata.creator": "Tvůrce",
+	"server.migrate.built-in-site-read-directly-with": "vestavěný web {name}, čte se přímo bez Prowlarru; přidán pozastavený: zkontrolujte ho a obnovte sami"
 }

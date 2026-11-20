@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Σειρές που κάνουν τάση στο streaming",
 	"server.suggest.trending-on-streaming": "Τάσεις στο streaming",
 	"server.discover.popular": "Δημοφιλή",
-	"server.metadata.creator": "Δημιουργός"
+	"server.metadata.creator": "Δημιουργός",
+	"server.migrate.built-in-site-read-directly-with": "ενσωματωμένος ιστότοπος {name}, διαβάζεται απευθείας χωρίς Prowlarr· προστέθηκε σε παύση: ελέγξτε τον και συνεχίστε τον μόνοι σας"
 }

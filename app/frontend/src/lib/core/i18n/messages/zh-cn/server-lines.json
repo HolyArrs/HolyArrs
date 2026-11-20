@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "流媒体热播剧集",
 	"server.suggest.trending-on-streaming": "流媒体热播",
 	"server.discover.popular": "热门",
-	"server.metadata.creator": "创作者"
+	"server.metadata.creator": "创作者",
+	"server.migrate.built-in-site-read-directly-with": "内置站点 {name}，直接读取，无需 Prowlarr；已以暂停状态添加：请自行检查后恢复"
 }

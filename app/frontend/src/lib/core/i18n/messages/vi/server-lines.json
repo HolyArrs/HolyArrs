@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Phim bộ đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.suggest.trending-on-streaming": "Đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.discover.popular": "Phổ biến",
-	"server.metadata.creator": "Người sáng tạo"
+	"server.metadata.creator": "Người sáng tạo",
+	"server.migrate.built-in-site-read-directly-with": "trang có sẵn {name}, đọc trực tiếp không qua Prowlarr; đã thêm ở trạng thái tạm dừng: tự kiểm tra rồi tiếp tục"
 }

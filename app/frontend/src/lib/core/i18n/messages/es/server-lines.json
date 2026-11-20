@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Series en tendencia en streaming",
 	"server.suggest.trending-on-streaming": "Tendencia en streaming",
 	"server.discover.popular": "Popular",
-	"server.metadata.creator": "Creador"
+	"server.metadata.creator": "Creador",
+	"server.migrate.built-in-site-read-directly-with": "sitio integrado {name}, leído directamente sin Prowlarr; añadido en pausa: revísalo y reanúdalo tú"
 }

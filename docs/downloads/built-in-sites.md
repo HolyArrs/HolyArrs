@@ -108,6 +108,10 @@ Sites see the address HolyArrs calls them from. To send that through a VPN, use 
 - Set the app proxy under **Settings > This app > Proxy**. Every outside call goes through it, Sources included, unless a Source has its own proxy.
 - Run HolyArrs itself in the VPN container's network (`network_mode: service:vpn` in Docker Compose). Every call then leaves through the VPN.
 
+## Moving from Prowlarr
+
+When you import from Prowlarr, sites listed above become built-in site Sources, read directly instead of through Prowlarr. A FlareSolverr proxy a site used in Prowlarr is set as its **FlareSolverr address**. Check the address works from HolyArrs, since Prowlarr may have reached it as `127.0.0.1`. Other Prowlarr sites are listed as not moved; link Prowlarr for them.
+
 ## If it does not work
 
 | You see | Try |

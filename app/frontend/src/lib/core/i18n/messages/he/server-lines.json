@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "סדרות בטרנד בסטרימינג",
 	"server.suggest.trending-on-streaming": "בטרנד בסטרימינג",
 	"server.discover.popular": "פופולרי",
-	"server.metadata.creator": "יוצר"
+	"server.metadata.creator": "יוצר",
+	"server.migrate.built-in-site-read-directly-with": "אתר מובנה {name}, נקרא ישירות בלי Prowlarr; נוסף מושהה: בדקו אותו והמשיכו אותו בעצמכם"
 }

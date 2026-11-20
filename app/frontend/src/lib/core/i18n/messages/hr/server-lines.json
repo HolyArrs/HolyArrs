@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Serije u trendu na streamingu",
 	"server.suggest.trending-on-streaming": "U trendu na streamingu",
 	"server.discover.popular": "Popularno",
-	"server.metadata.creator": "Autor"
+	"server.metadata.creator": "Autor",
+	"server.migrate.built-in-site-read-directly-with": "ugrađena stranica {name}, čita se izravno bez Prowlarra; dodana pauzirana: provjerite je i sami nastavite"
 }

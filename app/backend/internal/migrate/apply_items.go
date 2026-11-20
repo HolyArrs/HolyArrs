@@ -67,8 +67,11 @@ func (r *run) source(it Item) (string, string) {
 	}
 	local := false
 	prio := s.Priority
-	in := sources.Input{Name: it.Name, Format: s.Format, Protocol: s.Protocol, URL: s.URL, Kinds: s.Kinds, Categories: s.Categories,
+	in := sources.Input{Name: it.Name, Format: s.Format, Site: s.Site, Protocol: s.Protocol, URL: s.URL, Kinds: s.Kinds, Categories: s.Categories,
 		MinSeeders: s.MinSeeders, Priority: &prio, AllowLocal: &local}
+	if s.FlareSolverr != "" {
+		in.FlareSolverr = &s.FlareSolverr
+	}
 	if key := r.prowlarrKey(s.URL); key != "" {
 		in.APIKey = key
 		what += "; uses the key of the Prowlarr you imported from"

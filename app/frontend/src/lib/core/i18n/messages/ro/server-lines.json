@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Seriale în trend pe streaming",
 	"server.suggest.trending-on-streaming": "În trend pe streaming",
 	"server.discover.popular": "Populare",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.migrate.built-in-site-read-directly-with": "site încorporat {name}, citit direct fără Prowlarr; adăugat în pauză: verifică-l și reia-l singur"
 }

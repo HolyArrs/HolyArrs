@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Serial yang sedang tren di streaming",
 	"server.suggest.trending-on-streaming": "Tren di streaming",
 	"server.discover.popular": "Populer",
-	"server.metadata.creator": "Kreator"
+	"server.metadata.creator": "Kreator",
+	"server.migrate.built-in-site-read-directly-with": "situs bawaan {name}, dibaca langsung tanpa Prowlarr; ditambahkan dalam keadaan jeda: periksa dan lanjutkan sendiri"
 }

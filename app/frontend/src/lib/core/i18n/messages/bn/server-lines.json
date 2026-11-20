@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "স্ট্রিমিংয়ে ট্রেন্ডিং শো",
 	"server.suggest.trending-on-streaming": "স্ট্রিমিংয়ে ট্রেন্ডিং",
 	"server.discover.popular": "জনপ্রিয়",
-	"server.metadata.creator": "নির্মাতা"
+	"server.metadata.creator": "নির্মাতা",
+	"server.migrate.built-in-site-read-directly-with": "বিল্ট-ইন সাইট {name}, Prowlarr ছাড়াই সরাসরি পড়া হয়; থামানো অবস্থায় যোগ করা হয়েছে: নিজে দেখে চালু করুন"
 }

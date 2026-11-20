@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "ஸ்ட்ரீமிங்கில் டிரெண்டிங் தொடர்கள்",
 	"server.suggest.trending-on-streaming": "ஸ்ட்ரீமிங்கில் டிரெண்டிங்",
 	"server.discover.popular": "பிரபலமானவை",
-	"server.metadata.creator": "படைப்பாளர்"
+	"server.metadata.creator": "படைப்பாளர்",
+	"server.migrate.built-in-site-read-directly-with": "உள்ளமைந்த தளம் {name}, Prowlarr இல்லாமல் நேரடியாகப் படிக்கப்படுகிறது; இடைநிறுத்தத்தில் சேர்க்கப்பட்டது: நீங்களே சரிபார்த்துத் தொடருங்கள்"
 }

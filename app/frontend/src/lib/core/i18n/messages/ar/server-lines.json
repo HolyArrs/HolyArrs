@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "المسلسلات الرائجة على منصات البث",
 	"server.suggest.trending-on-streaming": "رائج على منصات البث",
 	"server.discover.popular": "الرائج",
-	"server.metadata.creator": "المبتكر"
+	"server.metadata.creator": "المبتكر",
+	"server.migrate.built-in-site-read-directly-with": "موقع مدمج {name}، يُقرأ مباشرة دون Prowlarr؛ أُضيف موقوفًا مؤقتًا: افحصه واستأنفه بنفسك"
 }

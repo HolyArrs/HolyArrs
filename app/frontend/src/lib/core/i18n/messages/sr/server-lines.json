@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Серије у тренду на стримингу",
 	"server.suggest.trending-on-streaming": "У тренду на стримингу",
 	"server.discover.popular": "Популарно",
-	"server.metadata.creator": "Аутор"
+	"server.metadata.creator": "Аутор",
+	"server.migrate.built-in-site-read-directly-with": "уграђени сајт {name}, чита се директно без Prowlarr-а; додат паузиран: проверите га и сами наставите"
 }
