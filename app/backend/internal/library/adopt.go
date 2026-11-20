@@ -219,13 +219,20 @@ var ReFolderYear = regexp.MustCompile(`^(.+?)[\s._-]*[(\[]?((?:18|19|20)\d{2})[)
 // folderName reads "Name (Year)" and its usual variants from a folder
 // name; a release-style name goes through the release parser.
 func FolderName(s string) (string, int) {
+	releaseEvidence := folderReleaseWords.MatchString(releaseDelimiters.Replace(s))
+	s = matchingFolderName(s)
 	if m := ReFolderYear.FindStringSubmatch(s); m != nil {
 		y, _ := strconv.Atoi(m[2])
-		return strings.Trim(m[1], " -._(["), y
+		return cleanReleaseTitle(strings.Trim(m[1], " -._"), releaseEvidence), y
 	}
 	p := releasename.Parse(s, releasename.Hints{})
 	if p.Title.Value != "" && p.Year.Value != 0 {
 		return p.Title.Value, p.Year.Value
+	}
+	// A release parser may reject an edition before the year. Recover only
+	// with a single year and a technical tail, never from a bare numeric title.
+	if title, year := packReleaseFacts(s); year != 0 {
+		return cleanReleaseTitle(strings.ReplaceAll(title, "_", " "), true), year
 	}
 	return strings.Trim(s, " -._"), 0
 }
@@ -306,6 +313,7 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 	defer func() { ReportScan(ctx, len(p.Folders), total) }()
 	ahead := startAhead(ctx, md, scanLookups(todo, p.Limit, known, fold))
 	defer ahead.close()
+	evidenceBudget := scanEvidenceRequests
 	for _, name := range todo {
 		if len(p.Folders) >= p.Limit {
 			p.More, p.Next = true, p.Folders[len(p.Folders)-1].Folder
@@ -322,8 +330,8 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 			p.Counts[c.Status]++
 			continue
 		}
-		ahead.wait(ctx, path.Base(name))
-		name, year, ms, err := matchFolder(ctx, md, path.Base(name))
+		ahead.wait(ctx, name)
+		name, year, ms, err := matchCandidateWithBudget(ctx, md, name, &evidenceBudget)
 		if err != nil {
 			if ctx.Err() != nil {
 				return p, ctx.Err()
