@@ -134,7 +134,9 @@ type TVSub struct {
 }
 
 // TVSubs fakes the show subtitle site. Shows maps a show id to its listed
-// name, such as "Quiet Harbour (2005-2013)".
+// name, such as "Quiet Harbour (2005-2013)". Like the real site, the home page
+// sets a cookie and names the search page in its form, and the search answers
+// only with that cookie.
 type TVSubs struct {
 	mu       sync.Mutex
 	Shows    map[int]string
@@ -142,6 +144,12 @@ type TVSubs struct {
 	Requests int
 	Searches []string
 	Paths    []string
+	// SearchPage is the search page the home page names; /search2.php when empty.
+	SearchPage string
+	// Session is the cookie value the home page hands out; changing it ends
+	// every earlier session.
+	Session string
+	Homes   int
 }
 
 func (t *TVSubs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -150,8 +158,24 @@ func (t *TVSubs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.Requests++
 	p := r.URL.Path
 	t.Paths = append(t.Paths, p)
+	search := t.SearchPage
+	if search == "" {
+		search = "/search2.php"
+	}
+	session := t.Session
+	if session == "" {
+		session = "1"
+	}
 	switch {
-	case p == "/search1.php" && r.Method == http.MethodPost:
+	case p == "/":
+		t.Homes++
+		http.SetCookie(w, &http.Cookie{Name: "visited", Value: session, Path: "/"})
+		htmlPage(w, `<form method="get" action="/lang.php"><input name="setlang"></form><form method="post" action="`+strings.TrimPrefix(search, "/")+`"><input type="text" name="qs"><input type="submit"></form>`)
+	case p == search && r.Method == http.MethodPost:
+		if c, err := r.Cookie("visited"); err != nil || c.Value != session {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
 		_ = r.ParseForm()
 		q := r.PostForm.Get("qs")
 		t.Searches = append(t.Searches, q)
