@@ -38,13 +38,14 @@ func posterOf(t mediafiles.Title) string {
 // libraryImages lists a Library title's pictures, poster first and the
 // wide one second, because Bazarr reads them in that order. url points at
 // this side's covers route, as the old apps point at their own cover
-// cache. remoteUrl keeps the original address when one is known. A stored
-// poster has none, so it is empty there.
+// cache. remoteUrl keeps the original address when one is known (phone
+// apps such as Helmarr load pictures from it); a poster stored before its
+// address was kept has none until its next fetch.
 func (h *handler) libraryImages(ctx context.Context, t mediafiles.Title) []image {
 	out := []image{}
 	at := h.base(ctx) + "/MediaCover/" + itoa(t.ID) + "/"
 	if posterOf(t) != "" {
-		out = append(out, image{CoverType: "poster", URL: at + "poster.jpg"})
+		out = append(out, image{CoverType: "poster", URL: at + "poster.jpg", RemoteURL: t.PosterURL})
 	}
 	if t.Backdrop != "" {
 		out = append(out, image{CoverType: "fanart", URL: at + "fanart.jpg", RemoteURL: t.Backdrop})
