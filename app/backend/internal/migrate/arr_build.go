@@ -138,6 +138,11 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 	if rows := in.sets["indexerconfig"]; len(rows) > 0 && rows[0]["availabilitydelay"] != nil {
 		s.Settings = map[string]any{"availability_delay": num(rows[0]["availabilitydelay"])}
 	}
+	for _, m := range in.sets["blocklist"] {
+		s.Blocklist = append(s.Blocklist, Blocked{TitleID: num(first(m, "movieid", "seriesid")), Name: clip(str(m["sourcetitle"]), 300),
+			InfoHash: clip(str(m["torrentinfohash"]), 100), Protocol: protocolName(m["protocol"]), Indexer: clip(str(m["indexer"]), 200),
+			Reason: clip(str(m["message"]), 300)})
+	}
 	if rows := in.sets["media"]; len(rows) > 0 {
 		v := first(rows[0], "autounmonitorpreviouslydownloadedmovies", "autounmonitorpreviouslydownloadedepisodes")
 		if v != nil {

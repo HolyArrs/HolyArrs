@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "از قبل همین‌طور تنظیم شده",
 	"server.migrate.stop-looking-for-deleted-episodes": "دیگر دنبال قسمت‌های حذف‌شده نگرد",
 	"server.migrate.stop-looking-for-deleted-movies": "دیگر دنبال فیلم‌های حذف‌شده نگرد",
-	"server.migrate.the-deleted-file-switch-is-back": "کلید فایل‌های حذف‌شده به حالت قبل برگشت"
+	"server.migrate.the-deleted-file-switch-is-back": "کلید فایل‌های حذف‌شده به حالت قبل برگشت",
+	"server.migrate.already-on-the-turned-down-list": "از قبل در فهرست «ردشده» است",
+	"server.migrate.its-title-did-not-come-over": "عنوانش منتقل نشد",
+	"server.migrate.its-title-is-not-in-the": "عنوانش در کتابخانه نیست",
+	"server.migrate.on-the-old-app-s-blocklist": "در فهرست مسدود برنامهٔ قدیمی",
+	"server.migrate.the-old-app-gave-no-release": "برنامهٔ قدیمی نام انتشار یا پروتکلی برایش نداد",
+	"server.migrate.turned-down": "ردشده"
 }

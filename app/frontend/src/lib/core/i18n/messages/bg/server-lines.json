@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "вече е настроено така",
 	"server.migrate.stop-looking-for-deleted-episodes": "Спиране на търсенето на изтрити епизоди",
 	"server.migrate.stop-looking-for-deleted-movies": "Спиране на търсенето на изтрити филми",
-	"server.migrate.the-deleted-file-switch-is-back": "превключвателят за изтрити файлове е както преди"
+	"server.migrate.the-deleted-file-switch-is-back": "превключвателят за изтрити файлове е както преди",
+	"server.migrate.already-on-the-turned-down-list": "вече е в списъка „Отхвърлени“",
+	"server.migrate.its-title-did-not-come-over": "заглавието му не беше пренесено",
+	"server.migrate.its-title-is-not-in-the": "заглавието му не е в библиотеката",
+	"server.migrate.on-the-old-app-s-blocklist": "в черния списък на старото приложение",
+	"server.migrate.the-old-app-gave-no-release": "старото приложение не даде име на издание или протокол",
+	"server.migrate.turned-down": "Отхвърлени"
 }

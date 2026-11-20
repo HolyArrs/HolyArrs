@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "ইতিমধ্যে এভাবেই সেট করা",
 	"server.migrate.stop-looking-for-deleted-episodes": "মুছে ফেলা পর্ব আর খুঁজবে না",
 	"server.migrate.stop-looking-for-deleted-movies": "মুছে ফেলা মুভি আর খুঁজবে না",
-	"server.migrate.the-deleted-file-switch-is-back": "মুছে ফেলা ফাইলের সুইচ আগের মতো ফিরেছে"
+	"server.migrate.the-deleted-file-switch-is-back": "মুছে ফেলা ফাইলের সুইচ আগের মতো ফিরেছে",
+	"server.migrate.already-on-the-turned-down-list": "ইতিমধ্যে «বাতিল করা» তালিকায় আছে",
+	"server.migrate.its-title-did-not-come-over": "এর টাইটেল আনা হয়নি",
+	"server.migrate.its-title-is-not-in-the": "এর টাইটেল লাইব্রেরিতে নেই",
+	"server.migrate.on-the-old-app-s-blocklist": "পুরোনো অ্যাপের ব্লকলিস্টে",
+	"server.migrate.the-old-app-gave-no-release": "পুরোনো অ্যাপ এর রিলিজের নাম বা প্রোটোকল দেয়নি",
+	"server.migrate.turned-down": "বাতিল করা"
 }

@@ -40,7 +40,8 @@ func fullSnapshots() []Input {
 		ImportLists:   []Provider{prov("Trakt", "TraktListImport", nil, "accessToken")},
 		Notifications: []Provider{prov("Discord", "Discord", nil, "webHookUrl"), prov("Mail", "Email", map[string]any{"server": "smtp.example", "port": int64(465), "useEncryption": "1", "from": "a@example.org", "to": []any{"b@example.org"}}, "password"), prov("Push", "Pushover", nil)},
 		Metadata:      []Provider{prov("Kodi", "XbmcMetadata", nil)},
-		Settings:      map[string]any{"availability_delay": int64(7)},
+		Settings:      map[string]any{"availability_delay": int64(7), "unkeep_deleted": true},
+		Blocklist:     []Blocked{{TitleID: 1, Name: "The.Matrix.1999.720p", Protocol: "torrent"}, {TitleID: 2, Name: "No.id.720p", Protocol: "torrent"}},
 		NeedsReentry:  []string{`indexer "Nyaa": apiKey`, `import list "Trakt": accessToken`},
 		Notes:         []string{"a note"},
 	}

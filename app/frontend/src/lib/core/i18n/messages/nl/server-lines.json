@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "staat al zo",
 	"server.migrate.stop-looking-for-deleted-episodes": "Verwijderde afleveringen niet meer zoeken",
 	"server.migrate.stop-looking-for-deleted-movies": "Verwijderde films niet meer zoeken",
-	"server.migrate.the-deleted-file-switch-is-back": "de schakelaar voor verwijderde bestanden staat weer zoals eerst"
+	"server.migrate.the-deleted-file-switch-is-back": "de schakelaar voor verwijderde bestanden staat weer zoals eerst",
+	"server.migrate.already-on-the-turned-down-list": "staat al op de lijst ‘Afgekeurd’",
+	"server.migrate.its-title-did-not-come-over": "de titel is niet meegekomen",
+	"server.migrate.its-title-is-not-in-the": "de titel staat niet in de bibliotheek",
+	"server.migrate.on-the-old-app-s-blocklist": "op de blokkeerlijst van de oude app",
+	"server.migrate.the-old-app-gave-no-release": "de oude app gaf geen releasenaam of protocol",
+	"server.migrate.turned-down": "Afgekeurd"
 }

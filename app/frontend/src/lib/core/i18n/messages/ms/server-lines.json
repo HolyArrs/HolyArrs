@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "sudah ditetapkan begini",
 	"server.migrate.stop-looking-for-deleted-episodes": "Berhenti mencari episod yang dipadam",
 	"server.migrate.stop-looking-for-deleted-movies": "Berhenti mencari filem yang dipadam",
-	"server.migrate.the-deleted-file-switch-is-back": "suis fail dipadam kembali seperti asal"
+	"server.migrate.the-deleted-file-switch-is-back": "suis fail dipadam kembali seperti asal",
+	"server.migrate.already-on-the-turned-down-list": "sudah dalam senarai \"Ditolak\"",
+	"server.migrate.its-title-did-not-come-over": "tajuknya tidak dibawa",
+	"server.migrate.its-title-is-not-in-the": "tajuknya tiada dalam Pustaka",
+	"server.migrate.on-the-old-app-s-blocklist": "dalam senarai sekatan aplikasi lama",
+	"server.migrate.the-old-app-gave-no-release": "aplikasi lama tidak memberi nama keluaran atau protokol",
+	"server.migrate.turned-down": "Ditolak"
 }

@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "sudah diatur begini",
 	"server.migrate.stop-looking-for-deleted-episodes": "Berhenti mencari episode yang dihapus",
 	"server.migrate.stop-looking-for-deleted-movies": "Berhenti mencari film yang dihapus",
-	"server.migrate.the-deleted-file-switch-is-back": "sakelar file terhapus kembali seperti semula"
+	"server.migrate.the-deleted-file-switch-is-back": "sakelar file terhapus kembali seperti semula",
+	"server.migrate.already-on-the-turned-down-list": "sudah ada di daftar \"Ditolak\"",
+	"server.migrate.its-title-did-not-come-over": "judulnya tidak ikut dipindah",
+	"server.migrate.its-title-is-not-in-the": "judulnya tidak ada di Pustaka",
+	"server.migrate.on-the-old-app-s-blocklist": "di daftar blokir aplikasi lama",
+	"server.migrate.the-old-app-gave-no-release": "aplikasi lama tidak memberi nama rilis atau protokol",
+	"server.migrate.turned-down": "Ditolak"
 }

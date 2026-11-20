@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "पहले से ऐसा ही सेट है",
 	"server.migrate.stop-looking-for-deleted-episodes": "हटाए गए एपिसोड अब न खोजें",
 	"server.migrate.stop-looking-for-deleted-movies": "हटाई गई फ़िल्में अब न खोजें",
-	"server.migrate.the-deleted-file-switch-is-back": "हटाई गई फ़ाइलों का स्विच पहले जैसा हो गया"
+	"server.migrate.the-deleted-file-switch-is-back": "हटाई गई फ़ाइलों का स्विच पहले जैसा हो गया",
+	"server.migrate.already-on-the-turned-down-list": "पहले से «ठुकराई गई» सूची में है",
+	"server.migrate.its-title-did-not-come-over": "इसका टाइटल नहीं आया",
+	"server.migrate.its-title-is-not-in-the": "इसका टाइटल लाइब्रेरी में नहीं है",
+	"server.migrate.on-the-old-app-s-blocklist": "पुराने ऐप की ब्लॉकलिस्ट में",
+	"server.migrate.the-old-app-gave-no-release": "पुराने ऐप ने इसका रिलीज़ नाम या प्रोटोकॉल नहीं दिया",
+	"server.migrate.turned-down": "ठुकराई गई"
 }

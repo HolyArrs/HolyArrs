@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "이미 이렇게 설정됨",
 	"server.migrate.stop-looking-for-deleted-episodes": "삭제한 에피소드는 더 찾지 않기",
 	"server.migrate.stop-looking-for-deleted-movies": "삭제한 영화는 더 찾지 않기",
-	"server.migrate.the-deleted-file-switch-is-back": "삭제된 파일 스위치가 원래대로 돌아왔습니다"
+	"server.migrate.the-deleted-file-switch-is-back": "삭제된 파일 스위치가 원래대로 돌아왔습니다",
+	"server.migrate.already-on-the-turned-down-list": "이미 '거부됨' 목록에 있음",
+	"server.migrate.its-title-did-not-come-over": "작품이 옮겨지지 않았음",
+	"server.migrate.its-title-is-not-in-the": "작품이 라이브러리에 없음",
+	"server.migrate.on-the-old-app-s-blocklist": "이전 앱의 차단 목록에 있음",
+	"server.migrate.the-old-app-gave-no-release": "이전 앱이 릴리스 이름이나 프로토콜을 주지 않았음",
+	"server.migrate.turned-down": "거부됨"
 }

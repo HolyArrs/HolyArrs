@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "er þegar stillt svona",
 	"server.migrate.stop-looking-for-deleted-episodes": "Hætta að leita að eyddum þáttum",
 	"server.migrate.stop-looking-for-deleted-movies": "Hætta að leita að eyddum kvikmyndum",
-	"server.migrate.the-deleted-file-switch-is-back": "rofinn fyrir eyddar skrár er aftur eins og hann var"
+	"server.migrate.the-deleted-file-switch-is-back": "rofinn fyrir eyddar skrár er aftur eins og hann var",
+	"server.migrate.already-on-the-turned-down-list": "er þegar á listanum „Hafnað“",
+	"server.migrate.its-title-did-not-come-over": "titill hans kom ekki yfir",
+	"server.migrate.its-title-is-not-in-the": "titill hans er ekki í safninu",
+	"server.migrate.on-the-old-app-s-blocklist": "á bannlista gamla forritsins",
+	"server.migrate.the-old-app-gave-no-release": "gamla forritið gaf ekkert útgáfuheiti eða samskiptareglu",
+	"server.migrate.turned-down": "Hafnað"
 }

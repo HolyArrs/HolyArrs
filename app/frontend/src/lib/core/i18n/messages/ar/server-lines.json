@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "مضبوط هكذا بالفعل",
 	"server.migrate.stop-looking-for-deleted-episodes": "التوقف عن البحث عن الحلقات المحذوفة",
 	"server.migrate.stop-looking-for-deleted-movies": "التوقف عن البحث عن الأفلام المحذوفة",
-	"server.migrate.the-deleted-file-switch-is-back": "عاد مفتاح الملفات المحذوفة كما كان"
+	"server.migrate.the-deleted-file-switch-is-back": "عاد مفتاح الملفات المحذوفة كما كان",
+	"server.migrate.already-on-the-turned-down-list": "موجود بالفعل في قائمة «مستبعَد»",
+	"server.migrate.its-title-did-not-come-over": "لم يُنقل عنوانه",
+	"server.migrate.its-title-is-not-in-the": "عنوانه ليس في المكتبة",
+	"server.migrate.on-the-old-app-s-blocklist": "في قائمة الحظر في التطبيق القديم",
+	"server.migrate.the-old-app-gave-no-release": "لم يعطِ التطبيق القديم اسم إصدار أو بروتوكولًا له",
+	"server.migrate.turned-down": "مستبعَد"
 }

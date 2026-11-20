@@ -402,6 +402,16 @@
         "local_path": "s"
       }
     ],
+    "blocklist": [
+      {
+        "title_id": 7,
+        "name": "s",
+        "info_hash": "s",
+        "protocol": "s",
+        "indexer": "s",
+        "reason": "s"
+      }
+    ],
     "users": [
       {
         "source_id": 7,

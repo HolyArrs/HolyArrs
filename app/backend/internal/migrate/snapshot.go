@@ -59,6 +59,9 @@ type Snapshot struct {
 	// and the same folder as the app sees it.
 	RemotePathMappings []RemotePathMapping `json:"remote_path_mappings,omitempty"`
 
+	// Blocklist are the releases Sonarr or Radarr will never take again.
+	Blocklist []Blocked `json:"blocklist,omitempty"`
+
 	// Seerr and Overseerr.
 	Users    []User    `json:"users,omitempty"`
 	Requests []Request `json:"requests,omitempty"`
@@ -78,6 +81,16 @@ type RemotePathMapping struct {
 	Host       string `json:"host"`
 	RemotePath string `json:"remote_path"`
 	LocalPath  string `json:"local_path"`
+}
+
+// Blocked is one release on Sonarr's or Radarr's blocklist.
+type Blocked struct {
+	TitleID  int64  `json:"title_id"` // the app's own movie or series id
+	Name     string `json:"name"`
+	InfoHash string `json:"info_hash,omitempty"`
+	Protocol string `json:"protocol"` // torrent, usenet
+	Indexer  string `json:"indexer,omitempty"`
+	Reason   string `json:"reason,omitempty"`
 }
 
 // Title is one movie, show or artist.

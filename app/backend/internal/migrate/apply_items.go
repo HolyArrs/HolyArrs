@@ -666,6 +666,8 @@ func partOf(it Item) string {
 		kind = "movie" // Outside lists add movies
 	case it.FileRules != nil:
 		kind = it.FileRules.Kind
+	case it.TurnDown != nil:
+		kind = it.TurnDown.Kind
 	case it.Protocol != nil:
 		return it.Protocol.Part
 	case it.Subtitles != nil:

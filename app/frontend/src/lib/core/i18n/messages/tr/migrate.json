@@ -315,5 +315,6 @@
 	"migrate.seasonsDifferOther": "TMDB numarasıyla bulunan {n} diziyi kontrol et",
 	"migrate.seasonsDifferWhy": "{list} yalnızca eski uygulamanın TMDB numarasıyla bulundu, burada başka bir adla. Her birini aç ve aynı dizi olduğunu kontrol et. Aynıysa sezonları farklı numaralandırılmış: Artan dosyalarını eşleştir, sonra diziyi aç. Değilse kaldır; dosyaları oldukları yerde kalır.",
 	"migrate.stillChecking": "Meta veri sunucusunun hâlâ kontrol ettiği diziler: {n}. Bu liste bitince kendiliğinden güncellenir.",
-	"migrate.stillCheckingImport": "Meta veri sunucusunun hâlâ kontrol ettiği diziler: {n}. Şimdi içe aktarabilirsin; içe aktarma sırasında kontrol edilirler."
+	"migrate.stillCheckingImport": "Meta veri sunucusunun hâlâ kontrol ettiği diziler: {n}. Şimdi içe aktarabilirsin; içe aktarma sırasında kontrol edilirler.",
+	"migrate.turnedDown": "Reddedilenler"
 }

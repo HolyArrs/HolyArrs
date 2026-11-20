@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "er allerede sat sådan",
 	"server.migrate.stop-looking-for-deleted-episodes": "Stop med at lede efter slettede afsnit",
 	"server.migrate.stop-looking-for-deleted-movies": "Stop med at lede efter slettede film",
-	"server.migrate.the-deleted-file-switch-is-back": "kontakten for slettede filer er tilbage som før"
+	"server.migrate.the-deleted-file-switch-is-back": "kontakten for slettede filer er tilbage som før",
+	"server.migrate.already-on-the-turned-down-list": "er allerede på listen “Afvist”",
+	"server.migrate.its-title-did-not-come-over": "dens titel kom ikke med",
+	"server.migrate.its-title-is-not-in-the": "dens titel er ikke i biblioteket",
+	"server.migrate.on-the-old-app-s-blocklist": "på den gamle apps blokeringsliste",
+	"server.migrate.the-old-app-gave-no-release": "den gamle app gav intet udgivelsesnavn eller protokol",
+	"server.migrate.turned-down": "Afvist"
 }

@@ -630,7 +630,7 @@ var natural = map[string][2]string{
 	"ask": {"asks", "name"}, "user": {"users", "name"}, "alert": {"alerts", "name"}, "subtitle_site": {"subtitle_sites", "name"},
 	"source": {"sources", "name"}, "downloader": {"downloaders", "name"}, "never_add": {"never_add", "name"},
 	"title": {"titles", "kind"}, "folder": {"library_folders", "path"}, "outside_list": {"outside_lists", "name"},
-	"pick_rules": {"pick_rules", "name"}, "own_trait": {"own_traits", "name"},
+	"pick_rules": {"pick_rules", "name"}, "own_trait": {"own_traits", "name"}, "turned_down": {"releases", "name"},
 }
 
 type rowQuerier interface {
@@ -775,6 +775,8 @@ func (r *run) one(group string, it Item) (string, string) {
 		return r.alert(it)
 	case it.FileRules != nil:
 		return r.fileRules(it)
+	case it.TurnDown != nil:
+		return r.turnDown(it)
 	}
 	return ResFailed, "nothing to do for it"
 }

@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "već je tako postavljeno",
 	"server.migrate.stop-looking-for-deleted-episodes": "Prestani tražiti obrisane epizode",
 	"server.migrate.stop-looking-for-deleted-movies": "Prestani tražiti obrisane filmove",
-	"server.migrate.the-deleted-file-switch-is-back": "prekidač za obrisane datoteke vraćen je kakav je bio"
+	"server.migrate.the-deleted-file-switch-is-back": "prekidač za obrisane datoteke vraćen je kakav je bio",
+	"server.migrate.already-on-the-turned-down-list": "već je na popisu „Odbačeno”",
+	"server.migrate.its-title-did-not-come-over": "njegov naslov nije prenesen",
+	"server.migrate.its-title-is-not-in-the": "njegov naslov nije u biblioteci",
+	"server.migrate.on-the-old-app-s-blocklist": "na popisu blokiranih stare aplikacije",
+	"server.migrate.the-old-app-gave-no-release": "stara aplikacija nije dala naziv izdanja ni protokol",
+	"server.migrate.turned-down": "Odbačeno"
 }

@@ -315,5 +315,6 @@
 	"migrate.seasonsDifferOther": "Pagal TMDB numerį rasti serialai, kuriuos reikia patikrinti: {n}",
 	"migrate.seasonsDifferWhy": "{list} rado tik senos programos TMDB numeris, čia kitu pavadinimu. Atidarykite kiekvieną ir patikrinkite, ar tai tas pats serialas. Jei taip, jo sezonai numeruojami kitaip: susiekite jo Likusius failus ir tada įjunkite serialą. Jei ne, pašalinkite jį; jo failai lieka savo vietoje.",
 	"migrate.stillChecking": "Serialai, kuriuos metaduomenų serveris dar tikrina: {n}. Sąrašas atsinaujins pats, kai bus baigta.",
-	"migrate.stillCheckingImport": "Serialai, kuriuos metaduomenų serveris dar tikrina: {n}. Galite importuoti jau dabar; jie bus patikrinti importuojant."
+	"migrate.stillCheckingImport": "Serialai, kuriuos metaduomenų serveris dar tikrina: {n}. Galite importuoti jau dabar; jie bus patikrinti importuojant.",
+	"migrate.turnedDown": "Atmesta"
 }

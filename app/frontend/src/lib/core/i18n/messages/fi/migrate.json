@@ -315,5 +315,6 @@
 	"migrate.seasonsDifferOther": "Tarkista {n} sarjaa, jotka löytyivät TMDB-numerollaan",
 	"migrate.seasonsDifferWhy": "Vain vanhan sovelluksen TMDB-numero löysi kohteet {list}, täällä toisella nimellä. Avaa jokainen ja tarkista, että se on sama sarja. Jos on, sen kaudet on numeroitu eri tavalla: yhdistä sen Ylijääneet tiedostot ja laita sitten sarja päälle. Jos ei, poista se; sen tiedostot jäävät paikoilleen.",
 	"migrate.stillChecking": "Sarjat, joita metatietopalvelin vielä tarkistaa: {n}. Luettelo päivittyy itsestään, kun se on valmis.",
-	"migrate.stillCheckingImport": "Sarjat, joita metatietopalvelin vielä tarkistaa: {n}. Voit tuoda nyt; ne tarkistetaan tuonnin aikana."
+	"migrate.stillCheckingImport": "Sarjat, joita metatietopalvelin vielä tarkistaa: {n}. Voit tuoda nyt; ne tarkistetaan tuonnin aikana.",
+	"migrate.turnedDown": "Hylätyt"
 }

@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "已經是這樣設定的",
 	"server.migrate.stop-looking-for-deleted-episodes": "不再尋找已刪除的劇集",
 	"server.migrate.stop-looking-for-deleted-movies": "不再尋找已刪除的電影",
-	"server.migrate.the-deleted-file-switch-is-back": "已刪除檔案的開關已恢復原樣"
+	"server.migrate.the-deleted-file-switch-is-back": "已刪除檔案的開關已恢復原樣",
+	"server.migrate.already-on-the-turned-down-list": "已在「已排除」清單中",
+	"server.migrate.its-title-did-not-come-over": "它的作品沒有遷移過來",
+	"server.migrate.its-title-is-not-in-the": "它的作品不在媒體庫中",
+	"server.migrate.on-the-old-app-s-blocklist": "在舊應用的封鎖清單中",
+	"server.migrate.the-old-app-gave-no-release": "舊應用沒有給出發行名稱或協定",
+	"server.migrate.turned-down": "已排除"
 }

@@ -252,6 +252,7 @@ block
 block_checked_at
 block_counter
 blocked
+blocklist
 blocklist_checked_at
 blocklist_stale
 blocks
@@ -805,6 +806,7 @@ indexers
 indexes
 info
 infoHash
+info_hash
 infohash
 inherit
 inspection_status

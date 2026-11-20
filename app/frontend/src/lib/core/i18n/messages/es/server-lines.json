@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "ya está así",
 	"server.migrate.stop-looking-for-deleted-episodes": "Dejar de buscar episodios borrados",
 	"server.migrate.stop-looking-for-deleted-movies": "Dejar de buscar películas borradas",
-	"server.migrate.the-deleted-file-switch-is-back": "el interruptor de archivos borrados vuelve a estar como estaba"
+	"server.migrate.the-deleted-file-switch-is-back": "el interruptor de archivos borrados vuelve a estar como estaba",
+	"server.migrate.already-on-the-turned-down-list": "ya está en la lista «Descartados»",
+	"server.migrate.its-title-did-not-come-over": "su título no se trajo",
+	"server.migrate.its-title-is-not-in-the": "su título no está en la biblioteca",
+	"server.migrate.on-the-old-app-s-blocklist": "en la lista de bloqueo de la app anterior",
+	"server.migrate.the-old-app-gave-no-release": "la app anterior no dio nombre de versión ni protocolo",
+	"server.migrate.turned-down": "Descartados"
 }

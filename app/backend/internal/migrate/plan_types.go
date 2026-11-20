@@ -18,6 +18,7 @@ const (
 	GroupRules       = "pick_rules"
 	GroupTitles      = "titles"
 	GroupNeverAdd    = "never_add"
+	GroupTurnedDown  = "turned_down"
 	GroupLists       = "outside_lists"
 	GroupSources     = "sources"
 	GroupDownloaders = "downloaders"
@@ -31,12 +32,13 @@ const (
 )
 
 // GroupOrder lists the groups in the order they are shown and moved.
-var GroupOrder = []string{GroupFolders, GroupRules, GroupTitles, GroupNeverAdd, GroupLists, GroupSources, GroupDownloaders,
+// The Turned down list comes after Sources: each release is kept under one.
+var GroupOrder = []string{GroupFolders, GroupRules, GroupTitles, GroupNeverAdd, GroupLists, GroupSources, GroupDownloaders, GroupTurnedDown,
 	GroupNaming, GroupSubtitles, GroupPeople, GroupRequests, GroupAlerts}
 
 // GroupLabels are the groups' names on the move screen.
 var GroupLabels = map[string]string{
-	GroupFolders: "Library folders", GroupRules: "Pick rules", GroupTitles: "Titles", GroupNeverAdd: "Never-add list", GroupLists: "Outside lists",
+	GroupFolders: "Library folders", GroupRules: "Pick rules", GroupTitles: "Titles", GroupNeverAdd: "Never-add list", GroupTurnedDown: "Turned down", GroupLists: "Outside lists",
 	GroupSources: "Sources", GroupDownloaders: "Downloaders", GroupNaming: "Naming", GroupSubtitles: "Subtitles",
 	GroupPeople: "People", GroupRequests: "Requests", GroupAlerts: "Alerts", GroupOther: "Other settings",
 }
@@ -148,6 +150,7 @@ type Item struct {
 	Ask         *AskPlan          `json:"ask,omitempty"`
 	Alert       *AlertPlan        `json:"alert,omitempty"`
 	FileRules   *FileRulesPlan    `json:"file_rules,omitempty"`
+	TurnDown    *TurnDownPlan     `json:"turn_down,omitempty"`
 }
 
 // NotMoved is one setting the move leaves behind, and why.
@@ -265,6 +268,19 @@ type MusicAlbumPlan struct {
 type FileRulesPlan struct {
 	Kind          string `json:"kind"` // movie or show
 	UnkeepDeleted bool   `json:"unkeep_deleted"`
+}
+
+// TurnDownPlan is one release on the old app's blocklist, for the Turned
+// down list of its title.
+type TurnDownPlan struct {
+	Kind     string            `json:"kind"` // movie, show
+	ID       string            `json:"id"`   // the title's TitlePlan id: tmdb:603, tvdb:81189
+	IDs      map[string]string `json:"ids"`
+	Name     string            `json:"name"`
+	InfoHash string            `json:"info_hash,omitempty"`
+	Protocol string            `json:"protocol"`
+	Indexer  string            `json:"indexer,omitempty"`
+	Reason   string            `json:"reason,omitempty"`
 }
 
 // NeverAddPlan is one entry for the Never-add list.

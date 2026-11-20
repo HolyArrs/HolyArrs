@@ -35,6 +35,9 @@ type arrSet struct {
 	table  string
 	only   []Kind // nil: every arr app
 	needed bool   // a failure fails the read (else a note)
+	// soft makes any failure a note, for a list that may be too large to
+	// read and is not worth failing the whole read for.
+	soft bool
 }
 
 func (r arrReader) apiBase() string {
@@ -120,6 +123,7 @@ func (r arrReader) sets() []arrSet {
 		{name: "indexerconfig", api: []string{"/config/indexer"}, only: []Kind{Radarr}},
 		// The "unmonitor deleted" switch; a backup keeps it in the Config table (fromBackup).
 		{name: "media", api: []string{"/config/mediamanagement"}, only: []Kind{Sonarr, Radarr}},
+		{name: "blocklist", api: []string{"/blocklist"}, table: "Blocklist", only: []Kind{Sonarr, Radarr}, soft: true},
 		excl,
 		{name: "naming", api: []string{"/config/naming", "/settings/naming"}, table: "NamingConfig"},
 		{name: "indexers", api: []string{"/indexer"}, table: "Indexers"},
@@ -240,7 +244,7 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 			got, lastErr = r.albumsByArtist(ctx, c, out.sets["titles"])
 		}
 		if lastErr != nil {
-			if s.needed || !errors.Is(lastErr, ErrBadAnswer) {
+			if s.needed || !s.soft && !errors.Is(lastErr, ErrBadAnswer) {
 				return nil, lastErr
 			}
 			out.notes = append(out.notes, "the app has no "+s.name+" list; skipped")
@@ -261,7 +265,7 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 			if _, paged := lower(x)["records"]; paged {
 				if rows, err = r.pages(ctx, c, used); err != nil {
 					// A later page that fails is skipped like a missing route.
-					if s.needed || !errors.Is(err, ErrBadAnswer) {
+					if s.needed || !s.soft && !errors.Is(err, ErrBadAnswer) {
 						return nil, err
 					}
 					out.notes = append(out.notes, "the app has no "+s.name+" list; skipped")

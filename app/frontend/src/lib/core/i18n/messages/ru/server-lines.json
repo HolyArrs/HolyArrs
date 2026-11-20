@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "уже так настроено",
 	"server.migrate.stop-looking-for-deleted-episodes": "Не искать удалённые серии",
 	"server.migrate.stop-looking-for-deleted-movies": "Не искать удалённые фильмы",
-	"server.migrate.the-deleted-file-switch-is-back": "переключатель удалённых файлов снова как был"
+	"server.migrate.the-deleted-file-switch-is-back": "переключатель удалённых файлов снова как был",
+	"server.migrate.already-on-the-turned-down-list": "уже в списке «Отброшенные»",
+	"server.migrate.its-title-did-not-come-over": "его тайтл не был перенесён",
+	"server.migrate.its-title-is-not-in-the": "его тайтла нет в библиотеке",
+	"server.migrate.on-the-old-app-s-blocklist": "в чёрном списке старого приложения",
+	"server.migrate.the-old-app-gave-no-release": "старое приложение не указало название релиза или протокол",
+	"server.migrate.turned-down": "Отброшенные"
 }

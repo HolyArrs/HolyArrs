@@ -288,6 +288,18 @@
           "file_rules": {
             "kind": "s",
             "unkeep_deleted": true
+          },
+          "turn_down": {
+            "kind": "s",
+            "id": "s",
+            "ids": {
+              "s": "s"
+            },
+            "name": "s",
+            "info_hash": "s",
+            "protocol": "s",
+            "indexer": "s",
+            "reason": "s"
           }
         }
       ]

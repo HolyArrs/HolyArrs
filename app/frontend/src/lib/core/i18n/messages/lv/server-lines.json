@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "jau ir tā iestatīts",
 	"server.migrate.stop-looking-for-deleted-episodes": "Vairs nemeklēt dzēstās sērijas",
 	"server.migrate.stop-looking-for-deleted-movies": "Vairs nemeklēt dzēstās filmas",
-	"server.migrate.the-deleted-file-switch-is-back": "dzēsto failu slēdzis ir atpakaļ kā bija"
+	"server.migrate.the-deleted-file-switch-is-back": "dzēsto failu slēdzis ir atpakaļ kā bija",
+	"server.migrate.already-on-the-turned-down-list": "jau ir sarakstā “Noraidīts”",
+	"server.migrate.its-title-did-not-come-over": "tā nosaukums netika pārnests",
+	"server.migrate.its-title-is-not-in-the": "tā nosaukuma nav bibliotēkā",
+	"server.migrate.on-the-old-app-s-blocklist": "vecās lietotnes bloķēšanas sarakstā",
+	"server.migrate.the-old-app-gave-no-release": "vecā lietotne nedeva laidiena nosaukumu vai protokolu",
+	"server.migrate.turned-down": "Noraidīts"
 }

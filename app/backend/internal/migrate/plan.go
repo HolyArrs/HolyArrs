@@ -296,6 +296,7 @@ func (b *builder) snapshot(s *Snapshot) {
 	b.profiles(s)
 	b.titleList(s)
 	b.exclusions(s)
+	b.blocklist(s)
 	b.indexers(s)
 	b.downloaders(s)
 	b.pathMappings(s)

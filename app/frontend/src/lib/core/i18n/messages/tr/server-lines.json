@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "zaten böyle ayarlı",
 	"server.migrate.stop-looking-for-deleted-episodes": "Silinen bölümleri artık arama",
 	"server.migrate.stop-looking-for-deleted-movies": "Silinen filmleri artık arama",
-	"server.migrate.the-deleted-file-switch-is-back": "silinen dosya anahtarı eski hâline döndü"
+	"server.migrate.the-deleted-file-switch-is-back": "silinen dosya anahtarı eski hâline döndü",
+	"server.migrate.already-on-the-turned-down-list": "zaten “Reddedilenler” listesinde",
+	"server.migrate.its-title-did-not-come-over": "başlığı taşınmadı",
+	"server.migrate.its-title-is-not-in-the": "başlığı kitaplıkta değil",
+	"server.migrate.on-the-old-app-s-blocklist": "eski uygulamanın engel listesinde",
+	"server.migrate.the-old-app-gave-no-release": "eski uygulama sürüm adı veya protokol vermedi",
+	"server.migrate.turned-down": "Reddedilenler"
 }

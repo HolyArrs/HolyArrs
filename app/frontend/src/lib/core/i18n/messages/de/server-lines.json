@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "ist schon so eingestellt",
 	"server.migrate.stop-looking-for-deleted-episodes": "Gelöschte Folgen nicht mehr suchen",
 	"server.migrate.stop-looking-for-deleted-movies": "Gelöschte Filme nicht mehr suchen",
-	"server.migrate.the-deleted-file-switch-is-back": "der Schalter für gelöschte Dateien steht wieder wie vorher"
+	"server.migrate.the-deleted-file-switch-is-back": "der Schalter für gelöschte Dateien steht wieder wie vorher",
+	"server.migrate.already-on-the-turned-down-list": "steht schon auf der Liste „Verworfen“",
+	"server.migrate.its-title-did-not-come-over": "sein Titel kam nicht mit",
+	"server.migrate.its-title-is-not-in-the": "sein Titel ist nicht in der Bibliothek",
+	"server.migrate.on-the-old-app-s-blocklist": "auf der Sperrliste der alten App",
+	"server.migrate.the-old-app-gave-no-release": "die alte App nannte keinen Release-Namen oder kein Protokoll",
+	"server.migrate.turned-down": "Verworfen"
 }

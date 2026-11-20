@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "už je nastavené takto",
 	"server.migrate.stop-looking-for-deleted-episodes": "Nehľadať zmazané diely",
 	"server.migrate.stop-looking-for-deleted-movies": "Nehľadať zmazané filmy",
-	"server.migrate.the-deleted-file-switch-is-back": "prepínač zmazaných súborov je späť, ako bol"
+	"server.migrate.the-deleted-file-switch-is-back": "prepínač zmazaných súborov je späť, ako bol",
+	"server.migrate.already-on-the-turned-down-list": "už je v zozname „Zamietnuté“",
+	"server.migrate.its-title-did-not-come-over": "jeho titul sa nepreniesol",
+	"server.migrate.its-title-is-not-in-the": "jeho titul nie je v knižnici",
+	"server.migrate.on-the-old-app-s-blocklist": "na blokovacom zozname starej aplikácie",
+	"server.migrate.the-old-app-gave-no-release": "stará aplikácia neuviedla názov vydania ani protokol",
+	"server.migrate.turned-down": "Zamietnuté"
 }

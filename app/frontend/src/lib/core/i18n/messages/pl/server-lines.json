@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "już tak ustawione",
 	"server.migrate.stop-looking-for-deleted-episodes": "Nie szukaj usuniętych odcinków",
 	"server.migrate.stop-looking-for-deleted-movies": "Nie szukaj usuniętych filmów",
-	"server.migrate.the-deleted-file-switch-is-back": "przełącznik usuniętych plików wrócił do poprzedniego stanu"
+	"server.migrate.the-deleted-file-switch-is-back": "przełącznik usuniętych plików wrócił do poprzedniego stanu",
+	"server.migrate.already-on-the-turned-down-list": "już na liście „Odrzucone na stałe”",
+	"server.migrate.its-title-did-not-come-over": "jego tytuł nie został przeniesiony",
+	"server.migrate.its-title-is-not-in-the": "jego tytułu nie ma w bibliotece",
+	"server.migrate.on-the-old-app-s-blocklist": "na liście zablokowanych starej aplikacji",
+	"server.migrate.the-old-app-gave-no-release": "stara aplikacja nie podała nazwy wydania ani protokołu",
+	"server.migrate.turned-down": "Odrzucone na stałe"
 }

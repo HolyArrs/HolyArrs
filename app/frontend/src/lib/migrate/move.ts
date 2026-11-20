@@ -218,6 +218,7 @@ export function groupLabel(group: string): string | undefined {
 		pick_rules: t('migrate.pickRules'),
 		titles: t('migrate.titles'),
 		never_add: t('migrate.neverAddList'),
+		turned_down: t('migrate.turnedDown'),
 		outside_lists: t('migrate.outsideLists'),
 		sources: t('migrate.sources'),
 		downloaders: t('migrate.downloaders'),
@@ -231,7 +232,7 @@ export function groupLabel(group: string): string | undefined {
 	return labels[group];
 }
 
-export const groupOrder = ['folders', 'pick_rules', 'titles', 'never_add', 'outside_lists', 'sources', 'downloaders', 'naming', 'subtitles', 'people', 'wishlist', 'alerts'];
+export const groupOrder = ['folders', 'pick_rules', 'titles', 'never_add', 'outside_lists', 'sources', 'downloaders', 'turned_down', 'naming', 'subtitles', 'people', 'wishlist', 'alerts'];
 
 const words = (): Record<string, [string, string]> => ({
 	create: [t('migrate.willBeAdded'), t('migrate.added')],

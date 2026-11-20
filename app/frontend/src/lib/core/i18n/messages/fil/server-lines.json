@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "nakatakda na nang ganito",
 	"server.migrate.stop-looking-for-deleted-episodes": "Huwag nang hanapin ang mga binurang episode",
 	"server.migrate.stop-looking-for-deleted-movies": "Huwag nang hanapin ang mga binurang pelikula",
-	"server.migrate.the-deleted-file-switch-is-back": "bumalik sa dati ang switch para sa mga binurang file"
+	"server.migrate.the-deleted-file-switch-is-back": "bumalik sa dati ang switch para sa mga binurang file",
+	"server.migrate.already-on-the-turned-down-list": "nasa listahang \"Tinanggihan\" na",
+	"server.migrate.its-title-did-not-come-over": "hindi nailipat ang pamagat nito",
+	"server.migrate.its-title-is-not-in-the": "wala sa Library ang pamagat nito",
+	"server.migrate.on-the-old-app-s-blocklist": "nasa blocklist ng lumang app",
+	"server.migrate.the-old-app-gave-no-release": "walang ibinigay na pangalan ng release o protocol ang lumang app",
+	"server.migrate.turned-down": "Tinanggihan"
 }

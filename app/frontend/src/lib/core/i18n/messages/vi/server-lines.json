@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "đã được đặt như vậy",
 	"server.migrate.stop-looking-for-deleted-episodes": "Không tìm lại tập đã xóa",
 	"server.migrate.stop-looking-for-deleted-movies": "Không tìm lại phim đã xóa",
-	"server.migrate.the-deleted-file-switch-is-back": "công tắc tệp đã xóa đã trở lại như cũ"
+	"server.migrate.the-deleted-file-switch-is-back": "công tắc tệp đã xóa đã trở lại như cũ",
+	"server.migrate.already-on-the-turned-down-list": "đã có trong danh sách “Đã loại”",
+	"server.migrate.its-title-did-not-come-over": "tựa của nó không được chuyển sang",
+	"server.migrate.its-title-is-not-in-the": "tựa của nó không có trong Thư viện",
+	"server.migrate.on-the-old-app-s-blocklist": "trong danh sách chặn của ứng dụng cũ",
+	"server.migrate.the-old-app-gave-no-release": "ứng dụng cũ không cho tên bản phát hành hay giao thức",
+	"server.migrate.turned-down": "Đã loại"
 }

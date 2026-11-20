@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "כבר מוגדר כך",
 	"server.migrate.stop-looking-for-deleted-episodes": "להפסיק לחפש פרקים שנמחקו",
 	"server.migrate.stop-looking-for-deleted-movies": "להפסיק לחפש סרטים שנמחקו",
-	"server.migrate.the-deleted-file-switch-is-back": "המתג של קבצים שנמחקו חזר למצבו הקודם"
+	"server.migrate.the-deleted-file-switch-is-back": "המתג של קבצים שנמחקו חזר למצבו הקודם",
+	"server.migrate.already-on-the-turned-down-list": "כבר ברשימה „נפסל”",
+	"server.migrate.its-title-did-not-come-over": "הכותר שלו לא הועבר",
+	"server.migrate.its-title-is-not-in-the": "הכותר שלו לא בספרייה",
+	"server.migrate.on-the-old-app-s-blocklist": "ברשימת החסימה של האפליקציה הישנה",
+	"server.migrate.the-old-app-gave-no-release": "האפליקציה הישנה לא נתנה שם הוצאה או פרוטוקול",
+	"server.migrate.turned-down": "נפסל"
 }

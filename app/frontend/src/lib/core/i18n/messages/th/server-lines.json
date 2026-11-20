@@ -1585,5 +1585,11 @@
 	"server.migrate.already-set-this-way": "ตั้งค่าแบบนี้อยู่แล้ว",
 	"server.migrate.stop-looking-for-deleted-episodes": "เลิกหาตอนที่ลบแล้ว",
 	"server.migrate.stop-looking-for-deleted-movies": "เลิกหาภาพยนตร์ที่ลบแล้ว",
-	"server.migrate.the-deleted-file-switch-is-back": "สวิตช์ไฟล์ที่ลบกลับเป็นเหมือนเดิมแล้ว"
+	"server.migrate.the-deleted-file-switch-is-back": "สวิตช์ไฟล์ที่ลบกลับเป็นเหมือนเดิมแล้ว",
+	"server.migrate.already-on-the-turned-down-list": "อยู่ในรายการ \"ปฏิเสธแล้ว\" แล้ว",
+	"server.migrate.its-title-did-not-come-over": "ไม่ได้ย้ายเรื่องนี้มา",
+	"server.migrate.its-title-is-not-in-the": "เรื่องนี้ไม่อยู่ในคลัง",
+	"server.migrate.on-the-old-app-s-blocklist": "อยู่ในรายการบล็อกของแอปเก่า",
+	"server.migrate.the-old-app-gave-no-release": "แอปเก่าไม่ได้ให้ชื่อรีลีสหรือโปรโตคอล",
+	"server.migrate.turned-down": "ปฏิเสธแล้ว"
 }
