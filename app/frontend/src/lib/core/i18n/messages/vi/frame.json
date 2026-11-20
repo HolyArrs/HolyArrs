@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} / {total}",
 	"frame.theater.soundOn": "Bật âm thanh",
 	"frame.theater.soundOff": "Tắt âm thanh",
+	"frame.theater.fullScreen": "Toàn màn hình",
+	"frame.theater.leaveFullScreen": "Thoát toàn màn hình",
 	"frame.layout.search": "Tìm kiếm",
 	"frame.layout.more": "Thêm",
 	"frame.layout.owner": "Chủ sở hữu",

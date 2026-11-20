@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} จาก {total}",
 	"frame.theater.soundOn": "เปิดเสียง",
 	"frame.theater.soundOff": "ปิดเสียง",
+	"frame.theater.fullScreen": "เต็มหน้าจอ",
+	"frame.theater.leaveFullScreen": "ออกจากเต็มหน้าจอ",
 	"frame.layout.search": "ค้นหา",
 	"frame.layout.more": "เพิ่มเติม",
 	"frame.layout.owner": "เจ้าของ",

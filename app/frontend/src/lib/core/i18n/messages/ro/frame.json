@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} din {total}",
 	"frame.theater.soundOn": "Pornește sunetul",
 	"frame.theater.soundOff": "Oprește sunetul",
+	"frame.theater.fullScreen": "Ecran complet",
+	"frame.theater.leaveFullScreen": "Ieși din ecranul complet",
 	"frame.layout.search": "Căutare",
 	"frame.layout.more": "Mai multe",
 	"frame.layout.owner": "Proprietar",

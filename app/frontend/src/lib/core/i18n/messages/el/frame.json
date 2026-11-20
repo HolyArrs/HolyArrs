@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} από {total}",
 	"frame.theater.soundOn": "Ενεργοποίηση ήχου",
 	"frame.theater.soundOff": "Σίγαση",
+	"frame.theater.fullScreen": "Πλήρης οθόνη",
+	"frame.theater.leaveFullScreen": "Έξοδος από πλήρη οθόνη",
 	"frame.layout.search": "Αναζήτηση",
 	"frame.layout.more": "Περισσότερα",
 	"frame.layout.owner": "Ιδιοκτήτης",

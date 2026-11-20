@@ -66,6 +66,8 @@
 	"frame.theater.of": "{total} में से {time}",
 	"frame.theater.soundOn": "आवाज़ चालू करें",
 	"frame.theater.soundOff": "आवाज़ बंद करें",
+	"frame.theater.fullScreen": "पूर्ण स्क्रीन",
+	"frame.theater.leaveFullScreen": "पूर्ण स्क्रीन से बाहर निकलें",
 	"frame.layout.search": "खोज",
 	"frame.layout.more": "और",
 	"frame.layout.owner": "ओनर",

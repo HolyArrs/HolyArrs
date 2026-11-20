@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} de {total}",
 	"frame.theater.soundOn": "Activa el so",
 	"frame.theater.soundOff": "Desactiva el so",
+	"frame.theater.fullScreen": "Pantalla completa",
+	"frame.theater.leaveFullScreen": "Surt de la pantalla completa",
 	"frame.layout.search": "Cerca",
 	"frame.layout.more": "Més",
 	"frame.layout.owner": "Propietari",

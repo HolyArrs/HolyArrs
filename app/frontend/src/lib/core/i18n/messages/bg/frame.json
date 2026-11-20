@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} от {total}",
 	"frame.theater.soundOn": "Включване на звука",
 	"frame.theater.soundOff": "Изключване на звука",
+	"frame.theater.fullScreen": "Цял екран",
+	"frame.theater.leaveFullScreen": "Изход от цял екран",
 	"frame.layout.search": "Търсене",
 	"frame.layout.more": "Още",
 	"frame.layout.owner": "Собственик",

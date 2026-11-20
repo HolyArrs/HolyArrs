@@ -66,6 +66,8 @@
   "frame.theater.of": "{time} av {total}",
   "frame.theater.soundOn": "Slå på ljudet",
   "frame.theater.soundOff": "Stäng av ljudet",
+  "frame.theater.fullScreen": "Helskärm",
+  "frame.theater.leaveFullScreen": "Avsluta helskärm",
   "frame.layout.search": "Sök",
   "frame.layout.more": "Mer",
   "frame.layout.owner": "Ägare",

@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} von {total}",
 	"frame.theater.soundOn": "Ton einschalten",
 	"frame.theater.soundOff": "Ton ausschalten",
+	"frame.theater.fullScreen": "Vollbild",
+	"frame.theater.leaveFullScreen": "Vollbild beenden",
 	"frame.layout.search": "Suche",
 	"frame.layout.more": "Mehr",
 	"frame.layout.owner": "Besitzer",

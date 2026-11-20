@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} / {total}",
 	"frame.theater.soundOn": "Sesi aç",
 	"frame.theater.soundOff": "Sesi kapat",
+	"frame.theater.fullScreen": "Tam ekran",
+	"frame.theater.leaveFullScreen": "Tam ekrandan çık",
 	"frame.layout.search": "Ara",
 	"frame.layout.more": "Daha fazla",
 	"frame.layout.owner": "Sahip",

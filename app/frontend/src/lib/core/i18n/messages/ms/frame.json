@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} daripada {total}",
 	"frame.theater.soundOn": "Hidupkan bunyi",
 	"frame.theater.soundOff": "Matikan bunyi",
+	"frame.theater.fullScreen": "Skrin penuh",
+	"frame.theater.leaveFullScreen": "Keluar dari skrin penuh",
 	"frame.layout.search": "Cari",
 	"frame.layout.more": "Lagi",
 	"frame.layout.owner": "Pemilik",

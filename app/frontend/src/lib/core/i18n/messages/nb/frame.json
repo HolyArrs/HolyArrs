@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} av {total}",
 	"frame.theater.soundOn": "Slå på lyd",
 	"frame.theater.soundOff": "Slå av lyd",
+	"frame.theater.fullScreen": "Fullskjerm",
+	"frame.theater.leaveFullScreen": "Avslutt fullskjerm",
 	"frame.layout.search": "Søk",
 	"frame.layout.more": "Mer",
 	"frame.layout.owner": "Eier",

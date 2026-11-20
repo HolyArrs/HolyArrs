@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} מתוך {total}",
 	"frame.theater.soundOn": "הפעלת הקול",
 	"frame.theater.soundOff": "השתקת הקול",
+	"frame.theater.fullScreen": "מסך מלא",
+	"frame.theater.leaveFullScreen": "יציאה ממסך מלא",
 	"frame.layout.search": "חיפוש",
 	"frame.layout.more": "עוד",
 	"frame.layout.owner": "בעלים",

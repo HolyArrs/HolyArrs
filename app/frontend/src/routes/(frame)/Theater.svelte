@@ -144,8 +144,31 @@
 		});
 	});
 
+	// Whether the player fills the screen, and whether the person just left full screen with the button (then it plays on in the page).
+	let full = $state(false);
+	let leftByButton = false;
 	function onFullscreen() {
-		if (!document.fullscreenElement && dialog?.open && !leaving) void close();
+		full = !!document.fullscreenElement;
+		if (full) return;
+		if (leftByButton) {
+			leftByButton = false;
+			return;
+		}
+		if (dialog?.open && !leaving) void close();
+	}
+
+	// The automatic full screen on opening needs the click that opened it, which the grow outlasts in Safari, so it can stay a full page; this asks again on a click of its own. iPhone Safari only puts the video itself full screen.
+	function toggleFull() {
+		if (document.fullscreenElement) {
+			leftByButton = true;
+			void document.exitFullscreen().catch(() => (leftByButton = false));
+			return;
+		}
+		if (document.fullscreenEnabled && dialog?.requestFullscreen) {
+			void dialog.requestFullscreen().catch(() => {});
+			return;
+		}
+		(video as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | undefined)?.webkitEnterFullscreen?.();
 	}
 
 	async function close(ended = false) {
@@ -367,6 +390,7 @@
 				<input class="seek" type="range" min="0" max={Math.max(duration, 1)} step="0.1" value={time} aria-label={t('frame.theater.seek')} aria-valuetext={t('frame.theater.of', { time: clock(time), total: clock(duration) })} oninput={seek} style:--p="{duration ? (time / duration) * 100 : 0}%" />
 				<span class="t">{clock(duration)}</span>
 				<IconButton icon={muted ? 'soundOff' : 'sound'} label={muted ? t('frame.theater.soundOn') : t('frame.theater.soundOff')} variant="glass" size="lg" tipSide="above" onclick={toggleSound} />
+				<IconButton icon="expand" label={full ? t('frame.theater.leaveFullScreen') : t('frame.theater.fullScreen')} variant="glass" size="lg" tipSide="above" onclick={toggleFull} />
 			</div>
 		</div>
 	{/if}

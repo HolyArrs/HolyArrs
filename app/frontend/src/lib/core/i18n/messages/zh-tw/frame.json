@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} / {total}",
 	"frame.theater.soundOn": "開啟聲音",
 	"frame.theater.soundOff": "關閉聲音",
+	"frame.theater.fullScreen": "全螢幕",
+	"frame.theater.leaveFullScreen": "結束全螢幕",
 	"frame.layout.search": "搜尋",
 	"frame.layout.more": "更多",
 	"frame.layout.owner": "擁有者",

@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} از {total}",
 	"frame.theater.soundOn": "روشن کردن صدا",
 	"frame.theater.soundOff": "خاموش کردن صدا",
+	"frame.theater.fullScreen": "تمام‌صفحه",
+	"frame.theater.leaveFullScreen": "خروج از تمام‌صفحه",
 	"frame.layout.search": "جستجو",
 	"frame.layout.more": "بیشتر",
 	"frame.layout.owner": "مالک",

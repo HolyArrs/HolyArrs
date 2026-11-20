@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} de {total}",
 	"frame.theater.soundOn": "Ativar o som",
 	"frame.theater.soundOff": "Desativar o som",
+	"frame.theater.fullScreen": "Tela cheia",
+	"frame.theater.leaveFullScreen": "Sair da tela cheia",
 	"frame.layout.search": "Buscar",
 	"frame.layout.more": "Mais",
 	"frame.layout.owner": "Dono",

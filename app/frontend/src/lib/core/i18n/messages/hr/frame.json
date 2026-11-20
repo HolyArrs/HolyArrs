@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} od {total}",
 	"frame.theater.soundOn": "Uključi zvuk",
 	"frame.theater.soundOff": "Isključi zvuk",
+	"frame.theater.fullScreen": "Cijeli zaslon",
+	"frame.theater.leaveFullScreen": "Izađi iz cijelog zaslona",
 	"frame.layout.search": "Pretraga",
 	"frame.layout.more": "Više",
 	"frame.layout.owner": "Vlasnik",

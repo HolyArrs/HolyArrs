@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} af {total}",
 	"frame.theater.soundOn": "Slå lyd til",
 	"frame.theater.soundOff": "Slå lyd fra",
+	"frame.theater.fullScreen": "Fuld skærm",
+	"frame.theater.leaveFullScreen": "Afslut fuld skærm",
 	"frame.layout.search": "Søg",
 	"frame.layout.more": "Mere",
 	"frame.layout.owner": "Ejer",

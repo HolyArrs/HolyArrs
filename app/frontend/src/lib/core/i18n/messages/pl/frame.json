@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} z {total}",
 	"frame.theater.soundOn": "Włącz dźwięk",
 	"frame.theater.soundOff": "Wyłącz dźwięk",
+	"frame.theater.fullScreen": "Pełny ekran",
+	"frame.theater.leaveFullScreen": "Zamknij pełny ekran",
 	"frame.layout.search": "Szukaj",
 	"frame.layout.more": "Więcej",
 	"frame.layout.owner": "Właściciel",

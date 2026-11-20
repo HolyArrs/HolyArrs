@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} dari {total}",
 	"frame.theater.soundOn": "Nyalakan suara",
 	"frame.theater.soundOff": "Matikan suara",
+	"frame.theater.fullScreen": "Layar penuh",
+	"frame.theater.leaveFullScreen": "Keluar dari layar penuh",
 	"frame.layout.search": "Cari",
 	"frame.layout.more": "Lainnya",
 	"frame.layout.owner": "Pemilik",

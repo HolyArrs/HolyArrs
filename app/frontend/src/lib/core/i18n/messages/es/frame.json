@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} de {total}",
 	"frame.theater.soundOn": "Activar el sonido",
 	"frame.theater.soundOff": "Desactivar el sonido",
+	"frame.theater.fullScreen": "Pantalla completa",
+	"frame.theater.leaveFullScreen": "Salir de pantalla completa",
 	"frame.layout.search": "Buscar",
 	"frame.layout.more": "Más",
 	"frame.layout.owner": "Propietario",

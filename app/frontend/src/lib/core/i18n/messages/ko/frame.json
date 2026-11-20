@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} / {total}",
 	"frame.theater.soundOn": "소리 켜기",
 	"frame.theater.soundOff": "소리 끄기",
+	"frame.theater.fullScreen": "전체 화면",
+	"frame.theater.leaveFullScreen": "전체 화면 종료",
 	"frame.layout.search": "검색",
 	"frame.layout.more": "더 보기",
 	"frame.layout.owner": "소유자",

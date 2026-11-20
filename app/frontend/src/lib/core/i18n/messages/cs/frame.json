@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} z {total}",
 	"frame.theater.soundOn": "Zapnout zvuk",
 	"frame.theater.soundOff": "Vypnout zvuk",
+	"frame.theater.fullScreen": "Celá obrazovka",
+	"frame.theater.leaveFullScreen": "Ukončit celou obrazovku",
 	"frame.layout.search": "Hledat",
 	"frame.layout.more": "Více",
 	"frame.layout.owner": "Vlastník",

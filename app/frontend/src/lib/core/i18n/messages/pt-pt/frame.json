@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} de {total}",
 	"frame.theater.soundOn": "Ativar o som",
 	"frame.theater.soundOff": "Desativar o som",
+	"frame.theater.fullScreen": "Ecrã inteiro",
+	"frame.theater.leaveFullScreen": "Sair do ecrã inteiro",
 	"frame.layout.search": "Procurar",
 	"frame.layout.more": "Mais",
 	"frame.layout.owner": "Proprietário",

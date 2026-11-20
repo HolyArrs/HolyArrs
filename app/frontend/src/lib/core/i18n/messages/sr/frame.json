@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} од {total}",
 	"frame.theater.soundOn": "Укључи звук",
 	"frame.theater.soundOff": "Искључи звук",
+	"frame.theater.fullScreen": "Цео екран",
+	"frame.theater.leaveFullScreen": "Изађи из целог екрана",
 	"frame.layout.search": "Претрага",
 	"frame.layout.more": "Више",
 	"frame.layout.owner": "Власник",

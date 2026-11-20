@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} / {total}",
 	"frame.theater.soundOn": "Hang bekapcsolása",
 	"frame.theater.soundOff": "Hang kikapcsolása",
+	"frame.theater.fullScreen": "Teljes képernyő",
+	"frame.theater.leaveFullScreen": "Kilépés a teljes képernyőből",
 	"frame.layout.search": "Keresés",
 	"frame.layout.more": "Továbbiak",
 	"frame.layout.owner": "Tulajdonos",

@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} af {total}",
 	"frame.theater.soundOn": "Kveikja á hljóði",
 	"frame.theater.soundOff": "Slökkva á hljóði",
+	"frame.theater.fullScreen": "Allur skjárinn",
+	"frame.theater.leaveFullScreen": "Hætta í öllum skjánum",
 	"frame.layout.search": "Leita",
 	"frame.layout.more": "Meira",
 	"frame.layout.owner": "Eigandi",

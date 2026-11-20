@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} / {total}",
 	"frame.theater.soundOn": "音声をオンにする",
 	"frame.theater.soundOff": "音声をオフにする",
+	"frame.theater.fullScreen": "全画面",
+	"frame.theater.leaveFullScreen": "全画面を終了",
 	"frame.layout.search": "検索",
 	"frame.layout.more": "その他",
 	"frame.layout.owner": "オーナー",

@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} / {total}",
 	"frame.theater.soundOn": "Ota ääni käyttöön",
 	"frame.theater.soundOff": "Mykistä",
+	"frame.theater.fullScreen": "Koko näyttö",
+	"frame.theater.leaveFullScreen": "Poistu koko näytöstä",
 	"frame.layout.search": "Haku",
 	"frame.layout.more": "Lisää",
 	"frame.layout.owner": "Omistaja",

@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} no {total}",
 	"frame.theater.soundOn": "Ieslēgt skaņu",
 	"frame.theater.soundOff": "Izslēgt skaņu",
+	"frame.theater.fullScreen": "Pilnekrāns",
+	"frame.theater.leaveFullScreen": "Iziet no pilnekrāna",
 	"frame.layout.search": "Meklēt",
 	"frame.layout.more": "Vairāk",
 	"frame.layout.owner": "Īpašnieks",

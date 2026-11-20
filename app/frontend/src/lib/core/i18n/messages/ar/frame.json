@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} من {total}",
 	"frame.theater.soundOn": "تشغيل الصوت",
 	"frame.theater.soundOff": "كتم الصوت",
+	"frame.theater.fullScreen": "ملء الشاشة",
+	"frame.theater.leaveFullScreen": "الخروج من ملء الشاشة",
 	"frame.layout.search": "البحث",
 	"frame.layout.more": "المزيد",
 	"frame.layout.owner": "المالك",

@@ -66,6 +66,8 @@
 	"frame.theater.of": "{total}-এর মধ্যে {time}",
 	"frame.theater.soundOn": "সাউন্ড চালু করুন",
 	"frame.theater.soundOff": "সাউন্ড বন্ধ করুন",
+	"frame.theater.fullScreen": "পূর্ণ স্ক্রিন",
+	"frame.theater.leaveFullScreen": "পূর্ণ স্ক্রিন থেকে বেরোন",
 	"frame.layout.search": "সার্চ",
 	"frame.layout.more": "আরও",
 	"frame.layout.owner": "ওনার",

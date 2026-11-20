@@ -66,6 +66,8 @@
 	"frame.theater.of": "{time} sa {total}",
 	"frame.theater.soundOn": "I-on ang tunog",
 	"frame.theater.soundOff": "I-off ang tunog",
+	"frame.theater.fullScreen": "Full screen",
+	"frame.theater.leaveFullScreen": "Umalis sa full screen",
 	"frame.layout.search": "Maghanap",
 	"frame.layout.more": "Higit pa",
 	"frame.layout.owner": "Owner",
