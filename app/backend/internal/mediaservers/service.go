@@ -20,6 +20,7 @@ import (
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -248,6 +249,9 @@ type Linker struct {
 	watch watchCache
 	// Asked lists asked-for titles for Plex labels (nil: no labels).
 	Asked AskedFunc
+	// Trakt, when someone signed in with Trakt, adds their Trakt watch
+	// history to the watch history read (nil: no Trakt).
+	Trakt *metadata.TraktAuth
 	// labelling lets one label pass run at a time; stopLabel ends a
 	// background one.
 	labelling sync.Mutex

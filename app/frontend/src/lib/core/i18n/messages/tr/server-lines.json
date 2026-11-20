@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Yayın servislerinde öne çıkan diziler",
 	"server.suggest.trending-on-streaming": "Yayın servislerinde öne çıkanlar",
 	"server.discover.popular": "Popüler",
-	"server.metadata.creator": "Yaratıcı"
+	"server.metadata.creator": "Yaratıcı",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Bir Trakt listesini açmadan önce Trakt anahtarını Ayarlar > Dış listeler altına ekle; özel bir liste için orada Trakt ile giriş yap da gerekir.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "şunu gönder: {\"secret\": \"<Trakt app client secret>\"}, ya da kaldırmak için {\"secret\": \"\"}"
 }

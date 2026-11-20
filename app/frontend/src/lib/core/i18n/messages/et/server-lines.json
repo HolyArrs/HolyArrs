@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Menukad sarjad voogedastuses",
 	"server.suggest.trending-on-streaming": "Menukas voogedastuses",
 	"server.discover.popular": "Populaarsed",
-	"server.metadata.creator": "Looja"
+	"server.metadata.creator": "Looja",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Lisa oma Trakti võti jaotises Seaded > Välised nimekirjad, enne kui lülitad Trakti nimekirja sisse; privaatne nimekiri vajab seal ka nuppu Logi sisse Traktiga.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "saada {\"secret\": \"<Trakt app client secret>\"}, või {\"secret\": \"\"}, et see eemaldada"
 }

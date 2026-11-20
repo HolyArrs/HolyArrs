@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "افزودن به فهرست «هرگز اضافه نشود»",
 	"settings.outsideLists.showDot": "سریال ·",
 	"settings.outsideLists.takeOff": "برداشتن {name}",
-	"settings.outsideLists.empty": "هنوز چیزی در این فهرست نیست"
+	"settings.outsideLists.empty": "هنوز چیزی در این فهرست نیست",
+	"settings.outsideLists.traktSignInTitle": "ورود به Trakt",
+	"settings.outsideLists.traktSignInInfo": "وارد شو تا فهرست‌های خصوصی و فهرست تماشای Trakt تو خوانده شوند و آنچه در Trakt دیدی به تاریخچه تماشا اضافه شود.",
+	"settings.outsideLists.traktSignedInAs": "وارد شده با نام {name}.",
+	"settings.outsideLists.traktNotSignedIn": "وارد نشده‌ای. فقط فهرست‌های عمومی خوانده می‌شوند.",
+	"settings.outsideLists.traktSignIn": "ورود با Trakt",
+	"settings.outsideLists.traktDeviceSteps": "روی هر دستگاهی <a>{url}</a> را باز کن و <code>{code}</code> را وارد کن. این صفحه تا تأیید تو صبر می‌کند.",
+	"settings.outsideLists.traktDenied": "ورود به Trakt رد شد.",
+	"settings.outsideLists.traktExpired": "مهلت کد تمام شد. دوباره شروع کن.",
+	"settings.outsideLists.traktSignOut": "خروج از Trakt",
+	"settings.outsideLists.traktSignedIn": "به Trakt وارد شدی",
+	"settings.outsideLists.traktSignedOut": "از Trakt خارج شدی",
+	"settings.outsideLists.traktSecret": "Client secret (فقط برنامه‌های قدیمی‌تر Trakt؛ برنامه‌های جدید ندارند)"
 }

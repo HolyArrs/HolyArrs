@@ -27,6 +27,7 @@ DELETE /api/v1/own-traits/{id} delete
 DELETE /api/v1/pick-rules/{id} delete
 DELETE /api/v1/plugins/{id} admin
 DELETE /api/v1/settings/old-app-api/keys/{side} admin
+DELETE /api/v1/settings/trakt-signin delete
 DELETE /api/v1/sources/{id} delete
 DELETE /api/v1/subtitle-sites/{id} delete
 DELETE /api/v1/titles/{id}/follow delete
@@ -226,6 +227,7 @@ GET /api/v1/settings/subtitles settings
 GET /api/v1/settings/subtitles/translator settings
 GET /api/v1/settings/title-defaults settings
 GET /api/v1/settings/trakt-key settings
+GET /api/v1/settings/trakt-signin settings
 GET /api/v1/settings/trakt-token settings
 GET /api/v1/settings/ui settings
 GET /api/v1/settings/url-base admin
@@ -477,6 +479,8 @@ POST /api/v1/settings/naming/example see
 POST /api/v1/settings/old-app-api/keys/{side} admin
 POST /api/v1/settings/plex-labels/run settings
 POST /api/v1/settings/subtitles/translator/test settings
+POST /api/v1/settings/trakt-signin settings
+POST /api/v1/settings/trakt-signin/check settings
 POST /api/v1/shows add
 POST /api/v1/sources settings
 POST /api/v1/sources/check settings
@@ -582,6 +586,7 @@ PUT /api/v1/settings/subtitles settings
 PUT /api/v1/settings/subtitles/translator settings
 PUT /api/v1/settings/title-defaults settings
 PUT /api/v1/settings/trakt-key settings
+PUT /api/v1/settings/trakt-secret settings
 PUT /api/v1/settings/trakt-token settings
 PUT /api/v1/settings/ui settings
 PUT /api/v1/settings/url-base admin

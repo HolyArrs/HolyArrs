@@ -174,6 +174,9 @@ func (s *services) fill() {
 	if s.Lists == nil {
 		s.Lists = &requests.OutsideLists{Store: s.Store, Queue: s.Queue, Library: s.Library, Metadata: s.Metadata}
 	}
+	if s.Lists.TraktAuth == nil && s.Secrets != nil {
+		s.Lists.TraktAuth = &metadata.TraktAuth{Secrets: s.Secrets, Base: s.TraktBase}
+	}
 	if s.Alerts == nil && s.Secrets != nil {
 		s.Alerts = &alerts.Sender{Store: s.Store, Vault: s.Secrets, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Store.Read()) }}
 	}
@@ -205,7 +208,7 @@ func (s *services) fill() {
 		WireUpdateChecks(s.Health, s.Updates)
 	}
 	if s.Media == nil && s.Secrets != nil {
-		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets, Asked: requests.AskedForLabels(s.Store)}
+		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets, Asked: requests.AskedForLabels(s.Store), Trakt: s.Lists.TraktAuth}
 	}
 	if s.Subtitles == nil {
 		s.Subtitles = subtitles.NewService(s.Store, s.Secrets, s.Live, s.Queue)

@@ -71,7 +71,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	(&requests.TitleDefaultsHandlers{Store: a.s.Store, Actor: actor}).Routes(m)
 	a.dlh.Routes(m)
 	(&library.FolderHandlers{Store: a.s.Store, DownloadPaths: a.downloadPaths, Actor: actor, Fail: library.WriteError}).Routes(m)
-	lists := &requests.OutsideListHandlers{Store: a.s.Store, Queue: a.s.Queue, Secrets: a.s.Secrets, Actor: actor, LibraryError: library.WriteError}
+	lists := &requests.OutsideListHandlers{Store: a.s.Store, Queue: a.s.Queue, Secrets: a.s.Secrets, TraktAuth: a.s.Lists.TraktAuth, Actor: actor, LibraryError: library.WriteError}
 	lists.Routes(m)
 	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, Show: (&shows.SearchHandlers{Store: a.s.Store, Queue: a.s.Queue}).Search, Artist: a.mh().SearchArtist}).Routes(m)
 	m.HandleFunc("GET /api/v1/downloads", downloads.ListDownloads(a.s.Store))
@@ -114,6 +114,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	if a.s.Secrets != nil {
 		lists.MDBListKeyRoutes(m)
 		lists.TraktKeyRoutes(m)
+		lists.TraktSignInRoutes(m)
 		a.disc.TokenRoutes(m)
 	}
 	a.askHandlers().Routes(m)

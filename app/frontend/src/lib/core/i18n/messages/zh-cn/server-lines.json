@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "流媒体热播剧集",
 	"server.suggest.trending-on-streaming": "流媒体热播",
 	"server.discover.popular": "热门",
-	"server.metadata.creator": "创作者"
+	"server.metadata.creator": "创作者",
+	"server.migrate.add-your-trakt-key-under-settings-2": "开启 Trakt 列表之前，请先在 设置 > 外部列表 中添加你的 Trakt 密钥；私密列表还需在那里点击“使用 Trakt 登录”。",
+	"server.requests.send-secret-trakt-app-client-secret-line": "请发送 {\"secret\": \"<Trakt app client secret>\"}，或发送 {\"secret\": \"\"} 将其移除"
 }

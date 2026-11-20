@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Přidat do seznamu Nikdy nepřidávat",
 	"settings.outsideLists.showDot": "seriál ·",
 	"settings.outsideLists.takeOff": "Sundat {name}",
-	"settings.outsideLists.empty": "Na tomto seznamu zatím nic není"
+	"settings.outsideLists.empty": "Na tomto seznamu zatím nic není",
+	"settings.outsideLists.traktSignInTitle": "Přihlášení k Traktu",
+	"settings.outsideLists.traktSignInInfo": "Přihlaste se, aby šlo číst vaše soukromé seznamy a seznam ke zhlédnutí na Traktu a přidávat to, co jste viděli na Traktu, do historie sledování.",
+	"settings.outsideLists.traktSignedInAs": "Přihlášeno jako {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Nepřihlášeno. Čtou se jen veřejné seznamy.",
+	"settings.outsideLists.traktSignIn": "Přihlásit se přes Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Na libovolném zařízení otevřete <a>{url}</a> a zadejte <code>{code}</code>. Tato stránka počká, dokud to neschválíte.",
+	"settings.outsideLists.traktDenied": "Přihlášení k Traktu bylo odmítnuto.",
+	"settings.outsideLists.traktExpired": "Platnost kódu vypršela. Začněte znovu.",
+	"settings.outsideLists.traktSignOut": "Odhlásit se z Traktu",
+	"settings.outsideLists.traktSignedIn": "Přihlášeno k Traktu",
+	"settings.outsideLists.traktSignedOut": "Odhlášeno z Traktu",
+	"settings.outsideLists.traktSecret": "Client secret (jen starší aplikace Trakt; nové ho nemají)"
 }

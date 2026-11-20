@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Tendencēs seriāli straumēšanā",
 	"server.suggest.trending-on-streaming": "Tendences straumēšanā",
 	"server.discover.popular": "Populārs",
-	"server.metadata.creator": "Veidotājs"
+	"server.metadata.creator": "Veidotājs",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Pirms ieslēdz Trakt sarakstu, sadaļā Iestatījumi > Ārējie saraksti pievieno savu Trakt atslēgu; privātam sarakstam tur vajag arī Pieteikties ar Trakt.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "sūti {\"secret\": \"<Trakt app client secret>\"}, vai {\"secret\": \"\"}, lai to noņemtu"
 }

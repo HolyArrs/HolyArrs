@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Trendy seriály ve streamování",
 	"server.suggest.trending-on-streaming": "Trendy ve streamování",
 	"server.discover.popular": "Oblíbené",
-	"server.metadata.creator": "Tvůrce"
+	"server.metadata.creator": "Tvůrce",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Před zapnutím seznamu Trakt přidejte svůj klíč Trakt v Nastavení > Externí seznamy; soukromý seznam tam navíc potřebuje Přihlásit se přes Trakt.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "pošlete {\"secret\": \"<Trakt app client secret>\"}, nebo {\"secret\": \"\"} pro jeho odebrání"
 }

@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Adaugă în lista „Nu adăuga niciodată”",
 	"settings.outsideLists.showDot": "serial ·",
 	"settings.outsideLists.takeOff": "Scoate {name}",
-	"settings.outsideLists.empty": "Încă nu e nimic pe această listă"
+	"settings.outsideLists.empty": "Încă nu e nimic pe această listă",
+	"settings.outsideLists.traktSignInTitle": "Autentificare Trakt",
+	"settings.outsideLists.traktSignInInfo": "Autentifică-te ca să fie citite listele tale private și watchlist-ul din Trakt și ca ce ai văzut pe Trakt să fie adăugat în istoricul vizionărilor.",
+	"settings.outsideLists.traktSignedInAs": "Autentificat ca {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Neautentificat. Se citesc doar listele publice.",
+	"settings.outsideLists.traktSignIn": "Autentificare cu Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Pe orice dispozitiv, deschide <a>{url}</a> și introdu <code>{code}</code>. Pagina aceasta așteaptă până aprobi.",
+	"settings.outsideLists.traktDenied": "Autentificarea Trakt a fost refuzată.",
+	"settings.outsideLists.traktExpired": "Codul a expirat. Începe din nou.",
+	"settings.outsideLists.traktSignOut": "Deconectare de la Trakt",
+	"settings.outsideLists.traktSignedIn": "Autentificat în Trakt",
+	"settings.outsideLists.traktSignedOut": "Deconectat de la Trakt",
+	"settings.outsideLists.traktSecret": "Client secret (doar aplicațiile Trakt mai vechi; cele noi nu au)"
 }

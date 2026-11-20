@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Serial yang sedang tren di streaming",
 	"server.suggest.trending-on-streaming": "Tren di streaming",
 	"server.discover.popular": "Populer",
-	"server.metadata.creator": "Kreator"
+	"server.metadata.creator": "Kreator",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Tambahkan kunci Trakt-mu di Pengaturan > Daftar luar sebelum menyalakan daftar Trakt; daftar pribadi juga perlu Masuk dengan Trakt di sana.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "kirim {\"secret\": \"<Trakt app client secret>\"}, atau {\"secret\": \"\"} untuk menghapusnya"
 }

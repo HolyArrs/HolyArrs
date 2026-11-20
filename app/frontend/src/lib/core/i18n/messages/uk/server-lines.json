@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Серіали в тренді на стрімінгу",
 	"server.suggest.trending-on-streaming": "У тренді на стрімінгу",
 	"server.discover.popular": "Популярне",
-	"server.metadata.creator": "Автор"
+	"server.metadata.creator": "Автор",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Додай свій ключ Trakt у Налаштування > Зовнішні списки, перш ніж вмикати список Trakt; для приватного списку там також потрібно «Увійти через Trakt».",
+	"server.requests.send-secret-trakt-app-client-secret-line": "надішли {\"secret\": \"<Trakt app client secret>\"} або {\"secret\": \"\"}, щоб прибрати його"
 }

@@ -461,7 +461,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	go lib.Artwork.KeepTMDBFresh(ctx)
 	lib.Shows = showMD
 	lib.EpisodeGroups = hosted.TMDB()
-	lib.OMDb = omdbSource(hosted)
+	lib.OMDb, lib.TraktRatings = omdbSource(hosted), traktRatings(vault)
 	lib.AnimeNames = func(ctx context.Context, kind, tmdbID, name string) []string {
 		by := "tmdb_tv"
 		if kind == "movie" {
@@ -507,9 +507,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	} else if n, err := lib.RecoverRenames(ctx, domain.System); err != nil || n > 0 {
 		log.Printf("renames cut off by a stop: %d finished, error %v", n, err)
 	}
-	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBRoute: hosted.ListRoute,
-		TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MDBListBase: os.Getenv(metadata.EnvMDBListURL), MDBListSite: os.Getenv("HOLYARRS_MDBLIST_SITE_URL"),
-		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }, MDBListKey: hosted.KeyReader(metadata.KeyMDBList)}
+	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBRoute: hosted.ListRoute, TraktAuth: traktAuth(vault), TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"),
+		MDBListBase: os.Getenv(metadata.EnvMDBListURL), MDBListSite: os.Getenv("HOLYARRS_MDBLIST_SITE_URL"), MDBListKey: hosted.KeyReader(metadata.KeyMDBList)} // TraktAuth gives the Trakt key
 	ol.Register(q)
 	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
 	he := &health.Engine{Store: s, Version: version, UnreadUserLists: func(ctx context.Context) map[string]string { return accounts.UnreadUserLists(ctx, s.Read()) }, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
@@ -599,6 +598,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}})
 	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
 	optional(jobs.Loop{Name: "omdb_scores", Label: "IMDb, Rotten Tomatoes and Metacritic scores", Every: library.OMDbEvery, Run: lib.OMDbPass})
+	optional(jobs.Loop{Name: "trakt_ratings", Label: "Trakt ratings", Every: library.TraktEvery, Run: lib.TraktPass})
 	sso, err := accounts.SSOFromEnv(c.URLBase)
 	if err != nil {
 		return err
@@ -637,7 +637,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) }}
 	sender.Watch(ctx)
-	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode, Asked: requests.AskedForLabels(s)}
+	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode, Asked: requests.AskedForLabels(s), Trakt: ol.TraktAuth}
 	reg.AlsoWait(func() { media.Stop(); media.Wait() })
 	au.SetMediaLinks(accounts.MediaLinks{Servers: media.LinkServers, Accounts: media.ServerAccounts, Linked: media.ReadWatchHistorySoon})
 	reg.AlsoWait(he.Wait)

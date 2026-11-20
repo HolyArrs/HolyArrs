@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Populiarūs serialai srautinėse platformose",
 	"server.suggest.trending-on-streaming": "Populiaru srautinėse platformose",
 	"server.discover.popular": "Populiaru",
-	"server.metadata.creator": "Kūrėjas"
+	"server.metadata.creator": "Kūrėjas",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Prieš įjungdami Trakt sąrašą, skiltyje Nustatymai > Išoriniai sąrašai pridėkite savo Trakt raktą; privačiam sąrašui ten dar reikia Prisijungti su Trakt.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "siųskite {\"secret\": \"<Trakt app client secret>\"}, arba {\"secret\": \"\"}, kad jį pašalintumėte"
 }

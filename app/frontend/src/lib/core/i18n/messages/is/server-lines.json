@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Vinsælir þættir á streymi",
 	"server.suggest.trending-on-streaming": "Vinsælt á streymi",
 	"server.discover.popular": "Vinsælt",
-	"server.metadata.creator": "Höfundur"
+	"server.metadata.creator": "Höfundur",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Bættu við Trakt-lyklinum þínum undir Stillingar > Ytri listar áður en þú kveikir á Trakt-lista; einkalisti þarf líka Skrá inn með Trakt þar.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "sendu {\"secret\": \"<Trakt app client secret>\"}, eða {\"secret\": \"\"} til að fjarlægja hann"
 }

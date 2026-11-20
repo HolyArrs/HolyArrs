@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Tambah ke Senarai jangan tambah",
 	"settings.outsideLists.showDot": "siri ·",
 	"settings.outsideLists.takeOff": "Keluarkan {name}",
-	"settings.outsideLists.empty": "Belum ada apa-apa dalam senarai ini"
+	"settings.outsideLists.empty": "Belum ada apa-apa dalam senarai ini",
+	"settings.outsideLists.traktSignInTitle": "Log masuk Trakt",
+	"settings.outsideLists.traktSignInInfo": "Log masuk untuk membaca senarai Trakt peribadi dan senarai tontonan anda, serta menambah apa yang anda tonton di Trakt ke sejarah tontonan.",
+	"settings.outsideLists.traktSignedInAs": "Log masuk sebagai {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Belum log masuk. Hanya senarai awam dibaca.",
+	"settings.outsideLists.traktSignIn": "Log masuk dengan Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Pada mana-mana peranti, buka <a>{url}</a> dan masukkan <code>{code}</code>. Halaman ini menunggu sehingga anda meluluskan.",
+	"settings.outsideLists.traktDenied": "Log masuk Trakt ditolak.",
+	"settings.outsideLists.traktExpired": "Kod sudah tamat tempoh. Mulakan semula.",
+	"settings.outsideLists.traktSignOut": "Log keluar daripada Trakt",
+	"settings.outsideLists.traktSignedIn": "Sudah log masuk ke Trakt",
+	"settings.outsideLists.traktSignedOut": "Sudah log keluar daripada Trakt",
+	"settings.outsideLists.traktSecret": "Client secret (hanya apl Trakt lama; apl baharu tiada)"
 }

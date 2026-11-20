@@ -40,6 +40,7 @@ describe('rowCell / cell', () => {
 		const omdb = { ...m, score: 7.4, votes: 900, imdb_rating: 8.1, imdb_votes: 412345, rotten_tomatoes: 91, metacritic: 77 } as TitleView;
 		expect(cellTitle(omdb, col('score'), '')).toBe('TMDB 7.4 · IMDb 8.1 · Rotten Tomatoes critics 91% · Metacritic 77');
 		expect(cellTitle({ ...m, metacritic: 64 } as TitleView, col('score'), '')).toBe('Metacritic 64');
+		expect(cellTitle({ ...m, score: 7.4, votes: 900, imdb_rating: 8.1, imdb_votes: 412345, trakt_rating: 8.3347, trakt_votes: 52731 } as TitleView, col('score'), '')).toBe('TMDB 7.4 · IMDb 8.1 · Trakt 83%');
 		expect(cellTitle({ ...m, score: 7.4, votes: 900 } as TitleView, col('score'), '')).toBeUndefined();
 		expect(cellTitle(omdb, col('year'), '')).toBeUndefined();
 		expect(cellTitle({ ...m, folder_path: '/m/A' } as TitleView, col('path'), '')).toBe('/m/A');

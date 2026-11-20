@@ -60,6 +60,9 @@
   "RottenTomatoes": null,
   "Metacritic": null,
   "OMDbCheckedAt": null,
+  "TraktRating": null,
+  "TraktVotes": 0,
+  "TraktCheckedAt": null,
   "Directors": null,
   "Studio": "",
   "Tags": null

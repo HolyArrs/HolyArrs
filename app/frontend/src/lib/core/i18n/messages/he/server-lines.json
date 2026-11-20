@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "סדרות בטרנד בסטרימינג",
 	"server.suggest.trending-on-streaming": "בטרנד בסטרימינג",
 	"server.discover.popular": "פופולרי",
-	"server.metadata.creator": "יוצר"
+	"server.metadata.creator": "יוצר",
+	"server.migrate.add-your-trakt-key-under-settings-2": "הוסף את מפתח ה־Trakt שלך תחת הגדרות > רשימות חיצוניות לפני שתפעיל רשימת Trakt; רשימה פרטית צריכה שם גם התחברות עם Trakt.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "שלח {\"secret\": \"<Trakt app client secret>\"}, או {\"secret\": \"\"} כדי להסיר אותו"
 }

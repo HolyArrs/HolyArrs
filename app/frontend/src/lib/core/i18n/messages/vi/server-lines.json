@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Phim bộ đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.suggest.trending-on-streaming": "Đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.discover.popular": "Phổ biến",
-	"server.metadata.creator": "Người sáng tạo"
+	"server.metadata.creator": "Người sáng tạo",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Hãy thêm khóa Trakt của bạn trong Cài đặt > Danh sách ngoài trước khi bật một danh sách Trakt; danh sách riêng tư cũng cần Đăng nhập bằng Trakt ở đó.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "gửi {\"secret\": \"<Trakt app client secret>\"}, hoặc {\"secret\": \"\"} để xóa nó"
 }

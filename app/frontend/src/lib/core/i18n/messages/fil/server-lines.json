@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Trending na show sa streaming",
 	"server.suggest.trending-on-streaming": "Trending sa streaming",
 	"server.discover.popular": "Sikat",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Idagdag ang Trakt key mo sa Settings > Mga Panlabas na listahan bago i-on ang listahan ng Trakt; kailangan din ng pribadong listahan ang Mag-sign in gamit ang Trakt doon.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "ipadala ang {\"secret\": \"<Trakt app client secret>\"}, o {\"secret\": \"\"} para alisin ito"
 }

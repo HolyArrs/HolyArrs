@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "配信でトレンドの番組",
 	"server.suggest.trending-on-streaming": "配信でトレンド",
 	"server.discover.popular": "人気",
-	"server.metadata.creator": "原作者"
+	"server.metadata.creator": "原作者",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Trakt のリストをオンにする前に、設定 > 外部リスト で Trakt のキーを追加してください。非公開リストには、そこで「Trakt でサインイン」も必要です。",
+	"server.requests.send-secret-trakt-app-client-secret-line": "{\"secret\": \"<Trakt app client secret>\"} を送信してください。削除するには {\"secret\": \"\"} を送信してください"
 }

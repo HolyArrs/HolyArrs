@@ -152,9 +152,10 @@ var tableOwner = map[string]string{
 	"subtitle_wishes":      "subtitles",
 
 	// mediaservers
-	"media_servers": "mediaservers",
-	"watch_state":   "mediaservers",
-	"media_labels":  "mediaservers",
+	"media_servers":     "mediaservers",
+	"watch_state":       "mediaservers",
+	"trakt_watch_state": "mediaservers",
+	"media_labels":      "mediaservers",
 
 	// alerts
 	"alerts": "alerts",

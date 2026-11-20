@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Afegeix a la llista de no afegir mai",
 	"settings.outsideLists.showDot": "sèrie ·",
 	"settings.outsideLists.takeOff": "Treu {name}",
-	"settings.outsideLists.empty": "Encara no hi ha res en aquesta llista"
+	"settings.outsideLists.empty": "Encara no hi ha res en aquesta llista",
+	"settings.outsideLists.traktSignInTitle": "Inici de sessió a Trakt",
+	"settings.outsideLists.traktSignInInfo": "Inicia la sessió per llegir les teves llistes privades i la llista de seguiment de Trakt, i per afegir el que has vist a Trakt a l'historial de visualització.",
+	"settings.outsideLists.traktSignedInAs": "Sessió iniciada com a {name}.",
+	"settings.outsideLists.traktNotSignedIn": "No has iniciat la sessió. Només es llegeixen les llistes públiques.",
+	"settings.outsideLists.traktSignIn": "Inicia la sessió amb Trakt",
+	"settings.outsideLists.traktDeviceSteps": "En qualsevol dispositiu, obre <a>{url}</a> i introdueix <code>{code}</code>. Aquesta pàgina espera fins que ho aprovis.",
+	"settings.outsideLists.traktDenied": "S'ha rebutjat l'inici de sessió a Trakt.",
+	"settings.outsideLists.traktExpired": "El codi ha caducat. Torna a començar.",
+	"settings.outsideLists.traktSignOut": "Tanca la sessió de Trakt",
+	"settings.outsideLists.traktSignedIn": "Sessió iniciada a Trakt",
+	"settings.outsideLists.traktSignedOut": "Sessió de Trakt tancada",
+	"settings.outsideLists.traktSecret": "Secret de client (només apps de Trakt antigues; les noves no en tenen)"
 }

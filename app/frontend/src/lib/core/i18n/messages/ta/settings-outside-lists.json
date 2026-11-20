@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "ஒருபோதும் சேர்க்காத பட்டியலில் சேர்",
 	"settings.outsideLists.showDot": "தொடர் ·",
 	"settings.outsideLists.takeOff": "{name} ஐ நீக்கு",
-	"settings.outsideLists.empty": "இந்தப் பட்டியலில் இன்னும் எதுவும் இல்லை"
+	"settings.outsideLists.empty": "இந்தப் பட்டியலில் இன்னும் எதுவும் இல்லை",
+	"settings.outsideLists.traktSignInTitle": "Trakt உள்நுழைவு",
+	"settings.outsideLists.traktSignInInfo": "உங்கள் தனிப்பட்ட Trakt பட்டியல்களையும் பார்க்கவேண்டிய பட்டியலையும் படிக்கவும், Trakt இல் பார்த்தவற்றைப் பார்வை வரலாற்றில் சேர்க்கவும் உள்நுழையுங்கள்.",
+	"settings.outsideLists.traktSignedInAs": "{name} ஆக உள்நுழைந்துள்ளீர்கள்.",
+	"settings.outsideLists.traktNotSignedIn": "உள்நுழையவில்லை. பொதுப் பட்டியல்கள் மட்டுமே படிக்கப்படும்.",
+	"settings.outsideLists.traktSignIn": "Trakt மூலம் உள்நுழை",
+	"settings.outsideLists.traktDeviceSteps": "எந்தச் சாதனத்திலும் <a>{url}</a> ஐத் திறந்து <code>{code}</code> ஐ உள்ளிடுங்கள். நீங்கள் அனுமதிக்கும் வரை இந்தப் பக்கம் காத்திருக்கும்.",
+	"settings.outsideLists.traktDenied": "Trakt உள்நுழைவு மறுக்கப்பட்டது.",
+	"settings.outsideLists.traktExpired": "குறியீடு காலாவதியானது. மீண்டும் தொடங்குங்கள்.",
+	"settings.outsideLists.traktSignOut": "Trakt இலிருந்து வெளியேறு",
+	"settings.outsideLists.traktSignedIn": "Trakt இல் உள்நுழைந்தீர்கள்",
+	"settings.outsideLists.traktSignedOut": "Trakt இலிருந்து வெளியேறினீர்கள்",
+	"settings.outsideLists.traktSecret": "Client secret (பழைய Trakt ஆப்களுக்கு மட்டும்; புதியவற்றில் இல்லை)"
 }

@@ -64,6 +64,9 @@ type Service struct {
 	// OMDb reads IMDb, Rotten Tomatoes and Metacritic scores with the
 	// owner's OMDb key (OMDbPass); nil reads none.
 	OMDb *metadata.OMDb
+	// TraktRatings reads Trakt ratings with the Trakt client id
+	// (TraktPass); nil reads none.
+	TraktRatings *metadata.TraktRatings
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
 	// DownloadRunning says whether a download is still in its Downloader's
@@ -77,7 +80,8 @@ type Service struct {
 	checkedOnce  bool
 	checkedPaths string
 
-	omdb omdbState
+	omdb  omdbState
+	trakt traktState
 }
 
 // animeAliases are the anime's other titles, or an empty list.

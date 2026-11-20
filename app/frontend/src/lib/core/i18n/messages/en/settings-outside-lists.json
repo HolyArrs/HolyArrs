@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Add to the Never-add list",
 	"settings.outsideLists.showDot": "show ·",
 	"settings.outsideLists.takeOff": "Take off {name}",
-	"settings.outsideLists.empty": "Nothing on this list yet"
+	"settings.outsideLists.empty": "Nothing on this list yet",
+	"settings.outsideLists.traktSignInTitle": "Trakt sign-in",
+	"settings.outsideLists.traktSignInInfo": "Sign in to read your private Trakt lists and watchlist, and to add what you watched on Trakt to watch history.",
+	"settings.outsideLists.traktSignedInAs": "Signed in as {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Not signed in. Only public lists are read.",
+	"settings.outsideLists.traktSignIn": "Sign in with Trakt",
+	"settings.outsideLists.traktDeviceSteps": "On any device, open <a>{url}</a> and enter <code>{code}</code>. This page waits until you approve.",
+	"settings.outsideLists.traktDenied": "The Trakt sign-in was turned down.",
+	"settings.outsideLists.traktExpired": "The code ran out. Start again.",
+	"settings.outsideLists.traktSignOut": "Sign out of Trakt",
+	"settings.outsideLists.traktSignedIn": "Signed in to Trakt",
+	"settings.outsideLists.traktSignedOut": "Signed out of Trakt",
+	"settings.outsideLists.traktSecret": "Client secret (older Trakt apps only; new apps have none)"
 }

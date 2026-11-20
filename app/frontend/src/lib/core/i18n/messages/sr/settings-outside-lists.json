@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Додај на листу никад-не-додај",
 	"settings.outsideLists.showDot": "серија ·",
 	"settings.outsideLists.takeOff": "Скини {name}",
-	"settings.outsideLists.empty": "На овој листи још нема ничега"
+	"settings.outsideLists.empty": "На овој листи још нема ничега",
+	"settings.outsideLists.traktSignInTitle": "Пријава на Trakt",
+	"settings.outsideLists.traktSignInInfo": "Пријави се да би се читале твоје приватне Trakt листе и листа за гледање и да би се оно што си гледао на Trakt-у додало у историју гледања.",
+	"settings.outsideLists.traktSignedInAs": "Пријављен као {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Ниси пријављен. Читају се само јавне листе.",
+	"settings.outsideLists.traktSignIn": "Пријава преко Trakt-а",
+	"settings.outsideLists.traktDeviceSteps": "На било ком уређају отвори <a>{url}</a> и унеси <code>{code}</code>. Ова страница чека док не одобриш.",
+	"settings.outsideLists.traktDenied": "Пријава на Trakt је одбијена.",
+	"settings.outsideLists.traktExpired": "Код је истекао. Почни поново.",
+	"settings.outsideLists.traktSignOut": "Одјави се са Trakt-а",
+	"settings.outsideLists.traktSignedIn": "Пријављен на Trakt",
+	"settings.outsideLists.traktSignedOut": "Одјављен са Trakt-а",
+	"settings.outsideLists.traktSecret": "Client secret (само старије Trakt апликације; нове га немају)"
 }

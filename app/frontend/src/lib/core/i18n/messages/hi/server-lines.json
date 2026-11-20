@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "स्ट्रीमिंग पर ट्रेंडिंग टीवी शो",
 	"server.suggest.trending-on-streaming": "स्ट्रीमिंग पर ट्रेंडिंग",
 	"server.discover.popular": "लोकप्रिय",
-	"server.metadata.creator": "क्रिएटर"
+	"server.metadata.creator": "क्रिएटर",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Trakt सूची चालू करने से पहले अपनी Trakt कुंजी सेटिंग > बाहरी सूचियां में जोड़ें; निजी सूची के लिए वहां Trakt से साइन इन करें भी ज़रूरी है।",
+	"server.requests.send-secret-trakt-app-client-secret-line": "भेजें {\"secret\": \"<Trakt app client secret>\"}, या इसे हटाने के लिए {\"secret\": \"\"}"
 }

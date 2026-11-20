@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Lisa mitte kunagi lisatavate nimekirja",
 	"settings.outsideLists.showDot": "sari ·",
 	"settings.outsideLists.takeOff": "Eemalda nimekirjast: {name}",
-	"settings.outsideLists.empty": "Selles loendis pole veel midagi"
+	"settings.outsideLists.empty": "Selles loendis pole veel midagi",
+	"settings.outsideLists.traktSignInTitle": "Trakti sisselogimine",
+	"settings.outsideLists.traktSignInInfo": "Logi sisse, et lugeda oma privaatseid Trakti nimekirju ja vaatamisnimekirja ning lisada Traktis vaadatu vaatamisajalukku.",
+	"settings.outsideLists.traktSignedInAs": "Sisse logitud kui {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Pole sisse logitud. Loetakse ainult avalikke nimekirju.",
+	"settings.outsideLists.traktSignIn": "Logi sisse Traktiga",
+	"settings.outsideLists.traktDeviceSteps": "Ava mis tahes seadmes <a>{url}</a> ja sisesta <code>{code}</code>. See leht ootab, kuni sa kinnitad.",
+	"settings.outsideLists.traktDenied": "Trakti sisselogimine lükati tagasi.",
+	"settings.outsideLists.traktExpired": "Kood aegus. Alusta uuesti.",
+	"settings.outsideLists.traktSignOut": "Logi Traktist välja",
+	"settings.outsideLists.traktSignedIn": "Traktisse sisse logitud",
+	"settings.outsideLists.traktSignedOut": "Traktist välja logitud",
+	"settings.outsideLists.traktSecret": "Client secret (ainult vanemad Trakti rakendused; uutel seda pole)"
 }

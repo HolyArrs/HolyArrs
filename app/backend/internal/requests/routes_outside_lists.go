@@ -22,6 +22,8 @@ type OutsideListHandlers struct {
 	Store   *database.Store
 	Queue   *jobs.Queue
 	Secrets *secrets.Vault
+	// TraktAuth keeps the Trakt sign-in (TraktSignInRoutes).
+	TraktAuth *metadata.TraktAuth
 	// Actor is the signed-in person (the owner without sign-in).
 	Actor func(r *http.Request) domain.Actor
 	// LibraryError answers the Library's refusals.

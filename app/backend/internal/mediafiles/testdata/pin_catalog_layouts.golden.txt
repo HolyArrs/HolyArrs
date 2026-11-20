@@ -66,6 +66,9 @@ IMDbVotes int `db:"imdb_votes"`
 RottenTomatoes *int `db:"rotten_tomatoes"`
 Metacritic *int `db:"metacritic"`
 OMDbCheckedAt *time.Time `db:"omdb_checked_at"`
+TraktRating *float64 `db:"trakt_rating"`
+TraktVotes int `db:"trakt_votes"`
+TraktCheckedAt *time.Time `db:"trakt_checked_at"`
 Directors []string `db:"directors,json"`
 Studio string `db:"studio"`
 Tags []string `db:"tags,json"`

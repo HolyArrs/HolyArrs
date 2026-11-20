@@ -91,3 +91,16 @@ func (a *handlers) metadataModeHandlers() *metadata.ModeHandlers {
 	}
 	return &metadata.ModeHandlers{Modes: m, Store: a.s.Store, Vault: a.s.Secrets, EnvTMDB: a.s.MetadataEnvKey, Test: a.s.MetadataTest}
 }
+
+// traktAuth keeps the Trakt sign-in, shared by Outside lists and the watch
+// history read.
+func traktAuth(vault *secrets.Vault) *metadata.TraktAuth {
+	return &metadata.TraktAuth{Secrets: vault, Base: os.Getenv("HOLYARRS_TRAKT_URL")}
+}
+
+// traktRatings reads Library titles' Trakt ratings with the Trakt client id.
+func traktRatings(vault *secrets.Vault) *metadata.TraktRatings {
+	return &metadata.TraktRatings{Base: os.Getenv("HOLYARRS_TRAKT_URL"), Key: func(ctx context.Context) (string, error) {
+		return vault.Setting(ctx, metadata.TraktKeyGroup, metadata.TraktKeyName)
+	}}
+}

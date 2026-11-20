@@ -99,6 +99,12 @@ type Title struct {
 	RottenTomatoes *int       `db:"rotten_tomatoes"`
 	Metacritic     *int       `db:"metacritic"`
 	OMDbCheckedAt  *time.Time `db:"omdb_checked_at"`
+	// TraktRating is Trakt's rating out of 10 with its vote count, read
+	// with the Trakt client id; nil when not known. TraktCheckedAt is when
+	// Trakt was last asked.
+	TraktRating    *float64   `db:"trakt_rating"`
+	TraktVotes     int        `db:"trakt_votes"`
+	TraktCheckedAt *time.Time `db:"trakt_checked_at"`
 	// Directors are a movie's directors alone (People mixes them in after the cast).
 	Directors []string `db:"directors,json"`
 	// Studio is a movie's first production company.

@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "הוספה לרשימת אל־תוסיף",
 	"settings.outsideLists.showDot": "סדרה ·",
 	"settings.outsideLists.takeOff": "הסרת {name}",
-	"settings.outsideLists.empty": "אין עדיין כלום ברשימה הזו"
+	"settings.outsideLists.empty": "אין עדיין כלום ברשימה הזו",
+	"settings.outsideLists.traktSignInTitle": "התחברות ל־Trakt",
+	"settings.outsideLists.traktSignInInfo": "התחבר כדי לקרוא את הרשימות הפרטיות ואת רשימת הצפייה שלך ב־Trakt, וכדי להוסיף להיסטוריית הצפייה את מה שצפית בו ב־Trakt.",
+	"settings.outsideLists.traktSignedInAs": "מחובר בתור {name}.",
+	"settings.outsideLists.traktNotSignedIn": "לא מחובר. נקראות רק רשימות ציבוריות.",
+	"settings.outsideLists.traktSignIn": "התחברות עם Trakt",
+	"settings.outsideLists.traktDeviceSteps": "בכל מכשיר, פתח את <a>{url}</a> והזן את <code>{code}</code>. הדף הזה ממתין עד שתאשר.",
+	"settings.outsideLists.traktDenied": "ההתחברות ל־Trakt נדחתה.",
+	"settings.outsideLists.traktExpired": "תוקף הקוד פג. התחל מחדש.",
+	"settings.outsideLists.traktSignOut": "התנתקות מ־Trakt",
+	"settings.outsideLists.traktSignedIn": "מחובר ל־Trakt",
+	"settings.outsideLists.traktSignedOut": "מנותק מ־Trakt",
+	"settings.outsideLists.traktSecret": "Client secret (רק לאפליקציות Trakt ישנות; לחדשות אין)"
 }

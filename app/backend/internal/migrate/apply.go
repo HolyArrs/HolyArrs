@@ -547,7 +547,7 @@ func next(rep *Report) []string {
 		out = append(out, "Outside lists come over paused; turn each on under Settings > Outside lists after checking its folder and Pick rules.")
 	}
 	if trakt {
-		out = append(out, "Add your Trakt key under Settings > Outside lists before you turn a Trakt list on; the list must be public.")
+		out = append(out, "Add your Trakt key under Settings > Outside lists before you turn a Trakt list on; a private list also needs Sign in with Trakt there.")
 	}
 	if people {
 		out = append(out, "People came over turned off, as members (admin or owner only where you confirmed it): invite them from Settings > Users and roles.")

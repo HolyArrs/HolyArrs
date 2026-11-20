@@ -199,7 +199,9 @@ func (k *Trakt) get(ctx context.Context, path string, into any) (http.Header, er
 	}
 	req.Header.Set("trakt-api-version", "2")
 	req.Header.Set("trakt-api-key", k.ClientID)
-	req.Header.Set("Authorization", "Bearer "+k.Token)
+	if k.Token != "" { // ratings need the client id alone
+		req.Header.Set("Authorization", "Bearer "+k.Token)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	cl := k.HTTP
 	if cl == nil {
@@ -215,7 +217,7 @@ func (k *Trakt) get(ctx context.Context, path string, into any) (http.Header, er
 	case resp.StatusCode == 401 || resp.StatusCode == 403 || resp.StatusCode == 426:
 		outcome = outbound.TerminalFailure
 		return nil, ErrTraktLocked
-	case resp.StatusCode == 404:
+	case resp.StatusCode == 404 || resp.StatusCode == 204: // 204: Trakt has no such title
 		outcome = outbound.Success
 		return nil, ErrNotFound
 	case resp.StatusCode == 429:

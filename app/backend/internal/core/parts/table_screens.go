@@ -107,6 +107,7 @@ var loopOwners = map[string]Owner{
 	"plex_labels":      Media,
 	"gates":            movies,
 	"omdb_scores":      Media,
+	"trakt_ratings":    Media,
 	"wishlist":         wishlist,
 	"music_warm":       music,
 	"trailer_pass":     Media,

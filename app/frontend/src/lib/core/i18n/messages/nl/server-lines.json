@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Trending series op streaming",
 	"server.suggest.trending-on-streaming": "Trending op streaming",
 	"server.discover.popular": "Populair",
-	"server.metadata.creator": "Maker"
+	"server.metadata.creator": "Maker",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Voeg je Trakt-sleutel toe onder Instellingen > Externe lijsten voordat je een Trakt-lijst aanzet; een privélijst heeft daar ook Aanmelden met Trakt nodig.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "stuur {\"secret\": \"<Trakt app client secret>\"}, of {\"secret\": \"\"} om hem te verwijderen"
 }

@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Asla ekleme listesine ekle",
 	"settings.outsideLists.showDot": "dizi ·",
 	"settings.outsideLists.takeOff": "{name} listeden çıkar",
-	"settings.outsideLists.empty": "Bu listede henüz bir şey yok"
+	"settings.outsideLists.empty": "Bu listede henüz bir şey yok",
+	"settings.outsideLists.traktSignInTitle": "Trakt girişi",
+	"settings.outsideLists.traktSignInInfo": "Özel Trakt listelerini ve izleme listeni okumak, Trakt'ta izlediklerini izleme geçmişine eklemek için giriş yap.",
+	"settings.outsideLists.traktSignedInAs": "{name} olarak giriş yapıldı.",
+	"settings.outsideLists.traktNotSignedIn": "Giriş yapılmadı. Yalnızca herkese açık listeler okunur.",
+	"settings.outsideLists.traktSignIn": "Trakt ile giriş yap",
+	"settings.outsideLists.traktDeviceSteps": "Herhangi bir cihazda <a>{url}</a> adresini aç ve <code>{code}</code> kodunu gir. Bu sayfa sen onaylayana kadar bekler.",
+	"settings.outsideLists.traktDenied": "Trakt girişi reddedildi.",
+	"settings.outsideLists.traktExpired": "Kodun süresi doldu. Baştan başla.",
+	"settings.outsideLists.traktSignOut": "Trakt'tan çıkış yap",
+	"settings.outsideLists.traktSignedIn": "Trakt'a giriş yapıldı",
+	"settings.outsideLists.traktSignedOut": "Trakt'tan çıkış yapıldı",
+	"settings.outsideLists.traktSecret": "Client secret (yalnızca eski Trakt uygulamaları; yenilerinde yok)"
 }

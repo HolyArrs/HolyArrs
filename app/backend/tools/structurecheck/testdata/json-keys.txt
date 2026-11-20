@@ -66,6 +66,7 @@ absoluteNumber
 absolute_digits
 absolute_from
 access
+access_token
 account
 accounts
 acknowledge_protection
@@ -447,6 +448,7 @@ detail
 details
 details_source
 device
+device_code
 device_name
 died
 digests
@@ -585,6 +587,7 @@ exec_error
 exists
 expected
 expires_at
+expires_in
 explicit
 explicit_lyrics
 ext_name
@@ -819,6 +822,7 @@ inspection_status
 installed
 installed_version
 instanceName
+interval
 ip
 isAvailable
 isUpgrade
@@ -1303,6 +1307,7 @@ plain
 plan
 plan_hash
 plans
+play_count
 playabilityStatus
 playerStoryboardSpecRenderer
 plays
@@ -1418,6 +1423,7 @@ redirect_uris
 redirect_url
 redirect_urls
 ref
+refresh_token
 refreshed_at
 refs
 refuse_early_releases
@@ -1627,6 +1633,7 @@ sign_in_id
 sign_in_name
 signature
 signatureCipher
+signed_in
 signin_library_art
 signing_secret
 sim
@@ -1864,6 +1871,8 @@ trait
 trait_id
 traits
 trakt
+trakt_rating
+trakt_votes
 translate_from
 translated
 translations
@@ -1950,6 +1959,7 @@ used_at
 used_by
 usenet_delay
 user
+user_code
 user_fingerprint
 user_id
 user_key
@@ -1964,6 +1974,7 @@ value
 various
 vbr
 verdict
+verification_url
 version
 version_audio_languages
 version_id
@@ -1982,6 +1993,7 @@ votes
 w
 wait_minutes_torrent
 wait_minutes_usenet
+waiting
 want
 wanted
 warmed

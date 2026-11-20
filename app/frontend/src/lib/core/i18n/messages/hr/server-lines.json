@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Serije u trendu na streamingu",
 	"server.suggest.trending-on-streaming": "U trendu na streamingu",
 	"server.discover.popular": "Popularno",
-	"server.metadata.creator": "Autor"
+	"server.metadata.creator": "Autor",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Dodaj svoj Trakt ključ u Postavke > Vanjski popisi prije nego uključiš Trakt popis; privatni popis tamo treba i Prijava putem Trakta.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "pošalji {\"secret\": \"<Trakt app client secret>\"}, ili {\"secret\": \"\"} da ga ukloniš"
 }

@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Актуални сериали в стрийминг",
 	"server.suggest.trending-on-streaming": "Актуално в стрийминг",
 	"server.discover.popular": "Популярни",
-	"server.metadata.creator": "Създател"
+	"server.metadata.creator": "Създател",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Добавете ключа си за Trakt в Настройки > Външни списъци, преди да включите списък от Trakt; за личен списък там е нужен и Вход с Trakt.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "изпратете {\"secret\": \"<Trakt app client secret>\"}, или {\"secret\": \"\"}, за да го премахнете"
 }

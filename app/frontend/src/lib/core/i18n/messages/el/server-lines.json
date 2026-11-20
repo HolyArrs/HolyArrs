@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Σειρές που κάνουν τάση στο streaming",
 	"server.suggest.trending-on-streaming": "Τάσεις στο streaming",
 	"server.discover.popular": "Δημοφιλή",
-	"server.metadata.creator": "Δημιουργός"
+	"server.metadata.creator": "Δημιουργός",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Προσθέστε το κλειδί Trakt σας στις Ρυθμίσεις > Εξωτερικές λίστες πριν ενεργοποιήσετε μια λίστα Trakt· μια ιδιωτική λίστα χρειάζεται επίσης Σύνδεση με Trakt εκεί.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "στείλτε {\"secret\": \"<Trakt app client secret>\"}, ή {\"secret\": \"\"} για να το αφαιρέσετε"
 }

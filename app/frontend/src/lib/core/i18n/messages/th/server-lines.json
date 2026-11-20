@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "ซีรีส์ที่กำลังมาแรงบนสตรีมมิง",
 	"server.suggest.trending-on-streaming": "กำลังมาแรงบนสตรีมมิง",
 	"server.discover.popular": "ยอดนิยม",
-	"server.metadata.creator": "ผู้สร้าง"
+	"server.metadata.creator": "ผู้สร้าง",
+	"server.migrate.add-your-trakt-key-under-settings-2": "เพิ่มคีย์ Trakt ของคุณในการตั้งค่า > รายการภายนอก ก่อนเปิดรายการ Trakt รายการส่วนตัวต้องใช้ เข้าสู่ระบบด้วย Trakt ที่นั่นด้วย",
+	"server.requests.send-secret-trakt-app-client-secret-line": "ส่ง {\"secret\": \"<Trakt app client secret>\"} หรือ {\"secret\": \"\"} เพื่อลบ"
 }

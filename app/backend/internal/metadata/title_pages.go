@@ -3,6 +3,7 @@ package metadata
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
 	"slices"
 	"strconv"
@@ -314,6 +315,10 @@ type KeptScores struct {
 	IMDbVotes      int
 	RottenTomatoes *int
 	Metacritic     *int
+	// TraktRating is the kept Trakt rating out of 10, read with the Trakt
+	// client id; nil when not known.
+	TraktRating *float64
+	TraktVotes  int
 }
 
 // withKept adds the kept scores for sources the answer has none for. OMDb
@@ -329,6 +334,10 @@ func withKept(v TitleExtras, k KeptScores) TitleExtras {
 	}
 	if k.Metacritic != nil && *k.Metacritic > 0 {
 		add = append(add, OutsideScore{Source: "metacritic", Value: float64(*k.Metacritic), Max: 100})
+	}
+	// Trakt's own pages show its rating as a percent, as MDBList's does.
+	if k.TraktRating != nil && *k.TraktRating > 0 && int64(k.TraktVotes) >= minOutsideVotes["trakt"] {
+		add = append(add, OutsideScore{Source: "trakt", Value: math.Round(*k.TraktRating * 10), Max: 100, Votes: int64(k.TraktVotes)})
 	}
 	if len(add) == 0 {
 		return v

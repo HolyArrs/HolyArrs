@@ -77,8 +77,17 @@ func (l *Linker) ReadWatchHistory(ctx context.Context) error {
 		return nil
 	}
 	ms, err := enabledServers(ctx, l.Store.Read())
-	if err != nil || len(ms) == 0 {
+	if err != nil {
 		return err
+	}
+	trakt := l.Trakt.Person(ctx)
+	if trakt == 0 {
+		if err := clearTraktWatchState(ctx, l.Store); err != nil {
+			return err
+		}
+	}
+	if len(ms) == 0 && trakt == 0 {
+		return nil
 	}
 	keys, err := mediafiles.TitlesBySourceID(ctx, l.Store.Read())
 	if err != nil {
@@ -104,6 +113,15 @@ func (l *Linker) ReadWatchHistory(ctx context.Context) error {
 			}
 			log.Printf("media servers: %s: watch history: %v", m.Name, err)
 			errs = append(errs, fmt.Errorf("%s: %w", m.Name, err))
+		}
+	}
+	if trakt != 0 {
+		if err := l.readTraktHistory(ctx, trakt, keys); err != nil {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			log.Printf("media servers: Trakt: watch history: %v", err)
+			errs = append(errs, fmt.Errorf("Trakt: %w", err))
 		}
 	}
 	return errors.Join(errs...)
@@ -144,8 +162,18 @@ func Watched(ctx context.Context, q watchReader) (WatchedSummary, error) {
 		return out, err
 	}
 	links := map[string]map[string]accounts.LinkedPerson{}
+	var names map[int64]string
 	for i := range out.People {
 		p := &out.People[i]
+		if p.ServerKind == "trakt" { // linked by the Trakt sign-in
+			if names == nil {
+				if names, err = accounts.UserNames(ctx, q); err != nil {
+					return out, err
+				}
+			}
+			p.UserName = names[*p.UserID]
+			continue
+		}
 		byID, ok := links[p.ServerKind]
 		if !ok {
 			if byID, err = accounts.LinkedPeople(ctx, q, p.ServerKind); err != nil {

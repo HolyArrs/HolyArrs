@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Tambahkan ke Daftar jangan-tambah",
 	"settings.outsideLists.showDot": "serial ·",
 	"settings.outsideLists.takeOff": "Keluarkan {name}",
-	"settings.outsideLists.empty": "Belum ada apa pun di daftar ini"
+	"settings.outsideLists.empty": "Belum ada apa pun di daftar ini",
+	"settings.outsideLists.traktSignInTitle": "Masuk ke Trakt",
+	"settings.outsideLists.traktSignInInfo": "Masuk untuk membaca daftar Trakt pribadi dan watchlist-mu, serta menambahkan yang kamu tonton di Trakt ke riwayat tontonan.",
+	"settings.outsideLists.traktSignedInAs": "Masuk sebagai {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Belum masuk. Hanya daftar publik yang dibaca.",
+	"settings.outsideLists.traktSignIn": "Masuk dengan Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Di perangkat apa pun, buka <a>{url}</a> dan masukkan <code>{code}</code>. Halaman ini menunggu sampai kamu menyetujui.",
+	"settings.outsideLists.traktDenied": "Masuk ke Trakt ditolak.",
+	"settings.outsideLists.traktExpired": "Kodenya kedaluwarsa. Mulai lagi.",
+	"settings.outsideLists.traktSignOut": "Keluar dari Trakt",
+	"settings.outsideLists.traktSignedIn": "Sudah masuk ke Trakt",
+	"settings.outsideLists.traktSignedOut": "Sudah keluar dari Trakt",
+	"settings.outsideLists.traktSecret": "Client secret (hanya aplikasi Trakt lama; aplikasi baru tidak punya)"
 }

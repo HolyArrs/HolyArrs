@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Serien im Trend beim Streaming",
 	"server.suggest.trending-on-streaming": "Im Trend beim Streaming",
 	"server.discover.popular": "Beliebt",
-	"server.metadata.creator": "Schöpfer"
+	"server.metadata.creator": "Schöpfer",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Trage deinen Trakt-Schlüssel unter Einstellungen > Externe Listen ein, bevor du eine Trakt-Liste einschaltest; eine private Liste braucht dort außerdem Mit Trakt anmelden.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "sende {\"secret\": \"<Trakt app client secret>\"}, oder {\"secret\": \"\"}, um ihn zu entfernen"
 }

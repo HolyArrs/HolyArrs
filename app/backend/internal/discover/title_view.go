@@ -116,6 +116,10 @@ type TitleView struct {
 	IMDbVotes      int     `json:"imdb_votes,omitempty"`
 	RottenTomatoes *int    `json:"rotten_tomatoes,omitempty"`
 	Metacritic     *int    `json:"metacritic,omitempty"`
+	// TraktRating is Trakt's rating out of 10 and TraktVotes its votes,
+	// read with the Trakt client id; left out when not known.
+	TraktRating float64 `json:"trakt_rating,omitempty"`
+	TraktVotes  int     `json:"trakt_votes,omitempty"`
 	// Tags route the title's grabs and searches to the Downloaders and Sources that share one.
 	Tags []string `json:"tags"`
 	// AddedAt is when the title joined the Library; SizeBytes is the sum of
@@ -176,6 +180,9 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 	}
 	if t.IMDbRating != nil {
 		v.IMDbRating, v.IMDbVotes = *t.IMDbRating, t.IMDbVotes
+	}
+	if t.TraktRating != nil {
+		v.TraktRating, v.TraktVotes = *t.TraktRating, t.TraktVotes
 	}
 	now := time.Now()
 	var err error

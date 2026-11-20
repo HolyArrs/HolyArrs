@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Seriály v trende na streamingu",
 	"server.suggest.trending-on-streaming": "V trende na streamingu",
 	"server.discover.popular": "Populárne",
-	"server.metadata.creator": "Tvorca"
+	"server.metadata.creator": "Tvorca",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Pred zapnutím zoznamu Trakt pridajte svoj kľúč Trakt v Nastavenia > Externé zoznamy; súkromný zoznam tam navyše potrebuje Prihlásiť sa cez Trakt.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "pošlite {\"secret\": \"<Trakt app client secret>\"}, alebo {\"secret\": \"\"} na jeho odstránenie"
 }

@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "কখনো-যোগ-না-করার তালিকায় যোগ করুন",
 	"settings.outsideLists.showDot": "শো ·",
 	"settings.outsideLists.takeOff": "{name} তুলে নিন",
-	"settings.outsideLists.empty": "এই তালিকায় এখনও কিছু নেই"
+	"settings.outsideLists.empty": "এই তালিকায় এখনও কিছু নেই",
+	"settings.outsideLists.traktSignInTitle": "Trakt সাইন ইন",
+	"settings.outsideLists.traktSignInInfo": "আপনার ব্যক্তিগত Trakt তালিকা ও ওয়াচলিস্ট পড়তে এবং Trakt-এ যা দেখেছেন তা দেখার ইতিহাসে যোগ করতে সাইন ইন করুন।",
+	"settings.outsideLists.traktSignedInAs": "{name} হিসেবে সাইন ইন করা আছে।",
+	"settings.outsideLists.traktNotSignedIn": "সাইন ইন করা নেই। শুধু পাবলিক তালিকা পড়া হয়।",
+	"settings.outsideLists.traktSignIn": "Trakt দিয়ে সাইন ইন করুন",
+	"settings.outsideLists.traktDeviceSteps": "যেকোনো ডিভাইসে <a>{url}</a> খুলুন এবং <code>{code}</code> লিখুন। আপনি অনুমোদন না করা পর্যন্ত এই পেজ অপেক্ষা করবে।",
+	"settings.outsideLists.traktDenied": "Trakt সাইন ইন প্রত্যাখ্যান করা হয়েছে।",
+	"settings.outsideLists.traktExpired": "কোডের মেয়াদ শেষ। আবার শুরু করুন।",
+	"settings.outsideLists.traktSignOut": "Trakt থেকে সাইন আউট করুন",
+	"settings.outsideLists.traktSignedIn": "Trakt-এ সাইন ইন হয়েছে",
+	"settings.outsideLists.traktSignedOut": "Trakt থেকে সাইন আউট হয়েছে",
+	"settings.outsideLists.traktSecret": "ক্লায়েন্ট সিক্রেট (শুধু পুরোনো Trakt অ্যাপের জন্য; নতুন অ্যাপে এটি নেই)"
 }

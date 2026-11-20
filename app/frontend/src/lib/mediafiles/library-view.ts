@@ -334,12 +334,14 @@ export function scoreText(t: TitleView): string {
 	return shownScore(t.score, t.votes)?.toFixed(1) ?? '';
 }
 
-/** A title's IMDb, Rotten Tomatoes and Metacritic scores (from OMDb), worded as the title page words them; [] when none is known. */
+/** A title's IMDb, Rotten Tomatoes and Metacritic scores (from OMDb) and its Trakt rating, worded as the title page words them; [] when none is known. */
 export function outsideScores(t: TitleView): OutsideScore[] {
 	const out: OutsideScore[] = [];
 	if (t.imdb_rating) out.push({ source: 'imdb', value: t.imdb_rating, max: 10, votes: t.imdb_votes ?? 0 });
 	if (t.rotten_tomatoes) out.push({ source: 'rt_critics', value: t.rotten_tomatoes, max: 100, votes: 0 });
 	if (t.metacritic) out.push({ source: 'metacritic', value: t.metacritic, max: 100, votes: 0 });
+	// Trakt shows its rating as a percent.
+	if (t.trakt_rating) out.push({ source: 'trakt', value: Math.round(t.trakt_rating * 10), max: 100, votes: t.trakt_votes ?? 0 });
 	return out;
 }
 

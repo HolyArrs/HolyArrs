@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "سریال‌های پرطرفدار در پخش آنلاین",
 	"server.suggest.trending-on-streaming": "پرطرفدار در پخش آنلاین",
 	"server.discover.popular": "محبوب",
-	"server.metadata.creator": "سازنده"
+	"server.metadata.creator": "سازنده",
+	"server.migrate.add-your-trakt-key-under-settings-2": "پیش از روشن کردن یک فهرست Trakt، کلید Trakt خودت را زیر تنظیمات > فهرست‌های بیرونی اضافه کن؛ فهرست خصوصی هم آنجا به ورود با Trakt نیاز دارد.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "بفرست {\"secret\": \"<Trakt app client secret>\"}، یا {\"secret\": \"\"} تا حذف شود"
 }

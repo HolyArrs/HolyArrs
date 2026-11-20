@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "المسلسلات الرائجة على منصات البث",
 	"server.suggest.trending-on-streaming": "رائج على منصات البث",
 	"server.discover.popular": "الرائج",
-	"server.metadata.creator": "المبتكر"
+	"server.metadata.creator": "المبتكر",
+	"server.migrate.add-your-trakt-key-under-settings-2": "أضف مفتاح Trakt في الإعدادات > القوائم الخارجية قبل تفعيل قائمة Trakt؛ وتحتاج القائمة الخاصة أيضًا إلى تسجيل الدخول عبر Trakt هناك.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "أرسل {\"secret\": \"<Trakt app client secret>\"}، أو {\"secret\": \"\"} لإزالته"
 }

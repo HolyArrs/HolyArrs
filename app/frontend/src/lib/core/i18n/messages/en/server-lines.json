@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Trending shows on streaming",
 	"server.suggest.trending-shows-this-week": "Trending shows this week",
 	"server.suggest.trending-this-week-everywhere": "Trending this week everywhere",
-	"server.suggest.what-people-watch-this-week": "What people watch this week"
+	"server.suggest.what-people-watch-this-week": "What people watch this week",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Add your Trakt key under Settings > Outside lists before you turn a Trakt list on; a private list also needs Sign in with Trakt there.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "send {\"secret\": \"<Trakt app client secret>\"}, or {\"secret\": \"\"} to remove it"
 }

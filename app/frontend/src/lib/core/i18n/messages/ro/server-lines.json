@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Seriale în trend pe streaming",
 	"server.suggest.trending-on-streaming": "În trend pe streaming",
 	"server.discover.popular": "Populare",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Adaugă cheia ta Trakt în Setări > Liste externe înainte de a porni o listă Trakt; o listă privată are nevoie acolo și de Autentificare cu Trakt.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "trimite {\"secret\": \"<Trakt app client secret>\"}, sau {\"secret\": \"\"} pentru a o elimina"
 }

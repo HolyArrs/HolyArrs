@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Hozzáadás a Soha nem hozzáadandók listájához",
 	"settings.outsideLists.showDot": "sorozat ·",
 	"settings.outsideLists.takeOff": "{name} levétele",
-	"settings.outsideLists.empty": "Ezen a listán még nincs semmi"
+	"settings.outsideLists.empty": "Ezen a listán még nincs semmi",
+	"settings.outsideLists.traktSignInTitle": "Trakt-bejelentkezés",
+	"settings.outsideLists.traktSignInInfo": "Jelentkezzen be, hogy a privát Trakt-listái és a figyelőlistája is olvashatók legyenek, és a Trakton megnézettek bekerüljenek a megtekintési előzményekbe.",
+	"settings.outsideLists.traktSignedInAs": "Bejelentkezve: {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Nincs bejelentkezve. Csak a nyilvános listák olvashatók.",
+	"settings.outsideLists.traktSignIn": "Bejelentkezés Trakttal",
+	"settings.outsideLists.traktDeviceSteps": "Bármely eszközön nyissa meg ezt: <a>{url}</a>, és írja be: <code>{code}</code>. Ez az oldal vár, amíg jóvá nem hagyja.",
+	"settings.outsideLists.traktDenied": "A Trakt-bejelentkezést elutasították.",
+	"settings.outsideLists.traktExpired": "A kód lejárt. Kezdje újra.",
+	"settings.outsideLists.traktSignOut": "Kijelentkezés a Traktból",
+	"settings.outsideLists.traktSignedIn": "Bejelentkezve a Traktba",
+	"settings.outsideLists.traktSignedOut": "Kijelentkezve a Traktból",
+	"settings.outsideLists.traktSecret": "Client secret (csak régebbi Trakt-alkalmazásoknál; az újaknak nincs)"
 }

@@ -57,6 +57,9 @@ export interface TitleView {
 	imdb_votes?: number;
 	rotten_tomatoes?: number;
 	metacritic?: number;
+	// Trakt's rating out of 10 and its votes, read with the Trakt client id; missing when not known.
+	trakt_rating?: number;
+	trakt_votes?: number;
 	added_at?: string;
 	size_bytes?: number;
 	copy?: TitleCopy;

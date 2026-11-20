@@ -1579,5 +1579,7 @@
 	"server.suggest.trending-shows-on-streaming": "Trendy serier på strømming",
 	"server.suggest.trending-on-streaming": "Trendy på strømming",
 	"server.discover.popular": "Populært",
-	"server.metadata.creator": "Skaper"
+	"server.metadata.creator": "Skaper",
+	"server.migrate.add-your-trakt-key-under-settings-2": "Legg til Trakt-nøkkelen din under Innstillinger > Eksterne lister før du slår på en Trakt-liste. En privat liste trenger også Logg inn med Trakt der.",
+	"server.requests.send-secret-trakt-app-client-secret-line": "send {\"secret\": \"<Trakt app client secret>\"}, eller {\"secret\": \"\"} for å fjerne den"
 }
