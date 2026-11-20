@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -230,10 +231,23 @@ func oidcLoopbackHost(host string) bool {
 	return strings.EqualFold(host, "localhost") || net.ParseIP(host) != nil && net.ParseIP(host).IsLoopback()
 }
 
+// oidcSiblingHosts lists providers whose discovery document puts the token,
+// key and user-info endpoints on other hosts the provider owns. Google signs
+// in on accounts.google.com but hands out tokens and keys from googleapis.com.
+var oidcSiblingHosts = map[string][]string{
+	"accounts.google.com:443": {"oauth2.googleapis.com:443", "www.googleapis.com:443", "openidconnect.googleapis.com:443"},
+}
+
 func oidcEndpointAllowed(issuer *url.URL, raw string) bool {
 	u, err := url.Parse(raw)
-	return err == nil && u.User == nil && u.Host != "" && u.Fragment == "" &&
-		strings.EqualFold(u.Scheme, issuer.Scheme) && oidcOriginHost(u) == oidcOriginHost(issuer)
+	if err != nil || u.User != nil || u.Host == "" || u.Fragment != "" || !strings.EqualFold(u.Scheme, issuer.Scheme) {
+		return false
+	}
+	host, own := oidcOriginHost(u), oidcOriginHost(issuer)
+	if host == own {
+		return true
+	}
+	return strings.EqualFold(issuer.Scheme, "https") && slices.Contains(oidcSiblingHosts[own], host)
 }
 
 func oidcOriginHost(u *url.URL) string {
