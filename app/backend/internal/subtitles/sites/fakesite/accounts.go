@@ -25,6 +25,8 @@ type OpenSubs struct {
 	Quota    int   // downloads left today
 	Logins   int
 	Searches int
+	// Languages lists the languages field of every search, as sent.
+	Languages []string
 	// Expire makes the next download refuse the current token once, as if it
 	// had expired.
 	Expire bool
@@ -103,10 +105,12 @@ func (o *OpenSubs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (o *OpenSubs) search(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
+	// Like the real site, a regional file answers only its own code.
 	langs := strings.Split(q.Get("languages"), ",")
+	o.Languages = append(o.Languages, q.Get("languages"))
 	data := []any{}
 	for _, s := range o.Subs {
-		if s.Kind != q.Get("type") || !(contains(langs, s.Language) || contains(langs, strings.SplitN(s.Language, "-", 2)[0])) {
+		if s.Kind != q.Get("type") || !contains(langs, strings.ToLower(s.Language)) {
 			continue
 		}
 		feature := map[string]any{"title": s.Title, "year": s.Year}

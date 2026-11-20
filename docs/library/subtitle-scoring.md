@@ -119,7 +119,7 @@ A better subtitle must score higher than the one it replaces.
 
 | Site | Covers | Account | Notes |
 |---|---|---|---|
-| OpenSubtitles.com | movies and shows | API key, user name and password | Searches use the key; downloads sign in. Matches by file hash, then IMDb or TMDB id, then name. Machine translations are left out. |
+| OpenSubtitles.com | movies and shows | API key, user name and password | Searches use the key; downloads sign in. Matches by file hash, then IMDb or TMDB id, then name. Machine translations are left out. Chinese asks for both simplified and traditional, Portuguese for both Portugal and Brazil. |
 | subdl | movies and shows | API key | Searches by TMDB id, IMDb id or name. The download count resets at midnight UTC. |
 | Gestdown | shows | none | Show subtitles from Addic7ed. |
 | Podnapisi | movies and shows | none | Starts turned off because the site does not answer now. Turn it on when it does. |

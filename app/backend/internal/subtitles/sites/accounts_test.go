@@ -25,6 +25,8 @@ func osFake() *fakesite.OpenSubs {
 	return &fakesite.OpenSubs{Key: fakeKey, User: fakeUser, Pass: fakePass, Quota: 2, Subs: []fakesite.Sub{
 		{ID: "101", Kind: "movie", Language: "en", Title: "The Lantern", Year: 2010, Release: "The.Lantern.2010.1080p.BluRay.x264-GRP", ByID: true, Trusted: true, Uploader: "anna", Text: fakesite.Cue("made up", 1000)},
 		{ID: "102", Kind: "movie", Language: "pt-BR", Title: "The Lantern", Year: 2010, Release: "The.Lantern.2010.720p", Text: fakesite.Cue("inventado", 1000)},
+		{ID: "103", Kind: "movie", Language: "zh-CN", Title: "The Lantern", Year: 2010, Release: "The.Lantern.2010.WEB", Text: fakesite.Cue("编造", 1000)},
+		{ID: "104", Kind: "movie", Language: "zh-TW", Title: "The Lantern", Year: 2010, Release: "The.Lantern.2010.BluRay", Text: fakesite.Cue("編造", 1000)},
 		{ID: "201", Kind: "episode", Language: "en", Title: "Quiet Harbour", Season: 1, Episode: 2, Release: "Quiet.Harbour.S01E02.WEB", ByID: true, HearingImpaired: true, Text: fakesite.Cue("made up", 1000)},
 	}}
 }
@@ -46,6 +48,31 @@ func kindOf(err error) string {
 		return se.Kind
 	}
 	return ""
+}
+
+func TestOpenSubtitlesAsksForRegionalCodes(t *testing.T) {
+	f := osFake()
+	s, _ := osSite(t, f, fakeUser, fakePass)
+	// The site keeps Chinese only as zh-CN and zh-TW, and Portuguese as pt-PT
+	// and pt-BR, so a plain zh or pt wish must ask for both.
+	got, err := s.Search(context.Background(), Query{Kind: "movie", Title: "The Lantern", Year: 2010, Languages: []string{"zh", "pt", "en"}})
+	if err != nil || len(got) != 4 {
+		t.Fatalf("%+v %v", got, err)
+	}
+	if f.Languages[0] != "en,pt-br,pt-pt,zh-cn,zh-tw" {
+		t.Fatalf("languages sent %q", f.Languages[0])
+	}
+	langs := map[string]string{}
+	for _, c := range got {
+		langs[c.Key] = c.Language
+	}
+	if langs["103"] != "zh" || langs["104"] != "zh" || langs["102"] != "pt-br" || langs["101"] != "en" {
+		t.Fatalf("languages %v", langs)
+	}
+	// Brazilian Portuguese alone asks for that code only.
+	if _, err := s.Search(context.Background(), Query{Kind: "movie", Title: "The Lantern", Languages: []string{"pt-br"}}); err != nil || f.Languages[1] != "pt-br" {
+		t.Fatalf("pt-br sent %q %v", f.Languages[1], err)
+	}
 }
 
 func TestOpenSubtitlesSearchAndDownload(t *testing.T) {

@@ -127,6 +127,30 @@ func baseLang(code string) string {
 	return code
 }
 
+// osCodes are the site's codes for languages it keeps only by region (its
+// /infos/languages list). A Chinese wish asks for both scripts and a
+// Portuguese wish for both countries; the answers come back as zh and pt (or
+// pt-br).
+var osCodes = map[string][]string{"zh": {"zh-cn", "zh-tw"}, "pt": {"pt-br", "pt-pt"}, "az": {"az-az"}}
+
+// osLanguages turns our codes into the site's, sorted as the site asks.
+func osLanguages(langs []string) []string {
+	var out []string
+	for _, l := range langs {
+		codes, ok := osCodes[l]
+		if !ok {
+			codes = []string{l}
+		}
+		for _, c := range codes {
+			if !slices.Contains(out, c) {
+				out = append(out, c)
+			}
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
 func (o *openSubtitles) Search(ctx context.Context, q Query) ([]Candidate, error) {
 	langs := make([]string, 0, len(q.Languages))
 	for _, l := range q.Languages {
@@ -137,9 +161,8 @@ func (o *openSubtitles) Search(ctx context.Context, q Query) ([]Candidate, error
 	if len(langs) == 0 {
 		return nil, nil
 	}
-	slices.Sort(langs)
 	v := url.Values{}
-	v.Set("languages", strings.Join(langs, ","))
+	v.Set("languages", strings.Join(osLanguages(langs), ","))
 	imdb, tmdb := idNumber(q.IMDb), idNumber(q.TMDB)
 	if q.Hash != "" {
 		v.Set("moviehash", strings.ToLower(q.Hash))
