@@ -123,6 +123,35 @@ func (s *Store) RecentEvents(ctx context.Context, limit int) ([]Event, error) {
 	return es, err
 }
 
+// TitleEventsOfKinds lists the Events of these kinds that name a Title,
+// newest first, up to limit. Only the columns History needs are read, and
+// Events allows no more than 500, so this has its own query.
+func (s *Store) TitleEventsOfKinds(ctx context.Context, kinds []string, limit int) ([]Event, error) {
+	args := make([]any, 0, len(kinds)+1)
+	for _, k := range kinds {
+		args = append(args, k)
+	}
+	args = append(args, limit)
+	rows, err := s.readEv.QueryContext(ctx, "SELECT id, at, kind, title_id, slot_id, download_id, summary, data FROM events WHERE title_id IS NOT NULL AND kind IN ("+
+		strings.TrimSuffix(strings.Repeat("?,", len(kinds)), ",")+") ORDER BY at DESC, id DESC LIMIT ?", args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Event
+	for rows.Next() {
+		var e Event
+		var at, data string
+		if err := rows.Scan(&e.ID, &at, &e.Kind, &e.TitleID, &e.SlotID, &e.DownloadID, &e.Summary, &data); err != nil {
+			return nil, err
+		}
+		e.At, _ = time.Parse(time.RFC3339Nano, at)
+		_ = json.Unmarshal([]byte(data), &e.Data)
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
 // Events lists the Events that match f, newest first, and how many match
 // in all (for paging).
 func (s *Store) Events(ctx context.Context, f EventFilter) ([]Event, int, error) {

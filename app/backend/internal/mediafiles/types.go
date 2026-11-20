@@ -81,7 +81,9 @@ type Title struct {
 	// Details for screens, from the metadata source: wide picture and logo
 	// URLs, genre names, runtime in minutes, the US rating and the people
 	// (top cast, then directors).
-	Backdrop       string   `db:"backdrop"`
+	Backdrop string `db:"backdrop"`
+	// PosterURL is where the stored poster (in Artwork) was fetched from.
+	PosterURL      string   `db:"poster_url"`
 	Logo           string   `db:"logo"`
 	Genres         []string `db:"genres,json"`
 	RuntimeMinutes int      `db:"runtime_minutes"`
@@ -212,13 +214,13 @@ type PickRules struct {
 
 // PlanStep is one file in an Import plan.
 type PlanStep struct {
-	SourceFile     string   `json:"source_file"`
-	TargetSlotIDs  []int64  `json:"target_slot_ids"`
-	TargetPath     string   `json:"target_path"`
-	Method         string   `json:"method"` // hardlink, move, copy
+	SourceFile    string  `json:"source_file"`
+	TargetSlotIDs []int64 `json:"target_slot_ids"`
+	TargetPath    string  `json:"target_path"`
+	Method        string  `json:"method"` // hardlink, move, copy
 	// Move tries a rename into the Library first: the file is not needed in
 	// the download folder afterwards (a finished Usenet job, an unpacked file).
-	Move bool `json:"move,omitempty"`
+	Move           bool     `json:"move,omitempty"`
 	ReplacesFileID *int64   `json:"replaces_file_id,omitempty"`
 	Confidence     float64  `json:"confidence"`
 	Why            []string `json:"why"`

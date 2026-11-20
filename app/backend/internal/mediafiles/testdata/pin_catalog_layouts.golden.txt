@@ -54,6 +54,7 @@ MusicStatuses []string `db:"music_statuses,json"`
 ArtistType *string `db:"artist_type"`
 Disambiguation *string `db:"disambiguation"`
 Backdrop string `db:"backdrop"`
+PosterURL string `db:"poster_url"`
 Logo string `db:"logo"`
 Genres []string `db:"genres,json"`
 RuntimeMinutes int `db:"runtime_minutes"`

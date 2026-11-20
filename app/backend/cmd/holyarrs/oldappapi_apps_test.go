@@ -21,6 +21,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // The other apps that read the arr API: Bazarr
@@ -230,6 +231,11 @@ func TestOldAppBazarrSync(t *testing.T) {
 	if !scanned {
 		t.Fatal("no scan Job for the show")
 	}
+	// Helmarr refreshes with an empty seriesIds list: every show.
+	f.arrOK(son, "POST", s+"command", `{"name":"RefreshSeries","seriesIds":[]}`, 201)
+	if len(f.jobs(shows.KindRefreshShows)) == 0 {
+		t.Fatal("no refresh Job for every show")
+	}
 
 	// The Radarr side: every movie carries hasFile, and one with a file
 	// its file; pictures are poster first, then the wide one.
@@ -264,14 +270,19 @@ func TestOldAppBazarrSync(t *testing.T) {
 	// Calls marked out answer 404, never a pretend success.
 	for _, c := range []struct{ key, path string }{
 		{son, s + "filesystem?path=/&allowFoldersWithoutTrailingSlashes=true&includeFiles=false"},
-		{son, s + "history?eventType=1&episodeId=1"},
-		{rad, r + "history?eventType=1&movieIds=1"},
 		{son, s + "episode/1"},
-		{son, s + "episodefile?seriesId=" + arrItoa(showID)},
 		{rad, r + "moviefile?movieId=" + arrItoa(movieID)},
 	} {
 		if st, _, b := f.arr(c.key, "GET", c.path, ""); st != 404 {
 			t.Errorf("%s: %d %s, want 404", c.path, st, b)
+		}
+	}
+	// History answers with no grabs yet. Bazarr reads only nzbInfoUrl from
+	// it, and skips a row without one.
+	for _, p := range []string{son + "|" + s + "history?eventType=1&episodeId=1", rad + "|" + r + "history?eventType=1&movieIds=1"} {
+		key, path, _ := strings.Cut(p, "|")
+		if st, _, b := f.arr(key, "GET", path, ""); st != 200 || !strings.Contains(b, `"records":[]`) {
+			t.Errorf("%s: %d %s", path, st, b)
 		}
 	}
 	// The live feed hub takes no key in access_token: a bare 401.

@@ -72,7 +72,7 @@ func (h *handler) withFiles(ctx context.Context, eps []episode) error {
 	files := map[int64]*mediaFile{}
 	for _, f := range fs {
 		v := versions[f.VersionID]
-		files[f.ID] = mediaFileOf(f, folders[v.LibraryFolderID].Path, v.FolderName)
+		files[f.ID] = mediaFileOf(h.side, f, folders[v.LibraryFolderID].Path, v.FolderName)
 	}
 	for i := range eps {
 		if mf := files[eps[i].EpisodeFileID]; mf != nil {
@@ -291,15 +291,27 @@ func (h *handler) queueDetails(w http.ResponseWriter, r *http.Request) {
 	if ids := idsParam(r, "episodeIds"); len(ids) > 0 && h.side == "sonarr" {
 		rows = slices.DeleteFunc(rows, func(q queueRow) bool { return !slices.Contains(ids, q.EpisodeID) })
 	}
-	if queryBool(r, "includeSeries") && h.side == "sonarr" && len(rows) > 0 {
+	if err := h.queueInclude(ctx, r, rows); err != nil {
+		internalError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, rows)
+}
+
+// queueInclude adds the show (includeSeries) or the movie (includeMovie)
+// to each queue row, as the old apps do when asked.
+func (h *handler) queueInclude(ctx context.Context, r *http.Request, rows []queueRow) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	if queryBool(r, "includeSeries") && h.side == "sonarr" {
 		ids := make([]int64, 0, len(rows))
 		for _, q := range rows {
 			ids = append(ids, q.SeriesID)
 		}
 		shows, err := h.seriesByID(ctx, ids)
 		if err != nil {
-			internalError(w, err)
-			return
+			return err
 		}
 		for i := range rows {
 			if s, ok := shows[rows[i].SeriesID]; ok {
@@ -307,7 +319,26 @@ func (h *handler) queueDetails(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	writeJSON(w, http.StatusOK, rows)
+	if queryBool(r, "includeMovie") && h.side == "radarr" {
+		ids := make([]int64, 0, len(rows))
+		for _, q := range rows {
+			ids = append(ids, q.MovieID)
+		}
+		ms, err := h.loadMovies(ctx, false, "id IN "+idList(ids))
+		if err != nil {
+			return err
+		}
+		byID := map[int64]movie{}
+		for _, m := range ms {
+			byID[m.ID] = m
+		}
+		for i := range rows {
+			if m, ok := byID[rows[i].MovieID]; ok {
+				rows[i].Movie = &m
+			}
+		}
+	}
+	return nil
 }
 
 // queueStatus counts the download list the way the old apps do: all rows,
@@ -328,6 +359,7 @@ func (h *handler) queueStatus(w http.ResponseWriter, r *http.Request) {
 			warns++
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]int{"totalCount": len(rows), "count": len(rows), "unknownCount": 0,
-		"errors": errs, "warnings": warns, "unknownErrors": 0, "unknownWarnings": 0})
+	// The counts are numbers; errors and warnings say whether there are any.
+	writeJSON(w, http.StatusOK, map[string]any{"totalCount": len(rows), "count": len(rows), "unknownCount": 0,
+		"errors": errs > 0, "warnings": warns > 0, "unknownErrors": false, "unknownWarnings": false})
 }

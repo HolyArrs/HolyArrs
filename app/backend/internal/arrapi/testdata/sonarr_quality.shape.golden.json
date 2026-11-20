@@ -10,7 +10,9 @@
         "items": [],
         "quality": {
           "id": "number",
-          "name": "string"
+          "name": "string",
+          "resolution": "number",
+          "source": "string"
         }
       }
     ],

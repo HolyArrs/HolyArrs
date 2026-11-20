@@ -99,7 +99,7 @@ var roots = []string{
 	// the old-app API, below /sonarr/ and /radarr/
 	"calendar", "command", "config", "customformat", "delayprofile", "episode", "exclusions", "importlistexclusion",
 	"indexer", "languageprofile", "mediacover", "movie", "notification", "qualitydefinition", "qualityprofile",
-	"queue", "rootfolder", "series", "system", "tag", "wanted", "health",
+	"queue", "rootfolder", "series", "system", "tag", "wanted", "health", "history", "diskspace", "customfilter", "episodefile",
 }
 
 // adminPrefixes cover sign-in, people, keys and the whole app.
