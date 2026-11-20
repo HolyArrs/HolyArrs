@@ -46,8 +46,8 @@ var (
 	ErrKeyAgainProxy = errors.New("the proxy changed and the Source address is plain http, so the new proxy would see the key; type the key again")
 	// ErrFlareAgain is a FlareSolverr address moved to another host: it would be handed the Source's address (with any key in it) and the proxy password.
 	ErrFlareAgain = errors.New("the FlareSolverr address changed to another host; type the Source's key and proxy password again so they are never sent to a new host by itself")
-	ErrNoVault       = errors.New("keys cannot be stored: the secrets vault is not open")
-	ErrSeeders       = errors.New("min_seeders must be 0 or more")
+	ErrNoVault    = errors.New("keys cannot be stored: the secrets vault is not open")
+	ErrSeeders    = errors.New("min_seeders must be 0 or more")
 )
 
 // AllKinds lists the media types a Source may serve.

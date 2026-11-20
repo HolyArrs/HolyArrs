@@ -105,6 +105,11 @@ func New(cfg Config) *Client {
 	if cfg.Timeout <= 0 {
 		cfg.Timeout = 30 * time.Second
 	}
+	// A bot check through FlareSolverr may take its whole wait, so a call
+	// that may go there gets that long and a little more.
+	if cfg.FlareSolverr != nil && cfg.Timeout < flareWait+15*time.Second {
+		cfg.Timeout = flareWait + 15*time.Second
+	}
 	if cfg.Window <= 0 {
 		cfg.Window = time.Hour
 	}

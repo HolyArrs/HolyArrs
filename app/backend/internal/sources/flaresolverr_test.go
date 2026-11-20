@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
@@ -251,5 +252,17 @@ func TestSameSite(t *testing.T) {
 		if got := sameSite(c.a, c.b); got != c.want {
 			t.Errorf("%q %q: %v", c.a, c.b, got)
 		}
+	}
+}
+
+// A Source that may go through FlareSolverr waits as long as FlareSolverr
+// may take over a bot check, even with a shorter limit of its own.
+func TestFlareSolverr_CallWaitsForTheCheck(t *testing.T) {
+	flare, _ := url.Parse("http://127.0.0.1:8191")
+	if c := New(Config{URL: "https://site.example", Timeout: 20 * time.Second, FlareSolverr: flare}); c.cfg.Timeout < flareWait {
+		t.Fatalf("timeout %v, FlareSolverr may take %v", c.cfg.Timeout, flareWait)
+	}
+	if c := New(Config{URL: "https://site.example", Timeout: 20 * time.Second}); c.cfg.Timeout != 20*time.Second {
+		t.Fatalf("without FlareSolverr: %v", c.cfg.Timeout)
 	}
 }
