@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "配信でトレンド",
 	"server.discover.popular": "人気",
 	"server.metadata.creator": "原作者",
-	"server.migrate.built-in-site-read-directly-with": "組み込みサイト {name}。Prowlarr を通さず直接読み込みます。一時停止で追加しました: 確認してから自分で再開してください"
+	"server.migrate.built-in-site-read-directly-with": "組み込みサイト {name}。Prowlarr を通さず直接読み込みます。一時停止で追加しました: 確認してから自分で再開してください",
+	"server.migrate.the-same-as-a-source-that": "{name} と同じで、すでにあるソースです"
 }

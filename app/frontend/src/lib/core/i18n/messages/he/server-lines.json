@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "בטרנד בסטרימינג",
 	"server.discover.popular": "פופולרי",
 	"server.metadata.creator": "יוצר",
-	"server.migrate.built-in-site-read-directly-with": "אתר מובנה {name}, נקרא ישירות בלי Prowlarr; נוסף מושהה: בדקו אותו והמשיכו אותו בעצמכם"
+	"server.migrate.built-in-site-read-directly-with": "אתר מובנה {name}, נקרא ישירות בלי Prowlarr; נוסף מושהה: בדקו אותו והמשיכו אותו בעצמכם",
+	"server.migrate.the-same-as-a-source-that": "זהה ל-{name}, מקור שכבר כאן"
 }

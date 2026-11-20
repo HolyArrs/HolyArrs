@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Felkapott a streamingen",
 	"server.discover.popular": "Népszerű",
 	"server.metadata.creator": "Alkotó",
-	"server.migrate.built-in-site-read-directly-with": "beépített oldal: {name}, közvetlenül olvasva Prowlarr nélkül; szüneteltetve hozzáadva: ellenőrizd és folytasd magad"
+	"server.migrate.built-in-site-read-directly-with": "beépített oldal: {name}, közvetlenül olvasva Prowlarr nélkül; szüneteltetve hozzáadva: ellenőrizd és folytasd magad",
+	"server.migrate.the-same-as-a-source-that": "ugyanaz, mint {name}, egy Forrás, ami már itt van"
 }

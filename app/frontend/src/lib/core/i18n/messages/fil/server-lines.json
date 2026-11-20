@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Trending sa streaming",
 	"server.discover.popular": "Sikat",
 	"server.metadata.creator": "Creator",
-	"server.migrate.built-in-site-read-directly-with": "built-in na site na {name}, direktang binabasa nang walang Prowlarr; idinagdag na naka-pause: suriin at ituloy mo ito"
+	"server.migrate.built-in-site-read-directly-with": "built-in na site na {name}, direktang binabasa nang walang Prowlarr; idinagdag na naka-pause: suriin at ituloy mo ito",
+	"server.migrate.the-same-as-a-source-that": "kapareho ng {name}, isang Source na nandito na"
 }

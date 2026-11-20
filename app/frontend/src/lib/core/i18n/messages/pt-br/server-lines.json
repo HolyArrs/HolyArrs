@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Em alta no streaming",
 	"server.discover.popular": "Popular",
 	"server.metadata.creator": "Criador",
-	"server.migrate.built-in-site-read-directly-with": "site embutido {name}, lido diretamente sem Prowlarr; adicionado pausado: confira e retome você mesmo"
+	"server.migrate.built-in-site-read-directly-with": "site embutido {name}, lido diretamente sem Prowlarr; adicionado pausado: confira e retome você mesmo",
+	"server.migrate.the-same-as-a-source-that": "o mesmo que {name}, uma Fonte que já está aqui"
 }

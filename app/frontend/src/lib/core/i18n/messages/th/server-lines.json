@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "กำลังมาแรงบนสตรีมมิง",
 	"server.discover.popular": "ยอดนิยม",
 	"server.metadata.creator": "ผู้สร้าง",
-	"server.migrate.built-in-site-read-directly-with": "เว็บในตัว {name} อ่านโดยตรงโดยไม่ผ่าน Prowlarr; เพิ่มไว้แบบหยุดชั่วคราว: ตรวจดูแล้วเริ่มต่อเอง"
+	"server.migrate.built-in-site-read-directly-with": "เว็บในตัว {name} อ่านโดยตรงโดยไม่ผ่าน Prowlarr; เพิ่มไว้แบบหยุดชั่วคราว: ตรวจดูแล้วเริ่มต่อเอง",
+	"server.migrate.the-same-as-a-source-that": "เหมือนกับ {name} ซึ่งเป็นแหล่งที่มาที่มีอยู่แล้ว"
 }

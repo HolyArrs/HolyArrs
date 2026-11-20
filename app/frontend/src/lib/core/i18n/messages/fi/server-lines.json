@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Nousussa suoratoistossa",
 	"server.discover.popular": "Suosittua",
 	"server.metadata.creator": "Tekijä",
-	"server.migrate.built-in-site-read-directly-with": "sisäänrakennettu sivusto {name}, luetaan suoraan ilman Prowlarria; lisätty keskeytettynä: tarkista ja jatka itse"
+	"server.migrate.built-in-site-read-directly-with": "sisäänrakennettu sivusto {name}, luetaan suoraan ilman Prowlarria; lisätty keskeytettynä: tarkista ja jatka itse",
+	"server.migrate.the-same-as-a-source-that": "sama kuin {name}, lähde joka on jo täällä"
 }

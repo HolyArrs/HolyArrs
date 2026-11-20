@@ -315,5 +315,7 @@
 	"migrate.seasonsDifferOther": "Kolla {n} serier som hittades via sitt TMDB-nummer",
 	"migrate.seasonsDifferWhy": "Bara den gamla appens TMDB-nummer hittade {list}, under ett annat namn här. Öppna var och en och kolla att det är samma serie. Om det är det är säsongerna numrerade annorlunda: matcha dess Överblivna filer och slå sedan på serien. Om inte, ta bort den; dess filer ligger kvar där de är.",
 	"migrate.stillChecking": "Serier som metadataservern fortfarande kontrollerar: {n}. Listan uppdateras av sig själv när den är klar.",
-	"migrate.stillCheckingImport": "Serier som metadataservern fortfarande kontrollerar: {n}. Du kan importera nu; de kontrolleras under importen."
+	"migrate.stillCheckingImport": "Serier som metadataservern fortfarande kontrollerar: {n}. Du kan importera nu; de kontrolleras under importen.",
+	"migrate.sameSource": "samma som {list}: en källa",
+	"migrate.nameInApps": "{name} i {apps}"
 }

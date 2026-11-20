@@ -205,7 +205,17 @@
             "needs_key": true,
             "on": true,
             "site": "s",
-            "flaresolverr": "s"
+            "flaresolverr": "s",
+            "same_as": [
+              {
+                "app": "s",
+                "name": "s",
+                "url": "s"
+              }
+            ],
+            "through": [
+              "s"
+            ]
           },
           "downloader": {
             "kind": "s",

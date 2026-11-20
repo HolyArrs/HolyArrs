@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.discover.popular": "Phổ biến",
 	"server.metadata.creator": "Người sáng tạo",
-	"server.migrate.built-in-site-read-directly-with": "trang có sẵn {name}, đọc trực tiếp không qua Prowlarr; đã thêm ở trạng thái tạm dừng: tự kiểm tra rồi tiếp tục"
+	"server.migrate.built-in-site-read-directly-with": "trang có sẵn {name}, đọc trực tiếp không qua Prowlarr; đã thêm ở trạng thái tạm dừng: tự kiểm tra rồi tiếp tục",
+	"server.migrate.the-same-as-a-source-that": "giống {name}, một Nguồn đã có ở đây"
 }

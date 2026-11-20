@@ -279,6 +279,20 @@ type SourcePlan struct {
 	// HolyArrs has built in; FlareSolverr is the Prowlarr FlareSolverr it used.
 	Site         string `json:"site,omitempty"`
 	FlareSolverr string `json:"flaresolverr,omitempty"`
+	// SameAs are the other old indexers that are this same Source (the
+	// same site through Prowlarr, or the same feed in another app); they
+	// come over as this one. Through are the Prowlarr per-site addresses
+	// of a Source read from Prowlarr itself, so a Source here at one of
+	// them is the same.
+	SameAs  []SameIndexer `json:"same_as,omitempty"`
+	Through []string      `json:"through,omitempty"`
+}
+
+// SameIndexer is an old app's indexer that came over as another Source.
+type SameIndexer struct {
+	App  string `json:"app"`
+	Name string `json:"name"`
+	URL  string `json:"url,omitempty"`
 }
 
 // DownloaderPlan is a Downloader to add.

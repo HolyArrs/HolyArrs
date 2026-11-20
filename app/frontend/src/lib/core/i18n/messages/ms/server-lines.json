@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Sedang tren di strim",
 	"server.discover.popular": "Popular",
 	"server.metadata.creator": "Pencipta",
-	"server.migrate.built-in-site-read-directly-with": "laman terbina dalam {name}, dibaca terus tanpa Prowlarr; ditambah dalam keadaan dijeda: semak dan sambung sendiri"
+	"server.migrate.built-in-site-read-directly-with": "laman terbina dalam {name}, dibaca terus tanpa Prowlarr; ditambah dalam keadaan dijeda: semak dan sambung sendiri",
+	"server.migrate.the-same-as-a-source-that": "sama seperti {name}, Sumber yang ada di sini"
 }

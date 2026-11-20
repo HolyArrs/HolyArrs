@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Trendy på strømming",
 	"server.discover.popular": "Populært",
 	"server.metadata.creator": "Skaper",
-	"server.migrate.built-in-site-read-directly-with": "innebygd nettsted {name}, leses direkte uten Prowlarr; lagt til på pause: sjekk det og fortsett selv"
+	"server.migrate.built-in-site-read-directly-with": "innebygd nettsted {name}, leses direkte uten Prowlarr; lagt til på pause: sjekk det og fortsett selv",
+	"server.migrate.the-same-as-a-source-that": "det samme som {name}, en kilde som finnes her"
 }

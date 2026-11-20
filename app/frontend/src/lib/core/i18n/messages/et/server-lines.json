@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Menukas voogedastuses",
 	"server.discover.popular": "Populaarsed",
 	"server.metadata.creator": "Looja",
-	"server.migrate.built-in-site-read-directly-with": "sisseehitatud sait {name}, loetakse otse ilma Prowlarrita; lisatud peatatuna: kontrolli ja jätka ise"
+	"server.migrate.built-in-site-read-directly-with": "sisseehitatud sait {name}, loetakse otse ilma Prowlarrita; lisatud peatatuna: kontrolli ja jätka ise",
+	"server.migrate.the-same-as-a-source-that": "sama mis {name}, allikas, mis on siin olemas"
 }

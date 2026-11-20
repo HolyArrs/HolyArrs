@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "V trende na streamingu",
 	"server.discover.popular": "Populárne",
 	"server.metadata.creator": "Tvorca",
-	"server.migrate.built-in-site-read-directly-with": "vstavaná stránka {name}, číta sa priamo bez Prowlarru; pridaná pozastavená: skontrolujte ju a obnovte sami"
+	"server.migrate.built-in-site-read-directly-with": "vstavaná stránka {name}, číta sa priamo bez Prowlarru; pridaná pozastavená: skontrolujte ju a obnovte sami",
+	"server.migrate.the-same-as-a-source-that": "to isté ako {name}, Zdroj, ktorý tu už je"
 }

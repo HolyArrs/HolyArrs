@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Yayın servislerinde öne çıkanlar",
 	"server.discover.popular": "Popüler",
 	"server.metadata.creator": "Yaratıcı",
-	"server.migrate.built-in-site-read-directly-with": "yerleşik site {name}, Prowlarr olmadan doğrudan okunur; duraklatılmış olarak eklendi: kendin kontrol edip sürdür"
+	"server.migrate.built-in-site-read-directly-with": "yerleşik site {name}, Prowlarr olmadan doğrudan okunur; duraklatılmış olarak eklendi: kendin kontrol edip sürdür",
+	"server.migrate.the-same-as-a-source-that": "{name} ile aynı, burada zaten olan bir Kaynak"
 }

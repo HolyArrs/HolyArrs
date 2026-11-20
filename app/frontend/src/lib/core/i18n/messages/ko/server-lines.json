@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "스트리밍 인기 급상승",
 	"server.discover.popular": "인기순",
 	"server.metadata.creator": "제작자",
-	"server.migrate.built-in-site-read-directly-with": "기본 제공 사이트 {name}, Prowlarr 없이 직접 읽음; 일시 중지 상태로 추가됨: 직접 확인하고 다시 시작하세요"
+	"server.migrate.built-in-site-read-directly-with": "기본 제공 사이트 {name}, Prowlarr 없이 직접 읽음; 일시 중지 상태로 추가됨: 직접 확인하고 다시 시작하세요",
+	"server.migrate.the-same-as-a-source-that": "{name}와 같으며, 이미 있는 소스입니다"
 }

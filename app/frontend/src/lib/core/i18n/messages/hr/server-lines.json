@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "U trendu na streamingu",
 	"server.discover.popular": "Popularno",
 	"server.metadata.creator": "Autor",
-	"server.migrate.built-in-site-read-directly-with": "ugrađena stranica {name}, čita se izravno bez Prowlarra; dodana pauzirana: provjerite je i sami nastavite"
+	"server.migrate.built-in-site-read-directly-with": "ugrađena stranica {name}, čita se izravno bez Prowlarra; dodana pauzirana: provjerite je i sami nastavite",
+	"server.migrate.the-same-as-a-source-that": "isto kao {name}, izvor koji već postoji"
 }

@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Tendences straumēšanā",
 	"server.discover.popular": "Populārs",
 	"server.metadata.creator": "Veidotājs",
-	"server.migrate.built-in-site-read-directly-with": "iebūvēta vietne {name}, lasīta tieši bez Prowlarr; pievienota apturēta: pārbaudiet to un atsāciet paši"
+	"server.migrate.built-in-site-read-directly-with": "iebūvēta vietne {name}, lasīta tieši bez Prowlarr; pievienota apturēta: pārbaudiet to un atsāciet paši",
+	"server.migrate.the-same-as-a-source-that": "tas pats, kas {name}, Avots, kas jau ir šeit"
 }

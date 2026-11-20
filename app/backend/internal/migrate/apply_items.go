@@ -58,8 +58,10 @@ func (r *run) neverAdd(it Item) (string, string) {
 // link-local and metadata refusal of the dial policies stays either way.
 func (r *run) source(it Item) (string, string) {
 	s := it.Source
-	if r.id("SELECT id FROM sources WHERE name = ?", it.Name) != 0 {
+	if name, own := r.sameSourceHere(it); own {
 		return ResAlready, "a Source with this name is here"
+	} else if name != "" {
+		return ResAlready, "the same as " + name + ", a Source that is here"
 	}
 	what := s.Format + " at " + s.URL + ", paused until you check and resume it"
 	if r.dry {
@@ -83,6 +85,47 @@ func (r *run) source(it Item) (string, string) {
 		return r.markTx(tx, it.Key, "source", id, "", "")
 	})
 	return result(err, ResCreated, what)
+}
+
+// sameSourceHere is the Source here that this one is: the one with its name
+// (own is true), else one at one of its addresses, or, for the same
+// protocol, one named like an indexer it is the same as, with or without
+// the " (Prowlarr)" Prowlarr adds to the names in the other apps. So an
+// import of Prowlarr after Sonarr and Radarr, or before them, adds nothing
+// twice.
+func (r *run) sameSourceHere(it Item) (name string, own bool) {
+	all, err := sources.AllNamed(r.ctx, r.m.Store.Read())
+	if err != nil {
+		return "", false
+	}
+	for _, h := range all {
+		if strings.EqualFold(h.Name, it.Name) {
+			return h.Name, true
+		}
+	}
+	s := it.Source
+	names := []string{it.Name}
+	addrs := map[string]bool{}
+	for _, u := range append([]string{s.URL}, s.Through...) {
+		addrs[addrKey(u)] = true
+	}
+	for _, x := range s.SameAs {
+		names = append(names, x.Name)
+		addrs[addrKey(x.URL)] = true
+	}
+	delete(addrs, "")
+	want := map[string]bool{}
+	for _, n := range names {
+		base, _ := prowlarrName(n)
+		want[strings.ToLower(base)] = true
+		want[strings.ToLower(base+prowlarrSuffix)] = true
+	}
+	for _, h := range all {
+		if addrs[addrKey(h.URL)] || h.Protocol == s.Protocol && want[strings.ToLower(h.Name)] {
+			return h.Name, false
+		}
+	}
+	return "", false
 }
 
 func (r *run) downloader(it Item) (string, string) {

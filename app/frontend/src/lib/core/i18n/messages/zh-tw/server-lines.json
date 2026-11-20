@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "流媒體熱播",
 	"server.discover.popular": "熱門",
 	"server.metadata.creator": "創作者",
-	"server.migrate.built-in-site-read-directly-with": "內建網站 {name}，直接讀取，不需 Prowlarr；已以暫停狀態加入：請自行檢查後再繼續"
+	"server.migrate.built-in-site-read-directly-with": "內建網站 {name}，直接讀取，不需 Prowlarr；已以暫停狀態加入：請自行檢查後再繼續",
+	"server.migrate.the-same-as-a-source-that": "與 {name} 相同，這裡已有此來源"
 }

@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Tendència en streaming",
 	"server.discover.popular": "Populars",
 	"server.metadata.creator": "Creador",
-	"server.migrate.built-in-site-read-directly-with": "lloc integrat {name}, llegit directament sense Prowlarr; afegit en pausa: comproveu-lo i reprengueu-lo vosaltres"
+	"server.migrate.built-in-site-read-directly-with": "lloc integrat {name}, llegit directament sense Prowlarr; afegit en pausa: comproveu-lo i reprengueu-lo vosaltres",
+	"server.migrate.the-same-as-a-source-that": "el mateix que {name}, una Font que ja hi és"
 }

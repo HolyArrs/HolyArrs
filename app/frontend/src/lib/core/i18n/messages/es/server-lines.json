@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Tendencia en streaming",
 	"server.discover.popular": "Popular",
 	"server.metadata.creator": "Creador",
-	"server.migrate.built-in-site-read-directly-with": "sitio integrado {name}, leído directamente sin Prowlarr; añadido en pausa: revísalo y reanúdalo tú"
+	"server.migrate.built-in-site-read-directly-with": "sitio integrado {name}, leído directamente sin Prowlarr; añadido en pausa: revísalo y reanúdalo tú",
+	"server.migrate.the-same-as-a-source-that": "lo mismo que {name}, una Fuente que ya está aquí"
 }

@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Актуално в стрийминг",
 	"server.discover.popular": "Популярни",
 	"server.metadata.creator": "Създател",
-	"server.migrate.built-in-site-read-directly-with": "вграден сайт {name}, чете се директно без Prowlarr; добавен на пауза: проверете го и го пуснете сами"
+	"server.migrate.built-in-site-read-directly-with": "вграден сайт {name}, чете се директно без Prowlarr; добавен на пауза: проверете го и го пуснете сами",
+	"server.migrate.the-same-as-a-source-that": "същият като {name}, източник, който вече е тук"
 }

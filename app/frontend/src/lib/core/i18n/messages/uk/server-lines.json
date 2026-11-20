@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "У тренді на стрімінгу",
 	"server.discover.popular": "Популярне",
 	"server.metadata.creator": "Автор",
-	"server.migrate.built-in-site-read-directly-with": "вбудований сайт {name}, читається напряму без Prowlarr; додано на паузі: перевірте його й відновіть самі"
+	"server.migrate.built-in-site-read-directly-with": "вбудований сайт {name}, читається напряму без Prowlarr; додано на паузі: перевірте його й відновіть самі",
+	"server.migrate.the-same-as-a-source-that": "те саме, що {name}, джерело, яке вже є"
 }

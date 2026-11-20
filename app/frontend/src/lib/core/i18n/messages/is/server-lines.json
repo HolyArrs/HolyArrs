@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Vinsælt á streymi",
 	"server.discover.popular": "Vinsælt",
 	"server.metadata.creator": "Höfundur",
-	"server.migrate.built-in-site-read-directly-with": "innbyggður vefur {name}, lesinn beint án Prowlarr; bætt við í biðstöðu: athugaðu hann og haltu áfram sjálf(ur)"
+	"server.migrate.built-in-site-read-directly-with": "innbyggður vefur {name}, lesinn beint án Prowlarr; bætt við í biðstöðu: athugaðu hann og haltu áfram sjálf(ur)",
+	"server.migrate.the-same-as-a-source-that": "það sama og {name}, heimild sem er hér"
 }

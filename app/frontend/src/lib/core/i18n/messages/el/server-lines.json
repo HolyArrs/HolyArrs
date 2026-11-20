@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-on-streaming": "Τάσεις στο streaming",
 	"server.discover.popular": "Δημοφιλή",
 	"server.metadata.creator": "Δημιουργός",
-	"server.migrate.built-in-site-read-directly-with": "ενσωματωμένος ιστότοπος {name}, διαβάζεται απευθείας χωρίς Prowlarr· προστέθηκε σε παύση: ελέγξτε τον και συνεχίστε τον μόνοι σας"
+	"server.migrate.built-in-site-read-directly-with": "ενσωματωμένος ιστότοπος {name}, διαβάζεται απευθείας χωρίς Prowlarr· προστέθηκε σε παύση: ελέγξτε τον και συνεχίστε τον μόνοι σας",
+	"server.migrate.the-same-as-a-source-that": "το ίδιο με {name}, μια Πηγή που υπάρχει ήδη εδώ"
 }

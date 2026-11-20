@@ -1580,5 +1580,6 @@
 	"server.suggest.trending-shows-this-week": "Trending shows this week",
 	"server.suggest.trending-this-week-everywhere": "Trending this week everywhere",
 	"server.suggest.what-people-watch-this-week": "What people watch this week",
-	"server.migrate.built-in-site-read-directly-with": "built-in site {name}, read directly with no Prowlarr; added paused: check it and resume it yourself"
+	"server.migrate.built-in-site-read-directly-with": "built-in site {name}, read directly with no Prowlarr; added paused: check it and resume it yourself",
+	"server.migrate.the-same-as-a-source-that": "the same as {name}, a Source that is here"
 }
