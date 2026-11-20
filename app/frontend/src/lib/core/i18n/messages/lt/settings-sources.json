@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 arba http://host:3128",
 	"settings.sources.proxyPass": "Tarpinio serverio slaptažodis",
 	"settings.sources.proxyLocal": "Tarpinis serveris gali būti vietiniame tinkle",
+	"settings.sources.flaresolverr": "FlareSolverr adresas",
+	"settings.sources.flaresolverrHint": "Svetainei už robotų patikros, pvz., Cloudflare. HolyArrs klausia FlareSolverr tik tada, kai svetainė parodo patikrą.",
 	"settings.sources.local": "Pasiekti vietinį tinklą",
 	"settings.sources.localHint": "Jackett ar Prowlarr namuose",
 	"settings.sources.save": "Išsaugoti",

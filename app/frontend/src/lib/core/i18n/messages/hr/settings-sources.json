@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 ili http://host:3128",
 	"settings.sources.proxyPass": "Lozinka proxyja",
 	"settings.sources.proxyLocal": "Proxy može biti na lokalnoj mreži",
+	"settings.sources.flaresolverr": "Adresa FlareSolverra",
+	"settings.sources.flaresolverrHint": "Za stranicu iza provjere botova, npr. Cloudflare. HolyArrs pita FlareSolverr samo kad stranica pokaže provjeru.",
 	"settings.sources.local": "Dosegni lokalnu mrežu",
 	"settings.sources.localHint": "Za Jackett ili Prowlarr kod kuće",
 	"settings.sources.save": "Spremi",

@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 или http://host:3128",
 	"settings.sources.proxyPass": "Пароль прокси",
 	"settings.sources.proxyLocal": "Прокси может быть в локальной сети",
+	"settings.sources.flaresolverr": "Адрес FlareSolverr",
+	"settings.sources.flaresolverrHint": "Для сайта за проверкой на ботов, например Cloudflare. HolyArrs обращается к FlareSolverr, только когда сайт показывает проверку.",
 	"settings.sources.local": "Доступ к локальной сети",
 	"settings.sources.localHint": "Для Jackett или Prowlarr у вас дома",
 	"settings.sources.save": "Сохранить",

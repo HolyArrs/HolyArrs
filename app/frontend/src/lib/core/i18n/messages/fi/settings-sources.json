@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 tai http://host:3128",
 	"settings.sources.proxyPass": "Välityspalvelimen salasana",
 	"settings.sources.proxyLocal": "Välityspalvelin voi olla paikallisessa verkossa",
+	"settings.sources.flaresolverr": "FlareSolverrin osoite",
+	"settings.sources.flaresolverrHint": "Sivustolle, jonka edessä on bottitarkistus, kuten Cloudflare. HolyArrs kysyy FlareSolverrilta vain, kun sivusto näyttää tarkistuksensa.",
 	"settings.sources.local": "Yhteys paikalliseen verkkoon",
 	"settings.sources.localHint": "Kotona toimivalle Jackettille tai Prowlarrille",
 	"settings.sources.save": "Tallenna",

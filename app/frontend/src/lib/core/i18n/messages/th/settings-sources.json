@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 หรือ http://host:3128",
 	"settings.sources.proxyPass": "รหัสผ่านพร็อกซี",
 	"settings.sources.proxyLocal": "พร็อกซีอยู่ในเครือข่ายภายในได้",
+	"settings.sources.flaresolverr": "ที่อยู่ FlareSolverr",
+	"settings.sources.flaresolverrHint": "สำหรับเว็บที่มีการตรวจบอต เช่น Cloudflare โดย HolyArrs จะถาม FlareSolverr เฉพาะเมื่อเว็บแสดงการตรวจเท่านั้น",
 	"settings.sources.local": "เข้าถึงเครือข่ายภายใน",
 	"settings.sources.localHint": "สำหรับ Jackett หรือ Prowlarr ที่บ้าน",
 	"settings.sources.save": "บันทึก",

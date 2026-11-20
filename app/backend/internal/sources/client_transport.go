@@ -9,6 +9,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 )
@@ -190,3 +192,21 @@ func feedError(body []byte) error {
 	}
 	return &Error{Kind: kind, Msg: fmt.Sprintf("code %d: %s", e.Code, e.Description), RetryAfter: Backoff(1)}
 }
+
+// feedAddress is a Newznab or Torznab address ready to call. An address
+// with no path (https://indexer.example) means its /api, and so do a
+// Prowlarr site address (http://prowlarr:9696/5) and a Jackett one
+// (.../results/torznab) saved without it by earlier versions.
+func feedAddress(raw string) string {
+	raw = strings.TrimRight(raw, "/")
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" || u.RawQuery != "" {
+		return raw
+	}
+	if u.Path == "" || prowlarrSitePath.MatchString(u.Path) || strings.HasSuffix(u.Path, "/results/torznab") {
+		return raw + "/api"
+	}
+	return raw
+}
+
+var prowlarrSitePath = regexp.MustCompile(`^/[0-9]+$`)

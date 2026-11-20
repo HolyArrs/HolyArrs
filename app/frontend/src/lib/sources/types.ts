@@ -72,6 +72,7 @@ export interface SourceView {
 	proxy: string;
 	proxy_password: string;
 	proxy_allow_local_network: boolean;
+	flaresolverr?: string;
 	summary: SourceSummary;
 }
 

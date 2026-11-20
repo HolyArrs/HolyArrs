@@ -79,7 +79,7 @@ Press **Unlink** on the card, then pick:
 | **Unreachable** | No answer, or an answer HolyArrs could not read |
 | **Key turned down** or **Key refused** | The key was not accepted |
 | **Slowed down** | The Source asked HolyArrs to wait |
-| **Blocked** | The site has a bot check, such as Cloudflare. Use Jackett or Prowlarr for it |
+| **Blocked** | The site has a bot check, such as Cloudflare. Set a **FlareSolverr address** on the Source, or use Jackett or Prowlarr for it |
 | **Paused** | You paused it. Press **Resume** to use it again |
 
 A failing Source is retried by itself: after 1 minute at first, then at double the wait each time, up to 6 hours. The Source shows the next try. **Try now** tries at once.
@@ -93,7 +93,8 @@ A failing Source is retried by itself: after 1 minute at first, then at double t
 | HolyArrs could not reach the Source | Check that Jackett, Prowlarr or the site is running and the address and port are right |
 | The answer is not a feed HolyArrs can read | The address is not a Torznab or Newznab feed. Copy it again |
 | The Source asked HolyArrs to slow down | Wait, or raise **Least time between calls** under **Limits** |
-| The site has a bot check | Add the site to Jackett or Prowlarr and link it |
+| The site has a bot check | Run FlareSolverr and put its address in **FlareSolverr address** under **Proxy**. Or add the site to Jackett or Prowlarr and link it |
+| FlareSolverr could not pass the site's bot check | FlareSolverr's own log says why. Update FlareSolverr; a new check often needs a newer one |
 | Prowlarr will not link | Set a HolyArrs password first. Check Prowlarr can reach the address on the card |
 | Another app stopped working after linking Prowlarr | You replaced a key. Give that app the new key |
 
@@ -115,8 +116,11 @@ More in [Troubleshooting](../../help/troubleshooting/).
 | Proxy | Sends every call through an HTTP or SOCKS5 proxy, such as `socks5://name@host:1080` or `http://host:3128` | Empty | The site needs another route |
 | Reach the local network | Lets it call this machine or your home network | Off | Jackett or Prowlarr runs at home |
 | Proxy may be on the local network | The same, for the proxy | Off | Your proxy runs at home |
+| FlareSolverr address | A [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) that opens the site's bot check, such as `http://flaresolverr:8191` | Empty | The Source shows **Blocked** by a bot check |
 
 Keys and proxy passwords are stored encrypted and shown hidden. Moving a Source to another host asks for the key again. Local network access never opens cloud metadata addresses.
+
+HolyArrs asks FlareSolverr only when a call meets the site's bot check, and only for plain page reads. It then keeps the cookie FlareSolverr's browser got and calls the site directly until the site checks again. FlareSolverr gets the whole address, key included, and the Source's proxy, so the page comes from the same route. FlareSolverr itself may be on the local network; the site it opens still has to pass the Source's own rule, before the ask and again for the page it ended on. A page that ended on another site is refused. FlareSolverr looks names up and follows redirects itself, so HolyArrs cannot fully stop it reaching your home network. Run it away from your other services, for example inside a VPN container's network.
 
 </details>
 

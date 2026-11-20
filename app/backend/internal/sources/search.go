@@ -97,9 +97,15 @@ func sameConfig(a, b Config) bool {
 		}
 		return c.Proxy.String()
 	}
+	flare := func(c Config) string {
+		if c.FlareSolverr == nil {
+			return ""
+		}
+		return c.FlareSolverr.String()
+	}
 	return a.URL == b.URL && a.APIKey == b.APIKey && a.AllowLocal == b.AllowLocal && a.Format == b.Format && a.Protocol == b.Protocol &&
 		a.GapMS == b.GapMS && a.PerWindow == b.PerWindow && a.Window == b.Window && a.Timeout == b.Timeout &&
-		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal && a.Site == b.Site
+		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal && a.Site == b.Site && flare(a) == flare(b)
 }
 
 // hidden marks where a Source key was taken out of a stored link. The number

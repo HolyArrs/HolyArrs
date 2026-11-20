@@ -61,6 +61,21 @@ You can paste both in one line. HolyArrs keeps it encrypted.
 
 With the cookie, HolyArrs reads the site's own search pages. With only the RSS key, it uses the site's RSS search.
 
+## Sites behind a bot check
+
+Some sites show Cloudflare's bot check instead of results. The Source then shows **Blocked**.
+
+1. Run [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) next to HolyArrs, for example as the `ghcr.io/flaresolverr/flaresolverr` container.
+2. Open the Source, then **Proxy**.
+3. Put its address in **FlareSolverr address**, such as `http://flaresolverr:8191`.
+4. Press **Save**, then **Test**.
+
+   You should see **Working**.
+
+HolyArrs asks FlareSolverr only when the site shows its check. Calls in between go straight to the site with the cookie FlareSolverr got. A Source's proxy is also handed to FlareSolverr, so pages it opens come from the same route.
+
+FlareSolverr opens whatever page it is asked for in a real browser. Run it where it cannot reach the rest of your home network, such as inside your VPN container's network, next to your torrent app.
+
 ## If it does not work
 
 | You see | Try |

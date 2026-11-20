@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 nebo http://host:3128",
 	"settings.sources.proxyPass": "Heslo proxy",
 	"settings.sources.proxyLocal": "Proxy smí být v místní síti",
+	"settings.sources.flaresolverr": "Adresa FlareSolverru",
+	"settings.sources.flaresolverrHint": "Pro web za kontrolou botů, třeba od Cloudflare. HolyArrs se FlareSolverru ptá, jen když web kontrolu ukáže.",
 	"settings.sources.local": "Dosáhnout do místní sítě",
 	"settings.sources.localHint": "Pro Jackett nebo Prowlarr doma",
 	"settings.sources.save": "Uložit",

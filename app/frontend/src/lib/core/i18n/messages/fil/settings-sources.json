@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 o http://host:3128",
 	"settings.sources.proxyPass": "Password ng proxy",
 	"settings.sources.proxyLocal": "Puwedeng nasa local network ang proxy",
+	"settings.sources.flaresolverr": "Address ng FlareSolverr",
+	"settings.sources.flaresolverrHint": "Para sa site na may bot check, gaya ng Cloudflare. Tinatanong lang ng HolyArrs ang FlareSolverr kapag ipinakita ng site ang check nito.",
 	"settings.sources.local": "Abutin ang local network",
 	"settings.sources.localHint": "Para sa Jackett o Prowlarr sa bahay",
 	"settings.sources.save": "I-save",
