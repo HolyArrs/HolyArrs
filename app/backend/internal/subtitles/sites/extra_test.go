@@ -439,3 +439,17 @@ func TestBSPlayerServerList(t *testing.T) {
 		}
 	}
 }
+
+func TestTagEndStrayQuote(t *testing.T) {
+	for in, want := range map[string]int{
+		`p style="a;\ alt="up" title="up">rest`: 32,
+		`a href="x>y">z`:                        12,
+		`img alt='it"s'>`:                       14,
+		`p "loose">`:                            9,
+		`a href="never closed>`:                 -1,
+	} {
+		if got := tagEnd([]byte(in)); got != want {
+			t.Errorf("%q: %d, want %d", in, got, want)
+		}
+	}
+}

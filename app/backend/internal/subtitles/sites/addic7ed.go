@@ -499,16 +499,27 @@ func tokens(b []byte, fn func(token)) {
 	}
 }
 
+// tagEnd finds the end of a tag. As in a browser, a quote starts a value only
+// right after "=": a stray quote, as in TVsubtitles' style="a;\ alt="x", must
+// not swallow the rest of the page.
 func tagEnd(b []byte) int {
 	var quote byte
+	afterEq := false
 	for i, c := range b {
 		switch {
-		case quote != 0 && c == quote:
-			quote = 0
-		case quote == 0 && (c == '\'' || c == '"'):
-			quote = c
-		case quote == 0 && c == '>':
+		case quote != 0:
+			if c == quote {
+				quote = 0
+			}
+			continue
+		case c == '>':
 			return i
+		case afterEq && (c == '\'' || c == '"'):
+			quote = c
+			continue
+		}
+		if !isSpace(c) {
+			afterEq = c == '='
 		}
 	}
 	return -1

@@ -214,7 +214,9 @@ func (t *TVSubs) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				if epID(show, s.Season, s.Episode) != id {
 					continue
 				}
-				fmt.Fprintf(&sb, `<a href="/subtitle-%d.html"><div class="subtitlen"><div class="subtitlen_left"><img src="images/flags/%s.gif" width="18"></div><h5><img src="images/icons/x.png">%s</h5><p title="rip"><img src="images/icons/rip.png">%s</p></div></a>`,
+				fmt.Fprintf(&sb, `<a href="/subtitle-%d.html"><div class="subtitlen"><div class="subtitlen_left"><img src="images/flags/%s.gif" width="18"></div><h5><img src="images/icons/x.png">%s</h5><p title="rip"><img src="images/icons/rip.png">%s</p>`+
+					// The real page has this stray quote in every block.
+					`<p style="width:70px;\ alt="uploaded" title="uploaded"><img src="images/time.png"><small>02.11.09</small></p></div></a>`,
 					s.ID, s.Flag, html.EscapeString(s.Release), html.EscapeString(s.Rip))
 			}
 		}
