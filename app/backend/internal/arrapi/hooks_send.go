@@ -280,8 +280,8 @@ func (s *hookSender) notesFor(ctx context.Context, e domain.Event, t mediafiles.
 		if err := database.Get(ctx, db, "files", *slots[0].FileID, &f); err != nil {
 			continue // the file went away since
 		}
-		mf := mediaFileOf(f, lf.Path, main.FolderName)
-		quality, _ := mf.Quality["quality"].(map[string]any)["name"].(string)
+		mf := mediaFileOf(map[string]string{"show": "sonarr", "movie": "radarr"}[t.Kind], f, lf.Path, main.FolderName)
+		quality := mf.Quality["quality"].(wireQuality).Name
 		ev := hookEvent{EventType: "Download", InstanceName: eventName, IsUpgrade: st.upgrade}
 		if t.Kind == "movie" {
 			ev.Movie = &hookMovie{ID: t.ID, Title: t.Name, TmdbID: sourceID(t.SourceIDs, "tmdb"), Tags: labels}

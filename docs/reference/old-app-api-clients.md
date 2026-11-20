@@ -1,6 +1,6 @@
 ---
 title: Old-app API clients
-description: Connect Seerr, Overseerr, Bazarr, Prowlarr, Unpackerr and Homepage to HolyArrs step by step.
+description: Connect Seerr, Overseerr, Bazarr, Prowlarr, Unpackerr, Homepage and Helmarr to HolyArrs step by step.
 level: Expert
 sidebar: { order: 2 }
 ---
@@ -118,6 +118,16 @@ The key's maker must be allowed to change settings and manage the Library, or Pr
 You don't need it. HolyArrs unpacks RAR sets itself during import, and imports only the files the download listed, so files Unpackerr unpacks beside them are never imported.
 
 If you run it anyway, point its Sonarr and Radarr entries at `/sonarr` and `/radarr` with the keys. It reads the download list: a finished download waiting for import shows as completed with its folder; after import it leaves the list. Unpackerr changes nothing in HolyArrs.
+
+## Helmarr
+
+Helmarr is a phone app for Sonarr and Radarr. Add HolyArrs to it as both.
+
+1. In Helmarr, add a **Sonarr** instance with your HolyArrs address, `/sonarr` as the URL base and the Sonarr-side key.
+2. Add a **Radarr** instance with `/radarr` and the Radarr-side key.
+3. Open each instance. You should see your shows and movies.
+
+Searching and adding titles, the calendar, the download list, History, episode files, disk space and health all work. History lists sends to a Downloader, imports, failures and renames.
 
 ## Homepage
 

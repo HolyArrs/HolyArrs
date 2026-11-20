@@ -304,6 +304,31 @@ func SlotsOfItem(ctx context.Context, q database.Lister, itemID int64) ([]Slot, 
 	return database.Select[Slot](ctx, q, "slots", "item_id = ? ORDER BY id", itemID)
 }
 
+// SlotItems is the Item of each of these Slots, by Slot id.
+func SlotItems(ctx context.Context, q database.Lister, slotIDs []int64) (map[int64]int64, error) {
+	out := map[int64]int64{}
+	if len(slotIDs) == 0 {
+		return out, nil
+	}
+	in, err := json.Marshal(slotIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.QueryContext(ctx, "SELECT id, item_id FROM slots WHERE id IN (SELECT value FROM json_each(?))", string(in))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, item int64
+		if err := rows.Scan(&id, &item); err != nil {
+			return nil, err
+		}
+		out[id] = item
+	}
+	return out, rows.Err()
+}
+
 // SeasonPartID is the id of a show's season Part with that number.
 func SeasonPartID(ctx context.Context, q database.Querier, titleID int64, number int) (int64, error) {
 	var id int64

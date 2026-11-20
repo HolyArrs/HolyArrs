@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -51,15 +52,37 @@ type movie struct {
 	MovieFileID         int64             `json:"movieFileId"`
 	MovieFile           *mediaFile        `json:"movieFile,omitempty"`
 	Statistics          *movieStats       `json:"statistics,omitempty"`
+	// Details Radarr always sends; neutral values where HolyArrs has none.
+	OriginalTitle         string           `json:"originalTitle"`
+	ReleaseDate           *utc             `json:"releaseDate,omitempty"`
+	Website               string           `json:"website"`
+	YouTubeTrailerID      string           `json:"youTubeTrailerId"`
+	Studio                string           `json:"studio"`
+	FolderName            string           `json:"folderName,omitempty"`
+	CleanTitle            string           `json:"cleanTitle"`
+	Certification         string           `json:"certification,omitempty"`
+	Keywords              []string         `json:"keywords"`
+	Ratings               map[string]any   `json:"ratings"`
+	Popularity            float64          `json:"popularity"`
+	SecondaryYearSourceID int              `json:"secondaryYearSourceId"`
+	Collection            *movieCollection `json:"collection,omitempty"`
+}
+
+type movieCollection struct {
+	Title  string `json:"title"`
+	TmdbID int64  `json:"tmdbId"`
 }
 
 type movieStats struct {
-	MovieFileCount int      `json:"movieFileCount"`
-	SizeOnDisk     int64    `json:"sizeOnDisk"`
-	ReleaseGroups  []string `json:"releaseGroups"`
+	MovieFileCount     int              `json:"movieFileCount"`
+	SizeOnDisk         int64            `json:"sizeOnDisk"`
+	ReleaseGroups      []string         `json:"releaseGroups"`
+	MovieFileQualities []map[string]any `json:"movieFileQualities"`
 }
 
 // mediaFile is the main Version's file of a movie or an episode.
+// Every field the old apps always send is here, at its neutral value when
+// HolyArrs does not know it: phone apps such as Helmarr decode each one.
 type mediaFile struct {
 	ID           int64          `json:"id"`
 	MovieID      int64          `json:"movieId,omitempty"`
@@ -70,10 +93,18 @@ type mediaFile struct {
 	Size         int64          `json:"size"`
 	DateAdded    utc            `json:"dateAdded"`
 	SceneName    string         `json:"sceneName,omitempty"`
-	ReleaseGroup string         `json:"releaseGroup,omitempty"`
+	ReleaseGroup string         `json:"releaseGroup"`
+	Edition      *string        `json:"edition,omitempty"` // Radarr
 	Languages    []language     `json:"languages"`
 	Quality      map[string]any `json:"quality"`
-	MediaInfo    map[string]any `json:"mediaInfo,omitempty"`
+	// Sonarr's custom format fields and release type.
+	CustomFormats       *[]any         `json:"customFormats,omitempty"`
+	CustomFormatScore   *int           `json:"customFormatScore,omitempty"`
+	IndexerFlags        int            `json:"indexerFlags"`
+	ReleaseType         string         `json:"releaseType,omitempty"`
+	OriginalFilePath    *string        `json:"originalFilePath,omitempty"` // Radarr
+	QualityCutoffNotMet bool           `json:"qualityCutoffNotMet"`
+	MediaInfo           map[string]any `json:"mediaInfo"`
 }
 
 // The release stages map HolyArrs' Release gate to the old apps' names
@@ -128,47 +159,91 @@ var sourceNames = map[string]string{"web_dl": "WEBDL", "web_rip": "WEBRip", "tv"
 // to the Library folder root, while relativePath in the answer is
 // relative to the title folder. The quality name is source-resolution,
 // such as WEBDL-1080p, because Bazarr splits it on the dash.
-func mediaFileOf(f mediafiles.File, root, folder string) *mediaFile {
+func mediaFileOf(side string, f mediafiles.File, root, folder string) *mediaFile {
 	mf := &mediaFile{ID: f.ID, RelativePath: strings.TrimPrefix(f.RelativePath, folder+"/"),
-		Path: filepath.Join(root, filepath.FromSlash(f.RelativePath)), Size: f.Size, DateAdded: utc(f.AddedAt), Languages: languagesOf(f.Languages)}
+		Path: filepath.Join(root, filepath.FromSlash(f.RelativePath)), Size: f.Size, DateAdded: utc(f.AddedAt), Languages: languagesOf(side, f.Languages)}
 	if f.ReleaseName != nil {
 		mf.SceneName = *f.ReleaseName
 	}
 	if f.Group != nil {
 		mf.ReleaseGroup = *f.Group
 	}
-	info := map[string]any{}
-	name := f.Quality.Source
+	mf.MediaInfo = mediaInfoOf(f)
+	name := qualityName(f.Quality.Source, f.Quality.Resolution)
+	mf.Quality = fullQuality(side, name, f.Quality.Resolution)
+	if side == "radarr" {
+		mf.Edition, mf.OriginalFilePath = ptr(""), ptr("")
+		if e, _ := f.MediaInfo["edition"].(string); e != "" {
+			mf.Edition = &e
+		}
+		if f.ReleaseName != nil {
+			mf.OriginalFilePath = ptr(*f.ReleaseName)
+		}
+	} else {
+		mf.CustomFormats, mf.CustomFormatScore, mf.ReleaseType = &[]any{}, ptr(0), "singleEpisode"
+	}
+	return mf
+}
+
+// mediaInfoOf is a file's media details in the old apps' shape, every
+// field present: what the file inspection found, zero values otherwise.
+func mediaInfoOf(f mediafiles.File) map[string]any {
+	str := func(k string) string { s, _ := f.MediaInfo[k].(string); return s }
+	num := func(k string) float64 {
+		switch v := f.MediaInfo[k].(type) {
+		case float64:
+			return v
+		case int:
+			return float64(v)
+		case int64:
+			return float64(v)
+		}
+		return 0
+	}
+	info := map[string]any{"audioBitrate": 0, "audioChannels": num("audio_channels"), "audioCodec": f.Quality.Audio, "audioLanguages": "",
+		"audioStreamCount": 0, "videoBitDepth": 0, "videoBitrate": 0, "videoCodec": f.Quality.Codec, "videoFps": 0, "videoDynamicRange": "",
+		"videoDynamicRangeType": "", "resolution": "", "runTime": "", "scanType": "", "subtitles": ""}
+	if info["audioCodec"] == "" {
+		info["audioCodec"] = str("audio_codec")
+	}
+	if info["videoCodec"] == "" {
+		info["videoCodec"] = str("video_codec")
+	}
+	if w := fileWidths[f.Quality.Resolution]; w > 0 {
+		info["resolution"] = strconv.Itoa(w) + "x" + strconv.Itoa(f.Quality.Resolution)
+	}
+	if l, ok := f.MediaInfo["audio_languages"].([]any); ok {
+		var parts []string
+		for _, x := range l {
+			if s, ok := x.(string); ok && s != "" {
+				parts = append(parts, s)
+			}
+		}
+		info["audioLanguages"], info["audioStreamCount"] = strings.Join(parts, "/"), len(parts)
+	}
+	if len(f.Quality.HDR) > 0 {
+		info["videoDynamicRange"], info["videoDynamicRangeType"] = "HDR", strings.ToUpper(strings.Join(f.Quality.HDR, " "))
+	}
+	return info
+}
+
+// qualityName is the old apps' quality name for a parser source and a
+// vertical resolution, such as WEBDL-1080p or Bluray-2160p Remux.
+func qualityName(source string, resolution int) string {
+	name := source
 	if n, ok := sourceNames[name]; ok {
 		name = n
 	}
-	if f.Quality.Resolution > 0 {
+	if resolution > 0 {
 		if name != "" {
 			name += "-"
 		}
-		name += strconv.Itoa(f.Quality.Resolution) + "p"
-		if w := fileWidths[f.Quality.Resolution]; w > 0 {
-			info["resolution"] = strconv.Itoa(w) + "x" + strconv.Itoa(f.Quality.Resolution)
-		}
+		name += strconv.Itoa(resolution) + "p"
 	}
-	if f.Quality.Source == "remux" {
+	if source == "remux" {
 		name += " Remux"
 	}
-	video := f.Quality.Codec
-	if video == "" {
-		video, _ = f.MediaInfo["video_codec"].(string)
-	}
-	if video != "" {
-		info["videoCodec"] = video
-	}
-	if f.Quality.Audio != "" {
-		info["audioCodec"] = f.Quality.Audio
-	}
-	if len(info) > 0 {
-		mf.MediaInfo = info
-	}
-	mf.Quality = map[string]any{"quality": map[string]any{"name": name, "resolution": f.Quality.Resolution}}
-	return mf
+	return name
 }
 
 // loadMovies reads the Library movies that match where, each with the
@@ -211,9 +286,9 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 		m := movie{ID: t.ID, Title: t.Name, SortTitle: t.SortName, Status: movieStatus(t.CinemaDate, t.DigitalDate, t.PhysicalDate, now),
 			InCinemas: utcPtr(t.CinemaDate), PhysicalRelease: utcPtr(t.PhysicalDate), DigitalRelease: utcPtr(t.DigitalDate),
 			QualityProfileID: v.PickRulesID, Monitored: t.KeepUpToDate, MinimumAvailability: availability(t.ReleaseGate),
-			IsAvailable: t.GateOpensAt != nil && !t.GateOpensAt.After(now), Runtime: t.RuntimeMinutes, TmdbID: sourceID(t.SourceIDs, "tmdb"),
+			IsAvailable: library.GateOpen(t.GateDriver, t.GateOpensAt, now), Runtime: t.RuntimeMinutes, TmdbID: sourceID(t.SourceIDs, "tmdb"),
 			ImdbID: t.SourceIDs["imdb"], TitleSlug: t.SourceIDs["tmdb"], Genres: nonNil(t.Genres), Tags: []int64{}, Added: utc(t.CreatedAt),
-			Images: h.libraryImages(ctx, t), AlternateTitles: ptr(alternateTitles(t.Aliases)), OriginalLanguage: ptr(originalLanguage(t.OriginalLanguage))}
+			Images: h.libraryImages(ctx, t), AlternateTitles: ptr(alternateTitles(h.side, t.ID, t.Aliases)), OriginalLanguage: ptr(originalLanguage(h.side, t.OriginalLanguage))}
 		if l := tags[t.ID]; l != nil {
 			m.Tags = l
 		}
@@ -223,18 +298,23 @@ func (h *handler) loadMovies(ctx context.Context, lookup bool, where string, arg
 		if t.Year != nil {
 			m.Year = *t.Year
 		}
+		movieDetails(&m, t)
 		lf, hasFolder := folders[v.LibraryFolderID]
 		if hasFolder {
 			m.RootFolderPath = lf.Path
 			m.Path = filepath.Join(lf.Path, v.FolderName)
+			m.FolderName = m.Path
 		}
-		st := movieStats{ReleaseGroups: []string{}}
+		st := movieStats{ReleaseGroups: []string{}, MovieFileQualities: []map[string]any{}}
 		if f, ok := fileOf[v.ID]; ok {
-			m.MovieFileID, m.MovieFile = f.ID, mediaFileOf(f, lf.Path, v.FolderName)
+			m.MovieFileID, m.MovieFile = f.ID, mediaFileOf(h.side, f, lf.Path, v.FolderName)
 			m.MovieFile.MovieID = t.ID
 			st.MovieFileCount, st.SizeOnDisk = 1, f.Size
 			if f.Group != nil {
 				st.ReleaseGroups = []string{*f.Group}
+			}
+			if q, ok := m.MovieFile.Quality["quality"].(wireQuality); ok {
+				st.MovieFileQualities = []map[string]any{{"id": q.ID, "name": q.Name, "source": q.Source, "resolution": q.Resolution, "modifier": q.Modifier}}
 			}
 		}
 		if !lookup {
@@ -254,6 +334,12 @@ func (h *handler) lookupMovieOf(m metadata.Movie) movie {
 		InCinemas: utcPtr(m.CinemaDate), PhysicalRelease: utcPtr(m.PhysicalDate), DigitalRelease: utcPtr(m.DigitalDate), Images: []image{},
 		RemotePoster: m.Poster, Year: m.Year, MinimumAvailability: "tba", IsAvailable: true, Runtime: m.Runtime, TmdbID: sourceID(m.IDs, "tmdb"),
 		ImdbID: m.IDs["imdb"], TitleSlug: m.IDs["tmdb"], Genres: nonNil(m.Genres), Tags: []int64{}, Added: zeroDate}
+	out.OriginalTitle, out.CleanTitle, out.Certification, out.Studio = m.Name, cleanTitle(m.Name), m.Rating, m.Studio
+	out.OriginalLanguage = ptr(originalLanguage(h.side, &m.OriginalLanguage))
+	out.Keywords, out.Ratings, out.ReleaseDate = []string{}, movieRatings(m.Votes, m.Score), utcPtr(m.CinemaDate)
+	if m.Collection != nil {
+		out.Collection = &movieCollection{Title: m.Collection.Name, TmdbID: atoi64(m.Collection.ID)}
+	}
 	if m.Poster != "" {
 		out.Images = append(out.Images, image{CoverType: "poster", RemoteURL: m.Poster, URL: m.Poster})
 	}
@@ -513,4 +599,43 @@ func (h *handler) putMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusAccepted, out)
+}
+
+// movieDetails fills the details Radarr always sends from what HolyArrs
+// keeps of a movie.
+func movieDetails(m *movie, t mediafiles.Title) {
+	m.OriginalTitle, m.CleanTitle, m.Certification, m.Studio = t.Name, cleanTitle(t.Name), t.Rating, t.Studio
+	if t.OriginalName != nil && *t.OriginalName != "" {
+		m.OriginalTitle = *t.OriginalName
+	}
+	m.Keywords = []string{}
+	score := 0.0
+	if t.Score != nil {
+		score = *t.Score
+	}
+	m.Ratings = movieRatings(t.Votes, score)
+	for _, d := range []*time.Time{t.CinemaDate, t.DigitalDate, t.PhysicalDate} {
+		if d != nil {
+			m.ReleaseDate = utcPtr(d)
+			break
+		}
+	}
+}
+
+// movieRatings has the two sources Radarr always sends, imdb and tmdb;
+// HolyArrs knows TMDB's score only, so imdb stands at zero.
+func movieRatings(votes int, score float64) map[string]any {
+	return map[string]any{"imdb": map[string]any{"votes": 0, "value": 0, "type": "user"},
+		"tmdb": map[string]any{"votes": votes, "value": score, "type": "user"}}
+}
+
+// cleanTitle is the old apps' clean title: lower case letters and digits.
+func cleanTitle(name string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(name) {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }

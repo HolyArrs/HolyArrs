@@ -323,6 +323,7 @@ chosen_by
 cinema_date
 cipher
 ciphertext
+cleanTitle
 clear_app_token
 clear_finished
 clear_key
@@ -401,6 +402,8 @@ credits
 crew
 current
 cursor
+customFormatScore
+customFormats
 custom_formats
 cut
 cutoff
@@ -478,6 +481,7 @@ done_at
 down
 download
 downloadClient
+downloadClientHasPostImportCategory
 downloadCount
 downloadId
 downloadSpeed
@@ -537,6 +541,7 @@ episodeCount
 episodeFile
 episodeFileCount
 episodeFileId
+episodeHasFile
 episodeId
 episodeIds
 episodeNumber
@@ -620,6 +625,7 @@ files_stay
 filled
 films
 filter
+finaleType
 fingerprint
 finish_reason
 finished
@@ -637,6 +643,7 @@ flags
 flap_guard
 flatrate
 folder
+folderName
 folder_moved
 folder_name
 folder_path
@@ -799,6 +806,7 @@ included
 incomplete
 index
 indexer
+indexerFlags
 indexer_proxies
 indexers
 indexes
@@ -863,6 +871,7 @@ languageProfileId
 language_profiles
 languages
 lastAired
+lastSearchTime
 last_activity
 last_air
 last_air_date
@@ -1020,6 +1029,7 @@ mode
 mode_locked
 model
 models
+modifier
 moment
 moments
 monitor
@@ -1043,8 +1053,10 @@ movie
 movieFile
 movieFileCount
 movieFileId
+movieFileQualities
 movieId
 movieIds
+movieMetadataId
 movie_days
 movie_limit
 movie_limit_set
@@ -1178,8 +1190,10 @@ orders
 origin
 origin_country
 original
+originalFilePath
 originalLanguage
 originalNetwork
+originalTitle
 original_language
 original_name
 original_ok
@@ -1367,6 +1381,7 @@ qbittorrent
 qid
 qualities
 quality
+qualityCutoffNotMet
 qualityProfileId
 qualityVersion
 quality_name
@@ -1425,8 +1440,10 @@ release-count
 release-group
 release-group-count
 release-groups
+releaseDate
 releaseGroup
 releaseGroups
+releaseType
 release_date
 release_dates
 release_gate
@@ -1549,6 +1566,7 @@ seasons
 seasons_added
 seasons_off
 secondary-types
+secondaryYearSourceId
 secondary_types
 secret
 secret_set
@@ -1576,6 +1594,7 @@ sending
 serial
 series
 seriesId
+seriesIds
 seriesType
 server
 serverAbrStreamingUrl
@@ -1668,6 +1687,8 @@ sortTitle
 sort_name
 source
 sourceName
+sourceTitle
+sourceType
 source_data
 source_file
 source_id
@@ -1873,6 +1894,7 @@ turn_down
 turned_down_for
 tvDbId
 tvMazeId
+tvRageId
 tv_results
 tvdb
 tvdbId
@@ -1987,6 +2009,7 @@ web_url
 webhook
 webhook_auth
 webhook_url
+website
 week
 what
 where
@@ -2010,4 +2033,5 @@ writable_locked
 year
 year_from
 year_to
+youTubeTrailerId
 youtube_id

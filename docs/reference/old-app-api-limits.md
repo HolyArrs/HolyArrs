@@ -9,7 +9,7 @@ What old-app clients can't do through HolyArrs, and the fix for each common erro
 
 ## Supported apps
 
-Seerr, Overseerr, Bazarr, Unpackerr, Prowlarr and the Homepage Sonarr widget. The Homepage Radarr widget is untried. Recyclarr, Maintainerr, Cleanuparr and other apps that talk to Sonarr or Radarr are not supported.
+Seerr, Overseerr, Bazarr, Unpackerr, Prowlarr, Helmarr and the Homepage Sonarr widget. The Homepage Radarr widget is untried. Recyclarr, Maintainerr, Cleanuparr and other apps that talk to Sonarr or Radarr are not supported.
 
 ## If it does not work
 

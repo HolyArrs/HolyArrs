@@ -6,8 +6,10 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
@@ -27,6 +29,8 @@ type episode struct {
 	Monitored             bool   `json:"monitored"`
 	AbsoluteEpisodeNumber *int   `json:"absoluteEpisodeNumber,omitempty"`
 	UnverifiedScene       bool   `json:"unverifiedSceneNumbering"`
+	FinaleType            string `json:"finaleType,omitempty"` // season or series, on the last episode
+	LastSearchTime        *utc   `json:"lastSearchTime,omitempty"`
 	// Set only when asked for with includeEpisodeFile or includeSeries.
 	EpisodeFile *mediaFile `json:"episodeFile,omitempty"`
 	Series      *series    `json:"series,omitempty"`
@@ -52,6 +56,14 @@ func (h *handler) episodesOf(ctx context.Context, f library.EpisodeFilter) ([]ep
 	if err != nil {
 		return nil, err
 	}
+	var shows []int64
+	for _, it := range its {
+		shows = append(shows, it.TitleID)
+	}
+	ended, err := mediafiles.EndedTitles(ctx, h.Store.Read(), shows)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]episode, 0, len(its))
 	for _, it := range its {
 		e := episode{ID: it.ID, SeriesID: it.TitleID, TvdbID: sourceID(it.SourceIDs, "tvdb"), EpisodeFileID: files[it.ID],
@@ -72,8 +84,10 @@ func (h *handler) episodesOf(ctx context.Context, f library.EpisodeFilter) ([]ep
 		if it.Runtime != nil {
 			e.Runtime = *it.Runtime
 		}
+		e.LastSearchTime = utcPtr(it.LastSearchedAt)
 		out = append(out, e)
 	}
+	markFinales(out, h.now(), func(id int64) bool { return ended[id] })
 	return out, nil
 }
 
@@ -189,4 +203,35 @@ func (h *handler) monitorEpisodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusAccepted, out)
+}
+
+// markFinales sets finaleType on the last aired episode of each season:
+// "season", or "series" for the last season of an ended show, as Sonarr
+// marks them. Only a season whose last episode has aired has a finale.
+func markFinales(eps []episode, now time.Time, ended func(seriesID int64) bool) {
+	type key struct {
+		series int64
+		season int
+	}
+	last := map[key]int{}
+	lastSeason := map[int64]int{}
+	for i, e := range eps {
+		k := key{e.SeriesID, e.SeasonNumber}
+		if j, ok := last[k]; !ok || e.EpisodeNumber > eps[j].EpisodeNumber {
+			last[k] = i
+		}
+		if e.SeasonNumber > lastSeason[e.SeriesID] {
+			lastSeason[e.SeriesID] = e.SeasonNumber
+		}
+	}
+	for k, i := range last {
+		e := &eps[i]
+		if e.AirDateUtc == nil || time.Time(*e.AirDateUtc).After(now) {
+			continue
+		}
+		e.FinaleType = "season"
+		if k.season > 0 && k.season == lastSeason[k.series] && ended(k.series) {
+			e.FinaleType = "series"
+		}
+	}
 }
