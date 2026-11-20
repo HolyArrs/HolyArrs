@@ -120,6 +120,8 @@ var Kinds = []Kind{
 		Note: "Movies and shows, matched by the video file's hash, so it needs the file on disk. No account. Starts turned off: the site is often down. Checked against fake replies only."},
 	{Kind: "napiprojekt", Name: "NapiProjekt", DefaultURL: "http://napiprojekt.pl", Movies: true, Shows: true,
 		Note: "Polish only. Movies and shows, matched by the video file's own hash, so it needs the file on disk. No account. The site has no https, so calls to it are not encrypted."},
+	{Kind: "napisy24", Name: "Napisy24", DefaultURL: "https://napisy24.pl", Movies: true, Shows: true,
+		Note: "Polish only. Movies and shows, matched by the video file's hash and size, so it needs the file on disk. No account: HolyArrs uses the public login subliminal and Bazarr use."},
 	{Kind: "fake", Name: "Lab subtitle site", Movies: true, Shows: true, Lab: true, Note: "The lab's fake site, for tests."},
 	{Kind: "fake_account", Name: "Lab subtitle site with an account", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"api_key"}, Lab: true,
 		Note: "The lab's fake site asking for a key, for tests of sites that need your account."},
@@ -176,6 +178,8 @@ func New(kind string, cfg Config) (Site, error) {
 		return newBSPlayer(c), nil
 	case "napiprojekt":
 		return newNapiProjekt(c), nil
+	case "napisy24":
+		return newNapisy24(c), nil
 	case "subdl":
 		c.keyHeader = "" // subdl takes the key in the query
 		return &subdl{c: c}, nil

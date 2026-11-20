@@ -116,7 +116,7 @@ func TestSubtitleRoutes(t *testing.T) {
 		Kinds []struct{ Kind string } `json:"kinds"`
 	}
 	decodeJSON(t, do(t, "GET", u+"/subtitle-sites/kinds", "", 200), &kinds)
-	if len(kinds.Kinds) != 11 {
+	if len(kinds.Kinds) != 12 {
 		t.Fatalf("%v", kinds)
 	}
 	do(t, "POST", u+"/subtitle-sites", `{"kind": "nope"}`, 400)

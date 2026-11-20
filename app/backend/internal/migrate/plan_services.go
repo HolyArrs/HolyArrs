@@ -456,7 +456,7 @@ func (b *builder) naming(s *Snapshot) {
 
 // subtitleSiteKinds maps their subtitle site names to ours.
 var subtitleSiteKinds = map[string]string{"podnapisi": "podnapisi", "gestdown": "gestdown", "yifysubtitles": "yifysubtitles",
-	"tvsubtitles": "tvsubtitles", "bsplayer": "bsplayer", "napiprojekt": "napiprojekt"}
+	"tvsubtitles": "tvsubtitles", "bsplayer": "bsplayer", "napiprojekt": "napiprojekt", "napisy24": "napisy24"}
 
 func (b *builder) subtitles(s *Snapshot) {
 	b.cover("subtitles")
