@@ -40,11 +40,14 @@ Stays behind: other subtitle sites and their accounts. HolyArrs reaches Addic7ed
 | From Prowlarr | In HolyArrs |
 | --- | --- |
 | Torznab, Newznab and RSS indexers | **Sources**, added paused and blocked from your home network. |
+| Sites HolyArrs has built in (The Pirate Bay, YTS, Nyaa, Tokyo Toshokan, Bangumi Moe, BigFANGroup, Torrent9, TorrentDownload, LimeTorrents, 1337x, Knaben, SubsPlease, TorrentsCSV) | Built-in site **Sources**, read directly with no Prowlarr, added paused. A FlareSolverr proxy the indexer used becomes that Source's FlareSolverr address. |
 | Download clients | **Downloaders**, added paused. |
 
-Stays behind: app links, sync profiles, indexer proxies and notification kinds HolyArrs does not have.
+Stays behind: app links, sync profiles, other site definitions, indexer proxies HolyArrs has no place for, and notification kinds HolyArrs does not have.
 
-Sources brought in from Prowlarr still search through Prowlarr, so keep it running. If it stops, those Sources say Prowlarr isn't answering.
+Import Prowlarr together with Sonarr and Radarr, or before or after them. The indexers Prowlarr put in those apps are not added again: each one is the same Source as its indexer in Prowlarr. A site Prowlarr cannot give (another site definition) comes over once, from Sonarr and Radarr, through Prowlarr. See [The same indexer in more than one app](sonarr-radarr.md#the-same-indexer-in-more-than-one-app).
+
+Sources at a Prowlarr address (the copies in Sonarr and Radarr of sites Prowlarr cannot give) still search through Prowlarr, so keep it running. If it stops, those Sources say Prowlarr isn't answering.
 
 :::tip
 To keep Prowlarr running and let it push Sources into HolyArrs instead, see [Old-app API](../reference/old-app-api.md).

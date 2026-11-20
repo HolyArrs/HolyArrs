@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 hoặc http://host:3128",
 	"settings.sources.proxyPass": "Mật khẩu proxy",
 	"settings.sources.proxyLocal": "Proxy có thể nằm trong mạng nội bộ",
+	"settings.sources.flaresolverr": "Địa chỉ FlareSolverr",
+	"settings.sources.flaresolverrHint": "Dành cho trang có kiểm tra bot, như Cloudflare. HolyArrs chỉ hỏi FlareSolverr khi trang hiện bước kiểm tra.",
 	"settings.sources.local": "Truy cập mạng nội bộ",
 	"settings.sources.localHint": "Dành cho Jackett hoặc Prowlarr ở nhà",
 	"settings.sources.save": "Lưu",

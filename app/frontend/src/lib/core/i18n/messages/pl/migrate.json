@@ -315,5 +315,7 @@
 	"migrate.seasonsDifferOther": "Seriale znalezione po numerze TMDB do sprawdzenia: {n}",
 	"migrate.seasonsDifferWhy": "{list} znaleziono tylko po numerze TMDB ze starej aplikacji, tutaj pod inną nazwą. Otwórz każdy i sprawdź, czy to ten sam serial. Jeśli tak, jego sezony są inaczej numerowane: dopasuj jego Pozostałe pliki, a potem włącz serial. Jeśli nie, usuń go; jego pliki zostaną tam, gdzie są.",
 	"migrate.stillChecking": "Seriale, które serwer metadanych wciąż sprawdza: {n}. Lista zaktualizuje się sama po zakończeniu.",
-	"migrate.stillCheckingImport": "Seriale, które serwer metadanych wciąż sprawdza: {n}. Możesz już importować; zostaną sprawdzone podczas importu."
+	"migrate.stillCheckingImport": "Seriale, które serwer metadanych wciąż sprawdza: {n}. Możesz już importować; zostaną sprawdzone podczas importu.",
+	"migrate.sameSource": "to samo co {list}: jedno Źródło",
+	"migrate.nameInApps": "{name} w {apps}"
 }

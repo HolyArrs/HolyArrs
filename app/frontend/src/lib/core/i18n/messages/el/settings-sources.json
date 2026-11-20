@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 ή http://host:3128",
 	"settings.sources.proxyPass": "Κωδικός διακομιστή μεσολάβησης",
 	"settings.sources.proxyLocal": "Ο διακομιστής μεσολάβησης μπορεί να βρίσκεται στο τοπικό δίκτυο",
+	"settings.sources.flaresolverr": "Διεύθυνση FlareSolverr",
+	"settings.sources.flaresolverrHint": "Για ιστότοπο πίσω από έλεγχο bot, όπως το Cloudflare. Το HolyArrs ρωτά το FlareSolverr μόνο όταν ο ιστότοπος δείχνει τον έλεγχό του.",
 	"settings.sources.local": "Πρόσβαση στο τοπικό δίκτυο",
 	"settings.sources.localHint": "Για Jackett ή Prowlarr στο σπίτι",
 	"settings.sources.save": "Αποθήκευση",

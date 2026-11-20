@@ -3,13 +3,13 @@ package migrate
 import (
 	"fmt"
 	"net/url"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // sourceKinds are the media kinds a Source from an app serves.
@@ -78,11 +78,75 @@ func webURL(raw string) string {
 	return raw
 }
 
+// prowlarrSites maps Prowlarr's site definitions (Cardigann's definition
+// file, or the implementation of a site Prowlarr has in code) to the
+// built-in site HolyArrs reads the same site with.
+var prowlarrSites = map[string]string{
+	"1337x": "1337x", "thepiratebay": "thepiratebay", "nyaasi": "nyaasi", "bangumi-moe": "bangumimoe", "tokyotosho": "tokyotosho",
+	"bigfangroup": "bigfangroup", "torrent9": "torrent9", "torrentdownload": "torrentdownload", "yts": "yts", "limetorrents": "limetorrents",
+	"knaben": "knaben", "subsplease": "subsplease", "torrentscsv": "torrentscsv",
+}
+
+// builtInSite is the built-in site for a Prowlarr indexer, or false.
+func builtInSite(ix Provider) (sources.Site, bool) {
+	def := strings.ToLower(setStr(ix.Settings, "definitionFile"))
+	if def == "" {
+		def = strings.ToLower(ix.Kind)
+	}
+	if id, ok := prowlarrSites[def]; ok {
+		return sources.SiteByID(id)
+	}
+	return sources.Site{}, false
+}
+
+// flareSolverr is the address of the FlareSolverr proxy an indexer used in
+// Prowlarr (the proxy shares one of its tags), and the proxy's index.
+func flareSolverr(s *Snapshot, ix Provider) (string, int) {
+	for i, px := range s.IndexerProxies {
+		if strings.EqualFold(px.Kind, "FlareSolverr") && sharesTag(ix.Tags, px.Tags) {
+			if addr, err := sources.ParseFlareSolverr(setStr(px.Settings, "host")); err == nil && addr != "" {
+				return addr, i
+			}
+		}
+	}
+	return "", -1
+}
+
+// site plans a Prowlarr site HolyArrs has built in as a built-in site
+// Source, so it is read directly instead of through Prowlarr.
+func (b *builder) site(s *Snapshot, from string, ix Provider, site sources.Site, usedProxy map[int]bool) {
+	u := site.URL
+	// A mirror set in Prowlarr is kept.
+	if own := webURL(setStr(ix.Settings, "baseUrl")); own != "" && !metadataHost(own) {
+		u = strings.TrimRight(own, "/")
+	}
+	sp := &SourcePlan{Format: "site", Site: site.ID, Protocol: "torrent", URL: u, Kinds: site.Kinds, On: ix.Enabled, Priority: 25}
+	if ix.Priority >= 1 && ix.Priority <= 50 {
+		sp.Priority = ix.Priority
+	}
+	it := Item{Key: "source:" + strings.ToLower(clip(ix.Name, 80)), Name: clip(ix.Name, 80), From: from, Source: sp,
+		Detail: "built-in site " + site.Name + ", read directly with no Prowlarr; added paused: check it and resume it yourself"}
+	if addr, i := flareSolverr(s, ix); addr != "" {
+		sp.FlareSolverr = addr
+		usedProxy[i] = true
+		it.Detail += "; FlareSolverr at " + addr + " as Prowlarr used it: check HolyArrs reaches that address"
+	}
+	b.addSource(s, ix, it, false)
+}
+
 func (b *builder) indexers(s *Snapshot) {
 	b.cover("indexers", "indexer_proxies")
-	for i, px := range s.IndexerProxies {
-		b.not(GroupSources, b.from("indexer_proxies", i), px.Name, "HolyArrs sets one proxy address per Source; set it on the Sources that used it")
-	}
+	usedProxy := map[int]bool{}
+	defer func() {
+		for i, px := range s.IndexerProxies {
+			if usedProxy[i] {
+				// Its address went onto the built-in sites that used it.
+				b.p.Mapped = append(b.p.Mapped, b.from("indexer_proxies", i))
+				continue
+			}
+			b.not(GroupSources, b.from("indexer_proxies", i), px.Name, "HolyArrs sets one proxy address per Source; set it on the Sources that used it")
+		}
+	}()
 	for i, ix := range s.Indexers {
 		from := b.from("indexers", i)
 		kind := strings.ToLower(ix.Kind)
@@ -96,6 +160,10 @@ func (b *builder) indexers(s *Snapshot) {
 			format = "rss"
 		}
 		if format == "" {
+			if site, ok := builtInSite(ix); ok && s.Kind == Prowlarr && ix.Protocol != "usenet" {
+				b.site(s, from, ix, site, usedProxy)
+				continue
+			}
 			why := "HolyArrs reads Torznab, Newznab and RSS Sources; add this one through the Sources bridge"
 			if s.Kind == Prowlarr {
 				why = "a Prowlarr site definition; HolyArrs reaches such sites through the Sources bridge (Settings > Sources)"
@@ -170,23 +238,8 @@ func (b *builder) indexers(s *Snapshot) {
 				it.Detail += "; used proxy " + clip(px.Name, 80) + " there; set a proxy on this Source"
 			}
 		}
-		if prev := b.sameSource(it.Key, sp); prev != nil {
-			// The same indexer in another app: one Source serves both kinds.
-			for _, k := range sp.Kinds {
-				if !slices.Contains(prev.Kinds, k) {
-					prev.Kinds = append(prev.Kinds, k)
-				}
-				if cs := sp.Categories[k]; len(cs) > 0 && len(prev.Categories[k]) == 0 {
-					if prev.Categories == nil {
-						prev.Categories = map[string][]int{}
-					}
-					prev.Categories[k] = cs
-				}
-			}
-			b.p.Mapped = append(b.p.Mapped, from)
-		} else {
-			b.addTagged(s.Kind, GroupSources, it, ix.Tags)
-		}
+		// The same indexer in another app, or Prowlarr's copy of it, is one Source.
+		b.addSource(s, ix, it, true)
 		keys := make([]string, 0, len(ix.Settings))
 		for k := range ix.Settings {
 			keys = append(keys, k)
@@ -203,20 +256,6 @@ func (b *builder) indexers(s *Snapshot) {
 			b.not(GroupSources, from+"."+k, ix.Name+": "+k, "no Source setting matches it")
 		}
 	}
-}
-
-// sameSource finds the Source already planned under this key when it is
-// the same feed (format and address), or nil.
-func (b *builder) sameSource(key string, sp *SourcePlan) *SourcePlan {
-	if !b.keys[key] {
-		return nil
-	}
-	for _, it := range b.items[GroupSources].Items {
-		if it.Key == key && it.Source != nil && it.Source.Format == sp.Format && it.Source.URL == sp.URL && it.Source.Protocol == sp.Protocol {
-			return it.Source
-		}
-	}
-	return nil
 }
 
 func anyKey(m map[string]any, key string) any {

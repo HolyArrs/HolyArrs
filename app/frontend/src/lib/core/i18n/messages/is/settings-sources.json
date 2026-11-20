@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 eða http://host:3128",
 	"settings.sources.proxyPass": "Lykilorð milliþjóns",
 	"settings.sources.proxyLocal": "Milliþjónn má vera á staðarnetinu",
+	"settings.sources.flaresolverr": "Vistfang FlareSolverr",
+	"settings.sources.flaresolverrHint": "Fyrir vef á bak við vélmennapróf, t.d. Cloudflare. HolyArrs spyr FlareSolverr aðeins þegar vefurinn sýnir prófið.",
 	"settings.sources.local": "Ná til staðarnetsins",
 	"settings.sources.localHint": "Fyrir Jackett eða Prowlarr heima",
 	"settings.sources.save": "Vista",

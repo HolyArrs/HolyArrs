@@ -7,7 +7,7 @@ sidebar: { order: 4, label: "Step 4 of 5: Connect" }
 
 Connect one downloader and one source. When both pass **Test**, HolyArrs can find and fetch titles.
 
-HolyArrs does not download by itself. A **downloader** (qBittorrent, SABnzbd and others) fetches files. A **source** is a feed HolyArrs searches for releases. Four torrent sites are built in (Knaben, TorrentsCSV, SubsPlease and IPTorrents); for other sites, link Prowlarr or Jackett.
+HolyArrs does not download by itself. A **downloader** (qBittorrent, SABnzbd and others) fetches files. A **source** is a feed HolyArrs searches for releases. 14 torrent sites are built in, among them Knaben, The Pirate Bay, 1337x, YTS and Nyaa; for other sites, link Prowlarr or Jackett.
 
 ## Before you start
 
@@ -96,7 +96,7 @@ Stored keys are encrypted and never shown again. Moving a downloader to a new ho
 
 <details class="ha-more"><summary>Sources by hand</summary>
 
-HolyArrs reads Torznab (torrents), Newznab (Usenet) and RSS (newest only, no search) feeds itself, and 4 torrent sites directly: pick **Built-in site** under **Kind of feed**, then the **Site**, and skip the **Address** and **Key** (only IPTorrents needs your own cookie or RSS key). **Settings > Sources > Add a Source**, pick **Kind of feed**, paste **Address** and **Key**, tick **Reach the local network** for a feed on your home network, **Save**. It tests right away. Full page: [Sources](../../downloads/sources/).
+HolyArrs reads Torznab (torrents), Newznab (Usenet) and RSS (newest only, no search) feeds itself, and 14 torrent sites directly: pick **Built-in site** under **Kind of feed**, then the **Site**, and skip the **Address** and **Key** (only IPTorrents needs your own cookie or RSS key). **Settings > Sources > Add a Source**, pick **Kind of feed**, paste **Address** and **Key**, tick **Reach the local network** for a feed on your home network, **Save**. It tests right away. Full page: [Sources](../../downloads/sources/).
 
 </details>
 

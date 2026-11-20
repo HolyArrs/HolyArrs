@@ -9,7 +9,7 @@ const en = (file: string): Record<string, string> => JSON.parse(read(`app/fronte
 describe('built-in sites are told about', () => {
 	it('lists the same sites as the server', () => {
 		const go = read('app/backend/internal/sources/sites.go');
-		const ids = [...go.matchAll(/\{ID: "(\w+)", Name: "(\w+)"/g)].map((m) => `${m[1]}:${m[2]}`);
+		const ids = [...go.matchAll(/\{ID: "(\w+)", Name: "([^"]+)"/g)].map((m) => `${m[1]}:${m[2]}`);
 		expect(builtInSites.map((s) => `${s.id}:${s.name}`)).toEqual(ids);
 	});
 

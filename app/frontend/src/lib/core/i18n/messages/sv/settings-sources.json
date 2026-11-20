@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://namn@värd:1080 eller http://värd:3128",
 	"settings.sources.proxyPass": "Proxylösenord",
 	"settings.sources.proxyLocal": "Proxyn får ligga på det lokala nätverket",
+	"settings.sources.flaresolverr": "FlareSolverr-adress",
+	"settings.sources.flaresolverrHint": "För en webbplats bakom en botkontroll, till exempel Cloudflare. HolyArrs frågar FlareSolverr bara när webbplatsen visar sin kontroll.",
 	"settings.sources.local": "Nå det lokala nätverket",
 	"settings.sources.localHint": "För Jackett eller Prowlarr hemma",
 	"settings.sources.save": "Spara",

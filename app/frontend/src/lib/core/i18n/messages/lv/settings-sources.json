@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 vai http://host:3128",
 	"settings.sources.proxyPass": "Starpniekservera parole",
 	"settings.sources.proxyLocal": "Starpniekserveris var būt vietējā tīklā",
+	"settings.sources.flaresolverr": "FlareSolverr adrese",
+	"settings.sources.flaresolverrHint": "Vietnei aiz robotu pārbaudes, piemēram, Cloudflare. HolyArrs vaicā FlareSolverr tikai tad, kad vietne rāda pārbaudi.",
 	"settings.sources.local": "Piekļūt vietējam tīklam",
 	"settings.sources.localHint": "Jackett vai Prowlarr mājās",
 	"settings.sources.save": "Saglabāt",

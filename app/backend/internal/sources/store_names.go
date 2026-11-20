@@ -21,3 +21,30 @@ func DisableTx(tx *sql.Tx, id int64, extra string) error {
 	_, err := tx.Exec("UPDATE sources SET state = 'disabled', pause_reason = NULL, paused_until = NULL, extra = ? WHERE id = ?", extra, id)
 	return err
 }
+
+// Named is a Source's name, address and protocol.
+type Named struct {
+	ID       int64
+	Name     string
+	URL      string
+	Protocol string
+}
+
+// AllNamed lists every Source's name, address and protocol, in the order
+// they were added.
+func AllNamed(ctx context.Context, q database.Lister) ([]Named, error) {
+	rows, err := q.QueryContext(ctx, "SELECT id, name, url, protocol FROM sources ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var out []Named
+	for rows.Next() {
+		var n Named
+		if err := rows.Scan(&n.ID, &n.Name, &n.URL, &n.Protocol); err != nil {
+			return nil, err
+		}
+		out = append(out, n)
+	}
+	return out, rows.Err()
+}

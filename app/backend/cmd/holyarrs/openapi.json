@@ -5629,6 +5629,10 @@
           "categories": {
             "type": "object"
           },
+          "flaresolverr": {
+            "description": "FlareSolverr address that opens the site's bot check; empty is none",
+            "type": "string"
+          },
           "format": {
             "type": "string"
           },
@@ -5690,6 +5694,10 @@
           },
           "proxy_password": {
             "description": "masked when set",
+            "type": "string"
+          },
+          "site": {
+            "description": "the built-in site a site Source reads (GET /api/v1/sources/sites)",
             "type": "string"
           },
           "state": {
@@ -5836,6 +5844,10 @@
           "clear_key": {
             "type": "boolean"
           },
+          "flaresolverr": {
+            "description": "FlareSolverr address, such as http://flaresolverr:8191; empty clears it, left out keeps it",
+            "type": "string"
+          },
           "format": {
             "enum": [
               "torznab",
@@ -5906,6 +5918,10 @@
             "type": "boolean"
           },
           "proxy_password": {
+            "type": "string"
+          },
+          "site": {
+            "description": "for a site Source, the built-in site's id from GET /api/v1/sources/sites; set when the Source is added",
             "type": "string"
           },
           "tags": {

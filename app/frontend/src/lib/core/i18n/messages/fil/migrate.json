@@ -315,5 +315,7 @@
 	"migrate.seasonsDifferOther": "Suriin ang {n} palabas na nahanap gamit ang TMDB number nila",
 	"migrate.seasonsDifferWhy": "TMDB number lang ng lumang app ang nakahanap sa {list}, sa ibang pangalan dito. Buksan ang bawat isa at tiyaking iisang palabas ito. Kung oo, iba ang pagbilang ng mga season nito: itugma ang Mga natirang file nito, saka i-on ang palabas. Kung hindi, alisin ito; mananatili ang mga file nito kung nasaan sila.",
 	"migrate.stillChecking": "Mga palabas na sinusuri pa ng metadata server: {n}. Kusang mag-a-update ang listahang ito kapag tapos na.",
-	"migrate.stillCheckingImport": "Mga palabas na sinusuri pa ng metadata server: {n}. Puwede ka nang mag-import ngayon; susuriin ang mga ito habang nag-i-import."
+	"migrate.stillCheckingImport": "Mga palabas na sinusuri pa ng metadata server: {n}. Puwede ka nang mag-import ngayon; susuriin ang mga ito habang nag-i-import.",
+	"migrate.sameSource": "kapareho ng {list}: iisang Source",
+	"migrate.nameInApps": "{name} sa {apps}"
 }

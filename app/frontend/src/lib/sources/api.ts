@@ -24,6 +24,8 @@ export interface SourceForm {
 	proxy: string;
 	proxy_password: string;
 	proxy_allow_local_network: boolean;
+	// flaresolverr opens the site's bot check, such as Cloudflare's.
+	flaresolverr: string;
 	tags: string[];
 	downloader_id: number;
 }
@@ -85,6 +87,7 @@ export function emptyForm(): SourceForm {
 		proxy: '',
 		proxy_password: '',
 		proxy_allow_local_network: false,
+		flaresolverr: '',
 		tags: [],
 		downloader_id: 0
 	};
@@ -114,6 +117,7 @@ export function formFrom(s: SourceView): SourceForm {
 		proxy: s.proxy,
 		proxy_password: s.proxy_password,
 		proxy_allow_local_network: s.proxy_allow_local_network,
+		flaresolverr: s.flaresolverr ?? '',
 		tags: [...(s.tags ?? [])],
 		downloader_id: s.downloader_id ?? 0
 	};
@@ -125,7 +129,17 @@ export const builtInSites = [
 	{ id: 'knaben', name: 'Knaben', url: 'https://api.knaben.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
 	{ id: 'torrentscsv', name: 'TorrentsCSV', url: 'https://torrents-csv.com', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
 	{ id: 'subsplease', name: 'SubsPlease', url: 'https://subsplease.org', key: false, kinds: ['tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'iptorrents', name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 }
+	{ id: 'iptorrents', name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 },
+	{ id: 'thepiratebay', name: 'The Pirate Bay', url: 'https://apibay.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'yts', name: 'YTS', url: 'https://movies-api.accel.li', key: false, kinds: ['movie'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'nyaasi', name: 'Nyaa', url: 'https://nyaa.si', key: false, kinds: ['movie', 'tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'tokyotosho', name: 'Tokyo Toshokan', url: 'https://www.tokyotosho.info', key: false, kinds: ['movie', 'tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'bangumimoe', name: 'Bangumi Moe', url: 'https://bangumi.moe', key: false, kinds: ['movie', 'tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: '1337x', name: '1337x', url: 'https://1337x.to', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 },
+	{ id: 'torrent9', name: 'Torrent9', url: 'https://www7.torrent9.to', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 },
+	{ id: 'torrentdownload', name: 'TorrentDownload', url: 'https://www.torrentdownload.info', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 },
+	{ id: 'limetorrents', name: 'LimeTorrents', url: 'https://www.limetorrents.fun', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 },
+	{ id: 'bigfangroup', name: 'BigFANGroup', url: 'https://bigfangroup.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 }
 ] as const;
 
 // pickSite fills a new form with a built-in site's address and limits.
@@ -168,6 +182,7 @@ export function formBody(f: SourceForm): Record<string, unknown> {
 		proxy: f.proxy.trim(),
 		proxy_password: f.proxy_password,
 		proxy_allow_local_network: f.proxy_allow_local_network,
+		flaresolverr: f.flaresolverr.trim(),
 		tags: f.tags,
 		downloader_id: Number(f.downloader_id) || 0
 	};

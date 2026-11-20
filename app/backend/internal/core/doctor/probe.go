@@ -58,8 +58,11 @@ func Probe(rawURL string, dial Dial) Cause {
 		if _, err := io.WriteString(conn, "HEAD / HTTP/1.0\r\nHost: "+u.Host+"\r\n\r\n"); err != nil {
 			return Unknown
 		}
-		b := make([]byte, 5)
-		if _, err := io.ReadFull(conn, b); err == nil && string(b) == "HTTP/" {
+		// nginx and Cloudflare answer plain text on their TLS port with a
+		// page saying so: that port speaks https after all.
+		b := make([]byte, 512)
+		n, _ := io.ReadAtLeast(conn, b, 5)
+		if n >= 5 && string(b[:5]) == "HTTP/" && !strings.Contains(strings.ToLower(string(b[:n])), "sent to https port") {
 			return UseHTTP
 		}
 	}

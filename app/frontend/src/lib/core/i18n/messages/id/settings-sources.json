@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 atau http://host:3128",
 	"settings.sources.proxyPass": "Kata sandi proxy",
 	"settings.sources.proxyLocal": "Proxy boleh ada di jaringan lokal",
+	"settings.sources.flaresolverr": "Alamat FlareSolverr",
+	"settings.sources.flaresolverrHint": "Untuk situs di balik pemeriksaan bot, seperti Cloudflare. HolyArrs hanya bertanya ke FlareSolverr saat situs menampilkan pemeriksaannya.",
 	"settings.sources.local": "Jangkau jaringan lokal",
 	"settings.sources.localHint": "Untuk Jackett atau Prowlarr di rumah",
 	"settings.sources.save": "Simpan",

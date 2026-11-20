@@ -203,7 +203,19 @@
             "min_seeders": 7,
             "priority": 7,
             "needs_key": true,
-            "on": true
+            "on": true,
+            "site": "s",
+            "flaresolverr": "s",
+            "same_as": [
+              {
+                "app": "s",
+                "name": "s",
+                "url": "s"
+              }
+            ],
+            "through": [
+              "s"
+            ]
           },
           "downloader": {
             "kind": "s",

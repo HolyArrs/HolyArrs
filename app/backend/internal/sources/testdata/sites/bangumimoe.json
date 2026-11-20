@@ -1,0 +1,30 @@
+{
+ "torrents": [
+  {
+   "_id": "6a90acf49605d5c690106883",
+   "category_tag_id": "54967e14ff43b99e284d0bf7",
+   "title": "[7³ACG] 葬送的芙莉莲/Sousou no Frieren S01 | 01-28+SPx11 [简繁字幕] BDrip 1080p x265 OPUS 2.0",
+   "downloads": 17,
+   "leechers": 0,
+   "seeders": 0,
+   "publish_time": "2026-08-27T21:32:36.253Z",
+   "magnet": "magnet:?xt=urn:btih:f8651444a2c0b3ff7e3da3cbd75da58ef5f09e19",
+   "infoHash": "f8651444a2c0b3ff7e3da3cbd75da58ef5f09e19",
+   "size": "52.02 GB"
+  },
+  {
+   "_id": "6a7d68309605d5c6901b499e",
+   "category_tag_id": "54967e14ff43b99e284d0bf7",
+   "title": "[7³ACG] 葬送的芙莉莲/Sousou no Frieren S01 | 01-28+SPx11 [简繁字幕] BDrip 1080p AV1 OPUS 2.0",
+   "downloads": 11,
+   "leechers": 0,
+   "seeders": 0,
+   "publish_time": "2026-08-13T06:46:08.651Z",
+   "magnet": "magnet:?xt=urn:btih:9a7b7d3a08d4889b44f0ed6d701468802b766f28",
+   "infoHash": "9a7b7d3a08d4889b44f0ed6d701468802b766f28",
+   "size": "27.71 GB"
+  }
+ ],
+ "count": 2,
+ "page_count": 1
+}

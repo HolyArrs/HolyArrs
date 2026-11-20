@@ -97,9 +97,15 @@ func sameConfig(a, b Config) bool {
 		}
 		return c.Proxy.String()
 	}
+	flare := func(c Config) string {
+		if c.FlareSolverr == nil {
+			return ""
+		}
+		return c.FlareSolverr.String()
+	}
 	return a.URL == b.URL && a.APIKey == b.APIKey && a.AllowLocal == b.AllowLocal && a.Format == b.Format && a.Protocol == b.Protocol &&
 		a.GapMS == b.GapMS && a.PerWindow == b.PerWindow && a.Window == b.Window && a.Timeout == b.Timeout &&
-		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal && a.Site == b.Site
+		proxy(a) == proxy(b) && a.ProxyAllowLocal == b.ProxyAllowLocal && a.Site == b.Site && flare(a) == flare(b)
 }
 
 // hidden marks where a Source key was taken out of a stored link. The number
@@ -195,7 +201,7 @@ func revealLink(link string, keys []string) (string, error) {
 // with the Source's key, read from the vault, put back.
 func GrabLink(ctx context.Context, s *database.Store, sec SecretReader, rel domain.Release) (string, error) {
 	if !strings.Contains(rel.LinkRef, hidden) {
-		return rel.LinkRef, nil
+		return detailsLink(ctx, s, sec, rel)
 	}
 	var src domain.Source
 	if err := database.Get(ctx, s.Read(), "sources", rel.SourceID, &src); err != nil {

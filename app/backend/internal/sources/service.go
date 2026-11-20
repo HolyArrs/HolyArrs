@@ -30,7 +30,7 @@ var (
 	ErrName     = errors.New("give the Source a name of 1 to 80 characters")
 	ErrNameUsed = errors.New("another Source has that name")
 	ErrFormat   = errors.New("format must be torznab, newznab, rss or site")
-	ErrSite     = errors.New("site must be one of the built-in sites: knaben, torrentscsv, subsplease or iptorrents")
+	ErrSite     = errors.New("site must be one of the built-in sites: knaben, torrentscsv, subsplease, iptorrents, thepiratebay, yts, nyaasi, tokyotosho, bangumimoe, 1337x, torrent9, torrentdownload, limetorrents or bigfangroup")
 	ErrProtocol = errors.New("protocol must be torrent or usenet")
 	ErrURL      = errors.New("the address must start with http:// or https:// and name a host")
 	// ErrQuery matches ErrURL under errors.Is, so callers that check ErrURL treat it the same.
@@ -44,8 +44,10 @@ var (
 	ErrProxyAgain       = errors.New("the proxy changed to another host or name; type its password again")
 	// ErrKeyAgainProxy is ErrKeyAgain for a plain http Source whose proxy changed, because the new proxy would see the key.
 	ErrKeyAgainProxy = errors.New("the proxy changed and the Source address is plain http, so the new proxy would see the key; type the key again")
-	ErrNoVault       = errors.New("keys cannot be stored: the secrets vault is not open")
-	ErrSeeders       = errors.New("min_seeders must be 0 or more")
+	// ErrFlareAgain is a FlareSolverr address moved to another host: it would be handed the Source's address (with any key in it) and the proxy password.
+	ErrFlareAgain = errors.New("the FlareSolverr address changed to another host; type the Source's key and proxy password again so they are never sent to a new host by itself")
+	ErrNoVault    = errors.New("keys cannot be stored: the secrets vault is not open")
+	ErrSeeders    = errors.New("min_seeders must be 0 or more")
 )
 
 // AllKinds lists the media types a Source may serve.
@@ -60,8 +62,8 @@ var DefaultCategories = map[string][]int{"movie": {2000}, "tv": {5000}, "music":
 type Input struct {
 	Name   string `json:"name"`
 	Format string `json:"format"`
-	// Site names the built-in site a site-format Source reads (knaben,
-	// torrentscsv, subsplease, iptorrents). It is set when the Source is added.
+	// Site names the built-in site a site-format Source reads (an id from
+	// Sites, such as knaben or thepiratebay). It is set when the Source is added.
 	Site            string               `json:"site,omitempty"`
 	Protocol        string               `json:"protocol"`
 	URL             string               `json:"url"`
@@ -82,6 +84,9 @@ type Input struct {
 	// DownloaderID picks the one Downloader this Source's grabs go to; 0 is
 	// any Downloader and nil keeps the stored choice.
 	DownloaderID *int64 `json:"downloader_id"`
+	// FlareSolverr is the address of a FlareSolverr that opens the site's
+	// bot check; empty clears it and nil keeps it.
+	FlareSolverr *string `json:"flaresolverr"`
 }
 
 // queryErr is the error behind ErrQuery.
@@ -174,6 +179,11 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 	// The stored proxy address has no password, so a changed scheme, name or host needs it typed again.
 	if src.ProxySecretRef != nil && pass == "" && src.ProxyURL != "" && src.ProxyURL != old.ProxyURL {
 		return old, ErrProxyAgain
+	}
+	// FlareSolverr is handed the page address and the proxy with its password, so a new FlareSolverr host needs them typed again.
+	if src.FlareSolverrURL != "" && hostOf(src.FlareSolverrURL) != hostOf(old.FlareSolverrURL) &&
+		(src.SecretRef != nil && key == "" && !in.ClearKey || pathKept || src.ProxySecretRef != nil && pass == "") {
+		return old, ErrFlareAgain
 	}
 	// A plain http Source sends its key in the clear to whatever proxy carries it.
 	if (src.SecretRef != nil && key == "" && !in.ClearKey || pathKept) && strings.HasPrefix(src.URL, "http://") &&
@@ -285,6 +295,11 @@ func ConfigFor(ctx context.Context, src domain.Source, sec SecretReader) (Config
 		cfg.PathKeys = splitKeys(plain)
 		if cfg.URL, err = revealPath(src.URL, cfg.PathKeys); err != nil {
 			return cfg, err
+		}
+	}
+	if src.FlareSolverrURL != "" {
+		if cfg.FlareSolverr, err = url.Parse(src.FlareSolverrURL); err != nil {
+			return cfg, ErrFlareSolverr
 		}
 	}
 	if src.ProxyURL != "" {
@@ -564,8 +579,8 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 		src.UseFor = *in.UseFor
 	} else if isNew {
 		src.UseFor = domain.SourceUse{Feed: true, AutoSearch: src.Format != "rss", HandSearch: src.Format != "rss"}
-		if site.ID == "torrentscsv" {
-			// TorrentsCSV only searches; it has no newest list to watch.
+		if site.ID == "torrentscsv" || site.NoFeed {
+			// The site only searches; it has no newest list to watch.
 			src.UseFor.Feed = false
 		}
 	}
@@ -641,6 +656,11 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 			proxyPass = pass
 		}
 		src.ProxyURL = clean
+	}
+	if in.FlareSolverr != nil {
+		if src.FlareSolverrURL, err = ParseFlareSolverr(*in.FlareSolverr); err != nil {
+			return "", "", err
+		}
 	}
 	if isNew {
 		src.State = "enabled"

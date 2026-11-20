@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://nume@gazdă:1080 sau http://gazdă:3128",
 	"settings.sources.proxyPass": "Parola proxy",
 	"settings.sources.proxyLocal": "Proxy-ul poate fi în rețeaua locală",
+	"settings.sources.flaresolverr": "Adresa FlareSolverr",
+	"settings.sources.flaresolverrHint": "Pentru un site aflat în spatele unei verificări anti-bot, ca Cloudflare. HolyArrs întreabă FlareSolverr doar când site-ul își arată verificarea.",
 	"settings.sources.local": "Acces la rețeaua locală",
 	"settings.sources.localHint": "Pentru Jackett sau Prowlarr de acasă",
 	"settings.sources.save": "Salvează",

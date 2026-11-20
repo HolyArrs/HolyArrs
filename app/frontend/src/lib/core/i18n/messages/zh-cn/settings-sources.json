@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 或 http://host:3128",
 	"settings.sources.proxyPass": "代理密码",
 	"settings.sources.proxyLocal": "代理可以在本地网络",
+	"settings.sources.flaresolverr": "FlareSolverr 地址",
+	"settings.sources.flaresolverrHint": "用于有机器人检查（如 Cloudflare）的网站。仅当网站显示检查时，HolyArrs 才会请求 FlareSolverr。",
 	"settings.sources.local": "访问本地网络",
 	"settings.sources.localHint": "适用于家里的 Jackett 或 Prowlarr",
 	"settings.sources.save": "保存",

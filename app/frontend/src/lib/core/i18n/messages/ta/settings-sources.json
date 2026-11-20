@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 அல்லது http://host:3128",
 	"settings.sources.proxyPass": "ப்ராக்ஸி கடவுச்சொல்",
 	"settings.sources.proxyLocal": "ப்ராக்ஸி உள்ளூர் வலையில் இருக்கலாம்",
+	"settings.sources.flaresolverr": "FlareSolverr முகவரி",
+	"settings.sources.flaresolverrHint": "Cloudflare போன்ற பாட் சோதனைக்குப் பின்னால் உள்ள தளத்துக்கு. தளம் சோதனையைக் காட்டும்போது மட்டும் HolyArrs FlareSolverr-இடம் கேட்கிறது.",
 	"settings.sources.local": "உள்ளூர் வலையை அடை",
 	"settings.sources.localHint": "வீட்டிலுள்ள Jackett அல்லது Prowlarr க்கு",
 	"settings.sources.save": "சேமி",

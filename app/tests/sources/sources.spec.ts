@@ -110,7 +110,7 @@ test('Jackett is connected in one step, kept in step, and disconnected; a bot ch
 		// A site behind a bot check says so, and points here.
 		await addSource('Lab Guarded', 'torznab', `${base}/guarded/api`, indexerKey);
 		const guarded = page.getByTestId('source').filter({ hasText: 'Lab Guarded' });
-		await expect(guarded.getByTestId('source-test')).toContainText("Blocked by the site's bot check. Reach this site through Jackett or Prowlarr.");
+		await expect(guarded.getByTestId('source-test')).toContainText("Blocked by the site's bot check. Set a FlareSolverr address on this Source, or reach this site through Jackett or Prowlarr.");
 		await expect(guarded.getByTestId('source-bridge-link')).toHaveAttribute('href', '#connect-bridge');
 
 		await row.getByTestId('bridge-remove').click();
