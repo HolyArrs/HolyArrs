@@ -141,7 +141,8 @@
 			const el = view === 'posters' ? gridEl : listEl;
 			if (el && !reducedMotion()) el.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: DUR.base, easing: EASE.out });
 		});
-		savedViews.set(`library.view.${kind}`, v);
+		// Movies, shows and both together share one view, so a switch on one holds on the others; music keeps its own.
+		for (const k of kind === 'artist' ? (['artist'] as const) : (['all', 'movie', 'show'] as const)) savedViews.set(`library.view.${k}`, v);
 	}
 
 	let listWidth = $state(1000);
