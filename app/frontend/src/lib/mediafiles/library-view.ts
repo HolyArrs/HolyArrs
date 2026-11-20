@@ -10,6 +10,7 @@ import { t as tr } from '../core/i18n/i18n.svelte.ts';
 import { codecLabel, languageName } from './copies.ts';
 import { libraryState } from './library-state.ts';
 import { shownScore } from '../core/rating.ts';
+import { scoreName, scoreText as outsideText, type OutsideScore } from '#lib/ui/outside-ratings.ts';
 import { progressOf, releaseDate, type Column, type FilterState } from './table.ts';
 
 export type View = 'rows' | 'table' | 'posters' | 'overview';
@@ -331,6 +332,23 @@ function movieOut(t: TitleView): string {
 /** A title's score to one decimal, or '' when it has none or too few votes. */
 export function scoreText(t: TitleView): string {
 	return shownScore(t.score, t.votes)?.toFixed(1) ?? '';
+}
+
+/** A title's IMDb, Rotten Tomatoes and Metacritic scores (from OMDb), worded as the title page words them; [] when none is known. */
+export function outsideScores(t: TitleView): OutsideScore[] {
+	const out: OutsideScore[] = [];
+	if (t.imdb_rating) out.push({ source: 'imdb', value: t.imdb_rating, max: 10, votes: t.imdb_votes ?? 0 });
+	if (t.rotten_tomatoes) out.push({ source: 'rt_critics', value: t.rotten_tomatoes, max: 100, votes: 0 });
+	if (t.metacritic) out.push({ source: 'metacritic', value: t.metacritic, max: 100, votes: 0 });
+	return out;
+}
+
+/** The hover text of a cell: the full path, or the score's outside scores beside it. */
+export function cellTitle(t: TitleView, c: Column, series: string): string | undefined {
+	if (c.id === 'path') return cell(t, c, series);
+	if (c.id !== 'score') return undefined;
+	const words = outsideScores(t).map((s) => `${scoreName(s.source)} ${outsideText(s)}`);
+	return words.length ? [scoreText(t) ? `TMDB ${scoreText(t)}` : '', ...words].filter(Boolean).join(' · ') : undefined;
 }
 
 export function cell(t: TitleView, c: Column, series: string): string {

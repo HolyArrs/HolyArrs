@@ -110,6 +110,12 @@ type TitleView struct {
 	// Score is the members' average out of 10 and Votes how many voted.
 	Score float64 `json:"score,omitempty"`
 	Votes int     `json:"votes,omitempty"`
+	// IMDb's score and votes, the Rotten Tomatoes critics percent and the
+	// Metascore, read from OMDb with the owner's key; left out when not known.
+	IMDbRating     float64 `json:"imdb_rating,omitempty"`
+	IMDbVotes      int     `json:"imdb_votes,omitempty"`
+	RottenTomatoes *int    `json:"rotten_tomatoes,omitempty"`
+	Metacritic     *int    `json:"metacritic,omitempty"`
 	// Tags route the title's grabs and searches to the Downloaders and Sources that share one.
 	Tags []string `json:"tags"`
 	// AddedAt is when the title joined the Library; SizeBytes is the sum of
@@ -164,9 +170,12 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 		GateDriver: t.GateDriver, GateOpensAt: t.GateOpensAt, CinemaDate: t.CinemaDate, DigitalDate: t.DigitalDate,
 		PhysicalDate: t.PhysicalDate, RefreshedAt: t.RefreshedAt, DroppedAt: t.DroppedAt, Artwork: ArtworkLinks(t.Artwork),
 		Backdrop: t.Backdrop, Logo: t.Logo, Genres: nonNil(t.Genres), RuntimeMinutes: t.RuntimeMinutes, Rating: t.Rating, People: nonNil(t.People),
-		AddedAt: t.CreatedAt, Tags: nonNil(t.Tags), Votes: t.Votes}
+		AddedAt: t.CreatedAt, Tags: nonNil(t.Tags), Votes: t.Votes, RottenTomatoes: t.RottenTomatoes, Metacritic: t.Metacritic}
 	if t.Score != nil {
 		v.Score = *t.Score
+	}
+	if t.IMDbRating != nil {
+		v.IMDbRating, v.IMDbVotes = *t.IMDbRating, t.IMDbVotes
 	}
 	now := time.Now()
 	var err error

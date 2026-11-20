@@ -52,6 +52,11 @@ export interface TitleView {
 	// Members' average out of 10 and its vote count (not the age rating); missing when not known.
 	score?: number;
 	votes?: number;
+	// IMDb's score and votes, the Rotten Tomatoes critics percent and the Metascore, from OMDb; missing when not known.
+	imdb_rating?: number;
+	imdb_votes?: number;
+	rotten_tomatoes?: number;
+	metacritic?: number;
 	added_at?: string;
 	size_bytes?: number;
 	copy?: TitleCopy;

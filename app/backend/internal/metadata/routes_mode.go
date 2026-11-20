@@ -21,7 +21,7 @@ type ModeHandlers struct {
 	// EnvTMDB says a TMDB key comes from the Docker settings.
 	EnvTMDB bool
 	// Test checks one own key (KeyTMDB, KeyTVDB with its PIN, KeyMDBList,
-	// KeyFanart); nil answers that the key cannot be tested.
+	// KeyFanart, KeyOMDb); nil answers that the key cannot be tested.
 	Test func(ctx context.Context, key, value, pin string) error
 }
 
@@ -104,7 +104,7 @@ func (h *ModeHandlers) get(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, h.Answer(r.Context()))
 }
 
-const modeHelp = `send {"mode": "full" | "own" | "off", "keys": {"tmdb_token": "...", "tvdb_key": "...", "tvdb_pin": "...", "mdblist_key": "...", "fanart_key": "..."}}; an empty key removes it, a left-out key stays`
+const modeHelp = `send {"mode": "full" | "own" | "off", "keys": {"tmdb_token": "...", "tvdb_key": "...", "tvdb_pin": "...", "mdblist_key": "...", "fanart_key": "...", "omdb_key": "..."}}; an empty key removes it, a left-out key stays`
 
 func (h *ModeHandlers) put(w http.ResponseWriter, r *http.Request) {
 	var in struct {
@@ -155,7 +155,7 @@ func (h *ModeHandlers) put(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, h.Answer(r.Context()))
 }
 
-const testHelp = `send {"key": "tmdb_token" | "tvdb_key" | "mdblist_key" | "fanart_key", "value": "<key, or empty for the saved one>", "pin": "<TheTVDB PIN, optional>"}`
+const testHelp = `send {"key": "tmdb_token" | "tvdb_key" | "mdblist_key" | "fanart_key" | "omdb_key", "value": "<key, or empty for the saved one>", "pin": "<TheTVDB PIN, optional>"}`
 
 func (h *ModeHandlers) test(w http.ResponseWriter, r *http.Request) {
 	var in struct {

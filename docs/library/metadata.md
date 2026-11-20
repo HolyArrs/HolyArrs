@@ -17,6 +17,18 @@ If it says **Not answering**, select **Check again**.
 
 Your Library, downloads and everything already saved keep working. Searches and new artwork come back when the server answers.
 
+## IMDb, Rotten Tomatoes and Metacritic scores
+
+HolyArrs can show IMDb, Rotten Tomatoes and Metacritic scores for the movies and shows in your Library. They come from OMDb and need your own free OMDb key. Without a key nothing changes.
+
+1. Get a free key at [omdbapi.com](https://www.omdbapi.com/apikey.aspx).
+2. Open **Settings > Metadata**.
+3. Paste it into **OMDb key** under **Your keys**, select **Test**, then save.
+
+The scores show next to the TMDB score on title pages, and when you hover over the score in the Library list.
+
+The free key allows 1,000 requests a day. HolyArrs asks about 20 titles every 30 minutes and each title at most once a week, so a large Library fills in over a few days. If OMDb refuses the key or the day's requests are used up, HolyArrs waits 12 hours, or until you save a new key. Lookups set to **Off** turn this off too.
+
 ## Privacy
 
 Your install sends only what it looks up, plus your language and region. Your files, library, users and keys never leave your server. **Settings > Metadata** lists both.
@@ -61,6 +73,7 @@ Never sent: your files, folder paths or file names; your library, downloads or h
 | `HOLYARRS_METADATA_URL` | Points HolyArrs at another metadata server. Restart after changing | `https://api.holyarrs.com` |
 | `HOLYARRS_TMDB_KEY` | Your own TMDB read token. Movie and show lookups go to TMDB directly | Empty |
 | `HOLYARRS_DEEZER_URL=off` | Turns off artist top songs | On |
+| `HOLYARRS_OMDB_URL` | A stand-in address for OMDb. For tests only | Empty |
 
 </details>
 
