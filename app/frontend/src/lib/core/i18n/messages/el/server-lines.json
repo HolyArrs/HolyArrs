@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Δημοφιλή",
 	"server.metadata.creator": "Δημιουργός",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Προσθέστε το κλειδί Trakt σας στις Ρυθμίσεις > Εξωτερικές λίστες πριν ενεργοποιήσετε μια λίστα Trakt· μια ιδιωτική λίστα χρειάζεται επίσης Σύνδεση με Trakt εκεί.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "στείλτε {\"secret\": \"<Trakt app client secret>\"}, ή {\"secret\": \"\"} για να το αφαιρέσετε"
+	"server.requests.send-secret-trakt-app-client-secret-line": "στείλτε {\"secret\": \"<Trakt app client secret>\"}, ή {\"secret\": \"\"} για να το αφαιρέσετε",
+	"server.migrate.its-seasons": "{name}: οι σεζόν του",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "Το HolyArrs δεν μπορεί να κρατήσει μόνο το πρώτο επεισόδιο· η λίστα κρατά την πρώτη σεζόν",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "Το HolyArrs διαβάζει μόνο λίστες TMDB και δημόσιες λίστες Trakt· αυτή η λίστα μένει στο Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "Το HolyArrs διαβάζει λίστες και watchlists του Trakt· μια λίστα watched ή collection μένει στο Sonarr"
 }

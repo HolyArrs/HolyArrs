@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "लोकप्रिय",
 	"server.metadata.creator": "क्रिएटर",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Trakt सूची चालू करने से पहले अपनी Trakt कुंजी सेटिंग > बाहरी सूचियां में जोड़ें; निजी सूची के लिए वहां Trakt से साइन इन करें भी ज़रूरी है।",
-	"server.requests.send-secret-trakt-app-client-secret-line": "भेजें {\"secret\": \"<Trakt app client secret>\"}, या इसे हटाने के लिए {\"secret\": \"\"}"
+	"server.requests.send-secret-trakt-app-client-secret-line": "भेजें {\"secret\": \"<Trakt app client secret>\"}, या इसे हटाने के लिए {\"secret\": \"\"}",
+	"server.migrate.its-seasons": "{name}: इसके सीज़न",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs केवल पहला एपिसोड नहीं रख सकता; सूची पहला सीज़न रखती है",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs सिर्फ़ TMDB सूचियां और सार्वजनिक Trakt सूचियां पढ़ता है; यह सूची Sonarr में ही रहती है",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs Trakt सूचियां और वॉचलिस्ट पढ़ता है; देखी हुई या कलेक्शन सूची Sonarr में ही रहती है"
 }

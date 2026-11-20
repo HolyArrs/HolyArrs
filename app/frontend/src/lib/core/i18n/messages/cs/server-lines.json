@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Oblíbené",
 	"server.metadata.creator": "Tvůrce",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Před zapnutím seznamu Trakt přidejte svůj klíč Trakt v Nastavení > Externí seznamy; soukromý seznam tam navíc potřebuje Přihlásit se přes Trakt.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "pošlete {\"secret\": \"<Trakt app client secret>\"}, nebo {\"secret\": \"\"} pro jeho odebrání"
+	"server.requests.send-secret-trakt-app-client-secret-line": "pošlete {\"secret\": \"<Trakt app client secret>\"}, nebo {\"secret\": \"\"} pro jeho odebrání",
+	"server.migrate.its-seasons": "{name}: jeho řady",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs neumí ponechat jen první díl; seznam ponechá první řadu",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs čte jen seznamy TMDB a veřejné seznamy Trakt; tento seznam zůstává v Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs čte seznamy a watchlisty Trakt; seznam zhlédnutých nebo sbírka zůstává v Sonarr"
 }

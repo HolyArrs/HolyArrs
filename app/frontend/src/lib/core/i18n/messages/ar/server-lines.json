@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "الرائج",
 	"server.metadata.creator": "المبتكر",
 	"server.migrate.add-your-trakt-key-under-settings-2": "أضف مفتاح Trakt في الإعدادات > القوائم الخارجية قبل تفعيل قائمة Trakt؛ وتحتاج القائمة الخاصة أيضًا إلى تسجيل الدخول عبر Trakt هناك.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "أرسل {\"secret\": \"<Trakt app client secret>\"}، أو {\"secret\": \"\"} لإزالته"
+	"server.requests.send-secret-trakt-app-client-secret-line": "أرسل {\"secret\": \"<Trakt app client secret>\"}، أو {\"secret\": \"\"} لإزالته",
+	"server.migrate.its-seasons": "{name}: مواسمها",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "لا يستطيع HolyArrs الاحتفاظ بالحلقة الأولى وحدها؛ تحتفظ القائمة بالموسم الأول",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "يقرأ HolyArrs قوائم TMDB وقوائم Trakt العامة فقط؛ تبقى هذه القائمة في Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "يقرأ HolyArrs قوائم Trakt وقوائم المشاهدة؛ تبقى قائمة المشاهَد أو المجموعة في Sonarr"
 }

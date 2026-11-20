@@ -636,6 +636,76 @@ func TestMoveOutsideLists(t *testing.T) {
 	}
 }
 
+// TestMoveSonarrOutsideLists: a Sonarr Trakt watchlist comes over paused as
+// a show list in the show folder, beside the Radarr list of the same
+// watchlist, which keeps its own name; with Shows off it is left out.
+func TestMoveSonarrOutsideLists(t *testing.T) {
+	watch := func(app string) Provider {
+		set := map[string]any{"traktListType": int64(0), "authUser": "pawel"}
+		if app == "radarr" {
+			set["link.rootfolderpath"], set["link.searchonadd"] = "/movies", true
+		} else {
+			for k, v := range map[string]any{"link.rootfolderpath": "/tv", "link.searchformissingepisodes": true, "link.shouldmonitor": "firstSeason", "link.monitornewitems": "none"} {
+				set[k] = v
+			}
+		}
+		return Provider{Name: "Pawel watchlist", Kind: "TraktUserImport", Enabled: true, Settings: set, NeedsReentry: []string{"accessToken"}}
+	}
+	lab := func(t *testing.T) *moveLab {
+		l := newMoveLabWith(t, func(radarr, _, _ *Snapshot) { radarr.ImportLists = []Provider{watch("radarr")} })
+		tv := filepath.Join(filepath.Dir(l.movies), "tv")
+		if err := os.MkdirAll(tv, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		so := &Snapshot{Kind: Sonarr, Version: "4.0.16", Via: ViaAPI, Folders: []Folder{{Path: "/tv"}}, ImportLists: []Provider{watch("sonarr")}}
+		so.finish()
+		saved, err := Save(context.Background(), l.st, 1, so)
+		if err != nil {
+			t.Fatal(err)
+		}
+		l.snaps = append(l.snaps, saved.ID)
+		l.rules = append(l.rules, PathRule{From: "/tv", To: filepath.ToSlash(tv)})
+		return l
+	}
+	l := lab(t)
+	key := "outside_list:trakt_list:show:pawel/watchlist"
+	if got := lineOf(t, l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil), key); got.Result != ResCreate {
+		t.Fatalf("dry run %+v", got)
+	}
+	mv := l.move(t, Choices{})
+	for _, k := range []string{key, "outside_list:trakt_list:pawel/watchlist"} {
+		if got := lineOf(t, mv.Report, k); got.Result != ResCreated {
+			t.Fatalf("move %s %+v", k, got)
+		}
+	}
+	var name, kind, seasons, newSeasons, folderKind string
+	var on, search, keep bool
+	if err := l.st.Read().QueryRow(`SELECT o.name, o.title_kind, o.seasons, o.new_seasons, o.enabled, o.search_on_add, o.keep_up_to_date, f.kind
+		FROM outside_lists o JOIN library_folders f ON f.id = o.library_folder_id WHERE o.ref = 'pawel/watchlist' AND o.title_kind = 'show'`).
+		Scan(&name, &kind, &seasons, &newSeasons, &on, &search, &keep, &folderKind); err != nil {
+		t.Fatal(err)
+	}
+	if name != "Pawel watchlist (sonarr)" || seasons != "first" || newSeasons != "none" || on || !search || !keep || folderKind != "show" {
+		t.Fatalf("show list %q %s seasons %q/%q on %v search %v keep %v folder %s", name, kind, seasons, newSeasons, on, search, keep, folderKind)
+	}
+	if n := l.count(t, "SELECT count(*) FROM outside_lists WHERE ref = 'pawel/watchlist' AND title_kind = 'movie' AND name = 'Pawel watchlist'"); n != 1 {
+		t.Fatal("the movie watchlist did not keep its name")
+	}
+	if got := lineOf(t, l.move(t, Choices{}).Report, key); got.Result != ResAlready {
+		t.Fatalf("second move %+v", got)
+	}
+	// With Shows off, the show list is left out and the movie one still comes.
+	l2 := lab(t)
+	l2.parts["shows"] = true
+	r := l2.move(t, Choices{}).Report
+	if got := lineOf(t, r, key); got.Result != ResSkipped {
+		t.Fatalf("shows off %+v", got)
+	}
+	if got := lineOf(t, r, "outside_list:trakt_list:pawel/watchlist"); got.Result != ResCreated {
+		t.Fatalf("shows off, movie list %+v", got)
+	}
+}
+
 // A finished move forgets every arr key kept for "Read again".
 func TestFinishedMoveForgetsKeptKeys(t *testing.T) {
 	l := newMoveLab(t)

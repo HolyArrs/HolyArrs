@@ -181,6 +181,9 @@
           "outside_list": {
             "kind": "s",
             "ref": "s",
+            "title_kind": "s",
+            "seasons": "s",
+            "new_seasons": "s",
             "library": "s",
             "pick_rules": "s",
             "keep_up_to_date": true,

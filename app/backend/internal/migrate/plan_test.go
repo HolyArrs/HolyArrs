@@ -475,7 +475,7 @@ func TestPlanImportListLines(t *testing.T) {
 	// A Radarr TMDB or Trakt list without its list number or names cannot
 	// come over as an Outside list; it says what is missing.
 	for from, want := range map[string]NotMoved{
-		"sonarr import_lists[0]": {GroupOther, "", "", "HolyArrs Outside lists add movies only for now; this show list stays in Sonarr; its sign-in does not come over"},
+		"sonarr import_lists[0]": {GroupLists, "", "", "its Trakt user or list name did not come over; add it again under Settings > Outside lists"},
 		"radarr import_lists[0]": {GroupLists, "", "", "its TMDB list number did not come over; add it again under Settings > Outside lists"},
 		"radarr import_lists[1]": {GroupLists, "", "", "its Trakt user or list name did not come over; add it again under Settings > Outside lists"},
 		"radarr import_lists[2]": {GroupOther, "", "", "HolyArrs is one app; it does not copy from another instance; its sign-in does not come over"},
@@ -822,10 +822,76 @@ func TestPlanOutsideLists(t *testing.T) {
 			t.Fatalf("an import list secret is asked for: %v", p.NeedsInput)
 		}
 	}
-	// A Sonarr Trakt list stays report-only.
+	// A Sonarr Trakt list with no folder here is listed, not planned.
 	so := &Snapshot{Kind: Sonarr, ImportLists: []Provider{{Name: "Shows", Kind: "TraktListImport", Settings: map[string]any{"username": "sean", "listname": "tv"}}}}
 	if p := BuildPlan([]Input{{1, so}}, Choices{}); len(p.Group(GroupLists).Items) != 0 {
-		t.Fatalf("a show list was planned: %+v", p.Group(GroupLists).Items)
+		t.Fatalf("a show list without its folder was planned: %+v", p.Group(GroupLists).Items)
+	}
+}
+
+// TestPlanSonarrOutsideLists: Sonarr Trakt lists and watchlists become
+// paused show Outside lists with their show folder, Pick rules, seasons,
+// new seasons, search on add and refresh gap. The same watchlist in Radarr
+// and Sonarr gives two lists, one for movies and one for shows.
+func TestPlanSonarrOutsideLists(t *testing.T) {
+	so := &Snapshot{Kind: Sonarr, Folders: []Folder{{Path: "/data/tv"}},
+		QualityProfiles: []Profile{{ID: 7, Name: "HD", Cutoff: "WEBDL-1080p"}},
+		ImportLists: []Provider{
+			// As Sonarr's API gives a Trakt user watchlist.
+			{Name: "Pawel watchlist", Kind: "TraktUserImport", Enabled: true, Settings: map[string]any{"traktListType": int64(0), "authUser": "pawel",
+				"link.enableautomaticadd": true, "link.searchformissingepisodes": true, "link.shouldmonitor": "all", "link.monitornewitems": "all",
+				"link.rootfolderpath": "/data/tv", "link.qualityprofileid": int64(7), "link.seriestype": "standard", "link.minrefreshinterval": "12:00:00"},
+				NeedsReentry: []string{"accessToken", "refreshToken"}},
+			// As a backup row gives it: numbers for the choices.
+			{Name: "Anime starts", Kind: "TraktListImport", Settings: map[string]any{"username": "kim", "listname": "Anime 2026",
+				"link.shouldmonitor": int64(5), "link.monitornewitems": int64(1), "link.seriestype": int64(2), "link.rootfolderpath": "/data/tv"}},
+			{Name: "Pilots", Kind: "TraktListImport", Settings: map[string]any{"username": "kim", "listname": "pilots", "link.shouldmonitor": "pilot", "link.rootfolderpath": "/data/tv"}},
+			{Name: "Nothing yet", Kind: "TraktListImport", Settings: map[string]any{"username": "kim", "listname": "later", "link.shouldmonitor": "none", "link.rootfolderpath": "/data/tv"}},
+			{Name: "Watched", Kind: "TraktUserImport", Settings: map[string]any{"traktListType": int64(1), "authUser": "pawel", "link.rootfolderpath": "/data/tv"}},
+			{Name: "IMDb picks", Kind: "ImdbListImport"},
+			{Name: "TMDB odd", Kind: "TMDbListImport", Settings: map[string]any{"listId": "8136", "link.rootfolderpath": "/data/tv"}},
+		}}
+	ra := &Snapshot{Kind: Radarr, Folders: []Folder{{Path: "/data/movies"}},
+		ImportLists: []Provider{{Name: "Pawel watchlist", Kind: "TraktUserImport", Enabled: true, Settings: map[string]any{"traktListType": int64(0), "authUser": "pawel",
+			"link.enabled": true, "link.enableauto": true, "link.monitor": "movieOnly", "link.rootfolderpath": "/data/movies", "link.searchonadd": true, "link.minimumavailability": "released"}}}}
+	so.finish()
+	ra.finish()
+	p := BuildPlan([]Input{{1, ra}, {2, so}}, Choices{})
+	movies := item(t, p, GroupLists, "outside_list:trakt_list:pawel/watchlist")
+	if m := movies.OutsideList; m.TitleKind != "" || m.Library != "/data/movies" || movies.Name != "Pawel watchlist" {
+		t.Fatalf("movie watchlist %q %+v", movies.Name, m)
+	}
+	shows := item(t, p, GroupLists, "outside_list:trakt_list:show:pawel/watchlist")
+	if *shows.OutsideList != (OutsideListPlan{Kind: "trakt_list", Ref: "pawel/watchlist", TitleKind: "show", Seasons: "all", NewSeasons: "all", Library: "/data/tv",
+		Preset: "Standard", KeepUpToDate: true, SearchOnAdd: true, SyncEveryHours: 12}) || shows.Name != "Pawel watchlist (sonarr)" {
+		t.Fatalf("show watchlist %q %+v", shows.Name, shows.OutsideList)
+	}
+	if want := "Trakt list pawel/watchlist into /data/tv; added paused (was on there), every 12 hours; seasons: all, new seasons: all; needs your Trakt key, and Sign in with Trakt if the list is private"; shows.Detail != want {
+		t.Errorf("detail %q", shows.Detail)
+	}
+	if a := item(t, p, GroupLists, "outside_list:trakt_list:show:kim/anime-2026").OutsideList; a.Seasons != "first" || a.NewSeasons != "none" || !a.KeepUpToDate || a.SearchOnAdd {
+		t.Errorf("first season list %+v", a)
+	}
+	if a := item(t, p, GroupLists, "outside_list:trakt_list:show:kim/pilots").OutsideList; a.Seasons != "first" {
+		t.Errorf("pilot list %+v", a)
+	}
+	if a := item(t, p, GroupLists, "outside_list:trakt_list:show:kim/later").OutsideList; a.Seasons != "none" || a.KeepUpToDate {
+		t.Errorf("none list %+v", a)
+	}
+	for from, want := range map[string]NotMoved{
+		"sonarr import_lists[2].monitor": {GroupLists, "", "", "HolyArrs cannot keep only the first episode; the list keeps the first season"},
+		"sonarr import_lists[4]":         {GroupLists, "", "", "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Sonarr"},
+		"sonarr import_lists[5]":         {GroupOther, "", "", "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Sonarr"},
+		"sonarr import_lists[6]":         {GroupOther, "", "", "HolyArrs reads TMDB lists and public Trakt lists; add it again under Settings > Outside lists"},
+	} {
+		if n, ok := notMoved(p, from); !ok || n.Group != want.Group || n.Why != want.Why {
+			t.Errorf("%s: %+v", from, n)
+		}
+	}
+	for _, n := range p.NeedsInput {
+		if strings.Contains(n, "import list") {
+			t.Fatalf("an import list secret is asked for: %v", p.NeedsInput)
+		}
 	}
 }
 
@@ -839,10 +905,10 @@ func TestSyncHours(t *testing.T) {
 		t.Errorf("slug %q", got)
 	}
 	taken := map[string]bool{"top": true, "top (radarr)": true}
-	if got := freeListName("top", func(n string) bool { return taken[n] }); got != "top (radarr 2)" {
+	if got := freeListName("top", Radarr, func(n string) bool { return taken[n] }); got != "top (radarr 2)" {
 		t.Errorf("second clash %q", got)
 	}
-	if got := freeListName("new", func(n string) bool { return taken[n] }); got != "new" {
+	if got := freeListName("new", Radarr, func(n string) bool { return taken[n] }); got != "new" {
 		t.Errorf("free name %q", got)
 	}
 }

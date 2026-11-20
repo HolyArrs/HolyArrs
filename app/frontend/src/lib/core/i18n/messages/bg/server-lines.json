@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Популярни",
 	"server.metadata.creator": "Създател",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Добавете ключа си за Trakt в Настройки > Външни списъци, преди да включите списък от Trakt; за личен списък там е нужен и Вход с Trakt.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "изпратете {\"secret\": \"<Trakt app client secret>\"}, или {\"secret\": \"\"}, за да го премахнете"
+	"server.requests.send-secret-trakt-app-client-secret-line": "изпратете {\"secret\": \"<Trakt app client secret>\"}, или {\"secret\": \"\"}, за да го премахнете",
+	"server.migrate.its-seasons": "{name}: сезоните му",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs не може да запази само първия епизод; списъкът запазва първия сезон",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs чете само списъци от TMDB и публични списъци от Trakt; този списък остава в Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs чете списъци и списъци за гледане от Trakt; списък с гледани или колекция остава в Sonarr"
 }

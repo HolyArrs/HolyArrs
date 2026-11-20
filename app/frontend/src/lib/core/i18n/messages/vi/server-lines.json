@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Phổ biến",
 	"server.metadata.creator": "Người sáng tạo",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Hãy thêm khóa Trakt của bạn trong Cài đặt > Danh sách ngoài trước khi bật một danh sách Trakt; danh sách riêng tư cũng cần Đăng nhập bằng Trakt ở đó.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "gửi {\"secret\": \"<Trakt app client secret>\"}, hoặc {\"secret\": \"\"} để xóa nó"
+	"server.requests.send-secret-trakt-app-client-secret-line": "gửi {\"secret\": \"<Trakt app client secret>\"}, hoặc {\"secret\": \"\"} để xóa nó",
+	"server.migrate.its-seasons": "{name}: các mùa của nó",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs không thể chỉ giữ tập đầu tiên; danh sách giữ mùa đầu tiên",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs chỉ đọc danh sách TMDB và danh sách Trakt công khai; danh sách này ở lại Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs đọc danh sách và danh sách xem của Trakt; danh sách đã xem hoặc bộ sưu tập ở lại Sonarr"
 }

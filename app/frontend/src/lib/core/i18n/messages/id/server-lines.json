@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Populer",
 	"server.metadata.creator": "Kreator",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Tambahkan kunci Trakt-mu di Pengaturan > Daftar luar sebelum menyalakan daftar Trakt; daftar pribadi juga perlu Masuk dengan Trakt di sana.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "kirim {\"secret\": \"<Trakt app client secret>\"}, atau {\"secret\": \"\"} untuk menghapusnya"
+	"server.requests.send-secret-trakt-app-client-secret-line": "kirim {\"secret\": \"<Trakt app client secret>\"}, atau {\"secret\": \"\"} untuk menghapusnya",
+	"server.migrate.its-seasons": "{name}: musimnya",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs tidak bisa menyimpan episode pertama saja; daftar menyimpan musim pertama",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs hanya membaca daftar TMDB dan daftar Trakt publik; daftar ini tetap di Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs membaca daftar dan watchlist Trakt; daftar yang ditonton atau koleksi tetap di Sonarr"
 }

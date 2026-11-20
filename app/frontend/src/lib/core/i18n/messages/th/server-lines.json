@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "ยอดนิยม",
 	"server.metadata.creator": "ผู้สร้าง",
 	"server.migrate.add-your-trakt-key-under-settings-2": "เพิ่มคีย์ Trakt ของคุณในการตั้งค่า > รายการภายนอก ก่อนเปิดรายการ Trakt รายการส่วนตัวต้องใช้ เข้าสู่ระบบด้วย Trakt ที่นั่นด้วย",
-	"server.requests.send-secret-trakt-app-client-secret-line": "ส่ง {\"secret\": \"<Trakt app client secret>\"} หรือ {\"secret\": \"\"} เพื่อลบ"
+	"server.requests.send-secret-trakt-app-client-secret-line": "ส่ง {\"secret\": \"<Trakt app client secret>\"} หรือ {\"secret\": \"\"} เพื่อลบ",
+	"server.migrate.its-seasons": "{name}: ซีซันของมัน",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs เก็บเฉพาะตอนแรกไม่ได้ รายการจะเก็บซีซันแรกไว้",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs อ่านเฉพาะรายการ TMDB และรายการ Trakt สาธารณะ รายการนี้ยังอยู่ใน Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs อ่านรายการ Trakt และรายการที่ต้องการดู รายการที่ดูแล้วหรือคอลเลกชันยังอยู่ใน Sonarr"
 }

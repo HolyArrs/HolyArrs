@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Populært",
 	"server.metadata.creator": "Skaper",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Legg til Trakt-nøkkelen din under Innstillinger > Eksterne lister før du slår på en Trakt-liste. En privat liste trenger også Logg inn med Trakt der.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "send {\"secret\": \"<Trakt app client secret>\"}, eller {\"secret\": \"\"} for å fjerne den"
+	"server.requests.send-secret-trakt-app-client-secret-line": "send {\"secret\": \"<Trakt app client secret>\"}, eller {\"secret\": \"\"} for å fjerne den",
+	"server.migrate.its-seasons": "{name}: sesongene",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs kan ikke beholde bare første episode; listen beholder første sesong",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs leser bare TMDB-lister og offentlige Trakt-lister. Denne listen blir i Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs leser Trakt-lister og ønskelister. En sett- eller samlingsliste blir i Sonarr"
 }

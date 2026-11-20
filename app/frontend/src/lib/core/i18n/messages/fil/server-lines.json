@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Sikat",
 	"server.metadata.creator": "Creator",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Idagdag ang Trakt key mo sa Settings > Mga Panlabas na listahan bago i-on ang listahan ng Trakt; kailangan din ng pribadong listahan ang Mag-sign in gamit ang Trakt doon.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "ipadala ang {\"secret\": \"<Trakt app client secret>\"}, o {\"secret\": \"\"} para alisin ito"
+	"server.requests.send-secret-trakt-app-client-secret-line": "ipadala ang {\"secret\": \"<Trakt app client secret>\"}, o {\"secret\": \"\"} para alisin ito",
+	"server.migrate.its-seasons": "{name}: ang mga season nito",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "Hindi kayang itago ng HolyArrs ang unang episode lang; itinatago ng listahan ang unang season",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "Mga listahan ng TMDB at pampublikong listahan ng Trakt lang ang binabasa ng HolyArrs; mananatili sa Sonarr ang listahang ito",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "Binabasa ng HolyArrs ang mga listahan at watchlist ng Trakt; mananatili sa Sonarr ang listahan ng napanood o koleksyon"
 }

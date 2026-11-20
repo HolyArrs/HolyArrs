@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "பிரபலமானவை",
 	"server.metadata.creator": "படைப்பாளர்",
 	"server.migrate.add-your-trakt-key-under-settings-2": "ஒரு Trakt பட்டியலை இயக்கும் முன் அமைப்புகள் > வெளிப்பட்டியல்கள் இல் உங்கள் Trakt விசையைச் சேருங்கள்; தனிப்பட்ட பட்டியலுக்கு அங்கே Trakt மூலம் உள்நுழை என்பதும் தேவை.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "{\"secret\": \"<Trakt app client secret>\"} ஐ அனுப்புங்கள், அல்லது அதை நீக்க {\"secret\": \"\"} ஐ அனுப்புங்கள்"
+	"server.requests.send-secret-trakt-app-client-secret-line": "{\"secret\": \"<Trakt app client secret>\"} ஐ அனுப்புங்கள், அல்லது அதை நீக்க {\"secret\": \"\"} ஐ அனுப்புங்கள்",
+	"server.migrate.its-seasons": "{name}: அதன் சீசன்கள்",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs முதல் எபிசோடை மட்டும் வைத்திருக்க முடியாது; பட்டியல் முதல் சீசனை வைத்திருக்கும்",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs TMDB பட்டியல்களையும் பொது Trakt பட்டியல்களையும் மட்டுமே படிக்கும்; இந்தப் பட்டியல் Sonarr இலேயே இருக்கும்",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs Trakt பட்டியல்களையும் பார்வைப்பட்டியல்களையும் படிக்கும்; பார்த்த அல்லது சேகரிப்புப் பட்டியல் Sonarr இலேயே இருக்கும்"
 }

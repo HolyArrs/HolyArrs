@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
@@ -345,14 +346,12 @@ func (b *builder) leftBehind(s *Snapshot) {
 		b.not(GroupOther, b.from("tags", i), t.Label, "HolyArrs has no tags")
 	}
 	for i, l := range s.ImportLists {
-		if s.Kind == Radarr && b.outsideList(i, l) {
+		if (s.Kind == Radarr || s.Kind == Sonarr) && b.outsideList(s.Kind, i, l) {
 			continue
 		}
 		kind := strings.ToLower(l.Kind)
 		var why string
 		switch {
-		case s.Kind == Sonarr:
-			why = "HolyArrs Outside lists add movies only for now; this show list stays in Sonarr"
 		case s.Kind == Lidarr:
 			why = "HolyArrs Outside lists add movies only for now; this music list stays in Lidarr"
 		// An MDBList list, by its own kind or a list link to mdblist.com, is
@@ -369,6 +368,8 @@ func (b *builder) leftBehind(s *Snapshot) {
 			if strings.Contains(kind, "trakt") {
 				why += " (a private list needs Sign in with Trakt there)"
 			}
+		case s.Kind == Sonarr:
+			why = "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Sonarr"
 		default:
 			why = "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Radarr"
 		}
@@ -406,15 +407,15 @@ func listSlug(name string) string {
 }
 
 // freeListName is name, or name with " (radarr)", " (radarr 2)" and so on
-// when taken says that one is in use.
-func freeListName(name string, taken func(string) bool) string {
+// (" (sonarr)" for a Sonarr list) when taken says that one is in use.
+func freeListName(name string, app Kind, taken func(string) bool) string {
 	if !taken(name) {
 		return name
 	}
 	for n := 1; n < 100; n++ {
-		end := " (radarr)"
+		end := " (" + string(app) + ")"
 		if n > 1 {
-			end = fmt.Sprintf(" (radarr %d)", n)
+			end = fmt.Sprintf(" (%s %d)", app, n)
 		}
 		if c := clip(name, 80-len(end)) + end; !taken(c) {
 			return c
@@ -448,16 +449,21 @@ func syncHours(v any) int {
 	return min(max(hours, 6), 168)
 }
 
-// outsideList plans one Radarr list as a paused Outside list: a TMDB list,
-// a Trakt list or a Trakt watchlist (requests.NormalListRef checks its reference).
+// outsideList plans one Radarr or Sonarr list as a paused Outside list: a
+// TMDB list (Radarr only), a Trakt list or a Trakt watchlist
+// (requests.NormalListRef checks its reference). A Sonarr list adds shows.
 // It says false for every other kind, which leftBehind lists.
-func (b *builder) outsideList(i int, l Provider) bool {
+func (b *builder) outsideList(app Kind, i int, l Provider) bool {
 	from := b.from("import_lists", i)
 	set := l.Settings
 	name := clip(l.Name, 80)
+	titleKind := libraryKind(app)
 	var kind, ref string
 	switch strings.ToLower(l.Kind) {
 	case "tmdblistimport":
+		if app != Radarr {
+			return false
+		}
 		kind, ref = requests.ListTMDB, str(anyKey(set, "listId"))
 	case "traktlistimport":
 		kind, ref = requests.ListTrakt, setStr(set, "username", "authUser")+"/"+listSlug(str(anyKey(set, "listname")))
@@ -466,7 +472,11 @@ func (b *builder) outsideList(i int, l Provider) bool {
 		case "0", "userWatchList", "":
 			kind, ref = requests.ListTrakt, setStr(set, "username", "authUser")+"/watchlist"
 		default:
-			b.not(GroupLists, from, l.Name, "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Radarr")
+			why := "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Radarr"
+			if app == Sonarr {
+				why = "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Sonarr"
+			}
+			b.not(GroupLists, from, l.Name, why)
 			return true
 		}
 	default:
@@ -484,7 +494,7 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	folder := oldPath(str(anyKey(set, "link.rootFolderPath")))
 	lib := ""
 	for _, f := range b.folders {
-		if f.Kind == "movie" && f.OldPath == folder && folder != "" {
+		if f.Kind == titleKind && f.OldPath == folder && folder != "" {
 			lib = f.Path
 		}
 	}
@@ -495,21 +505,28 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	if name == "" {
 		name = kind + " " + norm
 	}
-	name = freeListName(name, func(n string) bool { return b.listNames[strings.ToLower(n)] })
+	name = freeListName(name, app, func(n string) bool { return b.listNames[strings.ToLower(n)] })
 	b.listNames[strings.ToLower(name)] = true
-	op := &OutsideListPlan{Kind: kind, Ref: norm, Library: lib, KeepUpToDate: true, SearchOnAdd: boolean(anyKey(set, "link.searchOnAdd")),
-		Preset: b.presets[b.presetKey(Radarr, num(anyKey(set, "link.qualityProfileId")))], SyncEveryHours: syncHours(anyKey(set, "link.minRefreshInterval"))}
-	switch strings.ToLower(str(anyKey(set, "link.monitor"))) {
-	case "none", "2":
-		op.KeepUpToDate = false
-	case "movieandcollection", "1":
-		b.not(GroupLists, from+".monitor", l.Name+": its movie series", "lists add only the movies on the list, not the rest of their movie series; add those by hand")
-	}
-	if v := str(anyKey(set, "link.minimumAvailability")); v != "" {
-		op.ReleaseGate = releaseGates[strings.ToLower(v)]
+	op := &OutsideListPlan{Kind: kind, Ref: norm, Library: lib, KeepUpToDate: true,
+		SearchOnAdd:    boolean(anyKey(set, "link.searchOnAdd")) || boolean(anyKey(set, "link.searchForMissingEpisodes")),
+		Preset:         b.presets[b.presetKey(app, num(anyKey(set, "link.qualityProfileId")))],
+		SyncEveryHours: syncHours(anyKey(set, "link.minRefreshInterval"))}
+	if app == Sonarr {
+		op.TitleKind = "show"
+		b.showListSeasons(from, l, op)
+	} else {
+		switch strings.ToLower(str(anyKey(set, "link.monitor"))) {
+		case "none", "2":
+			op.KeepUpToDate = false
+		case "movieandcollection", "1":
+			b.not(GroupLists, from+".monitor", l.Name+": its movie series", "lists add only the movies on the list, not the rest of their movie series; add those by hand")
+		}
+		if v := str(anyKey(set, "link.minimumAvailability")); v != "" {
+			op.ReleaseGate = releaseGates[strings.ToLower(v)]
+		}
 	}
 	// Radarr reads a list only while it is on, and adds its movies only
-	// while its automatic add is on too.
+	// while its automatic add is on too. Sonarr has only the automatic add.
 	on := l.Enabled
 	if v := anyKey(set, "link.enabled"); v != nil {
 		on = boolean(v)
@@ -525,6 +542,9 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	if op.ReleaseGate != "" {
 		detail += "; release gate: " + gateWords[op.ReleaseGate]
 	}
+	if op.TitleKind == "show" {
+		detail += "; seasons: " + op.Seasons + ", new seasons: " + op.NewSeasons
+	}
 	if !op.KeepUpToDate {
 		detail += "; Keep up to date off"
 	}
@@ -533,9 +553,52 @@ func (b *builder) outsideList(i int, l Provider) bool {
 		// with Trakt, a public one only the key.
 		detail += "; needs your Trakt key, and Sign in with Trakt if the list is private"
 	}
-	b.add(GroupLists, Item{Key: "outside_list:" + kind + ":" + strings.ToLower(norm), Name: name, From: from, Detail: detail,
+	key := "outside_list:" + kind + ":" + strings.ToLower(norm)
+	if op.TitleKind == "show" {
+		// The same Trakt watchlist can feed both apps: one list for its
+		// movies, one for its shows.
+		key = "outside_list:" + kind + ":show:" + strings.ToLower(norm)
+	}
+	b.add(GroupLists, Item{Key: key, Name: name, From: from, Detail: detail,
 		Why: "added paused, like Sources and Downloaders: check its folder and Pick rules, then turn it on", OutsideList: op})
 	return true
+}
+
+// sonarrMonitor maps Sonarr's list monitor choice (a word, or the backup's
+// number) to the Outside list seasons choice.
+var sonarrMonitor = map[string]string{
+	"all": library.SeasonsAll, "1": library.SeasonsAll, "missing": library.SeasonsAll, "3": library.SeasonsAll,
+	"existing": library.SeasonsAll, "4": library.SeasonsAll, "recent": library.SeasonsAll, "9": library.SeasonsAll,
+	"monitorspecials": library.SeasonsAll, "10": library.SeasonsAll, "unmonitorspecials": library.SeasonsAll, "11": library.SeasonsAll,
+	"future": library.SeasonsFuture, "2": library.SeasonsFuture,
+	"firstseason": requests.SeasonsFirst, "5": requests.SeasonsFirst, "pilot": requests.SeasonsFirst, "8": requests.SeasonsFirst,
+	"lastseason": library.SeasonsLatest, "6": library.SeasonsLatest, "latestseason": library.SeasonsLatest, "7": library.SeasonsLatest,
+	"none": library.SeasonsNone, "12": library.SeasonsNone, "skip": library.SeasonsNone, "13": library.SeasonsNone,
+}
+
+// showListSeasons sets a Sonarr list's seasons and new seasons on op. Every
+// Sonarr monitor choice has a match here but the pilot, which keeps the first
+// season. The series type is left to the show: HolyArrs tells anime itself.
+func (b *builder) showListSeasons(from string, l Provider, op *OutsideListPlan) {
+	set := l.Settings
+	mon := strings.ToLower(str(anyKey(set, "link.shouldMonitor")))
+	op.Seasons = sonarrMonitor[mon]
+	switch {
+	case op.Seasons == "":
+		op.Seasons = library.SeasonsAll
+	case mon == "pilot" || mon == "8":
+		b.not(GroupLists, from+".monitor", l.Name+": its seasons", "HolyArrs cannot keep only the first episode; the list keeps the first season")
+	case op.Seasons == library.SeasonsNone:
+		op.KeepUpToDate = false
+	}
+	op.NewSeasons = "all"
+	switch strings.ToLower(str(anyKey(set, "link.monitorNewItems"))) {
+	case "none", "1":
+		op.NewSeasons = "none"
+	}
+	if op.Seasons == library.SeasonsFuture {
+		op.NewSeasons = "all"
+	}
 }
 
 // metadataHost says an address names a cloud metadata address (the list

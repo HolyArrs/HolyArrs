@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Populárne",
 	"server.metadata.creator": "Tvorca",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Pred zapnutím zoznamu Trakt pridajte svoj kľúč Trakt v Nastavenia > Externé zoznamy; súkromný zoznam tam navyše potrebuje Prihlásiť sa cez Trakt.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "pošlite {\"secret\": \"<Trakt app client secret>\"}, alebo {\"secret\": \"\"} na jeho odstránenie"
+	"server.requests.send-secret-trakt-app-client-secret-line": "pošlite {\"secret\": \"<Trakt app client secret>\"}, alebo {\"secret\": \"\"} na jeho odstránenie",
+	"server.migrate.its-seasons": "{name}: jeho série",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs nedokáže ponechať len prvú epizódu; zoznam ponechá prvú sériu",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs číta iba zoznamy TMDB a verejné zoznamy Trakt; tento zoznam zostáva v Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs číta zoznamy a zoznamy na pozeranie z Trakt; zoznam pozretých alebo zbierky zostáva v Sonarr"
 }

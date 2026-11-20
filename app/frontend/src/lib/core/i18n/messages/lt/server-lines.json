@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Populiaru",
 	"server.metadata.creator": "Kūrėjas",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Prieš įjungdami Trakt sąrašą, skiltyje Nustatymai > Išoriniai sąrašai pridėkite savo Trakt raktą; privačiam sąrašui ten dar reikia Prisijungti su Trakt.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "siųskite {\"secret\": \"<Trakt app client secret>\"}, arba {\"secret\": \"\"}, kad jį pašalintumėte"
+	"server.requests.send-secret-trakt-app-client-secret-line": "siųskite {\"secret\": \"<Trakt app client secret>\"}, arba {\"secret\": \"\"}, kad jį pašalintumėte",
+	"server.migrate.its-seasons": "{name}: jo sezonai",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs negali palikti tik pirmos serijos; sąrašas palieka pirmą sezoną",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs skaito tik TMDB sąrašus ir viešus Trakt sąrašus; šis sąrašas lieka Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs skaito Trakt sąrašus ir stebėjimo sąrašus; žiūrėtų ar kolekcijos sąrašas lieka Sonarr"
 }

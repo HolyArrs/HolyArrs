@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Populare",
 	"server.metadata.creator": "Creator",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Adaugă cheia ta Trakt în Setări > Liste externe înainte de a porni o listă Trakt; o listă privată are nevoie acolo și de Autentificare cu Trakt.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "trimite {\"secret\": \"<Trakt app client secret>\"}, sau {\"secret\": \"\"} pentru a o elimina"
+	"server.requests.send-secret-trakt-app-client-secret-line": "trimite {\"secret\": \"<Trakt app client secret>\"}, sau {\"secret\": \"\"} pentru a o elimina",
+	"server.migrate.its-seasons": "{name}: sezoanele lui",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs nu poate păstra doar primul episod; lista păstrează primul sezon",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs citește doar listele TMDB și listele Trakt publice; această listă rămâne în Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs citește listele și listele de urmărire Trakt; o listă de vizionate sau de colecție rămâne în Sonarr"
 }

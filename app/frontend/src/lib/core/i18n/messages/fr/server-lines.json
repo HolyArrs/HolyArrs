@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Populaires",
 	"server.metadata.creator": "Créateur",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Ajoutez votre clé Trakt dans Paramètres > Listes externes avant d'activer une liste Trakt ; une liste privée demande aussi Se connecter avec Trakt à cet endroit.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "envoyez {\"secret\": \"<Trakt app client secret>\"}, ou {\"secret\": \"\"} pour la retirer"
+	"server.requests.send-secret-trakt-app-client-secret-line": "envoyez {\"secret\": \"<Trakt app client secret>\"}, ou {\"secret\": \"\"} pour la retirer",
+	"server.migrate.its-seasons": "{name} : ses saisons",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs ne peut pas garder seulement le premier épisode ; la liste garde la première saison",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs lit seulement les listes TMDB et les listes Trakt publiques ; cette liste reste dans Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs lit les listes Trakt et les listes à voir ; une liste de vus ou de collection reste dans Sonarr"
 }

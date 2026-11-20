@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Popularno",
 	"server.metadata.creator": "Autor",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Dodaj svoj Trakt ključ u Postavke > Vanjski popisi prije nego uključiš Trakt popis; privatni popis tamo treba i Prijava putem Trakta.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "pošalji {\"secret\": \"<Trakt app client secret>\"}, ili {\"secret\": \"\"} da ga ukloniš"
+	"server.requests.send-secret-trakt-app-client-secret-line": "pošalji {\"secret\": \"<Trakt app client secret>\"}, ili {\"secret\": \"\"} da ga ukloniš",
+	"server.migrate.its-seasons": "{name}: njegove sezone",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs ne može zadržati samo prvu epizodu; popis zadržava prvu sezonu",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs čita samo TMDB popise i javne Trakt popise; ovaj popis ostaje u Sonarru",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs čita Trakt popise i popise za gledanje; popis pogledanog ili zbirke ostaje u Sonarru"
 }

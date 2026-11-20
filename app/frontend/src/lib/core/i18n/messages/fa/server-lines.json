@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "محبوب",
 	"server.metadata.creator": "سازنده",
 	"server.migrate.add-your-trakt-key-under-settings-2": "پیش از روشن کردن یک فهرست Trakt، کلید Trakt خودت را زیر تنظیمات > فهرست‌های بیرونی اضافه کن؛ فهرست خصوصی هم آنجا به ورود با Trakt نیاز دارد.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "بفرست {\"secret\": \"<Trakt app client secret>\"}، یا {\"secret\": \"\"} تا حذف شود"
+	"server.requests.send-secret-trakt-app-client-secret-line": "بفرست {\"secret\": \"<Trakt app client secret>\"}، یا {\"secret\": \"\"} تا حذف شود",
+	"server.migrate.its-seasons": "{name}: فصل‌هایش",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs نمی‌تواند فقط قسمت اول را نگه دارد؛ فهرست فصل اول را نگه می‌دارد",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs فقط فهرست‌های TMDB و فهرست‌های عمومی Trakt را می‌خواند؛ این فهرست در Sonarr می‌ماند",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs فهرست‌ها و فهرست‌های تماشای Trakt را می‌خواند؛ فهرست دیده‌شده یا مجموعه در Sonarr می‌ماند"
 }

@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "জনপ্রিয়",
 	"server.metadata.creator": "নির্মাতা",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Trakt তালিকা চালু করার আগে সেটিংস > বাইরের তালিকায় আপনার Trakt কী যোগ করুন; প্রাইভেট তালিকার জন্য সেখানে “Trakt দিয়ে সাইন ইন করুন”-ও দরকার।",
-	"server.requests.send-secret-trakt-app-client-secret-line": "পাঠান {\"secret\": \"<Trakt app client secret>\"}, অথবা সরাতে {\"secret\": \"\"}"
+	"server.requests.send-secret-trakt-app-client-secret-line": "পাঠান {\"secret\": \"<Trakt app client secret>\"}, অথবা সরাতে {\"secret\": \"\"}",
+	"server.migrate.its-seasons": "{name}: এর সিজনগুলো",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs শুধু প্রথম পর্ব রাখতে পারে না; তালিকাটি প্রথম সিজন রাখে",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs শুধু TMDB তালিকা ও পাবলিক Trakt তালিকা পড়ে; এই তালিকা Sonarr-এ থাকে",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs Trakt তালিকা ও ওয়াচলিস্ট পড়ে; দেখা বা সংগ্রহ তালিকা Sonarr-এ থাকে"
 }

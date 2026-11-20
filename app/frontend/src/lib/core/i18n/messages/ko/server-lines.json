@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "인기순",
 	"server.metadata.creator": "제작자",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Trakt 목록을 켜기 전에 설정 > 외부 목록에서 Trakt 키를 추가하세요. 비공개 목록은 그곳에서 'Trakt로 로그인'도 필요합니다.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "{\"secret\": \"<Trakt app client secret>\"}를 보내거나, 삭제하려면 {\"secret\": \"\"}를 보내세요"
+	"server.requests.send-secret-trakt-app-client-secret-line": "{\"secret\": \"<Trakt app client secret>\"}를 보내거나, 삭제하려면 {\"secret\": \"\"}를 보내세요",
+	"server.migrate.its-seasons": "{name}: 시즌",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs는 첫 화만 남길 수 없습니다. 목록은 첫 시즌을 남깁니다",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs는 TMDB 목록과 공개 Trakt 목록만 읽습니다. 이 목록은 Sonarr에 남습니다",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs는 Trakt 목록과 관심 목록을 읽습니다. 시청 기록이나 컬렉션 목록은 Sonarr에 남습니다"
 }

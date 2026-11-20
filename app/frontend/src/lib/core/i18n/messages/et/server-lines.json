@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Populaarsed",
 	"server.metadata.creator": "Looja",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Lisa oma Trakti võti jaotises Seaded > Välised nimekirjad, enne kui lülitad Trakti nimekirja sisse; privaatne nimekiri vajab seal ka nuppu Logi sisse Traktiga.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "saada {\"secret\": \"<Trakt app client secret>\"}, või {\"secret\": \"\"}, et see eemaldada"
+	"server.requests.send-secret-trakt-app-client-secret-line": "saada {\"secret\": \"<Trakt app client secret>\"}, või {\"secret\": \"\"}, et see eemaldada",
+	"server.migrate.its-seasons": "{name}: selle hooajad",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs ei saa hoida ainult esimest osa; nimekiri hoiab esimest hooaega",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs loeb ainult TMDB nimekirju ja avalikke Trakti nimekirju; see nimekiri jääb Sonarri",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs loeb Trakti nimekirju ja vaatamisnimekirju; vaadatud või kollektsiooni nimekiri jääb Sonarri"
 }

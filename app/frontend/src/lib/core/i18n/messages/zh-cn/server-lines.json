@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "热门",
 	"server.metadata.creator": "创作者",
 	"server.migrate.add-your-trakt-key-under-settings-2": "开启 Trakt 列表之前，请先在 设置 > 外部列表 中添加你的 Trakt 密钥；私密列表还需在那里点击“使用 Trakt 登录”。",
-	"server.requests.send-secret-trakt-app-client-secret-line": "请发送 {\"secret\": \"<Trakt app client secret>\"}，或发送 {\"secret\": \"\"} 将其移除"
+	"server.requests.send-secret-trakt-app-client-secret-line": "请发送 {\"secret\": \"<Trakt app client secret>\"}，或发送 {\"secret\": \"\"} 将其移除",
+	"server.migrate.its-seasons": "{name}：它的季",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs 无法只保留第一集；列表会保留第一季",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs 只读取 TMDB 列表和公开的 Trakt 列表；这个列表仍留在 Sonarr",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs 读取 Trakt 列表和待看清单；已观看或收藏的列表仍留在 Sonarr"
 }

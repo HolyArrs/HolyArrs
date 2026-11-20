@@ -285,7 +285,7 @@ func partOf(it Item) string {
 	case it.NeverAdd != nil:
 		kind = it.NeverAdd.Kind
 	case it.OutsideList != nil:
-		kind = "movie" // Outside lists add movies
+		kind = it.OutsideList.titleKind()
 	case it.Protocol != nil:
 		return it.Protocol.Part
 	case it.Subtitles != nil:

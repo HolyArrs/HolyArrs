@@ -1581,5 +1581,9 @@
 	"server.discover.popular": "Suosittua",
 	"server.metadata.creator": "Tekijä",
 	"server.migrate.add-your-trakt-key-under-settings-2": "Lisää Trakt-avaimesi kohdassa Asetukset > Ulkoiset listat ennen kuin otat Trakt-listan käyttöön; yksityiselle listalle tarvitaan siellä myös Kirjaudu Traktilla.",
-	"server.requests.send-secret-trakt-app-client-secret-line": "lähetä {\"secret\": \"<Trakt app client secret>\"}, tai {\"secret\": \"\"} poistaaksesi sen"
+	"server.requests.send-secret-trakt-app-client-secret-line": "lähetä {\"secret\": \"<Trakt app client secret>\"}, tai {\"secret\": \"\"} poistaaksesi sen",
+	"server.migrate.its-seasons": "{name}: sen tuotantokaudet",
+	"server.migrate.holyarrs-cannot-keep-only-the-first": "HolyArrs ei voi pitää vain ensimmäistä jaksoa; lista pitää ensimmäisen tuotantokauden",
+	"server.migrate.holyarrs-reads-tmdb-lists-and-public-3": "HolyArrs lukee vain TMDB-listoja ja julkisia Trakt-listoja; tämä lista jää Sonarriin",
+	"server.migrate.holyarrs-reads-trakt-lists-and-watchlists-2": "HolyArrs lukee Trakt-listoja ja katselulistoja; katsottu- tai kokoelmalista jää Sonarriin"
 }
