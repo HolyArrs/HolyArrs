@@ -420,7 +420,7 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 	}
 	n := 0
 	for _, v := range vs {
-		if v.FolderName == "" || !filepath.IsLocal(v.FolderName) {
+		if v.SharedFolder || v.FolderName == "" || !filepath.IsLocal(v.FolderName) {
 			continue
 		}
 		if lf.Kind == "music" {

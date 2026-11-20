@@ -183,6 +183,8 @@ type Version struct {
 	AudioLanguages  []string `db:"audio_languages,json"`
 	// FourK marks the title's 4K copy (at most one a title).
 	FourK bool `db:"four_k"`
+	// SharedFolder adopts only reviewed files, never the folder's other videos.
+	SharedFolder bool `db:"shared_folder"`
 }
 
 // Slot is one Item in one Version; the core loop state lives here.

@@ -124,6 +124,7 @@ IsMain bool `db:"is_main"`
 Edition string `db:"edition"`
 AudioLanguages []string `db:"audio_languages,json"`
 FourK bool `db:"four_k"`
+SharedFolder bool `db:"shared_folder"`
 == Slot
 Meta Meta ``
 ItemID int64 `db:"item_id"`

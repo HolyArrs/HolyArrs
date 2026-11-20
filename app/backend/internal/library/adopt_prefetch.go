@@ -2,7 +2,6 @@ package library
 
 import (
 	"context"
-	"path"
 	"strconv"
 	"strings"
 
@@ -32,7 +31,7 @@ func folderRead(folder string) metadata.TMDBRead {
 // scanAhead fetches the lookups of a scan's folders one window ahead of
 // the scan, so each folder's lookup is answered from memory.
 type scanAhead struct {
-	index map[string]int
+	index map[string]int // full relative paths: basenames can repeat across groups
 	ready []chan struct{}
 	free  chan struct{}
 	stop  chan struct{}
@@ -71,7 +70,7 @@ func startAhead(ctx context.Context, md metadata.Provider, folders []string) *sc
 				end := min(len(folders), (w+1)*scanWindow)
 				reads := make([]metadata.TMDBRead, 0, end-w*scanWindow)
 				for _, f := range folders[w*scanWindow : end] {
-					reads = append(reads, folderRead(f))
+					reads = append(reads, folderRead(candidateLookup(f)))
 				}
 				p.Prefetch(ctx, reads)
 			}
@@ -115,7 +114,7 @@ func (a *scanAhead) wait(ctx context.Context, folder string) {
 	}
 }
 
-// scanLookups lists the folder names a scan will look up, in scan order: those
+// scanLookups lists the relative folder paths a scan will look up, in scan order: those
 // it reads (at most limit), less those already in the Library. names are paths
 // inside the Library folder; a lookup goes by the last part.
 func scanLookups(names []string, limit int, known map[string]int64, fold bool) []string {
@@ -125,7 +124,7 @@ func scanLookups(names []string, limit int, known map[string]int64, fold bool) [
 			break
 		}
 		if _, ok := known[FolderKey(n, fold)]; !ok {
-			out = append(out, path.Base(n))
+			out = append(out, n)
 		}
 	}
 	return out

@@ -48,6 +48,12 @@ func adoptWhy(ctx context.Context, db Reader, err error) string {
 func (s *Service) adoptFailed(ctx context.Context, lf mediafiles.LibraryFolder, r *AdoptResult, err error) {
 	var dup interface{ InLibrary() int64 }
 	if errors.As(err, &dup) {
+		fold := FoldsCase(lf.Path)
+		if owners, e := mediafiles.AdoptedFileOwners(ctx, s.Store.Read(), lf.ID, fold, r.Folder); e == nil && owners[FolderKey(r.Folder, fold)].Assigned && owners[FolderKey(r.Folder, fold)].TitleID == dup.InLibrary() {
+			r.TitleID = dup.InLibrary()
+			r.File = r.Folder
+			return
+		}
 		if id, e := FolderTaken(ctx, s.Store.Read(), lf, r.Folder); e == nil && id != 0 && id == dup.InLibrary() {
 			r.TitleID = id
 			return
