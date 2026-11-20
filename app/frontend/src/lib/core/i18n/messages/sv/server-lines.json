@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Trendande serier på streaming",
 	"server.suggest.trending-on-streaming": "Trendar på streaming",
 	"server.discover.popular": "Populärt",
-	"server.metadata.creator": "Skapare"
+	"server.metadata.creator": "Skapare",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: ”Håll uppdaterad” av, filen raderades från disken",
+	"server.library.keep-up-to-date-off-its-2": "{name}: ”Håll uppdaterad” av, filen raderades från disken",
+	"server.migrate.already-set-this-way": "är redan inställt så",
+	"server.migrate.stop-looking-for-deleted-episodes": "Sluta leta efter raderade avsnitt",
+	"server.migrate.stop-looking-for-deleted-movies": "Sluta leta efter raderade filmer",
+	"server.migrate.the-deleted-file-switch-is-back": "brytaren för raderade filer är tillbaka som förut"
 }

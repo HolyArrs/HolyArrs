@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Trendy seriály ve streamování",
 	"server.suggest.trending-on-streaming": "Trendy ve streamování",
 	"server.discover.popular": "Oblíbené",
-	"server.metadata.creator": "Tvůrce"
+	"server.metadata.creator": "Tvůrce",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Udržovat aktuální“ vypnuto, soubor byl smazán z disku",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Udržovat aktuální“ vypnuto, soubor byl smazán z disku",
+	"server.migrate.already-set-this-way": "už je nastaveno takto",
+	"server.migrate.stop-looking-for-deleted-episodes": "Nehledat smazané díly",
+	"server.migrate.stop-looking-for-deleted-movies": "Nehledat smazané filmy",
+	"server.migrate.the-deleted-file-switch-is-back": "přepínač smazaných souborů je zpět, jak byl"
 }

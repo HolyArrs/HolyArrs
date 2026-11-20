@@ -84,5 +84,8 @@
 	"settings.naming.holding": "پوشه نگه‌داری",
 	"settings.naming.clearOld": "پاک کردن فایل‌های قدیمی نگه‌داشته‌شده",
 	"settings.naming.clearOldHint": "هر روز خودش اجرا می‌شود",
-	"settings.naming.clearNow": "پاک کن"
+	"settings.naming.clearNow": "پاک کن",
+	"settings.naming.unkeepMovies": "دیگر دنبال فیلم‌های حذف‌شده نگرد",
+	"settings.naming.unkeepEpisodes": "دیگر دنبال قسمت‌های حذف‌شده نگرد",
+	"settings.naming.unkeepHint": "وقتی بررسی دوباره ببیند فایل از دیسک رفته، «به‌روز نگه داشتن» را خاموش می‌کند"
 }

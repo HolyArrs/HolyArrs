@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Серіали в тренді на стрімінгу",
 	"server.suggest.trending-on-streaming": "У тренді на стрімінгу",
 	"server.discover.popular": "Популярне",
-	"server.metadata.creator": "Автор"
+	"server.metadata.creator": "Автор",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: «Стежити за оновленнями» вимкнено, файл видалено з диска",
+	"server.library.keep-up-to-date-off-its-2": "{name}: «Стежити за оновленнями» вимкнено, файл видалено з диска",
+	"server.migrate.already-set-this-way": "вже так налаштовано",
+	"server.migrate.stop-looking-for-deleted-episodes": "Не шукати видалені серії",
+	"server.migrate.stop-looking-for-deleted-movies": "Не шукати видалені фільми",
+	"server.migrate.the-deleted-file-switch-is-back": "перемикач видалених файлів знову як був"
 }

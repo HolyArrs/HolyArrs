@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "ซีรีส์ที่กำลังมาแรงบนสตรีมมิง",
 	"server.suggest.trending-on-streaming": "กำลังมาแรงบนสตรีมมิง",
 	"server.discover.popular": "ยอดนิยม",
-	"server.metadata.creator": "ผู้สร้าง"
+	"server.metadata.creator": "ผู้สร้าง",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: ปิด \"อัปเดตให้ทันสมัย\" แล้ว ไฟล์ถูกลบออกจากดิสก์",
+	"server.library.keep-up-to-date-off-its-2": "{name}: ปิด \"อัปเดตให้ทันสมัย\" แล้ว ไฟล์ถูกลบออกจากดิสก์",
+	"server.migrate.already-set-this-way": "ตั้งค่าแบบนี้อยู่แล้ว",
+	"server.migrate.stop-looking-for-deleted-episodes": "เลิกหาตอนที่ลบแล้ว",
+	"server.migrate.stop-looking-for-deleted-movies": "เลิกหาภาพยนตร์ที่ลบแล้ว",
+	"server.migrate.the-deleted-file-switch-is-back": "สวิตช์ไฟล์ที่ลบกลับเป็นเหมือนเดิมแล้ว"
 }

@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Siri sedang tren di strim",
 	"server.suggest.trending-on-streaming": "Sedang tren di strim",
 	"server.discover.popular": "Popular",
-	"server.metadata.creator": "Pencipta"
+	"server.metadata.creator": "Pencipta",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: Kekalkan terkini dimatikan, failnya dipadam daripada cakera",
+	"server.library.keep-up-to-date-off-its-2": "{name}: Kekalkan terkini dimatikan, failnya dipadam daripada cakera",
+	"server.migrate.already-set-this-way": "sudah ditetapkan begini",
+	"server.migrate.stop-looking-for-deleted-episodes": "Berhenti mencari episod yang dipadam",
+	"server.migrate.stop-looking-for-deleted-movies": "Berhenti mencari filem yang dipadam",
+	"server.migrate.the-deleted-file-switch-is-back": "suis fail dipadam kembali seperti asal"
 }

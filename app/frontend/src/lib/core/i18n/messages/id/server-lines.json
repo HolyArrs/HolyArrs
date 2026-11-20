@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Serial yang sedang tren di streaming",
 	"server.suggest.trending-on-streaming": "Tren di streaming",
 	"server.discover.popular": "Populer",
-	"server.metadata.creator": "Kreator"
+	"server.metadata.creator": "Kreator",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: Selalu terbaru mati, filenya dihapus dari disk",
+	"server.library.keep-up-to-date-off-its-2": "{name}: Selalu terbaru mati, filenya dihapus dari disk",
+	"server.migrate.already-set-this-way": "sudah diatur begini",
+	"server.migrate.stop-looking-for-deleted-episodes": "Berhenti mencari episode yang dihapus",
+	"server.migrate.stop-looking-for-deleted-movies": "Berhenti mencari film yang dihapus",
+	"server.migrate.the-deleted-file-switch-is-back": "sakelar file terhapus kembali seperti semula"
 }

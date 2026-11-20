@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Séries tendance du streaming",
 	"server.suggest.trending-on-streaming": "Tendances du streaming",
 	"server.discover.popular": "Populaires",
-	"server.metadata.creator": "Créateur"
+	"server.metadata.creator": "Créateur",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: « Tenir à jour » désactivé, son fichier a été supprimé du disque",
+	"server.library.keep-up-to-date-off-its-2": "{name}: « Tenir à jour » désactivé, son fichier a été supprimé du disque",
+	"server.migrate.already-set-this-way": "déjà réglé ainsi",
+	"server.migrate.stop-looking-for-deleted-episodes": "Ne plus chercher les épisodes supprimés",
+	"server.migrate.stop-looking-for-deleted-movies": "Ne plus chercher les films supprimés",
+	"server.migrate.the-deleted-file-switch-is-back": "le réglage des fichiers supprimés est revenu comme avant"
 }

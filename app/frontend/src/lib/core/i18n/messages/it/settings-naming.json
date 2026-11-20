@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Cartella di attesa",
 	"settings.naming.clearOld": "Elimina i vecchi file in attesa",
 	"settings.naming.clearOldHint": "Parte da sola ogni giorno",
-	"settings.naming.clearNow": "Elimina"
+	"settings.naming.clearNow": "Elimina",
+	"settings.naming.unkeepMovies": "Non cercare più i film eliminati",
+	"settings.naming.unkeepEpisodes": "Non cercare più gli episodi eliminati",
+	"settings.naming.unkeepHint": "Disattiva «Tieni aggiornato» quando una nuova scansione trova che il file non è più sul disco"
 }

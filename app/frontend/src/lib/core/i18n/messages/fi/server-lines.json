@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Nousussa olevat sarjat suoratoistossa",
 	"server.suggest.trending-on-streaming": "Nousussa suoratoistossa",
 	"server.discover.popular": "Suosittua",
-	"server.metadata.creator": "Tekijä"
+	"server.metadata.creator": "Tekijä",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: ”Pidä ajan tasalla” pois, tiedosto poistettiin levyltä",
+	"server.library.keep-up-to-date-off-its-2": "{name}: ”Pidä ajan tasalla” pois, tiedosto poistettiin levyltä",
+	"server.migrate.already-set-this-way": "on jo asetettu näin",
+	"server.migrate.stop-looking-for-deleted-episodes": "Lopeta poistettujen jaksojen etsiminen",
+	"server.migrate.stop-looking-for-deleted-movies": "Lopeta poistettujen elokuvien etsiminen",
+	"server.migrate.the-deleted-file-switch-is-back": "poistettujen tiedostojen kytkin on taas ennallaan"
 }

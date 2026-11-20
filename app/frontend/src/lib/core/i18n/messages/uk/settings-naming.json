@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Тека очікування",
 	"settings.naming.clearOld": "Очищати старі утримувані файли",
 	"settings.naming.clearOldHint": "Запускається сама щодня",
-	"settings.naming.clearNow": "Очистити"
+	"settings.naming.clearNow": "Очистити",
+	"settings.naming.unkeepMovies": "Не шукати видалені фільми",
+	"settings.naming.unkeepEpisodes": "Не шукати видалені серії",
+	"settings.naming.unkeepHint": "Вимикає «Стежити за оновленнями», коли повторна перевірка бачить, що файлу на диску вже немає"
 }

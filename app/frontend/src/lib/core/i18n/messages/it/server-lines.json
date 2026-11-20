@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Serie di tendenza in streaming",
 	"server.suggest.trending-on-streaming": "Di tendenza in streaming",
 	"server.discover.popular": "Popolari",
-	"server.metadata.creator": "Ideatore"
+	"server.metadata.creator": "Ideatore",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: «Tieni aggiornato» disattivato, il file è stato eliminato dal disco",
+	"server.library.keep-up-to-date-off-its-2": "{name}: «Tieni aggiornato» disattivato, il file è stato eliminato dal disco",
+	"server.migrate.already-set-this-way": "già impostato così",
+	"server.migrate.stop-looking-for-deleted-episodes": "Non cercare più gli episodi eliminati",
+	"server.migrate.stop-looking-for-deleted-movies": "Non cercare più i film eliminati",
+	"server.migrate.the-deleted-file-switch-is-back": "l'interruttore dei file eliminati è tornato com'era"
 }

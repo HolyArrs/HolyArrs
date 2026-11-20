@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "المسلسلات الرائجة على منصات البث",
 	"server.suggest.trending-on-streaming": "رائج على منصات البث",
 	"server.discover.popular": "الرائج",
-	"server.metadata.creator": "المبتكر"
+	"server.metadata.creator": "المبتكر",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: مواكبة الجديد: متوقف، حُذف ملفه من القرص",
+	"server.library.keep-up-to-date-off-its-2": "{name}: مواكبة الجديد: متوقف، حُذف ملفه من القرص",
+	"server.migrate.already-set-this-way": "مضبوط هكذا بالفعل",
+	"server.migrate.stop-looking-for-deleted-episodes": "التوقف عن البحث عن الحلقات المحذوفة",
+	"server.migrate.stop-looking-for-deleted-movies": "التوقف عن البحث عن الأفلام المحذوفة",
+	"server.migrate.the-deleted-file-switch-is-back": "عاد مفتاح الملفات المحذوفة كما كان"
 }

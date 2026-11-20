@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Folder przechowywania",
 	"settings.naming.clearOld": "Wyczyść stare wstrzymane pliki",
 	"settings.naming.clearOldHint": "Uruchamia się samo każdego dnia",
-	"settings.naming.clearNow": "Wyczyść"
+	"settings.naming.clearNow": "Wyczyść",
+	"settings.naming.unkeepMovies": "Nie szukaj usuniętych filmów",
+	"settings.naming.unkeepEpisodes": "Nie szukaj usuniętych odcinków",
+	"settings.naming.unkeepHint": "Wyłącza „Śledź nowości”, gdy ponowne skanowanie wykryje, że pliku nie ma już na dysku"
 }

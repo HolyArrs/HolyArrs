@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Seriale na topie w streamingu",
 	"server.suggest.trending-on-streaming": "Na topie w streamingu",
 	"server.discover.popular": "Popularne",
-	"server.metadata.creator": "Twórca"
+	"server.metadata.creator": "Twórca",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Śledź nowości” wyłączone, plik usunięto z dysku",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Śledź nowości” wyłączone, plik usunięto z dysku",
+	"server.migrate.already-set-this-way": "już tak ustawione",
+	"server.migrate.stop-looking-for-deleted-episodes": "Nie szukaj usuniętych odcinków",
+	"server.migrate.stop-looking-for-deleted-movies": "Nie szukaj usuniętych filmów",
+	"server.migrate.the-deleted-file-switch-is-back": "przełącznik usuniętych plików wrócił do poprzedniego stanu"
 }

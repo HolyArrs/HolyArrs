@@ -251,6 +251,11 @@ func (s *Service) rescanFolder(ctx context.Context, lf mediafiles.LibraryFolder,
 		if err := s.setFileState(ctx, c.f, c.to, by); err != nil {
 			return err
 		}
+		if c.to == "missing" {
+			if err := s.unkeepDeleted(ctx, lf, c.f, by); err != nil {
+				return err
+			}
+		}
 	}
 	n, err := s.recordFound(ctx, lf, titleID, knownPaths, by)
 	if err != nil {
@@ -407,6 +412,45 @@ func (s *Service) setFileState(ctx context.Context, f mediafiles.File, to string
 	}
 	s.Emit(ctx, &domain.Event{Actor: by, Kind: kind, TitleID: &titleID, Summary: summary,
 		Data: map[string]any{"file_id": f.ID, "path": f.RelativePath}, GroupKey: GroupKey(titleID)})
+	return nil
+}
+
+// unkeepDeleted turns Keep up to date off for what a main File gone from
+// disk filled, when the owner chose that for its kind (the old apps'
+// "unmonitor deleted" switch). The mass-gone guard has already run, so a
+// dropped mount never gets here.
+func (s *Service) unkeepDeleted(ctx context.Context, lf mediafiles.LibraryFolder, f mediafiles.File, by domain.Actor) error {
+	if f.Role != "main" || lf.Kind != "movie" && lf.Kind != "show" {
+		return nil
+	}
+	rules, err := importer.ReadFileRules(ctx, s.Store.Read())
+	if err != nil {
+		return err
+	}
+	if lf.Kind == "movie" && !rules.UnkeepDeletedMovies || lf.Kind == "show" && !rules.UnkeepDeletedEpisodes {
+		return nil
+	}
+	var u mediafiles.UnkeptDeleted
+	var changed bool
+	if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+		u, changed, err = mediafiles.UnkeepDeletedTx(ctx, tx, f.ID, s.now(), by)
+		return err
+	}); err != nil || !changed {
+		return err
+	}
+	if u.Kind == "movie" {
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleEdited, TitleID: &u.TitleID,
+			Summary: u.Name + ": Keep up to date off, its file was deleted from disk",
+			Data:    map[string]any{"keep_up_to_date": false, "file_id": f.ID, "reason": "file_deleted"}, GroupKey: GroupKey(u.TitleID)})
+		return nil
+	}
+	labels := make([]string, 0, len(f.SlotIDs))
+	for _, sid := range f.SlotIDs {
+		labels = append(labels, EpisodeLabel(ctx, s.Store.Read(), sid))
+	}
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventSeasonChanged, TitleID: &u.TitleID,
+		Summary: u.Name + " " + strings.Join(labels, ", ") + ": Keep up to date off, its file was deleted from disk",
+		Data:    map[string]any{"item_ids": u.Items, "keep_up_to_date": false, "file_id": f.ID, "reason": "file_deleted"}, GroupKey: GroupKey(u.TitleID)})
 	return nil
 }
 

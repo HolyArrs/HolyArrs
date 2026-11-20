@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Seriály v trende na streamingu",
 	"server.suggest.trending-on-streaming": "V trende na streamingu",
 	"server.discover.popular": "Populárne",
-	"server.metadata.creator": "Tvorca"
+	"server.metadata.creator": "Tvorca",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Udržiavať aktuálne“ vypnuté, súbor bol zmazaný z disku",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Udržiavať aktuálne“ vypnuté, súbor bol zmazaný z disku",
+	"server.migrate.already-set-this-way": "už je nastavené takto",
+	"server.migrate.stop-looking-for-deleted-episodes": "Nehľadať zmazané diely",
+	"server.migrate.stop-looking-for-deleted-movies": "Nehľadať zmazané filmy",
+	"server.migrate.the-deleted-file-switch-is-back": "prepínač zmazaných súborov je späť, ako bol"
 }

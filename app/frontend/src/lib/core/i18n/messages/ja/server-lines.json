@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "配信でトレンドの番組",
 	"server.suggest.trending-on-streaming": "配信でトレンド",
 	"server.discover.popular": "人気",
-	"server.metadata.creator": "原作者"
+	"server.metadata.creator": "原作者",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: 「最新に保つ」をオフ、ファイルがディスクから削除されました",
+	"server.library.keep-up-to-date-off-its-2": "{name}: 「最新に保つ」をオフ、ファイルがディスクから削除されました",
+	"server.migrate.already-set-this-way": "すでにこの設定です",
+	"server.migrate.stop-looking-for-deleted-episodes": "削除したエピソードは探さない",
+	"server.migrate.stop-looking-for-deleted-movies": "削除した映画は探さない",
+	"server.migrate.the-deleted-file-switch-is-back": "削除ファイルのスイッチを元に戻しました"
 }

@@ -84,5 +84,8 @@
 "settings.naming.holding": "Priečinok na uchovanie",
 "settings.naming.clearOld": "Vymazať staré podržané súbory",
 "settings.naming.clearOldHint": "Beží samo každý deň",
-"settings.naming.clearNow": "Vymazať"
+"settings.naming.clearNow": "Vymazať",
+"settings.naming.unkeepMovies": "Nehľadať zmazané filmy",
+"settings.naming.unkeepEpisodes": "Nehľadať zmazané diely",
+"settings.naming.unkeepHint": "Vypne „Udržiavať aktuálne“, keď nová kontrola zistí, že súbor na disku chýba"
 }

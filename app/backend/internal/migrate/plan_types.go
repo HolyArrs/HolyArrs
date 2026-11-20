@@ -147,6 +147,7 @@ type Item struct {
 	AskSettings *AskSettingsPlan  `json:"ask_settings,omitempty"`
 	Ask         *AskPlan          `json:"ask,omitempty"`
 	Alert       *AlertPlan        `json:"alert,omitempty"`
+	FileRules   *FileRulesPlan    `json:"file_rules,omitempty"`
 }
 
 // NotMoved is one setting the move leaves behind, and why.
@@ -256,6 +257,14 @@ type MusicAlbumPlan struct {
 	MBID         string `json:"mbid"`
 	KeepUpToDate bool   `json:"keep_up_to_date"`
 	PressingMBID string `json:"pressing_mbid,omitempty"`
+}
+
+// FileRulesPlan is an old app's "unmonitor deleted" switch: whether a
+// movie or an episode whose file is deleted from disk stops being kept up
+// to date.
+type FileRulesPlan struct {
+	Kind          string `json:"kind"` // movie or show
+	UnkeepDeleted bool   `json:"unkeep_deleted"`
 }
 
 // NeverAddPlan is one entry for the Never-add list.

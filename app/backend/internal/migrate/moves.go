@@ -676,6 +676,8 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 			return ResFailed, err.Error()
 		}
 		return ResRemoved, "naming is back as it was"
+	case "file_rules":
+		return undoFileRules(ctx, m.Store, x.before, x.after, by)
 	case "subtitle_languages":
 		var old []subtitles.Want
 		if x.after == "" || json.Unmarshal([]byte(x.before), &old) != nil {

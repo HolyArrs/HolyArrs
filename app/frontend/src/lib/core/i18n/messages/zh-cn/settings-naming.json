@@ -84,5 +84,8 @@
 	"settings.naming.holding": "暂存文件夹",
 	"settings.naming.clearOld": "清理旧的暂存文件",
 	"settings.naming.clearOldHint": "每天自动运行",
-	"settings.naming.clearNow": "清理"
+	"settings.naming.clearNow": "清理",
+	"settings.naming.unkeepMovies": "不再寻找已删除的电影",
+	"settings.naming.unkeepEpisodes": "不再寻找已删除的剧集",
+	"settings.naming.unkeepHint": "重新扫描发现文件已从磁盘删除时，关闭“持续追踪”"
 }

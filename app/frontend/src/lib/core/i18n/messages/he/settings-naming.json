@@ -84,5 +84,8 @@
 	"settings.naming.holding": "תיקיית המתנה",
 	"settings.naming.clearOld": "ניקוי קבצים מוחזקים ישנים",
 	"settings.naming.clearOldHint": "רץ מעצמו כל יום",
-	"settings.naming.clearNow": "ניקוי"
+	"settings.naming.clearNow": "ניקוי",
+	"settings.naming.unkeepMovies": "להפסיק לחפש סרטים שנמחקו",
+	"settings.naming.unkeepEpisodes": "להפסיק לחפש פרקים שנמחקו",
+	"settings.naming.unkeepHint": "מכבה את „שמור מעודכן” כשסריקה חוזרת מגלה שהקובץ נעלם מהדיסק"
 }

@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Фасцикла за задржавање",
 	"settings.naming.clearOld": "Очисти старе Задржане датотеке",
 	"settings.naming.clearOldHint": "Ради само сваког дана",
-	"settings.naming.clearNow": "Очисти"
+	"settings.naming.clearNow": "Очисти",
+	"settings.naming.unkeepMovies": "Престани да тражиш обрисане филмове",
+	"settings.naming.unkeepEpisodes": "Престани да тражиш обрисане епизоде",
+	"settings.naming.unkeepHint": "Искључује „Одржавај ажурним” када поновно скенирање утврди да датотеке више нема на диску"
 }

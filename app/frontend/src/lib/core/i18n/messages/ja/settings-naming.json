@@ -84,5 +84,8 @@
 "settings.naming.holding": "保留フォルダー",
 "settings.naming.clearOld": "古い保留ファイルを削除",
 "settings.naming.clearOldHint": "毎日自動で実行されます",
-"settings.naming.clearNow": "削除"
+"settings.naming.clearNow": "削除",
+"settings.naming.unkeepMovies": "削除した映画は探さない",
+"settings.naming.unkeepEpisodes": "削除したエピソードは探さない",
+"settings.naming.unkeepHint": "再スキャンでファイルがディスクから消えていると「最新に保つ」をオフにします"
 }

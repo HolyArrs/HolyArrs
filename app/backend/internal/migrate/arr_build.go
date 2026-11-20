@@ -138,6 +138,15 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 	if rows := in.sets["indexerconfig"]; len(rows) > 0 && rows[0]["availabilitydelay"] != nil {
 		s.Settings = map[string]any{"availability_delay": num(rows[0]["availabilitydelay"])}
 	}
+	if rows := in.sets["media"]; len(rows) > 0 {
+		v := first(rows[0], "autounmonitorpreviouslydownloadedmovies", "autounmonitorpreviouslydownloadedepisodes")
+		if v != nil {
+			if s.Settings == nil {
+				s.Settings = map[string]any{}
+			}
+			s.Settings["unkeep_deleted"] = boolean(v)
+		}
+	}
 	for _, m := range in.sets["appprofiles"] {
 		set, _ := plainSettings(m)
 		s.AppProfiles = append(s.AppProfiles, set)

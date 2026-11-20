@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Carpeta de retenció",
 	"settings.naming.clearOld": "Neteja els fitxers En espera antics",
 	"settings.naming.clearOldHint": "S'executa sol cada dia",
-	"settings.naming.clearNow": "Neteja"
+	"settings.naming.clearNow": "Neteja",
+	"settings.naming.unkeepMovies": "Deixa de buscar pel·lícules esborrades",
+	"settings.naming.unkeepEpisodes": "Deixa de buscar episodis esborrats",
+	"settings.naming.unkeepHint": "Desactiva «Mantén al dia» quan una revisió troba que el fitxer ja no és al disc"
 }

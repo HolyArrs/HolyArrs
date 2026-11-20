@@ -181,6 +181,8 @@ func (b *builder) people(s *Snapshot) {
 	}
 	// Radarr's availability delay is a Release gate setting (titleList).
 	recognized["availability_delay"] = s.Kind == Radarr
+	// The "unmonitor deleted" switch is a file rule (fileRules).
+	recognized["unkeep_deleted"] = s.Kind == Radarr || s.Kind == Sonarr
 	keys := make([]string, 0, len(s.Settings))
 	for k := range s.Settings {
 		keys = append(keys, k)

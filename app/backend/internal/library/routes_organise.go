@@ -346,8 +346,13 @@ func (h *OrganiseHandlers) getFileRules(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *OrganiseHandlers) putFileRules(w http.ResponseWriter, r *http.Request) {
-	var fr importer.FileRules
-	if !webserver.Decode(w, r, &fr, `send {"holding_days","min_free_mb","skip_free_space_check"}`) {
+	// Fields left out keep their saved value.
+	fr, err := importer.ReadFileRules(r.Context(), h.Store.Read())
+	if err != nil {
+		webserver.Internal(w, "library", err)
+		return
+	}
+	if !webserver.Decode(w, r, &fr, `send any of {"holding_days","min_free_mb","skip_free_space_check","unkeep_deleted_movies","unkeep_deleted_episodes"}`) {
 		return
 	}
 	if err := importer.SaveFileRules(r.Context(), h.Store, fr, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1})); err != nil {

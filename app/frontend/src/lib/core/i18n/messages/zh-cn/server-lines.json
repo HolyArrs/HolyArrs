@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "流媒体热播剧集",
 	"server.suggest.trending-on-streaming": "流媒体热播",
 	"server.discover.popular": "热门",
-	"server.metadata.creator": "创作者"
+	"server.metadata.creator": "创作者",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: 已关闭“持续追踪”，文件已从磁盘删除",
+	"server.library.keep-up-to-date-off-its-2": "{name}: 已关闭“持续追踪”，文件已从磁盘删除",
+	"server.migrate.already-set-this-way": "已经是这样设置的",
+	"server.migrate.stop-looking-for-deleted-episodes": "不再寻找已删除的剧集",
+	"server.migrate.stop-looking-for-deleted-movies": "不再寻找已删除的电影",
+	"server.migrate.the-deleted-file-switch-is-back": "已删除文件的开关已恢复原样"
 }

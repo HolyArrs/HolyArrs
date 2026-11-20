@@ -84,5 +84,8 @@
 	"settings.naming.holding": "暫存資料夾",
 	"settings.naming.clearOld": "清理舊的暫存檔案",
 	"settings.naming.clearOldHint": "每天自動執行",
-	"settings.naming.clearNow": "清理"
+	"settings.naming.clearNow": "清理",
+	"settings.naming.unkeepMovies": "不再尋找已刪除的電影",
+	"settings.naming.unkeepEpisodes": "不再尋找已刪除的劇集",
+	"settings.naming.unkeepHint": "重新掃描發現檔案已從磁碟刪除時，關閉「持續追蹤」"
 }

@@ -84,5 +84,8 @@
 	"settings.naming.holding": "โฟลเดอร์พักไฟล์",
 	"settings.naming.clearOld": "ล้างไฟล์ที่พักไว้ที่เก่า",
 	"settings.naming.clearOldHint": "ทำงานเองทุกวัน",
-	"settings.naming.clearNow": "ล้าง"
+	"settings.naming.clearNow": "ล้าง",
+	"settings.naming.unkeepMovies": "เลิกหาภาพยนตร์ที่ลบแล้ว",
+	"settings.naming.unkeepEpisodes": "เลิกหาตอนที่ลบแล้ว",
+	"settings.naming.unkeepHint": "ปิด \"อัปเดตให้ทันสมัย\" เมื่อการสแกนใหม่พบว่าไฟล์หายไปจากดิสก์"
 }

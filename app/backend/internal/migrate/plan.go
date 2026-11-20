@@ -300,6 +300,7 @@ func (b *builder) snapshot(s *Snapshot) {
 	b.downloaders(s)
 	b.pathMappings(s)
 	b.naming(s)
+	b.fileRules(s)
 	b.subtitles(s)
 	b.people(s)
 	b.asks(s)

@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "स्ट्रीमिंग पर ट्रेंडिंग टीवी शो",
 	"server.suggest.trending-on-streaming": "स्ट्रीमिंग पर ट्रेंडिंग",
 	"server.discover.popular": "लोकप्रिय",
-	"server.metadata.creator": "क्रिएटर"
+	"server.metadata.creator": "क्रिएटर",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: अप-टू-डेट रखना बंद, इसकी फ़ाइल डिस्क से हटा दी गई",
+	"server.library.keep-up-to-date-off-its-2": "{name}: अप-टू-डेट रखना बंद, इसकी फ़ाइल डिस्क से हटा दी गई",
+	"server.migrate.already-set-this-way": "पहले से ऐसा ही सेट है",
+	"server.migrate.stop-looking-for-deleted-episodes": "हटाए गए एपिसोड अब न खोजें",
+	"server.migrate.stop-looking-for-deleted-movies": "हटाई गई फ़िल्में अब न खोजें",
+	"server.migrate.the-deleted-file-switch-is-back": "हटाई गई फ़ाइलों का स्विच पहले जैसा हो गया"
 }

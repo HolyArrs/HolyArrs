@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Ooteruum",
 	"settings.naming.clearOld": "Tühjenda vanad ootel failid",
 	"settings.naming.clearOldHint": "Töötab iga päev iseenesest",
-	"settings.naming.clearNow": "Tühjenda"
+	"settings.naming.clearNow": "Tühjenda",
+	"settings.naming.unkeepMovies": "Ära otsi kustutatud filme",
+	"settings.naming.unkeepEpisodes": "Ära otsi kustutatud osasid",
+	"settings.naming.unkeepHint": "Lülitab „Hoia ajakohasena“ välja, kui uus skannimine leiab, et fail on kettalt kadunud"
 }

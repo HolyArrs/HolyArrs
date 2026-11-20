@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Serier, der trender på streaming",
 	"server.suggest.trending-on-streaming": "Trender på streaming",
 	"server.discover.popular": "Populære",
-	"server.metadata.creator": "Skaber"
+	"server.metadata.creator": "Skaber",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: Hold opdateret slået fra, filen blev slettet fra disken",
+	"server.library.keep-up-to-date-off-its-2": "{name}: Hold opdateret slået fra, filen blev slettet fra disken",
+	"server.migrate.already-set-this-way": "er allerede sat sådan",
+	"server.migrate.stop-looking-for-deleted-episodes": "Stop med at lede efter slettede afsnit",
+	"server.migrate.stop-looking-for-deleted-movies": "Stop med at lede efter slettede film",
+	"server.migrate.the-deleted-file-switch-is-back": "kontakten for slettede filer er tilbage som før"
 }

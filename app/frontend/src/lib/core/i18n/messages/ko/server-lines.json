@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "스트리밍 인기 TV 시리즈",
 	"server.suggest.trending-on-streaming": "스트리밍 인기 급상승",
 	"server.discover.popular": "인기순",
-	"server.metadata.creator": "제작자"
+	"server.metadata.creator": "제작자",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: '최신 상태 유지' 꺼짐, 파일이 디스크에서 삭제됨",
+	"server.library.keep-up-to-date-off-its-2": "{name}: '최신 상태 유지' 꺼짐, 파일이 디스크에서 삭제됨",
+	"server.migrate.already-set-this-way": "이미 이렇게 설정됨",
+	"server.migrate.stop-looking-for-deleted-episodes": "삭제한 에피소드는 더 찾지 않기",
+	"server.migrate.stop-looking-for-deleted-movies": "삭제한 영화는 더 찾지 않기",
+	"server.migrate.the-deleted-file-switch-is-back": "삭제된 파일 스위치가 원래대로 돌아왔습니다"
 }

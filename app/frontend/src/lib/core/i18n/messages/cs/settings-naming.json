@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Pozdržovací složka",
 	"settings.naming.clearOld": "Vyčistit staré Pozdržené soubory",
 	"settings.naming.clearOldHint": "Běží samo každý den",
-	"settings.naming.clearNow": "Vyčistit"
+	"settings.naming.clearNow": "Vyčistit",
+	"settings.naming.unkeepMovies": "Nehledat smazané filmy",
+	"settings.naming.unkeepEpisodes": "Nehledat smazané díly",
+	"settings.naming.unkeepHint": "Vypne „Udržovat aktuální“, když nová kontrola zjistí, že soubor na disku chybí"
 }

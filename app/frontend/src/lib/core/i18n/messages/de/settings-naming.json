@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Ordner für Zurückgehaltenes",
 	"settings.naming.clearOld": "Alte zurückgehaltene Dateien leeren",
 	"settings.naming.clearOldHint": "Läuft jeden Tag von selbst",
-	"settings.naming.clearNow": "Leeren"
+	"settings.naming.clearNow": "Leeren",
+	"settings.naming.unkeepMovies": "Gelöschte Filme nicht mehr suchen",
+	"settings.naming.unkeepEpisodes": "Gelöschte Folgen nicht mehr suchen",
+	"settings.naming.unkeepHint": "Schaltet „Aktuell halten“ aus, wenn ein erneuter Scan die Datei nicht mehr auf der Platte findet"
 }

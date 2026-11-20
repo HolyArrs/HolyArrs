@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Trending series op streaming",
 	"server.suggest.trending-on-streaming": "Trending op streaming",
 	"server.discover.popular": "Populair",
-	"server.metadata.creator": "Maker"
+	"server.metadata.creator": "Maker",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: ‘Actueel houden’ uit, het bestand is van de schijf verwijderd",
+	"server.library.keep-up-to-date-off-its-2": "{name}: ‘Actueel houden’ uit, het bestand is van de schijf verwijderd",
+	"server.migrate.already-set-this-way": "staat al zo",
+	"server.migrate.stop-looking-for-deleted-episodes": "Verwijderde afleveringen niet meer zoeken",
+	"server.migrate.stop-looking-for-deleted-movies": "Verwijderde films niet meer zoeken",
+	"server.migrate.the-deleted-file-switch-is-back": "de schakelaar voor verwijderde bestanden staat weer zoals eerst"
 }

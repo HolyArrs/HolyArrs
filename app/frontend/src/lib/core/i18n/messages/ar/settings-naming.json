@@ -84,5 +84,8 @@
 	"settings.naming.holding": "مجلد الاحتفاظ",
 	"settings.naming.clearOld": "امسح الملفات المؤجَّلة القديمة",
 	"settings.naming.clearOldHint": "يعمل من تلقاء نفسه كل يوم",
-	"settings.naming.clearNow": "امسح"
+	"settings.naming.clearNow": "امسح",
+	"settings.naming.unkeepMovies": "التوقف عن البحث عن الأفلام المحذوفة",
+	"settings.naming.unkeepEpisodes": "التوقف عن البحث عن الحلقات المحذوفة",
+	"settings.naming.unkeepHint": "يوقف مواكبة الجديد عندما يجد الفحص أن الملف حُذف من القرص"
 }

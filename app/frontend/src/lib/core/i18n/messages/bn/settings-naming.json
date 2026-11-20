@@ -84,5 +84,8 @@
 	"settings.naming.holding": "হোল্ডিং ফোল্ডার",
 	"settings.naming.clearOld": "পুরোনো আটকে রাখা ফাইল পরিষ্কার করুন",
 	"settings.naming.clearOldHint": "প্রতিদিন নিজে থেকে চলে",
-	"settings.naming.clearNow": "পরিষ্কার করুন"
+	"settings.naming.clearNow": "পরিষ্কার করুন",
+	"settings.naming.unkeepMovies": "মুছে ফেলা মুভি আর খুঁজবে না",
+	"settings.naming.unkeepEpisodes": "মুছে ফেলা পর্ব আর খুঁজবে না",
+	"settings.naming.unkeepHint": "পুনরায় স্ক্যানে ফাইলটি ডিস্কে না পেলে আপ-টু-ডেট রাখুন বন্ধ হয়"
 }

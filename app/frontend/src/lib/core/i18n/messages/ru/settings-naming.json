@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Папка отложенных",
 	"settings.naming.clearOld": "Очищать старые отложенные файлы",
 	"settings.naming.clearOldHint": "Запускается сам каждый день",
-	"settings.naming.clearNow": "Очистить"
+	"settings.naming.clearNow": "Очистить",
+	"settings.naming.unkeepMovies": "Не искать удалённые фильмы",
+	"settings.naming.unkeepEpisodes": "Не искать удалённые серии",
+	"settings.naming.unkeepHint": "Выключает «Держать актуальным», когда повторная проверка видит, что файла больше нет на диске"
 }

@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Biðmappa",
 	"settings.naming.clearOld": "Hreinsa gamlar skrár í bið",
 	"settings.naming.clearOldHint": "Keyrir sjálfkrafa á hverjum degi",
-	"settings.naming.clearNow": "Hreinsa"
+	"settings.naming.clearNow": "Hreinsa",
+	"settings.naming.unkeepMovies": "Hætta að leita að eyddum kvikmyndum",
+	"settings.naming.unkeepEpisodes": "Hætta að leita að eyddum þáttum",
+	"settings.naming.unkeepHint": "Slekkur á „Halda uppfærðu“ þegar ný skönnun sér að skráin er horfin af disknum"
 }

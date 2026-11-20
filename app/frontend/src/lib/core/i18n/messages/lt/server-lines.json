@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Populiarūs serialai srautinėse platformose",
 	"server.suggest.trending-on-streaming": "Populiaru srautinėse platformose",
 	"server.discover.popular": "Populiaru",
-	"server.metadata.creator": "Kūrėjas"
+	"server.metadata.creator": "Kūrėjas",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Laikyti naujausią“ išjungta, failas ištrintas iš disko",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Laikyti naujausią“ išjungta, failas ištrintas iš disko",
+	"server.migrate.already-set-this-way": "jau taip nustatyta",
+	"server.migrate.stop-looking-for-deleted-episodes": "Nebeieškoti ištrintų serijų",
+	"server.migrate.stop-looking-for-deleted-movies": "Nebeieškoti ištrintų filmų",
+	"server.migrate.the-deleted-file-switch-is-back": "ištrintų failų jungiklis grąžintas kaip buvo"
 }

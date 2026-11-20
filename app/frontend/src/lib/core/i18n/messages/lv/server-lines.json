@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Tendencēs seriāli straumēšanā",
 	"server.suggest.trending-on-streaming": "Tendences straumēšanā",
 	"server.discover.popular": "Populārs",
-	"server.metadata.creator": "Veidotājs"
+	"server.metadata.creator": "Veidotājs",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: “Uzturēt aktuālu” izslēgts, fails izdzēsts no diska",
+	"server.library.keep-up-to-date-off-its-2": "{name}: “Uzturēt aktuālu” izslēgts, fails izdzēsts no diska",
+	"server.migrate.already-set-this-way": "jau ir tā iestatīts",
+	"server.migrate.stop-looking-for-deleted-episodes": "Vairs nemeklēt dzēstās sērijas",
+	"server.migrate.stop-looking-for-deleted-movies": "Vairs nemeklēt dzēstās filmas",
+	"server.migrate.the-deleted-file-switch-is-back": "dzēsto failu slēdzis ir atpakaļ kā bija"
 }

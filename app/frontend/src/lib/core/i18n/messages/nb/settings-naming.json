@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Oppbevaringsmappe",
 	"settings.naming.clearOld": "Rydd bort gamle tilbakeholdte filer",
 	"settings.naming.clearOldHint": "Kjører av seg selv hver dag",
-	"settings.naming.clearNow": "Rydd"
+	"settings.naming.clearNow": "Rydd",
+	"settings.naming.unkeepMovies": "Slutt å lete etter slettede filmer",
+	"settings.naming.unkeepEpisodes": "Slutt å lete etter slettede episoder",
+	"settings.naming.unkeepHint": "Slår av «Hold oppdatert» når en ny skanning finner at filen er borte fra disken"
 }

@@ -118,6 +118,8 @@ func (r arrReader) sets() []arrSet {
 		{name: "delays", api: []string{"/delayprofile"}, table: "DelayProfiles"},
 		// The availability delay; a backup keeps it in the Config table (fromBackup).
 		{name: "indexerconfig", api: []string{"/config/indexer"}, only: []Kind{Radarr}},
+		// The "unmonitor deleted" switch; a backup keeps it in the Config table (fromBackup).
+		{name: "media", api: []string{"/config/mediamanagement"}, only: []Kind{Sonarr, Radarr}},
 		excl,
 		{name: "naming", api: []string{"/config/naming", "/settings/naming"}, table: "NamingConfig"},
 		{name: "indexers", api: []string{"/indexer"}, table: "Indexers"},
@@ -340,16 +342,20 @@ func (r arrReader) fromBackup(ctx context.Context, src Source) (*arrRows, error)
 		return nil, err
 	}
 	r.fileQualitiesBackup(ctx, t, out)
-	// Radarr's availability delay is one key of the Config table (keys
-	// lower-cased); a backup without it leaves this server's default.
-	if r.kind == Radarr && t.exists(ctx, "Config") {
+	// Radarr's availability delay and the "unmonitor deleted" switch are
+	// keys of the Config table (keys lower-cased); a backup without them
+	// leaves this server's defaults.
+	if (r.kind == Radarr || r.kind == Sonarr) && t.exists(ctx, "Config") {
 		rows, err := t.all(ctx, "Config")
 		if err != nil {
 			return nil, err
 		}
 		for _, m := range rows {
-			if strings.EqualFold(str(m["key"]), "availabilitydelay") {
+			switch k := strings.ToLower(str(m["key"])); {
+			case k == "availabilitydelay" && r.kind == Radarr:
 				out.sets["indexerconfig"] = []map[string]any{{"availabilitydelay": m["value"]}}
+			case k == "autounmonitorpreviouslydownloadedmovies" && r.kind == Radarr, k == "autounmonitorpreviouslydownloadedepisodes" && r.kind == Sonarr:
+				out.sets["media"] = []map[string]any{{k: m["value"]}}
 			}
 		}
 	}

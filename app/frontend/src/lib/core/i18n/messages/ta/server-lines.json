@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "ஸ்ட்ரீமிங்கில் டிரெண்டிங் தொடர்கள்",
 	"server.suggest.trending-on-streaming": "ஸ்ட்ரீமிங்கில் டிரெண்டிங்",
 	"server.discover.popular": "பிரபலமானவை",
-	"server.metadata.creator": "படைப்பாளர்"
+	"server.metadata.creator": "படைப்பாளர்",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: புதுப்பித்தபடி வை அணைக்கப்பட்டது, கோப்பு வட்டிலிருந்து நீக்கப்பட்டது",
+	"server.library.keep-up-to-date-off-its-2": "{name}: புதுப்பித்தபடி வை அணைக்கப்பட்டது, கோப்பு வட்டிலிருந்து நீக்கப்பட்டது",
+	"server.migrate.already-set-this-way": "ஏற்கனவே இப்படி அமைக்கப்பட்டுள்ளது",
+	"server.migrate.stop-looking-for-deleted-episodes": "நீக்கிய எபிசோடுகளை இனி தேடாதே",
+	"server.migrate.stop-looking-for-deleted-movies": "நீக்கிய திரைப்படங்களை இனி தேடாதே",
+	"server.migrate.the-deleted-file-switch-is-back": "நீக்கிய கோப்புகளுக்கான சுவிட்ச் முன்பிருந்தபடி திரும்பியது"
 }

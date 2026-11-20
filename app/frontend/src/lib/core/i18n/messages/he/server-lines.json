@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "סדרות בטרנד בסטרימינג",
 	"server.suggest.trending-on-streaming": "בטרנד בסטרימינג",
 	"server.discover.popular": "פופולרי",
-	"server.metadata.creator": "יוצר"
+	"server.metadata.creator": "יוצר",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „שמור מעודכן” כבוי, הקובץ נמחק מהדיסק",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „שמור מעודכן” כבוי, הקובץ נמחק מהדיסק",
+	"server.migrate.already-set-this-way": "כבר מוגדר כך",
+	"server.migrate.stop-looking-for-deleted-episodes": "להפסיק לחפש פרקים שנמחקו",
+	"server.migrate.stop-looking-for-deleted-movies": "להפסיק לחפש סרטים שנמחקו",
+	"server.migrate.the-deleted-file-switch-is-back": "המתג של קבצים שנמחקו חזר למצבו הקודם"
 }

@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Bekletme klasörü",
 	"settings.naming.clearOld": "Eski bekletilen dosyaları temizle",
 	"settings.naming.clearOldHint": "Her gün kendiliğinden çalışır",
-	"settings.naming.clearNow": "Temizle"
+	"settings.naming.clearNow": "Temizle",
+	"settings.naming.unkeepMovies": "Silinen filmleri artık arama",
+	"settings.naming.unkeepEpisodes": "Silinen bölümleri artık arama",
+	"settings.naming.unkeepHint": "Yeniden tarama dosyanın diskten gittiğini görünce “Güncel tut” ayarını kapatır"
 }

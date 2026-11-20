@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Trendy serier på strømming",
 	"server.suggest.trending-on-streaming": "Trendy på strømming",
 	"server.discover.popular": "Populært",
-	"server.metadata.creator": "Skaper"
+	"server.metadata.creator": "Skaper",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: «Hold oppdatert» av, filen ble slettet fra disken",
+	"server.library.keep-up-to-date-off-its-2": "{name}: «Hold oppdatert» av, filen ble slettet fra disken",
+	"server.migrate.already-set-this-way": "er allerede satt slik",
+	"server.migrate.stop-looking-for-deleted-episodes": "Slutt å lete etter slettede episoder",
+	"server.migrate.stop-looking-for-deleted-movies": "Slutt å lete etter slettede filmer",
+	"server.migrate.the-deleted-file-switch-is-back": "bryteren for slettede filer er tilbake som før"
 }

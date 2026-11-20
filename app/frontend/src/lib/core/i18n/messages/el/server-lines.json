@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Σειρές που κάνουν τάση στο streaming",
 	"server.suggest.trending-on-streaming": "Τάσεις στο streaming",
 	"server.discover.popular": "Δημοφιλή",
-	"server.metadata.creator": "Δημιουργός"
+	"server.metadata.creator": "Δημιουργός",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: «Να μένει ενημερωμένο» ανενεργό, το αρχείο διαγράφηκε από τον δίσκο",
+	"server.library.keep-up-to-date-off-its-2": "{name}: «Να μένει ενημερωμένο» ανενεργό, το αρχείο διαγράφηκε από τον δίσκο",
+	"server.migrate.already-set-this-way": "είναι ήδη ρυθμισμένο έτσι",
+	"server.migrate.stop-looking-for-deleted-episodes": "Διακοπή αναζήτησης διαγραμμένων επεισοδίων",
+	"server.migrate.stop-looking-for-deleted-movies": "Διακοπή αναζήτησης διαγραμμένων ταινιών",
+	"server.migrate.the-deleted-file-switch-is-back": "ο διακόπτης διαγραμμένων αρχείων είναι όπως πριν"
 }

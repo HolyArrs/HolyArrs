@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Folder penampungan",
 	"settings.naming.clearOld": "Bersihkan file lama yang Ditahan",
 	"settings.naming.clearOldHint": "Berjalan sendiri setiap hari",
-	"settings.naming.clearNow": "Bersihkan"
+	"settings.naming.clearNow": "Bersihkan",
+	"settings.naming.unkeepMovies": "Berhenti mencari film yang dihapus",
+	"settings.naming.unkeepEpisodes": "Berhenti mencari episode yang dihapus",
+	"settings.naming.unkeepHint": "Mematikan Selalu terbaru saat pemindaian ulang mendapati file sudah tidak ada di disk"
 }

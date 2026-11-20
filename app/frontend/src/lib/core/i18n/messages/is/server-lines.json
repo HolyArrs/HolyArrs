@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Vinsælir þættir á streymi",
 	"server.suggest.trending-on-streaming": "Vinsælt á streymi",
 	"server.discover.popular": "Vinsælt",
-	"server.metadata.creator": "Höfundur"
+	"server.metadata.creator": "Höfundur",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Halda uppfærðu“ af, skránni var eytt af disknum",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Halda uppfærðu“ af, skránni var eytt af disknum",
+	"server.migrate.already-set-this-way": "er þegar stillt svona",
+	"server.migrate.stop-looking-for-deleted-episodes": "Hætta að leita að eyddum þáttum",
+	"server.migrate.stop-looking-for-deleted-movies": "Hætta að leita að eyddum kvikmyndum",
+	"server.migrate.the-deleted-file-switch-is-back": "rofinn fyrir eyddar skrár er aftur eins og hann var"
 }

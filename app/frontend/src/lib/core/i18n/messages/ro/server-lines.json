@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Seriale în trend pe streaming",
 	"server.suggest.trending-on-streaming": "În trend pe streaming",
 	"server.discover.popular": "Populare",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Menține la zi” oprit, fișierul a fost șters de pe disc",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Menține la zi” oprit, fișierul a fost șters de pe disc",
+	"server.migrate.already-set-this-way": "este deja setat așa",
+	"server.migrate.stop-looking-for-deleted-episodes": "Nu mai căuta episoadele șterse",
+	"server.migrate.stop-looking-for-deleted-movies": "Nu mai căuta filmele șterse",
+	"server.migrate.the-deleted-file-switch-is-back": "comutatorul pentru fișiere șterse a revenit cum era"
 }

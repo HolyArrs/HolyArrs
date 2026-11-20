@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Serien im Trend beim Streaming",
 	"server.suggest.trending-on-streaming": "Im Trend beim Streaming",
 	"server.discover.popular": "Beliebt",
-	"server.metadata.creator": "Schöpfer"
+	"server.metadata.creator": "Schöpfer",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Aktuell halten“ aus, die Datei wurde von der Platte gelöscht",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Aktuell halten“ aus, die Datei wurde von der Platte gelöscht",
+	"server.migrate.already-set-this-way": "ist schon so eingestellt",
+	"server.migrate.stop-looking-for-deleted-episodes": "Gelöschte Folgen nicht mehr suchen",
+	"server.migrate.stop-looking-for-deleted-movies": "Gelöschte Filme nicht mehr suchen",
+	"server.migrate.the-deleted-file-switch-is-back": "der Schalter für gelöschte Dateien steht wieder wie vorher"
 }

@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Pasta de retenção",
 	"settings.naming.clearOld": "Limpar arquivos retidos antigos",
 	"settings.naming.clearOldHint": "Roda sozinho todo dia",
-	"settings.naming.clearNow": "Limpar"
+	"settings.naming.clearNow": "Limpar",
+	"settings.naming.unkeepMovies": "Parar de procurar filmes apagados",
+	"settings.naming.unkeepEpisodes": "Parar de procurar episódios apagados",
+	"settings.naming.unkeepHint": "Desliga “Manter em dia” quando uma nova verificação vê que o arquivo sumiu do disco"
 }

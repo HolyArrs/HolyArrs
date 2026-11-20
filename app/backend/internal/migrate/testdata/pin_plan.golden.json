@@ -284,6 +284,10 @@
             "smtp_from": "s",
             "smtp_user": "s",
             "staff_to": "s"
+          },
+          "file_rules": {
+            "kind": "s",
+            "unkeep_deleted": true
           }
         }
       ]

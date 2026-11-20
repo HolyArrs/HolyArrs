@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Trending na show sa streaming",
 	"server.suggest.trending-on-streaming": "Trending sa streaming",
 	"server.discover.popular": "Sikat",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: Naka-off ang Panatilihing napapanahon, binura ang file nito sa disk",
+	"server.library.keep-up-to-date-off-its-2": "{name}: Naka-off ang Panatilihing napapanahon, binura ang file nito sa disk",
+	"server.migrate.already-set-this-way": "nakatakda na nang ganito",
+	"server.migrate.stop-looking-for-deleted-episodes": "Huwag nang hanapin ang mga binurang episode",
+	"server.migrate.stop-looking-for-deleted-movies": "Huwag nang hanapin ang mga binurang pelikula",
+	"server.migrate.the-deleted-file-switch-is-back": "bumalik sa dati ang switch para sa mga binurang file"
 }

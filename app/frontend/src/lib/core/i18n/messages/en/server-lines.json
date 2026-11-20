@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Trending shows on streaming",
 	"server.suggest.trending-shows-this-week": "Trending shows this week",
 	"server.suggest.trending-this-week-everywhere": "Trending this week everywhere",
-	"server.suggest.what-people-watch-this-week": "What people watch this week"
+	"server.suggest.what-people-watch-this-week": "What people watch this week",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: Keep up to date off, its file was deleted from disk",
+	"server.library.keep-up-to-date-off-its-2": "{name}: Keep up to date off, its file was deleted from disk",
+	"server.migrate.already-set-this-way": "already set this way",
+	"server.migrate.stop-looking-for-deleted-episodes": "Stop looking for deleted episodes",
+	"server.migrate.stop-looking-for-deleted-movies": "Stop looking for deleted movies",
+	"server.migrate.the-deleted-file-switch-is-back": "the deleted-file switch is back as it was"
 }

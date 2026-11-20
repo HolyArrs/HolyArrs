@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Mellemlagermappe",
 	"settings.naming.clearOld": "Ryd gamle Tilbageholdte filer",
 	"settings.naming.clearOldHint": "Kører af sig selv hver dag",
-	"settings.naming.clearNow": "Ryd"
+	"settings.naming.clearNow": "Ryd",
+	"settings.naming.unkeepMovies": "Stop med at lede efter slettede film",
+	"settings.naming.unkeepEpisodes": "Stop med at lede efter slettede afsnit",
+	"settings.naming.unkeepHint": "Slår Hold opdateret fra, når en ny scanning finder filen væk fra disken"
 }

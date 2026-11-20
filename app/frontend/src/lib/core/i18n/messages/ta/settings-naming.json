@@ -84,5 +84,8 @@
 	"settings.naming.holding": "நிறுத்தி வைக்கும் கோப்புறை",
 	"settings.naming.clearOld": "பழைய நிறுத்தி வைத்த கோப்புகளை அழி",
 	"settings.naming.clearOldHint": "தினமும் தானாக இயங்கும்",
-	"settings.naming.clearNow": "அழி"
+	"settings.naming.clearNow": "அழி",
+	"settings.naming.unkeepMovies": "நீக்கிய திரைப்படங்களை இனி தேடாதே",
+	"settings.naming.unkeepEpisodes": "நீக்கிய எபிசோடுகளை இனி தேடாதே",
+	"settings.naming.unkeepHint": "மறு ஸ்கேனில் கோப்பு வட்டில் இல்லை எனக் கண்டால் புதுப்பித்தபடி வை அணைக்கப்படும்"
 }

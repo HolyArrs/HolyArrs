@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Map voor vastgehouden bestanden",
 	"settings.naming.clearOld": "Oude vastgehouden bestanden wissen",
 	"settings.naming.clearOldHint": "Draait elke dag vanzelf",
-	"settings.naming.clearNow": "Wissen"
+	"settings.naming.clearNow": "Wissen",
+	"settings.naming.unkeepMovies": "Verwijderde films niet meer zoeken",
+	"settings.naming.unkeepEpisodes": "Verwijderde afleveringen niet meer zoeken",
+	"settings.naming.unkeepHint": "Zet ‘Actueel houden’ uit als een nieuwe scan ziet dat het bestand van de schijf is verdwenen"
 }

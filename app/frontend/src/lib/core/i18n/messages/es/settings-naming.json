@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Carpeta de espera",
 	"settings.naming.clearOld": "Vaciar archivos en espera antiguos",
 	"settings.naming.clearOldHint": "Se ejecuta solo cada día",
-	"settings.naming.clearNow": "Vaciar"
+	"settings.naming.clearNow": "Vaciar",
+	"settings.naming.unkeepMovies": "Dejar de buscar películas borradas",
+	"settings.naming.unkeepEpisodes": "Dejar de buscar episodios borrados",
+	"settings.naming.unkeepHint": "Desactiva «Mantener al día» cuando una revisión ve que el archivo ya no está en el disco"
 }

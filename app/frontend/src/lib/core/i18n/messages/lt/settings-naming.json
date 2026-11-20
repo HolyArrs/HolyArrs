@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Laikymo aplankas",
 	"settings.naming.clearOld": "Išvalyti senus Sulaikytus failus",
 	"settings.naming.clearOldHint": "Veikia pats kasdien",
-	"settings.naming.clearNow": "Išvalyti"
+	"settings.naming.clearNow": "Išvalyti",
+	"settings.naming.unkeepMovies": "Nebeieškoti ištrintų filmų",
+	"settings.naming.unkeepEpisodes": "Nebeieškoti ištrintų serijų",
+	"settings.naming.unkeepHint": "Išjungia „Laikyti naujausią“, kai pakartotinis patikrinimas randa, kad failo diske nebėra"
 }

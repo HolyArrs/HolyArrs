@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Felkapott sorozatok a streamingen",
 	"server.suggest.trending-on-streaming": "Felkapott a streamingen",
 	"server.discover.popular": "Népszerű",
-	"server.metadata.creator": "Alkotó"
+	"server.metadata.creator": "Alkotó",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Naprakészen tartás” kikapcsolva, a fájlt törölték a lemezről",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Naprakészen tartás” kikapcsolva, a fájlt törölték a lemezről",
+	"server.migrate.already-set-this-way": "már így van beállítva",
+	"server.migrate.stop-looking-for-deleted-episodes": "Ne keresse tovább a törölt epizódokat",
+	"server.migrate.stop-looking-for-deleted-movies": "Ne keresse tovább a törölt filmeket",
+	"server.migrate.the-deleted-file-switch-is-back": "a törölt fájlok kapcsolója visszaállt"
 }

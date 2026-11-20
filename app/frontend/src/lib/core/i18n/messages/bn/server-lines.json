@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "স্ট্রিমিংয়ে ট্রেন্ডিং শো",
 	"server.suggest.trending-on-streaming": "স্ট্রিমিংয়ে ট্রেন্ডিং",
 	"server.discover.popular": "জনপ্রিয়",
-	"server.metadata.creator": "নির্মাতা"
+	"server.metadata.creator": "নির্মাতা",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: আপ-টু-ডেট রাখুন বন্ধ, ফাইলটি ডিস্ক থেকে মুছে ফেলা হয়েছে",
+	"server.library.keep-up-to-date-off-its-2": "{name}: আপ-টু-ডেট রাখুন বন্ধ, ফাইলটি ডিস্ক থেকে মুছে ফেলা হয়েছে",
+	"server.migrate.already-set-this-way": "ইতিমধ্যে এভাবেই সেট করা",
+	"server.migrate.stop-looking-for-deleted-episodes": "মুছে ফেলা পর্ব আর খুঁজবে না",
+	"server.migrate.stop-looking-for-deleted-movies": "মুছে ফেলা মুভি আর খুঁজবে না",
+	"server.migrate.the-deleted-file-switch-is-back": "মুছে ফেলা ফাইলের সুইচ আগের মতো ফিরেছে"
 }

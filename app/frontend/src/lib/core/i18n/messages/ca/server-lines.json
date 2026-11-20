@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Sèries en tendència en streaming",
 	"server.suggest.trending-on-streaming": "Tendència en streaming",
 	"server.discover.popular": "Populars",
-	"server.metadata.creator": "Creador"
+	"server.metadata.creator": "Creador",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: «Mantén al dia» desactivat, el fitxer s'ha esborrat del disc",
+	"server.library.keep-up-to-date-off-its-2": "{name}: «Mantén al dia» desactivat, el fitxer s'ha esborrat del disc",
+	"server.migrate.already-set-this-way": "ja està configurat així",
+	"server.migrate.stop-looking-for-deleted-episodes": "Deixa de buscar episodis esborrats",
+	"server.migrate.stop-looking-for-deleted-movies": "Deixa de buscar pel·lícules esborrades",
+	"server.migrate.the-deleted-file-switch-is-back": "l'interruptor de fitxers esborrats torna a estar com era"
 }

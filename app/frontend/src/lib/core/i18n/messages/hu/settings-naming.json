@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Gyűjtőmappa",
 	"settings.naming.clearOld": "Régi visszatartott fájlok törlése",
 	"settings.naming.clearOldHint": "Naponta magától fut",
-	"settings.naming.clearNow": "Törlés"
+	"settings.naming.clearNow": "Törlés",
+	"settings.naming.unkeepMovies": "Ne keresse tovább a törölt filmeket",
+	"settings.naming.unkeepEpisodes": "Ne keresse tovább a törölt epizódokat",
+	"settings.naming.unkeepHint": "Kikapcsolja a(z) „Naprakészen tartás” beállítást, ha egy újbóli átnézés szerint a fájl eltűnt a lemezről"
 }

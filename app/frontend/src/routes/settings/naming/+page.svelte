@@ -14,7 +14,7 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 
 	let ns = $state<NamingSettings>({ file_pattern: '', folder_pattern: '', colon: 'smart', illegal: 'replace', rename_on_import: true, adopt_scan_limit: 5000, title_language: '' });
-	let fr = $state<FileRules>({ holding_days: 7, min_free_mb: 100, skip_free_space_check: false });
+	let fr = $state<FileRules>({ holding_days: 7, min_free_mb: 100, skip_free_space_check: false, unkeep_deleted_movies: false, unkeep_deleted_episodes: false });
 	let words = $state<Record<string, string>>({});
 	let example = $state('');
 	let exampleFolder = $state('');
@@ -132,7 +132,7 @@
 		try {
 			const n = await api.put<NamingView>('/settings/naming', { ...ns, adopt_scan_limit: scanLimit, music_adopt_scan_limit: musicLimit });
 			ns = n.naming;
-			fr = await api.put<FileRules>('/settings/files', { holding_days: days, min_free_mb: floor, skip_free_space_check: fr.skip_free_space_check });
+			fr = await api.put<FileRules>('/settings/files', { holding_days: days, min_free_mb: floor, skip_free_space_check: fr.skip_free_space_check, unkeep_deleted_movies: fr.unkeep_deleted_movies, unkeep_deleted_episodes: fr.unkeep_deleted_episodes });
 			saved = snapshot();
 			toasts.push(t('settings.naming.saved'), 'ok');
 		} catch (err) {
@@ -178,6 +178,15 @@
 				<input id="holding-days" class="input narrow" type="number" min="0" max="3650" bind:value={fr.holding_days} />
 				<span class="hint" title={t('settings.naming.holdingTitle')}>{t('settings.naming.holdingHint')}</span>
 			</Field>
+			<!-- The old apps' "unmonitor deleted" switches: a file deleted by hand is not fetched again. -->
+			<label class="checkline">
+				<input id="unkeep-deleted-movies" type="checkbox" bind:checked={fr.unkeep_deleted_movies} />
+				<span><b>{t('settings.naming.unkeepMovies')}</b><br /><span class="hint">{t('settings.naming.unkeepHint')}</span></span>
+			</label>
+			<label class="checkline">
+				<input id="unkeep-deleted-episodes" type="checkbox" bind:checked={fr.unkeep_deleted_episodes} />
+				<span><b>{t('settings.naming.unkeepEpisodes')}</b><br /><span class="hint">{t('settings.naming.unkeepHint')}</span></span>
+			</label>
 			{#snippet advanced()}
 			<Field id="scan-limit" label={t('settings.naming.scanLimit')} hint={t('settings.naming.scanLimitHint')}>
 				<input id="scan-limit" class="input narrow" type="number" min="10" max="100000" bind:value={ns.adopt_scan_limit} />

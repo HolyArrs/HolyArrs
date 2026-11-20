@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Menukad sarjad voogedastuses",
 	"server.suggest.trending-on-streaming": "Menukas voogedastuses",
 	"server.discover.popular": "Populaarsed",
-	"server.metadata.creator": "Looja"
+	"server.metadata.creator": "Looja",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Hoia ajakohasena“ väljas, fail kustutati kettalt",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Hoia ajakohasena“ väljas, fail kustutati kettalt",
+	"server.migrate.already-set-this-way": "on juba nii seatud",
+	"server.migrate.stop-looking-for-deleted-episodes": "Ära otsi kustutatud osasid",
+	"server.migrate.stop-looking-for-deleted-movies": "Ära otsi kustutatud filme",
+	"server.migrate.the-deleted-file-switch-is-back": "kustutatud failide lüliti on tagasi endises seisus"
 }

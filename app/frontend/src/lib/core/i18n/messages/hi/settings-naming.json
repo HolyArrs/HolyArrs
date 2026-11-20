@@ -84,5 +84,8 @@
 	"settings.naming.holding": "होल्डिंग फ़ोल्डर",
 	"settings.naming.clearOld": "पुरानी रोकी गई फ़ाइलें साफ़ करें",
 	"settings.naming.clearOldHint": "रोज़ अपने-आप चलता है",
-	"settings.naming.clearNow": "साफ़ करें"
+	"settings.naming.clearNow": "साफ़ करें",
+	"settings.naming.unkeepMovies": "हटाई गई फ़िल्में अब न खोजें",
+	"settings.naming.unkeepEpisodes": "हटाए गए एपिसोड अब न खोजें",
+	"settings.naming.unkeepHint": "दोबारा स्कैन में फ़ाइल डिस्क पर न मिलने पर अप-टू-डेट रखना बंद हो जाता है"
 }

@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Holding folder",
 	"settings.naming.clearOld": "Clear old Held files",
 	"settings.naming.clearOldHint": "Runs by itself every day",
-	"settings.naming.clearNow": "Clear"
+	"settings.naming.clearNow": "Clear",
+	"settings.naming.unkeepMovies": "Stop looking for deleted movies",
+	"settings.naming.unkeepEpisodes": "Stop looking for deleted episodes",
+	"settings.naming.unkeepHint": "Turns off Keep up to date when a rescan finds the file gone from disk"
 }

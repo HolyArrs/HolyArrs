@@ -274,28 +274,6 @@ func isDir(p string) bool {
 	return err == nil && fi.IsDir()
 }
 
-// partOf is the part an item belongs to ("" for the core).
-func partOf(it Item) string {
-	kind := ""
-	switch {
-	case it.Folder != nil:
-		kind = it.Folder.Kind
-	case it.Title != nil:
-		kind = it.Title.Kind
-	case it.NeverAdd != nil:
-		kind = it.NeverAdd.Kind
-	case it.OutsideList != nil:
-		kind = "movie" // Outside lists add movies
-	case it.Protocol != nil:
-		return it.Protocol.Part
-	case it.Subtitles != nil:
-		return "subtitles"
-	case it.Ask != nil:
-		return "wishlist"
-	}
-	return map[string]string{"movie": "movies", "show": "shows", "music": "music", "artist": "music"}[kind]
-}
-
 // run is one pass over a Plan.
 type run struct {
 	m      *Mover
@@ -795,6 +773,8 @@ func (r *run) one(group string, it Item) (string, string) {
 		return r.ask(it)
 	case it.Alert != nil:
 		return r.alert(it)
+	case it.FileRules != nil:
+		return r.fileRules(it)
 	}
 	return ResFailed, "nothing to do for it"
 }

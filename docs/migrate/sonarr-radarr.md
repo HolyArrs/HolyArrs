@@ -39,6 +39,7 @@ Old apps often run in other containers and see folders under other names. A rule
 | Download clients (qBittorrent, SABnzbd, Transmission, Deluge, rTorrent, aria2, NZBGet) | **Downloaders**, added paused and blocked from your home network. They use the `holyarrs` category, so they never pick up the old apps' downloads. For rTorrent, the old directory, priority, add-stopped and post-import label are not used. For aria2, the RPC path is read and switched to `/jsonrpc`, the secret token must be typed again, and the old directory is not used. |
 | Remote path mappings | **Different folder names** on the Downloader at that host, up to 100 pairs. A Downloader that was already here is left alone, and its pairs are listed for you to add by hand. A pair whose folder HolyArrs cannot see yet is still added and marked "not visible here yet (check your mounts)". |
 | Naming | HolyArrs naming, where a pattern word has a match. Nothing on disk is renamed. |
+| "Unmonitor deleted episodes" and "Unmonitor deleted movies" | **Stop looking for deleted episodes** and **Stop looking for deleted movies** under **Settings > Naming and files**, listed with Naming. |
 | Discord, webhook and email notifications | **Alerts**, off until you type the link, address or mail password. |
 
 An indexer is a site that lists releases; in HolyArrs it is a **Source**.

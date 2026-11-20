@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "سریال‌های پرطرفدار در پخش آنلاین",
 	"server.suggest.trending-on-streaming": "پرطرفدار در پخش آنلاین",
 	"server.discover.popular": "محبوب",
-	"server.metadata.creator": "سازنده"
+	"server.metadata.creator": "سازنده",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: «به‌روز نگه داشتن» خاموش شد، فایلش از دیسک حذف شده است",
+	"server.library.keep-up-to-date-off-its-2": "{name}: «به‌روز نگه داشتن» خاموش شد، فایلش از دیسک حذف شده است",
+	"server.migrate.already-set-this-way": "از قبل همین‌طور تنظیم شده",
+	"server.migrate.stop-looking-for-deleted-episodes": "دیگر دنبال قسمت‌های حذف‌شده نگرد",
+	"server.migrate.stop-looking-for-deleted-movies": "دیگر دنبال فیلم‌های حذف‌شده نگرد",
+	"server.migrate.the-deleted-file-switch-is-back": "کلید فایل‌های حذف‌شده به حالت قبل برگشت"
 }

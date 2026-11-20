@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Väntemapp",
 	"settings.naming.clearOld": "Rensa gamla undanhållna filer",
 	"settings.naming.clearOldHint": "Körs av sig själv varje dag",
-	"settings.naming.clearNow": "Rensa"
+	"settings.naming.clearNow": "Rensa",
+	"settings.naming.unkeepMovies": "Sluta leta efter raderade filmer",
+	"settings.naming.unkeepEpisodes": "Sluta leta efter raderade avsnitt",
+	"settings.naming.unkeepHint": "Stänger av ”Håll uppdaterad” när en ny genomsökning ser att filen är borta från disken"
 }

@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Séries em alta no streaming",
 	"server.suggest.trending-on-streaming": "Em alta no streaming",
 	"server.discover.popular": "Popular",
-	"server.metadata.creator": "Criador"
+	"server.metadata.creator": "Criador",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: “Manter em dia” desligado, o ficheiro foi apagado do disco",
+	"server.library.keep-up-to-date-off-its-2": "{name}: “Manter em dia” desligado, o ficheiro foi apagado do disco",
+	"server.migrate.already-set-this-way": "já está assim",
+	"server.migrate.stop-looking-for-deleted-episodes": "Deixar de procurar episódios apagados",
+	"server.migrate.stop-looking-for-deleted-movies": "Deixar de procurar filmes apagados",
+	"server.migrate.the-deleted-file-switch-is-back": "a opção de ficheiros apagados voltou ao que era"
 }

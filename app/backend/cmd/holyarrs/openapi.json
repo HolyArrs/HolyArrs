@@ -2463,6 +2463,14 @@
           },
           "skip_free_space_check": {
             "type": "boolean"
+          },
+          "unkeep_deleted_episodes": {
+            "description": "Turn Keep up to date off for an episode whose file a rescan finds deleted from disk.",
+            "type": "boolean"
+          },
+          "unkeep_deleted_movies": {
+            "description": "Turn Keep up to date off for a movie whose file a rescan finds deleted from disk.",
+            "type": "boolean"
           }
         },
         "type": "object"

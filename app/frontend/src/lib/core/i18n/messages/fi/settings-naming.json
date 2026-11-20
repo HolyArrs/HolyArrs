@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Pidätyskansio",
 	"settings.naming.clearOld": "Tyhjennä vanhat pidätetyt tiedostot",
 	"settings.naming.clearOldHint": "Ajetaan itsestään joka päivä",
-	"settings.naming.clearNow": "Tyhjennä"
+	"settings.naming.clearNow": "Tyhjennä",
+	"settings.naming.unkeepMovies": "Lopeta poistettujen elokuvien etsiminen",
+	"settings.naming.unkeepEpisodes": "Lopeta poistettujen jaksojen etsiminen",
+	"settings.naming.unkeepHint": "Kytkee pois asetuksen ”Pidä ajan tasalla”, kun uusi tarkistus huomaa tiedoston kadonneen levyltä"
 }

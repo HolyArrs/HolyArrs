@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Серије у тренду на стримингу",
 	"server.suggest.trending-on-streaming": "У тренду на стримингу",
 	"server.discover.popular": "Популарно",
-	"server.metadata.creator": "Аутор"
+	"server.metadata.creator": "Аутор",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Одржавај ажурним” искључено, датотека је обрисана са диска",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Одржавај ажурним” искључено, датотека је обрисана са диска",
+	"server.migrate.already-set-this-way": "већ је тако подешено",
+	"server.migrate.stop-looking-for-deleted-episodes": "Престани да тражиш обрисане епизоде",
+	"server.migrate.stop-looking-for-deleted-movies": "Престани да тражиш обрисане филмове",
+	"server.migrate.the-deleted-file-switch-is-back": "прекидач за обрисане датотеке враћен је какав је био"
 }

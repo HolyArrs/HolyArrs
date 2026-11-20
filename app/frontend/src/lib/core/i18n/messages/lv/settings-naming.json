@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Aizturēšanas mape",
 	"settings.naming.clearOld": "Notīrīt vecos Aizturētos failus",
 	"settings.naming.clearOldHint": "Darbojas pats katru dienu",
-	"settings.naming.clearNow": "Notīrīt"
+	"settings.naming.clearNow": "Notīrīt",
+	"settings.naming.unkeepMovies": "Vairs nemeklēt dzēstās filmas",
+	"settings.naming.unkeepEpisodes": "Vairs nemeklēt dzēstās sērijas",
+	"settings.naming.unkeepHint": "Izslēdz “Uzturēt aktuālu”, kad atkārtota pārbaude atrod, ka fails no diska ir pazudis"
 }

@@ -651,3 +651,27 @@ func originOf(raw string) string {
 func personName(s string) string {
 	return accounts.NewPersonName(s, "imported-user", 64)
 }
+
+// partOf is the part an item belongs to ("" for the core).
+func partOf(it Item) string {
+	kind := ""
+	switch {
+	case it.Folder != nil:
+		kind = it.Folder.Kind
+	case it.Title != nil:
+		kind = it.Title.Kind
+	case it.NeverAdd != nil:
+		kind = it.NeverAdd.Kind
+	case it.OutsideList != nil:
+		kind = "movie" // Outside lists add movies
+	case it.FileRules != nil:
+		kind = it.FileRules.Kind
+	case it.Protocol != nil:
+		return it.Protocol.Part
+	case it.Subtitles != nil:
+		return "subtitles"
+	case it.Ask != nil:
+		return "wishlist"
+	}
+	return map[string]string{"movie": "movies", "show": "shows", "music": "music", "artist": "music"}[kind]
+}

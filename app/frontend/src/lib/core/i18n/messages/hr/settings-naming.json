@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Mapa za zadržavanje",
 	"settings.naming.clearOld": "Očisti stare zadržane datoteke",
 	"settings.naming.clearOldHint": "Pokreće se sam svaki dan",
-	"settings.naming.clearNow": "Očisti"
+	"settings.naming.clearNow": "Očisti",
+	"settings.naming.unkeepMovies": "Prestani tražiti obrisane filmove",
+	"settings.naming.unkeepEpisodes": "Prestani tražiti obrisane epizode",
+	"settings.naming.unkeepHint": "Isključuje „Drži ažurnim” kad ponovno skeniranje utvrdi da datoteke više nema na disku"
 }

@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Folder penahan",
 	"settings.naming.clearOld": "Kosongkan fail Ditahan yang lama",
 	"settings.naming.clearOldHint": "Berjalan sendiri setiap hari",
-	"settings.naming.clearNow": "Kosongkan"
+	"settings.naming.clearNow": "Kosongkan",
+	"settings.naming.unkeepMovies": "Berhenti mencari filem yang dipadam",
+	"settings.naming.unkeepEpisodes": "Berhenti mencari episod yang dipadam",
+	"settings.naming.unkeepHint": "Mematikan Kekalkan terkini apabila imbasan semula mendapati fail sudah tiada pada cakera"
 }

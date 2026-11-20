@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Dossier de rétention",
 	"settings.naming.clearOld": "Vider les anciens fichiers retenus",
 	"settings.naming.clearOldHint": "Se lance seul chaque jour",
-	"settings.naming.clearNow": "Vider"
+	"settings.naming.clearNow": "Vider",
+	"settings.naming.unkeepMovies": "Ne plus chercher les films supprimés",
+	"settings.naming.unkeepEpisodes": "Ne plus chercher les épisodes supprimés",
+	"settings.naming.unkeepHint": "Désactive « Tenir à jour » quand un nouveau passage voit que le fichier n’est plus sur le disque"
 }

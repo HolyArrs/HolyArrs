@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Thư mục lưu giữ",
 	"settings.naming.clearOld": "Dọn các tệp Đang giữ cũ",
 	"settings.naming.clearOldHint": "Tự chạy mỗi ngày",
-	"settings.naming.clearNow": "Dọn"
+	"settings.naming.clearNow": "Dọn",
+	"settings.naming.unkeepMovies": "Không tìm lại phim đã xóa",
+	"settings.naming.unkeepEpisodes": "Không tìm lại tập đã xóa",
+	"settings.naming.unkeepHint": "Tắt “Luôn cập nhật” khi lần quét lại thấy tệp đã biến mất khỏi ổ đĩa"
 }

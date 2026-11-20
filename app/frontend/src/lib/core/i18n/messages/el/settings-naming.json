@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Φάκελος αναμονής",
 	"settings.naming.clearOld": "Καθαρισμός παλιών κρατημένων αρχείων",
 	"settings.naming.clearOldHint": "Εκτελείται μόνο του κάθε ημέρα",
-	"settings.naming.clearNow": "Καθαρισμός"
+	"settings.naming.clearNow": "Καθαρισμός",
+	"settings.naming.unkeepMovies": "Διακοπή αναζήτησης διαγραμμένων ταινιών",
+	"settings.naming.unkeepEpisodes": "Διακοπή αναζήτησης διαγραμμένων επεισοδίων",
+	"settings.naming.unkeepHint": "Απενεργοποιεί το «Να μένει ενημερωμένο» όταν ένας νέος έλεγχος βρει ότι το αρχείο λείπει από τον δίσκο"
 }

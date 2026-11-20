@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Dosar de păstrare",
 	"settings.naming.clearOld": "Șterge fișierele Reținute vechi",
 	"settings.naming.clearOldHint": "Rulează singur în fiecare zi",
-	"settings.naming.clearNow": "Șterge"
+	"settings.naming.clearNow": "Șterge",
+	"settings.naming.unkeepMovies": "Nu mai căuta filmele șterse",
+	"settings.naming.unkeepEpisodes": "Nu mai căuta episoadele șterse",
+	"settings.naming.unkeepHint": "Oprește „Menține la zi” când o nouă scanare găsește că fișierul a dispărut de pe disc"
 }

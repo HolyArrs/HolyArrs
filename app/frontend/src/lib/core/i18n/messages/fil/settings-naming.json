@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Holding folder",
 	"settings.naming.clearOld": "Linisin ang mga lumang Held file",
 	"settings.naming.clearOldHint": "Kusang tumatakbo araw-araw",
-	"settings.naming.clearNow": "Linisin"
+	"settings.naming.clearNow": "Linisin",
+	"settings.naming.unkeepMovies": "Huwag nang hanapin ang mga binurang pelikula",
+	"settings.naming.unkeepEpisodes": "Huwag nang hanapin ang mga binurang episode",
+	"settings.naming.unkeepHint": "Pinapatay ang Panatilihing napapanahon kapag nakita ng muling pag-scan na wala na ang file sa disk"
 }

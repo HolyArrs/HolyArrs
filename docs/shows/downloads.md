@@ -144,7 +144,7 @@ Fix: none needed. Watch an episode or press **Get the next 2 episodes**.
 
 `{episode}` gives `S01E02`, or `S01E02-E03` for a file with several episodes. `{episode_title}` joins several names with `+`. The examples under each pattern change as you type.
 
-The same page sets the free space an import must leave (default and minimum 100 MB) and the holding days (default 7). 0 holding days never removes replaced files.
+The same page sets the free space an import must leave (default and minimum 100 MB) and the holding days (default 7). 0 holding days never removes replaced files. **Stop looking for deleted episodes** (off by default) turns Keep up to date off for an episode whose file a rescan finds deleted from disk.
 
 </details>
 

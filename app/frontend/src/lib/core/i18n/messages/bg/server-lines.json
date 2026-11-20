@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Актуални сериали в стрийминг",
 	"server.suggest.trending-on-streaming": "Актуално в стрийминг",
 	"server.discover.popular": "Популярни",
-	"server.metadata.creator": "Създател"
+	"server.metadata.creator": "Създател",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: „Поддържане актуално“ е изключено, файлът е изтрит от диска",
+	"server.library.keep-up-to-date-off-its-2": "{name}: „Поддържане актуално“ е изключено, файлът е изтрит от диска",
+	"server.migrate.already-set-this-way": "вече е настроено така",
+	"server.migrate.stop-looking-for-deleted-episodes": "Спиране на търсенето на изтрити епизоди",
+	"server.migrate.stop-looking-for-deleted-movies": "Спиране на търсенето на изтрити филми",
+	"server.migrate.the-deleted-file-switch-is-back": "превключвателят за изтрити файлове е както преди"
 }

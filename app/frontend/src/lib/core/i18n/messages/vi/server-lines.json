@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Phim bộ đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.suggest.trending-on-streaming": "Đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.discover.popular": "Phổ biến",
-	"server.metadata.creator": "Người sáng tạo"
+	"server.metadata.creator": "Người sáng tạo",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: Đã tắt “Luôn cập nhật”, tệp đã bị xóa khỏi ổ đĩa",
+	"server.library.keep-up-to-date-off-its-2": "{name}: Đã tắt “Luôn cập nhật”, tệp đã bị xóa khỏi ổ đĩa",
+	"server.migrate.already-set-this-way": "đã được đặt như vậy",
+	"server.migrate.stop-looking-for-deleted-episodes": "Không tìm lại tập đã xóa",
+	"server.migrate.stop-looking-for-deleted-movies": "Không tìm lại phim đã xóa",
+	"server.migrate.the-deleted-file-switch-is-back": "công tắc tệp đã xóa đã trở lại như cũ"
 }

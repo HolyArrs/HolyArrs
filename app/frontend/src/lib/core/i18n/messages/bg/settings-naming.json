@@ -84,5 +84,8 @@
 	"settings.naming.holding": "Папка за задържане",
 	"settings.naming.clearOld": "Изчистване на старите задържани файлове",
 	"settings.naming.clearOldHint": "Работи сама всеки ден",
-	"settings.naming.clearNow": "Изчисти"
+	"settings.naming.clearNow": "Изчисти",
+	"settings.naming.unkeepMovies": "Спиране на търсенето на изтрити филми",
+	"settings.naming.unkeepEpisodes": "Спиране на търсенето на изтрити епизоди",
+	"settings.naming.unkeepHint": "Изключва „Поддържане актуално“, когато повторното сканиране открие, че файлът липсва на диска"
 }

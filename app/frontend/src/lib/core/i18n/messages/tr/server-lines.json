@@ -1579,5 +1579,11 @@
 	"server.suggest.trending-shows-on-streaming": "Yayın servislerinde öne çıkan diziler",
 	"server.suggest.trending-on-streaming": "Yayın servislerinde öne çıkanlar",
 	"server.discover.popular": "Popüler",
-	"server.metadata.creator": "Yaratıcı"
+	"server.metadata.creator": "Yaratıcı",
+	"server.library.keep-up-to-date-off-its": "{name} {labels}: “Güncel tut” kapalı, dosyası diskten silindi",
+	"server.library.keep-up-to-date-off-its-2": "{name}: “Güncel tut” kapalı, dosyası diskten silindi",
+	"server.migrate.already-set-this-way": "zaten böyle ayarlı",
+	"server.migrate.stop-looking-for-deleted-episodes": "Silinen bölümleri artık arama",
+	"server.migrate.stop-looking-for-deleted-movies": "Silinen filmleri artık arama",
+	"server.migrate.the-deleted-file-switch-is-back": "silinen dosya anahtarı eski hâline döndü"
 }

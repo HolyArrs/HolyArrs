@@ -206,6 +206,8 @@ export interface FileRules {
 	holding_days: number;
 	min_free_mb: number;
 	skip_free_space_check: boolean;
+	unkeep_deleted_movies: boolean;
+	unkeep_deleted_episodes: boolean;
 }
 
 export interface DeleteScope {
