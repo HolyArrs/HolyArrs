@@ -1,6 +1,7 @@
 package library
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"errors"
@@ -22,8 +23,11 @@ type ImportedTrait struct {
 
 // ImportRulesInput is an old app's quality profile as Pick rules: Body
 // without its traits, and the formats it scores. ProfileKey names the
-// profile across imports ("<app>:<server>:<profile id>").
+// profile across imports ("<app>:<server>:<profile id>"). From is what the
+// rules are synced from: "import" (the default) or
+// mediafiles.SourceImportSizes for a copy of ready-made rules.
 type ImportRulesInput struct {
+	From       string
 	App        string
 	ProfileKey string
 	Name       string
@@ -92,10 +96,11 @@ func ImportPickRules(ctx context.Context, st *database.Store, in ImportRulesInpu
 	for i, it := range in.Traits {
 		b.Traits = append(b.Traits, mediafiles.TraitPoints{Trait: keys[i], Points: it.Points})
 	}
-	b.Synced = &mediafiles.SyncedProfile{From: "import", App: in.App, ProfileID: in.ProfileKey, Name: in.Name, At: time.Now().UTC().Format(time.RFC3339)}
+	from := cmp.Or(in.From, "import")
+	b.Synced = &mediafiles.SyncedProfile{From: from, App: in.App, ProfileID: in.ProfileKey, Name: in.Name, At: time.Now().UTC().Format(time.RFC3339)}
 	var prev []mediafiles.PickRules
 	prev, err = database.Select[mediafiles.PickRules](ctx, st.Read(), "pick_rules",
-		"json_extract(body, '$.synced.from') = 'import' AND json_extract(body, '$.synced.profile_id') = ?", in.ProfileKey)
+		"json_extract(body, '$.synced.from') = ? AND json_extract(body, '$.synced.profile_id') = ?", from, in.ProfileKey)
 	if err != nil {
 		return res, err
 	}

@@ -337,14 +337,19 @@ func (r *run) importRules(it Item) (string, string) {
 	if len(rp.Skipped) > 0 {
 		what += fmt.Sprintf("; %d formats left out", len(rp.Skipped))
 	}
+	from := "import"
+	if rp.CopyOf != "" {
+		what = fmt.Sprintf("Pick rules %s, a copy of %s with the old app's sizes", rp.Name, rp.CopyOf)
+		from = mediafiles.SourceImportSizes
+	}
 	if r.dry {
-		if id := r.id("SELECT id FROM pick_rules WHERE json_extract(body, '$.synced.from') = 'import' AND json_extract(body, '$.synced.profile_id') = ?", rp.ProfileKey); id != 0 {
+		if id := r.id("SELECT id FROM pick_rules WHERE json_extract(body, '$.synced.from') = ? AND json_extract(body, '$.synced.profile_id') = ?", from, rp.ProfileKey); id != 0 {
 			r.ruleID(rp.Name, id)
 			return ResChange, what + " (updates the ones imported before)"
 		}
 		return ResCreate, what
 	}
-	res, err := library.ImportPickRules(r.ctx, r.m.Store, library.ImportRulesInput{App: rp.App, ProfileKey: rp.ProfileKey, Name: rp.Name,
+	res, err := library.ImportPickRules(r.ctx, r.m.Store, library.ImportRulesInput{From: from, App: rp.App, ProfileKey: rp.ProfileKey, Name: rp.Name,
 		Kinds: rp.Kinds, Body: *rp.Body, Traits: rp.Traits}, r.by)
 	if err != nil {
 		return ResFailed, err.Error()

@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "它的作品不在媒体库中",
 	"server.migrate.on-the-old-app-s-blocklist": "在旧应用的屏蔽列表中",
 	"server.migrate.the-old-app-gave-no-release": "旧应用没有给出发布名称或协议",
-	"server.migrate.turned-down": "已排除"
+	"server.migrate.turned-down": "已排除",
+	"server.migrate.sizes-from-the-old-app": "{why}；来自旧应用的大小：{body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "成为挑选规则 {name}，即带有旧应用大小的 {preset} 副本",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "没有与之对应的 HolyArrs 画质档位",
+	"server.migrate.no-quality-profile-came-over-to-2": "没有迁入可以承载它的画质配置",
+	"server.migrate.you-left-size-limits-behind-titles": "你没有带上大小限制；标题使用其挑选规则的大小"
 }

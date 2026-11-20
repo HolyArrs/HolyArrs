@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "titill hans er ekki í safninu",
 	"server.migrate.on-the-old-app-s-blocklist": "á bannlista gamla forritsins",
 	"server.migrate.the-old-app-gave-no-release": "gamla forritið gaf ekkert útgáfuheiti eða samskiptareglu",
-	"server.migrate.turned-down": "Hafnað"
+	"server.migrate.turned-down": "Hafnað",
+	"server.migrate.sizes-from-the-old-app": "{why}; stærðir úr gamla forritinu: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "verður að Valreglunum {name}, afriti af {preset} með stærðum gamla forritsins",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "ekkert gæðaþrep í HolyArrs passar við það",
+	"server.migrate.no-quality-profile-came-over-to-2": "ekkert gæðasnið kom yfir til að bera það",
+	"server.migrate.you-left-size-limits-behind-titles": "þú skildir stærðarmörkin eftir; titlar fá stærðirnar úr Valreglum sínum"
 }

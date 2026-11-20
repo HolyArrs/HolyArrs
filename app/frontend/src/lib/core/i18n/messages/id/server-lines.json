@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "judulnya tidak ada di Pustaka",
 	"server.migrate.on-the-old-app-s-blocklist": "di daftar blokir aplikasi lama",
 	"server.migrate.the-old-app-gave-no-release": "aplikasi lama tidak memberi nama rilis atau protokol",
-	"server.migrate.turned-down": "Ditolak"
+	"server.migrate.turned-down": "Ditolak",
+	"server.migrate.sizes-from-the-old-app": "{why}; ukuran dari aplikasi lama: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "menjadi Aturan pilihan {name}, salinan {preset} dengan ukuran dari aplikasi lama",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "tidak ada tingkat kualitas HolyArrs yang cocok",
+	"server.migrate.no-quality-profile-came-over-to-2": "tidak ada profil kualitas yang terbawa untuk memuatnya",
+	"server.migrate.you-left-size-limits-behind-titles": "Anda meninggalkan batas ukuran; judul memakai ukuran dari Aturan pilihannya"
 }

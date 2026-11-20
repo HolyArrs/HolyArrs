@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "הכותר שלו לא בספרייה",
 	"server.migrate.on-the-old-app-s-blocklist": "ברשימת החסימה של האפליקציה הישנה",
 	"server.migrate.the-old-app-gave-no-release": "האפליקציה הישנה לא נתנה שם הוצאה או פרוטוקול",
-	"server.migrate.turned-down": "נפסל"
+	"server.migrate.turned-down": "נפסל",
+	"server.migrate.sizes-from-the-old-app": "{why}; גדלים מהאפליקציה הישנה: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "הופך לכללי הבחירה {name}, עותק של {preset} עם הגדלים של האפליקציה הישנה",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "אין שלב איכות ב-HolyArrs שמתאים לו",
+	"server.migrate.no-quality-profile-came-over-to-2": "לא הגיע פרופיל איכות שייקח אותו",
+	"server.migrate.you-left-size-limits-behind-titles": "השארת את מגבלות הגודל מאחור; הכותרים לוקחים את הגדלים של כללי הבחירה שלהם"
 }

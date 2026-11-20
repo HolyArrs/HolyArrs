@@ -381,6 +381,7 @@ controls
 copies
 copies_expected
 copy
+copy_of
 corrected
 count
 count_install
@@ -1127,6 +1128,7 @@ no_downloader
 no_formats
 no_limit
 no_release
+no_sizes
 nodes
 nominations
 nonce
@@ -1374,6 +1376,7 @@ qualityProfileId
 qualityVersion
 quality_name
 quality_profiles
+quality_sizes
 query
 queue
 queue_pos
@@ -1641,6 +1644,7 @@ sizeOnDisk
 size_bytes
 size_limits
 sizeleft
+sizes
 skip
 skip_free_space_check
 skip_login_local_network

@@ -80,10 +80,11 @@ func (b *builder) profiles(s *Snapshot) {
 	scored := map[string]bool{}
 	leftOut := map[string]string{}
 	b.snapRules = nil
+	sizes, used := b.appSizes(s), usedProfiles(s)
 	for i, p := range s.QualityProfiles {
 		preset, why := matchPreset(s.Kind, p)
 		key := fmt.Sprintf("pick_rules:%d:%s:%d", b.snapID, s.Kind, p.ID)
-		if rp, ok := b.importedRules(s, p, preset); ok {
+		if rp, ok := b.importedRules(s, p, preset, sizes); ok {
 			b.ownRulesName(rp, leftOut)
 			b.presets[b.presetKey(s.Kind, p.ID)] = rp.Name
 			b.imported[rp.Name] = true
@@ -100,6 +101,10 @@ func (b *builder) profiles(s *Snapshot) {
 			}
 			b.add(GroupRules, Item{Key: key, Name: b.named(p.Name), From: b.from("quality_profiles", i),
 				Detail: fmt.Sprintf("becomes Pick rules %s · %d traits", rp.Name, len(rp.Traits)), Why: why, Rules: rp})
+			continue
+		}
+		if sizes != nil && used[p.ID] && sizesDiffer(presetBody(preset), sizes) {
+			b.sizedItem(s, p, i, key, preset, why, sizes, leftOut)
 			continue
 		}
 		b.presets[b.presetKey(s.Kind, p.ID)] = preset
@@ -146,6 +151,7 @@ func (b *builder) profiles(s *Snapshot) {
 		}
 		b.not(GroupRules, b.from("release_profiles", i), what, why)
 	}
+	b.sizeRows(s)
 	b.waitRules(s)
 	for i, n := range s.LanguageProfiles {
 		b.not(GroupRules, b.from("language_profiles", i), n.Name, "language profiles are not imported; Pick rules set the languages")

@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "ο τίτλος του δεν είναι στη βιβλιοθήκη",
 	"server.migrate.on-the-old-app-s-blocklist": "στη λίστα αποκλεισμού της παλιάς εφαρμογής",
 	"server.migrate.the-old-app-gave-no-release": "η παλιά εφαρμογή δεν έδωσε όνομα έκδοσης ή πρωτόκολλο",
-	"server.migrate.turned-down": "Απορρίφθηκαν"
+	"server.migrate.turned-down": "Απορρίφθηκαν",
+	"server.migrate.sizes-from-the-old-app": "{why}· μεγέθη από την παλιά εφαρμογή: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "γίνεται Κανόνες επιλογής {name}, αντίγραφο του {preset} με τα μεγέθη της παλιάς εφαρμογής",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "κανένα βήμα ποιότητας του HolyArrs δεν του ταιριάζει",
+	"server.migrate.no-quality-profile-came-over-to-2": "δεν μεταφέρθηκε προφίλ ποιότητας για να το φέρει",
+	"server.migrate.you-left-size-limits-behind-titles": "άφησες πίσω τα όρια μεγέθους· οι τίτλοι παίρνουν τα μεγέθη των Κανόνων επιλογής τους"
 }

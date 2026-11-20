@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "його тайтла немає в бібліотеці",
 	"server.migrate.on-the-old-app-s-blocklist": "у чорному списку старого застосунку",
 	"server.migrate.the-old-app-gave-no-release": "старий застосунок не вказав назву релізу чи протокол",
-	"server.migrate.turned-down": "Відкинуто"
+	"server.migrate.turned-down": "Відкинуто",
+	"server.migrate.sizes-from-the-old-app": "{why}; розміри зі старого застосунку: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "стає Правилами вибору {name}, копією {preset} з розмірами старого застосунку",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "жоден щабель якості HolyArrs йому не відповідає",
+	"server.migrate.no-quality-profile-came-over-to-2": "жоден профіль якості не прийшов, щоб це нести",
+	"server.migrate.you-left-size-limits-behind-titles": "ти залишив обмеження розміру; тайтли беруть розміри своїх Правил вибору"
 }

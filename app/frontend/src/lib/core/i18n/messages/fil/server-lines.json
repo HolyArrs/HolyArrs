@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "wala sa Library ang pamagat nito",
 	"server.migrate.on-the-old-app-s-blocklist": "nasa blocklist ng lumang app",
 	"server.migrate.the-old-app-gave-no-release": "walang ibinigay na pangalan ng release o protocol ang lumang app",
-	"server.migrate.turned-down": "Tinanggihan"
+	"server.migrate.turned-down": "Tinanggihan",
+	"server.migrate.sizes-from-the-old-app": "{why}; mga laki mula sa lumang app: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "nagiging Mga panuntunan sa pagpili {name}, kopya ng {preset} na may mga laki ng lumang app",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "walang quality step ng HolyArrs na tugma rito",
+	"server.migrate.no-quality-profile-came-over-to-2": "walang quality profile na dumating para dalhin ito",
+	"server.migrate.you-left-size-limits-behind-titles": "iniwan mo ang mga limit sa laki; ginagamit ng mga title ang mga laki ng kanilang Mga panuntunan sa pagpili"
 }

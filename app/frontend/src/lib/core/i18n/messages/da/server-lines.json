@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "dens titel er ikke i biblioteket",
 	"server.migrate.on-the-old-app-s-blocklist": "på den gamle apps blokeringsliste",
 	"server.migrate.the-old-app-gave-no-release": "den gamle app gav intet udgivelsesnavn eller protokol",
-	"server.migrate.turned-down": "Afvist"
+	"server.migrate.turned-down": "Afvist",
+	"server.migrate.sizes-from-the-old-app": "{why}; størrelser fra den gamle app: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "bliver Valgregler {name}, en kopi af {preset} med den gamle apps størrelser",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "intet kvalitetstrin i HolyArrs passer til den",
+	"server.migrate.no-quality-profile-came-over-to-2": "ingen kvalitetsprofil kom med til at bære den",
+	"server.migrate.you-left-size-limits-behind-titles": "du lod størrelsesgrænserne blive tilbage; titler bruger størrelserne fra deres Valgregler"
 }

@@ -66,6 +66,8 @@ No Profilarr? Bring the formats and profiles over once.
 3. Leave **Bring formats and scores** on. Each profile that scores formats becomes its own Pick rules, with those formats as traits.
 4. Import. Each set of Pick rules lists **Traits** it got and what was **Left out**.
 
+With **Bring size limits** on, those Pick rules also take the app's size table. See [Size limits](sonarr-radarr.md#size-limits).
+
 ## Limits
 
 | Limit | What happens |

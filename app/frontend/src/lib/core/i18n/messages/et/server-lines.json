@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "selle pealkiri pole kogus",
 	"server.migrate.on-the-old-app-s-blocklist": "vana rakenduse blokeerimisnimekirjas",
 	"server.migrate.the-old-app-gave-no-release": "vana rakendus ei andnud väljalaske nime ega protokolli",
-	"server.migrate.turned-down": "Tagasi lükatud"
+	"server.migrate.turned-down": "Tagasi lükatud",
+	"server.migrate.sizes-from-the-old-app": "{why}; suurused vanast rakendusest: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "saab Valikureegliteks {name}, {preset} koopiaks vana rakenduse suurustega",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "ükski HolyArrsi kvaliteediaste sellele ei vasta",
+	"server.migrate.no-quality-profile-came-over-to-2": "ükski kvaliteediprofiil ei tulnud seda kandma",
+	"server.migrate.you-left-size-limits-behind-titles": "jätsid suuruspiirangud maha; pealkirjad võtavad suurused oma Valikureeglitest"
 }

@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "{list} našlo len číslo TMDB zo starej aplikácie, tu pod iným názvom. Otvor každý a skontroluj, či ide o rovnaký seriál. Ak áno, jeho série sú číslované inak: priraď jeho Zvyšné súbory a potom zapni seriál. Ak nie, odstráň ho; jeho súbory zostanú, kde sú.",
 	"migrate.stillChecking": "Seriály, ktoré server metadát ešte overuje: {n}. Zoznam sa sám aktualizuje, keď to skončí.",
 	"migrate.stillCheckingImport": "Seriály, ktoré server metadát ešte overuje: {n}. Importovať môžete hneď; overia sa počas importu.",
-	"migrate.turnedDown": "Zamietnuté"
+	"migrate.turnedDown": "Zamietnuté",
+	"migrate.bringSizes": "Preniesť limity veľkosti",
+	"migrate.bringSizesHint": "Každý profil sa stane vlastnými Pravidlami výberu s limitmi veľkosti pre každú kvalitu zo svojej aplikácie, kde sa líšia od predvoľby."
 }

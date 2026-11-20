@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "његов наслов није у библиотеци",
 	"server.migrate.on-the-old-app-s-blocklist": "на листи блокираних старе апликације",
 	"server.migrate.the-old-app-gave-no-release": "стара апликација није дала назив издања нити протокол",
-	"server.migrate.turned-down": "Одбијено"
+	"server.migrate.turned-down": "Одбијено",
+	"server.migrate.sizes-from-the-old-app": "{why}; величине из старе апликације: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "постаје Правила избора {name}, копија {preset} са величинама старе апликације",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "ниједан корак квалитета у HolyArrs-у му не одговара",
+	"server.migrate.no-quality-profile-came-over-to-2": "ниједан профил квалитета није пренет да га носи",
+	"server.migrate.you-left-size-limits-behind-titles": "оставио си ограничења величине; наслови узимају величине својих Правила избора"
 }

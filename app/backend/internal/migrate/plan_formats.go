@@ -36,18 +36,18 @@ func scoresFormats(p Profile) bool {
 // allowed qualities as steps, its cutoff as Good enough, each format it
 // scores as a trait with those points, and its score settings as the
 // points thresholds. ok is false when the profile stays a ready-made match.
-func (b *builder) importedRules(s *Snapshot, p Profile, preset string) (*RulesPlan, bool) {
+func (b *builder) importedRules(s *Snapshot, p Profile, preset string, sizes map[string]mediafiles.SizeLimit) (*RulesPlan, bool) {
 	if b.noFormats || s.Kind != Sonarr && s.Kind != Radarr || !scoresFormats(p) {
 		return nil, false
 	}
 	app := string(s.Kind)
 	body, notes := library.OldProfileRules(library.OldProfile{Qualities: p.Qualities, CutoffQualities: p.CutoffQualities,
 		UpgradeAllowed: p.UpgradeAllowed, MinScore: p.MinScore, CutoffScore: p.CutoffScore, MinUpgradeScore: p.MinUpgradeScore,
-		Language: p.Language, LanguageCode: subtitles.NormLanguage(strings.ToLower(strings.TrimSpace(p.Language))), FourK: preset == "4K"})
+		Language: p.Language, LanguageCode: subtitles.NormLanguage(strings.ToLower(strings.TrimSpace(p.Language))), FourK: preset == "4K",
+		Sizes: sizes})
 	name := clip(b.named(p.Name), maxName)
-	rp := &RulesPlan{App: app, Profile: name, Preset: name, Name: name,
-		ProfileKey: fmt.Sprintf("%s:%s:%d", app, instanceLabel(s.Address), p.ID),
-		Kinds:      []string{map[Kind]string{Sonarr: "show", Radarr: "movie"}[s.Kind]}, Body: &body}
+	rp := &RulesPlan{App: app, Profile: name, Preset: name, Name: name, ProfileKey: profileKey(s, p),
+		Kinds: appKinds(s.Kind), Body: &body, Sizes: sizes != nil}
 	byName := map[string]Named{}
 	for _, f := range s.CustomFormats {
 		byName[f.Name] = f
@@ -83,9 +83,17 @@ func (b *builder) importedRules(s *Snapshot, p Profile, preset string) (*RulesPl
 		}
 		rp.Traits = rp.Traits[:maxImportTraits]
 	}
+	if rp.Sizes {
+		notes = append(notes, sizesNote(body))
+	}
 	rp.Notes = notes
 	return rp, true
 }
+
+// readyMade are the ready-made Pick rules names an import never takes, so
+// titles matched to them never land on imported ones.
+var readyMade = map[string]bool{mediafiles.GoodEverydayName: true, mediafiles.SaveSpaceName: true, mediafiles.BestName: true,
+	mediafiles.FourKName: true, mediafiles.LosslessFirstName: true, mediafiles.Lossy320Name: true, mediafiles.AnyMusicName: true}
 
 // ownRulesName gives imported Pick rules a name no other imported ones
 // have: two apps' profiles of one name stay two Pick rules, so each app's
@@ -94,7 +102,7 @@ func (b *builder) ownRulesName(rp *RulesPlan, leftOut map[string]string) {
 	for _, sk := range rp.Skipped {
 		leftOut[sk.Name] = sk.Reason
 	}
-	for n, base := 2, rp.Name; b.imported[rp.Name]; n++ {
+	for n, base := 2, rp.Name; b.imported[rp.Name] || readyMade[rp.Name]; n++ {
 		rp.Name = clip(base, maxName-20) + " (" + rp.App + ")"
 		if n > 2 {
 			rp.Name = fmt.Sprintf("%s (%s %d)", clip(base, maxName-20), rp.App, n-1)

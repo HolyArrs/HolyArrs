@@ -35,6 +35,7 @@ type builder struct {
 	app       Kind
 	snapID    int64
 	noFormats bool
+	noSizes   bool
 	// label names the app's address after its rule names when more than
 	// one copy of that app is imported ("" otherwise).
 	label string
@@ -155,7 +156,7 @@ func (e *RuleError) Error() string { return e.Text }
 func BuildPlan(in []Input, ch Choices) *Plan {
 	p := &Plan{covered: map[string]bool{}, Snapshots: []int64{}, Apps: []string{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Paths: []string{}}
 	b := &builder{p: p, rules: ch.PathRules, skip: map[string]bool{}, items: map[string]*Group{}, keys: map[string]bool{},
-		presets: map[string]string{}, imported: map[string]bool{}, noFormats: ch.NoFormats, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
+		presets: map[string]string{}, imported: map[string]bool{}, noFormats: ch.NoFormats, noSizes: ch.NoSizes, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
 		waits: map[string][]waitFrom{}, listNames: map[string]bool{}}
 	for _, s := range ch.Skip {
 		b.skip[s] = true

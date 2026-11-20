@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "{list} rado tik senos programos TMDB numeris, čia kitu pavadinimu. Atidarykite kiekvieną ir patikrinkite, ar tai tas pats serialas. Jei taip, jo sezonai numeruojami kitaip: susiekite jo Likusius failus ir tada įjunkite serialą. Jei ne, pašalinkite jį; jo failai lieka savo vietoje.",
 	"migrate.stillChecking": "Serialai, kuriuos metaduomenų serveris dar tikrina: {n}. Sąrašas atsinaujins pats, kai bus baigta.",
 	"migrate.stillCheckingImport": "Serialai, kuriuos metaduomenų serveris dar tikrina: {n}. Galite importuoti jau dabar; jie bus patikrinti importuojant.",
-	"migrate.turnedDown": "Atmesta"
+	"migrate.turnedDown": "Atmesta",
+	"migrate.bringSizes": "Perkelti dydžio ribas",
+	"migrate.bringSizesHint": "Kiekvienas profilis tampa savomis Pasirinkimo taisyklėmis su savo programos dydžio ribomis kiekvienai kokybei, kur jos skiriasi nuo šablono."
 }

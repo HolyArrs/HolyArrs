@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,6 +25,28 @@ func str(v any) string {
 		return strconv.FormatBool(x)
 	}
 	return ""
+}
+
+// decimal reads a number with its fraction (MB a minute); 0 otherwise.
+func decimal(v any) float64 {
+	switch x := v.(type) {
+	case json.Number:
+		f, _ := x.Float64()
+		return f
+	case float64:
+		return x
+	case int64:
+		return float64(x)
+	case int:
+		return float64(x)
+	case string:
+		f, err := strconv.ParseFloat(strings.TrimSpace(x), 64)
+		if err != nil || math.IsNaN(f) || math.IsInf(f, 0) {
+			return 0
+		}
+		return f
+	}
+	return 0
 }
 
 // num reads a value as a whole number (0 when it is not one).

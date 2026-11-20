@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "عنوانش در کتابخانه نیست",
 	"server.migrate.on-the-old-app-s-blocklist": "در فهرست مسدود برنامهٔ قدیمی",
 	"server.migrate.the-old-app-gave-no-release": "برنامهٔ قدیمی نام انتشار یا پروتکلی برایش نداد",
-	"server.migrate.turned-down": "ردشده"
+	"server.migrate.turned-down": "ردشده",
+	"server.migrate.sizes-from-the-old-app": "{why}؛ اندازه‌ها از برنامهٔ قدیمی: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "قوانین انتخاب {name} می‌شود، رونوشتی از {preset} با اندازه‌های برنامهٔ قدیمی",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "هیچ پلهٔ کیفیتی در HolyArrs با آن جور نیست",
+	"server.migrate.no-quality-profile-came-over-to-2": "هیچ پروفایل کیفیتی برای حمل آن نیامد",
+	"server.migrate.you-left-size-limits-behind-titles": "محدودیت‌های اندازه را جا گذاشتی؛ عنوان‌ها اندازه‌های قوانین انتخاب خودشان را می‌گیرند"
 }

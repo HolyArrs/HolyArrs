@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "Bare TMDB-nummeret fra den gamle appen fant {list}, under et annet navn her. Åpne hver av dem og sjekk at det er samme serie. Hvis det er det, er sesongene nummerert annerledes: koble Gjenværende filer og slå så på serien. Hvis ikke, fjern den; filene blir liggende der de er.",
 	"migrate.stillChecking": "Serier metadataserveren fortsatt sjekker: {n}. Listen oppdaterer seg selv når den er ferdig.",
 	"migrate.stillCheckingImport": "Serier metadataserveren fortsatt sjekker: {n}. Du kan importere nå; de sjekkes under importen.",
-	"migrate.turnedDown": "Avvist"
+	"migrate.turnedDown": "Avvist",
+	"migrate.bringSizes": "Ta med størrelsesgrenser",
+	"migrate.bringSizesHint": "Hver profil blir sine egne Valgregler med appens størrelsesgrenser per kvalitet, der de skiller seg fra forhåndsvalget."
 }

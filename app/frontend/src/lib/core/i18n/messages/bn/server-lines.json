@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "এর টাইটেল লাইব্রেরিতে নেই",
 	"server.migrate.on-the-old-app-s-blocklist": "পুরোনো অ্যাপের ব্লকলিস্টে",
 	"server.migrate.the-old-app-gave-no-release": "পুরোনো অ্যাপ এর রিলিজের নাম বা প্রোটোকল দেয়নি",
-	"server.migrate.turned-down": "বাতিল করা"
+	"server.migrate.turned-down": "বাতিল করা",
+	"server.migrate.sizes-from-the-old-app": "{why}; পুরোনো অ্যাপের আকার: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "বাছাইয়ের নিয়ম {name} হয়, পুরোনো অ্যাপের আকারসহ {preset}-এর একটি কপি",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "HolyArrs-এর কোনো কোয়ালিটি ধাপ এর সাথে মেলে না",
+	"server.migrate.no-quality-profile-came-over-to-2": "এটি বহন করার মতো কোনো কোয়ালিটি প্রোফাইল আসেনি",
+	"server.migrate.you-left-size-limits-behind-titles": "আপনি আকারের সীমা রেখে এসেছেন; টাইটেলগুলো তাদের বাছাইয়ের নিয়মের আকার নেয়"
 }

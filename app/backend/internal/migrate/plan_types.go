@@ -74,6 +74,10 @@ type Choices struct {
 	// NoFormats keeps profiles as ready-made Pick rules matches, leaving
 	// their formats and scores behind (off: they are brought).
 	NoFormats bool `json:"no_formats,omitempty"`
+	// NoSizes leaves Sonarr's and Radarr's size tables behind: profiles
+	// keep their ready-made match (off: a profile whose app's sizes differ
+	// from its match becomes Pick rules of its own with those sizes).
+	NoSizes bool `json:"no_sizes,omitempty"`
 	// LeaveFolders are old root folders the owner left at "Don't bring
 	// them": their titles stay behind, whether or not this server can see
 	// the folder.
@@ -188,6 +192,11 @@ type RulesPlan struct {
 	Traits     []library.ImportedTrait   `json:"traits,omitempty"`
 	Skipped    []ImportSkipped           `json:"skipped,omitempty"`
 	Notes      []string                  `json:"notes,omitempty"`
+	// CopyOf names the ready-made Pick rules Body copies, set when only
+	// the old app's sizes made the profile its own Pick rules.
+	CopyOf string `json:"copy_of,omitempty"`
+	// Sizes says Body holds the old app's size limits.
+	Sizes bool `json:"sizes,omitempty"`
 }
 
 // ProtocolPlan is the wait an old app's untagged default wait rule gives a

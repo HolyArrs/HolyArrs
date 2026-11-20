@@ -138,53 +138,15 @@ func strOf(v any) string { s, _ := v.(string); return s }
 // waitOf reads a wait in minutes, held to what Pick rules allow (a week).
 func waitOf(v any) int { return int(math.Max(0, math.Min(10080, num(v)))) }
 
-const mib = int64(1) << 20
-
-// noMax stands for "no largest size" on a step that has a smallest one:
-// Pick rules want largest >= smallest, and 1 TiB a minute is never reached.
-const noMax = int64(1) << 40
-
 // stepLimits turns size-table rows (MB a minute, null or 0 largest for no
 // limit) into per-minute limits per quality step.
 func stepLimits(rows []obj) map[string]mediafiles.SizeLimit {
-	type pair struct{ lo, hi int64 } // hi -1: no limit
-	steps := map[string]*pair{}
-	ladder := map[string]bool{}
-	for _, s := range mediafiles.Ladder {
-		ladder[s] = true
-	}
+	sizes := make([]library.OldSize, 0, len(rows))
 	for _, row := range rows {
 		q, _ := row["quality"].(obj)
-		step := library.QualityStep(cmpOr(strOf(q["name"]), strOf(row["title"])))
-		if !ladder[step] {
-			continue
-		}
-		lo, hi := int64(math.Max(0, num(row["minSize"]))*float64(mib)), int64(math.Max(0, num(row["maxSize"]))*float64(mib))
-		if hi == 0 {
-			hi = -1
-		}
-		p, ok := steps[step]
-		if !ok {
-			steps[step] = &pair{lo, hi}
-			continue
-		}
-		p.lo = min(p.lo, lo)
-		if p.hi != -1 && (hi == -1 || hi > p.hi) {
-			p.hi = hi
-		}
+		sizes = append(sizes, library.OldSize{Name: cmpOr(strOf(q["name"]), strOf(row["title"])), Min: num(row["minSize"]), Max: num(row["maxSize"])})
 	}
-	out := map[string]mediafiles.SizeLimit{}
-	for step, p := range steps {
-		l := mediafiles.SizeLimit{Min: p.lo, Max: p.hi, PerMinute: true}
-		switch {
-		case p.hi == -1 && p.lo == 0:
-			l.Max = 0
-		case p.hi == -1 || p.hi < p.lo:
-			l.Max = max(noMax, p.lo)
-		}
-		out[step] = l
-	}
-	return out
+	return library.OldSizeLimits(sizes)
 }
 
 // refold applies this side's settings to every Pick rules body it was sent.

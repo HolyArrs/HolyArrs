@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "작품이 라이브러리에 없음",
 	"server.migrate.on-the-old-app-s-blocklist": "이전 앱의 차단 목록에 있음",
 	"server.migrate.the-old-app-gave-no-release": "이전 앱이 릴리스 이름이나 프로토콜을 주지 않았음",
-	"server.migrate.turned-down": "거부됨"
+	"server.migrate.turned-down": "거부됨",
+	"server.migrate.sizes-from-the-old-app": "{why}; 이전 앱의 크기: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "선택 규칙 {name}이 됩니다 · 이전 앱의 크기를 가진 {preset}의 복사본",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "일치하는 HolyArrs 품질 단계가 없습니다",
+	"server.migrate.no-quality-profile-came-over-to-2": "이를 담을 품질 프로필을 가져오지 않았습니다",
+	"server.migrate.you-left-size-limits-behind-titles": "크기 제한을 두고 왔습니다. 타이틀은 선택 규칙의 크기를 사용합니다"
 }

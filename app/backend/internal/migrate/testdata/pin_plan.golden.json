@@ -115,7 +115,9 @@
             ],
             "notes": [
               "s"
-            ]
+            ],
+            "copy_of": "s",
+            "sizes": true
           },
           "protocol": {
             "preset": "s",

@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "a címe nincs a könyvtárban",
 	"server.migrate.on-the-old-app-s-blocklist": "a régi alkalmazás tiltólistáján",
 	"server.migrate.the-old-app-gave-no-release": "a régi alkalmazás nem adott kiadásnevet vagy protokollt",
-	"server.migrate.turned-down": "Elvetett"
+	"server.migrate.turned-down": "Elvetett",
+	"server.migrate.sizes-from-the-old-app": "{why}; méretek a régi alkalmazásból: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "{name} Kiválasztási szabályokká válik, a(z) {preset} másolatává a régi alkalmazás méreteivel",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "egy HolyArrs minőségi lépcső sem felel meg neki",
+	"server.migrate.no-quality-profile-came-over-to-2": "nem jött át minőségi profil, amely hordozhatná",
+	"server.migrate.you-left-size-limits-behind-titles": "a méretkorlátokat hátrahagyta; a címek a Kiválasztási szabályaik méreteit kapják"
 }

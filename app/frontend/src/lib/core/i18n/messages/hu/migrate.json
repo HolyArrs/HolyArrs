@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "Csak a régi alkalmazás TMDB-száma találta meg ezeket: {list}, itt más néven. Nyisd meg mindegyiket, és ellenőrizd, hogy ugyanaz a sorozat-e. Ha igen, az évadai másképp vannak számozva: párosítsd a Maradék fájljait, majd kapcsold be a sorozatot. Ha nem, távolítsd el; a fájljai ott maradnak, ahol vannak.",
 	"migrate.stillChecking": "A metaadat-kiszolgáló által még ellenőrzött sorozatok: {n}. A lista magától frissül, amikor végzett.",
 	"migrate.stillCheckingImport": "A metaadat-kiszolgáló által még ellenőrzött sorozatok: {n}. Már most importálhatsz; az importálás közben ellenőrizzük őket.",
-	"migrate.turnedDown": "Elvetett"
+	"migrate.turnedDown": "Elvetett",
+	"migrate.bringSizes": "Méretkorlátok áthozása",
+	"migrate.bringSizesHint": "Minden profil saját Kiválasztási szabályokká válik az alkalmazása minőségenkénti méretkorlátaival, ahol azok eltérnek a sablontól."
 }

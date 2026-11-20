@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "Aðeins TMDB-númer gamla forritsins fann {list}, hér undir öðru nafni. Opnaðu hvern og athugaðu hvort þetta sé sami þátturinn. Ef svo er, eru þáttaraðirnar númeraðar öðruvísi: paraðu Afgangsskrár hans og kveiktu svo á þættinum. Ef ekki, fjarlægðu hann; skrárnar hans verða kyrrar þar sem þær eru.",
 	"migrate.stillChecking": "Þáttaraðir sem lýsigagnaþjónninn er enn að athuga: {n}. Listinn uppfærist sjálfur þegar því er lokið.",
 	"migrate.stillCheckingImport": "Þáttaraðir sem lýsigagnaþjónninn er enn að athuga: {n}. Þú getur flutt inn núna; þær eru athugaðar á meðan innflutningurinn stendur yfir.",
-	"migrate.turnedDown": "Hafnað"
+	"migrate.turnedDown": "Hafnað",
+	"migrate.bringSizes": "Flytja stærðarmörk",
+	"migrate.bringSizesHint": "Hver prófíll verður að eigin Valreglum með stærðarmörkum hvers gæðastigs úr sínu forriti, þar sem þau eru frábrugðin forstillingunni."
 }

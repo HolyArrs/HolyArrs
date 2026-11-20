@@ -32,6 +32,8 @@
 		people,
 		noFormats = false,
 		onformats,
+		noSizes = false,
+		onsizes,
 		onfolder,
 		onother,
 		onextra,
@@ -56,6 +58,8 @@
 		people: Record<string, PersonChoice>;
 		noFormats?: boolean;
 		onformats?: (on: boolean) => void;
+		noSizes?: boolean;
+		onsizes?: (on: boolean) => void;
 		onfolder: (from: string, pick: string) => void;
 		onother: (from: string, to: string) => void;
 		onextra: (rules: PathRule[]) => void;
@@ -210,7 +214,9 @@
 	}
 	const toCheck = $derived(new Map(seasonsShows(tried).map((s) => [s.key, { name: s.name, detail: tried.find((l) => l.key === s.key)?.detail }])));
 	// Profiles that score formats can bring them as traits; the switch shows while any could.
-	const formatsAsk = $derived(noFormats || (plan?.groups.find((g) => g.name === 'pick_rules')?.items ?? []).some((it) => !!it.rules?.body));
+	const formatsAsk = $derived(noFormats || (plan?.groups.find((g) => g.name === 'pick_rules')?.items ?? []).some((it) => !!it.rules?.body && !it.rules.copy_of));
+	// Sonarr and Radarr size tables that differ from the matched presets can come over; the switch shows while any does.
+	const sizesAsk = $derived(noSizes || (plan?.groups.find((g) => g.name === 'pick_rules')?.items ?? []).some((it) => !!it.rules?.sizes));
 	function openKeys(k: 'sources' | 'downloaders') {
 		keysOf = k;
 		keysOpen = true;
@@ -396,6 +402,15 @@
 										<span class="txt"><label class="name" for="move-formats">{t('migrate.bringFormats')}</label><span class="sub">{t('migrate.bringFormatsHint')}</span></span>
 										<label class="switch">
 											<input id="move-formats" type="checkbox" checked={!noFormats} onchange={(e) => onformats(e.currentTarget.checked)} />
+											<span class="sw" aria-hidden="true"></span>
+										</label>
+									</li>
+								{/if}
+								{#if g.name === 'pick_rules' && sizesAsk && onsizes && !skip.includes(g.name)}
+									<li class="mrow" data-testid="sizes-row">
+										<span class="txt"><label class="name" for="move-sizes">{t('migrate.bringSizes')}</label><span class="sub">{t('migrate.bringSizesHint')}</span></span>
+										<label class="switch">
+											<input id="move-sizes" type="checkbox" checked={!noSizes} onchange={(e) => onsizes(e.currentTarget.checked)} />
 											<span class="sw" aria-hidden="true"></span>
 										</label>
 									</li>

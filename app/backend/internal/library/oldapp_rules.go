@@ -25,6 +25,9 @@ type OldProfile struct {
 	LanguageCode string
 	// FourK starts from the 4K preset instead of Standard.
 	FourK bool
+	// Sizes are the old app's size limits by step (OldSizeLimits); nil
+	// leaves the rules without size limits.
+	Sizes map[string]mediafiles.SizeLimit
 }
 
 // ClampPoints keeps points inside the Pick rules bound.
@@ -44,7 +47,12 @@ func OldProfileRules(p OldProfile) (mediafiles.PickRulesBody, []string) {
 	// The old apps keep size limits per quality and refuse no traits of
 	// their own, so the ready-made rules' limits and refusals are left out.
 	body.SizeLimits = map[string]mediafiles.SizeLimit{}
-	notes = append(notes, "its size limits are not brought; set them under Pick rules")
+	for step, l := range p.Sizes {
+		body.SizeLimits[step] = l
+	}
+	if p.Sizes == nil {
+		notes = append(notes, "its size limits are not brought; set them under Pick rules")
+	}
 	discs := slices.ContainsFunc(p.Qualities, func(q string) bool {
 		q = strings.ToLower(q)
 		return strings.Contains(q, "br-disk") || strings.Contains(q, "brdisk")

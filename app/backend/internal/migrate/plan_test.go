@@ -24,6 +24,7 @@ func fullSnapshots() []Input {
 		Tags:            []Tag{{ID: 1, Label: "kids"}},
 		Folders:         []Folder{{Path: "/movies", Extra: map[string]any{"name": "Films"}}},
 		QualityProfiles: []Profile{{ID: 1, Name: "HD-1080p", UpgradeAllowed: true, Cutoff: "Bluray-1080p", Allowed: []string{"WEBDL-1080p", "Bluray-1080p"}, Scores: map[string]int{"x265": 10}}, {ID: 2, Name: "Ultra-HD", Cutoff: "Remux-2160p"}},
+		QualitySizes:    []QualitySize{{Name: "WEBDL-1080p", Max: 68.7}, {Name: "Bluray-1080p", Max: 85.4}, {Name: "Unknown"}},
 		CustomFormats:   []Named{{ID: 1, Name: "x265"}},
 		ReleaseProfiles: []Named{{ID: 1, Name: "No HC", Settings: map[string]any{"enabled": true, "ignored": []any{"HC"}}}},
 		DelayProfiles:   []DelayProfile{{ID: 1, EnableTorrent: true, TorrentDelay: 60}},
@@ -258,7 +259,7 @@ func notMoved(p *Plan, from string) (NotMoved, bool) {
 }
 
 func TestPlanMapsEachGroup(t *testing.T) {
-	p := planOf(t, Choices{NoFormats: true, PathRules: []PathRule{{From: `D:\TV`, To: "/tv"}, {From: "/movies", To: "/data/movies"}}, People: map[string]string{"person:seerr:1": PersonOwner}})
+	p := planOf(t, Choices{NoFormats: true, NoSizes: true, PathRules: []PathRule{{From: `D:\TV`, To: "/tv"}, {From: "/movies", To: "/data/movies"}}, People: map[string]string{"person:seerr:1": PersonOwner}})
 	// Folders follow the path rules.
 	if f := item(t, p, GroupFolders, "folder:/data/movies").Folder; f.Kind != "movie" || f.OldPath != "/movies" {
 		t.Fatalf("movie folder %+v", f)

@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "{list} atrada tikai vecās lietotnes TMDB numurs, šeit ar citu nosaukumu. Atver katru un pārbaudi, vai tas ir tas pats seriāls. Ja ir, tā sezonas ir numurētas citādi: sasaisti tā Atlikušos failus un tad ieslēdz seriālu. Ja nav, noņem to; tā faili paliek savā vietā.",
 	"migrate.stillChecking": "Seriāli, kurus metadatu serveris vēl pārbauda: {n}. Saraksts atjaunosies pats, kad tas būs pabeigts.",
 	"migrate.stillCheckingImport": "Seriāli, kurus metadatu serveris vēl pārbauda: {n}. Varat importēt jau tagad; tie tiks pārbaudīti importēšanas laikā.",
-	"migrate.turnedDown": "Noraidīts"
+	"migrate.turnedDown": "Noraidīts",
+	"migrate.bringSizes": "Pārnest izmēra ierobežojumus",
+	"migrate.bringSizesHint": "Katrs profils kļūst par saviem Izvēles noteikumiem ar savas lietotnes izmēra ierobežojumiem katrai kvalitātei, kur tie atšķiras no sagataves."
 }

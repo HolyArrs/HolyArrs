@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "タイトルがライブラリにありません",
 	"server.migrate.on-the-old-app-s-blocklist": "以前のアプリのブロックリストにあります",
 	"server.migrate.the-old-app-gave-no-release": "以前のアプリがリリース名やプロトコルを返しませんでした",
-	"server.migrate.turned-down": "不採用"
+	"server.migrate.turned-down": "不採用",
+	"server.migrate.sizes-from-the-old-app": "{why}。旧アプリのサイズ: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "選定ルール {name} になります（旧アプリのサイズを持つ {preset} のコピー）",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "一致する HolyArrs の画質ステップがありません",
+	"server.migrate.no-quality-profile-came-over-to-2": "引き継ぐ画質プロファイルがありませんでした",
+	"server.migrate.you-left-size-limits-behind-titles": "サイズ制限は持ってきませんでした。タイトルは選定ルールのサイズを使います"
 }

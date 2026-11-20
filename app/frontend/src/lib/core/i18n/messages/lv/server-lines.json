@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "tā nosaukuma nav bibliotēkā",
 	"server.migrate.on-the-old-app-s-blocklist": "vecās lietotnes bloķēšanas sarakstā",
 	"server.migrate.the-old-app-gave-no-release": "vecā lietotne nedeva laidiena nosaukumu vai protokolu",
-	"server.migrate.turned-down": "Noraidīts"
+	"server.migrate.turned-down": "Noraidīts",
+	"server.migrate.sizes-from-the-old-app": "{why}; izmēri no vecās lietotnes: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "kļūst par Izvēles noteikumiem {name} – {preset} kopiju ar vecās lietotnes izmēriem",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "neviens HolyArrs kvalitātes pakāpiens tam neatbilst",
+	"server.migrate.no-quality-profile-came-over-to-2": "nepārnāca neviens kvalitātes profils, kas to nestu",
+	"server.migrate.you-left-size-limits-behind-titles": "tu atstāji izmēra ierobežojumus; nosaukumi ņem savu Izvēles noteikumu izmērus"
 }

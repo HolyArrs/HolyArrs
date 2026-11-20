@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "Chỉ số TMDB của ứng dụng cũ tìm thấy {list}, dưới tên khác ở đây. Mở từng cái và kiểm tra đó có đúng là cùng một chương trình không. Nếu đúng, các mùa của nó được đánh số khác: ghép Tệp còn sót của nó rồi bật chương trình. Nếu không, hãy xóa nó; các tệp của nó vẫn ở nguyên chỗ.",
 	"migrate.stillChecking": "Chương trình máy chủ siêu dữ liệu vẫn đang kiểm tra: {n}. Danh sách này tự cập nhật khi xong.",
 	"migrate.stillCheckingImport": "Chương trình máy chủ siêu dữ liệu vẫn đang kiểm tra: {n}. Bạn có thể nhập ngay bây giờ; chúng sẽ được kiểm tra trong lúc nhập.",
-	"migrate.turnedDown": "Đã loại"
+	"migrate.turnedDown": "Đã loại",
+	"migrate.bringSizes": "Mang theo giới hạn dung lượng",
+	"migrate.bringSizesHint": "Mỗi hồ sơ trở thành Quy tắc chọn riêng với giới hạn dung lượng theo từng chất lượng từ ứng dụng của nó, ở những chỗ khác với mẫu có sẵn."
 }

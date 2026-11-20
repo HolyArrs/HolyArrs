@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "Hanya nombor TMDB aplikasi lama yang menemui {list}, dengan nama lain di sini. Buka setiap satu dan pastikan ini rancangan yang sama. Jika ya, musimnya dinomborkan secara berbeza: padankan Fail berbakinya, kemudian hidupkan rancangan itu. Jika tidak, buangnya; failnya kekal di tempatnya.",
 	"migrate.stillChecking": "Rancangan yang masih disemak oleh pelayan metadata: {n}. Senarai ini dikemas kini sendiri apabila selesai.",
 	"migrate.stillCheckingImport": "Rancangan yang masih disemak oleh pelayan metadata: {n}. Anda boleh import sekarang; ia disemak semasa import.",
-	"migrate.turnedDown": "Ditolak"
+	"migrate.turnedDown": "Ditolak",
+	"migrate.bringSizes": "Bawa had saiz",
+	"migrate.bringSizesHint": "Setiap profil menjadi Peraturan pilihannya sendiri dengan had saiz bagi setiap kualiti daripada aplikasinya, jika berbeza daripada pratetap."
 }

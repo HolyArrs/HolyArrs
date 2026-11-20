@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "Només el número de TMDB de l'app antiga ha trobat {list}, aquí amb un altre nom. Obre-les una a una i comprova que és la mateixa sèrie. Si ho és, les temporades estan numerades de manera diferent: associa els seus Fitxers sobrants i després activa la sèrie. Si no ho és, elimina-la; els seus fitxers es queden on són.",
 	"migrate.stillChecking": "Sèries que el servidor de metadades encara comprova: {n}. Aquesta llista s'actualitza sola quan acaba.",
 	"migrate.stillCheckingImport": "Sèries que el servidor de metadades encara comprova: {n}. Ja pots importar; es comproven durant la importació.",
-	"migrate.turnedDown": "Descartats"
+	"migrate.turnedDown": "Descartats",
+	"migrate.bringSizes": "Porta els límits de mida",
+	"migrate.bringSizesHint": "Cada perfil esdevé les seves pròpies Regles d'elecció amb els límits de mida per qualitat de la seva app, on difereixen del predefinit."
 }

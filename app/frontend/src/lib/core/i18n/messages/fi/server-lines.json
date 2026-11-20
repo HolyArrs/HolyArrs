@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "sen nimike ei ole kirjastossa",
 	"server.migrate.on-the-old-app-s-blocklist": "vanhan sovelluksen estolistalla",
 	"server.migrate.the-old-app-gave-no-release": "vanha sovellus ei antanut julkaisun nimeä tai protokollaa",
-	"server.migrate.turned-down": "Hylätyt"
+	"server.migrate.turned-down": "Hylätyt",
+	"server.migrate.sizes-from-the-old-app": "{why}; koot vanhasta sovelluksesta: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "muuttuu Valintasäännöiksi {name}, kopioksi kohteesta {preset} vanhan sovelluksen koilla",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "mikään HolyArrsin laatuporras ei vastaa sitä",
+	"server.migrate.no-quality-profile-came-over-to-2": "laatuprofiilia sen kantamiseksi ei tullut mukaan",
+	"server.migrate.you-left-size-limits-behind-titles": "jätit kokorajat pois; nimikkeet käyttävät Valintasääntöjensä kokoja"
 }

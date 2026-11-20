@@ -29,7 +29,9 @@ type Snapshot struct {
 
 	// Rules.
 	QualityProfiles []Profile `json:"quality_profiles,omitempty"`
-	CustomFormats   []Named   `json:"custom_formats,omitempty"`
+	// QualitySizes are Sonarr's or Radarr's size table, one row a quality.
+	QualitySizes  []QualitySize `json:"quality_sizes,omitempty"`
+	CustomFormats []Named       `json:"custom_formats,omitempty"`
 	// ReleaseProfiles are release word rules: words a release must or must
 	// not hold, with their tag and indexer scope.
 	ReleaseProfiles  []Named          `json:"release_profiles,omitempty"`
@@ -173,6 +175,14 @@ type Profile struct {
 	Language string `json:"language,omitempty"`
 	// Scores maps custom format names to their score in this profile.
 	Scores map[string]int `json:"scores,omitempty"`
+}
+
+// QualitySize is one quality's size limits in MB a minute of runtime (0
+// largest: no limit). The old apps' preferred size has no match here.
+type QualitySize struct {
+	Name string  `json:"name"`
+	Min  float64 `json:"min"`
+	Max  float64 `json:"max"`
 }
 
 // DelayProfile is a wait-before-grab rule.

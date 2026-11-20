@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "它的作品不在媒體庫中",
 	"server.migrate.on-the-old-app-s-blocklist": "在舊應用的封鎖清單中",
 	"server.migrate.the-old-app-gave-no-release": "舊應用沒有給出發行名稱或協定",
-	"server.migrate.turned-down": "已排除"
+	"server.migrate.turned-down": "已排除",
+	"server.migrate.sizes-from-the-old-app": "{why}；來自舊應用程式的大小：{body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "成為挑選規則 {name}，即帶有舊應用程式大小的 {preset} 副本",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "沒有與之對應的 HolyArrs 畫質級別",
+	"server.migrate.no-quality-profile-came-over-to-2": "沒有遷入可以承載它的畫質設定",
+	"server.migrate.you-left-size-limits-behind-titles": "你沒有帶上大小限制；標題使用其挑選規則的大小"
 }

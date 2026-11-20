@@ -38,9 +38,20 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 		f.Extra, _ = plainSettings(extra)
 		s.Folders = append(s.Folders, f)
 	}
+	// A backup names each quality id in QualityDefinitions; the API's
+	// rows hold the quality itself. Either kind carries the size table.
 	quality := map[int64]string{}
 	for _, m := range in.sets["qualitydefs"] {
-		quality[num(m["quality"])] = str(m["title"])
+		id, name := num(m["quality"]), str(m["title"])
+		if q := mapOf(m["quality"]); q != nil {
+			id, name = num(q["id"]), str(q["name"])
+		}
+		quality[id] = name
+		_, lo := m["minsize"]
+		_, hi := m["maxsize"]
+		if (lo || hi) && name != "" && (r.kind == Sonarr || r.kind == Radarr) {
+			s.QualitySizes = append(s.QualitySizes, QualitySize{Name: clip(name, 60), Min: decimal(m["minsize"]), Max: decimal(m["maxsize"])})
+		}
 	}
 	formatName := map[int64]string{}
 	langName := map[int64]string{}

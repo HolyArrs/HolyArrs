@@ -20,6 +20,7 @@
     },
     "approved_hash": "s",
     "no_formats": true,
+    "no_sizes": true,
     "leave_folders": [
       "s"
     ]

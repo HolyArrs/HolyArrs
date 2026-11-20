@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "el seu títol no és a la biblioteca",
 	"server.migrate.on-the-old-app-s-blocklist": "a la llista de bloqueig de l'app antiga",
 	"server.migrate.the-old-app-gave-no-release": "l'app antiga no en va donar el nom de la versió ni el protocol",
-	"server.migrate.turned-down": "Descartats"
+	"server.migrate.turned-down": "Descartats",
+	"server.migrate.sizes-from-the-old-app": "{why}; mides de l'app antiga: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "esdevé les Regles d'elecció {name}, una còpia de {preset} amb les mides de l'app antiga",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "cap pas de qualitat d'HolyArrs hi correspon",
+	"server.migrate.no-quality-profile-came-over-to-2": "no ha entrat cap perfil de qualitat que el dugui",
+	"server.migrate.you-left-size-limits-behind-titles": "has deixat enrere els límits de mida; els títols prenen les mides de les seves Regles d'elecció"
 }

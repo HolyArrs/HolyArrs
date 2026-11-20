@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "de titel staat niet in de bibliotheek",
 	"server.migrate.on-the-old-app-s-blocklist": "op de blokkeerlijst van de oude app",
 	"server.migrate.the-old-app-gave-no-release": "de oude app gaf geen releasenaam of protocol",
-	"server.migrate.turned-down": "Afgekeurd"
+	"server.migrate.turned-down": "Afgekeurd",
+	"server.migrate.sizes-from-the-old-app": "{why}; groottes uit de oude app: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "wordt de Keuzeregels {name}, een kopie van {preset} met de groottes van de oude app",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "geen kwaliteitsstap van HolyArrs past erbij",
+	"server.migrate.no-quality-profile-came-over-to-2": "er is geen kwaliteitsprofiel meegekomen om het te dragen",
+	"server.migrate.you-left-size-limits-behind-titles": "je hebt de groottegrenzen achtergelaten; titels nemen de groottes van hun Keuzeregels"
 }

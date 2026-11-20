@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "عنوانه ليس في المكتبة",
 	"server.migrate.on-the-old-app-s-blocklist": "في قائمة الحظر في التطبيق القديم",
 	"server.migrate.the-old-app-gave-no-release": "لم يعطِ التطبيق القديم اسم إصدار أو بروتوكولًا له",
-	"server.migrate.turned-down": "مستبعَد"
+	"server.migrate.turned-down": "مستبعَد",
+	"server.migrate.sizes-from-the-old-app": "{why}؛ الأحجام من التطبيق القديم: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "يصبح قواعد الاختيار {name}، نسخة من {preset} بأحجام التطبيق القديم",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "لا تطابقها أي درجة جودة في HolyArrs",
+	"server.migrate.no-quality-profile-came-over-to-2": "لم يُستورد أي ملف جودة لحملها",
+	"server.migrate.you-left-size-limits-behind-titles": "تركت حدود الحجم؛ تأخذ العناوين أحجام قواعد الاختيار الخاصة بها"
 }

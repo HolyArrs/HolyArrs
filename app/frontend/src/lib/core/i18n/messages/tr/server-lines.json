@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "başlığı kitaplıkta değil",
 	"server.migrate.on-the-old-app-s-blocklist": "eski uygulamanın engel listesinde",
 	"server.migrate.the-old-app-gave-no-release": "eski uygulama sürüm adı veya protokol vermedi",
-	"server.migrate.turned-down": "Reddedilenler"
+	"server.migrate.turned-down": "Reddedilenler",
+	"server.migrate.sizes-from-the-old-app": "{why}; eski uygulamadan boyutlar: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "{name} Seçim kuralları olur; eski uygulamanın boyutlarıyla {preset} kopyası",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "HolyArrs'ta buna uyan bir kalite adımı yok",
+	"server.migrate.no-quality-profile-came-over-to-2": "bunu taşıyacak bir kalite profili gelmedi",
+	"server.migrate.you-left-size-limits-behind-titles": "boyut sınırlarını geride bıraktın; başlıklar kendi Seçim kurallarının boyutlarını alır"
 }

@@ -41,7 +41,7 @@ Reads from a backup save no key.
 
 | App | What is read |
 | --- | --- |
-| Radarr, Sonarr, Lidarr | Every movie, show (with seasons) or artist: ids, folder, watch flag, quality profile, tags, date added. Also Library folders, tags, quality profiles, custom formats, release word rules, wait rules, naming, indexers, download clients, lists, notifications, metadata writers, exclusions, language profiles (Sonarr v3), metadata profiles (Lidarr) and Radarr's availability delay. |
+| Radarr, Sonarr, Lidarr | Every movie, show (with seasons) or artist: ids, folder, watch flag, quality profile, tags, date added. Also Library folders, tags, quality profiles, custom formats, release word rules, wait rules, naming, indexers, download clients, lists, notifications, metadata writers, exclusions, language profiles (Sonarr v3), metadata profiles (Lidarr), the size table per quality (Sonarr and Radarr) and Radarr's availability delay. |
 | Prowlarr | Indexers, app links, sync profiles, indexer proxies, download clients, notifications. |
 | Bazarr | Enabled languages, language profiles, enabled subtitle sites, default profiles. |
 | qBittorrent, SABnzbd | Address, port, user name, download folders, categories and (SABnzbd) usenet servers. |

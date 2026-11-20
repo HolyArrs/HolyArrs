@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "il suo titolo non è nella libreria",
 	"server.migrate.on-the-old-app-s-blocklist": "nella lista di blocco della vecchia app",
 	"server.migrate.the-old-app-gave-no-release": "la vecchia app non ha dato nome della release né protocollo",
-	"server.migrate.turned-down": "Scartate"
+	"server.migrate.turned-down": "Scartate",
+	"server.migrate.sizes-from-the-old-app": "{why}; dimensioni dalla vecchia app: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "diventa le Regole di scelta {name}, una copia di {preset} con le dimensioni della vecchia app",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "nessun livello di qualità di HolyArrs gli corrisponde",
+	"server.migrate.no-quality-profile-came-over-to-2": "nessun profilo di qualità è arrivato a portarlo",
+	"server.migrate.you-left-size-limits-behind-titles": "hai lasciato indietro i limiti di dimensione; i titoli prendono le dimensioni delle loro Regole di scelta"
 }

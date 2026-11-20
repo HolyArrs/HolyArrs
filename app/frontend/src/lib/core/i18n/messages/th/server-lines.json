@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "เรื่องนี้ไม่อยู่ในคลัง",
 	"server.migrate.on-the-old-app-s-blocklist": "อยู่ในรายการบล็อกของแอปเก่า",
 	"server.migrate.the-old-app-gave-no-release": "แอปเก่าไม่ได้ให้ชื่อรีลีสหรือโปรโตคอล",
-	"server.migrate.turned-down": "ปฏิเสธแล้ว"
+	"server.migrate.turned-down": "ปฏิเสธแล้ว",
+	"server.migrate.sizes-from-the-old-app": "{why}; ขนาดจากแอปเดิม: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "กลายเป็นกฎการเลือก {name} ซึ่งคัดลอกจาก {preset} พร้อมขนาดของแอปเดิม",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "ไม่มีขั้นคุณภาพของ HolyArrs ที่ตรงกัน",
+	"server.migrate.no-quality-profile-came-over-to-2": "ไม่มีโปรไฟล์คุณภาพที่นำมารองรับ",
+	"server.migrate.you-left-size-limits-behind-titles": "คุณไม่ได้นำขีดจำกัดขนาดมา ชื่อเรื่องใช้ขนาดตามกฎการเลือกของตัวเอง"
 }

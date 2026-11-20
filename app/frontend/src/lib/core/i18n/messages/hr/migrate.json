@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "Samo je TMDB broj iz stare aplikacije pronašao {list}, ovdje pod drugim imenom. Otvori svaku i provjeri je li to ista serija. Ako jest, njezine su sezone drukčije numerirane: upari njezine Preostale datoteke i zatim uključi seriju. Ako nije, ukloni je; njezine datoteke ostaju gdje jesu.",
 	"migrate.stillChecking": "Serije koje poslužitelj metapodataka još provjerava: {n}. Popis se sam osvježi kad završi.",
 	"migrate.stillCheckingImport": "Serije koje poslužitelj metapodataka još provjerava: {n}. Možete uvesti odmah; provjeravaju se tijekom uvoza.",
-	"migrate.turnedDown": "Odbačeno"
+	"migrate.turnedDown": "Odbačeno",
+	"migrate.bringSizes": "Prenesi ograničenja veličine",
+	"migrate.bringSizesHint": "Svaki profil postaje vlastita Pravila odabira s ograničenjima veličine po kvaliteti iz svoje aplikacije, gdje se razlikuju od predloška."
 }

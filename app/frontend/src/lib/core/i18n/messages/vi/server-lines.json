@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "tựa của nó không có trong Thư viện",
 	"server.migrate.on-the-old-app-s-blocklist": "trong danh sách chặn của ứng dụng cũ",
 	"server.migrate.the-old-app-gave-no-release": "ứng dụng cũ không cho tên bản phát hành hay giao thức",
-	"server.migrate.turned-down": "Đã loại"
+	"server.migrate.turned-down": "Đã loại",
+	"server.migrate.sizes-from-the-old-app": "{why}; dung lượng từ ứng dụng cũ: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "trở thành Quy tắc chọn {name}, bản sao của {preset} với dung lượng của ứng dụng cũ",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "không có bậc chất lượng nào của HolyArrs khớp với nó",
+	"server.migrate.no-quality-profile-came-over-to-2": "không có hồ sơ chất lượng nào được chuyển sang để mang nó",
+	"server.migrate.you-left-size-limits-behind-titles": "bạn đã để lại giới hạn dung lượng; các tựa dùng dung lượng theo Quy tắc chọn của chúng"
 }

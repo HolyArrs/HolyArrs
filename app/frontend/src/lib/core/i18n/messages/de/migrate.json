@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "Nur die TMDB-Nummer der alten App hat {list} gefunden, hier unter einem anderen Namen. Öffne jede und prüfe, ob es dieselbe Serie ist. Wenn ja, sind ihre Staffeln anders nummeriert: Ordne ihre Dateien unter „Übrige Dateien“ zu und schalte dann die Serie ein. Wenn nicht, entferne sie; ihre Dateien bleiben, wo sie sind.",
 	"migrate.stillChecking": "Serien, die der Metadatenserver noch prüft: {n}. Diese Liste aktualisiert sich von selbst, sobald er fertig ist.",
 	"migrate.stillCheckingImport": "Serien, die der Metadatenserver noch prüft: {n}. Du kannst jetzt importieren; sie werden während des Imports geprüft.",
-	"migrate.turnedDown": "Verworfen"
+	"migrate.turnedDown": "Verworfen",
+	"migrate.bringSizes": "Größengrenzen übernehmen",
+	"migrate.bringSizesHint": "Jedes Profil wird zu eigenen Auswahlregeln mit den Größengrenzen je Qualität aus seiner App, wo sie von der Vorlage abweichen."
 }

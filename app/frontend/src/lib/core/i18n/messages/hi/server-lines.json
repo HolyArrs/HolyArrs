@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "इसका टाइटल लाइब्रेरी में नहीं है",
 	"server.migrate.on-the-old-app-s-blocklist": "पुराने ऐप की ब्लॉकलिस्ट में",
 	"server.migrate.the-old-app-gave-no-release": "पुराने ऐप ने इसका रिलीज़ नाम या प्रोटोकॉल नहीं दिया",
-	"server.migrate.turned-down": "ठुकराई गई"
+	"server.migrate.turned-down": "ठुकराई गई",
+	"server.migrate.sizes-from-the-old-app": "{why}; पुराने ऐप से आकार: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "चुनाव के नियम {name} बनता है, पुराने ऐप के आकारों के साथ {preset} की कॉपी",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "HolyArrs का कोई क्वालिटी स्टेप इससे मेल नहीं खाता",
+	"server.migrate.no-quality-profile-came-over-to-2": "इसे ले जाने के लिए कोई क्वालिटी प्रोफ़ाइल नहीं आई",
+	"server.migrate.you-left-size-limits-behind-titles": "आपने आकार की सीमाएं पीछे छोड़ दीं; टाइटल अपने चुनाव के नियमों के आकार लेते हैं"
 }

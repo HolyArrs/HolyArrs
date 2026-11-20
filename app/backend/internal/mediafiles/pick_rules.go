@@ -73,12 +73,16 @@ type PickRulesBody struct {
 // SyncedProfile is a TRaSH Guides profile applied to Pick rules, or an
 // old app's profile imported or sent through the arr API.
 type SyncedProfile struct {
-	From      string `json:"from"` // trash, import or arrapi
+	From      string `json:"from"` // trash, import, import_sizes or arrapi
 	App       string `json:"app"`  // sonarr or radarr
 	ProfileID string `json:"profile_id"`
 	Name      string `json:"name"`
 	At        string `json:"at"`
 }
+
+// SourceImportSizes marks Pick rules an import made as a copy of ready-made
+// ones with an old app's size limits; they judge as the ready-made ones do.
+const SourceImportSizes = "import_sizes"
 
 // OldApp reports whether the rules are an old app's profile, which judge
 // upgrades and missing languages as that app does.

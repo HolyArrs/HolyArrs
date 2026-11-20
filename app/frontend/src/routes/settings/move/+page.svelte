@@ -92,6 +92,8 @@
 	let skip = $state<string[]>([]);
 	// On by default: profiles bring their formats and scores as traits.
 	let noFormats = $state(false);
+	// On by default: profiles whose app's sizes differ from their preset bring those sizes.
+	let noSizes = $state(false);
 	let people = $state<Record<string, PersonChoice>>({});
 	let changes = $state(0);
 	let planTimer: ReturnType<typeof setTimeout> | undefined;
@@ -341,7 +343,7 @@
 		const ok = Object.fromEntries(Object.entries(picks).filter(([p, v]) => folderProblem(p, v, others[p]) === ''));
 		// Old folders set to "Don't bring them": their titles stay behind.
 		const leave = leaveFolders(plan, folders, picks);
-		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people, no_formats: noFormats, leave_folders: leave };
+		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people, no_formats: noFormats, no_sizes: noSizes, leave_folders: leave };
 	}
 
 	function changed() {
@@ -557,6 +559,7 @@
 		// The move's other choices too: the groups it left out and its folders.
 		skip = [...(m.choices?.skip ?? skip)];
 		noFormats = !!m.choices?.no_formats;
+		noSizes = !!m.choices?.no_sizes;
 		const rules = m.choices?.path_rules ?? [];
 		if (rules.length > 0) {
 			const p = { ...picks };
@@ -650,6 +653,8 @@
 			{people}
 			{noFormats}
 			onformats={(on) => ((noFormats = !on), changed(), planFlow.replan(true))}
+			{noSizes}
+			onsizes={(on) => ((noSizes = !on), changed(), planFlow.replan(true))}
 			onfolder={planFlow.onfolder}
 			onother={planFlow.onother}
 			onextra={planFlow.onextra}

@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "titlul său nu este în bibliotecă",
 	"server.migrate.on-the-old-app-s-blocklist": "pe lista de blocare a aplicației vechi",
 	"server.migrate.the-old-app-gave-no-release": "aplicația veche nu a dat numele lansării sau protocolul",
-	"server.migrate.turned-down": "Respins"
+	"server.migrate.turned-down": "Respins",
+	"server.migrate.sizes-from-the-old-app": "{why}; mărimi din aplicația veche: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "devine Regulile de alegere {name}, o copie a {preset} cu mărimile aplicației vechi",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "nicio treaptă de calitate HolyArrs nu i se potrivește",
+	"server.migrate.no-quality-profile-came-over-to-2": "niciun profil de calitate nu a venit să-l poarte",
+	"server.migrate.you-left-size-limits-behind-titles": "ai lăsat în urmă limitele de mărime; titlurile iau mărimile din Regulile lor de alegere"
 }

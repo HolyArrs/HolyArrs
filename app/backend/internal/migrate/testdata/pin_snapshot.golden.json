@@ -93,6 +93,13 @@
       }
     }
   ],
+  "quality_sizes": [
+    {
+      "name": "s",
+      "min": 1.5,
+      "max": 1.5
+    }
+  ],
   "custom_formats": [
     {
       "id": 7,

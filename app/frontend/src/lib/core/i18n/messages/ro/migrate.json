@@ -316,5 +316,7 @@
 	"migrate.seasonsDifferWhy": "Doar numărul TMDB din aplicația veche a găsit {list}, aici sub alt nume. Deschide-l pe fiecare și verifică dacă este același serial. Dacă da, sezoanele lui sunt numerotate altfel: potrivește-i Fișierele rămase, apoi pornește serialul. Dacă nu, elimină-l; fișierele lui rămân unde sunt.",
 	"migrate.stillChecking": "Seriale pe care serverul de metadate încă le verifică: {n}. Lista se actualizează singură când termină.",
 	"migrate.stillCheckingImport": "Seriale pe care serverul de metadate încă le verifică: {n}. Poți importa acum; sunt verificate în timpul importului.",
-	"migrate.turnedDown": "Respins"
+	"migrate.turnedDown": "Respins",
+	"migrate.bringSizes": "Adu limitele de mărime",
+	"migrate.bringSizesHint": "Fiecare profil devine propriile Reguli de alegere cu limitele de mărime pe calitate din aplicația sa, acolo unde diferă de presetare."
 }

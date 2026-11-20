@@ -1591,5 +1591,10 @@
 	"server.migrate.its-title-is-not-in-the": "dess titel finns inte i biblioteket",
 	"server.migrate.on-the-old-app-s-blocklist": "på den gamla appens spärrlista",
 	"server.migrate.the-old-app-gave-no-release": "den gamla appen gav inget releasenamn eller protokoll",
-	"server.migrate.turned-down": "Nekade"
+	"server.migrate.turned-down": "Nekade",
+	"server.migrate.sizes-from-the-old-app": "{why}; storlekar från den gamla appen: {body}",
+	"server.migrate.becomes-pick-rules-a-copy-of": "blir Valreglerna {name}, en kopia av {preset} med den gamla appens storlekar",
+	"server.migrate.no-holyarrs-quality-step-matches-it": "inget kvalitetssteg i HolyArrs passar den",
+	"server.migrate.no-quality-profile-came-over-to-2": "ingen kvalitetsprofil kom över för att bära den",
+	"server.migrate.you-left-size-limits-behind-titles": "du lämnade storleksgränserna; titlar tar storlekarna från sina Valregler"
 }
