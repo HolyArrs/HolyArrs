@@ -122,6 +122,8 @@ var Kinds = []Kind{
 		Note: "Polish only. Movies and shows, matched by the video file's own hash, so it needs the file on disk. No account. The site has no https, so calls to it are not encrypted."},
 	{Kind: "napisy24", Name: "Napisy24", DefaultURL: "https://napisy24.pl", Movies: true, Shows: true,
 		Note: "Polish only. Movies and shows, matched by the video file's hash and size, so it needs the file on disk. No account: HolyArrs uses the public login subliminal and Bazarr use."},
+	{Kind: "assrt", Name: "Assrt", DefaultURL: "https://api.assrt.net/v1", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"api_key"},
+		Note: "Chinese subtitles, some with English. Needs your account: the free token from your assrt.net user page goes in API key. Searches by name, so it works best with release names in English. One call every 3 seconds at most by default."},
 	{Kind: "fake", Name: "Lab subtitle site", Movies: true, Shows: true, Lab: true, Note: "The lab's fake site, for tests."},
 	{Kind: "fake_account", Name: "Lab subtitle site with an account", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"api_key"}, Lab: true,
 		Note: "The lab's fake site asking for a key, for tests of sites that need your account."},
@@ -180,6 +182,8 @@ func New(kind string, cfg Config) (Site, error) {
 		return newNapiProjekt(c), nil
 	case "napisy24":
 		return newNapisy24(c), nil
+	case "assrt":
+		return newAssrt(c), nil
 	case "subdl":
 		c.keyHeader = "" // subdl takes the key in the query
 		return &subdl{c: c}, nil

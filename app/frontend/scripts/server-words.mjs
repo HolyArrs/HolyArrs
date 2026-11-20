@@ -20,7 +20,7 @@ const banned = ['Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 
 const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 'key', 'movie', 'show', 'artist',
 	// The audio codec and HDR labels a file name carries (mediafiles/naming_media.go): names, not words to translate.
 	'AAC', 'AC3', 'EAC3', 'DTS', 'DTS-HD', 'TrueHD', 'FLAC', 'ALAC', 'MP3', 'Opus', 'Vorbis', 'PCM', 'DolbyVision', 'HDR10', 'HDR10+', 'HLG',
-	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'napiprojekt', 'napisy24', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}',
+	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'napiprojekt', 'napisy24', 'assrt', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}',
 	// migrate errNotChecked: a dry run's own marker, never shown (the page says how many shows are still being checked).
 	'still being checked']);
 // Lines the scan cannot put together: a control's Event starts with the person's name (setup ControlEvent)

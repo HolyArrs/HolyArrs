@@ -6518,7 +6518,8 @@
               "tvsubtitles",
               "bsplayer",
               "napiprojekt",
-              "napisy24"
+              "napisy24",
+              "assrt"
             ],
             "type": "string"
           },
