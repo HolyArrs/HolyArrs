@@ -1,6 +1,7 @@
 package subtitles
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -299,7 +300,8 @@ func (s *Service) fetchAndSave(ctx context.Context, fc *fileCtx, t target, c Sco
 		return "", err
 	}
 	e := pickEntry(entries)
-	text, err := subtext.Clean(e.Data, e.Format)
+	// The language picks the old encodings to try on a file that is not Unicode.
+	text, err := subtext.CleanFor(e.Data, e.Format, cmp.Or(c.Language, t.want.Language))
 	if err != nil {
 		s.failed(ctx, fc, t.want, c.Site, err, by)
 		return "", err

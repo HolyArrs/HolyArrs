@@ -74,6 +74,7 @@ Movie (2020).fr.forced.ass
 - A subtitle HolyArrs replaces goes to the holding folder first.
 - **Rename files** moves subtitles with their video. If the new name is taken, that subtitle stays and says why.
 - Deleting a title with its files sends its subtitles to the holding folder too.
+- Every saved subtitle is UTF-8. A file in an older encoding is read in the one that suits its language, such as Windows-1250 or ISO-8859-2 for Polish, GBK or Big5 for Chinese, and Windows-1251 or KOI8-R for Russian. A language without its own old encodings is read as Windows-1252.
 
 Portuguese (Brazil) has its own files, `Movie (2020).pt-BR.srt`. Older `.pt` files stay where they are, so both can sit next to the video.
 

@@ -62,7 +62,7 @@ func (s *Service) Sync(ctx context.Context, id int64, fix subtext.Fix, by domain
 	if format != "" {
 		format = format[1:]
 	}
-	text, err := subtext.Clean(b, format)
+	text, err := subtext.CleanFor(b, format, row.Language)
 	if err != nil {
 		return row, err
 	}

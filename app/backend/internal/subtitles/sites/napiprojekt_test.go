@@ -55,7 +55,7 @@ func TestNapiConvert(t *testing.T) {
 	cp1250, _ := charmap.Windows1250.NewEncoder().String("[10][35]Zażółć gęślą jaźń|/druga linia\n[40][]Bez końca\n")
 	for _, tc := range []struct {
 		name, in, format string
-		want           []string
+		want             []string
 	}{
 		{"mpl2 in windows-1250", cp1250, "srt", []string{"00:00:01,000 --> 00:00:03,500\nZażółć gęślą jaźń\n<i>druga linia</i>", "00:00:04,000 --> 00:00:09,000\nBez końca"}},
 		{"microdvd with rate", "{1}{1}25\r\n{25}{50}Raz\r\n{75}{100}Dwa\r\n", "srt", []string{"00:00:01,000 --> 00:00:02,000\nRaz", "00:00:03,000 --> 00:00:04,000\nDwa"}},

@@ -15,9 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 
-	"golang.org/x/text/encoding/charmap"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
 // napiprojekt finds Polish subtitles by the video file's own NapiProjekt hash:
@@ -154,15 +153,11 @@ func (n *napiprojekt) Download(ctx context.Context, c Candidate) ([]byte, error)
 // napiConvert turns a NapiProjekt file into UTF-8 and, where it can, into SRT.
 // It returns the text, its format ("srt" or "sub") and whether it was read.
 func napiConvert(b []byte) ([]byte, string, bool) {
-	b = bytes.TrimPrefix(b, []byte{0xEF, 0xBB, 0xBF})
-	if !utf8.Valid(b) {
-		dec, err := charmap.Windows1250.NewDecoder().Bytes(b)
-		if err != nil {
-			return nil, "", false
-		}
-		b = dec
+	dec, _, err := subtext.Decode(b, "pl")
+	if err != nil {
+		return nil, "", false
 	}
-	text := strings.ReplaceAll(string(b), "\r\n", "\n")
+	text := strings.ReplaceAll(dec, "\r\n", "\n")
 	if strings.Contains(text, "-->") {
 		return []byte(text), "srt", true
 	}
