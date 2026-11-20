@@ -137,3 +137,10 @@ type ActiveLister interface {
 type AllLister interface {
 	ListAll(ctx context.Context) ([]Job, error)
 }
+
+// Sessioner is an engine whose client names the run of its own process. A client that
+// started again has forgotten the jobs it was given, so a Download it no longer lists
+// was not removed by hand.
+type Sessioner interface {
+	Session(ctx context.Context) (string, error)
+}

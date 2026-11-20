@@ -84,10 +84,18 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 		for _, j := range jobsIn {
 			have[j.ID] = j
 		}
+		// restarted is when the client started again, if that is known: it then forgot
+		// every download it was given, so one it does not list was not removed by hand.
+		// Asked for once, and only when a download is missing.
+		var restarted time.Time
+		asked := false
 		for _, d := range list {
 			j, ok := have[d.ExternalID]
 			if !ok {
 				j, ok = outsideJob(ctx, e, dr, v, fromStore, d.ExternalID)
+			}
+			if !ok && !asked {
+				asked, restarted = true, m.restartedAt(ctx, e, dr.ID)
 			}
 			if fromStore && !ok && !readAt.After(d.UpdatedAt) {
 				// Missing from a snapshot no newer than the row means unknown, so a grab the
@@ -124,7 +132,7 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 					j.Files = full.Files
 				}
 			}
-			if m.apply(ctx, dr, d, j, ok, st) {
+			if m.apply(ctx, dr, d, j, ok, st, restarted) {
 				active++
 			}
 		}
@@ -245,15 +253,24 @@ func (m *Manager) eventWith(ctx context.Context, d *domain.Download, kind, summa
 }
 
 // apply records one Download's new state and reports whether it is still active.
-func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Download, j Job, found bool, st settings) bool {
+// restarted is when the Downloader's client started again, zero if unknown; a
+// Download last seen before that was forgotten by the client, not removed.
+func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Download, j Job, found bool, st settings, restarted time.Time) bool {
 	now := m.now()
 	next := d
 	last := lastMoved(d)
 	failReason := ""
+	forgot := !restarted.IsZero() && restarted.After(last)
 	switch {
 	case !found && d.State == "sent" && now.Sub(last) < m.vanishGrace():
 		// Added by URL: the Downloader is still fetching the file.
 		return true
+	case !found && forgot:
+		// The client started again and lost what it was given. The row still goes, since
+		// the download is not there to follow, but the reason is not a removal.
+		m.seen(d.ID)
+		next.State = "vanished"
+		next.StateReason = strPtr(dr.Name + " restarted and forgot the download; nothing was deleted, and its files are left where they are")
 	case !found:
 		m.seen(d.ID)
 		next.State = "vanished"
@@ -417,6 +434,32 @@ func isActive(state string) bool {
 		return true
 	}
 	return false
+}
+
+// restartedAt is when the Downloader's client last started again, zero when it
+// has not been seen to. A client that restarts forgets the jobs it was given, so
+// a download it no longer lists was not removed by hand. Only a client that names
+// its own run can say (aria2 does).
+func (m *Manager) restartedAt(ctx context.Context, e Engine, id int64) time.Time {
+	s, ok := e.(Sessioner)
+	if !ok {
+		return time.Time{}
+	}
+	session, err := s.Session(ctx)
+	if err != nil || session == "" {
+		return time.Time{}
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.sessions == nil {
+		m.sessions, m.restarts = map[int64]string{}, map[int64]time.Time{}
+	}
+	before, seen := m.sessions[id]
+	m.sessions[id] = session
+	if seen && before != session {
+		m.restarts[id] = m.now()
+	}
+	return m.restarts[id]
 }
 
 // vanishGrace is how long a sent Download may be missing from its Downloader

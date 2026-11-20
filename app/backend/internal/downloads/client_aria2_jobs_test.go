@@ -29,6 +29,12 @@ func TestAria2States(t *testing.T) {
 	}{
 		{a2Row("a", "active", meta), StateDownloading, "metadata"},
 		{a2Row("a", "paused", meta), StateDownloading, "metadata"},
+		// The torrent file is fully in; the files it names start next, so the
+		// download is not done yet.
+		{a2Row("a", "complete", func(s *a2Status) {
+			s.ErrorCode = "0"
+			meta(s)
+		}), StateDownloading, "metadata"},
 		{a2Row("a", "active", func(s *a2Status) { s.Seeder = "true" }), StateFinished, "seeding"},
 		{a2Row("a", "active", func(s *a2Status) { s.CompletedLength = "100" }), StateFinished, "seeding"},
 		{a2Row("a", "active", nil), StateDownloading, "downloading"},
@@ -75,6 +81,25 @@ func TestAria2JobFields(t *testing.T) {
 	if meta.Name != "Lab Movie" || meta.ContentPath != "" {
 		t.Errorf("metadata %+v", meta)
 	}
+	// A magnet's metadata job holds the torrent file's bytes only, so its own
+	// length must never read as the download being done.
+	doneMeta := a.job(a2Row("a", "active", func(s *a2Status) {
+		s.Bittorrent.Info.Name, s.TotalLength, s.CompletedLength = "", "4651", "4651"
+		s.Files = []a2FileRow{{Path: "[METADATA]Lab Movie", Length: "4651", CompletedLength: "4651", Selected: "true"}}
+	}))
+	if doneMeta.State != StateDownloading || doneMeta.Progress != 0 || doneMeta.Size != 4651 {
+		t.Errorf("finished metadata %+v", doneMeta)
+	}
+	// aria2 reports a magnet's metadata job complete for a moment before its
+	// content job is listed; it still holds no part of the download.
+	completeMeta := a.job(a2Row("a", "complete", func(s *a2Status) {
+		s.ErrorCode = "0"
+		s.Bittorrent.Info.Name, s.TotalLength, s.CompletedLength = "", "4651", "4651"
+		s.Files = []a2FileRow{{Path: "[METADATA]Lab Movie", Length: "4651", CompletedLength: "4651", Selected: "true"}}
+	}))
+	if completeMeta.State != StateDownloading || completeMeta.Progress != 0 {
+		t.Errorf("complete metadata %+v", completeMeta)
+	}
 }
 
 func TestAria2Pick(t *testing.T) {
@@ -95,6 +120,10 @@ func TestAria2Pick(t *testing.T) {
 		{"paused over stopped", []a2Status{a2Row("c", "complete", nil), a2Row("p", "paused", nil)}, "p"},
 		{"complete over error", []a2Status{a2Row("e", "error", nil), a2Row("c", "complete", nil)}, "c"},
 		{"real over metadata", []a2Status{a2Row("m", "active", meta), a2Row("r", "active", nil)}, "r"},
+		// The metadata job can still be active when the content job it made is
+		// waiting its turn; the content job is the torrent.
+		{"waiting real over active metadata", []a2Status{a2Row("m", "active", meta), a2Row("r", "waiting", nil)}, "r"},
+		{"paused real over active metadata", []a2Status{a2Row("m", "active", meta), a2Row("r", "paused", nil)}, "r"},
 	} {
 		got, ok := pick(c.rows)
 		if c.want == "" && ok || c.want != "" && got.GID != c.want {
@@ -157,6 +186,51 @@ func TestAria2GetFilesAndHandOff(t *testing.T) {
 	}
 	if _, err := e.Get(ctx, "nothex"); err == nil || errors.Is(err, ErrNotFound) {
 		t.Errorf("bad id: %v", err)
+	}
+}
+
+// A magnet whose metadata is in and whose content job waits its turn must
+// read as the content job: 0.1 done, not the metadata job's 100%.
+func TestAria2MagnetHandoverReadsContent(t *testing.T) {
+	f := &fakeAria2{}
+	e := NewAria2(startAria2(t, f), "", nil)
+	parent := f.put(&a2Job{status: "active", hash: rtHash, dir: "/downloads/movies",
+		files: []a2FakeFile{{path: "[METADATA]Lab", length: 4651, done: 4651}}})
+	child := f.put(&a2Job{status: "waiting", hash: rtHash, dir: "/downloads/movies", name: "Lab.mkv", total: 1000, done: 100})
+	parent.followedBy, child.following = []string{child.gid}, parent.gid
+	jobs, err := e.List(context.Background(), "movies")
+	if err != nil || len(jobs) != 1 || jobs[0].Progress != 0.1 || jobs[0].State != StateQueued || jobs[0].Name != "Lab.mkv" {
+		t.Fatalf("list: %+v %v", jobs, err)
+	}
+	j, err := e.Get(context.Background(), rtHash)
+	if err != nil || j.Progress != 0.1 || j.State != StateQueued {
+		t.Errorf("get: %+v %v", j, err)
+	}
+}
+
+// A second download added after the first finished: aria2 still lists the
+// finished one, and the second's magnet is fetching its torrent file. The
+// second must read as downloading with no progress, never as the torrent
+// file's own 100%.
+func TestAria2SecondDownloadAfterAFinishedOne(t *testing.T) {
+	f := &fakeAria2{}
+	e := NewAria2(startAria2(t, f), "", nil)
+	f.put(&a2Job{status: "complete", errCode: "0", hash: rtHash, dir: "/downloads/movies", name: "First.mkv", total: 10, done: 10})
+	f.put(&a2Job{status: "complete", errCode: "0", hash: a2Other, dir: "/downloads/movies",
+		total: 4651, done: 4651, files: []a2FakeFile{{path: "[METADATA]Second.mkv", length: 4651, done: 4651}}})
+	jobs, err := e.List(context.Background(), "movies")
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]Job{}
+	for _, j := range jobs {
+		byID[j.ID] = j
+	}
+	if j := byID[rtHash]; j.State != StateFinished || j.Progress != 1 {
+		t.Errorf("the finished first download reads %+v", j)
+	}
+	if j, ok := byID[a2Other]; !ok || j.State != StateDownloading || j.Progress != 0 || j.Detail != "metadata" {
+		t.Errorf("the metadata of the second download reads %+v (listed %v)", j, ok)
 	}
 }
 
