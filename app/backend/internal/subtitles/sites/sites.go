@@ -34,7 +34,10 @@ type Query struct {
 	// digits. It is empty when the file could not be read.
 	Hash string
 	// Size is the video file's size in bytes, sent with the hash. 0 when unknown.
-	Size      int64
+	Size int64
+	// File is the video's path on disk, for sites that hash it their own way.
+	// Empty when the file could not be read.
+	File      string
 	Languages []string // two-letter codes
 }
 
@@ -115,6 +118,8 @@ var Kinds = []Kind{
 		Note: "Shows only. No account. The site has no https, so calls to it are not encrypted. Checked against fake pages only."},
 	{Kind: "bsplayer", Name: "BSPlayer", DefaultURL: "http://s1.api.bsplayer-subtitles.com", Movies: true, Shows: true, DefaultOff: true,
 		Note: "Movies and shows, matched by the video file's hash, so it needs the file on disk. No account. Starts turned off: the site is often down. Checked against fake replies only."},
+	{Kind: "napiprojekt", Name: "NapiProjekt", DefaultURL: "http://napiprojekt.pl", Movies: true, Shows: true,
+		Note: "Polish only. Movies and shows, matched by the video file's own hash, so it needs the file on disk. No account. The site has no https, so calls to it are not encrypted."},
 	{Kind: "fake", Name: "Lab subtitle site", Movies: true, Shows: true, Lab: true, Note: "The lab's fake site, for tests."},
 	{Kind: "fake_account", Name: "Lab subtitle site with an account", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"api_key"}, Lab: true,
 		Note: "The lab's fake site asking for a key, for tests of sites that need your account."},
@@ -169,6 +174,8 @@ func New(kind string, cfg Config) (Site, error) {
 		return newTVSubs(c), nil
 	case "bsplayer":
 		return newBSPlayer(c), nil
+	case "napiprojekt":
+		return newNapiProjekt(c), nil
 	case "subdl":
 		c.keyHeader = "" // subdl takes the key in the query
 		return &subdl{c: c}, nil

@@ -6516,7 +6516,8 @@
               "addic7ed",
               "yifysubtitles",
               "tvsubtitles",
-              "bsplayer"
+              "bsplayer",
+              "napiprojekt"
             ],
             "type": "string"
           },
