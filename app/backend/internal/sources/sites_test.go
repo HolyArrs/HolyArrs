@@ -206,7 +206,7 @@ func TestSiteSourceAdd(t *testing.T) {
 		Sites []Site `json:"sites"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/sources/sites", "", 200), &sites)
-	if len(sites.Sites) != 4 {
+	if len(sites.Sites) != len(Sites) || len(Sites) != 14 {
 		t.Fatalf("sites %+v", sites)
 	}
 	var x SourceView

@@ -95,7 +95,7 @@ func (h *Handlers) listSites(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"sites": Sites})
 }
 
-const sourceHelp = `send name, format (torznab, newznab, rss or site; a site Source also sends site: knaben, torrentscsv, subsplease or iptorrents), url, and if needed api_key, protocol, use_for {feed, auto_search, hand_search}, kinds, categories, min_seeders, limits, priority (1 to 50), allow_local_network, proxy, proxy_password, proxy_allow_local_network, flaresolverr`
+const sourceHelp = `send name, format (torznab, newznab, rss or site; a site Source also sends site, an id from GET /api/v1/sources/sites such as knaben or thepiratebay), url, and if needed api_key, protocol, use_for {feed, auto_search, hand_search}, kinds, categories, min_seeders, limits, priority (1 to 50), allow_local_network, proxy, proxy_password, proxy_allow_local_network, flaresolverr`
 
 // readSource reads a Source body; the masked placeholder keeps the stored secret.
 func readSource(w http.ResponseWriter, r *http.Request) (Input, bool) {

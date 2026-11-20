@@ -5696,6 +5696,10 @@
             "description": "masked when set",
             "type": "string"
           },
+          "site": {
+            "description": "the built-in site a site Source reads (GET /api/v1/sources/sites)",
+            "type": "string"
+          },
           "state": {
             "enum": [
               "enabled",
@@ -5914,6 +5918,10 @@
             "type": "boolean"
           },
           "proxy_password": {
+            "type": "string"
+          },
+          "site": {
+            "description": "for a site Source, the built-in site's id from GET /api/v1/sources/sites; set when the Source is added",
             "type": "string"
           },
           "tags": {

@@ -201,7 +201,7 @@ func revealLink(link string, keys []string) (string, error) {
 // with the Source's key, read from the vault, put back.
 func GrabLink(ctx context.Context, s *database.Store, sec SecretReader, rel domain.Release) (string, error) {
 	if !strings.Contains(rel.LinkRef, hidden) {
-		return rel.LinkRef, nil
+		return detailsLink(ctx, s, sec, rel)
 	}
 	var src domain.Source
 	if err := database.Get(ctx, s.Read(), "sources", rel.SourceID, &src); err != nil {

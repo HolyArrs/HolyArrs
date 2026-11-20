@@ -53,6 +53,7 @@ Value
 Version
 _embedded
 _held
+_id
 _new_proof
 about
 absolute
@@ -201,6 +202,7 @@ attention
 attributes
 attribution
 audio
+audio_channels
 audio_languages
 audio_tracks
 audio_unknown
@@ -416,6 +418,7 @@ data
 data_compat
 date
 dateAdded
+date_uploaded_unix
 dates
 day
 day_down
@@ -783,6 +786,7 @@ image_url
 images
 imdb
 imdbId
+imdb_code
 imdb_id
 implementation
 import_file
@@ -807,6 +811,7 @@ indexers
 indexes
 info
 infoHash
+info_hash
 infohash
 inherit
 inspection_status
@@ -1144,6 +1149,7 @@ notifications
 nth
 numSeeders
 num_complete
+num_files
 num_incomplete
 num_leechs
 num_peers
@@ -1366,6 +1372,7 @@ proxy_allow_local_network
 proxy_password
 proxy_url
 public_client
+publish_time
 published_at
 qbittorrent
 qid
@@ -1789,6 +1796,7 @@ title_ids
 title_kind
 title_language
 title_layer
+title_long
 title_name
 titles
 tls
@@ -1968,6 +1976,7 @@ version_label
 versions
 via
 videoDetails
+video_codec
 videos
 view
 vip
