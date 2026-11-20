@@ -138,6 +138,10 @@ func movieStatus(cinema, digital, physical *time.Time, now time.Time) string {
 	switch {
 	case past(digital) || past(physical):
 		return "released"
+	// With no home release date, the old apps count a movie as out 90
+	// days after it opened in cinemas.
+	case digital == nil && physical == nil && cinema != nil && !cinema.AddDate(0, 0, 90).After(now):
+		return "released"
 	case past(cinema):
 		return "inCinemas"
 	case cinema != nil || digital != nil || physical != nil:
@@ -230,6 +234,16 @@ func mediaInfoOf(f mediafiles.File) map[string]any {
 // qualityName is the old apps' quality name for a parser source and a
 // vertical resolution, such as WEBDL-1080p or Bluray-2160p Remux.
 func qualityName(source string, resolution int) string {
+	// The old apps name these without a resolution, and TV under 720p is SDTV.
+	// A disc image keeps its resolution for Sonarr, which has no BR-DISK.
+	switch source {
+	case "dvd", "cam", "telesync":
+		return sourceNames[source]
+	case "tv":
+		if resolution > 0 && resolution < 720 {
+			return "SDTV"
+		}
+	}
 	name := source
 	if n, ok := sourceNames[name]; ok {
 		name = n

@@ -114,7 +114,12 @@ func languageOf(side, name string) language {
 // when the metadata gave none, so callers always find the field.
 func originalLanguage(side string, code *string) language {
 	if code != nil {
-		if n := subtitles.LanguageName(*code); n != "" {
+		c := *code
+		// TMDB writes Cantonese as "cn"; the old apps call it Chinese.
+		if strings.EqualFold(c, "cn") || strings.EqualFold(c, "yue") {
+			c = "zh"
+		}
+		if n := subtitles.LanguageName(c); n != "" {
 			return languageOf(side, n)
 		}
 	}

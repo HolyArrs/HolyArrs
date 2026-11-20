@@ -134,6 +134,9 @@ func fullQuality(side, name string, resolution int) map[string]any {
 	if side == "radarr" && strings.HasPrefix(look, "Bluray-") && strings.HasSuffix(look, " Remux") {
 		look = "Remux-" + strings.TrimSuffix(strings.TrimPrefix(look, "Bluray-"), " Remux") // Radarr's own name
 	}
+	if side == "radarr" && strings.HasPrefix(look, "BR-DISK-") {
+		look = "BR-DISK"
+	}
 	q := wireQuality{Name: name, Source: "unknown", Resolution: resolution}
 	if side == "radarr" {
 		q.Modifier = "none"
