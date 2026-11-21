@@ -175,6 +175,9 @@ func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 			}
 		}
 	}
+	if w := releasename.AmpReading(name); w != "" {
+		sides = append(sides, w)
+	}
 	var cands []*TitleRef
 	for i := range lib {
 		t := &lib[i]
