@@ -61,6 +61,11 @@ Rating string `db:"rating"`
 People []string `db:"people,json"`
 Score *float64 `db:"score"`
 Votes int `db:"votes"`
+IMDbRating *float64 `db:"imdb_rating"`
+IMDbVotes int `db:"imdb_votes"`
+RottenTomatoes *int `db:"rotten_tomatoes"`
+Metacritic *int `db:"metacritic"`
+OMDbCheckedAt *time.Time `db:"omdb_checked_at"`
 Directors []string `db:"directors,json"`
 Studio string `db:"studio"`
 Tags []string `db:"tags,json"`

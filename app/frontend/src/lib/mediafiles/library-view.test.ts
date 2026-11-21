@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { TitleView } from '../core/types.ts';
 import type { Column } from './table.ts';
-import { buildEntries, cell, drawRange, firstOnScreen, holdFocus, holder, placeKeeper, posterCols, posterRowGuess, posterRowKey, rowCell, tone } from './library-view.ts';
+import { buildEntries, cell, cellTitle, drawRange, firstOnScreen, holdFocus, holder, placeKeeper, posterCols, posterRowGuess, posterRowKey, rowCell, tone } from './library-view.ts';
 import { fakeWindow } from './fake-window.ts';
 
 const t = (id: number) => ({ id, kind: 'movie', slots: [] }) as unknown as TitleView;
@@ -36,6 +36,13 @@ describe('rowCell / cell', () => {
 		expect(cell({ ...m, score: 9.1, votes: 3 } as TitleView, col('score'), '')).toBe('');
 		expect(cell(m, col('score'), '')).toBe('');
 		expect(rowCell(m, col('episodes'), { have: 3, total: 10 }, '')).toBe('3/10');
+		// OMDb's scores show on hover over the score, the way the title page words them.
+		const omdb = { ...m, score: 7.4, votes: 900, imdb_rating: 8.1, imdb_votes: 412345, rotten_tomatoes: 91, metacritic: 77 } as TitleView;
+		expect(cellTitle(omdb, col('score'), '')).toBe('TMDB 7.4 · IMDb 8.1 · Rotten Tomatoes critics 91% · Metacritic 77');
+		expect(cellTitle({ ...m, metacritic: 64 } as TitleView, col('score'), '')).toBe('Metacritic 64');
+		expect(cellTitle({ ...m, score: 7.4, votes: 900 } as TitleView, col('score'), '')).toBeUndefined();
+		expect(cellTitle(omdb, col('year'), '')).toBeUndefined();
+		expect(cellTitle({ ...m, folder_path: '/m/A' } as TitleView, col('path'), '')).toBe('/m/A');
 		expect(rowCell(m, col('episodes'), { have: 0, total: 0 }, '')).toBe('');
 	});
 });

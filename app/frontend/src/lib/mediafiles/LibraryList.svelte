@@ -34,7 +34,7 @@
 	import { emptyAdds, exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type AddKind, type Kind } from './library.ts';
 	import { libraryState } from './library-state.ts';
 	import { partOff } from './parts.svelte.ts';
-	import { buildEntries, cell, drawRange, grow, holdFocus, isProgressCol, placeKeeper, posterCols, posterRowGuess, posterRowKey, posterExtra, posterFacts, requestedBy, rowCell, scoreText, shrink, tone, type Entry, type View } from './library-view.ts';
+	import { buildEntries, cell, cellTitle, drawRange, grow, holdFocus, isProgressCol, placeKeeper, posterCols, posterRowGuess, posterRowKey, posterExtra, posterFacts, requestedBy, rowCell, scoreText, shrink, tone, type Entry, type View } from './library-view.ts';
 	import { needsAttention, barOf, flipFrom, type PosterDetail } from './poster.ts';
 	import { columnSort, progressOf, sortName, sortsFor, tableMinWidth, type Column, type FilterState, type LibKind, type SortDir, type SortKey } from './table.ts';
 	import { artName, slotKind } from './title-page.ts';
@@ -479,7 +479,7 @@
 											</span>
 											{#if !phone}
 												<span class="ls {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}><i class="dot" aria-hidden="true"></i>{ls?.label ?? '—'}</span>
-												{#each rowCols as c (c.id)}<span class="lc" title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}><PersonText text={rowCell(t, c, p, seriesOf(t)) || '—'} /></span>{/each}
+												{#each rowCols as c (c.id)}<span class="lc" title={cellTitle(t, c, seriesOf(t))}><PersonText text={rowCell(t, c, p, seriesOf(t)) || '—'} /></span>{/each}
 												<span class="acts">
 													{#if canManage && !selecting}
 														<IconButton icon="search" size="sm" tipSide="below-end" label={tr('mediafiles.poster.searchFor', { title: t.name })} tabindex={ri === active ? 0 : -1} onclick={() => searchTitles([t.id])} />
@@ -525,7 +525,7 @@
 															<span class="sr-only">{progressText(t)}</span>
 														</span>
 													{:else}
-														<span class="c" class:num={c.numeric} class:path={c.id === 'path'} title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}><PersonText text={cell(t, c, seriesOf(t)) || '—'} /></span>
+														<span class="c" class:num={c.numeric} class:path={c.id === 'path'} title={cellTitle(t, c, seriesOf(t))}><PersonText text={cell(t, c, seriesOf(t)) || '—'} /></span>
 													{/if}
 												{/each}
 											{/if}

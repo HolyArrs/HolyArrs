@@ -461,6 +461,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	go lib.Artwork.KeepTMDBFresh(ctx)
 	lib.Shows = showMD
 	lib.EpisodeGroups = hosted.TMDB()
+	lib.OMDb = omdbSource(hosted)
 	lib.AnimeNames = func(ctx context.Context, kind, tmdbID, name string) []string {
 		by := "tmdb_tv"
 		if kind == "movie" {
@@ -597,6 +598,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}})
 	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
+	optional(jobs.Loop{Name: "omdb_scores", Label: "IMDb, Rotten Tomatoes and Metacritic scores", Every: library.OMDbEvery, Run: lib.OMDbPass})
 	sso, err := accounts.SSOFromEnv(c.URLBase)
 	if err != nil {
 		return err

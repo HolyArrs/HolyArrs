@@ -7,6 +7,7 @@ DownloadPaused
 DownloadRate
 DownloadRateHi
 DownloadRateLo
+Error
 ExParStatus
 FileSizeHi
 FileSizeLo
@@ -22,6 +23,7 @@ MarkStatus
 MaxParentalRating
 MediaContainer
 Metadata
+Metascore
 MinPostTime
 MoveStatus
 NZBFilename
@@ -36,11 +38,14 @@ Policy
 ProductName
 Progress
 ProviderIds
+Ratings
 RemainingSizeHi
 RemainingSizeLo
+Response
 ScriptStatus
 SeriesId
 ServerName
+Source
 Status
 Type
 UnpackStatus
@@ -780,7 +785,11 @@ image_url
 images
 imdb
 imdbId
+imdbRating
+imdbVotes
 imdb_id
+imdb_rating
+imdb_votes
 implementation
 import_file
 import_folder
@@ -984,6 +993,7 @@ member
 members
 message
 messages
+metacritic
 metadata
 metadata_percent_complete
 metadata_profiles
@@ -1494,6 +1504,7 @@ rollback_at
 rollout_percent
 romaji
 rootFolderPath
+rotten_tomatoes
 routine_days
 row_type
 rows

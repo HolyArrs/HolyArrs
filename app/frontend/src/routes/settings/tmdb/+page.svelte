@@ -114,6 +114,7 @@
 		trailers: () => t('settings.tmdb.src.trailers'),
 		ratings: () => t('settings.tmdb.src.ratings'),
 		art: () => t('settings.tmdb.src.art'),
+		omdb: () => t('settings.tmdb.src.omdb'),
 		charts: () => t('settings.tmdb.src.charts'),
 		streaming: () => t('settings.tmdb.src.streaming'),
 		wiki: () => t('settings.tmdb.src.wiki'),
@@ -121,20 +122,23 @@
 	};
 	const sourceName = (s: { id: string; name: string }) => sourceWords[s.id]?.() ?? s.name;
 	const offRows = $derived((answer?.sources ?? []).filter((s) => s.state !== 'on'));
-	const shownKeys = $derived<KeyName[]>(mode === 'own' ? ['tmdb_token', 'tvdb_key', 'mdblist_key', 'fanart_key'] : mode === 'full' ? ['tvdb_key'] : []);
+	// TheTVDB and OMDb are asked in every mode but off, so their keys show with the HolyArrs server too.
+	const shownKeys = $derived<KeyName[]>(mode === 'own' ? ['tmdb_token', 'tvdb_key', 'mdblist_key', 'fanart_key', 'omdb_key'] : mode === 'full' ? ['tvdb_key', 'omdb_key'] : []);
 	const keyLabel: Record<KeyName, () => string> = {
 		tmdb_token: () => t('settings.tmdb.keyTmdb'),
 		tvdb_key: () => t('settings.tmdb.keyTvdb'),
 		tvdb_pin: () => t('settings.tmdb.keyTvdbPin'),
 		mdblist_key: () => t('settings.tmdb.keyMdblist'),
-		fanart_key: () => t('settings.tmdb.keyFanart')
+		fanart_key: () => t('settings.tmdb.keyFanart'),
+		omdb_key: () => t('settings.tmdb.keyOmdb')
 	};
 	const keyHint: Record<KeyName, () => string> = {
 		tmdb_token: () => t('settings.tmdb.keyTmdbHint'),
-		tvdb_key: () => t('settings.tmdb.keyTvdbHint'),
+		tvdb_key: () => (mode === 'own' ? t('settings.tmdb.keyTvdbHint') : t('settings.tmdb.tvdbDesc')),
 		tvdb_pin: () => t('settings.tmdb.keyTvdbPinHint'),
 		mdblist_key: () => t('settings.tmdb.keyMdblistHint'),
-		fanart_key: () => t('settings.tmdb.keyFanartHint')
+		fanart_key: () => t('settings.tmdb.keyFanartHint'),
+		omdb_key: () => t('settings.tmdb.keyOmdbHint')
 	};
 </script>
 
@@ -169,7 +173,7 @@
 	</SettingsCard>
 
 	{#if shownKeys.length}
-	<SettingsCard id="metadata-keys" title={mode === 'own' ? t('settings.tmdb.keysTitle') : t('settings.tmdb.tvdbTitle')} description={mode === 'own' ? t('settings.tmdb.keysDesc') : t('settings.tmdb.tvdbDesc')}>
+	<SettingsCard id="metadata-keys" title={t('settings.tmdb.keysTitle')} description={mode === 'own' ? t('settings.tmdb.keysDesc') : undefined}>
 		<form id="metadata-keys-form" onsubmit={saveKeys} aria-label={t('settings.tmdb.keysTitle')}>
 			{#each shownKeys as k (k)}
 				{@const fromDocker = k === 'tmdb_token' && answer.tmdb_key_from_docker}

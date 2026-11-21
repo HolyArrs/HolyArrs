@@ -55,6 +55,11 @@
   "People": null,
   "Score": null,
   "Votes": 0,
+  "IMDbRating": null,
+  "IMDbVotes": 0,
+  "RottenTomatoes": null,
+  "Metacritic": null,
+  "OMDbCheckedAt": null,
   "Directors": null,
   "Studio": "",
   "Tags": null
