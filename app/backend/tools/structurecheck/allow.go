@@ -35,6 +35,7 @@ var layers = map[string]int{
 	"updates":      11,
 	"plugins":      11, // Plugin Engine: manifests, signed lists, install checks
 	"setup":        11,
+	"youtube":      11, // YouTube library: follows, downloads, player files
 }
 
 // coreRows orders the core packages. A core package imports only core
@@ -60,7 +61,6 @@ var coreRows = map[string]int{
 // means the package is split or dissolved and is not judged.
 var packageHome = map[string]string{
 	"ratings":       "metadata",
-	"youtube":       "metadata",
 	"judge":         "mediafiles",
 	"naming":        "mediafiles",
 	"mediainfo":     "mediafiles",
@@ -198,4 +198,9 @@ var tableOwner = map[string]string{
 	"compat_hooks":      "arrapi",
 	"compat_formats":    "arrapi",
 	"compat_profiles":   "arrapi",
+
+	// youtube
+	"youtube_follows":       "youtube",
+	"youtube_video_follows": "youtube",
+	"youtube_videos":        "youtube",
 }

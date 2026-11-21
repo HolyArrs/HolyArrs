@@ -1,0 +1,14 @@
+{
+  "_type": "video",
+  "id": "@ID@",
+  "title": "A video",
+  "channel": "Rick Astley",
+  "channel_id": "UCuAXFkgsw1L7xaCfnd5JJOw",
+  "uploader": "Rick Astley",
+  "duration": 212.6,
+  "upload_date": "20240305",
+  "timestamp": 1709650800,
+  "release_timestamp": null,
+  "live_status": "not_live",
+  "webpage_url": "https://www.youtube.com/watch?v=@ID@"
+}

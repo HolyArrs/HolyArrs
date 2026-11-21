@@ -1,0 +1,14 @@
+{
+  "_type": "playlist",
+  "id": "PLtestlist01",
+  "title": "Test playlist",
+  "channel": "Some Owner",
+  "channel_id": "UCxxxxxxxxxxxxxxxxxxxxx1",
+  "uploader": "Some Owner",
+  "playlist_count": 3,
+  "entries": [
+    {"_type": "url", "ie_key": "Youtube", "id": "aaaaaaaaaa1", "url": "https://www.youtube.com/watch?v=aaaaaaaaaa1", "title": "First", "duration": 61.0, "live_status": null, "timestamp": null},
+    {"_type": "url", "ie_key": "Youtube", "id": "aaaaaaaaaa2", "url": "https://www.youtube.com/watch?v=aaaaaaaaaa2", "title": "Second", "duration": null, "live_status": null},
+    {"_type": "url", "ie_key": "Youtube", "id": "aaaaaaaaaa3", "url": "https://www.youtube.com/shorts/aaaaaaaaaa3", "title": "Third", "duration": 30}
+  ]
+}

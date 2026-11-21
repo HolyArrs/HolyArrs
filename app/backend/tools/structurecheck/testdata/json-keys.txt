@@ -227,6 +227,7 @@ back
 backdrop
 backdrop_path
 backdrops
+backfill
 backgrounds
 bad
 badge
@@ -306,6 +307,9 @@ change
 changed
 changelog_url
 changes
+channel
+channel_id
+channel_name
 channels
 character
 characters
@@ -511,6 +515,7 @@ dry
 dry_run
 duplicates
 duration
+duration_seconds
 each_limit
 early_release_grace_hours
 echoed
@@ -636,13 +641,16 @@ fixed
 flags
 flap_guard
 flatrate
+floor_bytes
 folder
 folder_moved
 folder_name
 folder_path
 folder_pattern
+folder_set
 folders
 follow
+follow_ids
 followedBy
 followed_at
 followers
@@ -695,6 +703,7 @@ genre_name
 genres
 gid
 go
+gone
 good_enough
 good_enough_at
 good_enough_changes
@@ -795,6 +804,7 @@ in_use
 inactive_minutes
 inactive_seeding_time_limit
 include
+include_shorts
 included
 incomplete
 index
@@ -837,6 +847,7 @@ k
 kbpersec
 kdf
 keep
+keep_last
 keep_specials
 keep_up_to_date
 kept
@@ -867,6 +878,7 @@ last_activity
 last_air
 last_air_date
 last_check
+last_checked_at
 last_error
 last_failure
 last_good
@@ -931,6 +943,7 @@ listen_count
 listeners
 listeners_change_today
 live_key
+live_status
 local
 local_network_allowed
 local_networks
@@ -948,6 +961,7 @@ logo_path
 logos
 looked
 lossless
+low_space
 low_space_mb
 m
 machine_made
@@ -959,6 +973,7 @@ magnetUrl
 main
 mal
 manifest_sha256
+manual
 mapped
 match
 matched
@@ -998,6 +1013,7 @@ minFormatScore
 minUpgradeFormatScore
 min_app_version
 min_blocklist_counter
+min_free_gb
 min_free_mb
 min_from
 min_password_length
@@ -1009,6 +1025,7 @@ min_upgrade_score
 mine
 minimumAvailability
 minutes
+mirror
 misc
 miss
 missing
@@ -1295,6 +1312,8 @@ plan_hash
 plans
 playabilityStatus
 playerStoryboardSpecRenderer
+playlist_count
+playlists
 plays
 plex
 plex_friends
@@ -1307,6 +1326,7 @@ pop
 popularity
 port
 position
+position_seconds
 posted_at
 poster
 poster_path
@@ -1369,6 +1389,7 @@ qualities
 quality
 qualityProfileId
 qualityVersion
+quality_max_height
 quality_name
 quality_profiles
 query
@@ -1440,6 +1461,7 @@ release_names
 release_profiles
 release_statuses
 release_tests
+release_timestamp
 released
 released_at
 releases
@@ -1773,6 +1795,7 @@ time_zone
 timed
 timeleft
 timeout_ms
+timestamp
 timezone
 title
 titleSlug
@@ -1920,8 +1943,10 @@ upgrade_allowed
 upgrade_min_points
 uploadLength
 uploadSpeed
+upload_date
 upload_payload_rate
 uploaded
+uploaded_at
 uploader
 upsert
 upspeed
@@ -1961,6 +1986,7 @@ version_label
 versions
 via
 videoDetails
+video_id
 videos
 view
 vip
@@ -1979,6 +2005,7 @@ warnings
 was_admin
 was_owner
 wasted
+watched_at
 watched_edition
 watching
 watchlist
@@ -2011,3 +2038,6 @@ year
 year_from
 year_to
 youtube_id
+yt_id
+ytdlp_update_error
+ytdlp_updated_at

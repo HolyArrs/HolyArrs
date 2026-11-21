@@ -18,7 +18,7 @@ import (
 // Modules are the module packages allowed under internal/, besides core.
 var Modules = []string{"suggest", "importer", "library", "requests", "movies", "shows", "music", "sources", "downloads", "subtitles", "discover",
 	"mediafiles", "metadata", "mediaservers", "accounts", "alerts", "migrate", "arrapi", "ai", "backups",
-	"health", "updates", "setup", "plugins"}
+	"health", "updates", "setup", "plugins", "youtube"}
 
 // CoreParts are the packages allowed under internal/core/.
 var CoreParts = []string{"database", "webserver", "outbound", "jobs", "logs", "files", "secrets", "startup", "releasename", "model", "parts", "doctor"}
@@ -227,7 +227,7 @@ func TestCoreImportsNoModule(t *testing.T) {
 }
 
 // testOnlySubs are helper packages another module's tests may import.
-var testOnlySubs = []string{"clienttest", "signtest", "fakesite"}
+var testOnlySubs = []string{"clienttest", "signtest", "fakesite", "youtubetest"}
 
 func TestModuleImportsRootOnly(t *testing.T) {
 	root := repoRoot(t)
