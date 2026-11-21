@@ -51,6 +51,7 @@ export const sections: Section[] = [
 	{ href: '/settings/parts', group: 'library', tint: 'graphite', get label() { return t('core.settings.parts.label'); }, icon: 'grid', get about() { return t('core.settings.parts.about'); }, need: 'users' },
 	{ href: '/settings/outside-lists', group: 'library', tint: 'teal', get label() { return t('core.settings.outsideLists.label'); }, icon: 'inbox', get about() { return t('core.settings.outsideLists.about'); } },
 	{ href: '/settings/move', group: 'library', tint: 'teal', get label() { return t('core.settings.move.label'); }, icon: 'upload', get about() { return t('core.settings.move.about'); }, need: 'users' },
+	{ href: '/settings/youtube', group: 'library', tint: 'red', get label() { return t('core.settings.youtube.label'); }, icon: 'play', get about() { return t('core.settings.youtube.about'); }, need: 'users', feature: 'youtube' },
 
 	{ href: '/settings/downloaders', group: 'downloads', tint: 'green', get label() { return t('core.settings.downloaders.label'); }, icon: 'downloader', get about() { return t('core.settings.downloaders.about'); } },
 	{ href: '/settings/sources', group: 'downloads', tint: 'blue', get label() { return t('core.settings.sources.label'); }, icon: 'source', get about() { return t('core.settings.sources.about'); } },

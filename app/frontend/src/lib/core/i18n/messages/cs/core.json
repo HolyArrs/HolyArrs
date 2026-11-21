@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Seznamy, které přidávají tituly za vás",
 	"core.settings.move.label": "Import z jiných aplikací",
 	"core.settings.move.about": "Převezměte Sonarr, Radarr a další",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Složka, programy a součty",
 	"core.settings.downloaders.label": "Stahovače",
 	"core.settings.downloaders.about": "Vaše torrentové a usenetové aplikace",
 	"core.settings.sources.label": "Zdroje",

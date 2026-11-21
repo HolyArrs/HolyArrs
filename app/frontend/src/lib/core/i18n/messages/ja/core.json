@@ -105,6 +105,8 @@
 	"core.settings.outsideLists.about": "作品を自動で追加するリスト",
 	"core.settings.move.label": "ほかのアプリからのインポート",
 	"core.settings.move.about": "Sonarr、Radarr などから引き継ぐ",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "フォルダー、プログラム、合計",
 	"core.settings.downloaders.label": "ダウンローダー",
 	"core.settings.downloaders.about": "トレントと Usenet のアプリ",
 	"core.settings.sources.label": "ソース",

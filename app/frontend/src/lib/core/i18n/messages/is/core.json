@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Listar sem bæta titlum við fyrir þig",
 	"core.settings.move.label": "Flytja inn úr öðrum forritum",
 	"core.settings.move.about": "Komdu með Sonarr, Radarr og fleira",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Mappa, forrit og samtölur",
 	"core.settings.downloaders.label": "Niðurhalarar",
 	"core.settings.downloaders.about": "Torrent- og Usenet-forritin þín",
 	"core.settings.sources.label": "Heimildir",

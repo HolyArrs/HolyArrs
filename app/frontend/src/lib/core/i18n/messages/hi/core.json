@@ -105,6 +105,8 @@
 	"core.settings.outsideLists.about": "सूचियाँ जो आपके लिए टाइटल जोड़ती हैं",
 	"core.settings.move.label": "दूसरे ऐप से इंपोर्ट",
 	"core.settings.move.about": "Sonarr, Radarr और बाकी यहाँ लाएं",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "फ़ोल्डर, प्रोग्राम और कुल",
 	"core.settings.downloaders.label": "डाउनलोडर",
 	"core.settings.downloaders.about": "आपके टॉरेंट और Usenet ऐप",
 	"core.settings.sources.label": "सोर्स",

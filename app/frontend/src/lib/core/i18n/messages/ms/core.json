@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Senarai yang menambah tajuk untuk anda",
 	"core.settings.move.label": "Import daripada apl lain",
 	"core.settings.move.about": "Bawa masuk Sonarr, Radarr dan banyak lagi",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Folder, program dan jumlah",
 	"core.settings.downloaders.label": "Pemuat turun",
 	"core.settings.downloaders.about": "Apl torrent dan Usenet anda",
 	"core.settings.sources.label": "Sumber",

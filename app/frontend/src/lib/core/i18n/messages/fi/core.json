@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Listat, jotka lisäävät nimikkeitä puolestasi",
 	"core.settings.move.label": "Tuonti muista sovelluksista",
 	"core.settings.move.about": "Tuo Sonarr, Radarr ja muut",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Kansio, ohjelmat ja yhteensä",
 	"core.settings.downloaders.label": "Lataajat",
 	"core.settings.downloaders.about": "Torrent- ja Usenet-sovelluksesi",
 	"core.settings.sources.label": "Lähteet",

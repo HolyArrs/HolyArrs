@@ -105,6 +105,8 @@
 	"core.settings.outsideLists.about": "Lijsten die titels voor je toevoegen",
 	"core.settings.move.label": "Importeren van andere apps",
 	"core.settings.move.about": "Neem Sonarr, Radarr en meer over",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Map, programma's en totalen",
 	"core.settings.downloaders.label": "Downloaders",
 	"core.settings.downloaders.about": "Je torrent- en Usenet-apps",
 	"core.settings.sources.label": "Bronnen",

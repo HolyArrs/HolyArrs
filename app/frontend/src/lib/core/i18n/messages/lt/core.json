@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Sąrašai, kurie prideda kūrinius už jus",
 	"core.settings.move.label": "Importas iš kitų programų",
 	"core.settings.move.about": "Perkelkite Sonarr, Radarr ir kita",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Aplankas, programos ir sumos",
 	"core.settings.downloaders.label": "Atsisiuntėjai",
 	"core.settings.downloaders.about": "Jūsų torentų ir Usenet programos",
 	"core.settings.sources.label": "Šaltiniai",

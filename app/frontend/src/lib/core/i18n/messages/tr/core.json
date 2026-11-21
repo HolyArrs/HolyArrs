@@ -105,6 +105,8 @@
 	"core.settings.outsideLists.about": "Senin için başlık ekleyen listeler",
 	"core.settings.move.label": "Diğer uygulamalardan içe aktar",
 	"core.settings.move.about": "Sonarr, Radarr ve diğerlerini getir",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Klasör, programlar ve toplamlar",
 	"core.settings.downloaders.label": "İndiriciler",
 	"core.settings.downloaders.about": "Torrent ve Usenet uygulamaların",
 	"core.settings.sources.label": "Kaynaklar",

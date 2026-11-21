@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Danh sách thêm tựa giúp bạn",
 	"core.settings.move.label": "Nhập từ ứng dụng khác",
 	"core.settings.move.about": "Mang Sonarr, Radarr và nhiều hơn sang",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Thư mục, chương trình và tổng số",
 	"core.settings.downloaders.label": "Trình tải",
 	"core.settings.downloaders.about": "Các ứng dụng torrent và Usenet của bạn",
 	"core.settings.sources.label": "Nguồn",

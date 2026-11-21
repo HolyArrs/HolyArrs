@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Liste care adaugă titluri pentru tine",
 	"core.settings.move.label": "Import din alte aplicații",
 	"core.settings.move.about": "Adu Sonarr, Radarr și altele",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Dosar, programe și totaluri",
 	"core.settings.downloaders.label": "Programe de descărcare",
 	"core.settings.downloaders.about": "Aplicațiile tale de torrent și Usenet",
 	"core.settings.sources.label": "Surse",

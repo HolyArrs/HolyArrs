@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "உங்களுக்காகத் தலைப்புகளைச் சேர்க்கும் பட்டியல்கள்",
 	"core.settings.move.label": "பிற ஆப்களிலிருந்து இறக்குமதி",
 	"core.settings.move.about": "Sonarr, Radarr மற்றும் பிறவற்றைக் கொண்டுவாருங்கள்",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "கோப்புறை, நிரல்கள், மொத்தங்கள்",
 	"core.settings.downloaders.label": "பதிவிறக்கிகள்",
 	"core.settings.downloaders.about": "உங்கள் டொரண்ட், Usenet ஆப்கள்",
 	"core.settings.sources.label": "மூலங்கள்",

@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Saraksti, kas pievieno nosaukumus tavā vietā",
 	"core.settings.move.label": "Importēt no citām lietotnēm",
 	"core.settings.move.about": "Pārnes Sonarr, Radarr un citas",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Mape, programmas un kopsummas",
 	"core.settings.downloaders.label": "Lejupielādētāji",
 	"core.settings.downloaders.about": "Tavas torrentu un Usenet lietotnes",
 	"core.settings.sources.label": "Avoti",

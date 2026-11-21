@@ -105,6 +105,8 @@
 	"core.settings.outsideLists.about": "替你添加条目的列表",
 	"core.settings.move.label": "从其他应用导入",
 	"core.settings.move.about": "迁入 Sonarr、Radarr 等",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "文件夹、程序和总计",
 	"core.settings.downloaders.label": "下载器",
 	"core.settings.downloaders.about": "你的种子和 Usenet 应用",
 	"core.settings.sources.label": "来源",

@@ -105,6 +105,8 @@
 	"core.settings.outsideLists.about": "Списки, що додають тайтли за тебе",
 	"core.settings.move.label": "Імпорт з інших застосунків",
 	"core.settings.move.about": "Перенеси Sonarr, Radarr та інше",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Тека, програми й підсумки",
 	"core.settings.downloaders.label": "Завантажувачі",
 	"core.settings.downloaders.about": "Твої торент- і Usenet-застосунки",
 	"core.settings.sources.label": "Джерела",

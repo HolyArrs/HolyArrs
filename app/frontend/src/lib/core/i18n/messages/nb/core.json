@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Lister som legger til titler for deg",
 	"core.settings.move.label": "Importer fra andre apper",
 	"core.settings.move.about": "Ta med Sonarr, Radarr og mer",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Mappe, programmer og totaler",
 	"core.settings.downloaders.label": "Nedlastere",
 	"core.settings.downloaders.about": "Torrent- og Usenet-appene dine",
 	"core.settings.sources.label": "Kilder",

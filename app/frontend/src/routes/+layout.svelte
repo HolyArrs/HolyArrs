@@ -101,6 +101,7 @@
 		buildNav({
 			allowed: (n) => allowed(n),
 			off: (href) => !!offPartName(partsNow.answer, href),
+			held: session.held,
 			kinds,
 			waitingAsks: inbox.waiting,
 			decisions: decisions.count,
@@ -224,7 +225,7 @@
 		dlTop.toggle = () => void toggleSidebar();
 	});
 	// History has its own top row too (search, Live, Filter), so the shared bar steps aside there as well.
-	const topHidden = $derived(path === '/downloads' || path === '/library' || path === '/downloads/history');
+	const topHidden = $derived(path === '/downloads' || path === '/library' || path === '/downloads/history' || path === '/youtube');
 	const typingIn = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 	function keys(e: KeyboardEvent) {
 		if (!ready || bare) return;
@@ -350,6 +351,8 @@
 		if (p.startsWith('/downloads')) return allowed('manage_library');
 		if (p === '/library/held' || p === '/library/turned-down' || p === '/library/rename' || p === '/library/import' || p === '/library/import-files' || p === '/library/missing-subtitles' || p === '/library/copies' || p === '/library/stats') return allowed('manage_library');
 		if (p.startsWith('/requests')) return allowed('wishlist');
+		// A person's own YouTube videos: never a Kid's, and no page at all while the feature is held back.
+		if (p === '/youtube' || p.startsWith('/youtube/')) return allowed('youtube') && !session.kid && !session.held('youtube');
 		// Status sits under Manage, as in the side menu.
 		if (p.startsWith('/health')) return allowed('manage_library');
 		// A Settings page the person may not open shows a short note there instead of a bounce.

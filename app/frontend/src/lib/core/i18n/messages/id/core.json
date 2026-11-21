@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Daftar yang menambahkan judul untukmu",
 	"core.settings.move.label": "Impor dari aplikasi lain",
 	"core.settings.move.about": "Bawa Sonarr, Radarr, dan lainnya",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Folder, program, dan total",
 	"core.settings.downloaders.label": "Pengunduh",
 	"core.settings.downloaders.about": "Aplikasi torrent dan Usenet-mu",
 	"core.settings.sources.label": "Sumber",

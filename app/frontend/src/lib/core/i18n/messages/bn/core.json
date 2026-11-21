@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "যে তালিকা আপনার হয়ে টাইটেল যোগ করে",
 	"core.settings.move.label": "অন্য অ্যাপ থেকে ইমপোর্ট",
 	"core.settings.move.about": "Sonarr, Radarr ও আরও অনেক কিছু নিয়ে আসুন",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "ফোল্ডার, প্রোগ্রাম ও মোট",
 	"core.settings.downloaders.label": "ডাউনলোডার",
 	"core.settings.downloaders.about": "আপনার টরেন্ট ও ইউজনেট অ্যাপ",
 	"core.settings.sources.label": "সোর্স",

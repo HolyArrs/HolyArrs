@@ -105,6 +105,8 @@
 	"core.settings.outsideLists.about": "قوائم تضيف الأعمال لك",
 	"core.settings.move.label": "الاستيراد من تطبيقات أخرى",
 	"core.settings.move.about": "انقل Sonarr وRadarr وغيرهما",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "المجلد والبرامج والإجماليات",
 	"core.settings.downloaders.label": "برامج التنزيل",
 	"core.settings.downloaders.about": "تطبيقات التورنت وUsenet لديك",
 	"core.settings.sources.label": "المصادر",

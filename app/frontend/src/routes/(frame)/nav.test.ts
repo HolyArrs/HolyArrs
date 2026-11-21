@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 const owner: NavInput = { allowed: () => true, off: () => false, kinds: ['movie', 'show', 'artist'], waitingAsks: 3, decisions: 1, unread: 0 };
 const memberPerms = new Set(['wishlist']);
 const member: NavInput = { ...owner, allowed: (n) => memberPerms.has(n) };
+const library = (i: NavInput) => buildNav(i).find((s) => s.id === 'library')?.items.map((x) => x.href) ?? [];
 
 const labels = (input: NavInput) => buildNav(input).map((s) => [s.label, s.items.map((i) => i.label)]);
 
@@ -19,11 +20,28 @@ describe('buildNav', () => {
 	it('gives owners every section, with Requests last under Your stuff', () => {
 		expect(labels(owner)).toEqual([
 			[null, ['Home', 'Explore', 'New & Popular']],
-			['Library', ['Movies', 'TV shows', 'Music', 'Stats']],
+			['Library', ['Movies', 'TV shows', 'Music', 'YouTube', 'Stats']],
 			['Your stuff', ['Calendar', 'Requests']],
 			['Activity', ['Downloads', 'History']],
 			['System', ['Status', 'Plugins', 'Settings']]
 		]);
+	});
+	it('shows YouTube in the Library, after the kinds, for people with the permission', () => {
+		const perms = new Set(['wishlist', 'youtube']);
+		const nav = buildNav({ ...member, allowed: (n) => perms.has(n), held: (f) => f !== 'youtube' });
+		const lib = nav.find((s) => s.id === 'library')?.items ?? [];
+		expect(lib.map((i) => i.label)).toEqual(['Movies', 'TV shows', 'Music', 'YouTube']);
+		expect(lib.at(-1)).toMatchObject({ href: '/youtube', label: 'YouTube', icon: 'play', need: 'youtube' });
+		expect(nav.find((s) => s.id === 'yours')?.items.map((i) => i.href)).not.toContain('/youtube');
+		// With every library kind turned off the Library still holds YouTube.
+		expect(labels({ ...owner, kinds: [], allowed: (n) => perms.has(n) })[1]).toEqual(['Library', ['YouTube']]);
+	});
+	it('hides YouTube while held, for kids and without the permission', () => {
+		expect(library({ ...owner, held: (f) => f === 'youtube' })).not.toContain('/youtube');
+		expect(library({ ...owner, kid: true })).not.toContain('/youtube');
+		expect(library({ ...owner, allowed: (n) => n !== 'youtube' })).not.toContain('/youtube');
+		expect(library({ ...owner, off: (h) => h === '/youtube' })).not.toContain('/youtube');
+		expect(library(member)).not.toContain('/youtube');
 	});
 	it('lists Library stats only for people who manage the Library', () => {
 		const lib = (i: NavInput) => buildNav(i).find((s) => s.id === 'library')?.items.map((x) => x.href);
@@ -55,7 +73,7 @@ describe('buildNav', () => {
 	});
 	it('drops places whose part is off', () => {
 		const nav = buildNav({ ...owner, kinds: ['show'], off: (h) => h === '/requests' });
-		expect(nav.find((s) => s.id === 'library')?.items.map((i) => i.label)).toEqual(['TV shows', 'Stats']);
+		expect(nav.find((s) => s.id === 'library')?.items.map((i) => i.label)).toEqual(['TV shows', 'YouTube', 'Stats']);
 		expect(nav.find((s) => s.id === 'yours')?.items.map((i) => i.label)).not.toContain('Requests');
 	});
 	it('carries the badge counts', () => {

@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "فهرست‌هایی که برایت عنوان اضافه می‌کنند",
 	"core.settings.move.label": "وارد کردن از برنامه‌های دیگر",
 	"core.settings.move.about": "Sonarr، Radarr و بیشتر را بیاور",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "پوشه، برنامه‌ها و جمع‌ها",
 	"core.settings.downloaders.label": "دانلودرها",
 	"core.settings.downloaders.about": "برنامه‌های تورنت و Usenet تو",
 	"core.settings.sources.label": "منبع‌ها",

@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Nimekirjad, mis lisavad pealkirju sinu eest",
 	"core.settings.move.label": "Import teistest rakendustest",
 	"core.settings.move.about": "Too üle Sonarr, Radarr ja muu",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Kaust, programmid ja kokkuvõte",
 	"core.settings.downloaders.label": "Allalaadijad",
 	"core.settings.downloaders.about": "Sinu torrenti- ja Usenet-rakendused",
 	"core.settings.sources.label": "Allikad",

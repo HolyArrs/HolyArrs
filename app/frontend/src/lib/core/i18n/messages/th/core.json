@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "รายการที่เพิ่มเรื่องให้คุณ",
 	"core.settings.move.label": "นำเข้าจากแอปอื่น",
 	"core.settings.move.about": "นำ Sonarr, Radarr และอื่น ๆ มาใช้",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "โฟลเดอร์ โปรแกรม และยอดรวม",
 	"core.settings.downloaders.label": "ตัวดาวน์โหลด",
 	"core.settings.downloaders.about": "แอปทอร์เรนต์และ Usenet ของคุณ",
 	"core.settings.sources.label": "แหล่งที่มา",

@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "רשימות שמוסיפות כותרים בשבילך",
 	"core.settings.move.label": "ייבוא מאפליקציות אחרות",
 	"core.settings.move.about": "העברה מ־Sonarr, Radarr ועוד",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "תיקייה, תוכנות וסיכומים",
 	"core.settings.downloaders.label": "מורידים",
 	"core.settings.downloaders.about": "אפליקציות הטורנטים וה־Usenet שלך",
 	"core.settings.sources.label": "מקורות",

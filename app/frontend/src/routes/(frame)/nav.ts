@@ -3,7 +3,7 @@
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
-export type Need = 'manage_library' | 'settings' | 'wishlist' | 'approve' | 'staff' | 'manage' | 'owner' | null;
+export type Need = 'manage_library' | 'settings' | 'wishlist' | 'approve' | 'staff' | 'manage' | 'owner' | 'youtube' | null;
 
 export interface NavItem {
 	href: string;
@@ -30,6 +30,8 @@ export interface NavInput {
 	allowed: (need: Exclude<Need, null>) => boolean;
 	/** True when the part that owns this path is turned off. */
 	off: (href: string) => boolean;
+	/** True for a held-back feature that is switched off on this install (youtube). */
+	held?: (feature: string) => boolean;
 	/** Library kinds whose part is on: movie, show, artist. */
 	kinds: ('movie' | 'show' | 'artist')[];
 	waitingAsks: number;
@@ -80,6 +82,8 @@ export function buildNav(input: NavInput): NavSection[] {
 			items: [
 				// Movie series live in the Library's Filter menu and its Group by series choice.
 				...input.kinds.filter((k) => !(input.kid && k === 'artist')).map((k) => kindItem(k)),
+				// A person's own YouTube videos; never for a Kid, and gone while the feature is held back.
+				...(!input.kid && !input.held?.('youtube') ? [{ href: '/youtube', label: t('frame.nav.youtube'), icon: 'play', need: 'youtube' } as NavItem] : []),
 				// Library stats, for people who look after the Library (also linked from the Sort and filter panel).
 				{ href: '/library/stats', label: t('frame.nav.stats'), icon: 'gauge', need: 'manage_library' }
 			]

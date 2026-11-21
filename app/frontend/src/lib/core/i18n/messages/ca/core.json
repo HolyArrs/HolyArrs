@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Llistes que afegeixen títols per tu",
 	"core.settings.move.label": "Importa d'altres apps",
 	"core.settings.move.about": "Porta Sonarr, Radarr i més",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Carpeta, programes i totals",
 	"core.settings.downloaders.label": "Gestors de baixades",
 	"core.settings.downloaders.about": "Les teves apps de torrents i Usenet",
 	"core.settings.sources.label": "Fonts",

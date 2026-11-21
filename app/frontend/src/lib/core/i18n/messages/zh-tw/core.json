@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "替你新增項目的清單",
 	"core.settings.move.label": "從其他應用程式匯入",
 	"core.settings.move.about": "遷入 Sonarr、Radarr 等",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "資料夾、程式和總計",
 	"core.settings.downloaders.label": "下載器",
 	"core.settings.downloaders.about": "你的種子和 Usenet 應用程式",
 	"core.settings.sources.label": "來源",

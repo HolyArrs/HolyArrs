@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Popisi koji dodaju naslove umjesto tebe",
 	"core.settings.move.label": "Uvoz iz drugih aplikacija",
 	"core.settings.move.about": "Prenesi Sonarr, Radarr i više",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Mapa, programi i ukupno",
 	"core.settings.downloaders.label": "Preuzimatelji",
 	"core.settings.downloaders.about": "Tvoje torrent i Usenet aplikacije",
 	"core.settings.sources.label": "Izvori",

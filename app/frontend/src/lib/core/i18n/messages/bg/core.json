@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Списъци, които добавят заглавия вместо вас",
 	"core.settings.move.label": "Импорт от други приложения",
 	"core.settings.move.about": "Пренесете Sonarr, Radarr и още",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Папка, програми и общо",
 	"core.settings.downloaders.label": "Програми за изтегляне",
 	"core.settings.downloaders.about": "Вашите приложения за торенти и Usenet",
 	"core.settings.sources.label": "Източници",

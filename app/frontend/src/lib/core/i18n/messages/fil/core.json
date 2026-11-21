@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Mga listahang nagdaragdag ng mga title para sa iyo",
 	"core.settings.move.label": "Mag-import mula sa ibang app",
 	"core.settings.move.about": "Dalhin ang Sonarr, Radarr at iba pa",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Folder, mga program at kabuuan",
 	"core.settings.downloaders.label": "Mga Downloader",
 	"core.settings.downloaders.about": "Mga torrent at Usenet app mo",
 	"core.settings.sources.label": "Mga Source",

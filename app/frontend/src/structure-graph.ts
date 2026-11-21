@@ -28,7 +28,8 @@ export const LAYER: Record<string, number> = {
 	health: 9,
 	updates: 9,
 	setup: 9,
-	plugins: 9
+	plugins: 9,
+	youtube: 9
 };
 
 export function listFiles(dir = SRC, out: string[] = []): string[] {
@@ -97,7 +98,8 @@ const ROUTES: [RegExp, string][] = [
 	[/^routes\/settings\/media-servers/, 'mediaservers'],
 	[/^routes\/settings\/(search|sources)/, 'sources'],
 	[/^routes\/settings\/subtitles/, 'subtitles'],
-	[/^routes\/settings\/tmdb/, 'metadata']
+	[/^routes\/settings\/tmdb/, 'metadata'],
+	[/^routes\/youtube\b|^routes\/settings\/youtube/, 'youtube']
 ];
 
 export function routeModule(file: string): string | null {

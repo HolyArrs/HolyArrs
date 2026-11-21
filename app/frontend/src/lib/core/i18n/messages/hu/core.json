@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Listák, amelyek Ön helyett adnak hozzá címeket",
 	"core.settings.move.label": "Importálás más alkalmazásokból",
 	"core.settings.move.about": "Sonarr, Radarr és más átvétele",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Mappa, programok és összesítés",
 	"core.settings.downloaders.label": "Letöltők",
 	"core.settings.downloaders.about": "A torrent- és Usenet-alkalmazásai",
 	"core.settings.sources.label": "Források",

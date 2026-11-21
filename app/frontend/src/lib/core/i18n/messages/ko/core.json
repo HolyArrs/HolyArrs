@@ -105,6 +105,8 @@
 	"core.settings.outsideLists.about": "작품을 대신 추가해 주는 목록",
 	"core.settings.move.label": "다른 앱에서 가져오기",
 	"core.settings.move.about": "Sonarr, Radarr 등에서 가져오기",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "폴더, 프로그램, 합계",
 	"core.settings.downloaders.label": "다운로더",
 	"core.settings.downloaders.about": "토렌트 및 Usenet 앱",
 	"core.settings.sources.label": "소스",

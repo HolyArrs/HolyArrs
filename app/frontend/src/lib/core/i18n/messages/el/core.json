@@ -103,6 +103,8 @@
 	"core.settings.outsideLists.about": "Λίστες που προσθέτουν τίτλους για εσάς",
 	"core.settings.move.label": "Εισαγωγή από άλλες εφαρμογές",
 	"core.settings.move.about": "Μεταφορά από Sonarr, Radarr και άλλα",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Φάκελος, προγράμματα και σύνολα",
 	"core.settings.downloaders.label": "Προγράμματα λήψης",
 	"core.settings.downloaders.about": "Οι εφαρμογές torrent και Usenet σας",
 	"core.settings.sources.label": "Πηγές",

@@ -105,6 +105,8 @@
 	"core.settings.outsideLists.about": "Listen, die Titel für dich hinzufügen",
 	"core.settings.move.label": "Import aus anderen Apps",
 	"core.settings.move.about": "Sonarr, Radarr und mehr übernehmen",
+	"core.settings.youtube.label": "YouTube",
+	"core.settings.youtube.about": "Ordner, Programme und Summen",
 	"core.settings.downloaders.label": "Downloader",
 	"core.settings.downloaders.about": "Deine Torrent- und Usenet-Apps",
 	"core.settings.sources.label": "Quellen",
