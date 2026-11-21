@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "हर सीज़न खोजा जा रहा है",
 	"shows.page.searchingNamed": "{name} खोजा जा रहा है",
 	"shows.page.chooseRelease": "रिलीज़ ख़ुद चुनें",
+	"shows.page.saveToDevice": "डिवाइस पर सहेजें",
 	"shows.page.keepNamed": "{name} को अप-टू-डेट रखें",
 	"shows.page.seasonKept": "{name} अप-टू-डेट रखा जाएगा",
 	"shows.page.seasonNotKept": "{name} अप-टू-डेट नहीं रखा जाएगा",

@@ -508,6 +508,7 @@
   "discover.titleLibrary.keptUpToDate": "Holdt oppdatert",
   "discover.titleLibrary.notKeptUpToDate": "Ikke holdt oppdatert",
   "discover.titleLibrary.mainCopy": "Hovedkopi",
+  "discover.titleLibrary.saveToDevice": "Lagre på enheten",
   "discover.titleLibrary.noSubtitles": "Ingen undertekster",
   "discover.titleLibrary.defaultCodes": "Standard · {codes}",
   "discover.titleLibrary.defaultNone": "Standard · ingen satt",

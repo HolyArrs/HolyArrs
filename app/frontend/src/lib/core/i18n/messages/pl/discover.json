@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Śledzone",
 	"discover.titleLibrary.notKeptUpToDate": "Nieśledzone",
 	"discover.titleLibrary.mainCopy": "Główna kopia",
+	"discover.titleLibrary.saveToDevice": "Zapisz na urządzeniu",
 	"discover.titleLibrary.noSubtitles": "Brak napisów",
 	"discover.titleLibrary.defaultCodes": "Domyślne · {codes}",
 	"discover.titleLibrary.defaultNone": "Domyślne · nic nie ustawiono",

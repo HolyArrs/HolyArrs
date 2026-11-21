@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Leita í hverri þáttaröð",
 	"shows.page.searchingNamed": "Leita að {name}",
 	"shows.page.chooseRelease": "Velja útgáfu",
+	"shows.page.saveToDevice": "Vista í tæki",
 	"shows.page.keepNamed": "Halda {name} uppfærðu",
 	"shows.page.seasonKept": "{name} haldið uppfærðu",
 	"shows.page.seasonNotKept": "{name} ekki haldið uppfærðu",

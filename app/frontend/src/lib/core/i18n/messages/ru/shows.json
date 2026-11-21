@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Поиск по всем сезонам",
 	"shows.page.searchingNamed": "Поиск: {name}",
 	"shows.page.chooseRelease": "Выбрать релиз",
+	"shows.page.saveToDevice": "Сохранить на устройство",
 	"shows.page.keepNamed": "Держать актуальным: {name}",
 	"shows.page.seasonKept": "{name}: держится актуальным",
 	"shows.page.seasonNotKept": "{name}: не держится актуальным",

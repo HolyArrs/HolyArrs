@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "正在搜索每一季",
 	"shows.page.searchingNamed": "正在搜索{name}",
 	"shows.page.chooseRelease": "手动选资源",
+	"shows.page.saveToDevice": "保存到设备",
 	"shows.page.keepNamed": "持续追踪{name}",
 	"shows.page.seasonKept": "已持续追踪{name}",
 	"shows.page.seasonNotKept": "未持续追踪{name}",

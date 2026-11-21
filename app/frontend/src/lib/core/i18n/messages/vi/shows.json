@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Đang tìm mọi mùa",
 	"shows.page.searchingNamed": "Đang tìm {name}",
 	"shows.page.chooseRelease": "Chọn bản phát hành",
+	"shows.page.saveToDevice": "Lưu vào thiết bị",
 	"shows.page.keepNamed": "Giữ {name} luôn cập nhật",
 	"shows.page.seasonKept": "{name} được giữ cập nhật",
 	"shows.page.seasonNotKept": "{name} không được giữ cập nhật",

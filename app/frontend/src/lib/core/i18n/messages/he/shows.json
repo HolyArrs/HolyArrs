@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "מחפש בכל עונה",
 	"shows.page.searchingNamed": "מחפש את {name}",
 	"shows.page.chooseRelease": "בחירת ריליז",
+	"shows.page.saveToDevice": "שמירה במכשיר",
 	"shows.page.keepNamed": "לשמור את {name} מעודכן",
 	"shows.page.seasonKept": "{name} נשמר מעודכן",
 	"shows.page.seasonNotKept": "{name} לא נשמר מעודכן",

@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Держится актуальным",
 	"discover.titleLibrary.notKeptUpToDate": "Не держится актуальным",
 	"discover.titleLibrary.mainCopy": "Основная копия",
+	"discover.titleLibrary.saveToDevice": "Сохранить на устройство",
 	"discover.titleLibrary.noSubtitles": "Без субтитров",
 	"discover.titleLibrary.defaultCodes": "По умолчанию · {codes}",
 	"discover.titleLibrary.defaultNone": "По умолчанию · не задано",

@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "持續追蹤",
 	"discover.titleLibrary.notKeptUpToDate": "未持續追蹤",
 	"discover.titleLibrary.mainCopy": "主副本",
+	"discover.titleLibrary.saveToDevice": "儲存到裝置",
 	"discover.titleLibrary.noSubtitles": "沒有字幕",
 	"discover.titleLibrary.defaultCodes": "預設 · {codes}",
 	"discover.titleLibrary.defaultNone": "預設 · 未設定",

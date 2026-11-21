@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "최신 상태 유지 중",
 	"discover.titleLibrary.notKeptUpToDate": "최신 상태 유지 안 함",
 	"discover.titleLibrary.mainCopy": "주 사본",
+	"discover.titleLibrary.saveToDevice": "기기에 저장",
 	"discover.titleLibrary.noSubtitles": "자막 없음",
 	"discover.titleLibrary.defaultCodes": "기본값 · {codes}",
 	"discover.titleLibrary.defaultNone": "기본값 · 설정 안 됨",

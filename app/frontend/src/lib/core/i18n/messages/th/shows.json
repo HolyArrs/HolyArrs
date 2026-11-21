@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "กำลังค้นหาทุกซีซัน",
 	"shows.page.searchingNamed": "กำลังค้นหา {name}",
 	"shows.page.chooseRelease": "เลือกรีลีส",
+	"shows.page.saveToDevice": "บันทึกลงอุปกรณ์",
 	"shows.page.keepNamed": "อัปเดต {name} ให้ทันสมัย",
 	"shows.page.seasonKept": "อัปเดต {name} ให้ทันสมัยแล้ว",
 	"shows.page.seasonNotKept": "ไม่ได้อัปเดต {name} ให้ทันสมัย",

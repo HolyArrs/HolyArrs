@@ -125,6 +125,7 @@ GET /api/v1/explore/tail see
 GET /api/v1/explore/title-stats see
 GET /api/v1/explore/top see
 GET /api/v1/extras/{kind}/{id} see
+GET /api/v1/files/{id}/download see
 GET /api/v1/health see
 GET /api/v1/health/checks see
 GET /api/v1/health/disks see

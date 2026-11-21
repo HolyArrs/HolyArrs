@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "আপ-টু-ডেট রাখা হচ্ছে",
 	"discover.titleLibrary.notKeptUpToDate": "আপ-টু-ডেট রাখা হচ্ছে না",
 	"discover.titleLibrary.mainCopy": "প্রধান কপি",
+	"discover.titleLibrary.saveToDevice": "ডিভাইসে সংরক্ষণ করুন",
 	"discover.titleLibrary.noSubtitles": "কোনো সাবটাইটেল নেই",
 	"discover.titleLibrary.defaultCodes": "ডিফল্ট · {codes}",
 	"discover.titleLibrary.defaultNone": "ডিফল্ট · কিছু সেট করা নেই",

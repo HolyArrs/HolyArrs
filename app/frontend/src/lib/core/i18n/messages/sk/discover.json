@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Udržiava sa aktuálne",
 	"discover.titleLibrary.notKeptUpToDate": "Neudržiava sa aktuálne",
 	"discover.titleLibrary.mainCopy": "Hlavná kópia",
+	"discover.titleLibrary.saveToDevice": "Uložiť do zariadenia",
 	"discover.titleLibrary.noSubtitles": "Bez titulkov",
 	"discover.titleLibrary.defaultCodes": "Predvolené · {codes}",
 	"discover.titleLibrary.defaultNone": "Predvolené · nenastavené",

@@ -225,3 +225,4 @@ export { factOrder as statFacts, valueLabel as statValue, unitWord as statUnit, 
 export { shelfEntries, type ShelfEntry } from './shelf.ts';
 export { folderMissing } from './folder-missing.ts';
 export { qualityFor, qualityBody, qualityValue, qualityChoices, defaultChoice } from './folder-quality.ts';
+export { saveHref } from './save-to-device.ts';

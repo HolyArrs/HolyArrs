@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Διατηρείται ενημερωμένο",
 	"discover.titleLibrary.notKeptUpToDate": "Δεν διατηρείται ενημερωμένο",
 	"discover.titleLibrary.mainCopy": "Κύριο αντίγραφο",
+	"discover.titleLibrary.saveToDevice": "Αποθήκευση στη συσκευή",
 	"discover.titleLibrary.noSubtitles": "Χωρίς υπότιτλους",
 	"discover.titleLibrary.defaultCodes": "Προεπιλογή · {codes}",
 	"discover.titleLibrary.defaultNone": "Προεπιλογή · δεν έχει οριστεί τίποτα",

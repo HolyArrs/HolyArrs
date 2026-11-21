@@ -379,3 +379,21 @@ func TitlesBySourceID(ctx context.Context, q database.Lister) (map[string]int64,
 	}
 	return out, rows.Err()
 }
+
+// LibraryFolderPaths lists the path of every Library folder.
+func LibraryFolderPaths(ctx context.Context, q database.Lister) ([]string, error) {
+	rows, err := q.QueryContext(ctx, "SELECT path FROM library_folders ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var p string
+		if err := rows.Scan(&p); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}

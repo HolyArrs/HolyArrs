@@ -10,6 +10,8 @@
 		variant?: 'plain' | 'tinted' | 'filled' | 'glass';
 		size?: 'sm' | 'md' | 'lg';
 		href?: string;
+		// With href: save the linked file instead of opening it.
+		download?: boolean | string;
 		badge?: number;
 		tooltip?: boolean;
 		tipSide?: 'below' | 'below-end' | 'above' | 'right';

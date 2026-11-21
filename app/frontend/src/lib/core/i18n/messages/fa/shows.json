@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "در حال جستجوی همه فصل‌ها",
 	"shows.page.searchingNamed": "در حال جستجوی {name}",
 	"shows.page.chooseRelease": "انتخاب ریلیز",
+	"shows.page.saveToDevice": "ذخیره در دستگاه",
 	"shows.page.keepNamed": "به‌روز نگه داشتن {name}",
 	"shows.page.seasonKept": "{name} به‌روز نگه داشته می‌شود",
 	"shows.page.seasonNotKept": "{name} به‌روز نگه داشته نمی‌شود",

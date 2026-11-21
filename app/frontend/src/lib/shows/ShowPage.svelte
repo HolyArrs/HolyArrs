@@ -11,6 +11,7 @@
 	import ActionButton from '#lib/ui/ActionButton.svelte';
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import TitleCast from '#lib/ui/TitleCast.svelte';
@@ -21,7 +22,7 @@
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import '#lib/ui/title-page.css';
 	import { extrasIdOf } from '#lib/ui/library-art.ts';
-	import { RenamePreview, ShowDeleteDialog, ShowReleases, CopyControls, artName, crumbFor, qualityBadges, slotKind, staleWhileImporting, type ReleaseScope } from '../mediafiles/index.ts';
+	import { RenamePreview, ShowDeleteDialog, ShowReleases, CopyControls, artName, crumbFor, qualityBadges, saveHref, slotKind, staleWhileImporting, type ReleaseScope } from '../mediafiles/index.ts';
 	import { SubtitlePanel } from '../subtitles/index.ts';
 	import { groupDownloads, HistoryLine as CompactRow, isRoutine, NoDownloaderNote } from '../downloads/index.ts';
 	import ShowVersions from './ShowVersions.svelte';
@@ -513,6 +514,9 @@
 						{#if staff && main}<StatusPill kind={slotKind(main.state)} label={eps[i].slots.length > 1 ? eps[i].slots.map((x) => `${x.version}: ${serverWords(x.state_label)}`).join(' · ') : serverWords(main.state_label)} testid="episode-state" />{/if}
 					{/snippet}
 					{#snippet action(i: number)}
+						{@const save = saveHref(eps[i].slots.find((x) => x.file_id)?.file_id)}
+						<!-- Outside the staff menu: anyone with save_files may save an episode. -->
+						{#if save}<IconButton icon="download" size="sm" label={t('shows.page.saveToDevice')} href={save} download data-testid="episode-save" />{/if}
 						{#if staff}<Menu label={t('shows.page.episodeActions', { name: episodeLabel(eps[i], order) })} items={episodeItems(eps[i])} width={250} />{/if}
 					{/snippet}
 					{#snippet after(i: number)}

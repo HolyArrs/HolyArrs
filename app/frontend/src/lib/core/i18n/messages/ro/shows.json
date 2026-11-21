@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Se caută în fiecare sezon",
 	"shows.page.searchingNamed": "Se caută {name}",
 	"shows.page.chooseRelease": "Alege o Lansare",
+	"shows.page.saveToDevice": "Salvează pe dispozitiv",
 	"shows.page.keepNamed": "Ține {name} la zi",
 	"shows.page.seasonKept": "{name} e ținut la zi",
 	"shows.page.seasonNotKept": "{name} nu mai e ținut la zi",

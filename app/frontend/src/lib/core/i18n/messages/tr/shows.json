@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Her sezon aranıyor",
 	"shows.page.searchingNamed": "{name} aranıyor",
 	"shows.page.chooseRelease": "Sürüm adayı seç",
+	"shows.page.saveToDevice": "Cihaza kaydet",
 	"shows.page.keepNamed": "{name} güncel tut",
 	"shows.page.seasonKept": "{name} güncel tutuluyor",
 	"shows.page.seasonNotKept": "{name} güncel tutulmuyor",

@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Etsitään jokaista kautta",
 	"shows.page.searchingNamed": "Etsitään: {name}",
 	"shows.page.chooseRelease": "Valitse julkaisu",
+	"shows.page.saveToDevice": "Tallenna laitteelle",
 	"shows.page.keepNamed": "Pidä {name} ajan tasalla",
 	"shows.page.seasonKept": "{name} pidetään ajan tasalla",
 	"shows.page.seasonNotKept": "{name} ei pidetä ajan tasalla",

@@ -144,6 +144,7 @@
 "shows.page.searchingAll": "すべてのシーズンを検索中",
 "shows.page.searchingNamed": "{name} を検索中",
 "shows.page.chooseRelease": "リリースを自分で選ぶ",
+"shows.page.saveToDevice": "デバイスに保存",
 "shows.page.keepNamed": "{name} を最新に保つ",
 "shows.page.seasonKept": "{name} を最新に保ちます",
 "shows.page.seasonNotKept": "{name} は最新に保ちません",

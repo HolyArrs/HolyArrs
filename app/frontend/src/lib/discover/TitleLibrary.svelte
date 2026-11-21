@@ -10,7 +10,7 @@
 	import { airWords, epFile, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
 	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, chosenWhy, type SheetEpisode } from '#lib/shows/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
-	import { qualityBadges, ShowDeleteDialog, splitSteps, type RenameStep } from '#lib/mediafiles/index.ts';
+	import { qualityBadges, saveHref, ShowDeleteDialog, splitSteps, type RenameStep } from '#lib/mediafiles/index.ts';
 	import { copyBadges, MovieVersions } from '#lib/movies/index.ts';
 	import { SubtitlePanel, type TitleSubtitles } from '#lib/subtitles/index.ts';
 	import { goto } from '$app/navigation';
@@ -318,7 +318,7 @@
 		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
 		const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
-		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: copyBadges(qualityBadges([f]), m.edition ? String(m.edition) : '', f?.Protected ? t('mediafiles.copy.protectedBadge') : ''), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
+		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, save: saveHref(f?.ID as number | undefined), versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: copyBadges(qualityBadges([f]), m.edition ? String(m.edition) : '', f?.Protected ? t('mediafiles.copy.protectedBadge') : ''), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 
 	let libAll = $state(false);
@@ -507,6 +507,7 @@
 								<p class="lib-langs">{#if f.audio.length}<span class="muted">{t('discover.titleLibrary.audio')}</span>{#each f.audio as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}{#if f.subs.length}<span class="muted">{t('discover.titleLibrary.subtitles')}</span>{#each f.subs as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}</p>
 							{/if}
 							{#if f.name}<p class="lib-file-name" title={f.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{f.name}</span></p>{/if}
+							<!-- Outside the staff menu: anyone with save_files may save a copy. -->{#if f.save}<a class="lib-btn sm lib-save" href={f.save} download data-testid="save-to-device"><Icon name="download" size={15} />{t('discover.titleLibrary.saveToDevice')}</a>{/if}
 						</article>
 					{:else}
 						<p class="muted">{t('discover.titleLibrary.noFileYet2')}</p>
@@ -696,6 +697,7 @@
 	}	.lib-eps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	.lib-eps-head .lib-h { margin-bottom: 14px; }
 	.lib-btn.sm { height: 36px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
+	.lib-btn.lib-save { justify-self: start; margin-top: 4px; }
 	.lib-eps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 	.lib-ep { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 34px; align-items: center; gap: 14px; padding: 6px; border-radius: 12px; transition: background var(--dur-fast) var(--ease-out); }
 	.lib-ep { position: relative; cursor: pointer; }

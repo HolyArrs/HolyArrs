@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Searching every season",
 	"shows.page.searchingNamed": "Searching {name}",
 	"shows.page.chooseRelease": "Choose a release",
+	"shows.page.saveToDevice": "Save to device",
 	"shows.page.keepNamed": "Keep {name} up to date",
 	"shows.page.seasonKept": "{name} kept up to date",
 	"shows.page.seasonNotKept": "{name} not kept up to date",

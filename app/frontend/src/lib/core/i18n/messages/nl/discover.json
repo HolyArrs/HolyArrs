@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Actueel gehouden",
 	"discover.titleLibrary.notKeptUpToDate": "Niet actueel gehouden",
 	"discover.titleLibrary.mainCopy": "Hoofdkopie",
+	"discover.titleLibrary.saveToDevice": "Opslaan op apparaat",
 	"discover.titleLibrary.noSubtitles": "Geen ondertitels",
 	"discover.titleLibrary.defaultCodes": "Standaard · {codes}",
 	"discover.titleLibrary.defaultNone": "Standaard · geen ingesteld",

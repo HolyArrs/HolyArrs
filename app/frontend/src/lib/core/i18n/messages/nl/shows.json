@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Elk seizoen wordt gezocht",
 	"shows.page.searchingNamed": "{name} wordt gezocht",
 	"shows.page.chooseRelease": "Release kiezen",
+	"shows.page.saveToDevice": "Opslaan op apparaat",
 	"shows.page.keepNamed": "{name} actueel houden",
 	"shows.page.seasonKept": "{name} wordt actueel gehouden",
 	"shows.page.seasonNotKept": "{name} wordt niet actueel gehouden",

@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Dikekalkan terkini",
 	"discover.titleLibrary.notKeptUpToDate": "Tidak dikekalkan terkini",
 	"discover.titleLibrary.mainCopy": "Salinan utama",
+	"discover.titleLibrary.saveToDevice": "Simpan ke peranti",
 	"discover.titleLibrary.noSubtitles": "Tiada sari kata",
 	"discover.titleLibrary.defaultCodes": "Lalai · {codes}",
 	"discover.titleLibrary.defaultNone": "Lalai · tiada ditetapkan",

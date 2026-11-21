@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Mantingut al dia",
 	"discover.titleLibrary.notKeptUpToDate": "No mantingut al dia",
 	"discover.titleLibrary.mainCopy": "Còpia principal",
+	"discover.titleLibrary.saveToDevice": "Desa al dispositiu",
 	"discover.titleLibrary.noSubtitles": "Sense subtítols",
 	"discover.titleLibrary.defaultCodes": "Per defecte · {codes}",
 	"discover.titleLibrary.defaultNone": "Per defecte · cap definit",

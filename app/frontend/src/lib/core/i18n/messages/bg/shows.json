@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Търси се във всеки сезон",
 	"shows.page.searchingNamed": "Търси се {name}",
 	"shows.page.chooseRelease": "Избор на релийз",
+	"shows.page.saveToDevice": "Запазване на устройството",
 	"shows.page.keepNamed": "Поддържане на {name} актуален",
 	"shows.page.seasonKept": "{name} се поддържа актуален",
 	"shows.page.seasonNotKept": "{name} не се поддържа актуален",

@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Одржава се ажурним",
 	"discover.titleLibrary.notKeptUpToDate": "Не одржава се ажурним",
 	"discover.titleLibrary.mainCopy": "Главна копија",
+	"discover.titleLibrary.saveToDevice": "Сачувај на уређај",
 	"discover.titleLibrary.noSubtitles": "Без титлова",
 	"discover.titleLibrary.defaultCodes": "Подразумевано · {codes}",
 	"discover.titleLibrary.defaultNone": "Подразумевано · ниједан подешен",

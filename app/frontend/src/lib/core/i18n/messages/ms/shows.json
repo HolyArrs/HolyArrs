@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Mencari setiap musim",
 	"shows.page.searchingNamed": "Mencari {name}",
 	"shows.page.chooseRelease": "Pilih keluaran",
+	"shows.page.saveToDevice": "Simpan ke peranti",
 	"shows.page.keepNamed": "Kekalkan {name} terkini",
 	"shows.page.seasonKept": "{name} dikekalkan terkini",
 	"shows.page.seasonNotKept": "{name} tidak dikekalkan terkini",

@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Hoitakse ajakohasena",
 	"discover.titleLibrary.notKeptUpToDate": "Ei hoita ajakohasena",
 	"discover.titleLibrary.mainCopy": "Põhikoopia",
+	"discover.titleLibrary.saveToDevice": "Salvesta seadmesse",
 	"discover.titleLibrary.noSubtitles": "Subtiitreid pole",
 	"discover.titleLibrary.defaultCodes": "Vaikimisi · {codes}",
 	"discover.titleLibrary.defaultNone": "Vaikimisi · pole määratud",

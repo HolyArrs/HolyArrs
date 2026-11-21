@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "最新に保つ",
 	"discover.titleLibrary.notKeptUpToDate": "最新には保たない",
 	"discover.titleLibrary.mainCopy": "メインのコピー",
+	"discover.titleLibrary.saveToDevice": "デバイスに保存",
 	"discover.titleLibrary.noSubtitles": "字幕なし",
 	"discover.titleLibrary.defaultCodes": "初期設定 · {codes}",
 	"discover.titleLibrary.defaultNone": "初期設定 · 未設定",

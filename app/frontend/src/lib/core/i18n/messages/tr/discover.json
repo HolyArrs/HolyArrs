@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Güncel tutuluyor",
 	"discover.titleLibrary.notKeptUpToDate": "Güncel tutulmuyor",
 	"discover.titleLibrary.mainCopy": "Ana kopya",
+	"discover.titleLibrary.saveToDevice": "Cihaza kaydet",
 	"discover.titleLibrary.noSubtitles": "Altyazı yok",
 	"discover.titleLibrary.defaultCodes": "Varsayılan · {codes}",
 	"discover.titleLibrary.defaultNone": "Varsayılan · ayarlanmadı",

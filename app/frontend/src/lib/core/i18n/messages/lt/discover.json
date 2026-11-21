@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Laikoma naujausia",
 	"discover.titleLibrary.notKeptUpToDate": "Nelaikoma naujausia",
 	"discover.titleLibrary.mainCopy": "Pagrindinė kopija",
+	"discover.titleLibrary.saveToDevice": "Įrašyti į įrenginį",
 	"discover.titleLibrary.noSubtitles": "Subtitrų nėra",
 	"discover.titleLibrary.defaultCodes": "Numatyta · {codes}",
 	"discover.titleLibrary.defaultNone": "Numatyta · nenustatyta",

@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "مواكَب للجديد",
 	"discover.titleLibrary.notKeptUpToDate": "غير مواكَب للجديد",
 	"discover.titleLibrary.mainCopy": "النسخة الرئيسية",
+	"discover.titleLibrary.saveToDevice": "حفظ على الجهاز",
 	"discover.titleLibrary.noSubtitles": "بلا ترجمات",
 	"discover.titleLibrary.defaultCodes": "الافتراضي · {codes}",
 	"discover.titleLibrary.defaultNone": "الافتراضي · لا شيء معيَّن",

@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Meklē katru sezonu",
 	"shows.page.searchingNamed": "Meklē: {name}",
 	"shows.page.chooseRelease": "Izvēlēties izlaidumu",
+	"shows.page.saveToDevice": "Saglabāt ierīcē",
 	"shows.page.keepNamed": "Uzturēt {name} aktuālu",
 	"shows.page.seasonKept": "{name} tiek uzturēts aktuāls",
 	"shows.page.seasonNotKept": "{name} netiek uzturēts aktuāls",

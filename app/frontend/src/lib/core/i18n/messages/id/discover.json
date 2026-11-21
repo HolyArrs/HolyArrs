@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Dijaga mutakhir",
 	"discover.titleLibrary.notKeptUpToDate": "Tidak dijaga mutakhir",
 	"discover.titleLibrary.mainCopy": "Salinan utama",
+	"discover.titleLibrary.saveToDevice": "Simpan ke perangkat",
 	"discover.titleLibrary.noSubtitles": "Tanpa subtitel",
 	"discover.titleLibrary.defaultCodes": "Bawaan · {codes}",
 	"discover.titleLibrary.defaultNone": "Bawaan · belum diatur",

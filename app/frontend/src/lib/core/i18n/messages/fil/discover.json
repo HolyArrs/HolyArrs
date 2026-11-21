@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Pinananatiling napapanahon",
 	"discover.titleLibrary.notKeptUpToDate": "Hindi pinananatiling napapanahon",
 	"discover.titleLibrary.mainCopy": "Pangunahing kopya",
+	"discover.titleLibrary.saveToDevice": "I-save sa device",
 	"discover.titleLibrary.noSubtitles": "Walang subtitle",
 	"discover.titleLibrary.defaultCodes": "Default · {codes}",
 	"discover.titleLibrary.defaultNone": "Default · wala pang naitakda",

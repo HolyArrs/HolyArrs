@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Søker i alle sesonger",
 	"shows.page.searchingNamed": "Søker etter {name}",
 	"shows.page.chooseRelease": "Velg en utgivelse",
+	"shows.page.saveToDevice": "Lagre på enheten",
 	"shows.page.keepNamed": "Hold {name} oppdatert",
 	"shows.page.seasonKept": "{name} holdes oppdatert",
 	"shows.page.seasonNotKept": "{name} holdes ikke oppdatert",

@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Стежимо за оновленнями",
 	"discover.titleLibrary.notKeptUpToDate": "Не стежимо за оновленнями",
 	"discover.titleLibrary.mainCopy": "Основна копія",
+	"discover.titleLibrary.saveToDevice": "Зберегти на пристрій",
 	"discover.titleLibrary.noSubtitles": "Без субтитрів",
 	"discover.titleLibrary.defaultCodes": "Типово · {codes}",
 	"discover.titleLibrary.defaultNone": "Типово · не задано",

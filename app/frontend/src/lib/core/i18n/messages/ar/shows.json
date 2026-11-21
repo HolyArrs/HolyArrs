@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "جارٍ البحث في كل موسم",
 	"shows.page.searchingNamed": "جارٍ البحث عن {name}",
 	"shows.page.chooseRelease": "اختيار إصدار",
+	"shows.page.saveToDevice": "حفظ على الجهاز",
 	"shows.page.keepNamed": "واكب الجديد في {name}",
 	"shows.page.seasonKept": "{name} مواكَب للجديد",
 	"shows.page.seasonNotKept": "{name} غير مواكَب للجديد",

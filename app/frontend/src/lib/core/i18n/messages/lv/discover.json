@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Uzturēts aktuāls",
 	"discover.titleLibrary.notKeptUpToDate": "Netiek uzturēts aktuāls",
 	"discover.titleLibrary.mainCopy": "Galvenā kopija",
+	"discover.titleLibrary.saveToDevice": "Saglabāt ierīcē",
 	"discover.titleLibrary.noSubtitles": "Bez subtitriem",
 	"discover.titleLibrary.defaultCodes": "Noklusējums · {codes}",
 	"discover.titleLibrary.defaultNone": "Noklusējums · nav iestatīts",

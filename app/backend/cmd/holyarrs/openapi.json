@@ -17096,6 +17096,36 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/files/{id}/download": {
+      "get": {
+        "description": "Sends a movie or episode file as an attachment named after the file, with range requests so a stopped save can resume. Needs the save_files permission and only exists with the youtube feature switch on; Kid accounts are denied whatever they are ticked for. Only a File that is the main video and present on disk is sent; a subtitle or other side file, a missing one, or one gone from disk answers 404.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file"
+          },
+          "206": {
+            "description": "Part of the file"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Save a movie or episode file to your device",
+        "x-holyarrs-part": "title",
+        "x-holyarrs-permission": "save_files",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/files/{id}/subtitles/choices": {
       "post": {
         "description": "Asks every usable Subtitle site now and lists the scored candidates per wished language, best first, with the parts of each score. No subtitle file is saved; what the File has and wants is recorded first, and each site's answer counts against its limits, so this is a POST (send no body).",

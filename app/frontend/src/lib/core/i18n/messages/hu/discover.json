@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Naprakészen tartva",
 	"discover.titleLibrary.notKeptUpToDate": "Nincs naprakészen tartva",
 	"discover.titleLibrary.mainCopy": "Fő másolat",
+	"discover.titleLibrary.saveToDevice": "Mentés az eszközre",
 	"discover.titleLibrary.noSubtitles": "Nincs felirat",
 	"discover.titleLibrary.defaultCodes": "Alapértelmezett · {codes}",
 	"discover.titleLibrary.defaultNone": "Alapértelmezett · nincs beállítva",

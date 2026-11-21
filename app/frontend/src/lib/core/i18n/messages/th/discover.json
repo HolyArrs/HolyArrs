@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "อัปเดตให้ทันสมัยแล้ว",
 	"discover.titleLibrary.notKeptUpToDate": "ไม่ได้อัปเดตให้ทันสมัย",
 	"discover.titleLibrary.mainCopy": "สำเนาหลัก",
+	"discover.titleLibrary.saveToDevice": "บันทึกลงอุปกรณ์",
 	"discover.titleLibrary.noSubtitles": "ไม่มีคำบรรยาย",
 	"discover.titleLibrary.defaultCodes": "ค่าเริ่มต้น · {codes}",
 	"discover.titleLibrary.defaultNone": "ค่าเริ่มต้น · ยังไม่ได้ตั้ง",

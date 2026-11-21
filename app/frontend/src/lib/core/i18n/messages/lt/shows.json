@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Ieškoma kiekvieno sezono",
 	"shows.page.searchingNamed": "Ieškoma: {name}",
 	"shows.page.chooseRelease": "Pasirinkti leidimą",
+	"shows.page.saveToDevice": "Įrašyti į įrenginį",
 	"shows.page.keepNamed": "Laikyti {name} naujausią",
 	"shows.page.seasonKept": "{name} laikoma naujausia",
 	"shows.page.seasonNotKept": "{name} nebelaikoma naujausia",

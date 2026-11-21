@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "প্রতিটি সিজন খোঁজা হচ্ছে",
 	"shows.page.searchingNamed": "{name} খোঁজা হচ্ছে",
 	"shows.page.chooseRelease": "রিলিজ নিজে বাছুন",
+	"shows.page.saveToDevice": "ডিভাইসে সংরক্ষণ করুন",
 	"shows.page.keepNamed": "{name} আপ-টু-ডেট রাখুন",
 	"shows.page.seasonKept": "{name} আপ-টু-ডেট রাখা হচ্ছে",
 	"shows.page.seasonNotKept": "{name} আপ-টু-ডেট রাখা হচ্ছে না",

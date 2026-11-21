@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "持续追踪",
 	"discover.titleLibrary.notKeptUpToDate": "未持续追踪",
 	"discover.titleLibrary.mainCopy": "主副本",
+	"discover.titleLibrary.saveToDevice": "保存到设备",
 	"discover.titleLibrary.noSubtitles": "没有字幕",
 	"discover.titleLibrary.defaultCodes": "默认 · {codes}",
 	"discover.titleLibrary.defaultNone": "默认 · 未设置",

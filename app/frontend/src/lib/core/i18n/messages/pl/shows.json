@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Szukanie każdego sezonu",
 	"shows.page.searchingNamed": "Szukanie: {name}",
 	"shows.page.chooseRelease": "Wybierz release",
+	"shows.page.saveToDevice": "Zapisz na urządzeniu",
 	"shows.page.keepNamed": "Śledź nowości: {name}",
 	"shows.page.seasonKept": "Śledzone nowości: {name}",
 	"shows.page.seasonNotKept": "Nieśledzone nowości: {name}",

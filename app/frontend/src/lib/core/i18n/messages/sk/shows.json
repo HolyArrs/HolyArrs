@@ -144,6 +144,7 @@
 "shows.page.searchingAll": "Hľadá sa každá séria",
 "shows.page.searchingNamed": "Hľadá sa {name}",
 "shows.page.chooseRelease": "Vybrať vydanie",
+"shows.page.saveToDevice": "Uložiť do zariadenia",
 "shows.page.keepNamed": "Udržiavať {name} aktuálne",
 "shows.page.seasonKept": "{name} sa udržiava aktuálne",
 "shows.page.seasonNotKept": "{name} sa neudržiava aktuálne",

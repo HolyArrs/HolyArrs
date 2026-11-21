@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Шукаємо кожен сезон",
 	"shows.page.searchingNamed": "Шукаємо {name}",
 	"shows.page.chooseRelease": "Вибрати реліз",
+	"shows.page.saveToDevice": "Зберегти на пристрій",
 	"shows.page.keepNamed": "Стежити за оновленнями: {name}",
 	"shows.page.seasonKept": "{name}: стежимо за оновленнями",
 	"shows.page.seasonNotKept": "{name}: не стежимо за оновленнями",

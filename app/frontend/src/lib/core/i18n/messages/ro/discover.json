@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Ținut la zi",
 	"discover.titleLibrary.notKeptUpToDate": "Nu e ținut la zi",
 	"discover.titleLibrary.mainCopy": "Copia principală",
+	"discover.titleLibrary.saveToDevice": "Salvează pe dispozitiv",
 	"discover.titleLibrary.noSubtitles": "Fără subtitrări",
 	"discover.titleLibrary.defaultCodes": "Implicit · {codes}",
 	"discover.titleLibrary.defaultNone": "Implicit · nesetat",

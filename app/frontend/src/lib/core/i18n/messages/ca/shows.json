@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Cercant totes les temporades",
 	"shows.page.searchingNamed": "Cercant {name}",
 	"shows.page.chooseRelease": "Tria un llançament",
+	"shows.page.saveToDevice": "Desa al dispositiu",
 	"shows.page.keepNamed": "Mantén {name} al dia",
 	"shows.page.seasonKept": "{name} es manté al dia",
 	"shows.page.seasonNotKept": "{name} no es manté al dia",

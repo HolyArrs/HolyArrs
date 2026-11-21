@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "به‌روز نگه داشته می‌شود",
 	"discover.titleLibrary.notKeptUpToDate": "به‌روز نگه داشته نمی‌شود",
 	"discover.titleLibrary.mainCopy": "کپی اصلی",
+	"discover.titleLibrary.saveToDevice": "ذخیره در دستگاه",
 	"discover.titleLibrary.noSubtitles": "بدون زیرنویس",
 	"discover.titleLibrary.defaultCodes": "پیش‌فرض · {codes}",
 	"discover.titleLibrary.defaultNone": "پیش‌فرض · تنظیم نشده",

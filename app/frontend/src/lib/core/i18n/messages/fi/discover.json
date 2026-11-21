@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Pidetään ajan tasalla",
 	"discover.titleLibrary.notKeptUpToDate": "Ei pidetä ajan tasalla",
 	"discover.titleLibrary.mainCopy": "Pääkopio",
+	"discover.titleLibrary.saveToDevice": "Tallenna laitteelle",
 	"discover.titleLibrary.noSubtitles": "Ei tekstityksiä",
 	"discover.titleLibrary.defaultCodes": "Oletus · {codes}",
 	"discover.titleLibrary.defaultNone": "Oletus · ei asetettu",

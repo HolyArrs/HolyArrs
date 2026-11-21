@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Hinahanap ang bawat season",
 	"shows.page.searchingNamed": "Hinahanap ang {name}",
 	"shows.page.chooseRelease": "Pumili ng release",
+	"shows.page.saveToDevice": "I-save sa device",
 	"shows.page.keepNamed": "Panatilihing napapanahon ang {name}",
 	"shows.page.seasonKept": "Pinananatiling napapanahon ang {name}",
 	"shows.page.seasonNotKept": "Hindi pinananatiling napapanahon ang {name}",

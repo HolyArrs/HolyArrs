@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Sucht jede Staffel",
 	"shows.page.searchingNamed": "Sucht {name}",
 	"shows.page.chooseRelease": "Release auswählen",
+	"shows.page.saveToDevice": "Auf Gerät speichern",
 	"shows.page.keepNamed": "{name} aktuell halten",
 	"shows.page.seasonKept": "{name} wird aktuell gehalten",
 	"shows.page.seasonNotKept": "{name} wird nicht aktuell gehalten",

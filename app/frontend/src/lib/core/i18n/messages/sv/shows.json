@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Söker i varje säsong",
 	"shows.page.searchingNamed": "Söker efter {name}",
 	"shows.page.chooseRelease": "Välj en release",
+	"shows.page.saveToDevice": "Spara på enheten",
 	"shows.page.keepNamed": "Håll {name} uppdaterad",
 	"shows.page.seasonKept": "{name} hålls uppdaterad",
 	"shows.page.seasonNotKept": "{name} hålls inte uppdaterad",

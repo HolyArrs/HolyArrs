@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "נשמר מעודכן",
 	"discover.titleLibrary.notKeptUpToDate": "לא נשמר מעודכן",
 	"discover.titleLibrary.mainCopy": "עותק ראשי",
+	"discover.titleLibrary.saveToDevice": "שמירה במכשיר",
 	"discover.titleLibrary.noSubtitles": "אין כתוביות",
 	"discover.titleLibrary.defaultCodes": "ברירת מחדל · {codes}",
 	"discover.titleLibrary.defaultNone": "ברירת מחדל · לא הוגדר",

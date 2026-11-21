@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "अप-टू-डेट रखा जाता है",
 	"discover.titleLibrary.notKeptUpToDate": "अप-टू-डेट नहीं रखा जाता",
 	"discover.titleLibrary.mainCopy": "मुख्य कॉपी",
+	"discover.titleLibrary.saveToDevice": "डिवाइस पर सहेजें",
 	"discover.titleLibrary.noSubtitles": "कोई सबटाइटल नहीं",
 	"discover.titleLibrary.defaultCodes": "डिफ़ॉल्ट · {codes}",
 	"discover.titleLibrary.defaultNone": "डिफ़ॉल्ट · कुछ सेट नहीं",

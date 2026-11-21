@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "புதுப்பித்தபடி வைக்கப்படுகிறது",
 	"discover.titleLibrary.notKeptUpToDate": "புதுப்பித்தபடி வைக்கப்படவில்லை",
 	"discover.titleLibrary.mainCopy": "முதன்மைப் பிரதி",
+	"discover.titleLibrary.saveToDevice": "சாதனத்தில் சேமி",
 	"discover.titleLibrary.noSubtitles": "வசனங்கள் இல்லை",
 	"discover.titleLibrary.defaultCodes": "இயல்புநிலை · {codes}",
 	"discover.titleLibrary.defaultNone": "இயல்புநிலை · எதுவும் அமைக்கப்படவில்லை",

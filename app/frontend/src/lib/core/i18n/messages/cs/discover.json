@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Udržováno aktuální",
 	"discover.titleLibrary.notKeptUpToDate": "Neudržováno aktuální",
 	"discover.titleLibrary.mainCopy": "Hlavní kopie",
+	"discover.titleLibrary.saveToDevice": "Uložit do zařízení",
 	"discover.titleLibrary.noSubtitles": "Bez titulků",
 	"discover.titleLibrary.defaultCodes": "Výchozí · {codes}",
 	"discover.titleLibrary.defaultNone": "Výchozí · nenastaveno",

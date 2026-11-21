@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Minden évad keresése",
 	"shows.page.searchingNamed": "{name} keresése",
 	"shows.page.chooseRelease": "Release választása",
+	"shows.page.saveToDevice": "Mentés az eszközre",
 	"shows.page.keepNamed": "{name} naprakészen tartása",
 	"shows.page.seasonKept": "{name} naprakészen tartva",
 	"shows.page.seasonNotKept": "{name} nincs naprakészen tartva",

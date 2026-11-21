@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Tenuto aggiornato",
 	"discover.titleLibrary.notKeptUpToDate": "Non tenuto aggiornato",
 	"discover.titleLibrary.mainCopy": "Copia principale",
+	"discover.titleLibrary.saveToDevice": "Salva sul dispositivo",
 	"discover.titleLibrary.noSubtitles": "Nessun sottotitolo",
 	"discover.titleLibrary.defaultCodes": "Predefinito · {codes}",
 	"discover.titleLibrary.defaultNone": "Predefinito · nessuno impostato",

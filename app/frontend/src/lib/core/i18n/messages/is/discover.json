@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Haldið uppfærðu",
 	"discover.titleLibrary.notKeptUpToDate": "Ekki haldið uppfærðu",
 	"discover.titleLibrary.mainCopy": "Aðaleintak",
+	"discover.titleLibrary.saveToDevice": "Vista í tæki",
 	"discover.titleLibrary.noSubtitles": "Engir skjátextar",
 	"discover.titleLibrary.defaultCodes": "Sjálfgefið · {codes}",
 	"discover.titleLibrary.defaultNone": "Sjálfgefið · ekkert stillt",

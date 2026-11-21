@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Тражим сваку сезону",
 	"shows.page.searchingNamed": "Тражим {name}",
 	"shows.page.chooseRelease": "Изабери издање",
+	"shows.page.saveToDevice": "Сачувај на уређај",
 	"shows.page.keepNamed": "Одржавај {name} ажурним",
 	"shows.page.seasonKept": "{name} се одржава ажурним",
 	"shows.page.seasonNotKept": "{name} се не одржава ажурним",

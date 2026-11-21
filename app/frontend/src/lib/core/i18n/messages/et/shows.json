@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Otsin iga hooaega",
 	"shows.page.searchingNamed": "Otsin: {name}",
 	"shows.page.chooseRelease": "Vali väljalase",
+	"shows.page.saveToDevice": "Salvesta seadmesse",
 	"shows.page.keepNamed": "Hoia {name} ajakohasena",
 	"shows.page.seasonKept": "{name} hoitakse ajakohasena",
 	"shows.page.seasonNotKept": "{name} ei hoita ajakohasena",

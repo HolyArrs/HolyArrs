@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Αναζήτηση όλων των σεζόν",
 	"shows.page.searchingNamed": "Αναζήτηση: {name}",
 	"shows.page.chooseRelease": "Επιλογή κυκλοφορίας",
+	"shows.page.saveToDevice": "Αποθήκευση στη συσκευή",
 	"shows.page.keepNamed": "Διατήρηση ενημερωμένου: {name}",
 	"shows.page.seasonKept": "Το «{name}» διατηρείται ενημερωμένο",
 	"shows.page.seasonNotKept": "Το «{name}» δεν διατηρείται ενημερωμένο",

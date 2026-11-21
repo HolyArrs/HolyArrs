@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "Hledají se všechny sezóny",
 	"shows.page.searchingNamed": "Hledá se {name}",
 	"shows.page.chooseRelease": "Vybrat release",
+	"shows.page.saveToDevice": "Uložit do zařízení",
 	"shows.page.keepNamed": "Udržovat {name} aktuální",
 	"shows.page.seasonKept": "{name} se udržuje aktuální",
 	"shows.page.seasonNotKept": "{name} se neudržuje aktuální",

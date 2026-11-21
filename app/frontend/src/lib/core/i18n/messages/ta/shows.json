@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "ஒவ்வொரு பருவத்தையும் தேடுகிறது",
 	"shows.page.searchingNamed": "{name} ஐத் தேடுகிறது",
 	"shows.page.chooseRelease": "வெளியீட்டைத் தேர்ந்தெடு",
+	"shows.page.saveToDevice": "சாதனத்தில் சேமி",
 	"shows.page.keepNamed": "{name} ஐப் புதுப்பித்தபடி வை",
 	"shows.page.seasonKept": "{name} புதுப்பித்தபடி வைக்கப்படுகிறது",
 	"shows.page.seasonNotKept": "{name} புதுப்பித்தபடி வைக்கப்படவில்லை",

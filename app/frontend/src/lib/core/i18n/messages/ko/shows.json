@@ -144,6 +144,7 @@
 	"shows.page.searchingAll": "모든 시즌 검색 중",
 	"shows.page.searchingNamed": "{name} 검색 중",
 	"shows.page.chooseRelease": "릴리스 직접 고르기",
+	"shows.page.saveToDevice": "기기에 저장",
 	"shows.page.keepNamed": "{name} 최신 상태 유지",
 	"shows.page.seasonKept": "{name} 최신 상태로 유지 중",
 	"shows.page.seasonNotKept": "{name} 최신 상태로 유지하지 않음",

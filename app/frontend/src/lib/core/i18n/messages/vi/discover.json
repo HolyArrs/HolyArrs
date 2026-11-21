@@ -508,6 +508,7 @@
 	"discover.titleLibrary.keptUpToDate": "Được giữ cập nhật",
 	"discover.titleLibrary.notKeptUpToDate": "Không được giữ cập nhật",
 	"discover.titleLibrary.mainCopy": "Bản chính",
+	"discover.titleLibrary.saveToDevice": "Lưu vào thiết bị",
 	"discover.titleLibrary.noSubtitles": "Không có phụ đề",
 	"discover.titleLibrary.defaultCodes": "Mặc định · {codes}",
 	"discover.titleLibrary.defaultNone": "Mặc định · chưa đặt",
