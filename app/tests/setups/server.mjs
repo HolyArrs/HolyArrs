@@ -1,7 +1,7 @@
 // Starts a throwaway HolyArrs for the browser tests: a fresh config folder
 // in e2e/.tmp, the program built from this repo, listening on 127.0.0.1.
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deezerURL, mbPort, mdblistPort, metadataEnv, plexPort, startFakes, subsPort, tmdbPort, traktPort, tvmazePort, youtubeURL } from '../fakes/index.mjs';
@@ -36,13 +36,18 @@ const stopFakes = startFakes();
 // runs often, so a title noted by a page is looked up within seconds.
 // Features held back from the release (internal/feature) are switched on here so their specs keep running,
 // and so is the lab switch that offers the lab's fake Subtitle sites.
-const heldOn = 'ai_apps,plex_watchlists,row_title_stats,alert_channels_more,subtitle_sites,emby_signin,go_back,lab';
+const heldOn = 'ai_apps,plex_watchlists,row_title_stats,alert_channels_more,subtitle_sites,emby_signin,go_back,lab,youtube';
+// YouTube downloads through a fake yt-dlp; ffmpeg only has to be found, so it
+// is a script that runs this Node and does nothing.
+const ffmpeg = join(tmp, 'ffmpeg');
+writeFileSync(ffmpeg, `#!${process.execPath}\n`, { mode: 0o755 });
+const youtubeEnv = { HOLYARRS_YTDLP: join(here, '..', 'fakes', 'yt-dlp.mjs'), HOLYARRS_FFMPEG: ffmpeg };
 const trailerEnv = { HOLYARRS_YOUTUBE_URL: youtubeURL(), HOLYARRS_TRAILER_PASS_FIRST: '2s', HOLYARRS_TRAILER_PASS_EVERY: '3s' };
 const plex = `http://127.0.0.1:${plexPort}`;
 const child = spawn(bin, ['-config', config, '-addr', `127.0.0.1:${port}`], {
 	cwd: tmp,
 	stdio: 'inherit',
-	env: { ...process.env, HOLYARRS_PLEX_URL: plex, HOLYARRS_PLEX_APP_URL: `${plex}/app`, HOLYARRS_PLEX_DISCOVER_URL: `${plex}/discover`, ...metadataEnv, HOLYARRS_RELEASE_FEED: `http://127.0.0.1:${tmdbPort}/releases/latest`, HOLYARRS_TRAKT_URL: `http://127.0.0.1:${traktPort}`, HOLYARRS_MDBLIST_SITE_URL: `http://127.0.0.1:${mdblistPort}`, HOLYARRS_MDBLIST_URL: `http://127.0.0.1:${mdblistPort}/api`, HOLYARRS_TVMAZE_URL: `http://127.0.0.1:${tvmazePort}`, HOLYARRS_MUSICBRAINZ_URL: `http://127.0.0.1:${mbPort}`, HOLYARRS_DEEZER_URL: deezerURL, HOLYARRS_OIDC_ALLOW_LOOPBACK_HTTP: 'true', ...trailerEnv, HOLYARRS_FLAGS: [process.env.HOLYARRS_FLAGS, heldOn].filter(Boolean).join(',') }
+	env: { ...process.env, HOLYARRS_PLEX_URL: plex, HOLYARRS_PLEX_APP_URL: `${plex}/app`, HOLYARRS_PLEX_DISCOVER_URL: `${plex}/discover`, ...metadataEnv, HOLYARRS_RELEASE_FEED: `http://127.0.0.1:${tmdbPort}/releases/latest`, HOLYARRS_TRAKT_URL: `http://127.0.0.1:${traktPort}`, HOLYARRS_MDBLIST_SITE_URL: `http://127.0.0.1:${mdblistPort}`, HOLYARRS_MDBLIST_URL: `http://127.0.0.1:${mdblistPort}/api`, HOLYARRS_TVMAZE_URL: `http://127.0.0.1:${tvmazePort}`, HOLYARRS_MUSICBRAINZ_URL: `http://127.0.0.1:${mbPort}`, HOLYARRS_DEEZER_URL: deezerURL, HOLYARRS_OIDC_ALLOW_LOOPBACK_HTTP: 'true', ...trailerEnv, ...youtubeEnv, HOLYARRS_FLAGS: [process.env.HOLYARRS_FLAGS, heldOn].filter(Boolean).join(',') }
 });
 const stop = () => {
 	child.kill();

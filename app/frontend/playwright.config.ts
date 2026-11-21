@@ -98,6 +98,8 @@ export default defineConfig({
 		// The rest of the app frame: signed-in devices, This app, Schedules, the log viewer, the API page and the update notice; a phone and accessibility.
 		// The whole app under a URL base behind a reverse proxy: its own HolyArrs, no other project needed.
 		{ name: 'urlbase', testMatch: '**/whole-app/urlbase.spec.ts', use: { ...devices['Desktop Chrome'] } },
+		// YouTube with a fake yt-dlp: the folder in Settings, a video downloads and resumes, a channel followed, a member without the permission sees none of it.
+		{ name: 'youtube', testMatch: '**/youtube/youtube.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'schedules', testMatch: '**/health/schedules.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'copychoices', testMatch: '**/whole-app/copy-choices.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Explore memory: heap, DOM nodes and listeners back to the start after 20 Home, Explore and title rounds.

@@ -18,7 +18,7 @@ test.beforeAll(async ({ browser }) => {
 	await signIn(page, owner());
 });
 
-const ids: Record<string, string> = { Movies: 'movies', 'TV shows': 'shows', Music: 'music', Subtitles: 'subtitles', 'Requests': 'wishlist', Sources: 'sources' };
+const ids: Record<string, string> = { Movies: 'movies', 'TV shows': 'shows', Music: 'music', Subtitles: 'subtitles', 'Requests': 'wishlist', Sources: 'sources', YouTube: 'youtube' };
 const part = (name: string) => page.locator(`[data-testid="part"][data-part="${ids[name]}"]`);
 
 async function confirm(label: RegExp) {
@@ -34,7 +34,9 @@ test('turn a part off and on, a refused switch, and the Events', async () => {
 	await page.getByTestId('settings-group').filter({ hasText: 'Library' }).click();
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Parts', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'Parts', level: 1 })).toBeVisible();
-	await expect(page.getByTestId('part')).toHaveCount(6);
+	// The shared test server switches the youtube feature on, so YouTube is the seventh part.
+	await expect(page.getByTestId('part')).toHaveCount(7);
+	await expect(part('YouTube')).toBeVisible();
 	await expect(part('Sources')).toContainText('When off: Automatic searches stop');
 	await expect(part('Music')).toContainText('When off: Artist and album pages');
 
