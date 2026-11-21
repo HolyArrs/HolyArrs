@@ -172,9 +172,13 @@ type Hints struct {
 
 // Result is a parsed Release name.
 type Result struct {
-	Original   string          `json:"original"`
-	Kind       Field[string]   `json:"kind"`
-	Title      Field[string]   `json:"title"`
+	Original string        `json:"original"`
+	Kind     Field[string] `json:"kind"`
+	Title    Field[string] `json:"title"`
+	// KanaTitle is the title read a second way, with the kana of words that
+	// mix Latin letters and kana spelled out ("Re:ゼロ" as "Re:zero"). Empty
+	// when no word is like that.
+	KanaTitle  string          `json:"-"`
 	Year       Field[int]      `json:"year"`
 	Resolution Field[int]      `json:"resolution"`
 	Source     Field[string]   `json:"source"`
@@ -380,13 +384,23 @@ func Parse(name string, h Hints) Result {
 	if lead != "" && !strings.Contains(strings.TrimSpace(body), " ") {
 		body = strings.ReplaceAll(body, ".", " ")
 	}
-	if sh, start, end, ok := findShow(body, lead != "", h.Show); ok {
+	sh, pre, kana, post, isShow, backwards := bracketTitleShow(body, lead != "", h.Show)
+	if !isShow && !backwards {
+		var start, end int
+		if sh, start, end, isShow = findShow(body, lead != "", h.Show); isShow {
+			pre, post = body[:start], body[end:]
+		}
+	}
+	if isShow {
 		// An anime name puts its group first; a last bracket such as
 		// "[Batch]" or "[Multi-Sub]" is then not the group.
 		if lead != "" && (r.Group.Conf == Unknown || bracketGroup) {
 			r.Group = sure(lead)
 		}
-		parseShow(&r, sh, body[:start], body[end:], trailing, lead != "", flags, h)
+		parseShow(&r, sh, pre, post, trailing, lead != "", flags, h)
+		if kana != "" {
+			r.KanaTitle = kana
+		}
 		for f := range flags {
 			r.Flags = append(r.Flags, f)
 		}
@@ -436,7 +450,8 @@ func Parse(name string, h Hints) Result {
 	} else {
 		r.Year.Conf = Unknown
 	}
-	title := strings.Join(toks[:end], " ")
+	r.KanaTitle = kanaReading(toks[:end])
+	title := strings.Join(latinRun(toks[:end]), " ")
 	if m := reArticle.FindStringSubmatch(title); m != nil {
 		title = m[2] + " " + m[1]
 	}

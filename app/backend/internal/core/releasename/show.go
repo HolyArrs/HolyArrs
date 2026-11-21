@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 // Show patterns, tried in this order; the first that fits wins. The order
@@ -211,7 +212,7 @@ func findShow(s string, anime, show bool) (showHit, int, int, bool) {
 		return h, m[0], end, true
 	}
 	if anime {
-		if m := reAnimeBrack.FindStringSubmatchIndex(s); m != nil && !isYearNum(s[m[2]:m[3]]) {
+		if m := reAnimeBrack.FindStringSubmatchIndex(s); m != nil && !isYearNum(s[m[2]:m[3]]) && !tagNumbers[atoi(s[m[2]:m[3]])] {
 			a, b := atoi(s[m[2]:m[3]]), atoi(s[m[2]:m[3]])
 			if m[4] >= 0 {
 				b = atoi(s[m[4]:m[5]])
@@ -223,7 +224,7 @@ func findShow(s string, anime, show bool) (showHit, int, int, bool) {
 		if m := reBareEp.FindStringSubmatchIndex(s); m != nil {
 			return showHit{kind: KindAbsolute, n: ShowNumbers{Absolute: []int{atoi(s[m[2]:m[3]])}}}, m[0], m[1], true
 		}
-		if m := reAnimeBare.FindStringSubmatchIndex(s); m != nil && !isYearNum(s[m[2]:m[3]]) && !reResWord.MatchString(s[m[2]:m[3]]+"p") {
+		if m := reAnimeBare.FindStringSubmatchIndex(s); m != nil && !isYearNum(s[m[2]:m[3]]) && !tagNumbers[atoi(s[m[2]:m[3]])] {
 			h := showHit{kind: KindAbsolute, n: ShowNumbers{Absolute: []int{atoi(s[m[2]:m[3]])}}}
 			if m[4] >= 0 {
 				h.fix = atoi(s[m[4]:m[5]]) - 1
@@ -287,6 +288,141 @@ func findShow(s string, anime, show bool) (showHit, int, int, bool) {
 	return showHit{}, 0, 0, false
 }
 
+// latinRun drops the CJK alt-titles that fansub names put before, after or
+// inside the Latin title ("新吊带袜天使 New Panty Stocking", "Sword Art Online
+// アリシゼーション Alicization"). A word with any CJK character goes, and the
+// Latin words keep their order. That includes words that mix both ("Re:ゼロ"),
+// since the Latin half alone is no safe name; kanaReading covers those. A "&"
+// beside a dropped word goes too. A title with no Latin-only word stays whole.
+func latinRun(words []string) []string {
+	if !slices.ContainsFunc(words, func(w string) bool { return strings.IndexFunc(w, isLatin) >= 0 && !isCJK(w) }) {
+		return words
+	}
+	out := make([]string, 0, len(words))
+	for i, w := range words {
+		if isCJK(w) {
+			continue
+		}
+		if w == "&" && (i == 0 || isCJK(words[i-1]) || i == len(words)-1 || isCJK(words[i+1])) {
+			continue
+		}
+		out = append(out, w)
+	}
+	return out
+}
+
+// reBracketEpisodes matches the episode bracket of [Group][Title][01-12][tags]:
+// a number, maybe a second one after a hyphen, a tilde or spaces (indexers
+// turn the hyphen into a space), then anything.
+var reBracketEpisodes = regexp.MustCompile(`^(\d{1,4})(?:v(\d))?(?:$|[\s~-])\s*[~-]?\s*(\d{1,4})?`)
+
+// tagNumbers are resolutions and codec numbers, which are never episodes.
+var tagNumbers = map[int]bool{480: true, 576: true, 720: true, 1080: true, 2160: true, 264: true, 265: true}
+
+// bracketTagOnly says a bracket holds only tags, like "1080p" or "10bit".
+func bracketTagOnly(s string) bool {
+	f := strings.Fields(s)
+	return len(f) > 0 && !slices.ContainsFunc(f, func(w string) bool { return !isTag(w) })
+}
+
+// bracketTitleShow reads the layout some fansub groups use, with the title in
+// a bracket after the group and the episode numbers in the next one:
+// "[Group][Title][01-12][1080p][BDRip]". body starts after the group. The
+// numbers are a running count, so they are absolute. title is the bracket
+// without its CJK alt-titles and kana its spelled-out reading (see
+// kanaReading). Everything after the title, including text left in the
+// episode bracket ("[03 1080P]"), goes to post as tags. Brackets that hold
+// only tags between the two are skipped. If the second bracket does not start
+// with an episode number (a resolution, a year, a codec) it is no match.
+// backwards says the numbers were a range that runs backwards, which no other
+// reading may take. A search for something other than a show needs a
+// zero-padded number or a range to accept it.
+func bracketTitleShow(body string, anime, show bool) (h showHit, title, kana, post string, ok, backwards bool) {
+	if !anime {
+		return h, "", "", "", false, false
+	}
+	t := reLeadBrack.FindStringSubmatchIndex(body)
+	if t == nil {
+		return h, "", "", "", false, false
+	}
+	rest := body[t[1]:]
+	skipped := ""
+	var e []int
+	for {
+		e = reLeadBrack.FindStringSubmatchIndex(rest)
+		if e == nil {
+			return h, "", "", "", false, false
+		}
+		if !bracketTagOnly(rest[e[2]:e[3]]) {
+			break
+		}
+		skipped += rest[:e[1]]
+		rest = rest[e[1]:]
+	}
+	inner := rest[e[2]:e[3]]
+	m := reBracketEpisodes.FindStringSubmatchIndex(inner)
+	if m == nil {
+		return h, "", "", "", false, false
+	}
+	first := atoi(inner[m[2]:m[3]])
+	if isYearNum(inner[m[2]:m[3]]) || tagNumbers[first] {
+		return h, "", "", "", false, false
+	}
+	titleText := body[t[2]:t[3]]
+	if slices.ContainsFunc(strings.Fields(titleText), isTag) {
+		return h, "", "", "", false, false
+	}
+	h = showHit{kind: KindAbsolute, n: ShowNumbers{Absolute: []int{first}}}
+	if m[4] >= 0 {
+		h.fix = atoi(inner[m[4]:m[5]]) - 1
+	}
+	end := m[1]
+	if m[6] >= 0 {
+		end = m[6] // a second number is a tag unless it makes a range
+		tok := inner[m[6]:]
+		if i := strings.IndexAny(tok, " \t"); i >= 0 {
+			tok = tok[:i]
+		}
+		digits := inner[m[6]:m[7]]
+		tail := strings.TrimPrefix(tok, digits)
+		last := atoi(digits)
+		tagLike := isTag(tok) || tagNumbers[last] && tail == "" || tail != "" && strings.ContainsAny(tail[:1], ".kKxXpPiI") || strings.HasPrefix(strings.ToLower(tail), "bit")
+		if !tagLike {
+			if last < first {
+				return h, "", "", "", false, true // runs backwards
+			}
+			end = m[7]
+			if last > first {
+				if sp := span(first, last); sp != nil {
+					h.n.Absolute = sp
+				}
+			}
+		}
+	}
+	isRange := len(h.n.Absolute) > 1
+	zeroPadded := len(inner[m[2]:m[3]]) > 1 && inner[m[2]] == '0'
+	if !show && !isRange && !zeroPadded {
+		return h, "", "", "", false, false
+	}
+	post = skipped + " " + inner[end:] + " " + rest[e[1]:]
+	return h, latinTitle(titleText), kanaReading(strings.Fields(titleText)), post, true, false
+}
+
+// latinTitle is a bracket title without its CJK alt-titles ("新吊带袜天使 New
+// PANTY STOCKING" gives "New PANTY STOCKING").
+func latinTitle(s string) string {
+	return strings.Join(latinRun(strings.Fields(s)), " ")
+}
+
+func isLatin(c rune) bool { return unicode.Is(unicode.Latin, c) && unicode.IsLetter(c) }
+
+// isCJK says a word has a Han, kana or Hangul character.
+func isCJK(w string) bool {
+	return strings.IndexFunc(w, func(c rune) bool {
+		return unicode.In(c, unicode.Han, unicode.Hiragana, unicode.Katakana, unicode.Hangul)
+	}) >= 0
+}
+
 // parseShow fills a Result for a show Release: the title is what comes
 // before the numbers (with a year at its end, if any), the tags what comes
 // after. anime says the name began with a [group].
@@ -307,11 +443,12 @@ func parseShow(r *Result, h showHit, pre, post string, trailing []string, anime 
 		r.Year = sure(atoi(toks[k-1]))
 		toks = toks[:k-1]
 	}
-	title := strings.Join(toks, " ")
+	title := strings.Join(latinRun(toks), " ")
 	if m := reArticle.FindStringSubmatch(title); m != nil {
 		title = m[2] + " " + m[1]
 	}
 	r.Title = sure(title)
+	r.KanaTitle = kanaReading(toks)
 	// " - Episode Title" after the episode number is how the old apps name
 	// Library files. Its words are the episode's title ("Charlotte's Web",
 	// "TS-19"), not tags, unless a resolution says the name ends in quality.
