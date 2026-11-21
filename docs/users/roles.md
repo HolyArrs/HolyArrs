@@ -35,6 +35,10 @@ For a child with an age limit, see [Kid accounts](kids.md).
 | Approve or turn down requests | Decide other people's requests | Yes | No |
 | Run the Library | Search, organise and manage Library work | Yes | No |
 | Change settings | Open and change ordinary settings | No | No |
+| Use the YouTube library | Download and watch their own [YouTube](../youtube/index.md) videos | No | No |
+| Save files to their device | Save a copy of a movie or episode | No | No |
+
+The last two show only with the `youtube` switch. The owner always has both. Kid accounts never get them, even when ticked. Deleting a person deletes their YouTube videos and follows.
 
 Who can grant what:
 

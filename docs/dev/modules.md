@@ -1,6 +1,6 @@
 ---
 title: Modules
-description: What each of the 23 modules owns, the layer order between them and the structure checks that enforce it.
+description: What each of the 24 modules owns, the layer order between them and the structure checks that enforce it.
 level: Expert
 sidebar: { order: 4 }
 ---
@@ -39,6 +39,7 @@ Pick the module your change belongs in, and know which modules it may call.
 | `health` | Health checks, the doctor, the support bundle |
 | `updates` | The update check and the signed update list |
 | `setup` | The first-run wizard |
+| `youtube` | Each person's YouTube follows, downloads and player files |
 
 ## Layer order
 
@@ -57,7 +58,7 @@ A module imports only a lower layer. Nothing imports `discover`. `tools/structur
 | 8 | `subtitles`, `mediaservers`, `alerts` |
 | 9 | `movies`, `shows` |
 | 10 | `requests`, `health` |
-| 11 | `music`, `arrapi`, `migrate`, `ai`, `backups`, `updates`, `setup` |
+| 11 | `music`, `arrapi`, `migrate`, `ai`, `backups`, `updates`, `setup`, `youtube` |
 | 13 | `discover` |
 
 If your module needs something from a higher layer, do not import it. Have the higher module pass plain data down, or define a small interface in the lower one that `wiring.go` fills in.
@@ -70,7 +71,7 @@ Register it in the module's `routes.go` with its permission. `openapi.json` come
 
 ### New module
 
-Fit your change into the 23 first, and open an issue before you add one. A new module needs its backend folder (plus `lib/<module>/` and `app/tests/<module>/` if it has screens), a place in the layer order in `tools/structurecheck`, and a line in `wiring.go`.
+Fit your change into the 24 first, and open an issue before you add one. A new module needs its backend folder (plus `lib/<module>/` and `app/tests/<module>/` if it has screens), a place in the layer order in `tools/structurecheck`, and a line in `wiring.go`.
 
 ## If it does not work
 

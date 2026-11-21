@@ -26,6 +26,7 @@ Writing code for HolyArrs? Go to [For developers](#for-developers).
 | Subtitles | [Subtitles](library/subtitles.md) |
 | Files and folders | [Library folders](library/folders.md), [move to one data folder](library/move-to-one-folder.md), [codecs and media inspection](library/codecs-inspection.md), [audio versions](library/audio-versions.md), [protected copies](library/protected-copies.md) |
 | Media servers | [Plex, Jellyfin and Emby](library/media-servers.md) |
+| YouTube (held back) | [YouTube videos, playlists and channels](youtube/index.md) |
 | Metadata | [Metadata and privacy](library/metadata.md), [trailers](library/trailers.md), [data packs](library/data-packs.md), [TRaSH Guides scores](library/trash-guides.md) |
 | Accounts | [Sign-in and passwords](users/sign-in.md), [users and roles](users/roles.md), [kid accounts](users/kids.md), [signed-in devices](users/sessions.md) |
 | Alerts | [Alerts](users/alerts.md) |
@@ -78,10 +79,12 @@ A changing number or token is in square brackets.
 | Import a library, Rename files | `/library/import`, `/library/rename` | Organising [movies](movies/organise.md), [shows](shows/organise.md), [music](music/organise.md) |
 | Missing subtitles | `/library/missing-subtitles` | [Subtitles](library/subtitles.md) |
 | Allow an AI app | `/ai` | [MCP plugin](reference/ai.md) (held back) |
+| YouTube | `/youtube`, `/youtube/[id]` | [YouTube](youtube/index.md) (held back) |
 | Plugins | `/plugins` | [Plugins](run/plugins.md) |
 | Settings | `/settings` | [Home and Settings](start/home-and-settings.md#settings) |
 | Request rules | `/settings/requests` | [Weekly limits and Request rules](requests/settings.md) |
 | AI apps | `/settings/ai` | [MCP plugin](reference/ai.md) (held back) |
+| YouTube settings | `/settings/youtube` | [YouTube](youtube/index.md) (held back) |
 | Alerts | `/settings/alerts` | [Alerts](users/alerts.md) |
 | Backups | `/settings/backups` | [Backups](run/backups.md) |
 | Import from other apps | `/settings/move` | [Import from other apps](migrate/index.md) |

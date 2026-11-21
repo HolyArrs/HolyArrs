@@ -49,6 +49,7 @@ The next timed run does not move. A job already waiting or running is not starte
 | Rescan the Library | 6 h to 7 days | |
 | Clean the holding folder | 6 h to 7 days | |
 | Clean up History | 6 h to 7 days | Settings > This app |
+| Check YouTube follows | 1 h to 7 days, every 6 h by default. Only with the `youtube` switch | |
 
 ### Turn a schedule off
 

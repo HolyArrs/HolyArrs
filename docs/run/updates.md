@@ -103,6 +103,7 @@ Remove the name and restart to turn it off. Hidden settings come back when you t
 | `subtitle_sites` | Subtitle sites and subtitle search. Your subtitle language stays on |
 | `emby_signin` | Sign in with Emby. Emby library refresh still works |
 | `go_back` | The **Go back** panel on the Status page. The steps in [Go back](#go-back-to-the-older-version) work without it |
+| `youtube` | [YouTube](../youtube/index.md): the **YouTube** page, **Settings > YouTube**, its schedule and permissions, and **Save to device** for movies and episodes. Needs yt-dlp and ffmpeg |
 
 Nothing changed after adding a switch? Check the spelling (lowercase, underscores) and restart the container, not only the page.
 

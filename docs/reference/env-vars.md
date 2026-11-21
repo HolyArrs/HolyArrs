@@ -49,6 +49,15 @@ HolyArrs drops one newline at the end of the file. If the file is missing, HolyA
 
 On/off variables accept `1`, `true`, `yes` or `on`.
 
+## YouTube
+
+Read only with the `youtube` switch in `HOLYARRS_FLAGS`. See [YouTube](../youtube/index.md#programs).
+
+| Variable | What it does | Default | Example |
+| --- | --- | --- | --- |
+| `HOLYARRS_YTDLP` | Full path to yt-dlp. Keep it in a folder HolyArrs can write to so it can update itself. | `yt-dlp` on `PATH` | `/config/bin/yt-dlp` |
+| `HOLYARRS_FFMPEG` | Full path to ffmpeg. | `ffmpeg` on `PATH` | `/usr/bin/ffmpeg` |
+
 ## Single sign-on
 
 Set these before start. If `HOLYARRS_OIDC_ENABLED` is present at all, even as `false`, the environment owns single sign-on and Settings only shows it. The on/off ones here take only `true` or `false`; anything else stops the start.
