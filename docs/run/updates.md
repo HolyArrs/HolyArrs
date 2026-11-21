@@ -90,7 +90,7 @@ To turn one on, add its switch to `HOLYARRS_FLAGS`, comma-separated, and restart
 
 ```yaml
 environment:
-  HOLYARRS_FLAGS: "subtitle_sites,trakt_lists"
+  HOLYARRS_FLAGS: "ai_apps,go_back"
 ```
 
 Remove the name and restart to turn it off. Hidden settings come back when you turn it on again.
@@ -99,7 +99,6 @@ Remove the name and restart to turn it off. Hidden settings come back when you t
 |---|---|
 | `ai_apps` | Connect AI apps: **Settings > AI apps**, the `/ai` page and its routes |
 | `row_title_stats` | Explore row title statistics in Appearance |
-| `trakt_lists` | Trakt key, Trakt lists and Trakt reviews. TMDB lists stay on |
 | `subtitle_sites` | Subtitle sites and subtitle search. Your subtitle language stays on |
 | `emby_signin` | Sign in with Emby. Emby library refresh still works |
 | `go_back` | The **Go back** panel on the Status page. The steps in [Go back](#go-back-to-the-older-version) work without it |

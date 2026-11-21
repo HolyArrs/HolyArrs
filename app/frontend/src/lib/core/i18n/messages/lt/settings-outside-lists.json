@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Pridėti į Nepridėtinų sąrašą",
 	"settings.outsideLists.showDot": "serialas ·",
 	"settings.outsideLists.takeOff": "Išimti: {name}",
-	"settings.outsideLists.empty": "Šiame sąraše dar nieko nėra"
+	"settings.outsideLists.empty": "Šiame sąraše dar nieko nėra",
+	"settings.outsideLists.traktSignInTitle": "Prisijungimas prie Trakt",
+	"settings.outsideLists.traktSignInInfo": "Prisijunkite, kad būtų skaitomi jūsų privatūs Trakt sąrašai ir žiūrėjimo sąrašas, o tai, ką žiūrėjote Trakt, būtų pridėta į žiūrėjimo istoriją.",
+	"settings.outsideLists.traktSignedInAs": "Prisijungta kaip {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Neprisijungta. Skaitomi tik vieši sąrašai.",
+	"settings.outsideLists.traktSignIn": "Prisijungti su Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Bet kuriame įrenginyje atidarykite <a>{url}</a> ir įveskite <code>{code}</code>. Šis puslapis laukia, kol patvirtinsite.",
+	"settings.outsideLists.traktDenied": "Prisijungimas prie Trakt atmestas.",
+	"settings.outsideLists.traktExpired": "Kodo galiojimas baigėsi. Pradėkite iš naujo.",
+	"settings.outsideLists.traktSignOut": "Atsijungti nuo Trakt",
+	"settings.outsideLists.traktSignedIn": "Prisijungta prie Trakt",
+	"settings.outsideLists.traktSignedOut": "Atsijungta nuo Trakt",
+	"settings.outsideLists.traktSecret": "Client secret (tik senesnėms Trakt programoms; naujos jo neturi)"
 }

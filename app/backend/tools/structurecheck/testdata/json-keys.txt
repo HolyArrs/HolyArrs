@@ -7,6 +7,7 @@ DownloadPaused
 DownloadRate
 DownloadRateHi
 DownloadRateLo
+Error
 ExParStatus
 FileSizeHi
 FileSizeLo
@@ -22,6 +23,7 @@ MarkStatus
 MaxParentalRating
 MediaContainer
 Metadata
+Metascore
 MinPostTime
 MoveStatus
 NZBFilename
@@ -36,11 +38,14 @@ Policy
 ProductName
 Progress
 ProviderIds
+Ratings
 RemainingSizeHi
 RemainingSizeLo
+Response
 ScriptStatus
 SeriesId
 ServerName
+Source
 Status
 Type
 UnpackStatus
@@ -61,6 +66,7 @@ absoluteNumber
 absolute_digits
 absolute_from
 access
+access_token
 account
 accounts
 acknowledge_protection
@@ -442,6 +448,7 @@ detail
 details
 details_source
 device
+device_code
 device_name
 died
 digests
@@ -580,6 +587,7 @@ exec_error
 exists
 expected
 expires_at
+expires_in
 explicit
 explicit_lyrics
 ext_name
@@ -780,7 +788,11 @@ image_url
 images
 imdb
 imdbId
+imdbRating
+imdbVotes
 imdb_id
+imdb_rating
+imdb_votes
 implementation
 import_file
 import_folder
@@ -810,6 +822,7 @@ inspection_status
 installed
 installed_version
 instanceName
+interval
 ip
 isAvailable
 isUpgrade
@@ -984,6 +997,7 @@ member
 members
 message
 messages
+metacritic
 metadata
 metadata_percent_complete
 metadata_profiles
@@ -1293,6 +1307,7 @@ plain
 plan
 plan_hash
 plans
+play_count
 playabilityStatus
 playerStoryboardSpecRenderer
 plays
@@ -1408,6 +1423,7 @@ redirect_uris
 redirect_url
 redirect_urls
 ref
+refresh_token
 refreshed_at
 refs
 refuse_early_releases
@@ -1494,6 +1510,7 @@ rollback_at
 rollout_percent
 romaji
 rootFolderPath
+rotten_tomatoes
 routine_days
 row_type
 rows
@@ -1616,6 +1633,7 @@ sign_in_id
 sign_in_name
 signature
 signatureCipher
+signed_in
 signin_library_art
 signing_secret
 sim
@@ -1853,6 +1871,8 @@ trait
 trait_id
 traits
 trakt
+trakt_rating
+trakt_votes
 translate_from
 translated
 translations
@@ -1939,6 +1959,7 @@ used_at
 used_by
 usenet_delay
 user
+user_code
 user_fingerprint
 user_id
 user_key
@@ -1953,6 +1974,7 @@ value
 various
 vbr
 verdict
+verification_url
 version
 version_audio_languages
 version_id
@@ -1971,6 +1993,7 @@ votes
 w
 wait_minutes_torrent
 wait_minutes_usenet
+waiting
 want
 wanted
 warmed

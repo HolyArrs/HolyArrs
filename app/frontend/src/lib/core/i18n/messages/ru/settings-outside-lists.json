@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Добавить в список «Никогда не добавлять»",
 	"settings.outsideLists.showDot": "сериал ·",
 	"settings.outsideLists.takeOff": "Убрать {name}",
-	"settings.outsideLists.empty": "В этом списке пока ничего нет"
+	"settings.outsideLists.empty": "В этом списке пока ничего нет",
+	"settings.outsideLists.traktSignInTitle": "Вход в Trakt",
+	"settings.outsideLists.traktSignInInfo": "Войдите, чтобы читать ваши личные списки и список «Буду смотреть» в Trakt и добавлять просмотренное в Trakt в историю просмотров.",
+	"settings.outsideLists.traktSignedInAs": "Вы вошли как {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Вход не выполнен. Читаются только публичные списки.",
+	"settings.outsideLists.traktSignIn": "Войти через Trakt",
+	"settings.outsideLists.traktDeviceSteps": "На любом устройстве откройте <a>{url}</a> и введите <code>{code}</code>. Эта страница ждёт вашего подтверждения.",
+	"settings.outsideLists.traktDenied": "Вход в Trakt отклонён.",
+	"settings.outsideLists.traktExpired": "Срок действия кода истёк. Начните заново.",
+	"settings.outsideLists.traktSignOut": "Выйти из Trakt",
+	"settings.outsideLists.traktSignedIn": "Вход в Trakt выполнен",
+	"settings.outsideLists.traktSignedOut": "Выход из Trakt выполнен",
+	"settings.outsideLists.traktSecret": "Client secret (только для старых приложений Trakt; у новых его нет)"
 }

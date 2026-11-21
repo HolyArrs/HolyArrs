@@ -91,6 +91,20 @@ type Title struct {
 	// after scores were kept; 0 when the source has none) and Votes how many voted.
 	Score *float64 `db:"score"`
 	Votes int      `db:"votes"`
+	// IMDb's score out of 10 with its vote count, Rotten Tomatoes' critics
+	// percent and the Metascore (0-100), read from OMDb with the owner's
+	// key; nil when not known. OMDbCheckedAt is when OMDb was last asked.
+	IMDbRating     *float64   `db:"imdb_rating"`
+	IMDbVotes      int        `db:"imdb_votes"`
+	RottenTomatoes *int       `db:"rotten_tomatoes"`
+	Metacritic     *int       `db:"metacritic"`
+	OMDbCheckedAt  *time.Time `db:"omdb_checked_at"`
+	// TraktRating is Trakt's rating out of 10 with its vote count, read
+	// with the Trakt client id; nil when not known. TraktCheckedAt is when
+	// Trakt was last asked.
+	TraktRating    *float64   `db:"trakt_rating"`
+	TraktVotes     int        `db:"trakt_votes"`
+	TraktCheckedAt *time.Time `db:"trakt_checked_at"`
 	// Directors are a movie's directors alone (People mixes them in after the cast).
 	Directors []string `db:"directors,json"`
 	// Studio is a movie's first production company.

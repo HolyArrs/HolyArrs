@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Bæta á útilokunarlistann",
 	"settings.outsideLists.showDot": "þáttur ·",
 	"settings.outsideLists.takeOff": "Taka {name} af",
-	"settings.outsideLists.empty": "Ekkert er enn á þessum lista"
+	"settings.outsideLists.empty": "Ekkert er enn á þessum lista",
+	"settings.outsideLists.traktSignInTitle": "Innskráning í Trakt",
+	"settings.outsideLists.traktSignInInfo": "Skráðu þig inn til að lesa einkalista þína og áhorfslista á Trakt og til að bæta því sem þú horfðir á á Trakt við áhorfssöguna.",
+	"settings.outsideLists.traktSignedInAs": "Innskráð sem {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Ekki innskráð. Aðeins opinberir listar eru lesnir.",
+	"settings.outsideLists.traktSignIn": "Skrá inn með Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Opnaðu <a>{url}</a> í hvaða tæki sem er og sláðu inn <code>{code}</code>. Þessi síða bíður þar til þú samþykkir.",
+	"settings.outsideLists.traktDenied": "Innskráningu í Trakt var hafnað.",
+	"settings.outsideLists.traktExpired": "Kóðinn rann út. Byrjaðu aftur.",
+	"settings.outsideLists.traktSignOut": "Skrá út úr Trakt",
+	"settings.outsideLists.traktSignedIn": "Innskráð í Trakt",
+	"settings.outsideLists.traktSignedOut": "Útskráð úr Trakt",
+	"settings.outsideLists.traktSecret": "Client secret (aðeins eldri Trakt-forrit; ný forrit hafa ekkert)"
 }

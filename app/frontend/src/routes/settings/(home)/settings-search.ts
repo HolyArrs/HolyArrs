@@ -124,7 +124,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/subtitles', 'sy-step', 'Sync fix shift', 'subtitles sync timing offset ms', true),
 	e('/settings/subtitles', 'sites-card', 'Subtitle sites', 'subtitles opensubtitles provider site add'),
 	e('/settings/tmdb', 'metadata-mode', 'Where details come from', 'metadata mode own keys off lookups privacy server independent'),
-	e('/settings/tmdb', 'metadata-keys', 'Your own keys', 'tmdb token tvdb pin mdblist fanart key api'),
+	e('/settings/tmdb', 'metadata-keys', 'Your own keys', 'tmdb token tvdb pin mdblist fanart omdb imdb rotten tomatoes metacritic key api'),
 	e('/settings/tmdb', 'metadata-hosts', 'Addresses for your firewall', 'firewall hosts outside addresses allow list'),
 	e('/settings/tmdb', 'metadata-card', 'Metadata server', 'metadata tmdb posters names artwork server'),
 	e('/settings/outside-lists', '', 'Outside lists', 'tmdb list trakt list import list auto add'),

@@ -2,8 +2,8 @@
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type Mode = 'full' | 'own' | 'off';
-export type KeyName = 'tmdb_token' | 'tvdb_key' | 'tvdb_pin' | 'mdblist_key' | 'fanart_key';
-export const KEY_NAMES: KeyName[] = ['tmdb_token', 'tvdb_key', 'tvdb_pin', 'mdblist_key', 'fanart_key'];
+export type KeyName = 'tmdb_token' | 'tvdb_key' | 'tvdb_pin' | 'mdblist_key' | 'fanart_key' | 'omdb_key';
+export const KEY_NAMES: KeyName[] = ['tmdb_token', 'tvdb_key', 'tvdb_pin', 'mdblist_key', 'fanart_key', 'omdb_key'];
 
 // The server's stand-in for a saved key; sending it back keeps the key.
 export const MASK = '••••••••';

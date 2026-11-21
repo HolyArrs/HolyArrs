@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "添加到永不添加列表",
 	"settings.outsideLists.showDot": "剧集 ·",
 	"settings.outsideLists.takeOff": "移出 {name}",
-	"settings.outsideLists.empty": "此列表中还没有内容"
+	"settings.outsideLists.empty": "此列表中还没有内容",
+	"settings.outsideLists.traktSignInTitle": "Trakt 登录",
+	"settings.outsideLists.traktSignInInfo": "登录后可读取你在 Trakt 上的私密列表和待看清单，并把你在 Trakt 上看过的内容加入观看记录。",
+	"settings.outsideLists.traktSignedInAs": "已登录为 {name}。",
+	"settings.outsideLists.traktNotSignedIn": "未登录。只读取公开列表。",
+	"settings.outsideLists.traktSignIn": "使用 Trakt 登录",
+	"settings.outsideLists.traktDeviceSteps": "在任意设备上打开 <a>{url}</a> 并输入 <code>{code}</code>。此页面会等待你批准。",
+	"settings.outsideLists.traktDenied": "Trakt 登录被拒绝。",
+	"settings.outsideLists.traktExpired": "代码已过期。请重新开始。",
+	"settings.outsideLists.traktSignOut": "退出 Trakt",
+	"settings.outsideLists.traktSignedIn": "已登录 Trakt",
+	"settings.outsideLists.traktSignedOut": "已退出 Trakt",
+	"settings.outsideLists.traktSecret": "Client secret（仅限较旧的 Trakt 应用；新应用没有）"
 }

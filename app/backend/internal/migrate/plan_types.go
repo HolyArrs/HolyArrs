@@ -198,18 +198,31 @@ type ProtocolPlan struct {
 	Part             string `json:"part,omitempty"` // movies, shows or music when only that part's apps set it
 }
 
-// OutsideListPlan is a Radarr TMDB or public Trakt list to add as an
-// Outside list, always paused.
+// OutsideListPlan is a Radarr TMDB or Trakt list, or a Sonarr Trakt list,
+// to add as an Outside list, always paused.
 type OutsideListPlan struct {
 	Kind string `json:"kind"` // tmdb_list, trakt_list
 	Ref  string `json:"ref"`
-	// Library is the movie Library folder's path here.
+	// TitleKind is "show" for a Sonarr list; empty for a movie list.
+	TitleKind string `json:"title_kind,omitempty"`
+	// Seasons and NewSeasons are a show list's choices (requests.OutsideListInput).
+	Seasons    string `json:"seasons,omitempty"`
+	NewSeasons string `json:"new_seasons,omitempty"`
+	// Library is the movie or show Library folder's path here.
 	Library        string `json:"library"`
 	Preset         string `json:"pick_rules,omitempty"`
 	KeepUpToDate   bool   `json:"keep_up_to_date"`
 	SearchOnAdd    bool   `json:"search_on_add"`
 	ReleaseGate    string `json:"release_gate,omitempty"`
 	SyncEveryHours int    `json:"sync_every_hours"`
+}
+
+// titleKind is what the list adds: "show" for a Sonarr list, else "movie".
+func (o *OutsideListPlan) titleKind() string {
+	if o.TitleKind == "show" {
+		return "show"
+	}
+	return "movie"
 }
 
 // TitlePlan is a movie, show or artist to add, adopting its folder.

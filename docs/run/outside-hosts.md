@@ -39,9 +39,10 @@ What the install sends is listed in [Metadata](../library/metadata.md#for-expert
 | `plex.tv`, `app.plex.tv` | Sign in with Plex | Only when someone signs in with Plex | Do not use Plex sign-in |
 | `discover.provider.plex.tv` | Plex watchlists | Only when [Plex watchlists](../requests/settings.md#plex-watchlists) are on | Turn Plex watchlists off |
 | `plex.tv`, `community.plex.tv` | Plex friends' watchlists, read with the owner's Plex link | Only when Plex watchlists and **Include Plex friends** are both on | Turn **Include Plex friends** off |
-| `api.trakt.tv` | Trakt lists and Trakt reviews | Only with the `trakt_lists` switch on and a Trakt key saved | Leave the switch off. See [Held-back features](updates.md#held-back-features) |
+| `api.trakt.tv` | Trakt lists, Trakt ratings and Trakt reviews; with Trakt sign-in also your private lists and your Trakt watch history | Only with a Trakt key saved in **Settings > Outside lists**: ratings for up to 50 titles every 30 minutes, each at most once a week; watch history every 30 minutes while **Read watch history** is on | Remove the Trakt key, and sign out of Trakt |
 | `mdblist.com` | MDBList lists, read by their public link | Each time an MDBList list is read, with no MDBList key saved. Never while lookups are off | Remove your MDBList lists in **Settings > Outside lists** |
 | `api.mdblist.com` | MDBList lists, read with your MDBList key | Each time an MDBList list is read, with an MDBList key saved in **Settings > Outside lists**. Never while lookups are off | Remove the key to use the public link instead, or remove your MDBList lists |
+| `www.omdbapi.com` | IMDb, Rotten Tomatoes and Metacritic scores for Library movies and shows | Only with an OMDb key saved in **Settings > Metadata**: up to 20 titles every 30 minutes, each at most once a week. Never while lookups are off | Remove the OMDb key |
 
 With the HolyArrs server, music lookups (MusicBrainz, Deezer, Wikipedia) and TVmaze go through the metadata server; your install does not contact them itself. TheTVDB is contacted only with your own TheTVDB key and PIN; otherwise TVDB ids come from TMDB and TVmaze.
 
@@ -53,8 +54,8 @@ When someone opens a show's season in a language other than English, the season 
 
 | Where details come from | Addresses lookups reach |
 |---|---|
-| HolyArrs server | `api.holyarrs.com`, `image.tmdb.org`, `www.youtube.com`, plus `api4.thetvdb.com` and `artworks.thetvdb.com` with a TheTVDB key |
-| Your own keys | Never the metadata server. `api.themoviedb.org` and `image.tmdb.org` (with a TMDB token), `api.tvmaze.com`, `static.tvmaze.com`, `musicbrainz.org`, `api.deezer.com`, `en.wikipedia.org`, `www.youtube.com`; `api.mdblist.com` and `webservice.fanart.tv`/`assets.fanart.tv` with those keys; TheTVDB with its key |
+| HolyArrs server | `api.holyarrs.com`, `image.tmdb.org`, `www.youtube.com`, plus `api4.thetvdb.com` and `artworks.thetvdb.com` with a TheTVDB key, and `www.omdbapi.com` with an OMDb key |
+| Your own keys | Never the metadata server. `api.themoviedb.org` and `image.tmdb.org` (with a TMDB token), `api.tvmaze.com`, `static.tvmaze.com`, `musicbrainz.org`, `api.deezer.com`, `en.wikipedia.org`, `www.youtube.com`; `api.mdblist.com` and `webservice.fanart.tv`/`assets.fanart.tv` with those keys; TheTVDB and OMDb with their keys |
 | Off | None. Pictures and details already saved keep showing |
 
 Music charts, new music rows, streaming Top 10s, Wikipedia facts and anime maps come only from the metadata server, so they are off with your own keys.

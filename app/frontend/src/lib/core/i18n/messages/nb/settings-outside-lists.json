@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Legg til i Aldri-legg-til-listen",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "Ta bort {name}",
-	"settings.outsideLists.empty": "Ingenting på listen ennå"
+	"settings.outsideLists.empty": "Ingenting på listen ennå",
+	"settings.outsideLists.traktSignInTitle": "Trakt-innlogging",
+	"settings.outsideLists.traktSignInInfo": "Logg inn for å lese de private Trakt-listene og watchlisten din, og for å legge det du har sett på Trakt, til visningshistorikken.",
+	"settings.outsideLists.traktSignedInAs": "Logget inn som {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Ikke logget inn. Bare offentlige lister leses.",
+	"settings.outsideLists.traktSignIn": "Logg inn med Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Åpne <a>{url}</a> på hvilken som helst enhet, og skriv inn <code>{code}</code>. Denne siden venter til du godkjenner.",
+	"settings.outsideLists.traktDenied": "Trakt-innloggingen ble avslått.",
+	"settings.outsideLists.traktExpired": "Koden gikk ut. Start på nytt.",
+	"settings.outsideLists.traktSignOut": "Logg ut av Trakt",
+	"settings.outsideLists.traktSignedIn": "Logget inn på Trakt",
+	"settings.outsideLists.traktSignedOut": "Logget ut av Trakt",
+	"settings.outsideLists.traktSecret": "Klienthemmelighet (bare eldre Trakt-apper; nye apper har ingen)"
 }

@@ -27036,6 +27036,345 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/trakt-secret": {
+      "put": {
+        "description": "New Trakt apps have none and need none; an empty secret removes it. Never sent back.",
+        "operationId": "putTraktSecret",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "secret": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "secret"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "client_id": {
+                      "type": "boolean"
+                    },
+                    "client_secret": {
+                      "type": "boolean"
+                    },
+                    "expires_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "person_id": {
+                      "type": "integer"
+                    },
+                    "problem": {
+                      "type": "string"
+                    },
+                    "signed_in": {
+                      "type": "boolean"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "waiting": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Saved; the sign-in status."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not a secret."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Owner only, signed in with a password."
+          }
+        },
+        "summary": "Store an older Trakt app's client secret",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/trakt-signin": {
+      "delete": {
+        "description": "Asks Trakt to forget the token too. Public lists still read.",
+        "operationId": "endTraktSignIn",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "client_id": {
+                      "type": "boolean"
+                    },
+                    "client_secret": {
+                      "type": "boolean"
+                    },
+                    "expires_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "person_id": {
+                      "type": "integer"
+                    },
+                    "problem": {
+                      "type": "string"
+                    },
+                    "signed_in": {
+                      "type": "boolean"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "waiting": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Signed out."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Owner only, signed in with a password."
+          }
+        },
+        "summary": "Sign out of Trakt",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "get": {
+        "description": "Never holds a token, the client id or the client secret.",
+        "operationId": "getTraktSignIn",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "client_id": {
+                      "type": "boolean"
+                    },
+                    "client_secret": {
+                      "type": "boolean"
+                    },
+                    "expires_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "person_id": {
+                      "type": "integer"
+                    },
+                    "problem": {
+                      "type": "string"
+                    },
+                    "signed_in": {
+                      "type": "boolean"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "waiting": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The sign-in status."
+          }
+        },
+        "summary": "Whether the Trakt app is set up and who is signed in",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Answers a code to type at Trakt's address; ask /trakt-signin/check until it is approved.",
+        "operationId": "startTraktDeviceSignIn",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "expires_in": {
+                      "type": "integer"
+                    },
+                    "interval": {
+                      "type": "integer"
+                    },
+                    "user_code": {
+                      "type": "string"
+                    },
+                    "verification_url": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The code and where to type it."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Owner only, signed in with a password."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No Trakt key yet."
+          }
+        },
+        "summary": "Start a Trakt device sign-in",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/trakt-signin/check": {
+      "post": {
+        "description": "state is waiting, signed_in, denied or expired. Trakt is asked no faster than its interval.",
+        "operationId": "checkTraktDeviceSignIn",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "state": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "properties": {
+                        "client_id": {
+                          "type": "boolean"
+                        },
+                        "client_secret": {
+                          "type": "boolean"
+                        },
+                        "expires_at": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "person_id": {
+                          "type": "integer"
+                        },
+                        "problem": {
+                          "type": "string"
+                        },
+                        "signed_in": {
+                          "type": "boolean"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "waiting": {
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The state and the sign-in status."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Owner only, signed in with a password."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No device sign-in is waiting."
+          }
+        },
+        "summary": "Ask whether the Trakt device sign-in was approved",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/settings/trakt-token": {
       "get": {
         "description": "Never sent in full. Owner only.",

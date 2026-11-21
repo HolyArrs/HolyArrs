@@ -160,9 +160,10 @@ test('settings pages render their forms', async () => {
 	}
 	await page.goto('/settings/tmdb');
 	await expect(page.getByText('Answering', { exact: true })).toBeVisible();
-	// Answering mode shows only the optional TVDB key and PIN; no TMDB token field.
+	// Answering mode shows only the optional TVDB and OMDb keys and the TVDB PIN; no TMDB token field.
 	await expect(page.locator('#mk-tmdb_token')).toHaveCount(0);
-	await expect(page.locator('input[type=password]')).toHaveCount(2);
+	for (const id of ['#mk-tvdb_key', '#mk-omdb_key', '#mk-tvdb_pin']) await expect(page.locator(id)).toBeVisible();
+	await expect(page.locator('input[type=password]')).toHaveCount(3);
 	await expect(page.getByText(/read access token|TMDB key/i)).toHaveCount(0);
 	// No credit lines in the app: they live on GitHub.
 	await page.goto('/settings/backups');

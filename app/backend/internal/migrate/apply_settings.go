@@ -293,10 +293,14 @@ func (r *run) protocol(it Item) (string, string) {
 	return result(err, ResChanged, what)
 }
 
-// outsideList adds a Radarr list as a paused Outside list.
+// outsideList adds a Radarr or Sonarr list as a paused Outside list.
 func (r *run) outsideList(it Item) (string, string) {
 	o := it.OutsideList
-	if r.id("SELECT id FROM outside_lists WHERE kind = ? AND ref = ? COLLATE NOCASE AND title_kind = 'movie'", o.Kind, o.Ref) != 0 {
+	titleKind, app := o.titleKind(), Radarr
+	if titleKind == "show" {
+		app = Sonarr
+	}
+	if r.id("SELECT id FROM outside_lists WHERE kind = ? AND ref = ? COLLATE NOCASE AND title_kind = ?", o.Kind, o.Ref, titleKind) != 0 {
 		return ResAlready, "an Outside list for this list is here"
 	}
 	lib := filepath.Clean(filepath.FromSlash(o.Library))
@@ -307,16 +311,16 @@ func (r *run) outsideList(it Item) (string, string) {
 		}
 		return ResCreate, what
 	}
-	lfID := r.id("SELECT id FROM library_folders WHERE path = ? AND kind = 'movie'", lib)
+	lfID := r.id("SELECT id FROM library_folders WHERE path = ? AND kind = ?", lib, titleKind)
 	if lfID == 0 {
 		return ResNotFound, "its Library folder " + o.Library + " is not here (not imported, or left out)"
 	}
-	name := freeListName(it.Name, func(n string) bool {
+	name := freeListName(it.Name, app, func(n string) bool {
 		return r.id("SELECT id FROM outside_lists WHERE name = ? COLLATE NOCASE", n) != 0
 	})
 	off, keep := false, o.KeepUpToDate
-	in := requests.OutsideListInput{Name: name, Kind: o.Kind, Ref: o.Ref, LibraryFolderID: lfID, PickRulesID: r.presetID(o.Preset, "movie"), KeepUpToDate: &keep,
-		SearchOnAdd: o.SearchOnAdd, ReleaseGate: o.ReleaseGate, Enabled: &off, SyncEveryHours: o.SyncEveryHours}
+	in := requests.OutsideListInput{Name: name, Kind: o.Kind, TitleKind: titleKind, Ref: o.Ref, LibraryFolderID: lfID, PickRulesID: r.presetID(o.Preset, titleKind), KeepUpToDate: &keep,
+		SearchOnAdd: o.SearchOnAdd, ReleaseGate: o.ReleaseGate, Seasons: o.Seasons, NewSeasons: o.NewSeasons, Enabled: &off, SyncEveryHours: o.SyncEveryHours}
 	_, err := requests.AddOutsideList(r.ctx, r.m.Store, in, r.by, r.markWith(it.Key, "outside_list"))
 	return result(err, ResCreated, what)
 }

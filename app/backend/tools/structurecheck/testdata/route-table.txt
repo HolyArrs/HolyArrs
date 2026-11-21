@@ -27,6 +27,7 @@ DELETE /api/v1/own-traits/{id} auth=settings scope=write assurance=false part=me
 DELETE /api/v1/pick-rules/{id} auth=settings scope=write assurance=false part=media
 DELETE /api/v1/plugins/{id} auth=owner scope=admin assurance=false part=core
 DELETE /api/v1/settings/old-app-api/keys/{side} auth=settings scope=admin assurance=true part=core
+DELETE /api/v1/settings/trakt-signin auth=owner scope=admin assurance=false part=core
 DELETE /api/v1/sources/{id} auth=settings scope=write assurance=false part=core
 DELETE /api/v1/subtitle-sites/{id} auth=settings scope=write assurance=false part=subtitles
 DELETE /api/v1/titles/{id}/follow auth=signed_in scope=write assurance=false part=wishlist
@@ -226,6 +227,7 @@ GET /api/v1/settings/subtitles auth=settings scope=read assurance=false part=sub
 GET /api/v1/settings/subtitles/translator auth=settings scope=read assurance=false part=subtitles
 GET /api/v1/settings/title-defaults auth=manage_library scope=read assurance=false part=media
 GET /api/v1/settings/trakt-key auth=settings scope=admin assurance=false part=core
+GET /api/v1/settings/trakt-signin auth=settings scope=admin assurance=false part=core
 GET /api/v1/settings/trakt-token auth=owner scope=admin assurance=false part=core
 GET /api/v1/settings/ui auth=signed_in scope=read assurance=false part=core
 GET /api/v1/settings/url-base auth=settings scope=read assurance=false part=core
@@ -477,6 +479,8 @@ POST /api/v1/settings/naming/example auth=manage_library scope=write assurance=f
 POST /api/v1/settings/old-app-api/keys/{side} auth=settings scope=admin assurance=true part=core
 POST /api/v1/settings/plex-labels/run auth=owner scope=admin assurance=false part=media
 POST /api/v1/settings/subtitles/translator/test auth=settings scope=write assurance=false part=subtitles
+POST /api/v1/settings/trakt-signin auth=owner scope=admin assurance=false part=core
+POST /api/v1/settings/trakt-signin/check auth=owner scope=admin assurance=false part=core
 POST /api/v1/shows auth=manage_library scope=write assurance=false part=shows
 POST /api/v1/sources auth=settings scope=write assurance=false part=core
 POST /api/v1/sources/check auth=settings scope=write assurance=false part=core
@@ -582,6 +586,7 @@ PUT /api/v1/settings/subtitles auth=settings scope=write assurance=false part=su
 PUT /api/v1/settings/subtitles/translator auth=settings scope=write assurance=false part=subtitles
 PUT /api/v1/settings/title-defaults auth=settings scope=write assurance=false part=media
 PUT /api/v1/settings/trakt-key auth=settings scope=write assurance=false part=core
+PUT /api/v1/settings/trakt-secret auth=owner scope=admin assurance=false part=core
 PUT /api/v1/settings/trakt-token auth=owner scope=admin assurance=false part=core
 PUT /api/v1/settings/ui auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/url-base auth=settings scope=write assurance=false part=core

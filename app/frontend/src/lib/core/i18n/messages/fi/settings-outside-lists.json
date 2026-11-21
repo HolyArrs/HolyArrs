@@ -86,5 +86,17 @@
 	"settings.outsideLists.addNever": "Lisää Ei-lisättävien listalle",
 	"settings.outsideLists.showDot": "sarja ·",
 	"settings.outsideLists.takeOff": "Poista listalta {name}",
-	"settings.outsideLists.empty": "Tällä listalla ei ole vielä mitään"
+	"settings.outsideLists.empty": "Tällä listalla ei ole vielä mitään",
+	"settings.outsideLists.traktSignInTitle": "Trakt-kirjautuminen",
+	"settings.outsideLists.traktSignInInfo": "Kirjaudu, niin yksityiset Trakt-listasi ja katselulistasi luetaan ja Traktissa katsomasi lisätään katseluhistoriaan.",
+	"settings.outsideLists.traktSignedInAs": "Kirjautunut käyttäjänä {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Ei kirjautunut. Vain julkiset listat luetaan.",
+	"settings.outsideLists.traktSignIn": "Kirjaudu Traktilla",
+	"settings.outsideLists.traktDeviceSteps": "Avaa millä tahansa laitteella <a>{url}</a> ja syötä <code>{code}</code>. Tämä sivu odottaa, kunnes hyväksyt.",
+	"settings.outsideLists.traktDenied": "Trakt-kirjautuminen hylättiin.",
+	"settings.outsideLists.traktExpired": "Koodi vanheni. Aloita alusta.",
+	"settings.outsideLists.traktSignOut": "Kirjaudu ulos Traktista",
+	"settings.outsideLists.traktSignedIn": "Kirjauduttu Traktiin",
+	"settings.outsideLists.traktSignedOut": "Kirjauduttu ulos Traktista",
+	"settings.outsideLists.traktSecret": "Client secret (vain vanhemmat Trakt-sovellukset; uusissa sitä ei ole)"
 }
