@@ -14,7 +14,7 @@
 	"settings.health.none": "Sem resultados. Verifique novamente para rodá-las.",
 	"settings.health.since": "Desde",
 	"settings.health.settings": "Definições das verificações de saúde",
-	"settings.health.updateCheck": "Procurar um HolyArrs mais novo",
+	"settings.health.updateCheck": "Procurar um Eleven+ mais novo",
 	"settings.health.onlyChecks": "Só verifica. Nunca instala.",
 	"settings.health.every": "Procurar atualizações a cada",
 	"settings.health.day": "dia",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Alertar após esta quantidade de execuções seguidas",
 	"settings.health.guardHint": "Evita alertas por falhas isoladas",
 	"settings.health.feed": "Feed de lançamentos",
-	"settings.health.feedHint": "Vazio usa os lançamentos do HolyArrs",
+	"settings.health.feedHint": "Vazio usa os lançamentos do Eleven+",
 	"settings.health.feedLocal": "O feed pode estar na rede local",
 	"settings.health.prerelease": "Incluir versões de teste (como 1.2.0-rc1)"
 }

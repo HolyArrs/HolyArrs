@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "플레이어가 SDH로 인식하는 파일 끝부분",
 	"settings.subtitles.syncFix": "싱크 보정",
 	"settings.subtitles.syncFixDesc": "타이밍 보정의 시작값",
-	"settings.subtitles.syncNote": "싱크가 어긋난 자막은 해당 영화나 에피소드에서 직접 고칩니다. 모든 줄을 이동하거나 프레임 레이트를 바꾸세요. HolyArrs는 소리를 들어 자막을 맞추지 않습니다.",
+	"settings.subtitles.syncNote": "싱크가 어긋난 자막은 해당 영화나 에피소드에서 직접 고칩니다. 모든 줄을 이동하거나 프레임 레이트를 바꾸세요. Eleven+는 소리를 들어 자막을 맞추지 않습니다.",
 	"settings.subtitles.shift": "이동 버튼 단위 (ms)",
 	"settings.subtitles.fpsFrom": "원래 프레임 레이트",
 	"settings.subtitles.fpsTo": "바꿀 프레임 레이트",

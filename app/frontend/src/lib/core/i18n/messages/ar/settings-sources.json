@@ -71,7 +71,7 @@
 	"settings.sources.remove": "إزالة",
 	"settings.sources.bridge": "اربط Jackett أو Prowlarr",
 	"settings.sources.off": "المصادر متوقفة",
-	"settings.sources.offText": "لا يبحث HolyArrs ولا يجلب شيئًا. التنزيلات التي تضيفها في برنامج التنزيل تُستورد كالمعتاد.",
+	"settings.sources.offText": "لا يبحث Eleven+ ولا يجلب شيئًا. التنزيلات التي تضيفها في برنامج التنزيل تُستورد كالمعتاد.",
 	"settings.sources.openParts": "فتح الأجزاء",
 	"settings.sources.offState": "متوقف",
 	"settings.sources.site": "موقع مدمج",

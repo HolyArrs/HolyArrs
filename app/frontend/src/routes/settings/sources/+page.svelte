@@ -162,7 +162,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.sources.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.sources.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.sources.title')}>
 	{#snippet actions()}

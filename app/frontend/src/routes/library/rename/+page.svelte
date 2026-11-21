@@ -8,7 +8,7 @@
 	let changeCount = $state(0);
 </script>
 
-<svelte:head><title>{t('library.rename.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('library.rename.title')} · Eleven+</title></svelte:head>
 
 <LibraryToolPage title={t('library.rename.title')} count={changeCount ? t('mediafiles.unit.file.' + (changeCount === 1 ? 'one' : 'other'), { n: changeCount }) : ''}>
 	{#snippet bar()}

@@ -181,7 +181,7 @@
 	{/if}
 {/snippet}
 
-<svelte:head><title>{t('settings.ai.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.ai.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.ai.title')} />
 

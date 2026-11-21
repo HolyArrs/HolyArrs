@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "لاحقة اسم الملف التي تقرؤها المشغلات بوصفها SDH",
 	"settings.subtitles.syncFix": "إصلاح التزامن",
 	"settings.subtitles.syncFixDesc": "القيم الابتدائية لإصلاح التوقيت",
-	"settings.subtitles.syncNote": "الترجمة غير المتزامنة تُصلح يدويًا في صفحة فيلمها أو حلقتها: أزح كل الأسطر، أو غيّر معدل الإطارات. لا يستمع HolyArrs إلى الصوت لمحاذاة الترجمات.",
+	"settings.subtitles.syncNote": "الترجمة غير المتزامنة تُصلح يدويًا في صفحة فيلمها أو حلقتها: أزح كل الأسطر، أو غيّر معدل الإطارات. لا يستمع Eleven+ إلى الصوت لمحاذاة الترجمات.",
 	"settings.subtitles.shift": "أزرار الإزاحة تحرّك (مللي ثانية)",
 	"settings.subtitles.fpsFrom": "معدل الإطارات من",
 	"settings.subtitles.fpsTo": "معدل الإطارات إلى",

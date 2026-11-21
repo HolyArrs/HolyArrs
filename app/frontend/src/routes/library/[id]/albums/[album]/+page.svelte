@@ -235,7 +235,7 @@
 	}
 </script>
 
-<svelte:head><title>{album?.name ?? tr('library.album.album')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{album?.name ?? tr('library.album.album')} · Eleven+</title></svelte:head>
 
 {#if notFound}
 	<h1 class="sr-only">{tr('library.album.album')}</h1>

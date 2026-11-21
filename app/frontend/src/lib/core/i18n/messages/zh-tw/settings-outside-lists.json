@@ -37,7 +37,7 @@
 	"settings.outsideLists.hours": "讀取間隔（小時）",
 	"settings.outsideLists.hoursHint": "6 到 168 小時。儲存後會立即讀取一次。",
 	"settings.outsideLists.keep": "持續追蹤",
-	"settings.outsideLists.keepShows": "HolyArrs 會照看上面選定的季。",
+	"settings.outsideLists.keepShows": "Eleven+ 會照看上面選定的季。",
 	"settings.outsideLists.keepMovies": "會為新增的電影尋找資源，之後也會找更好的副本。",
 	"settings.outsideLists.search": "新增時搜尋",
 	"settings.outsideLists.searchShows": "影集一從清單進來，就去找缺少的單集。",

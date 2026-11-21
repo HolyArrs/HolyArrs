@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Tiedoston pääte, jonka soittimet lukevat SDH:ksi",
 	"settings.subtitles.syncFix": "Synkronoinnin korjaus",
 	"settings.subtitles.syncFixDesc": "Aloitusarvot ajoituksen korjaamiseen",
-	"settings.subtitles.syncNote": "Epäsynkassa oleva tekstitys korjataan käsin elokuvan tai jakson sivulla: siirrä jokaista riviä tai muuta kuvataajuutta. HolyArrs ei kuuntele ääntä tekstitysten kohdistamiseksi.",
+	"settings.subtitles.syncNote": "Epäsynkassa oleva tekstitys korjataan käsin elokuvan tai jakson sivulla: siirrä jokaista riviä tai muuta kuvataajuutta. Eleven+ ei kuuntele ääntä tekstitysten kohdistamiseksi.",
 	"settings.subtitles.shift": "Siirtopainikkeet siirtävät (ms)",
 	"settings.subtitles.fpsFrom": "Kuvataajuus alkaen",
 	"settings.subtitles.fpsTo": "Kuvataajuus päätyen",

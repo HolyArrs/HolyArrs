@@ -37,7 +37,7 @@
 "settings.outsideLists.hours": "読み取り間隔(時間)",
 "settings.outsideLists.hoursHint": "6 ~ 168 時間。保存するとすぐに読み取ります。",
 "settings.outsideLists.keep": "最新に保つ",
-"settings.outsideLists.keepShows": "上で選んだシーズンを HolyArrs が管理します。",
+"settings.outsideLists.keepShows": "上で選んだシーズンを Eleven+ が管理します。",
 "settings.outsideLists.keepMovies": "追加された映画を探し、あとでより良いコピーも探します。",
 "settings.outsideLists.search": "追加時に検索",
 "settings.outsideLists.searchShows": "リストから番組が届いたらすぐ、足りないエピソードを探します。",

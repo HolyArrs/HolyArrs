@@ -71,7 +71,7 @@
 	"settings.sources.remove": "حذف",
 	"settings.sources.bridge": "اتصال Jackett یا Prowlarr",
 	"settings.sources.off": "منبع‌ها خاموش هستند",
-	"settings.sources.offText": "HolyArrs جست‌وجو نمی‌کند و دریافت نمی‌کند. دانلودهایی که در دانلودر خود اضافه می‌کنید همچنان وارد می‌شوند.",
+	"settings.sources.offText": "Eleven+ جست‌وجو نمی‌کند و دریافت نمی‌کند. دانلودهایی که در دانلودر خود اضافه می‌کنید همچنان وارد می‌شوند.",
 	"settings.sources.openParts": "باز کردن بخش‌ها",
 	"settings.sources.offState": "خاموش",
 	"settings.sources.site": "سایت داخلی",

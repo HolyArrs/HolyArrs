@@ -14,7 +14,7 @@
 	"settings.health.none": "Žádné výsledky. Spusťte je novou kontrolou.",
 	"settings.health.since": "Od",
 	"settings.health.settings": "Nastavení kontrol stavu",
-	"settings.health.updateCheck": "Hledat novější HolyArrs",
+	"settings.health.updateCheck": "Hledat novější Eleven+",
 	"settings.health.onlyChecks": "Jen kontroluje. Nikdy neinstaluje.",
 	"settings.health.every": "Hledat aktualizace každých",
 	"settings.health.day": "den",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Upozornit po tolika bězích za sebou",
 	"settings.health.guardHint": "Zabrání upozornění na jednorázové výkyvy",
 	"settings.health.feed": "Kanál vydání",
-	"settings.health.feedHint": "Prázdné použije vydání HolyArrs",
+	"settings.health.feedHint": "Prázdné použije vydání Eleven+",
 	"settings.health.feedLocal": "Kanál smí být v místní síti",
 	"settings.health.prerelease": "Zahrnout testovací verze (např. 1.2.0-rc1)"
 }

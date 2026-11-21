@@ -478,7 +478,7 @@
 
 <svelte:window onbeforeunload={(e) => { if (adopting) e.preventDefault(); }} onpagehide={() => { if (adopting && track) noteCut(track, false); }} />
 
-<svelte:head><title>{t('library.import.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('library.import.title')} · Eleven+</title></svelte:head>
 
 <LibraryToolPage title={t('library.import.title')}>
 

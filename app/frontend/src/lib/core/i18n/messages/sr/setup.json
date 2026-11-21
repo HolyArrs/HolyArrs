@@ -9,7 +9,7 @@
 	"setup.folderUsed": "Ова фасцикла је већ у употреби или се налази унутар оне која јесте.",
 	"setup.folderMissing": "Та фасцикла не постоји. Провери путању.",
 	"setup.addFolderOrOff": "Додај фасциклу или искључи ово.",
-	"setup.notAnswering": "HolyArrs не одговара. Покушај поново за тренутак.",
+	"setup.notAnswering": "Eleven+ не одговара. Покушај поново за тренутак.",
 	"setup.addUserPasswordHint": "Унеси корисничко име и лозинку.",
 	"setup.folders": "Фасцикле",
 	"setup.downloader": "Преузимач",

@@ -14,7 +14,7 @@
 	"settings.health.none": "لا توجد نتائج. افحص مرة أخرى لتشغيلها.",
 	"settings.health.since": "منذ",
 	"settings.health.settings": "إعدادات فحص السلامة",
-	"settings.health.updateCheck": "تحقق من وجود HolyArrs أحدث",
+	"settings.health.updateCheck": "تحقق من وجود Eleven+ أحدث",
 	"settings.health.onlyChecks": "يتحقق فقط. لا يثبّت أبدًا.",
 	"settings.health.every": "تحقق من التحديثات كل",
 	"settings.health.day": "يوم",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "نبّه بعد هذا العدد من التشغيلات المتتالية",
 	"settings.health.guardHint": "يمنع التنبيه عند الأعطال العابرة",
 	"settings.health.feed": "خلاصة الإصدارات",
-	"settings.health.feedHint": "إذا تُرك فارغًا تُستخدم إصدارات HolyArrs",
+	"settings.health.feedHint": "إذا تُرك فارغًا تُستخدم إصدارات Eleven+",
 	"settings.health.feedLocal": "قد تكون الخلاصة على الشبكة المحلية",
 	"settings.health.prerelease": "تضمين النسخ التجريبية (مثل 1.2.0-rc1)"
 }

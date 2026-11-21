@@ -15,7 +15,7 @@
 	"settings.parts.title": "Moodulid",
 	"settings.parts.onOff": "Lülita mooduleid sisse või välja",
 	"settings.parts.ownerOnly": "Ainult omanikule ja administraatoritele",
-	"settings.parts.safeMode": "HolyArrs töötab turvarežiimis: töötab ainult tuum ning moodulite lülitid ja etappide juhtnupud keelatakse kuni tavapärase käivituseni. Turvarežiimist väljumiseks kasuta <a>Ohutsoonis</a> valikut <b>Taaskäivita HolyArrs</b>.",
+	"settings.parts.safeMode": "Eleven+ töötab turvarežiimis: töötab ainult tuum ning moodulite lülitid ja etappide juhtnupud keelatakse kuni tavapärase käivituseni. Turvarežiimist väljumiseks kasuta <a>Ohutsoonis</a> valikut <b>Taaskäivita Eleven+</b>.",
 	"settings.parts.dangerZone": "Ohutsoon",
 	"settings.parts.ask": "{label}?",
 	"settings.parts.yes": "Jah, {action}",

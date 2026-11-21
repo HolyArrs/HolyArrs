@@ -72,7 +72,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.music.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.music.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.music.title')} />
 

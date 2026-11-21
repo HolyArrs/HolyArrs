@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "ส่วนท้ายไฟล์ที่เครื่องเล่นอ่านเป็น SDH",
 	"settings.subtitles.syncFix": "แก้การซิงก์",
 	"settings.subtitles.syncFixDesc": "ค่าเริ่มต้นสำหรับการแก้เวลา",
-	"settings.subtitles.syncNote": "คำบรรยายที่เวลาเพี้ยนแก้ด้วยมือในหน้าภาพยนตร์หรือตอนนั้น: เลื่อนทุกบรรทัด หรือเปลี่ยนเฟรมเรต HolyArrs ไม่ได้ฟังเสียงเพื่อจัดคำบรรยายให้ตรง",
+	"settings.subtitles.syncNote": "คำบรรยายที่เวลาเพี้ยนแก้ด้วยมือในหน้าภาพยนตร์หรือตอนนั้น: เลื่อนทุกบรรทัด หรือเปลี่ยนเฟรมเรต Eleven+ ไม่ได้ฟังเสียงเพื่อจัดคำบรรยายให้ตรง",
 	"settings.subtitles.shift": "ปุ่มเลื่อนขยับ (มิลลิวินาที)",
 	"settings.subtitles.fpsFrom": "เฟรมเรตจาก",
 	"settings.subtitles.fpsTo": "เฟรมเรตเป็น",

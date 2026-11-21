@@ -3,7 +3,7 @@
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type ArtImage = { url: string; w: number; h: number };
-export type ArtShot = { backdrop: ArtImage; poster?: ArtImage; logo: string };
+export type ArtShot = { backdrop: ArtImage; poster?: ArtImage; logo: string; title?: string; year?: number; kind?: 'movie' | 'show'; genres?: string[] };
 export type Screen = { vw: number; vh: number; dpr: number };
 
 export type ArtPick = {
@@ -84,11 +84,11 @@ export function playlist(shots: ArtShot[], s: Screen): { shot: ArtShot; pick: Ar
 
 const LABELS: Record<Way, string> = {
 	plex: 'Continue with Plex',
-	jellyfin: 'Continue with Jellyfin',
+	jellyfin: 'Continue with Eleven+',
 	emby: 'Continue with Emby',
 	oidc: 'Continue with single sign-on',
 	forward_auth: 'Continue through the trusted proxy',
-	password: 'Use a HolyArrs account'
+	password: 'Use an Eleven+ account'
 };
 
 /** Loads the backdrop and the logo of one title together and returns them as one unit, or null when the backdrop fails (the caller moves on). A missing or broken logo gives logo null: the slide shows no logo rather than another title's. */
@@ -102,7 +102,7 @@ export async function prepareSlide(
 	return { shot: entry.shot, pick: entry.pick, logo: logo ? logoUrl : null };
 }
 
-const nameOf = (way: Exclude<Way, 'password'>): string => (way === 'oidc' ? t('accounts.tiles.sso') : way === 'forward_auth' ? t('accounts.tiles.proxy') : way === 'plex' ? 'Plex' : way === 'jellyfin' ? 'Jellyfin' : 'Emby');
+const nameOf = (way: Exclude<Way, 'password'>): string => (way === 'oidc' ? t('accounts.tiles.sso') : way === 'forward_auth' ? t('accounts.tiles.proxy') : way === 'plex' ? 'Plex' : way === 'jellyfin' ? 'Eleven+' : 'Emby'); // Eleven+: Jellyfin sign-in shown as Eleven+
 
 /** The tile row: only the outside ways the owner turned on, in a fixed order. */
 export function providerTiles(ways: readonly Way[]): ProviderTile[] {

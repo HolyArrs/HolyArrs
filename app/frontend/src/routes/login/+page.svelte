@@ -91,7 +91,7 @@
 	// How the owner was made, for remembering them on this device.
 	let firstRunWay: RecentWay | '' = '';
 	const waiting = $derived(Math.max(0, Math.ceil((waitUntil - now) / 1000)));
-	const wayWord = { jellyfin: 'Jellyfin', emby: 'Emby' } as const;
+	const wayWord = { jellyfin: 'Eleven+', emby: 'Emby' } as const; // Eleven+: family never sees "Jellyfin"
 	const outside = $derived(session.s.ways.filter((w) => w !== 'password'));
 	const tiles = $derived(providerTiles(session.s.ways as Way[]));
 	const formOn = $derived(session.s.ways.includes('password'));
@@ -446,11 +446,13 @@
 	<title>{t('accounts.login.pageTitle', { what: mode === 'setup' ? t('accounts.login.setUp') : t('accounts.signin.signIn') })}</title>
 </svelte:head>
 
-<main class="wrap" class:leaving data-theme="dark">
-	<SigninBackdrop />
+<main class="wrap eplus" class:leaving class:light={theme.value === 'light'} data-theme={theme.value}>
+	<!-- Eleven+: the moving posters live in a rounded media panel, not behind the whole page. -->
+	<div class="media" aria-hidden="true"><SigninBackdrop caption /></div>
 	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
 	<div class="panel" class:intro class:gl-wait={glWait} class:light={theme.value === 'light'} data-theme={theme.value} bind:this={panelEl} data-signin-panel>
 		<SigninBrand />
+		<p class="tagline">Built by Lorenzo. Fuck subscriptions.</p>
 		{#if backTo && session.s.state !== 'unknown' && !ssoFinishing && !plexWaiting}
 			<span class="corner"><IconButton icon="chevronLeft" variant="glass" label={backTo.label} onclick={backTo.go} /></span>
 		{/if}
@@ -467,7 +469,7 @@
 						<SigninWait {cancelPlex} />
 					{:else if acctView !== 'none'}
 						<!-- One person: their face and name lead; the heading stays for screen readers. -->
-						<h1 class="title" class:sr-only={acctView === 'person'}>{acctView === 'list' ? t('accounts.login.who') : t('accounts.signin.signIn')}</h1>
+						<h1 class="title" class:sr-only={acctView !== 'list'}>{acctView === 'list' ? t('accounts.login.who') : t('accounts.signin.signIn')}</h1>
 						{#if acctView === 'list'}
 							<SigninRecent {shown} {editing} {wayName} {dropPerson} {openPerson} {another} />
 							<button class="link" type="button" aria-pressed={editing} onclick={() => (editing = !editing)}>{editing ? t('accounts.login.done') : t('accounts.login.editList')}</button>
@@ -477,7 +479,7 @@
 						{/if}
 						{#if formOn}<SigninHelp {calm} />{/if}
 					{:else}
-						<h1 class="title">{mode === 'setup' ? t('accounts.login.setUp') : mode === 'code' ? t('accounts.login.twoStep') : via === 'jellyfin' || via === 'emby' ? t('accounts.signin.signInWith', { way: wayWord[via] }) : t('accounts.signin.signIn')}</h1>
+						<h1 class="title" class:sr-only={mode === 'login'}>{mode === 'setup' ? t('accounts.login.setUp') : mode === 'code' ? t('accounts.login.twoStep') : via === 'jellyfin' || via === 'emby' ? t('accounts.signin.signInWith', { way: wayWord[via] }) : t('accounts.signin.signIn')}</h1>
 						{#if mode === 'setup'}
 							<p class="lead">{setupServer ? t('accounts.login.useAdmin', { way: wayWord[setupServer] }) : t('accounts.login.createOwner')}</p>
 							{#if session.s.configUnmapped}
@@ -753,4 +755,97 @@
 	@media (prefers-reduced-motion: reduce) and (max-width: 600px) {
 		.panel { transition: none; }
 }
+
+	/* ===================== Eleven+ sign-in ===================== */
+	/* Split layout: form on a plain brand canvas, posters in a rounded media panel. */
+	.wrap.eplus {
+		--e-ink: #0e0a14; --e-paper: #f6f4f9;
+		--accent: #5e3fa3; --accent-fill: #5e3fa3; --accent-fill-hover: #4f3390; --accent-soft: rgb(94 63 163 / 0.12);
+		--accent-text: #b7a0e6; --text-on-red: #fff;
+		--focus-ring: 0 0 0 2px var(--e-ink), 0 0 0 4px #b7a0e6;
+		display: grid;
+		grid-template-columns: minmax(380px, 0.85fr) 1.15fr;
+		align-items: stretch;
+		justify-items: stretch;
+		gap: 16px;
+		padding: 16px;
+		min-height: 100dvh;
+		background: var(--e-ink);
+		color: #f5f3f8;
+	}
+	.wrap.eplus.light {
+		--accent-text: #5e3fa3;
+		--focus-ring: 0 0 0 2px var(--e-paper), 0 0 0 4px #5e3fa3;
+		background: var(--e-paper);
+		color: #17111f;
+	}
+	:global(html.sa-seeded) .wrap.eplus { background: var(--e-ink); }
+	:global(html.sa-seeded) .wrap.eplus.light { background: var(--e-paper); }
+	/* The old full-screen frame and corner effect are not part of this layout. */
+	.wrap.eplus :global(.edge), .wrap.eplus :global(.portals) { display: none !important; }
+
+	.media {
+		grid-column: 2;
+		grid-row: 1;
+		position: relative;
+		overflow: hidden;
+		border-radius: 28px;
+		min-height: calc(100dvh - 32px);
+		background: #0e0a14;
+		box-shadow: 0 20px 60px rgb(14 10 20 / 0.25);
+		isolation: isolate;
+	}
+	.media :global(.art) { position: absolute !important; inset: 0; }
+	/* The title art sits above the caption card. */
+	.media :global(.logo) { left: clamp(20px, 2.6vw, 40px) !important; bottom: clamp(150px, 17vh, 180px) !important; max-height: clamp(48px, 8vh, 110px) !important; }
+	@media (max-width: 900px) { .media :global(.logo) { top: 16px !important; bottom: auto !important; left: 16px !important; max-height: 44px !important; } }
+
+	/* The panel re-reads theme colours (data-theme), so the purple accent is set on it too. */
+	.wrap.eplus .panel, .wrap.eplus .media {
+		--accent: #5e3fa3; --accent-fill: #5e3fa3; --accent-fill-hover: #4f3390; --accent-soft: rgb(94 63 163 / 0.12); --text-on-red: #fff;
+		--accent-text: #b7a0e6;
+	}
+	.wrap.eplus.light .panel { --accent-text: #5e3fa3; }
+	.wrap.eplus .panel {
+		grid-column: 1;
+		grid-row: 1;
+		align-self: center;
+		justify-self: center;
+		width: min(400px, 100%);
+		padding: 24px 8px;
+		background: none !important;
+		-webkit-backdrop-filter: none !important;
+		backdrop-filter: none !important;
+		border: 0 !important;
+		box-shadow: none !important;
+		border-radius: 0;
+	}
+	.wrap.eplus .panel :global(.brand) { justify-content: center; margin-bottom: 10px; }
+	.wrap.eplus .panel :global(.brand img.word) { width: 200px; height: 48px; }
+	.tagline { margin: 0 0 34px; text-align: center; font: 600 15px/1.4 var(--font-ui); letter-spacing: -0.01em; color: rgb(245 243 248 / 0.7); }
+	.light .tagline { color: #6b6378; }
+	/* Text lines up on the left, like the wordmark. */
+	.wrap.eplus .lead, .wrap.eplus .title, .wrap.eplus .panel :global(.field) { text-align: left; }
+	.wrap.eplus .lead { color: rgb(245 243 248 / 0.68); margin-top: 0; }
+	.wrap.eplus.light .lead { color: #6b6378; }
+	.wrap.eplus.light .title { color: #17111f; }
+	/* Fields: soft brand surfaces. */
+	.wrap.eplus .panel :global(.input) { background: #17111f; border-color: #382c47; color: #f5f3f8; border-radius: 14px; }
+	.wrap.eplus.light .panel :global(.input) { background: #fff; border-color: #e3dded; color: #17111f; }
+	.wrap.eplus .panel :global(.input:focus-visible) { border-color: #b7a0e6; box-shadow: 0 0 0 3px rgb(183 160 230 / 0.25); }
+	.wrap.eplus.light .panel :global(.input:focus-visible) { border-color: #5e3fa3; box-shadow: 0 0 0 3px rgb(94 63 163 / 0.18); }
+	.wrap.eplus.light .link { color: #5e3fa3; text-decoration: none; }
+	.wrap.eplus .or { color: rgb(245 243 248 / 0.45); }
+	.wrap.eplus.light .or { color: #9a93a6; }
+	.wrap.eplus.light .or::before, .wrap.eplus.light .or::after { background: #e3dded; }
+	.wrap.eplus .corner { top: 24px; left: auto; right: 8px; }
+
+	/* Tablets and phones: posters become a rounded band on top, the form sits below. */
+	@media (max-width: 900px) {
+		.wrap.eplus { grid-template-columns: 1fr; grid-template-rows: auto 1fr; padding: max(12px, env(safe-area-inset-top)) 12px 12px; gap: 8px; }
+		.media { grid-column: 1; grid-row: 1; min-height: 34dvh; border-radius: 24px; }
+		.wrap.eplus .panel { grid-column: 1; grid-row: 2; align-self: start; padding: 20px 12px 24px; transform: translateY(calc(-1 * var(--kb, 0px))); }
+		.wrap.eplus .panel :global(.brand img.word) { width: 160px; height: 38px; }
+		.tagline { margin-bottom: 24px; font-size: 14px; }
+	}
 </style>

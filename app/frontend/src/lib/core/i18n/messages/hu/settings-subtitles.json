@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "A lejátszók által SDH-ként olvasott fájlvégződés",
 	"settings.subtitles.syncFix": "Szinkronjavítás",
 	"settings.subtitles.syncFixDesc": "Kezdőértékek az időzítés javításához",
-	"settings.subtitles.syncNote": "Az időzítésben elcsúszott feliratot kézzel kell javítani a filmjénél vagy epizódjánál: minden sort eltolni, vagy módosítani a képkockasebességet. A HolyArrs nem hallgatja a hangot a feliratok igazításához.",
+	"settings.subtitles.syncNote": "Az időzítésben elcsúszott feliratot kézzel kell javítani a filmjénél vagy epizódjánál: minden sort eltolni, vagy módosítani a képkockasebességet. A Eleven+ nem hallgatja a hangot a feliratok igazításához.",
 	"settings.subtitles.shift": "Az eltolás gombjai ennyit mozdítanak (ms)",
 	"settings.subtitles.fpsFrom": "Képkockasebesség innen",
 	"settings.subtitles.fpsTo": "Képkockasebesség ide",

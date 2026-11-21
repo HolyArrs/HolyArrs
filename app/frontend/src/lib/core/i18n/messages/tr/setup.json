@@ -9,7 +9,7 @@
 	"setup.folderUsed": "Bu klasör zaten kullanılıyor ya da kullanılan bir klasörün içinde.",
 	"setup.folderMissing": "Böyle bir klasör yok. Yolu kontrol et.",
 	"setup.addFolderOrOff": "Bir klasör ekle ya da bunu kapat.",
-	"setup.notAnswering": "HolyArrs yanıt vermiyor. Biraz sonra tekrar dene.",
+	"setup.notAnswering": "Eleven+ yanıt vermiyor. Biraz sonra tekrar dene.",
 	"setup.addUserPasswordHint": "Kullanıcı adını ve parolayı ekle.",
 	"setup.folders": "Klasörler",
 	"setup.downloader": "İndirici",

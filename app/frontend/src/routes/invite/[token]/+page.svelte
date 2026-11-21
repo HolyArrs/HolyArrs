@@ -15,7 +15,7 @@
 	const linkPart = $derived(page.params.token ?? '');
 	// The outside ways the owner turned on, as tiles above the name and password form.
 	const tiles = $derived(inviteTiles(session.s.ways as Way[]));
-	const wayWord = { jellyfin: 'Jellyfin', emby: 'Emby' } as const;
+	const wayWord = { jellyfin: 'Eleven+', emby: 'Emby' } as const; // Eleven+: family never sees "Jellyfin"
 
 	let invite = $state<{ role: string; max_rating?: string } | null>(null);
 	let gone = $state('');
@@ -187,9 +187,8 @@
 	<div class="panel" class:light={theme.value === 'light'} data-theme={theme.value} data-signin-panel>
 		<div class="brand">
 			<!-- Both marks load up front, so switching the appearance never shows a blank logo. -->
-			<img class="mark-dark" src={to('/brand/mark-color-on-dark.svg')} alt="" width="36" height="36" />
-			<img class="mark-light" src={to('/brand/mark-color.svg')} alt="" width="36" height="36" />
-			<span>HolyArrs</span>
+			<img class="mark-dark word" src={to('/brand/wordmark-on-dark.svg')} alt="Eleven+" width="150" height="36" />
+			<img class="mark-light word" src={to('/brand/wordmark.svg')} alt="Eleven+" width="150" height="36" />
 		</div>
 		{#if plexWaiting}
 			<div class="wait" role="status" aria-live="polite" data-testid="plex-wait">
@@ -329,7 +328,7 @@
 	.panel :global(.field .input) { text-align: left; }
 	.light :global(.input) { background: rgb(255 255 255 / 0.6); border-color: rgb(255 255 255 / 0.75); color: #111; }
 	.light :global(.input:hover) { border-color: rgb(0 0 0 / 0.16); }
-	.light :global(.input:focus-visible) { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(229 53 43 / 0.22); }
+	.light :global(.input:focus-visible) { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(94 63 163 / 0.22); }
 	.pw { position: relative; display: flex; align-items: center; }
 	.pw .input { padding-right: 52px; }
 	.pw .input::-ms-reveal { display: none; }
@@ -407,7 +406,7 @@
 		.wrap { --fr: 0px; place-items: end center; padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, calc(env(safe-area-inset-bottom) + 12px)) max(24px, env(safe-area-inset-left)); }
 		.panel { width: 100%; max-width: 440px; padding: 14px 16px 16px; border-radius: 24px; }
 		.brand { gap: 12px; margin-bottom: 16px; font-size: 18px; }
-		.brand img { width: 26px; height: 26px; }
+		.brand img { width: 116px; height: 28px; }
 		.title { font-size: 20px; line-height: 1.15; }
 		.lead { margin: 4px 0 10px; }
 		.panel :global(.field) { gap: 2px; }

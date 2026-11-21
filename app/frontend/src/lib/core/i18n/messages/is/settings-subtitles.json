@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Endir á skráarnafni sem spilarar lesa sem SDH",
 	"settings.subtitles.syncFix": "Samstillingarlagfæring",
 	"settings.subtitles.syncFixDesc": "Upphafsgildi til að laga tímasetningu",
-	"settings.subtitles.syncNote": "Skjátexti sem er úr takti er lagaður í höndunum á kvikmynda- eða þáttasíðunni: færðu hverja línu til, eða breyttu rammatíðni. HolyArrs hlustar ekki á hljóðið til að stilla skjátexta saman.",
+	"settings.subtitles.syncNote": "Skjátexti sem er úr takti er lagaður í höndunum á kvikmynda- eða þáttasíðunni: færðu hverja línu til, eða breyttu rammatíðni. Eleven+ hlustar ekki á hljóðið til að stilla skjátexta saman.",
 	"settings.subtitles.shift": "Færsluhnappar færa (ms)",
 	"settings.subtitles.fpsFrom": "Rammatíðni frá",
 	"settings.subtitles.fpsTo": "Rammatíðni til",

@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Xóa",
 	"settings.sources.bridge": "Liên kết Jackett hoặc Prowlarr",
 	"settings.sources.off": "Nguồn đang tắt",
-	"settings.sources.offText": "HolyArrs không tìm kiếm và không lấy. Các bản tải bạn thêm trong Trình tải vẫn được nhập.",
+	"settings.sources.offText": "Eleven+ không tìm kiếm và không lấy. Các bản tải bạn thêm trong Trình tải vẫn được nhập.",
 	"settings.sources.openParts": "Mở Các Phần",
 	"settings.sources.offState": "Tắt",
 	"settings.sources.site": "Trang tích hợp",

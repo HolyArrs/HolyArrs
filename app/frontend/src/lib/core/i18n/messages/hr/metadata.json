@@ -4,5 +4,5 @@
 	"metadata.health.downTitle": "Metapodaci nisu dostupni",
 	"metadata.health.down": "Pretraga i nove naslovnice čekaju dok se ne vrate. Tvoja biblioteka i dalje radi.",
 	"metadata.health.back": "Metapodaci su ponovno dostupni",
-	"metadata.health.fakeIp": "Vaš usmjerivač ili VPN šalje HolyArrs na lažnu adresu (198.18.x.x). To obično dolazi od Clasha ili Surgea. Dodajte {host} na njegov popis izravnih veza."
+	"metadata.health.fakeIp": "Vaš usmjerivač ili VPN šalje Eleven+ na lažnu adresu (198.18.x.x). To obično dolazi od Clasha ili Surgea. Dodajte {host} na njegov popis izravnih veza."
 }

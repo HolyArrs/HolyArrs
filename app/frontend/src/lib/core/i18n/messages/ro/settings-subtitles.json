@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Terminația de fișier pe care playerele o citesc ca SDH",
 	"settings.subtitles.syncFix": "Corectarea sincronizării",
 	"settings.subtitles.syncFixDesc": "Valori inițiale pentru corectarea sincronizării",
-	"settings.subtitles.syncNote": "O subtitrare desincronizată se corectează manual pe filmul sau episodul ei: deplasezi fiecare linie sau schimbi rata de cadre. HolyArrs nu ascultă sunetul ca să alinieze subtitrările.",
+	"settings.subtitles.syncNote": "O subtitrare desincronizată se corectează manual pe filmul sau episodul ei: deplasezi fiecare linie sau schimbi rata de cadre. Eleven+ nu ascultă sunetul ca să alinieze subtitrările.",
 	"settings.subtitles.shift": "Butoanele de deplasare mută (ms)",
 	"settings.subtitles.fpsFrom": "Rata de cadre de la",
 	"settings.subtitles.fpsTo": "Rata de cadre la",

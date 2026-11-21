@@ -14,7 +14,7 @@
 	"settings.health.none": "முடிவுகள் இல்லை. இயக்க மீண்டும் சோதியுங்கள்.",
 	"settings.health.since": "முதல்",
 	"settings.health.settings": "நலச் சோதனை அமைப்புகள்",
-	"settings.health.updateCheck": "புதிய HolyArrs உள்ளதா எனச் சோதி",
+	"settings.health.updateCheck": "புதிய Eleven+ உள்ளதா எனச் சோதி",
 	"settings.health.onlyChecks": "சோதிக்க மட்டும். ஒருபோதும் நிறுவாது.",
 	"settings.health.every": "புதுப்பிப்புகளைச் சோதிக்கும் இடைவெளி",
 	"settings.health.day": "நாள்",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "தொடர்ந்து இத்தனை முறை நிகழ்ந்தால் அறிவி",
 	"settings.health.guardHint": "ஒருமுறை ஏற்படும் தடங்கல்கள் அறிவிப்பைத் தூண்டாமல் தடுக்கும்",
 	"settings.health.feed": "வெளியீட்டு ஊட்டம்",
-	"settings.health.feedHint": "காலியாக இருந்தால் HolyArrs வெளியீடுகள் பயன்படும்",
+	"settings.health.feedHint": "காலியாக இருந்தால் Eleven+ வெளியீடுகள் பயன்படும்",
 	"settings.health.feedLocal": "ஊட்டம் உள்ளூர் வலையில் இருக்கலாம்",
 	"settings.health.prerelease": "சோதனைப் பதிப்புகளையும் சேர் (1.2.0-rc1 போல)"
 }

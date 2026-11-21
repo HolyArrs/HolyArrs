@@ -31,7 +31,7 @@
 	onMount(load);
 </script>
 
-<svelte:head><title>{t('plugins.remoteTitle')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('plugins.remoteTitle')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('plugins.remoteTitle')} />
 

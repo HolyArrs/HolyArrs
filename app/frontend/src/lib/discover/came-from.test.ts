@@ -2,7 +2,7 @@ import { pageLabel } from './came-from.svelte.ts';
 import { describe, expect, it } from 'vitest';
 
 describe('came-from', () => {
-	it('names a page from its title', () => expect(pageLabel('Search · HolyArrs')).toBe('Search'));
+	it('names a page from its title', () => expect(pageLabel('Search · Eleven+')).toBe('Search'));
 });
 
 describe('came-from history index', () => {
@@ -10,7 +10,7 @@ describe('came-from history index', () => {
 		const store = new Map<string, string>();
 		const g = globalThis as Record<string, unknown>;
 		g.sessionStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v) };
-		g.document = { title: 'FROM · HolyArrs' };
+		g.document = { title: 'FROM · Eleven+' };
 		g.location = { pathname: '/title/show/124364', search: '' };
 		g.history = { state: { 'sveltekit:metadata': { historyIndex: 7 } } };
 		const { arrived, cameFrom, leaving } = await import('./came-from.svelte.ts');

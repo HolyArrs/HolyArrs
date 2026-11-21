@@ -95,7 +95,7 @@
 	});
 </script>
 
-<svelte:head><title>{t('settings.appearance.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.appearance.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.appearance.title')} />
 

@@ -15,7 +15,7 @@
 	"settings.parts.title": "Osat",
 	"settings.parts.onOff": "Ota osia käyttöön tai pois",
 	"settings.parts.ownerOnly": "Vain omistaja ja ylläpitäjät",
-	"settings.parts.safeMode": "HolyArrs toimii vikasietotilassa: vain ydin on käynnissä, ja osien kytkimet ja vaiheiden hallinta evätään seuraavaan normaaliin käynnistykseen asti. Poistu vikasietotilasta valitsemalla <b>Käynnistä HolyArrs uudelleen</b> <a>vaaravyöhykkeellä</a>.",
+	"settings.parts.safeMode": "Eleven+ toimii vikasietotilassa: vain ydin on käynnissä, ja osien kytkimet ja vaiheiden hallinta evätään seuraavaan normaaliin käynnistykseen asti. Poistu vikasietotilasta valitsemalla <b>Käynnistä Eleven+ uudelleen</b> <a>vaaravyöhykkeellä</a>.",
 	"settings.parts.dangerZone": "Vaaravyöhyke",
 	"settings.parts.ask": "{label}?",
 	"settings.parts.yes": "Kyllä, {action}",

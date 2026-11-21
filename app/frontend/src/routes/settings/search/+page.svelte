@@ -99,7 +99,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.search.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.search.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.search.title')}>
 	{#snippet actions()}

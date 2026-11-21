@@ -71,7 +71,7 @@
   "settings.sources.remove": "Fjern",
   "settings.sources.bridge": "Koble til Jackett eller Prowlarr",
   "settings.sources.off": "Kilder er av",
-  "settings.sources.offText": "HolyArrs søker ikke og henter ikke. Nedlastinger du legger til i Nedlasteren din blir fortsatt importert.",
+  "settings.sources.offText": "Eleven+ søker ikke og henter ikke. Nedlastinger du legger til i Nedlasteren din blir fortsatt importert.",
   "settings.sources.openParts": "Åpne Deler",
   "settings.sources.offState": "Av",
 "settings.sources.site": "Innebygd side",

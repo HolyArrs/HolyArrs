@@ -338,7 +338,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.libraryFolders.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.libraryFolders.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.libraryFolders.title')}>
 	{#snippet actions()}

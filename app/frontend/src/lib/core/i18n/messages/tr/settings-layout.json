@@ -7,7 +7,7 @@
 	"settings.layout.blocked": "Bunu değiştiremezsin",
 	"settings.layout.backToSettings": "Ayarlar'a dön",
 	"settings.layout.setPasswordFirst": "Önce bir parola belirle",
-	"settings.layout.setPasswordDesc": "Anahtarlar, parolalar, kişiler ve yedekler için bir HolyArrs parolası gerekir. Henüz yok.",
+	"settings.layout.setPasswordDesc": "Anahtarlar, parolalar, kişiler ve yedekler için bir Eleven+ parolası gerekir. Henüz yok.",
 	"settings.layout.setPasswordLabel": "Parola belirle",
 	"settings.layout.signInAgainTitle": "Önce yeniden giriş yap",
 	"settings.layout.confirmPasswordLabel": "Parolanı doğrula",

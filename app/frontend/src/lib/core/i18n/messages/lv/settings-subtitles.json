@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Faila beigas, ko atskaņotāji nolasa kā SDH",
 	"settings.subtitles.syncFix": "Sinhronizācijas labojums",
 	"settings.subtitles.syncFixDesc": "Sākuma vērtības laika labošanai",
-	"settings.subtitles.syncNote": "Subtitrus ar nobīdi laikā labo ar roku to filmas vai epizodes lapā: pabīdi katru rindu vai maini kadru ātrumu. HolyArrs neklausās skaņu, lai saskaņotu subtitrus.",
+	"settings.subtitles.syncNote": "Subtitrus ar nobīdi laikā labo ar roku to filmas vai epizodes lapā: pabīdi katru rindu vai maini kadru ātrumu. Eleven+ neklausās skaņu, lai saskaņotu subtitrus.",
 	"settings.subtitles.shift": "Pārbīdes pogas pārvieto (ms)",
 	"settings.subtitles.fpsFrom": "Kadru ātrums no",
 	"settings.subtitles.fpsTo": "Kadru ātrums uz",

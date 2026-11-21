@@ -192,13 +192,13 @@ func (h *ViewHandlers) View(ctx context.Context, t mediafiles.Title) (TitleView,
 		v.Stage, v.GateOpen = t.Status, true
 		v.GateReason = "Each album is wanted once it is out (its release date has passed)."
 		if !t.KeepUpToDate {
-			v.GateReason += " Keep up to date is off for the artist, so HolyArrs does not look for it on its own."
+			v.GateReason += " Keep up to date is off for the artist, so Eleven+ does not look for it on its own."
 		}
 	} else if t.Kind == "show" {
 		v.Stage, v.GateOpen = t.Status, true
 		v.GateReason = "Each episode is wanted once it has aired."
 		if !t.KeepUpToDate {
-			v.GateReason += " Keep up to date is off for the show, so HolyArrs does not look for it on its own."
+			v.GateReason += " Keep up to date is off for the show, so Eleven+ does not look for it on its own."
 		}
 	} else {
 		v.Stage = library.Stage(library.DatesOf(t), now)
@@ -316,7 +316,7 @@ func gateReason(t mediafiles.Title, open bool) string {
 	case t.GateDriver == "announced":
 		s = "The gate is open: " + when + "."
 	case t.GateOpensAt == nil:
-		s = "The gate is closed: there are no release dates yet, so HolyArrs waits until TMDB has one."
+		s = "The gate is closed: there are no release dates yet, so Eleven+ waits until TMDB has one."
 	case open:
 		s = "The gate is open since " + date(t.GateOpensAt) + " (" + when + ")."
 	default:
@@ -326,7 +326,7 @@ func gateReason(t mediafiles.Title, open bool) string {
 		s = strings.TrimSuffix(s, ".") + ", plus " + strconv.Itoa(t.GateDelayDays) + " days of delay."
 	}
 	if !t.KeepUpToDate {
-		s += " Keep up to date is off, so HolyArrs does not look for it on its own."
+		s += " Keep up to date is off, so Eleven+ does not look for it on its own."
 	}
 	return s
 }

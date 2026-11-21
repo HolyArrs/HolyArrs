@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Failo galūnė, kurią grotuvai atpažįsta kaip SDH",
 	"settings.subtitles.syncFix": "Sinchronizavimo taisymas",
 	"settings.subtitles.syncFixDesc": "Pradinės laiko taisymo reikšmės",
-	"settings.subtitles.syncNote": "Nesinchronizuotas subtitras taisomas ranka jo filmo ar epizodo puslapyje: perstumkite visas eilutes arba pakeiskite kadrų dažnį. HolyArrs neklausosi garso, kad sulygiuotų subtitrus.",
+	"settings.subtitles.syncNote": "Nesinchronizuotas subtitras taisomas ranka jo filmo ar epizodo puslapyje: perstumkite visas eilutes arba pakeiskite kadrų dažnį. Eleven+ neklausosi garso, kad sulygiuotų subtitrus.",
 	"settings.subtitles.shift": "Perstūmimo mygtukai juda (ms)",
 	"settings.subtitles.fpsFrom": "Kadrų dažnis iš",
 	"settings.subtitles.fpsTo": "Kadrų dažnis į",

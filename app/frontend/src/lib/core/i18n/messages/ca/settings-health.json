@@ -14,7 +14,7 @@
 	"settings.health.none": "Cap resultat. Torna a comprovar per executar-les.",
 	"settings.health.since": "Des de",
 	"settings.health.settings": "Configuració de les comprovacions d'estat",
-	"settings.health.updateCheck": "Comprova si hi ha un HolyArrs més nou",
+	"settings.health.updateCheck": "Comprova si hi ha un Eleven+ més nou",
 	"settings.health.onlyChecks": "Només comprova. Mai instal·la.",
 	"settings.health.every": "Comprova les actualitzacions cada",
 	"settings.health.day": "dia",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Avisa després d'aquestes execucions seguides",
 	"settings.health.guardHint": "Evita que un error puntual generi un avís",
 	"settings.health.feed": "Feed de llançaments",
-	"settings.health.feedHint": "Si és buit, fa servir els llançaments de HolyArrs",
+	"settings.health.feedHint": "Si és buit, fa servir els llançaments de Eleven+",
 	"settings.health.feedLocal": "El feed pot ser a la xarxa local",
 	"settings.health.prerelease": "Inclou versions de prova (com 1.2.0-rc1)"
 }

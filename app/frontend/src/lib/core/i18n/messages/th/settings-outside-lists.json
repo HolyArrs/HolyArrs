@@ -37,7 +37,7 @@
 	"settings.outsideLists.hours": "อ่านทุก (ชั่วโมง)",
 	"settings.outsideLists.hoursHint": "6 ถึง 168 ชั่วโมง การบันทึกจะอ่านทันที",
 	"settings.outsideLists.keep": "อัปเดตให้ทันสมัย",
-	"settings.outsideLists.keepShows": "HolyArrs ดูแลซีซันที่เลือกไว้ด้านบน",
+	"settings.outsideLists.keepShows": "Eleven+ ดูแลซีซันที่เลือกไว้ด้านบน",
 	"settings.outsideLists.keepMovies": "ภาพยนตร์ที่เพิ่มจะถูกค้นหา และค้นหาสำเนาที่ดีกว่าในภายหลัง",
 	"settings.outsideLists.search": "ค้นหาเมื่อเพิ่ม",
 	"settings.outsideLists.searchShows": "ค้นหาตอนที่ขาดทันทีที่ซีรีส์เข้ามาจากรายการ",

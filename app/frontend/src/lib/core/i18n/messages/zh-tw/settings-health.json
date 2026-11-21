@@ -14,7 +14,7 @@
 	"settings.health.none": "沒有結果。重新檢查即可執行。",
 	"settings.health.since": "起始時間",
 	"settings.health.settings": "健康檢查設定",
-	"settings.health.updateCheck": "檢查 HolyArrs 新版本",
+	"settings.health.updateCheck": "檢查 Eleven+ 新版本",
 	"settings.health.onlyChecks": "只檢查，從不安裝。",
 	"settings.health.every": "檢查更新的間隔",
 	"settings.health.day": "天",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "連續出現這麼多次後才通知",
 	"settings.health.guardHint": "避免偶發的小問題也發通知",
 	"settings.health.feed": "發佈訂閱來源",
-	"settings.health.feedHint": "留空則使用 HolyArrs 官方發佈",
+	"settings.health.feedHint": "留空則使用 Eleven+ 官方發佈",
 	"settings.health.feedLocal": "訂閱來源可以在區域網路",
 	"settings.health.prerelease": "包含測試版本（如 1.2.0-rc1）"
 }

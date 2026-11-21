@@ -7,15 +7,15 @@ const KEY = 'holyarrs-theme';
 
 export const theme = $state<{ value: Theme; choice: ThemeChoice }>({
 	value: current(),
-	choice: typeof document === 'undefined' ? 'system' : storedChoice()
+	choice: typeof document === 'undefined' ? 'light' : storedChoice()
 });
 
 export function setTheme(t: ThemeChoice) {
 	theme.choice = t;
 	apply(t === 'system' ? systemTheme() : t);
 	try {
-		if (t === 'system') localStorage.removeItem(KEY);
-		else localStorage.setItem(KEY, t);
+		// Eleven+: 'system' is saved too, so a cleared key means the light default.
+		localStorage.setItem(KEY, t);
 	} catch {
 		// Private windows may refuse storage; the choice then lasts this visit.
 	}
@@ -41,9 +41,9 @@ function systemTheme(): Theme {
 function storedChoice(): ThemeChoice {
 	try {
 		const t = localStorage.getItem(KEY);
-		return t === 'light' || t === 'dark' ? t : 'system';
+		return t === 'light' || t === 'dark' || t === 'system' ? t : 'light';
 	} catch {
-		return 'system';
+		return 'light';
 	}
 }
 

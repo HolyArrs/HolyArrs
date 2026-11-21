@@ -87,10 +87,24 @@
 </script>
 
 <script lang="ts">
+	import { solar } from './solar-icons.ts';
 	// Decorative unless a label is given, then it is announced as an image.
 	let { name, size = 20, label, stroke = 1.75 }: { name: IconName; size?: number; label?: string; stroke?: number } = $props();
 </script>
 
+{#if solar[name]}
+<!-- Eleven+: Solar Linear icon (see solar-icons.ts). -->
+<svg
+	class="icon"
+	class:flip={name === 'chevronLeft' || name === 'chevronRight' || name === 'arrow' || name === 'back'}
+	width={size}
+	height={size}
+	viewBox="0 0 24 24"
+	role={label ? 'img' : undefined}
+	aria-label={label}
+	aria-hidden={label ? undefined : 'true'}
+>{@html solar[name]}</svg>
+{:else}
 <svg
 	class="icon"
 	class:flip={name === 'chevronLeft' || name === 'chevronRight' || name === 'arrow' || name === 'back'}
@@ -108,6 +122,7 @@
 >
 	<path d={paths[name]} />
 </svg>
+{/if}
 
 <style>
 	.icon {

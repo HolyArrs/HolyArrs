@@ -313,7 +313,7 @@
 
 </script>
 
-<svelte:head><title>{t('settings.signIn.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.signIn.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.signIn.title')} />
 

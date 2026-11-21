@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Remover",
 	"settings.sources.bridge": "Associar Jackett ou Prowlarr",
 	"settings.sources.off": "As Fontes estão desativadas",
-	"settings.sources.offText": "O HolyArrs não pesquisa nem obtém. Os downloads que adicionas no teu Gestor de downloads continuam a ser importados.",
+	"settings.sources.offText": "O Eleven+ não pesquisa nem obtém. Os downloads que adicionas no teu Gestor de downloads continuam a ser importados.",
 	"settings.sources.openParts": "Abrir Partes",
 	"settings.sources.offState": "Desativado",
 	"settings.sources.site": "Site integrado",

@@ -15,7 +15,7 @@
 	"settings.parts.title": "Parts",
 	"settings.parts.onOff": "Activa o desactiva parts",
 	"settings.parts.ownerOnly": "Només el propietari i els administradors",
-	"settings.parts.safeMode": "HolyArrs funciona en mode segur: només s'executa el nucli, i els interruptors de les parts i els controls de les etapes es rebutgen fins a un inici normal. Fes servir <b>Reinicia HolyArrs</b> a la <a>Zona de perill</a> per sortir del mode segur.",
+	"settings.parts.safeMode": "Eleven+ funciona en mode segur: només s'executa el nucli, i els interruptors de les parts i els controls de les etapes es rebutgen fins a un inici normal. Fes servir <b>Reinicia Eleven+</b> a la <a>Zona de perill</a> per sortir del mode segur.",
 	"settings.parts.dangerZone": "Zona de perill",
 	"settings.parts.ask": "{label}?",
 	"settings.parts.yes": "Sí, {action}",

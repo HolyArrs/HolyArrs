@@ -9,7 +9,7 @@
 	"setup.folderUsed": "โฟลเดอร์นี้ถูกใช้อยู่แล้ว หรืออยู่ภายในโฟลเดอร์ที่ถูกใช้อยู่",
 	"setup.folderMissing": "ไม่พบโฟลเดอร์นั้น ตรวจสอบพาธอีกครั้ง",
 	"setup.addFolderOrOff": "เพิ่มโฟลเดอร์ หรือปิดตัวเลือกนี้",
-	"setup.notAnswering": "HolyArrs ไม่ตอบสนอง ลองอีกครั้งในอีกสักครู่",
+	"setup.notAnswering": "Eleven+ ไม่ตอบสนอง ลองอีกครั้งในอีกสักครู่",
 	"setup.addUserPasswordHint": "ใส่ชื่อผู้ใช้และรหัสผ่าน",
 	"setup.folders": "โฟลเดอร์",
 	"setup.downloader": "ตัวดาวน์โหลด",

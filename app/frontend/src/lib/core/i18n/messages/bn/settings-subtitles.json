@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "প্লেয়ার যে শেষাংশকে SDH হিসেবে পড়ে",
 	"settings.subtitles.syncFix": "সিঙ্ক ঠিক করা",
 	"settings.subtitles.syncFixDesc": "টাইমিং ঠিক করার শুরুর মান",
-	"settings.subtitles.syncNote": "সময়ের সঙ্গে না মেলা সাবটাইটেল তার সিনেমা বা এপিসোডে হাতে ঠিক করা হয়: প্রতিটি লাইন সরান, বা ফ্রেম রেট বদলান। সাবটাইটেল মেলাতে HolyArrs শব্দ শোনে না।",
+	"settings.subtitles.syncNote": "সময়ের সঙ্গে না মেলা সাবটাইটেল তার সিনেমা বা এপিসোডে হাতে ঠিক করা হয়: প্রতিটি লাইন সরান, বা ফ্রেম রেট বদলান। সাবটাইটেল মেলাতে Eleven+ শব্দ শোনে না।",
 	"settings.subtitles.shift": "শিফট বোতাম কত সরায় (ms)",
 	"settings.subtitles.fpsFrom": "ফ্রেম রেট থেকে",
 	"settings.subtitles.fpsTo": "ফ্রেম রেট পর্যন্ত",

@@ -83,7 +83,7 @@
 "settings.subtitles.hiSuffixHint": "プレーヤーが SDH と判断するファイル名の末尾",
 "settings.subtitles.syncFix": "同期の修正",
 "settings.subtitles.syncFixDesc": "タイミング修正の開始値",
-"settings.subtitles.syncNote": "タイミングがずれた字幕は、その映画やエピソードのページで手動で直します。すべての行をずらすか、フレームレートを変更します。HolyArrs は、音声を聞いて字幕を合わせることはしません。",
+"settings.subtitles.syncNote": "タイミングがずれた字幕は、その映画やエピソードのページで手動で直します。すべての行をずらすか、フレームレートを変更します。Eleven+ は、音声を聞いて字幕を合わせることはしません。",
 "settings.subtitles.shift": "ずらすボタンの量(ミリ秒)",
 "settings.subtitles.fpsFrom": "変換前のフレームレート",
 "settings.subtitles.fpsTo": "変換後のフレームレート",

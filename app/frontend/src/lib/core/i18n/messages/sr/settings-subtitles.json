@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Завршетак који плејери читају као SDH",
 	"settings.subtitles.syncFix": "Исправка синхронизације",
 	"settings.subtitles.syncFixDesc": "Почетне вредности за исправку времена",
-	"settings.subtitles.syncNote": "Титл ван времена исправља се ручно на његовом филму или епизоди: помери сваки ред или промени број слика у секунди. HolyArrs не слуша звук да би поравнао титлове.",
+	"settings.subtitles.syncNote": "Титл ван времена исправља се ручно на његовом филму или епизоди: помери сваки ред или промени број слика у секунди. Eleven+ не слуша звук да би поравнао титлове.",
 	"settings.subtitles.shift": "Дугмад за померање померају (ms)",
 	"settings.subtitles.fpsFrom": "Број слика у секунди од",
 	"settings.subtitles.fpsTo": "Број слика у секунди до",

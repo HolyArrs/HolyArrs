@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Końcówka pliku, którą odtwarzacze czytają jako SDH",
 	"settings.subtitles.syncFix": "Korekta synchronizacji",
 	"settings.subtitles.syncFixDesc": "Wartości początkowe do korekty czasu",
-	"settings.subtitles.syncNote": "Napisy poza czasem poprawia się ręcznie na stronie filmu lub odcinka: przesuń każdy wers albo zmień liczbę klatek. HolyArrs nie słucha dźwięku, by dopasować napisy.",
+	"settings.subtitles.syncNote": "Napisy poza czasem poprawia się ręcznie na stronie filmu lub odcinka: przesuń każdy wers albo zmień liczbę klatek. Eleven+ nie słucha dźwięku, by dopasować napisy.",
 	"settings.subtitles.shift": "Przyciski przesuwają o (ms)",
 	"settings.subtitles.fpsFrom": "Liczba klatek z",
 	"settings.subtitles.fpsTo": "Liczba klatek na",

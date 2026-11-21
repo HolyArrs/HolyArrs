@@ -7,7 +7,7 @@
 	"settings.layout.blocked": "Ezt nem módosíthatja",
 	"settings.layout.backToSettings": "Vissza a Beállításokhoz",
 	"settings.layout.setPasswordFirst": "Először állítson be jelszót",
-	"settings.layout.setPasswordDesc": "A kulcsokhoz, jelszavakhoz, személyekhez és biztonsági mentésekhez HolyArrs-jelszó kell. Önnek még nincs.",
+	"settings.layout.setPasswordDesc": "A kulcsokhoz, jelszavakhoz, személyekhez és biztonsági mentésekhez Eleven+-jelszó kell. Önnek még nincs.",
 	"settings.layout.setPasswordLabel": "Jelszó beállítása",
 	"settings.layout.signInAgainTitle": "Előbb jelentkezz be újra",
 	"settings.layout.confirmPasswordLabel": "Erősítse meg a jelszavát",

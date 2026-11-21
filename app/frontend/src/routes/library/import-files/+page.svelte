@@ -233,7 +233,7 @@
 	}
 </script>
 
-<svelte:head><title>{tr('library.byHand.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{tr('library.byHand.title')} · Eleven+</title></svelte:head>
 
 <LibraryToolPage title={tr('library.byHand.title')}>
 {#if !session.can('settings')}

@@ -71,7 +71,7 @@
 	"settings.sources.remove": "移除",
 	"settings.sources.bridge": "關聯 Jackett 或 Prowlarr",
 	"settings.sources.off": "來源已關閉",
-	"settings.sources.offText": "HolyArrs 不會搜尋或抓取。你在下載器中新增的下載仍會匯入。",
+	"settings.sources.offText": "Eleven+ 不會搜尋或抓取。你在下載器中新增的下載仍會匯入。",
 	"settings.sources.openParts": "開啟功能模組",
 	"settings.sources.offState": "關閉",
 	"settings.sources.site": "內建網站",

@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Dulo ng file na binabasa ng mga player bilang SDH",
 	"settings.subtitles.syncFix": "Ayos ng sync",
 	"settings.subtitles.syncFixDesc": "Mga panimulang halaga para sa pag-ayos ng timing",
-	"settings.subtitles.syncNote": "Ang subtitle na hindi sabay ay inaayos nang mano-mano sa pelikula o episode nito: ilipat ang bawat linya, o baguhin ang frame rate. Hindi nakikinig ang HolyArrs sa tunog para pagtugmain ang mga subtitle.",
+	"settings.subtitles.syncNote": "Ang subtitle na hindi sabay ay inaayos nang mano-mano sa pelikula o episode nito: ilipat ang bawat linya, o baguhin ang frame rate. Hindi nakikinig ang Eleven+ sa tunog para pagtugmain ang mga subtitle.",
 	"settings.subtitles.shift": "Inililipat ng mga shift button (ms)",
 	"settings.subtitles.fpsFrom": "Frame rate mula sa",
 	"settings.subtitles.fpsTo": "Frame rate patungo sa",

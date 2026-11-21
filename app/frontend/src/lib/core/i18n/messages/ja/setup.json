@@ -9,7 +9,7 @@
 "setup.folderUsed": "このフォルダーはすでに使われているか、使用中のフォルダーの中にあります。",
 "setup.folderMissing": "そのフォルダーが見つかりません。パスを確認してください。",
 "setup.addFolderOrOff": "フォルダーを追加するか、これをオフにしてください。",
-"setup.notAnswering": "HolyArrs が応答していません。しばらくしてからもう一度お試しください。",
+"setup.notAnswering": "Eleven+ が応答していません。しばらくしてからもう一度お試しください。",
 "setup.addUserPasswordHint": "ユーザー名とパスワードを入力してください。",
 "setup.folders": "フォルダー",
 "setup.downloader": "ダウンローダー",

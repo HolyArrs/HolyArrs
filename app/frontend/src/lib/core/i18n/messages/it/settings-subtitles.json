@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Terminazione del file che i lettori leggono come SDH",
 	"settings.subtitles.syncFix": "Correzione della sincronia",
 	"settings.subtitles.syncFixDesc": "Valori di partenza per correggere i tempi",
-	"settings.subtitles.syncNote": "Un sottotitolo fuori tempo si corregge a mano nel suo film o episodio: sposta ogni riga, oppure cambia il frame rate. HolyArrs non ascolta l'audio per allineare i sottotitoli.",
+	"settings.subtitles.syncNote": "Un sottotitolo fuori tempo si corregge a mano nel suo film o episodio: sposta ogni riga, oppure cambia il frame rate. Eleven+ non ascolta l'audio per allineare i sottotitoli.",
 	"settings.subtitles.shift": "Passo dei pulsanti di spostamento (ms)",
 	"settings.subtitles.fpsFrom": "Frame rate da",
 	"settings.subtitles.fpsTo": "Frame rate a",

@@ -56,7 +56,7 @@
 	});
 </script>
 
-<svelte:head><title>{t('settings.danger.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.danger.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.danger.title')} />
 

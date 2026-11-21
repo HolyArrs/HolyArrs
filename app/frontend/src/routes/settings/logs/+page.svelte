@@ -58,7 +58,7 @@
 	onMount(load);
 </script>
 
-<svelte:head><title>{t('settings.logs.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.logs.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.logs.title')}>
 	{#snippet actions()}

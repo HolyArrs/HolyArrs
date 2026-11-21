@@ -275,7 +275,7 @@
 	}
 </script>
 
-<svelte:head>{#if !shared(title)}<title>{title?.name ?? tr('mediafiles.title.titleWord')} · HolyArrs</title>{/if}</svelte:head>
+<svelte:head>{#if !shared(title)}<title>{title?.name ?? tr('mediafiles.title.titleWord')} · Eleven+</title>{/if}</svelte:head>
 
 {#if blocked}
 	<EmptyState icon="shield" title={tr('library.title.blocked')}>

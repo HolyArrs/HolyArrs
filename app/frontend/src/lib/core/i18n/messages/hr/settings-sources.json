@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Ukloni",
 	"settings.sources.bridge": "Poveži Jackett ili Prowlarr",
 	"settings.sources.off": "Izvori su isključeni",
-	"settings.sources.offText": "HolyArrs ne pretražuje i ne preuzima. Preuzimanja koja dodate u svom Preuzimatelju i dalje se uvoze.",
+	"settings.sources.offText": "Eleven+ ne pretražuje i ne preuzima. Preuzimanja koja dodate u svom Preuzimatelju i dalje se uvoze.",
 	"settings.sources.openParts": "Otvori Dijelove",
 	"settings.sources.offState": "Isključeno",
 	"settings.sources.site": "Ugrađena stranica",

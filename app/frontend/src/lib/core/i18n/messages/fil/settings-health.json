@@ -14,7 +14,7 @@
 	"settings.health.none": "Walang resulta. Suriin ulit para patakbuhin ang mga ito.",
 	"settings.health.since": "Mula",
 	"settings.health.settings": "Mga setting ng health check",
-	"settings.health.updateCheck": "Tingnan kung may mas bagong HolyArrs",
+	"settings.health.updateCheck": "Tingnan kung may mas bagong Eleven+",
 	"settings.health.onlyChecks": "Tumitingin lang. Hindi nag-i-install.",
 	"settings.health.every": "Tingnan ang mga update kada",
 	"settings.health.day": "araw",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Mag-alerto pagkatapos ng ganito karaming sunod-sunod na takbo",
 	"settings.health.guardHint": "Pinipigilan ang alerto sa mga isang beses lang na pagkakamali",
 	"settings.health.feed": "Release feed",
-	"settings.health.feedHint": "Kapag walang laman, gagamitin ang mga release ng HolyArrs",
+	"settings.health.feedHint": "Kapag walang laman, gagamitin ang mga release ng Eleven+",
 	"settings.health.feedLocal": "Puwedeng nasa local network ang feed",
 	"settings.health.prerelease": "Isama ang mga test version (tulad ng 1.2.0-rc1)"
 }

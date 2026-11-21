@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Retirer",
 	"settings.sources.bridge": "Lier Jackett ou Prowlarr",
 	"settings.sources.off": "Les sources sont désactivées",
-	"settings.sources.offText": "HolyArrs ne cherche ni ne récupère rien. Les téléchargements ajoutés dans ton téléchargeur sont toujours importés.",
+	"settings.sources.offText": "Eleven+ ne cherche ni ne récupère rien. Les téléchargements ajoutés dans ton téléchargeur sont toujours importés.",
 	"settings.sources.openParts": "Ouvrir Parties",
 	"settings.sources.offState": "Désactivé",
 	"settings.sources.site": "Site intégré",

@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Final de fitxer que els reproductors llegeixen com a SDH",
 	"settings.subtitles.syncFix": "Correcció de sincronia",
 	"settings.subtitles.syncFixDesc": "Valors inicials per corregir el temps",
-	"settings.subtitles.syncNote": "Un subtítol desfasat es corregeix a mà a la seva pel·lícula o episodi: desplaça totes les línies o canvia la taxa de fotogrames. HolyArrs no escolta el so per alinear els subtítols.",
+	"settings.subtitles.syncNote": "Un subtítol desfasat es corregeix a mà a la seva pel·lícula o episodi: desplaça totes les línies o canvia la taxa de fotogrames. Eleven+ no escolta el so per alinear els subtítols.",
 	"settings.subtitles.shift": "Els botons de desplaçament mouen (ms)",
 	"settings.subtitles.fpsFrom": "Taxa de fotogrames de",
 	"settings.subtitles.fpsTo": "Taxa de fotogrames a",

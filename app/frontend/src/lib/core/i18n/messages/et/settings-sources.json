@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Eemalda",
 	"settings.sources.bridge": "Seo Jackett või Prowlarr",
 	"settings.sources.off": "Allikad on väljas",
-	"settings.sources.offText": "HolyArrs ei otsi ega hangi. Allalaadimised, mille lisad oma Allalaadijas, imporditakse endiselt.",
+	"settings.sources.offText": "Eleven+ ei otsi ega hangi. Allalaadimised, mille lisad oma Allalaadijas, imporditakse endiselt.",
 	"settings.sources.openParts": "Ava Moodulid",
 	"settings.sources.offState": "Väljas",
 	"settings.sources.site": "Sisseehitatud sait",

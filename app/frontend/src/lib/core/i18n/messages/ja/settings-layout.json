@@ -7,7 +7,7 @@
 "settings.layout.blocked": "これは変更できません",
 "settings.layout.backToSettings": "設定に戻る",
 "settings.layout.setPasswordFirst": "先にパスワードを設定してください",
-"settings.layout.setPasswordDesc": "キー、パスワード、ユーザー、バックアップの操作には HolyArrs のパスワードが必要です。まだ設定されていません。",
+"settings.layout.setPasswordDesc": "キー、パスワード、ユーザー、バックアップの操作には Eleven+ のパスワードが必要です。まだ設定されていません。",
 "settings.layout.setPasswordLabel": "パスワードを設定",
 "settings.layout.signInAgainTitle": "もう一度サインインしてください",
 "settings.layout.confirmPasswordLabel": "パスワードを確認",

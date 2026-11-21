@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Remove",
 	"settings.sources.bridge": "Link Jackett or Prowlarr",
 	"settings.sources.off": "Sources are off",
-	"settings.sources.offText": "HolyArrs doesn't search or grab. Downloads you add in your Downloader still import.",
+	"settings.sources.offText": "Eleven+ doesn't search or grab. Downloads you add in your Downloader still import.",
 	"settings.sources.openParts": "Open Parts",
 	"settings.sources.offState": "Off",
 	"settings.sources.site": "Built-in site",

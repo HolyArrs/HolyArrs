@@ -14,7 +14,7 @@
 "settings.health.none": "結果がありません。再チェックして実行してください。",
 "settings.health.since": "開始",
 "settings.health.settings": "稼働状態チェックの設定",
-"settings.health.updateCheck": "新しい HolyArrs を確認",
+"settings.health.updateCheck": "新しい Eleven+ を確認",
 "settings.health.onlyChecks": "確認のみ。インストールはしません。",
 "settings.health.every": "アップデートの確認間隔",
 "settings.health.day": "日",
@@ -25,7 +25,7 @@
 "settings.health.guard": "連続何回で通知するか",
 "settings.health.guardHint": "一時的な不調では通知されません",
 "settings.health.feed": "リリースフィード",
-"settings.health.feedHint": "空欄なら HolyArrs のリリースを使います",
+"settings.health.feedHint": "空欄なら Eleven+ のリリースを使います",
 "settings.health.feedLocal": "フィードはローカルネットワーク上でもよい",
 "settings.health.prerelease": "テスト版を含める(1.2.0-rc1 など)"
 }

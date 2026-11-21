@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "File ending players read as SDH",
 	"settings.subtitles.syncFix": "Sync fix",
 	"settings.subtitles.syncFixDesc": "Starting values for fixing timing",
-	"settings.subtitles.syncNote": "A subtitle out of time is fixed by hand on its movie or episode: shift every line, or change the frame rate. HolyArrs does not listen to the sound to line subtitles up.",
+	"settings.subtitles.syncNote": "A subtitle out of time is fixed by hand on its movie or episode: shift every line, or change the frame rate. Eleven+ does not listen to the sound to line subtitles up.",
 	"settings.subtitles.shift": "Shift buttons move (ms)",
 	"settings.subtitles.fpsFrom": "Frame rate from",
 	"settings.subtitles.fpsTo": "Frame rate to",

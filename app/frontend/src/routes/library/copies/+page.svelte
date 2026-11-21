@@ -104,7 +104,7 @@
 	onMount(() => { load(); void titleArt().then((m) => (art = m)); return () => clearTimeout(typing); });
 </script>
 
-<svelte:head><title>{t('library.copies.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('library.copies.title')} · Eleven+</title></svelte:head>
 
 <LibraryToolPage title={t('library.copies.title')} count={loaded && !error ? t('mediafiles.unit.file.' + (page.total === 1 ? 'one' : 'other'), { n: page.total.toLocaleString(appLocale()) }) : ''}>
 	{#snippet bar()}

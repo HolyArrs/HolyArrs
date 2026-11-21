@@ -14,7 +14,7 @@
 	"settings.health.none": "Tulemusi pole. Kontrolli uuesti, et need käivitada.",
 	"settings.health.since": "Alates",
 	"settings.health.settings": "Seisukorra kontrolli seaded",
-	"settings.health.updateCheck": "Otsi uuemat HolyArrsi",
+	"settings.health.updateCheck": "Otsi uuemat Eleven+i",
 	"settings.health.onlyChecks": "Ainult kontrollib. Ei paigalda kunagi.",
 	"settings.health.every": "Otsi uuendusi iga",
 	"settings.health.day": "päev",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Teavita pärast nii mitut korda järjest",
 	"settings.health.guardHint": "Ühekordsed tõrked ei anna teavitust",
 	"settings.health.feed": "Väljalaskevoog",
-	"settings.health.feedHint": "Tühjana kasutatakse HolyArrsi väljalaskeid",
+	"settings.health.feedHint": "Tühjana kasutatakse Eleven+i väljalaskeid",
 	"settings.health.feedLocal": "Voog võib olla kohtvõrgus",
 	"settings.health.prerelease": "Kaasa testversioonid (nt 1.2.0-rc1)"
 }

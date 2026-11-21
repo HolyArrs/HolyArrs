@@ -65,7 +65,7 @@
 	const dayLabel = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString(appLocale(), { month: 'short', day: 'numeric' });
 </script>
 
-<svelte:head><title>{t('settings.sourceDetail.pageTitle', { name: src?.name ?? t('settings.sourceDetail.source') })} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.sourceDetail.pageTitle', { name: src?.name ?? t('settings.sourceDetail.source') })} · Eleven+</title></svelte:head>
 
 <PageHeader
 	back={{ href: to('/settings/sources'), label: t('settings.sourceDetail.sources') }}

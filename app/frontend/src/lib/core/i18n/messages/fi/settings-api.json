@@ -1,5 +1,5 @@
 {
-	"settings.api.exHealth": "Onko HolyArrs käynnissä ja mikä versio",
+	"settings.api.exHealth": "Onko Eleven+ käynnissä ja mikä versio",
 	"settings.api.exTitles": "Kaikki kirjaston elokuvat, sarjat ja esittäjät",
 	"settings.api.exDownloads": "Mitä on parhaillaan latautumassa",
 	"settings.api.exFeed": "Aja syötteen tarkistus nyt",

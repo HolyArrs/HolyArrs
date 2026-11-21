@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Završetak datoteke koji playeri čitaju kao SDH",
 	"settings.subtitles.syncFix": "Ispravak sinkronizacije",
 	"settings.subtitles.syncFixDesc": "Početne vrijednosti za ispravak vremena",
-	"settings.subtitles.syncNote": "Titl koji kasni popravlja se ručno na stranici filma ili epizode: pomakni svaki redak ili promijeni brzinu sličica. HolyArrs ne sluša zvuk da bi uskladio titlove.",
+	"settings.subtitles.syncNote": "Titl koji kasni popravlja se ručno na stranici filma ili epizode: pomakni svaki redak ili promijeni brzinu sličica. Eleven+ ne sluša zvuk da bi uskladio titlove.",
 	"settings.subtitles.shift": "Tipke za pomak miču (ms)",
 	"settings.subtitles.fpsFrom": "Brzina sličica iz",
 	"settings.subtitles.fpsTo": "Brzina sličica u",

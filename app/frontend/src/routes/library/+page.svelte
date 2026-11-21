@@ -647,7 +647,7 @@
 	});
 </script>
 
-<svelte:head><title>{kindTitle} · HolyArrs</title></svelte:head>
+<svelte:head><title>{kindTitle} · Eleven+</title></svelte:head>
 <svelte:window onkeydown={selectKey} />
 
 <div class="library" class:selecting>

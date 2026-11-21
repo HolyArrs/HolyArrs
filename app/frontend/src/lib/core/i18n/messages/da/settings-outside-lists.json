@@ -37,7 +37,7 @@
 	"settings.outsideLists.hours": "Læs hver (timer)",
 	"settings.outsideLists.hoursHint": "6 til 168 timer. Når du gemmer, læses den nu.",
 	"settings.outsideLists.keep": "Hold opdateret",
-	"settings.outsideLists.keepShows": "HolyArrs passer de sæsoner, der er valgt ovenfor.",
+	"settings.outsideLists.keepShows": "Eleven+ passer de sæsoner, der er valgt ovenfor.",
 	"settings.outsideLists.keepMovies": "Tilføjede film søges, og en bedre kopi senere.",
 	"settings.outsideLists.search": "Søg ved tilføjelse",
 	"settings.outsideLists.searchShows": "Led efter manglende afsnit, så snart en serie kommer ind fra listen.",

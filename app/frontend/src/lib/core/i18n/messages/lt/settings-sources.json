@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Pašalinti",
 	"settings.sources.bridge": "Susieti Jackett ar Prowlarr",
 	"settings.sources.off": "Šaltiniai išjungti",
-	"settings.sources.offText": "HolyArrs neieško ir nesiunčia. Atsisiuntimai, kuriuos pridedate savo Atsisiuntėjuje, vis tiek importuojami.",
+	"settings.sources.offText": "Eleven+ neieško ir nesiunčia. Atsisiuntimai, kuriuos pridedate savo Atsisiuntėjuje, vis tiek importuojami.",
 	"settings.sources.openParts": "Atidaryti Dalis",
 	"settings.sources.offState": "Išjungta",
 	"settings.sources.site": "Įtaisyta svetainė",

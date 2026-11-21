@@ -14,7 +14,7 @@
 	"settings.health.none": "Δεν υπάρχουν αποτελέσματα. Ελέγξτε ξανά για να εκτελεστούν.",
 	"settings.health.since": "Από",
 	"settings.health.settings": "Ρυθμίσεις ελέγχων υγείας",
-	"settings.health.updateCheck": "Έλεγχος για νεότερο HolyArrs",
+	"settings.health.updateCheck": "Έλεγχος για νεότερο Eleven+",
 	"settings.health.onlyChecks": "Μόνο έλεγχος. Δεν εγκαθιστά ποτέ.",
 	"settings.health.every": "Έλεγχος ενημερώσεων κάθε",
 	"settings.health.day": "ημέρα",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Ειδοποίηση μετά από τόσες διαδοχικές εκτελέσεις",
 	"settings.health.guardHint": "Αποφεύγει ειδοποιήσεις για μεμονωμένα στιγμιαία προβλήματα",
 	"settings.health.feed": "Ροή εκδόσεων",
-	"settings.health.feedHint": "Κενό: χρησιμοποιούνται οι εκδόσεις του HolyArrs",
+	"settings.health.feedHint": "Κενό: χρησιμοποιούνται οι εκδόσεις του Eleven+",
 	"settings.health.feedLocal": "Η ροή μπορεί να βρίσκεται στο τοπικό δίκτυο",
 	"settings.health.prerelease": "Να περιλαμβάνονται δοκιμαστικές εκδόσεις (όπως 1.2.0-rc1)"
 }

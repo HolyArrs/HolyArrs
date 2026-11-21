@@ -78,7 +78,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.pickRules.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.pickRules.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.pickRules.title')}>
 	{#snippet actions()}

@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "播放器会将其识别为 SDH 的文件名结尾",
 	"settings.subtitles.syncFix": "同步修正",
 	"settings.subtitles.syncFixDesc": "修正时间轴的初始值",
-	"settings.subtitles.syncNote": "字幕不同步时，请在对应电影或单集页面手动修正：整体平移每一行，或更改帧率。HolyArrs 不会通过听声音来对齐字幕。",
+	"settings.subtitles.syncNote": "字幕不同步时，请在对应电影或单集页面手动修正：整体平移每一行，或更改帧率。Eleven+ 不会通过听声音来对齐字幕。",
 	"settings.subtitles.shift": "平移按钮每次移动（毫秒）",
 	"settings.subtitles.fpsFrom": "原帧率",
 	"settings.subtitles.fpsTo": "目标帧率",

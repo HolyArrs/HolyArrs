@@ -14,7 +14,7 @@
 	"settings.health.none": "कोई नतीजा नहीं। चलाने के लिए फिर से जांचें।",
 	"settings.health.since": "तब से",
 	"settings.health.settings": "हेल्थ जांच की सेटिंग",
-	"settings.health.updateCheck": "नए HolyArrs की जांच करें",
+	"settings.health.updateCheck": "नए Eleven+ की जांच करें",
 	"settings.health.onlyChecks": "सिर्फ़ जांचता है। कभी इंस्टॉल नहीं करता।",
 	"settings.health.every": "अपडेट की जांच हर",
 	"settings.health.day": "दिन",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "लगातार इतनी बार चलने के बाद अलर्ट दें",
 	"settings.health.guardHint": "एक बार की गड़बड़ी पर अलर्ट नहीं जाता",
 	"settings.health.feed": "रिलीज़ फ़ीड",
-	"settings.health.feedHint": "खाली रहने पर HolyArrs की रिलीज़ इस्तेमाल होती हैं",
+	"settings.health.feedHint": "खाली रहने पर Eleven+ की रिलीज़ इस्तेमाल होती हैं",
 	"settings.health.feedLocal": "फ़ीड लोकल नेटवर्क पर हो सकती है",
 	"settings.health.prerelease": "टेस्ट वर्ज़न भी शामिल करें (जैसे 1.2.0-rc1)"
 }

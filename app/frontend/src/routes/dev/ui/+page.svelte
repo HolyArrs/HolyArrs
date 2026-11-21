@@ -62,7 +62,7 @@
 	]);
 </script>
 
-<svelte:head><title>Components · HolyArrs</title></svelte:head>
+<svelte:head><title>Components · Eleven+</title></svelte:head>
 
 <PageHeader title="Components" subtitle="Every part of the HolyArrs kit, light and dark side by side.">
 	{#snippet actions()}<SegmentedControl label="Preview width" options={widths} bind:value={width} />{/snippet}

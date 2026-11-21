@@ -14,7 +14,7 @@
 	"settings.health.none": "Sonuç yok. Çalıştırmak için tekrar denetle.",
 	"settings.health.since": "Başlangıç",
 	"settings.health.settings": "Sağlık denetimi ayarları",
-	"settings.health.updateCheck": "Daha yeni HolyArrs var mı diye bak",
+	"settings.health.updateCheck": "Daha yeni Eleven+ var mı diye bak",
 	"settings.health.onlyChecks": "Yalnızca bakar. Hiçbir şey kurmaz.",
 	"settings.health.every": "Güncellemelere şu sıklıkla bak",
 	"settings.health.day": "gün",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Üst üste şu kadar çalıştırmadan sonra uyar",
 	"settings.health.guardHint": "Tek seferlik aksaklıkların uyarı vermesini önler",
 	"settings.health.feed": "Sürüm feed'i",
-	"settings.health.feedHint": "Boşsa HolyArrs sürümleri kullanılır",
+	"settings.health.feedHint": "Boşsa Eleven+ sürümleri kullanılır",
 	"settings.health.feedLocal": "Feed yerel ağda olabilir",
 	"settings.health.prerelease": "Test sürümlerini de say (1.2.0-rc1 gibi)"
 }

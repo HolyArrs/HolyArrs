@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Oynatıcıların SDH olarak okuduğu dosya sonu",
 	"settings.subtitles.syncFix": "Senkron düzeltme",
 	"settings.subtitles.syncFixDesc": "Zamanlamayı düzeltmek için başlangıç değerleri",
-	"settings.subtitles.syncNote": "Zamanlaması kayan bir altyazı, filmin ya da bölümün sayfasında elle düzeltilir: her satırı kaydır ya da kare hızını değiştir. HolyArrs altyazıları hizalamak için sesi dinlemez.",
+	"settings.subtitles.syncNote": "Zamanlaması kayan bir altyazı, filmin ya da bölümün sayfasında elle düzeltilir: her satırı kaydır ya da kare hızını değiştir. Eleven+ altyazıları hizalamak için sesi dinlemez.",
 	"settings.subtitles.shift": "Kaydırma düğmeleri şu kadar oynatır (ms)",
 	"settings.subtitles.fpsFrom": "Kare hızı: başlangıç",
 	"settings.subtitles.fpsTo": "Kare hızı: hedef",

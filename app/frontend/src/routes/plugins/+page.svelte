@@ -119,7 +119,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('plugins.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('plugins.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('plugins.title')} />
 

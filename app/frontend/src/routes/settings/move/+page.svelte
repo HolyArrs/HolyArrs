@@ -600,7 +600,7 @@
 	const railFill = $derived(step === 'move' && moveRunning ? progress : 0.5);
 </script>
 
-<svelte:head>{#if !embedded}<title>{t('settings.move.title')} · HolyArrs</title>{/if}</svelte:head>
+<svelte:head>{#if !embedded}<title>{t('settings.move.title')} · Eleven+</title>{/if}</svelte:head>
 
 {#if !embedded}
 	<PageHeader title={t('settings.move.title')} subtitle={t('settings.move.subtitle')} />

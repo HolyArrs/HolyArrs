@@ -117,4 +117,18 @@
 	.flag-pop .flag { width: 9px; height: 9px; }
 	.tip { position: fixed; z-index: 80; translate: 0 -50%; padding: 5px 9px; border-radius: 7px; background: var(--text); color: var(--bg); font: var(--t-footnote); white-space: nowrap; pointer-events: none; box-shadow: var(--shadow-lift); }
 	@media (pointer: coarse) { .ui-sbi { min-height: 44px; } }
+
+	/* ===== Eleven+ refined rows (open sidebar) ===== */
+	.ui-sbi { min-height: 38px; border-radius: 10px; font-size: 14.5px; font-weight: 550; color: var(--text-muted); transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+	.ui-sbi:hover:not(.current) { color: var(--text); }
+	.current { color: var(--accent-text); font-weight: 650; }
+	.count { box-shadow: none; background: var(--accent-fill); color: var(--text-on-red); }
+
+	/* ===== Eleven+ floating rail rows (collapsed) ===== */
+	:global(.ui-sidebar.collapsed) .ui-sbi { width: 48px; min-height: 48px; margin-inline: auto; padding: 0; justify-content: center; gap: 0; border-radius: 14px; }
+	:global(.ui-sidebar.collapsed) .ui-sbi .label { display: none; }
+	:global(.ui-sidebar.collapsed) .ui-sbi .ic { width: 48px; }
+	:global(.ui-sidebar.collapsed) .ui-sbi.current .ic { color: var(--accent); }
+	:global(.ui-sidebar.collapsed) .ui-sbi .count { top: 4px; inset-inline-end: 4px; box-shadow: 0 0 0 2px var(--sidebar-solid); }
+	:global(.ui-sidebar.collapsed) .ui-sbi .flag { top: 9px; inset-inline-end: 9px; box-shadow: 0 0 0 2px var(--sidebar-solid); }
 </style>

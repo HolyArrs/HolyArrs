@@ -15,7 +15,7 @@ export function historyIndex(): string | null {
 	return typeof i === 'number' ? String(i) : null;
 }
 
-/** A page's name from its title ("Search · HolyArrs" becomes "Search"). */
+/** A page's name from its title ("Search · Eleven+" becomes "Search"). */
 export function pageLabel(title: string): string {
 	return title.split(' · ')[0].trim();
 }

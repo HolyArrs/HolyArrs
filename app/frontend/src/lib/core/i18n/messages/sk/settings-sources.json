@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Odstrániť",
 	"settings.sources.bridge": "Prepojiť Jackett alebo Prowlarr",
 	"settings.sources.off": "Zdroje sú vypnuté",
-	"settings.sources.offText": "HolyArrs nevyhľadáva ani nesťahuje. Sťahovania, ktoré pridáte vo svojom Sťahovači, sa stále importujú.",
+	"settings.sources.offText": "Eleven+ nevyhľadáva ani nesťahuje. Sťahovania, ktoré pridáte vo svojom Sťahovači, sa stále importujú.",
 	"settings.sources.openParts": "Otvoriť Časti",
 	"settings.sources.offState": "Vypnuté",
 	"settings.sources.site": "Vstavaná stránka",

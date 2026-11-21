@@ -14,7 +14,7 @@
 	"settings.health.none": "Ei tuloksia. Tarkista uudelleen ajaaksesi ne.",
 	"settings.health.since": "Alkaen",
 	"settings.health.settings": "Kuntotarkistusten asetukset",
-	"settings.health.updateCheck": "Tarkista uudempi HolyArrs",
+	"settings.health.updateCheck": "Tarkista uudempi Eleven+",
 	"settings.health.onlyChecks": "Vain tarkistaa. Ei koskaan asenna.",
 	"settings.health.every": "Tarkista päivitykset joka",
 	"settings.health.day": "päivä",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Ilmoita näin monen peräkkäisen ajon jälkeen",
 	"settings.health.guardHint": "Estää yksittäisiä häiriöitä aiheuttamasta ilmoitusta",
 	"settings.health.feed": "Julkaisusyöte",
-	"settings.health.feedHint": "Tyhjä käyttää HolyArrsin julkaisuja",
+	"settings.health.feedHint": "Tyhjä käyttää Eleven+in julkaisuja",
 	"settings.health.feedLocal": "Syöte voi olla paikallisessa verkossa",
 	"settings.health.prerelease": "Sisällytä testiversiot (kuten 1.2.0-rc1)"
 }

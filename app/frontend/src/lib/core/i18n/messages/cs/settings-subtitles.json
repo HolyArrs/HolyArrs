@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Koncovka souboru, kterou přehrávače čtou jako SDH",
 	"settings.subtitles.syncFix": "Oprava synchronizace",
 	"settings.subtitles.syncFixDesc": "Počáteční hodnoty pro opravu časování",
-	"settings.subtitles.syncNote": "Titulky mimo čas se opraví ručně u jejich filmu nebo epizody: posuňte všechny řádky, nebo změňte snímkovou frekvenci. HolyArrs neposlouchá zvuk, aby titulky srovnal.",
+	"settings.subtitles.syncNote": "Titulky mimo čas se opraví ručně u jejich filmu nebo epizody: posuňte všechny řádky, nebo změňte snímkovou frekvenci. Eleven+ neposlouchá zvuk, aby titulky srovnal.",
 	"settings.subtitles.shift": "Tlačítka posunu posouvají o (ms)",
 	"settings.subtitles.fpsFrom": "Snímková frekvence z",
 	"settings.subtitles.fpsTo": "Snímková frekvence na",

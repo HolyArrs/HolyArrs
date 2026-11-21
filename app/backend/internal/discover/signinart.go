@@ -68,6 +68,11 @@ type SigninShot struct {
 	Backdrop SigninImage  `json:"backdrop"`
 	Poster   *SigninImage `json:"poster,omitempty"`
 	Logo     string       `json:"logo"`
+	// Eleven+: what the slide shows, for the caption on the sign-in page.
+	Title  string   `json:"title,omitempty"`
+	Year   int      `json:"year,omitempty"`
+	Kind   string   `json:"kind,omitempty"`
+	Genres []string `json:"genres,omitempty"`
 }
 
 type signinArtState struct {
@@ -257,7 +262,7 @@ func publicURL(u, largest string) string {
 func publicShots(shots []SigninShot) []SigninShot {
 	out := make([]SigninShot, 0, len(shots))
 	for _, s := range shots {
-		x := SigninShot{Backdrop: s.Backdrop, Logo: publicURL(s.Logo, "w500")}
+		x := SigninShot{Backdrop: s.Backdrop, Logo: publicURL(s.Logo, "w500"), Title: s.Title, Year: s.Year, Kind: s.Kind, Genres: s.Genres}
 		x.Backdrop.URL = publicURL(s.Backdrop.URL, "w1280")
 		if s.Poster != nil {
 			p := *s.Poster
@@ -395,24 +400,38 @@ func (s *Signin) signinShots(ctx context.Context) []SigninShot {
 
 type signinRef struct{ kind, tmdbID string }
 
+// signinInfo is a title's caption (Eleven+): name, year and genres.
+type signinInfo struct {
+	name   string
+	year   int
+	genres []string
+}
+
 // librarySigninShots picks Library movies and shows.
 func (s *Signin) librarySigninShots(ctx context.Context) []SigninShot {
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT kind, COALESCE(json_extract(source_ids, '$.tmdb'), '')
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT kind, COALESCE(json_extract(source_ids, '$.tmdb'), ''), name, COALESCE(year, 0)
 		FROM titles WHERE kind IN ('movie', 'show') AND state != 'removed' LIMIT 2000`)
 	if err != nil {
 		s.art.fail()
 		return nil
 	}
 	var refs []signinRef
+	info := map[signinRef]signinInfo{}
 	for rows.Next() {
-		var kind, id string
-		if rows.Scan(&kind, &id) == nil && id != "" {
-			refs = append(refs, signinRef{kind, id})
+		var kind, id, name string
+		var year int
+		if rows.Scan(&kind, &id, &name, &year) == nil && id != "" {
+			r := signinRef{kind, id}
+			refs = append(refs, r)
+			// Eleven+: Library titles are NOT captioned (the sign-in page is public;
+			// strangers on the link would read what the household owns). Set
+			// info[r] here to caption Library slides too.
+			_, _ = name, year
 		}
 	}
 	_ = rows.Close()
 	rand.Shuffle(len(refs), func(i, j int) { refs[i], refs[j] = refs[j], refs[i] })
-	return s.shotsFor(ctx, refs)
+	return s.shotsFor(ctx, refs, info)
 }
 
 // trendingSigninShots picks trending movies and shows.
@@ -441,19 +460,22 @@ func (s *Signin) trendingSigninShots(ctx context.Context) []SigninShot {
 	// Most popular first, movies and shows together.
 	slices.SortStableFunc(items, func(x, y metadata.DiscoverItem) int { return cmp.Compare(x.Popularity, y.Popularity) * -1 })
 	var cand []signinRef
+	info := map[signinRef]signinInfo{}
 	for _, it := range items {
 		if len(cand) >= signinArtLookups {
 			break
 		}
 		if it.TMDBID != "" && (it.Kind == "movie" || it.Kind == "show") {
-			cand = append(cand, signinRef{it.Kind, it.TMDBID})
+			r := signinRef{it.Kind, it.TMDBID}
+			cand = append(cand, r)
+			info[r] = signinInfo{name: it.Name, year: it.Year, genres: it.Genres}
 		}
 	}
-	return s.shotsFor(ctx, cand)
+	return s.shotsFor(ctx, cand, info)
 }
 
 // shotsFor looks up each title's images until SigninArtMax slides qualify.
-func (s *Signin) shotsFor(ctx context.Context, refs []signinRef) []SigninShot {
+func (s *Signin) shotsFor(ctx context.Context, refs []signinRef, info map[signinRef]signinInfo) []SigninShot {
 	look := s.Images
 	if look == nil {
 		src, ok := metadata.CardArterFor(ctx, s.Metadata)
@@ -496,9 +518,18 @@ func (s *Signin) shotsFor(ctx context.Context, refs []signinRef) []SigninShot {
 		st.mu.Unlock()
 	})
 	var out []SigninShot
-	for _, p := range picks {
+	for i, p := range picks {
 		if p.ok && len(out) < SigninArtMax {
-			out = append(out, p.shot)
+			shot := p.shot
+			if in, ok := info[refs[i]]; ok {
+				shot.Title, shot.Year, shot.Kind = in.name, in.year, refs[i].kind
+				if len(in.genres) > 2 {
+					shot.Genres = in.genres[:2]
+				} else {
+					shot.Genres = in.genres
+				}
+			}
+			out = append(out, shot)
 		}
 	}
 	return out

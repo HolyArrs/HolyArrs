@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "סיומת קובץ שנגנים קוראים כ־SDH",
 	"settings.subtitles.syncFix": "תיקון סנכרון",
 	"settings.subtitles.syncFixDesc": "ערכי התחלה לתיקון תזמון",
-	"settings.subtitles.syncNote": "כתובית לא מסונכרנת מתוקנת ידנית בסרט או בפרק שלה: הזז כל שורה, או שנה את מהירות הפריימים. HolyArrs לא מאזין לצליל כדי ליישר כתוביות.",
+	"settings.subtitles.syncNote": "כתובית לא מסונכרנת מתוקנת ידנית בסרט או בפרק שלה: הזז כל שורה, או שנה את מהירות הפריימים. Eleven+ לא מאזין לצליל כדי ליישר כתוביות.",
 	"settings.subtitles.shift": "כפתורי הזזה מזיזים (מ״ש)",
 	"settings.subtitles.fpsFrom": "מהירות פריימים מ",
 	"settings.subtitles.fpsTo": "מהירות פריימים אל",

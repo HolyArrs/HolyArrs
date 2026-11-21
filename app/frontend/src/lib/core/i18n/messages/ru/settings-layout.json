@@ -7,7 +7,7 @@
 	"settings.layout.blocked": "Вы не можете это менять",
 	"settings.layout.backToSettings": "Назад в настройки",
 	"settings.layout.setPasswordFirst": "Сначала задайте пароль",
-	"settings.layout.setPasswordDesc": "Для ключей, паролей, людей и резервных копий нужен пароль HolyArrs. У вас его пока нет.",
+	"settings.layout.setPasswordDesc": "Для ключей, паролей, людей и резервных копий нужен пароль Eleven+. У вас его пока нет.",
 	"settings.layout.setPasswordLabel": "Задайте пароль",
 	"settings.layout.signInAgainTitle": "Сначала войдите снова",
 	"settings.layout.confirmPasswordLabel": "Подтвердите пароль",

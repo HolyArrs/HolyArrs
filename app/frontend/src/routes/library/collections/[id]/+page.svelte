@@ -59,7 +59,7 @@
 	}
 </script>
 
-<svelte:head><title>{detail?.name ?? tr('library.collection.movieCollection')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{detail?.name ?? tr('library.collection.movieCollection')} · Eleven+</title></svelte:head>
 <div class="page">
 <PageHeader title={detail?.name ?? tr('library.collection.collection')} subtitle={detail ? tr('library.collection.alsoRemoves') : undefined} back={{ href: to('/library/collections'), label: tr('library.collection.collection') }} />
 

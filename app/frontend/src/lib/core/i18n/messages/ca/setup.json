@@ -9,7 +9,7 @@
 	"setup.folderUsed": "Aquesta carpeta ja s'utilitza o es troba dins d'una que ja s'utilitza.",
 	"setup.folderMissing": "Aquesta carpeta no existeix. Comprova la ruta.",
 	"setup.addFolderOrOff": "Afegeix una carpeta o desactiva això.",
-	"setup.notAnswering": "HolyArrs no respon. Torna-ho a provar d'aquí a un moment.",
+	"setup.notAnswering": "Eleven+ no respon. Torna-ho a provar d'aquí a un moment.",
 	"setup.addUserPasswordHint": "Afegeix el nom d'usuari i la contrasenya.",
 	"setup.folders": "Carpetes",
 	"setup.downloader": "Gestor de baixades",

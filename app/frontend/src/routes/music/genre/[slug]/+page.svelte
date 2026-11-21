@@ -25,7 +25,7 @@
 	});
 </script>
 
-<svelte:head><title>{t('music.musicGenre')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('music.musicGenre')} · Eleven+</title></svelte:head>
 
 <div class="genre" data-testid="music-genre-page">
 	{#key slug}

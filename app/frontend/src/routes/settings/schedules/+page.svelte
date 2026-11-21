@@ -125,7 +125,7 @@
 	});
 </script>
 
-<svelte:head><title>{t('settings.schedules.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.schedules.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.schedules.title')} />
 

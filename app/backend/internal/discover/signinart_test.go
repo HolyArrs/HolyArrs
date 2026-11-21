@@ -121,7 +121,8 @@ func TestSigninArtTrendingDefault(t *testing.T) {
 		}
 	}
 	body := w.Body.String()
-	for _, leak := range []string{"Secret", "Trend", "name", "tmdb_id", "count", "rating", "\"id\""} {
+	// Eleven+: trending slides carry a public caption (title), so "Trend" may appear; Library names still must not.
+	for _, leak := range []string{"Secret", "\"name\"", "tmdb_id", "count", "rating", "\"id\""} {
 		if strings.Contains(body, leak) {
 			t.Fatalf("answer leaks %q: %s", leak, body)
 		}

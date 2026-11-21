@@ -14,7 +14,7 @@
 	"settings.health.none": "Ingen resultater. Sjekk igjen for å kjøre dem.",
 	"settings.health.since": "Siden",
 	"settings.health.settings": "Innstillinger for helsesjekk",
-	"settings.health.updateCheck": "Se etter en nyere HolyArrs",
+	"settings.health.updateCheck": "Se etter en nyere Eleven+",
 	"settings.health.onlyChecks": "Bare sjekker. Installerer aldri.",
 	"settings.health.every": "Se etter oppdateringer hver",
 	"settings.health.day": "dag",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Varsle etter så mange kjøringer på rad",
 	"settings.health.guardHint": "Hindrer at enkeltstående glipp gir varsel",
 	"settings.health.feed": "Utgivelsesfeed",
-	"settings.health.feedHint": "Tom bruker HolyArrs-utgivelser",
+	"settings.health.feedHint": "Tom bruker Eleven+-utgivelser",
 	"settings.health.feedLocal": "Feeden kan ligge på det lokale nettverket",
 	"settings.health.prerelease": "Ta med testversjoner (som 1.2.0-rc1)"
 }

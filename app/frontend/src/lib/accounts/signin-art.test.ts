@@ -129,7 +129,7 @@ describe('providerTiles', () => {
 		expect(t.map((x) => x.label)).toEqual(['Plex', 'Emby', 'Single sign-on']);
 	});
 	it('a single tile says Continue with', () => {
-		expect(providerTiles(['jellyfin', 'password'])).toEqual([{ way: 'jellyfin', name: 'Jellyfin', label: 'Continue with Jellyfin' }]);
+		expect(providerTiles(['jellyfin', 'password'])).toEqual([{ way: 'jellyfin', name: 'Eleven+', label: 'Continue with Eleven+' }]);
 	});
 	it('password only gives no tiles', () => {
 		expect(providerTiles(['password'])).toEqual([]);
@@ -197,7 +197,7 @@ describe('inviteTiles', () => {
 	it('offers only Plex, Jellyfin and Emby on an invite', () => {
 		expect(inviteTiles(['password', 'oidc', 'emby', 'plex', 'forward_auth']).map((t) => t.way)).toEqual(['plex', 'emby']);
 		expect(inviteTiles(['password', 'oidc'])).toEqual([]);
-		expect(inviteTiles(['jellyfin'])[0].label).toBe('Continue with Jellyfin');
+		expect(inviteTiles(['jellyfin'])[0].label).toBe('Continue with Eleven+');
 	});
 	it('knows the already-linked answer', () => {
 		expect(alreadyLinked({ status: 409, body: { code: 'linked' } })).toBe(true);

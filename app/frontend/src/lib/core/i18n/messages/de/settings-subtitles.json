@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Dateiendung, die Player als SDH lesen",
 	"settings.subtitles.syncFix": "Synchronisation korrigieren",
 	"settings.subtitles.syncFixDesc": "Startwerte zum Korrigieren des Timings",
-	"settings.subtitles.syncNote": "Einen Untertitel, der nicht im Takt ist, korrigierst du von Hand auf der Seite seines Films oder seiner Folge: Verschieb jede Zeile oder ändere die Bildrate. HolyArrs hört nicht auf den Ton, um Untertitel auszurichten.",
+	"settings.subtitles.syncNote": "Einen Untertitel, der nicht im Takt ist, korrigierst du von Hand auf der Seite seines Films oder seiner Folge: Verschieb jede Zeile oder ändere die Bildrate. Eleven+ hört nicht auf den Ton, um Untertitel auszurichten.",
 	"settings.subtitles.shift": "Die Verschieben-Tasten bewegen um (ms)",
 	"settings.subtitles.fpsFrom": "Bildrate von",
 	"settings.subtitles.fpsTo": "Bildrate nach",

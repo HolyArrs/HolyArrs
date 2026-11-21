@@ -271,7 +271,7 @@
 
 </script>
 
-<svelte:head><title>{hero?.name ?? t('music.album')} · HolyArrs</title>{#if heroCover}<link rel="preload" as="image" href={heroCover} />{/if}</svelte:head>
+<svelte:head><title>{hero?.name ?? t('music.album')} · Eleven+</title>{#if heroCover}<link rel="preload" as="image" href={heroCover} />{/if}</svelte:head>
 
 {#snippet albumCard(a: PageAlbum)}
 	{@const c = coverFor(appPicture(a.image), 200)}

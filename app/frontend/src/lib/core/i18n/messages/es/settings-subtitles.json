@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Terminación de archivo que los reproductores leen como SDH",
 	"settings.subtitles.syncFix": "Corrección de sincronía",
 	"settings.subtitles.syncFixDesc": "Valores iniciales para corregir los tiempos",
-	"settings.subtitles.syncNote": "Un subtítulo desfasado se corrige a mano en su película o episodio: desplaza todas las líneas o cambia la velocidad de fotogramas. HolyArrs no escucha el sonido para alinear los subtítulos.",
+	"settings.subtitles.syncNote": "Un subtítulo desfasado se corrige a mano en su película o episodio: desplaza todas las líneas o cambia la velocidad de fotogramas. Eleven+ no escucha el sonido para alinear los subtítulos.",
 	"settings.subtitles.shift": "Los botones de desplazamiento mueven (ms)",
 	"settings.subtitles.fpsFrom": "Velocidad de fotogramas de",
 	"settings.subtitles.fpsTo": "Velocidad de fotogramas a",

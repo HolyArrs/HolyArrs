@@ -14,7 +14,7 @@
 	"settings.health.none": "Niciun rezultat. Verifică din nou pentru a le rula.",
 	"settings.health.since": "Din",
 	"settings.health.settings": "Setările verificărilor de stare",
-	"settings.health.updateCheck": "Caută un HolyArrs mai nou",
+	"settings.health.updateCheck": "Caută un Eleven+ mai nou",
 	"settings.health.onlyChecks": "Doar verifică. Nu instalează niciodată.",
 	"settings.health.every": "Caută actualizări la fiecare",
 	"settings.health.day": "zi",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Alertează după atâtea rulări la rând",
 	"settings.health.guardHint": "Oprește alertele pentru probleme trecătoare",
 	"settings.health.feed": "Flux de versiuni",
-	"settings.health.feedHint": "Dacă e gol, se folosesc versiunile HolyArrs",
+	"settings.health.feedHint": "Dacă e gol, se folosesc versiunile Eleven+",
 	"settings.health.feedLocal": "Fluxul poate fi în rețeaua locală",
 	"settings.health.prerelease": "Include versiuni de test (ex. 1.2.0-rc1)"
 }

@@ -11,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	import { to } from '#lib/core/paths.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Shows a calm loader after a short delay and fades the page in when data arrives.
 	import { untrack, type Snippet } from 'svelte';
@@ -76,10 +77,8 @@
 		{#if stage !== 'hidden'}
 			<div class="ow" aria-hidden="true">
 				<svg class="ms" viewBox="0 0 100 100"
-					><defs><clipPath id="plc"><rect x="17.5" y="17.5" width="65" height="65" rx="4" transform="rotate(45 50 50)" /></clipPath></defs><circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="1.6" /><g transform="translate(14 14) scale(.72)"
-						><rect x="17.5" y="17.5" width="65" height="65" rx="4" transform="rotate(45 50 50)" fill="none" stroke="#3a3d44" stroke-width="2.2" /><g clip-path="url(#plc)"
-							><rect width="100" height="100" fill="#1c1d21" /><path d="M50 0C42 18 46 32 58 41C70 50 66 70 54 100L110 100L110 0Z" fill="#f23a2e" /><path d="M50 0C42 18 46 32 58 41C70 50 66 70 54 100L110 100L110 0Z" fill="#55585e" transform="rotate(180 50 50)" /></g
-						><path d="M50 26.8Q54.5 44.3 72 48.8Q54.5 53.3 50 70.8Q45.5 53.3 28 48.8Q45.5 44.3 50 26.8Z" fill="#fff" /></g
+					><circle cx="50" cy="50" r="46" fill="none" stroke="#7c7c80" stroke-opacity=".3" stroke-width="1.6" /><g class="m"
+						><!-- Eleven+: original symbol files, dark one on dark theme. --><image class="ml" href={to('/brand/mark-color.svg')} x="29" y="29" width="42" height="42" /><image class="md" href={to('/brand/mark-color-on-dark.svg')} x="29" y="29" width="42" height="42" /></g
 					></svg
 				><svg class="rs" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="60 229" /></svg>
 			</div>
@@ -121,4 +120,7 @@
 		.rs { animation: pl-pulse 1.6s ease-in-out infinite !important; animation-duration: 1.6s !important; animation-iteration-count: infinite !important; }
 		.ms { animation: none !important; }
 	}
+	.ow :global(.md) { display: none; }
+	:global([data-theme='dark']) .ow :global(.md) { display: inline; }
+	:global([data-theme='dark']) .ow :global(.ml) { display: none; }
 </style>

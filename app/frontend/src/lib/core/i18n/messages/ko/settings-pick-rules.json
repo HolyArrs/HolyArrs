@@ -6,7 +6,7 @@
 	"settings.pickRules.yours": "내 품질 세트",
 	"settings.pickRules.yoursDesc": "라이브러리 폴더마다 자체 세트가 있으며, 작품별로 바꿀 수 있습니다",
 	"settings.pickRules.none": "품질 세트 없음",
-	"settings.pickRules.noneText": "HolyArrs는 시작할 때 기본 품질 세트를 만듭니다.",
+	"settings.pickRules.noneText": "Eleven+는 시작할 때 기본 품질 세트를 만듭니다.",
 	"settings.pickRules.readyMade": "기본 제공",
 	"settings.pickRules.change": "변경",
 	"settings.pickRules.open": "열기",

@@ -3,7 +3,7 @@
 	import { Account } from '#lib/accounts/index.ts';
 </script>
 
-<svelte:head><title>{t('settings.account.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.account.title')} · Eleven+</title></svelte:head>
 
 <div class="account-view"><Account /></div>
 

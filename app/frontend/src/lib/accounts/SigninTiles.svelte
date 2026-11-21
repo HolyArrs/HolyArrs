@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { to } from '#lib/core/paths.ts';
 	import { pixelTrail } from './pixel-trail.ts';
 	import type { Way } from './signin-art.ts';
 
@@ -40,7 +41,7 @@
 			{#if tl.way === 'plex'}
 				<svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#1f1f1f" /><path d="M8 5h4.6l5 7-5 7H8l5-7z" fill="#E5A00D" /></svg>
 			{:else if tl.way === 'jellyfin'}
-				<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="jg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#AA5CC3" /><stop offset="1" stop-color="#00A4DC" /></linearGradient></defs><path d="M12 3c-2 0-9 12.4-8 14.4S20 19.4 21 17.4 14 3 12 3zm0 6c1 0 4.4 6 4 7s-7.6 1-8 0S11 9 12 9z" fill="url(#jg)" /></svg>
+				<img src={to('/brand/favicon.svg')} alt="" width="24" height="24" style="border-radius: 6px" />
 			{:else if tl.way === 'emby'}
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z" fill="#52B54B" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
 			{:else if tl.way === 'oidc'}

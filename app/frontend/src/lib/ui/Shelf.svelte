@@ -111,10 +111,24 @@
 		return { destroy: () => { io.disconnect(); stop(); } };
 	}
 	// Whole shelves page by exact rows; others scroll a bit less than a screen.
+	// Eleven+: clicks queue onto an exact target, so fast clicks page evenly instead of
+	// restarting from wherever the last smooth scroll happened to be.
+	let target: number | null = null;
+	let settle: ReturnType<typeof setTimeout> | undefined;
 	function page(dir: 1 | -1) {
 		if (!scroller) return;
-		const step = whole ? scroller.clientWidth + (parseFloat(getComputedStyle(scroller).columnGap) || 0) : scroller.clientWidth * 0.9;
-		scroller.scrollBy({ left: dir * step * (getComputedStyle(scroller).direction === 'rtl' ? -1 : 1), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+		const el = scroller;
+		const step = whole ? el.clientWidth + (parseFloat(getComputedStyle(el).columnGap) || 0) : el.clientWidth * 0.9;
+		const rtl = getComputedStyle(el).direction === 'rtl' ? -1 : 1;
+		const max = el.scrollWidth - el.clientWidth;
+		const from = target ?? el.scrollLeft;
+		const next = Math.max(rtl === 1 ? 0 : -max, Math.min(rtl === 1 ? max : 0, from + dir * step * rtl));
+		target = next;
+		el.scrollTo({ left: next, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+		clearTimeout(settle);
+		const done = () => { target = null; clearTimeout(settle); measure(); };
+		el.addEventListener('scrollend', done, { once: true });
+		settle = setTimeout(done, 700);
 	}
 </script>
 
@@ -173,8 +187,11 @@
 	.sk.wide { --art: calc(var(--w) * 9 / 16); --text-h: 0px; }
 	@media (max-width: 767px) { .sk { --w: calc(var(--item) * .78); } }
 	.row > :global(*) { scroll-snap-align: start; }
-	.arrow { position: absolute; top: calc(50% - 26px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
-	.arrow :global(.ui-ibtn) { width: 36px; height: 36px; box-shadow: var(--shadow-lift); background: var(--surface-1); color: var(--text); }
+	/* Eleven+: arrows sit above the cards (z-index), with a bigger target, and show while the pointer is anywhere on the shelf. */
+	.arrow { position: absolute; z-index: 6; top: calc(50% - 30px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+	.arrow :global(.ui-ibtn) { width: 44px; height: 44px; border-radius: 999px; box-shadow: 0 6px 20px rgb(0 0 0 / 0.22), 0 0 0 1px var(--line); background: var(--surface-1); color: var(--text); }
+	.arrow:hover { transform: scale(1.06); }
+	.ui-shelf:hover .arrow:not(.hide), .arrow:focus-within { opacity: 1; }
 	.left { inset-inline-start: -12px; }
 	.right { inset-inline-end: -12px; }
 	.wrap:hover .arrow:not(.hide) { opacity: 1; }

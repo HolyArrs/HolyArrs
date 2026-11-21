@@ -9,3 +9,6 @@ app/frontend/.svelte-kit/
 app/tests/
 .env
 .env.*
+
+# Eleven+: local copy of the home-server folder (has VPN login); never send to Docker
+eleven+/

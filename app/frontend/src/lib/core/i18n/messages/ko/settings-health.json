@@ -14,7 +14,7 @@
 	"settings.health.none": "결과가 없습니다. 다시 점검하면 실행됩니다.",
 	"settings.health.since": "시작 시점",
 	"settings.health.settings": "상태 점검 설정",
-	"settings.health.updateCheck": "최신 HolyArrs 확인",
+	"settings.health.updateCheck": "최신 Eleven+ 확인",
 	"settings.health.onlyChecks": "확인만 합니다. 설치하지 않습니다.",
 	"settings.health.every": "업데이트 확인 주기",
 	"settings.health.day": "일",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "연속 이 횟수만큼 실패하면 알림",
 	"settings.health.guardHint": "일시적인 오류로 알림이 가는 것을 막습니다",
 	"settings.health.feed": "릴리스 피드",
-	"settings.health.feedHint": "비워 두면 HolyArrs 릴리스를 사용합니다",
+	"settings.health.feedHint": "비워 두면 Eleven+ 릴리스를 사용합니다",
 	"settings.health.feedLocal": "피드가 로컬 네트워크에 있을 수 있음",
 	"settings.health.prerelease": "테스트 버전 포함 (예: 1.2.0-rc1)"
 }

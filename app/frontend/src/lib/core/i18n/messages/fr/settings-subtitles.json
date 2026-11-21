@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Fin de nom que les lecteurs lisent comme SDH",
 	"settings.subtitles.syncFix": "Correction de synchronisation",
 	"settings.subtitles.syncFixDesc": "Valeurs de départ pour corriger le minutage",
-	"settings.subtitles.syncNote": "Un sous-titre décalé se corrige à la main sur son film ou son épisode : décalez chaque ligne, ou changez la fréquence d'images. HolyArrs n'écoute pas le son pour aligner les sous-titres.",
+	"settings.subtitles.syncNote": "Un sous-titre décalé se corrige à la main sur son film ou son épisode : décalez chaque ligne, ou changez la fréquence d'images. Eleven+ n'écoute pas le son pour aligner les sous-titres.",
 	"settings.subtitles.shift": "Les boutons de décalage déplacent de (ms)",
 	"settings.subtitles.fpsFrom": "Fréquence d'images de départ",
 	"settings.subtitles.fpsTo": "Fréquence d'images d'arrivée",

@@ -7,7 +7,7 @@
 	"settings.layout.blocked": "Du kan ikke ændre dette",
 	"settings.layout.backToSettings": "Tilbage til Indstillinger",
 	"settings.layout.setPasswordFirst": "Angiv først en adgangskode",
-	"settings.layout.setPasswordDesc": "Nøgler, adgangskoder, personer og sikkerhedskopier kræver en HolyArrs-adgangskode. Du har ikke en endnu.",
+	"settings.layout.setPasswordDesc": "Nøgler, adgangskoder, personer og sikkerhedskopier kræver en Eleven+-adgangskode. Du har ikke en endnu.",
 	"settings.layout.setPasswordLabel": "Angiv en adgangskode",
 	"settings.layout.signInAgainTitle": "Log ind igen først",
 	"settings.layout.confirmPasswordLabel": "Bekræft din adgangskode",

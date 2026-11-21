@@ -9,7 +9,7 @@
 	"setup.folderUsed": "Esta pasta já está em uso, ou fica dentro de uma que está.",
 	"setup.folderMissing": "Essa pasta não existe. Confira o caminho.",
 	"setup.addFolderOrOff": "Adicione uma pasta ou desative isto.",
-	"setup.notAnswering": "O HolyArrs não está respondendo. Tente de novo em instantes.",
+	"setup.notAnswering": "O Eleven+ não está respondendo. Tente de novo em instantes.",
 	"setup.addUserPasswordHint": "Informe o nome de usuário e a senha.",
 	"setup.folders": "Pastas",
 	"setup.downloader": "Gerenciador de downloads",

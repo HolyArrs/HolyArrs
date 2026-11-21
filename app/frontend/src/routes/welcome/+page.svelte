@@ -263,14 +263,14 @@
 	);
 </script>
 
-<svelte:head><title>{head.h} · HolyArrs</title></svelte:head>
+<svelte:head><title>{head.h} · Eleven+</title></svelte:head>
 
 {#if firstRun}<SigninBackdrop /><div class="dim" aria-hidden="true"></div>{/if}
 <!-- First run sits on a dark picture with white text, so its cards and sheets use the dark colours in any theme. -->
 <div class="welcome" class:over-art={firstRun} data-theme={firstRun ? 'dark' : undefined}>
 	<!-- First run keeps the sign-in look: the same moving backdrop behind one glass panel. -->
 	<div class="sheet" class:glass={firstRun} class:light={theme.value === 'light'} data-signin-panel={firstRun ? '' : undefined}>
-	<div class="brand"><img src={to(mark)} alt={firstRun ? 'HolyArrs' : ''} width={firstRun ? 28 : 32} height={firstRun ? 28 : 32} />{#if !firstRun}<span>HolyArrs</span>{/if}</div>
+	<div class="brand"><img src={to(mark.replace(/mark-color(-on-dark)?\.svg/, (_m, d) => (firstRun || d ? 'wordmark-on-dark.svg' : 'wordmark.svg')))} alt="Eleven+" width={firstRun ? 116 : 133} height={firstRun ? 28 : 32} /></div>
 	{#if firstRun && prev && session.can('users') && (step !== 'import' || sourcesStep.moveStep === 'read')}
 		<span class="corner"><IconButton icon="chevronLeft" variant="tinted" label={t('welcome.back')} onclick={back} disabled={busy} /></span>
 	{/if}
@@ -741,7 +741,7 @@
 	.sheet.glass, .sheet.glass.light { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	.glass .corner { top: -8px; left: 0; }
 	.glass .corner :global(.ui-ibtn) { background: rgb(255 255 255 / 0.1); color: #fff; }
-	.glass .brand img { width: 28px; height: 28px; }
+	.glass .brand img { width: 116px; height: 28px; }
 	.glass .brand { min-height: 28px; }
 	.glass .dots { margin-top: 18px; }
 	.glass .dots li, .glass .dots li.done { background: rgb(255 255 255 / 0.3); }

@@ -14,7 +14,7 @@
 	"settings.health.none": "Chưa có kết quả. Hãy kiểm tra lại để chạy.",
 	"settings.health.since": "Từ",
 	"settings.health.settings": "Cài đặt kiểm tra tình trạng",
-	"settings.health.updateCheck": "Kiểm tra bản HolyArrs mới hơn",
+	"settings.health.updateCheck": "Kiểm tra bản Eleven+ mới hơn",
 	"settings.health.onlyChecks": "Chỉ kiểm tra. Không bao giờ tự cài.",
 	"settings.health.every": "Kiểm tra cập nhật mỗi",
 	"settings.health.day": "ngày",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Cảnh báo sau số lần chạy liên tiếp này",
 	"settings.health.guardHint": "Tránh cảnh báo vì lỗi thoáng qua",
 	"settings.health.feed": "Nguồn cấp bản phát hành",
-	"settings.health.feedHint": "Để trống sẽ dùng các bản phát hành của HolyArrs",
+	"settings.health.feedHint": "Để trống sẽ dùng các bản phát hành của Eleven+",
 	"settings.health.feedLocal": "Nguồn cấp có thể nằm trong mạng nội bộ",
 	"settings.health.prerelease": "Gồm cả bản thử nghiệm (như 1.2.0-rc1)"
 }

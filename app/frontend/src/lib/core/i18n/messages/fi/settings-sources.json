@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Poista",
 	"settings.sources.bridge": "Yhdistä Jackett tai Prowlarr",
 	"settings.sources.off": "Lähteet ovat pois päältä",
-	"settings.sources.offText": "HolyArrs ei hae eikä nappaa. Lataukset, jotka lisäät Lataajaasi, tuodaan silti.",
+	"settings.sources.offText": "Eleven+ ei hae eikä nappaa. Lataukset, jotka lisäät Lataajaasi, tuodaan silti.",
 	"settings.sources.openParts": "Avaa Osat",
 	"settings.sources.offState": "Pois",
 	"settings.sources.site": "Sisäänrakennettu sivusto",

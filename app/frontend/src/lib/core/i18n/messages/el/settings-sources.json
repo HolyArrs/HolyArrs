@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Αφαίρεση",
 	"settings.sources.bridge": "Σύνδεση Jackett ή Prowlarr",
 	"settings.sources.off": "Οι Πηγές είναι απενεργοποιημένες",
-	"settings.sources.offText": "Το HolyArrs δεν αναζητά και δεν πιάνει. Οι λήψεις που προσθέτετε στο Πρόγραμμα λήψης σας εξακολουθούν να εισάγονται.",
+	"settings.sources.offText": "Το Eleven+ δεν αναζητά και δεν πιάνει. Οι λήψεις που προσθέτετε στο Πρόγραμμα λήψης σας εξακολουθούν να εισάγονται.",
 	"settings.sources.openParts": "Άνοιγμα Ενοτήτων",
 	"settings.sources.offState": "Ανενεργό",
 	"settings.sources.site": "Ενσωματωμένος ιστότοπος",

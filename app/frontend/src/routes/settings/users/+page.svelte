@@ -416,7 +416,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.users.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.users.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.users.title')}>
 	{#snippet actions()}

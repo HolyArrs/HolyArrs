@@ -417,7 +417,7 @@
 
 </script>
 
-<svelte:head><title>{searched ? t('discover.search.searchTitle', { searched }) : t('discover.search.search')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{searched ? t('discover.search.searchTitle', { searched }) : t('discover.search.search')} · Eleven+</title></svelte:head>
 
 {#snippet plus(c: ExploreCard, act: 'add' | 'ask')}
 	<IconButton icon="plus" label={act === 'add' ? t('discover.search.addName', { name: c.name }) : t('discover.search.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void flow?.open(c, act)} />

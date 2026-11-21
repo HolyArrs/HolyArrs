@@ -14,7 +14,7 @@
 	"settings.health.none": "Aucun résultat. Vérifiez à nouveau pour les obtenir.",
 	"settings.health.since": "Depuis",
 	"settings.health.settings": "Paramètres des vérifications d'état",
-	"settings.health.updateCheck": "Chercher une version plus récente de HolyArrs",
+	"settings.health.updateCheck": "Chercher une version plus récente de Eleven+",
 	"settings.health.onlyChecks": "Vérifie seulement. N'installe jamais.",
 	"settings.health.every": "Chercher des mises à jour tous les",
 	"settings.health.day": "jour",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Alerter après autant d'essais de suite",
 	"settings.health.guardHint": "Évite les alertes pour un incident isolé",
 	"settings.health.feed": "Flux des versions",
-	"settings.health.feedHint": "Vide : les versions de HolyArrs",
+	"settings.health.feedHint": "Vide : les versions de Eleven+",
 	"settings.health.feedLocal": "Le flux peut être sur le réseau local",
 	"settings.health.prerelease": "Inclure les versions de test (comme 1.2.0-rc1)"
 }

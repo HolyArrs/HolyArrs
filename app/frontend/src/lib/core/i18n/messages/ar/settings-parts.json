@@ -15,7 +15,7 @@
 	"settings.parts.title": "الأقسام",
 	"settings.parts.onOff": "تشغيل الأقسام أو إيقافها",
 	"settings.parts.ownerOnly": "للمالك والمشرفين فقط",
-	"settings.parts.safeMode": "HolyArrs يعمل في الوضع الآمن: تعمل النواة فقط، وتُرفض مفاتيح تشغيل الأقسام وأدوات التحكم في المراحل حتى البدء العادي. استخدم <b>إعادة تشغيل HolyArrs</b> في <a>منطقة الخطر</a> للخروج من الوضع الآمن.",
+	"settings.parts.safeMode": "Eleven+ يعمل في الوضع الآمن: تعمل النواة فقط، وتُرفض مفاتيح تشغيل الأقسام وأدوات التحكم في المراحل حتى البدء العادي. استخدم <b>إعادة تشغيل Eleven+</b> في <a>منطقة الخطر</a> للخروج من الوضع الآمن.",
 	"settings.parts.dangerZone": "منطقة الخطر",
 	"settings.parts.ask": "{label}؟",
 	"settings.parts.yes": "نعم، {action}",

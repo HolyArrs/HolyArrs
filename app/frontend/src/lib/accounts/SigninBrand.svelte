@@ -4,9 +4,8 @@
 
 <div class="brand">
 	<!-- Both marks load up front, so switching the appearance never shows a blank logo. -->
-	<img class="mark-dark" src={to('/brand/mark-color-on-dark.svg')} alt="" width="36" height="36" />
-	<img class="mark-light" src={to('/brand/mark-color.svg')} alt="" width="36" height="36" />
-	<span>HolyArrs</span>
+	<img class="mark-dark word" src={to('/brand/wordmark-on-dark.svg')} alt="Eleven+" width="150" height="36" />
+	<img class="mark-light word" src={to('/brand/wordmark.svg')} alt="Eleven+" width="150" height="36" />
 </div>
 
 <style>
@@ -31,6 +30,6 @@
 	/* Phones: the desktop card, floating low over full-bleed art with 24 px of art on every side; it rides above the keyboard (--kb) with a smooth lift. */
 	@media (max-width: 600px) {
 		.brand { gap: 12px; margin-bottom: 16px; font-size: 18px; }
-		.brand img { width: 26px; height: 26px; }
+		.brand img { width: 116px; height: 28px; }
 }
 </style>

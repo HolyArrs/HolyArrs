@@ -14,7 +14,7 @@
 	"settings.health.none": "Nincs eredmény. Futtatáshoz ellenőrizze újra.",
 	"settings.health.since": "Mióta",
 	"settings.health.settings": "Állapotellenőrzés-beállítások",
-	"settings.health.updateCheck": "Újabb HolyArrs keresése",
+	"settings.health.updateCheck": "Újabb Eleven+ keresése",
 	"settings.health.onlyChecks": "Csak ellenőriz. Sosem telepít.",
 	"settings.health.every": "Frissítések ellenőrzése",
 	"settings.health.day": "naponta",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Értesítés ennyi egymást követő futás után",
 	"settings.health.guardHint": "Megakadályozza, hogy az egyszeri zavarok értesítést küldjenek",
 	"settings.health.feed": "Kiadási hírcsatorna",
-	"settings.health.feedHint": "Üresen a HolyArrs-kiadásokat használja",
+	"settings.health.feedHint": "Üresen a Eleven+-kiadásokat használja",
 	"settings.health.feedLocal": "A hírcsatorna lehet a helyi hálózaton",
 	"settings.health.prerelease": "Tesztverziók is (például 1.2.0-rc1)"
 }

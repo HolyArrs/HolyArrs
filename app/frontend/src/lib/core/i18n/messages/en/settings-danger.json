@@ -1,5 +1,5 @@
 {
-	"settings.danger.stopping": "HolyArrs is stopping.",
+	"settings.danger.stopping": "Eleven+ is stopping.",
 	"settings.danger.couldnt": "Couldn't {action}",
 	"settings.danger.title": "Danger zone",
 	"settings.danger.ownerOnly": "Owner and admins only",
@@ -8,8 +8,8 @@
 	"settings.danger.cancel": "Cancel",
 	"settings.danger.expires": "Expires in 60 s",
 	"settings.danger.wholeApp": "The whole app",
-	"settings.danger.intro": "These stop HolyArrs. Docker's restart policy starts it again in a few seconds, unless the policy is <code>no</code>; then start the container yourself. Each one asks first.",
-	"settings.danger.restart": "Restart HolyArrs",
+	"settings.danger.intro": "These stop Eleven+. Docker's restart policy starts it again in a few seconds, unless the policy is <code>no</code>; then start the container yourself. Each one asks first.",
+	"settings.danger.restart": "Restart Eleven+",
 	"settings.danger.safe": "Restart in safe mode",
 	"settings.danger.shutdown": "Shut down",
 	"settings.danger.safeNote": "Starts once with only sign-in, Settings and Library. Use it when a Part blocks startup."

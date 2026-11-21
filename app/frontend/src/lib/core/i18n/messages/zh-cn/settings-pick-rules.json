@@ -6,7 +6,7 @@
 	"settings.pickRules.yours": "你的画质方案",
 	"settings.pickRules.yoursDesc": "每个媒体库文件夹有自己的方案；单个条目可以单独覆盖",
 	"settings.pickRules.none": "没有画质方案",
-	"settings.pickRules.noneText": "HolyArrs 启动时会创建内置的画质方案。",
+	"settings.pickRules.noneText": "Eleven+ 启动时会创建内置的画质方案。",
 	"settings.pickRules.readyMade": "内置",
 	"settings.pickRules.change": "更改",
 	"settings.pickRules.open": "打开",

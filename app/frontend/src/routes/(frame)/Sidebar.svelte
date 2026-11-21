@@ -65,7 +65,8 @@
 <aside {id} class="ui-sidebar" class:collapsed class:overlay aria-label={t('frame.sidebar.label')}>
 	<div class="top">
 		<a class="brand" href={brandHref} aria-label={t('frame.sidebar.home')} onclick={onpick}>
-			<img src={markSrc} alt="" width="28" height="28" /><span class="word">HolyArrs</span>
+			<!-- Eleven+: full wordmark when open, the symbol alone when collapsed. -->
+			<img class="mark" src={markSrc} alt="" width="28" height="28" /><img class="word" src={markSrc.replace(/mark-color(-on-dark)?\.svg/, (_m, d) => (d ? 'wordmark-on-dark.svg' : 'wordmark.svg'))} alt="Eleven+" width="133" height="32" />
 		</a>
 		<span class="tog">
 			<IconButton bind:node={toggle} icon="sidebar" label={collapsed ? t('frame.sidebar.show') : t('frame.sidebar.hide')} aria-expanded={!collapsed} aria-controls={id} tipSide={collapsed ? 'right' : 'below'} onclick={ontoggle} />
@@ -110,7 +111,7 @@
 	@supports not (backdrop-filter: blur(1px)) { .ui-sidebar { background: var(--sidebar-solid); } }
 	.overlay { box-shadow: var(--shadow-modal); background: var(--sidebar-solid); }
 	.top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 44px; padding: 0 2px 0 8px; margin-bottom: 6px; }
-	.brand { display: flex; align-items: center; gap: 10px; min-width: 0; height: 40px; border-radius: 8px; font: var(--t-headline); font-size: 17px; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; }
+	.brand { display: flex; align-items: center; gap: 10px; min-width: 0; height: 48px; border-radius: 8px; font: var(--t-headline); font-size: 17px; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; }
 	.brand img { flex: none; }
 	.brand:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.word { transition: opacity var(--dur-fast) var(--ease-out) var(--label-delay); }
@@ -119,7 +120,11 @@
 	.collapsed .brand { width: 40px; justify-content: center; }
 	.collapsed .tog { display: none; }
 	.collapsed .brand .word { display: none; }
-	.scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; margin: 0 -4px; padding: 0 4px; scrollbar-width: thin; }
+	.brand .mark { display: none; }
+	.collapsed .brand .mark { display: block; }
+	.brand .word { height: 25px; width: auto; padding-left: 4px; }
+	.scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; margin: 0 -4px; padding: 0 4px; scrollbar-width: none; } /* Eleven+: no visible scrollbar */
+	.scroll::-webkit-scrollbar { display: none; }
 	.list { position: relative; }
 	.pill { position: absolute; z-index: 0; left: 0; right: 0; top: 0; border-radius: 9px; background: var(--surface-3); opacity: 0; transition: transform var(--dur) var(--ease-spring), height var(--dur) var(--ease-spring), opacity var(--dur-fast) var(--ease-out); }
 	.pill.on { opacity: 1; }
@@ -135,4 +140,26 @@
 	li { position: relative; }
 	.foot { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 	@media (max-width: 767px) { .ui-sidebar { display: none; } }
+
+	/* ===== Eleven+ refined sidebar (open) ===== */
+	.ui-sidebar { padding: 14px 12px 12px; }
+	.top { margin-bottom: 10px; }
+	.brand .word { height: 32px; }
+	.sec { height: auto; padding: 16px 12px 6px; color: var(--text-faint); font: 600 12.5px/1.2 var(--font-ui); letter-spacing: 0; }
+	.section + .section { margin-top: 4px; }
+	.pill { border-radius: 10px; background: var(--accent-soft); }
+	/* Thin accent marker on the edge of the selected row */
+	.pill::before { content: ''; position: absolute; inset-inline-start: -12px; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); transition: opacity var(--dur-fast) var(--ease-out); }
+	.foot { border-top: 0; padding-top: 4px; }
+
+	/* ===== Eleven+ attached rail (collapsed) ===== */
+	.collapsed .top { margin-bottom: 12px; }
+	.collapsed .brand { width: 48px; height: 44px; }
+	.collapsed .brand .mark { width: 30px; height: 30px; translate: 16% 0; } /* centre the II, not the II+ */
+	.collapsed .scroll { margin: 0; padding: 0; scrollbar-width: none; }
+	.collapsed .pill { border-radius: 14px; }
+	.collapsed .pill::before { opacity: 0; }
+	.collapsed .sec { height: 14px; padding: 0; }
+	.collapsed .div { left: 14px; right: 14px; top: 6px; }
+	.collapsed .foot { display: flex; justify-content: center; }
 </style>

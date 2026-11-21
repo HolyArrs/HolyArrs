@@ -309,7 +309,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.downloaders.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.downloaders.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.downloaders.title')}>
 	{#snippet actions()}

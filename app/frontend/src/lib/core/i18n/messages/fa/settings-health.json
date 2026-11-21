@@ -14,7 +14,7 @@
 	"settings.health.none": "نتیجه‌ای نیست. برای اجرا دوباره بررسی کن.",
 	"settings.health.since": "از",
 	"settings.health.settings": "تنظیمات بررسی سلامت",
-	"settings.health.updateCheck": "بررسی نسخه جدیدتر HolyArrs",
+	"settings.health.updateCheck": "بررسی نسخه جدیدتر Eleven+",
 	"settings.health.onlyChecks": "فقط بررسی می‌کند. هرگز نصب نمی‌کند.",
 	"settings.health.every": "بررسی به‌روزرسانی هر",
 	"settings.health.day": "روز",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "هشدار بعد از این‌تعداد اجرای پشت‌سرهم",
 	"settings.health.guardHint": "جلوی هشدار برای خرابی‌های لحظه‌ای را می‌گیرد",
 	"settings.health.feed": "فید انتشار",
-	"settings.health.feedHint": "خالی یعنی انتشارهای HolyArrs",
+	"settings.health.feedHint": "خالی یعنی انتشارهای Eleven+",
 	"settings.health.feedLocal": "فید می‌تواند در شبکه محلی باشد",
 	"settings.health.prerelease": "شامل نسخه‌های آزمایشی (مثل 1.2.0-rc1)"
 }

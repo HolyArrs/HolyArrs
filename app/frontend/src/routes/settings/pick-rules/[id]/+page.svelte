@@ -286,7 +286,7 @@
 	}
 </script>
 
-<svelte:head><title>{id === null ? t('settings.pickRuleEdit.add') : savedName} · HolyArrs</title></svelte:head>
+<svelte:head><title>{id === null ? t('settings.pickRuleEdit.add') : savedName} · Eleven+</title></svelte:head>
 
 <PageHeader
 	title={id === null ? t('settings.pickRuleEdit.add') : savedName || t('settings.pickRuleEdit.quality')}

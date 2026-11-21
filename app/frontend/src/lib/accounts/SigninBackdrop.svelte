@@ -28,6 +28,9 @@
 	/** The first slide's mosaic sources: the 24 px frame-0 thumbnail when kept, and a small copy for detail until the full picture is in. */
 	type Seed = { t24: string | null; small: string };
 	type Slide = { pick: ArtPick; shot: ArtShot; logo: string | null; key: number; first: boolean; seed: Seed | null; origin: number };
+	/** Eleven+: show a caption card (poster, title, year, type, genres) for the current slide. */
+	let { caption = false }: { caption?: boolean } = $props();
+	const capMeta = (sh: ArtShot) => [sh.year || '', sh.kind === 'show' ? 'Series' : sh.kind === 'movie' ? 'Film' : '', ...(sh.genres ?? [])].filter(Boolean).join(' · ');
 	let layers = $state<Slide[]>([]);
 	let still = $state(false);
 	let n = 0;
@@ -570,6 +573,16 @@
 			<img class="logo" class:top={i === layers.length - 1} src={l.logo} alt="" decoding="async" />
 		{/if}
 	{/each}
+	{#if caption}
+		{#each layers as l, i (l.key)}
+			{#if l.shot.title}
+				<div class="cap" class:top={i === layers.length - 1}>
+					{#if l.shot.poster}<img class="cap-poster" src={l.shot.poster.url} alt="" decoding="async" />{/if}
+					<div class="cap-text"><b>{l.shot.title}</b><span>{capMeta(l.shot)}</span></div>
+				</div>
+			{/if}
+		{/each}
+	{/if}
 </div>
 
 <style>
@@ -693,5 +706,42 @@
 				linear-gradient(180deg, rgb(5 5 7 / 0.55) 0%, rgb(5 5 7 / 0) 22%),
 				linear-gradient(0deg, rgb(5 5 7 / 0.55) 0%, rgb(5 5 7 / 0.2) 40%, rgb(5 5 7 / 0) 60%);
 		}
+	}
+
+	/* Eleven+ caption card: frosted, rounded, bottom-left; fades with its slide like the logo. */
+	.cap {
+		position: absolute;
+		left: clamp(16px, 2.2vw, 32px);
+		bottom: clamp(16px, 2.2vw, 32px);
+		z-index: 4;
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		max-width: min(440px, calc(100% - 32px));
+		padding: 10px 18px 10px 10px;
+		border-radius: 20px;
+		background: rgb(14 10 20 / 0.42);
+		border: 1px solid rgb(255 255 255 / 0.14);
+		-webkit-backdrop-filter: blur(22px) saturate(1.4);
+		backdrop-filter: blur(22px) saturate(1.4);
+		box-shadow: 0 12px 34px rgb(0 0 0 / 0.35);
+		color: #fff;
+		opacity: 0;
+		animation: logo-out 1.6s var(--ease-in-out) forwards;
+	}
+	.cap.top { animation: cap-in 1.6s var(--ease-in-out) forwards; }
+	@keyframes cap-in { from { opacity: 0; } to { opacity: 1; } }
+	.cap-poster { width: 54px; height: 81px; object-fit: cover; border-radius: 10px; flex: none; box-shadow: 0 4px 12px rgb(0 0 0 / 0.4); }
+	.cap-text { display: grid; gap: 3px; min-width: 0; }
+	.cap-text b { font: 800 17px/1.2 var(--font-ui); letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.cap-text span { font: 600 13px/1.3 var(--font-ui); color: rgb(255 255 255 / 0.75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.still .cap { animation: none; opacity: 0; }
+	.still .cap.top { opacity: 1; }
+	@media (prefers-reduced-motion: reduce) { .cap { animation: none !important; opacity: 0; } .cap.top { opacity: 1; } }
+	@media (max-width: 600px) {
+		.cap { padding: 8px 14px 8px 8px; gap: 10px; border-radius: 16px; }
+		.cap-poster { width: 40px; height: 60px; border-radius: 8px; }
+		.cap-text b { font-size: 15px; }
+		.cap-text span { font-size: 12px; }
 	}
 </style>

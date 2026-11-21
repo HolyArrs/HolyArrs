@@ -38,7 +38,12 @@ export function ownShots(list: unknown, prefix: boolean): ArtShot[] {
 		.map((x: ArtShot) => ({
 			backdrop: { ...x.backdrop, url: at(x.backdrop.url) },
 			poster: x.poster && local(x.poster.url) ? { ...x.poster, url: at(x.poster.url) } : undefined,
-			logo: local(x.logo) ? at(x.logo) : ''
+			logo: local(x.logo) ? at(x.logo) : '',
+			// Eleven+: caption text (plain strings only).
+			...(typeof x.title === 'string' ? { title: x.title } : {}),
+			...(typeof x.year === 'number' ? { year: x.year } : {}),
+			...(x.kind === 'movie' || x.kind === 'show' ? { kind: x.kind } : {}),
+			...(Array.isArray(x.genres) ? { genres: x.genres.filter((g): g is string => typeof g === 'string').slice(0, 2) } : {})
 		}));
 }
 

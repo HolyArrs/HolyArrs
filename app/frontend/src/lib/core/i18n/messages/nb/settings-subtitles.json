@@ -83,7 +83,7 @@
   "settings.subtitles.hiSuffixHint": "Filendelse spillere leser som SDH",
   "settings.subtitles.syncFix": "Synkfiks",
   "settings.subtitles.syncFixDesc": "Startverdier for å rette timing",
-  "settings.subtitles.syncNote": "En undertekst som er ute av tid, rettes for hånd på filmen eller episoden: flytt hver linje, eller endre bildefrekvensen. HolyArrs lytter ikke til lyden for å stille inn undertekstene.",
+  "settings.subtitles.syncNote": "En undertekst som er ute av tid, rettes for hånd på filmen eller episoden: flytt hver linje, eller endre bildefrekvensen. Eleven+ lytter ikke til lyden for å stille inn undertekstene.",
   "settings.subtitles.shift": "Flytteknapper flytter (ms)",
   "settings.subtitles.fpsFrom": "Bildefrekvens fra",
   "settings.subtitles.fpsTo": "Bildefrekvens til",

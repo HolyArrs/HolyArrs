@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "फ़ाइल का अंत जिसे प्लेयर SDH पढ़ते हैं",
 	"settings.subtitles.syncFix": "सिंक ठीक करना",
 	"settings.subtitles.syncFixDesc": "टाइमिंग ठीक करने की शुरुआती वैल्यू",
-	"settings.subtitles.syncNote": "समय से बाहर सबटाइटल को उसकी फ़िल्म या एपिसोड पर हाथ से ठीक किया जाता है: हर लाइन खिसकाएं, या फ़्रेम रेट बदलें। HolyArrs सबटाइटल मिलाने के लिए आवाज़ नहीं सुनता।",
+	"settings.subtitles.syncNote": "समय से बाहर सबटाइटल को उसकी फ़िल्म या एपिसोड पर हाथ से ठीक किया जाता है: हर लाइन खिसकाएं, या फ़्रेम रेट बदलें। Eleven+ सबटाइटल मिलाने के लिए आवाज़ नहीं सुनता।",
 	"settings.subtitles.shift": "खिसकाने वाले बटन कितना हिलाएं (ms)",
 	"settings.subtitles.fpsFrom": "फ़्रेम रेट इससे",
 	"settings.subtitles.fpsTo": "फ़्रेम रेट इस पर",

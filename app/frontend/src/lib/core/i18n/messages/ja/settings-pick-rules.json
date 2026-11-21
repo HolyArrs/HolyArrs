@@ -6,7 +6,7 @@
 "settings.pickRules.yours": "自分の品質セット",
 "settings.pickRules.yoursDesc": "ライブラリフォルダーごとに持ち、作品ごとに上書きもできます",
 "settings.pickRules.none": "品質セットがありません",
-"settings.pickRules.noneText": "既成の品質セットは、HolyArrs の起動時に作られます。",
+"settings.pickRules.noneText": "既成の品質セットは、Eleven+ の起動時に作られます。",
 "settings.pickRules.readyMade": "既成",
 "settings.pickRules.change": "変更",
 "settings.pickRules.open": "開く",

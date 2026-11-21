@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "پسوند فایلی که پخش‌کننده‌ها به‌عنوان SDH می‌خوانند",
 	"settings.subtitles.syncFix": "اصلاح همگامی",
 	"settings.subtitles.syncFixDesc": "مقدارهای شروع برای اصلاح زمان‌بندی",
-	"settings.subtitles.syncNote": "زیرنویسی که با تصویر هماهنگ نیست دستی در صفحه فیلم یا قسمتش اصلاح می‌شود: همه خط‌ها را جابه‌جا کن یا نرخ فریم را عوض کن. HolyArrs برای هماهنگ کردن زیرنویس به صدا گوش نمی‌دهد.",
+	"settings.subtitles.syncNote": "زیرنویسی که با تصویر هماهنگ نیست دستی در صفحه فیلم یا قسمتش اصلاح می‌شود: همه خط‌ها را جابه‌جا کن یا نرخ فریم را عوض کن. Eleven+ برای هماهنگ کردن زیرنویس به صدا گوش نمی‌دهد.",
 	"settings.subtitles.shift": "دکمه‌های جابه‌جایی چقدر حرکت می‌دهند (میلی‌ثانیه)",
 	"settings.subtitles.fpsFrom": "نرخ فریم از",
 	"settings.subtitles.fpsTo": "نرخ فریم به",

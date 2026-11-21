@@ -14,7 +14,7 @@
 	"settings.health.none": "Результатів немає. Перевір знову, щоб їх отримати.",
 	"settings.health.since": "З",
 	"settings.health.settings": "Налаштування перевірок справності",
-	"settings.health.updateCheck": "Перевіряти, чи є новіший HolyArrs",
+	"settings.health.updateCheck": "Перевіряти, чи є новіший Eleven+",
 	"settings.health.onlyChecks": "Лише перевіряє. Ніколи не встановлює.",
 	"settings.health.every": "Перевіряти оновлення кожні",
 	"settings.health.day": "день",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Сповіщати після стількох запусків поспіль",
 	"settings.health.guardHint": "Не дає разовим збоям викликати сповіщення",
 	"settings.health.feed": "Стрічка релізів",
-	"settings.health.feedHint": "Порожнє поле — релізи HolyArrs",
+	"settings.health.feedHint": "Порожнє поле — релізи Eleven+",
 	"settings.health.feedLocal": "Стрічка може бути в локальній мережі",
 	"settings.health.prerelease": "Включати тестові версії (як-от 1.2.0-rc1)"
 }

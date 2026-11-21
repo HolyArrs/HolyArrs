@@ -7,7 +7,7 @@
 	"settings.layout.blocked": "Das kannst du nicht ändern",
 	"settings.layout.backToSettings": "Zurück zu den Einstellungen",
 	"settings.layout.setPasswordFirst": "Leg zuerst ein Passwort fest",
-	"settings.layout.setPasswordDesc": "Schlüssel, Passwörter, Personen und Backups brauchen ein HolyArrs-Passwort. Du hast noch keins.",
+	"settings.layout.setPasswordDesc": "Schlüssel, Passwörter, Personen und Backups brauchen ein Eleven+-Passwort. Du hast noch keins.",
 	"settings.layout.setPasswordLabel": "Passwort festlegen",
 	"settings.layout.signInAgainTitle": "Erst erneut anmelden",
 	"settings.layout.confirmPasswordLabel": "Bestätige dein Passwort",

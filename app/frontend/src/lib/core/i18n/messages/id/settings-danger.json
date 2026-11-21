@@ -1,5 +1,5 @@
 {
-	"settings.danger.stopping": "HolyArrs sedang berhenti.",
+	"settings.danger.stopping": "Eleven+ sedang berhenti.",
 	"settings.danger.couldnt": "Tidak bisa {action}",
 	"settings.danger.title": "Zona berbahaya",
 	"settings.danger.ownerOnly": "Khusus pemilik dan admin",
@@ -8,8 +8,8 @@
 	"settings.danger.cancel": "Batal",
 	"settings.danger.expires": "Kedaluwarsa dalam 60 dtk",
 	"settings.danger.wholeApp": "Seluruh aplikasi",
-	"settings.danger.intro": "Tindakan ini menghentikan HolyArrs. Kebijakan restart Docker menyalakannya lagi dalam beberapa detik, kecuali kebijakannya <code>no</code>; kalau begitu, nyalakan kontainernya sendiri. Setiap tindakan meminta konfirmasi dulu.",
-	"settings.danger.restart": "Mulai ulang HolyArrs",
+	"settings.danger.intro": "Tindakan ini menghentikan Eleven+. Kebijakan restart Docker menyalakannya lagi dalam beberapa detik, kecuali kebijakannya <code>no</code>; kalau begitu, nyalakan kontainernya sendiri. Setiap tindakan meminta konfirmasi dulu.",
+	"settings.danger.restart": "Mulai ulang Eleven+",
 	"settings.danger.safe": "Mulai ulang dalam mode aman",
 	"settings.danger.shutdown": "Matikan",
 	"settings.danger.safeNote": "Berjalan sekali hanya dengan masuk, Pengaturan, dan Pustaka. Pakai ini saat sebuah Bagian menghalangi startup."

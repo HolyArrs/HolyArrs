@@ -71,7 +71,7 @@
 	"settings.sources.remove": "நீக்கு",
 	"settings.sources.bridge": "Jackett அல்லது Prowlarr ஐ இணை",
 	"settings.sources.off": "மூலங்கள் அணைக்கப்பட்டுள்ளன",
-	"settings.sources.offText": "HolyArrs தேடாது, பிடிக்காது. உங்கள் பதிவிறக்கியில் நீங்கள் சேர்க்கும் பதிவிறக்கங்கள் இன்னும் இறக்குமதி செய்யப்படும்.",
+	"settings.sources.offText": "Eleven+ தேடாது, பிடிக்காது. உங்கள் பதிவிறக்கியில் நீங்கள் சேர்க்கும் பதிவிறக்கங்கள் இன்னும் இறக்குமதி செய்யப்படும்.",
 	"settings.sources.openParts": "பகுதிகளைத் திற",
 	"settings.sources.offState": "அணை",
 	"settings.sources.site": "உள்ளமைந்த தளம்",

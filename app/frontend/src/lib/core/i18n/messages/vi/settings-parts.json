@@ -15,7 +15,7 @@
 	"settings.parts.title": "Các Phần",
 	"settings.parts.onOff": "Bật hoặc tắt các phần",
 	"settings.parts.ownerOnly": "Chỉ chủ sở hữu và quản trị viên",
-	"settings.parts.safeMode": "HolyArrs đang chạy ở chế độ an toàn: chỉ phần lõi chạy, công tắc Phần và điều khiển Công đoạn bị từ chối cho đến lần khởi động bình thường. Dùng <b>Khởi động lại HolyArrs</b> trong <a>Vùng nguy hiểm</a> để thoát chế độ an toàn.",
+	"settings.parts.safeMode": "Eleven+ đang chạy ở chế độ an toàn: chỉ phần lõi chạy, công tắc Phần và điều khiển Công đoạn bị từ chối cho đến lần khởi động bình thường. Dùng <b>Khởi động lại Eleven+</b> trong <a>Vùng nguy hiểm</a> để thoát chế độ an toàn.",
 	"settings.parts.dangerZone": "Vùng nguy hiểm",
 	"settings.parts.ask": "{label}?",
 	"settings.parts.yes": "Có, {action}",

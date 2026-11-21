@@ -173,7 +173,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.backups.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.backups.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.backups.title')}>
 	{#snippet actions()}

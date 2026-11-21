@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Bestandsuiteinde dat spelers lezen als SDH",
 	"settings.subtitles.syncFix": "Synchronisatie herstellen",
 	"settings.subtitles.syncFixDesc": "Beginwaarden voor het herstellen van timing",
-	"settings.subtitles.syncNote": "Een ondertitel die niet in de tijd klopt, herstel je met de hand op de pagina van de film of aflevering: verschuif elke regel of wijzig de framerate. HolyArrs luistert niet naar het geluid om ondertitels uit te lijnen.",
+	"settings.subtitles.syncNote": "Een ondertitel die niet in de tijd klopt, herstel je met de hand op de pagina van de film of aflevering: verschuif elke regel of wijzig de framerate. Eleven+ luistert niet naar het geluid om ondertitels uit te lijnen.",
 	"settings.subtitles.shift": "Verschuifknoppen verplaatsen (ms)",
 	"settings.subtitles.fpsFrom": "Framerate van",
 	"settings.subtitles.fpsTo": "Framerate naar",

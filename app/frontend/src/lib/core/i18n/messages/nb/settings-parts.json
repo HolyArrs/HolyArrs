@@ -15,7 +15,7 @@
 	"settings.parts.title": "Deler",
 	"settings.parts.onOff": "Slå deler av eller på",
 	"settings.parts.ownerOnly": "Bare eier og administratorer",
-	"settings.parts.safeMode": "HolyArrs kjører i sikkermodus: bare kjernen kjører, og delbrytere og trinnkontroller avvises til en vanlig oppstart. Bruk <b>Start HolyArrs på nytt</b> i <a>Faresonen</a> for å forlate sikkermodus.",
+	"settings.parts.safeMode": "Eleven+ kjører i sikkermodus: bare kjernen kjører, og delbrytere og trinnkontroller avvises til en vanlig oppstart. Bruk <b>Start Eleven+ på nytt</b> i <a>Faresonen</a> for å forlate sikkermodus.",
 	"settings.parts.dangerZone": "Faresone",
 	"settings.parts.ask": "{label}?",
 	"settings.parts.yes": "Ja, {action}",

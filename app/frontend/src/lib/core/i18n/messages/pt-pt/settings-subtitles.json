@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Final de ficheiro que os players leem como SDH",
 	"settings.subtitles.syncFix": "Correção de sincronia",
 	"settings.subtitles.syncFixDesc": "Valores iniciais para corrigir o tempo",
-	"settings.subtitles.syncNote": "Uma legenda fora de tempo é corrigida à mão no filme ou episódio: desloque todas as linhas ou mude a taxa de quadros. O HolyArrs não escuta o som para alinhar legendas.",
+	"settings.subtitles.syncNote": "Uma legenda fora de tempo é corrigida à mão no filme ou episódio: desloque todas as linhas ou mude a taxa de quadros. O Eleven+ não escuta o som para alinhar legendas.",
 	"settings.subtitles.shift": "Os botões de deslocamento movem (ms)",
 	"settings.subtitles.fpsFrom": "Taxa de quadros de",
 	"settings.subtitles.fpsTo": "Taxa de quadros para",

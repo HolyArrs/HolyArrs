@@ -4,5 +4,5 @@
 	"metadata.health.downTitle": "メタデータがオフラインです",
 	"metadata.health.down": "復旧するまで、検索と新しいアートワークの取得は止まります。ライブラリは通常どおり使えます。",
 	"metadata.health.back": "メタデータがオンラインに戻りました",
-	"metadata.health.fakeIp": "ルーターまたは VPN が HolyArrs を偽のアドレス (198.18.x.x) に送っています。通常は Clash か Surge が原因です。{host} をその直接接続リストに追加してください。"
+	"metadata.health.fakeIp": "ルーターまたは VPN が Eleven+ を偽のアドレス (198.18.x.x) に送っています。通常は Clash か Surge が原因です。{host} をその直接接続リストに追加してください。"
 }

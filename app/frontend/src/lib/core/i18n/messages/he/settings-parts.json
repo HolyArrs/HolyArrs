@@ -15,7 +15,7 @@
 	"settings.parts.title": "רכיבים",
 	"settings.parts.onOff": "הפעלה או כיבוי של רכיבים",
 	"settings.parts.ownerOnly": "לבעלים ולמנהלים בלבד",
-	"settings.parts.safeMode": "HolyArrs פועל במצב בטוח: רק הליבה פועלת, ומתגי הרכיבים ובקרת השלבים נדחים עד להפעלה רגילה. כדי לצאת ממצב בטוח השתמש ב<b>הפעלה מחדש של HolyArrs</b> ב<a>אזור המסוכן</a>.",
+	"settings.parts.safeMode": "Eleven+ פועל במצב בטוח: רק הליבה פועלת, ומתגי הרכיבים ובקרת השלבים נדחים עד להפעלה רגילה. כדי לצאת ממצב בטוח השתמש ב<b>הפעלה מחדש של Eleven+</b> ב<a>אזור המסוכן</a>.",
 	"settings.parts.dangerZone": "אזור מסוכן",
 	"settings.parts.ask": "{label}?",
 	"settings.parts.yes": "כן, {action}",

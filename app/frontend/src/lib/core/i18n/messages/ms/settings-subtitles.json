@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Akhiran fail yang dibaca pemain sebagai SDH",
 	"settings.subtitles.syncFix": "Baiki penyegerakan",
 	"settings.subtitles.syncFixDesc": "Nilai permulaan untuk membetulkan masa",
-	"settings.subtitles.syncNote": "Sari kata yang tidak selari dibetulkan dengan tangan pada filem atau episodnya: anjakkan setiap baris, atau ubah kadar bingkai. HolyArrs tidak mendengar bunyi untuk menyelaraskan sari kata.",
+	"settings.subtitles.syncNote": "Sari kata yang tidak selari dibetulkan dengan tangan pada filem atau episodnya: anjakkan setiap baris, atau ubah kadar bingkai. Eleven+ tidak mendengar bunyi untuk menyelaraskan sari kata.",
 	"settings.subtitles.shift": "Butang anjak menggerakkan (ms)",
 	"settings.subtitles.fpsFrom": "Kadar bingkai daripada",
 	"settings.subtitles.fpsTo": "Kadar bingkai kepada",

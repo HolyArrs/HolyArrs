@@ -4,5 +4,5 @@
 	"metadata.health.downTitle": "Metadati nav pieejami",
 	"metadata.health.down": "Meklēšana un jauni vāki ir apturēti, līdz tie atgriezīsies. Tava Bibliotēka joprojām darbojas.",
 	"metadata.health.back": "Metadati atkal pieejami",
-	"metadata.health.fakeIp": "Jūsu maršrutētājs vai VPN sūta HolyArrs uz viltotu adresi (198.18.x.x). Parasti to dara Clash vai Surge. Pievienojiet {host} tā tiešā savienojuma sarakstam."
+	"metadata.health.fakeIp": "Jūsu maršrutētājs vai VPN sūta Eleven+ uz viltotu adresi (198.18.x.x). Parasti to dara Clash vai Surge. Pievienojiet {host} tā tiešā savienojuma sarakstam."
 }

@@ -14,7 +14,7 @@
 	"settings.health.none": "Engar niðurstöður. Athugaðu aftur til að keyra þær.",
 	"settings.health.since": "Síðan",
 	"settings.health.settings": "Stillingar ástandsathugana",
-	"settings.health.updateCheck": "Athuga hvort nýrra HolyArrs sé til",
+	"settings.health.updateCheck": "Athuga hvort nýrra Eleven+ sé til",
 	"settings.health.onlyChecks": "Athugar aðeins. Setur aldrei upp.",
 	"settings.health.every": "Athuga með uppfærslur á",
 	"settings.health.day": "dag",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Tilkynna eftir þetta margar keyrslur í röð",
 	"settings.health.guardHint": "Kemur í veg fyrir tilkynningar vegna stakra truflana",
 	"settings.health.feed": "Útgáfustraumur",
-	"settings.health.feedHint": "Tómt notar HolyArrs-útgáfur",
+	"settings.health.feedHint": "Tómt notar Eleven+-útgáfur",
 	"settings.health.feedLocal": "Straumurinn má vera á staðarnetinu",
 	"settings.health.prerelease": "Taka með prófunarútgáfur (eins og 1.2.0-rc1)"
 }

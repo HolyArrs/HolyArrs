@@ -14,7 +14,7 @@
 	"settings.health.none": "Результатов нет. Запустите проверку снова.",
 	"settings.health.since": "С",
 	"settings.health.settings": "Настройки проверок исправности",
-	"settings.health.updateCheck": "Проверять, нет ли новой версии HolyArrs",
+	"settings.health.updateCheck": "Проверять, нет ли новой версии Eleven+",
 	"settings.health.onlyChecks": "Только проверяет. Ничего не устанавливает.",
 	"settings.health.every": "Проверять обновления каждые",
 	"settings.health.day": "день",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Оповещать после стольких проверок подряд",
 	"settings.health.guardHint": "Одиночные сбои не вызовут оповещение",
 	"settings.health.feed": "Лента релизов",
-	"settings.health.feedHint": "Если пусто, используются релизы HolyArrs",
+	"settings.health.feedHint": "Если пусто, используются релизы Eleven+",
 	"settings.health.feedLocal": "Лента может быть в локальной сети",
 	"settings.health.prerelease": "Включать тестовые версии (например, 1.2.0-rc1)"
 }

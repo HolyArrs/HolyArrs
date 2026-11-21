@@ -254,7 +254,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.outsideLists.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.outsideLists.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.outsideLists.title')}>
 	{#snippet actions()}

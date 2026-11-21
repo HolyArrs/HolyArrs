@@ -8,7 +8,9 @@
 		<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
 		<link rel="icon" href="/favicon.ico" sizes="any" />
 		<link rel="apple-touch-icon" href="/brand/apple-touch-icon-180.png" />
-		<title>HolyArrs</title>
+		<title>Eleven+</title>
+		<meta name="apple-mobile-web-app-title" content="Eleven+" />
+		<meta name="application-name" content="Eleven+" />
 		<!--holyarrs-font-preload-->
 		<!--holyarrs-signin-seed-->
 		<script>
@@ -123,8 +125,10 @@
 				var requested = new URLSearchParams(location.search).get('theme');
 				var t = requested === 'light' || requested === 'dark' ? requested : localStorage.getItem('holyarrs-theme');
 				if (requested === 'light' || requested === 'dark') localStorage.setItem('holyarrs-theme', t);
-				if (requested === 'system') localStorage.removeItem('holyarrs-theme');
-				if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+				if (requested === 'system') { localStorage.setItem('holyarrs-theme', 'system'); t = 'system'; }
+				// Eleven+: light unless the person picked dark, or picked Automatic (follow the system).
+				if (t === 'system') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+				else if (t !== 'dark') t = 'light';
 				document.documentElement.dataset.theme = t;
 			} catch (e) {}
 			// The minimal look (lib/core/look.svelte.ts): plain headers from the first frame.
@@ -197,6 +201,8 @@
 			html.hl-skip{scrollbar-gutter:auto;background:#050507}
 			#hlt{margin:0;font:500 15px/1.3 system-ui,sans-serif;color:#a1a1a6;min-height:1.3em}
 			#hl svg{overflow:visible}
+			/* Eleven+: original symbol files; dark one on dark theme. */
+			#hl .md { display: none; } [data-theme='dark'] #hl .md { display: inline; } [data-theme='dark'] #hl .ml { display: none; }
 			/* The ring and the pulse animate whole HTML-level boxes (outer <svg>s), so the compositor keeps them moving while the app's JS boots. */
 			#hl .hw{position:relative;width:104px;height:104px}
 			#hl .hw svg{position:absolute;inset:0;width:100%;height:100%}
@@ -206,7 +212,7 @@
 			#hl.nav .hw{width:56px;height:56px}
 			#hl.out{opacity:0;pointer-events:none}
 			#hlt{max-width:min(360px,80vw);text-align:center}
-			#hlr{min-height:36px;padding:0 16px;border:0;border-radius:10px;background:#d42d24;color:#fff;font:600 14px/1 system-ui,sans-serif;cursor:pointer}
+			#hlr{min-height:36px;padding:0 16px;border:0;border-radius:10px;background:#5e3fa3;color:#fff;font:600 14px/1 system-ui,sans-serif;cursor:pointer}
 			#hlr[hidden]{display:none}
 			#hl.nav #hlr{display:none}
 			/* Sign-in hand-off (lib/loader.ts playHandoff): the veil fades to the app colour while the Orbit glides in from the button. */
@@ -227,10 +233,10 @@
 
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<noscript>HolyArrs needs JavaScript.</noscript>
+		<noscript>Eleven+ needs JavaScript.</noscript>
 		<div style="display: contents">%sveltekit.body%</div>
-		<div id="hl" role="status" aria-label="HolyArrs is loading">
-			<div class="hw"><svg class="ms" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="hlc"><rect x="17.5" y="17.5" width="65" height="65" rx="4" transform="rotate(45 50 50)" /></clipPath></defs><circle cx="50" cy="50" r="46" fill="none" stroke="#7c7c80" stroke-opacity=".3" stroke-width="1.6" /><g class="m"><g transform="translate(14 14) scale(.72)"><rect x="17.5" y="17.5" width="65" height="65" rx="4" transform="rotate(45 50 50)" fill="none" stroke="#3a3d44" stroke-width="2.2" /><g clip-path="url(#hlc)"><rect width="100" height="100" fill="#1c1d21" /><path d="M50 0C42 18 46 32 58 41C70 50 66 70 54 100L110 100L110 0Z" fill="#f23a2e" /><path d="M50 0C42 18 46 32 58 41C70 50 66 70 54 100L110 100L110 0Z" fill="#55585e" transform="rotate(180 50 50)" /></g><path d="M50 26.8Q54.5 44.3 72 48.8Q54.5 53.3 50 70.8Q45.5 53.3 28 48.8Q45.5 44.3 50 26.8Z" fill="#fff" /></g></g></svg><svg class="rs" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="#ff453a" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="60 229" /></svg></div>
+		<div id="hl" role="status" aria-label="Eleven+ is loading">
+			<div class="hw"><svg class="ms" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="hlc"><rect x="17.5" y="17.5" width="65" height="65" rx="4" transform="rotate(45 50 50)" /></clipPath></defs><circle cx="50" cy="50" r="46" fill="none" stroke="#7c7c80" stroke-opacity=".3" stroke-width="1.6" /><g class="m"><image class="ml" href="/brand/mark-color.svg" x="29" y="29" width="42" height="42" /><image class="md" href="/brand/mark-color-on-dark.svg" x="29" y="29" width="42" height="42" /></g></svg><svg class="rs" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="#5e3fa3" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="60 229" /></svg></div>
 			<p id="hlt"></p>
 			<button id="hlr" type="button" hidden>Reload</button>
 		</div>
@@ -242,7 +248,7 @@
 				// A listener, not an inline onclick: the script policy has no 'unsafe-inline'.
 				if (r) r.addEventListener('click', function () { location.reload(); });
 				function up() { return hl && !hl.hidden && !hl.classList.contains('nav') && !hl.classList.contains('out'); }
-				setTimeout(function () { if (up() && t && !t.textContent) { t.textContent = 'Starting HolyArrs…'; t.dataset.boot = '1'; } }, 3000);
+				setTimeout(function () { if (up() && t && !t.textContent) { t.textContent = 'Starting Eleven+…'; t.dataset.boot = '1'; } }, 3000);
 				setTimeout(function () {
 					if (!up()) return;
 					if (t && (!t.textContent || t.dataset.boot)) t.textContent = 'This is taking longer than usual. The server may still be starting.';

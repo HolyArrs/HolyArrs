@@ -98,7 +98,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.health.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.health.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.health.title')}>
 	{#snippet actions()}

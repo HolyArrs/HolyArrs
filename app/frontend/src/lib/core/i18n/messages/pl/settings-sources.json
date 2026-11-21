@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Usuń",
 	"settings.sources.bridge": "Połącz Jackett lub Prowlarr",
 	"settings.sources.off": "Źródła są wyłączone",
-	"settings.sources.offText": "HolyArrs nic nie szuka ani nie pobiera. Pobrania dodane w kliencie pobierania nadal są importowane.",
+	"settings.sources.offText": "Eleven+ nic nie szuka ani nie pobiera. Pobrania dodane w kliencie pobierania nadal są importowane.",
 	"settings.sources.openParts": "Otwórz Części",
 	"settings.sources.offState": "Wyłączone",
 	"settings.sources.site": "Wbudowana strona",

@@ -214,7 +214,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('settings.mediaServers.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.mediaServers.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('settings.mediaServers.title')}>
 	{#snippet actions()}

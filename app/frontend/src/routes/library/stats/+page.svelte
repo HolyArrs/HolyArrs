@@ -69,7 +69,7 @@
 	const isOwner = $derived(session.s.role === 'owner');
 </script>
 
-<svelte:head><title>{t('library.stats.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('library.stats.title')} · Eleven+</title></svelte:head>
 
 <LibraryToolPage title={t('library.stats.title')}>
 	{#snippet bar()}

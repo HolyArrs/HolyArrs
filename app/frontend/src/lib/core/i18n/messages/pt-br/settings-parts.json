@@ -15,7 +15,7 @@
 	"settings.parts.title": "Partes",
 	"settings.parts.onOff": "Ativar ou desativar partes",
 	"settings.parts.ownerOnly": "Só o dono e administradores",
-	"settings.parts.safeMode": "O HolyArrs está em modo de segurança: só o núcleo roda, e os interruptores das partes e os controles das etapas são recusados até uma inicialização normal. Use <b>Reiniciar o HolyArrs</b> na <a>Zona de perigo</a> para sair do modo de segurança.",
+	"settings.parts.safeMode": "O Eleven+ está em modo de segurança: só o núcleo roda, e os interruptores das partes e os controles das etapas são recusados até uma inicialização normal. Use <b>Reiniciar o Eleven+</b> na <a>Zona de perigo</a> para sair do modo de segurança.",
 	"settings.parts.dangerZone": "Zona de perigo",
 	"settings.parts.ask": "{label}?",
 	"settings.parts.yes": "Sim, {action}",

@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Phần đuôi tệp mà trình phát đọc là SDH",
 	"settings.subtitles.syncFix": "Sửa đồng bộ",
 	"settings.subtitles.syncFixDesc": "Giá trị bắt đầu để sửa thời gian",
-	"settings.subtitles.syncNote": "Phụ đề lệch thời gian được sửa thủ công trên phim hoặc tập của nó: dịch mọi dòng, hoặc đổi tốc độ khung hình. HolyArrs không nghe âm thanh để căn chỉnh phụ đề.",
+	"settings.subtitles.syncNote": "Phụ đề lệch thời gian được sửa thủ công trên phim hoặc tập của nó: dịch mọi dòng, hoặc đổi tốc độ khung hình. Eleven+ không nghe âm thanh để căn chỉnh phụ đề.",
 	"settings.subtitles.shift": "Các nút dịch di chuyển (ms)",
 	"settings.subtitles.fpsFrom": "Tốc độ khung hình từ",
 	"settings.subtitles.fpsTo": "Tốc độ khung hình sang",

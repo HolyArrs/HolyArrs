@@ -66,7 +66,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('library.deleted.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('library.deleted.title')} · Eleven+</title></svelte:head>
 
 <LibraryToolPage title={t('library.deleted.title')} count={loaded && !error && files.length ? t('mediafiles.unit.file.' + (files.length === 1 ? 'one' : 'other'), { n: files.length.toLocaleString(appLocale()) }) : ''}>
 	{#snippet bar()}

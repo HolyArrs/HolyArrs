@@ -52,7 +52,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('arrapi.ai.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('arrapi.ai.title')} · Eleven+</title></svelte:head>
 
 <PageHeader title={t('arrapi.ai.title')} />
 

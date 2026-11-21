@@ -14,7 +14,7 @@
 	"settings.health.none": "Belum ada hasil. Periksa lagi untuk menjalankannya.",
 	"settings.health.since": "Sejak",
 	"settings.health.settings": "Pengaturan pemeriksaan kesehatan",
-	"settings.health.updateCheck": "Cek HolyArrs yang lebih baru",
+	"settings.health.updateCheck": "Cek Eleven+ yang lebih baru",
 	"settings.health.onlyChecks": "Hanya memeriksa. Tidak pernah memasang.",
 	"settings.health.every": "Cek pembaruan setiap",
 	"settings.health.day": "hari",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Beri peringatan setelah sekian kali berturut-turut",
 	"settings.health.guardHint": "Mencegah gangguan sesaat memicu peringatan",
 	"settings.health.feed": "Feed rilis",
-	"settings.health.feedHint": "Kosong berarti memakai rilis HolyArrs",
+	"settings.health.feedHint": "Kosong berarti memakai rilis Eleven+",
 	"settings.health.feedLocal": "Feed boleh ada di jaringan lokal",
 	"settings.health.prerelease": "Sertakan versi uji coba (seperti 1.2.0-rc1)"
 }

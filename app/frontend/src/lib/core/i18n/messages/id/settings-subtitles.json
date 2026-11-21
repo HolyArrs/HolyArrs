@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Akhiran file yang dibaca pemutar sebagai SDH",
 	"settings.subtitles.syncFix": "Perbaikan sinkron",
 	"settings.subtitles.syncFixDesc": "Nilai awal untuk memperbaiki waktu",
-	"settings.subtitles.syncNote": "Subtitel yang tidak sinkron diperbaiki secara manual di film atau episodenya: geser setiap baris, atau ubah frame rate. HolyArrs tidak mendengarkan suara untuk menyelaraskan subtitel.",
+	"settings.subtitles.syncNote": "Subtitel yang tidak sinkron diperbaiki secara manual di film atau episodenya: geser setiap baris, atau ubah frame rate. Eleven+ tidak mendengarkan suara untuk menyelaraskan subtitel.",
 	"settings.subtitles.shift": "Tombol geser memindahkan (md)",
 	"settings.subtitles.fpsFrom": "Frame rate dari",
 	"settings.subtitles.fpsTo": "Frame rate ke",

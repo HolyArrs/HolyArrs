@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Alisin",
 	"settings.sources.bridge": "I-link ang Jackett o Prowlarr",
 	"settings.sources.off": "Naka-off ang mga Source",
-	"settings.sources.offText": "Hindi naghahanap o kumukuha ang HolyArrs. Na-i-import pa rin ang mga download na idinagdag mo sa iyong Downloader.",
+	"settings.sources.offText": "Hindi naghahanap o kumukuha ang Eleven+. Na-i-import pa rin ang mga download na idinagdag mo sa iyong Downloader.",
 	"settings.sources.openParts": "Buksan ang Mga Bahagi",
 	"settings.sources.offState": "Off",
 	"settings.sources.site": "Built-in na site",

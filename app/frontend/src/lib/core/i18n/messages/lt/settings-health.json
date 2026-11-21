@@ -14,7 +14,7 @@
 	"settings.health.none": "Rezultatų nėra. Patikrinkite dar kartą, kad juos gautumėte.",
 	"settings.health.since": "Nuo",
 	"settings.health.settings": "Būklės patikrų nustatymai",
-	"settings.health.updateCheck": "Tikrinti, ar yra naujesnis HolyArrs",
+	"settings.health.updateCheck": "Tikrinti, ar yra naujesnis Eleven+",
 	"settings.health.onlyChecks": "Tik tikrina. Niekada neįdiegia.",
 	"settings.health.every": "Tikrinti naujinius kas",
 	"settings.health.day": "diena",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Pranešti po tiek patikrų iš eilės",
 	"settings.health.guardHint": "Neleidžia pranešti dėl vienkartinių trikdžių",
 	"settings.health.feed": "Leidimų srautas",
-	"settings.health.feedHint": "Jei tuščia, naudojami HolyArrs leidimai",
+	"settings.health.feedHint": "Jei tuščia, naudojami Eleven+ leidimai",
 	"settings.health.feedLocal": "Srautas gali būti vietiniame tinkle",
 	"settings.health.prerelease": "Įtraukti bandomąsias versijas (pvz., 1.2.0-rc1)"
 }

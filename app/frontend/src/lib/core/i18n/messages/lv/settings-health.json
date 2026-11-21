@@ -14,7 +14,7 @@
 	"settings.health.none": "Rezultātu nav. Pārbaudi vēlreiz, lai tos palaistu.",
 	"settings.health.since": "Kopš",
 	"settings.health.settings": "Veselības pārbaužu iestatījumi",
-	"settings.health.updateCheck": "Pārbaudīt, vai ir jaunāks HolyArrs",
+	"settings.health.updateCheck": "Pārbaudīt, vai ir jaunāks Eleven+",
 	"settings.health.onlyChecks": "Tikai pārbauda. Nekad neinstalē.",
 	"settings.health.every": "Pārbaudīt atjauninājumus ik pēc",
 	"settings.health.day": "dienas",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Paziņot pēc tik daudzām reizēm pēc kārtas",
 	"settings.health.guardHint": "Novērš paziņojumus par vienreizējiem kļūmēm",
 	"settings.health.feed": "Izlaidumu plūsma",
-	"settings.health.feedHint": "Ja tukšs, izmanto HolyArrs izlaidumus",
+	"settings.health.feedHint": "Ja tukšs, izmanto Eleven+ izlaidumus",
 	"settings.health.feedLocal": "Plūsma var atrasties vietējā tīklā",
 	"settings.health.prerelease": "Iekļaut testa versijas (piem., 1.2.0-rc1)"
 }

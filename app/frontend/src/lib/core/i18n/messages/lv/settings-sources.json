@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Noņemt",
 	"settings.sources.bridge": "Sasaistīt Jackett vai Prowlarr",
 	"settings.sources.off": "Avoti ir izslēgti",
-	"settings.sources.offText": "HolyArrs nemeklē un neņem. Lejupielādes, ko pievienojat savā Lejupielādētājā, joprojām tiek importētas.",
+	"settings.sources.offText": "Eleven+ nemeklē un neņem. Lejupielādes, ko pievienojat savā Lejupielādētājā, joprojām tiek importētas.",
 	"settings.sources.openParts": "Atvērt Daļas",
 	"settings.sources.offState": "Izslēgts",
 	"settings.sources.site": "Iebūvēta vietne",

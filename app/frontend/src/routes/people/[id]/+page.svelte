@@ -324,7 +324,7 @@
 	setTopCrumbs(null);
 </script>
 
-<svelte:head><title>{data?.person.name ?? t('discover.people.person')} · HolyArrs</title>{#if hero && !minimal}<link rel="preload" as="image" href={hero} />{/if}</svelte:head>
+<svelte:head><title>{data?.person.name ?? t('discover.people.person')} · Eleven+</title>{#if hero && !minimal}<link rel="preload" as="image" href={hero} />{/if}</svelte:head>
 
 {#snippet filmCard(m: PersonMovie)}
 	<WideCard cover title={m.name} href={href(m)} image={m.backdrop || m.poster} kind="movie" subtitle={roleLine(m) || undefined} owned={owned(m)} preview={{ kind: 'movie', tmdb: m.ids.tmdb, year: m.year || undefined, titleId: m.title_id }}

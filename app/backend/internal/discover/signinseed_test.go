@@ -129,7 +129,8 @@ func TestSigninSeedInlinesFirstSlideThumbnails(t *testing.T) {
 			}
 		}
 	}
-	if strings.Contains(string(got), "Secret") || strings.Contains(string(got), "Trend") {
+	// Eleven+: trending captions are public; Library names ("Secret") must never appear.
+	if strings.Contains(string(got), "Secret") {
 		t.Fatal("names leaked")
 	}
 	mu.Lock()

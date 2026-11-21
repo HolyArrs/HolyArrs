@@ -14,7 +14,7 @@
 	"settings.health.none": "Tiada keputusan. Semak semula untuk menjalankannya.",
 	"settings.health.since": "Sejak",
 	"settings.health.settings": "Tetapan semakan kesihatan",
-	"settings.health.updateCheck": "Semak HolyArrs yang lebih baharu",
+	"settings.health.updateCheck": "Semak Eleven+ yang lebih baharu",
 	"settings.health.onlyChecks": "Menyemak sahaja. Tidak pernah memasang.",
 	"settings.health.every": "Semak kemas kini setiap",
 	"settings.health.day": "hari",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Beri makluman selepas sekian banyak larian berturut-turut",
 	"settings.health.guardHint": "Menghalang gangguan sekali-sekala daripada memberi makluman",
 	"settings.health.feed": "Suapan keluaran",
-	"settings.health.feedHint": "Kosong bermaksud keluaran HolyArrs",
+	"settings.health.feedHint": "Kosong bermaksud keluaran Eleven+",
 	"settings.health.feedLocal": "Suapan boleh berada di rangkaian setempat",
 	"settings.health.prerelease": "Sertakan versi ujian (seperti 1.2.0-rc1)"
 }

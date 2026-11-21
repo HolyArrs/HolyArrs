@@ -39,7 +39,7 @@
 {/if}
 
 {#if fresh}
-	<span class="fresh {fresh.kind}" class:sm={size === 'sm'} role="img" aria-label={freshLabel(fresh)} title={freshLabel(fresh)} data-testid="card-fresh" data-kind={fresh.kind}>
+	<span class="fresh {fresh.kind}" class:today={/today/i.test(fresh.text)} class:sm={size === 'sm'} role="img" aria-label={freshLabel(fresh)} title={freshLabel(fresh)} data-testid="card-fresh" data-kind={fresh.kind}>
 		<span aria-hidden="true">{serverWords(fresh.text)}</span>
 	</span>
 {/if}
@@ -77,6 +77,29 @@
 	.sm.mark :global(svg) { width: 12px; height: 12px; }
 	.sm.mark.downloading :global(svg) { width: 17px; height: 17px; }
 	.sm.fresh { height: 16px; font-size: 10px; padding: 0 5px; }
+
+	/* ===== Eleven+ fresh tags: rounded pills, coloured by what they mean ===== */
+	.fresh {
+		left: 8px; bottom: 8px; transform: none;
+		max-width: calc(100% - 16px);
+		height: 22px; padding: 0 9px;
+		border-radius: 999px;
+		font: 700 11.5px/1 var(--font-ui);
+		letter-spacing: -0.005em;
+		color: #fff;
+		box-shadow: 0 2px 8px rgb(0 0 0 / 0.28);
+	}
+	.sm.fresh { left: 6px; bottom: 6px; height: 18px; padding: 0 7px; font-size: 10.5px; }
+	/* New things are loud: series/releases red-orange, episodes orange. */
+	.fresh.new_release { background: #ff4d2e; }
+	.fresh.new_episode { background: #ff8a1f; }
+	/* New season: brand purple. */
+	.fresh.new_season { background: #5e3fa3; }
+	/* Added: green on the day, then quiet frosted glass. */
+	.fresh.recently_added { background: rgb(14 10 20 / 0.62); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
+	.fresh.recently_added.today { background: #16a34a; box-shadow: 0 2px 8px rgb(0 0 0 / 0.28); }
+	/* Coming soon: white glass with purple text. */
+	.fresh.coming, .fresh.season_coming { background: rgb(255 255 255 / 0.9); color: #5e3fa3; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
 	/* Colors are dropped in forced colors, so add an outline. */
 	@media (forced-colors: active) {
 		.mark, .fresh { border: 1px solid CanvasText; }

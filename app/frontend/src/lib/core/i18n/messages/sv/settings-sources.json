@@ -71,7 +71,7 @@
 	"settings.sources.remove": "Ta bort",
 	"settings.sources.bridge": "Länka Jackett eller Prowlarr",
 	"settings.sources.off": "Källor är av",
-	"settings.sources.offText": "HolyArrs söker inte och hämtar inte. Nedladdningar som du lägger till i din Nedladdare importeras fortfarande.",
+	"settings.sources.offText": "Eleven+ söker inte och hämtar inte. Nedladdningar som du lägger till i din Nedladdare importeras fortfarande.",
 	"settings.sources.openParts": "Öppna Delar",
 	"settings.sources.offState": "Av",
 	"settings.sources.site": "Inbyggd webbplats",

@@ -151,7 +151,7 @@
 	}
 </script>
 
-<svelte:head><title>{tr('library.missingSubs.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{tr('library.missingSubs.title')} · Eleven+</title></svelte:head>
 
 <LibraryToolPage title={tr('library.missingSubs.title')} count={loaded && !error ? tr('library.missingSubs.count', { n: total.toLocaleString(appLocale()) }) : ''}>
 	{#snippet bar()}

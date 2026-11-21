@@ -425,7 +425,7 @@
 	};
 </script>
 
-<svelte:head><title>{hero?.name ?? t('music.artist')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{hero?.name ?? t('music.artist')} · Eleven+</title></svelte:head>
 
 {#snippet albumCard(a: PageAlbum, eager = false, row = false)}
 	{@const c = coverFor(appPicture(a.image), 200)}

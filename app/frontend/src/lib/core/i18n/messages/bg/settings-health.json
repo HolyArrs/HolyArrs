@@ -14,7 +14,7 @@
 	"settings.health.none": "Няма резултати. Проверете отново, за да ги получите.",
 	"settings.health.since": "От",
 	"settings.health.settings": "Настройки за проверки на състоянието",
-	"settings.health.updateCheck": "Проверка за по-нов HolyArrs",
+	"settings.health.updateCheck": "Проверка за по-нов Eleven+",
 	"settings.health.onlyChecks": "Само проверява. Никога не инсталира.",
 	"settings.health.every": "Проверка за актуализации на всеки",
 	"settings.health.day": "ден",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Известие след толкова поредни изпълнения",
 	"settings.health.guardHint": "Спира известията при еднократни смущения",
 	"settings.health.feed": "Емисия с издания",
-	"settings.health.feedHint": "Празно ползва изданията на HolyArrs",
+	"settings.health.feedHint": "Празно ползва изданията на Eleven+",
 	"settings.health.feedLocal": "Емисията може да е в локалната мрежа",
 	"settings.health.prerelease": "Включване на тестови версии (като 1.2.0-rc1)"
 }

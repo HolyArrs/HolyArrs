@@ -4,5 +4,5 @@
 "metadata.health.downTitle": "Metadáta sú offline",
 "metadata.health.down": "Vyhľadávanie a nové obrázky sú pozastavené, kým sa nevráti. Knižnica funguje ďalej.",
 "metadata.health.back": "Metadáta sú znova online",
-	"metadata.health.fakeIp": "Váš smerovač alebo VPN posiela HolyArrs na falošnú adresu (198.18.x.x). Zvyčajne to spôsobuje Clash alebo Surge. Pridajte {host} do jeho zoznamu priamych pripojení."
+	"metadata.health.fakeIp": "Váš smerovač alebo VPN posiela Eleven+ na falošnú adresu (198.18.x.x). Zvyčajne to spôsobuje Clash alebo Surge. Pridajte {host} do jeho zoznamu priamych pripojení."
 }

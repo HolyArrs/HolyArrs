@@ -14,7 +14,7 @@
 	"settings.health.none": "No results. Check again to run them.",
 	"settings.health.since": "Since",
 	"settings.health.settings": "Health check settings",
-	"settings.health.updateCheck": "Check for a newer HolyArrs",
+	"settings.health.updateCheck": "Check for a newer Eleven+",
 	"settings.health.onlyChecks": "Only checks. Never installs.",
 	"settings.health.every": "Check for updates every",
 	"settings.health.day": "day",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Alert after this many runs in a row",
 	"settings.health.guardHint": "Stops one-off blips from alerting",
 	"settings.health.feed": "Release feed",
-	"settings.health.feedHint": "Empty uses HolyArrs releases",
+	"settings.health.feedHint": "Empty uses Eleven+ releases",
 	"settings.health.feedLocal": "Feed may be on the local network",
 	"settings.health.prerelease": "Include test versions (like 1.2.0-rc1)"
 }

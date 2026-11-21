@@ -389,7 +389,7 @@
 	const sectionCrumb = $derived(details?.kind === 'show' ? { label: t('discover.titlePage.tvShows'), href: backHref ?? to('/library?kind=show') } : { label: t('discover.titlePage.movies'), href: backHref ?? to('/library?kind=movie') });
 </script>
 
-<svelte:head><title>{details?.name ? `${details.name} · HolyArrs` : `${kindWord} · HolyArrs`}</title></svelte:head>
+<svelte:head><title>{details?.name ? `${details.name} · Eleven+` : `${kindWord} · Eleven+`}</title></svelte:head>
 
 {#if blocked}
 	<EmptyState icon="shield" title={t('discover.titlePage.thisTitleIsNot')} action={{ label: t('discover.titlePage.backToExplore'), href: to('/explore') }} />

@@ -338,7 +338,7 @@
 	});
 </script>
 
-<svelte:head><title>{t('home.home')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('home.home')} · Eleven+</title></svelte:head>
 
 <div class="home">
 	<div class="top">

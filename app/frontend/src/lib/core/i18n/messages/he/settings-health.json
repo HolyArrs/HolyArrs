@@ -14,7 +14,7 @@
 	"settings.health.none": "אין תוצאות. בדוק שוב כדי להריץ אותן.",
 	"settings.health.since": "מאז",
 	"settings.health.settings": "הגדרות בדיקות התקינות",
-	"settings.health.updateCheck": "בדיקת גרסה חדשה של HolyArrs",
+	"settings.health.updateCheck": "בדיקת גרסה חדשה של Eleven+",
 	"settings.health.onlyChecks": "בודק בלבד. אף פעם לא מתקין.",
 	"settings.health.every": "בדיקת עדכונים כל",
 	"settings.health.day": "יום",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "התראה אחרי כמה הרצות ברצף",
 	"settings.health.guardHint": "מונע התראות על תקלות חד־פעמיות",
 	"settings.health.feed": "פיד גרסאות",
-	"settings.health.feedHint": "ריק משתמש בגרסאות של HolyArrs",
+	"settings.health.feedHint": "ריק משתמש בגרסאות של Eleven+",
 	"settings.health.feedLocal": "הפיד יכול להיות ברשת המקומית",
 	"settings.health.prerelease": "כולל גרסאות בדיקה (כמו 1.2.0-rc1)"
 }

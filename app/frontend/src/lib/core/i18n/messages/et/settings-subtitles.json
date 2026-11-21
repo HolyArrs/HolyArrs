@@ -83,7 +83,7 @@
 	"settings.subtitles.hiSuffixHint": "Faililõpp, mida mängijad loevad SDH-ks",
 	"settings.subtitles.syncFix": "Sünkroonimise parandus",
 	"settings.subtitles.syncFixDesc": "Ajastuse parandamise algväärtused",
-	"settings.subtitles.syncNote": "Ajast väljas subtiitri parandad käsitsi selle filmi või episoodi juures: nihuta iga rida või muuda kaadrisagedust. HolyArrs ei kuula heli, et subtiitreid joondada.",
+	"settings.subtitles.syncNote": "Ajast väljas subtiitri parandad käsitsi selle filmi või episoodi juures: nihuta iga rida või muuda kaadrisagedust. Eleven+ ei kuula heli, et subtiitreid joondada.",
 	"settings.subtitles.shift": "Nihutusnupud liigutavad (ms)",
 	"settings.subtitles.fpsFrom": "Kaadrisagedus alates",
 	"settings.subtitles.fpsTo": "Kaadrisagedus kuni",

@@ -14,7 +14,7 @@
 	"settings.health.none": "Nema rezultata. Provjeri ponovno da ih pokreneš.",
 	"settings.health.since": "Od",
 	"settings.health.settings": "Postavke provjera stanja",
-	"settings.health.updateCheck": "Provjeri ima li novijeg HolyArrsa",
+	"settings.health.updateCheck": "Provjeri ima li novijeg Eleven+a",
 	"settings.health.onlyChecks": "Samo provjerava. Nikad ne instalira.",
 	"settings.health.every": "Provjeri ažuriranja svakih",
 	"settings.health.day": "dan",
@@ -25,7 +25,7 @@
 	"settings.health.guard": "Obavijesti nakon ovoliko uzastopnih pokretanja",
 	"settings.health.guardHint": "Sprječava da jednokratni zastoji šalju obavijest",
 	"settings.health.feed": "Feed izdanja",
-	"settings.health.feedHint": "Prazno koristi HolyArrs izdanja",
+	"settings.health.feedHint": "Prazno koristi Eleven+ izdanja",
 	"settings.health.feedLocal": "Feed može biti na lokalnoj mreži",
 	"settings.health.prerelease": "Uključi probne verzije (poput 1.2.0-rc1)"
 }

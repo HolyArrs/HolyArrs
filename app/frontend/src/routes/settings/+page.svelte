@@ -94,7 +94,7 @@
 	});
 </script>
 
-<svelte:head><title>{t('settings.home.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('settings.home.title')} · Eleven+</title></svelte:head>
 <svelte:window onkeydown={key} />
 
 <div class="sx-home" bind:this={home}>
