@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Populiarūs serialai srautinėse platformose",
 	"server.suggest.trending-on-streaming": "Populiaru srautinėse platformose",
 	"server.discover.popular": "Populiaru",
-	"server.metadata.creator": "Kūrėjas"
+	"server.metadata.creator": "Kūrėjas",
+	"server.youtube.follow-must-be-a-follow-id": "follow turi būti sekimo ID",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit ir offset turi būti skaičiai nuo 0",
+	"server.youtube.say-files-keep-or-files-delete": "nurodykite files=keep arba files=delete"
 }

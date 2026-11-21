@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "流媒体热播剧集",
 	"server.suggest.trending-on-streaming": "流媒体热播",
 	"server.discover.popular": "热门",
-	"server.metadata.creator": "创作者"
+	"server.metadata.creator": "创作者",
+	"server.youtube.follow-must-be-a-follow-id": "follow 必须是关注的 ID",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit 和 offset 必须是 0 或更大的数字",
+	"server.youtube.say-files-keep-or-files-delete": "请指定 files=keep 或 files=delete"
 }

@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Seriale na topie w streamingu",
 	"server.suggest.trending-on-streaming": "Na topie w streamingu",
 	"server.discover.popular": "Popularne",
-	"server.metadata.creator": "Twórca"
+	"server.metadata.creator": "Twórca",
+	"server.youtube.follow-must-be-a-follow-id": "follow musi być identyfikatorem obserwowania",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit i offset muszą być liczbami 0 lub większymi",
+	"server.youtube.say-files-keep-or-files-delete": "podaj files=keep albo files=delete"
 }

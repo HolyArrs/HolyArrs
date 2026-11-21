@@ -612,6 +612,7 @@ feed
 feed_check_minutes
 fell_back
 fetched_at
+ffmpeg_path
 fields
 file
 file_id
@@ -1572,6 +1573,7 @@ seasons_added
 seasons_off
 secondary-types
 secondary_types
+seconds
 secret
 secret_set
 section
@@ -1619,6 +1621,7 @@ shape
 share_limit_action
 share_ratio
 shelf
+short
 show
 show_days
 show_folder_pattern
@@ -2039,5 +2042,6 @@ year_from
 year_to
 youtube_id
 yt_id
+ytdlp_path
 ytdlp_update_error
 ytdlp_updated_at

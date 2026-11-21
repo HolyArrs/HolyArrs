@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "ซีรีส์ที่กำลังมาแรงบนสตรีมมิง",
 	"server.suggest.trending-on-streaming": "กำลังมาแรงบนสตรีมมิง",
 	"server.discover.popular": "ยอดนิยม",
-	"server.metadata.creator": "ผู้สร้าง"
+	"server.metadata.creator": "ผู้สร้าง",
+	"server.youtube.follow-must-be-a-follow-id": "follow ต้องเป็นรหัสการติดตาม",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit และ offset ต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป",
+	"server.youtube.say-files-keep-or-files-delete": "ระบุ files=keep หรือ files=delete"
 }

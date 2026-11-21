@@ -37,6 +37,8 @@ DELETE /api/v1/users/invites/{id} admin
 DELETE /api/v1/users/{id} admin
 DELETE /api/v1/users/{id}/media-link/{kind} admin
 DELETE /api/v1/users/{id}/sessions/{sid} admin
+DELETE /api/v1/youtube/follows/{id} delete
+DELETE /api/v1/youtube/videos/{id} delete
 DELETE /customformat/{id} delete
 DELETE /delayprofile/{id} delete
 DELETE /indexer/{id} delete
@@ -231,6 +233,7 @@ GET /api/v1/settings/trakt-token settings
 GET /api/v1/settings/ui settings
 GET /api/v1/settings/url-base admin
 GET /api/v1/settings/watch-history settings
+GET /api/v1/settings/youtube settings
 GET /api/v1/shows/lookup see
 GET /api/v1/sources see
 GET /api/v1/sources/sites see
@@ -270,6 +273,12 @@ GET /api/v1/users/{id}/avatar admin
 GET /api/v1/users/{id}/sessions admin
 GET /api/v1/watch-services see
 GET /api/v1/wiki/{kind}/{id} see
+GET /api/v1/youtube/follows see
+GET /api/v1/youtube/status see
+GET /api/v1/youtube/videos see
+GET /api/v1/youtube/videos/{id} see
+GET /api/v1/youtube/videos/{id}/file see
+GET /api/v1/youtube/videos/{id}/thumb see
 GET /calendar see
 GET /command/{id} see
 GET /config/mediamanagement see
@@ -514,6 +523,11 @@ POST /api/v1/users/{id}/password admin
 POST /api/v1/users/{id}/sessions/end-all admin
 POST /api/v1/users/{id}/sso/unlink admin
 POST /api/v1/users/{id}/two-factor/reset admin
+POST /api/v1/youtube/adopt admin
+POST /api/v1/youtube/follows add
+POST /api/v1/youtube/probe add
+POST /api/v1/youtube/videos add
+POST /api/v1/youtube/videos/{id}/retry add
 POST /command control
 POST /customformat settings
 POST /delayprofile settings
@@ -587,6 +601,7 @@ PUT /api/v1/settings/trakt-token settings
 PUT /api/v1/settings/ui settings
 PUT /api/v1/settings/url-base admin
 PUT /api/v1/settings/watch-history settings
+PUT /api/v1/settings/youtube settings
 PUT /api/v1/sources/{id} settings
 PUT /api/v1/subtitle-sites/{id} settings
 PUT /api/v1/titles/{id} add
@@ -599,6 +614,8 @@ PUT /api/v1/titles/{id}/subtitle-wish add
 PUT /api/v1/titles/{id}/versions/{vid} add
 PUT /api/v1/users/{id} admin
 PUT /api/v1/users/{id}/media-link admin
+PUT /api/v1/youtube/follows/{id} add
+PUT /api/v1/youtube/videos/{id}/position add
 PUT /config/mediamanagement settings
 PUT /config/mediamanagement/{id} settings
 PUT /config/naming settings

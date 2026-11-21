@@ -319,10 +319,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// are checked too.
 	logFolderCheck(ctx, s.Read(), c.SavePath, c.ConfigDir)
 	hub := webserver.NewLiveHub(webserver.LiveOptions{Merge: downloads.MergePatch})
-	pools := jobs.DefaultPools
-	if c.SafeMode {
-		pools = map[jobs.Pool]int{jobs.PoolCore: jobs.DefaultPools[jobs.PoolCore]}
-	}
+	pools := workerPools(c.SafeMode)
 	q := jobs.New(s, jobs.Options{Pools: pools, OnChange: func(j domain.Job) {
 		hub.Publish("job", map[string]any{"id": j.ID, "kind": j.Kind, "state": j.State, "progress": j.Progress})
 	}})
@@ -548,6 +545,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// Subtitles: searches after imports and better copies, two schedules.
 	subs := &subtitles.Service{Store: s, Live: hub, Vault: vault}
 	subs.Register(q)
+	// YouTube: checks and downloads, only with the youtube feature switch on.
+	youtubeJobs(s, q, hub)
 	if !c.SafeMode {
 		s.OnEvent(func(e domain.Event) {
 			if pc.On(parts.Subtitles) {
@@ -570,7 +569,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}
 	defer q.Stop()
-	for p, label := range map[jobs.Pool]string{jobs.PoolCore: "Core workers", jobs.PoolIO: "Search and download workers", jobs.PoolHeavy: "Import and scan workers", jobs.PoolMigrate: "Import from other apps worker", jobs.PoolTranslate: "Subtitle translation worker"} {
+	for p, label := range poolLabels() {
 		if pools[p] == 0 {
 			reg.Set(jobs.StageKey("jobs_"+string(p)), "stage", label, jobs.Off, notStarted)
 			continue
@@ -603,6 +602,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	au := accounts.New(s, accounts.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso, ConfigUnmapped: unmapped != ""})
 	defer au.Close()
+	youtubeForgets(au, s, q, hub)
 	loop(jobs.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
 	var restarting atomic.Bool
 	restart := func() {

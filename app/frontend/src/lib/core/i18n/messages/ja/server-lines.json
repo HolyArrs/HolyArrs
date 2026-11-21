@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "配信でトレンドの番組",
 	"server.suggest.trending-on-streaming": "配信でトレンド",
 	"server.discover.popular": "人気",
-	"server.metadata.creator": "原作者"
+	"server.metadata.creator": "原作者",
+	"server.youtube.follow-must-be-a-follow-id": "follow はフォローの ID にしてください",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit と offset は 0 以上の数にしてください",
+	"server.youtube.say-files-keep-or-files-delete": "files=keep か files=delete を指定してください"
 }

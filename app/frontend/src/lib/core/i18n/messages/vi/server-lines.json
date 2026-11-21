@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Phim bộ đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.suggest.trending-on-streaming": "Đang thịnh hành trên các dịch vụ phát trực tuyến",
 	"server.discover.popular": "Phổ biến",
-	"server.metadata.creator": "Người sáng tạo"
+	"server.metadata.creator": "Người sáng tạo",
+	"server.youtube.follow-must-be-a-follow-id": "follow phải là id của một mục theo dõi",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit và offset phải là số từ 0 trở lên",
+	"server.youtube.say-files-keep-or-files-delete": "hãy chọn files=keep hoặc files=delete"
 }

@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Serial yang sedang tren di streaming",
 	"server.suggest.trending-on-streaming": "Tren di streaming",
 	"server.discover.popular": "Populer",
-	"server.metadata.creator": "Kreator"
+	"server.metadata.creator": "Kreator",
+	"server.youtube.follow-must-be-a-follow-id": "follow harus berupa id ikuti",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit dan offset harus berupa angka 0 atau lebih",
+	"server.youtube.say-files-keep-or-files-delete": "sebutkan files=keep atau files=delete"
 }

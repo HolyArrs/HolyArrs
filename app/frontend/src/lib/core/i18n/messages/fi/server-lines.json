@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Nousussa olevat sarjat suoratoistossa",
 	"server.suggest.trending-on-streaming": "Nousussa suoratoistossa",
 	"server.discover.popular": "Suosittua",
-	"server.metadata.creator": "Tekijä"
+	"server.metadata.creator": "Tekijä",
+	"server.youtube.follow-must-be-a-follow-id": "follow on oltava seurannan tunnus",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit ja offset on oltava lukuja 0 tai enemmän",
+	"server.youtube.say-files-keep-or-files-delete": "anna files=keep tai files=delete"
 }

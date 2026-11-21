@@ -9,6 +9,7 @@ import (
 	"net/http/cookiejar"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -204,5 +205,58 @@ func TestRestartInSafeModeFromTheControls(t *testing.T) {
 	_, pc, _, _ = runApp(t, config{ConfigDir: dir})
 	if len(pc.Off()) != 0 {
 		t.Fatalf("the start after safe mode is not normal: off %v", pc.Off())
+	}
+}
+
+// With the youtube switch off, the YouTube part, its schedule kind and its
+// two permissions are nowhere to be seen; with it on, they show.
+func TestYouTubeFlagOffHidesPartScheduleAndPerms(t *testing.T) {
+	look := func(flags string) (partsList []string, permsList []string, pc *parts.Control, stage bool) {
+		t.Setenv("HOLYARRS_FLAGS", flags)
+		addr, pc, reg, stop := runApp(t, config{ConfigDir: t.TempDir()})
+		defer func() { _ = stop() }()
+		jar, _ := cookiejar.New(nil)
+		own := &signedIn{t: t, base: "http://" + addr, c: &http.Client{Jar: jar}}
+		var x struct {
+			CSRF string `json:"csrf"`
+		}
+		decodeJSON(t, own.call("POST", "/api/v1/auth/setup", `{"name":"luis","password":"a long test passphrase"}`, 201), &x)
+		own.csrf = x.CSRF
+		var pv struct {
+			Parts []struct {
+				Part string `json:"part"`
+				On   bool   `json:"on"`
+			} `json:"parts"`
+		}
+		decodeJSON(t, own.call("GET", "/api/v1/parts", "", 200), &pv)
+		for _, p := range pv.Parts {
+			if p.Part == string(parts.YouTube) && !p.On {
+				t.Errorf("flags %q: the YouTube part is listed off", flags)
+			}
+			partsList = append(partsList, p.Part)
+		}
+		var uv struct {
+			Perms []string `json:"perms"`
+		}
+		decodeJSON(t, own.call("GET", "/api/v1/users", "", 200), &uv)
+		_, stage = reg.Get(jobs.StageKey("jobs_youtube"))
+		return partsList, uv.Perms, pc, stage
+	}
+	ps, perms, pc, stage := look("")
+	if slices.Contains(ps, "youtube") || slices.Contains(perms, "youtube") || slices.Contains(perms, "save_files") || stage {
+		t.Fatalf("flag off: parts %v, perms %v, jobs_youtube stage %v", ps, perms, stage)
+	}
+	if !pc.KindOff("youtube_check") || pc.On(parts.YouTube) {
+		t.Fatal("flag off: the youtube kinds are not held")
+	}
+	if err := pc.Set(context.Background(), parts.YouTube, true, domain.System); err == nil || !strings.Contains(err.Error(), "youtube feature") {
+		t.Fatalf("flag off: switching YouTube on: %v", err)
+	}
+	ps, perms, pc, stage = look("youtube")
+	if !slices.Contains(ps, "youtube") || !slices.Contains(perms, "youtube") || !slices.Contains(perms, "save_files") || !stage {
+		t.Fatalf("flag on: parts %v, perms %v, jobs_youtube stage %v", ps, perms, stage)
+	}
+	if pc.KindOff("youtube_check") || !pc.On(parts.YouTube) {
+		t.Fatal("flag on: the youtube kinds are held")
 	}
 }

@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Σειρές που κάνουν τάση στο streaming",
 	"server.suggest.trending-on-streaming": "Τάσεις στο streaming",
 	"server.discover.popular": "Δημοφιλή",
-	"server.metadata.creator": "Δημιουργός"
+	"server.metadata.creator": "Δημιουργός",
+	"server.youtube.follow-must-be-a-follow-id": "το follow πρέπει να είναι αναγνωριστικό παρακολούθησης",
+	"server.youtube.limit-and-offset-must-be-numbers": "τα limit και offset πρέπει να είναι αριθμοί από 0 και πάνω",
+	"server.youtube.say-files-keep-or-files-delete": "δώσε files=keep ή files=delete"
 }

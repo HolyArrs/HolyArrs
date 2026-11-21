@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Trendande serier på streaming",
 	"server.suggest.trending-on-streaming": "Trendar på streaming",
 	"server.discover.popular": "Populärt",
-	"server.metadata.creator": "Skapare"
+	"server.metadata.creator": "Skapare",
+	"server.youtube.follow-must-be-a-follow-id": "follow måste vara ett följ-id",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit och offset måste vara tal från 0 och uppåt",
+	"server.youtube.say-files-keep-or-files-delete": "ange files=keep eller files=delete"
 }

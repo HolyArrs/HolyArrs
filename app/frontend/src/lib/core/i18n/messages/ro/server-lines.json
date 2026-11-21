@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Seriale în trend pe streaming",
 	"server.suggest.trending-on-streaming": "În trend pe streaming",
 	"server.discover.popular": "Populare",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.youtube.follow-must-be-a-follow-id": "follow trebuie să fie id-ul unei urmăriri",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit și offset trebuie să fie numere de la 0 în sus",
+	"server.youtube.say-files-keep-or-files-delete": "spune files=keep sau files=delete"
 }

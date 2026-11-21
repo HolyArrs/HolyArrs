@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Trendy serier på strømming",
 	"server.suggest.trending-on-streaming": "Trendy på strømming",
 	"server.discover.popular": "Populært",
-	"server.metadata.creator": "Skaper"
+	"server.metadata.creator": "Skaper",
+	"server.youtube.follow-must-be-a-follow-id": "follow må være en følge-ID",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit og offset må være tall på 0 eller mer",
+	"server.youtube.say-files-keep-or-files-delete": "oppgi files=keep eller files=delete"
 }

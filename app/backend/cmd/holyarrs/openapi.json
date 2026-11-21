@@ -27369,6 +27369,38 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/settings/youtube": {
+      "get": {
+        "description": "Owner and admins. The YouTube folder, the free space to keep (min_free_gb, default 10), how the last yt-dlp self-update went, the total of downloaded videos over everyone (count, bytes, people; never titles), where yt-dlp and ffmpeg were found (ytdlp_path, ffmpeg_path; empty when missing) and yt-dlp's version (empty when it is missing). Kid accounts get 404.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "YouTube settings",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Owner only. Send folder and min_free_gb; a field left out keeps its value. The folder must be an absolute path that exists, takes writes, is not a drive root, and neither holds nor sits inside the data folder, a Library folder or a Downloader folder. It cannot change while downloaded videos are in it (409).",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad folder or free space"
+          },
+          "409": {
+            "description": "Downloaded videos are in the folder"
+          }
+        },
+        "summary": "Change the YouTube settings",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/shows": {
       "post": {
         "description": "Adds a show with which seasons to keep up to date, what happens to new seasons, its episode order and details source. Seasons, episodes and one Slot per episode are written at once; each episode is not out yet until it airs, then missing. A folder look follows as a Job. With search_on_add, the whole show is searched after the folder look, the same search POST /titles/{id}/search starts for a show. With more_versions, each extra Version (such as 4K) gets one Slot per episode too. A field the request leaves out (library_folder_id, pick_rules_id, keep_up_to_date, search_on_add) takes the saved Movies and TV default for shows, only when that default has been saved.",
@@ -32969,6 +33001,429 @@
         "summary": "Awards (Wikidata) and the Wikipedia bio for a movie, show or person",
         "x-holyarrs-part": "movies",
         "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/youtube/adopt": {
+      "post": {
+        "description": "Send {\"user_id\", \"path\", \"playlists\", \"dry_run\"}. Copies the videos under path (an absolute folder apart from the YouTube folder) into that person's library; the source is never changed. The video id comes from a sibling .nfo, then an .info.json, then [id] in the file name. playlists maps a folder name to a playlist link: that folder's videos join a new follow that takes no older videos. dry_run answers {\"items\": [{\"from\", \"to\", \"video_id\", \"folder\", \"reason\", \"gone\"}]} without looking anything up or writing anything; a non-empty reason means the file is skipped. Otherwise it queues a youtube_adopt job, whose result counts copied, skipped, gone and failed videos.",
+        "responses": {
+          "200": {
+            "description": "dry_run: what would be adopted"
+          },
+          "202": {
+            "description": "Adopting; job_id is the job"
+          },
+          "400": {
+            "description": "A bad folder, a person who cannot use YouTube, a bad playlist link or no YouTube folder set"
+          },
+          "503": {
+            "description": "yt-dlp or ffmpeg is missing"
+          }
+        },
+        "summary": "Adopt videos from a folder",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/youtube/follows": {
+      "get": {
+        "description": "Your followed playlists and channels. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Your YouTube follows",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Send {\"url\", \"backfill\", \"keep_last\", \"include_shorts\", \"quality_max_height\"}. backfill null takes the newest 20 of a channel or every video of a playlist; it never exceeds keep_last. A channel is known by its channel id whatever link named it. Queues the first check. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "responses": {
+          "201": {
+            "description": "Following"
+          },
+          "400": {
+            "description": "Not a playlist or channel link, or a bad number"
+          },
+          "409": {
+            "description": "You already follow this; existing_id points at it"
+          },
+          "502": {
+            "description": "yt-dlp could not look it up"
+          },
+          "503": {
+            "description": "yt-dlp or ffmpeg is missing"
+          }
+        },
+        "summary": "Follow a playlist or channel",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/youtube/follows/{id}": {
+      "delete": {
+        "description": "files=keep leaves the videos as videos of no follow; files=delete deletes their files, thumbnails and rows. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "files",
+            "required": true,
+            "schema": {
+              "enum": [
+                "keep",
+                "delete"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Unfollowed"
+          },
+          "400": {
+            "description": "files is neither keep nor delete"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Unfollow",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "write"
+      },
+      "put": {
+        "description": "Send any of quality_max_height, include_shorts, enabled, keep_last (null keeps every video). Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad value"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Change a follow",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/youtube/probe": {
+      "post": {
+        "description": "Send {\"url\"}. Says what the link is (video, playlist or channel) with its title, channel, length, count (0 when unknown, as for channels) and first entries, for the confirm card. Nothing is saved. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Not a YouTube link"
+          },
+          "502": {
+            "description": "yt-dlp could not look it up"
+          },
+          "503": {
+            "description": "yt-dlp or ffmpeg is missing"
+          }
+        },
+        "summary": "Look up a YouTube link",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/youtube/status": {
+      "get": {
+        "description": "Needs the youtube permission; Kid accounts get 404. Which programs are missing (yt-dlp, ffmpeg), whether the YouTube folder is set, its free bytes (-1 when unknown) and whether downloads wait because free space is under the floor.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "YouTube status",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/youtube/videos": {
+      "get": {
+        "description": "Your videos, newest added first, without removed ones. Filters: follow (follow id), channel (channel id), unwatched=1, limit, offset. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "follow",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "channel",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unwatched",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad filter"
+          }
+        },
+        "summary": "Your YouTube videos",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Send {\"url\", \"quality_max_height\"} (0 means 1080). Adds the video for you and queues its download. Adding one you already have returns it; a removed or failed one is queued again. Live streams and premieres that have not aired are refused. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "responses": {
+          "201": {
+            "description": "Added"
+          },
+          "400": {
+            "description": "Not a video link, or not aired yet"
+          },
+          "502": {
+            "description": "yt-dlp could not look it up"
+          },
+          "503": {
+            "description": "yt-dlp or ffmpeg is missing"
+          }
+        },
+        "summary": "Add a YouTube video",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/youtube/videos/{id}": {
+      "delete": {
+        "description": "Deletes the file and its thumbnail; the video stays listed as removed internally so a follow never downloads it again. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Remove a YouTube video",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "write"
+      },
+      "get": {
+        "description": "One of your videos. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "One of your YouTube videos",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/youtube/videos/{id}/file": {
+      "get": {
+        "description": "The downloaded MP4, with range requests for seeking. download=1 asks the browser to save it under its file name. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one. A video not downloaded, or whose file is gone, answers 404.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "enum": [
+                "1"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file"
+          },
+          "206": {
+            "description": "Part of the file"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Play or save a YouTube video",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/youtube/videos/{id}/position": {
+      "put": {
+        "description": "Body {\"seconds\": int, \"duration\": int}. At 90 % of the duration or more the video counts as watched and stays watched. Answers {\"watched\": bool}. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saved"
+          },
+          "400": {
+            "description": "Body is not seconds and duration"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "Save where you stopped",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/youtube/videos/{id}/retry": {
+      "post": {
+        "description": "Puts a failed video back in the queue and queues its download. Answers the video. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Queued again"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "The video has not failed"
+          }
+        },
+        "summary": "Try a failed YouTube video again",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/youtube/videos/{id}/thumb": {
+      "get": {
+        "description": "The JPEG kept next to the downloaded video. Needs the youtube permission; Kid accounts get 404. Another person's row answers 404 like a missing one. A video not downloaded, or without a thumbnail, answers 404.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "A YouTube video thumbnail",
+        "x-holyarrs-part": "youtube",
+        "x-holyarrs-permission": "youtube",
         "x-holyarrs-scope": "read"
       }
     }

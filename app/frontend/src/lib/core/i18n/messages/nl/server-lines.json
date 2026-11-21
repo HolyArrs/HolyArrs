@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Trending series op streaming",
 	"server.suggest.trending-on-streaming": "Trending op streaming",
 	"server.discover.popular": "Populair",
-	"server.metadata.creator": "Maker"
+	"server.metadata.creator": "Maker",
+	"server.youtube.follow-must-be-a-follow-id": "follow moet het id van een volg-item zijn",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit en offset moeten getallen van 0 of meer zijn",
+	"server.youtube.say-files-keep-or-files-delete": "geef files=keep of files=delete op"
 }

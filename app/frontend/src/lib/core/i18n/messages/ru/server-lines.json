@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Сериалы в тренде на стримингах",
 	"server.suggest.trending-on-streaming": "В тренде на стримингах",
 	"server.discover.popular": "Популярные",
-	"server.metadata.creator": "Создатель"
+	"server.metadata.creator": "Создатель",
+	"server.youtube.follow-must-be-a-follow-id": "follow должен быть ID подписки",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit и offset должны быть числами от 0",
+	"server.youtube.say-files-keep-or-files-delete": "укажите files=keep или files=delete"
 }

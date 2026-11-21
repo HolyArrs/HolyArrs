@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Trending shows on streaming",
 	"server.suggest.trending-shows-this-week": "Trending shows this week",
 	"server.suggest.trending-this-week-everywhere": "Trending this week everywhere",
-	"server.suggest.what-people-watch-this-week": "What people watch this week"
+	"server.suggest.what-people-watch-this-week": "What people watch this week",
+	"server.youtube.follow-must-be-a-follow-id": "follow must be a follow id",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit and offset must be numbers of 0 or more",
+	"server.youtube.say-files-keep-or-files-delete": "say files=keep or files=delete"
 }

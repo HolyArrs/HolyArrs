@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Trending na show sa streaming",
 	"server.suggest.trending-on-streaming": "Trending sa streaming",
 	"server.discover.popular": "Sikat",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.youtube.follow-must-be-a-follow-id": "ang follow ay dapat isang follow id",
+	"server.youtube.limit-and-offset-must-be-numbers": "ang limit at offset ay dapat mga numerong 0 o higit pa",
+	"server.youtube.say-files-keep-or-files-delete": "sabihin ang files=keep o files=delete"
 }

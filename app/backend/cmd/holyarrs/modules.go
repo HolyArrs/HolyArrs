@@ -25,6 +25,7 @@ func (a *handlers) ModuleRoutes(rt *webserver.Router) {
 	if startup.FeatureOn(startup.AIApps) {
 		a.ai.Routes(rt)
 	}
+	a.youtubeRoutes(rt)
 }
 
 // sourceHandlers is the Source, search and bridge routes; one value serves

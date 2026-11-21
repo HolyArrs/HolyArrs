@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Felkapott sorozatok a streamingen",
 	"server.suggest.trending-on-streaming": "Felkapott a streamingen",
 	"server.discover.popular": "Népszerű",
-	"server.metadata.creator": "Alkotó"
+	"server.metadata.creator": "Alkotó",
+	"server.youtube.follow-must-be-a-follow-id": "a follow egy követés azonosítója kell legyen",
+	"server.youtube.limit-and-offset-must-be-numbers": "a limit és az offset 0 vagy nagyobb szám kell legyen",
+	"server.youtube.say-files-keep-or-files-delete": "adja meg: files=keep vagy files=delete"
 }

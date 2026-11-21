@@ -78,6 +78,7 @@ var overrides = map[string]Group{
 	"POST /api/v1/downloaders":           Settings, // adding a download app is setup
 	"PUT /api/v1/downloaders/{id}":       Settings,
 	"POST /api/v1/downloaders/{id}/test": Settings,
+	"POST /api/v1/youtube/adopt":         Admin, // owner only: copies a folder into a person's library
 }
 
 // wildOverrides are the override patterns with a {wildcard}, sorted so the

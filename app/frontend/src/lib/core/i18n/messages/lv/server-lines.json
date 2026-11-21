@@ -1579,5 +1579,8 @@
 	"server.suggest.trending-shows-on-streaming": "Tendencēs seriāli straumēšanā",
 	"server.suggest.trending-on-streaming": "Tendences straumēšanā",
 	"server.discover.popular": "Populārs",
-	"server.metadata.creator": "Veidotājs"
+	"server.metadata.creator": "Veidotājs",
+	"server.youtube.follow-must-be-a-follow-id": "follow jābūt sekošanas ID",
+	"server.youtube.limit-and-offset-must-be-numbers": "limit un offset jābūt skaitļiem no 0",
+	"server.youtube.say-files-keep-or-files-delete": "norādiet files=keep vai files=delete"
 }
