@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} நீக்கப்பட்டார்",
 	"settings.users.couldntDelete": "நீக்க முடியவில்லை",
 	"settings.users.confirmDeleteKeys": "அவர் உருவாக்கிய Seerr விசைகள் புதியது உருவாக்கப்படும் வரை அனைவருக்கும் வேலை செய்யாது.",
+	"settings.users.deleteYouTube": "அவர்களின் YouTube வீடியோக்களும் பின்தொடரும் சேனல்கள், பிளேலிஸ்ட்களும் நீக்கப்படும்.",
 	"settings.users.qualities": "தரங்கள்",
-	"settings.users.qualitiesHint": "இயக்கியவற்றை மட்டுமே தேர்வு செய்யலாம். அனைத்தும் இயக்கினால், புதியவையும் வழங்கப்படும்."
+	"settings.users.qualitiesHint": "இயக்கியவற்றை மட்டுமே தேர்வு செய்யலாம். அனைத்தும் இயக்கினால், புதியவையும் வழங்கப்படும்.",
+	"settings.users.permYouTube": "YouTube நூலகத்தைப் பயன்படுத்துதல்",
+	"settings.users.permSaveFiles": "தங்கள் சாதனத்தில் கோப்புகளைச் சேமித்தல்"
 }

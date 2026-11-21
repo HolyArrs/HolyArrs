@@ -171,6 +171,13 @@ func (h *LiveHub) PublishUser(topic string, data any, userID int64) uint64 {
 	return h.publishEvent(topic, "", data, func(v LiveViewer) bool { return !v.Approve && userID > 0 && v.UserID == userID }, true)
 }
 
+// PublishOwn sends data on topic to one person's streams only, managers
+// included only when the row is their own: the event is about something
+// private to that person.
+func (h *LiveHub) PublishOwn(topic string, data any, userID int64) uint64 {
+	return h.publishEvent(topic, "", data, LiveUser(userID), true)
+}
+
 // Viewers lists the people holding a stream who are not managers.
 func (h *LiveHub) Viewers() []int64 {
 	h.mu.Lock()

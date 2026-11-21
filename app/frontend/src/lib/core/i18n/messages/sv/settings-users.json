@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} borttagen",
 	"settings.users.couldntDelete": "Kunde inte ta bort",
 	"settings.users.confirmDeleteKeys": "Seerr-nycklar som personen skapat slutar fungera för alla tills en ny skapas.",
+	"settings.users.deleteYouTube": "Personens YouTube-videor och följda kanaler och spellistor raderas också.",
 	"settings.users.qualities": "Kvaliteter",
-	"settings.users.qualitiesHint": "De kan bara välja de som är på. Är alla på erbjuds nya också."
+	"settings.users.qualitiesHint": "De kan bara välja de som är på. Är alla på erbjuds nya också.",
+	"settings.users.permYouTube": "Använda YouTube-biblioteket",
+	"settings.users.permSaveFiles": "Spara filer på sin enhet"
 }

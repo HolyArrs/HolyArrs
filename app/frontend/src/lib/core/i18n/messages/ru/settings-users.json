@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} удалён",
 	"settings.users.couldntDelete": "Не удалось удалить",
 	"settings.users.confirmDeleteKeys": "Созданные им ключи Seerr перестанут работать для всех, пока не будет создан новый.",
+	"settings.users.deleteYouTube": "Его видео с YouTube и отслеживаемые каналы и плейлисты тоже удаляются.",
 	"settings.users.qualities": "Качество",
-	"settings.users.qualitiesHint": "Можно выбрать только включённые. Если включены все, новые тоже предлагаются."
+	"settings.users.qualitiesHint": "Можно выбрать только включённые. Если включены все, новые тоже предлагаются.",
+	"settings.users.permYouTube": "Пользоваться библиотекой YouTube",
+	"settings.users.permSaveFiles": "Сохранять файлы на своё устройство"
 }

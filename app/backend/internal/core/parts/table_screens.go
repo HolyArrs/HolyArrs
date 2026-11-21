@@ -45,6 +45,8 @@ var screenOwners = map[string]Owner{
 	"/music/[kind=musicpage]/[slug]": music,
 	"/music/album/[mbid]":            music,
 	"/calendar":                      Media,
+	"/youtube":                       youtube,
+	"/youtube/[id]":                  youtube,
 	"/requests":                      wishlist,
 	"/requests/reports":              Core,
 	"/settings":                      Core,
@@ -81,6 +83,7 @@ var screenOwners = map[string]Owner{
 	"/settings/music":                music,
 	"/settings/subtitles":            subtitles,
 	"/settings/requests":             wishlist,
+	"/settings/youtube":              youtube,
 }
 
 // Loops gives every supervised background loop and every other stage the
@@ -101,6 +104,7 @@ var loopOwners = map[string]Owner{
 	"jobs_heavy":       Core,
 	"jobs_migrate":     Core,
 	"jobs_translate":   Core,
+	"jobs_youtube":     Core,
 	"stranded_imports": Media,
 	"pack_watched":     Media,
 	"watch_history":    Media,
@@ -157,6 +161,11 @@ var jobOwners = map[string]Owner{
 
 	// Requests.
 	"sync_plex_watchlists": wishlist,
+
+	// YouTube.
+	"youtube_check":    youtube,
+	"youtube_download": youtube,
+	"youtube_adopt":    youtube,
 }
 
 // ScreenOwner finds the owner of a web path such as /library/12: the
@@ -224,9 +233,10 @@ func register() {
 	for _, p := range []struct {
 		part  Part
 		label string
-	}{{Movies, "Movies"}, {Shows, "TV shows"}, {Music, "Music"}, {Subtitles, "Subtitles"}, {Wishlist, "Requests"}, {Sources, "Sources"}} {
+	}{{Movies, "Movies"}, {Shows, "TV shows"}, {Music, "Music"}, {Subtitles, "Subtitles"}, {Wishlist, "Requests"}, {Sources, "Sources"}, {YouTube, "YouTube"}} {
 		startup.RegisterPart(p.part, p.label)
 	}
+	startup.HoldPart(YouTube, startup.YouTube)
 	startup.RegisterOwners(startup.RouteOwners, routeOwners)
 	startup.RegisterOwners(startup.ScreenOwners, screenOwners)
 	startup.RegisterOwners(startup.LoopOwners, loopOwners)

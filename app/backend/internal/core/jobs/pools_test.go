@@ -3,6 +3,7 @@ package jobs
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 )
@@ -75,5 +76,44 @@ func TestPoolOf(t *testing.T) {
 		if got := PoolOf(kind); got != want {
 			t.Errorf("PoolOf(%s) = %s, want %s", kind, got, want)
 		}
+	}
+}
+
+// A pool outside AllPools (YouTube, started only with its switch on) gets
+// its workers and runs only its own kinds; the I/O pool leaves them alone.
+func TestOnDemandPoolRunsItsKinds(t *testing.T) {
+	for kind, want := range map[string]Pool{"youtube_download": PoolYouTube, "youtube_adopt": PoolYouTube, "youtube_check": PoolIO} {
+		if got := PoolOf(kind); got != want {
+			t.Errorf("PoolOf(%s) = %s, want %s", kind, got, want)
+		}
+	}
+	if _, ok := DefaultPools[PoolYouTube]; ok || slices.Contains(AllPools, PoolYouTube) {
+		t.Fatal("the YouTube pool starts with every app")
+	}
+	for _, pools := range []map[Pool]int{{PoolIO: 1}, {PoolIO: 1, PoolYouTube: 1}} {
+		s := newStore(t, t.TempDir())
+		o := fastOpts()
+		o.Pools = pools
+		q := New(s, o)
+		q.Handle("youtube_download", func(ctx context.Context, r *Run) error { return nil })
+		ctx := context.Background()
+		if err := q.Start(ctx); err != nil {
+			t.Fatal(err)
+		}
+		id, _, err := q.Enqueue(ctx, "youtube_download", nil, nil, "", me)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if pools[PoolYouTube] > 0 {
+			waitState(t, s, id, "done")
+		} else {
+			time.Sleep(200 * time.Millisecond)
+			var state string
+			if err := s.Read().QueryRow("SELECT state FROM jobs WHERE id = ?", id).Scan(&state); err != nil || state != "queued" {
+				t.Fatalf("with no YouTube workers the job is %q (%v), want queued", state, err)
+			}
+		}
+		q.Stop()
+		s.Close()
 	}
 }

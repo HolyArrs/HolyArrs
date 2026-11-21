@@ -115,6 +115,9 @@
 	"settings.users.deleted": "Đã xóa {name}",
 	"settings.users.couldntDelete": "Không xóa được",
 	"settings.users.confirmDeleteKeys": "Các khóa Seerr người này tạo sẽ ngừng hoạt động với mọi người cho đến khi tạo khóa mới.",
+	"settings.users.deleteYouTube": "Video YouTube của họ cùng các kênh và danh sách phát họ theo dõi cũng bị xoá.",
 	"settings.users.qualities": "Chất lượng",
-	"settings.users.qualitiesHint": "Họ chỉ chọn được mục đang bật. Khi bật tất cả, mục mới cũng được đưa ra."
+	"settings.users.qualitiesHint": "Họ chỉ chọn được mục đang bật. Khi bật tất cả, mục mới cũng được đưa ra.",
+	"settings.users.permYouTube": "Dùng thư viện YouTube",
+	"settings.users.permSaveFiles": "Lưu tệp về thiết bị của mình"
 }

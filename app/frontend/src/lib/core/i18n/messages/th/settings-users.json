@@ -115,6 +115,9 @@
 	"settings.users.deleted": "ลบ {name} แล้ว",
 	"settings.users.couldntDelete": "ลบไม่ได้",
 	"settings.users.confirmDeleteKeys": "คีย์ Seerr ที่เขาสร้างจะใช้ไม่ได้สำหรับทุกคนจนกว่าจะสร้างคีย์ใหม่",
+	"settings.users.deleteYouTube": "วิดีโอ YouTube ของผู้ใช้นี้ รวมถึงช่องและเพลย์ลิสต์ที่ติดตามจะถูกลบด้วย",
 	"settings.users.qualities": "คุณภาพ",
-	"settings.users.qualitiesHint": "เลือกได้เฉพาะที่เปิดอยู่ ถ้าเปิดทั้งหมด รายการใหม่จะแสดงด้วย"
+	"settings.users.qualitiesHint": "เลือกได้เฉพาะที่เปิดอยู่ ถ้าเปิดทั้งหมด รายการใหม่จะแสดงด้วย",
+	"settings.users.permYouTube": "ใช้คลัง YouTube",
+	"settings.users.permSaveFiles": "บันทึกไฟล์ลงอุปกรณ์ของตนเอง"
 }

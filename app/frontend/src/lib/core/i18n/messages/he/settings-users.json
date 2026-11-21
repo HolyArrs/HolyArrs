@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} נמחק",
 	"settings.users.couldntDelete": "המחיקה נכשלה",
 	"settings.users.confirmDeleteKeys": "מפתחות Seerr שיצר יפסיקו לעבוד לכולם עד שייווצר מפתח חדש.",
+	"settings.users.deleteYouTube": "גם סרטוני ה-YouTube שלו והערוצים והפלייליסטים שהוא עוקב אחריהם נמחקים.",
 	"settings.users.qualities": "איכויות",
-	"settings.users.qualitiesHint": "אפשר לבחור רק את המופעלות. כשכולן מופעלות, גם חדשות מוצעות."
+	"settings.users.qualitiesHint": "אפשר לבחור רק את המופעלות. כשכולן מופעלות, גם חדשות מוצעות.",
+	"settings.users.permYouTube": "שימוש בספריית YouTube",
+	"settings.users.permSaveFiles": "שמירת קבצים במכשיר שלהם"
 }

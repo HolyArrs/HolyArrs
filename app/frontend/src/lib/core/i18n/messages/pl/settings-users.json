@@ -115,6 +115,9 @@
 	"settings.users.deleted": "Usunięto {name}",
 	"settings.users.couldntDelete": "Nie udało się usunąć",
 	"settings.users.confirmDeleteKeys": "Klucze Seerr, które utworzył, przestają działać dla wszystkich, dopóki nie powstanie nowy.",
+	"settings.users.deleteYouTube": "Jego filmy z YouTube i obserwowane kanały oraz playlisty też zostaną usunięte.",
 	"settings.users.qualities": "Jakości",
-	"settings.users.qualitiesHint": "Mogą wybrać tylko włączone. Gdy włączone są wszystkie, nowe też są oferowane."
+	"settings.users.qualitiesHint": "Mogą wybrać tylko włączone. Gdy włączone są wszystkie, nowe też są oferowane.",
+	"settings.users.permYouTube": "Korzystanie z biblioteki YouTube",
+	"settings.users.permSaveFiles": "Zapisywanie plików na swoim urządzeniu"
 }

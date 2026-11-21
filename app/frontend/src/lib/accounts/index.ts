@@ -41,6 +41,7 @@ export { pixelTrail } from './pixel-trail.ts';
 export { plexSignIn } from './signin-plex.ts';
 export { choosePreset, presetOf } from './presets.ts';
 export { presetPerms } from './presets.ts';
+export { permWords } from './perm-words.ts';
 export { presetOptions, presetsFor } from './presets.ts';
 export { profile } from './profile.svelte.ts';
 export { providerTiles } from './signin-art.ts';

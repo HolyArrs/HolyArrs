@@ -15,6 +15,10 @@ const (
 	// PoolTranslate runs subtitle translations, which can take minutes, so
 	// searches, grabs and imports never wait behind one.
 	PoolTranslate Pool = "translate"
+	// PoolYouTube runs YouTube downloads and adopts, so long downloads never
+	// hold up searches and grabs. It starts only with the youtube feature
+	// switch on, so it is in neither DefaultPools nor AllPools.
+	PoolYouTube Pool = "youtube"
 )
 
 // DefaultPools are the worker counts the app starts with.
@@ -65,6 +69,10 @@ var kindPools = map[string]Pool{
 	"rescan_library":      PoolHeavy,
 	"subtitle_look":       PoolHeavy,
 	"recheck_pick_rules":  PoolHeavy,
+	// YouTube
+	"youtube_download": PoolYouTube,
+	"youtube_adopt":    PoolYouTube,
+	"youtube_check":    PoolIO,
 }
 
 // Pool is a group of workers. Core work (health checks) never waits behind

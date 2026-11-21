@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} silindi",
 	"settings.users.couldntDelete": "Silinemedi",
 	"settings.users.confirmDeleteKeys": "Oluşturduğu Seerr anahtarları, yenisi oluşturulana kadar herkes için çalışmaz.",
+	"settings.users.deleteYouTube": "Kişinin YouTube videoları ile takip ettiği kanallar ve oynatma listeleri de silinir.",
 	"settings.users.qualities": "Kaliteler",
-	"settings.users.qualitiesHint": "Yalnızca açık olanları seçebilirler. Hepsi açıksa yeniler de sunulur."
+	"settings.users.qualitiesHint": "Yalnızca açık olanları seçebilirler. Hepsi açıksa yeniler de sunulur.",
+	"settings.users.permYouTube": "YouTube kitaplığını kullanma",
+	"settings.users.permSaveFiles": "Dosyaları kendi cihazına kaydetme"
 }

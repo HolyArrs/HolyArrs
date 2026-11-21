@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -203,7 +205,14 @@ func (q *Queue) Start(ctx context.Context) error {
 		}
 		return nil
 	}
-	for _, p := range AllPools {
+	// AllPools first, in their order, then any pool started on demand.
+	order := slices.Clone(AllPools)
+	for _, p := range slices.Sorted(maps.Keys(q.opt.Pools)) {
+		if !slices.Contains(order, p) {
+			order = append(order, p)
+		}
+	}
+	for _, p := range order {
 		for range q.opt.Pools[p] {
 			q.wg.Add(1)
 			go q.work(ctx, p)

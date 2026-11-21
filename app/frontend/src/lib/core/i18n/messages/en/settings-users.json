@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} deleted",
 	"settings.users.couldntDelete": "Couldn't delete",
 	"settings.users.confirmDeleteKeys": "Any Seerr keys they made stop working for everyone until a new one is made.",
+	"settings.users.deleteYouTube": "Their YouTube videos and follows are deleted too.",
 	"settings.users.qualities": "Qualities",
-	"settings.users.qualitiesHint": "They can pick only the ones on. With all on, new ones are offered too."
+	"settings.users.qualitiesHint": "They can pick only the ones on. With all on, new ones are offered too.",
+	"settings.users.permYouTube": "Use the YouTube library",
+	"settings.users.permSaveFiles": "Save files to their device"
 }

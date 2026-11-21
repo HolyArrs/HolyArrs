@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} gelöscht",
 	"settings.users.couldntDelete": "Löschen fehlgeschlagen",
 	"settings.users.confirmDeleteKeys": "Seerr-Schlüssel, die die Person erstellt hat, funktionieren für niemanden mehr, bis ein neuer erstellt wird.",
+	"settings.users.deleteYouTube": "Die YouTube-Videos der Person und was sie dort verfolgt, werden ebenfalls gelöscht.",
 	"settings.users.qualities": "Qualitäten",
-	"settings.users.qualitiesHint": "Sie können nur die eingeschalteten wählen. Sind alle an, werden neue auch angeboten."
+	"settings.users.qualitiesHint": "Sie können nur die eingeschalteten wählen. Sind alle an, werden neue auch angeboten.",
+	"settings.users.permYouTube": "YouTube-Bibliothek nutzen",
+	"settings.users.permSaveFiles": "Dateien auf dem eigenen Gerät speichern"
 }

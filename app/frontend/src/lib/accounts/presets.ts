@@ -14,6 +14,9 @@ export interface Preset {
 	soon?: string;
 }
 
+/** Permissions ticked on top of a role: no preset sets or clears them, and they never make a list read as Custom. */
+export const ADDON_PERMS: readonly Perm[] = ['youtube', 'save_files'];
+
 export const presets: Preset[] = [
 	{ id: 'admin', get label() { return t('accounts.preset.admin'); }, perms: ['ask', 'auto_approve', 'approve', 'manage_library', 'settings'] },
 	{ id: 'manager', get label() { return t('accounts.preset.manager'); }, perms: ['ask', 'auto_approve', 'approve', 'manage_library'] },
@@ -35,7 +38,7 @@ export function presetPerms(id: PresetId, grantable: readonly Perm[]): Perm[] | 
 
 /** The preset a permission list and age-rating limit match, or 'custom'. */
 export function presetOf(perms: readonly Perm[], grantable: readonly Perm[], maxRating = ''): PresetId | 'custom' {
-	const have = new Set(perms);
+	const have = new Set(perms.filter((x) => !ADDON_PERMS.includes(x)));
 	for (const p of presetsFor(grantable)) {
 		if (p.soon) continue;
 		if (!!p.maxRating !== !!maxRating) continue;
@@ -57,7 +60,7 @@ export interface Mix {
 }
 
 /**
- * What picking a segment does. A preset replaces the switches, but the person's own mix is kept so
+ * What picking a segment does. A preset replaces the role switches and keeps the add-ons ticked, but the person's own mix is kept so
  * picking Custom again brings it back; Custom with nothing kept changes nothing (mix null).
  */
 export function choosePreset(id: PresetId | 'custom', grantable: readonly Perm[], now: Mix, saved: Mix | null): { mix: Mix | null; saved: Mix | null } {
@@ -65,5 +68,6 @@ export function choosePreset(id: PresetId | 'custom', grantable: readonly Perm[]
 	const next = presetPerms(id, grantable);
 	if (!next) return { mix: null, saved };
 	const keep = presetOf(now.perms, grantable, now.max) === 'custom' ? { perms: [...now.perms], max: now.max } : saved;
-	return { mix: { perms: next, max: presets.find((p) => p.id === id)?.maxRating ?? '' }, saved: keep };
+	const addons = now.perms.filter((x) => ADDON_PERMS.includes(x));
+	return { mix: { perms: [...next, ...addons], max: presets.find((p) => p.id === id)?.maxRating ?? '' }, saved: keep };
 }

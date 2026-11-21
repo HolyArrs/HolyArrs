@@ -128,6 +128,9 @@ type Auth struct {
 	known           map[string]map[string]time.Time // name -> address -> last full sign-in (signInWait)
 	ownerSetupFails map[string]*failure             // failed first-run owner attempts (hosts.go)
 	refusedHosts    map[string]bool                 // refused names already logged (hosts.go)
+	// deletedHooks run after a person is deleted (delete_person.go).
+	hooksMu      sync.Mutex
+	deletedHooks []func(ctx context.Context, userID int64)
 	// codes are AI app sign-ins waiting for their key (ai_signin.go).
 	codes aiCodes
 	// cimd reads AI apps' client ID metadata documents (ai_client_docs.go).

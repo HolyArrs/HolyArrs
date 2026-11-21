@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} törölve",
 	"settings.users.couldntDelete": "Nem sikerült törölni",
 	"settings.users.confirmDeleteKeys": "Az általa készített Seerr-kulcsok mindenkinek leállnak, amíg nem készül új.",
+	"settings.users.deleteYouTube": "A YouTube-videói és a követett csatornái és lejátszási listái is törlődnek.",
 	"settings.users.qualities": "Minőségek",
-	"settings.users.qualitiesHint": "Csak a bekapcsoltak közül választhatnak. Ha mind be van kapcsolva, az újakat is felkínáljuk."
+	"settings.users.qualitiesHint": "Csak a bekapcsoltak közül választhatnak. Ha mind be van kapcsolva, az újakat is felkínáljuk.",
+	"settings.users.permYouTube": "A YouTube-könyvtár használata",
+	"settings.users.permSaveFiles": "Fájlok mentése a saját eszközére"
 }

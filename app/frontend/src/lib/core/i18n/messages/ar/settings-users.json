@@ -115,6 +115,9 @@
 	"settings.users.deleted": "تم حذف {name}",
 	"settings.users.couldntDelete": "تعذّر الحذف",
 	"settings.users.confirmDeleteKeys": "أي مفاتيح Seerr أنشأها تتوقف عن العمل للجميع حتى يُنشأ مفتاح جديد.",
+	"settings.users.deleteYouTube": "تُحذف أيضًا فيديوهات YouTube الخاصة به والقنوات وقوائم التشغيل التي يتابعها.",
 	"settings.users.qualities": "الجودات",
-	"settings.users.qualitiesHint": "يمكنهم اختيار المفعّل فقط. عند تفعيل الكل، تُعرض الجديدة أيضًا."
+	"settings.users.qualitiesHint": "يمكنهم اختيار المفعّل فقط. عند تفعيل الكل، تُعرض الجديدة أيضًا.",
+	"settings.users.permYouTube": "استخدام مكتبة YouTube",
+	"settings.users.permSaveFiles": "حفظ الملفات على أجهزتهم"
 }

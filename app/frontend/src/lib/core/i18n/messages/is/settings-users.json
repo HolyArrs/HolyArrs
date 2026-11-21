@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} eytt",
 	"settings.users.couldntDelete": "Tókst ekki að eyða",
 	"settings.users.confirmDeleteKeys": "Seerr-lyklar sem viðkomandi bjó til hætta að virka fyrir alla þar til nýr er búinn til.",
+	"settings.users.deleteYouTube": "YouTube-myndbönd viðkomandi og rásir og spilunarlistar sem hann fylgir eyðast líka.",
 	"settings.users.qualities": "Gæði",
-	"settings.users.qualitiesHint": "Þau geta aðeins valið það sem er kveikt á. Ef kveikt er á öllu bjóðast ný líka."
+	"settings.users.qualitiesHint": "Þau geta aðeins valið það sem er kveikt á. Ef kveikt er á öllu bjóðast ný líka.",
+	"settings.users.permYouTube": "Nota YouTube-safnið",
+	"settings.users.permSaveFiles": "Vista skrár á eigið tæki"
 }

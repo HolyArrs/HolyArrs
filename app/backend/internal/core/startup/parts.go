@@ -37,6 +37,7 @@ var (
 	partsMu sync.RWMutex
 	partDef []partEntry
 	owners  = map[OwnerKind]map[string]Owner{}
+	held    = map[Part]string{} // part -> the feature switch it waits for
 )
 
 type partEntry struct {
@@ -91,6 +92,27 @@ func (p Part) Label() string {
 		}
 	}
 	return string(p)
+}
+
+// HoldPart keeps part p off, and off every screen, while the feature switch
+// flag is off.
+func HoldPart(p Part, flag string) {
+	partsMu.Lock()
+	defer partsMu.Unlock()
+	held[p] = flag
+}
+
+// HeldFlag is the feature switch part p waits for, "" when it waits for none.
+func HeldFlag(p Part) string {
+	partsMu.RLock()
+	defer partsMu.RUnlock()
+	return held[p]
+}
+
+// PartHeldOff reports whether part p waits for a feature switch that is off.
+func PartHeldOff(p Part) bool {
+	flag := HeldFlag(p)
+	return flag != "" && !FeatureOn(flag)
 }
 
 // RegisterOwners adds owners for routes, screens, loops or job kinds. A key

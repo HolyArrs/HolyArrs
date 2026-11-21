@@ -47,3 +47,27 @@ func TestOwnersAreRegisteredPerKind(t *testing.T) {
 		t.Fatal("OwnersOf must return a copy")
 	}
 }
+
+func TestHeldPartIsOffWhileItsFlagIsOff(t *testing.T) {
+	partsMu.Lock()
+	savedHeld := held
+	held = map[Part]string{}
+	partsMu.Unlock()
+	defer func() { partsMu.Lock(); held = savedHeld; partsMu.Unlock() }()
+
+	t.Setenv("HOLYARRS_FLAGS", "")
+	HoldPart("p_test", "f_test")
+	if !PartHeldOff("p_test") {
+		t.Fatal("a held part is on while its flag is off")
+	}
+	if HeldFlag("p_test") != "f_test" || HeldFlag("movies") != "" {
+		t.Fatalf("held flags %q %q", HeldFlag("p_test"), HeldFlag("movies"))
+	}
+	t.Setenv("HOLYARRS_FLAGS", "f_test")
+	if PartHeldOff("p_test") {
+		t.Fatal("a held part stays off with its flag on")
+	}
+	if PartHeldOff("movies") {
+		t.Fatal("a part nobody holds is held off")
+	}
+}

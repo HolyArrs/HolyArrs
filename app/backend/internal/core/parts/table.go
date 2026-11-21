@@ -10,6 +10,8 @@
 package parts
 
 import (
+	"slices"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
@@ -27,14 +29,18 @@ const (
 	Subtitles Part = "subtitles"
 	Wishlist  Part = "wishlist"
 	Sources   Part = "sources"
+	YouTube   Part = "youtube"
 
 	Core    = startup.Core
 	Media   = startup.Media
 	ByTitle = startup.ByTitle
 )
 
-// All lists the parts in the order screens show them.
-func All() []Part { return startup.Parts() }
+// All lists the parts in the order screens show them. A part held back by a
+// feature switch that is off is left out: it is not there at all.
+func All() []Part {
+	return slices.DeleteFunc(startup.Parts(), startup.PartHeldOff)
+}
 
 // Routes, Screens, Loops and JobKinds are copies of the registry's owners.
 func Routes() map[string]Owner   { return startup.OwnersOf(startup.RouteOwners) }
@@ -54,6 +60,10 @@ func JobOwner(kind string) Owner { o, _ := startup.OwnerOf(startup.JobOwners, ki
 
 // Valid reports whether p is a registered part.
 func Valid(p Part) bool { return startup.PartKnown(p) }
+
+// HeldOff reports whether o is a part held back by a feature switch that is
+// off; screens leave out what such a part owns.
+func HeldOff(o Owner) bool { return startup.PartHeldOff(Part(o)) }
 
 // Of is the Owner for one part.
 func Of(p Part) Owner { return Owner(p) }
@@ -78,6 +88,7 @@ var (
 	music     = Of(Music)
 	subtitles = Of(Subtitles)
 	wishlist  = Of(Wishlist)
+	youtube   = Of(YouTube)
 )
 
 // routeOwners gives every route the server registers its owner. A test in
@@ -99,6 +110,28 @@ var routeOwners = map[string]Owner{
 	"POST /oauth/token":                                   Core,
 	"GET /api/v1/auth/ai-connect":                         Core,
 	"POST /api/v1/auth/ai-connect":                        Core,
+
+	// YouTube library.
+	"GET /api/v1/youtube/status":               youtube,
+	"GET /api/v1/settings/youtube":             youtube,
+	"PUT /api/v1/settings/youtube":             youtube,
+	"POST /api/v1/youtube/probe":               youtube,
+	"POST /api/v1/youtube/adopt":               youtube,
+	"GET /api/v1/youtube/videos":               youtube,
+	"POST /api/v1/youtube/videos":              youtube,
+	"GET /api/v1/youtube/videos/{id}":          youtube,
+	"DELETE /api/v1/youtube/videos/{id}":       youtube,
+	"GET /api/v1/youtube/videos/{id}/file":     youtube,
+	"GET /api/v1/youtube/videos/{id}/thumb":    youtube,
+	"PUT /api/v1/youtube/videos/{id}/position": youtube,
+	"POST /api/v1/youtube/videos/{id}/retry":   youtube,
+	"GET /api/v1/youtube/follows":              youtube,
+	"POST /api/v1/youtube/follows":             youtube,
+	"PUT /api/v1/youtube/follows/{id}":         youtube,
+	"DELETE /api/v1/youtube/follows/{id}":      youtube,
+
+	// Saving a movie or episode file goes with the title's part.
+	"GET /api/v1/files/{id}/download": ByTitle,
 
 	"GET /api/v1/plugins":                               Core,
 	"POST /api/v1/plugins/{id}/install":                 Core,

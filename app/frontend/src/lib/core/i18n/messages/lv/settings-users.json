@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} izdzēsts",
 	"settings.users.couldntDelete": "Neizdevās izdzēst",
 	"settings.users.confirmDeleteKeys": "Viņa izveidotās Seerr atslēgas pārstāj darboties visiem, līdz tiek izveidota jauna.",
+	"settings.users.deleteYouTube": "Tiek dzēsti arī viņa YouTube video un sekotie kanāli un atskaņošanas saraksti.",
 	"settings.users.qualities": "Kvalitātes",
-	"settings.users.qualitiesHint": "Var izvēlēties tikai ieslēgtās. Ja ieslēgtas visas, tiek piedāvātas arī jaunās."
+	"settings.users.qualitiesHint": "Var izvēlēties tikai ieslēgtās. Ja ieslēgtas visas, tiek piedāvātas arī jaunās.",
+	"settings.users.permYouTube": "Izmantot YouTube bibliotēku",
+	"settings.users.permSaveFiles": "Saglabāt failus savā ierīcē"
 }

@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} supprimé",
 	"settings.users.couldntDelete": "Suppression impossible",
 	"settings.users.confirmDeleteKeys": "Les clés Seerr qu'il a créées cessent de fonctionner pour tout le monde jusqu'à ce qu'une nouvelle soit créée.",
+	"settings.users.deleteYouTube": "Ses vidéos YouTube et les chaînes et playlists suivies sont aussi supprimées.",
 	"settings.users.qualities": "Qualités",
-	"settings.users.qualitiesHint": "Ils ne peuvent choisir que celles activées. Si toutes le sont, les nouvelles sont aussi proposées."
+	"settings.users.qualitiesHint": "Ils ne peuvent choisir que celles activées. Si toutes le sont, les nouvelles sont aussi proposées.",
+	"settings.users.permYouTube": "Utiliser la bibliothèque YouTube",
+	"settings.users.permSaveFiles": "Enregistrer des fichiers sur leur appareil"
 }

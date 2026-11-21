@@ -174,3 +174,31 @@ func TestDeletePersonStopsFollowingTheirAsks(t *testing.T) {
 		t.Fatalf("follow rows %d, kept %d", n, kept)
 	}
 }
+
+// route: DELETE /api/v1/users/{id}
+func TestDeletePersonRunsHooks(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	join(t, f, invite(t, f, own, `{}`), "pat")
+	id := userID(t, f, "pat")
+	var got []int64
+	var limited bool
+	f.a.OnPersonDeleted(func(context.Context, int64) { panic("boom") })
+	f.a.OnPersonDeleted(func(ctx context.Context, userID int64) {
+		_, limited = ctx.Deadline()
+		got = append(got, userID)
+	})
+	if resp, out := own.do(t, f, "DELETE", fmt.Sprintf("/api/v1/users/%d", id), ""); resp.StatusCode != 204 {
+		t.Fatalf("delete: %d %s", resp.StatusCode, out)
+	}
+	if len(got) != 1 || got[0] != id || !limited {
+		t.Fatalf("hook calls %v, deadline %v", got, limited)
+	}
+	// A refused delete runs no hook.
+	if resp, _ := own.do(t, f, "DELETE", fmt.Sprintf("/api/v1/users/%d", id), ""); resp.StatusCode != 404 {
+		t.Fatalf("second delete: %d", resp.StatusCode)
+	}
+	if len(got) != 1 {
+		t.Fatalf("hook ran for a refused delete: %v", got)
+	}
+}

@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} हटाया गया",
 	"settings.users.couldntDelete": "हटाया नहीं जा सका",
 	"settings.users.confirmDeleteKeys": "उनकी बनाई Seerr कुंजियाँ सभी के लिए काम करना बंद कर देंगी, जब तक नई न बनाई जाए।",
+	"settings.users.deleteYouTube": "उनके YouTube वीडियो और फ़ॉलो किए गए चैनल व प्लेलिस्ट भी मिटा दिए जाते हैं।",
 	"settings.users.qualities": "क्वालिटी",
-	"settings.users.qualitiesHint": "वे सिर्फ़ चालू वाले चुन सकते हैं। सब चालू हों तो नए भी दिखाए जाते हैं।"
+	"settings.users.qualitiesHint": "वे सिर्फ़ चालू वाले चुन सकते हैं। सब चालू हों तो नए भी दिखाए जाते हैं।",
+	"settings.users.permYouTube": "YouTube लाइब्रेरी का उपयोग करना",
+	"settings.users.permSaveFiles": "अपने डिवाइस पर फ़ाइलें सहेजना"
 }

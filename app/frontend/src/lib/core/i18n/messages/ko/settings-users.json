@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name}님 삭제됨",
 	"settings.users.couldntDelete": "삭제하지 못했습니다",
 	"settings.users.confirmDeleteKeys": "이 사람이 만든 Seerr 키는 새 키를 만들 때까지 모두에게 작동하지 않습니다.",
+	"settings.users.deleteYouTube": "이 사용자의 YouTube 동영상과 팔로우한 채널 및 재생목록도 삭제됩니다.",
 	"settings.users.qualities": "화질",
-	"settings.users.qualitiesHint": "켜진 항목만 고를 수 있어요. 모두 켜져 있으면 새 항목도 보여요."
+	"settings.users.qualitiesHint": "켜진 항목만 고를 수 있어요. 모두 켜져 있으면 새 항목도 보여요.",
+	"settings.users.permYouTube": "YouTube 보관함 사용",
+	"settings.users.permSaveFiles": "자신의 기기에 파일 저장"
 }

@@ -1,12 +1,15 @@
 package accounts
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
+	"slices"
 	"strconv"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -69,5 +72,40 @@ func (a *Auth) deletePerson(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("auth: user %d deleted by user %d", id, by.UserID)
 	a.accountEvent(r, id, "deleted", byName(r)+" deleted "+name, nil)
+	a.runDeletedHooks(r.Context(), id)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// personHookTime is how long each person-deleted hook may take.
+const personHookTime = 2 * time.Minute
+
+// OnPersonDeleted adds f to what runs after a person is deleted, so a
+// module can remove what it keeps for them. f runs once the delete is
+// saved; it cannot undo the delete.
+func (a *Auth) OnPersonDeleted(f func(ctx context.Context, userID int64)) {
+	a.hooksMu.Lock()
+	defer a.hooksMu.Unlock()
+	a.deletedHooks = append(a.deletedHooks, f)
+}
+
+// runDeletedHooks runs every person-deleted hook, each with its own time
+// limit; one that panics is logged and the rest still run. A page closed
+// mid-way does not stop them.
+func (a *Auth) runDeletedHooks(ctx context.Context, userID int64) {
+	a.hooksMu.Lock()
+	hooks := slices.Clone(a.deletedHooks)
+	a.hooksMu.Unlock()
+	base := context.WithoutCancel(ctx)
+	for _, f := range hooks {
+		func() {
+			hctx, cancel := context.WithTimeout(base, personHookTime)
+			defer cancel()
+			defer func() {
+				if p := recover(); p != nil {
+					log.Printf("auth: clean-up after deleting user %d failed: %v", userID, p)
+				}
+			}()
+			f(hctx, userID)
+		}()
+	}
 }

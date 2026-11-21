@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} kustutatud",
 	"settings.users.couldntDelete": "Kustutamine ebaõnnestus",
 	"settings.users.confirmDeleteKeys": "Tema loodud Seerri võtmed lakkavad kõigi jaoks töötamast, kuni luuakse uus.",
+	"settings.users.deleteYouTube": "Kustutatakse ka tema YouTube'i videod ning jälgitavad kanalid ja esitusloendid.",
 	"settings.users.qualities": "Kvaliteedid",
-	"settings.users.qualitiesHint": "Nad saavad valida ainult sisselülitatuid. Kui kõik on sees, pakutakse ka uusi."
+	"settings.users.qualitiesHint": "Nad saavad valida ainult sisselülitatuid. Kui kõik on sees, pakutakse ka uusi.",
+	"settings.users.permYouTube": "YouTube'i kogu kasutamine",
+	"settings.users.permSaveFiles": "Failide salvestamine oma seadmesse"
 }

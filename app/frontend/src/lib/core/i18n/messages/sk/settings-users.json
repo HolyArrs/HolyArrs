@@ -115,6 +115,9 @@
   "settings.users.deleted": "{name} odstránený",
   "settings.users.couldntDelete": "Nepodarilo sa odstrániť",
   "settings.users.confirmDeleteKeys": "Kľúče pre Seerr, ktoré vytvoril, prestanú fungovať pre všetkých, kým nevznikne nový.",
+  "settings.users.deleteYouTube": "Zmažú sa aj jeho videá z YouTube a sledované kanály a playlisty.",
   "settings.users.qualities": "Kvality",
-  "settings.users.qualitiesHint": "Môžu vyberať len zapnuté. Keď sú zapnuté všetky, ponúknu sa aj nové."
+  "settings.users.qualitiesHint": "Môžu vyberať len zapnuté. Keď sú zapnuté všetky, ponúknu sa aj nové.",
+	"settings.users.permYouTube": "Používať knižnicu YouTube",
+	"settings.users.permSaveFiles": "Ukladať súbory do svojho zariadenia"
 }

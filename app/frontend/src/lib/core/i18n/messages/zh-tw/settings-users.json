@@ -115,6 +115,9 @@
 	"settings.users.deleted": "已刪除 {name}",
 	"settings.users.couldntDelete": "無法刪除",
 	"settings.users.confirmDeleteKeys": "此人建立的 Seerr 金鑰會對所有人失效，直到建立新的金鑰。",
+	"settings.users.deleteYouTube": "其 YouTube 影片以及追蹤的頻道和播放清單也會一併刪除。",
 	"settings.users.qualities": "畫質",
-	"settings.users.qualitiesHint": "只能選擇已開啟的。全部開啟時，新加的也會提供。"
+	"settings.users.qualitiesHint": "只能選擇已開啟的。全部開啟時，新加的也會提供。",
+	"settings.users.permYouTube": "使用 YouTube 媒體庫",
+	"settings.users.permSaveFiles": "將檔案儲存到自己的裝置"
 }

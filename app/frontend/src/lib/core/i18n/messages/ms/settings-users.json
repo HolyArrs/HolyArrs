@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} dipadam",
 	"settings.users.couldntDelete": "Tidak dapat memadam",
 	"settings.users.confirmDeleteKeys": "Kunci Seerr yang dibuatnya berhenti berfungsi untuk semua orang sehingga kunci baharu dibuat.",
+	"settings.users.deleteYouTube": "Video YouTube mereka serta saluran dan senarai main yang diikuti juga dipadam.",
 	"settings.users.qualities": "Kualiti",
-	"settings.users.qualitiesHint": "Mereka hanya boleh pilih yang dihidupkan. Jika semua hidup, yang baharu turut ditawarkan."
+	"settings.users.qualitiesHint": "Mereka hanya boleh pilih yang dihidupkan. Jika semua hidup, yang baharu turut ditawarkan.",
+	"settings.users.permYouTube": "Menggunakan pustaka YouTube",
+	"settings.users.permSaveFiles": "Menyimpan fail ke peranti mereka"
 }

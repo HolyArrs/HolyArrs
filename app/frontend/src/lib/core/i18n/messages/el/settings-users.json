@@ -115,6 +115,9 @@
 	"settings.users.deleted": "Ο {name} διαγράφηκε",
 	"settings.users.couldntDelete": "Δεν ήταν δυνατή η διαγραφή",
 	"settings.users.confirmDeleteKeys": "Τα κλειδιά Seerr που δημιούργησε σταματούν να λειτουργούν για όλους μέχρι να δημιουργηθεί νέο.",
+	"settings.users.deleteYouTube": "Διαγράφονται επίσης τα βίντεό του στο YouTube και τα κανάλια και οι λίστες που ακολουθεί.",
 	"settings.users.qualities": "Ποιότητες",
-	"settings.users.qualitiesHint": "Μπορούν να διαλέξουν μόνο τις ενεργές. Με όλες ενεργές, προσφέρονται και οι νέες."
+	"settings.users.qualitiesHint": "Μπορούν να διαλέξουν μόνο τις ενεργές. Με όλες ενεργές, προσφέρονται και οι νέες.",
+	"settings.users.permYouTube": "Χρήση της βιβλιοθήκης YouTube",
+	"settings.users.permSaveFiles": "Αποθήκευση αρχείων στη συσκευή τους"
 }

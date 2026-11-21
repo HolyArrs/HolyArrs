@@ -115,6 +115,9 @@
 	"settings.users.deleted": "已删除 {name}",
 	"settings.users.couldntDelete": "无法删除",
 	"settings.users.confirmDeleteKeys": "此人创建的 Seerr 密钥会对所有人失效，直到创建新的密钥。",
+	"settings.users.deleteYouTube": "其 YouTube 视频以及关注的频道和播放列表也会一并删除。",
 	"settings.users.qualities": "画质",
-	"settings.users.qualitiesHint": "只能选择已开启的。全部开启时，新加的也会提供。"
+	"settings.users.qualitiesHint": "只能选择已开启的。全部开启时，新加的也会提供。",
+	"settings.users.permYouTube": "使用 YouTube 媒体库",
+	"settings.users.permSaveFiles": "将文件保存到自己的设备"
 }

@@ -66,6 +66,7 @@ var ScheduleInfos = map[string]ScheduleInfo{
 	"clean_history":         {"Clean up History", "Removes History Events older than their keep time.", 6 * schHour, 7 * schDay, schHour, "/settings/this-app"},
 	"subtitle_missing":      {"Look for missing subtitles", "Searches the subtitle sites for every file missing a wished language.", schHour, 7 * schDay, schHour, "/settings/subtitles"},
 	"subtitle_better":       {"Look for better subtitles", "Searches again for subtitles under their Pass mark.", 6 * schHour, 7 * schDay, schHour, "/settings/subtitles"},
+	"youtube_check":         {"Check YouTube follows", "Looks for new videos in the playlists and channels people follow.", schHour, 7 * schDay, schHour, ""},
 }
 
 // ScheduleView is one scheduled Job kind on the Schedules page.
@@ -169,6 +170,9 @@ func (h *ScheduleHandlers) listSchedules(w http.ResponseWriter, r *http.Request)
 	}
 	out := []ScheduleView{}
 	for _, sc := range scs {
+		if parts.HeldOff(parts.JobOwner(sc.Kind)) {
+			continue
+		}
 		v, err := h.scheduleView(r.Context(), db, sc)
 		if err != nil {
 			webserver.Internal(w, "api", err)
@@ -180,7 +184,7 @@ func (h *ScheduleHandlers) listSchedules(w http.ResponseWriter, r *http.Request)
 	if h.States != nil {
 		for _, st := range h.States.List() {
 			name, ok := strings.CutPrefix(st.Key, "stage:")
-			if !ok || st.Kind != "stage" {
+			if !ok || st.Kind != "stage" || parts.HeldOff(parts.LoopOwner(name)) {
 				continue
 			}
 			st.Reason = logs.RedactPatterns(st.Reason)

@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} slettet",
 	"settings.users.couldntDelete": "Kunne ikke slette",
 	"settings.users.confirmDeleteKeys": "Seerr-nøkler personen har laget slutter å virke for alle til en ny lages.",
+	"settings.users.deleteYouTube": "Personens YouTube-videoer og fulgte kanaler og spillelister slettes også.",
 	"settings.users.qualities": "Kvaliteter",
-	"settings.users.qualitiesHint": "De kan bare velge de som er på. Er alle på, tilbys nye også."
+	"settings.users.qualitiesHint": "De kan bare velge de som er på. Er alle på, tilbys nye også.",
+	"settings.users.permYouTube": "Bruke YouTube-biblioteket",
+	"settings.users.permSaveFiles": "Lagre filer på egen enhet"
 }

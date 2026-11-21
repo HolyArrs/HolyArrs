@@ -1,12 +1,17 @@
 package parts
 
 import (
+	"context"
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
+
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 const webRoutes = "../../../../frontend/src/routes"
@@ -66,5 +71,41 @@ func TestEveryScreenHasAPart(t *testing.T) {
 		if _, ok := ScreenOwner(m[1]); !ok {
 			t.Errorf("menu entry %s belongs to no part", m[1])
 		}
+	}
+}
+
+// The YouTube part is registered but held by the youtube feature switch:
+// with the switch off it is in no list, is off, and refuses to be switched;
+// its Job kinds and worker stage belong to it or the core.
+func TestYouTubePartIsHeldByItsFlag(t *testing.T) {
+	if !Valid(YouTube) || YouTube.Label() != "YouTube" {
+		t.Fatalf("YouTube part: valid %v, label %q", Valid(YouTube), YouTube.Label())
+	}
+	for _, k := range []string{"youtube_check", "youtube_download", "youtube_adopt"} {
+		if JobOwner(k) != Of(YouTube) {
+			t.Errorf("%s belongs to %q", k, JobOwner(k))
+		}
+	}
+	if LoopOwner("jobs_youtube") != Core {
+		t.Errorf("jobs_youtube belongs to %q", LoopOwner("jobs_youtube"))
+	}
+	t.Setenv("HOLYARRS_FLAGS", "")
+	if slices.Contains(All(), YouTube) || !HeldOff(Of(YouTube)) {
+		t.Fatalf("flag off: All() = %v", All())
+	}
+	c := &Control{}
+	if c.On(YouTube) || !c.KindOff("youtube_download") || slices.Contains(c.Off(), YouTube) {
+		t.Fatalf("flag off: on %v, off %v", c.On(YouTube), c.Off())
+	}
+	var held HeldError
+	if err := c.Set(context.Background(), YouTube, true, domain.System); !errors.As(err, &held) || err.Error() != "YouTube is not available; turn on the youtube feature first" {
+		t.Fatalf("flag off: Set = %v", err)
+	}
+	if _, err := c.Restart(context.Background(), YouTube); !errors.As(err, &held) {
+		t.Fatalf("flag off: Restart = %v", err)
+	}
+	t.Setenv("HOLYARRS_FLAGS", "youtube")
+	if !slices.Contains(All(), YouTube) || HeldOff(Of(YouTube)) || !c.On(YouTube) || c.KindOff("youtube_download") {
+		t.Fatalf("flag on: All() = %v, on %v", All(), c.On(YouTube))
 	}
 }

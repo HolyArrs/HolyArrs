@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} eliminado",
 	"settings.users.couldntDelete": "No se pudo eliminar",
 	"settings.users.confirmDeleteKeys": "Las claves de Seerr que haya creado dejan de funcionar para todos hasta que se cree una nueva.",
+	"settings.users.deleteYouTube": "También se borran sus vídeos de YouTube y los canales y listas que sigue.",
 	"settings.users.qualities": "Calidades",
-	"settings.users.qualitiesHint": "Solo pueden elegir las activadas. Con todas activadas, también se ofrecen las nuevas."
+	"settings.users.qualitiesHint": "Solo pueden elegir las activadas. Con todas activadas, también se ofrecen las nuevas.",
+	"settings.users.permYouTube": "Usar la biblioteca de YouTube",
+	"settings.users.permSaveFiles": "Guardar archivos en su dispositivo"
 }

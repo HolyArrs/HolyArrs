@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} ištrintas",
 	"settings.users.couldntDelete": "Nepavyko ištrinti",
 	"settings.users.confirmDeleteKeys": "Jo sukurti Seerr raktai nustoja veikti visiems, kol bus sukurtas naujas.",
+	"settings.users.deleteYouTube": "Taip pat ištrinami jo YouTube vaizdo įrašai ir stebimi kanalai bei grojaraščiai.",
 	"settings.users.qualities": "Kokybės",
-	"settings.users.qualitiesHint": "Gali rinktis tik įjungtas. Kai įjungtos visos, siūlomos ir naujos."
+	"settings.users.qualitiesHint": "Gali rinktis tik įjungtas. Kai įjungtos visos, siūlomos ir naujos.",
+	"settings.users.permYouTube": "Naudotis YouTube biblioteka",
+	"settings.users.permSaveFiles": "Išsaugoti failus savo įrenginyje"
 }

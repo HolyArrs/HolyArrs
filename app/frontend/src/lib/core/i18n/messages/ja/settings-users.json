@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} を削除しました",
 	"settings.users.couldntDelete": "削除できませんでした",
 	"settings.users.confirmDeleteKeys": "この人が作った Seerr のキーは、新しいキーを作るまで全員で使えなくなります。",
+	"settings.users.deleteYouTube": "このユーザーの YouTube 動画とフォロー中のチャンネルや再生リストも削除されます。",
 	"settings.users.qualities": "画質",
-	"settings.users.qualitiesHint": "オンのものだけ選べます。すべてオンなら、新しいものも表示されます。"
+	"settings.users.qualitiesHint": "オンのものだけ選べます。すべてオンなら、新しいものも表示されます。",
+	"settings.users.permYouTube": "YouTube ライブラリを使う",
+	"settings.users.permSaveFiles": "自分のデバイスにファイルを保存する"
 }

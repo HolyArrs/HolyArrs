@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} suprimit",
 	"settings.users.couldntDelete": "No s’ha pogut suprimir",
 	"settings.users.confirmDeleteKeys": "Les claus de Seerr que hagi creat deixen de funcionar per a tothom fins que se'n creï una de nova.",
+	"settings.users.deleteYouTube": "També se n'esborren els vídeos de YouTube i els canals i llistes que segueix.",
 	"settings.users.qualities": "Qualitats",
-	"settings.users.qualitiesHint": "Només poden triar les activades. Amb totes activades, també s'ofereixen les noves."
+	"settings.users.qualitiesHint": "Només poden triar les activades. Amb totes activades, també s'ofereixen les noves.",
+	"settings.users.permYouTube": "Fer servir la biblioteca de YouTube",
+	"settings.users.permSaveFiles": "Desar fitxers al seu dispositiu"
 }

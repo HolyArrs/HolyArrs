@@ -38,6 +38,21 @@ type OffError struct{ Part Part }
 
 func (e OffError) Error() string { return e.Part.Label() + " is off; turn it on first" }
 
+// HeldError is a switch of a part held back by a feature switch that is off.
+type HeldError struct{ Part Part }
+
+func (e HeldError) Error() string {
+	return e.Part.Label() + " is not available; turn on the " + startup.HeldFlag(e.Part) + " feature first"
+}
+
+// heldErr is the HeldError for p while its feature switch is off, else nil.
+func heldErr(p Part) error {
+	if startup.PartHeldOff(p) {
+		return HeldError{p}
+	}
+	return nil
+}
+
 // Running lists the Jobs the queue's workers run now (jobs.Queue does).
 type Running interface {
 	Running() []domain.Job
@@ -175,6 +190,9 @@ func (c *Control) ownerOnLocked(o Owner) bool {
 }
 
 func (c *Control) onLocked(p Part) bool {
+	if startup.PartHeldOff(p) {
+		return false
+	}
 	_, off := c.off[p]
 	return !off && !c.hold[p]
 }
@@ -317,6 +335,9 @@ func (c *Control) Set(ctx context.Context, p Part, on bool, by domain.Actor) err
 	if !Valid(p) {
 		return ErrNoPart
 	}
+	if err := heldErr(p); err != nil {
+		return err
+	}
 	if c.SafeMode {
 		return ErrSafeMode
 	}
@@ -361,10 +382,11 @@ func (c *Control) Set(ctx context.Context, p Part, on bool, by domain.Actor) err
 	return nil
 }
 
-// savedLocked is the list of parts turned off by a person, in order.
+// savedLocked is the list of parts turned off by a person, in order; a
+// held-back part keeps its saved switch for when its feature is turned on.
 func (c *Control) savedLocked() []Part {
 	var out []Part
-	for _, q := range All() {
+	for _, q := range startup.Parts() {
 		if _, off := c.off[q]; off {
 			out = append(out, q)
 		}
@@ -414,6 +436,9 @@ func (c *Control) apply() {
 func (c *Control) Restart(ctx context.Context, p Part) (int, error) {
 	if !Valid(p) {
 		return 0, ErrNoPart
+	}
+	if err := heldErr(p); err != nil {
+		return 0, err
 	}
 	if c.SafeMode {
 		return 0, ErrSafeMode

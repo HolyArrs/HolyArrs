@@ -10,13 +10,14 @@ const (
 	RowTitleStats = "row_title_stats" // Explore row titles statistics (owner table)
 	EmbySignIn    = "emby_signin"     // Sign in with Emby
 	GoBack        = "go_back"         // Go back to the previous version steps
+	YouTube       = "youtube"         // YouTube library and saving files to a device
 )
 
 // Register adds the held-back feature names to the registry. The program
 // wiring calls it once; calling it again does nothing.
 func RegisterHeldFeatures() {
 	registerOnce.Do(func() {
-		for _, n := range []string{AIApps, RowTitleStats, EmbySignIn, GoBack} {
+		for _, n := range []string{AIApps, RowTitleStats, EmbySignIn, GoBack, YouTube} {
 			RegisterFeature(n)
 		}
 	})

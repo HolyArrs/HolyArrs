@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} a fost șters",
 	"settings.users.couldntDelete": "Nu s-a putut șterge",
 	"settings.users.confirmDeleteKeys": "Cheile Seerr create de el nu mai funcționează pentru nimeni până nu se creează una nouă.",
+	"settings.users.deleteYouTube": "Se șterg și videoclipurile sale de pe YouTube și canalele și playlisturile urmărite.",
 	"settings.users.qualities": "Calități",
-	"settings.users.qualitiesHint": "Pot alege doar pe cele pornite. Cu toate pornite, se oferă și cele noi."
+	"settings.users.qualitiesHint": "Pot alege doar pe cele pornite. Cu toate pornite, se oferă și cele noi.",
+	"settings.users.permYouTube": "Folosirea bibliotecii YouTube",
+	"settings.users.permSaveFiles": "Salvarea fișierelor pe dispozitivul propriu"
 }

@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} izbrisan",
 	"settings.users.couldntDelete": "Brisanje nije uspjelo",
 	"settings.users.confirmDeleteKeys": "Ključevi za Seerr koje je napravio prestaju raditi za sve dok se ne napravi novi.",
+	"settings.users.deleteYouTube": "Brišu se i njegovi YouTube videozapisi te praćeni kanali i popisi za reprodukciju.",
 	"settings.users.qualities": "Kvalitete",
-	"settings.users.qualitiesHint": "Mogu birati samo uključene. Kad su sve uključene, nude se i nove."
+	"settings.users.qualitiesHint": "Mogu birati samo uključene. Kad su sve uključene, nude se i nove.",
+	"settings.users.permYouTube": "Korištenje YouTube knjižnice",
+	"settings.users.permSaveFiles": "Spremanje datoteka na svoj uređaj"
 }

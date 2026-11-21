@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} е изтрит",
 	"settings.users.couldntDelete": "Не можа да се изтрие",
 	"settings.users.confirmDeleteKeys": "Ключовете за Seerr, които е създал, спират да работят за всички, докато не се създаде нов.",
+	"settings.users.deleteYouTube": "Неговите видеоклипове от YouTube и следваните канали и плейлисти също се изтриват.",
 	"settings.users.qualities": "Качества",
-	"settings.users.qualitiesHint": "Могат да избират само включените. Когато всички са включени, се предлагат и новите."
+	"settings.users.qualitiesHint": "Могат да избират само включените. Когато всички са включени, се предлагат и новите.",
+	"settings.users.permYouTube": "Използване на библиотеката с YouTube",
+	"settings.users.permSaveFiles": "Запазване на файлове на устройството си"
 }

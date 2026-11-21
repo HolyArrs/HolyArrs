@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -66,7 +67,7 @@ func (h *Handlers) PartGate(m *http.ServeMux, next http.Handler) http.Handler {
 			return
 		}
 		if o == parts.ByTitle {
-			if p, found := parts.TitlePart(r.Context(), h.Store.Read(), pathValue(pattern, r.URL.Path, "{id}")); found {
+			if p, found := byTitlePart(r.Context(), h.Store.Read(), pattern, r.URL.Path); found {
 				o = parts.Of(p)
 			} else {
 				next.ServeHTTP(w, r) // no such title: the route answers 404
@@ -79,6 +80,21 @@ func (h *Handlers) PartGate(m *http.ServeMux, next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// byTitlePart finds the part of the title a title-decided route is about:
+// {id} is the title, or under /api/v1/files/ a file of it.
+func byTitlePart(ctx context.Context, db database.Querier, pattern, path string) (parts.Part, bool) {
+	id := pathValue(pattern, path, "{id}")
+	_, pat, _ := strings.Cut(pattern, " ")
+	if !strings.HasPrefix(pat, "/api/v1/files/{id}") {
+		return parts.TitlePart(ctx, db, id)
+	}
+	n, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return "", false
+	}
+	return parts.SubjectPart(ctx, db, &domain.Subject{Type: "file", ID: n})
 }
 
 // pathValue picks the path segment that stands where name is in pattern.

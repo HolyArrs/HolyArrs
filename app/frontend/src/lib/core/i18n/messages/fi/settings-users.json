@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} poistettu",
 	"settings.users.couldntDelete": "Poistaminen epäonnistui",
 	"settings.users.confirmDeleteKeys": "Hänen tekemänsä Seerr-avaimet lakkaavat toimimasta kaikilta, kunnes uusi tehdään.",
+	"settings.users.deleteYouTube": "Myös hänen YouTube-videonsa ja seuraamansa kanavat ja soittolistat poistetaan.",
 	"settings.users.qualities": "Laadut",
-	"settings.users.qualitiesHint": "He voivat valita vain päällä olevat. Kun kaikki ovat päällä, myös uudet tarjotaan."
+	"settings.users.qualitiesHint": "He voivat valita vain päällä olevat. Kun kaikki ovat päällä, myös uudet tarjotaan.",
+	"settings.users.permYouTube": "Käyttää YouTube-kirjastoa",
+	"settings.users.permSaveFiles": "Tallentaa tiedostoja omalle laitteelleen"
 }

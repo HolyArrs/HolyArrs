@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} excluído",
 	"settings.users.couldntDelete": "Não foi possível excluir",
 	"settings.users.confirmDeleteKeys": "As chaves do Seerr que a pessoa criou param de funcionar para todos até que uma nova seja criada.",
+	"settings.users.deleteYouTube": "Os vídeos do YouTube e os canais e playlists que a pessoa segue também são excluídos.",
 	"settings.users.qualities": "Qualidades",
-	"settings.users.qualitiesHint": "Só podem escolher as ativadas. Com todas ativadas, as novas também aparecem."
+	"settings.users.qualitiesHint": "Só podem escolher as ativadas. Com todas ativadas, as novas também aparecem.",
+	"settings.users.permYouTube": "Usar a biblioteca do YouTube",
+	"settings.users.permSaveFiles": "Salvar arquivos no próprio dispositivo"
 }

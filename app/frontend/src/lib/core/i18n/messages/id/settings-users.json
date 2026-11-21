@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} dihapus",
 	"settings.users.couldntDelete": "Tidak bisa menghapus",
 	"settings.users.confirmDeleteKeys": "Kunci Seerr yang dia buat berhenti berfungsi untuk semua orang sampai kunci baru dibuat.",
+	"settings.users.deleteYouTube": "Video YouTube mereka serta kanal dan playlist yang mereka ikuti juga dihapus.",
 	"settings.users.qualities": "Kualitas",
-	"settings.users.qualitiesHint": "Mereka hanya bisa memilih yang aktif. Jika semua aktif, yang baru juga ditawarkan."
+	"settings.users.qualitiesHint": "Mereka hanya bisa memilih yang aktif. Jika semua aktif, yang baru juga ditawarkan.",
+	"settings.users.permYouTube": "Menggunakan perpustakaan YouTube",
+	"settings.users.permSaveFiles": "Menyimpan file ke perangkat mereka"
 }

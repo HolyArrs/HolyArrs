@@ -143,7 +143,7 @@ func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "users", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"users": out, "perms": webserver.AllPerms})
+	writeJSON(w, http.StatusOK, map[string]any{"users": out, "perms": webserver.ShownPerms()})
 }
 
 // mayGrant checks the permissions an owner or admin hands out: an admin may

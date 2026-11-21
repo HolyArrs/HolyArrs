@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Perm } from '../core/session.svelte.ts';
 
 const all: Perm[] = ['ask', 'auto_approve', 'approve', 'manage_library', 'settings'];
+const grantableAll: Perm[] = [...all, 'youtube', 'save_files'];
 const noSettings: Perm[] = ['ask', 'auto_approve', 'approve', 'manage_library'];
 
 describe('role presets', () => {
@@ -33,6 +34,9 @@ describe('role presets', () => {
 		expect(presetOf(['ask', 'approve'], all)).toBe('custom');
 		expect(presetOf([], all)).toBe('custom');
 	});
+	it('a member with add-on perms still reads as Member', () => {
+		expect(presetOf(['ask', 'youtube', 'save_files'], grantableAll)).toBe('member');
+	});
 });
 
 describe('choosing a preset after customising', () => {
@@ -50,6 +54,11 @@ describe('choosing a preset after customising', () => {
 	});
 	it('does nothing when Custom is chosen with nothing saved', () => {
 		expect(choosePreset('custom', all, custom, null).mix).toBeNull();
+	});
+	it('picking a preset keeps the add-on perms that were ticked', () => {
+		const r = choosePreset('admin', grantableAll, { perms: ['ask', 'youtube'], max: '' }, null);
+		expect(r.mix?.perms).toEqual(expect.arrayContaining(['youtube']));
+		expect(r.saved).toBeNull();
 	});
 	it('ignores a preset the person cannot hand out', () => {
 		expect(choosePreset('admin', noSettings, custom, null).mix).toBeNull();

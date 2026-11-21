@@ -231,3 +231,35 @@ func TestRingKeepsLast(t *testing.T) {
 		t.Fatalf("replay %+v", replay)
 	}
 }
+
+func TestPublishOwnSkipsManagers(t *testing.T) {
+	h := NewLiveHub(LiveOptions{})
+	manager, _ := h.subscribe(LiveViewer{UserID: 1, All: true}, "")
+	owner, _ := h.subscribe(LiveViewer{UserID: 2}, "")
+	other, _ := h.subscribe(LiveViewer{UserID: 3}, "")
+	before := h.Publish("job", 0)
+	id := h.PublishOwn("youtube", map[string]int{"id": 5}, 2)
+	if len(owner.ch) != 1 {
+		t.Fatalf("owner got %d events, want 1", len(owner.ch))
+	}
+	if e := <-owner.ch; e.ID != id || e.Topic != "youtube" || string(e.Data) != `{"id":5}` {
+		t.Fatalf("owner got %+v", e)
+	}
+	if len(manager.ch) != 1 || len(other.ch) != 0 {
+		t.Fatalf("manager %d events (want only the job), other %d", len(manager.ch), len(other.ch))
+	}
+	if e := <-manager.ch; e.Topic != "job" {
+		t.Fatalf("manager got %+v", e)
+	}
+	for _, v := range []LiveViewer{{UserID: 1, All: true}, {UserID: 3}} {
+		if _, replay := h.subscribe(v, h.EventID(before)); len(replay) != 0 {
+			t.Fatalf("resume for %+v replays %+v", v, replay)
+		}
+	}
+	if _, replay := h.subscribe(LiveViewer{UserID: 2}, h.EventID(before)); len(replay) != 1 || replay[0].ID != id {
+		t.Fatalf("resume for the owner replays %+v", replay)
+	}
+	if h.PublishOwn("youtube", 1, 0); len(owner.ch) != 0 {
+		t.Fatal("an event for no one reached a viewer")
+	}
+}

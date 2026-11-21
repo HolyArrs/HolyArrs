@@ -115,6 +115,9 @@
 	"settings.users.deleted": "{name} slettet",
 	"settings.users.couldntDelete": "Kunne ikke slette",
 	"settings.users.confirmDeleteKeys": "Seerr-nøgler, personen har lavet, holder op med at virke for alle, indtil der laves en ny.",
+	"settings.users.deleteYouTube": "Personens YouTube-videoer og fulgte kanaler og playlister slettes også.",
 	"settings.users.qualities": "Kvaliteter",
-	"settings.users.qualitiesHint": "De kan kun vælge dem, der er slået til. Er alle slået til, tilbydes nye også."
+	"settings.users.qualitiesHint": "De kan kun vælge dem, der er slået til. Er alle slået til, tilbydes nye også.",
+	"settings.users.permYouTube": "Bruge YouTube-biblioteket",
+	"settings.users.permSaveFiles": "Gemme filer på deres enhed"
 }
