@@ -513,9 +513,10 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 		if site, ok = SiteByID(id); !ok {
 			return "", "", ErrSite
 		}
-		if in.Protocol != "" && in.Protocol != "torrent" {
+		if in.Protocol != "" && in.Protocol != site.Protocol {
 			return "", "", ErrProtocol
 		}
+		in.Protocol = site.Protocol
 		if isNew && strings.TrimSpace(in.URL) == "" {
 			in.URL = site.URL
 		}
@@ -534,7 +535,7 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 		}
 	}
 	if proto != "" {
-		if proto != "torrent" && proto != "usenet" {
+		if proto != "torrent" && proto != "usenet" && (proto != "soulseek" || src.Format != "site") {
 			return "", "", ErrProtocol
 		}
 		src.Protocol = proto

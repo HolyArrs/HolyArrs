@@ -190,3 +190,12 @@ func feedError(body []byte) error {
 	}
 	return &Error{Kind: kind, Msg: fmt.Sprintf("code %d: %s", e.Code, e.Description), RetryAfter: Backoff(1)}
 }
+
+// target is the Source as the outbound breaker knows it.
+func (c *Client) target() outbound.Target {
+	identity := []string{c.cfg.URL, c.cfg.APIKey}
+	if c.cfg.Proxy != nil {
+		identity = append(identity, c.cfg.Proxy.String())
+	}
+	return outbound.Target{Kind: "source", Identity: identity}
+}

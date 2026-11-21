@@ -65,11 +65,14 @@ func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst boo
 			}
 			return 1, "on fix number"
 		}
+		// With three protocols neither may be the preferred one; then they tie here.
 		if pref := rules.Protocol.Prefer; pref != "either" && rels[a].Protocol != rels[b].Protocol {
 			if rels[a].Protocol == pref {
 				return -1, "on preferred protocol"
 			}
-			return 1, "on preferred protocol"
+			if rels[b].Protocol == pref {
+				return 1, "on preferred protocol"
+			}
 		}
 		if c, why := episodeOrder(pa, pb); c != 0 {
 			return c, why

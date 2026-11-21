@@ -104,7 +104,7 @@ var apps = []struct {
 // them that send the version header.
 var (
 	servarrApps = []string{"sonarr", "radarr", "lidarr", "readarr", "whisparr", "prowlarr"}
-	kestrelApps = append([]string{"jellyfin", "emby", "jackett"}, servarrApps...)
+	kestrelApps = append([]string{"jellyfin", "emby", "jackett", "slskd"}, servarrApps...)
 )
 
 // Who names the app that answered, from its headers and the start of its

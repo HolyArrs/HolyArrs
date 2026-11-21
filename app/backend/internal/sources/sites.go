@@ -28,6 +28,8 @@ type Site struct {
 	Name    string `json:"name"`
 	URL     string `json:"url"`
 	Private bool   `json:"private"`
+	// Protocol is what its Releases are: torrent, or soulseek for slskd.
+	Protocol string `json:"protocol"`
 	// Kinds are the media types the site serves.
 	Kinds []string `json:"kinds"`
 	// Limits are polite defaults: one call at a time with a gap, a cap per hour.
@@ -38,10 +40,11 @@ type Site struct {
 
 // Sites lists the built-in sites, in the order the add form shows them.
 var Sites = []Site{
-	{ID: "knaben", Name: "Knaben", URL: "https://api.knaben.org", Kinds: []string{"movie", "tv", "music"}, GapMS: 2000, PerHour: 100, TimeoutMS: 20000},
-	{ID: "torrentscsv", Name: "TorrentsCSV", URL: "https://torrents-csv.com", Kinds: []string{"movie", "tv", "music"}, GapMS: 2000, PerHour: 100, TimeoutMS: 20000},
-	{ID: "subsplease", Name: "SubsPlease", URL: "https://subsplease.org", Kinds: []string{"tv"}, GapMS: 2000, PerHour: 100, TimeoutMS: 20000},
-	{ID: "iptorrents", Name: "IPTorrents", URL: "https://iptorrents.com", Private: true, Kinds: []string{"movie", "tv", "music"}, GapMS: 3000, PerHour: 60, TimeoutMS: 30000},
+	{ID: "knaben", Name: "Knaben", Protocol: "torrent", URL: "https://api.knaben.org", Kinds: []string{"movie", "tv", "music"}, GapMS: 2000, PerHour: 100, TimeoutMS: 20000},
+	{ID: "torrentscsv", Name: "TorrentsCSV", Protocol: "torrent", URL: "https://torrents-csv.com", Kinds: []string{"movie", "tv", "music"}, GapMS: 2000, PerHour: 100, TimeoutMS: 20000},
+	{ID: "subsplease", Name: "SubsPlease", Protocol: "torrent", URL: "https://subsplease.org", Kinds: []string{"tv"}, GapMS: 2000, PerHour: 100, TimeoutMS: 20000},
+	{ID: "iptorrents", Name: "IPTorrents", Protocol: "torrent", URL: "https://iptorrents.com", Private: true, Kinds: []string{"movie", "tv", "music"}, GapMS: 3000, PerHour: 60, TimeoutMS: 30000},
+	{ID: "slskd", Name: "slskd", Protocol: "soulseek", URL: "", Private: true, Kinds: []string{"music"}, GapMS: 5000, PerHour: 60, TimeoutMS: 30000},
 }
 
 // SiteByID finds a built-in site.
@@ -120,6 +123,8 @@ func (c *Client) siteSearch(ctx context.Context, q Query, observer func(string, 
 
 func (c *Client) siteCall(ctx context.Context, base, text string, q Query) ([]Item, error) {
 	switch c.cfg.Site {
+	case "slskd":
+		return c.slskdSearch(ctx, base, text, q.Artist)
 	case "knaben":
 		body := map[string]any{"search_type": "100%", "search_field": "title", "query": text, "size": 100,
 			"hide_unsafe": true, "hide_xxx": true, "order_by": "seeders", "order_direction": "desc"}
@@ -495,6 +500,13 @@ func parseIPTorrents(raw []byte, base, passkey string) ([]Item, error) {
 // siteTest reads the site's newest list; TorrentsCSV has none, so it runs one small search.
 func (c *Client) siteTest(ctx context.Context) (int, error) {
 	q := Query{feed: true}
+	if c.cfg.Site == "slskd" {
+		// A test search would be a real search on the network; reading slskd's state is enough.
+		if err := c.wait(ctx); err != nil {
+			return 0, err
+		}
+		return 0, c.slskdTest(ctx, strings.TrimRight(c.cfg.URL, "/"))
+	}
 	if c.cfg.Site == "torrentscsv" {
 		q = Query{Title: "linux"}
 	}

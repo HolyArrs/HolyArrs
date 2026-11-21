@@ -235,11 +235,7 @@ func (c *Client) fetch(ctx context.Context, raw string) ([]byte, error) {
 // send makes one call to the Source: a GET, or a POST with a JSON body for a
 // built-in site that asks for one. head adds headers, such as a site cookie.
 func (c *Client) send(ctx context.Context, method, raw string, payload []byte, head http.Header) ([]byte, error) {
-	identity := []string{c.cfg.URL, c.cfg.APIKey}
-	if c.cfg.Proxy != nil {
-		identity = append(identity, c.cfg.Proxy.String())
-	}
-	op, err := outbound.Begin(ctx, outbound.Target{Kind: "source", Identity: identity})
+	op, err := outbound.Begin(ctx, c.target())
 	if err != nil {
 		if errors.Is(err, outbound.ErrSuppressed) {
 			return nil, &Error{Kind: KindDown, Msg: err.Error(), cause: err}

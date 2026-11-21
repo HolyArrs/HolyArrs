@@ -465,6 +465,8 @@ func adapterWord(adapter string) string {
 		return "SABnzbd"
 	case "nzbget":
 		return "NZBGet"
+	case "slskd":
+		return "slskd"
 	}
 	return "the Downloader"
 }

@@ -280,6 +280,10 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 				expected = h
 			}
 		}
+		if d.Protocol == "soulseek" {
+			// A slskd job's id comes from the link, so a lost reply is looked for by it.
+			expected, _ = slskdLinkID(link)
+		}
 		a = &sendAttempt{Attempt: Attempt{DownloaderID: d.ID, ReleaseID: releaseID, SlotID: slotID, State: "pending", CreatedAt: now, UpdatedAt: now},
 			marker: "nzbget-" + hex.EncodeToString(nonce[:]), category: d.Category, expectedID: expected, created: true}
 		res, err := tx.ExecContext(ctx, `INSERT INTO downloader_attempts(downloader_id, release_id, slot_id, release_created_at, slot_created_at, version_id, version_created_at, slot_snapshots, marker, expected_id, category, state, created_at, updated_at)
@@ -294,7 +298,7 @@ func (m *Manager) claimAttempt(ctx context.Context, d domain.Downloader, release
 }
 
 func journalAdapter(adapter string) bool {
-	return adapter == "nzbget" || adapter == "transmission" || adapter == "deluge" || adapter == "rtorrent" || adapter == "aria2"
+	return adapter == "nzbget" || adapter == "transmission" || adapter == "deluge" || adapter == "rtorrent" || adapter == "aria2" || adapter == "slskd"
 }
 
 func pendingAttemptCount(tx *sql.Tx, downloaderID int64) (int, error) {

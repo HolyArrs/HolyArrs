@@ -283,6 +283,8 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 			d.Protocol = "torrent"
 		case "sabnzbd", "nzbget":
 			d.Protocol = "usenet"
+		case "slskd":
+			d.Protocol = "soulseek"
 		default:
 			return ErrAdapter
 		}

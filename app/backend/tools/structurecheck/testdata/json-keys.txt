@@ -218,6 +218,7 @@ available
 available_at
 avatar
 averageRuntime
+averageSpeed
 avg_age
 avg_ms
 avg_ms_24h
@@ -245,6 +246,8 @@ biography
 birth_place
 birthday
 birthplace
+bitDepth
+bitRate
 bit_depth
 bitrate
 bittorrent
@@ -276,6 +279,7 @@ bypass_if_above_score
 bypass_if_highest_quality
 bypass_local
 bytes
+bytesTransferred
 bytes_completed
 c
 cache_hours
@@ -438,6 +442,7 @@ deluge
 department
 description
 desktop
+destination
 detail
 details
 details_source
@@ -449,7 +454,9 @@ digital
 digitalRelease
 digital_date
 dir
+directories
 directors
+directory
 disabled_reason
 disambiguation
 disc
@@ -528,9 +535,11 @@ enabled
 enabledFeatures
 end
 ended
+endedAt
 ended_at
 english
 english_name
+enqueued
 entries
 episode
 episodeCount
@@ -583,12 +592,14 @@ expires_at
 explicit
 explicit_lyrics
 ext_name
+extension
 external_id
 external_ids
 externals
 extra
 extra_folders
 extract
+f
 f14
 f60
 f7
@@ -713,6 +724,7 @@ guid
 h
 hand_search
 hasFile
+hasFreeUploadSlot
 has_4k
 has_account
 has_copy
@@ -812,13 +824,18 @@ installed_version
 instanceName
 ip
 isAvailable
+isComplete
+isLocked
 isUpgrade
+isVariableBitRate
 is_finished
 is_private
 iso_3166_1
 iso_639_1
 issuer
 item
+item1
+item2
 item_id
 item_ids
 item_name
@@ -1107,6 +1124,7 @@ new_title_tags
 newer
 next
 nextAiring
+nextAttemptAt
 next_air_date
 next_air_day
 next_announce
@@ -1263,6 +1281,7 @@ per_minute
 per_week
 per_window
 percent
+percentComplete
 percentOfEpisodes
 percent_done
 percentage
@@ -1373,6 +1392,7 @@ quality_name
 quality_profiles
 query
 queue
+queueLength
 queue_pos
 queued
 queued_at
@@ -1463,6 +1483,7 @@ replaces_file_id
 reply
 report
 report_id
+requestedAt
 requested_by
 requests
 require_two_factor_admins
@@ -1506,6 +1527,7 @@ runtime_minutes
 s
 sabnzbd
 salt
+sampleRate
 sample_rate
 savePath
 save_path
@@ -1721,6 +1743,7 @@ stuck
 studio
 studios
 sub
+subdirectory
 subdl
 subject
 subtitle
@@ -1853,6 +1876,7 @@ trait
 trait_id
 traits
 trakt
+transfers
 translate_from
 translated
 translations

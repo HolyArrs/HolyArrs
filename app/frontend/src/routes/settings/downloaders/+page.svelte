@@ -156,6 +156,9 @@
 		{ id: 'usenet', title: t('settings.downloaders.usenetHead'), tiles: [
 			{ value: 'sabnzbd' as const, name: 'SABnzbd', badge: 'SB', hue: 45, hint: t('settings.downloaders.mostUsed') },
 			{ value: 'nzbget' as const, name: 'NZBGet', badge: 'NG', hue: 140 }
+		] },
+		{ id: 'soulseek', title: t('settings.downloaders.soulseekHead'), tiles: [
+			{ value: 'slskd' as const, name: 'slskd', badge: 'Sk', hue: 330 }
 		] }
 	]);
 
@@ -184,6 +187,8 @@
 				return 'http://192.168.1.10:8000/RPC2';
 			case 'aria2':
 				return 'http://192.168.1.10:6800/jsonrpc';
+			case 'slskd':
+				return 'http://192.168.1.10:5030';
 			default:
 				return 'http://192.168.1.10:8090';
 		}
@@ -196,6 +201,7 @@
 		if (kind === 'rtorrent') return t('settings.downloaders.catRtorrent');
 		if (kind === 'aria2') return t('settings.downloaders.catAria2');
 		if (kind === 'nzbget') return t('settings.downloaders.catNzbget');
+		if (kind === 'slskd') return t('settings.downloaders.catSlskd');
 		return t('settings.downloaders.catQbit');
 	}
 
@@ -411,10 +417,10 @@
 					</Field>
 				</div>
 			{:else}
-				{@const key = form.kind === 'sabnzbd' || form.kind === 'qbittorrent'}
+				{@const key = form.kind === 'sabnzbd' || form.kind === 'qbittorrent' || form.kind === 'slskd'}
 				<Field id="dl-secret" label={key ? t('settings.downloaders.apiKeyLabel') : form.kind === 'aria2' ? t('settings.downloaders.secretTokenLabel') : t('settings.downloaders.passwordLabel')}>
 					<input id="dl-secret" class="input" class:mono={key} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew && form.kind !== 'aria2'} data-testid="dl-secret" />
-					<span class="hint">{form.kind === 'sabnzbd' ? t('settings.downloaders.secretSab') : form.kind === 'qbittorrent' ? t('settings.downloaders.secretQbit') : form.kind === 'aria2' ? t('settings.downloaders.secretAria2') : t('settings.downloaders.secretDeluge')} {t('settings.downloaders.secretKept')}</span>
+					<span class="hint">{form.kind === 'sabnzbd' ? t('settings.downloaders.secretSab') : form.kind === 'qbittorrent' ? t('settings.downloaders.secretQbit') : form.kind === 'aria2' ? t('settings.downloaders.secretAria2') : form.kind === 'slskd' ? t('settings.downloaders.secretSlskd') : t('settings.downloaders.secretDeluge')} {t('settings.downloaders.secretKept')}</span>
 				</Field>
 			{/if}
 			{#if form.kind === 'deluge'}
@@ -423,6 +429,8 @@
 				<p class="notice">{t('settings.downloaders.rtorrentNote')}</p>
 			{:else if form.kind === 'aria2'}
 				<p class="notice">{t('settings.downloaders.aria2Note')}</p>
+			{:else if form.kind === 'slskd'}
+				<p class="notice">{t('settings.downloaders.slskdNote')}</p>
 			{/if}
 			{#if form.kind === 'qbittorrent'}
 				<details class="more"><summary>{t('settings.downloaders.moreOptions')}</summary>{@render moreFields()}</details>

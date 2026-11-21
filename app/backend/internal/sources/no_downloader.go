@@ -12,6 +12,9 @@ func NoDownloader(protocol string) string {
 	if protocol == "usenet" {
 		return "no Usenet Downloader is set up"
 	}
+	if protocol == "soulseek" {
+		return "no slskd Downloader is set up"
+	}
 	return "no torrent Downloader is set up"
 }
 

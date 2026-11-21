@@ -206,7 +206,7 @@ func TestSiteSourceAdd(t *testing.T) {
 		Sites []Site `json:"sites"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/sources/sites", "", 200), &sites)
-	if len(sites.Sites) != 4 {
+	if len(sites.Sites) != 5 {
 		t.Fatalf("sites %+v", sites)
 	}
 	var x SourceView
@@ -225,6 +225,13 @@ func TestSiteSourceAdd(t *testing.T) {
 	}
 	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"site","site":"other"}`, 400)
 	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"site","site":"knaben","protocol":"usenet"}`, 400)
+	// slskd's Releases are Soulseek ones, whatever the form says.
+	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"site","site":"slskd","protocol":"torrent"}`, 400)
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"slskd","format":"site","site":"slskd","url":"http://192.168.1.4:5030","api_key":"k","allow_local_network":true}`, 201), &x)
+	if x.Protocol != "soulseek" || len(x.Kinds) != 1 || x.Kinds[0] != "music" {
+		t.Fatalf("slskd %+v", x)
+	}
+	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"torznab","protocol":"soulseek","url":"http://x/api"}`, 400)
 	raw := string(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"IPT","format":"site","site":"iptorrents","api_key":"uid=1; pass=secretcookie"}`, 201))
 	if strings.Contains(raw, "secretcookie") {
 		t.Fatalf("key shown %s", raw)

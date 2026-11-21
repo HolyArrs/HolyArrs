@@ -10,6 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
@@ -272,7 +273,9 @@ func (h *Handlers) runTest(w http.ResponseWriter, r *http.Request, x domain.Sour
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 	start := time.Now()
-	items, err := New(cfg).Test(ctx)
+	c := New(cfg)
+	outbound.Clear(c.target()) // a person's test goes through at once, as a Downloader's does
+	items, err := c.Test(ctx)
 	took := time.Since(start)
 	Record(context.WithoutCancel(r.Context()), h.Store, x.ID, "test", took, err)
 	out := map[string]any{"ok": err == nil, "ms": took.Milliseconds()}

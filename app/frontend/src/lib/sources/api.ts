@@ -7,7 +7,7 @@ export interface SourceForm {
 	format: 'torznab' | 'newznab' | 'rss' | 'site';
 	// site is the built-in site a site Source reads.
 	site: string;
-	protocol: 'torrent' | 'usenet';
+	protocol: 'torrent' | 'usenet' | 'soulseek';
 	url: string;
 	api_key: string;
 	feed: boolean;
@@ -122,11 +122,18 @@ export function formFrom(s: SourceView): SourceForm {
 // The built-in sites a Source can read directly, with their polite limits.
 // Names are the sites' own names, so they are not translated.
 export const builtInSites = [
-	{ id: 'knaben', name: 'Knaben', url: 'https://api.knaben.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'torrentscsv', name: 'TorrentsCSV', url: 'https://torrents-csv.com', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'subsplease', name: 'SubsPlease', url: 'https://subsplease.org', key: false, kinds: ['tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'iptorrents', name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 }
+	{ id: 'knaben', protocol: 'torrent', name: 'Knaben', url: 'https://api.knaben.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'torrentscsv', protocol: 'torrent', name: 'TorrentsCSV', url: 'https://torrents-csv.com', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'subsplease', protocol: 'torrent', name: 'SubsPlease', url: 'https://subsplease.org', key: false, kinds: ['tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'iptorrents', protocol: 'torrent', name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 },
+	{ id: 'slskd', protocol: 'soulseek', name: 'slskd', url: '', key: true, kinds: ['music'], gap_ms: 5000, per_hour: 60, timeout_s: 30 }
 ] as const;
+
+/** The protocol a Source's Releases have: a built-in site's own, else the one picked. */
+export function sourceProtocol(f: Pick<SourceForm, 'format' | 'site' | 'protocol'>): SourceForm['protocol'] {
+	if (f.format !== 'site') return f.protocol;
+	return builtInSites.find((x) => x.id === f.site)?.protocol ?? 'torrent';
+}
 
 // pickSite fills a new form with a built-in site's address and limits.
 export function pickSite(f: SourceForm, id: string): void {
@@ -134,7 +141,7 @@ export function pickSite(f: SourceForm, id: string): void {
 	if (!s) return;
 	const before = builtInSites.find((x) => x.id === f.site);
 	f.site = s.id;
-	f.protocol = 'torrent';
+	f.protocol = s.protocol;
 	f.url = s.url;
 	if (!f.name.trim() || f.name === before?.name) f.name = s.name;
 	f.kinds = [...s.kinds];
@@ -151,7 +158,7 @@ export function formBody(f: SourceForm): Record<string, unknown> {
 		name: f.name.trim(),
 		format: f.format,
 		...(f.format === 'site' ? { site: f.site } : {}),
-		protocol: f.format === 'site' ? 'torrent' : f.protocol,
+		protocol: sourceProtocol(f),
 		url: f.url.trim(),
 		api_key: f.api_key,
 		use_for: { feed: f.feed, auto_search: rss ? false : f.auto_search, hand_search: rss ? false : f.hand_search },

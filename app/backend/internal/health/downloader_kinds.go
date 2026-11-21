@@ -11,6 +11,9 @@ func noDownloaderLine(protocol string) string {
 	if protocol == "usenet" {
 		return "Sources find Usenet downloads, but no Usenet Downloader is set up, so none can be sent"
 	}
+	if protocol == "soulseek" {
+		return "Sources find Soulseek downloads, but no slskd Downloader is set up, so none can be sent"
+	}
 	return "Sources find torrent downloads, but no torrent Downloader is set up, so none can be sent"
 }
 
@@ -18,6 +21,9 @@ func noDownloaderLine(protocol string) string {
 func noDownloaderFix(protocol string) string {
 	if protocol == "usenet" {
 		return "add a Usenet Downloader (such as SABnzbd or NZBGet) in Settings, Downloaders, or turn off the Usenet Sources"
+	}
+	if protocol == "soulseek" {
+		return "add a slskd Downloader in Settings, Downloaders, or turn off the slskd Source"
 	}
 	return "add a torrent Downloader (such as qBittorrent) in Settings, Downloaders, or turn off the torrent Sources"
 }

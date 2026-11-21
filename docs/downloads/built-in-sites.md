@@ -20,6 +20,8 @@ Each one becomes an ordinary Source. Priority, use and limits work as on any oth
 
 All 4 hand out torrents, so you need a torrent Downloader. See [Downloaders](downloaders.md).
 
+The list also holds **slskd**, for music from Soulseek through your own slskd. It needs a slskd Downloader too. See [Soulseek with slskd](slskd.md).
+
 ## Add a built-in site
 
 1. Open **Settings > Sources**.

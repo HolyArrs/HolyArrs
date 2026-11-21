@@ -16,7 +16,7 @@
 	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
 	import { ConnectBridge } from '#lib/sources/index.ts';
 	import { partOff } from '#lib/mediafiles/index.ts';
-	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, builtInSites, pickSite, sendToChoices, type SourceForm } from '#lib/sources/index.ts';
+	import { healthTone, healthWord, pausedUntil, SourceCheck, emptyForm, formBody, formFrom, ms, uses, builtInSites, pickSite, sendToChoices, sourceProtocol, type SourceForm } from '#lib/sources/index.ts';
 	import type { SourceHealth, SourceView } from '#lib/sources/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
@@ -80,7 +80,7 @@
 		formError = '';
 	}
 
-	const sendProto = $derived(form.format === 'site' ? 'torrent' : form.protocol);
+	const sendProto = $derived(sourceProtocol(form));
 	const sendTo = $derived(sendToChoices(downloaders ?? [], sendProto, form.downloader_id));
 	// A chosen Downloader that is not on the list (removed, or of the other
 	// kind after a switch) means any Downloader. Only a removed one is worth a
@@ -206,13 +206,17 @@
 				{/if}
 			</div>
 			<Field id="so-url" label={t('settings.sources.address')}>
-				<input id="so-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={form.format === 'rss' ? 'https://example.org/rss?passkey=…' : 'https://example.org/api'} />
+				<input id="so-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={form.format === 'rss' ? 'https://example.org/rss?passkey=…' : form.format === 'site' && form.site === 'slskd' ? 'http://192.168.1.10:5030' : 'https://example.org/api'} />
 				<span class="hint">
-					{#if form.format === 'rss'}{t('settings.sources.addressRss')}{:else if form.format === 'site'}{t('settings.sources.addressSite')}{:else}{t('settings.sources.addressFeed')}{/if}
+					{#if form.format === 'rss'}{t('settings.sources.addressRss')}{:else if form.site === 'slskd' && form.format === 'site'}{t('settings.sources.addressSlskd')}{:else if form.format === 'site'}{t('settings.sources.addressSite')}{:else}{t('settings.sources.addressFeed')}{/if}
 				</span>
 			</Field>
 			{#if form.format === 'site'}
-				{#if siteNeedsKey}
+				{#if form.site === 'slskd'}
+					<Field id="so-key" label={t('settings.sources.apiKeyLabel')} hint={t('settings.sources.slskdKeyHint')}>
+						<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
+					</Field>
+				{:else if siteNeedsKey}
 					<Field id="so-key" label={t('settings.sources.siteKeyLabel')} hint={t('settings.sources.siteKeyHint')}>
 						<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
 					</Field>

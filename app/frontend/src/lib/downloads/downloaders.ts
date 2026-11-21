@@ -31,8 +31,8 @@ export function samePathPair(p: PathMap): boolean {
 export interface DownloaderView {
 	id: number;
 	name: string;
-	kind: 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent' | 'aria2';
-	protocol: 'torrent' | 'usenet';
+	kind: 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent' | 'aria2' | 'slskd';
+	protocol: 'torrent' | 'usenet' | 'soulseek';
 	url: string;
 	username: string;
 	secret: string;
@@ -158,7 +158,8 @@ export const kindWords: Record<DownloaderView['kind'], string> = {
 	nzbget: 'NZBGet',
 	deluge: 'Deluge',
 	rtorrent: 'rTorrent',
-	aria2: 'aria2'
+	aria2: 'aria2',
+	slskd: 'slskd'
 };
 
 const stateKeys: Record<DownloaderHealth['state'], string> = {
@@ -276,7 +277,7 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		writable: f.writable,
 		tags: f.tags,
 		...(f.kind === 'qbittorrent' ? { category_after_import: f.category_after_import.trim() } : {}),
-		...(f.kind === 'sabnzbd' || f.kind === 'nzbget' ? {} : { own_only: f.own_only }),
+		...(f.kind === 'sabnzbd' || f.kind === 'nzbget' || f.kind === 'slskd' ? {} : { own_only: f.own_only }),
 		...(seedingFields(f.kind) === 'none' ? {} : { after_seeding: seedingBody(f) })
 	};
 }
@@ -288,7 +289,7 @@ function goal(v: number | '' | null): number | null {
 
 /** Which After seeding fields a Downloader gets: none for Usenet, goals only where ratio and time are reported. */
 export function seedingFields(kind: DownloaderView['kind']): 'none' | 'remove' | 'goals' {
-	if (kind === 'sabnzbd' || kind === 'nzbget') return 'none';
+	if (kind === 'sabnzbd' || kind === 'nzbget' || kind === 'slskd') return 'none';
 	return seedGoalKinds.includes(kind) ? 'goals' : 'remove';
 }
 

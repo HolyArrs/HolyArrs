@@ -99,6 +99,7 @@ export function clientMark(kind: string | undefined): { mark: string; tone: stri
 		case 'aria2': return { mark: 'a2', tone: 'a2' };
 		case 'sabnzbd': return { mark: 'SAB', tone: 'sab' };
 		case 'nzbget': return { mark: 'NZB', tone: 'nzb' };
+		case 'slskd': return { mark: 'Sk', tone: '' };
 	}
 	return { mark: '', tone: '' };
 }

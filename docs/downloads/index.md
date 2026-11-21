@@ -11,6 +11,7 @@ HolyArrs finds Releases through Sources and hands them to a Downloader. Set up b
 |---|---|---|
 | Downloaders | qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd and NZBGet fetch the files. HolyArrs follows each download and imports it | [Downloaders](downloaders/) |
 | Sources | Built-in sites, Torznab, Newznab and RSS feeds that HolyArrs searches, or Jackett and Prowlarr linked in one go | [Sources](sources/) |
+| Soulseek | Music from Soulseek through your own slskd, as a Source and a Downloader | [Soulseek with slskd](slskd/) |
 | Library search | Find a title you already added, from the Library page | [Library search](library-search/) |
 | History | What was grabbed, imported or failed | [History](history/) |
 
