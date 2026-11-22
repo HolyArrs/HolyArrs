@@ -174,7 +174,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if _, err := backups.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	s, err := database.Open(c.ConfigDir, database.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000)})
+	s, err := database.Open(c.ConfigDir, database.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000),
+		WriteCap: startup.WriteCap()})
 	if err != nil {
 		if !needsPerson(err) {
 			return err
