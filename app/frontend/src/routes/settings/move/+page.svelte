@@ -73,6 +73,7 @@
 	let readStart = $state<AppKind>('radarr');
 	let readAgain = $state(false);
 	let readAddress = $state('');
+	let readVia = $state<'api' | 'backup'>('api');
 	let reading = $state('');
 	let forgetting = $state<Snapshot | null>(null);
 	let forgetOpen = $state(false);
@@ -364,11 +365,13 @@
 		readStart = 'radarr';
 		readAgain = false;
 		readAddress = '';
+		readVia = 'api';
 		readOpen = true;
 	}
 	function readAgainFor(s: Snapshot) {
 		readStart = s.kind as AppKind;
 		readAddress = s.address ?? '';
+		readVia = s.via;
 		readAgain = true;
 		readOpen = true;
 	}
@@ -710,7 +713,7 @@
 	{/if}
 {/if}
 
-<ReadSheet bind:open={readOpen} bind:reading start={readStart} startAddress={readAddress} again={readAgain} saved={savedKeys} known={snapshots.map((s) => s.address ?? '')} {onread} />
+<ReadSheet bind:open={readOpen} bind:reading start={readStart} startAddress={readAddress} startVia={readVia} again={readAgain} saved={savedKeys} known={snapshots.map((s) => s.address ?? '')} {onread} />
 
 <ItemsSheet bind:open={listOpen} title={listTitle} items={listItems} row={listRow} />
 

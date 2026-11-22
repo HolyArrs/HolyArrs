@@ -16,6 +16,7 @@
 	import { getContext, tick } from 'svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import StepCapsule from './StepCapsule.svelte';
 	import { apps, appName, placeholderFor, type AppKind } from './move.ts';
@@ -28,6 +29,7 @@
 		open = $bindable(false),
 		start = 'radarr',
 		startAddress = '',
+		startVia = 'api',
 		again = false,
 		saved = [],
 		known = [],
@@ -38,6 +40,8 @@
 		start?: AppKind;
 		/** Edit: the address of the copy being read again ('' for a backup or an older read). */
 		startAddress?: string;
+		/** Edit: how that copy was read, so a backup is read again from a backup, not through some app with a saved key. */
+		startVia?: 'api' | 'backup';
 		again?: boolean;
 		saved?: SavedKey[];
 		/** Addresses already read; a saved key for one of them is not offered when adding another app. */
@@ -85,7 +89,7 @@
 		if (open && !wasOpen) {
 			if (!busy) {
 				kind = start;
-				way = 'api';
+				way = again ? startVia : 'api';
 				useSaved = true;
 				const last = again ? lastRead[`${start} ${startAddress}`] : undefined;
 				address = again ? startAddress || (saved.find((x) => x.kind === start)?.address ?? last?.address ?? '') : '';
@@ -97,7 +101,7 @@
 				error = '';
 				probe = null;
 			}
-			setTimeout(() => document.getElementById(again || busy ? 'move-address' : 'move-app')?.focus(), 0);
+			setTimeout(() => document.getElementById(again || busy ? fieldId() : 'move-app')?.focus(), 0);
 		}
 		wasOpen = open;
 	});
@@ -136,6 +140,11 @@
 			document.getElementById('move-address')?.focus();
 			return true;
 		}
+		if (way === 'backup' && !backupPath.trim()) {
+			error = t('migrate.addTheBackupPath');
+			document.getElementById('move-path')?.focus();
+			return true;
+		}
 		return !!form && !form.reportValidity();
 	}
 	async function check() {
@@ -155,9 +164,13 @@
 		}
 		if (error) focusAddress();
 	}
+	// The field that leads: the path for a backup, the address otherwise.
+	function fieldId(): string {
+		return way === 'backup' ? 'move-path' : 'move-address';
+	}
 	async function focusAddress() {
 		await tick();
-		document.getElementById('move-address')?.focus();
+		document.getElementById(fieldId())?.focus();
 	}
 	async function read(e: SubmitEvent) {
 		e.preventDefault();
@@ -217,6 +230,20 @@
 				</select>
 			</div>
 		</div>
+		<!-- A backup holds no key, so reading one needs no sign-in at all (docs/migrate/what-is-read.md). -->
+		<div class="srow">
+			<div class="txt"><span class="label">{t('migrate.readFrom')}</span></div>
+			<div class="ctl">
+				<SegmentedControl size="sm" label={t('migrate.readFrom')} testid="move-way" bind:value={way} onchange={changed}
+					options={[{ value: 'api', label: t('migrate.throughTheApp') }, { value: 'backup', label: t('migrate.fromABackup') }] as { value: 'api' | 'backup'; label: string }[]} />
+			</div>
+		</div>
+		{#if way === 'backup'}
+			<div class="srow">
+				<div class="txt"><label for="move-path">{t('downloads.fact.path')}</label><span class="hint">{t('migrate.backupPathHint')}</span></div>
+				<div class="ctl"><input id="move-path" class="input mono" type="text" bind:value={backupPath} oninput={changed} autocomplete="off" spellcheck="false" required /></div>
+			</div>
+		{/if}
 		{#if way === 'api'}
 			{#if savedKey && !keptAgain}
 				<div class="srow" data-testid="use-saved-key">

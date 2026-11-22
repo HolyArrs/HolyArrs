@@ -362,6 +362,25 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
   await sheet.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(sheet.getByTestId("read-capsule")).toHaveCount(0);
   await page.unroute("**/api/v1/migrate/read");
+
+  // From a backup: a path on the server replaces the address and the key.
+  await sheet.getByTestId("move-way").getByRole("radio", { name: "From a backup" }).click();
+  await expect(sheet.getByLabel("Address", { exact: true })).toHaveCount(0);
+  await expect(sheet.getByLabel("API key", { exact: true })).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Add Radarr" }).click();
+  await expect(sheet.getByRole("alert")).toHaveText("Add the path.");
+  await sheet.getByLabel("Path", { exact: true }).fill(" /backups/radarr_backup.zip ");
+  let sent: unknown;
+  await page.route("**/api/v1/migrate/read", (route) => {
+    sent = route.request().postDataJSON();
+    return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ error: "the backup was refused" }) });
+  });
+  await sheet.getByRole("button", { name: "Add Radarr" }).click();
+  await expect(sheet.getByRole("alert")).toHaveText("The backup was refused.");
+  expect(sent).toEqual({ kind: "radarr", path: "/backups/radarr_backup.zip" });
+  await page.unroute("**/api/v1/migrate/read");
+  await sheet.getByTestId("move-way").getByRole("radio", { name: "Through the app" }).click();
+  await expect(sheet.getByLabel("Address", { exact: true })).toBeVisible();
   await sheet.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByTestId("read-row")).toHaveCount(before);
 
@@ -376,6 +395,26 @@ test("variants: qBittorrent sign-in, backup file, Stop reading and Forget", asyn
   await page.getByRole("button", { name: /^Forget the .+ read from/ }).last().click();
   await forget.getByRole("button", { name: "Remove", exact: true }).click();
   await expect(page.getByTestId("read-row")).toHaveCount(before - 1);
+});
+
+// Edit on a read that came from a backup reads the backup again: it opens on
+// From a backup, and a key saved for another copy of the app is not used.
+test("Edit on a backup read opens on From a backup", async () => {
+  const fromBackup = { id: 951, created_at: "2026-11-03T14:02:00Z", kind: "radarr", via: "backup", app_version: "", counts: { titles: 2 }, size: 100 };
+  await page.route(/\/api\/v1\/migrate\/(snapshots|saved-keys)$/, (route: Route) =>
+    route.request().url().endsWith("/saved-keys")
+      ? route.fulfill({ json: { saved: [{ kind: "radarr", address: "http://other-radarr:7878" }] } })
+      : route.fulfill({ json: { snapshots: [fromBackup] } }),
+  );
+  await page.goto("/settings/move");
+  await page.getByRole("button", { name: /^Edit / }).first().click();
+  const sheet = readSheet(page);
+  await expect(sheet.getByTestId("move-way").getByRole("radio", { name: "From a backup" })).toBeChecked();
+  await expect(sheet.getByLabel("Path", { exact: true })).toBeVisible();
+  await expect(sheet.getByLabel("Path", { exact: true })).toBeFocused();
+  await expect(sheet.getByTestId("saved-address")).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Cancel" }).click();
+  await page.unroute(/\/api\/v1\/migrate\/(snapshots|saved-keys)$/);
 });
 
 // 3.5.13: `holyarrs import-secrets` while HolyArrs runs goes through its
