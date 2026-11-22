@@ -44,7 +44,9 @@ Stays behind: other subtitle sites and their accounts. HolyArrs reaches Addic7ed
 
 Stays behind: app links, sync profiles, indexer proxies and notification kinds HolyArrs does not have.
 
-Sources brought in from Prowlarr still search through Prowlarr, so keep it running. If it stops, those Sources say Prowlarr isn't answering.
+Import Prowlarr together with Sonarr and Radarr, or before or after them. The indexers Prowlarr put in those apps are not added again: each one is the same Source as its Torznab, Newznab or RSS indexer in Prowlarr. A site definition in Prowlarr is not moved, so its copy in Sonarr and Radarr comes over once, through Prowlarr. See [The same indexer in more than one app](sonarr-radarr.md#the-same-indexer-in-more-than-one-app).
+
+Sources at a Prowlarr address (the copies in Sonarr and Radarr of Prowlarr's site definitions) still search through Prowlarr, so keep it running. If it stops, those Sources say Prowlarr isn't answering.
 
 :::tip
 To keep Prowlarr running and let it push Sources into HolyArrs instead, see [Old-app API](../reference/old-app-api.md).

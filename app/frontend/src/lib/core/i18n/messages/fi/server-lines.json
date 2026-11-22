@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Nousussa olevat sarjat suoratoistossa",
 	"server.suggest.trending-on-streaming": "Nousussa suoratoistossa",
 	"server.discover.popular": "Suosittua",
-	"server.metadata.creator": "Tekijä"
+	"server.metadata.creator": "Tekijä",
+	"server.migrate.the-same-as-a-source-that": "sama kuin {name}, lähde joka on jo täällä"
 }

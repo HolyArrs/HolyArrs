@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Séries em alta no streaming",
 	"server.suggest.trending-on-streaming": "Em alta no streaming",
 	"server.discover.popular": "Popular",
-	"server.metadata.creator": "Criador"
+	"server.metadata.creator": "Criador",
+	"server.migrate.the-same-as-a-source-that": "o mesmo que {name}, uma Fonte que já está aqui"
 }

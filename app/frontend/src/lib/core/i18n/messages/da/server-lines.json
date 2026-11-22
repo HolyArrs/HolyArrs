@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Serier, der trender på streaming",
 	"server.suggest.trending-on-streaming": "Trender på streaming",
 	"server.discover.popular": "Populære",
-	"server.metadata.creator": "Skaber"
+	"server.metadata.creator": "Skaber",
+	"server.migrate.the-same-as-a-source-that": "det samme som {name}, en Kilde der findes her"
 }

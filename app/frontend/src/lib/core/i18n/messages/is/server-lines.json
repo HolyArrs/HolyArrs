@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Vinsælir þættir á streymi",
 	"server.suggest.trending-on-streaming": "Vinsælt á streymi",
 	"server.discover.popular": "Vinsælt",
-	"server.metadata.creator": "Höfundur"
+	"server.metadata.creator": "Höfundur",
+	"server.migrate.the-same-as-a-source-that": "það sama og {name}, heimild sem er hér"
 }

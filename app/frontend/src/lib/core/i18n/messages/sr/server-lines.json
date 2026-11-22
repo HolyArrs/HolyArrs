@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Серије у тренду на стримингу",
 	"server.suggest.trending-on-streaming": "У тренду на стримингу",
 	"server.discover.popular": "Популарно",
-	"server.metadata.creator": "Аутор"
+	"server.metadata.creator": "Аутор",
+	"server.migrate.the-same-as-a-source-that": "исто као {name}, Извор који је већ овде"
 }

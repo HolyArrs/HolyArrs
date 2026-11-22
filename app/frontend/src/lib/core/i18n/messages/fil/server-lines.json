@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Trending na show sa streaming",
 	"server.suggest.trending-on-streaming": "Trending sa streaming",
 	"server.discover.popular": "Sikat",
-	"server.metadata.creator": "Creator"
+	"server.metadata.creator": "Creator",
+	"server.migrate.the-same-as-a-source-that": "kapareho ng {name}, isang Source na nandito na"
 }

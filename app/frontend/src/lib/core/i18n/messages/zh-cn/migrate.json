@@ -315,5 +315,7 @@
 	"migrate.seasonsDifferOther": "检查 {n} 部通过 TMDB 编号找到的剧",
 	"migrate.seasonsDifferWhy": "{list} 仅通过旧应用的 TMDB 编号找到，在这里用的是另一个名称。逐一打开并确认是同一部剧。如果是，它的季编号不同：匹配它的剩余文件，然后打开这部剧。如果不是，就移除它；它的文件会留在原处。",
 	"migrate.stillChecking": "元数据服务器仍在检查的剧集：{n}。检查完成后此列表会自动更新。",
-	"migrate.stillCheckingImport": "元数据服务器仍在检查的剧集：{n}。现在即可导入；导入时会进行检查。"
+	"migrate.stillCheckingImport": "元数据服务器仍在检查的剧集：{n}。现在即可导入；导入时会进行检查。",
+	"migrate.sameSource": "与 {list} 相同：同一个来源",
+	"migrate.nameInApps": "{apps} 中的 {name}"
 }

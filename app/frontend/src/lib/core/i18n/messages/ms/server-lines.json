@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Siri sedang tren di strim",
 	"server.suggest.trending-on-streaming": "Sedang tren di strim",
 	"server.discover.popular": "Popular",
-	"server.metadata.creator": "Pencipta"
+	"server.metadata.creator": "Pencipta",
+	"server.migrate.the-same-as-a-source-that": "sama seperti {name}, Sumber yang ada di sini"
 }

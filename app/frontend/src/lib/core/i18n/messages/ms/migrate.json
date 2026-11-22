@@ -315,5 +315,7 @@
 	"migrate.seasonsDifferOther": "Semak {n} rancangan yang ditemui melalui nombor TMDB",
 	"migrate.seasonsDifferWhy": "Hanya nombor TMDB aplikasi lama yang menemui {list}, dengan nama lain di sini. Buka setiap satu dan pastikan ini rancangan yang sama. Jika ya, musimnya dinomborkan secara berbeza: padankan Fail berbakinya, kemudian hidupkan rancangan itu. Jika tidak, buangnya; failnya kekal di tempatnya.",
 	"migrate.stillChecking": "Rancangan yang masih disemak oleh pelayan metadata: {n}. Senarai ini dikemas kini sendiri apabila selesai.",
-	"migrate.stillCheckingImport": "Rancangan yang masih disemak oleh pelayan metadata: {n}. Anda boleh import sekarang; ia disemak semasa import."
+	"migrate.stillCheckingImport": "Rancangan yang masih disemak oleh pelayan metadata: {n}. Anda boleh import sekarang; ia disemak semasa import.",
+	"migrate.sameSource": "sama seperti {list}: satu Sumber",
+	"migrate.nameInApps": "{name} dalam {apps}"
 }

@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "স্ট্রিমিংয়ে ট্রেন্ডিং শো",
 	"server.suggest.trending-on-streaming": "স্ট্রিমিংয়ে ট্রেন্ডিং",
 	"server.discover.popular": "জনপ্রিয়",
-	"server.metadata.creator": "নির্মাতা"
+	"server.metadata.creator": "নির্মাতা",
+	"server.migrate.the-same-as-a-source-that": "{name}-এর মতোই, একটি সোর্স যা এখানে আছে"
 }

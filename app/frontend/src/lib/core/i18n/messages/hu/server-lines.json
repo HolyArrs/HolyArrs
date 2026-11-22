@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Felkapott sorozatok a streamingen",
 	"server.suggest.trending-on-streaming": "Felkapott a streamingen",
 	"server.discover.popular": "Népszerű",
-	"server.metadata.creator": "Alkotó"
+	"server.metadata.creator": "Alkotó",
+	"server.migrate.the-same-as-a-source-that": "ugyanaz, mint {name}, egy Forrás, ami már itt van"
 }

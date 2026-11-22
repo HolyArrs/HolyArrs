@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Trendande serier på streaming",
 	"server.suggest.trending-on-streaming": "Trendar på streaming",
 	"server.discover.popular": "Populärt",
-	"server.metadata.creator": "Skapare"
+	"server.metadata.creator": "Skapare",
+	"server.migrate.the-same-as-a-source-that": "samma som {name}, en källa som finns här"
 }

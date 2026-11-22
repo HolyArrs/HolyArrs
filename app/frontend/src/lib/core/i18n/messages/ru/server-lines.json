@@ -1579,5 +1579,6 @@
 	"server.suggest.trending-shows-on-streaming": "Сериалы в тренде на стримингах",
 	"server.suggest.trending-on-streaming": "В тренде на стримингах",
 	"server.discover.popular": "Популярные",
-	"server.metadata.creator": "Создатель"
+	"server.metadata.creator": "Создатель",
+	"server.migrate.the-same-as-a-source-that": "то же, что {name}, источник, который уже есть"
 }
