@@ -16,7 +16,9 @@ func TestDownloaderTestShowsWhatTheNameTurnedInto(t *testing.T) {
 	port := l.Addr().(*net.TCPAddr).Port
 	l.Close()
 	cases := []struct{ base, want string }{
-		{"http://holyarrs-nameshow-test.home.arpa:8080", "holyarrs-nameshow-test.home.arpa → not found. HolyArrs can't find this name. Use the IP instead."},
+		// The trailing dot makes the name absolute: a DNS search domain with a
+		// wildcard record would otherwise turn the name into one that resolves.
+		{"http://holyarrs-nameshow-test.home.arpa.:8080", "holyarrs-nameshow-test.home.arpa. → not found. HolyArrs can't find this name. Use the IP instead."},
 		{"http://localhost:" + itoaInt(port), "→ refused on port " + itoaInt(port) + ". The name works, but nothing answers on that port. Check the port."},
 	}
 	for _, tc := range cases {
