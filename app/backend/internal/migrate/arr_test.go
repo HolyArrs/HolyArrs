@@ -670,3 +670,41 @@ func TestRadarrWaitSkipsAndListsRead(t *testing.T) {
 		t.Fatalf("backup watchlist %+v", l)
 	}
 }
+
+// Sonarr and Radarr store a custom format's conditions in their database as
+// {"type": ..., "body": {...}}, not in the API's {"implementation", "fields"}
+// shape. A backup read keeps each condition's kind and value.
+func TestBackupFormatConditionsStoredShape(t *testing.T) {
+	stored := `[{"type":"ReleaseTitleSpecification","body":{"order":1,"implementationName":"Release Title","infoLink":"https://wiki.servarr.com/radarr/settings#custom-formats-2","value":"\\b(nordic)","name":"NORDIC","negate":false,"required":true}},` +
+		`{"type":"ResolutionSpecification","body":{"order":2,"implementationName":"Resolution","value":1080,"name":"1080p","negate":true,"required":false}},` +
+		`{"type":"SizeSpecification","body":{"order":3,"implementationName":"Size","min":1,"max":10,"name":"Size","negate":false,"required":false}},` +
+		`{"type":"LanguageSpecification","body":{"order":4,"implementationName":"Language","value":3,"exceptLanguage":true,"name":"Not German","negate":false,"required":false}}]`
+	plain := filepath.Join(t.TempDir(), "radarr.db")
+	makeDB(t, plain, append(radarrDB(), `UPDATE CustomFormats SET Specifications = '`+stored+`' WHERE Id = 1`)...)
+	s := read(t, file(Radarr, plain))
+	items := s.CustomFormats[0].Items
+	if len(items) != 4 {
+		t.Fatalf("conditions %+v", items)
+	}
+	if it := items[0]; it["kind"] != "ReleaseTitleSpecification" || it["name"] != "NORDIC" || it["value.value"] != `\b(nordic)` || it["required"] != true || it["negate"] != false {
+		t.Fatalf("title condition %+v", it)
+	}
+	if it := items[1]; it["kind"] != "ResolutionSpecification" || it["negate"] != true || it["required"] != false || num(it["value.value"]) != 1080 {
+		t.Fatalf("resolution condition %+v", it)
+	}
+	// The converter reads the camelCase body fields through itemValue.
+	specs := formatSpecs(s.CustomFormats[0])
+	if sz := specs[2]; sz.Implementation != "SizeSpecification" || sz.Min != 1 || sz.Max != 10 {
+		t.Fatalf("size condition %+v", sz)
+	}
+	if l := specs[3]; l.Implementation != "LanguageSpecification" || !l.Except || l.Value != "3" {
+		t.Fatalf("language condition %+v", l)
+	}
+	for _, it := range items {
+		for _, meta := range []string{"value.order", "value.implementationname", "value.infolink", "value.name", "value.negate", "value.required"} {
+			if _, ok := it[meta]; ok {
+				t.Fatalf("condition kept body metadata %q: %+v", meta, it)
+			}
+		}
+	}
+}

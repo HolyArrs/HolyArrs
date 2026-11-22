@@ -361,6 +361,21 @@ func profile(m map[string]any, quality, formatName map[int64]string) Profile {
 // specItem keeps a custom format condition's plain parts.
 func specItem(sp any) map[string]any {
 	m := lower(obj(sp))
+	// The database (a backup) stores a condition as {type, body}, and body keeps
+	// the condition's fields next to its name, order and flags; the API sends
+	// {implementation, fields}. Read the first into the second.
+	if b := obj(m["body"]); m["implementation"] == nil && b != nil {
+		body, fields := lower(b), map[string]any{}
+		for k, v := range body {
+			switch k {
+			case "order", "implementationname", "infolink", "name", "negate", "required":
+			default:
+				fields[k] = v
+			}
+		}
+		body["implementation"], body["fields"] = m["type"], fields
+		m = body
+	}
 	out := map[string]any{"name": str(m["name"]), "kind": str(m["implementation"]),
 		"negate": boolean(m["negate"]), "required": boolean(m["required"])}
 	var set map[string]any
