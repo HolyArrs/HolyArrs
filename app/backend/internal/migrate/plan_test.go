@@ -894,3 +894,30 @@ func TestPlanEveryDownloaderKind(t *testing.T) {
 		t.Fatalf("vuze: %+v", n)
 	}
 }
+
+// Sonarr's multi-episode styles: Range (4) writes S01E01-03 and
+// PrefixedRange (5) writes S01E01-E03, given as a number (as Sonarr's API
+// and database send it) or as a name.
+func TestPlanMultiEpisodeStyle(t *testing.T) {
+	for in, want := range map[any]string{
+		"4": "short_range", "range": "short_range", "Range": "short_range",
+		"5": "range", "prefixedRange": "range",
+		"3": "each_dash", "scene": "each_dash", "2": "each", "repeat": "each",
+		// The API's JSON number and the database's integer.
+		float64(4): "short_range", int64(5): "range",
+	} {
+		s := &Snapshot{Kind: Sonarr, Naming: map[string]any{"multiEpisodeStyle": in}}
+		p := BuildPlan([]Input{{ID: 1, Snap: s}}, Choices{})
+		var got string
+		for _, g := range p.Groups {
+			for _, it := range g.Items {
+				if it.Naming != nil {
+					got = it.Naming["multi_episode_style"]
+				}
+			}
+		}
+		if got != want {
+			t.Errorf("Sonarr style %v became %q, want %q", in, got, want)
+		}
+	}
+}

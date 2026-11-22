@@ -428,7 +428,8 @@ func (b *builder) naming(s *Snapshot) {
 			out[ours] = c
 		case "multi_episode_style":
 			m := map[string]string{"0": "each", "extend": "each", "1": "each_dash", "duplicate": "each_dash", "2": "each", "repeat": "each",
-				"3": "each_dash", "scene": "each_dash", "4": "range", "range": "range", "5": "short_range", "prefixedrange": "range"}[strings.ToLower(str(v))]
+				// Sonarr's Range writes S01E01-03 (our short_range), PrefixedRange S01E01-E03 (our range).
+				"3": "each_dash", "scene": "each_dash", "4": "short_range", "range": "short_range", "5": "range", "prefixedrange": "range"}[strings.ToLower(str(v))]
 			if m == "" {
 				b.not(GroupNaming, from, k, "this style has no HolyArrs match")
 				continue
