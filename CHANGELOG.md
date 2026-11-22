@@ -28,6 +28,7 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 - Add your own certificate authority to the container. ([#389](https://github.com/HolyArrs/HolyArrs/issues/389))
 - Run HolyArrs as a Proxmox LXC. ([#348](https://github.com/HolyArrs/HolyArrs/issues/348))
 - Open a title in Jellyfin or Emby from its page. ([#415](https://github.com/HolyArrs/HolyArrs/issues/415))
+- Kodi refreshes its library after an import, and cleans a removed title. ([#652](https://github.com/HolyArrs/HolyArrs/issues/652))
 - Outside lists can read MDBList lists. ([#417](https://github.com/HolyArrs/HolyArrs/issues/417))
 - arr API works with more dashboards and phone apps. ([#333](https://github.com/HolyArrs/HolyArrs/issues/333))
 

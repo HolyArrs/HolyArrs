@@ -1,9 +1,10 @@
 export interface MediaServerView {
 	id: number;
 	name: string;
-	kind: 'plex' | 'jellyfin' | 'emby';
+	kind: 'plex' | 'jellyfin' | 'emby' | 'kodi';
 	url: string;
 	token: string;
+	username?: string;
 	enabled: boolean;
 	on_import: boolean;
 	on_rename: boolean;

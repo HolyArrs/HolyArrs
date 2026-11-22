@@ -41,7 +41,11 @@ func (l *Linker) doStream(ctx context.Context, m domain.MediaServer, method, pat
 		return ErrURL
 	}
 	req.Header.Set("Accept", "application/json")
-	if m.Kind == "plex" {
+	if m.Kind == "kodi" {
+		if m.Username != "" || tok != "" {
+			req.SetBasicAuth(m.Username, tok)
+		}
+	} else if m.Kind == "plex" {
 		req.Header.Set("X-Plex-Token", tok)
 		req.Header.Set("X-Plex-Client-Identifier", "holyarrs")
 		req.Header.Set("Accept", "application/xml")

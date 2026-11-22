@@ -141,7 +141,7 @@ func (h *Handlers) Test(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "found": res})
 }
 
-const inputHelp = `send name, kind (plex, jellyfin or emby), url, token, and optionally enabled, on_import, on_rename, on_delete, path_from and path_to, allow_local_network, web_url`
+const inputHelp = `send name, kind (plex, jellyfin, emby or kodi), url, token (Kodi: the web server password), and optionally username (Kodi),  enabled, on_import, on_rename, on_delete, path_from and path_to, allow_local_network, web_url`
 
 func readInput(w http.ResponseWriter, r *http.Request) (Input, bool) {
 	var in Input

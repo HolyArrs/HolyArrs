@@ -1,10 +1,10 @@
 ---
 title: Media servers
-description: Connect Plex, Jellyfin or Emby so new imports, renames and deletes show up without waiting for a full scan.
+description: Connect Plex, Jellyfin, Emby or Kodi so new imports, renames and deletes show up without waiting for a full scan.
 level: Setup
 ---
 
-Make new movies, shows and music appear in Plex, Jellyfin or Emby right after import.
+Make new movies, shows and music appear in Plex, Jellyfin, Emby or Kodi right after import.
 
 HolyArrs tells the server to look at a folder again after it imports, renames or deletes files there.
 
@@ -12,6 +12,7 @@ HolyArrs tells the server to look at a folder again after it imports, renames or
 
 - You can open the server's address from the machine that runs HolyArrs.
 - You have a Plex token, or an API key for Jellyfin or Emby (make one in the server under Dashboard, API keys).
+- For Kodi, its web server is on: in Kodi open **Settings > Services > Control** and turn on **Allow remote control via HTTP**. Note the port (8080 by default), the user name and the password. Kodi 19 or newer.
 - You know where the server sees your media folders. In Docker, that is the path inside the server's container.
 
 ## Add a media server
@@ -19,13 +20,13 @@ HolyArrs tells the server to look at a folder again after it imports, renames or
 1. Open **Settings > Media servers**.
 2. Select **Add a media server**.
 3. Enter a **Name**. Each server needs its own, up to 80 characters.
-4. Pick the **Kind**: Plex, Jellyfin or Emby. You cannot change it later.
-5. Enter the **Address** with `http` or `https`, such as `http://192.168.1.10:32400` for Plex or `http://192.168.1.10:8096` for Jellyfin and Emby.
-6. Paste the **Plex token**, or the **API key** for Jellyfin and Emby.
-7. Select **Save**, then **Test** on the new card. You should see the library names (Plex) or the server name and version (Jellyfin, Emby).
+4. Pick the **Kind**: Plex, Jellyfin, Emby or Kodi. You cannot change it later.
+5. Enter the **Address** with `http` or `https`, such as `http://192.168.1.10:32400` for Plex, `http://192.168.1.10:8096` for Jellyfin and Emby, or `http://192.168.1.10:8080` for Kodi.
+6. Paste the **Plex token**, or the **API key** for Jellyfin and Emby. For Kodi, enter the web server **User name** and **Password** instead; leave both empty if Kodi asks for none.
+7. Select **Save**, then **Test** on the new card. You should see the library names (Plex) or the server name and version (Jellyfin, Emby, Kodi).
 
 :::caution
-If the server sees your files under another path, for example in another container, scans find nothing new. Set the path pair under [Paths](#paths).
+If the server sees your files under another path, for example in another container or over SMB or NFS, scans find nothing new. Set the path pair under [Paths](#paths).
 :::
 
 ## Choices
@@ -38,9 +39,11 @@ Pick which changes the server hears about: **An import**, **A rename**, **A dele
 
 Fill **HolyArrs path** and **Same folder on the server** only when the two see files under different paths. If HolyArrs sees `/movies` and the server sees `/media/movies`, enter `/movies` first and `/media/movies` second. Fill both or neither.
 
+Kodi often sees the media over the network, not as a local folder. Enter the path as Kodi's source lists it, like `smb://nas/media` or `nfs://192.168.1.5/export/media`. If HolyArrs sees `/data/media`, enter `/data/media` first and `smb://nas/media` second. The path must lie inside a source Kodi already has, with a content type set (Movies, TV shows or Music), or Kodi skips it.
+
 ### Address for browsers
 
-Jellyfin and Emby only. Enter the address people open the server at on their phone or computer, like `https://jellyfin.example.com`. Library title pages the server has then show an **Open in Jellyfin** (or **Open in Emby**) button that opens the title in the server's web app, in a new tab. Only people who manage the Library see the button. Leave it empty for no button. Plex has no button.
+Jellyfin and Emby only. Enter the address people open the server at on their phone or computer, like `https://jellyfin.example.com`. Library title pages the server has then show an **Open in Jellyfin** (or **Open in Emby**) button that opens the title in the server's web app, in a new tab. Only people who manage the Library see the button. Leave it empty for no button. Plex and Kodi have no button.
 
 ### Plex labels
 
@@ -60,7 +63,7 @@ On by default, since media servers are almost always at home. Turn it off for a 
 
 Turn it off to pause a server without removing it. The card shows **Off**.
 
-The token or key is stored encrypted and never shown. Leave the box empty to keep it. After an address change, paste it again, so it never goes to a different server.
+The token, key or Kodi password is stored encrypted and never shown. Leave the box empty to keep it. After an address change, paste it again, so it never goes to a different server.
 
 ## Check that it works
 
@@ -70,7 +73,9 @@ The card shows the last check or the last error. Each update also lands in [Hist
 
 | Message or symptom | Fix |
 |---|---|
-| "the server turned down the token" | Select **Change** and paste a new token or key |
+| "the server turned down the token" | Select **Change** and paste a new token or key. For Kodi, check the user name and password |
+| Kodi: "the server did not answer" | Turn on **Allow remote control via HTTP** in Kodi, and check the port |
+| The Kodi scan finds nothing | The folder is outside every Kodi source, or the path pair does not match how Kodi lists the source |
 | "the server did not answer" | Check the address and port, and that HolyArrs can reach that machine |
 | "the server is on the local network, which it may not reach" | Turn on **Reach the local network** |
 | "the server has no movie, TV or music library" | Add a library in Plex, then test again |
@@ -91,6 +96,13 @@ HolyArrs waits 10 s and gathers every changed folder before it sends, so renamin
 | Plex | Finds the movie, TV or music library that holds the folder and scans that folder only. If none holds it, scans every library of that type |
 | Jellyfin | The list of created, changed or deleted folders, then one library refresh |
 | Emby | The list of created, changed or deleted folders |
+| Kodi | For a new or renamed folder, reads the folder above it again (`Files.GetDirectory`), then `VideoLibrary.Scan` of that folder only. For a delete, `VideoLibrary.Clean` of that folder only, with its content type (movies or TV shows). Music folders use `AudioLibrary.Scan`; a deleted music folder is left for Kodi's own clean, since Kodi cleans its music library only whole |
+
+Kodi gets plain JSON-RPC over HTTP (`POST /jsonrpc`, basic auth) and shows no progress window while it scans.
+
+The extra read of the folder above matters: Kodi keeps the last listing of a folder and, asked to scan a folder made since, answers OK and skips it as "does not exist". Without the read, a new folder under one Kodi already listed is skipped. A clean needs the content type too, or Kodi 20 answers OK and removes nothing.
+
+**Test** reads Kodi's name and version.
 
 A request to a server times out after 20 s, and **Test** after 30 s.
 

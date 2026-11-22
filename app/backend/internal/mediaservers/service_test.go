@@ -368,7 +368,7 @@ func TestInputChecksAndTokenAgain(t *testing.T) {
 	ctx := context.Background()
 	for _, in := range []Input{
 		{Name: "", Kind: "plex", URL: "http://x:32400", Token: tok},
-		{Name: "a", Kind: "kodi", URL: "http://x", Token: tok},
+		{Name: "a", Kind: "xbmc", URL: "http://x", Token: tok},
 		{Name: "a", Kind: "plex", URL: "x:32400", Token: tok},
 		{Name: "a", Kind: "plex", URL: "http://u:p@x:32400", Token: tok},
 		{Name: "a", Kind: "plex", URL: "http://x:32400"},

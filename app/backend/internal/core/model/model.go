@@ -463,12 +463,12 @@ type HealthCheck struct {
 	Confirmed string    `db:"confirmed" json:"confirmed"` // the state Alerts were told about; Home shows this one
 }
 
-// MediaServer is a Plex, Jellyfin or Emby server HolyArrs tells to look at
+// MediaServer is a Plex, Jellyfin, Emby or Kodi server HolyArrs tells to look at
 // a movie folder again after an import, rename or delete.
 type MediaServer struct {
 	Meta
 	Name          string     `db:"name"`
-	Kind          string     `db:"kind"` // plex, jellyfin, emby
+	Kind          string     `db:"kind"` // plex, jellyfin, emby, kodi
 	URL           string     `db:"url"`
 	TokenSecretID *int64     `db:"token_secret_id"`
 	Enabled       bool       `db:"enabled"`
@@ -478,7 +478,8 @@ type MediaServer struct {
 	PathFrom      string     `db:"path_from"` // HolyArrs' start of a path ...
 	PathTo        string     `db:"path_to"`   // ... as the media server sees it
 	AllowLocal    bool       `db:"allow_local_network"`
-	WebURL        string     `db:"web_url"` // where browsers open it; empty: no Open in button
+	WebURL        string     `db:"web_url"`  // where browsers open it; empty: no Open in button
+	Username      string     `db:"username"` // Kodi only: the web server user; the password is the token
 	LastOKAt      *time.Time `db:"last_ok_at"`
 	LastError     string     `db:"last_error"`
 }

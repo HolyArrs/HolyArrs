@@ -57,7 +57,7 @@ One line per word. Where older apps such as Sonarr and Radarr use another name, 
 | Word | Meaning |
 |---|---|
 | **Hardlink** | A second name for the same file. Takes no extra space and appears instantly. Works only within one filesystem. |
-| **Media server** | The app you watch from, such as Plex, Jellyfin or Emby. HolyArrs talks to it. |
+| **Media server** | The app you watch from, such as Plex, Jellyfin, Emby or Kodi. HolyArrs talks to it. |
 | **Mount** | A folder on your host that the container sees at a path, such as `/volume1/media/movies:/movies`. |
 | **PUID and PGID** | The user and group numbers HolyArrs runs as. They must own your media folders. |
 | **Reverse proxy** | The web server in front of your apps that sends each address to the right container. |

@@ -41,7 +41,7 @@ const (
 var (
 	ErrName     = errors.New("a media server needs a name of at most 80 characters")
 	ErrNameUsed = errors.New("another media server has that name")
-	ErrKind     = errors.New("kind must be plex, jellyfin or emby")
+	ErrKind     = errors.New("kind must be plex, jellyfin, emby or kodi")
 	ErrURL      = errors.New("the address must be an http or https link with a host, like http://192.168.1.10:32400")
 	ErrNoKey    = errors.New("paste the server's token (Plex) or API key (Jellyfin, Emby)")
 	ErrPathMap  = errors.New("give both sides of the path map, or neither")
@@ -63,16 +63,19 @@ func IsInputError(err error) bool {
 // Input is what a person sets on a media server. An empty token keeps the
 // stored one.
 type Input struct {
-	Name       string `json:"name"`
-	Kind       string `json:"kind"`
-	URL        string `json:"url"`
-	Token      string `json:"token"`
-	Enabled    *bool  `json:"enabled"`
-	OnImport   *bool  `json:"on_import"`
-	OnRename   *bool  `json:"on_rename"`
-	OnDelete   *bool  `json:"on_delete"`
-	PathFrom   string `json:"path_from"`
-	PathTo     string `json:"path_to"`
+	Name     string `json:"name"`
+	Kind     string `json:"kind"`
+	URL      string `json:"url"`
+	Token    string `json:"token"`
+	Enabled  *bool  `json:"enabled"`
+	OnImport *bool  `json:"on_import"`
+	OnRename *bool  `json:"on_rename"`
+	OnDelete *bool  `json:"on_delete"`
+	PathFrom string `json:"path_from"`
+	PathTo   string `json:"path_to"`
+	// Username is the user name of Kodi's web server (Kodi only); the token
+	// is its password, which may be empty when Kodi asks for none.
+	Username   string `json:"username"`
 	AllowLocal *bool  `json:"allow_local_network"`
 	// WebURL is where people's browsers open the server; empty clears it.
 	WebURL string `json:"web_url"`
@@ -99,7 +102,7 @@ func fill(in Input, m *domain.MediaServer, isNew bool) error {
 		return ErrName
 	}
 	if isNew {
-		if in.Kind != "plex" && in.Kind != "jellyfin" && in.Kind != "emby" {
+		if in.Kind != "plex" && in.Kind != "jellyfin" && in.Kind != "emby" && in.Kind != "kodi" {
 			return ErrKind
 		}
 		m.Kind = in.Kind
@@ -111,7 +114,7 @@ func fill(in Input, m *domain.MediaServer, isNew bool) error {
 		}
 		m.URL = strings.TrimRight(strings.TrimSpace(in.URL), "/")
 	}
-	if isNew && in.Token == "" {
+	if isNew && in.Token == "" && in.Kind != "kodi" {
 		return ErrNoKey
 	}
 	from, to := strings.TrimSpace(in.PathFrom), strings.TrimSpace(in.PathTo)
@@ -123,6 +126,9 @@ func fill(in Input, m *domain.MediaServer, isNew bool) error {
 		return ErrWebURL
 	}
 	m.Name, m.PathFrom, m.PathTo, m.WebURL = name, from, to, web
+	if m.Kind == "kodi" {
+		m.Username = strings.TrimSpace(in.Username)
+	}
 	m.Enabled = orKeep(in.Enabled, m.Enabled)
 	m.OnImport, m.OnRename, m.OnDelete = orKeep(in.OnImport, m.OnImport), orKeep(in.OnRename, m.OnRename), orKeep(in.OnDelete, m.OnDelete)
 	m.AllowLocal = orKeep(in.AllowLocal, m.AllowLocal)
@@ -139,11 +145,13 @@ func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by 
 		if err := nameUsed(tx, m.Name, 0); err != nil {
 			return err
 		}
-		id, err := v.PutTx(tx, "media_server_token", strings.TrimSpace(in.Token), by)
-		if err != nil {
-			return err
+		if in.Token != "" {
+			id, err := v.PutTx(tx, "media_server_token", strings.TrimSpace(in.Token), by)
+			if err != nil {
+				return err
+			}
+			m.TokenSecretID = &id
 		}
-		m.TokenSecretID = &id
 		return insertServer(tx, &m, by)
 	})
 	return m, err
@@ -160,7 +168,7 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 	if err := fill(in, &m, false); err != nil {
 		return old, err
 	}
-	if in.Token == "" && originOf(m.URL) != originOf(old.URL) {
+	if in.Token == "" && old.TokenSecretID != nil && originOf(m.URL) != originOf(old.URL) {
 		return old, ErrKeyAgain
 	}
 	err = s.Write(ctx, func(tx *sql.Tx) error {
@@ -532,6 +540,9 @@ func (l *Linker) record(ctx context.Context, m domain.MediaServer, sent []Update
 }
 
 func (l *Linker) token(ctx context.Context, m domain.MediaServer) (string, error) {
+	if m.TokenSecretID == nil && m.Kind == "kodi" {
+		return "", nil // Kodi may ask for no password
+	}
 	if m.TokenSecretID == nil || l.Vault == nil {
 		return "", ErrNoKey
 	}
@@ -626,7 +637,8 @@ func plexType(kind string) string {
 	return "movie"
 }
 
-// Tell asks the server to look at each folder again. Plex scans the movie,
+// Tell asks the server to look at each folder again. Kodi scans a new or
+// changed folder and cleans a deleted one (see tellKodi). Plex scans the movie,
 // TV or music library that holds the folder, only that folder; with no
 // library holding it, every library of the title's type is scanned. Jellyfin and Emby get one media
 // updated call with every folder and its change. Jellyfin then gets one full
@@ -635,6 +647,9 @@ func plexType(kind string) string {
 func (l *Linker) Tell(ctx context.Context, m domain.MediaServer, us []Update) error {
 	if len(us) == 0 {
 		return nil
+	}
+	if m.Kind == "kodi" {
+		return l.tellKodi(ctx, m, us)
 	}
 	if m.Kind == "plex" {
 		secs, err := l.plexSections(ctx, m)
@@ -695,11 +710,13 @@ type held struct{ error }
 func (h *held) Unwrap() []error { return []error{h.error, outbound.ErrSuppressed} }
 
 // Test checks the address and token: Plex must list at least one movie,
-// TV or music library; Jellyfin and Emby must answer their system info.
+// TV or music library; Kodi must answer its version; Jellyfin and Emby must answer their system info.
 func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error) {
 	var res string
 	var err error
-	if m.Kind == "plex" {
+	if m.Kind == "kodi" {
+		res, err = l.testKodi(ctx, m)
+	} else if m.Kind == "plex" {
 		var secs []plexSection
 		secs, err = l.plexSections(ctx, m)
 		if err == nil && len(secs) == 0 {

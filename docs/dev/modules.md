@@ -29,7 +29,7 @@ Pick the module your change belongs in, and know which modules it may call.
 | `importer` | File import: unpacking, tags, matching (backend only) |
 | `library` | Library folders, adopting and renaming (backend only) |
 | `metadata` | The outside data client, music lookups, rating ladders, trailers |
-| `mediaservers` | Telling Plex, Jellyfin and Emby to look again |
+| `mediaservers` | Telling Plex, Jellyfin, Emby and Kodi to look again |
 | `accounts` | Users, sign-in, single sign-on, AI app sign-in, kid limits, viewing choices |
 | `alerts` | Alert channels and when they speak |
 | `migrate` | Bringing data over from older apps |

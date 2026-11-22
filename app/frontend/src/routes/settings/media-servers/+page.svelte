@@ -22,8 +22,8 @@
 	import { session } from '#lib/core/session.svelte.ts';
 
 	type Kind = MediaServerView['kind'];
-	const kindWord: Record<Kind, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
-	const portHint: Record<Kind, string> = { plex: 'http://192.168.1.10:32400', jellyfin: 'http://192.168.1.10:8096', emby: 'http://192.168.1.10:8096' };
+	const kindWord: Record<Kind, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby', kodi: 'Kodi' };
+	const portHint: Record<Kind, string> = { plex: 'http://192.168.1.10:32400', jellyfin: 'http://192.168.1.10:8096', emby: 'http://192.168.1.10:8096', kodi: 'http://192.168.1.10:8080' };
 
 	let servers = $state<MediaServerView[]>([]);
 	let loaded = $state(false);
@@ -36,6 +36,7 @@
 		kind: 'jellyfin' as Kind,
 		url: '',
 		token: '',
+		username: '',
 		enabled: true,
 		on_import: true,
 		on_rename: true,
@@ -153,7 +154,7 @@
 	function startChange(m: MediaServerView) {
 		isNew = false;
 		editing = m;
-		form = { ...m, token: '' }; // Empty keeps the stored token.
+		form = { ...m, token: '', username: m.username ?? '' }; // Empty keeps the stored token.
 		formError = '';
 	}
 
@@ -234,19 +235,25 @@
 						<option value="plex">Plex</option>
 						<option value="jellyfin">Jellyfin</option>
 						<option value="emby">Emby</option>
+						<option value="kodi">Kodi</option>
 					</select>
 				</Field>
 			{/if}
 			<Field id="ms-url" label={t('settings.mediaServers.address')}>
 				<input id="ms-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder={portHint[form.kind]} />
 			</Field>
-			<Field id="ms-token" label={form.kind === 'plex' ? t('settings.mediaServers.plexTokenLabel') : t('settings.mediaServers.apiKeyLabel')}>
+			{#if form.kind === 'kodi'}
+				<Field id="ms-user" label={t('settings.downloaders.username')}>
+					<input id="ms-user" class="input" bind:value={form.username} autocomplete="off" spellcheck="false" placeholder="kodi" />
+				</Field>
+			{/if}
+			<Field id="ms-token" label={form.kind === 'plex' ? t('settings.mediaServers.plexTokenLabel') : form.kind === 'kodi' ? t('settings.downloaders.passwordLabel') : t('settings.mediaServers.apiKeyLabel')}>
 				<input id="ms-token" class="input mono" type="password" bind:value={form.token} autocomplete="new-password" />
 				<span class="hint">
-					{form.kind === 'plex' ? t('settings.mediaServers.plexTokenHint') : t('settings.mediaServers.apiKeyHint')}
+					{form.kind === 'plex' ? t('settings.mediaServers.plexTokenHint') : form.kind === 'kodi' ? '' : t('settings.mediaServers.apiKeyHint')}
 				</span>
 			</Field>
-			{#if form.kind !== 'plex'}
+			{#if form.kind === 'jellyfin' || form.kind === 'emby'}
 				<Field id="ms-web" label={t('settings.mediaServers.webUrl')}>
 					<input id="ms-web" class="input mono" type="url" bind:value={form.web_url} autocomplete="off" spellcheck="false" placeholder="https://jellyfin.example.com" />
 					<span class="hint">{t('settings.mediaServers.webUrlHint')}</span>

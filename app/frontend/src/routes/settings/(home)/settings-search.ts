@@ -194,7 +194,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/sign-in', 'proxy-card', 'Trusted proxies', 'reverse proxy forward auth', true),
 	e('/settings/api', 'keys-card', 'API keys', 'api key token make revoke'),
 
-	e('/settings/media-servers', '', 'Media servers', 'plex jellyfin emby library update notify'),
+	e('/settings/media-servers', '', 'Media servers', 'plex jellyfin emby kodi library update notify'),
 	e('/settings/alerts', '', 'Alerts', 'notifications discord telegram ntfy gotify pushover push email webhook notify'),
 	e('/settings/alerts', 'pack-alerts', 'Season pack Alerts', 'season pack one alert per episode'),
 	e('/settings/ai', 'ai-switch', 'AI apps', 'ai assistant claude chatgpt mcp llm agent bot connect turn on off'),

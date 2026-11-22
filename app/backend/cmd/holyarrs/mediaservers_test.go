@@ -30,7 +30,7 @@ func TestMediaServersOverHTTP(t *testing.T) {
 		_, _ = io.WriteString(w, `{"ServerName":"Lab Jellyfin","Version":"10.9.0"}`)
 	}))
 	defer jelly.Close()
-	r.owner.call("POST", "/api/v1/media-servers", `{"name":"J","kind":"kodi","url":"http://x","token":"tk-1234"}`, 400)
+	r.owner.call("POST", "/api/v1/media-servers", `{"name":"J","kind":"xbmc","url":"http://x","token":"tk-1234"}`, 400)
 	r.owner.call("POST", "/api/v1/media-servers", `{"name":"J","kind":"jellyfin","url":"`+jelly.URL+`"}`, 400)
 	b := r.owner.call("POST", "/api/v1/media-servers", `{"name":"Jellyfin","kind":"jellyfin","url":"`+jelly.URL+`","token":"tk-1234"}`, 201)
 	if strings.Contains(string(b), "tk-1234") {

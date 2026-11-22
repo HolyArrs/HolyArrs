@@ -14,6 +14,7 @@ type View struct {
 	Kind       string     `json:"kind"`
 	URL        string     `json:"url"`
 	Token      string     `json:"token"`
+	Username   string     `json:"username,omitempty"`
 	Enabled    bool       `json:"enabled"`
 	OnImport   bool       `json:"on_import"`
 	OnRename   bool       `json:"on_rename"`
@@ -29,7 +30,7 @@ type View struct {
 // ViewOf is m as the app shows it.
 func ViewOf(m domain.MediaServer) View {
 	v := View{ID: m.ID, Name: m.Name, Kind: m.Kind, URL: m.URL, Enabled: m.Enabled, OnImport: m.OnImport, OnRename: m.OnRename,
-		OnDelete: m.OnDelete, PathFrom: m.PathFrom, PathTo: m.PathTo, AllowLocal: m.AllowLocal, WebURL: m.WebURL, LastOKAt: m.LastOKAt, LastError: m.LastError}
+		OnDelete: m.OnDelete, PathFrom: m.PathFrom, PathTo: m.PathTo, AllowLocal: m.AllowLocal, WebURL: m.WebURL, Username: m.Username, LastOKAt: m.LastOKAt, LastError: m.LastError}
 	if m.TokenSecretID != nil {
 		v.Token = secrets.Masked
 	}

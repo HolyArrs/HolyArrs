@@ -24,7 +24,7 @@ func TestMediaServerAdapterConformance(t *testing.T) {
 			return (memoryMediaServer{err: errors.New("synthetic media-server failure")}).Tell(ctx, nil)
 		}, Cancellation: true})
 	w := newWorld(t)
-	for _, kind := range []string{"plex", "jellyfin", "emby"} {
+	for _, kind := range []string{"plex", "jellyfin", "emby", "kodi"} {
 		kind := kind
 		successLinker, successServer := mediaServerAdapter(t, w, kind, http.StatusOK)
 		failureLinker, failureServer := mediaServerAdapter(t, w, kind, http.StatusServiceUnavailable)
@@ -77,6 +77,10 @@ func mediaServerFixture(t *testing.T, kind string, status int) *httptest.Server 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if status != http.StatusOK {
 			http.Error(w, "synthetic failure", status)
+			return
+		}
+		if r.URL.Path == "/jsonrpc" {
+			_, _ = w.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":{"name":"Kodi","version":{"major":21,"minor":1}}}`))
 			return
 		}
 		if kind == "plex" && r.URL.Path == "/library/sections" {
