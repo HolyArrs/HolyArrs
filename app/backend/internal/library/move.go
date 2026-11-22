@@ -123,6 +123,14 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 	titleID := r.Job.Subject.ID
 	fid, _ := r.Job.Params["library_folder_id"].(float64)
 	apply, _ := r.Job.Params["apply"].(bool)
+	if apply {
+		// The real move takes the file lock before it reads the plan, as
+		// imports, renames and deletes do. Without it an upgrade could set
+		// a file aside, or a rename change its name, between the plan and
+		// the move, and the move would act on a stale path.
+		unlock := s.Store.LockFiles()
+		defer unlock()
+	}
 	db := s.Store.Read()
 	plans, err := PlanMove(ctx, db, db, titleID, int64(fid))
 	if err != nil {
@@ -329,7 +337,8 @@ func proofSourceUnchanged(name string, p preparedFileProof) bool {
 // moveFile hardlinks from to to and removes from, or on another disk copies
 // it through a temp file and then removes from. Neither ever replaces a file
 // at to. A move cut off after the copy finishes cleanly on the next try: a
-// target that is the same file, or has the same content, counts as ours.
+// target that is the same file, or has the same bytes in full, counts as
+// ours.
 func moveFile(from, to string) error {
 	return moveFileWithProof(from, to, "")
 }
@@ -386,7 +395,10 @@ func moveFileDistinctWithProof(from, to, proof string) error {
 			}
 			return os.Remove(from)
 		}
-		if dst.Mode().IsRegular() && importer.SameContent(from, to, src.Size()) {
+		// from is removed next, so a match on the ends alone is not
+		// enough: two encodes of one size can share them. This only runs
+		// when to already exists, such as after a cut-off move.
+		if dst.Mode().IsRegular() && dst.Size() == src.Size() && importer.SameFullContent(from, to) {
 			return os.Remove(from)
 		}
 		return fmt.Errorf("%s already exists and is a different file; HolyArrs never replaces it", to)
