@@ -275,7 +275,7 @@
 					</Field>
 				</div>
 			</details>
-			<details class="more" open={!!form.proxy}>
+			<details class="more" open={!!form.proxy || !!form.flaresolverr}>
 				<summary>{t('settings.sources.proxy')}</summary>
 				<Field id="so-proxy" label={t('settings.sources.proxyAddress')}>
 					<input id="so-proxy" class="input mono" bind:value={form.proxy} autocomplete="off" spellcheck="false" placeholder={t('settings.sources.proxyExample')} />
@@ -287,6 +287,9 @@
 					<input type="checkbox" bind:checked={form.proxy_allow_local_network} />
 					<span><b>{t('settings.sources.proxyLocal')}</b></span>
 				</label>
+				<Field id="so-flaresolverr" label={t('settings.sources.flaresolverr')} hint={t('settings.sources.flaresolverrHint')}>
+					<input id="so-flaresolverr" class="input mono" bind:value={form.flaresolverr} autocomplete="off" spellcheck="false" placeholder="http://flaresolverr:8191" />
+				</Field>
 			</details>
 			<label class="checkline">
 				<input type="checkbox" bind:checked={form.allow_local_network} />

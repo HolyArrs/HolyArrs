@@ -24,6 +24,8 @@ export interface SourceForm {
 	proxy: string;
 	proxy_password: string;
 	proxy_allow_local_network: boolean;
+	// flaresolverr opens the site's bot check, such as Cloudflare's.
+	flaresolverr: string;
 	tags: string[];
 	downloader_id: number;
 }
@@ -85,6 +87,7 @@ export function emptyForm(): SourceForm {
 		proxy: '',
 		proxy_password: '',
 		proxy_allow_local_network: false,
+		flaresolverr: '',
 		tags: [],
 		downloader_id: 0
 	};
@@ -114,6 +117,7 @@ export function formFrom(s: SourceView): SourceForm {
 		proxy: s.proxy,
 		proxy_password: s.proxy_password,
 		proxy_allow_local_network: s.proxy_allow_local_network,
+		flaresolverr: s.flaresolverr ?? '',
 		tags: [...(s.tags ?? [])],
 		downloader_id: s.downloader_id ?? 0
 	};
@@ -168,6 +172,7 @@ export function formBody(f: SourceForm): Record<string, unknown> {
 		proxy: f.proxy.trim(),
 		proxy_password: f.proxy_password,
 		proxy_allow_local_network: f.proxy_allow_local_network,
+		flaresolverr: f.flaresolverr.trim(),
 		tags: f.tags,
 		downloader_id: Number(f.downloader_id) || 0
 	};

@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://nama@hos:1080 atau http://hos:3128",
 	"settings.sources.proxyPass": "Kata laluan proksi",
 	"settings.sources.proxyLocal": "Proksi boleh berada di rangkaian setempat",
+	"settings.sources.flaresolverr": "Alamat FlareSolverr",
+	"settings.sources.flaresolverrHint": "Untuk laman di sebalik semakan bot, seperti Cloudflare. HolyArrs hanya bertanya kepada FlareSolverr apabila laman menunjukkan semakannya.",
 	"settings.sources.local": "Capai rangkaian setempat",
 	"settings.sources.localHint": "Untuk Jackett atau Prowlarr di rumah",
 	"settings.sources.save": "Simpan",

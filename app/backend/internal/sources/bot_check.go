@@ -10,8 +10,9 @@ import (
 )
 
 // A site's bot check is a page meant for a browser, which Cloudflare or DDoS-Guard puts in front of a Source
-// in place of the feed. HolyArrs never runs a browser or solves a CAPTCHA, so it says plainly that it
-// is blocked instead of calling the key refused, which a bare 403 would suggest.
+// in place of the feed. HolyArrs runs no browser itself: with a FlareSolverr set on the Source it asks that
+// one (see flaresolverr.go), and otherwise it says plainly that it is blocked instead of calling the key
+// refused, which a bare 403 would suggest.
 // A site that bans the address outright is told apart, because nothing on the HolyArrs side fixes it.
 // The kind is kept in the Source's extra under "block" while the Source is paused.
 const (
@@ -21,7 +22,7 @@ const (
 
 // blockText says what each kind of block means for the person.
 var blockText = map[string]string{
-	BlockBotCheck: "Blocked by the site's bot check. Reach this site through Jackett or Prowlarr.",
+	BlockBotCheck: "Blocked by the site's bot check. Set a FlareSolverr address on this Source, or reach this site through Jackett or Prowlarr.",
 	BlockSiteBan:  "The site's protection refuses HolyArrs's address. Changing anything in HolyArrs does not help; the site has to allow it.",
 }
 

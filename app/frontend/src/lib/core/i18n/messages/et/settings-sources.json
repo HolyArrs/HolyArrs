@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://nimi@host:1080 või http://host:3128",
 	"settings.sources.proxyPass": "Puhverserveri parool",
 	"settings.sources.proxyLocal": "Puhverserveri võib olla kohtvõrgus",
+	"settings.sources.flaresolverr": "FlareSolverri aadress",
+	"settings.sources.flaresolverrHint": "Saidile, mille ees on robotikontroll, näiteks Cloudflare. HolyArrs küsib FlareSolverrilt ainult siis, kui sait kontrolli näitab.",
 	"settings.sources.local": "Luba ligipääs kohtvõrku",
 	"settings.sources.localHint": "Kodus oleva Jacketti või Prowlarri jaoks",
 	"settings.sources.save": "Salvesta",

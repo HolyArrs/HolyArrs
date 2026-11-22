@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 أو http://host:3128",
 	"settings.sources.proxyPass": "كلمة مرور الوكيل",
 	"settings.sources.proxyLocal": "قد يكون الوكيل على الشبكة المحلية",
+	"settings.sources.flaresolverr": "عنوان FlareSolverr",
+	"settings.sources.flaresolverrHint": "لموقع خلف فحص للروبوتات مثل Cloudflare. يسأل HolyArrs ‏FlareSolverr فقط عندما يعرض الموقع فحصه.",
 	"settings.sources.local": "الوصول إلى الشبكة المحلية",
 	"settings.sources.localHint": "لـ Jackett أو Prowlarr في المنزل",
 	"settings.sources.save": "حفظ",

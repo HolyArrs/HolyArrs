@@ -367,6 +367,24 @@ func TestSave_KeepsKeysInVault(t *testing.T) {
 	if src, err = Change(ctx, s, v, src.ID, Input{Name: "Lab", URL: "http://lab.example/torznab/api", Priority: ptr(3)}, by); err != nil || src.Priority != 3 {
 		t.Fatalf("same host: %v %+v", err, src)
 	}
+	// FlareSolverr is handed the page address and the proxy password, so a
+	// new FlareSolverr host needs the key and proxy password typed again.
+	if _, err := Change(ctx, s, v, src.ID, Input{Name: "Lab", FlareSolverr: ptr("http://flare.example:8191")}, by); !errors.Is(err, ErrFlareAgain) {
+		t.Fatalf("new FlareSolverr host: %v", err)
+	}
+	if _, err := Change(ctx, s, v, src.ID, Input{Name: "Lab", FlareSolverr: ptr("http://flare.example:8191"), APIKey: labKey}, by); !errors.Is(err, ErrFlareAgain) {
+		t.Fatalf("new FlareSolverr host with the key only: %v", err)
+	}
+	if src, err = Change(ctx, s, v, src.ID, Input{Name: "Lab", FlareSolverr: ptr("http://flare.example:8191"), APIKey: labKey, ProxyPassword: "proxy-pass"}, by); err != nil || src.FlareSolverrURL != "http://flare.example:8191" {
+		t.Fatalf("new FlareSolverr host with both typed: %v %+v", err, src)
+	}
+	// Another port counts as another host, as for the Source address.
+	if _, err := Change(ctx, s, v, src.ID, Input{Name: "Lab", FlareSolverr: ptr("http://flare.example:8192")}, by); !errors.Is(err, ErrFlareAgain) {
+		t.Fatalf("same FlareSolverr host, other port: %v", err)
+	}
+	if src, err = Change(ctx, s, v, src.ID, Input{Name: "Lab", FlareSolverr: ptr("")}, by); err != nil || src.FlareSolverrURL != "" {
+		t.Fatalf("drop FlareSolverr: %v %+v", err, src)
+	}
 	if _, err := Change(ctx, s, v, src.ID, Input{Name: "Lab", Proxy: ptr("http://elsewhere.example:3128")}, by); !errors.Is(err, ErrProxyAgain) {
 		t.Fatalf("new proxy host: %v", err)
 	}

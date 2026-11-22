@@ -46,6 +46,8 @@
 	"settings.sources.proxyExample": "socks5://name@host:1080 또는 http://host:3128",
 	"settings.sources.proxyPass": "프록시 비밀번호",
 	"settings.sources.proxyLocal": "프록시가 로컬 네트워크에 있을 수 있음",
+	"settings.sources.flaresolverr": "FlareSolverr 주소",
+	"settings.sources.flaresolverrHint": "Cloudflare 같은 봇 확인 뒤에 있는 사이트용입니다. 사이트가 확인을 보여 줄 때만 HolyArrs가 FlareSolverr에 요청합니다.",
 	"settings.sources.local": "로컬 네트워크 접근",
 	"settings.sources.localHint": "집에 있는 Jackett나 Prowlarr용",
 	"settings.sources.save": "저장",

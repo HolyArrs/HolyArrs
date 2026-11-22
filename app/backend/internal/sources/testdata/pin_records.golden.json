@@ -85,6 +85,7 @@
     "ProxyAllowLocal": false,
     "PathSecretRef": null,
     "Tags": null,
-    "DownloaderID": null
+    "DownloaderID": null,
+    "FlareSolverrURL": ""
   }
 }
