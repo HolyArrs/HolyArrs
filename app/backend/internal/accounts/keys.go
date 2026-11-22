@@ -103,6 +103,26 @@ func (a *Auth) checkKey(ctx context.Context, k string) (webserver.Caller, bool) 
 	return who, true
 }
 
+// errMixedMCP is the answer to a key asked for with mcp and another scope.
+const errMixedMCP = "an AI key (mcp) holds no other scope"
+
+// scopeProblem says why no key may be made with scope sc, or "". What the
+// asker may hand out is checked by the caller.
+func scopeProblem(sc string) string {
+	if !slices.Contains(Scopes, sc) {
+		return "scopes are " + strings.Join(Scopes, ", ") + " (all includes read, write and admin)"
+	}
+	if sc == webserver.ScopeCompat {
+		return "make arr API keys in Settings > API (POST /api/v1/settings/old-app-api/keys/{side}), not here"
+	}
+	return ""
+}
+
+// mixesMCP reports whether scopes hold mcp next to another scope.
+func mixesMCP(scopes []string) bool {
+	return slices.Contains(scopes, webserver.ScopeMCP) && len(slices.Compact(slices.Sorted(slices.Values(scopes)))) > 1
+}
+
 func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 	if !webserver.RequireStrong(w, r) {
 		return
@@ -126,12 +146,8 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 		body.Scopes = []string{webserver.ScopeAll}
 	}
 	for _, sc := range body.Scopes {
-		if !slices.Contains(Scopes, sc) {
-			fail(w, http.StatusBadRequest, "scopes are "+strings.Join(Scopes, ", ")+" (all includes read, write and admin)")
-			return
-		}
-		if sc == webserver.ScopeCompat {
-			fail(w, http.StatusBadRequest, "make arr API keys in Settings > API (POST /api/v1/settings/old-app-api/keys/{side}), not here")
+		if msg := scopeProblem(sc); msg != "" {
+			fail(w, http.StatusBadRequest, msg)
 			return
 		}
 		if !who.HasScope(sc) {
@@ -143,8 +159,8 @@ func (a *Auth) makeKey(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if slices.Contains(body.Scopes, webserver.ScopeMCP) && len(slices.Compact(slices.Sorted(slices.Values(body.Scopes)))) > 1 {
-		fail(w, http.StatusBadRequest, "an AI key (mcp) holds no other scope")
+	if mixesMCP(body.Scopes) {
+		fail(w, http.StatusBadRequest, errMixedMCP)
 		return
 	}
 	body.Scopes = slices.Compact(slices.Sorted(slices.Values(body.Scopes)))
@@ -245,9 +261,17 @@ func (a *Auth) deleteKey(w http.ResponseWriter, r *http.Request) {
 	who, _ := webserver.From(r.Context())
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		label = keyLabel(r.Context(), tx, id)
-		var err error
+		envHash, err := envKeyHash(r.Context(), tx, id)
+		if err != nil {
+			return err
+		}
 		n, err = deleteKey(r.Context(), tx, id, who.Role == webserver.RoleOwner, who.UserID)
-		return err
+		if err != nil || n == 0 || envHash == "" {
+			return err
+		}
+		// A person deleting the file's key may know it leaked: the next
+		// start must not make it again.
+		return noteRevoked(r.Context(), tx, envHash, webserver.Actor(r.Context()), a.now())
 	})
 	if err != nil {
 		fail(w, http.StatusInternalServerError, "something went wrong; see the log")

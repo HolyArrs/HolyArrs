@@ -24,7 +24,7 @@ That builds the web app and the program into `bin/holyarrs`. On Windows without 
     cd app/frontend; npm ci; npm run build; cd ../..
     go build -o bin/holyarrs.exe ./app/backend/cmd/holyarrs
 
-Start it with `bin/holyarrs` and open http://localhost:6262. The first person to open a fresh install becomes the owner.
+Start it with `bin/holyarrs` and open http://localhost:6262. The first person to open a fresh install becomes the owner, unless `HOLYARRS_OWNER_NAME` is set.
 
 For live reload while you work on pages, see [docs/dev/setup.md](../docs/dev/setup.md).
 

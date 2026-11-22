@@ -597,11 +597,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return err
 	}})
 	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
-	sso, err := accounts.SSOFromEnv(c.URLBase)
+	au, err := startAuth(ctx, s, vault, c, unmapped != "")
 	if err != nil {
-		return err
+		return authRefused(err, hold)
 	}
-	au := accounts.New(s, accounts.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso, ConfigUnmapped: unmapped != ""})
 	defer au.Close()
 	loop(jobs.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
 	var restarting atomic.Bool

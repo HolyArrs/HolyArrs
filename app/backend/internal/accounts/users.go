@@ -500,6 +500,11 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 		}
+		// The file's key goes for the same reason, and the next start must
+		// not make it again.
+		if err := noteRevokedOf(r.Context(), tx, who.UserID, webserver.Actor(r.Context()), a.now()); err != nil {
+			return err
+		}
 		return deleteKeysOf(r.Context(), tx, who.UserID)
 	})
 	if err != nil {
