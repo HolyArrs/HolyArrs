@@ -561,7 +561,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 			}
 		}
 	}
-	placedBy, fellBack, srcGone := "none", false, false
+	placedBy, fellBack, created, removeSrc := "none", false, false, false
 	if filepath.Clean(target) != src {
 		ops := im.Ops
 		if ops.Link == nil {
@@ -570,36 +570,48 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 		if ops.Copy == nil {
 			ops.Copy = copyFile
 		}
+		// Only a target this import made may be undone. One that was
+		// there already, the same file or the same bytes, stays.
+		_, terr := os.Lstat(target)
 		res := place(mediafiles.PlanStep{SourceFile: src, TargetPath: target, Method: "hardlink"}, ops, time.Time{})
 		if res.Outcome != "placed" {
 			putBack()
 			r.Outcome, r.Error = res.Outcome, res.Error
 			return r, nil
 		}
+		created = errors.Is(terr, os.ErrNotExist)
 		placedBy, fellBack = res.PlacedBy, res.FellBack
 		if item.Kind != "track" {
 			im.placeSideFiles(ctx, "", []mediafiles.PlanStep{{SourceFile: src, TargetPath: target}}, []mediafiles.PlaceResult{res}, item.Kind == "episode")
 		}
-		if mode == "move" {
-			if err := os.Remove(src); err != nil {
-				r.Error = "placed, but the original could not be removed: " + err.Error()
-			} else {
-				srcGone = true
-				// A hardlink then delete is a move; a copy then delete stays a copy that fell back.
-				if placedBy == "hardlink" {
-					placedBy = "move"
-				}
-			}
+		// The source goes only when this import made the target: a target
+		// that was already there may be the very same directory entry
+		// under another spelling (a symlinked folder, a name that differs
+		// only in case, an NTFS short name), and removing the source would
+		// then remove the only copy. A made target is a second entry.
+		removeSrc = mode == "move" && created && !oneEntry(src, target)
+		// A hardlink then delete is a move; a copy then delete stays a copy that fell back.
+		if removeSrc && placedBy == "hardlink" {
+			placedBy = "move"
 		}
 	}
 	r.Outcome, r.PlacedBy, r.FellBack = "placed", placedBy, fellBack
 	rec := byHandRecord{old: old, held: held, download: it.fromDownload}
 	if err := im.recordByHand(ctx, &r, src, target, lf, ver, item, ti, sl, p, rec, by); err != nil {
-		if !srcGone && (placedBy == "hardlink" || placedBy == "copy") {
+		// The source is still there, so the new file this import made can
+		// go before the old one returns to its place.
+		if created {
 			_ = os.Remove(target)
 		}
 		putBack()
 		return r, err
+	}
+	// With Move the source goes only once the record is kept, so a failed
+	// record never leaves the new file as the only, unrecorded copy.
+	if removeSrc {
+		if err := os.Remove(src); err != nil {
+			r.Error = "placed, but the original could not be removed: " + err.Error()
+		}
 	}
 	return r, nil
 }
