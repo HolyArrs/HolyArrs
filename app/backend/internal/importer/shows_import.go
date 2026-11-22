@@ -381,14 +381,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			sweepStaleParts(filepath.Dir(st.TargetPath))
 		}
 	}
-	whole := func(f mediafiles.File) bool {
-		for _, id := range f.SlotIDs {
-			if !filled[id] {
-				return false
-			}
-		}
-		return true
-	}
+	whole := func(f mediafiles.File) bool { return allIn(f.SlotIDs, filled) }
 	abs := func(f mediafiles.File) string { return filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)) }
 	save := func() error {
 		return im.Store.Write(ctx, func(tx *sql.Tx) error { return database.Update(tx, "imports", imp, by) })
@@ -396,7 +389,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	heldFirst := map[int]string{}
 	for i, fs := range olds {
 		for _, f := range fs {
-			if !whole(f) || filepath.Clean(abs(f)) != filepath.Clean(plan[i].TargetPath) {
+			if !whole(f) || !covers(plan[i], f) || filepath.Clean(abs(f)) != filepath.Clean(plan[i].TargetPath) {
 				continue
 			}
 			if r := heldFrom(recorded, f.RelativePath); r != "" {
@@ -437,6 +430,8 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			return imp, err
 		}
 	}
+	placedSlot := placedSlots(plan, imp.Result)
+	wholePlaced := func(f mediafiles.File) bool { return allIn(f.SlotIDs, placedSlot) }
 	replacedTo := map[int64]string{}
 	for i, fs := range olds {
 		placed := imp.Result[i].Outcome == "placed"
@@ -456,7 +451,13 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				}
 			case sameSpot:
 				replacedTo[f.ID] = heldFirst[i]
+			case placed && !wholePlaced(f): // it stays for the episodes whose step failed (keepOldCopies)
 			case placed:
+				if _, done := replacedTo[f.ID]; done {
+					// A copy that holds two episodes is listed under both
+					// steps. The first one set it aside; keep where it went.
+					break
+				}
 				to := heldFrom(recorded, f.RelativePath)
 				if _, err := os.Lstat(abs(f)); err == nil && to == "" {
 					var herr error
@@ -479,6 +480,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				replacedTo[f.ID] = to
 			}
 		}
+	}
+	if err := keepOldCopies(slotFiles(ctx, db, slots), recorded, wholePlaced, abs); err != nil {
+		return imp, err
 	}
 	if crashAt != nil && len(replacedTo) > 0 {
 		if err := crashAt("held_late"); err != nil {
@@ -547,13 +551,10 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				continue
 			}
 			for _, f := range fs {
-				if !whole(f) {
-					var rest []int64
-					for _, id := range f.SlotIDs {
-						if !filled[id] {
-							rest = append(rest, id)
-						}
-					}
+				// A copy that kept some of its episodes stays in place
+				// and holds just those.
+				if !wholePlaced(f) {
+					rest := notIn(f.SlotIDs, placedSlot)
 					if _, err := tx.Exec("UPDATE files SET slot_ids = ?, updated_at = ?, updated_by = ? WHERE id = ?",
 						jsonIDs(rest), database.FormatTime(now), actorText(by), f.ID); err != nil {
 						return err
