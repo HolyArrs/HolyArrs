@@ -427,12 +427,20 @@ func (b *builder) naming(s *Snapshot) {
 			}
 			out[ours] = c
 		case "multi_episode_style":
-			m := map[string]string{"0": "each", "extend": "each", "1": "each_dash", "duplicate": "each_dash", "2": "each", "repeat": "each",
+			// Sonarr's Extend writes S01E01-02-03: short_range (S01E01-03) is the
+			// nearest, as the old-app API's table maps it (arrapi multiOurs). It
+			// is not the same name for three or more episodes, so a note says so.
+			// Duplicate repeats the whole SxxEyy for each episode, which no style
+			// here writes, so it is listed as not moved.
+			m := map[string]string{"0": "short_range", "extend": "short_range", "2": "each", "repeat": "each",
 				// Sonarr's Range writes S01E01-03 (our short_range), PrefixedRange S01E01-E03 (our range).
 				"3": "each_dash", "scene": "each_dash", "4": "short_range", "range": "short_range", "5": "range", "prefixedrange": "range"}[strings.ToLower(str(v))]
 			if m == "" {
 				b.not(GroupNaming, from, k, "this style has no HolyArrs match")
 				continue
+			}
+			if m == "short_range" && (strings.EqualFold(str(v), "0") || strings.EqualFold(str(v), "extend")) {
+				b.p.Notes = append(b.p.Notes, fmt.Sprintf("%s: the Extend multi-episode style (S01E01-02-03) becomes S01E01-03; a file with three or more episodes gets a new name when it is renamed", s.Kind))
 			}
 			out[ours] = m
 		default:

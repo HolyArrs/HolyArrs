@@ -897,7 +897,8 @@ func TestPlanEveryDownloaderKind(t *testing.T) {
 
 // Sonarr's multi-episode styles: Range (4) writes S01E01-03 and
 // PrefixedRange (5) writes S01E01-E03, given as a number (as Sonarr's API
-// and database send it) or as a name.
+// and database send it) or as a name. Extend (0) becomes the nearest style
+// with a note, and Duplicate (1), which no style here writes, is not moved.
 func TestPlanMultiEpisodeStyle(t *testing.T) {
 	for in, want := range map[any]string{
 		"4": "short_range", "range": "short_range", "Range": "short_range",
@@ -905,6 +906,9 @@ func TestPlanMultiEpisodeStyle(t *testing.T) {
 		"3": "each_dash", "scene": "each_dash", "2": "each", "repeat": "each",
 		// The API's JSON number and the database's integer.
 		float64(4): "short_range", int64(5): "range",
+		// Extend (S01E01-02-03) comes closest to short_range; Duplicate
+		// (S01E01.S01E02) has no match and is listed as not moved.
+		"0": "short_range", "extend": "short_range", "1": "", "duplicate": "",
 	} {
 		s := &Snapshot{Kind: Sonarr, Naming: map[string]any{"multiEpisodeStyle": in}}
 		p := BuildPlan([]Input{{ID: 1, Snap: s}}, Choices{})
@@ -918,6 +922,13 @@ func TestPlanMultiEpisodeStyle(t *testing.T) {
 		}
 		if got != want {
 			t.Errorf("Sonarr style %v became %q, want %q", in, got, want)
+		}
+		if want == "" && !accounted(p, "sonarr naming.multiEpisodeStyle") {
+			t.Errorf("Sonarr style %v is neither moved nor listed as not moved", in)
+		}
+		noted := slices.ContainsFunc(p.Notes, func(n string) bool { return strings.Contains(n, "Extend multi-episode style") })
+		if extend := in == "0" || in == "extend"; noted != extend {
+			t.Errorf("Sonarr style %v: Extend note %v, want %v (notes %v)", in, noted, extend, p.Notes)
 		}
 	}
 }
