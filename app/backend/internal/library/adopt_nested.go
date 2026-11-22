@@ -27,13 +27,69 @@ var extrasFolders = map[string]bool{"extras": true, "extra": true, "bonus": true
 // partFolder says a subfolder belongs to the movie folder around it
 // (extras, discs, bonus material) rather than being a movie of its own.
 func partFolder(name string) bool {
-	n := strings.Join(strings.Fields(strings.Map(func(r rune) rune {
+	n := folderWords(name)
+	return extrasFolders[n] || reDiscFolder.MatchString(n)
+}
+
+// folderWords lowers a folder name and turns dots, dashes and
+// underscores into single spaces, so "Behind.The.Scenes" reads as
+// "behind the scenes".
+func folderWords(name string) string {
+	return strings.Join(strings.Fields(strings.Map(func(r rune) rune {
 		if r == '.' || r == '_' || r == '-' {
 			return ' '
 		}
 		return r
 	}, strings.ToLower(name))), " ")
-	return extrasFolders[n] || reDiscFolder.MatchString(n)
+}
+
+// extraOnlyFolders hold nothing but a movie's extras. It is extrasFolders
+// without the folders that can hold the movie itself: disc structures
+// (BDMV, VIDEO_TS), "Feature", subtitles and backups.
+var extraOnlyFolders = map[string]bool{"extras": true, "extra": true, "bonus": true, "bonus features": true, "making of": true,
+	"behind the scenes": true, "deleted scenes": true, "featurettes": true, "featurette": true, "specials": true,
+	"special features": true, "samples": true, "sample": true, "trailers": true, "trailer": true, "interviews": true,
+	"interview": true, "scenes": true, "shorts": true, "other": true, "others": true}
+
+// extraSuffixes are the name endings media servers read as a movie's
+// extras, as in "Heat (1995)-trailer.mkv".
+var extraSuffixes = []string{"-trailer", "-featurette", "-behindthescenes", "-deleted", "-interview", "-scene", "-short", "-other", "-extra"}
+
+// MovieExtra says a video in a movie folder is one of the movie's extras,
+// not the movie: it sits in an extras folder, or its name ends the way
+// media servers mark extras, or it is named just "trailer". rel is the
+// video's path inside the movie folder, with forward slashes.
+func MovieExtra(rel string) bool {
+	parts := strings.Split(rel, "/")
+	for _, dir := range parts[:len(parts)-1] {
+		if extraOnlyFolders[folderWords(dir)] {
+			return true
+		}
+	}
+	name := parts[len(parts)-1]
+	base := strings.ToLower(strings.TrimSuffix(name, path.Ext(name)))
+	if base == "trailer" {
+		return true
+	}
+	for _, s := range extraSuffixes {
+		if strings.HasSuffix(base, s) {
+			return true
+		}
+	}
+	return false
+}
+
+// mainMovieVideo picks the movie's own file in a movie folder: the
+// biggest video that is not an extra. A folder that holds only extras has
+// no movie file, so a trailer or a featurette is never taken as the movie
+// and later upgraded or deleted as one. Extras do not count toward the
+// read limit, so a folder with many of them still shows its movie.
+func mainMovieVideo(lib, folder string) (AdoptVideo, bool) {
+	vids := listVideosWhere(lib, folder, maxScanVideos, func(rel string) bool { return !MovieExtra(rel) })
+	if len(vids) == 0 {
+		return AdoptVideo{}, false
+	}
+	return vids[0], true
 }
 
 // movieFolders lists the movie folders of a Library folder as paths

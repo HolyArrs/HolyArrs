@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -439,7 +440,16 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 			}
 			continue
 		}
-		for _, vid := range listVideos(lf.Path, v.FolderName) {
+		vids := listVideos(lf.Path, v.FolderName)
+		// The read limit counts extras too, so the videos that are not
+		// extras are added when many extras filled the list before them;
+		// two cuts of the movie then still ask the person.
+		for _, feature := range listVideosWhere(lf.Path, v.FolderName, maxScanVideos, func(rel string) bool { return !MovieExtra(rel) }) {
+			if !slices.ContainsFunc(vids, func(x AdoptVideo) bool { return x.Path == feature.Path }) {
+				vids = append(vids, feature)
+			}
+		}
+		for _, vid := range vids {
 			if known[strings.ToLower(vid.Path)] {
 				continue
 			}
@@ -469,7 +479,7 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 	return n, nil
 }
 
-// linkFoundMovie links the one found video in a movie Version's folder to
+// linkFoundMovie links the one found video, extras aside, in a movie Version's folder to
 // its slot when the slot has no file and no running download, as Radarr does
 // with a file another app placed: once the file is there the movie is no
 // longer wanted. A file that does not fit (edition, audio) stays a note.
@@ -480,7 +490,9 @@ func (s *Service) linkFoundMovie(ctx context.Context, v mediafiles.Version, by d
 	}
 	var only []mediafiles.File
 	for _, f := range notes {
-		if len(f.SlotIDs) == 0 && !f.Protected {
+		// An extra (a trailer, a featurette) is never the movie, so it is
+		// never linked as its copy; it stays a note beside it.
+		if len(f.SlotIDs) == 0 && !f.Protected && !MovieExtra(strings.TrimPrefix(f.RelativePath, v.FolderName+"/")) {
 			only = append(only, f)
 		}
 	}

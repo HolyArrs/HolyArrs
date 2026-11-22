@@ -132,6 +132,13 @@ func listVideos(lib, folder string) []AdoptVideo { return ListVideosN(lib, folde
 
 // listVideosN is listVideos reading at most limit videos.
 func ListVideosN(lib, folder string, limit int) []AdoptVideo {
+	return listVideosWhere(lib, folder, limit, nil)
+}
+
+// listVideosWhere is ListVideosN keeping only the videos keep accepts, by
+// their path inside the folder with forward slashes; nil keeps all. Only
+// kept videos count toward limit.
+func listVideosWhere(lib, folder string, limit int, keep func(rel string) bool) []AdoptVideo {
 	root := filepath.Join(lib, folder)
 	var out []AdoptVideo
 	_ = filepath.WalkDir(root, func(p string, e fs.DirEntry, err error) error {
@@ -155,6 +162,9 @@ func ListVideosN(lib, folder string, limit int) []AdoptVideo {
 			if w == "sample" {
 				return nil
 			}
+		}
+		if keep != nil && !keep(filepath.ToSlash(rel)) {
+			return nil
 		}
 		fi, err := e.Info()
 		if isLink {
@@ -313,8 +323,8 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 		}
 		ReportScan(ctx, len(p.Folders), total)
 		c := AdoptCandidate{Folder: name, Videos: listVideos(lf.Path, name), Others: []AdoptMatch{}}
-		if len(c.Videos) > 0 {
-			c.Main = c.Videos[0].Path
+		if v, ok := mainMovieVideo(lf.Path, name); ok {
+			c.Main = v.Path
 		}
 		if id, ok := known[FolderKey(name, fold)]; ok {
 			c.Status, c.Why, c.TitleID = "in_library", "this folder already belongs to a movie in the Library", id
@@ -364,7 +374,7 @@ func PlanAdoptFrom(ctx context.Context, db Reader, md metadata.Provider, folderI
 				c.Status, c.Why, c.TitleID = "in_library", "this movie is already in the Library in another folder", id
 			case never:
 				c.Status, c.Why = "never_add", "this movie is on the Never-add list"
-			case len(c.Videos) == 0:
+			case c.Main == "": // no video, or only extras
 				c.Status, c.Why = "no_video", "no video file in the folder; adopting adds the movie as missing"
 			case c.Match.Score < MatchSure || close:
 				c.Status, c.Why = "unsure", fmt.Sprintf("best match %s (%d) at %.0f%%; check it", c.Match.Name, c.Match.Year, c.Match.Score*100)
@@ -509,8 +519,8 @@ func (s *Service) adoptOne(ctx context.Context, lf mediafiles.LibraryFolder, c A
 		return 0, "", fmt.Errorf("TMDB %s: %w", c.TMDB, err)
 	}
 	a := &Adoption{FolderName: c.Folder}
-	if vids := listVideos(lf.Path, c.Folder); len(vids) > 0 {
-		a.File, a.Size = vids[0].Path, vids[0].Size
+	if v, ok := mainMovieVideo(lf.Path, c.Folder); ok {
+		a.File, a.Size = v.Path, v.Size
 	}
 	id, err := AddMovie(ctx, s.Store, m, AddOptions{LibraryFolderID: lf.ID, WhyAdded: "import", Adopt: a,
 		ReleaseGate: c.ReleaseGate, GateDelayDays: c.GateDelayDays}, s.DownloadFolders(ctx), s.now(), by)
