@@ -242,6 +242,10 @@ export interface AskStep {
 	text?: string;
 	searched_at?: string;
 	next_search?: string;
+	/** What kind of wait it is, for everyone who asked: 'rules' when releases were found and all were turned down. */
+	why?: string;
+	/** When the first part still to come is expected (not_out only). */
+	out_at?: string;
 }
 
 export interface Ask {

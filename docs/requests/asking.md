@@ -47,6 +47,9 @@ You join their request. Joining is free, does not use your weekly limit, and get
 | **Waiting for approval** | Nobody has decided yet |
 | **Approved** | Added to the Library |
 | **Searching**, **Downloading**, **Importing** | HolyArrs is getting it |
+| **Not out yet** | It has not been released. When a date is known you see it: "Not out yet · expected Dec 18" |
+| **Nothing found yet** | HolyArrs looked and found no release. It looks again by itself |
+| **None passed the quality rules** | Releases exist, but the owner's rules turned every one down. It keeps looking; only the owner can change the rules |
 | **Ready to watch** | Files are in. For a show: every aired episode of the asked seasons. For music: every track of the asked albums |
 | **Declined** | You see the approver's reason |
 

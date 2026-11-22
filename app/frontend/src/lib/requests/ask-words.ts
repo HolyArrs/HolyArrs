@@ -3,7 +3,9 @@
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { shownPerson } from '#lib/core/plain.ts';
 import type { AskLimit, LimitKind } from './types.ts';
-import type { Ask } from '../core/types.ts';
+import type { Ask, AskStep } from '../core/types.ts';
+import { ago } from '#lib/core/format.ts';
+import { shortDate } from './inbox.ts';
 
 /** The Requests tabs. Failed is an approved ask that never reached the Library. */
 export type AskTab = 'waiting' | 'approved' | 'declined' | 'done' | 'failed';
@@ -179,4 +181,26 @@ export function approverSort<T extends Pick<Ask, 'state' | 'title_id' | 'asked_a
 	const decidedAt = (a: T) => when(a.decided_at) || when(a.available_at) || when(a.asked_at);
 	if (tab === 'processing') return out.sort((x, y) => Number(askTab(y) === 'failed') - Number(askTab(x) === 'failed') || decidedAt(y) - decidedAt(x));
 	return out.sort((x, y) => decidedAt(y) - decidedAt(x));
+}
+
+/** Says, in plain words, where an approved ask is now and why it waits: no percent, no download names, none of the search's own words. */
+export function stepWords(step: AskStep | undefined, now = Date.now()): string {
+	switch (step?.kind) {
+		case 'searching':
+			return t('requests.cards.step.searching');
+		case 'downloading':
+			return t('requests.cards.step.downloading');
+		case 'importing':
+			return t('requests.cards.step.importing');
+		case 'waiting_on_admin':
+			return t('requests.cards.step.waitingAdmin');
+		case 'not_out': {
+			const date = step.out_at ? shortDate(step.out_at, new Date(now)) : '';
+			return date ? t('requests.cards.step.notOutUntil', { date }) : t('requests.cards.step.notOut');
+		}
+		case 'waiting':
+			if (!step.searched_at) return t('requests.cards.step.notLooked');
+			return t(step.why === 'rules' ? 'requests.cards.step.turnedDown' : 'requests.cards.step.nothingYet', { ago: ago(step.searched_at, now) });
+	}
+	return '';
 }

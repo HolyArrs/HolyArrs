@@ -3,6 +3,7 @@ package requests
 import (
 	"context"
 	"database/sql"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,24 @@ type Step struct {
 	// NextSearch is when the search for missing looks next, for an ask not
 	// looked for yet (waiting only; empty when that search is off).
 	NextSearch *time.Time `json:"next_search,omitempty"`
+	// Why says, for everyone who asked, what kind of wait it is (waiting
+	// only): "rules" when the last search found releases and the Pick rules
+	// turned every one down. Empty when nothing was found at all.
+	Why string `json:"why,omitempty"`
+	// OutAt is when the first part still to come is expected (not_out
+	// only; empty when no date is known or it has passed).
+	OutAt *time.Time `json:"out_at,omitempty"`
+}
+
+// foundRefused reads the counts a search leaves in its reason when nothing
+// passed the Pick rules: "(2 found, 2 refused)".
+var foundRefused = regexp.MustCompile(`\((\d+) found, \d+ refused\)`)
+
+// turnedDown says the search's reason is "releases were found and none
+// passed the rules", not "nothing was found".
+func turnedDown(reason string) bool {
+	m := foundRefused.FindStringSubmatch(reason)
+	return m != nil && m[1] != "0"
 }
 
 // AddSteps fills Step on approved asks that are not in the Library yet.
@@ -38,7 +57,7 @@ func (s *Service) AddSteps(ctx context.Context, vs []View, staff bool) {
 		if v.State != domain.AskApproved || v.TitleID == nil {
 			continue
 		}
-		if st, ok := stepOf(ctx, db, *v); ok {
+		if st, ok := stepOf(ctx, db, *v, s.now()); ok {
 			if !staff {
 				st.Text = ""
 			}
@@ -52,7 +71,7 @@ func (s *Service) AddSteps(ctx context.Context, vs []View, staff bool) {
 // would look for: a decision waiting on a person first, then an import, a
 // download, a search (or a found release waiting out its delay), and else
 // why nothing is coming yet. Nothing left to get (or a failed read): no step.
-func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
+func stepOf(ctx context.Context, db *sql.DB, v View, now time.Time) (Step, bool) {
 	titleID := *v.TitleID
 	q := stepOfSQL
 	args := []any{titleID}
@@ -106,12 +125,12 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 	seen := map[mediafiles.SlotState]bool{}
 	var slotIDs, partIDs []any
 	reason, missing := "", 0
-	var searched *time.Time
+	var searched, out *time.Time
 	for rows.Next() {
 		var id, part int64
 		var state, why string
-		var at sql.NullString
-		if rows.Scan(&id, &state, &why, &part, &at) != nil {
+		var at, due sql.NullString
+		if rows.Scan(&id, &state, &why, &part, &at, &due) != nil {
 			continue
 		}
 		st := mediafiles.SlotState(state)
@@ -121,6 +140,11 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 			partIDs = append(partIDs, part)
 		}
 		switch st {
+		case mediafiles.SlotNotOutYet:
+			// The first one still to come: a date that passed says nothing.
+			if t, ok := parseAt(due); ok && t.After(now) && (out == nil || t.Before(*out)) {
+				out = &t
+			}
 		case mediafiles.SlotWanted, mediafiles.SlotBetterWanted, mediafiles.SlotFailed, mediafiles.SlotRejected:
 			missing++
 			// Only a search's own words say why nothing came: a slot never
@@ -151,6 +175,9 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 		return Step{Kind: "searching"}, true
 	case missing > 0:
 		st := Step{Kind: "waiting", Text: reason, SearchedAt: searched}
+		if turnedDown(reason) {
+			st.Why = "rules"
+		}
 		if searched == nil {
 			var next sql.NullString
 			var on bool
@@ -162,7 +189,7 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 		}
 		return st, true
 	case seen[mediafiles.SlotNotOutYet]:
-		return Step{Kind: "not_out"}, true
+		return Step{Kind: "not_out", OutAt: out}, true
 	}
 	return Step{}, false
 }

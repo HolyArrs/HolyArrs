@@ -1,4 +1,4 @@
-import { statesToFill, totalCounts, alsoDeclined, approverCounts, approverSort, approverTab, askMoments, askTab, askTabs, askedBy, firstTab, libraryMoments, momentWords, tabCounts, limitLine, limitLines, names, waitWords } from './ask-words.ts';
+import { statesToFill, totalCounts, alsoDeclined, approverCounts, approverSort, approverTab, askMoments, askTab, askTabs, askedBy, firstTab, libraryMoments, momentWords, tabCounts, limitLine, limitLines, names, waitWords, stepWords } from './ask-words.ts';
 import type { AskKindLimit, AskLimit } from './types.ts';
 import { describe, expect, it } from 'vitest';
 import type { AskState } from '../core/types.ts';
@@ -138,5 +138,25 @@ describe('statesToFill', () => {
 		expect(statesToFill('done', 250, listed)).toEqual(['available', 'turned_down']);
 		expect(statesToFill('done', 0, listed)).toEqual([]);
 		expect(statesToFill('processing', 254, listed)).toEqual([]);
+	});
+});
+
+describe('where an approved ask is', () => {
+	const now = Date.parse('2026-11-03T12:00:00Z');
+	it('says when something not out yet is expected', () => {
+		expect(stepWords({ kind: 'not_out' }, now)).toBe('Not out yet');
+		expect(stepWords({ kind: 'not_out', out_at: '2026-12-18T00:00:00Z' }, now)).toBe('Not out yet · expected Dec 18');
+		expect(stepWords({ kind: 'not_out', out_at: '2027-03-12T00:00:00Z' }, now)).toBe('Not out yet · expected Mar 12, 2027');
+	});
+	it('keeps "found but turned down" apart from "nothing found"', () => {
+		const searched_at = '2026-11-03T10:00:00Z';
+		expect(stepWords({ kind: 'waiting', searched_at }, now)).toBe('Nothing found yet · last looked 2 h ago');
+		expect(stepWords({ kind: 'waiting', searched_at, why: 'rules' }, now)).toBe('None passed the quality rules · 2 h ago');
+		expect(stepWords({ kind: 'waiting', why: 'rules' }, now)).toBe('Not looked for yet');
+	});
+	it('says the other steps as before', () => {
+		expect(stepWords({ kind: 'searching' }, now)).toBe('Searching for it now');
+		expect(stepWords({ kind: 'waiting_on_admin' }, now)).toBe('Waiting on an admin');
+		expect(stepWords(undefined, now)).toBe('');
 	});
 });

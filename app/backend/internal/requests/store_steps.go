@@ -2,7 +2,8 @@ package requests
 
 // Statements of steps.go. The text is the exact SQL the server runs.
 const (
-	stepOfSQL = `SELECT s.id, s.state, COALESCE(s.last_reason, ''), COALESCE(i.part_id, 0), i.last_searched_at
+	stepOfSQL = `SELECT s.id, s.state, COALESCE(s.last_reason, ''), COALESCE(i.part_id, 0), i.last_searched_at,
+			CASE WHEN t.kind = 'movie' THEN t.gate_opens_at ELSE i.air_date END
 		FROM slots s JOIN items i ON i.id = s.item_id JOIN versions v ON v.id = s.version_id JOIN titles t ON t.id = i.title_id
 		LEFT JOIN parts p ON p.id = i.part_id
 		WHERE i.title_id = ? AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL AND v.keep_up_to_date = 1 AND t.state = 'active'

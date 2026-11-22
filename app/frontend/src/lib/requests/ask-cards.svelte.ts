@@ -2,7 +2,7 @@
 import { type IconName } from '#lib/ui/Icon.svelte';
 import { titleStatus } from '#lib/ui/title-status.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
-import { askedBy as askedByRaw, alsoDeclined as alsoDeclinedRaw } from './ask-words.ts';
+import { askedBy as askedByRaw, alsoDeclined as alsoDeclinedRaw, stepWords } from './ask-words.ts';
 import { liveFacts } from './live.ts';
 import { serverWords } from '#lib/core/i18n/server-words.ts';
 import { askArtist, askDetails } from './details.svelte.ts';
@@ -11,7 +11,6 @@ import { seasonWords } from '#lib/shows/index.ts';
 import { albumWords } from '#lib/music/index.ts';
 import { decided as decidedRaw, decidedWho } from '#lib/core/plain.ts';
 import { to } from '#lib/core/paths.ts';
-import { ago } from '#lib/core/format.ts';
 import type { TitleLive } from './live.ts';
 import { session } from '#lib/core/session.svelte.ts';
 import { looksLikeId } from '#lib/core/plain.ts';
@@ -65,21 +64,7 @@ export function createAskCards(ctx: { approver: boolean; titleLive: Map<number, 
 	/** Says, in plain words, where the person's own approved ask is now: no percent, no download names. */
 	function stepLine(a: Ask): string {
 		if (a.state !== 'approved' || !a.step) return '';
-		switch (a.step.kind) {
-			case 'searching':
-				return t('requests.cards.step.searching');
-			case 'downloading':
-				return t('requests.cards.step.downloading');
-			case 'importing':
-				return t('requests.cards.step.importing');
-			case 'waiting_on_admin':
-				return t('requests.cards.step.waitingAdmin');
-			case 'not_out':
-				return t('requests.cards.step.notOut');
-			case 'waiting':
-				return a.step.searched_at ? t('requests.cards.step.nothingYet', { ago: ago(a.step.searched_at) }) : t('requests.cards.step.notLooked');
-		}
-		return '';
+		return stepWords(a.step);
 	}
 	// While one of the person's own asks is on its way, read the list again now and then: a search starting or an import finishing reaches them only this way. Without "Run the Library" there are no download events, so the downloads read here would freeze; the poll reads them again too while any are on screen.
 	const noDlEvents = $derived(!session.can('manage_library'));
