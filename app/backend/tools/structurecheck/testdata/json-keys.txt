@@ -72,6 +72,8 @@ active_downloads
 actor_name
 adaptive
 adaptiveFormats
+addImportExclusion
+addImportListExclusion
 addOptions
 add_cgnat
 add_home_ranges
@@ -157,6 +159,7 @@ app_token
 app_version
 applied
 apply
+applyTags
 approval_hash
 approved
 approved_hash
@@ -432,6 +435,7 @@ default_pick_rules_id
 default_url
 defaults
 delay_profiles
+deleteFiles
 delete_files
 deleted_at
 deluge
@@ -1025,6 +1029,7 @@ moments
 monitor
 monitorNewItems
 monitored
+monitoringOptions
 month
 month_down
 monthly_listeners
@@ -1576,6 +1581,7 @@ sending
 serial
 series
 seriesId
+seriesIds
 seriesType
 server
 serverAbrStreamingUrl

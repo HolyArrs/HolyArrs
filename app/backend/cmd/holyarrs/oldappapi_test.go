@@ -105,6 +105,13 @@ func (f *oldAppFix) arrOK(key, method, path, body string, want int) any {
 // newOldAppFix serves the app, under base when one is given.
 func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 	t.Helper()
+	return newOldAppFixMeta(t, metadata.Lab(), base...)
+}
+
+// newOldAppFixMeta serves the app with a chosen movie metadata stand-in,
+// for tests that need more than the one lab movie.
+func newOldAppFixMeta(t *testing.T, md metadata.Provider, base ...string) *oldAppFix {
+	t.Helper()
 	dir := t.TempDir()
 	s, err := database.Open(dir, database.Options{})
 	if err != nil {
@@ -124,7 +131,7 @@ func newOldAppFix(t *testing.T, base ...string) *oldAppFix {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := buildHandlers(services{Store: s, Queue: q, Library: lib, Metadata: metadata.Lab(), Version: "test",
+	h := buildHandlers(services{Store: s, Queue: q, Library: lib, Metadata: md, Version: "test",
 		Auth: accounts.New(s, accounts.Options{}), Parts: pc, Secrets: vault}).Handler()
 	f := &oldAppFix{t: t, s: s, pc: pc, showDir: t.TempDir(), movieDir: t.TempDir(), art: art, vault: vault}
 	if len(base) > 0 {

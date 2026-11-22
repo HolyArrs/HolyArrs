@@ -9,7 +9,7 @@ What old-app clients can't do through HolyArrs, and the fix for each common erro
 
 ## Supported apps
 
-Seerr, Overseerr, Bazarr, Unpackerr, Prowlarr and the Homepage Sonarr widget. The Homepage Radarr widget is untried. Recyclarr, Maintainerr, Cleanuparr and other apps that talk to Sonarr or Radarr are not supported.
+Seerr, Overseerr, Bazarr, Unpackerr, Prowlarr, Kometa and the Homepage Sonarr widget. The Homepage Radarr widget is untried. Recyclarr, Maintainerr, Cleanuparr and other apps that talk to Sonarr or Radarr are not supported.
 
 ## If it does not work
 
@@ -35,7 +35,9 @@ Seerr, Overseerr, Bazarr, Unpackerr, Prowlarr and the Homepage Sonarr widget. Th
 | Show type | Changing the series type of a show already in the Library is ignored. |
 | Settings calls | Pick rules, naming, notifications and backups are not answered. Indexers are answered only the way Prowlarr writes them, one at a time. |
 | Unanswered calls | Return an error. HolyArrs never pretends a call worked. |
-| Tags | Not attached to titles, so lists filtered by tag are not narrowed. |
+| Tags | Kept on titles: an add attaches the tags sent, reads list them, and the bulk editor adds, removes or replaces them. |
+| Bulk calls | Kometa's bulk add, editor and season pass calls are answered. One call takes up to 500 adds, or 1000 ids to edit or remove. A path sent with an add is kept as the title's folder when it is one folder directly in the root folder. |
+| Season pass | Keeps whole seasons: `all`, `none`, `firstSeason`, `latestSeason`, `monitorSpecials`, `unmonitorSpecials` and `skip` work. `future`, `missing`, `existing`, `recent` and `pilot` pick single episodes and are refused. |
 | Languages | Carry only their name. No known original language reads "Unknown". |
 | Dashboard lists | `/wanted/missing`, `/calendar`, `/health`, `/queue/details` and `/queue/status` answer on both sides. `/wanted/cutoff` is not answered. |
 | Version number | Status reports `4.0.99.0` on the Sonarr side and `5.0.99.0` on the Radarr side, because clients choose their calls from it. |

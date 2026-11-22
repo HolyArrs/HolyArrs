@@ -51,6 +51,39 @@ func listTags(ctx context.Context, q database.Lister) ([]tag, error) {
 	return out, nil
 }
 
+// tagByID returns sql.ErrNoRows when no tag has the id.
+func tagByID(ctx context.Context, q database.Lister, id int64) (tag, error) {
+	var t tag
+	rows, err := q.QueryContext(ctx, "SELECT id, label FROM compat_tags WHERE id = ?", id)
+	if err != nil {
+		return t, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return t, sql.ErrNoRows
+	}
+	err = rows.Scan(&t.ID, &t.Label)
+	return t, err
+}
+
+// tagTitles lists the ids of the titles that carry a tag, lowest first.
+func tagTitles(ctx context.Context, q database.Lister, tagID int64) ([]int64, error) {
+	rows, err := q.QueryContext(ctx, "SELECT title_id FROM compat_title_tags WHERE tag_id = ? ORDER BY title_id", tagID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []int64{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}
+
 // tagByLabel returns sql.ErrNoRows when no tag has the label, so a caller
 // can tell a new label from a failed read.
 func tagByLabel(tx *sql.Tx, label string) (tag, error) {
@@ -153,6 +186,36 @@ func linkTags(ctx context.Context, st *database.Store, titleID int64, tagIDs []i
 	}
 	ids, _ := json.Marshal(tagIDs)
 	return st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("INSERT OR IGNORE INTO compat_title_tags (tag_id, title_id) SELECT id, ? FROM compat_tags WHERE id IN (SELECT value FROM json_each(?))", titleID, string(ids))
+		return err
+	})
+}
+
+// unlinkTags takes the tags with these ids off a title. Ids no tag has
+// are skipped, as linkTags does.
+func unlinkTags(ctx context.Context, st *database.Store, titleID int64, tagIDs []int64) error {
+	if len(tagIDs) == 0 {
+		return nil
+	}
+	ids, _ := json.Marshal(tagIDs)
+	return st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("DELETE FROM compat_title_tags WHERE title_id = ? AND tag_id IN (SELECT value FROM json_each(?))", titleID, string(ids))
+		return err
+	})
+}
+
+// setTags makes a title carry exactly these tags, replacing what it had.
+// Ids no tag has are skipped, as linkTags does. An empty list takes every
+// tag off.
+func setTags(ctx context.Context, st *database.Store, titleID int64, tagIDs []int64) error {
+	ids, _ := json.Marshal(tagIDs)
+	return st.Write(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.Exec("DELETE FROM compat_title_tags WHERE title_id = ?", titleID); err != nil {
+			return err
+		}
+		if len(tagIDs) == 0 {
+			return nil
+		}
 		_, err := tx.Exec("INSERT OR IGNORE INTO compat_title_tags (tag_id, title_id) SELECT id, ? FROM compat_tags WHERE id IN (SELECT value FROM json_each(?))", titleID, string(ids))
 		return err
 	})

@@ -1,6 +1,7 @@
 package arrapi
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -166,21 +167,86 @@ func (h *handler) removeTag(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// tagDetail lists each tag with the ids of this side's titles that carry
-// it (shows on the Sonarr side, movies on the Radarr side). Removed titles
-// are left out.
-func (h *handler) tagDetail(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	db := h.Store.Read()
-	tags, err := listTags(ctx, db)
+// getTag answers one tag. arrapi reads a title's tag ids and then each
+// tag's label by id, as Kometa's remove-by-tag does.
+func (h *handler) getTag(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	t, err := tagByID(r.Context(), h.Store.Read(), id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		notFound(w)
+	case err != nil:
+		internalError(w, err)
+	default:
+		writeJSON(w, http.StatusOK, t)
+	}
+}
+
+// getTagDetail answers one tag with the ids of this side's titles that
+// carry it, the one-tag form of tagDetail.
+func (h *handler) getTagDetail(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	t, err := tagByID(r.Context(), h.Store.Read(), id)
+	if errors.Is(err, sql.ErrNoRows) {
+		notFound(w)
+		return
+	} else if err != nil {
+		internalError(w, err)
+		return
+	}
+	ids, err := tagTitles(r.Context(), h.Store.Read(), id)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
-	links, err := allTagLinks(ctx, db)
+	// Only this side's titles that are still in the Library.
+	on := []int64{}
+	if len(ids) > 0 {
+		ts, err := database.Select[mediafiles.Title](r.Context(), h.Store.Read(), "titles", "kind = ? AND state != 'removed' AND id IN "+idList(ids)+" ORDER BY id", h.folderKind())
+		if err != nil {
+			internalError(w, err)
+			return
+		}
+		for _, x := range ts {
+			on = append(on, x.ID)
+		}
+	}
+	key := "movieIds"
+	if h.side == "sonarr" {
+		key = "seriesIds"
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"id": t.ID, "label": t.Label, key: on})
+}
+
+// tagDetail lists each tag with the ids of this side's titles that carry
+// it (shows on the Sonarr side, movies on the Radarr side). Removed titles
+// are left out.
+func (h *handler) tagDetail(w http.ResponseWriter, r *http.Request) {
+	out, err := h.tagDetails(r.Context())
 	if err != nil {
 		internalError(w, err)
 		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// tagDetails lists each tag with the ids of this side's live titles that
+// carry it.
+func (h *handler) tagDetails(ctx context.Context) ([]map[string]any, error) {
+	db := h.Store.Read()
+	tags, err := listTags(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	links, err := allTagLinks(ctx, db)
+	if err != nil {
+		return nil, err
 	}
 	var ids []int64
 	for _, l := range links {
@@ -191,8 +257,7 @@ func (h *handler) tagDetail(w http.ResponseWriter, r *http.Request) {
 		slices.Sort(ids)
 		ts, err := database.Select[mediafiles.Title](ctx, db, "titles", "kind = ? AND state != 'removed' AND id IN "+idList(slices.Compact(ids)), h.folderKind())
 		if err != nil {
-			internalError(w, err)
-			return
+			return nil, err
 		}
 		for _, t := range ts {
 			live[t.ID] = true
@@ -212,5 +277,5 @@ func (h *handler) tagDetail(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, map[string]any{"id": tg.ID, "label": tg.Label, key: on})
 	}
-	writeJSON(w, http.StatusOK, out)
+	return out, nil
 }

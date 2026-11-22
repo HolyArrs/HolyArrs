@@ -40,10 +40,12 @@ DELETE /api/v1/users/{id}/sessions/{sid} admin
 DELETE /customformat/{id} delete
 DELETE /delayprofile/{id} delete
 DELETE /indexer/{id} delete
+DELETE /movie/editor delete
 DELETE /movie/{id} delete
 DELETE /notification/{id} delete
 DELETE /qualityprofile/{id} delete
 DELETE /radarr/ delete
+DELETE /series/editor delete
 DELETE /series/{id} delete
 DELETE /sonarr/ delete
 DELETE /tag/{id} delete
@@ -314,6 +316,8 @@ GET /sonarr/ see
 GET /system/status admin
 GET /tag see
 GET /tag/detail see
+GET /tag/detail/{id} see
+GET /tag/{id} see
 GET /wanted/missing see
 POST / add
 POST /api/v1/alerts settings
@@ -520,13 +524,16 @@ POST /indexer settings
 POST /indexer/test settings
 POST /mcp see
 POST /movie add
+POST /movie/import add
 POST /notification settings
 POST /notification/test settings
 POST /oauth/register admin
 POST /oauth/token admin
 POST /qualityprofile settings
 POST /radarr/ add
+POST /seasonpass add
 POST /series add
+POST /series/import add
 POST /sonarr/ add
 POST /tag settings
 PUT /api/v1/account/avatar settings
@@ -607,6 +614,7 @@ PUT /delayprofile/{id} settings
 PUT /episode/monitor add
 PUT /indexer/{id} settings
 PUT /movie add
+PUT /movie/editor add
 PUT /movie/{id} add
 PUT /notification settings
 PUT /notification/{id} settings
@@ -615,6 +623,7 @@ PUT /qualitydefinition/{id} settings
 PUT /qualityprofile/{id} settings
 PUT /radarr/ add
 PUT /series add
+PUT /series/editor add
 PUT /series/{id} add
 PUT /sonarr/ add
 PUT /tag settings

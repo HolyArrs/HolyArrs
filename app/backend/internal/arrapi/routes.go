@@ -91,9 +91,13 @@ func Sonarr(d Deps) http.Handler {
 	mux.HandleFunc("GET /series/lookup", h.lookupSeries)
 	mux.HandleFunc("GET /series/{id}", h.getSeries)
 	mux.HandleFunc("POST /series", h.addSeries)
+	mux.HandleFunc("POST /series/import", h.importSeries)
 	mux.HandleFunc("PUT /series", h.putSeries)
 	mux.HandleFunc("PUT /series/{id}", h.putSeries)
+	mux.HandleFunc("PUT /series/editor", h.editSeriesBulk)
+	mux.HandleFunc("DELETE /series/editor", h.deleteEditor)
 	mux.HandleFunc("DELETE /series/{id}", h.deleteTitle)
+	mux.HandleFunc("POST /seasonpass", h.seasonPass)
 	mux.HandleFunc("GET /episode", h.listEpisodes)
 	mux.HandleFunc("PUT /episode/monitor", h.monitorEpisodes)
 	mux.HandleFunc("GET /wanted/missing", h.missingEpisodes)
@@ -111,8 +115,11 @@ func Radarr(d Deps) http.Handler {
 	mux.HandleFunc("GET /movie/lookup", h.lookupMovies)
 	mux.HandleFunc("GET /movie/{id}", h.getMovie)
 	mux.HandleFunc("POST /movie", h.addMovie)
+	mux.HandleFunc("POST /movie/import", h.importMovies)
 	mux.HandleFunc("PUT /movie", h.putMovie)
 	mux.HandleFunc("PUT /movie/{id}", h.putMovie)
+	mux.HandleFunc("PUT /movie/editor", h.editMoviesBulk)
+	mux.HandleFunc("DELETE /movie/editor", h.deleteEditor)
 	mux.HandleFunc("DELETE /movie/{id}", h.deleteTitle)
 	mux.HandleFunc("GET /exclusions/paged", h.neverAddPage)
 	mux.HandleFunc("GET /wanted/missing", h.missingMovies)
@@ -141,6 +148,8 @@ func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /tag/{id}", h.putTag)
 	mux.HandleFunc("DELETE /tag/{id}", h.removeTag)
 	mux.HandleFunc("GET /tag/detail", h.tagDetail)
+	mux.HandleFunc("GET /tag/{id}", h.getTag)
+	mux.HandleFunc("GET /tag/detail/{id}", h.getTagDetail)
 	mux.HandleFunc("GET /queue", h.queue)
 	mux.HandleFunc("GET /queue/details", h.queueDetails)
 	mux.HandleFunc("GET /queue/status", h.queueStatus)
@@ -244,6 +253,9 @@ type failure struct {
 	AttemptedValue any    `json:"attemptedValue"`
 	Severity       string `json:"severity"`
 	ErrorCode      string `json:"errorCode,omitempty"`
+	// skip marks a refusal bulk import passes over, as the old apps'
+	// import does: already added, on the Never-add list, or not found.
+	skip bool
 }
 
 func refuse(w http.ResponseWriter, fs ...failure) {
@@ -256,7 +268,16 @@ func refuse(w http.ResponseWriter, fs ...failure) {
 // decode reads a JSON body into v. Key case does not matter. It returns
 // false after sending a 400.
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, bodyMax)).Decode(v); err != nil {
+	return decodeUpTo(w, r, v, bodyMax)
+}
+
+// importBodyMax is the larger body a bulk import may send: arrapi sends
+// each title's whole lookup answer, and 500 shows pass 1 MiB.
+const importBodyMax = 16 << 20
+
+// decodeUpTo is decode with its own body limit.
+func decodeUpTo(w http.ResponseWriter, r *http.Request, v any, most int64) bool {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, most)).Decode(v); err != nil {
 		message(w, http.StatusBadRequest, "the body is not valid JSON for this route")
 		return false
 	}

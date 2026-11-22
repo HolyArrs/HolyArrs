@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -379,9 +380,12 @@ type movieIn struct {
 	QualityProfileID    looseID   `json:"qualityProfileId"`
 	MinimumAvailability string    `json:"minimumAvailability"`
 	RootFolderPath      string    `json:"rootFolderPath"`
-	Monitored           *bool     `json:"monitored"`
-	Tags                []looseID `json:"tags"`
-	AddOptions          struct {
+	Monitored           *keepFlag `json:"monitored"`
+	// Path is the movie's own folder, kept as it is (Kometa sends it for
+	// movies already on disk).
+	Path       string    `json:"path"`
+	Tags       []looseID `json:"tags"`
+	AddOptions struct {
 		SearchForMovie bool `json:"searchForMovie"`
 	} `json:"addOptions"`
 }
@@ -390,43 +394,66 @@ type movieIn struct {
 // the search waits for the folder scan and stays within the Release gate,
 // because the old apps treat that search as automatic too.
 func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	var in movieIn
 	if !decode(w, r, &in) {
 		return
 	}
+	id, f, err := h.addMovieOne(r.Context(), in, actor(r))
+	switch {
+	case f != nil:
+		refuse(w, *f)
+	case err != nil:
+		internalError(w, err)
+	default:
+		out, _, err := h.oneMovie(r.Context(), id, false)
+		if err != nil {
+			internalError(w, err)
+			return
+		}
+		w.Header().Set("Location", "/"+h.side+"/api/v3/movie/"+itoa(id))
+		writeJSON(w, http.StatusCreated, out)
+	}
+}
+
+// addMovieOne adds one movie from an add body and puts its tags on it. It
+// answers the new id, a refusal, or an error, so the single add and the
+// bulk import share one path. Refusals marked skip are the ones Radarr's
+// import passes over: already added, on the Never-add list, or not found
+// at the metadata server.
+func (h *handler) addMovieOne(ctx context.Context, in movieIn, by domain.Actor) (int64, *failure, error) {
 	if in.TmdbID <= 0 {
-		refuse(w, failure{PropertyName: "TmdbId", ErrorMessage: "send the movie's TMDB id", AttemptedValue: in.TmdbID})
-		return
+		return 0, &failure{PropertyName: "TmdbId", ErrorMessage: "send the movie's TMDB id", AttemptedValue: in.TmdbID}, nil
 	}
 	if in.QualityProfileID < 0 {
-		refuse(w, failure{PropertyName: "QualityProfileId", ErrorMessage: "send the Pick rules id as a number"})
-		return
+		return 0, &failure{PropertyName: "QualityProfileId", ErrorMessage: "send the Pick rules id as a number"}, nil
 	}
-	exists := failure{PropertyName: "TmdbId", ErrorMessage: movieAlreadyAdded, AttemptedValue: in.TmdbID, ErrorCode: "MovieExistsValidator"}
+	exists := &failure{PropertyName: "TmdbId", ErrorMessage: movieAlreadyAdded, AttemptedValue: in.TmdbID, ErrorCode: "MovieExistsValidator", skip: true}
 	if id, err := library.TitleByTMDB(ctx, h.Store.Read(), itoa(in.TmdbID)); err != nil {
-		internalError(w, err)
-		return
+		return 0, nil, err
 	} else if id != 0 {
-		refuse(w, exists)
-		return
+		return 0, exists, nil
 	}
+	if f := badKeep(in.Monitored); f != nil {
+		return 0, f, nil
+	}
+	defer lockKept(in.Path)()
 	folder, ok := h.folderByPath(ctx, in.RootFolderPath)
 	if !ok {
-		refuse(w, failure{PropertyName: "RootFolderPath", ErrorMessage: "no movie Library folder has this path", AttemptedValue: in.RootFolderPath})
-		return
+		return 0, &failure{PropertyName: "RootFolderPath", ErrorMessage: "no movie Library folder has this path", AttemptedValue: in.RootFolderPath}, nil
+	}
+	kept, _, f, err := h.keptFolder(ctx, folder, in.RootFolderPath, in.Path)
+	if f != nil || err != nil {
+		return 0, f, err
 	}
 	m, err := h.Metadata.Movie(ctx, "tmdb:"+itoa(in.TmdbID))
 	if errors.Is(err, metadata.ErrNotFound) {
-		refuse(w, failure{PropertyName: "TmdbId", ErrorMessage: "no movie with this TMDB id was found", AttemptedValue: in.TmdbID})
-		return
+		return 0, &failure{PropertyName: "TmdbId", ErrorMessage: "no movie with this TMDB id was found", AttemptedValue: in.TmdbID, skip: true}, nil
 	}
 	if err != nil {
-		internalError(w, err)
-		return
+		return 0, nil, err
 	}
 	// A missing monitored counts as true, as in Radarr.
-	keep := in.Monitored == nil || *in.Monitored
+	keep := in.Monitored == nil || in.Monitored.On
 	// A missing or unknown gate counts as released, as in Radarr.
 	gate := gateOf(in.MinimumAvailability)
 	if gate == "" {
@@ -434,40 +461,32 @@ func (h *handler) addMovie(w http.ResponseWriter, r *http.Request) {
 	}
 	opt := library.AddOptions{LibraryFolderID: folder, PickRulesID: int64(in.QualityProfileID), KeepUpToDate: &keep,
 		ReleaseGate: gate, SearchOnAdd: in.AddOptions.SearchForMovie}
-	id, _, err := h.Library.Add(ctx, m, opt, actor(r))
+	if kept != "" {
+		// The folder is kept as it is; the scan after the add finds and
+		// links the movie file in it.
+		opt.Adopt = &library.Adoption{FolderName: kept}
+	}
+	id, _, err := h.Library.Add(ctx, m, opt, by)
 	var dup *library.AlreadyAddedError
 	switch {
 	case errors.As(err, &dup):
-		refuse(w, exists)
-		return
+		return 0, exists, nil
 	case errors.Is(err, library.ErrNeverAdd):
-		refuse(w, failure{PropertyName: "TmdbId", ErrorMessage: "this movie is on HolyArrs' Never-add list", AttemptedValue: in.TmdbID})
-		return
+		return 0, &failure{PropertyName: "TmdbId", ErrorMessage: "this movie is on HolyArrs' Never-add list", AttemptedValue: in.TmdbID, skip: true}, nil
 	case err != nil:
 		if f, ok := addFailure(err, int64(in.QualityProfileID), in.RootFolderPath); ok {
-			refuse(w, f)
-			return
+			return 0, &f, nil
 		}
-		internalError(w, err)
-		return
+		return 0, nil, err
 	}
 	if err := linkTags(ctx, h.Store, id, tagIDs(in.Tags)); err != nil {
-		internalError(w, err)
-		return
+		return 0, nil, err
 	}
-	out, _, err := h.oneMovie(ctx, id, false)
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	w.Header().Set("Location", "/"+h.side+"/api/v3/movie/"+itoa(id))
-	writeJSON(w, http.StatusCreated, out)
+	return id, nil, nil
 }
 
 // putMovie changes a movie already in the Library. The id comes from the
-// path or the body. Only monitored, the quality profile and the minimum
-// stage are taken. The folder stays as it is, because moves are done in
-// HolyArrs. An app sends a search as its own command.
+// path or the body. An app sends a search as its own command.
 func (h *handler) putMovie(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	var in movieIn
@@ -482,30 +501,12 @@ func (h *handler) putMovie(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	var c library.TitleChange
-	if in.Monitored != nil && *in.Monitored != t.KeepUpToDate {
-		c.KeepUpToDate = in.Monitored
-	}
-	if g := gateOf(in.MinimumAvailability); g != "" && g != t.ReleaseGate {
-		c.ReleaseGate = &g
-	}
-	mains, err := h.mainVersions(ctx, []int64{t.ID})
-	if err != nil {
+	if f, err := h.editMovie(ctx, t, in, actor(r)); f != nil {
+		refuse(w, *f)
+		return
+	} else if err != nil {
 		internalError(w, err)
 		return
-	}
-	if p := int64(in.QualityProfileID); p > 0 && p != mains[t.ID].PickRulesID {
-		c.PickRulesID = &p
-	}
-	if c != (library.TitleChange{}) {
-		if _, err := h.Library.Edit(ctx, t.ID, c, false, actor(r)); err != nil {
-			if f, ok := addFailure(err, int64(in.QualityProfileID), in.RootFolderPath); ok {
-				refuse(w, f)
-				return
-			}
-			internalError(w, err)
-			return
-		}
 	}
 	out, _, err := h.oneMovie(ctx, t.ID, false)
 	if err != nil {
@@ -513,4 +514,38 @@ func (h *handler) putMovie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusAccepted, out)
+}
+
+// editMovie takes the monitored switch, the quality profile and the
+// minimum stage of an add body onto a Library movie. The folder stays as
+// it is, because moves are done in HolyArrs. The bulk editor shares it
+// with the single PUT.
+func (h *handler) editMovie(ctx context.Context, t mediafiles.Title, in movieIn, by domain.Actor) (*failure, error) {
+	var c library.TitleChange
+	if f := badKeep(in.Monitored); f != nil {
+		return f, nil
+	}
+	if in.Monitored != nil && in.Monitored.On != t.KeepUpToDate {
+		on := in.Monitored.On
+		c.KeepUpToDate = &on
+	}
+	if g := gateOf(in.MinimumAvailability); g != "" && g != t.ReleaseGate {
+		c.ReleaseGate = &g
+	}
+	mains, err := h.mainVersions(ctx, []int64{t.ID})
+	if err != nil {
+		return nil, err
+	}
+	if p := int64(in.QualityProfileID); p > 0 && p != mains[t.ID].PickRulesID {
+		c.PickRulesID = &p
+	}
+	if c != (library.TitleChange{}) {
+		if _, err := h.Library.Edit(ctx, t.ID, c, false, by); err != nil {
+			if f, ok := addFailure(err, int64(in.QualityProfileID), in.RootFolderPath); ok {
+				return &f, nil
+			}
+			return nil, err
+		}
+	}
+	return nil, nil
 }

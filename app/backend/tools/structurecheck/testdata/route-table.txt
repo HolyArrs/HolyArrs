@@ -40,10 +40,12 @@ DELETE /api/v1/users/{id}/sessions/{sid} auth=users scope=admin assurance=false 
 DELETE /customformat/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /delayprofile/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /indexer/{id} auth=unlisted scope=admin assurance=false part=-
+DELETE /movie/editor auth=unlisted scope=admin assurance=false part=-
 DELETE /movie/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /notification/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /qualityprofile/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /radarr/ auth=manage_library scope=compat assurance=false part=movies
+DELETE /series/editor auth=unlisted scope=admin assurance=false part=-
 DELETE /series/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /sonarr/ auth=manage_library scope=compat assurance=false part=shows
 DELETE /tag/{id} auth=unlisted scope=admin assurance=false part=-
@@ -314,6 +316,8 @@ GET /sonarr/ auth=manage_library scope=compat assurance=false part=shows
 GET /system/status auth=unlisted scope=admin assurance=false part=-
 GET /tag auth=unlisted scope=admin assurance=false part=-
 GET /tag/detail auth=unlisted scope=admin assurance=false part=-
+GET /tag/detail/{id} auth=unlisted scope=admin assurance=false part=-
+GET /tag/{id} auth=unlisted scope=admin assurance=false part=-
 GET /wanted/missing auth=unlisted scope=admin assurance=false part=-
 POST / auth=unlisted scope=admin assurance=false part=-
 POST /api/v1/alerts auth=settings scope=write assurance=false part=core
@@ -520,13 +524,16 @@ POST /indexer auth=unlisted scope=admin assurance=false part=-
 POST /indexer/test auth=unlisted scope=admin assurance=false part=-
 POST /mcp auth=signed_in scope=mcp assurance=false part=core
 POST /movie auth=unlisted scope=admin assurance=false part=-
+POST /movie/import auth=unlisted scope=admin assurance=false part=-
 POST /notification auth=unlisted scope=admin assurance=false part=-
 POST /notification/test auth=unlisted scope=admin assurance=false part=-
 POST /oauth/register auth=public scope=admin assurance=false part=core
 POST /oauth/token auth=public scope=admin assurance=false part=core
 POST /qualityprofile auth=unlisted scope=admin assurance=false part=-
 POST /radarr/ auth=manage_library scope=compat assurance=false part=movies
+POST /seasonpass auth=unlisted scope=admin assurance=false part=-
 POST /series auth=unlisted scope=admin assurance=false part=-
+POST /series/import auth=unlisted scope=admin assurance=false part=-
 POST /sonarr/ auth=manage_library scope=compat assurance=false part=shows
 POST /tag auth=unlisted scope=admin assurance=false part=-
 PUT /api/v1/account/avatar auth=self scope=write assurance=false part=core
@@ -607,6 +614,7 @@ PUT /delayprofile/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /episode/monitor auth=unlisted scope=admin assurance=false part=-
 PUT /indexer/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /movie auth=unlisted scope=admin assurance=false part=-
+PUT /movie/editor auth=unlisted scope=admin assurance=false part=-
 PUT /movie/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /notification auth=unlisted scope=admin assurance=false part=-
 PUT /notification/{id} auth=unlisted scope=admin assurance=false part=-
@@ -615,6 +623,7 @@ PUT /qualitydefinition/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /qualityprofile/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /radarr/ auth=manage_library scope=compat assurance=false part=movies
 PUT /series auth=unlisted scope=admin assurance=false part=-
+PUT /series/editor auth=unlisted scope=admin assurance=false part=-
 PUT /series/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /sonarr/ auth=manage_library scope=compat assurance=false part=shows
 PUT /tag auth=unlisted scope=admin assurance=false part=-

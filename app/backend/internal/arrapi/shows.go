@@ -266,12 +266,21 @@ func (h *handler) folderByPath(ctx context.Context, p string) (int64, bool) {
 	if err != nil {
 		return 0, false
 	}
+	// The exact path wins; another spelling is taken only when one folder
+	// alone has it, since on a disk that minds case "Films" and "films"
+	// are two folders.
+	var id int64
+	n := 0
 	for _, f := range fs {
-		if strings.EqualFold(strings.TrimRight(f.Path, `/\`), p) {
+		fp := strings.TrimRight(f.Path, `/\`)
+		if fp == p {
 			return f.ID, true
 		}
+		if strings.EqualFold(fp, p) {
+			id, n = f.ID, n+1
+		}
 	}
-	return 0, false
+	return id, n == 1
 }
 
 // sourceID reads one outside id as a number. It is 0 when unknown.

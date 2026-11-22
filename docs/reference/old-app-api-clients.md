@@ -1,6 +1,6 @@
 ---
 title: Old-app API clients
-description: Connect Seerr, Overseerr, Bazarr, Prowlarr, Unpackerr and Homepage to HolyArrs step by step.
+description: Connect Seerr, Overseerr, Bazarr, Prowlarr, Kometa, Unpackerr and Homepage to HolyArrs step by step.
 level: Expert
 sidebar: { order: 2 }
 ---
@@ -47,7 +47,7 @@ If it does not work:
 | Progress bars | Read HolyArrs downloads, one line per episode. |
 | Available | A movie with a file. A season once every episode has a file; a season still airing stays partly available. |
 | Remove | Takes the title out of the Library. Files follow **Let these apps delete files**. An exclusion puts it on the Never-add list. |
-| Per-user tags | Made and kept, not attached to titles. |
+| Per-user tags | Made, kept and put on the titles Seerr adds. |
 | Open in Sonarr/Radarr | Opens the title in HolyArrs. |
 
 </details>
@@ -112,6 +112,14 @@ The key's maker must be allowed to change settings and manage the Library, or Pr
 | Testing | Each Test and save asks Prowlarr's feed for its capabilities. If that fails, Prowlarr's force save still makes the Source, paused. |
 
 </details>
+
+## Kometa
+
+1. In Kometa's config, set `radarr`'s `url` to your HolyArrs address with `/radarr` at the end, such as `http://holyarrs:6262/radarr`, and `sonarr`'s `url` to the same address with `/sonarr`. Under a URL base, put it in front.
+2. Set each `token` to that side's key: the Radarr-side key for `radarr`, the Sonarr-side key for `sonarr`.
+3. Set `quality_profile` to a Pick rules name and `root_folder_path` to a Library folder path.
+
+`radarr_add_missing`, `item_radarr_tag` and `radarr_taglist` work, and the Sonarr ones too: missing titles are added in bulk, tags are made, attached to titles and listed. A bulk add skips titles already in the Library or on the Never-add list.
 
 ## Unpackerr
 
