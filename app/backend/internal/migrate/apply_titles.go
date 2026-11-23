@@ -57,12 +57,18 @@ func (r *run) title(it Item) (string, string) {
 		if t.Music == nil {
 			// Moving again after reading the old app brings the quality it
 			// recorded for each file to titles moved before.
-			if !r.dry && len(t.Qualities) > 0 {
-				if n, err := r.m.Library.SetRecordedQualities(r.ctx, id, t.Qualities, r.by); err == nil && n > 0 {
-					return ResAlready, "already in the Library; the quality of " + strconv.Itoa(n) + " files was updated"
+			d := "already in the Library"
+			if !r.dry {
+				if n := r.recordQualities(id, t); n > 0 {
+					d = "already in the Library; the quality of " + strconv.Itoa(n) + " files was updated"
 				}
 			}
-			return ResAlready, "already in the Library"
+			if t.FourK != nil {
+				// Undo stays simple: a title that was already here keeps
+				// only what it had; its 4K copy is added by hand.
+				d += "; add its 4K copy on the title page"
+			}
+			return ResAlready, d
 		}
 		if r.dry {
 			return ResChange, "keeps its imported artist and album choices"
@@ -189,6 +195,9 @@ func (r *run) title(it Item) (string, string) {
 		if other != "" {
 			r.here, d = other, seasonsNote(d, other, res == ResAdopt)
 		}
+		if t.FourK != nil {
+			d += r.fourKDryWords(t.FourK)
+		}
 		return res, d
 	}
 	var res []library.AdoptResult
@@ -243,6 +252,13 @@ func (r *run) title(it Item) (string, string) {
 		return ResFailed, err.Error()
 	}
 	id := res[0].TitleID
+	// Adopting a folder another movie already owns answers that movie. It
+	// is not this one, so it gets no undo mark and no 4K copy.
+	if t.Kind == "movie" && !noFiles {
+		if mine, _ := library.TitleByTMDB(r.ctx, r.m.Store.Read(), strings.TrimPrefix(t.ID, "tmdb:")); mine != id {
+			return ResFailed, "its folder " + filepath.ToSlash(dir) + " belongs to another movie in the Library"
+		}
+	}
 	// Adopting runs its own steps; when the mark cannot be kept the title
 	// leaves the Library again, so nothing stays that undo cannot find.
 	if mk := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error { return r.markTx(tx, it.Key, "title", id, "", "") }); mk != nil {
@@ -255,17 +271,24 @@ func (r *run) title(it Item) (string, string) {
 		}
 		return ResFailed, "adopted, but its mark was not kept, so it was taken out again: " + mk.Error()
 	}
-	if len(t.Qualities) > 0 {
-		// The quality the old app recorded; a file it cannot match keeps the
-		// quality read from its name and the file.
-		_, _ = r.m.Library.SetRecordedQualities(r.ctx, id, t.Qualities, r.by)
-	}
+	// The quality the old app recorded; a file it cannot match keeps the
+	// quality read from its name and the file.
+	_ = r.recordQualities(id, t)
 	pr := r.presetID(t.Preset, t.Kind)
+	// A movie the 1080p app did not keep up to date but the 4K app did
+	// stays kept up to date as a title, with its main copy switched off,
+	// so its 4K copy can still be upgraded.
+	keepFourK := t.FourK != nil && t.FourK.KeepUpToDate && !t.KeepUpToDate && other == ""
 	err = r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		// A show whose seasons differ stays not kept up to date until the
 		// owner places its files and turns it on.
-		if err := SetKeepUpToDateTx(tx, id, t.KeepUpToDate && other == ""); err != nil {
+		if err := SetKeepUpToDateTx(tx, id, t.KeepUpToDate && other == "" || keepFourK); err != nil {
 			return err
+		}
+		if keepFourK {
+			if _, err := tx.Exec("UPDATE versions SET keep_up_to_date = 0 WHERE title_id = ? AND is_main = 1", id); err != nil {
+				return err
+			}
 		}
 		if t.Music != nil {
 			if err := r.applyMusicPolicyTx(tx, id, t.Music); err != nil {
@@ -290,6 +313,13 @@ func (r *run) title(it Item) (string, string) {
 			return ResFailed, "adopted, but its choices were not kept; cleanup removed it, but its stale mark could not be deleted and will be ignored on retry: " + err.Error() + "; " + markErr.Error()
 		}
 		return ResFailed, "adopted, but its choices were not kept: " + err.Error()
+	}
+	// The 4K copy of a merged movie joins the title this run just made, so
+	// undoing the title takes its 4K Version too. A failure here never
+	// fails or removes the main title; it only notes the line.
+	fourKNote := ""
+	if t.FourK != nil {
+		fourKNote = r.addFourK(id, t.FourK)
 	}
 	placed := 0
 	if other != "" && !noFiles && fallback == "" {
@@ -336,6 +366,7 @@ func (r *run) title(it Item) (string, string) {
 			d = fmt.Sprintf("%s. %d of its files were placed, since their air day and name match an episode here", d, placed)
 		}
 	}
+	d += fourKNote
 	if noFiles {
 		return ResCreated, d
 	}
@@ -394,21 +425,51 @@ func (r *run) movieFolderHere(lfID int64, here, folder string) bool {
 			return false
 		}
 	}
-	for _, v := range library.ListVideosN(lib, folder, 50) {
+	return mainMovieVideo(lib, folder) != ""
+}
+
+// folderAt is the id of the Library folder at path here (0: none).
+func (r *run) folderAt(lib string) int64 {
+	return r.id("SELECT id FROM library_folders WHERE path = ?", lib)
+}
+
+// versionOf is the id of a title's main Version, or with fourK of its 4K
+// Version beside the main one (0: none).
+func (r *run) versionOf(titleID int64, fourK bool) int64 {
+	if fourK {
+		return r.id("SELECT id FROM versions WHERE title_id = ? AND four_k = 1 AND is_main = 0", titleID)
+	}
+	return r.id("SELECT id FROM versions WHERE title_id = ? AND is_main = 1", titleID)
+}
+
+// extraName says a file's name marks it as an extra the way media servers
+// read it: a -trailer, -featurette and the like ending, or just "trailer".
+func extraName(rel string) bool {
+	base := strings.ToLower(strings.TrimSuffix(path.Base(rel), path.Ext(rel)))
+	for _, s := range []string{"-trailer", "-featurette", "-behindthescenes", "-deleted", "-interview", "-scene", "-short", "-other", "-extra"} {
+		if strings.HasSuffix(base, s) {
+			return true
+		}
+	}
+	return base == "trailer"
+}
+
+// mainMovieVideo is the biggest video directly in a movie folder that is
+// not named like an extra (a trailer, featurette and the like); "" when
+// there is none. Videos in subfolders are extras' homes, never the movie.
+func mainMovieVideo(lib, folder string) string {
+	// The limit is high: videos in subfolders are counted by the listing
+	// but never taken, so many extras must not hide the movie.
+	for _, v := range library.ListVideosN(lib, folder, 5000) {
 		rel := strings.TrimPrefix(v.Path, folder+"/")
 		if strings.Contains(rel, "/") {
 			continue
 		}
-		base := strings.ToLower(strings.TrimSuffix(rel, path.Ext(rel)))
-		extra := false
-		for _, s := range []string{"-trailer", "-featurette", "-behindthescenes", "-deleted", "-interview", "-scene", "-short", "-other", "-extra"} {
-			extra = extra || strings.HasSuffix(base, s)
-		}
-		if !extra && base != "trailer" {
-			return true
+		if !extraName(rel) {
+			return v.Path
 		}
 	}
-	return false
+	return ""
 }
 
 type musicPartState struct {

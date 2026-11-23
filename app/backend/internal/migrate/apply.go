@@ -6,7 +6,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -259,9 +258,8 @@ func holdsTitles(p *Plan, old, here string) bool {
 	seen := false
 	for _, g := range p.Groups {
 		for _, it := range g.Items {
-			if t := it.Title; t != nil && t.Folder != "" && libs[t.Library] {
-				seen = true
-				if isDir(filepath.Join(here, t.Folder)) {
+			for _, pl := range titlePlaces(it.Title) {
+				if seen = seen || libs[pl[0]]; libs[pl[0]] && isDir(filepath.Join(here, pl[1])) {
 					return true
 				}
 			}
@@ -748,10 +746,8 @@ func (r *run) one(group string, it Item) (string, string) {
 		}
 		// A title moved before still takes the quality the old app recorded
 		// for each file, so moving again after reading the old app updates it.
-		if it.Title != nil && it.Title.Music == nil && len(it.Title.Qualities) > 0 && !r.dry {
-			if n, err := r.m.Library.SetRecordedQualities(r.ctx, id, it.Title.Qualities, r.by); err == nil && n > 0 {
-				return ResAlready, "imported before; the quality of " + strconv.Itoa(n) + " files was updated"
-			}
+		if it.Title != nil && it.Title.Music == nil && !r.dry {
+			return ResAlready, "imported before" + r.finishMovedTitle(id, it.Title)
 		}
 		if it.Downloader != nil {
 			if added := r.downloaderAgain(it, id); added != "" {

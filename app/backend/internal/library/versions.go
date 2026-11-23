@@ -46,6 +46,10 @@ type VersionInput struct {
 	// FourK makes it the title's 4K copy. A copy labelled 4K or on Pick
 	// rules named 4K is the 4K copy too when the title has none yet.
 	FourK bool `json:"four_k"`
+	// ExistingFolder keeps FolderName as a folder already on disk, named
+	// as another app named it (a colon or a question mark included), as
+	// adopting a folder does. Only the move from other apps sets it.
+	ExistingFolder bool `json:"-"`
 }
 
 // VersionChange is an edit of one Version.
@@ -176,7 +180,7 @@ func AddVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in Versio
 	}
 	if in.FolderName != "" {
 		folder = strings.TrimSpace(in.FolderName)
-		if folder != in.FolderName || !customFolderOK(folder) {
+		if folder != in.FolderName || !(customFolderOK(folder) || in.ExistingFolder && validFolder(folder) && !strings.Contains(folder, "/")) {
 			return v, ErrVersionFolder
 		}
 	}
@@ -191,8 +195,10 @@ func AddVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in Versio
 		if !flat {
 			return v, ErrVersionFolder
 		}
-	} else if err := tx.QueryRow("SELECT count(*) FROM versions WHERE library_folder_id = ? AND lower(folder_name) = lower(?)",
-		in.LibraryFolderID, folder).Scan(&clash); err != nil {
+		// A removed title's Versions no longer hold their folders, as an undone
+		// import leaves them, so the folder can be used again.
+	} else if err := tx.QueryRow(`SELECT count(*) FROM versions WHERE library_folder_id = ? AND lower(folder_name) = lower(?)
+		AND title_id IN (SELECT id FROM titles WHERE state != 'removed')`, in.LibraryFolderID, folder).Scan(&clash); err != nil {
 		return v, err
 	}
 	if clash > 0 {

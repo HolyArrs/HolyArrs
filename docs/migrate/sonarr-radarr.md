@@ -46,6 +46,8 @@ Old apps often run in other containers and see folders under other names. A rule
 
 An indexer is a site that lists releases; in HolyArrs it is a **Source**.
 
+A movie in both a 1080p Radarr and a 4K Radarr comes over as one title: the 1080p copy is its main Version and the 4K copy a 4K Version, each file staying where it is. For a title already in the Library, add its 4K copy on the title page.
+
 ## Choices
 
 ### Folders
