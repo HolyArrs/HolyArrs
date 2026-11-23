@@ -1,6 +1,7 @@
 package migrate
 
 import (
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -23,10 +24,19 @@ func (r *run) fourKDryWords(fk *FourKPlan) string {
 		return "; its 4K copy is left out: " + filepath.ToSlash(lib) + " is set to \"Don't bring them\""
 	case r.folderAt(lib) == 0 && !slices.Contains(r.coming["movie"], lib):
 		return "; its 4K copy will not be brought: its Library folder " + fk.Library + " is not on this server"
+	case r.folderHeld(r.folderAt(lib), fk.Folder):
+		return "; its 4K copy will not be brought: the folder " + path.Join(fk.Library, fk.Folder) + " already belongs to a title in the Library"
 	case !isDir(filepath.Join(lib, fk.Folder)):
 		return "; its 4K copy becomes a 4K Version with no file yet; there is no folder at " + path.Join(fk.Library, fk.Folder)
 	}
 	return "; its 4K copy becomes a 4K Version using the folder " + path.Join(fk.Library, fk.Folder) + " where it is"
+}
+
+// folderHeld says a Version of a title still in the Library already uses
+// the folder in Library folder lfID, the check adding a Version makes.
+func (r *run) folderHeld(lfID int64, folder string) bool {
+	return lfID > 0 && r.id(`SELECT count(*) FROM versions WHERE library_folder_id = ? AND lower(folder_name) = lower(?)
+		AND title_id IN (SELECT id FROM titles WHERE state != 'removed')`, lfID, folder) > 0
 }
 
 // recordQualities puts the quality each old app recorded on the copy it
@@ -115,11 +125,8 @@ func (r *run) addFourK(titleID int64, fk *FourKPlan) string {
 // only movie video. Two candidate cuts and no recorded name link none, so
 // an alternate cut is never taken for the 4K copy.
 func fourKVideo(lib, folder string, qualities map[string]string) string {
-	for name := range qualities {
-		rel := path.Join(folder, name)
-		if fi, err := os.Lstat(filepath.Join(lib, filepath.FromSlash(rel))); err == nil && fi.Mode().IsRegular() && path.Base(rel) == name {
-			return rel
-		}
+	if rel := recordedFile(lib, folder, qualities); rel != "" {
+		return rel
 	}
 	var only []string
 	for _, v := range library.ListVideosN(lib, folder, 5000) {
@@ -130,6 +137,20 @@ func fourKVideo(lib, folder string, qualities map[string]string) string {
 	}
 	if len(only) == 1 {
 		return only[0]
+	}
+	return ""
+}
+
+// recordedFile is a file an old app recorded for a movie (its names are
+// the keys of qualities) that is a plain file directly in the folder, as
+// a path in the Library folder; "" when none is there. Names are tried in
+// order, so the pick is the same on every run.
+func recordedFile(lib, folder string, qualities map[string]string) string {
+	for _, name := range slices.Sorted(maps.Keys(qualities)) {
+		rel := path.Join(folder, name)
+		if fi, err := os.Lstat(filepath.Join(lib, filepath.FromSlash(rel))); err == nil && fi.Mode().IsRegular() && path.Base(rel) == name {
+			return rel
+		}
 	}
 	return ""
 }

@@ -437,3 +437,70 @@ func TestFourKImportUndoImportAgain(t *testing.T) {
 		t.Fatalf("%d active 4K Versions after import, undo, import", n)
 	}
 }
+
+// TestMoveFourKCopySharingTheFolder: both Radarrs keep the movie in one
+// folder, the 2160p file bigger than the 1080p one. The dry run and the
+// real run agree that the 4K copy is not brought, the main Version keeps
+// the file the 1080p app recorded instead of the bigger 2160p one, and no
+// file changes on disk.
+func TestMoveFourKCopySharingTheFolder(t *testing.T) {
+	for _, fourKFirst := range []bool{false, true} {
+		name := "1080p read first"
+		if fourKFirst {
+			name = "4K read first"
+		}
+		t.Run(name, func(t *testing.T) {
+			l := newMoveLabWith(t, func(radarr, _, _ *Snapshot) {
+				radarr.QualityProfiles = []Profile{{ID: 2, Name: "HD-1080p", Cutoff: "Bluray-1080p"}}
+				radarr.Titles[0].Files = []TitleFile{{Name: "The.Matrix.1999.1080p.mkv", Quality: "Bluray-1080p"}}
+			})
+			fourKFile := filepath.Join(filepath.Dir(l.file), "The.Matrix.1999.2160p.mkv")
+			if err := os.WriteFile(fourKFile, []byte("the 4K copy, a good deal bigger than the 1080p one"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			uhd := &Snapshot{Kind: Radarr, Via: ViaAPI,
+				Folders:         []Folder{{Path: "/movies"}},
+				QualityProfiles: []Profile{{ID: 2, Name: "Ultra-HD", Cutoff: "Remux-2160p"}},
+				Titles: []Title{{SourceID: 1, Kind: "movie", Name: "The Matrix", Year: 1999, IDs: map[string]string{"tmdb": "603"},
+					Path: "/movies/The Matrix (1999)", Monitored: true, ProfileID: 2,
+					Files: []TitleFile{{Name: "The.Matrix.1999.2160p.mkv", Quality: "Remux-2160p"}}}}}
+			uhd.finish()
+			saved, err := Save(context.Background(), l.st, 1, uhd)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if fourKFirst {
+				l.snaps = append([]int64{saved.ID}, l.snaps...)
+			} else {
+				l.snaps = append(l.snaps, saved.ID)
+			}
+			mainBefore, fourKBefore := fileHash(t, l.file), fileHash(t, fourKFile)
+			by := domain.Actor{Kind: "user", ID: 1}
+			dry := l.mv.Run(context.Background(), 0, l.plan(t), true, by, nil)
+			if dl := lineOf(t, dry, "title:movie:tmdb:603"); dl.Result != ResAdopt || !strings.Contains(dl.Detail, "its 4K copy is not placed: it shares the folder") {
+				t.Fatalf("dry run %+v", dl)
+			}
+			mv := l.move(t, Choices{})
+			if mv.State != "done" || mv.Report == nil {
+				t.Fatalf("move %+v", mv)
+			}
+			if got := lineOf(t, mv.Report, "title:movie:tmdb:603"); got.Result != ResAdopted || !strings.Contains(got.Detail, "its 4K copy was not brought: it shares the folder") {
+				t.Fatalf("title line %+v", got)
+			}
+			if n := l.count(t, "SELECT count(*) FROM versions v JOIN titles t ON t.id = v.title_id WHERE t.state != 'removed'"); n != 1 {
+				t.Fatalf("%d Versions, want the main one only", n)
+			}
+			var rel, quality string
+			if err := l.st.Read().QueryRow(`SELECT f.relative_path, COALESCE(json_extract(f.media_info, '$.recorded_quality'), '')
+				FROM files f JOIN versions v ON v.id = f.version_id WHERE v.is_main = 1 AND f.state = 'present'`).Scan(&rel, &quality); err != nil {
+				t.Fatal(err)
+			}
+			if rel != "The Matrix (1999)/The.Matrix.1999.1080p.mkv" || quality != "Bluray-1080p" {
+				t.Fatalf("main file %q (%q), want the 1080p app's file", rel, quality)
+			}
+			if fileHash(t, l.file) != mainBefore || fileHash(t, fourKFile) != fourKBefore {
+				t.Fatal("the move changed a media file's bytes")
+			}
+		})
+	}
+}

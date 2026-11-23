@@ -41,7 +41,33 @@ func TestPlanMergesFourKRadarrCopy(t *testing.T) {
 			t.Fatalf("item %q detail %q", it.Name, it.Detail)
 		}
 		for _, n := range p.NotMoved {
-			if n.Group == GroupTitles || strings.Contains(n.Why, "imported once") {
+			if n.Group == GroupTitles || strings.HasPrefix(n.From, "radarr titles") {
+				t.Fatalf("the merged movie is listed: %+v", n)
+			}
+		}
+	}
+}
+
+// TestPlanFourKCopySharingTheFolderIsNotPlaced: when both Radarrs keep the
+// movie in one folder (a 1080p and a 2160p file side by side), the plan
+// says the 4K copy is not placed, in either order, instead of promising a
+// 4K Version the real run cannot add; the main copy stays the 1080p one.
+func TestPlanFourKCopySharingTheFolderIsNotPlaced(t *testing.T) {
+	hd := radarrOneMovie("/movies", "Bluray-1080p", true)
+	uhd := radarrOneMovie("/movies", "Remux-2160p", true)
+	uhd.Titles[0].Path = "/movies/the matrix (1999)" // the same folder, told by case only
+	for _, in := range [][]Input{{{1, hd}, {2, uhd}}, {{1, uhd}, {2, hd}}} {
+		p := BuildPlan(in, Choices{})
+		it := item(t, p, GroupTitles, "title:movie:tmdb:603")
+		tp := it.Title
+		if tp.FourK == nil || tp.Preset != "Standard" || !strings.EqualFold(tp.Folder, "The Matrix (1999)") {
+			t.Fatalf("main plan %+v", tp)
+		}
+		if !strings.Contains(tp.FourK.Unresolved, "shares the folder") || !strings.Contains(it.Detail, "its 4K copy is not placed: it shares the folder") {
+			t.Fatalf("4K plan %+v detail %q", tp.FourK, it.Detail)
+		}
+		for _, n := range p.NotMoved {
+			if n.Group == GroupTitles {
 				t.Fatalf("the merged movie is listed: %+v", n)
 			}
 		}

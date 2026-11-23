@@ -217,6 +217,13 @@ func (r *run) title(it Item) (string, string) {
 		c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
 		if t.Kind == "movie" {
 			c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
+			// A merged movie's main copy keeps the file its own app
+			// recorded: the folder may hold the 4K app's bigger file too.
+			if t.FourK != nil {
+				if rel := recordedFile(lib, t.Folder, t.Qualities); rel != "" {
+					c.File = path.Base(rel)
+				}
+			}
 		}
 		err = r.withShowIDs(t, func(sid, o string) error {
 			if t.Kind != "movie" {

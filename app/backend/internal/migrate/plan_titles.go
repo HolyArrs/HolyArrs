@@ -60,10 +60,25 @@ func titleDetail(tp *TitlePlan, monitored bool, gateNote string) string {
 	return d + gateNote
 }
 
-// fourKPlanOf takes a movie copy's plan as the 4K copy of a merged title.
-func fourKPlanOf(tp *TitlePlan, from string) *FourKPlan {
-	return &FourKPlan{Library: tp.Library, Folder: tp.Folder, Preset: tp.Preset, KeepUpToDate: tp.KeepUpToDate,
+// fourKPlanOf takes a movie copy's plan as the 4K copy of a merged title
+// whose main copy is main. A 4K copy in the main copy's own folder (one
+// folder holding both apps' files) is not placed: each Version needs a
+// folder of its own, so the real run could not add it.
+func fourKPlanOf(main, tp *TitlePlan, from string) *FourKPlan {
+	fk := &FourKPlan{Library: tp.Library, Folder: tp.Folder, Preset: tp.Preset, KeepUpToDate: tp.KeepUpToDate,
 		Qualities: tp.Qualities, Unresolved: tp.Unresolved, From: from}
+	if fk.Unresolved == "" && main.Unresolved == "" && main.Folder != "" && main.Library == fk.Library && strings.EqualFold(main.Folder, fk.Folder) {
+		fk.Unresolved = "it shares the folder " + path.Join(main.Library, main.Folder) + " with the main copy, and a 4K Version needs a folder of its own"
+	}
+	return fk
+}
+
+// fourKNote says where a merged movie's 4K copy goes, for the title's line.
+func fourKNote(fk *FourKPlan) string {
+	if fk.Unresolved != "" {
+		return "; its 4K copy is not placed: " + fk.Unresolved
+	}
+	return "; its 4K copy uses the folder " + path.Join(fk.Library, fk.Folder) + " where it is"
 }
 
 // mergeFourK folds a second Radarr's copy of an already planned movie into
@@ -88,14 +103,10 @@ func (b *builder) mergeFourK(key string, tp *TitlePlan, from string, t Title, ga
 	}
 	if newFourK {
 		// The 4K read came second: the planned title keeps its place.
-		fk := fourKPlanOf(tp, from)
+		fk := fourKPlanOf(it.Title, tp, from)
 		it.Title.FourK = fk
 		b.p.Mapped = append(b.p.Mapped, from)
-		if fk.Unresolved == "" {
-			it.Detail += "; its 4K copy uses the folder " + path.Join(fk.Library, fk.Folder) + " where it is"
-		} else {
-			it.Detail += "; its 4K copy is not placed: " + fk.Unresolved
-		}
+		it.Detail += fourKNote(fk)
 		return true
 	}
 	// The 4K read came first: this copy becomes the title. An unplaced
@@ -103,7 +114,7 @@ func (b *builder) mergeFourK(key string, tp *TitlePlan, from string, t Title, ga
 	if tp.Unresolved != "" {
 		return false
 	}
-	fk := fourKPlanOf(it.Title, it.From)
+	fk := fourKPlanOf(tp, it.Title, it.From)
 	tp.FourK = fk
 	b.p.Mapped = append(b.p.Mapped, it.From)
 	name := clip(t.Name, maxName)
@@ -116,7 +127,7 @@ func (b *builder) mergeFourK(key string, tp *TitlePlan, from string, t Title, ga
 		*gated++
 	}
 	it.Name, it.From, it.Title = name, from, tp
-	it.Detail = titleDetail(tp, t.Monitored, gateNote) + "; its 4K copy uses the folder " + path.Join(fk.Library, fk.Folder) + " where it is"
+	it.Detail = titleDetail(tp, t.Monitored, gateNote) + fourKNote(fk)
 	b.titleSrc[key] = titleCopy{snap: b.snapID, idx: src.idx, addr: b.addr}
 	return true
 }
