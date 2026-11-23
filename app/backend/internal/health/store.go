@@ -10,7 +10,7 @@ import (
 // and path. The folders belong to mediafiles; this read moves to its service
 // when that module has one.
 func libraryFolders(ctx context.Context, q database.Lister) ([]DiskView, error) {
-	rows, err := q.QueryContext(ctx, "SELECT path, kind, label FROM library_folders ORDER BY kind, path")
+	rows, err := q.QueryContext(ctx, "SELECT path, kind, label FROM library_folders WHERE stand_in = 0 ORDER BY kind, path")
 	if err != nil {
 		return nil, err
 	}

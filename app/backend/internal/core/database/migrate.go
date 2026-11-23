@@ -282,7 +282,13 @@ func migrate(w *writer, path string, ms []migration, cur int, backupDir, label s
 	if _, err := conn.ExecContext(ctx, "PRAGMA synchronous=FULL"); err != nil {
 		return "", err
 	}
-	defer func() { _, _ = conn.ExecContext(ctx, "PRAGMA synchronous=NORMAL") }()
+	// Back to the writer's own level: FULL stays FULL with a rollback
+	// journal (Unraid share).
+	after := "NORMAL"
+	if w.rollback {
+		after = "FULL"
+	}
+	defer func() { _, _ = conn.ExecContext(ctx, "PRAGMA synchronous="+after) }()
 	for _, m := range ms {
 		err := func() error {
 			tx, err := conn.BeginTx(ctx, nil)

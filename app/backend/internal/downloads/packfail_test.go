@@ -26,7 +26,8 @@ func TestPackStallsAndFailsForEverySlot(t *testing.T) {
 	if got := slotStates(t, w, ids); !slices.Equal(got, []string{"failed", "failed", "failed"}) {
 		t.Fatalf("after the act time %v", got)
 	}
-	if r := w.release(t); r.State != "turned_down" {
+	// A stall never turns the Release down.
+	if r := w.release(t); r.State == "turned_down" {
 		t.Fatalf("release %s", r.State)
 	}
 	if d := w.download(t, id); d.State != "failed" {

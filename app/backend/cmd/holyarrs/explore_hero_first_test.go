@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
 )
 
 // A fresh install has no card pictures stored yet. The first Explore and

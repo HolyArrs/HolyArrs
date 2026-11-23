@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Només aquests poden dir d'on ha vingut una visita.",
 	"settings.signIn.fixToSaveOne": "Arregla 1 línia per desar",
 	"settings.signIn.fixToSaveOther": "Arregla {n} línies per desar",
-	"settings.signIn.localSaved": "Xarxa local desada"
+	"settings.signIn.localSaved": "Xarxa local desada",
+	"settings.signIn.forgotTitle": "Has oblidat la contrasenya?",
+	"settings.signIn.forgotOn": "Mostra Has oblidat la contrasenya? a la pàgina d'inici de sessió",
+	"settings.signIn.forgotNote": "El propietari rep un codi d'un sol ús del registre del servidor. Apaga-ho si tothom entra amb inici de sessió únic. L'ordre reset-owner continua funcionant.",
+	"settings.signIn.forgotShown": "Has oblidat la contrasenya? està activat",
+	"settings.signIn.forgotHidden": "Has oblidat la contrasenya? està desactivat"
 }

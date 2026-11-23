@@ -10,11 +10,12 @@ import { t as tr } from '../core/i18n/i18n.svelte.ts';
 import { codecLabel, languageName } from './copies.ts';
 import { libraryState } from './library-state.ts';
 import { shownScore } from '../core/rating.ts';
+import { scoreName, scoreText as outsideText, type OutsideScore } from '#lib/ui/outside-ratings.ts';
 import { progressOf, releaseDate, type Column, type FilterState } from './table.ts';
 
 export type View = 'rows' | 'table' | 'posters' | 'overview';
 
-export type Entry = { type: 'head'; key: string; id: number; name: string; count: number } | { type: 'row'; key: string; t: TitleView };
+export type Entry = { type: 'head'; key: string; id: number; name: string; count: number } | { type: 'row'; key: string; kind: string; t: TitleView };
 
 /** How many poster columns fit the width, as the grid's auto-fill counts them. */
 export const posterCols = (width: number, min: number, gap: number) => Math.max(1, Math.floor((width + gap) / (min + gap)));
@@ -36,6 +37,55 @@ export function lineAt(offsets: number[], y: number): number {
 		else hi = mid;
 	}
 	return lo;
+}
+
+/** Measured line heights in a plain map that calls `changed` once after a burst of changes, so a list lays itself out once per burst and follows one counter rather than one signal per line. */
+export class RowHeights extends Map<string, number> {
+	readonly #changed: () => void;
+	#due = false;
+	constructor(changed: () => void) {
+		super();
+		this.#changed = changed;
+	}
+	#bump() {
+		if (this.#due) return;
+		this.#due = true;
+		queueMicrotask(() => {
+			this.#due = false;
+			this.#changed();
+		});
+	}
+	override set(k: string, v: number) {
+		super.set(k, v);
+		this.#bump();
+		return this;
+	}
+	override delete(k: string) {
+		const had = super.delete(k);
+		if (had) this.#bump();
+		return had;
+	}
+	override clear() {
+		super.clear();
+		this.#bump();
+	}
+}
+
+/** The running tops of `lines` (the last is the end): a measured height where there is one, else `guess`. With `sameGuess`, lines that give the same answer share one guess. */
+export function lineTops<T extends { key: string }>(lines: readonly T[], heights: ReadonlyMap<string, number>, guess: (line: T) => number, sameGuess?: (line: T) => string): number[] {
+	const out = [0];
+	const guesses = new Map<string, number>();
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+		let h = heights.get(line.key);
+		if (h === undefined && sameGuess) {
+			const g = sameGuess(line);
+			h = guesses.get(g);
+			if (h === undefined) guesses.set(g, (h = guess(line)));
+		}
+		out.push(out[i] + (h ?? guess(line)));
+	}
+	return out;
 }
 
 /** The lines to draw with the list scrolled to `top`: the screen and a margin above and below it. */
@@ -333,6 +383,25 @@ export function scoreText(t: TitleView): string {
 	return shownScore(t.score, t.votes)?.toFixed(1) ?? '';
 }
 
+/** A title's IMDb, Rotten Tomatoes and Metacritic scores (from OMDb) and its Trakt rating, worded as the title page words them; [] when none is known. */
+export function outsideScores(t: TitleView): OutsideScore[] {
+	const out: OutsideScore[] = [];
+	if (t.imdb_rating) out.push({ source: 'imdb', value: t.imdb_rating, max: 10, votes: t.imdb_votes ?? 0 });
+	if (t.rotten_tomatoes) out.push({ source: 'rt_critics', value: t.rotten_tomatoes, max: 100, votes: 0 });
+	if (t.metacritic) out.push({ source: 'metacritic', value: t.metacritic, max: 100, votes: 0 });
+	// Trakt shows its rating as a percent.
+	if (t.trakt_rating) out.push({ source: 'trakt', value: Math.round(t.trakt_rating * 10), max: 100, votes: t.trakt_votes ?? 0 });
+	return out;
+}
+
+/** The hover text of a cell: the full path, or the score's outside scores beside it. */
+export function cellTitle(t: TitleView, c: Column, series: string): string | undefined {
+	if (c.id === 'path') return cell(t, c, series);
+	if (c.id !== 'score') return undefined;
+	const words = outsideScores(t).map((s) => `${scoreName(s.source)} ${outsideText(s)}`);
+	return words.length ? [scoreText(t) ? `TMDB ${scoreText(t)}` : '', ...words].filter(Boolean).join(' · ') : undefined;
+}
+
 export function cell(t: TitleView, c: Column, series: string): string {
 	switch (c.id) {
 		case 'network': return t.show?.network ?? '';
@@ -387,7 +456,7 @@ export function posterFacts(t: TitleView): string[] {
 
 /** The Library's rows: each movie, show or artist, with a heading before every series when grouped. */
 export function buildEntries(shown: TitleView[], grouped: boolean, seriesOfTitle: Map<number, number>, seriesName: (id: number) => string): Entry[] {
-	if (!grouped) return shown.map((t) => ({ type: 'row', key: `r${t.id}`, t }));
+	if (!grouped) return shown.map((t) => ({ type: 'row', key: `r${t.id}`, kind: t.kind, t }));
 	const bySet = new Map<number, TitleView[]>();
 	const loose: TitleView[] = [];
 	for (const t of shown) {
@@ -398,11 +467,38 @@ export function buildEntries(shown: TitleView[], grouped: boolean, seriesOfTitle
 	const out: Entry[] = [];
 	for (const [id, ts] of [...bySet].sort((a, b) => seriesName(a[0]).localeCompare(seriesName(b[0])))) {
 		out.push({ type: 'head', key: `h${id}`, id, name: seriesName(id), count: ts.length });
-		for (const t of ts) out.push({ type: 'row', key: `r${t.id}`, t });
+		for (const t of ts) out.push({ type: 'row', key: `r${t.id}`, kind: t.kind, t });
 	}
 	if (loose.length) {
 		out.push({ type: 'head', key: 'h0', id: 0, name: tr('mediafiles.view.noCollection'), count: loose.length });
-		for (const t of loose) out.push({ type: 'row', key: `r${t.id}`, t });
+		for (const t of loose) out.push({ type: 'row', key: `r${t.id}`, kind: t.kind, t });
 	}
 	return out;
+}
+
+/** A Svelte action that keeps each row's measured height in heights, under its key. One observer watches every row, so rows drawn together are measured in one go. */
+export function heightAction(heights: Map<string, number>) {
+	const keys = new Map<Element, string>();
+	let ro: ResizeObserver | undefined;
+	const seen = (list: ResizeObserverEntry[]) => {
+		for (const e of list) {
+			const node = e.target as HTMLElement;
+			const k = keys.get(node);
+			const h = node.offsetHeight;
+			if (k !== undefined && h && heights.get(k) !== h) heights.set(k, h);
+		}
+	};
+	return (node: HTMLElement, key: string) => {
+		keys.set(node, key);
+		(ro ??= new ResizeObserver(seen)).observe(node);
+		return {
+			update(next: string) {
+				keys.set(node, next);
+			},
+			destroy() {
+				keys.delete(node);
+				ro?.unobserve(node);
+			}
+		};
+	};
 }

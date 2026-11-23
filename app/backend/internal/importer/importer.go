@@ -58,6 +58,9 @@ func (t Target) fileName(p releasename.Result, source string) string {
 		return EditionFileName(mediafiles.CleanWith(ns, release)+strings.ToLower(ext), t.Edition)
 	}
 	facts := mediafiles.FactsFrom(t.TitleName, t.Year, t.IDs, p, release, ext)
+	if facts.FrenchVersion == "" && mediafiles.UsesWord(ns.FilePattern, "french_version") {
+		facts.AddFrenchVersion(FrenchVersionOf(source))
+	}
 	if t.Edition != "" {
 		facts.Edition = t.Edition
 	}
@@ -95,6 +98,30 @@ func safeFolder(s string) string {
 		}
 	}
 	return strings.Join(parts, "/")
+}
+
+// showFolder is where a show's episodes go: its stored folder, which may
+// sit in a letter or genre folder (O/The Office), or a new one from the
+// naming settings when none is stored yet.
+func showFolder(ns mediafiles.NamingSettings, stored, name string, year int, ids map[string]string) string {
+	if f := safeFolder(stored); f != "" {
+		return f
+	}
+	return mediafiles.ShowFolderIn(ns, mediafiles.NameFacts{Title: name, Year: year, TMDB: ids["tmdb"], TVDB: ids["tvdb"], IMDB: ids["imdb"]})
+}
+
+// movieFolder is the folder a movie's file goes in, relative to its
+// Library folder: none for a movie kept flat (the file sits at the top of
+// a flat Library folder), else the Version's folder or a new one.
+func movieFolder(ver mediafiles.Version, lf mediafiles.LibraryFolder, title string, year int) string {
+	folder := safeFolder(ver.FolderName)
+	if folder == "" && lf.Flat {
+		return ""
+	}
+	if folder == "" || folder == "." || folder == ".." {
+		folder = FolderName(title, year)
+	}
+	return folder
 }
 
 // FolderName builds the library folder name for a title and year.
@@ -221,6 +248,11 @@ func Plan(cands []Candidate, t Target) []mediafiles.PlanStep {
 					if fm := mediafiles.MatchTitle(fp, []mediafiles.TitleRef{ref}); fm.Title != nil {
 						m = fm
 					}
+				}
+			}
+			if m.Title == nil {
+				if gp, gm, ok := withoutLeadGroup(filepath.Base(c.Path), releasename.Hints{Size: c.Size}, []mediafiles.TitleRef{ref}); ok {
+					p, m = gp, gm
 				}
 			}
 			s.Confidence = confidence(m.Conf)
@@ -409,8 +441,14 @@ func copyDirect(src, dst string) (err error) {
 	return out.Close()
 }
 
-// SameContent reports whether two files hold the same bytes.
+// SameContent compares only the first and last MiB of two files of the
+// given size. It is a quick check for a copy HolyArrs itself just wrote,
+// and it cannot tell apart two different files that share their ends.
 func SameContent(a, b string, size int64) bool { return sameContent(a, b, size) }
+
+// SameFullContent reports whether two files hold the same bytes, reading
+// both in full. Use it before removing the only other copy of a file.
+func SameFullContent(a, b string) bool { return sameFullContent(a, b) }
 
 func sameContent(a, b string, size int64) bool {
 	sum := func(p string) []byte {
@@ -442,21 +480,40 @@ func sameContent(a, b string, size int64) bool {
 	return x != nil && bytes.Equal(x, y)
 }
 
-// sameFullContent hashes both files in full and compares them.
+// sameFullContent hashes both files in full and compares them. Two names
+// of one file, or a name that is not a plain file, are never "the same
+// bytes": a caller that removes one would remove the only copy.
 func sameFullContent(a, b string) bool {
-	sum := func(p string) []byte {
-		f, err := os.Open(p)
-		if err != nil {
-			return nil
+	// Neither name may be a link or a pipe: they are checked before they
+	// are opened, since opening a pipe can block and a link leads elsewhere.
+	for _, p := range []string{a, b} {
+		if fi, err := os.Lstat(p); err != nil || !fi.Mode().IsRegular() {
+			return false
 		}
-		defer f.Close()
+	}
+	fa, err := os.Open(a)
+	if err != nil {
+		return false
+	}
+	defer fa.Close()
+	fb, err := os.Open(b)
+	if err != nil {
+		return false
+	}
+	defer fb.Close()
+	sa, err1 := fa.Stat()
+	sb, err2 := fb.Stat()
+	if err1 != nil || err2 != nil || !sa.Mode().IsRegular() || !sb.Mode().IsRegular() || sa.Size() != sb.Size() || os.SameFile(sa, sb) {
+		return false
+	}
+	sum := func(f *os.File) []byte {
 		h := sha256.New()
 		if _, err := io.Copy(h, f); err != nil {
 			return nil
 		}
 		return h.Sum(nil)
 	}
-	x, y := sum(a), sum(b)
+	x, y := sum(fa), sum(fb)
 	return x != nil && bytes.Equal(x, y)
 }
 
@@ -493,6 +550,9 @@ func execute(steps []mediafiles.PlanStep, ops Ops, resumable map[string]time.Tim
 }
 
 func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.PlaceResult {
+	if s.Symlink {
+		return placeSymlink(s)
+	}
 	r := mediafiles.PlaceResult{SourceFile: s.SourceFile, PlacedBy: "none"}
 	sfi, err := os.Lstat(s.SourceFile)
 	if err != nil {
@@ -509,11 +569,11 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 			r.Outcome, r.PlacedBy = "placed", "hardlink"
 			return r
 		}
-		if !resumeFrom.IsZero() && tfi.Mode().IsRegular() && !tfi.ModTime().Before(resumeFrom.Add(-2*time.Second)) && sameContent(s.SourceFile, s.TargetPath, sfi.Size()) {
-			r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
-			return r
-		}
-		// Another app may have placed the same file first; take it as ours.
+		// A resumed import's own copy, or the same file another app placed
+		// first, counts only when it matches in full: after this the
+		// download may be cleared, so a different file that shares its
+		// first and last MiB must not pass. One full compare covers both.
+		_ = resumeFrom
 		if tfi.Mode().IsRegular() && tfi.Size() == sfi.Size() && sameFullContent(s.SourceFile, s.TargetPath) {
 			r.Outcome, r.PlacedBy, r.FellBack = "placed", "copy", true
 			return r

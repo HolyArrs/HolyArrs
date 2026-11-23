@@ -99,7 +99,7 @@ test('Jackett is connected in one step, kept in step, and disconnected; a bot ch
 		await card.getByTestId('bridge-connect').click();
 		await expect(page.getByText('1 Source added')).toBeVisible();
 		const row = card.getByTestId('bridge');
-		await expect(row).toContainText('1 indexer');
+		await expect(row).toContainText('1 Source');
 		// The fake Jackett runs on this machine: its Sources may reach the local network, and each Source says so.
 		const src = page.getByTestId('source').filter({ hasText: 'Lab Jackett Site' });
 		await expect(src).toContainText('/jackett/api/v2.0/indexers/labsite/results/torznab/');

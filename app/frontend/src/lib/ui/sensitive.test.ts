@@ -34,11 +34,12 @@ describe('outsideWay', () => {
 		expect(outsideWay({ via: 'session', hasPassword: false, authMethod: 'plex' })).toBe('Plex');
 		expect(outsideWay({ via: 'session', hasPassword: false, authMethod: 'jellyfin' })).toBe('Jellyfin');
 		expect(outsideWay({ via: 'session', hasPassword: false, authMethod: 'emby' })).toBe('Emby');
+		expect(outsideWay({ via: 'session', hasPassword: false, authMethod: 'oidc' })).toBe('single sign-on');
 	});
 	it('keeps the password box for everyone else', () => {
 		expect(outsideWay({ via: 'session', hasPassword: true, authMethod: 'plex' })).toBe('');
 		expect(outsideWay({ via: 'session', authMethod: 'plex' })).toBe('');
-		expect(outsideWay({ via: 'session', hasPassword: false, authMethod: 'oidc' })).toBe('');
+		expect(outsideWay({ via: 'session', hasPassword: false, authMethod: 'forward_auth' })).toBe('');
 		expect(outsideWay({ via: 'local_network', hasPassword: false, authMethod: 'plex' })).toBe('');
 	});
 });

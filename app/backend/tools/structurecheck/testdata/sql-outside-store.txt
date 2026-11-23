@@ -67,10 +67,12 @@ app/backend/internal/importer/fake.go
 app/backend/internal/importer/import_run.go
 app/backend/internal/importer/importer.go
 app/backend/internal/importer/manual.go
+app/backend/internal/importer/reconcile_music.go
 app/backend/internal/importer/rules.go
 app/backend/internal/importer/shows_helpers.go
 app/backend/internal/importer/shows_import.go
 app/backend/internal/importer/upgrade.go
+app/backend/internal/importer/watch_folders.go
 app/backend/internal/library/adopt.go
 app/backend/internal/library/adopt_scan.go
 app/backend/internal/library/adoptcopy.go
@@ -84,6 +86,8 @@ app/backend/internal/library/deleteshows.go
 app/backend/internal/library/edit.go
 app/backend/internal/library/folders.go
 app/backend/internal/library/holding_restore.go
+app/backend/internal/library/leftovers.go
+app/backend/internal/library/leftovers_music.go
 app/backend/internal/library/library.go
 app/backend/internal/library/move.go
 app/backend/internal/library/music.go
@@ -91,14 +95,17 @@ app/backend/internal/library/owntraits.go
 app/backend/internal/library/pickrules.go
 app/backend/internal/library/placeholderheal.go
 app/backend/internal/library/protected.go
+app/backend/internal/library/reconcilemusic.go
 app/backend/internal/library/refresh.go
 app/backend/internal/library/refreshall.go
 app/backend/internal/library/rename.go
 app/backend/internal/library/rename_apply.go
+app/backend/internal/library/routes_versions.go
 app/backend/internal/library/service.go
 app/backend/internal/library/show_shared.go
 app/backend/internal/library/standin.go
 app/backend/internal/library/store_episode_lists.go
+app/backend/internal/library/tidy.go
 app/backend/internal/library/title_defaults.go
 app/backend/internal/library/versions.go
 app/backend/internal/mediafiles/datapack/apply.go
@@ -113,6 +120,7 @@ app/backend/internal/migrate/apply_settings.go
 app/backend/internal/migrate/apply_titles.go
 app/backend/internal/migrate/backup_files.go
 app/backend/internal/migrate/moves.go
+app/backend/internal/migrate/past_history.go
 app/backend/internal/movies/collections.go
 app/backend/internal/movies/collections_metadata.go
 app/backend/internal/music/explore_disk.go
@@ -150,6 +158,8 @@ app/backend/internal/shows/refresh.go
 app/backend/internal/shows/schedule.go
 app/backend/internal/shows/service.go
 app/backend/internal/shows/show_info.go
+app/backend/internal/sources/release_keep.go
+app/backend/internal/sources/reuse_after_fail.go
 app/backend/internal/sources/store.go
 app/backend/internal/sources/store_health.go
 app/backend/internal/sources/store_releases.go

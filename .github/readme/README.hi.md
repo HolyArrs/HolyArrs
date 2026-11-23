@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: एक लाल बिंदु दिखाता है कि क्या देखना है, और कनेक्शन टेस्ट ठीक-ठीक समस्या बताता है।** माँगे गए टाइटल के लिए Plex लेबल, आपकी भाषा में नाम, और 30 से ज़्यादा सुधार। अपने नियंत्रण वाली कुंजियों से MCP पर ऐप जोड़ें। [नया क्या है](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: 101 लोगों की ओर से 150 से ज़्यादा सुधार और फ़ीचर।** प्लगइन सिस्टम, नया सेटअप विज़ार्ड, और हैंड्स-ऑफ़ मोड, जो आपकी फ़ाइलों को कभी नहीं छूता। [नया क्या है](https://holyarrs.com/whats-new/)
 
 > आपके HolyArrs का हर पोस्टर, ट्रेलर और स्कोर एक ऐसे सर्वर से आता है जिसे मैं खुद चलाता हूँ और जिसका खर्च खुद उठाता हूँ, ताकि यह सबके लिए मुफ़्त रहे। अगर HolyArrs ने आपकी मूवी नाइट थोड़ी बेहतर बनाई है, तो स्पॉन्सर बनकर हम सबके लिए यह रोशनी जलाए रखिए 💛
 >
@@ -374,7 +374,7 @@ docker compose up -d
 - ओनर अकाउंट से बाहर हो गए हैं:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - वर्ज़न नंबर:

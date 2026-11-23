@@ -7,6 +7,12 @@ export interface SourceForm {
 	format: 'torznab' | 'newznab' | 'rss' | 'site';
 	// site is the built-in site a site Source reads.
 	site: string;
+	// site_user is the person's user id on a built-in site that asks for one beside the key.
+	site_user: string;
+	// site_login is how an IPTorrents Source signs in: user id + passkey, or a browser cookie.
+	site_login: 'passkey' | 'cookie';
+	// site_agent is the browser user agent sent with the cookie.
+	site_agent: string;
 	protocol: 'torrent' | 'usenet';
 	url: string;
 	api_key: string;
@@ -25,6 +31,10 @@ export interface SourceForm {
 	proxy_password: string;
 	proxy_allow_local_network: boolean;
 	tags: string[];
+	// multi_languages: what MULTi means on this Source, as typed ("fr, en").
+	multi_languages: string;
+	// no_language_languages: the audio languages a release here carries when its name shows none, as typed ("uk").
+	no_language_languages: string;
 	downloader_id: number;
 }
 
@@ -68,6 +78,9 @@ export function emptyForm(): SourceForm {
 		name: '',
 		format: 'torznab',
 		site: '',
+		site_user: '',
+		site_login: 'passkey',
+		site_agent: '',
 		protocol: 'torrent',
 		url: '',
 		api_key: '',
@@ -86,6 +99,8 @@ export function emptyForm(): SourceForm {
 		proxy_password: '',
 		proxy_allow_local_network: false,
 		tags: [],
+		multi_languages: '',
+		no_language_languages: '',
 		downloader_id: 0
 	};
 }
@@ -97,6 +112,9 @@ export function formFrom(s: SourceView): SourceForm {
 		name: s.name,
 		format: s.format === 'bridge' ? 'torznab' : s.format,
 		site: s.site ?? '',
+		site_user: s.site_user ?? '',
+		site_login: s.site_login === 'cookie' ? 'cookie' : 'passkey',
+		site_agent: s.site_agent ?? '',
 		protocol: s.protocol,
 		url: s.url,
 		api_key: s.api_key,
@@ -115,17 +133,21 @@ export function formFrom(s: SourceView): SourceForm {
 		proxy_password: s.proxy_password,
 		proxy_allow_local_network: s.proxy_allow_local_network,
 		tags: [...(s.tags ?? [])],
+		multi_languages: (s.multi_languages ?? []).join(', '),
+		no_language_languages: (s.no_language_languages ?? []).join(', '),
 		downloader_id: s.downloader_id ?? 0
 	};
 }
 
 // The built-in sites a Source can read directly, with their polite limits.
+// key says the site asks for a key (IPTorrents: the passkey), user that it
+// also asks for the person's user id there.
 // Names are the sites' own names, so they are not translated.
 export const builtInSites = [
-	{ id: 'knaben', name: 'Knaben', url: 'https://api.knaben.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'torrentscsv', name: 'TorrentsCSV', url: 'https://torrents-csv.com', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'subsplease', name: 'SubsPlease', url: 'https://subsplease.org', key: false, kinds: ['tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
-	{ id: 'iptorrents', name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 }
+	{ id: 'knaben', user: false, name: 'Knaben', url: 'https://api.knaben.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'torrentscsv', user: false, name: 'TorrentsCSV', url: 'https://torrents-csv.com', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'subsplease', user: false, name: 'SubsPlease', url: 'https://subsplease.org', key: false, kinds: ['tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'iptorrents', user: true, name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 }
 ] as const;
 
 // pickSite fills a new form with a built-in site's address and limits.
@@ -145,12 +167,25 @@ export function pickSite(f: SourceForm, id: string): void {
 }
 
 // An rss Source only feeds.
+// codeList reads typed language codes ("fr, en") into a list.
+function codeList(v: string): string[] {
+	return v
+		.split(/[\s,;]+/)
+		.map((c) => c.trim().toLowerCase())
+		.filter(Boolean);
+}
+
 export function formBody(f: SourceForm): Record<string, unknown> {
 	const rss = f.format === 'rss';
 	return {
 		name: f.name.trim(),
 		format: f.format,
 		...(f.format === 'site' ? { site: f.site } : {}),
+		...(f.format === 'site' && builtInSites.find((x) => x.id === f.site)?.user
+			? f.site_login === 'cookie'
+				? { site_login: 'cookie', site_agent: f.site_agent.trim() }
+				: { site_login: 'passkey', site_user: f.site_user.trim() }
+			: {}),
 		protocol: f.format === 'site' ? 'torrent' : f.protocol,
 		url: f.url.trim(),
 		api_key: f.api_key,
@@ -169,6 +204,8 @@ export function formBody(f: SourceForm): Record<string, unknown> {
 		proxy_password: f.proxy_password,
 		proxy_allow_local_network: f.proxy_allow_local_network,
 		tags: f.tags,
+		multi_languages: codeList(f.multi_languages),
+		no_language_languages: codeList(f.no_language_languages),
 		downloader_id: Number(f.downloader_id) || 0
 	};
 }

@@ -26,7 +26,7 @@ You should see each movie with its release, progress, speed, time left and Downl
 | Review | HolyArrs could not finish and needs you to choose. |
 | Problems | Failed and Review rows together. |
 
-A download with no progress for 6 h counts as stalled. After 24 h without progress HolyArrs tries the next release.
+A download with no progress for 6 h counts as stalled. After 24 h without progress HolyArrs searches again. A stall alone never turns the release down and never deletes its files, since the Downloader or its VPN may just be offline: the same release can be picked again and resume.
 
 :::tip
 A first download can sit in Queued or Downloading for a while. That is the Downloader at work, and HolyArrs keeps watching.

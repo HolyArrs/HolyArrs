@@ -1,4 +1,4 @@
-// Replaces each built script, style, language file and SVG in app/frontend/dist
+// Replaces each built script, style, JSON file and SVG in app/frontend/dist
 // with a brotli copy (name.br) when that is smaller, so the program that embeds
 // dist stays small. The Go server sends the copy as it is to browsers that
 // accept brotli and unpacks it for the others. index.html stays plain: the
@@ -17,8 +17,6 @@ function walk(dir) {
 		if (!exts.has(extname(p)) || name === 'index.html') continue;
 		const b = readFileSync(p);
 		if (b.length < 1024) continue;
-		// The image build packs the language files itself, with bzip2 (deploy/pack_languages.py).
-		if (process.env.HOLYARRS_LANGUAGES_PLAIN && extname(p) === '.json' && b.subarray(0, 8).toString() === '{"fit":"') continue;
 		const z = brotliCompressSync(b, { params: { [constants.BROTLI_PARAM_QUALITY]: 11, [constants.BROTLI_PARAM_SIZE_HINT]: b.length } });
 		if (z.length >= b.length * 0.9) continue;
 		writeFileSync(p + '.br', z);

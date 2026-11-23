@@ -320,8 +320,9 @@ func TestMoveWritesPathMappingsButNotIntoConfig(t *testing.T) {
 	}
 }
 
-// When the Downloader is already here, nothing is changed on it, and the
-// line says which folder maps to add by hand.
+// When the Downloader is already here with no folder maps of its own, it
+// gets the old apps' ones (set ones are never changed; see
+// TestImportFillsOnlyEmptyFolderMaps), and the line names them.
 func TestMoveNotesPathMappingsWhenDownloaderAlreadyHere(t *testing.T) {
 	l := newMoveLab(t)
 	local := t.TempDir()
@@ -342,8 +343,8 @@ func TestMoveNotesPathMappingsWhenDownloaderAlreadyHere(t *testing.T) {
 	if got.Result != ResAlready || !strings.Contains(got.Detail, "/downloads") {
 		t.Fatalf("downloader line %+v, want already with a note naming /downloads", got)
 	}
-	if maps := l.downloaderMaps(t); len(maps) != 0 {
-		t.Fatalf("an existing Downloader was changed: %+v", maps)
+	if maps := l.downloaderMaps(t); len(maps) != 1 || maps[0].Theirs != "/downloads" {
+		t.Fatalf("empty folder maps were not filled: %+v", maps)
 	}
 }
 

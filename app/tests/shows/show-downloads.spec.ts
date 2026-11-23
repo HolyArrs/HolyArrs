@@ -65,6 +65,42 @@ test('a finished episode is imported into its episode and the row says so', asyn
 	await expect(state(r)).toContainText('Done', { timeout: 30_000 });
 });
 
+// The imported episode shows its points against good enough on the title
+// page's Library tab; on a phone they move into the row's meta line.
+async function seasonTwo(p: Page, show: string) {
+	await p.goto(show);
+	await p.getByRole('tab', { name: 'Library' }).click();
+	await p.locator('.lib-sr-main', { hasText: 'Season 2' }).click();
+	return p.locator('.lib-ep').filter({ hasText: 'Return of the Fog' });
+}
+test('the episode list shows points and filters to below good enough', async ({ browser }) => {
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.goto('/library?kind=show');
+	await page.getByRole('main').getByRole('link', { name: /Harbour Lights/ }).first().click();
+	await expect(page.getByRole('heading', { level: 1 })).toContainText('Harbour Lights');
+	const show = new URL(page.url()).pathname;
+	const ep = await seasonTwo(page, show);
+	await expect(ep.getByTestId('episode-points')).toHaveText(/Points\s*-?\d+(\/-?\d+)?/, { timeout: 30_000 });
+	const filter = page.getByTestId('below-filter');
+	if (await filter.isVisible()) {
+		await filter.click();
+		await expect(filter).toHaveAttribute('aria-pressed', 'true');
+		await expect(ep).toBeVisible();
+		await page.screenshot({ path: 'test-results/points-1280-filter.png' });
+		await filter.click();
+	}
+	await page.screenshot({ path: 'test-results/points-1280.png' });
+	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+	const phone = await ctx.newPage();
+	await signIn(phone, owner());
+	const pep = await seasonTwo(phone, show);
+	await expect(pep.locator('.lib-ep-ptm')).toBeVisible({ timeout: 30_000 });
+	await expect(pep.getByTestId('episode-points')).toBeHidden();
+	await noSidewaysScroll(phone);
+	await phone.screenshot({ path: 'test-results/points-390.png' });
+	await ctx.close();
+});
+
 test('a pack whose files cannot be placed waits on Needs a decision as one card', async () => {
 	// The pack reports two files that are not on the disk: neither can be
 	// placed, so both episodes need a decision.

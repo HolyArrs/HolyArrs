@@ -8,10 +8,14 @@
 	"setup.fullPath": "Nimm den vollen Ordnerpfad, etwa {path}.",
 	"setup.folderUsed": "Dieser Ordner wird schon verwendet oder liegt in einem, der verwendet wird.",
 	"setup.folderMissing": "Diesen Ordner gibt es nicht. Prüf den Pfad.",
-	"setup.addFolderOrOff": "Füg einen Ordner hinzu oder schalte das aus.",
+	"setup.addFolderOrOff": "Füge einen Ordner hinzu oder drück „Vorerst überspringen“.",
 	"setup.notAnswering": "HolyArrs antwortet nicht. Versuch es gleich noch einmal.",
 	"setup.addUserPasswordHint": "Gib Benutzernamen und Passwort ein.",
 	"setup.folders": "Ordner",
 	"setup.downloader": "Downloader",
-	"setup.source": "Quelle"
+	"setup.source": "Quelle",
+	"setup.alertsNeedKeyOne": "Hinweise: 1 braucht einen Schlüssel",
+	"setup.alertsNeedKey": "Hinweise: {n} brauchen einen Schlüssel",
+	"setup.folderNoAccess": "HolyArrs kann diesen Ordner nicht öffnen. Prüfe seine Berechtigungen.",
+	"setup.folderCantUse": "HolyArrs kann diesen Ordner nicht nutzen. Prüfe den Pfad."
 }

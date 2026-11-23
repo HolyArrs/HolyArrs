@@ -13,7 +13,7 @@ Make one small change in the right place and send it as a pull request.
 - Wait for a reply, so you do not build something that will not be merged.
 - Finish [Setup](setup.md) so you can build and run HolyArrs.
 
-Questions go to [Discord](https://discord.com/invite/mthsvesKpC). Ideas go to [r/HolyArrs](https://www.reddit.com/r/HolyArrs/). Issues are for bugs and the roadmap.
+Questions and ideas go to the [HolyArrs Community](https://community.holyarrs.com). [Discord](https://discord.com/invite/mthsvesKpC) and [r/HolyArrs](https://www.reddit.com/r/HolyArrs/) work too. Issues are for bugs and the roadmap.
 
 ## Send your first pull request
 

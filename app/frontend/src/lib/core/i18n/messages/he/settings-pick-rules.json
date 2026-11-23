@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "אי אפשר לבטל. הקבצים נשארים.",
 	"settings.pickRules.removeUsed": "{used}. קודם בחר שם כללים אחרים.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "ביטול"
+	"settings.pickRules.cancel": "ביטול",
+	"settings.pickRules.check.title": "בדיקת שם הוצאה",
+	"settings.pickRules.check.desc": "הדבק שם הוצאה כדי לראות איך HolyArrs קורא אותו ואיך ערכות האיכות שלך שופטות אותו. שום דבר לא מחופש ולא מורד.",
+	"settings.pickRules.check.name": "שם ההוצאה",
+	"settings.pickRules.check.rules": "שפוט לפי",
+	"settings.pickRules.check.copies": "העותקים של הכותר המתאים",
+	"settings.pickRules.check.size": "גודל ב-GB (לא חובה)",
+	"settings.pickRules.check.check": "בדיקה",
+	"settings.pickRules.check.failed": "לא ניתן היה לבדוק את השם",
+	"settings.pickRules.check.readAs": "נקרא כ",
+	"settings.pickRules.check.matches": "מתאים ל{name}",
+	"settings.pickRules.check.noTitle": "לא מתאים לאף כותר בספרייה שלך. בחר ערכת איכות למעלה כדי לשפוט אותו בכל זאת.",
+	"settings.pickRules.check.noAlbum": "מתאים ל{name}, אבל לאף אחד מהאלבומים שלו.",
+	"settings.pickRules.check.noCopies": "לכותר הזה אין עותקים לשיפוט.",
+	"settings.pickRules.check.hasFile": "יש קובץ"
 }

@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Izrada: {what}… pokušaj {attempt}",
 	"core.testTag.connected": "Povezano",
 	"core.api.notAnswering": "HolyArrs ne odgovara. Provjeri radi li.",
+	"core.api.tooSlow": "HolyArrs je predugo odgovarao. Pokušaj ponovno za minutu.",
 	"core.api.requestFailed": "Zahtjev nije uspio ({status})",
 	"core.api.wentWrong": "Nešto je pošlo po zlu.",
 	"core.trailerMiss.trailer": "najava",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Automatski odobreno",
 	"core.plain.approvedBy": "Odobrio: {who}",
 	"core.settings.cantReach": "Ne mogu doći do te adrese. Provjeri je i radi li aplikacija.",
+	"core.settings.tryHttp": "Ta adresa ne odgovara preko https. Pokušaj s http://.",
 	"core.settings.groupLibrary.label": "Biblioteka",
 	"core.settings.groupLibrary.line": "Gdje su naslovi",
 	"core.settings.groupLibrary.about": "Mape, dijelovi, zadane postavke, titlovi, nazivi datoteka i uvoz.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dva preuzimatelja vode do iste aplikacije za preuzimanje, pa se preuzimanja mogu prikazati dvaput.",
 	"core.plain.peopleCheck": "Popis korisnika medijskog poslužitelja ne može se pročitati, pa se ovdje ne isključuju osobe uklonjene ondje.",
 	"core.plain.deleted": "izbrisan",
-	"core.plain.deletedName": "{name} (izbrisan)"
+	"core.plain.deletedName": "{name} (izbrisan)",
+	"core.api.handsOffFiles": "Način bez diranja je uključen pa HolyArrs ne dira preuzete datoteke. Isključite ga u Postavkama za uvoz, preimenovanje, premještanje ili skeniranje datoteka.",
+	"core.api.handsOffSubtitles": "Način bez diranja je uključen pa HolyArrs nikad ne otvara preuzete datoteke. Isključite ga u Postavkama za korištenje titlova."
 }

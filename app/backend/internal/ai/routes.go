@@ -54,6 +54,16 @@ type Handlers struct {
 	// Inner is the route chain below sign-in. It is set once the router is
 	// built; until then tool calls answer 503.
 	Inner http.Handler
+	// PluginTools are the tools running plugins add; nil means none. They
+	// show only on keys with the Plugin tools box ticked.
+	PluginTools PluginTools
+}
+
+// PluginTools lists and runs plugin tools for one person; who's own rights
+// decide which they see.
+type PluginTools interface {
+	List(who webserver.Caller) []map[string]any
+	Call(r *http.Request, who webserver.Caller, name string, args map[string]any) (any, error)
 }
 
 // SetClock replaces the clock the limits use; tests move time with it.
@@ -181,6 +191,9 @@ func (h *Handlers) serveRPC(w http.ResponseWriter, r *http.Request) {
 				tools = append(tools, map[string]any{"name": t.name, "title": t.title, "description": t.about, "inputSchema": t.schema,
 					"annotations": map[string]any{"readOnlyHint": !t.action}})
 			}
+		}
+		if h.pluginToolsOn(who) {
+			tools = append(tools, h.PluginTools.List(who)...)
 		}
 		rpcReply(w, http.StatusOK, msg.ID, map[string]any{"tools": tools}, nil)
 	case "tools/call":

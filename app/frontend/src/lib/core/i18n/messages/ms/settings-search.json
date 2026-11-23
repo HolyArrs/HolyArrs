@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Salinan terbaik dahulu; pek musim menang apabila setara",
 	"settings.search.preferAlways": "Pek musim apabila ada yang lulus set kualiti",
 	"settings.search.multi": "Ambil Keluaran dengan beberapa musim",
-	"settings.search.multiHint": "Mengisi setiap episod yang hilang di dalamnya",
+	"settings.search.multiHint": "Mengisi setiap episod yang hilang di dalamnya. Pada kualiti yang sama, keluaran dengan lebih banyak episod dicari menang",
 	"settings.search.music": "Muzik",
 	"settings.search.albums": "Cari album yang hilang juga",
 	"settings.search.albumsHint": "Album yang sudah dikeluarkan, satu carian setiap satu",

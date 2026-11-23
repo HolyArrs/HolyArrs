@@ -18,8 +18,12 @@ export interface GridDay {
 /** Big picture cards day by day, or a compact list. */
 export type CalendarView = 'cards' | 'list';
 
-/** The status dot on a calendar item: in the Library, missing (its day has passed), or still to come. */
-export type ItemDot = 'have' | 'missing' | 'upcoming';
+/** The status dot on a calendar item: in the Library, on its way (searching, downloading, bringing in), stuck (failed or waiting on a choice), missing (its day has passed), or still to come. */
+export type ItemDot = 'have' | 'getting' | 'problem' | 'missing' | 'upcoming';
+
+// Slot states read as on the way or stuck; any other state falls to missing or still to come by its day.
+const gettingStates = new Set(['searching', 'chosen', 'downloading', 'importing', 'held']);
+const problemStates = new Set(['failed', 'stalled', 'needs_a_decision', 'rejected']);
 
 /** A movie's dates and whether a copy is in the Library, read from its title. */
 export interface MovieFacts {
@@ -215,9 +219,35 @@ export function entryArt(e: Pick<CalendarEntry, 'still' | 'backdrop' | 'poster'>
 
 /** Which dot a calendar item shows on a given day. */
 export function itemDot(e: CalendarEntry, today = ymd(new Date())): ItemDot {
-	const have = e.kind === 'album' ? !!e.tracks && (e.have ?? 0) >= e.tracks : e.state === 'in_library' || !!e.versions?.some((v) => v.state === 'in_library');
+	const inLib = (s?: string) => s === 'in_library' || s === 'better_wanted';
+	const have = e.kind === 'album' ? !!e.tracks && (e.have ?? 0) >= e.tracks : inLib(e.state) || !!e.versions?.some((v) => inLib(v.state));
 	if (have) return 'have';
+	const states = [e.state, ...(e.versions?.map((v) => v.state) ?? [])].filter((x): x is string => !!x);
+	if (states.some((x) => gettingStates.has(x))) return 'getting';
+	if (states.some((x) => problemStates.has(x))) return 'problem';
 	return entryDay(e) < today ? 'missing' : 'upcoming';
+}
+
+/** Whether the details window offers a search: anything not yet in the Library (a person may search ahead of the day, as in the old apps). */
+export function canSearch(e: CalendarEntry, today = ymd(new Date())): boolean {
+	return itemDot(e, today) !== 'have';
+}
+
+/** The dates in view to search with one press, as the old apps' calendar does: aired, not in the Library and not already on the way or stuck; a movie once. */
+export function missingToSearch(es: CalendarEntry[], today = ymd(new Date())): CalendarEntry[] {
+	const seen = new Set<string>();
+	return es.filter((e) => {
+		if (itemDot(e, today) !== 'missing') return false;
+		const k = e.kind === 'episode' ? `e${e.item_id}` : e.kind === 'album' ? `a${e.part_id}` : `m${e.title_id}`;
+		return !seen.has(k) && !!seen.add(k);
+	});
+}
+
+/** The body of POST /titles/{id}/search for one calendar entry: an episode or an album alone, a movie whole. */
+export function searchBody(e: Pick<CalendarEntry, 'kind' | 'item_id' | 'part_id'>): Record<string, number> {
+	if (e.kind === 'episode' && e.item_id) return { item_id: e.item_id };
+	if (e.kind === 'album' && e.part_id) return { album_id: e.part_id };
+	return {};
 }
 
 /** Reads a movie title's dates and whether any of its copies is in the Library. */
@@ -226,7 +256,7 @@ export function movieFacts(t: Pick<TitleView, 'cinema_date' | 'digital_date' | '
 		cinema: t.cinema_date ? dayOf(t.cinema_date) : undefined,
 		digital: t.digital_date ? dayOf(t.digital_date) : undefined,
 		physical: t.physical_date ? dayOf(t.physical_date) : undefined,
-		have: !!t.slots?.some((s) => s.state === 'in_library')
+		have: !!t.slots?.some((s) => s.state === 'in_library' || s.state === 'better_wanted')
 	};
 }
 

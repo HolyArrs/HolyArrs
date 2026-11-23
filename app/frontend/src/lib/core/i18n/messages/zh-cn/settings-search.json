@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "优先选最好的副本；质量相同时选整季合集",
 	"settings.search.preferAlways": "只要整季合集符合画质方案就选它",
 	"settings.search.multi": "采用包含多季的资源",
-	"settings.search.multiHint": "补齐其中所有缺失的单集",
+	"settings.search.multiHint": "补齐其中所有缺失的单集。画质相同时，包含更多所需单集的发布优先",
 	"settings.search.music": "音乐",
 	"settings.search.albums": "也搜索缺失的专辑",
 	"settings.search.albumsHint": "已发行的专辑，每张搜索一次",

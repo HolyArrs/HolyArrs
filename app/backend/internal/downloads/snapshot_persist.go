@@ -191,6 +191,9 @@ func (p *persister) flush(ctx context.Context) error {
 		}
 		for _, l := range logs {
 			for _, line := range l.lines {
+				if line.Kind == "removed" && removedByUs(tx, l.id, l.key, now) {
+					line.Summary = strings.Replace(line.Summary, "Removed outside HolyArrs", "Removed by HolyArrs", 1)
+				}
 				if _, err := tx.Exec("INSERT INTO torrent_log (downloader_id, hash, at, kind, summary) VALUES (?, ?, ?, ?, ?)",
 					l.id, strings.ToLower(l.key), l.at.UTC().Format(database.TimeLayout), line.Kind, line.Summary); err != nil {
 					return err
@@ -304,4 +307,14 @@ func matchPriority(j Job) int {
 		return 2
 	}
 	return 3
+}
+
+// removedByUs reports that HolyArrs itself ended this torrent's Download as
+// failed in the last few minutes (and so took it off the Downloader), so its
+// log does not say someone else removed it.
+func removedByUs(tx *sql.Tx, downloaderID int64, key string, now time.Time) bool {
+	var n int
+	_ = tx.QueryRow(`SELECT count(*) FROM downloads WHERE downloader_id = ? AND lower(external_id) = ? AND state = 'failed' AND updated_at >= ?`,
+		downloaderID, strings.ToLower(key), database.FormatTime(now.Add(-10*time.Minute))).Scan(&n)
+	return n > 0
 }

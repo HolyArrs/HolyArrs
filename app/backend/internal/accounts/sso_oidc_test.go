@@ -33,11 +33,14 @@ type fakeOIDC struct {
 	expiry  time.Time
 	// B4 knobs: name in the ID token (nil = "Synthetic User"), iss override,
 	// the userinfo answer's sub and name, and a token-endpoint error code.
-	name     *string
-	iss      string
-	infoSub  string
-	infoName string
-	tokenErr string
+	name       *string
+	iss        string
+	infoSub    string
+	infoName   string
+	tokenErr   string
+	authTime   *time.Time // auth_time in the ID token; nil leaves it out
+	groups     any        // groups claim in the ID token; nil leaves it out
+	infoGroups any        // groups claim in the userinfo answer
 }
 
 func newFakeOIDC(t *testing.T) *fakeOIDC {
@@ -94,7 +97,7 @@ func (f *fakeOIDC) token(w http.ResponseWriter, r *http.Request) {
 	}
 	f.mu.Lock()
 	key, kid, nonce, subject, aud, azp, expiry := f.key, f.kid, f.nonce, f.subject, append([]string(nil), f.aud...), f.azp, f.expiry
-	name, iss, tokenErr := "Synthetic User", f.srv.URL, f.tokenErr
+	name, iss, tokenErr, authTime, groups := "Synthetic User", f.srv.URL, f.tokenErr, f.authTime, f.groups
 	if f.name != nil {
 		name = *f.name
 	}
@@ -123,8 +126,13 @@ func (f *fakeOIDC) token(w http.ResponseWriter, r *http.Request) {
 		Name    string           `json:"name,omitempty"`
 		AZP     string           `json:"azp,omitempty"`
 		Aud     []string         `json:"aud"`
+		Auth    *jwt.NumericDate `json:"auth_time,omitempty"`
+		Groups  any              `json:"groups,omitempty"`
 	}{Issuer: iss, Subject: subject, Expiry: jwt.NewNumericDate(expiry), Issued: jwt.NewNumericDate(time.Now()),
-		Nonce: nonce, Name: name, AZP: azp, Aud: aud}
+		Nonce: nonce, Name: name, AZP: azp, Aud: aud, Groups: groups}
+	if authTime != nil {
+		claims.Auth = jwt.NewNumericDate(*authTime)
+	}
 	raw, err := jwt.Signed(signer).Claims(claims).Serialize()
 	if err != nil {
 		f.t.Error(err)
@@ -143,7 +151,7 @@ func TestOIDCRuntimeUsesPKCEAndVerifiesRotatedKeys(t *testing.T) {
 	}
 	defer r.close()
 	now := time.Now()
-	authURL, browser, err := r.begin(context.Background(), now, "ip:127.0.0.1", 0, "")
+	authURL, browser, err := r.begin(context.Background(), now, "ip:127.0.0.1", 0, "", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +181,7 @@ func TestOIDCRuntimeUsesPKCEAndVerifiesRotatedKeys(t *testing.T) {
 	}
 
 	f.rotate("key-2")
-	authURL, browser, err = r.begin(context.Background(), now, "ip:127.0.0.1", 0, "")
+	authURL, browser, err = r.begin(context.Background(), now, "ip:127.0.0.1", 0, "", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +206,7 @@ func TestOIDCRuntimeRejectsReplayNonceExpiryAndExtraAudience(t *testing.T) {
 	}
 	defer r.close()
 	now := time.Now()
-	authURL, browser, err := r.begin(context.Background(), now, "ip:test", 0, "")
+	authURL, browser, err := r.begin(context.Background(), now, "ip:test", 0, "", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +266,7 @@ func TestOIDCRuntimeRequiresSameOriginEndpoints(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer r.close()
-	_, _, err = r.begin(context.Background(), time.Now(), "ip:test", 0, "")
+	_, _, err = r.begin(context.Background(), time.Now(), "ip:test", 0, "", false)
 	if err == nil || !strings.Contains(err.Error(), "configuration") {
 		t.Fatalf("error = %v", err)
 	}
@@ -282,10 +290,10 @@ func TestOIDCDiscoveryCancellationDoesNotPoisonRetry(t *testing.T) {
 	defer r.close()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, _, err := r.begin(ctx, time.Now(), "ip:test", 0, ""); err == nil {
+	if _, _, err := r.begin(ctx, time.Now(), "ip:test", 0, "", false); err == nil {
 		t.Fatal("canceled discovery succeeded")
 	}
-	if _, _, err := r.begin(context.Background(), time.Now(), "ip:test", 0, ""); err != nil {
+	if _, _, err := r.begin(context.Background(), time.Now(), "ip:test", 0, "", false); err != nil {
 		t.Fatalf("retry after canceled discovery: %v", err)
 	}
 }
@@ -314,7 +322,7 @@ func TestOIDCDiscoveryOutageIsOneSharedCancelableAttempt(t *testing.T) {
 			defer wg.Done()
 			ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 			defer cancel()
-			_, _, err := r.begin(ctx, time.Now(), "ip:one", 0, "")
+			_, _, err := r.begin(ctx, time.Now(), "ip:one", 0, "", false)
 			errs <- err
 		}()
 	}

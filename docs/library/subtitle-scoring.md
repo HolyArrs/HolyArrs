@@ -7,7 +7,7 @@ sidebar: { order: 4 }
 
 How HolyArrs scores a subtitle, when it searches, and how each Subtitle site behaves.
 
-For setup, see [Subtitles](subtitles.md). Subtitle sites are held back in the first release, see [Held-back features](../run/updates.md#held-back-features).
+For setup, see [Subtitles](subtitles.md).
 
 ## Change the Pass mark
 
@@ -123,6 +123,10 @@ A better subtitle must score higher than the one it replaces.
 | subdl | movies and shows | API key | Searches by TMDB id, IMDb id or name. The download count resets at midnight UTC. |
 | Gestdown | shows | none | Show subtitles from Addic7ed. |
 | Podnapisi | movies and shows | none | Starts turned off because the site does not answer now. Turn it on when it does. |
+| NapiProjekt | movies and shows, Polish only | none | Matched by the video file's own hash, so it needs the file on disk. Only the hash is sent, over https. |
+| Napisy24 | movies and shows, Polish only | your user name and password | Matched by the video file's hash and size, so it needs the file on disk. |
+| Assrt | movies and shows, Chinese (some sets also English) | token (in API key) | The free token from your assrt.net user page. Searches by name and season-episode, then picks the file for your language and episode out of the set. At least 3 s between calls by default, since the token allows a set number of calls a minute. |
+| TVsubtitles | shows | none | Reads the site's home page first, for its cookie and its current search page. Always uses https. |
 | Addic7ed (direct) | shows | user name and password | At least 3 s between calls and 100 calls a day by default. Unfinished subtitles are left out. HolyArrs never tries to get past a captcha. |
 
 The account sites have only been tested against stand-in servers. Run **Test** before your first real search.
@@ -138,4 +142,3 @@ Every subtitle route is in `http://your-server:6262/api/v1/openapi.json`, under 
 ## Related
 
 - [Subtitles](subtitles.md)
-- [Held-back features](../run/updates.md#held-back-features)

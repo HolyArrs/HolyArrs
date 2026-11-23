@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Preparo {what}… tentativo {attempt}",
 	"core.testTag.connected": "Connesso",
 	"core.api.notAnswering": "HolyArrs non risponde. Controlla che sia in esecuzione.",
+	"core.api.tooSlow": "HolyArrs ci ha messo troppo a rispondere. Riprova tra un minuto.",
 	"core.api.requestFailed": "Richiesta non riuscita ({status})",
 	"core.api.wentWrong": "Qualcosa è andato storto.",
 	"core.trailerMiss.trailer": "trailer",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Approvata in automatico",
 	"core.plain.approvedBy": "Approvata da {who}",
 	"core.settings.cantReach": "Non raggiungo quell'indirizzo. Controllalo e verifica che l'app sia in esecuzione.",
+	"core.settings.tryHttp": "Quell'indirizzo non risponde in https. Prova con http://.",
 	"core.settings.groupLibrary.label": "Libreria",
 	"core.settings.groupLibrary.line": "Dove stanno i titoli",
 	"core.settings.groupLibrary.about": "Cartelle, Parti, valori predefiniti, sottotitoli, nomi dei file e importazione.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Due Downloader raggiungono la stessa app di download, quindi i download possono comparire due volte.",
 	"core.plain.peopleCheck": "L’elenco utenti del server multimediale non è leggibile, quindi chi viene rimosso lì non viene disattivato qui.",
 	"core.plain.deleted": "eliminato",
-	"core.plain.deletedName": "{name} (eliminato)"
+	"core.plain.deletedName": "{name} (eliminato)",
+	"core.api.handsOffFiles": "La modalità senza intervento è attiva, quindi HolyArrs non tocca i file scaricati. Disattivala in Impostazioni per importare, rinominare, spostare o analizzare i file.",
+	"core.api.handsOffSubtitles": "La modalità senza intervento è attiva, quindi HolyArrs non apre mai i file scaricati. Disattivala in Impostazioni per usare i sottotitoli."
 }

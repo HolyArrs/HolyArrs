@@ -1,0 +1,31 @@
+{
+  "id": "tailscale",
+  "name": "Tailscale",
+  "version": "1.0.0",
+  "author": "HolyArrs",
+  "description": "Reach HolyArrs from anywhere through your own Tailscale network, without opening ports. Sign-in is still required for every visit.",
+  "long_description": "Adds this HolyArrs server to your Tailscale network as its own device, so phones and laptops on the same tailnet can open it from anywhere. Nothing is opened on your router. Traffic goes through Tailscale's encrypted relays, because the plugin lock blocks direct connections. Everyone who visits through it still signs in to HolyArrs, and first-time setup can't be done through it. A self-hosted Headscale server can be used instead of Tailscale's by setting HOLYARRS_TAILSCALE_LOGIN_SERVER.",
+  "how_it_works": [
+    "Turn the plugin on and open Remote access.",
+    "Follow the login link and approve the device in your Tailscale account.",
+    "Open HolyArrs from any device on your tailnet; sign in as usual.",
+    "Sign out here to leave the tailnet; remove the device in Tailscale's admin page if asked."
+  ],
+  "category": "Remote access",
+  "licence": "AGPL-3.0",
+  "repo": "https://github.com/HolyArrs/HolyArrs",
+  "support_email": "support@holyarrs.com",
+  "support_url": "https://github.com/HolyArrs/HolyArrs/issues",
+  "icon_file": "icon.svg",
+  "access": {
+    "hosts": [
+      "controlplane.tailscale.com",
+      "login.tailscale.com",
+      "*.tailscale.com",
+      "acme-v02.api.letsencrypt.org"
+    ],
+    "folders": [],
+    "actions": ["network.forward"]
+  },
+  "min_app_version": "1.3.0"
+}

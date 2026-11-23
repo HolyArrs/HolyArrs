@@ -14,7 +14,6 @@
 "settings.health.none": "結果がありません。再チェックして実行してください。",
 "settings.health.since": "開始",
 "settings.health.settings": "稼働状態チェックの設定",
-"settings.health.updateCheck": "新しい HolyArrs を確認",
 "settings.health.onlyChecks": "確認のみ。インストールはしません。",
 "settings.health.every": "アップデートの確認間隔",
 "settings.health.day": "日",

@@ -89,6 +89,7 @@ var tableOwner = map[string]string{
 	"api_keys":                "accounts",
 	"backup_codes":            "accounts",
 	"invites":                 "accounts",
+	"invite_uses":             "accounts",
 	"known_places":            "accounts",
 	"sso_links":               "accounts",
 	"user_links":              "accounts",
@@ -123,6 +124,7 @@ var tableOwner = map[string]string{
 	"imports":                 "mediafiles",
 	"rename_steps":            "mediafiles",
 	"title_search":            "mediafiles",
+	"release_stalls":          "mediafiles",
 
 	// discover
 	"hidden": "discover",
@@ -152,9 +154,11 @@ var tableOwner = map[string]string{
 	"subtitle_wishes":      "subtitles",
 
 	// mediaservers
-	"media_servers": "mediaservers",
-	"watch_state":   "mediaservers",
-	"media_labels":  "mediaservers",
+	"media_servers":     "mediaservers",
+	"watch_state":       "mediaservers",
+	"media_labels":      "mediaservers",
+	"media_tracks":      "mediaservers",
+	"trakt_watch_state": "mediaservers",
 
 	// alerts
 	"alerts": "alerts",

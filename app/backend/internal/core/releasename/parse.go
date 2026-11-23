@@ -1,7 +1,6 @@
 package releasename
 
 import (
-	"fmt"
 	"regexp"
 	"slices"
 	"strconv"
@@ -33,19 +32,28 @@ const (
 // All patterns are compiled once, at start.
 var (
 	reSitePrefix = regexp.MustCompile(`(?i)^\[?(?:www\.)[^\s\]]+\]?\s*-\s*`)
+	reLangCount  = regexp.MustCompile(`^\d+[xX]([A-Za-z]+)$`)
 	reSeparators = regexp.MustCompile(`[\s._()\[\]]+`)
 	reLastBrack  = regexp.MustCompile(`\[([^\[\]]+)\]\s*$`)
 	reCRC        = regexp.MustCompile(`\s*\[[0-9A-Fa-f]{8}\]\s*$`)
+	reNumNext    = regexp.MustCompile(`(?i)^[EXS]?\d{1,4}(?:E\d{1,4})?$`)
 	reLeadBrack  = regexp.MustCompile(`^\[([^\[\]]+)\]\s*`) // a group name may hold spaces: [Lab Fansub]
 	reResWord    = regexp.MustCompile(`^(480|576|720|1080|2160)[pi]$`)
 	reYear       = regexp.MustCompile(`^(19|20)\d\d$`)
 	reParenYear  = regexp.MustCompile(`\s\((19|20)\d\d\)(\s|$)`)
+	reBrackYear  = regexp.MustCompile(`\s\[((?:19|20)\d\d),([^\[\]]*)\]`)
 	reChannels   = regexp.MustCompile(`(?:^|[^0-9])([1-9]) ([01])(?:$|[^0-9])`)
 	reH26x       = regexp.MustCompile(`\b[hx] ?26([45])\b`)
 	reFix        = regexp.MustCompile(`^(proper|repack|rerip)(\d)?$`)
 	reArticle    = regexp.MustCompile(`^(.*), (The|A|An)$`)
-	reDDP        = regexp.MustCompile(`^(ddp|dd\+|eac3|ac3|dd|dts|aac|truehd|flac|opus|mp3)(\d)?$`)
+	reDDP        = regexp.MustCompile(`^(ddpa|ddp|dd\+|eac3|ac3|dd|dts|aac|truehd|flac|opus|mp3|lpcm)(\d)?$`)
 )
+
+// repostMarks follow the group at the end of a reposted name.
+var repostMarks = setOf("xpost", "obfuscated", "scrambled")
+
+// siteTags are sites whose tag ends a name in brackets.
+var siteTags = setOf("rarbg", "eztv", "ettv", "tgx", "yts")
 
 var videoExt = map[string]bool{"mkv": true, "mp4": true, "avi": true, "m4v": true, "wmv": true, "mov": true}
 
@@ -54,8 +62,8 @@ var exeExt = setOf("exe", "scr", "bat", "cmd", "msi", "msp", "lnk", "js", "jse",
 
 // Tag words: a token that is one of these (or matches a tag pattern) ends the title.
 var tagWords = setOf(
-	"bluray", "blu-ray", "bdrip", "brrip", "bd", "remux", "uhd", "4k",
-	"web", "web-dl", "webdl", "webrip", "web-rip", "hdtv", "pdtv", "dvdrip", "dvd", "hdcam", "cam", "camrip",
+	"bluray", "blu-ray", "bdrip", "brrip", "bd", "remux", "bdremux", "uhdremux", "uhd", "4k",
+	"web", "web-dl", "webdl", "webrip", "web-rip", "webhd", "web-hd", "hdtv", "pdtv", "dvdrip", "dvd", "hdcam", "cam", "camrip",
 	"hdts", "ts", "telesync", "complete", "iso", "bdmv",
 	"x264", "x265", "h264", "h265", "hevc", "avc", "av1", "xvid", "vc1", "vc-1", "mpeg2", "10bit", "8bit",
 	"dv", "dovi", "hdr", "hdr10", "hdr10plus", "hdr10+", "hlg",
@@ -66,10 +74,17 @@ var tagWords = setOf(
 	"proper", "repack", "rerip", "real", "internal", "sample", "featurette", "featurettes", "extras", "trailer",
 	"upscaled", "upscale", "dubbed", "hc", "hardsub", "hardcoded", "korsub", "passworded", "password",
 	"multi", "dl", "dual",
+	// Source, size, codec and audio words that are never title words.
+	"uhdbd", "uhd-bd", "uhdbdrip", "bdlight", "hddvd", "hd-dvd", "hddvdrip", "bdmux", "brdisk", "bd25", "bd50", "bd66", "bd100",
+	"webmux", "ituneshd", "amazonhd", "amazonsd", "amazonuhd", "netflixhd", "netflixuhd", "disneyhd", "hbomaxhd", "maxdomehd",
+	"hdrip", "sdtv", "ahdtv", "uhdtv", "hdtvrip", "tvrip", "dsrip", "dvbrip", "rawhd", "dvdr", "dvd-r", "dvd5", "dvd9",
+	"dvdscr", "dvdscreener", "bdscr", "telecine", "hdtc", "workprint", "vhsrip", "ldrip", "8k", "fhd",
+	"vp9", "divx", "mpeg-2", "ma10p", "hi10", "hi10p", "dts-x", "dtsx", "dts-es", "lpcm", "ddpa",
 )
 
 var langWords = map[string]string{
 	"english": "en", "eng": "en", "french": "fr", "truefrench": "fr", "vff": "fr", "vfq": "fr",
+	"vf": "fr", "vf2": "fr", "vfi": "fr", "vof": "fr",
 	"german": "de", "ger": "de", "italian": "it", "ita": "it", "spanish": "es", "spa": "es",
 	"russian": "ru", "rus": "ru", "japanese": "ja", "jpn": "ja", "korean": "ko", "kor": "ko",
 }
@@ -83,48 +98,43 @@ var moreLangWords = map[string]string{
 	"danish": "da", "norwegian": "no", "finnish": "fi", "czech": "cs", "cze": "cs", "hungarian": "hu", "hun": "hu",
 	"greek": "el", "hebrew": "he", "heb": "he", "turkish": "tr", "arabic": "ar", "hindi": "hi",
 	"chinese": "zh", "mandarin": "zh", "thai": "th", "vietnamese": "vi", "ukrainian": "uk", "ukr": "uk",
+	// Scene words and codes for the same languages.
+	"fre": "fr", "fra": "fr", "swissgerman": "de", "videomann": "de", "castellano": "es", "espanol": "es",
+	"español": "es", "esp": "es", "latino": "es", "brazilian": "pt", "dublado": "pt", "pt-br": "pt", "por": "pt",
+	"pldub": "pl", "pl-dub": "pl", "dub-pl": "pl", "lektor": "pl", "lek-pl": "pl", "pl-lek": "pl",
+	"hundub": "hu", "hebdub": "he", "cantonese": "zh", "vie": "vi",
+	// More languages, by full name and a few unmistakable scene words.
+	"bulgarian": "bg", "bgaudio": "bg", "romanian": "ro", "rodubbed": "ro", "catalan": "ca", "latvian": "lv", "lav": "lv",
+	"lithuanian": "lt", "slovak": "sk", "icelandic": "is", "persian": "fa", "farsi": "fa", "bengali": "bn",
+	"tamil": "ta", "telugu": "te", "malayalam": "ml", "kannada": "kn", "georgian": "ka", "urdu": "ur",
+	"estonian": "et", "serbian": "sr", "croatian": "hr", "slovenian": "sl", "indonesian": "id", "malay": "ms",
+	"albanian": "sq", "afrikaans": "af", "marathi": "mr", "tagalog": "tl", "filipino": "tl", "macedonian": "mk",
+	"bosnian": "bs", "punjabi": "pa", "gujarati": "gu",
+}
+
+// upperLangCodes count only when written in upper case ("CZ", not "cz"), so
+// a lower-case word in a name is never read as a language.
+var upperLangCodes = map[string]string{"LT": "lt", "CZ": "cs", "PL": "pl", "BG": "bg", "SK": "sk", "DE": "de"}
+
+// isLangWord says t (any case) is a language word or code.
+func isLangWord(t string) bool {
+	if _, ok := upperLangCodes[t]; ok {
+		return true
+	}
+	t = strings.ToLower(t)
+	_, a := langWords[t]
+	_, b := moreLangWords[t]
+	return a || b
 }
 
 var editions = []struct{ words, name string }{
 	{"directors cut", "Directors Cut"}, {"extended", "Extended"}, {"theatrical", "Theatrical"},
 	{"remastered", "Remastered"}, {"imax", "IMAX"}, {"unrated", "Unrated"}, {"anniversary", "Anniversary"},
+	{"final cut", "Final Cut"}, {"special edition", "Special Edition"}, {"open matte", "Open Matte"},
+	{"criterion", "Criterion"}, {"uncut", "Uncut"},
 }
 
 var nextYear = time.Now().Year() + 1
-
-// fold maps accented Latin letters to plain ones (standard library only, so
-// no Unicode normalisation tables).
-var fold = func() map[rune]string {
-	m := map[rune]string{}
-	add := func(to string, from string) {
-		for _, c := range from {
-			m[c] = to
-		}
-	}
-	add("a", "àáâãäåāăą")
-	add("c", "çćĉċč")
-	add("d", "ďđ")
-	add("e", "èéêëēĕėęě")
-	add("g", "ĝğġģ")
-	add("h", "ĥħ")
-	add("i", "ìíîïĩīĭįı")
-	add("j", "ĵ")
-	add("k", "ķ")
-	add("l", "ĺļľŀł")
-	add("n", "ñńņňŉ")
-	add("o", "òóôõöøōŏő")
-	add("r", "ŕŗř")
-	add("s", "śŝşš")
-	add("t", "ţťŧ")
-	add("u", "ùúûüũūŭůűų")
-	add("w", "ŵ")
-	add("y", "ýÿŷ")
-	add("z", "źżž")
-	m['ß'] = "ss"
-	m['æ'] = "ae"
-	m['œ'] = "oe"
-	return m
-}()
 
 // Conf is how sure the parser is about one field.
 type Conf string
@@ -152,6 +162,12 @@ type Hints struct {
 	// Music says the name is judged for an album search: it is read as
 	// "Artist - Album (Year) [tags]" or a scene music name.
 	Music bool
+	// MultiLanguages are what MULTi means on the Source the name came from
+	// (its per-Source list); a name with MULTi then carries them too.
+	MultiLanguages []string
+	// NoLanguage are the languages a name from that Source carries when it
+	// shows none (its per-Source list).
+	NoLanguage []string
 }
 
 // Result is a parsed Release name.
@@ -259,8 +275,13 @@ func Parse(name string, h Hints) Result {
 	// A repost marker at the end is not the group: some posters send a scene
 	// name on with "-xpost" after the release group. Drop it so the group
 	// before it is read, and cut a CRC that follows the marker.
+	// "-Obfuscated" and "-Scrambled" are posting tools' marks of the same kind.
 	repost := false
-	if i := strings.LastIndexByte(s, '-'); i > 0 && strings.EqualFold(s[i+1:], "xpost") {
+	for {
+		i := strings.LastIndexByte(s, '-')
+		if i <= 0 || !repostMarks[strings.ToLower(s[i+1:])] {
+			break
+		}
 		s = s[:i]
 		repost = true
 		if loc := reCRC.FindStringIndex(s); loc != nil {
@@ -269,10 +290,32 @@ func Parse(name string, h Hints) Result {
 		}
 	}
 
+	// A site's tag in brackets at the end ("[rarbg]", "[eztv.re]", "[TGx]")
+	// is not the group; YTS names carry only their own ("[YTS.MX]").
+	siteGroup := ""
+	if m := reLastBrack.FindStringSubmatchIndex(s); m != nil {
+		site, _, _ := strings.Cut(strings.ToLower(s[m[2]:m[3]]), ".")
+		if siteTags[site] {
+			if site == "yts" {
+				siteGroup = "YTS"
+			}
+			s = strings.TrimRight(s[:m[0]], " ._-")
+		}
+	}
+
+	// A leading [group] (anime) is the group; brackets at the end then hold
+	// tags or a checksum ("[1080p][Multi-Subs]", "[HEVC-x265]").
+	leadGroup := ""
+	if m := reLeadBrack.FindStringSubmatch(s); m != nil && !slices.ContainsFunc(strings.Fields(m[1]), isTag) {
+		leadGroup = m[1]
+	}
+
 	// Group: the text after the last hyphen, unless that hyphen joins a tag
 	// (WEB-DL, DTS-HD) or the text after it is not a group.
 	var trailing []string
-	if i := strings.LastIndexByte(s, '-'); i > 0 && i < len(s)-1 && s[i-1] != ' ' && s[i+1] != ' ' {
+	if leadGroup != "" {
+		r.Group = sure(leadGroup)
+	} else if i := strings.LastIndexByte(s, '-'); i > 0 && i < len(s)-1 && s[i-1] != ' ' && s[i+1] != ' ' {
 		after := reSeparators.Split(strings.Trim(s[i+1:], " ._"), -1)
 		before := s[:i]
 		if j := strings.LastIndexAny(before, " ._()[]"); j >= 0 {
@@ -281,6 +324,15 @@ func Parse(name string, h Hints) Result {
 		// A name whose marker was cut may have a hyphen inside its title
 		// (Spider-Man); the words after it are then not a group.
 		compound := tagWords[strings.ToLower(before+"-"+after[0])] || (repost && len(after) > 1)
+		// "S01E01-02", "1x01-02", a date: a number after the hyphen
+		// that the episode reader takes as part of the episode numbers is
+		// not a group. One reader decides, so a new episode form needs no
+		// second pattern here.
+		if !compound && reNumNext.MatchString(after[0]) {
+			if _, _, end, ok := findShow(strings.ReplaceAll(s, "_", " "), false, false); ok && end > i {
+				compound = true
+			}
+		}
 		allTags := true
 		for _, t := range after[1:] {
 			allTags = allTags && isTag(t)
@@ -293,14 +345,23 @@ func Parse(name string, h Hints) Result {
 			s = s[:i]
 		}
 	}
+	bracketGroup := false
 	if r.Group.Value == "" {
 		if m := reLastBrack.FindStringSubmatchIndex(s); m != nil {
 			inner := s[m[2]:m[3]]
-			if !strings.ContainsAny(inner, " .") && !isTag(inner) {
+			// "[Thai]" at the end is a language, not the group.
+			if !strings.ContainsAny(inner, " .") && !isTag(inner) && !allLangWords(inner) {
 				r.Group = sure(inner)
+				bracketGroup = true
 				s = s[:m[0]]
+			} else if strings.ContainsAny(inner, "-+") && allLangWords(inner) {
+				// "[Hindi-English]": read each language on its own.
+				s = s[:m[2]] + strings.NewReplacer("-", " ", "+", " ").Replace(inner) + s[m[3]:]
 			}
 		}
+	}
+	if r.Group.Value == "" && siteGroup != "" {
+		r.Group = sure(siteGroup)
 	}
 	if r.Group.Value == "" {
 		r.Group.Conf = Unknown
@@ -314,8 +375,15 @@ func Parse(name string, h Hints) Result {
 	// Underscores are word characters to the patterns; read them as spaces
 	// (same length, so the places found stay right).
 	body = strings.ReplaceAll(body, "_", " ")
+	// "[Group].Title.-.05.[1080p]": a dotted anime name reads like a
+	// spaced one (same length, so the places found stay right).
+	if lead != "" && !strings.Contains(strings.TrimSpace(body), " ") {
+		body = strings.ReplaceAll(body, ".", " ")
+	}
 	if sh, start, end, ok := findShow(body, lead != "", h.Show); ok {
-		if lead != "" && r.Group.Conf == Unknown {
+		// An anime name puts its group first; a last bracket such as
+		// "[Batch]" or "[Multi-Sub]" is then not the group.
+		if lead != "" && (r.Group.Conf == Unknown || bracketGroup) {
 			r.Group = sure(lead)
 		}
 		parseShow(&r, sh, body[:start], body[end:], trailing, lead != "", flags, h)
@@ -326,6 +394,12 @@ func Parse(name string, h Hints) Result {
 		return r
 	}
 
+	// "Title [2003, Country, Genre, WEB-DL 2160p]" (RuTracker): a year
+	// first in square brackets ends the title, like "(2003)"; the rest of
+	// that bracket is tags split by commas.
+	if m := reBrackYear.FindStringSubmatchIndex(s); m != nil {
+		s = s[:m[0]] + " (" + s[m[2]:m[3]] + ") " + strings.ReplaceAll(s[m[4]:m[5]], ",", " ") + s[m[1]:]
+	}
 	toks := reSeparators.Split(strings.TrimSpace(s), -1)
 	toks = slices.DeleteFunc(toks, func(t string) bool { return t == "" })
 	toks = append(splitTagPairs(toks), trailing...)
@@ -341,7 +415,7 @@ func Parse(name string, h Hints) Result {
 	}
 	first := len(toks)
 	for i, t := range toks {
-		if i > titleUpTo && isTag(t) {
+		if i > titleUpTo && isTag(t) && !titleTag(toks, i) {
 			first = i
 			break
 		}
@@ -378,142 +452,16 @@ func Parse(name string, h Hints) Result {
 		tags = slices.Delete(slices.Clone(tags), 0, 1)
 	}
 	readTags(&r, tags, flags, h)
+	// MULTi.CA names a Québec French dub, so French is one of its languages.
+	if flags["multi"] && !slices.Contains(r.Languages, "fr") && FrenchVersion(name) != "" {
+		r.Languages = append(r.Languages, "fr")
+	}
 
 	for f := range flags {
 		r.Flags = append(r.Flags, f)
 	}
 	slices.Sort(r.Flags)
 	return r
-}
-
-// CleanName is the form names are matched in: lower case, accents removed,
-// punctuation removed, "&" read as "and", and a leading "the", "a" or "an" dropped.
-func CleanName(s string) string {
-	var b strings.Builder
-	for _, c := range strings.ToLower(s) {
-		if f, ok := fold[c]; ok {
-			b.WriteString(f)
-			continue
-		}
-		switch {
-		case c == '&':
-			b.WriteString(" and ")
-		case unicode.IsLetter(c) || unicode.IsDigit(c):
-			b.WriteRune(c)
-		case unicode.Is(unicode.Mn, c):
-			// combining mark: drop
-		default:
-			b.WriteByte(' ')
-		}
-	}
-	words := strings.Fields(b.String())
-	// An "a" before another single letter starts letters written apart
-	// ("A.L.F."), not an article.
-	acronym := len(words) > 1 && words[0] == "a" && len([]rune(words[1])) == 1 && unicode.IsLetter([]rune(words[1])[0])
-	if len(words) > 1 && !acronym && (words[0] == "the" || words[0] == "a" || words[0] == "an") {
-		words = words[1:]
-	}
-	return strings.Join(words, " ")
-}
-
-// SameName says whether a library name cleans to want (a CleanName of a
-// release name). An apostrophe in the library name is tried both as a
-// separator ("Schitt s Creek", "d Amelie") and as nothing ("Schitts Creek"),
-// since release names show either. An all-capitals library name ("ER",
-// "CSI") also matches its letters written apart ("E.R.").
-func SameName(libName, want string) bool {
-	if slices.Contains(NameForms(libName), want) {
-		return true
-	}
-	return want != "" && strings.ToUpper(libName) == libName && strings.ToLower(libName) != libName && CleanName(libName) == JoinLetters(want)
-}
-
-// NameForms are the clean forms a library name can show in release names:
-// as written, with apostrophes dropped, and with letters written apart by
-// dots or stars joined ("S.W.A.T." as "swat", "M*A*S*H" as "mash"). A
-// joined name of only one or two letters ("I.T.", "E.R.") is too short to
-// tell apart from a word and is left out.
-func NameForms(libName string) []string {
-	forms := []string{CleanName(libName)}
-	if strings.ContainsAny(libName, "'’ʼ`‘") {
-		forms = append(forms, CleanName(reApostrophe.Replace(libName)))
-	}
-	if j := JoinLettersApart(libName, 2); j != libName {
-		if c := CleanName(reApostrophe.Replace(j)); strings.Contains(c, " ") || len([]rune(c)) > 2 {
-			forms = append(forms, CleanName(j), c)
-		}
-	}
-	return forms
-}
-
-// JoinLettersApart joins letters written apart by dots or stars ("S.W.A.T."
-// to "SWAT", "M*A*S*H" to "MASH") when the run has at least least letters;
-// shorter runs stay as they are. The matcher (NameForms) and the search
-// text both use it, so they read a name the same way.
-func JoinLettersApart(s string, least int) string { return joinRuns(reDotted, s, least) }
-
-// JoinDottedLetters joins only letters written apart by dots ("S.W.A.T." to
-// "SWAT", "E.T." to "ET"); a star, or a dot after a word or a number
-// ("D.Gray-man", "2.0"), stays as it is. Search text uses it, as the older
-// apps send names.
-func JoinDottedLetters(s string) string { return joinRuns(reDots, s, 2) }
-
-func joinRuns(re *regexp.Regexp, s string, least int) string {
-	return re.ReplaceAllStringFunc(s, func(m string) string {
-		j := dottedJoin(m)
-		n := 0
-		for _, c := range j {
-			if unicode.IsLetter(c) {
-				n++
-			}
-		}
-		if n < least {
-			return m
-		}
-		return j
-	})
-}
-
-var (
-	reApostrophe = strings.NewReplacer("'", "", "’", "", "ʼ", "", "`", "", "‘", "")
-	// reDotted is two or more single letters, each followed by a dot or star.
-	reDotted = regexp.MustCompile(`(?:^|[^\pL\pN])(?:\pL[.*]){1,}\pL(?:[.*]|$|[^\pL\pN])`)
-	reDots   = regexp.MustCompile(`(?:^|[^\pL\pN])(?:\pL\.){1,}\pL(?:\.|$|[^\pL\pN])`)
-)
-
-// dottedJoin joins the letters of one reDotted match, keeping the edges; a
-// dot or star after the last letter becomes a space ("S.W.A.T.2017").
-func dottedJoin(m string) string {
-	r := []rune(m)
-	var b strings.Builder
-	for i, c := range r {
-		if c == '.' || c == '*' {
-			if i == len(r)-1 && unicode.IsLetter(r[i-1]) {
-				b.WriteByte(' ')
-				continue
-			}
-			if i > 0 && i < len(r)-1 {
-				continue
-			}
-		}
-		b.WriteRune(c)
-	}
-	return b.String()
-}
-
-// JoinLetters joins runs of two or more one-letter words ("e r" to "er").
-func JoinLetters(clean string) string {
-	words := strings.Fields(clean)
-	letter := func(w string) bool { r := []rune(w); return len(r) == 1 && unicode.IsLetter(r[0]) }
-	var out []string
-	for i, w := range words {
-		if letter(w) && i > 0 && letter(words[i-1]) {
-			out[len(out)-1] += w
-			continue
-		}
-		out = append(out, w)
-	}
-	return strings.Join(out, " ")
 }
 
 func sure[T any](v T) Field[T] { return Field[T]{v, Sure} }
@@ -533,13 +481,24 @@ func setOf(words ...string) map[string]bool {
 func splitTagPairs(toks []string) []string {
 	out := make([]string, 0, len(toks))
 	for _, t := range toks {
-		if a, b, ok := strings.Cut(t, "-"); ok && a != "" && b != "" && !tagWords[strings.ToLower(t)] && (isTag(a) || isOldAppSource(a)) && isTag(b) {
-			out = append(out, a, b)
+		if a, b, ok := strings.Cut(t, "-"); ok && a != "" && b != "" && !tagWords[strings.ToLower(t)] && (isTag(a) || isOldAppSource(a) || strings.EqualFold(a, "hybrid")) && tagRun(b) {
+			out = append(out, a)
+			out = append(out, strings.Split(b, "-")...)
 			continue
 		}
 		out = append(out, t)
 	}
 	return out
+}
+
+// tagRun says every dash-joined part of s is a tag ("Remux-2160p").
+func tagRun(s string) bool {
+	for p := range strings.SplitSeq(s, "-") {
+		if p == "" || !isTag(p) && !isOldAppSource(p) {
+			return false
+		}
+	}
+	return true
 }
 
 // isOldAppSource is a source word only the old apps' quality names use.
@@ -553,20 +512,13 @@ func isOldAppSource(tok string) bool {
 
 func isTag(tok string) bool {
 	t := strings.ToLower(tok)
-	if tagWords[t] || reResWord.MatchString(t) || reDDP.MatchString(t) || reFix.MatchString(t) {
+	if tagWords[t] || reResWord.MatchString(t) || reResAny.MatchString(t) || reResPixel.MatchString(t) && len(t) >= 7 || reGlued.MatchString(t) || reDDP.MatchString(t) || reFix.MatchString(t) {
 		return true
 	}
 	if _, ok := langWords[t]; ok {
 		return true
 	}
 	return false
-}
-
-// plainWord says a lower-case word is neither a tag, a language nor a
-// number, so it reads as part of a title or a note.
-func plainWord(t string) bool {
-	_, lang := moreLangWords[t]
-	return !lang && !isTag(t) && !reNumber(t) && t != "dub" && t != "audio"
 }
 
 // ReadsLanguage reports whether Release names can show the language code at all.
@@ -608,90 +560,7 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 		return false
 	}
 
-	// Resolution. Two different values make it a guess; the later one wins.
-	// UHD and 4K count only when no number is written ("720p.UHD.BluRay"
-	// is a 720p cut of a UHD disc, as Sonarr and Radarr read it).
-	var seen []int
-	for _, t := range low {
-		if m := reResWord.FindStringSubmatch(t); m != nil {
-			v, _ := strconv.Atoi(m[1])
-			seen = append(seen, v)
-		}
-	}
-	if len(seen) == 0 && has("4k", "uhd") {
-		seen = append(seen, 2160)
-	}
-	if len(seen) > 0 {
-		r.Resolution = sure(seen[len(seen)-1])
-		for _, v := range seen {
-			if v != r.Resolution.Value {
-				r.Resolution.Conf = Guess
-				r.Notes = append(r.Notes, fmt.Sprintf("read as %dp; the name also says %dp", r.Resolution.Value, v))
-				break
-			}
-		}
-	} else {
-		r.Resolution.Conf = Unknown
-	}
-
-	// Source.
-	switch {
-	case has("iso", "bdmv", "video_ts") || (has("complete") && has("bluray", "blu-ray")):
-		r.Source = sure("disc_image")
-		flags["disc_image"] = true
-	case has("remux"):
-		r.Source = sure("remux")
-	case has("bluray", "blu-ray", "bdrip", "brrip", "bd"):
-		r.Source = sure("bluray")
-	case has("web-dl", "webdl"):
-		r.Source = sure("web_dl")
-	case has("webrip", "web-rip"):
-		r.Source = sure("web_rip")
-	case has("web"):
-		r.Source = likely("web_dl")
-	case has("hdtv", "pdtv"):
-		r.Source = sure("tv")
-	case has("dvdrip", "dvd"):
-		r.Source = sure("dvd")
-	case has("hdcam", "cam", "camrip"):
-		r.Source = sure("cam")
-	case has("hdts", "ts", "telesync"):
-		r.Source = sure("telesync")
-	default:
-		r.Source.Conf = Unknown
-	}
-	if r.Resolution.Conf == Unknown {
-		switch r.Source.Value {
-		case "bluray", "remux", "disc_image":
-			r.Resolution = likely(1080)
-		case "dvd":
-			r.Resolution = likely(480)
-		}
-	}
-
-	// Codec.
-	switch {
-	case reH26x.MatchString(line):
-		if reH26x.FindStringSubmatch(line)[1] == "5" {
-			r.Codec = sure("h265")
-		} else {
-			r.Codec = sure("h264")
-		}
-	case has("hevc"):
-		r.Codec = sure("h265")
-	case has("avc"):
-		r.Codec = sure("h264")
-	case has("av1"):
-		r.Codec = sure("av1")
-	case has("xvid"):
-		r.Codec = sure("xvid")
-	case has("vc1", "vc-1"):
-		r.Codec = sure("vc1")
-	case has("mpeg2"):
-		r.Codec = sure("mpeg2")
-	default:
-		r.Codec.Conf = Unknown
-	}
+	readQuality(r, low, flags)
 
 	// HDR. The words HolyArrs writes in a file name read back too, so a
 	// Library it named keeps its quality. A written label is one word that
@@ -716,46 +585,112 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 		r.HDR.Conf = Likely // no HDR words: SDR
 	}
 
-	// Audio.
-	for _, t := range low {
-		m := reDDP.FindStringSubmatch(t)
-		if m == nil {
-			continue
-		}
-		f := map[string]string{"ddp": "eac3", "dd+": "eac3", "eac3": "eac3", "ac3": "ac3", "dd": "ac3",
-			"dts": "dts", "aac": "aac", "truehd": "truehd", "flac": "flac", "opus": "opus", "mp3": "mp3"}[m[1]]
-		if r.Audio.Format == "" || f == "truehd" {
-			r.Audio.Format = f
-		}
-	}
-	if has("dts-hd") {
-		r.Audio.Format = "dts_hd_ma"
-	}
-	if m := reChannels.FindStringSubmatch(line); m != nil {
-		r.Audio.Channels = m[1] + "." + m[2]
-	}
-	r.Audio.Atmos = has("atmos")
-
 	// Languages. A newer language word before an ordinary word belongs to
 	// an episode title or a subtitle note ("The Chinese Restaurant", "Thai Sub").
-	for i, t := range low {
-		code, ok := langWords[t]
-		if !ok {
-			code, ok = moreLangWords[t]
-			ok = ok && (i+1 == len(low) || !plainWord(low[i+1]))
-			// "hun" also needs a tag before it, so "The.Hun.720p" stays a title.
-			ok = ok && (t != "hun" || i > 0 && !plainWord(low[i-1]))
+	// Toloka style: "2xUkr/Eng | Sub Ukr/Eng" lists audio languages joined
+	// by "/" (a count in front), then subtitle languages after "Sub".
+	var words []string // "eng|sub" reads like "eng | sub"
+	for _, t := range tags {
+		for j, p := range strings.Split(t, "|") {
+			if j > 0 {
+				words = append(words, "|")
+			}
+			if p != "" {
+				words = append(words, p)
+			}
 		}
-		if ok && !slices.Contains(r.Languages, code) {
+	}
+	isSub := func(t string) bool {
+		t = strings.ToLower(t)
+		return t == "sub" || t == "subs" || t == "subtitle" || t == "subtitles"
+	}
+	var langToks []string // original case: upper-case-only codes need it
+	for i, t := range words {
+		if isSub(t) {
+			if i > 0 && words[i-1] == "|" {
+				break // Toloka: subtitle languages follow
+			}
+			// "ENG.SUBS", "Kor.Eng.Sub": the languages right before are
+			// subtitles. Reading goes on after the sub word, like Sonarr.
+			for len(langToks) > 0 && isLangWord(langToks[len(langToks)-1]) {
+				langToks = langToks[:len(langToks)-1]
+			}
+			langToks = append(langToks, t) // keeps "Thai Sub 1080p" a note too
+			continue
+		}
+		if t == "|" {
+			continue
+		}
+		for _, p := range strings.Split(t, "/") {
+			if m := reLangCount.FindStringSubmatch(p); m != nil {
+				p = m[1]
+			}
+			langToks = append(langToks, p)
+		}
+	}
+	lowToks := make([]string, len(langToks))
+	for i, t := range langToks {
+		lowToks[i] = strings.ToLower(t)
+	}
+	addLang := func(code string) {
+		if !slices.Contains(r.Languages, code) {
 			r.Languages = append(r.Languages, code)
 		}
 	}
-	if has("multi") {
+	for i, t := range lowToks {
+		code, ok := langWords[t]
+		if !ok {
+			code, ok = moreLangWords[t]
+			ok = ok && (i+1 == len(lowToks) || !plainWord(lowToks[i+1]) || subTag(lowToks[i+1]))
+			// "hun" also needs a tag before it, or one after when it comes
+			// first, so "The.Hun.720p" stays a title.
+			ok = ok && (t != "hun" || i > 0 && !plainWord(lowToks[i-1]) || i == 0 && i+1 < len(lowToks))
+		}
+		if !ok {
+			// Upper-case two-letter codes, never next to a sub word.
+			code, ok = upperLangCodes[langToks[i]]
+			ok = ok && (i == 0 || !isSub(lowToks[i-1])) && (i+1 == len(lowToks) || !isSub(lowToks[i+1]))
+		}
+		if ok {
+			addLang(code)
+		}
+	}
+	// ORIG / ORIGINAL: the original language is in the Release too.
+	if has("orig", "original") {
+		flags["original"] = true
+	}
+	// German only: ML adds the original language and English; DL (not
+	// after WEB) adds the original language.
+	if len(r.Languages) == 1 && r.Languages[0] == "de" {
+		if has("ml") {
+			flags["original"] = true
+			addLang("en")
+		}
+		for i, t := range low {
+			if t == "dl" && (i == 0 || low[i-1] != "web") {
+				flags["original"] = true
+			}
+		}
+	}
+	if has("multi", "multi-audio", "multi-subs") {
 		flags["multi"] = true
+	}
+	// The Source says what MULTi means there; Multi-Subs is about subtitles.
+	if has("multi", "multi-audio") {
+		for _, code := range h.MultiLanguages {
+			addLang(code)
+		}
+	}
+	// A name that shows no language carries what its Source says every
+	// release there has (before the original-language fallback).
+	if len(r.Languages) == 0 {
+		for _, code := range h.NoLanguage {
+			addLang(code)
+		}
 	}
 	// DL is dual language, except after WEB, where it is the source ("WEB.DL").
 	for i, t := range low {
-		if t == "dual" || t == "dl" && (i == 0 || low[i-1] != "web") {
+		if t == "dual" || t == "dual-audio" || t == "dl" && (i == 0 || low[i-1] != "web") {
 			flags["dual"] = true
 		}
 	}
@@ -777,6 +712,10 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 			r.Fix = max(r.Fix, n)
 		}
 	}
+	// REAL marks a fix of a fix ("PROPER.REAL"), so it counts one more.
+	if has("real") {
+		r.Fix++
+	}
 
 	// Flags.
 	set := func(f string, words ...string) {
@@ -792,5 +731,24 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 	set("upscaled", "upscaled", "upscale")
 	set("dubbed", "dubbed")
 	set("internal", "internal")
+	set("hybrid", "hybrid")
 	_ = h
+}
+
+// allLangWords reports whether every "-" or "+" part of s is a language
+// word, so "[Hindi-English]" at the end reads as languages too.
+func allLangWords(s string) bool {
+	parts := strings.FieldsFunc(s, func(r rune) bool { return r == '-' || r == '+' })
+	for _, p := range parts {
+		if !isLangWord(p) {
+			return false
+		}
+	}
+	return len(parts) > 0
+}
+
+// subTag says t is a joined subtitle tag such as "swesub" or "nlsubs", so
+// "HUN.SWESUB" still reads Hungarian.
+func subTag(t string) bool {
+	return len(t) > 4 && (strings.HasSuffix(t, "sub") || strings.HasSuffix(t, "subs"))
 }

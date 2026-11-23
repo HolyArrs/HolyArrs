@@ -62,6 +62,7 @@ Rows past their keep time are gone for good. Keep **Keep other Events** on Forev
 | Rows | `GET /api/v1/events` returns the same rows as the page |
 | Filters | Full list in `http://your-server:6262/api/v1/openapi.json` |
 | Cleanup | A daily job removes rows past their keep time in small batches, so the database is never locked for long |
+| Removed downloads | The Downloads list leaves them out. Their download row is kept for History, retries and duplicate checks, and is not purged automatically. The torrent you add again later shows as an outside row |
 | Sign-ins and settings changes | Always kept 1 year |
 
 </details>

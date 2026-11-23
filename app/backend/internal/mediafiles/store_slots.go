@@ -101,3 +101,10 @@ func FollowedDownloads(ctx context.Context, q database.Lister) (map[int64]bool, 
 	}
 	return out, rows.Err()
 }
+
+// SlotDownloadTx reads a Slot's state, the download it waits on and its
+// file inside a write.
+func SlotDownloadTx(tx *sql.Tx, slotID int64) (state string, active, file sql.NullInt64, err error) {
+	err = tx.QueryRow("SELECT state, active_download_id, file_id FROM slots WHERE id = ?", slotID).Scan(&state, &active, &file)
+	return state, active, file, err
+}

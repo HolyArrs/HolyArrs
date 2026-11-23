@@ -81,3 +81,31 @@ func hasDotDot(p string) bool {
 	}
 	return false
 }
+
+// InLinkPair says whether p, a path as HolyArrs sees it, lies in the "ours"
+// folder of a pair that places links.
+func InLinkPair(p string, maps []PathMap) bool {
+	if hasDotDot(p) {
+		return false
+	}
+	for _, m := range maps {
+		ours := strings.TrimRight(strings.TrimSpace(m.Ours), `/\`)
+		if !m.Link || ours == "" {
+			continue
+		}
+		if _, ok := cutFolder(p, ours); ok {
+			return true
+		}
+	}
+	return false
+}
+
+// HasLinkPair says whether any pair places links.
+func HasLinkPair(maps []PathMap) bool {
+	for _, m := range maps {
+		if m.Link {
+			return true
+		}
+	}
+	return false
+}

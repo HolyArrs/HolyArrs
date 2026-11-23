@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "无法撤销。文件会保留。",
 	"settings.pickRules.removeUsed": "{used}。请先在那里改选其他规则。",
 	"settings.pickRules.sentence": "{text}。",
-	"settings.pickRules.cancel": "取消"
+	"settings.pickRules.cancel": "取消",
+	"settings.pickRules.check.title": "检查发布名称",
+	"settings.pickRules.check.desc": "粘贴一个发布名称，看看 HolyArrs 如何解读它，以及你的画质方案如何评判它。不会搜索或下载任何内容。",
+	"settings.pickRules.check.name": "发布名称",
+	"settings.pickRules.check.rules": "评判依据",
+	"settings.pickRules.check.copies": "匹配作品的副本",
+	"settings.pickRules.check.size": "大小（GB，可选）",
+	"settings.pickRules.check.check": "检查",
+	"settings.pickRules.check.failed": "无法检查该名称",
+	"settings.pickRules.check.readAs": "解读为",
+	"settings.pickRules.check.matches": "匹配 {name}",
+	"settings.pickRules.check.noTitle": "没有匹配媒体库中的任何作品。在上方选择一个画质方案，仍可评判。",
+	"settings.pickRules.check.noAlbum": "匹配 {name}，但没有匹配其任何专辑。",
+	"settings.pickRules.check.noCopies": "这个作品没有可评判的副本。",
+	"settings.pickRules.check.hasFile": "已有文件"
 }

@@ -8,10 +8,14 @@
 	"setup.fullPath": "Користи целу путању фасцикле, на пример {path}.",
 	"setup.folderUsed": "Ова фасцикла је већ у употреби или се налази унутар оне која јесте.",
 	"setup.folderMissing": "Та фасцикла не постоји. Провери путању.",
-	"setup.addFolderOrOff": "Додај фасциклу или искључи ово.",
+	"setup.addFolderOrOff": "Додајте фасциклу или притисните „Прескочи за сада”.",
 	"setup.notAnswering": "HolyArrs не одговара. Покушај поново за тренутак.",
 	"setup.addUserPasswordHint": "Унеси корисничко име и лозинку.",
 	"setup.folders": "Фасцикле",
 	"setup.downloader": "Преузимач",
-	"setup.source": "Извор"
+	"setup.source": "Извор",
+	"setup.alertsNeedKeyOne": "Обавештења: 1 треба кључ",
+	"setup.alertsNeedKey": "Обавештења: {n} треба кључ",
+	"setup.folderNoAccess": "HolyArrs не може да отвори ову фасциклу. Проверите њене дозволе.",
+	"setup.folderCantUse": "HolyArrs не може да користи ову фасциклу. Проверите путању."
 }

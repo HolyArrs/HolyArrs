@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Toevoegen aan de Nooit-toevoegen-lijst",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "{name} van de lijst halen",
-	"settings.outsideLists.empty": "Nog niets op deze lijst"
+	"settings.outsideLists.empty": "Nog niets op deze lijst",
+	"settings.outsideLists.traktSignInTitle": "Aanmelden bij Trakt",
+	"settings.outsideLists.traktSignInInfo": "Meld je aan om je privé Trakt-lijsten en watchlist te lezen en om wat je op Trakt hebt gekeken aan de kijkgeschiedenis toe te voegen.",
+	"settings.outsideLists.traktSignedInAs": "Aangemeld als {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Niet aangemeld. Alleen openbare lijsten worden gelezen.",
+	"settings.outsideLists.traktSignIn": "Aanmelden met Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Open op een willekeurig apparaat <a>{url}</a> en voer <code>{code}</code> in. Deze pagina wacht tot je goedkeurt.",
+	"settings.outsideLists.traktDenied": "De Trakt-aanmelding is geweigerd.",
+	"settings.outsideLists.traktExpired": "De code is verlopen. Begin opnieuw.",
+	"settings.outsideLists.traktSignOut": "Afmelden bij Trakt",
+	"settings.outsideLists.traktSignedIn": "Aangemeld bij Trakt",
+	"settings.outsideLists.traktSignedOut": "Afgemeld bij Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (nodig om in te loggen met Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Sla eerst het client secret van je Trakt-app op; Trakt heeft het nodig om je ingelogd te houden."
 }

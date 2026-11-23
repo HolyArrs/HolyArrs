@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Samo ovi mogu reći odakle je posjet došao.",
 	"settings.signIn.fixToSaveOne": "Popravite 1 redak za spremanje",
 	"settings.signIn.fixToSaveOther": "Popravite redaka: {n}, za spremanje",
-	"settings.signIn.localSaved": "Lokalna mreža spremljena"
+	"settings.signIn.localSaved": "Lokalna mreža spremljena",
+	"settings.signIn.forgotTitle": "Zaboravljena lozinka?",
+	"settings.signIn.forgotOn": "Prikaži Zaboravljena lozinka? na stranici za prijavu",
+	"settings.signIn.forgotNote": "Vlasnik dobiva jednokratni kôd iz zapisnika poslužitelja. Isključi ako se svi prijavljuju jedinstvenom prijavom. Naredba reset-owner i dalje radi.",
+	"settings.signIn.forgotShown": "Zaboravljena lozinka? je uključeno",
+	"settings.signIn.forgotHidden": "Zaboravljena lozinka? je isključeno"
 }

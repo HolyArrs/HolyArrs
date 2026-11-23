@@ -3,7 +3,6 @@
 	import { personText } from '#lib/core/plain.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { onMount, tick, untrack } from 'svelte';
-	import { SvelteMap } from 'svelte/reactivity';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import Button from '#lib/ui/Button.svelte';
@@ -34,11 +33,11 @@
 	import { emptyAdds, exceptionChip, firstOfLetter, letterOf, letters, missingEpisodes, posterStatus, type AddKind, type Kind } from './library.ts';
 	import { libraryState } from './library-state.ts';
 	import { partOff } from './parts.svelte.ts';
-	import { buildEntries, cell, drawRange, grow, holdFocus, isProgressCol, placeKeeper, posterCols, posterRowGuess, posterRowKey, posterExtra, posterFacts, requestedBy, rowCell, scoreText, shrink, tone, type Entry, type View } from './library-view.ts';
-	import { needsAttention, barOf, flipFrom, type PosterDetail } from './poster.ts';
-	import { columnSort, progressOf, sortName, sortsFor, tableMinWidth, type Column, type FilterState, type LibKind, type SortDir, type SortKey } from './table.ts';
+	import { buildEntries, cell, cellTitle, colPx, drawRange, grow, heightAction, holdFocus, isProgressCol, lineTops, placeKeeper, posterCols, posterRowGuess, posterRowKey, posterExtra, posterFacts, requestedBy, RowHeights, rowCell, scoreText, shrink, tone, type Entry, type View } from './library-view.ts';
+	import { needsAttention, barOf, flipFrom, posterNote, posterYear, type PosterDetail } from './poster.ts';
+	import { columnSort, columnsFor, fitColumns, progressOf, sortName, sortsFor, tableMinWidth, type Column, type FilterState, type LibKind, type SortDir, type SortKey } from './table.ts';
 	import { artName, slotKind } from './title-page.ts';
-	import { colPx } from './library-view.ts';
+	import { boxWidth } from '#lib/ui/box-width.ts';
 	import { t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 
 	type Props = {
@@ -61,9 +60,12 @@
 		picked: Set<number>;
 		lastOpenedId: number | null;
 		chosenCols: Column[];
+		/** Ids of chosen columns that do not fit at this width (for the Columns picker). */
+		cutIds?: string[];
 		density: Density;
 		posterSize: PosterSize;
 		posterDetail: PosterDetail;
+		posterDates?: boolean;
 		seriesOfTitle: Map<number, number>;
 		seriesName: (id: number) => string;
 		phone: boolean;
@@ -84,8 +86,7 @@
 	};
 	// The empty Library's add buttons, named for the kind each one adds.
 	const addWords = $derived<Record<AddKind, string>>({ movie: tr('mediafiles.list.addMovie'), show: tr('mediafiles.list.addShow'), artist: tr('mediafiles.list.addArtist') });
-	let { titles, shown, loaded, error, view, kind, libKind, filter, sort, grouped, kindTitle, q, filtersOn, who, canManage, selecting, picked, lastOpenedId, chosenCols, density, posterSize, posterDetail, seriesOfTitle, seriesName, phone, listWidth = $bindable(), gridEl = $bindable(), listEl = $bindable(), progressText, artistHref, episodeLabel, retryLoad, clearFilters, togglePick, startSelecting, setSort, searchTitles, setKeep, refreshTitle }: Props = $props();
-
+	let { titles, shown, loaded, error, view, kind, libKind, filter, sort, grouped, kindTitle, q, filtersOn, who, canManage, selecting, picked, lastOpenedId, chosenCols, density, posterSize, posterDetail, posterDates = false, seriesOfTitle, seriesName, phone, listWidth = $bindable(), cutIds = $bindable([]), gridEl = $bindable(), listEl = $bindable(), progressText, artistHref, episodeLabel, retryLoad, clearFilters, togglePick, startSelecting, setSort, searchTitles, setKeep, refreshTitle }: Props = $props();
 	const kindLabel = (k: string) => tr(`mediafiles.kindCap.${k}`);
 
 	// The banner sits inset in the sheet (8px from its edge, 6px above and below).
@@ -106,21 +107,25 @@
 		return out;
 	});
 	const hiddenCols = $derived(chosenCols.length - shownCols.length);
-	// As many facts as the list is wide enough for: three on a wide screen, down to one. The Rows grid: poster 52, title >= 120, status 168, each fact 150, actions (wider on touch screens), 12 px gaps.
+	// Rows: the same fit rule as Table. Chosen columns keep their order (Status and Kept are ordinary columns), each at its own width; what does not fit is cut from the end and counted in a "+N" mark.
 	const actsW = $derived(96 + (touchActs ? 48 : 0));
 	const factCols = $derived(chosenCols.filter((c) => c.id !== 'status' && c.id !== 'kept'));
-	const rowCols = $derived.by(() => {
-		let room = listWidth - 10 - 52 - 120 - 168 - actsW - 12 * 3 - (selecting ? 28 + 12 : 0);
-		const out: Column[] = [];
-		// All mixes kinds, so its rows show only the score, and only while sorted by it.
-		for (const c of kind === 'all' ? factCols.filter((c) => c.id === 'score' && sort.key === 'score') : factCols) {
-			if (out.length === 3 || (out.length && room < colPx(c) + 12)) break;
-			out.push(c);
-			room -= colPx(c) + 12;
-		}
-		return out;
+	const rowStatus = $derived(kind === 'all' || chosenCols.some((c) => c.id === 'status'));
+	const rowW = (c: Column) => (c.id === 'status' ? 168 : colPx(c));
+	// All mixes kinds, so its rows show the status, and the score only while sorted by it.
+	const rowPool = $derived(kind === 'all' ? [columnsFor('movie')[0], ...factCols.filter((c) => c.id === 'score' && sort.key === 'score')] : chosenCols);
+	const rowFit = $derived.by(() => {
+		const room = listWidth - 10 - 52 - 120 - actsW - 12 * 2 - (selecting ? 28 + 12 : 0);
+		const fit = fitColumns(rowPool, room, rowW);
+		return fit.cut.length ? fitColumns(rowPool, room - 28 - 12, rowW) : fit;
 	});
-	const factsTpl = $derived(rowCols.map((c) => `${colPx(c)}px`).join(' ') || '0px');
+	const rowCols = $derived(rowFit.shown);
+	const rowCut = $derived(rowFit.cut.length);
+	const factsTpl = $derived([...rowCols.map((c) => `${rowW(c)}px`), ...(rowCut ? ['28px'] : [])].join(' ') || '0px');
+	$effect(() => {
+		const ids = phone || kind === 'all' ? [] : (view === 'rows' ? rowFit.cut : view === 'table' ? chosenCols.slice(shownCols.length) : []).map((c) => c.id);
+		if (ids.join() !== cutIds.join()) cutIds = ids;
+	});
 	const bannerW = $derived(listWidth < 640 ? wantW : Math.round(Math.max(Math.min(wantW, bannerFloor[density]), Math.min(wantW, listWidth - colsNeed(kind === 'all' ? [] : shownCols)))));
 	/** A row's height for its title's kind: the banner plus its inset (Music rows are taller). */
 	const rowH = (k: string) => bannerHeight(bannerW, k) + ART_GAP;
@@ -145,7 +150,7 @@
 	const gapX = $derived(narrow ? 12 : 18);
 	const gapY = $derived(narrow ? 18 : 26);
 	const cols = $derived(posterCols(listWidth, narrow ? (kind === 'artist' ? squarePhoneMin[posterSize] : gridMin * 0.66) : gridMin, gapX));
-	const lines = (t: TitleView) => (posterDetail !== 'title' && who === 'staff' && needsAttention(libraryState(t)) ? 1 : 0) + (posterDetail === 'full' && posterExtra(t) ? 1 : 0);
+	const lines = (t: TitleView) => (posterDetail !== 'title' && who === 'staff' && needsAttention(libraryState(t)) ? 1 : 0) + (posterDetail === 'full' && posterExtra(t) ? 1 : 0) + (posterNote(t, posterDates) ? 1 : 0);
 	// The grid's own width, to the fraction of a pixel (the list's width is rounded), so a guess matches the drawn row.
 	let gridW = $state(0);
 	const cardRows = $derived.by(() => {
@@ -163,7 +168,9 @@
 	let scrollY = $state(0);
 	let viewH = $state(900);
 	let listTop = $state(0);
-	const heights = new SvelteMap<string, number>();
+	// Measured heights sit in a plain map with one change count, so laying out a long list reads one signal, not one per row.
+	let heightsRev = $state(0);
+	const heights = new RowHeights(() => heightsRev++);
 	// A row's height belongs to the view it was measured in: start over when the view changes.
 	let heightsView = untrack(() => view);
 	$effect(() => {
@@ -174,12 +181,10 @@
 	});
 	/** Height guess for a row not yet measured, from its kind's banner shape. */
 	const guessFor = (k: string) => (view === 'rows' ? (phone ? 60 : 54) : view === 'overview' ? 168 : phone ? Math.round((listWidth - 24) / bannerRatio(k)) + 92 : rowH(k));
+	// The walk reads no title and follows the view's shape only, as it runs again whenever a row is measured.
 	const offsets = $derived.by(() => {
-		const n = view === 'posters' ? cardRows.length : entries.length;
-		const out = new Array<number>(n + 1);
-		out[0] = 0;
-		for (let i = 0; i < n; i++) out[i + 1] = out[i] + (view === 'posters' ? (heights.get(cardRows[i].key) ?? cardRows[i].guess) : heights.get(entries[i].key) ?? (entries[i].type === 'head' ? 52 : guessFor((entries[i] as Extract<Entry, { type: 'row' }>).t.kind)));
-		return out;
+		const [rows, list, posters] = [cardRows, entries, view === 'posters', heightsRev, phone, listWidth, bannerW];
+		return untrack(() => (posters ? lineTops(rows, heights, (r) => r.guess) : lineTops(list, heights, (e) => (e.type === 'head' ? 52 : guessFor(e.kind)), (e) => (e.type === 'head' ? 'head' : e.kind))));
 	});
 	const virtual = $derived((view === 'posters' ? shown.length : entries.length) > 80);
 	const range = $derived(virtual ? drawRange(offsets, scrollY - listTop, viewH) : { start: 0, end: offsets.length - 1 });
@@ -235,22 +240,7 @@
 		ro.observe(gridEl);
 		return () => ro.disconnect();
 	});
-	function measure(node: HTMLElement, key: string) {
-		let k = key;
-		const ro = new ResizeObserver(() => {
-			const h = node.offsetHeight;
-			if (h && heights.get(k) !== h) heights.set(k, h);
-		});
-		ro.observe(node);
-		return {
-			update(next: string) {
-				k = next;
-			},
-			destroy() {
-				ro.disconnect();
-			}
-		};
-	}
+	const measure = heightAction(heights);
 	function readTop() {
 		const el = view === 'posters' ? gridEl : listEl;
 		if (el) listTop = el.getBoundingClientRect().top + window.scrollY;
@@ -365,7 +355,7 @@
 
 <!-- The rail column is kept while loading too, so the cards do not narrow when it appears. -->
 <div class:has-rail={railOn || (!loaded && sort.key === 'name' && !grouped)} class="with-rail">
-	<div class="content" bind:clientWidth={listWidth}>
+	<div class="content" use:boxWidth={(w) => (listWidth = w)}>
 		<PageLoader loading={!loaded} label={tr('mediafiles.list.loading')} onretry={retryLoad}>
 		{#if error}
 			<LoadError hasData={false} message={plainReason(error).text} onretry={retryLoad} />
@@ -384,7 +374,7 @@
 					{@const p = progressOf(t)}
 					{@const ls = who === 'staff' ? libraryState(t) : null}
 					<li class="item" style:--poster-ratio={posterRatio(t.kind)} aria-setsize={shown.length} aria-posinset={range.start * cols + i + 1} data-testid="library-card" data-title-id={t.id} data-letter={letterOf(sortName(t.name))} class:selected={picked.has(t.id)} class:last-opened={lastOpenedId === t.id}>
-						<LibraryPoster title={t.name} year={t.year} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} score={sort.key === 'score' ? scoreText(t) : ''} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} seen={seenIds.has(t.id)} onseen={() => seenIds.add(t.id)} watched={titleWatched(t, watchedNow.ix)} />
+						<LibraryPoster title={t.name} year={posterYear(t, posterDates)} note={posterNote(t, posterDates)} href={openLink(t)} image={posterSrc(t.artwork[0], gridMin)} kind={t.kind === 'artist' ? 'artist' : t.kind === 'show' ? 'show' : 'movie'} vtName={artName(t.id)} status={ls} attention={needsAttention(ls)} bar={barOf(ls, p.have, p.total)} detail={posterDetail} extra={posterExtra(t)} facts={posterFacts(t)} score={sort.key === 'score' ? scoreText(t) : ''} kept={t.keep_up_to_date} {canManage} {selecting} selected={picked.has(t.id)} onsearch={() => searchTitles([t.id])} onkeep={(k) => setKeep([t.id], k)} seen={seenIds.has(t.id)} onseen={() => seenIds.add(t.id)} watched={titleWatched(t, watchedNow.ix)} />
 						{#if selecting}
 							<button type="button" class="pick" aria-pressed={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} onclick={() => togglePick(t.id)} data-testid="library-pick"><span class="pick-dot" aria-hidden="true">{#if picked.has(t.id)}<Icon name="check" size={14} stroke={3} />{/if}</span></button>
 						{/if}
@@ -400,7 +390,7 @@
 						{#if selecting}<span></span>{/if}
 						<span></span>
 						<button type="button" class="h sort" aria-label={sort.key === 'name' ? tr('mediafiles.list.sorted', { what: tr('mediafiles.list.title'), dir: tr(sort.dir === 'asc' ? 'mediafiles.list.lowHigh' : 'mediafiles.list.highLow') }) : tr('mediafiles.list.title')} aria-pressed={sort.key === 'name'} onclick={() => setSort('name')}>{tr('mediafiles.list.title')}{#if sort.key === 'name'}<span class="dir">{sort.dir === 'asc' ? '↑' : '↓'}</span>{/if}</button>
-						<span class="h">{tr('mediafiles.col.status')}</span>
+						{#if !rowCols.length}<span></span>{/if}
 						{#each rowCols as c (c.id)}
 							{@const sk = columnSort[c.id]}
 							{#if sk && sortsFor(kind === 'all' ? 'all' : libKind).includes(sk)}
@@ -409,6 +399,7 @@
 								<span class="h">{c.label}</span>
 							{/if}
 						{/each}
+						{#if rowCut}<span class="h more" title={tr(rowCut === 1 ? 'mediafiles.list.moreColOne' : 'mediafiles.list.moreColMany', { n: rowCut })}>+{rowCut}</span>{/if}
 						<span></span>
 					</div>
 				{/if}
@@ -475,11 +466,16 @@
 											<span class="lt">
 												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												{#if !phone && t.year}<small>{t.year}</small>{/if}
-												{#if phone}{@const fc = rowCols.find((c) => !isProgressCol(c)) ?? rowCols[0]}<span class="lsub"><PersonText text={[ls?.label, fc ? rowCell(t, fc, p, seriesOf(t)) : ''].filter(Boolean).join(' · ')} /></span>{/if}
+												{#if phone}{@const fc = factCols[0]}<span class="lsub"><PersonText text={[rowStatus ? ls?.label : '', fc ? rowCell(t, fc, p, seriesOf(t)) : ''].filter(Boolean).join(' · ')} /></span>{/if}
 											</span>
 											{#if !phone}
-												<span class="ls {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}><i class="dot" aria-hidden="true"></i>{ls?.label ?? '—'}</span>
-												{#each rowCols as c (c.id)}<span class="lc" title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}><PersonText text={rowCell(t, c, p, seriesOf(t)) || '—'} /></span>{/each}
+												{#if !rowCols.length}<span></span>{/if}
+												{#each rowCols as c (c.id)}
+													{#if c.id === 'status'}<span class="ls {ls?.tone ?? 'idle'}" title={ls?.detail ?? ls?.label} data-testid="library-status" data-state={ls?.key}><i class="dot" aria-hidden="true"></i>{ls?.label ?? '—'}</span>
+													{:else if c.id === 'kept'}<span class="lc"><span class="keep" class:on={t.keep_up_to_date} role="img" aria-label={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')} title={tr(t.keep_up_to_date ? 'mediafiles.poster.kept' : 'mediafiles.poster.notKept')}><Icon name={t.keep_up_to_date ? 'bellOn' : 'bell'} size={16} /></span></span>
+													{:else}<span class="lc" title={cellTitle(t, c, seriesOf(t))}><PersonText text={rowCell(t, c, p, seriesOf(t)) || '—'} /></span>{/if}
+												{/each}
+												{#if rowCut}<span></span>{/if}
 												<span class="acts">
 													{#if canManage && !selecting}
 														<IconButton icon="search" size="sm" tipSide="below-end" label={tr('mediafiles.poster.searchFor', { title: t.name })} tabindex={ri === active ? 0 : -1} onclick={() => searchTitles([t.id])} />
@@ -503,14 +499,14 @@
 												<a href={openLink(t)} tabindex="-1" title={t.name} dir="auto">{t.name}</a>
 												<span class="sub">
 													{#if kind === 'all'}{kindLabel(t.kind)}{#if t.year} · {t.year}{/if}{#if sort.key === 'score' && !phone && scoreText(t)} · ★ {scoreText(t)}{/if}{/if}
-													{#if ls && (kind === 'all' || phone || !shownCols.some((c) => c.id === 'status'))}<span class="ls {ls.tone}" data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
+													{#if ls && (kind === 'all' || phone || (chosenCols.some((c) => c.id === 'status') && !shownCols.some((c) => c.id === 'status')))}<span class="ls {ls.tone}" title={ls.detail ?? ls.label} data-testid="library-status" data-state={ls.key}><i class="dot" aria-hidden="true"></i>{ls.label}</span>{/if}
 												</span>
 												{#if phone}<span class="facts"><PersonText text={factCols.slice(0, 3).map((c) => (isProgressCol(c) ? `${p.have}/${p.total}` : cell(t, c, seriesOf(t)))).filter(Boolean).join(' · ')} /></span>{/if}
 											</span>
 											{#if kind !== 'all'}
 												{#each shownCols as c (c.id)}
 													{#if c.id === 'status'}
-														<span class="c lstate {ls?.tone ?? 'idle'}" data-testid="library-status" data-state={ls?.key}>
+														<span class="c lstate {ls?.tone ?? 'idle'}" title={ls?.detail ?? ls?.label} data-testid="library-status" data-state={ls?.key}>
 															{#if ls}
 																<span class="ls-line ls {ls.tone}"><i class="dot" aria-hidden="true"></i><span class="ls-t">{ls.label}</span></span>
 																{#if ls.percent !== undefined}<span class="meter ls-bar" aria-hidden="true"><i style="width: {ls.percent}%"></i></span>{/if}
@@ -525,7 +521,7 @@
 															<span class="sr-only">{progressText(t)}</span>
 														</span>
 													{:else}
-														<span class="c" class:num={c.numeric} class:path={c.id === 'path'} title={c.id === 'path' ? cell(t, c, seriesOf(t)) : undefined}><PersonText text={cell(t, c, seriesOf(t)) || '—'} /></span>
+														<span class="c" class:num={c.numeric} class:path={c.id === 'path'} title={cellTitle(t, c, seriesOf(t))}><PersonText text={cell(t, c, seriesOf(t)) || '—'} /></span>
 													{/if}
 												{/each}
 											{/if}
@@ -558,8 +554,8 @@
 											</div>
 											<!-- The status leads on its own line (never cut short); under it only facts that say something. -->
 											<dl class="ov-facts">
-												{#if ls}<dt class="sr-only">{tr('mediafiles.col.status')}</dt><dd class="ov-state"><span class="ls {ls.tone}"><i class="dot" aria-hidden="true"></i>{ls.label}</span></dd>{/if}
-												{#each chosenCols.filter((c) => !isProgressCol(c) && c.id !== 'status' && c.id !== 'kept').slice(0, 4) as c (c.id)}{#if cell(t, c, seriesOf(t))}<dt>{c.label}</dt><dd title={personText(cell(t, c, seriesOf(t)))}><PersonText text={cell(t, c, seriesOf(t))} /></dd>{/if}{/each}
+												{#if ls && rowStatus}<dt class="sr-only">{tr('mediafiles.col.status')}</dt><dd class="ov-state"><span class="ls {ls.tone}"><i class="dot" aria-hidden="true"></i>{ls.label}</span></dd>{/if}
+												{#each chosenCols.filter((c) => !isProgressCol(c) && c.id !== 'status' && c.id !== 'kept') as c (c.id)}{#if cell(t, c, seriesOf(t))}<dt>{c.label}</dt><dd title={personText(cell(t, c, seriesOf(t)))}><PersonText text={cell(t, c, seriesOf(t))} /></dd>{/if}{/each}
 											</dl>
 											{#if selecting}<input type="checkbox" class="pick-box ov-pick" checked={picked.has(t.id)} aria-label={tr('mediafiles.list.select', { name: t.name })} tabindex="-1" onchange={() => togglePick(t.id)} data-testid="library-pick" />{/if}
 										</div>
@@ -607,8 +603,8 @@
 	.with-rail { min-width: 0; }
 	.with-rail.has-rail { display: grid; grid-template-columns: minmax(0, 1fr) 26px; gap: 12px; align-items: start; }
 	/* Rows: a ledger. 54 px a title, a small poster, the name and year, the status with its colour dot, three facts, the actions. */
-	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
-	.rows.has-select .lh, .rows.has-select .lr { grid-template-columns: 28px 52px minmax(120px, 1fr) 168px var(--facts, 150px) var(--acts-w, 96px); }
+	.lh, .lr { display: grid; grid-template-columns: 52px minmax(120px, 1fr) var(--facts, 150px) var(--acts-w, 96px); align-items: center; gap: 0 12px; }
+	.rows.has-select .lh, .rows.has-select .lr { grid-template-columns: 28px 52px minmax(120px, 1fr) var(--facts, 150px) var(--acts-w, 96px); }
 	.lsel { display: grid; place-items: center; padding-inline-start: 10px; }
 	.lr { position: relative; }
 	.lh { position: relative; height: 40px; padding-inline-end: 10px; background: color-mix(in srgb, var(--text) 3%, transparent); border-bottom: 1px solid var(--line); }
@@ -650,6 +646,8 @@
 	/* Sentence case, like Downloads' column headings: one voice on the page. */
 	.h { color: color-mix(in srgb, var(--text) 78%, transparent); font: 600 12px/1 var(--font-ui); text-align: left; white-space: nowrap; }
 	.h.more { position: absolute; right: 6px; top: 50%; translate: 0 -50%; padding: 3px 5px; border-radius: 6px; background: color-mix(in srgb, var(--text) 8%, transparent); letter-spacing: 0; cursor: help; }
+	/* In Rows the mark has its own 28 px track at the end of the facts. */
+	.lh .h.more { position: static; translate: none; justify-self: start; }
 	.h.num, .c.num { text-align: right; justify-self: end; }
 	.sort { display: inline-flex; align-items: center; gap: 4px; padding: 6px 0; border: 0; background: none; cursor: pointer; }
 	.sort.num { justify-content: flex-end; }

@@ -107,9 +107,24 @@ export function fromShow(s: LookupShow): TitleDetails {
 	return { kind: 'show', tmdb: s.ids.tmdb ?? '', name: s.name, year: num(s.year), overview: s.overview || undefined, poster: s.poster, genres: [], runtime: num(s.runtime), network: s.network, cast: [], similar: [], titleId: s.title_id, neverAdd: s.never_add, ask: s.ask, show: s, hidden: s.hidden || undefined };
 }
 
-export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, signal?: AbortSignal, onMeta?: (meta: TitleDetails) => void): Promise<TitleDetails | null> {
+// A details read the server or a proxy could not answer (0, 5xx) is asked once more after this wait, then the page says so with Retry.
+export const DETAILS_RETRY_MS = 1500;
+const passing = (e: unknown) => e instanceof ApiError && (e.status === 0 || e.status >= 500);
+const pause = (ms: number, signal?: AbortSignal) =>
+	new Promise<void>((done, fail) => {
+		if (signal?.aborted) return fail(signal.reason ?? new DOMException('Aborted', 'AbortError'));
+		const t = setTimeout(done, ms);
+		signal?.addEventListener('abort', () => (clearTimeout(t), fail(signal.reason ?? new DOMException('Aborted', 'AbortError'))), { once: true });
+	});
+
+export async function loadDetails(get: Get, kind: DetailKind, tmdb: string, signal?: AbortSignal, onMeta?: (meta: TitleDetails) => void, retryMs = DETAILS_RETRY_MS): Promise<TitleDetails | null> {
+	const path = `/metadata/${kind}/${encodeURIComponent(tmdb)}`;
 	// Both asks start together; the lookup is settled below so its failure is never unhandled while metadata is awaited.
-	const metaAsk = get<Raw>(`/metadata/${kind}/${encodeURIComponent(tmdb)}`, signal);
+	const metaAsk = get<Raw>(path, signal).catch(async (e: unknown) => {
+		if (!passing(e)) throw e;
+		await pause(retryMs, signal);
+		return get<Raw>(path, signal);
+	});
 	const term = encodeURIComponent(`tmdb:${tmdb}`);
 	const lookup: Promise<TitleDetails | null> =
 		kind === 'movie'

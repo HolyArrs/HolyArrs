@@ -23,43 +23,82 @@ export function owner(): Owner {
 }
 
 /**
- * finishFirstRun walks the first run after the owner: Start fresh, one movies
- * folder (Music on too when asked, with a folder next to it; TV shows off,
- * since Continue needs a folder for every part that is on), skips Downloader and Source, then opens
- * Home, or Users through Invite family (which also turns on Requests).
+ * reachSetupAccount walks a fresh app's first two setup steps (Language, then
+ * Welcome, each with its one main button) to the account form ("Your HolyArrs account").
+ * It copes with any of the three already being open.
+ */
+export async function reachSetupAccount(page: Page) {
+	const ways = page.getByRole('heading', { name: 'Your HolyArrs account' });
+	await expect(async () => {
+		if (await ways.isVisible()) return;
+		const lang = page.getByTestId('setup-lang-go');
+		if (await lang.isVisible()) await lang.click();
+		const start = page.getByTestId('setup-start');
+		if (await start.isVisible()) await start.click();
+		await expect(ways).toBeVisible({ timeout: 3_000 });
+	}).toPass({ timeout: 60_000 });
+	// The account step ignores a submit in its first 400 ms (the Enter that pressed Get started), so let it settle.
+	await page.waitForTimeout(500);
+}
+
+/**
+ * finishFirstRun walks the first run after a password owner: Media server
+ * skipped, Parts (Start
+ * fresh, TV shows off unless asked, Music on when asked), then a folder for
+ * every part that is on, then Sources, Downloads, Subtitles and Address left
+ * as they are (Continue / Skip for now), then opens Home, or Users when family is invited (which also
+ * turns on Requests).
  */
 export async function finishFirstRun(page: Page, moviesPath: string, o: { tv?: boolean; music?: boolean; invite?: boolean } = {}) {
-	await expect(page.getByRole('heading', { name: 'Coming from other apps?', level: 1 })).toBeVisible();
-	// The media step reads the saved folders as it opens and rebuilds its rows when they arrive; typing before that is lost.
-	const loaded = page.waitForResponse((r) => r.url().includes('/api/v1/library-folders') && r.request().method() === 'GET');
-	await page.getByRole('button', { name: /^Start fresh/ }).click();
-	await expect(page.getByRole('heading', { name: /^Where.s your media\?$/, level: 1 })).toBeVisible();
-	await loaded;
+	// Media server comes first and is optional: Skip (no server linked) moves on to Parts.
+	// A caller that stepped Back may already be past it, at Parts.
+	const link = page.getByTestId('link-continue');
+	const parts = page.getByRole('heading', { name: 'What should HolyArrs do?', level: 1 });
+	await expect(link.or(parts)).toBeVisible();
+	if (await link.isVisible()) await link.click();
+	await expect(parts).toBeVisible();
+	const fresh = page.getByTestId('welcome-fresh');
+	if (await fresh.isVisible()) await fresh.click();
+	await expect(page.getByTestId('parts-continue')).toBeVisible();
 	// TV shows starts on; most own-server checks need Movies only. The shared setup keeps it on, with its own folder.
-	if (o.tv) {
-		const tvPath = join(dirname(moviesPath), 'tv');
-		mkdirSync(tvPath, { recursive: true });
-		await page.getByLabel('TV shows folder').fill(tvPath);
-	} else await page.getByLabel('TV shows', { exact: true }).uncheck();
-	if (o.music) {
-		await page.getByLabel('Music', { exact: true }).check();
-		const musicPath = join(dirname(moviesPath), 'music');
-		mkdirSync(musicPath, { recursive: true });
-		await page.getByLabel('Music folder').fill(musicPath);
-	}
-	await page.getByLabel('Movies folder').fill(moviesPath);
-	await expect(page.getByLabel('Movies folder')).toHaveValue(moviesPath);
+	// The tiles start as the server has the parts, so each one is set, not just toggled on.
+	await page.getByLabel('TV shows', { exact: true }).setChecked(!!o.tv);
+	await page.getByLabel('Music', { exact: true }).setChecked(!!o.music);
+	// Requests is its own tile now (Invite family left the last step).
+	await page.getByLabel('Requests', { exact: true }).setChecked(!!o.invite);
+	// The folders step reads the saved folders as it opens and rebuilds its rows when they arrive; typing before that is lost.
+	const loaded = page.waitForResponse((r) => r.url().includes('/api/v1/library-folders') && r.request().method() === 'GET');
+	await page.getByTestId('parts-continue').click();
+	await expect(page.getByRole('heading', { name: /^Where.s your media\?$/, level: 1 })).toBeVisible();
+	await Promise.race([loaded, page.waitForTimeout(3000)]);
+	// Each folder is saved with its own check button; Continue then moves on.
+	const saveFolder = async (kind: 'movie' | 'show' | 'music', label: string, path: string) => {
+		mkdirSync(path, { recursive: true });
+		const box = page.getByRole('textbox', { name: `${label} folder` });
+		await box.fill(path);
+		await expect(box).toHaveValue(path);
+		await page.getByTestId(`folder-new-${kind}-save`).click();
+		await expect(page.getByTestId('folder-saved').filter({ hasText: path })).toBeVisible();
+	};
+	if (o.tv) await saveFolder('show', 'TV shows', join(dirname(moviesPath), 'tv'));
+	if (o.music) await saveFolder('music', 'Music', join(dirname(moviesPath), 'music'));
+	await saveFolder('movie', 'Movies', moviesPath);
 	await page.getByRole('button', { name: 'Continue' }).click();
-	// Saving the parts restarts them, which can take a while on a slow or loaded machine.
-	await expect(page.getByRole('heading', { name: 'Which app downloads?', level: 1 })).toBeVisible({ timeout: 20_000 });
-	await page.getByRole('button', { name: 'Skip for now' }).click();
-	await expect(page.getByRole('heading', { name: 'Where should we search?', level: 1 })).toBeVisible();
-	await page.getByRole('button', { name: 'Skip for now' }).click();
-	await expect(page.getByRole('heading', { name: 'HolyArrs is ready', level: 1 })).toBeVisible();
+	// Saving the folders restarts the parts, which can take a while on a slow or loaded machine.
+	await page.getByTestId('sources-continue').click({ timeout: 30_000 });
+	await page.getByTestId('downloads-continue').click();
+	// Subtitles is a step only while that part is on.
+	const subs = page.getByTestId('welcome-subtitles');
+	const access = page.getByTestId('welcome-access');
+	await expect(subs.or(access)).toBeVisible();
+	if (await subs.isVisible()) await subs.getByRole('button', { name: 'Skip for now' }).click();
+	await page.getByTestId('access-continue').click();
+	await expect(page.getByTestId('welcome-done')).toBeVisible({ timeout: 20_000 });
+	await page.getByRole('button', { name: 'Open Home' }).click();
 	if (o.invite) {
-		await page.getByRole('button', { name: 'Invite family' }).click();
-		await expect(page).toHaveURL(/\/settings\/users$/, { timeout: 20_000 });
-	} else await page.getByRole('button', { name: 'Open Home' }).click();
+		await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
+		await page.goto('/settings/users');
+	}
 }
 
 /**
@@ -70,14 +109,13 @@ export async function finishFirstRun(page: Page, moviesPath: string, o: { tv?: b
 export async function setUpFresh(page: Page, o: Owner, moviesPath: string, parts: { tv?: boolean; music?: boolean; invite?: boolean } = {}) {
 	await expect(async () => {
 		await page.goto('/');
-		await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible({ timeout: 2_000 });
+		await reachSetupAccount(page);
 	}).toPass({ timeout: 120_000 });
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill(o.name);
+	await page.getByLabel('Username').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
-	await page.getByLabel('Password again').fill(o.password);
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await expect(page).toHaveURL(/\/welcome\?first=1$/);
+	await page.getByLabel('Confirm password').fill(o.password);
+	await page.getByRole('button', { name: 'Create account and continue' }).click();
+	await expect(page).toHaveURL(/\/welcome\?first=1/);
 	await finishFirstRun(page, moviesPath, parts);
 }
 
@@ -98,9 +136,16 @@ export async function plainForm(page: Page) {
 export async function signIn(page: Page, o: Owner) {
 	await page.goto('/login');
 	await plainForm(page);
-	await page.getByLabel('Name').fill(o.name);
-	await page.getByLabel('Password', { exact: true }).fill(o.password);
-	await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+	// Every sign-in from 127.0.0.1 shares one address limit, and an earlier spec's deliberate wrong passwords count toward it; when the server says wait (429), wait as long as it says and try again, as a person would.
+	for (let i = 0; i < 6; i++) {
+		const answer = page.waitForResponse((r) => new URL(r.url()).pathname.endsWith('/api/v1/auth/login') && r.request().method() === 'POST');
+		await page.getByLabel('Name').fill(o.name);
+		await page.getByLabel('Password', { exact: true }).fill(o.password);
+		await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+		const r = await answer;
+		if (r.status() !== 429 || i === 5) break;
+		await page.waitForTimeout((Number(r.headers()['retry-after'] ?? '1') + 0.5) * 1000);
+	}
 	await expect(page).toHaveURL(/\/$/);
 }
 

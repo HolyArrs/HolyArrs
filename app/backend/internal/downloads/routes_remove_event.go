@@ -63,8 +63,14 @@ func (a *Web) itemEvent(r *http.Request, downloaderID int64, key, kind, verb str
 	_ = db.QueryRowContext(ctx, "SELECT name FROM dl_items WHERE downloader_id = ? AND lower(key) = lower(?)", downloaderID, key).Scan(&name)
 	e := &domain.Event{Actor: actor(r), Kind: kind, Data: data}
 	var dlID int64
-	if db.QueryRowContext(ctx, "SELECT id FROM downloads WHERE downloader_id = ? AND lower(external_id) = lower(?) ORDER BY id DESC LIMIT 1", downloaderID, key).Scan(&dlID) == nil {
+	var state string
+	// A removal records the state it left the row in, so History can tell a
+	// removed download (no longer on the page) from its client's leftover copy.
+	if db.QueryRowContext(ctx, "SELECT id, state FROM downloads WHERE downloader_id = ? AND lower(external_id) = lower(?) ORDER BY id DESC LIMIT 1", downloaderID, key).Scan(&dlID, &state) == nil {
 		e.DownloadID = &dlID
+		if _, ok := data["state"]; !ok && kind == "download_removed" {
+			data["state"] = state
+		}
 		var rel string
 		if db.QueryRowContext(ctx, "SELECT r.name FROM downloads d JOIN releases r ON r.id = d.release_id WHERE d.id = ?", dlID).Scan(&rel) == nil && name == "" {
 			name = rel

@@ -85,5 +85,21 @@
 	"sources.uses.auto": "otsib ise",
 	"sources.uses.feed": "uusimate nimekiri",
 	"sources.uses.hand": "käsitsi otsing",
-	"sources.uses.none": "ei kasutata"
+	"sources.uses.none": "ei kasutata",
+	"sources.bridge.removeTitle": "Kas eemaldada {name}?",
+	"sources.bridge.find": "Otsi {name} minu võrgust",
+	"sources.bridge.noneFound": "Ükski {name} ei vastanud sinu võrgus.",
+	"sources.bridge.keyFound": "Võti saadi rakendusest {name}",
+	"sources.bridge.keyKept": "{name} ei andnud võtit välja (sisselogimine on sees). Kopeeri see nupuga Too võti.",
+	"sources.bridge.keyKeptJackett": "Jackett ei andnud võtit välja (sellel on administraatori parool). Kopeeri see nupuga Too võti.",
+	"sources.bridge.notReached": "{name} pole kättesaadav.",
+	"sources.bridge.brings.title": "Mis kaasa tuleb",
+	"sources.bridge.brings.sites": "Selle indekseerijad, Allikatena",
+	"sources.bridge.brings.categories": "Nende kategooriad",
+	"sources.bridge.brings.search": "Otsingud käivad läbi {name}",
+	"sources.bridge.brings.sync": "Muudatused rakenduses {name} kanduvad üle",
+	"sources.bridge.brings.stays": "Sinu indekseerijad jäävad seadistatuks rakendusse {name}.",
+	"sources.bridge.brings.had": "{n} indekseerijat juba siin",
+	"sources.bridge.brings.hadFrom": "Imporditud kaudu: {apps}",
+	"sources.bridge.brings.keyKept": "Jäta võti tühjaks, et kasutada neil juba olemasolevat."
 }

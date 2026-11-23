@@ -36,5 +36,7 @@
 	"settings.move.undoId": "I-undo ang import na {id}?",
 	"settings.move.undoQuestion": "I-undo ang import na ito?",
 	"settings.move.undoNote": "Aalisin nito ang idinagdag ng import na ito; mananatili ang mga pagbabago mo pagkatapos. I-download muna ang report kung gusto mo.",
-	"settings.move.undoMove": "I-undo ang import"
+	"settings.move.undoMove": "I-undo ang import",
+	"settings.move.continueSetup": "Ituloy ang setup",
+	"settings.move.backToChoose": "Bumalik sa Pumili"
 }

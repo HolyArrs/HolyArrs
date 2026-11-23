@@ -119,3 +119,21 @@ func TestNamesAllLettersApart(t *testing.T) {
 		}
 	}
 }
+
+// TestTextQuery_DropsAccents checks that accented Latin letters go plain, as
+// the older apps send them: sites often find "Pokemon" but not "Pokémon".
+// Other scripts stay as they are.
+func TestTextQuery_DropsAccents(t *testing.T) {
+	for _, c := range []struct{ in, want string }{
+		{"Pokémon", "Pokemon"},
+		{"Amélie", "Amelie"},
+		{"ÉLITE", "ELITE"},
+		{"Señor Ávila", "Senor Avila"},
+		{"Shingeki no Kyojin", "Shingeki no Kyojin"},
+		{"進撃の巨人", "進撃の巨人"},
+	} {
+		if got := textQuery(Query{Title: c.in}); got != c.want {
+			t.Errorf("textQuery(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}

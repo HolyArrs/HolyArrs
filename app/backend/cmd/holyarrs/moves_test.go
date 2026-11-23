@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -67,13 +68,46 @@ func moveBodyHash(snap int64, to, hash string, skip ...string) string {
 	return string(b)
 }
 
+// moveCheck starts a plan or test run (202 at once) and polls its check
+// until it is done; want is the status the finished check answers.
+func moveCheck(t *testing.T, base, what, body string, want int) []byte {
+	t.Helper()
+	b := lbDo(t, "POST", base+what, body, 202)
+	var c struct {
+		ID string `json:"check_id"`
+	}
+	lbDecodeJSON(t, b, &c)
+	if c.ID == "" {
+		t.Fatalf("no check id: %s", b)
+	}
+	for i := 0; i < 2000; i++ {
+		res, err := http.Get(base + "checks/" + c.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		if res.StatusCode != 200 || !strings.Contains(string(out), `"state":"running"`) {
+			if res.StatusCode != want {
+				t.Fatalf("%s check answered %d, want %d: %s", what, res.StatusCode, want, out)
+			}
+			return out
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("%s check never finished", what)
+	return nil
+}
+
 // route: POST /api/v1/migrate/plan
+// route: GET /api/v1/migrate/checks/{id}
 // route: POST /api/v1/migrate/dry-run
 // route: GET /api/v1/migrate/moves
 // route: POST /api/v1/migrate/moves
 // route: GET /api/v1/migrate/moves/{id}
 // route: GET /api/v1/migrate/moves/{id}/report
 // route: POST /api/v1/migrate/moves/{id}/undo
+// route: DELETE /api/v1/migrate/moves/{id}
 func TestMoveRoutes(t *testing.T) {
 	t.Parallel()
 	srv, st, snap, films := moveSetup(t, false)
@@ -81,10 +115,10 @@ func TestMoveRoutes(t *testing.T) {
 
 	// The plan: groups with counts, not-moved reasons, and a suggestion
 	// when no rule is given and the old path is not here.
-	b := lbDo(t, "POST", base+"plan", moveBody(snap, films), 200)
+	b := moveCheck(t, base, "plan", moveBody(snap, films), 200)
 	var plan struct {
 		Plan   migrate.Plan   `json:"plan"`
-		Counts map[string]int `json:"counts"`
+		Counts map[string]int `json:"plan_counts"`
 	}
 	lbDecodeJSON(t, b, &plan)
 	if plan.Counts["titles"] != 1 || plan.Counts["sources"] != 1 || plan.Counts["not_moved"] == 0 || !strings.Contains(string(b), "HolyArrs has no tags") {
@@ -93,11 +127,11 @@ func TestMoveRoutes(t *testing.T) {
 	lbDo(t, "POST", base+"plan", `{"snapshots":[`+lbItoa(snap)+`],"skip":["nothing"]}`, 400)
 	lbDo(t, "POST", base+"plan", `{"snapshots":[`+lbItoa(snap)+`],"path_rules":[{"from":"/movies/../etc","to":"/x"}]}`, 400)
 	lbDo(t, "POST", base+"plan", `{"snapshots":[]}`, 400)
-	lbDo(t, "POST", base+"plan", `{"snapshots":[999]}`, 404)
+	moveCheck(t, base, "plan", `{"snapshots":[999]}`, 404)
 	lbDo(t, "POST", base+"plan", `not json`, 400)
 
 	// The dry run says what would happen and changes nothing.
-	b = lbDo(t, "POST", base+"dry-run", moveBody(snap, films), 200)
+	b = moveCheck(t, base, "dry-run", moveBody(snap, films), 200)
 	if !strings.Contains(string(b), `"result":"adopt"`) || !strings.Contains(string(b), `"dry":true`) {
 		t.Fatalf("dry run %s", b)
 	}
@@ -155,6 +189,8 @@ func TestMoveRoutes(t *testing.T) {
 	lbDo(t, "GET", base+"moves/999", "", 404)
 	lbDo(t, "GET", base+"moves/x/report", "", 404)
 
+	// A finished import is kept until it is undone.
+	lbDo(t, "DELETE", base+"moves/"+id, "", 409)
 	// Undo: a supervised Job of its own, once.
 	if b = lbDo(t, "POST", base+"moves/"+id+"/undo", "", 202); !strings.Contains(string(b), `"undo_job_id"`) {
 		t.Fatalf("undo %s", b)
@@ -168,6 +204,9 @@ func TestMoveRoutes(t *testing.T) {
 	}
 	lbDo(t, "POST", base+"moves/"+id+"/undo", "", 409)
 	lbDo(t, "POST", base+"moves/999/undo", "", 404)
+	// An undone import can be removed from Earlier imports.
+	lbDo(t, "DELETE", base+"moves/"+id, "", 204)
+	lbDo(t, "GET", base+"moves/"+id, "", 404)
 }
 
 // TestMoveSafeModeRefuses: safe mode keeps the Library still.
@@ -175,6 +214,6 @@ func TestMoveSafeModeRefuses(t *testing.T) {
 	t.Parallel()
 	srv, _, snap, films := moveSetup(t, true)
 	base := srv.URL + "/api/v1/migrate/"
-	lbDo(t, "POST", base+"dry-run", moveBody(snap, films), 200)
+	moveCheck(t, base, "dry-run", moveBody(snap, films), 200)
 	lbDo(t, "POST", base+"moves", moveBody(snap, films), 409)
 }

@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Binubuo ang {what}… subok {attempt}",
 	"core.testTag.connected": "Nakakonekta",
 	"core.api.notAnswering": "Hindi sumasagot ang HolyArrs. Tiyaking tumatakbo ito.",
+	"core.api.tooSlow": "Masyadong natagalan sumagot ang HolyArrs. Subukan ulit pagkalipas ng isang minuto.",
 	"core.api.requestFailed": "Nabigo ang request ({status})",
 	"core.api.wentWrong": "May nagkamali.",
 	"core.trailerMiss.trailer": "trailer",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Kusang naaprubahan",
 	"core.plain.approvedBy": "Inaprubahan ni {who}",
 	"core.settings.cantReach": "Hindi maabot ang address na iyon. Suriin ito at tiyaking tumatakbo ang app.",
+	"core.settings.tryHttp": "Hindi sumasagot ang address na iyan sa https. Subukan ang http:// sa halip.",
 	"core.settings.groupLibrary.label": "Library",
 	"core.settings.groupLibrary.line": "Kung saan nakalagay ang mga title",
 	"core.settings.groupLibrary.about": "Mga folder, bahagi, default, subtitle, pangalan ng file at pag-import.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dalawang Downloader ang umaabot sa iisang download app, kaya puwedeng dalawang beses lumabas ang mga download.",
 	"core.plain.peopleCheck": "Hindi mabasa ang listahan ng user ng media server, kaya hindi pinapatay dito ang mga inalis doon.",
 	"core.plain.deleted": "binura",
-	"core.plain.deletedName": "{name} (binura)"
+	"core.plain.deletedName": "{name} (binura)",
+	"core.api.handsOffFiles": "Naka-on ang hands-off mode, kaya hindi ginagalaw ng HolyArrs ang mga na-download na file. I-off ito sa Settings para mag-import, magpalit ng pangalan, maglipat o mag-scan ng mga file.",
+	"core.api.handsOffSubtitles": "Naka-on ang hands-off mode, kaya hindi kailanman binubuksan ng HolyArrs ang mga na-download na file. I-off ito sa Settings para gumamit ng subtitle."
 }

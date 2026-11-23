@@ -18,9 +18,10 @@ export function names(list: string[]): string {
 }
 
 /** Who asked: "Asked by ana and bo". */
-export function askedBy(a: Pick<Ask, 'people' | 'asked_by'>): string {
+export function askedBy(a: Pick<Ask, 'people' | 'asked_by' | 'via_plugin'>): string {
 	const list = a.people.length ? a.people.map((p) => shownPerson(p.name)) : [shownPerson(a.asked_by.name)];
-	return t('requests.words.askedBy', { names: names(list) });
+	const line = t('requests.words.askedBy', { names: names(list) });
+	return a.via_plugin ? t('requests.words.via', { who: line, plugin: a.via_plugin }) : line;
 }
 
 /** Names the others who declined the same title on earlier requests (approvers only get the list): "Bo and Cy declined it before."; '' when nobody did. Display names only, mine freshest; a sign-in name is never shown. */
@@ -94,13 +95,14 @@ export const momentWords: Record<string, [string, string]> = {
 	get delete() { return [t('requests.moment.delete.title'), t('requests.moment.delete.body')] as [string, string]; },
 	get health() { return [t('requests.moment.health.title'), t('requests.moment.health.body')] as [string, string]; },
 	get needs_decision() { return [t('requests.moment.needs_decision.title'), t('requests.moment.needs_decision.body')] as [string, string]; },
+	get plugin_message() { return [t('requests.moment.plugin_message.title'), t('requests.moment.plugin_message.body')] as [string, string]; },
 };
 
 /** Go to the people who asked (and the staff for a new ask). */
 export const askMoments = ['ask_waiting', 'ask_approved', 'ask_turned_down', 'ask_ready', 'new_episodes', 'new_albums', 'report_made', 'report_fixed'] as const;
 
 /** Go to the staff. */
-export const libraryMoments = ['grab', 'downloaded', 'download_failed', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision'] as const;
+export const libraryMoments = ['grab', 'downloaded', 'download_failed', 'import', 'rename', 'add', 'delete', 'health', 'needs_decision', 'plugin_message'] as const;
 
 export const askTabs: { tab: AskTab; label: string }[] = [
 	{ tab: 'waiting', get label() { return t('requests.tab.ask.waiting'); } },

@@ -3,6 +3,7 @@ package migrate
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -24,8 +25,12 @@ func TestSnapshotStore(t *testing.T) {
 	if err != nil || saved.ID == 0 || saved.Kind != Radarr || saved.Via != ViaAPI || saved.Counts["titles"] != 2 || saved.Size == 0 {
 		t.Fatalf("save %+v %v", saved, err)
 	}
-	var data string
-	if err := st.Read().QueryRow(`SELECT data FROM migrate_snapshots WHERE id = ?`, saved.ID).Scan(&data); err != nil || strings.Contains(data, secretMark) {
+	var data []byte
+	if err := st.Read().QueryRow(`SELECT data FROM migrate_snapshots WHERE id = ?`, saved.ID).Scan(&data); err != nil || len(data) < 2 || data[0] != 0x1f {
+		t.Fatalf("stored data is missing or not compressed: %v", err)
+	}
+	plain, err := decodeSnapshot(data)
+	if pj, _ := json.Marshal(plain); err != nil || strings.Contains(string(pj), secretMark) {
 		t.Fatalf("stored data holds a secret or is missing: %v", err)
 	}
 	list, err := List(ctx, st)

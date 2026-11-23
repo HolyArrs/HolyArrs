@@ -64,6 +64,18 @@ func sign(t *testing.T, priv ed25519.PrivateKey, l List) []byte {
 }
 
 func TestParseManifest(t *testing.T) {
+	for name, set := range map[string]any{
+		"bad type":         []map[string]any{{"key": "a", "label": "A", "type": "file"}},
+		"bad key":          []map[string]any{{"key": "A b", "label": "A", "type": "text"}},
+		"select no option": []map[string]any{{"key": "a", "label": "A", "type": "select"}},
+		"secret default":   []map[string]any{{"key": "a", "label": "A", "type": "secret", "default": "x"}},
+		"markup label":     []map[string]any{{"key": "a", "label": "<b>", "type": "text"}},
+		"duplicate":        []map[string]any{{"key": "a", "label": "A", "type": "text"}, {"key": "a", "label": "B", "type": "text"}},
+	} {
+		if _, err := ParseManifest(manifestJSON(func(m map[string]any) { m["settings"] = set })); !errors.Is(err, ErrManifest) {
+			t.Fatalf("settings %s accepted: %v", name, err)
+		}
+	}
 	if m, err := ParseManifest(manifestJSON(nil)); err != nil || m.ID != "tailscale" || len(m.Access.Hosts) != 1 {
 		t.Fatalf("valid manifest: %v %+v", err, m)
 	}
@@ -73,6 +85,17 @@ func TestParseManifest(t *testing.T) {
 	})
 	if m, err := ParseManifest(withShow); err != nil || m.Description == "" || m.Icon == "" {
 		t.Fatalf("manifest with description and icon: %v %+v", err, m)
+	}
+	if m, err := ParseManifest(manifestJSON(func(m map[string]any) { m["icon_url"] = "images/tailscale/icon-256.webp" })); err != nil || m.IconURL != "images/tailscale/icon-256.webp" {
+		t.Fatalf("manifest with icon_url: %v %+v", err, m)
+	}
+	future := manifestJSON(func(m map[string]any) {
+		m["homepage"] = "https://example.com"
+		m["extra"] = map[string]any{"nested": []any{1, "two", nil}}
+		m["access"] = map[string]any{"hosts": []string{"a.example"}, "folders": []string{}, "actions": []string{}, "docker": true}
+	})
+	if m, err := ParseManifest(future); err != nil || m.ID != "tailscale" || len(m.Access.Hosts) != 1 {
+		t.Fatalf("manifest with unknown fields: %v %+v", err, m)
 	}
 	tests := []struct {
 		name string
@@ -84,11 +107,12 @@ func TestParseManifest(t *testing.T) {
 		{"description too long", manifestJSON(func(m map[string]any) { m["description"] = strings.Repeat("a", 241) }), `"description"`},
 		{"icon not data url", manifestJSON(func(m map[string]any) { m["icon"] = "https://x/icon.png" }), `"icon"`},
 		{"icon html", manifestJSON(func(m map[string]any) { m["icon"] = "data:text/html;base64,PGI+" }), `"icon"`},
+		{"icon_url other host", manifestJSON(func(m map[string]any) { m["icon_url"] = "https://github.com/x.png" }), `"icon_url"`},
+		{"icon_url other plugin", manifestJSON(func(m map[string]any) { m["icon_url"] = "images/other/icon-256.webp" }), `"icon_url"`},
+		{"icon_url climbs out", manifestJSON(func(m map[string]any) { m["icon_url"] = "images/tailscale/../x/icon-256.webp" }), `"icon_url"`},
 		{"array", []byte("[]"), "JSON object"},
-		{"unknown field", manifestJSON(func(m map[string]any) { m["extra"] = 1 }), "unknown field"},
-		{"unknown access field", manifestJSON(func(m map[string]any) {
-			m["access"] = map[string]any{"hosts": []string{}, "folders": []string{}, "actions": []string{}, "docker": true}
-		}), "unknown field"},
+		{"unknown field bad id", manifestJSON(func(m map[string]any) { m["extra"] = 1; m["id"] = "Bad" }), `"id" must`},
+		{"case variant optional", manifestJSON(func(m map[string]any) { m["Icon"] = "x" }), `unknown field "Icon"`},
 		{"missing id", manifestJSON(func(m map[string]any) { delete(m, "id") }), `"id"`},
 		{"missing sha256", manifestJSON(func(m map[string]any) { delete(m, "sha256") }), `"sha256"`},
 		{"missing access", manifestJSON(func(m map[string]any) { delete(m, "access") }), `"access"`},

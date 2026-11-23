@@ -3,7 +3,7 @@
 	import type { Snippet } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { bytes, percent, agoLong, duration } from '#lib/core/format.ts';
-	import { n, uncheckedLine, type HomeAnswer, type HomeCard } from './home.ts';
+	import { n, tileWord, uncheckedLine, type HomeAnswer, type HomeCard } from './home.ts';
 	import { sized } from '#lib/core/tmdb-image.ts';
 	import { stageOf } from '#lib/downloads/index.ts';
 	import { partOff } from '#lib/mediafiles/index.ts';
@@ -44,7 +44,7 @@
 		uncheckedHealth: boolean;
 		health: Health | null;
 		picTile: Snippet<[{ c: HomeCard; label: string }, string, boolean]>;
-		tileArt: { pop: string[]; soon: string[]; week: { count: number; posters: string[] } };
+		tileArt: { pop: string[]; soon: string[]; week: { count: number; posters: string[] }; building: boolean };
 	};
 	let { overview, disk, admin, settled, attentionView, uncheckedParts, retrying, retry, approver, kid, uncheckedAsks, downloading, mineOpen, mineDeclined, fetchingAll, home, uncheckedDl, now, uncheckedHealth, health, picTile, tileArt }: Props = $props();
 	// Tile art: a picture that cannot load drops out and the next takes its place; with none left the tile keeps its plain sheet.
@@ -217,7 +217,7 @@
 				<a class="tile stat {cls}" class:art={!!popArt} href={to('/popular')}>
 					{#if popArt}<img class="bg" src={sized(popArt, cls === 'big' ? 'large' : 'backdrop')} alt="" decoding="async" use:artGone={() => badArt.add(popArt)} />{/if}
 					{@render head('star', 'pink', t('home.newPopular'))}
-					<span class="word">{t('home.whatSTrending')}</span>
+					<span class="word">{tileWord(tileArt.building, !!popArt, t('home.whatSTrending'))}</span>
 					<span class="sm">{t('home.top10sAndComing')}</span>
 				</a>
 			{:else if key === 'week'}
@@ -237,7 +237,7 @@
 				<a class="tile stat {cls}" class:art={calArt.length > 0} href={to('/calendar')}>
 					{#if calArt.length}<span class="bg posters" aria-hidden="true">{#each calArt as p (p)}<img src={sized(p, 'poster', 400)} alt="" decoding="async" use:artGone={() => badArt.add(p)} />{/each}</span>{/if}
 					{@render head('calendarDay', 'purple', t('home.calendar'))}
-					<span class="word">{t('home.whatSNext')}</span>
+					<span class="word">{tileWord(tileArt.building, calArt.length > 0, t('home.whatSNext'))}</span>
 					<span class="sm">{t('home.airDatesAndReleases')}</span>
 				</a>
 			{:else}

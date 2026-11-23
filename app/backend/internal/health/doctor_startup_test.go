@@ -107,7 +107,7 @@ func TestConfigInMemoryFails(t *testing.T) {
 // The lock probe only reports: a broken lock is a WARN, never a FAIL.
 func TestLockProbeOnlyReports(t *testing.T) {
 	var r Report
-	lockChecks(&r, t.TempDir(), func(string) error { return errors.New("locks are ignored here") })
+	lockChecks(&r, t.TempDir(), func(string) error { return errors.New("locks are ignored here") }, false)
 	c := lastCheck(t, r, "lock")
 	if c.Status != StatusWarn || r.Failed() {
 		t.Fatalf("broken lock: want WARN only, got %+v", c)
@@ -116,7 +116,7 @@ func TestLockProbeOnlyReports(t *testing.T) {
 		t.Errorf("fix should point at a named volume: %q", c.Fix)
 	}
 	r = Report{}
-	lockChecks(&r, t.TempDir(), func(string) error { return nil })
+	lockChecks(&r, t.TempDir(), func(string) error { return nil }, false)
 	if c := lastCheck(t, r, "lock"); c.Status != StatusOK {
 		t.Fatalf("working lock: %+v", c)
 	}
@@ -276,5 +276,63 @@ func TestDoctorOnAMigratedStoreAddsNoSetupLine(t *testing.T) {
 	text := r.Text()
 	if strings.Contains(text, "still being set up") || strings.Contains(text, "newer HolyArrs") {
 		t.Fatalf("fully migrated store:\n%s", text)
+	}
+}
+
+func TestConfigFuseOverrideWarns(t *testing.T) {
+	t.Setenv("HOLYARRS_ALLOW_FUSE_FOLDER", "1")
+	var r Report
+	configChecks(&r, t.TempDir(), 1, 1, shareKind("fuse"))
+	if r.Failed() {
+		t.Fatalf("override set, still FAIL:\n%s", r.Text())
+	}
+	if c := r.Checks[len(r.Checks)-1]; c.Status != StatusWarn || !strings.Contains(c.Text, "HOLYARRS_ALLOW_FUSE_FOLDER") {
+		t.Fatalf("want a WARN naming the override, got %+v", c)
+	}
+	r = Report{}
+	configChecks(&r, t.TempDir(), 1, 1, shareKind("nfs"))
+	if !r.Failed() {
+		t.Fatalf("the FUSE override must not soften NFS:\n%s", r.Text())
+	}
+}
+
+// An Unraid user share (fuse.shfs) is a WARN with the fix and the mover
+// note, without any setting; mergerfs stays a FAIL.
+func TestConfigUnraidShareWarns(t *testing.T) {
+	t.Setenv("HOLYARRS_ALLOW_FUSE_FOLDER", "")
+	old := configMountType
+	defer func() { configMountType = old }()
+	configMountType = func(string) string { return "fuse.shfs" }
+	var r Report
+	if !configChecks(&r, t.TempDir(), 1, 1, shareKind("fuse")) {
+		t.Fatal("configChecks did not report the Unraid share")
+	}
+	c := lastCheck(t, r, "Unraid user share")
+	if c.Status != StatusWarn || r.Failed() {
+		t.Fatalf("want WARN only, got %+v", c)
+	}
+	for _, w := range []string{"/mnt/<pool>/appdata/holyarrs", "/mnt/disk1/appdata/holyarrs", "Exclusive", "mover"} {
+		if !strings.Contains(c.Fix, w) {
+			t.Errorf("fix lacks %q: %q", w, c.Fix)
+		}
+	}
+	configMountType = func(string) string { return "fuse.mergerfs" }
+	r = Report{}
+	if configChecks(&r, t.TempDir(), 1, 1, shareKind("fuse")) || !r.Failed() {
+		t.Fatalf("mergerfs must FAIL:\n%s", r.Text())
+	}
+}
+
+// On an Unraid share the database relies on file locks: broken locks FAIL.
+func TestLockProbeFailsOnUnraidShare(t *testing.T) {
+	var r Report
+	lockChecks(&r, t.TempDir(), func(string) error { return errors.New("locks are ignored here") }, true)
+	if c := lastCheck(t, r, "lock"); c.Status != StatusFail {
+		t.Fatalf("broken lock on Unraid share: want FAIL, got %+v", c)
+	}
+	r = Report{}
+	lockChecks(&r, t.TempDir(), func(string) error { return nil }, true)
+	if c := lastCheck(t, r, "lock"); c.Status != StatusOK {
+		t.Fatalf("working lock: %+v", c)
 	}
 }

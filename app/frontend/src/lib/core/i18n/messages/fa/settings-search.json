@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "بهترین نسخه اول؛ اگر برابر بودند بسته فصل برنده است",
 	"settings.search.preferAlways": "بسته فصل هر وقت از مجموعه کیفیت بگذرد",
 	"settings.search.multi": "گرفتن ریلیزهای چندفصلی",
-	"settings.search.multiHint": "همه قسمت‌های گم‌شده داخلش را پر می‌کند",
+	"settings.search.multiHint": "همه قسمت‌های گم‌شده داخلش را پر می‌کند. با کیفیت یکسان، نسخه‌ای که قسمت‌های خواسته‌شده بیشتری دارد برنده است",
 	"settings.search.music": "موسیقی",
 	"settings.search.albums": "آلبوم‌های گم‌شده را هم جستجو کن",
 	"settings.search.albumsHint": "آلبوم‌های منتشرشده، هر کدام یک جستجو",

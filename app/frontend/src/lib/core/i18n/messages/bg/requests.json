@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Съобщения от добавки",
+	"requests.moment.plugin_message.body": "Добавка, която сте разрешили, изпраща съобщение.",
+	"requests.words.via": "{who} чрез {plugin}",
 	"requests.moment.ask_waiting.title": "Нова заявка",
 	"requests.moment.ask_waiting.body": "До екипа: филм, сериал или изпълнител чака одобрение.",
 	"requests.moment.ask_approved.title": "Одобрена",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "Списък от TMDB",
 	"requests.lists.tmdbHint": "Номерът на списъка или връзката му, например themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Списък от Trakt",
-	"requests.lists.traktHint": "user/list, user/watchlist или връзката, например trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist или връзката, например trakt.tv/users/ana/lists/favourites. Или класация: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "Списък от MDBList",
 	"requests.lists.mdblistHint": "user/list или връзката, например mdblist.com/lists/ana/favourites. Публичните списъци работят без ключ.",
 	"requests.lists.everyDay": "всеки ден",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Не можа да се намери нищо нередно",
 	"requests.outcome.noResults": "Още няма резултати",
 	"requests.outcome.nothingFound": "Нищо не е намерено:",
+	"requests.outcome.refused": "Има намерени, но нищо не отговаря на правилата за избор",
 	"requests.outcome.why.slowed": "беше на пауза (забавен)",
 	"requests.outcome.why.down": "не работеше",
 	"requests.outcome.why.blocked": "беше блокиран",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Добавяне",
 	"requests.addMovie.titleBare": "Добавяне на филм",
 	"requests.add.loadingDefaults": "Настройките по подразбиране се зареждат",
+	"requests.add.defaultsLate": "Запазените ви настройки по подразбиране не се заредиха навреме, затова са избрани обичайните. Проверете ги, преди да добавите.",
 	"requests.add.noFolder.music": "Още няма папка на библиотеката за музика. Първо <a>добавете една</a>.",
 	"requests.add.noFolder.movie": "Още няма папка на библиотеката за филми. Първо <a>добавете една</a>.",
 	"requests.add.noFolder.show": "Още няма папка на библиотеката за сериали. Първо <a>добавете една</a>.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Показване в моя календар.",
 	"requests.add.cancel": "Отказ",
 	"requests.add.submit": "Добавяне към библиотеката",
+	"requests.add.submitChoose": "Добави и избери издание",
 	"requests.addArtist.albums": "Албуми, които да се следят",
 	"requests.addArtist.newAlbums": "Нови албуми",
 	"requests.addArtist.newAlbumsHint": "Какво става с албум, който излиза по-късно.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", показва се: {status}",
 	"requests.board.reportsOpen": "Доклади, {n} отворени",
 	"requests.board.approveAll": "Одобряване на всички",
+	"requests.board.approveAllTitle": "Да се одобрят ли всички чакащи заявки ({n})?",
+	"requests.board.approveAllDesc": "Включва и заявките по-надолу в списъка, които още не са заредени.",
 	"requests.board.requests": "Заявки",
 	"requests.board.open": "Отваряне на {name}, заявено от {who}",
 	"requests.board.pageForArtist": "Страница на изпълнителя {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Добавен",
 	"requests.addAll.summary": "Добавени: {added}, пропуснати: {skipped}",
 	"requests.addAll.summaryClean": "Добавени: {added}",
-	"requests.addAll.intro": "Всеки филм се добавя във вашата библиотека с избраните по-долу папка и правила за избор и с вашите запазени настройки по подразбиране. Филмите, които вече са в библиотеката, са в списъка, но не се добавят отново."
+	"requests.addAll.intro": "Всеки филм се добавя във вашата библиотека с избраните по-долу папка и правила за избор и с вашите запазени настройки по подразбиране. Филмите, които вече са в библиотеката, са в списъка, но не се добавят отново.",
+	"requests.ask.alsoAsk": "Поискай и {name}",
+	"requests.add.handsOff": "Режимът „без намеса“ е включен: не е нужна папка на библиотеката. Отива в програмата за изтегляне и файловете остават там."
 }

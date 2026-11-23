@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: một chấm đỏ cho thấy điều gì cần chú ý, và kiểm tra kết nối nói đúng vấn đề.** Nhãn Plex cho các tựa được yêu cầu, tên theo ngôn ngữ của bạn và hơn 30 bản sửa lỗi. Kết nối ứng dụng qua MCP bằng khóa do bạn kiểm soát. [Xem có gì mới](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: hơn 150 bản sửa lỗi và tính năng từ 101 người.** Hệ thống plugin, trình hướng dẫn thiết lập mới, và chế độ không can thiệp không bao giờ đụng đến tệp của bạn. [Xem có gì mới](https://holyarrs.com/whats-new/)
 
 > Mọi poster, trailer và điểm đánh giá trong HolyArrs của bạn đều đến từ một máy chủ do chính tôi vận hành và trả tiền, để nó luôn miễn phí cho mọi người. Nếu HolyArrs làm buổi xem phim của bạn vui hơn một chút, một lượt tài trợ sẽ giúp giữ đèn sáng cho tất cả chúng ta 💛
 >
@@ -374,7 +374,7 @@ Image không có shell, nên `docker exec -it holyarrs /bin/bash` sẽ không ch
 - Bị khóa khỏi tài khoản chủ sở hữu:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Số phiên bản:

@@ -45,7 +45,7 @@
 "settings.search.preferRank": "最も良いコピーを優先。同じならシーズンパック",
 "settings.search.preferAlways": "品質セットを満たすなら、常にシーズンパック",
 "settings.search.multi": "複数シーズンのリリースを採用する",
-"settings.search.multiHint": "含まれる足りないエピソードをすべて埋めます",
+"settings.search.multiHint": "含まれる足りないエピソードをすべて埋めます。同じ画質なら、探しているエピソードを多く含むほうが選ばれます",
 "settings.search.music": "音楽",
 "settings.search.albums": "足りないアルバムも検索",
 "settings.search.albumsHint": "リリース済みのアルバムを、1 枚ずつ検索します",

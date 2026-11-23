@@ -17,6 +17,7 @@ const (
 	AppFolder    = "app"
 	currentFile  = "current.json"  // the version the launcher runs
 	previousFile = "previous.json" // the one "Go back" returns to
+	goBackFile   = "go-back.json"  // the version the owner chose to leave
 	pendingFile  = "pending.json"  // a start not yet proven healthy
 	skipFile     = "skip.json"     // versions never installed again
 	statusFile   = "status.json"   // what the launcher last did
@@ -67,6 +68,11 @@ type LaunchStatus struct {
 	// Rollback says which version was left and why.
 	Rollback   string     `json:"rollback,omitempty"`
 	RollbackAt *time.Time `json:"rollback_at,omitempty"`
+	// Chosen says the owner pressed Go back (not a failed start); Left and
+	// To are the versions on each side of the last going back.
+	Chosen bool   `json:"chosen,omitempty"`
+	Left   string `json:"left,omitempty"`
+	To     string `json:"to,omitempty"`
 	// ExecError is why a downloaded version could not be started.
 	ExecError string `json:"exec_error,omitempty"`
 	// Off says HOLYARRS_UPDATES=off made the image version run.

@@ -44,6 +44,7 @@ func TrimEpisodeSlots(ctx context.Context, slots map[int64][]shows.EpisodeSlot) 
 	for _, sl := range slots {
 		for i := range sl {
 			sl[i].Reason = ""
+			sl[i].Points, sl[i].GoodEnoughPoints = nil, nil
 			sl[i].File = TrimFile(sl[i].File)
 		}
 	}

@@ -31,11 +31,13 @@ var kindPools = map[string]Pool{
 	"health_check":          PoolCore,
 	"check_library_folders": PoolCore,
 	"clean_history":         PoolCore,
+	"clean_releases":        PoolCore,
 	// outside input and output
 	"search_slot":          PoolIO,
 	"search_season":        PoolIO,
 	"search_album":         PoolIO,
 	"search_missing":       PoolIO,
+	"release_check":        PoolIO,
 	"feed_check":           PoolIO,
 	"grab_held":            PoolIO,
 	"grab":                 PoolIO,
@@ -64,6 +66,7 @@ var kindPools = map[string]Pool{
 	"migrate_undo":        PoolMigrate,
 	"rescan_library":      PoolHeavy,
 	"subtitle_look":       PoolHeavy,
+	"subtitle_clean":      PoolHeavy,
 	"recheck_pick_rules":  PoolHeavy,
 }
 

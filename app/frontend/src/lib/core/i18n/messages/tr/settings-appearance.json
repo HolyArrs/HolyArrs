@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "İstekler",
 	"settings.appearance.colRate": "Satır başına",
 	"settings.appearance.noRows": "Henüz sayılan Keşfet satırı yok.",
+	"settings.appearance.rowStats": "Keşfet satırları",
+	"settings.appearance.rowStatsDesc": "Son 30 günde her satırdan açılmalar ve istekler, herkes birlikte. Yalnızca bu sunucuda sayılır.",
+	"settings.appearance.colRow": "Satır",
+	"settings.appearance.row.because_have": "Sahip olduğun yapımlara benzer",
+	"settings.appearance.row.because_asked": "İsteklerine benzer",
+	"settings.appearance.row.person": "Bir kişiden daha fazlası",
+	"settings.appearance.row.genre": "Sana özel tür seçkisi",
+	"settings.appearance.row.popular_genre": "Türe göre popüler",
+	"settings.appearance.row.popular_decade": "On yıla göre popüler",
+	"settings.appearance.row.decade": "On yıla göre",
+	"settings.appearance.row.mood": "Ruh hâline göre",
+	"settings.appearance.row.hero": "Üst afiş",
 	"settings.appearance.motion": "Hareket",
 	"settings.appearance.motionNote": "Cihazının Hareketi azalt ayarını izler"
 }

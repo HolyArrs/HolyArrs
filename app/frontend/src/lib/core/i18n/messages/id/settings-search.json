@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Salinan terbaik dulu; paket musim menang jika sama",
 	"settings.search.preferAlways": "Paket musim selama lolos set kualitas",
 	"settings.search.multi": "Ambil Rilis dengan beberapa musim",
-	"settings.search.multiHint": "Mengisi setiap episode yang hilang di dalamnya",
+	"settings.search.multiHint": "Mengisi setiap episode yang hilang di dalamnya. Pada kualitas yang sama, rilis dengan lebih banyak episode dicari yang menang",
 	"settings.search.music": "Musik",
 	"settings.search.albums": "Cari juga album yang hilang",
 	"settings.search.albumsHint": "Album yang sudah rilis, satu pencarian untuk masing-masing",

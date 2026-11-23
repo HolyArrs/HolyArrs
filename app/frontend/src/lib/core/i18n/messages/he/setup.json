@@ -8,10 +8,14 @@
 	"setup.fullPath": "השתמש בנתיב המלא של התיקייה, כמו {path}.",
 	"setup.folderUsed": "התיקייה הזו כבר בשימוש, או שהיא נמצאת בתוך תיקייה שכבר בשימוש.",
 	"setup.folderMissing": "התיקייה הזו לא קיימת. בדוק את הנתיב.",
-	"setup.addFolderOrOff": "הוסף תיקייה או כבה את האפשרות הזו.",
+	"setup.addFolderOrOff": "הוסיפו תיקייה, או לחצו על \"דלג בינתיים\".",
 	"setup.notAnswering": "HolyArrs לא מגיב. נסה שוב בעוד רגע.",
 	"setup.addUserPasswordHint": "הוסף את שם המשתמש והסיסמה.",
 	"setup.folders": "תיקיות",
 	"setup.downloader": "מוריד",
-	"setup.source": "מקור"
+	"setup.source": "מקור",
+	"setup.alertsNeedKeyOne": "התראות: 1 צריכה מפתח",
+	"setup.alertsNeedKey": "התראות: {n} צריכות מפתח",
+	"setup.folderNoAccess": "HolyArrs לא יכול לפתוח את התיקייה הזו. בדקו את ההרשאות שלה.",
+	"setup.folderCantUse": "HolyArrs לא יכול להשתמש בתיקייה הזו. בדקו את הנתיב."
 }

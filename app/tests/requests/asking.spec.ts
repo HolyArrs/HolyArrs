@@ -170,7 +170,7 @@ test('the owner approves from a phone: the movie is added and kim is told', asyn
 	expect(events.filter((e) => /Copper Lighthouse.*: approved by luis/.test(e))).toHaveLength(1);
 
 	// No inbox card: the news marks kim's card New for this visit, and opening Requests reads it.
-	expect(((await (await kim.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text)).toContainEqual(expect.stringContaining('Copper Lighthouse (2017) was approved by an admin'));
+	expect(((await (await kim.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text)).toContainEqual(expect.stringContaining('Copper Lighthouse (2017) was approved by luis'));
 	await kim.goto('/requests');
 	const copper = kim.getByTestId('ask').filter({ hasText: 'Copper Lighthouse' });
 	await expect(copper.getByTestId('ask-state')).toHaveText('Approved');

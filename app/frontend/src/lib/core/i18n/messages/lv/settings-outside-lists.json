@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Pievienot nekad nepievienošanas sarakstam",
 	"settings.outsideLists.showDot": "seriāls ·",
 	"settings.outsideLists.takeOff": "Noņemt {name}",
-	"settings.outsideLists.empty": "Šajā sarakstā vēl nekā nav"
+	"settings.outsideLists.empty": "Šajā sarakstā vēl nekā nav",
+	"settings.outsideLists.traktSignInTitle": "Pieteikšanās Trakt",
+	"settings.outsideLists.traktSignInInfo": "Piesakies, lai tiktu lasīti tavi privātie Trakt saraksti un skatāmo saraksts un lai Trakt noskatītais tiktu pievienots skatīšanās vēsturei.",
+	"settings.outsideLists.traktSignedInAs": "Pieteicies kā {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Nav pieteicies. Tiek lasīti tikai publiskie saraksti.",
+	"settings.outsideLists.traktSignIn": "Pieteikties ar Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Jebkurā ierīcē atver <a>{url}</a> un ievadi <code>{code}</code>. Šī lapa gaida, līdz tu apstiprināsi.",
+	"settings.outsideLists.traktDenied": "Pieteikšanās Trakt tika noraidīta.",
+	"settings.outsideLists.traktExpired": "Koda derīgums beidzās. Sāc no jauna.",
+	"settings.outsideLists.traktSignOut": "Atteikties no Trakt",
+	"settings.outsideLists.traktSignedIn": "Pieteicies Trakt",
+	"settings.outsideLists.traktSignedOut": "Atteicies no Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (vajadzīgs, lai pieteiktos ar Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Vispirms saglabājiet savas Trakt lietotnes client secret; Trakt tas vajadzīgs, lai jūs paliktu pieteicies."
 }

@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Atšaukti importą {id}?",
 	"settings.move.undoQuestion": "Atšaukti šį importą?",
 	"settings.move.undoNote": "Pašalina tai, ką pridėjo šis importas; vėlesni jūsų pakeitimai lieka. Jei norite, pirmiausia atsisiųskite ataskaitą.",
-	"settings.move.undoMove": "Atšaukti importą"
+	"settings.move.undoMove": "Atšaukti importą",
+	"settings.move.continueSetup": "Tęsti sąranką",
+	"settings.move.backToChoose": "Atgal į pasirinkimą"
 }

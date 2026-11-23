@@ -3,6 +3,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import { to } from '#lib/core/paths.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import { densityLabels, posterLabels, type Density, type PosterSize } from '#lib/ui/library-art.ts';
@@ -38,6 +39,7 @@
 		q: string;
 		syncUrl: () => void;
 		columns: Column[];
+		cutIds?: string[];
 		libKind: LibKind;
 		setColumns: (c: Column[]) => void;
 		canManage: boolean;
@@ -46,8 +48,10 @@
 		startSelecting: () => void;
 		stopSelecting: () => void;
 		addItems: MenuItem[];
+		/** Files in Recently deleted; null: not counted (or not allowed). */
+		deletedCount?: number | null;
 	};
-	let { phone, kind, kindTitle, loaded, error, countText, shelfItems, sidebarCollapsed, sidebarButton, find, sortFilter, view, setView, sizeItems, posterSize, density, listWidth, filtersOn, sortOpen = $bindable(), findOpen = $bindable(), findWords, q = $bindable(), syncUrl, columns, libKind, setColumns, canManage, shownCount, selecting, startSelecting, stopSelecting, addItems }: Props = $props();
+	let { phone, kind, kindTitle, loaded, error, countText, shelfItems, sidebarCollapsed, sidebarButton, find, sortFilter, view, setView, sizeItems, posterSize, density, listWidth, filtersOn, sortOpen = $bindable(), findOpen = $bindable(), findWords, q = $bindable(), syncUrl, columns, cutIds = [], libKind, setColumns, canManage, shownCount, selecting, startSelecting, stopSelecting, addItems, deletedCount = null }: Props = $props();
 
 	let toolbarEl = $state<HTMLElement>();
 	let stuck = $state(false);
@@ -86,8 +90,11 @@
 	{/if}
 	<span class="tool-gap"></span>
 	<span class="t-tools cap">
-	{#if view !== 'posters' && kind !== 'all' && !phone}<span class="t-cols"><ColumnChooser {columns} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
+	{#if view !== 'posters' && kind !== 'all'}<span class="t-cols"><ColumnChooser {columns} cut={cutIds} {phone} onchange={setColumns} onreset={() => setColumns(columnsFor(libKind))} /></span>{/if}
 	{#if canManage && shownCount}<span class="t-sel">{#if phone}<IconButton icon="check" variant={selecting ? 'filled' : 'tinted'} label={selecting ? t('mediafiles.toolbar.done') : t('mediafiles.toolbar.select')} onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select" />{:else}<Button variant={selecting ? 'primary' : 'secondary'} size="md" icon="check" onclick={() => (selecting ? stopSelecting() : startSelecting())} data-testid="library-select">{selecting ? t('mediafiles.toolbar.done') : t('mediafiles.toolbar.select')}</Button>{/if}</span>{/if}
+	{#if canManage && deletedCount !== null}
+		<span class="t-del"><IconButton icon="trash" href={to('/library/deleted')} badge={deletedCount} label={deletedCount ? t('mediafiles.toolbar.deletedN', { n: deletedCount }) : t('mediafiles.sortFilter.recentlyDeleted')} data-testid="library-deleted-top" /></span>
+	{/if}
 	{#if canManage}
 		<span class="t-add"><Menu label={t('mediafiles.toolbar.addTo')} variant={phone ? 'icon' : 'button'} text={phone ? undefined : t('mediafiles.toolbar.add')} icon="plus" items={addItems} width={190} align="end" /></span>
 	{/if}
@@ -122,7 +129,7 @@
 	.toolbar.topbar .t-view :global(.vs button[role='radio']) { min-height: 44px; min-width: 44px; }
 	.toolbar.topbar .t-view :global(.vs .seg) { border-radius: 10px; }
 	.toolbar.topbar .filter-btn.on :global(.trigger.button) { box-shadow: inset 0 0 0 1.5px var(--accent); color: var(--accent-text); }
-	.t-tools, .t-sel, .t-add, .t-cols { display: contents; }
+	.t-tools, .t-sel, .t-add, .t-cols, .t-del { display: contents; }
 	.toolbar.topbar .t-tools { display: flex; margin-left: auto; }
 	/* A narrower page keeps the one row: first Columns and Select fold to their icons, then Tools and Add too. A folded name is only hidden from the eye, so the button keeps its name for screen readers. */
 	.toolbar.topbar { container-type: inline-size; }
@@ -159,7 +166,7 @@
 	@media (max-width: 639px) {
 		.toolbar { position: static; margin: 0; padding: 8px 0; }
 		.t-sel, .t-add, .t-view, .filter-btn { display: inline-flex; }
-			/* Two rows: count, search, select, add; then view and size, sort and filter. */
+			/* Two rows: count, search, Recently deleted, select, add; then view and size, sort and filter. */
 		.toolbar .count { order: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; }
 		.t-find { order: 1; }
 		.t-add { order: 3; }
@@ -167,6 +174,7 @@
 		.t-view { order: 5; }
 		.filter-btn { order: 6; }
 		.t-sel { order: 2; }
+		.t-del { display: inline-flex; order: 2; }
 		.find-box { flex-basis: 100%; max-width: none; order: 4; }
 	}
 </style>

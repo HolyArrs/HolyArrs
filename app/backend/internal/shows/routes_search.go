@@ -22,6 +22,10 @@ import (
 type SearchHandlers struct {
 	Store *database.Store
 	Queue *jobs.Queue
+	// RetryImport, when set, goes first: an episode whose download (a season
+	// pack, say) is on disk but failed to import is imported again, and its
+	// season is not searched episode by episode.
+	RetryImport sources.RetryImport
 }
 
 // Search queues the searches a person asked for on a show page: one
@@ -83,12 +87,20 @@ func (h *SearchHandlers) Search(w http.ResponseWriter, r *http.Request, t mediaf
 	verOK := func(id int64) bool {
 		return slices.ContainsFunc(vs, func(v mediafiles.Version) bool { return v.ID == id })
 	}
+	retried, retriedParts, err := h.importFirst(r, t.ID, listOnly, in, verOK)
+	if err != nil {
+		webserver.Internal(w, "shows", err)
+		return
+	}
 	switch {
 	case in.SlotID != nil:
 		var sl mediafiles.Slot
 		if err := mediafiles.LoadSlot(ctx, db, *in.SlotID, &sl); err != nil || !mediafiles.ItemOfTitle(ctx, db, sl.ItemID, t.ID) || !verOK(sl.VersionID) {
 			webserver.Fail(w, http.StatusNotFound, "no such Slot on this show")
 			return
+		}
+		if retried[sl.ID] {
+			break
 		}
 		if err := episode(sl.ID); err != nil {
 			webserver.Internal(w, "shows", err)
@@ -105,7 +117,7 @@ func (h *SearchHandlers) Search(w http.ResponseWriter, r *http.Request, t mediaf
 			return
 		}
 		for _, sl := range slots {
-			if !verOK(sl.VersionID) {
+			if !verOK(sl.VersionID) || retried[sl.ID] {
 				continue
 			}
 			if err := episode(sl.ID); err != nil {
@@ -120,6 +132,9 @@ func (h *SearchHandlers) Search(w http.ResponseWriter, r *http.Request, t mediaf
 			return
 		}
 		for _, v := range vs {
+			if retriedParts[partID] {
+				break
+			}
 			if err := season(partID, v.ID, false); err != nil {
 				webserver.Internal(w, "shows", err)
 				return
@@ -134,7 +149,7 @@ func (h *SearchHandlers) Search(w http.ResponseWriter, r *http.Request, t mediaf
 			return
 		}
 		for _, x := range list {
-			if !verOK(x.VersionID) {
+			if !verOK(x.VersionID) || retriedParts[x.PartID] {
 				continue
 			}
 			if err := season(x.PartID, x.VersionID, true); err != nil {
@@ -143,5 +158,48 @@ func (h *SearchHandlers) Search(w http.ResponseWriter, r *http.Request, t mediaf
 			}
 		}
 	}
-	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids, "imports_again": len(retried)})
+}
+
+// importFirst asks again for the import of the downloads the asked
+// episodes wait on (see RetryImport) and returns those episodes' Slots and
+// seasons. A list-only search changes nothing.
+func (h *SearchHandlers) importFirst(r *http.Request, titleID int64, listOnly bool, in sources.TitleSearchIn, verOK func(int64) bool) (map[int64]bool, map[int64]bool, error) {
+	if h.RetryImport == nil || listOnly {
+		return nil, nil, nil
+	}
+	ctx, db := r.Context(), h.Store.Read()
+	slots, err := mediafiles.SlotsOfTitle(ctx, db, titleID)
+	if err != nil {
+		return nil, nil, err
+	}
+	var season int64
+	if in.Season != nil {
+		if season, err = mediafiles.SeasonPartID(ctx, db, titleID, *in.Season); err != nil {
+			return nil, nil, nil
+		}
+	}
+	partOf := map[int64]int64{}
+	asked := []int64{}
+	for _, sl := range slots {
+		if sl.State != mediafiles.SlotNeedsADecision || sl.ActiveDownloadID == nil || !verOK(sl.VersionID) ||
+			in.SlotID != nil && sl.ID != *in.SlotID || in.ItemID != nil && sl.ItemID != *in.ItemID {
+			continue
+		}
+		var it mediafiles.Item
+		if err := mediafiles.LoadItem(ctx, db, sl.ItemID, &it); err != nil || it.PartID == nil || in.Season != nil && *it.PartID != season {
+			continue
+		}
+		partOf[sl.ID] = *it.PartID
+		asked = append(asked, sl.ID)
+	}
+	if len(asked) == 0 {
+		return nil, nil, nil
+	}
+	retried := h.RetryImport(ctx, asked, actor(r))
+	parts := map[int64]bool{}
+	for sid := range retried {
+		parts[partOf[sid]] = true
+	}
+	return retried, parts, nil
 }

@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Запитів",
 	"settings.appearance.colRate": "На рядок",
 	"settings.appearance.noRows": "Рядки Огляду ще не пораховано.",
+	"settings.appearance.rowStats": "Рядки в Огляді",
+	"settings.appearance.rowStatsDesc": "Відкриття й запити з кожного рядка за останні 30 днів, усіх разом. Рахується лише на цьому сервері.",
+	"settings.appearance.colRow": "Рядок",
+	"settings.appearance.row.because_have": "Як ваші тайтли",
+	"settings.appearance.row.because_asked": "Як ваші запити",
+	"settings.appearance.row.person": "Більше від людини",
+	"settings.appearance.row.genre": "Жанри для вас",
+	"settings.appearance.row.popular_genre": "Популярне за жанром",
+	"settings.appearance.row.popular_decade": "Популярне за десятиліттям",
+	"settings.appearance.row.decade": "За десятиліттям",
+	"settings.appearance.row.mood": "За настроєм",
+	"settings.appearance.row.hero": "Верхній банер",
 	"settings.appearance.motion": "Рух",
 	"settings.appearance.motionNote": "Враховує налаштування «Зменшити рух» на твоєму пристрої"
 }

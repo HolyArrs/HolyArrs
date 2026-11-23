@@ -85,6 +85,8 @@ type View struct {
 	Adding bool `json:"adding,omitempty"`
 	// Mine says the person reading asked for it too (set by the API).
 	Mine bool `json:"mine"`
+	// ViaPlugin is the plugin that made the request for the person.
+	ViaPlugin string `json:"via_plugin,omitempty"`
 }
 
 // Views reads asks matching where (SQL on asks a), newest first.
@@ -125,6 +127,9 @@ func (s *Service) Views(ctx context.Context, where string, args ...any) ([]View,
 		v := View{ID: a.ID, Kind: a.Kind, TMDBID: a.TMDBID, Ref: a.Ref, Seasons: a.Seasons, FutureOnly: a.FutureOnly, FourK: a.FourK, Quality: a.Quality, Name: a.Name, Year: a.Year, Poster: a.Poster, State: a.State, StateLabel: StateLabels[a.State],
 			TitleID: a.TitleID, AskedBy: Who{ID: a.AskedBy, Name: userName(a.AskedBy)}, AskedAt: a.AskedAt, DecidedAt: a.DecidedAt, Note: a.Note,
 			AutoApproved: a.AutoApproved, AvailableAt: a.AvailableAt, People: []Asker{}}
+		if a.ViaPlugin != nil {
+			v.ViaPlugin = *a.ViaPlugin
+		}
 		if v.Seasons == nil {
 			v.Seasons = []int{}
 		}

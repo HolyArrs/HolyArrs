@@ -32,7 +32,7 @@ There is no Community Applications template yet, so add the container by hand.
 
 1. In the Docker tab, add a container with the HolyArrs image.
 2. Map port `6262`.
-3. Map `/config` to a pool path, such as `/mnt/<pool>/appdata/holyarrs`. `<pool>` is your pool's name. Not `/mnt/user/appdata`.
+3. Map `/config` to a pool path, such as `/mnt/<pool>/appdata/holyarrs`. `<pool>` is your pool's name, for example `cache`. No pool? Use one array disk: `/mnt/disk1/appdata/holyarrs`. `/mnt/user/appdata` also works: on a user share HolyArrs runs its database in a slower, safer mode and shows a warning in Status. A pool or disk path is faster.
 4. Map one data folder to `/data`, using a disk or pool path such as `/mnt/<pool>/data:/data`. Inside it, make `downloads` and `media`, with `movies`, `tv` and `music` inside `media`.
 5. Set `PUID=99`, `PGID=100` (Unraid's `nobody:users`) and `UMASK=022`.
 6. Turn on auto-start for the container, so it restarts on its own.
@@ -86,7 +86,8 @@ These jobs wake the media disks. Change how often they run on the **Schedules** 
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Won't start, names a FUSE path, network share or Unraid user share | `/config` is not on local disk (on Unraid, it points at `/mnt/user`) | Move `/config` to a local disk or pool path, such as `/mnt/<pool>/appdata/holyarrs`. |
+| Won't start, names a FUSE path or network share | `/config` is not on local disk (for example mergerfs, rclone, NFS or SMB) | Move `/config` to a local disk or pool path, such as `/mnt/<pool>/appdata/holyarrs`, or `/mnt/disk1/appdata/holyarrs` with no pool. For mergerfs or another FUSE path, `HOLYARRS_ALLOW_FUSE_FOLDER=1` keeps it there with a warning. |
+| Status warns about an Unraid user share | `/config` points at `/mnt/user`, so the database runs in a slower, safer mode | Optional: move `/config` to `/mnt/<pool>/appdata/holyarrs`, `/mnt/disk1/appdata/holyarrs`, or make appdata Exclusive. Keep the mover off appdata. |
 | Stays stopped after a restart or restore | Auto-restart is off | Turn it on and start the container. |
 | Imports fail with a permission error | The `PUID` user can't write to media | Give it read and write in the NAS permissions screen (on Synology: **Control Panel > Shared Folder > Edit > Permissions**). |
 | Imports are copies, not hardlinks | Downloads and Library are on different mounts or disks | Mount one shared folder once, in HolyArrs and the downloader. Already set up? See [Move to one data folder](../library/move-to-one-folder.md). |
@@ -97,9 +98,9 @@ More fixes: [Troubleshooting](../help/troubleshooting.md).
 
 <details class="ha-more"><summary>Why HolyArrs refuses some config paths</summary>
 
-HolyArrs keeps its databases in `/config`. Network shares and FUSE paths can corrupt them, so HolyArrs refuses to start on one and says why.
+HolyArrs keeps its databases in `/config`. Network shares and most FUSE paths (mergerfs, rclone, sshfs) can corrupt them, so HolyArrs refuses to start on one and says why. NFS and SMB stay refused: database locking over a network is not safe.
 
-On Unraid, `/mnt/user` is a FUSE path. Use a pool path, or make appdata Exclusive: turn on **Permit exclusive shares** in **Settings > Global Share Settings**, then set **Shares > appdata** to primary storage on one pool and secondary storage to none.
+On Unraid, `/mnt/user` is a FUSE path too, but on one machine with working locks. There HolyArrs starts on its own, runs the database in a slower, safer mode (a rollback journal with full sync instead of WAL), and shows a warning in Status. A database moved onto the user share switches mode at the next start, and back again when it moves off. If the mover moves the database while HolyArrs runs, it can still be damaged, so keep the mover off appdata. For full speed, use a pool path, an array disk path such as `/mnt/disk1/appdata/holyarrs` (the database then stays on that one disk; keep the mover off it), or make appdata Exclusive: turn on **Permit exclusive shares** in **Settings > Global Share Settings**, then set **Shares > appdata** to primary storage on one pool and secondary storage to none.
 
 A `/config` path on a pool that does not exist lands in memory and is lost on reboot. HolyArrs refuses that too. Avoid `/mnt/user` for media as well; hardlinks across it can fail.
 

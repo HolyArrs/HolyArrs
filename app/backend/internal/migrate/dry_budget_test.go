@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -126,5 +127,76 @@ func TestUncheckedShowStillChecked(t *testing.T) {
 	got := lineOf(t, l.move(t, Choices{}).Report, cunkKey)
 	if got.Attention != AttnSeasons || l.count(t, `SELECT count(*) FROM titles WHERE seasons_differ = 1`) != 1 || l.count(t, showFilled) != 0 {
 		t.Fatalf("import %+v; marked %d, filled %d", got, l.count(t, `SELECT count(*) FROM titles WHERE seasons_differ = 1`), l.count(t, showFilled))
+	}
+}
+
+// stuckShows answers only when the caller gives up, like a metadata server
+// that has stopped answering.
+type stuckShows struct{ manyShows }
+
+func (s *stuckShows) Show(ctx context.Context, _ string) (metadata.Show, error) {
+	select {
+	case <-ctx.Done():
+		return metadata.Show{}, ctx.Err()
+	case <-time.After(10 * time.Second):
+		return metadata.Show{}, errors.New("too late")
+	}
+}
+
+// a lookup already running when the test run's time ends is cut off
+// there, so a stuck metadata server cannot hold the page past its budget.
+func TestDryRunLookupStopsAtBudget(t *testing.T) {
+	old := dryLookupBudget
+	dryLookupBudget = 200 * time.Millisecond
+	t.Cleanup(func() { dryLookupBudget = old })
+	l, _ := cunkSetup(t, cunkSonarr, []metadata.Show{cunkOn()}, cunkFiles...)
+	l.mv.Library.Shows = metadata.ShowSources{"tmdb": &stuckShows{manyShows: manyShows{list: []metadata.Show{cunkOn()}}}}
+	start := time.Now()
+	dry := l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)
+	if took := time.Since(start); took > 3*time.Second || dry.Checking != 1 {
+		t.Fatalf("test run took %v, %d still being checked", took, dry.Checking)
+	}
+}
+
+// stuckSearch knows no show by id, and its name search answers only when
+// the caller gives up (the search path ran past the time limit).
+type stuckSearch struct{ manyShows }
+
+func (s *stuckSearch) SearchShows(ctx context.Context, _ string) ([]metadata.Show, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-time.After(10 * time.Second):
+		return nil, errors.New("too late")
+	}
+}
+
+// A name search already running when the test run's time ends is cut off
+// there too.
+func TestDryRunNameSearchStopsAtBudget(t *testing.T) {
+	old := dryLookupBudget
+	dryLookupBudget = 200 * time.Millisecond
+	t.Cleanup(func() { dryLookupBudget = old })
+	l, _ := cunkSetup(t, cunkSonarr, nil, cunkFiles...)
+	l.mv.Library.Shows = metadata.ShowSources{"tmdb": &stuckSearch{}, "tvmaze": &stuckSearch{}, "tvdb": &stuckSearch{}}
+	start := time.Now()
+	dry := l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)
+	// A search cut off by the time limit is "still being checked", never "not found".
+	if took := time.Since(start); took > 3*time.Second || dry.Checking != 1 || lineOf(t, dry, cunkKey).Result == ResFailed {
+		t.Fatalf("test run took %v, %d still being checked, line %+v", took, dry.Checking, lineOf(t, dry, cunkKey))
+	}
+}
+
+// A show the old app knows only by its TVDB id, whose name search the time
+// limit cut off, is still being checked: the test run never calls it missing.
+func TestDryRunCutSearchNotMissing(t *testing.T) {
+	old := dryLookupBudget
+	dryLookupBudget = 200 * time.Millisecond
+	t.Cleanup(func() { dryLookupBudget = old })
+	l, _ := cunkSetup(t, map[string]string{"tvdb": "414217"}, nil, cunkFiles...)
+	l.mv.Library.Shows = metadata.ShowSources{"tmdb": &stuckSearch{}, "tvmaze": &stuckSearch{}, "tvdb": &stuckSearch{}}
+	dry := l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)
+	if dry.Checking != 1 || lineOf(t, dry, cunkKey).Result == ResFailed {
+		t.Fatalf("%d still being checked, line %+v", dry.Checking, lineOf(t, dry, cunkKey))
 	}
 }

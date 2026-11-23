@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Doar acestea pot spune de unde a venit o vizită.",
 	"settings.signIn.fixToSaveOne": "Corectează 1 rând pentru a salva",
 	"settings.signIn.fixToSaveOther": "Corectează {n} rânduri pentru a salva",
-	"settings.signIn.localSaved": "Rețeaua locală a fost salvată"
+	"settings.signIn.localSaved": "Rețeaua locală a fost salvată",
+	"settings.signIn.forgotTitle": "Ai uitat parola?",
+	"settings.signIn.forgotOn": "Arată Ai uitat parola? pe pagina de conectare",
+	"settings.signIn.forgotNote": "Proprietarul primește un cod de unică folosință din jurnalul serverului. Oprește-l dacă toți se conectează prin autentificare unică. Comanda reset-owner merge în continuare.",
+	"settings.signIn.forgotShown": "Ai uitat parola? e pornit",
+	"settings.signIn.forgotHidden": "Ai uitat parola? e oprit"
 }

@@ -27,7 +27,12 @@
             "kind": "s",
             "label": "s",
             "left": true,
-            "unseen": true
+            "unseen": true,
+            "checked": 7,
+            "found": 7,
+            "missing": true,
+            "read_only": true,
+            "suggest": "s"
           },
           "rules": {
             "app": "s",
@@ -58,6 +63,9 @@
               "never": [
                 ""
               ],
+              "blocked_groups": [
+                ""
+              ],
               "min_points": 7,
               "good_enough_points": 0,
               "size_limits": {
@@ -79,6 +87,7 @@
               },
               "order": "s",
               "upgrade_min_points": 7,
+              "replace_under_min": true,
               "proper_policy": {
                 "mode": ""
               },
@@ -91,7 +100,13 @@
                 "profile_id": "",
                 "name": "",
                 "at": ""
-              }
+              },
+              "equal_steps": [
+                null
+              ],
+              "devices": [
+                ""
+              ]
             },
             "traits": [
               {
@@ -139,6 +154,12 @@
             "seasons_off": [
               7
             ],
+            "episodes_off": [
+              {
+                "season": 7,
+                "episode": 7
+              }
+            ],
             "unresolved": "s",
             "music": {
               "new_albums": "",
@@ -170,7 +191,23 @@
                   "number": 0
                 }
               ]
-            }
+            },
+            "history": [
+              {
+                "old_id": 7,
+                "kind": "s",
+                "at": "s",
+                "release": "s",
+                "quality": "s",
+                "season": 7,
+                "episode": 7,
+                "source": "s",
+                "downloader": "s",
+                "reason": "s",
+                "size": 7
+              }
+            ],
+            "app": "s"
           },
           "never_add": {
             "kind": "s",
@@ -181,6 +218,9 @@
           "outside_list": {
             "kind": "s",
             "ref": "s",
+            "title_kind": "s",
+            "seasons": "s",
+            "new_seasons": "s",
             "library": "s",
             "pick_rules": "s",
             "keep_up_to_date": true,
@@ -201,6 +241,9 @@
               ]
             },
             "min_seeders": 7,
+            "multi_languages": [
+              "s"
+            ],
             "priority": 7,
             "needs_key": true,
             "on": true
@@ -210,12 +253,16 @@
             "url": "s",
             "username": "s",
             "category": "s",
+            "category_shows": "s",
+            "category_movies": "s",
+            "category_music": "s",
             "priority": 7,
             "needs_input": true,
             "path_map": [
               {
                 "theirs": "s",
-                "ours": "s"
+                "ours": "s",
+                "link": true
               }
             ]
           },
@@ -268,6 +315,7 @@
               7
             ],
             "approved": true,
+            "done": true,
             "by": "s",
             "by_name": "s",
             "decided_by": "s",
@@ -283,7 +331,35 @@
             "smtp_security": "s",
             "smtp_from": "s",
             "smtp_user": "s",
-            "staff_to": "s"
+            "staff_to": "s",
+            "chat_id": "s",
+            "server_url": "s",
+            "allow_local": true,
+            "moments": [
+              "s"
+            ]
+          },
+          "file_rules": {
+            "kind": "s",
+            "unkeep_deleted": true
+          },
+          "turn_down": {
+            "kind": "s",
+            "id": "s",
+            "ids": {
+              "s": "s"
+            },
+            "name": "s",
+            "info_hash": "s",
+            "protocol": "s",
+            "indexer": "s",
+            "reason": "s",
+            "episodes": [
+              {
+                "season": 7,
+                "episode": 7
+              }
+            ]
           }
         }
       ]

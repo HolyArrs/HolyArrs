@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "সেরা কপি আগে; সমান হলে সিজন প্যাক জেতে",
 	"settings.search.preferAlways": "কোয়ালিটি সেট পাশ করলেই সিজন প্যাক",
 	"settings.search.multi": "একাধিক সিজনের রিলিজ নিন",
-	"settings.search.multiHint": "এতে থাকা প্রতিটি নেই এমন এপিসোড পূরণ করে",
+	"settings.search.multiHint": "এতে থাকা প্রতিটি নেই এমন এপিসোড পূরণ করে। একই মানে, বেশি চাওয়া এপিসোড থাকা রিলিজটি জেতে",
 	"settings.search.music": "মিউজিক",
 	"settings.search.albums": "নেই এমন অ্যালবামও খুঁজুন",
 	"settings.search.albumsHint": "রিলিজ হওয়া অ্যালবাম, প্রতিটির জন্য একটি সার্চ",

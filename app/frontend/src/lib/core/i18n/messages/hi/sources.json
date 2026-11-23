@@ -85,5 +85,21 @@
 	"sources.uses.auto": "ख़ुद खोजता है",
 	"sources.uses.feed": "सबसे नई सूची",
 	"sources.uses.hand": "हाथ से खोज",
-	"sources.uses.none": "इस्तेमाल नहीं होता"
+	"sources.uses.none": "इस्तेमाल नहीं होता",
+	"sources.bridge.removeTitle": "{name} हटाएँ?",
+	"sources.bridge.find": "मेरे नेटवर्क पर {name} खोजें",
+	"sources.bridge.noneFound": "आपके नेटवर्क पर किसी {name} ने जवाब नहीं दिया।",
+	"sources.bridge.keyFound": "{name} से कुंजी मिली",
+	"sources.bridge.keyKept": "{name} ने अपनी कुंजी नहीं दी (साइन-इन चालू है)। कॉपी करने के लिए \"कुंजी पाएँ\" दबाएँ।",
+	"sources.bridge.keyKeptJackett": "Jackett ने अपनी कुंजी नहीं दी (उसमें एडमिन पासवर्ड है)। कॉपी करने के लिए \"कुंजी पाएँ\" दबाएँ।",
+	"sources.bridge.notReached": "{name} तक नहीं पहुँच सके।",
+	"sources.bridge.brings.title": "क्या-क्या आता है",
+	"sources.bridge.brings.sites": "उसके इंडेक्सर, सोर्स के रूप में",
+	"sources.bridge.brings.categories": "उनकी कैटेगरी",
+	"sources.bridge.brings.search": "खोजें {name} से होकर जाती हैं",
+	"sources.bridge.brings.sync": "{name} में बदलाव साथ आते हैं",
+	"sources.bridge.brings.stays": "आपके इंडेक्सर {name} में ही सेट रहते हैं।",
+	"sources.bridge.brings.had": "{n} इंडेक्सर पहले से यहाँ",
+	"sources.bridge.brings.hadFrom": "{apps} से इंपोर्ट किए गए",
+	"sources.bridge.brings.keyKept": "उनके पास पहले से मौजूद कुंजी इस्तेमाल करने के लिए इसे खाली छोड़ें।"
 }

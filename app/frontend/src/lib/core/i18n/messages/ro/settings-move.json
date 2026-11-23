@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Anulezi importul {id}?",
 	"settings.move.undoQuestion": "Anulezi acest import?",
 	"settings.move.undoNote": "Elimină ce a adăugat acest import; modificările tale ulterioare rămân. Descarcă mai întâi raportul dacă îl vrei.",
-	"settings.move.undoMove": "Anulează importul"
+	"settings.move.undoMove": "Anulează importul",
+	"settings.move.continueSetup": "Continuă configurarea",
+	"settings.move.backToChoose": "Înapoi la alegere"
 }

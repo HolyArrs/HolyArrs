@@ -61,18 +61,30 @@ type Service struct {
 	AnimeNames func(ctx context.Context, kind, tmdbID, name string) []string
 	// EpisodeGroups reads TMDB's other episode orders; nil offers none.
 	EpisodeGroups metadata.EpisodeGroupSource
+	// OMDb reads IMDb, Rotten Tomatoes and Metacritic scores with the
+	// owner's OMDb key (OMDbPass); nil reads none.
+	OMDb *metadata.OMDb
+	// TraktRatings reads Trakt ratings with the Trakt client id
+	// (TraktPass); nil reads none.
+	TraktRatings *metadata.TraktRatings
 	// Now is the clock (time.Now when nil).
 	Now func() time.Time
 	// DownloadRunning says whether a download is still in its Downloader's
 	// hands; a rescan links a found copy to a movie whose download is not.
 	// Nil: any download holds the movie back.
 	DownloadRunning func(tx *sql.Tx, downloadID int64) (bool, error)
+	// UnlinkDownloads lets go of the Downloader links matched to a deleted
+	// title, so they can match it again once it is re-added; nil keeps them.
+	UnlinkDownloads func(tx *sql.Tx, titleID int64) error
 
 	// checkedPaths is the Downloader folder list of the last full folder
 	// check; a timed check with another list runs the full test again.
 	checkedMu    sync.Mutex
 	checkedOnce  bool
 	checkedPaths string
+
+	omdb  omdbState
+	trakt traktState
 }
 
 // animeAliases are the anime's other titles, or an empty list.
@@ -222,7 +234,11 @@ func versionFolder(ctx context.Context, db database.Querier, v mediafiles.Versio
 	return filepath.Join(lf.Path, v.FolderName), lf, nil
 }
 
-var videoExt = map[string]bool{".mkv": true, ".mp4": true, ".m4v": true, ".avi": true, ".ts": true, ".m2ts": true, ".wmv": true, ".mov": true, ".webm": true}
+var videoExt = map[string]bool{".mkv": true, ".mp4": true, ".m4v": true, ".avi": true, ".ts": true, ".m2ts": true, ".wmv": true, ".mov": true, ".webm": true,
+	".mpg": true, ".mpeg": true,
+	// A .strm file is a link to a stream another app manages. The Library
+	// finds and lists it like a video; downloads never bring one in.
+	".strm": true} // the importer's list, plus .strm
 
 // handleScan looks at each Version folder of a Title and reports what is
 // there: whether the folder exists, the video files in it, and which known
@@ -250,6 +266,10 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 			res["note"] = "the Library folder is missing; nothing was looked at"
 		} else if st, err := os.Stat(dir); err == nil && st.IsDir() {
 			res["exists"] = true
+		}
+		// A movie kept flat shares the Library folder with every other
+		// one: only its own Files are its videos.
+		if res["exists"] == true && v.FolderName != "" {
 			_ = filepath.WalkDir(dir, func(p string, d os.DirEntry, err error) error {
 				if err == nil && d.IsDir() && p != dir && NasSystemDir(d.Name()) {
 					return filepath.SkipDir
@@ -274,7 +294,12 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 				absent++
 			}
 		}
-		res["video_files"], res["known_present"], res["known_absent"] = len(videos), present, absent
+		if v.FolderName == "" {
+			res["video_files"] = present
+		} else {
+			res["video_files"] = len(videos)
+		}
+		res["known_present"], res["known_absent"] = present, absent
 		out = append(out, res)
 	}
 	r.SetResult(map[string]any{"versions": out})
@@ -285,7 +310,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 
 // handleCheckFolders checks every Library folder and records changes.
 func (s *Service) handleCheckFolders(ctx context.Context, r *jobs.Run) error {
-	fs, err := database.Select[mediafiles.LibraryFolder](ctx, s.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	fs, err := database.Select[mediafiles.LibraryFolder](ctx, s.Store.Read(), "library_folders", "stand_in = 0 ORDER BY id")
 	if err != nil {
 		return err
 	}

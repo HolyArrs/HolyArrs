@@ -10,6 +10,7 @@ import (
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // manyShows knows each show by any of its ids and counts the calls.
@@ -45,6 +46,9 @@ func cunkLab(t *testing.T, ids map[string]string, shows []metadata.Show) (*moveL
 // cunkSeasons are Sonarr's season choices for Cunk on Earth.
 var cunkSeasons = []Season{{Number: 1, Monitored: true}}
 
+// cunkEpisodesOff are the episodes switched off in Sonarr.
+var cunkEpisodesOff []sources.EpisodeNumber
+
 // cunkSetup reads a Sonarr holding Cunk on Earth; files are made in its
 // folder (none: the folder is not there).
 func cunkSetup(t *testing.T, ids map[string]string, shows []metadata.Show, files ...string) (*moveLab, *manyShows) {
@@ -73,7 +77,7 @@ func cunkSetupOld(t *testing.T, ids map[string]string, shows []metadata.Show, ol
 	l.mv.Library.Shows = metadata.ShowSources{"tmdb": src}
 	sonarr := &Snapshot{Kind: Sonarr, Via: ViaAPI, Folders: []Folder{{Path: "/tv"}},
 		Titles: []Title{{SourceID: 1, Kind: "show", Name: "Cunk on Earth", Year: 2022, IDs: ids, Path: "/tv/Cunk on Earth", Monitored: true,
-			Seasons: cunkSeasons, Files: old}}}
+			Seasons: cunkSeasons, EpisodesOff: cunkEpisodesOff, Files: old}}}
 	sonarr.finish()
 	saved, err := Save(context.Background(), l.st, 1, sonarr)
 	if err != nil {

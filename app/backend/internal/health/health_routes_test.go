@@ -52,7 +52,7 @@ func TestHealthChecksOverHTTP(t *testing.T) {
 func TestHealthSettingsOverHTTP(t *testing.T) {
 	t.Parallel()
 	srv, _, _ := setup(t)
-	if b := do(t, "GET", srv.URL+"/api/v1/settings/health", "", 200); string(b) != `{"every_minutes":5,"flap_guard":2,"low_space_mb":1024,"update_check_url":"","update_check":true,"update_check_local":false,"update_prerelease":false,"update_check_every_days":1,"update_check_default":"https://api.github.com/repos/HolyArrs/HolyArrs/releases/latest"}`+"\n" {
+	if b := do(t, "GET", srv.URL+"/api/v1/settings/health", "", 200); string(b) != `{"every_minutes":5,"flap_guard":2,"low_space_mb":1024,"update_check_url":"","update_check_local":false,"update_prerelease":false,"update_check_every_days":1,"update_check_default":"https://api.github.com/repos/HolyArrs/HolyArrs/releases/latest"}`+"\n" {
 		t.Fatalf("defaults %s", b)
 	}
 	b := do(t, "PUT", srv.URL+"/api/v1/settings/health", `{"every_minutes":15,"flap_guard":3,"low_space_mb":2048,"update_check_url":"https://example.com/latest"}`, 200)

@@ -27,8 +27,10 @@ describe('sign-in corner buttons', () => {
 	it('makes the language button a 44px tap on touch screens', () => {
 		expect(media(corner, '(pointer: coarse)')).toMatch(/\.mode \.trigger\.button\s*\{[^}]*min-height:\s*44px/);
 	});
-	it('leaves the light/dark button its 44px touch size from IconButton', () => {
-		expect(corner).not.toMatch(/\.ui-ibtn[^{]*\{[^}]*\b(width|height|min-height):/);
-		expect(media(styles('../ui/IconButton.svelte'), '(pointer: coarse)')).toMatch(/\.md\s*\{[^}]*width:\s*44px;\s*height:\s*44px/);
+	it('gives the light/dark button its 44px size from IconButton (lg)', () => {
+		expect(readFileSync(new URL('./SigninTheme.svelte', import.meta.url), 'utf8')).toMatch(/size="lg"/);
+		// Only the icon inside is sized here (20px svg), never the button itself.
+		expect(corner).not.toMatch(/\.ui-ibtn(?![^{]*svg)[^{]*\{[^}]*\b(width|height|min-height):/);
+		expect(styles('../ui/IconButton.svelte')).toMatch(/\.lg\s*\{[^}]*width:\s*44px;\s*height:\s*44px/);
 	});
 });

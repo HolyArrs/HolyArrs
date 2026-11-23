@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Запросов",
 	"settings.appearance.colRate": "На ряд",
 	"settings.appearance.noRows": "Ряды «Обзора» пока не посчитаны.",
+	"settings.appearance.rowStats": "Ряды в «Обзоре»",
+	"settings.appearance.rowStatsDesc": "Открытия и запросы по каждому ряду за последние 30 дней, у всех вместе. Считается только на этом сервере.",
+	"settings.appearance.colRow": "Ряд",
+	"settings.appearance.row.because_have": "Как ваши тайтлы",
+	"settings.appearance.row.because_asked": "Как ваши запросы",
+	"settings.appearance.row.person": "Ещё от человека",
+	"settings.appearance.row.genre": "Жанры для вас",
+	"settings.appearance.row.popular_genre": "Популярное по жанрам",
+	"settings.appearance.row.popular_decade": "Популярное по десятилетиям",
+	"settings.appearance.row.decade": "По десятилетиям",
+	"settings.appearance.row.mood": "По настроению",
+	"settings.appearance.row.hero": "Верхний баннер",
 	"settings.appearance.motion": "Анимация",
 	"settings.appearance.motionNote": "Следует настройке «Уменьшить движение» на вашем устройстве"
 }

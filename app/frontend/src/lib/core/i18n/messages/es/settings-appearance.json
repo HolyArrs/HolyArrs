@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Solicitudes",
 	"settings.appearance.colRate": "Por fila",
 	"settings.appearance.noRows": "Aún no se ha contado ninguna fila de Explorar.",
+	"settings.appearance.rowStats": "Filas de Explorar",
+	"settings.appearance.rowStatsDesc": "Aperturas y solicitudes por fila en los últimos 30 días, de todos juntos. Solo se cuentan en este servidor.",
+	"settings.appearance.colRow": "Fila",
+	"settings.appearance.row.because_have": "Como títulos que tienes",
+	"settings.appearance.row.because_asked": "Como tus solicitudes",
+	"settings.appearance.row.person": "Más de una persona",
+	"settings.appearance.row.genre": "Géneros elegidos para ti",
+	"settings.appearance.row.popular_genre": "Populares por género",
+	"settings.appearance.row.popular_decade": "Populares por década",
+	"settings.appearance.row.decade": "Por década",
+	"settings.appearance.row.mood": "Por estado de ánimo",
+	"settings.appearance.row.hero": "Banner superior",
 	"settings.appearance.motion": "Movimiento",
 	"settings.appearance.motionNote": "Sigue el ajuste Reducir movimiento de tu dispositivo"
 }

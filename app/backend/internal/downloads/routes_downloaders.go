@@ -27,6 +27,8 @@ func (a *Web) Routes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/downloaders/{id}", a.editDownloader)
 	m.HandleFunc("DELETE /api/v1/downloaders/{id}", a.deleteDownloader)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/test", a.TestDownloader)
+	m.HandleFunc("POST /api/v1/downloaders/{id}/category", a.makeCategory)
+	m.HandleFunc("GET /api/v1/downloaders/{id}/categories", a.clientCategories)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/pause", a.pauseDownloader)
 	m.HandleFunc("POST /api/v1/downloaders/{id}/resume", a.resumeDownloader)
 	m.HandleFunc("GET /api/v1/downloaders/{id}/attempts", a.listDownloaderAttempts)
@@ -144,7 +146,7 @@ func downloaderError(w http.ResponseWriter, err error) {
 		webserver.Fail(w, http.StatusConflict, ErrAttemptStopped.Error())
 	case errors.Is(err, ErrPendingAttempt):
 		webserver.Fail(w, http.StatusConflict, ErrPendingAttempt.Error())
-	case errors.Is(err, ErrNameUsed), errors.Is(err, ErrKeyAgain), errors.Is(err, ErrBusy):
+	case errors.Is(err, ErrNameUsed), errors.Is(err, ErrKeyAgain), errors.Is(err, ErrTypeKey), errors.Is(err, ErrBusy):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, ErrNoVault):
 		webserver.Fail(w, http.StatusServiceUnavailable, err.Error())
@@ -199,6 +201,7 @@ func (a *Web) addDownloader(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d, _ = a.Manager().LearnSaveRoot(r.Context(), d, actor(r))
+	d = a.settleCategories(r, d, true)
 	a.publishDownloader(d)
 	webserver.WriteJSON(w, http.StatusCreated, downloaderView(d, 0))
 }
@@ -228,6 +231,8 @@ func (a *Web) editDownloader(w http.ResponseWriter, r *http.Request) {
 	if len(before.PathMap) == 0 {
 		d, _ = a.Manager().LearnSaveRoot(r.Context(), d, actor(r))
 	}
+	// A kind the edit left out may take the client's fitting category.
+	d = a.settleCategories(r, d, in.CategoryMovies == nil && in.CategoryShows == nil && in.CategoryMusic == nil)
 	a.publishDownloader(d)
 	webserver.WriteJSON(w, http.StatusOK, downloaderView(d, 0))
 }
@@ -344,13 +349,7 @@ func explainDownloader(err error, rawURL string, allowLocal bool) (doctor.Cause,
 	case errors.Is(err, ErrAuth):
 		return doctor.Auth, doctor.Line(doctor.Auth)
 	case errors.Is(err, ErrNoCategory):
-		name := ""
-		if msg := err.Error(); strings.HasSuffix(msg, ")") {
-			if i := strings.LastIndex(msg, " ("); i >= 0 {
-				name = msg[i+2 : len(msg)-1]
-			}
-		}
-		return doctor.Category, doctor.CategoryLine(name)
+		return doctor.Category, doctor.CategoryLine(categoryInError(err))
 	case errors.Is(err, outbound.ErrMetadataRefused):
 		return doctor.Blocked, "That address is a cloud metadata address, which HolyArrs never connects to."
 	case errors.Is(err, outbound.ErrAddressRefused):
@@ -366,6 +365,17 @@ func explainDownloader(err error, rawURL string, allowLocal bool) (doctor.Cause,
 	return doctor.Unknown, "It did not answer the last check. The log has the details."
 }
 
+// categoryInError is the category named at the end of a missing-category
+// error, "(name)", or "".
+func categoryInError(err error) string {
+	if msg := err.Error(); strings.HasSuffix(msg, ")") {
+		if i := strings.LastIndex(msg, " ("); i >= 0 {
+			return msg[i+2 : len(msg)-1]
+		}
+	}
+	return ""
+}
+
 // mayKeepSaveRoot says whether a test may store the save root. Like an edit,
 // that takes a browser session or an API key (no sign-in is for tests).
 func mayKeepSaveRoot(r *http.Request) bool {
@@ -374,7 +384,8 @@ func mayKeepSaveRoot(r *http.Request) bool {
 }
 
 // TestDownloader asks a saved Downloader for its version and says the
-// result in plain words. A working answer ends a rest.
+// result in plain words. A working answer ends a rest. With a body, it tests
+// those values instead and saves nothing.
 func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 	id, ok := idIn(w, r, "Downloader")
 	if !ok {
@@ -383,6 +394,17 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 	var d domain.Downloader
 	if err := database.Get(r.Context(), a.Store.Read(), "downloaders", id, &d); err != nil || d.Removed {
 		downloaderError(w, database.ErrNotFound)
+		return
+	}
+	raw, ok := readTestBody(w, r)
+	if !ok {
+		return
+	}
+	if raw != nil {
+		if !webserver.RequireStrong(w, r) { // sends a saved key, as an edit does
+			return
+		}
+		a.testTyped(w, r, d, raw) // the Change form's values, not saved
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
@@ -395,6 +417,7 @@ func (a *Web) TestDownloader(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		cause, text := explainDownloader(err, d.URL, d.AllowLocal)
 		out["text"], out["cause"] = text, cause
+		missingCategory(out, err, d)
 		if cause != doctor.Unknown {
 			m.noteCause(ctx, id, text) // Health then says what Test found.
 		}

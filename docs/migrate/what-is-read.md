@@ -5,17 +5,19 @@ level: Expert
 sidebar: { order: 5 }
 ---
 
-Read an old app's setup, through the app or from its backup, as step 1 of an import. Reading changes nothing in HolyArrs or in the old app.
+Read an old app's setup through the app, as step 1 of an import. Reading changes nothing in HolyArrs or in the old app.
 
 A **read** is HolyArrs's copy of one app's setup. It is kept until you import it or remove it.
 
 ## Read an app
 
 1. Open **Settings > Import from other apps** and click **Add an app**.
-2. Pick the app, then **Through the app** or **From a backup**.
+2. Pick the app, then type its address and API key.
 3. Click **Check connection**. You should see the app and version within a few seconds.
 4. Start the read. A big library takes a few minutes. **Stop reading** stops it; closing the sheet does not.
 5. You should see the read in the list. Add the next app the same way.
+
+Not sure of an address? **Find on my network** lists the old apps that answer on their usual ports; pick one to fill in its address. After a good check of Overseerr or Seerr, HolyArrs lists the Sonarr and Radarr it uses and can add them in one go with the keys Overseerr holds. Prowlarr lists the apps it syncs to, but you type each key.
 
 **Edit** on a row reads that app again. **Remove** throws the read away.
 
@@ -29,7 +31,7 @@ Old apps usually live on your home network, so turn on the local network switch 
 
 ### From a backup
 
-Type the full path, on the HolyArrs server, of one of these:
+The import sheet reads through the app only. A backup can be read through the API: send `path` instead of `url` and `key` (see **API** below), with the full path, on the HolyArrs server, of one of these:
 
 - a backup zip from Radarr, Sonarr, Lidarr, Prowlarr or Bazarr,
 - the config folder of Seerr, Overseerr, qBittorrent or SABnzbd,
@@ -90,7 +92,7 @@ The owner and admins, signed in with their password. The local network sign-in s
 | Database | Opened read only. |
 | Refused whole when | an entry points outside the zip, it holds a link, or a file unpacks far bigger than its size. |
 | Backups at once | 1. |
-| Kept per read | 16 MB. |
+| Kept per read | 64 MB, compressed. |
 | Reads kept | The 50 newest. |
 
 </details>
@@ -101,6 +103,8 @@ The owner and admins, signed in with their password. The local network sign-in s
 | --- | --- |
 | `POST /api/v1/migrate/probe` | Says which app and version answers, or which backup this is. |
 | `POST /api/v1/migrate/read` | Reads the whole setup and keeps it. |
+| `POST /api/v1/migrate/find` | Looks for old apps on this server's network: their Docker names, this machine, the Docker host and the /24 of this server's address, on each app's usual port. Owner only, at most once every 10 seconds. No key is sent. |
+| `POST /api/v1/migrate/linked` | The Sonarr and Radarr servers an Overseerr or Seerr is set up with, or the apps a Prowlarr syncs to (address only). Keys are never answered. With `add`, reads the named ones with the key the old app holds. Owner only. |
 | `GET /api/v1/migrate/snapshots` | Lists reads, newest first. |
 | `GET /api/v1/migrate/snapshots/{id}` | One read with everything it holds. |
 | `DELETE /api/v1/migrate/snapshots/{id}` | Removes a read and the key saved for that app. |

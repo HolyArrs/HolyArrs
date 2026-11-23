@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"slices"
 	"strings"
 	"sync"
@@ -117,7 +118,26 @@ type UpdateInfo struct {
 }
 
 func (e *Checker) updateOn(ctx context.Context) bool {
-	return e.setting(ctx, settingUpdateOn) != "off"
+	return CheckOn(e.setting(ctx, settingUpdateOn))
+}
+
+// SetCheckOn keeps "Tell me about new versions"; a saved value wins over
+// HOLYARRS_UPDATE_CHECK.
+func (e *Checker) SetCheckOn(ctx context.Context, on bool) error {
+	return e.saveSetting(ctx, settingUpdateOn, map[bool]string{true: "on", false: "off"}[on])
+}
+
+// CheckOn says whether the update check runs for the saved setting v. A
+// saved "on" or "off" wins; unsaved, HOLYARRS_UPDATE_CHECK=off (or false, 0,
+// no) starts it off, for installs updated by Watchtower and the like.
+func CheckOn(v string) bool {
+	if v == "" {
+		switch strings.ToLower(strings.TrimSpace(os.Getenv("HOLYARRS_UPDATE_CHECK"))) {
+		case "off", "false", "0", "no":
+			return false
+		}
+	}
+	return v != "off"
 }
 
 // feed is the release feed to ask: the setting, else the engine's default.
@@ -142,8 +162,12 @@ func (e *Checker) updateLocked(ctx context.Context) UpdateInfo {
 			_ = json.Unmarshal([]byte(raw), e.upd)
 		}
 	}
+	if !e.updateOn(ctx) {
+		// Off: no notice, so the last answer is not shown either.
+		return UpdateInfo{Feed: e.feed(ctx), Version: e.Version}
+	}
 	out := *e.upd
-	out.On, out.Feed, out.Version = e.updateOn(ctx), e.feed(ctx), e.Version
+	out.On, out.Feed, out.Version = true, e.feed(ctx), e.Version
 	out.Newer = out.Latest != "" && Newer(out.Latest, e.Version) &&
 		(!IsPreRelease(out.Latest) || e.setting(ctx, settingUpdatePre) == "true")
 	return out
@@ -173,6 +197,14 @@ func (e *Checker) checkLocked(ctx context.Context, force bool) UpdateInfo {
 	var err error
 	if listMode {
 		latest, link, next.Notes, none, err = e.readList(ctx)
+		// The notice must not depend on the list: when it cannot be read,
+		// the release feed still says whether a new version exists.
+		// Installing still needs the signed list.
+		if err != nil && cur.Feed != "" {
+			if l, lk, n, ferr := e.readLatest(ctx, cur.Feed); ferr == nil {
+				latest, link, none, err = l, lk, n, nil
+			}
+		}
 	} else {
 		latest, link, none, err = e.readLatest(ctx, cur.Feed)
 	}

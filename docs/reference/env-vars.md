@@ -20,6 +20,7 @@ Every variable the HolyArrs container reads. Most installs set only `PUID`, `PGI
 | `HOLYARRS_URL_BASE` | Serve HolyArrs under a path behind a reverse proxy. `/` ignores a path saved in Settings. | none | `/holyarrs` |
 | `HOLYARRS_ALLOWED_HOSTS` | Extra host names people use to reach HolyArrs, comma separated. | IPs and `localhost` | `holyarrs.example.com` |
 | `HOLYARRS_TRUSTED_PROXIES` | Your reverse proxy's address or network, comma separated. Needed for real client addresses. | none | `172.18.0.0/16` |
+| `HOLYARRS_UPDATE_CHECK` | `off` starts with **Tell me about new versions** off: no update request at all. For installs updated by Watchtower or similar. Changing the switch later wins. | on | `off` |
 | `HOLYARRS_MASTER_KEY_FILE` | Read the vault's master key from its own file. The `PUID` user must be able to read it. | `/config/holyarrs.key` | `/keys/holyarrs.key` |
 
 ## Values from files
@@ -39,11 +40,13 @@ HolyArrs drops one newline at the end of the file. If the file is missing, HolyA
 | --- | --- | --- | --- |
 | `HOLYARRS_SAFE_MODE` | Start only the core: sign-in, Library, settings, backups and health. Remove it after the fix. | off | `1` |
 | `HOLYARRS_LOW_MEMORY` | `1` forces low-memory mode on, `0` forces it off. Unset, it turns on at about 2.5 GiB of RAM or less. | by machine size | `1` |
+| `HOLYARRS_WRITE_CAP` | Advanced. How long one database write may run before HolyArrs stops it and rolls it back. Set it only if you keep seeing "a write took too long" in the log on a very large Library or a slow disk. While one write runs, the rest of HolyArrs waits for it, so a higher cap can make the app pause instead of showing the error. Takes `90s`, `5m` or plain seconds, from `20s` to `1h`. A lower or unreadable value keeps `20s`, a higher one is cut to `1h`, and the log says so at start. Big imports keep their own longer cap. | `20s` | `5m` |
 | `HOLYARRS_FOLLOW_LINKS` | `1` lets the Library scan and imports use video and music files that are symlinks (libraries built from links into a mounted drive). A linked download is placed in the Library as a link. | off | `1` |
 | `GOMEMLIMIT` | Override the memory target HolyArrs sets for itself. | set by HolyArrs | `1GiB` |
 | `HOLYARRS_SKIP_SPACE_CHECK` | Skip the free-space check before a database update. | off | `yes` |
 | `HOLYARRS_CONFIG_IN_MEMORY` | Allow `/config` on a memory-backed folder. For test boxes; data is lost on restart. | off | `yes` |
 | `HOLYARRS_ALLOW_DESKTOP_FOLDER` | Start with `/config` in a Docker Desktop shared folder on a Mac, after you check file locks work there. HolyArrs warns on every start. | off | `1` |
+| `HOLYARRS_ALLOW_FUSE_FOLDER` | Start with `/config` on a FUSE folder that is refused, such as mergerfs. The database can be damaged there, so HolyArrs warns on every start. An Unraid user share under `/mnt/user` needs no setting: HolyArrs starts there in a slower, safer database mode with a warning. NFS and SMB stay refused. Status shows a warning while it is set. | off | `1` |
 | `HOLYARRS_READONLY_DOWNLOADERS` | Downloaders HolyArrs must never change, by id or address, comma separated. | none | `3,http://qbit:8080` |
 | `HOLYARRS_HEALTH_URL` | Address the container health check calls. | `http://127.0.0.1:` and the port from `HOLYARRS_ADDR` or `HOLYARRS_PORT`, else `6262` | `http://127.0.0.1:6262/holyarrs` |
 
@@ -61,6 +64,8 @@ Set these before start. If `HOLYARRS_OIDC_ENABLED` is present at all, even as `f
 | `HOLYARRS_OIDC_CLIENT_SECRET_FILE` | File holding the client secret, at most 4096 bytes. Leave out for a public client. | none |
 | `HOLYARRS_OIDC_REDIRECT_URL` | Exact callback: your address, URL base if any, then `/api/v1/auth/oidc/callback`. | none |
 | `HOLYARRS_OIDC_ALLOW_JOIN` | New people join as members who can only ask. | `false` |
+| `HOLYARRS_OIDC_GROUPS_CLAIM` | Claim that carries the groups, often `groups`. Empty sets roles only in HolyArrs. | none |
+| `HOLYARRS_OIDC_GROUP_ROLES` | Group to role, like `admins=admin,family=member`. Each sign-in gives the highest role; people in none are members. Never makes or changes the owner; a missing claim leaves the role alone. | none |
 | `HOLYARRS_OIDC_ALLOW_LOCAL_NETWORK` | Allow a provider on your private network. | `false` |
 | `HOLYARRS_OIDC_ALLOW_LOOPBACK_HTTP` | Allow plain HTTP on this machine, for testing. | `false` |
 | `HOLYARRS_FORWARD_AUTH_ENABLED` | Turn on trusted proxy sign-in. | `false` |
@@ -90,7 +95,7 @@ What to do instead:
 | `HOLYARRS_METADATA_MODE` | Where details come from: `full` (the HolyArrs server), `own` (your own keys) or `off`. Set, it locks the choice in **Settings > Metadata**. A value HolyArrs does not understand turns lookups off and shows a red line in Health. | the choice in Settings, else `full` |
 | `HOLYARRS_METADATA_URL` | The metadata server address. `off` means your own keys (before 1.1.0 it stopped HolyArrs at start). | `https://api.holyarrs.com` |
 | `HOLYARRS_TMDB_KEY` | Your own TMDB read access token. Set, TMDB reads go straight to TMDB instead of the metadata server. | none |
-| `HOLYARRS_TVDB_URL`, `HOLYARRS_FANART_URL` | Stand-in addresses for TheTVDB and fanart.tv. For tests only. | none |
+| `HOLYARRS_TVDB_URL`, `HOLYARRS_FANART_URL`, `HOLYARRS_OMDB_URL` | Stand-in addresses for TheTVDB, fanart.tv and OMDb. For tests only. | none |
 | `HOLYARRS_METADATA_SERVICE_TOKEN_FILE` | File holding this install's metadata server credential, read on each call. Unset, the credential lives in the vault. | none |
 
 What still goes through the metadata server with your own TMDB key, and every other outside address, is in [Outside addresses](../run/outside-hosts.md).

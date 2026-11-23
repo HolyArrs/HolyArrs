@@ -5,7 +5,7 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { DEFAULT_RATINGS, MAX_RATINGS, RATING_SOURCES, ratingPicks, resetRatingPicks, setRatingPick } from '#lib/ui/rating-picks.svelte.ts';
-	import { theme, setTheme, type ThemeChoice, backdrop, setBackdrop, type Backdrop, ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick, Table, LanguagePicker } from '#lib/accounts/index.ts';
+	import { theme, setTheme, type ThemeChoice, backdrop, setBackdrop, type Backdrop, ABOUT_ITEMS, aboutIsDefault, aboutPicks, resetAboutPicks, setAboutPick, Table, LanguagePicker, LanguageRetry } from '#lib/accounts/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -13,6 +13,8 @@
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { setAutoplaySetting } from '#lib/core/trailer/autoplay.svelte.ts';
 	import { look, setLook, minimalLook, type Look } from '#lib/core/look.svelte.ts';
+	import { rowStatLines, type RowStat } from '#lib/discover/index.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	const aboutGroups = ['Information', 'Production', 'Links', 'Ratings', 'Feel'] as const;
 	const isDefault = $derived(!ratingPicks.custom && ratingPicks.list.length === DEFAULT_RATINGS.length && DEFAULT_RATINGS.every((r) => ratingPicks.list.includes(r)));
 
@@ -89,8 +91,20 @@
 			titleStats = null;
 		}
 	}
+	// Explore rows: opens and requests per row, summed over everyone, counted on this server only (owner and admins).
+	const seesRowStats = $derived(session.s.role === 'owner' || session.s.role === 'admin');
+	let rowStats = $state<RowStat[] | null>(null);
+	const rowStatRows = $derived(rowStats ? rowStatLines(rowStats, serverWords, (type) => t('settings.appearance.row.' + type)) : []);
+	async function loadRowStats() {
+		try {
+			rowStats = (await api.get<{ rows: RowStat[] }>('/explore/row-stats')).rows;
+		} catch {
+			rowStats = null;
+		}
+	}
 	onMount(() => {
 		if (session.can('settings')) void loadApp();
+		if (seesRowStats) void loadRowStats();
 		if (session.s.role === 'owner' && !session.held('row_title_stats')) void loadTitleStats();
 	});
 </script>
@@ -113,6 +127,7 @@
 
 <SettingsCard id="language-card" title={t('accounts.language.label')} description={t('accounts.language.hint')} icon="appearance">
 	<LanguagePicker id="language" />
+	<LanguageRetry />
 </SettingsCard>
 
 <SettingsCard id="backdrop-card" title={t('settings.appearance.background')} description={t('settings.appearance.backgroundDesc')} icon="appearance">
@@ -168,6 +183,18 @@
 			</label>
 			{#if appError}<p class="app-error" role="alert" data-testid="autoplay-error">{appError}</p>{/if}
 		</div>
+	</SettingsCard>
+{/if}
+
+{#if seesRowStats && rowStats}
+	<SettingsCard id="row-stats-card" title={t('settings.appearance.rowStats')} description={t('settings.appearance.rowStatsDesc')} icon="compass">
+		<Table
+			caption={t('settings.appearance.rowStats')}
+			columns={[{ key: 'row', label: t('settings.appearance.colRow') }, { key: 'opens', label: t('settings.appearance.colOpens'), align: 'end' }, { key: 'asks', label: t('settings.appearance.colRequests'), align: 'end' }]}
+			rows={rowStatRows}
+			rowKey={(r) => r.key}
+			empty={t('settings.appearance.noRows')}
+		/>
 	</SettingsCard>
 {/if}
 

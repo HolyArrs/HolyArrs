@@ -64,7 +64,7 @@ func (e *Checker) offered(ctx context.Context, l *List, data, sig []byte, c Chan
 		return
 	}
 	mode, _ := e.Mode(ctx)
-	if mode == ModeOff {
+	if mode == ModeOff || !e.updateOn(ctx) {
 		return
 	}
 	in := e.Installer

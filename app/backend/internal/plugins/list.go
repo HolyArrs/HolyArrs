@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 )
 
 // Kinds of signed list. The kind is inside the signed payload, so a
@@ -13,6 +14,8 @@ import (
 const (
 	KindPlugins   = "plugins"
 	KindBlocklist = "blocklist"
+	// KindLanguages lists the signed language packs (text only, no program).
+	KindLanguages = "languages"
 )
 
 // List refusals.
@@ -34,7 +37,7 @@ type SignedList struct {
 type List struct {
 	Kind    string `json:"kind"`
 	Counter uint64 `json:"counter"`
-	// MinBlocklistCounter is required on the plugin list: a blocklist with a
+	// MinBlocklistCounter is required on the plugin and languages lists: a blocklist with a
 	// lower counter is stale and refused at install.
 	MinBlocklistCounter *uint64 `json:"min_blocklist_counter,omitempty"`
 	Entries             []Entry `json:"entries"`
@@ -49,6 +52,12 @@ type Entry struct {
 	// ManifestSHA256 is the hash of the manifest file's bytes; required on
 	// the plugin list, so the manifest is signed through the list.
 	ManifestSHA256 string `json:"manifest_sha256,omitempty"`
+	// FileURL is where the plugin file is downloaded from when it is not
+	// below the list address (large files live on a file host). Optional;
+	// https only. The file is still checked against SHA256.
+	FileURL string `json:"file_url,omitempty"`
+	// Size is the file's size in bytes, shown before install. Optional.
+	Size int64 `json:"size,omitempty"`
 }
 
 // VerifyList checks the signature with pub, the kind, and that the counter is
@@ -88,11 +97,12 @@ func VerifyList(pub ed25519.PublicKey, data []byte, kind string, lastCounter uin
 	if l.Counter < lastCounter {
 		return nil, fmt.Errorf("%w: counter %d, last accepted %d", ErrListOlder, l.Counter, lastCounter)
 	}
-	if kind == KindPlugins && l.MinBlocklistCounter == nil {
+	if (kind == KindPlugins || kind == KindLanguages) && l.MinBlocklistCounter == nil {
 		return nil, fmt.Errorf("%w: missing min_blocklist_counter", ErrListFormat)
 	}
 	for i, e := range l.Entries {
-		if kind == KindPlugins && (e.ID == "" || e.Version == "" || e.SHA256 == "" || e.ManifestSHA256 == "") {
+		if (kind == KindPlugins && (e.ID == "" || e.Version == "" || e.SHA256 == "" || e.ManifestSHA256 == "")) ||
+			(kind == KindLanguages && (e.ID == "" || e.Version == "" || e.SHA256 == "")) {
 			return nil, fmt.Errorf("%w: entry %d is incomplete", ErrListFormat, i)
 		}
 		if e.ID == "" && e.SHA256 == "" {
@@ -101,6 +111,11 @@ func VerifyList(pub ed25519.PublicKey, data []byte, kind string, lastCounter uin
 		if (e.ID != "" && !idRe.MatchString(e.ID)) || (e.Version != "" && !semverRe.MatchString(e.Version)) ||
 			(e.SHA256 != "" && !validSHA256(e.SHA256)) || (e.ManifestSHA256 != "" && !validSHA256(e.ManifestSHA256)) {
 			return nil, fmt.Errorf("%w: entry %d has a bad id, version or hash", ErrListFormat, i)
+		}
+		if e.FileURL != "" {
+			if u, err := url.Parse(e.FileURL); err != nil || u.Scheme != "https" || u.Host == "" {
+				return nil, fmt.Errorf("%w: entry %d has a bad file_url", ErrListFormat, i)
+			}
 		}
 	}
 	return &l, nil

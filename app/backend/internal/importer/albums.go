@@ -72,6 +72,7 @@ func (t AlbumTarget) trackFile(tr Track, ext string, discs int, src string) stri
 	if t.Naming != nil {
 		ns = *t.Naming
 	}
+	ns = ns.For(mediafiles.PartMusic)
 	f := mediafiles.TrackFacts{Artist: t.Artist, Album: t.Album, AlbumType: t.AlbumType, Edition: t.Edition, Year: t.Year,
 		Disc: tr.Disc, Discs: discs, Track: tr.Number, Title: tr.Name, Ext: ext}
 	if t.KeepNames && src != "" {
@@ -337,7 +338,7 @@ func AlbumFacts(ctx context.Context, db database.Querier, artist string, partID 
 
 func albumTarget(ctx context.Context, db database.Querier, lf mediafiles.LibraryFolder, ver mediafiles.Version, ti mediafiles.Title, items []mediafiles.Item,
 	slotOf map[int64]int64, slots map[int64]*showSlot, dryRun bool, ns mediafiles.NamingSettings) (AlbumTarget, error) {
-	at := AlbumTarget{LibraryPath: lf.Path, ArtistFolder: safeName(ver.FolderName), Artist: ti.Name, Naming: &ns, KeepNames: !ns.RenameOnImport}
+	at := AlbumTarget{LibraryPath: lf.Path, ArtistFolder: safeName(ver.FolderName), Artist: ti.Name, Naming: &ns, KeepNames: !ns.For(mediafiles.PartMusic).RenameOnImport}
 	if at.ArtistFolder == "" || at.ArtistFolder == "." || at.ArtistFolder == ".." {
 		at.ArtistFolder = mediafiles.ArtistFolder(ns, mediafiles.TrackFacts{Artist: ti.Name})
 	}

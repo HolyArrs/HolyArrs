@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ApiError, createClient, isIncomplete, isSourceOff, keepFor, message } from './api.ts';
+import { ApiError, READ_WAIT, createClient, isIncomplete, isSourceOff, keepFor, message } from './api.ts';
 import { appLanguage } from './i18n/i18n.svelte.ts';
 
 function reply(status: number, body?: unknown, headers: Record<string, string> = {}) {
@@ -42,6 +42,16 @@ describe('api client', () => {
 		const e = await c.get('/discover/x').catch((x) => x);
 		expect(isSourceOff(e)).toBe(true);
 		expect(isSourceOff(new ApiError('no', 500))).toBe(false);
+	});
+
+	it('shows the friendly line of a hands-off refusal, not the short error', async () => {
+		const c = createClient(vi.fn(async () => reply(409, { error: 'hands-off mode is on', text: 'Hands-off mode is on, so HolyArrs leaves the downloaded files alone.' })));
+		const e = await c.post('/titles/1/rescan').catch((x) => x);
+		expect(message(e)).toMatch(/^Hands-off mode is on, so HolyArrs leaves the downloaded files alone/);
+		const sub = createClient(vi.fn(async () => reply(409, { error: 'hands-off mode is on', part: 'subtitles', text: 'x' })));
+		expect(message(await sub.post('/parts/subtitles/on').catch((x) => x))).toMatch(/never opens the downloaded files/);
+		const other = createClient(vi.fn(async () => reply(409, { error: 'busy', text: 'something else' })));
+		expect(message(await other.post('/y').catch((x) => x))).toBe('busy');
 	});
 
 	it('does not keep a failed read', async () => {
@@ -104,6 +114,16 @@ describe('api client', () => {
 			throw new TypeError('fetch failed');
 		});
 		await expect(down.get('/x')).rejects.toMatchObject({ status: 0 });
+	});
+	it("says a proxy's own 504 page is HolyArrs taking too long, not the proxy's HTML (#486)", async () => {
+		const proxy = createClient(async () => reply(504, '<html><body>504 Gateway Time-out</body></html>'));
+		await expect(proxy.get('/x')).rejects.toMatchObject({ status: 504, message: 'HolyArrs took too long to answer. Try again in a minute.' });
+	});
+	it("says Cloudflare's 524 page and an empty 502 are HolyArrs taking too long (#486)", async () => {
+		const cf = createClient(async () => reply(524, '<!DOCTYPE html><title>A timeout occurred</title>'));
+		await expect(cf.get('/x')).rejects.toMatchObject({ status: 524, message: 'HolyArrs took too long to answer. Try again in a minute.' });
+		const empty = createClient(async () => reply(502, ''));
+		await expect(empty.post('/x', {})).rejects.toMatchObject({ status: 502, message: 'HolyArrs took too long to answer. Try again in a minute.' });
 	});
 
 	it('reports a lost sign-in on 401, except from the sign-in calls', async () => {
@@ -213,5 +233,78 @@ describe('api client', () => {
 			await expect(c.get('/y')).rejects.toBeInstanceOf(ApiError);
 			expect(c.has('/x')).toBe(false);
 		});
+	});
+});
+
+describe('a read that never answers (#447)', () => {
+	it('ends as not answering and the next read asks again', async () => {
+		vi.useFakeTimers();
+		try {
+			let n = 0;
+			const f = vi.fn((_u: string, o?: RequestInit) => (n++ === 0 ? new Promise<Response>((_, no) => o?.signal?.addEventListener('abort', () => no(new DOMException('Aborted', 'AbortError')))) : Promise.resolve(reply(200, { ok: true }))));
+			const c = createClient(f, () => undefined);
+			const first = c.get('/settings/title-defaults');
+			const seen = expect(first).rejects.toBeInstanceOf(ApiError);
+			await vi.advanceTimersByTimeAsync(READ_WAIT + 1);
+			await seen;
+			await expect(c.get('/settings/title-defaults')).resolves.toEqual({ ok: true });
+			expect(f).toHaveBeenCalledTimes(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('ends a read whose body stalls after the headers', async () => {
+		vi.useFakeTimers();
+		try {
+			const f = vi.fn((_u: string, o?: RequestInit) => {
+				const r = reply(200, { ok: true });
+				Object.defineProperty(r, 'text', { value: () => new Promise<string>((_, no) => o?.signal?.addEventListener('abort', () => no(new DOMException('Aborted', 'AbortError')))) });
+				return Promise.resolve(r);
+			});
+			const c = createClient(f, () => undefined);
+			const seen = expect(c.get('/settings/title-defaults')).rejects.toBeInstanceOf(ApiError);
+			await vi.advanceTimersByTimeAsync(READ_WAIT + 1);
+			await seen;
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('still ends a read the caller stopped as stopped, not as not answering', async () => {
+		const f = vi.fn((_u: string, o?: RequestInit) => new Promise<Response>((_, no) => o?.signal?.addEventListener('abort', () => no(new DOMException('Aborted', 'AbortError')))));
+		const c = createClient(f, () => undefined);
+		const stop = new AbortController();
+		const p = c.get('/slow', stop.signal);
+		stop.abort();
+		await expect(p).rejects.toMatchObject({ name: 'AbortError' });
+	});
+
+	it('ends a reply whose body stalls after the headers, and the next read asks again', async () => {
+		vi.useFakeTimers();
+		try {
+			let n = 0;
+			const stalled = () => ({ status: 200, ok: true, headers: new Headers(), text: () => new Promise<string>(() => {}) }) as unknown as Response;
+			const f = vi.fn(() => Promise.resolve(n++ === 0 ? stalled() : reply(200, { ok: true })));
+			const c = createClient(f, () => undefined);
+			const seen = expect(c.get('/settings/title-defaults')).rejects.toBeInstanceOf(ApiError);
+			await vi.advanceTimersByTimeAsync(READ_WAIT + 1);
+			await seen;
+			await expect(c.get('/settings/title-defaults')).resolves.toEqual({ ok: true });
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('a read stopped while its body is still coming ends as stopped, not with late data', async () => {
+		let give: (s: string) => void = () => {};
+		const r = { status: 200, ok: true, headers: new Headers(), text: () => new Promise<string>((ok) => (give = ok)) } as unknown as Response;
+		const c = createClient(vi.fn(() => Promise.resolve(r)), () => undefined);
+		const stop = new AbortController();
+		const p = c.request('/search?q=a', { signal: stop.signal });
+		await new Promise((ok) => setTimeout(ok, 0));
+		stop.abort();
+		give('{"late":true}');
+		await expect(p).rejects.toMatchObject({ name: 'AbortError' });
 	});
 });

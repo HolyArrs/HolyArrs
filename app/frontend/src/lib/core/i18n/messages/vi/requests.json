@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Tin nhắn từ plugin",
+	"requests.moment.plugin_message.body": "Một plugin bạn cho phép gửi tin nhắn.",
+	"requests.words.via": "{who} qua {plugin}",
 	"requests.moment.ask_waiting.title": "Yêu cầu mới",
 	"requests.moment.ask_waiting.body": "Gửi tới nhân viên: một phim, phim bộ hoặc nghệ sĩ đang chờ duyệt.",
 	"requests.moment.ask_approved.title": "Đã duyệt",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "Danh sách TMDB",
 	"requests.lists.tmdbHint": "Số của danh sách hoặc liên kết của nó, ví dụ themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Danh sách Trakt",
-	"requests.lists.traktHint": "user/list, user/watchlist hoặc liên kết, ví dụ trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist hoặc liên kết, ví dụ trakt.tv/users/ana/lists/favourites. Hoặc một bảng xếp hạng: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "Danh sách MDBList",
 	"requests.lists.mdblistHint": "user/list hoặc liên kết, ví dụ mdblist.com/lists/ana/favourites. Danh sách công khai dùng được mà không cần khóa.",
 	"requests.lists.everyDay": "mỗi ngày",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Không tìm thấy gì sai",
 	"requests.outcome.noResults": "Chưa có kết quả",
 	"requests.outcome.nothingFound": "Không tìm thấy gì:",
+	"requests.outcome.refused": "Đã tìm thấy, nhưng không có bản nào khớp quy tắc chọn",
 	"requests.outcome.why.slowed": "đã bị tạm dừng (bị làm chậm)",
 	"requests.outcome.why.down": "đã ngừng hoạt động",
 	"requests.outcome.why.blocked": "đã bị chặn",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Thêm",
 	"requests.addMovie.titleBare": "Thêm một phim",
 	"requests.add.loadingDefaults": "Đang tải các mặc định",
+	"requests.add.defaultsLate": "Mặc định đã lưu của bạn không tải kịp, nên các lựa chọn thông thường được chọn. Hãy kiểm tra trước khi thêm.",
 	"requests.add.noFolder.music": "Chưa có Thư mục thư viện cho nhạc. <a>Hãy thêm một cái</a> trước.",
 	"requests.add.noFolder.movie": "Chưa có Thư mục thư viện cho phim. <a>Hãy thêm một cái</a> trước.",
 	"requests.add.noFolder.show": "Chưa có Thư mục thư viện cho phim bộ. <a>Hãy thêm một cái</a> trước.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Hiện nó trên lịch của tôi.",
 	"requests.add.cancel": "Hủy",
 	"requests.add.submit": "Thêm vào Thư viện",
+	"requests.add.submitChoose": "Thêm và chọn bản phát hành",
 	"requests.addArtist.albums": "Các album cần giữ cập nhật",
 	"requests.addArtist.newAlbums": "Album mới",
 	"requests.addArtist.newAlbumsHint": "Điều xảy ra với một album ra mắt sau này.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", đang hiện {status}",
 	"requests.board.reportsOpen": "Báo cáo, {n} đang mở",
 	"requests.board.approveAll": "Duyệt tất cả",
+	"requests.board.approveAllTitle": "Duyệt tất cả yêu cầu đang chờ ({n})?",
+	"requests.board.approveAllDesc": "Bao gồm cả các yêu cầu ở phía dưới danh sách chưa được tải.",
 	"requests.board.requests": "Yêu cầu",
 	"requests.board.open": "Mở {name}, do {who} yêu cầu",
 	"requests.board.pageForArtist": "Trang nghệ sĩ của {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Đã thêm",
 	"requests.addAll.summary": "Đã thêm: {added}, bỏ qua: {skipped}",
 	"requests.addAll.summaryClean": "Đã thêm: {added}",
-	"requests.addAll.intro": "Mỗi phim được thêm vào Thư viện của bạn với thư mục và quy tắc chọn bên dưới cùng các mặc định bạn đã lưu. Phim đã có trong Thư viện vẫn hiện trong danh sách nhưng không được thêm lại."
+	"requests.addAll.intro": "Mỗi phim được thêm vào Thư viện của bạn với thư mục và quy tắc chọn bên dưới cùng các mặc định bạn đã lưu. Phim đã có trong Thư viện vẫn hiện trong danh sách nhưng không được thêm lại.",
+	"requests.ask.alsoAsk": "Xin cả {name}",
+	"requests.add.handsOff": "Chế độ không can thiệp đang bật: không cần thư mục thư viện. Nó được gửi tới trình tải và tệp nằm lại ở đó."
 }

@@ -85,5 +85,21 @@
 	"sources.uses.auto": "busca por conta própria",
 	"sources.uses.feed": "lista dos mais novos",
 	"sources.uses.hand": "busca manual",
-	"sources.uses.none": "não usada"
+	"sources.uses.none": "não usada",
+	"sources.bridge.removeTitle": "Remover {name}?",
+	"sources.bridge.find": "Procurar {name} na minha rede",
+	"sources.bridge.noneFound": "Nenhum {name} respondeu na sua rede.",
+	"sources.bridge.keyFound": "Chave obtida de {name}",
+	"sources.bridge.keyKept": "{name} não entregou a chave (o login está ativado). Use Obter chave para copiá-la.",
+	"sources.bridge.keyKeptJackett": "O Jackett não entregou a chave (tem senha de administrador). Use Obter chave para copiá-la.",
+	"sources.bridge.notReached": "Não foi possível acessar {name}.",
+	"sources.bridge.brings.title": "O que vem junto",
+	"sources.bridge.brings.sites": "Os indexadores dele, como Fontes",
+	"sources.bridge.brings.categories": "As categorias deles",
+	"sources.bridge.brings.search": "As buscas passam pelo {name}",
+	"sources.bridge.brings.sync": "Mudanças no {name} são trazidas",
+	"sources.bridge.brings.stays": "Seus indexadores continuam configurados no {name}.",
+	"sources.bridge.brings.had": "{n} indexadores já aqui",
+	"sources.bridge.brings.hadFrom": "Importados por {apps}",
+	"sources.bridge.brings.keyKept": "Deixe a chave vazia para usar a que eles já têm."
 }

@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Anulează",
 	"settings.schedules.stages": "Etape",
 	"settings.schedules.stagesNote": "Pune-le pe pauză sau repornește-le în <a>Module</a>.",
-	"settings.schedules.allTime": "Tot timpul"
+	"settings.schedules.allTime": "Tot timpul",
+	"settings.schedules.skip.nothing": "Nimic de făcut",
+	"settings.schedules.skip.plexOff": "Oprit: activează {setting} în {page}",
+	"settings.schedules.skip.plexNobody": "Nimic de făcut: nimeni nu și-a activat lista de urmărire Plex",
+	"settings.schedules.skip.settingOff": "Oprit: activează-l în setările sale",
+	"settings.schedules.skip.starting": "Omis: HolyArrs încă pornea",
+	"settings.schedules.took": "A durat {time}",
+	"settings.schedules.finished": "{label} s-a terminat",
+	"settings.schedules.nothingToDo": "{label}: nimic de făcut",
+	"settings.schedules.runFailed": "{label} a eșuat"
 }

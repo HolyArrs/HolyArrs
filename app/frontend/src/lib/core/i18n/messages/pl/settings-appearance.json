@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Prośby",
 	"settings.appearance.colRate": "Na rząd",
 	"settings.appearance.noRows": "Jeszcze nie policzono rzędów Odkrywaj.",
+	"settings.appearance.rowStats": "Rzędy w Odkrywaj",
+	"settings.appearance.rowStatsDesc": "Otwarcia i prośby z każdego rzędu w ostatnich 30 dniach, wszystkich razem. Liczone tylko na tym serwerze.",
+	"settings.appearance.colRow": "Rząd",
+	"settings.appearance.row.because_have": "Jak tytuły, które masz",
+	"settings.appearance.row.because_asked": "Jak twoje prośby",
+	"settings.appearance.row.person": "Więcej od osoby",
+	"settings.appearance.row.genre": "Gatunki wybrane dla ciebie",
+	"settings.appearance.row.popular_genre": "Popularne wg gatunku",
+	"settings.appearance.row.popular_decade": "Popularne wg dekady",
+	"settings.appearance.row.decade": "Wg dekady",
+	"settings.appearance.row.mood": "Wg nastroju",
+	"settings.appearance.row.hero": "Górny baner",
 	"settings.appearance.motion": "Ruch",
 	"settings.appearance.motionNote": "Zgodnie z ustawieniem Ogranicz ruch na twoim urządzeniu"
 }

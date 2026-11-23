@@ -29,9 +29,23 @@ func useCache(ctx context.Context) context.Context {
 	return context.WithValue(ctx, useCacheKey{}, true)
 }
 
+// refusedAlbumsStop is how many albums in a row the server may turn down
+// before the rest of a refresh waits for the next run.
+const refusedAlbumsStop = 3
+
+// serverRefused says the server, not the album, was the problem.
+func serverRefused(err error) bool {
+	return errors.Is(err, metadata.ErrServiceBusy) || errors.Is(err, metadata.ErrMusicBusy) ||
+		errors.Is(err, metadata.ErrServiceUnavailable) || errors.Is(err, metadata.ErrMusicUnavailable)
+}
+
 // ArtistRefresh says what one artist details refresh did.
 type ArtistRefresh struct {
 	Dropped bool `json:"dropped,omitempty"`
+	// AlbumsFailed counts albums whose editions could not be read this run;
+	// they are skipped, never fail the whole artist.
+	AlbumsFailed int   `json:"albums_failed,omitempty"`
+	FirstFailure error `json:"-"`
 	ArtistSync
 }
 
@@ -108,11 +122,27 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 	if err != nil {
 		return out, err
 	}
-	for _, al := range albums {
+	read, refusedInRow := 0, 0
+	for i, al := range albums {
 		if ctx.Err() != nil {
 			return out, ctx.Err()
 		}
+		if refusedInRow >= refusedAlbumsStop {
+			// The server turned down several albums in a row: the rest would
+			// be turned down too, so they wait for the next run.
+			out.AlbumsFailed += len(albums) - i
+			break
+		}
 		ps, err := p.Pressings(lctx, al.SourceIDs["musicbrainz"])
+		// A busy server is asked again a couple of times before the album is skipped.
+		for try := 0; try < 2 && (errors.Is(err, metadata.ErrServiceBusy) || errors.Is(err, metadata.ErrMusicBusy)); try++ {
+			select {
+			case <-ctx.Done():
+				return out, ctx.Err()
+			case <-time.After(busyWait):
+			}
+			ps, err = p.Pressings(lctx, al.SourceIDs["musicbrainz"])
+		}
 		cut := errors.Is(err, metadata.ErrListCut)
 		switch {
 		case errors.Is(err, metadata.ErrArtistNotFound), err == nil && len(ps) == 0:
@@ -120,8 +150,22 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 			// leave the album as it is; the album list decides whether it goes.
 			continue
 		case err != nil && !cut:
-			return out, fmt.Errorf("album %s: %w", al.Name, err)
+			if ctx.Err() != nil {
+				return out, ctx.Err()
+			}
+			// One album that cannot be read is skipped; the rest carry on.
+			out.AlbumsFailed++
+			if out.FirstFailure == nil {
+				out.FirstFailure = fmt.Errorf("album %s: %w", al.Name, err)
+			}
+			log.Printf("library: artist %d: album %s skipped: %v", titleID, al.Name, err)
+			if serverRefused(err) {
+				refusedInRow++
+			}
+			continue
 		}
+		refusedInRow = 0
+		read++
 		err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 			res, err := syncPressingsTx(ctx, tx, t, al.ID, ps, cut, defs.PressingRule, now, by)
 			out.add(res)
@@ -129,6 +173,20 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 		})
 		if err != nil {
 			return out, err
+		}
+	}
+	if out.AlbumsFailed > 0 {
+		// Skipped albums are asked again on the next refresh run, not after
+		// the usual 12 hours to 30 days: the artist reads as never fetched.
+		if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+			_, err := tx.Exec("UPDATE titles SET refreshed_at = NULL WHERE id = ?", titleID)
+			return err
+		}); err != nil {
+			return out, err
+		}
+		if read == 0 {
+			// Not one album could be read: the lookup was refused, say so.
+			return out, out.FirstFailure
 		}
 	}
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -141,13 +199,18 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 	}
 	data := map[string]any{"albums_added": out.AlbumsAdded, "albums_changed": out.AlbumsChanged, "albums_removed": out.AlbumsRemoved,
 		"albums_dropped": out.AlbumsDropped, "pressings_chosen": out.PressingsChosen, "tracks_added": out.TracksAdded,
-		"tracks_changed": out.TracksChanged, "tracks_removed": out.TracksRemoved, "tracks_dropped": out.TracksDropped}
+		"tracks_changed": out.TracksChanged, "tracks_removed": out.TracksRemoved, "tracks_dropped": out.TracksDropped,
+		"albums_failed": out.AlbumsFailed}
 	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRefreshed, TitleID: &titleID, JobID: jobID,
 		Summary: "Refreshed details of " + t.Name + " from MusicBrainz", Data: data, GroupKey: GroupKey(titleID)})
 	if out.AlbumsAdded+out.AlbumsRemoved+out.AlbumsDropped+out.TracksAdded+out.TracksRemoved+out.TracksDropped > 0 {
 		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumsChanged, TitleID: &titleID, JobID: jobID, GroupKey: GroupKey(titleID), Data: data,
 			Summary: fmt.Sprintf("%s: %d new albums, %d removed, %d no longer listed but kept; %d new tracks, %d removed, %d no longer listed but kept",
 				t.Name, out.AlbumsAdded, out.AlbumsRemoved, out.AlbumsDropped, out.TracksAdded, out.TracksRemoved, out.TracksDropped)})
+	}
+	if out.AlbumsFailed > 0 {
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleRefreshed, TitleID: &titleID, JobID: jobID, GroupKey: GroupKey(titleID), Data: data,
+			Summary: fmt.Sprintf("%s: %d albums could not be read and will be tried again", t.Name, out.AlbumsFailed)})
 	}
 	s.trackGateEvents(ctx, t, out.Opened, out.Closed, by, jobID)
 	return out, nil
@@ -585,21 +648,29 @@ type ArtistTotals struct {
 	// Downloading counts tracks on the way; Failed, failed or waiting on a decision.
 	Downloading, Failed int
 	NextRelease         *time.Time
+	// LastRelease is the newest included album already out.
+	LastRelease *time.Time
 }
 
 // Totals counts an artist's albums and tracks in two aggregate queries, so
 // the Title list does not read every album and pressing row.
 func Totals(ctx context.Context, db database.Querier, titleID int64, now time.Time) (ArtistTotals, error) {
 	var t ArtistTotals
-	var next sql.NullString
-	err := db.QueryRowContext(ctx, `SELECT count(*), COALESCE(sum(included), 0), min(CASE WHEN included AND release_date > ? THEN release_date END)
-		FROM parts WHERE title_id = ? AND kind = 'album'`, database.FormatTime(now), titleID).Scan(&t.Albums, &t.Included, &next)
+	var next, last sql.NullString
+	err := db.QueryRowContext(ctx, `SELECT count(*), COALESCE(sum(included), 0), min(CASE WHEN included AND release_date > ? THEN release_date END),
+		max(CASE WHEN included AND release_date <= ? THEN release_date END)
+		FROM parts WHERE title_id = ? AND kind = 'album'`, database.FormatTime(now), database.FormatTime(now), titleID).Scan(&t.Albums, &t.Included, &next, &last)
 	if err != nil {
 		return t, err
 	}
 	if next.Valid {
 		if at, err := time.Parse(database.TimeLayout, next.String); err == nil {
 			t.NextRelease = &at
+		}
+	}
+	if last.Valid {
+		if at, err := time.Parse(database.TimeLayout, last.String); err == nil {
+			t.LastRelease = &at
 		}
 	}
 	err = db.QueryRowContext(ctx, `SELECT count(*), COALESCE(sum(s.state IN (?, ?)), 0), COALESCE(sum(s.state = ?), 0),

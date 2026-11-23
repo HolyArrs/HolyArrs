@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Hủy",
 	"settings.schedules.stages": "Công đoạn",
 	"settings.schedules.stagesNote": "Tạm dừng hoặc khởi động lại chúng trong <a>Các Phần</a>.",
-	"settings.schedules.allTime": "Luôn luôn"
+	"settings.schedules.allTime": "Luôn luôn",
+	"settings.schedules.skip.nothing": "Không có gì để làm",
+	"settings.schedules.skip.plexOff": "Đang tắt: bật {setting} trong {page}",
+	"settings.schedules.skip.plexNobody": "Không có gì để làm: chưa ai bật danh sách xem Plex của mình",
+	"settings.schedules.skip.settingOff": "Đang tắt: bật trong phần cài đặt của nó",
+	"settings.schedules.skip.starting": "Đã bỏ qua: HolyArrs vẫn đang khởi động",
+	"settings.schedules.took": "Mất {time}",
+	"settings.schedules.finished": "{label} đã xong",
+	"settings.schedules.nothingToDo": "{label}: không có gì để làm",
+	"settings.schedules.runFailed": "{label} thất bại"
 }

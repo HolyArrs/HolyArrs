@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Negalima atšaukti. Failai lieka.",
 	"settings.pickRules.removeUsed": "{used}. Pirmiausia ten pasirinkite kitas taisykles.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Atšaukti"
+	"settings.pickRules.cancel": "Atšaukti",
+	"settings.pickRules.check.title": "Patikrinti leidimo pavadinimą",
+	"settings.pickRules.check.desc": "Įklijuokite leidimo pavadinimą ir pamatysite, kaip HolyArrs jį perskaito ir kaip jūsų kokybės rinkiniai jį įvertina. Niekas neieškoma ir neatsisiunčiama.",
+	"settings.pickRules.check.name": "Leidimo pavadinimas",
+	"settings.pickRules.check.rules": "Vertinti pagal",
+	"settings.pickRules.check.copies": "Atitinkančio pavadinimo kopijos",
+	"settings.pickRules.check.size": "Dydis GB (neprivaloma)",
+	"settings.pickRules.check.check": "Tikrinti",
+	"settings.pickRules.check.failed": "Nepavyko patikrinti pavadinimo",
+	"settings.pickRules.check.readAs": "Perskaityta kaip",
+	"settings.pickRules.check.matches": "Atitinka: {name}",
+	"settings.pickRules.check.noTitle": "Neatitinka jokio pavadinimo jūsų Bibliotekoje. Viršuje pasirinkite kokybės rinkinį, kad vis tiek įvertintumėte.",
+	"settings.pickRules.check.noAlbum": "Atitinka: {name}, bet nė vieno jo albumo.",
+	"settings.pickRules.check.noCopies": "Šis pavadinimas neturi kopijų vertinti.",
+	"settings.pickRules.check.hasFile": "Turi failą"
 }

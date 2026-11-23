@@ -73,7 +73,7 @@ export function stageOf(r: RowBits): Stage {
 		case 'done':
 			return r.state === 'seeding' ? 'seeding' : 'done';
 	}
-	// Removed (cleaned up) and anything new count as finished.
+	// An unknown phase counts as finished.
 	return 'done';
 }
 

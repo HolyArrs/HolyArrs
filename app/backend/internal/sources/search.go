@@ -25,6 +25,9 @@ type Searcher struct {
 	Live  Publisher
 	// OnChosen is told when a release is chosen for a Slot, to send it to a Downloader.
 	OnChosen func(ctx context.Context, slotID, releaseID int64)
+	// SettleGone settles a Slot's download its Downloader no longer has, before a
+	// pick by hand is refused for it. Nil means never.
+	SettleGone func(ctx context.Context, slotID int64) bool
 	// Secrets opens a Source's secret_ref, its API key. Nil means no keys.
 	Secrets SecretReader
 	// Queue takes the searches a missing search queues.
@@ -51,6 +54,8 @@ type Searcher struct {
 	names    *sharedNames
 	namesAt  time.Time
 	namesFor time.Duration // how long they are kept; 0: sharedNamesFor
+	// checks keeps the results of release checks (HandleCheck).
+	checks checkStore
 }
 
 func (s *Searcher) publish(topic string, data any) {
@@ -119,9 +124,19 @@ func secretValues(cfg Config) []string {
 		if cfg.APIKey != "" {
 			out = append(out, cfg.APIKey)
 		}
+	} else if cfg.Site == "iptorrents" && strings.Contains(cfg.APIKey, "://") {
+		// A pasted IPTorrents link: only its passkey is secret, not its
+		// path words, categories or search text.
+		if v := iptKeys(cfg.APIKey, cfg.SiteUser).passkey; len(v) >= 4 {
+			out = append(out, v)
+		}
 	} else {
 		for _, part := range strings.FieldsFunc(cfg.APIKey, func(r rune) bool { return r == '&' || r == ';' }) {
-			_, v, _ := strings.Cut(part, "=")
+			_, v, named := strings.Cut(part, "=")
+			if !named {
+				// A built-in site's key stored on its own, such as a passkey.
+				v = strings.TrimSpace(part)
+			}
 			if u, err := url.QueryUnescape(v); err == nil {
 				v = u
 			}
@@ -304,66 +319,101 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 		r.SetResult(map[string]any{"skipped": "a " + ti.Kind + " is not searched as a movie"})
 		return nil
 	}
+	// out follows the Slot state, except that a person's search for an episode
+	// whose air time is still ahead stays a not-out search even after a failed
+	// try moved its Slot.
+	out := from != mediafiles.SlotNotOutYet && !(handSearch && c.it.AirDate != nil && c.it.AirDate.After(now))
 	var shows showSet
 	var ep *epSlot
 	if isShow {
-		if shows, ep, err = s.episodeSet(ctx, c, from != mediafiles.SlotNotOutYet); err != nil {
+		if shows, ep, err = s.episodeSet(ctx, c, out); err != nil {
 			return err
 		}
 		q = showQuery(ti, ep.ref.Season, ep)
 	}
 	q.other = s.nameAsk(ctx, ti, handSearch)
-	all, failures, answered, skipped, note, err := s.askAll(ctx, r, q, handSearch, isShow, ti, c.ver.ID, c.pr.Body.Tags)
-	if err != nil {
-		return err
-	}
-	if keptApart(note) {
-		if !show && from != mediafiles.SlotHeld {
-			_ = mediafiles.MoveSlot(ctx, s.Store, slotID, restState(c, from), note, by)
-			s.publish("slot", map[string]any{"id": slotID, "state": restState(c, from), "reason": note})
-		}
-		s.touchSearched(ctx, c.it.ID)
-		s.keptApartDone(ctx, r, by, ti.ID, slotID, handSearch, note)
-		return nil
-	}
-	// Absolute order also searches by title and running number; a Source
-	// that failed or was skipped is said once.
-	if aq, ok := absoluteQuery(ti, ep); isShow && ok {
-		more, _, n, _, _, err := s.askAll(ctx, r, aq, handSearch, true, ti, c.ver.ID, c.pr.Body.Tags)
-		if err != nil {
-			return err
-		}
-		all, answered = append(all, more...), max(answered, n)
-	}
+	withWanted(&q, wantedNames(ti, c.ver.AudioLanguages, s.titleLanguage(ctx)))
+	q.drops = &dropTally{}
 	jobID := r.Job.ID
-
-	if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
-		if !show && from != mediafiles.SlotHeld {
-			_ = mediafiles.MoveSlot(ctx, s.Store, slotID, restState(c, from), reason, by)
-			s.publish("slot", map[string]any{"id": slotID, "state": restState(c, from), "reason": reason})
-		}
-		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchFailed, reason, noted(data, note))
-		if !failed {
-			return nil
-		}
-		return errors.New(reason)
-	}
-	all = dedupe(all)
-	out := from != mediafiles.SlotNotOutYet
 	var rels []mediafiles.ReleaseFacts
 	var vs []mediafiles.Verdict
 	c.listing, shows.listing = show, show
-	if isShow {
-		rels, vs, err = s.judgeShow(ctx, shows, all, handSearch, skipGate, s.showRules(ctx))
-	} else {
-		rels, vs, err = s.judgeAll(ctx, c, all, out, handSearch, skipGate)
-	}
-	if err != nil {
+	judge := func(all []found) error {
+		var err error
+		if isShow {
+			rels, vs, err = s.judgeShow(ctx, shows, all, handSearch, skipGate, s.showRules(ctx))
+		} else {
+			rels, vs, err = s.judgeAll(ctx, c, all, out, handSearch, skipGate)
+		}
 		return err
 	}
+	// After a failed Download the last search's Releases are tried first; a
+	// full search follows when none of them is picked.
+	var all []found
+	var answered, dropped int
+	var droppedBy []string
+	var note string
 	winner := -1
-	if !show {
-		winner = s.pickWinner(ctx, all, vs, now)
+	if reuse, _ := r.Job.Params[reuseParam].(bool); reuse && !show && !handSearch {
+		if prev := s.recentFound(ctx, slotID, now); len(prev) > 0 {
+			if err := judge(prev); err != nil {
+				return err
+			}
+			if w := s.pickWinner(ctx, prev, vs, now); w >= 0 && (vs[w].Outcome == "chosen" || vs[w].Outcome == "held") {
+				all, winner, answered = prev, w, 0
+				note = "picked from the last search's results"
+			}
+		}
+	}
+	if winner < 0 {
+		got, failures, answered2, skipped, note2, err := s.askAll(ctx, r, q, handSearch, isShow, ti, c.ver.ID, c.pr.Body.Tags)
+		if err != nil {
+			return err
+		}
+		all, answered, note = got, answered2, note2
+		if keptApart(note) {
+			if !show && from != mediafiles.SlotHeld {
+				_ = mediafiles.MoveSlot(ctx, s.Store, slotID, restState(c, from), note, by)
+				s.publish("slot", map[string]any{"id": slotID, "state": restState(c, from), "reason": note})
+			}
+			s.touchSearched(ctx, c.it.ID)
+			s.keptApartDone(ctx, r, by, ti.ID, slotID, handSearch, note)
+			return nil
+		}
+		// Absolute order also searches by title and running number; a Source
+		// that failed or was skipped is said once.
+		if aq, ok := absoluteQuery(ti, ep); isShow && ok {
+			aq.drops = q.drops
+			more, _, n, _, _, err := s.askAll(ctx, r, aq, handSearch, true, ti, c.ver.ID, c.pr.Body.Tags)
+			if err != nil {
+				return err
+			}
+			all, answered = append(all, more...), max(answered, n)
+		}
+
+		if reason, data, ok, failed := noAnswer(failures, answered, skipped); ok {
+			if !show && from != mediafiles.SlotHeld {
+				_ = mediafiles.MoveSlot(ctx, s.Store, slotID, restState(c, from), reason, by)
+				s.publish("slot", map[string]any{"id": slotID, "state": restState(c, from), "reason": reason})
+			}
+			s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchFailed, reason, noted(data, note))
+			if !failed {
+				return nil
+			}
+			return errors.New(reason)
+		}
+		all = dedupe(all)
+		dropped, droppedBy = q.drops.total()
+		if dropped > 0 {
+			s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchDone, droppedLine(dropped, droppedBy),
+				noted(map[string]any{"dropped": dropped, "dropped_sources": droppedBy}, note))
+		}
+		if err := judge(all); err != nil {
+			return err
+		}
+		if !show {
+			winner = s.pickWinner(ctx, all, vs, now)
+		}
 	}
 	pickSlots := []int64{slotID}
 	if winner >= 0 && len(vs[winner].SlotIDs) > 1 {
@@ -385,7 +435,10 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 			refused++
 		}
 	}
-	result := map[string]any{"releases": len(all), "refused": refused, "sources_answered": answered}
+	result := map[string]any{"releases": len(all), "refused": refused, "sources_answered": answered, "version_id": c.ver.ID, "pick_rules_id": c.ver.PickRulesID}
+	if dropped > 0 {
+		result["dropped"], result["dropped_sources"] = dropped, droppedBy
+	}
 	s.publish("releases", map[string]any{"slot_id": slotID, "count": len(all)})
 	switch {
 	case show:
@@ -448,7 +501,7 @@ func (s *Searcher) Handle(ctx context.Context, r *jobs.Run) error {
 			}
 			s.publish("slot", map[string]any{"id": slotID, "state": to, "reason": reason})
 		}
-		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchDone, reason, noted(nil, note))
+		s.addEvent(ctx, by, &jobID, ti.ID, slotID, EventSearchDone, reason, noted(refusedData(len(all), blocked), note))
 		r.SetResult(result)
 	}
 	return nil
@@ -527,4 +580,24 @@ func (s *Searcher) SweepSearching(ctx context.Context, olderThan time.Duration) 
 		}
 	}
 	return n, nil
+}
+
+// droppedLine says how many id answers were left out as not the title, and
+// from which Sources.
+func droppedLine(n int, sources []string) string {
+	what := "releases"
+	if n == 1 {
+		what = "release"
+	}
+	return fmt.Sprintf("Left out %d %s from %s: the Source ignored the id and sent other titles", n, what, strings.Join(sources, ", "))
+}
+
+// refusedData records how many Releases the Pick rules turned down, so the
+// requester can be told why nothing came. A missing download client is
+// staff business and is left out.
+func refusedData(found int, blocked string) map[string]any {
+	if blocked != "" {
+		return nil
+	}
+	return map[string]any{"found": found}
 }

@@ -8,27 +8,59 @@ import (
 	"strings"
 )
 
-// Show patterns, tried in this order; the first that fits wins.
+// Show patterns, tried in this order; the first that fits wins. The order
+// follows the old apps: the most specific forms first, the loose ones
+// (a bare running number, a season alone, a part) last, so a plain S01E05
+// is read by the first patterns and movie names never reach the loose ones.
 var (
-	sep           = `[\s._]`
+	sep = `[\s._]`
+	// A season number: one to three digits, or a year (S2016E05, 2016x05).
+	seasonNum = `(\d{1,3}|(?:19|20)\d\d)`
+	// Between the season and the episode: nothing, one separator, "-" or " - ".
+	seGap         = `(?:` + sep + `?-` + sep + `?|` + sep + `)?`
 	reMultiSeason = regexp.MustCompile(`(?i)\bS(\d{1,2})` + sep + `?-` + sep + `?S(\d{1,2})\b`)
-	reEpisodes    = regexp.MustCompile(`(?i)\bS(\d{1,3})` + sep + `?E(\d{1,4})((?:` + sep + `?-?` + sep + `?E\d{1,4}|-\d{1,4})*)\b`)
-	reEpMore      = regexp.MustCompile(`(?i)(-)?` + sep + `?E?(\d{1,4})`)
-	reCross       = regexp.MustCompile(`(?i)(?:^|[\s._\-\[(])(\d{1,2})x(\d{2,3})\b`)
-	reDailyYMD    = regexp.MustCompile(`\b((?:19|20)\d\d)[\s._-](\d\d)[\s._-](\d\d)\b`)
-	reDailyDMY    = regexp.MustCompile(`\b(\d\d)[\s._-](\d\d)[\s._-]((?:19|20)\d\d)\b`)
-	reComplete    = regexp.MustCompile(`(?i)\bcomplete` + sep + `(?:series|show)\b`)
-	reOVA         = regexp.MustCompile(`(?i)\b(?:OVA|OAD|SP)` + sep + `?(\d{1,3})\b`)
-	reSeasonDash  = regexp.MustCompile(`(?i)\bS(\d{1,2})\s+-\s+(\d{1,4})\b`)
+	// "S01-03", "S01.S02.S03", "Season 1-3", "Seasons 1 - 3", "Seasons 1 to 3".
+	reSeasonRange = regexp.MustCompile(`(?i)\b(?:S(\d{1,2})-(\d{1,2})|S(\d{1,2})(?:[\s.]S\d{1,2})*[\s.]S(\d{1,2})|Season` + sep + `?(\d{1,2})-(\d{1,2})|Seasons` + sep + `?(\d{1,2})` + sep + `?(?:-|to)` + sep + `?(\d{1,2}))\b`)
+	// S01E05, S01.E05, S01-E05, S01 - E05, S01.Ep05, ValleyS01E05, S01E05a,
+	// then more episodes: E06, -06, -E06, +E06, &E06, .S01E06, " - S01E06".
+	reEpisodes = regexp.MustCompile(`(?i)(?:\b|(?-i:[a-z]))S` + seasonNum + seGap + `Ep?\.?(\d{1,4})(?-i:[ab])?((?:(?:` + sep + `?[-+&]?` + sep + `?|\s-\s)(?:S\d{1,4})?Ep?\d{1,4}|-\d{1,4})*)\b`)
+	reEpMore   = regexp.MustCompile(`(?i)(-)?` + sep + `?(?:S(\d{1,4}))?(?:Ep?)?(\d{1,4})`)
+	// "Season 1 Episode 5".
+	reSeasonEpisode = regexp.MustCompile(`(?i)\bSeason` + sep + `?(\d{1,3})` + sep + `?(?:-` + sep + `?)?Episode` + sep + `?(\d{1,4})\b`)
+	// 1x05, 1x5, 2016x05, then -06, x06, " - 1x06".
+	reCross      = regexp.MustCompile(`(?i)(?:^|[\s._\-\[(])(\d{1,2}|(?:19|20)\d\d)x(\d{1,3})((?:-x?\d{1,3}|x\d{1,3}|(?:\s?-\s?|[._])\d{1,2}x\d{1,3})*)\b`)
+	reCrossMore  = regexp.MustCompile(`\d{1,3}$`)
+	reDailyYMD   = regexp.MustCompile(`\b((?:19|20)\d\d)[\s._-](\d\d)[\s._-](\d\d)\b`)
+	reDailyDMY   = regexp.MustCompile(`\b(\d\d)[\s._-](\d\d)[\s._-]((?:19|20)\d\d)\b`)
+	reDailyFlat  = regexp.MustCompile(`\b((?:19|20)\d\d)(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\b`)
+	reDailyWord  = regexp.MustCompile(`(?i)\b(\d{1,2})(?:st|nd|rd|th)?` + sep + `(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*` + sep + `((?:19|20)\d\d)\b`)
+	reComplete   = regexp.MustCompile(`(?i)\bcomplete` + sep + `(?:series|show)\b`)
+	reOVA        = regexp.MustCompile(`(?i)\b(?:OVA|OAD|SP)` + sep + `?(\d{1,3})\b`)
+	reSeasonDash = regexp.MustCompile(`(?i)\bS(\d{1,2})\s+-\s+(\d{1,4})\b`)
 	// "Season 2 - 05" and "2nd Season - 05". The episode has two digits or
 	// more, so "Season 1 - 2" (seasons) and "Season 2 - 1080p" stay out.
 	reSeasonWordDash = regexp.MustCompile(`(?i)\b(?:Season` + sep + `?(\d{1,2})|(\d{1,2})(?:st|nd|rd|th)` + sep + `Season)\s+-\s+(\d{2,4})(?:v(\d))?(?:\s?[-~]\s?(\d{2,4}))?\b`)
-	reAbsolute       = regexp.MustCompile(`\s-\s(\d{1,4})(?:v(\d))?(?:\s?-\s?(\d{1,4}))?(?:\s|$|[\[(])`)
-	reSeason         = regexp.MustCompile(`(?i)\b(?:S|Season` + sep + `?)(\d{1,2})\b`)
-	rePart           = regexp.MustCompile(`(?i)\b(?:Part|Pt)` + sep + `?(\d{1,2}|[IVX]{1,5})\b`)
+	reAbsolute       = regexp.MustCompile(`\s[-~]\s(\d{1,4})(?:v(\d))?(?:\s?[-~]\s?(\d{1,4}))?(?:\s|$|[\[(])`)
+	// Anime forms read only after a leading [group]: "Title 112 [1080p]",
+	// "[05]", "[01-12]", "Title E112", "Title Episode 112", "- 01~12".
+	reAnimeBare  = regexp.MustCompile(`\s(\d{2,4})(?:v(\d))?\s*(?:[\[(]|$)`)
+	reAnimeBrack = regexp.MustCompile(`\[(\d{2,4})(?:-(\d{2,4}))?\]`)
+	// "E02", "Ep02", "Episode 2" with no season.
+	reBareEp = regexp.MustCompile(`(?i)\b(?:E|Ep|Episode` + sep + `?)(\d{1,4})\b`)
+	// "2of6", "2.of.6".
+	reOf = regexp.MustCompile(`(?i)\b(\d{1,2})` + sep + `?of` + sep + `?(\d{1,2})\b`)
+	// Spanish "[Cap.105]" (season 1, episode 05), Turkish "1.Sezon.05.Bolum".
+	reCap   = regexp.MustCompile(`(?i)\bCap[.\s]?(\d{1,2})(\d\d)\b`)
+	reSezon = regexp.MustCompile(`(?i)\b(\d{1,2})` + sep + `Sezon` + sep + `(\d{1,4})` + sep + `B[oö]l[uü]m\b`)
+	// A season alone; a year is a season only after an S (S2016), never
+	// after a word ("The Season 2019" is a movie).
+	reSeason = regexp.MustCompile(`(?i)\b(?:S(\d{1,2}|(?:19|20)\d\d)|(?:Season|Stagione|Saison|Temporada|Staffel)` + sep + `?(\d{1,2}))\b`)
+	// "Сезон: 1" (Russian trackers);  does not see Cyrillic letters.
+	reSeasonCyr = regexp.MustCompile(`(?i)(?:^|[\s._/(\[-])Сезон[\s._:]*(\d{1,2})(?:\D|$)`)
+	rePart      = regexp.MustCompile(`(?i)\b(?:Part|Pt)` + sep + `?(\d{1,2}|[IVX]{1,5}|one|two|three|four|five|six|seven|eight|nine|ten)\b`)
 )
 
-var roman = map[string]int{"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10,
+var roman = map[string]int{"ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4, "FIVE": 5, "SIX": 6, "SEVEN": 7, "EIGHT": 8, "NINE": 9, "TEN": 10, "I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10,
 	"XI": 11, "XII": 12, "XIII": 13, "XIV": 14, "XV": 15}
 
 type showHit struct {
@@ -65,17 +97,23 @@ func findShow(s string, anime, show bool) (showHit, int, int, bool) {
 			return showHit{kind: KindMultiSeason, n: ShowNumbers{Seasons: sp}}, m[0], m[1], true
 		}
 	}
-	if m := reEpisodes.FindStringSubmatchIndex(s); m != nil && episodeRun(s[m[6]:m[7]], atoi(s[m[4]:m[5]])) != nil {
-		season, first := atoi(s[m[2]:m[3]]), atoi(s[m[4]:m[5]])
-		eps := episodeRun(s[m[6]:m[7]], first)
-		h := showHit{kind: KindEpisode, n: ShowNumbers{Seasons: []int{season}, Episodes: eps}}
-		switch {
-		case season == 0 || first == 0:
-			h.kind, h.n.Special = KindSpecial, true
-		case len(eps) > 1:
-			h.kind = KindMultiEpisode
+	if m := reSeasonRange.FindStringSubmatchIndex(s); m != nil {
+		for g := 2; g < 18; g += 4 {
+			if m[g] >= 0 {
+				if sp := span(atoi(s[m[g]:m[g+1]]), atoi(s[m[g+2]:m[g+3]])); len(sp) > 1 {
+					return showHit{kind: KindMultiSeason, n: ShowNumbers{Seasons: sp}}, m[0], m[1], true
+				}
+			}
 		}
-		return h, m[0], m[1], true
+	}
+	if m := reEpisodes.FindStringSubmatchIndex(s); m != nil {
+		season, first := atoi(s[m[2]:m[3]]), atoi(s[m[4]:m[5]])
+		if eps := episodeRun(s[m[6]:m[7]], season, first); eps != nil {
+			return episodeHit(season, eps), m[2] - 1, m[1], true // m[2]-1: the S, not a title letter before it
+		}
+	}
+	if m := reSeasonEpisode.FindStringSubmatchIndex(s); m != nil {
+		return episodeHit(atoi(s[m[2]:m[3]]), []int{atoi(s[m[4]:m[5]])}), m[0], m[1], true
 	}
 	for _, m := range reCross.FindAllStringSubmatchIndex(s, -1) {
 		season, ep := atoi(s[m[2]:m[3]]), atoi(s[m[4]:m[5]])
@@ -83,6 +121,12 @@ func findShow(s string, anime, show bool) (showHit, int, int, bool) {
 			continue
 		}
 		h := showHit{kind: KindEpisode, n: ShowNumbers{Seasons: []int{season}, Episodes: []int{ep}}}
+		// "1x01-02" / "1x01x02": the file holds every episode up to the last.
+		if last := reCrossMore.FindString(s[m[6]:m[7]]); last != "" {
+			if sp := span(ep, atoi(last)); len(sp) > 1 && len(sp) <= 100 {
+				h.kind, h.n.Episodes = KindMultiEpisode, sp
+			}
+		}
 		if season == 0 || ep == 0 {
 			h.kind, h.n.Special = KindSpecial, true
 		}
@@ -105,6 +149,15 @@ func findShow(s string, anime, show bool) (showHit, int, int, bool) {
 		if mo >= 1 && mo <= 12 && d >= 1 && d <= 31 {
 			h := showHit{kind: KindDaily, n: ShowNumbers{AirDate: fmt.Sprintf("%04d-%02d-%02d", y, mo, d), Conf: conf}}
 			return h, m[0], m[1], true
+		}
+	}
+	if m := reDailyFlat.FindStringSubmatchIndex(s); m != nil {
+		return showHit{kind: KindDaily, n: ShowNumbers{AirDate: s[m[2]:m[3]] + "-" + s[m[4]:m[5]] + "-" + s[m[6]:m[7]]}}, m[0], m[1], true
+	}
+	if m := reDailyWord.FindStringSubmatchIndex(s); m != nil {
+		d, mo := atoi(s[m[2]:m[3]]), months[strings.ToLower(s[m[4]:m[5]])]
+		if d >= 1 && d <= 31 {
+			return showHit{kind: KindDaily, n: ShowNumbers{AirDate: fmt.Sprintf("%s-%02d-%02d", s[m[6]:m[7]], mo, d)}}, m[0], m[1], true
 		}
 	}
 	if m := reComplete.FindStringIndex(s); m != nil {
@@ -157,8 +210,59 @@ func findShow(s string, anime, show bool) (showHit, int, int, bool) {
 		}
 		return h, m[0], end, true
 	}
-	if m := reSeason.FindStringSubmatchIndex(s); m != nil {
-		season := atoi(s[m[2]:m[3]])
+	if anime {
+		if m := reAnimeBrack.FindStringSubmatchIndex(s); m != nil && !isYearNum(s[m[2]:m[3]]) {
+			a, b := atoi(s[m[2]:m[3]]), atoi(s[m[2]:m[3]])
+			if m[4] >= 0 {
+				b = atoi(s[m[4]:m[5]])
+			}
+			if sp := span(a, b); sp != nil {
+				return showHit{kind: KindAbsolute, n: ShowNumbers{Absolute: sp}}, m[0], m[1], true
+			}
+		}
+		if m := reBareEp.FindStringSubmatchIndex(s); m != nil {
+			return showHit{kind: KindAbsolute, n: ShowNumbers{Absolute: []int{atoi(s[m[2]:m[3]])}}}, m[0], m[1], true
+		}
+		if m := reAnimeBare.FindStringSubmatchIndex(s); m != nil && !isYearNum(s[m[2]:m[3]]) && !reResWord.MatchString(s[m[2]:m[3]]+"p") {
+			h := showHit{kind: KindAbsolute, n: ShowNumbers{Absolute: []int{atoi(s[m[2]:m[3]])}}}
+			if m[4] >= 0 {
+				h.fix = atoi(s[m[4]:m[5]]) - 1
+			}
+			end := m[1]
+			if end > m[0] && strings.ContainsAny(s[end-1:end], "[(") {
+				end--
+			}
+			return h, m[0], end, true
+		}
+	}
+	if m := reCap.FindStringSubmatchIndex(s); m != nil {
+		return episodeHit(atoi(s[m[2]:m[3]]), []int{atoi(s[m[4]:m[5]])}), m[0], m[1], true
+	}
+	if m := reSezon.FindStringSubmatchIndex(s); m != nil {
+		return episodeHit(atoi(s[m[2]:m[3]]), []int{atoi(s[m[4]:m[5]])}), m[0], m[1], true
+	}
+	// A mini-series episode with no season, only when a show is expected
+	// and a title comes first (a file named just "E05" needs its folder).
+	if show {
+		if m := reBareEp.FindStringSubmatchIndex(s); m != nil && strings.TrimSpace(s[:m[0]]) != "" {
+			return episodeHit(1, []int{atoi(s[m[2]:m[3]])}), m[0], m[1], true
+		}
+		if m := reOf.FindStringSubmatchIndex(s); m != nil && atoi(s[m[2]:m[3]]) <= atoi(s[m[4]:m[5]]) {
+			return episodeHit(1, []int{atoi(s[m[2]:m[3]])}), m[0], m[1], true
+		}
+	}
+	m := reSeason.FindStringSubmatchIndex(s)
+	if m == nil {
+		if m = reSeasonCyr.FindStringSubmatchIndex(s); m != nil {
+			m = []int{m[0], m[3], m[2], m[3], -1, -1} // end at the number, not the letter after it
+		}
+	}
+	if m != nil {
+		g := m[2:4]
+		if g[0] < 0 {
+			g = m[4:6]
+		}
+		season := atoi(s[g[0]:g[1]])
 		h := showHit{kind: KindSeasonPack, n: ShowNumbers{Seasons: []int{season}}}
 		if season == 0 {
 			h.n.Special = true
@@ -225,12 +329,16 @@ func parseShow(r *Result, h showHit, pre, post string, trailing []string, anime 
 	}
 }
 
-// episodeRun reads the episodes after the first one (E03, -E04, -08). It
-// is nil when a range is wider than 500.
-func episodeRun(more string, first int) []int {
+// episodeRun reads the episodes after the first one (E03, -E04, -08,
+// .S01E06). An episode of another season is left out. It is nil when a
+// range is wider than 500.
+func episodeRun(more string, season, first int) []int {
 	eps := []int{first}
 	for _, x := range reEpMore.FindAllStringSubmatch(more, -1) {
-		n := atoi(x[2])
+		if x[2] != "" && atoi(x[2]) != season {
+			continue
+		}
+		n := atoi(x[3])
 		if x[1] == "-" && n > eps[len(eps)-1] {
 			sp := span(eps[len(eps)-1]+1, n)
 			if sp == nil {
@@ -243,6 +351,20 @@ func episodeRun(more string, first int) []int {
 	}
 	return eps
 }
+
+// episodeHit is one season's episodes; season or episode 0 is a special.
+func episodeHit(season int, eps []int) showHit {
+	h := showHit{kind: KindEpisode, n: ShowNumbers{Seasons: []int{season}, Episodes: eps}}
+	switch {
+	case season == 0 || eps[0] == 0:
+		h.kind, h.n.Special = KindSpecial, true
+	case len(eps) > 1:
+		h.kind = KindMultiEpisode
+	}
+	return h
+}
+
+var months = map[string]int{"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
 
 // isYearNum says a number reads as a year (1900 to 2099).
 func isYearNum(v string) bool { return reYear.MatchString(v) }

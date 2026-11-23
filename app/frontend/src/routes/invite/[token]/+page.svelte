@@ -3,7 +3,7 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { theme, alreadyLinked, inviteTiles, type Way, SigninBackdrop, SigninPortals } from '#lib/accounts/index.ts';
+	import { theme, alreadyLinked, inviteTiles, type Way, SigninBackdrop, SigninPortals, closePlexWindow, openPlexWindow, sendToPlex } from '#lib/accounts/index.ts';
 	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -128,20 +128,17 @@
 	let win: Window | null = null;
 	function cancelPlex() {
 		clearInterval(plexTimer);
-		win?.close();
+		closePlexWindow(win);
 		plexWaiting = false;
 	}
 
 	// The sign-in page's PIN steps, bound to this invite.
 	async function plex() {
 		// Open the window while the click still counts, then point it at Plex.
-		win = window.open('', 'plex-sign-in', 'width=600,height=720');
+		win = openPlexWindow('plex-sign-in');
 		try {
 			const p = await session.invitePlexStart(linkPart);
-			if (win) {
-				win.opener = null; // The Plex page cannot reach back into HolyArrs.
-				win.location.href = p.auth_url;
-			} else window.open(p.auth_url, '_blank', 'noopener');
+			sendToPlex(win, p.auth_url);
 			plexWaiting = true;
 			const started = Date.now();
 			clearInterval(plexTimer);
@@ -155,16 +152,14 @@
 					const r = await session.invitePlexFinish(linkPart, p.id);
 					if (r === 'waiting') return;
 					cancelPlex();
-					win?.close();
 					await done(r);
 				} catch (err) {
 					cancelPlex();
-					win?.close();
 					failed(err);
 				}
 			}, 2000);
 		} catch (err) {
-			win?.close();
+			closePlexWindow(win);
 			failed(err);
 		}
 	}
@@ -224,7 +219,7 @@
 						<label for="password">{t('accounts.signin.passwordLabel')}</label>
 						<div class="pw">
 							<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" />
-							<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? t('accounts.invite.hidePasswordLabel') : t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+							<IconButton tabindex={-1} icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? t('accounts.invite.hidePasswordLabel') : t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 						</div>
 					</div>
 					{@render problem()}
@@ -259,7 +254,7 @@
 						<label for="password">{t('accounts.signin.passwordLabel')}</label>
 						<div class="pw">
 							<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="new-password" placeholder={t('accounts.signin.atLeast', { n: MIN_LENGTH })} aria-describedby="pw-min" required />
-							<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? t('accounts.invite.hidePasswordLabel') : t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+							<IconButton tabindex={-1} icon={showPw ? 'eyeOff' : 'eye'} label={showPw ? t('accounts.invite.hidePasswordLabel') : t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 						</div>
 						<span id="pw-min" class="sr-only">{t('accounts.signin.atLeast', { n: MIN_LENGTH })}</span>
 					</div>

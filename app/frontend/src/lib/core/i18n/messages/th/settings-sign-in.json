@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "เฉพาะรายการเหล่านี้เท่านั้นที่บอกได้ว่าการเข้าชมมาจากไหน",
 	"settings.signIn.fixToSaveOne": "แก้ 1 บรรทัดเพื่อบันทึก",
 	"settings.signIn.fixToSaveOther": "แก้ {n} บรรทัดเพื่อบันทึก",
-	"settings.signIn.localSaved": "บันทึกเครือข่ายภายในแล้ว"
+	"settings.signIn.localSaved": "บันทึกเครือข่ายภายในแล้ว",
+	"settings.signIn.forgotTitle": "ลืมรหัสผ่าน?",
+	"settings.signIn.forgotOn": "แสดง ลืมรหัสผ่าน? ในหน้าเข้าสู่ระบบ",
+	"settings.signIn.forgotNote": "เจ้าของจะได้รหัสใช้ครั้งเดียวจากล็อกของเซิร์ฟเวอร์ ปิดไว้ถ้าทุกคนเข้าสู่ระบบผ่าน single sign-on คำสั่ง reset-owner ยังใช้ได้",
+	"settings.signIn.forgotShown": "ลืมรหัสผ่าน? เปิดอยู่",
+	"settings.signIn.forgotHidden": "ลืมรหัสผ่าน? ปิดอยู่"
 }

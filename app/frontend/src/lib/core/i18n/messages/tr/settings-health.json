@@ -14,7 +14,6 @@
 	"settings.health.none": "Sonuç yok. Çalıştırmak için tekrar denetle.",
 	"settings.health.since": "Başlangıç",
 	"settings.health.settings": "Sağlık denetimi ayarları",
-	"settings.health.updateCheck": "Daha yeni HolyArrs var mı diye bak",
 	"settings.health.onlyChecks": "Yalnızca bakar. Hiçbir şey kurmaz.",
 	"settings.health.every": "Güncellemelere şu sıklıkla bak",
 	"settings.health.day": "gün",

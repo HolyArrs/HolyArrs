@@ -14,7 +14,7 @@ type familyKey struct{}
 // every hour while the browser goes on with a new one of the same family;
 // Still follows that family, so a working sign-in keeps its stream.
 func (a *Auth) WithSessionFamily(r *http.Request) *http.Request {
-	ck, err := r.Cookie(CookieName)
+	ck, err := sessionCookie(r)
 	if err != nil || ck.Value == "" {
 		return r
 	}
@@ -36,7 +36,7 @@ func (a *Auth) Still(r *http.Request) (webserver.Caller, bool) {
 	}
 	switch who.Via {
 	case "session":
-		ck, err := r.Cookie(CookieName)
+		ck, err := sessionCookie(r)
 		if err != nil || ck.Value == "" {
 			return webserver.Caller{}, false
 		}

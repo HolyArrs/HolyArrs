@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/doctor"
@@ -35,6 +36,23 @@ func (l *Linker) doStream(ctx context.Context, m domain.MediaServer, method, pat
 	defer func() { op.Finish(outcome) }()
 	rctx, cancel := op.AttemptContext(ctx, 20*time.Second)
 	defer cancel()
+	form := false
+	if m.Kind == "subsonic" {
+		q := url.Values{"v": {"1.16.1"}, "c": {"HolyArrs"}, "f": {"json"}}
+		if ctx.Value(noAuth{}) == nil {
+			if m.PlainPassword && !plainSafe(m.URL) {
+				outcome = outbound.TerminalFailure
+				return ErrPlainHTTP
+			}
+			q = subsonicParams(tok, m.PlainPassword)
+		}
+		if ctx.Value(asForm{}) != nil {
+			// The sign-in goes in the body, never the address.
+			method, form, rd = http.MethodPost, true, strings.NewReader(q.Encode())
+		} else {
+			path += "?" + q.Encode()
+		}
+	}
 	req, err := http.NewRequestWithContext(rctx, method, m.URL+path, rd)
 	if err != nil {
 		outcome = outbound.TerminalFailure
@@ -47,20 +65,24 @@ func (l *Linker) doStream(ctx context.Context, m domain.MediaServer, method, pat
 		req.Header.Set("Accept", "application/xml")
 	} else if m.Kind == "jellyfin" {
 		req.Header.Set("Authorization", fmt.Sprintf(`MediaBrowser Client="HolyArrs", Device="HolyArrs", DeviceId="holyarrs", Version="1", Token=%q`, tok))
-	} else {
+	} else if m.Kind == "kodi" {
+		user, pw, _ := strings.Cut(tok, "\n")
+		req.SetBasicAuth(user, pw)
+	} else if m.Kind != "subsonic" {
 		req.Header.Set("X-MediaBrowser-Token", tok)
 		req.Header.Set("X-Emby-Token", tok)
 	}
-	if body != nil {
+	if form {
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	} else if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	resp, err := client(m).Do(req)
 	if err != nil {
 		outcome = outbound.HTTPOutcome(0, err, ctx)
-		var ue *url.Error
-		if errors.As(err, &ue) {
-			err = ue.Err
-		}
+		// The address may carry the sign-in (Subsonic): keep only the
+		// cause, never the address.
+		err = withoutAddress(err)
 		if errors.Is(err, outbound.ErrMetadataRefused) {
 			return errors.New("the address is a cloud metadata address, which HolyArrs never connects to")
 		}
@@ -101,4 +123,14 @@ func (l *Linker) doStream(ctx context.Context, m domain.MediaServer, method, pat
 	}
 	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
 	return nil
+}
+
+// withoutAddress drops the address (and so any sign-in in its query) from
+// a request error, keeping only the cause.
+func withoutAddress(err error) error {
+	var ue *url.Error
+	for errors.As(err, &ue) {
+		err = ue.Err
+	}
+	return err
 }

@@ -85,5 +85,21 @@
 	"sources.uses.auto": "தானாகத் தேடும்",
 	"sources.uses.feed": "புதியவை பட்டியல்",
 	"sources.uses.hand": "கையால் தேடு",
-	"sources.uses.none": "பயன்படுத்தப்படவில்லை"
+	"sources.uses.none": "பயன்படுத்தப்படவில்லை",
+	"sources.bridge.removeTitle": "{name} நீக்கவா?",
+	"sources.bridge.find": "என் நெட்வொர்க்கில் {name} ஐத் தேடு",
+	"sources.bridge.noneFound": "உங்கள் நெட்வொர்க்கில் எந்த {name} உம் பதிலளிக்கவில்லை.",
+	"sources.bridge.keyFound": "{name} இலிருந்து விசை கிடைத்தது",
+	"sources.bridge.keyKept": "{name} தன் விசையைத் தரவில்லை (உள்நுழைவு இயக்கத்தில் உள்ளது). நகலெடுக்க \"விசையைப் பெறு\" பயன்படுத்தவும்.",
+	"sources.bridge.keyKeptJackett": "Jackett தன் விசையைத் தரவில்லை (அதற்கு நிர்வாகி கடவுச்சொல் உள்ளது). நகலெடுக்க \"விசையைப் பெறு\" பயன்படுத்தவும்.",
+	"sources.bridge.notReached": "{name} ஐ அடைய முடியவில்லை.",
+	"sources.bridge.brings.title": "என்ன வருகிறது",
+	"sources.bridge.brings.sites": "அதன் இன்டெக்ஸர்கள், மூலங்களாக",
+	"sources.bridge.brings.categories": "அவற்றின் வகைகள்",
+	"sources.bridge.brings.search": "தேடல்கள் {name} வழியாகச் செல்லும்",
+	"sources.bridge.brings.sync": "{name} இல் மாற்றங்கள் இங்கும் வரும்",
+	"sources.bridge.brings.stays": "உங்கள் இன்டெக்ஸர்கள் {name} இல் அமைக்கப்பட்டே இருக்கும்.",
+	"sources.bridge.brings.had": "{n} இன்டெக்ஸர்கள் ஏற்கனவே இங்கே",
+	"sources.bridge.brings.hadFrom": "{apps} வழியாக இறக்கப்பட்டது",
+	"sources.bridge.brings.keyKept": "அவர்களிடம் ஏற்கனவே உள்ள விசையைப் பயன்படுத்த, விசையை காலியாக விடவும்."
 }

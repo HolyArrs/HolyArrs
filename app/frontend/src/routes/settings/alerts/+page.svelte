@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { editForm, withoutEditing } from '#lib/ui/edit-in-place.ts';
 	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
@@ -10,7 +11,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { switchKind } from '#lib/alerts/index.ts';
+	import { alertForm, alertMissing, missingWords, switchKind } from '#lib/alerts/index.ts';
 	import { askMoments, libraryMoments, momentWords } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
@@ -119,30 +120,7 @@
 	function startChange(a: AlertView) {
 		isNew = false;
 		editing = a;
-		form = {
-			name: a.name,
-			kind: a.kind,
-			enabled: a.enabled,
-			moments: [...a.moments],
-			url: a.url ?? '',
-			smtp_host: a.smtp_host ?? '',
-			smtp_port: a.smtp_port ?? 587,
-			smtp_security: a.smtp_security ?? 'starttls',
-			smtp_from: a.smtp_from ?? '',
-			smtp_user: a.smtp_user ?? '',
-			smtp_pass: '', // Empty keeps the stored one.
-			staff_to: a.staff_to ?? '',
-			secret: '', // Empty keeps the stored one.
-			webhook_auth: a.webhook_auth ?? 'sign',
-			bot_token: '', // Empty keeps the stored one.
-			chat_id: a.chat_id ?? '',
-			server_url: a.server_url ?? '',
-			topic: a.topic ?? '',
-			user_key: a.user_key ?? '',
-			app_token: '', // Empty keeps the stored one.
-			clear_app_token: false,
-			allow_local_network: a.allow_local_network ?? false
-		};
+		form = alertForm(a);
 		formError = '';
 	}
 
@@ -173,6 +151,11 @@
 	}
 
 	async function test(a: AlertView) {
+		// An Alert still waiting for its token cannot send: say so here instead of a server error.
+		if (alertMissing(a)) {
+			results = { ...results, [a.id]: { ok: false, text: t('settings.alerts.typeFirst') } };
+			return;
+		}
 		testing = a.id;
 		try {
 			await api.post(`/alerts/${a.id}/test`);
@@ -209,7 +192,7 @@
 </p>
 
 {#if editing}
-	<form class="sc-form" onsubmit={save} aria-label={isNew ? t('settings.alerts.add') : t('settings.alerts.change', { name: editing.name })}>
+	<form class="sc-form" use:editForm={isNew ? null : editing.id} onsubmit={save} aria-label={isNew ? t('settings.alerts.add') : t('settings.alerts.change', { name: editing.name })}>
 		<SettingsCard title={isNew ? t('settings.alerts.add') : t('settings.alerts.change', { name: editing.name })}>
 			<Field id="al-name" label={t('settings.alerts.name')} style="margin-top: var(--s-4)">
 				<input id="al-name" class="input" bind:value={form.name} maxlength="80" required />
@@ -243,7 +226,7 @@
 				</Field>
 			{:else if form.kind === 'telegram'}
 				<Field id="al-tg-token" label={t('settings.alerts.botTokenLabel')} hint={isNew ? t('settings.alerts.botTokenNew') : t('settings.alerts.keptKeep')}>
-					<input id="al-tg-token" class="input mono" type="password" bind:value={form.bot_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '123456789:AAH…' : t('settings.alerts.stored')} />
+					<input id="al-tg-token" class="input mono" type="password" bind:value={form.bot_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '123456789:AAH…' : editing?.bot_token ? t('settings.alerts.stored') : t('settings.alerts.pasteBot')} />
 				</Field>
 				<Field id="al-tg-chat" label={t('settings.alerts.chatId')} hint={t('settings.alerts.chatIdHint')}>
 					<input id="al-tg-chat" class="input mono" bind:value={form.chat_id} autocomplete="off" spellcheck="false" placeholder={t('settings.alerts.chatIdExample')} />
@@ -269,14 +252,14 @@
 					<input id="al-gotify-server" class="input mono" bind:value={form.server_url} autocomplete="off" spellcheck="false" placeholder="https://gotify.example.com" />
 				</Field>
 				<Field id="al-gotify-token" label={t('settings.alerts.appTokenLabel')} hint={isNew ? t('settings.alerts.gotifyTokenNew') : t('settings.alerts.keptKeepServer')}>
-					<input id="al-gotify-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : t('settings.alerts.stored')} />
+					<input id="al-gotify-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : editing?.app_token ? t('settings.alerts.stored') : t('settings.alerts.pasteApp')} />
 				</Field>
 			{:else if form.kind === 'pushover'}
 				<Field id="al-push-user" label={t('settings.alerts.userKey')} hint={t('settings.alerts.userKeyHint')}>
 					<input id="al-push-user" class="input mono" bind:value={form.user_key} autocomplete="off" spellcheck="false" />
 				</Field>
 				<Field id="al-push-token" label={t('settings.alerts.appTokenLabel')} hint={isNew ? t('settings.alerts.pushoverTokenNew') : t('settings.alerts.keptKeep')}>
-					<input id="al-push-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : t('settings.alerts.stored')} />
+					<input id="al-push-token" class="input mono" type="password" bind:value={form.app_token} autocomplete="new-password" spellcheck="false" placeholder={isNew ? '' : editing?.app_token ? t('settings.alerts.stored') : t('settings.alerts.pasteApp')} />
 				</Field>
 			{:else if form.kind === 'discord'}
 				<Field id="al-url" label={t('settings.alerts.discordLink')} hint={t('settings.alerts.discordLinkHint')}>
@@ -352,14 +335,16 @@
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="list">
-		{#each alerts as a (a.id)}
-			<li class="card" data-testid="alert">
+		{#each withoutEditing(alerts, editing?.id) as a (a.id)}
+			{@const missing = alertMissing(a)}
+			<li class="card" data-testid="alert" data-edit-row={a.id}>
 				<div class="head">
 					<h2 class="h3">{a.name}</h2>
 					<span class="chip">{kindWord[a.kind] ?? a.kind}</span>
 					{#if !a.enabled}<span class="chip">{t('settings.alerts.off')}</span>{/if}
 					{#if results[a.id]}<TestTag ok={results[a.id].ok} text={results[a.id].text} app={kindWord[a.kind] ?? a.kind} testid="alert-test" />{/if}
 				</div>
+				{#if missing}<p class="small" data-testid="alert-needs">{t('settings.alerts.stillNeeds', { what: missingWords(missing) })}</p>{/if}
 				<p class="small muted">{a.moments.length ? a.moments.map((m) => momentWords[m]?.[0] ?? m).join(' · ') : t('settings.alerts.noMoments')}</p>
 				{#if results[a.id] && !results[a.id].ok}
 					<p class="small bad-text" data-testid="alert-result">{results[a.id].text}</p>
@@ -370,7 +355,7 @@
 				{/if}
 				<div class="row actions">
 					<Button type="button" disabled={testing === a.id} aria-busy={testing === a.id} onclick={() => test(a)}>{t('settings.alerts.sendTest')}</Button>
-					<Button variant="secondary" type="button" onclick={() => startChange(a)}>{t('settings.alerts.changeButton')}</Button>
+					<Button variant="secondary" type="button" data-edit-change onclick={() => startChange(a)}>{t('settings.alerts.changeButton')}</Button>
 					<Button variant="secondary" type="button" onclick={() => remove(a)} aria-label={t('settings.alerts.removeName', { name: a.name })}>{t('settings.alerts.remove')}</Button>
 				</div>
 			</li>

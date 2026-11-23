@@ -32,8 +32,8 @@
 	}
 	:global(.light) .orbit { border-color: rgb(0 0 0 / 0.14); border-top-color: #e5a00d; }
 	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; color: #fff; text-wrap: balance; }
-	.lead { margin: 8px 0 20px; color: rgb(255 255 255 / 0.68); font: var(--t-callout); text-align: center; text-wrap: pretty; }
-	.title + :not(.lead) { margin-top: 26px; }
+	.lead { margin: var(--s-2) 0 var(--gap, 20px); color: rgb(255 255 255 / 0.68); font: var(--t-callout); text-align: center; text-wrap: pretty; }
+	.title + :not(.lead) { margin-top: var(--gap, 20px); }
 
 	.link {
 		display: block;
@@ -75,8 +75,8 @@
 	/* Phones: the desktop card, floating low over full-bleed art with 24 px of art on every side; it rides above the keyboard (--kb) with a smooth lift. */
 	@media (max-width: 600px) {
 		.title { font-size: 20px; line-height: 1.15; }
-		.lead { margin: 4px 0 10px; }
-		.title + :not(.lead) { margin-top: 16px; }
+		.lead { margin: var(--s-1) 0 var(--gap, 16px); }
+		.title + :not(.lead) { margin-top: var(--gap, 16px); }
 		.link { min-height: 40px; margin-bottom: 0; margin-top: 0; }
 }
 	/* Touch screens: 44 px tap targets for the small controls (after the phone block, so it wins). */

@@ -18,20 +18,24 @@ import (
 
 func (f *fakeOIDC) userinfo(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
-	sub, name := f.infoSub, f.infoName
+	sub, name, groups := f.infoSub, f.infoName, f.infoGroups
 	f.mu.Unlock()
 	if r.Header.Get("Authorization") != "Bearer <discarded>" || sub == "" {
 		http.Error(w, "no", http.StatusUnauthorized)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{"sub": sub, "name": name})
+	out := map[string]any{"sub": sub, "name": name}
+	if groups != nil {
+		out["groups"] = groups
+	}
+	_ = json.NewEncoder(w).Encode(out)
 }
 
 // b4Exchange runs one begin/take/exchange against the fake provider.
 func b4Exchange(t *testing.T, f *fakeOIDC, r *oidcRuntime, code string) (oidcClaims, error) {
 	t.Helper()
-	authURL, browser, err := r.begin(context.Background(), time.Now(), "ip:test", 0, "")
+	authURL, browser, err := r.begin(context.Background(), time.Now(), "ip:test", 0, "", false)
 	if err != nil {
 		t.Fatal(err)
 	}

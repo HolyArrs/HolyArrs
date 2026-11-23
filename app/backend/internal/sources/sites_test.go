@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -137,22 +139,32 @@ func TestIPTorrentsCookieSearch(t *testing.T) {
 			t.Errorf("request %s cookie %q", r.URL, r.Header.Get("Cookie"))
 		}
 	})
-	c := siteClient(srv.URL, "iptorrents", "uid=1234; pass=cookiepass; tp=passkey99")
+	// A Source saved with a browser cookie and no passkey still reads the site's page.
+	c := siteClient(srv.URL, "iptorrents", "uid=1234; pass=cookiepass")
 	items, err := c.Search(context.Background(), Query{Title: "Sample Show", TV: true, Season: 1, Episode: "2"})
 	if err != nil || len(items) != 2 {
 		t.Fatalf("items %v err %v", items, err)
 	}
 	a, b := items[0], items[1]
 	if a.Title != "Sample Show S01E02 1080p WEB h264-GROUP" || *a.Seeders != 1204 || *a.Peers != 1241 || a.Size < 1500000000 || a.Size > 1600000000 ||
-		a.Link != srv.URL+"/download.php/1001/Sample.Show.S01E02.1080p.WEB.h264-GROUP.torrent?torrent_pass=passkey99" {
+		a.Link != srv.URL+"/download.php/1001/Sample.Show.S01E02.1080p.WEB.h264-GROUP.torrent" {
 		t.Fatalf("first %+v", a)
 	}
 	if b.Title != "Sample Film 2008 720p BluRay x264-OTHER & Co" || *b.Seeders != 9 || b.Size != 812<<20 {
 		t.Fatalf("second %+v", b)
 	}
-	// Stored links never keep the passkey.
-	if l := hideKeys(a.Link, secretValues(c.cfg)); strings.Contains(l, "passkey99") || !strings.Contains(l, hidden) {
-		t.Fatalf("hidden link %s", l)
+	// The title link is found by its class or by a details address, whichever the site uses.
+	if a.GUID != srv.URL+"/t/1001" || b.GUID != srv.URL+"/details.php?id=1002" {
+		t.Fatalf("guids %q %q", a.GUID, b.GUID)
+	}
+	// Rows with files but no readable name are a changed page, not an empty search.
+	odd := `<table><tr><td><a href="/x/9">Name</a></td><td><a href="/download.php/9/n.torrent"></a></td></tr></table>`
+	var se *Error
+	if _, err := parseIPTorrents([]byte(odd), srv.URL, ""); !errors.As(err, &se) || se.Kind != KindBroken {
+		t.Fatalf("odd page err %v", err)
+	}
+	if got, err := parseIPTorrents([]byte(`<table id="torrents"><tr><td>No Torrents Found!</td></tr></table>`), srv.URL, ""); err != nil || len(got) != 0 {
+		t.Fatalf("empty page %v %v", got, err)
 	}
 }
 
@@ -171,20 +183,106 @@ func TestIPTorrentsSignInPage(t *testing.T) {
 	}
 }
 
-func TestIPTorrentsRSSKey(t *testing.T) {
+func TestIPTorrentsPasskey(t *testing.T) {
 	t.Parallel()
-	rss := `<rss><channel><item><title>Sample Show S01E02 720p</title><link>https://example.invalid/download.php/5/x.torrent</link>` +
-		`<guid>https://example.invalid/details.php?id=5</guid><description>1.2 GB; TV/x264</description></item></channel></rss>`
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/t.rss" || !strings.Contains(r.URL.RawQuery, "u=77;tp=rsskey1;download;q=Sample") {
-			t.Errorf("request %s", r.URL)
+	var seen []string
+	srv := siteServer(t, "iptorrents.rss", func(r *http.Request, _ string) {
+		if r.URL.Path != "/t.rss" || r.Header.Get("Cookie") != "" {
+			t.Errorf("request %s cookie %q", r.URL, r.Header.Get("Cookie"))
 		}
-		_, _ = w.Write([]byte(rss))
-	}))
-	t.Cleanup(srv.Close)
-	items, err := siteClient(srv.URL, "iptorrents", "u=77; tp=rsskey1").Search(context.Background(), Query{Title: "Sample"})
-	if err != nil || len(items) != 1 || items[0].Protocol != "torrent" {
+		seen = append(seen, r.URL.RawQuery)
+	})
+	c := New(Config{URL: srv.URL, Format: "site", Site: "iptorrents", Protocol: "torrent", AllowLocal: true, APIKey: " rsskey1 ", SiteUser: "77"})
+	items, err := c.Search(context.Background(), Query{Title: "Sample Show", TV: true, Season: 1, Episode: "2"})
+	if err != nil || len(items) != 2 {
 		t.Fatalf("items %v err %v", items, err)
+	}
+	a, b := items[0], items[1]
+	if a.Title != "Sample Show S01E02 1080p WEB h264-GROUP" || a.Protocol != "torrent" || a.Size != 1567663063 || a.Published.IsZero() ||
+		a.Seeders == nil || *a.Seeders != 1204 || a.Peers == nil || *a.Peers != 1241 || a.GUID != "https://iptorrents.com/t/1001" ||
+		a.Link != "https://iptorrents.com/download.php/1001/Sample.Show.S01E02.1080p.WEB.h264-GROUP.torrent?torrent_pass=rsskey1" {
+		t.Fatalf("first %+v", a)
+	}
+	// With no enclosure the size comes from the description; no seeders is said, not left unknown.
+	if b.Title != "Sample Film 2008 720p BluRay x264-OTHER & Co" || b.Size != 812<<20 || b.Seeders == nil || *b.Seeders != 0 || *b.Peers != 0 {
+		t.Fatalf("second %+v", b)
+	}
+	// Stored links never keep the passkey.
+	if l := hideKeys(a.Link, secretValues(c.cfg)); strings.Contains(l, "rsskey1") || !strings.Contains(l, hidden) {
+		t.Fatalf("hidden link %s", l)
+	}
+	// Each call names the site's categories: the RSS is empty without them.
+	if _, err := c.Search(context.Background(), Query{Title: "Sample Film", Year: 2008}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Search(context.Background(), Query{Music: true, Artist: "Sample", Album: "Record"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Feed(context.Background(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Feed(context.Background(), []int{5000, 5040}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"u=77;tp=rsskey1;73;60;download;q=Sample+Show+S01E02",
+		"u=77;tp=rsskey1;72;60;download;q=Sample+Film+2008",
+		"u=77;tp=rsskey1;75;download;q=Sample+Record",
+		"u=77;tp=rsskey1;72;73;75;60;download",
+		"u=77;tp=rsskey1;73;60;download",
+	}
+	if !slices.Equal(seen, want) {
+		t.Fatalf("calls\n got %q\nwant %q", seen, want)
+	}
+}
+
+// A Source saved before the user id and passkey had their own fields holds
+// one line; it keeps working, and with a passkey in it it reads the RSS.
+func TestIPTorrentsOldKeyLine(t *testing.T) {
+	t.Parallel()
+	for _, line := range []string{"u=77; tp=rsskey1", "uid=77; pass=cookiepass; tp=rsskey1"} {
+		srv := siteServer(t, "iptorrents.rss", func(r *http.Request, _ string) {
+			if r.URL.Path != "/t.rss" || !strings.HasPrefix(r.URL.RawQuery, "u=77;tp=rsskey1;") {
+				t.Errorf("%s: request %s", line, r.URL)
+			}
+		})
+		c := siteClient(srv.URL, "iptorrents", line)
+		if items, err := c.Search(context.Background(), Query{Title: "Sample"}); err != nil || len(items) != 2 {
+			t.Fatalf("%s: items %v err %v", line, items, err)
+		}
+		if l := hideKeys("https://x.invalid/a.torrent?torrent_pass=rsskey1", secretValues(c.cfg)); strings.Contains(l, "rsskey1") {
+			t.Fatalf("%s: hidden link %s", line, l)
+		}
+	}
+	// The user id field wins over the one in an old line.
+	if k := iptKeys("u=77; tp=rsskey1", "88"); k.uid != "88" || k.passkey != "rsskey1" {
+		t.Fatalf("keys %+v", k)
+	}
+}
+
+// A wrong user id or passkey gets the sign-in page in place of the RSS.
+func TestIPTorrentsPasskeyRefused(t *testing.T) {
+	t.Parallel()
+	srv := siteServer(t, "iptorrents_login.html", func(*http.Request, string) {})
+	c := New(Config{URL: srv.URL, Format: "site", Site: "iptorrents", Protocol: "torrent", AllowLocal: true, APIKey: "wrong", SiteUser: "77"})
+	_, err := c.Search(context.Background(), Query{Title: "x"})
+	var se *Error
+	if !errors.As(err, &se) || se.Kind != KindLoginRefused {
+		t.Fatalf("err %v", err)
+	}
+	// A passkey the site does not know gets "404 Not Found".
+	gone := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(gone.Close)
+	c = New(Config{URL: gone.URL, Format: "site", Site: "iptorrents", Protocol: "torrent", AllowLocal: true, APIKey: "wrong", SiteUser: "77"})
+	if _, err := c.Search(context.Background(), Query{Title: "x"}); !errors.As(err, &se) || se.Kind != KindLoginRefused {
+		t.Fatalf("404: err %v", err)
+	}
+	// A passkey with no user id, or the other way round, fails before any call.
+	for _, cfg := range []Config{{APIKey: "rsskey1"}, {SiteUser: "77"}} {
+		cfg.URL, cfg.Format, cfg.Site, cfg.Protocol, cfg.AllowLocal = srv.URL, "site", "iptorrents", "torrent", true
+		if _, err := New(cfg).Search(context.Background(), Query{Title: "x"}); !errors.As(err, &se) || se.Kind != KindLoginRefused {
+			t.Fatalf("%+v: err %v", cfg, err)
+		}
 	}
 }
 
@@ -225,27 +323,49 @@ func TestSiteSourceAdd(t *testing.T) {
 	}
 	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"site","site":"other"}`, 400)
 	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"site","site":"knaben","protocol":"usenet"}`, 400)
-	raw := string(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"IPT","format":"site","site":"iptorrents","api_key":"uid=1; pass=secretcookie"}`, 201))
-	if strings.Contains(raw, "secretcookie") {
+	raw := string(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"IPT","format":"site","site":"iptorrents","site_user":" 2134 ","api_key":"your-passkey"}`, 201))
+	if strings.Contains(raw, "your-passkey") {
 		t.Fatalf("key shown %s", raw)
 	}
+	// The user id is not a secret: it is shown, kept when not sent, and must be digits.
+	if _ = json.Unmarshal([]byte(raw), &x); x.SiteUser != "2134" || x.APIKey == "" {
+		t.Fatalf("added %+v", x)
+	}
+	id := strconv.FormatInt(x.ID, 10)
+	_ = json.Unmarshal(do(t, "PUT", srv.URL+"/api/v1/sources/"+id, `{"name":"IPT 2"}`, 200), &x)
+	if x.SiteUser != "2134" || x.Site != "iptorrents" {
+		t.Fatalf("after a rename %+v", x)
+	}
+	_ = json.Unmarshal(do(t, "PUT", srv.URL+"/api/v1/sources/"+id, `{"name":"IPT 2","site_user":"99"}`, 200), &x)
+	if x.SiteUser != "99" {
+		t.Fatalf("after a new user id %+v", x)
+	}
+	do(t, "PUT", srv.URL+"/api/v1/sources/"+id, `{"name":"IPT 2","site_user":"me@example.org"}`, 400)
 }
 
 type oneSecret string
 
 func (s oneSecret) Get(context.Context, int64) (string, error) { return string(s), nil }
 
-// FileHeader gives the IPTorrents cookie (without the RSS key) for fetching
-// a Release file, and nothing for other Sources or a key-only IPTorrents.
+// FileHeader gives the cookie of an IPTorrents Source saved with one and no
+// passkey, for fetching a Release file. It gives nothing for a Source with a
+// passkey, whose links carry it, or for other Sources.
 func TestFileHeaderIPTorrentsCookie(t *testing.T) {
 	ref := int64(1)
 	ipt := domain.Source{URL: "https://iptorrents.com", Format: "site", Extra: map[string]string{"site": "iptorrents"}, SecretRef: &ref}
-	h, err := FileHeader(context.Background(), ipt, oneSecret("uid=1234; pass=cookiepass; tp=passkey99"))
+	h, err := FileHeader(context.Background(), ipt, oneSecret("uid=1234; pass=cookiepass"))
 	if err != nil || h.Get("Cookie") != "uid=1234; pass=cookiepass" {
 		t.Fatalf("cookie %q, %v", h.Get("Cookie"), err)
 	}
-	if h, _ := FileHeader(context.Background(), ipt, oneSecret("u=1234; tp=passkey99")); h != nil {
-		t.Fatalf("key only: %v", h)
+	for _, line := range []string{"u=1234; tp=passkey99", "uid=1234; pass=cookiepass; tp=passkey99"} {
+		if h, _ := FileHeader(context.Background(), ipt, oneSecret(line)); h != nil {
+			t.Fatalf("%s: %v", line, h)
+		}
+	}
+	withUser := ipt
+	withUser.Extra = map[string]string{"site": "iptorrents", "site_user": "1234"}
+	if h, _ := FileHeader(context.Background(), withUser, oneSecret("passkey99")); h != nil {
+		t.Fatalf("user id and passkey: %v", h)
 	}
 	knaben := domain.Source{URL: "https://knaben.org", Format: "site", Extra: map[string]string{"site": "knaben"}, SecretRef: &ref}
 	if h, _ := FileHeader(context.Background(), knaben, oneSecret("uid=1; pass=x")); h != nil {

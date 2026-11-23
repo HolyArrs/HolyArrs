@@ -99,6 +99,9 @@ func (h *handler) oldProfile(p wireProfile) library.OldProfile {
 		}
 		if it.Allowed {
 			out.Qualities = append(out.Qualities, names...)
+			if len(it.Items) > 0 {
+				out.Groups = append(out.Groups, names)
+			}
 		}
 		if id == p.Cutoff && !cutFound {
 			out.CutoffQualities, cutFound = names, true
@@ -316,7 +319,7 @@ func formatItems(formats []pushedFormat, score func(pushedFormat) int) []map[str
 }
 
 // rulesShape writes Pick rules made in HolyArrs as a profile: this side's
-// qualities in ladder order, best last, allowed where their step is.
+// qualities in the rules' step order, best last, allowed where their step is.
 func (h *handler) rulesShape(p mediafiles.PickRules, formats []pushedFormat) map[string]any {
 	b := p.Body
 	allowed := map[string]bool{}
@@ -324,9 +327,15 @@ func (h *handler) rulesShape(p mediafiles.PickRules, formats []pushedFormat) map
 		allowed[s.Quality] = s.Allowed
 	}
 	qs := slices.Clone(sideQualities[h.side])
-	sort.SliceStable(qs, func(i, j int) bool {
-		return slices.Index(mediafiles.Ladder, library.QualityStep(qs[i].Name)) < slices.Index(mediafiles.Ladder, library.QualityStep(qs[j].Name))
-	})
+	// The rules' own step order, which may differ from the ladder's.
+	rank := func(name string) int {
+		step := library.QualityStep(name)
+		if i := slices.IndexFunc(b.Steps, func(s mediafiles.Step) bool { return s.Quality == step }); i >= 0 {
+			return i
+		}
+		return slices.Index(mediafiles.Ladder, step)
+	}
+	sort.SliceStable(qs, func(i, j int) bool { return rank(qs[i].Name) < rank(qs[j].Name) })
 	items := make([]map[string]any, 0, len(qs))
 	cutoff := int64(0)
 	for _, q := range qs {

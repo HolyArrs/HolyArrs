@@ -262,7 +262,10 @@ var (
 	losslessExts = map[string]bool{".flac": true, ".wav": true, ".aiff": true, ".aif": true, ".ape": true, ".wv": true, ".dsf": true, ".dff": true, ".alac": true, ".tak": true}
 )
 
-var renameFile = os.Rename
+// renameFile never replaces a file at the target. A plain rename does on
+// Linux, so putting an old copy back over a spot a new copy already took
+// would destroy the new one.
+var renameFile = renameNoReplace
 
 var crashAt func(stage string) error
 
@@ -285,6 +288,7 @@ func holdPath(libPath, rel string, now time.Time) (string, error) {
 // HoldPath returns where a replaced file is held.
 func HoldPath(libPath, rel string, now time.Time) (string, error) { return holdPath(libPath, rel, now) }
 
+// moveFile moves from to to and never replaces a file already at to.
 func moveFile(from, to string) error {
 	if err := os.MkdirAll(filepath.Dir(to), 0o777); err != nil {
 		return err
@@ -292,6 +296,9 @@ func moveFile(from, to string) error {
 	err := renameFile(from, to)
 	if err == nil || errors.Is(err, os.ErrNotExist) {
 		return err
+	}
+	if errors.Is(err, os.ErrExist) {
+		return fmt.Errorf("%s is taken; HolyArrs never replaces a file: %w", to, err)
 	}
 	if cerr := copyFile(from, to); cerr != nil {
 		return fmt.Errorf("rename failed (%v), copy failed (%v)", err, cerr)

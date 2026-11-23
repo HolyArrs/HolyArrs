@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "רק אלה יכולים לומר מאיפה הגיעה ביקור.",
 	"settings.signIn.fixToSaveOne": "תקנו שורה אחת כדי לשמור",
 	"settings.signIn.fixToSaveOther": "תקנו {n} שורות כדי לשמור",
-	"settings.signIn.localSaved": "הרשת המקומית נשמרה"
+	"settings.signIn.localSaved": "הרשת המקומית נשמרה",
+	"settings.signIn.forgotTitle": "שכחת סיסמה?",
+	"settings.signIn.forgotOn": "הצגת שכחת סיסמה? בדף הכניסה",
+	"settings.signIn.forgotNote": "הבעלים מקבל קוד חד־פעמי מיומן השרת. כבה אם כולם נכנסים בכניסה אחודה. הפקודה reset-owner עדיין עובדת.",
+	"settings.signIn.forgotShown": "שכחת סיסמה? פעיל",
+	"settings.signIn.forgotHidden": "שכחת סיסמה? כבוי"
 }

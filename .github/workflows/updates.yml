@@ -1,0 +1,140 @@
+name: HolyArrs - Update list
+run-name: ${{ inputs.version || github.event.workflow_run.head_branch }}
+
+# Signs the bare Linux programs of a published version, adds the signatures
+# to its GitHub release, writes the signed update list that in-app updates
+# read (https://updates.holyarrs.com/v1/manifest.json) and uploads it.
+#
+# Starts after HolyArrs - Linux downloads ends well. Automatic updating only
+# installs a release whose list says auto_update_safe; a tag-started run
+# never says so. A hand start re-publishes the list for a version with the
+# flags chosen here (the serial always rises, so the newer list wins).
+#
+# Environment "update-signing" (runs from main only):
+#   secrets UPDATE_SIGNING_KEY (plain key from "updatekey keygen -plain -pipe"),
+#           CLOUDFLARE_API_TOKEN (R2 write on the updates bucket only),
+#           CLOUDFLARE_ACCOUNT_ID
+#   var     UPDATES_BUCKET (the R2 bucket behind updates.holyarrs.com)
+# The key is written to the runner's temp folder, used and shredded, even
+# when a step fails. It is never printed.
+
+on:
+  workflow_run:
+    workflows: ['HolyArrs - Linux downloads']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: A published version with Linux downloads (for example 1.2.1)
+        required: true
+        type: string
+      auto_safe:
+        description: Automatic mode may install it
+        type: boolean
+        default: false
+      one_way:
+        description: Going back from it is not possible (never auto-installed)
+        type: boolean
+        default: false
+      security:
+        description: Security release
+        type: boolean
+        default: false
+      notes:
+        description: Short note shown with the update notice (plain text)
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: holyarrs-update-list
+  cancel-in-progress: false
+
+env:
+  VERSION: ${{ inputs.version || github.event.workflow_run.head_branch }}
+
+jobs:
+  publish:
+    name: Sign the programs and publish the update list
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: update-signing
+    permissions:
+      contents: write
+    steps:
+      - name: Check the version
+        run: case "$VERSION" in (*[!0-9.]*|'') echo "::error::not a version: $VERSION"; exit 1;; esac
+
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Build the signing tool
+        run: |
+          [ -s deploy/release/updates/keys/main.pub ] || { echo "::error::no release key: deploy/release/updates/keys/main.pub"; exit 1; }
+          go build -o "$RUNNER_TEMP/updatekey" ./app/backend/tools/updatekey
+
+      - name: Download the bare programs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir dist
+          gh release download "$VERSION" --dir dist --pattern "holyarrs_${VERSION}_linux_amd64" \
+            --pattern "holyarrs_${VERSION}_linux_arm64" --pattern "holyarrs_${VERSION}_linux_armv7" --pattern SHA256SUMS
+          (cd dist && grep -E "  holyarrs_${VERSION}_linux_(amd64|arm64|armv7)$" SHA256SUMS | sha256sum -c -)
+
+      - name: Sign, write and check the list
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+          AUTO_SAFE: ${{ inputs.auto_safe && '-auto-safe' || '' }}
+          ONE_WAY: ${{ inputs.one_way && '-one-way' || '' }}
+          SECURITY: ${{ inputs.security && '-security' || '' }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          key="$RUNNER_TEMP/update.key"
+          trap 'shred -u "$key" 2>/dev/null || rm -f "$key"' EXIT
+          umask 077
+          printf '%s\n' "$UPDATE_SIGNING_KEY" > "$key"
+          for f in dist/holyarrs_"$VERSION"_linux_*; do
+            "$RUNNER_TEMP/updatekey" sign -binary -key "$key" -in "$f" -out "$f.minisig"
+          done
+          mkdir -p site/v1
+          "$RUNNER_TEMP/updatekey" list -version "$VERSION" -dist dist \
+            -base "https://github.com/${GITHUB_REPOSITORY}/releases/download/$VERSION" \
+            -notes "$NOTES" $AUTO_SAFE $ONE_WAY $SECURITY -out site/v1/manifest.json
+          "$RUNNER_TEMP/updatekey" sign -key "$key" -in site/v1/manifest.json -out site/v1/manifest.json.minisig
+          "$RUNNER_TEMP/updatekey" verify -pub deploy/release/updates/keys/main.pub -in site/v1/manifest.json -sig site/v1/manifest.json.minisig
+          for f in dist/holyarrs_"$VERSION"_linux_*.minisig; do
+            "$RUNNER_TEMP/updatekey" verify -pub deploy/release/updates/keys/main.pub -in "${f%.minisig}" -sig "$f"
+          done
+
+      - name: Add the signatures to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$VERSION" dist/holyarrs_"$VERSION"_linux_*.minisig --clobber
+
+      - name: Upload the list
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BUCKET: ${{ vars.UPDATES_BUCKET }}
+        run: |
+          [ -n "$BUCKET" ] || { echo "::error::UPDATES_BUCKET is not set"; exit 1; }
+          # The signature first: an app that reads the new list mid-upload
+          # fails the check and keeps its last good answer.
+          for f in manifest.json.minisig manifest.json; do
+            npx --yes wrangler@4.20.0 r2 object put "$BUCKET/v1/$f" --file "site/v1/$f" \
+              --content-type "$( [ "$f" = manifest.json ] && echo application/json || echo text/plain )" \
+              --cache-control "public, max-age=300" --remote
+          done

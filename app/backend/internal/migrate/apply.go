@@ -12,9 +12,8 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate/secretsfile"
@@ -73,6 +72,8 @@ type Line struct {
 	Here string `json:"here,omitempty"`
 	// open says the choice is still missing (the person stays behind).
 	open bool
+	// missing names the old folder a not-found line could not find here.
+	missing string
 }
 
 // Why a title's line needs a look (Line.Attention).
@@ -118,8 +119,8 @@ type Mover struct {
 	dryShows map[string]dryShow
 	dryWarm  bool
 	Store    *database.Store
-	Library *library.Service
-	Queue   *jobs.Queue
+	Library  *library.Service
+	Queue    *jobs.Queue
 	// PartOn says whether a part is on. The part keys are movies, shows,
 	// music, subtitles and wishlist (the requests part keeps its old key);
 	// nil counts every part on.
@@ -274,28 +275,6 @@ func isDir(p string) bool {
 	return err == nil && fi.IsDir()
 }
 
-// partOf is the part an item belongs to ("" for the core).
-func partOf(it Item) string {
-	kind := ""
-	switch {
-	case it.Folder != nil:
-		kind = it.Folder.Kind
-	case it.Title != nil:
-		kind = it.Title.Kind
-	case it.NeverAdd != nil:
-		kind = it.NeverAdd.Kind
-	case it.OutsideList != nil:
-		kind = "movie" // Outside lists add movies
-	case it.Protocol != nil:
-		return it.Protocol.Part
-	case it.Subtitles != nil:
-		return "subtitles"
-	case it.Ask != nil:
-		return "wishlist"
-	}
-	return map[string]string{"movie": "movies", "show": "shows", "music": "music", "artist": "music"}[kind]
-}
-
 // run is one pass over a Plan.
 type run struct {
 	m      *Mover
@@ -328,13 +307,19 @@ type run struct {
 	// attn and attnFolder are set by title() for the item it just ran, and
 	// attnTitle with AttnSeasons.
 	attn, attnFolder string
-	attnTitle        int64
-	here             string
+	// missing is set by folder() and title() for the item it just ran when
+	// its old Library folder is not on this server (Line.missing).
+	missing   string
+	attnTitle int64
+	here      string
 	// preview is the plan's own quick check: shows are not looked up.
 	preview bool
 	// lookupBy ends a dry run's show lookups; unchecked lists the shows
 	// that were not looked up in time (Report.Checking).
-	lookupBy  time.Time
+	lookupBy time.Time
+	// watch, in a background check, hears each item as it is done; such a
+	// check has no overall time limit, only one per lookup (dryCallLimit).
+	watch     func(done, total int, name, result string)
 	unchecked []TitlePlan
 	// foldersOff says the Library folders group was left out; coming lists,
 	// per kind, the planned Library folders on this server that this run adds.
@@ -412,6 +397,9 @@ func (r *run) folderGroup(p *Plan) {
 func (m *Mover) PreviewTitles(ctx context.Context, p *Plan) {
 	r := &run{m: m, ctx: ctx, dry: true, preview: true}
 	r.folderGroup(p)
+	// A slow disk must not hold the plan past what a proxy waits: the lines
+	// not reached in time just keep their plain text.
+	end := time.Now().Add(previewBudget)
 	for gi := range p.Groups {
 		g := &p.Groups[gi]
 		if g.Name != GroupTitles || g.Skipped {
@@ -422,6 +410,9 @@ func (m *Mover) PreviewTitles(ctx context.Context, p *Plan) {
 			if it.Title == nil || (partOf(*it) != "" && !m.partOn(partOf(*it))) {
 				continue
 			}
+			if time.Now().After(end) || ctx.Err() != nil {
+				return
+			}
 			if res, detail := r.title(*it); res != ResAdopt {
 				it.Detail = detail
 			}
@@ -429,13 +420,26 @@ func (m *Mover) PreviewTitles(ctx context.Context, p *Plan) {
 	}
 }
 
+// previewBudget is how long the plan may spend on PreviewTitles.
+var previewBudget = 20 * time.Second
+
 // Run dry-runs (dry) or applies a Plan. progress, when set, hears how far
 // it is.
 func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by domain.Actor, progress func(done, total int)) *Report {
-	r := &run{m: m, ctx: ctx, move: moveID, dry: dry, by: by, people: map[string]int64{}, personStable: map[string]bool{}, personMarked: map[string]bool{},
+	return m.run(ctx, moveID, p, dry, by, progress, nil)
+}
+
+// DryCheck dry-runs a Plan in the background: no overall time limit, each
+// show lookup is cut off after dryCallLimit, and watch hears every item.
+func (m *Mover) DryCheck(ctx context.Context, p *Plan, by domain.Actor, watch func(done, total int, name, result string)) *Report {
+	return m.run(ctx, 0, p, true, by, nil, watch)
+}
+
+func (m *Mover) run(ctx context.Context, moveID int64, p *Plan, dry bool, by domain.Actor, progress func(done, total int), watch func(done, total int, name, result string)) *Report {
+	r := &run{watch: watch, m: m, ctx: ctx, move: moveID, dry: dry, by: by, people: map[string]int64{}, personStable: map[string]bool{}, personMarked: map[string]bool{},
 		rep: &Report{Move: moveID, Dry: dry, Apps: p.Apps, At: m.now(), Lines: []Line{}, Counts: map[string]int{},
 			NotMoved: append([]NotMoved{}, p.NotMoved...), NeedsInput: append([]string{}, p.NeedsInput...), Notes: p.Notes}}
-	if dry {
+	if dry && watch == nil {
 		r.lookupBy = time.Now().Add(dryLookupBudget)
 	}
 	r.folderGroup(p)
@@ -464,14 +468,21 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 			}
 			var res, detail string
 			r.choose = ""
-			r.attn, r.attnFolder, r.found, r.attnTitle, r.here = "", "", "", 0, ""
+			r.attn, r.attnFolder, r.found, r.attnTitle, r.here, r.missing = "", "", "", 0, "", ""
 			switch {
-			case g.Skipped:
+			case g.Skipped && !strings.HasPrefix(it.Key, "names:"):
 				res, detail = ResSkipped, "you left "+strings.ToLower(GroupLabels[g.Name])+" out"
 			case partOf(it) != "" && !m.partOn(partOf(it)):
 				res, detail = ResSkipped, "its part is off"
 			default:
 				res, detail = r.one(g.Name, it)
+			}
+			// The old app's past downloads come to the title's History,
+			// also for a title moved before.
+			if !r.dry && it.Title != nil && len(it.Title.History) > 0 && (res == ResAlready || res == ResAdopted || res == ResCreated || res == ResChanged) {
+				if id := r.titleHere(it.Title); id != 0 {
+					r.bringPast(id, it.Title)
+				}
 			}
 			needs := ""
 			if res == ResCreated || res == ResCreate {
@@ -480,6 +491,9 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 			r.line(g.Name, it, res, detail, needs)
 			if r.found != "" {
 				r.rep.Lines[len(r.rep.Lines)-1].Name = r.found
+			}
+			if res == ResNotFound && r.missing != "" {
+				r.rep.Lines[len(r.rep.Lines)-1].missing = r.missing
 			}
 			if r.attn != "" {
 				l := &r.rep.Lines[len(r.rep.Lines)-1]
@@ -495,6 +509,9 @@ func (m *Mover) Run(ctx context.Context, moveID int64, p *Plan, dry bool, by dom
 				l.open = res == ResSkipped && it.Person != nil && it.Person.Choice != PersonSkip
 			}
 			done++
+			if watch != nil {
+				watch(done, total, it.Name, res)
+			}
 			if progress != nil && (done%25 == 0 || done == total) {
 				progress(done, total)
 			}
@@ -517,8 +534,15 @@ func (r *run) line(group string, it Item, res, detail, needs string) {
 
 func next(rep *Report) []string {
 	var out []string
-	if rep.Counts[ResNotFound] > 0 {
+	missing, all := missingFolders(rep)
+	if missing != "" {
+		out = append(out, "These old app folders are not on this server, so nothing from them came over: "+missing+". Add path rules or make the folders reachable here, then import again (nothing is added twice).")
+	}
+	if rep.Counts[ResNotFound] > 0 && !all {
 		out = append(out, "Some folders were not found on this server: add path rules and import again (nothing is added twice).")
+	}
+	if folders := unreachableFolders(rep); folders != "" {
+		out = append(out, "These old app folders are not reachable from this server, so their titles came over without files: "+folders+". Add path rules or make the folders reachable here, then import again (nothing is added twice).")
 	}
 	if len(rep.NeedsInput) > 0 {
 		out = append(out, "Type the keys and passwords listed under \"needs your input\": Sources, Downloaders, Alerts and subtitle sites stay paused until then.")
@@ -547,7 +571,7 @@ func next(rep *Report) []string {
 		out = append(out, "Outside lists come over paused; turn each on under Settings > Outside lists after checking its folder and Pick rules.")
 	}
 	if trakt {
-		out = append(out, "Add your Trakt key under Settings > Outside lists before you turn a Trakt list on; the list must be public.")
+		out = append(out, "Add your Trakt key under Settings > Outside lists before you turn a Trakt list on; a private list also needs Sign in with Trakt there.")
 	}
 	if people {
 		out = append(out, "People came over turned off, as members (admin or owner only where you confirmed it): invite them from Settings > Users and roles.")
@@ -645,20 +669,6 @@ func (r *run) hasActiveMark(key string) bool {
 	return err == nil
 }
 
-// natural names, per kind of marked row, its table and the column that
-// with created_at fingerprints it: SQLite gives a deleted row's id to the
-// next row, so undo deletes a row only while its fingerprint still holds.
-var natural = map[string][2]string{
-	"ask": {"asks", "name"}, "user": {"users", "name"}, "alert": {"alerts", "name"}, "subtitle_site": {"subtitle_sites", "name"},
-	"source": {"sources", "name"}, "downloader": {"downloaders", "name"}, "never_add": {"never_add", "name"},
-	"title": {"titles", "kind"}, "folder": {"library_folders", "path"}, "outside_list": {"outside_lists", "name"},
-	"pick_rules": {"pick_rules", "name"}, "own_trait": {"own_traits", "name"},
-}
-
-type rowQuerier interface {
-	QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row
-}
-
 // fingerprint reads a marked row's created_at and natural key ("" when the
 // row is gone or its kind has none).
 func fingerprint(ctx context.Context, q rowQuerier, what string, id int64) string {
@@ -676,22 +686,6 @@ func readFingerprint(ctx context.Context, q rowQuerier, what string, id int64) (
 	return fp, err
 }
 
-func markFingerprintKind(what string) string {
-	if what == "music_policy" {
-		return "title"
-	}
-	if what == "ask_claim" {
-		return "ask"
-	}
-	return what
-}
-
-func sameMarkedCreation(marked, current string) bool {
-	mi := strings.IndexByte(marked, 31)
-	ci := strings.IndexByte(current, 31)
-	return mi > 0 && ci > 0 && marked[:mi] == current[:ci]
-}
-
 // markTx records, in the transaction that made the row, that this move
 // made it, with its fingerprint; before and after are a changed setting's
 // old and new values.
@@ -706,11 +700,6 @@ func (r *run) markTx(tx *sql.Tx, key, what string, id int64, before, after strin
 	_, err := tx.Exec(`INSERT OR REPLACE INTO move_made (move_id, key, what, row_id, before, after, fingerprint, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		r.move, key, what, id, before, after, fp, database.FormatTime(r.m.now()))
 	return err
-}
-
-// markWith is markTx as an after-insert step of another package's save.
-func (r *run) markWith(key, what string) func(tx *sql.Tx, id int64) error {
-	return func(tx *sql.Tx, id int64) error { return r.markTx(tx, key, what, id, "", "") }
 }
 
 func (r *run) one(group string, it Item) (string, string) {
@@ -764,6 +753,11 @@ func (r *run) one(group string, it Item) (string, string) {
 				return ResAlready, "imported before; the quality of " + strconv.Itoa(n) + " files was updated"
 			}
 		}
+		if it.Downloader != nil {
+			if added := r.downloaderAgain(it, id); added != "" {
+				return ResAlready, "imported before; " + added
+			}
+		}
 		return ResAlready, "imported before"
 	}
 	switch {
@@ -795,6 +789,10 @@ func (r *run) one(group string, it Item) (string, string) {
 		return r.ask(it)
 	case it.Alert != nil:
 		return r.alert(it)
+	case it.FileRules != nil:
+		return r.fileRules(it)
+	case it.TurnDown != nil:
+		return r.turnDown(it)
 	}
 	return ResFailed, "nothing to do for it"
 }

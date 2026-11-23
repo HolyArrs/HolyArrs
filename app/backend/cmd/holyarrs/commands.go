@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/health"
@@ -100,32 +99,4 @@ func configDirArg(args []string) string {
 		}
 	}
 	return dir
-}
-
-// resetOwner sets the owner's name and password from stdin ("name: ..." and
-// "password: ..." lines), for when the password is lost. Every session and API
-// key ends. It works while the server runs.
-func resetOwner(args []string) int {
-	c, err := parseFlags(args, os.Stderr)
-	if err != nil {
-		return 2
-	}
-	name, pw, err := accounts.ReadNewOwner(os.Stdin)
-	if err != nil {
-		log.Printf("reset-owner: %v", err)
-		return 1
-	}
-	s, err := database.Open(c.ConfigDir, database.Options{})
-	if err != nil {
-		log.Printf("reset-owner: %v", err)
-		return 1
-	}
-	defer s.Close()
-	if err := accounts.ResetOwner(context.Background(), s, name, pw); err != nil {
-		log.Printf("reset-owner: %v", err)
-		return 1
-	}
-	log.Printf("reset-owner: the owner is now %q; sign in again everywhere", name)
-	log.Printf("reset-owner: open invites and arr API keys were removed; review allowed hosts and local networks in Settings")
-	return 0
 }

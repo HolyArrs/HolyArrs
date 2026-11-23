@@ -82,8 +82,8 @@ func (s NamingSettings) validateMusic() error {
 		if strings.TrimSpace(p.pat) == "" {
 			return fmt.Errorf("the %s is empty", p.name)
 		}
-		if len(p.pat) > 200 {
-			return fmt.Errorf("the %s is too long (200 characters at most)", p.name)
+		if len(p.pat) > MaxPattern {
+			return fmt.Errorf("the %s is too long (%d characters at most)", p.name, MaxPattern)
 		}
 		if strings.ContainsAny(p.pat, `/\`) {
 			return fmt.Errorf("the %s holds a folder separator; it names one folder or one file", p.name)
@@ -93,7 +93,7 @@ func (s NamingSettings) validateMusic() error {
 			return fmt.Errorf("the %s: %w", p.name, err)
 		}
 		for w := range words {
-			if !musicWords[w] && w != "year" && w != "edition" {
+			if !musicWords[w] && w != "year" && w != "edition" && w != "quality_title" && w != "quality_full" {
 				return fmt.Errorf("the %s cannot use {%s}; music patterns use music words such as {artist}, {album} and {track}", p.name, w)
 			}
 		}
@@ -137,7 +137,8 @@ func musicVals(f TrackFacts) map[string]string {
 	}
 	return map[string]string{"artist": f.Artist, "artist_sort": theLast(f.Artist), "album": f.Album, "album_type": kind, "year": year,
 		"edition": f.Edition, "disc": disc, "track": track, "track_title": f.Title, "track_artist": ta,
-		"format": strings.ToUpper(strings.TrimPrefix(f.Ext, "."))}
+		"format": strings.ToUpper(strings.TrimPrefix(f.Ext, ".")), "quality_title": strings.ToUpper(strings.TrimPrefix(f.Ext, ".")),
+		"quality_full": strings.ToUpper(strings.TrimPrefix(f.Ext, "."))}
 }
 
 // theLast moves a leading "The " to the end: "The Beatles" sorts as
@@ -173,6 +174,7 @@ func fit(s NamingSettings, pat string, vals map[string]string, key string, n int
 // ArtistFolder names an artist folder from the artist folder pattern.
 func ArtistFolder(s NamingSettings, f TrackFacts) string {
 	s.fillMusic()
+	s = s.For(PartMusic)
 	name := fit(s, s.ArtistFolderPattern, musicVals(f), "artist", MusicMaxComponent)
 	if name == "" {
 		return "Unnamed"
@@ -184,6 +186,7 @@ func ArtistFolder(s NamingSettings, f TrackFacts) string {
 // album name that cleans to nothing is "Unknown album".
 func AlbumFolder(s NamingSettings, f TrackFacts) string {
 	s.fillMusic()
+	s = s.For(PartMusic)
 	if clean(s, f.Album) == "" {
 		f.Album = "Unknown album"
 	}
@@ -198,6 +201,7 @@ func AlbumFolder(s NamingSettings, f TrackFacts) string {
 // and the album has more than one disc).
 func DiscFolder(s NamingSettings, f TrackFacts) string {
 	s.fillMusic()
+	s = s.For(PartMusic)
 	if !s.DiscFolders || f.Discs < 2 || f.Disc < 1 {
 		return ""
 	}
@@ -209,6 +213,7 @@ func DiscFolder(s NamingSettings, f TrackFacts) string {
 // track pattern otherwise.
 func TrackFile(s NamingSettings, f TrackFacts) string {
 	s.fillMusic()
+	s = s.For(PartMusic)
 	pat := s.TrackPattern
 	if f.Discs > 1 && !s.DiscFolders {
 		pat = s.MultiDiscTrackPattern

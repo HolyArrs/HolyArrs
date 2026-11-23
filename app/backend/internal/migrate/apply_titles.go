@@ -134,11 +134,12 @@ func (r *run) title(it Item) (string, string) {
 	}
 	if lfID == 0 {
 		var here string
-		_ = r.m.Store.Read().QueryRowContext(r.ctx, "SELECT id, path FROM library_folders WHERE kind = ? ORDER BY id LIMIT 1", t.Kind).Scan(&lfID, &here)
+		_ = r.m.Store.Read().QueryRowContext(r.ctx, "SELECT id, path FROM library_folders WHERE kind = ? ORDER BY look_only, id LIMIT 1", t.Kind).Scan(&lfID, &here)
 		if lfID == 0 && r.dry && len(r.coming[t.Kind]) > 0 {
 			lfID, here = -1, r.coming[t.Kind][0] // added earlier in this same run
 		}
 		if lfID == 0 {
+			r.missing = t.Library
 			return ResNotFound, "its Library folder " + t.Library + " is not on this server, and there is no " + t.Kind + " Library folder here to add it to; add one and import again"
 		}
 		wantedLib, wantedDir = lib, dir
@@ -301,6 +302,15 @@ func (r *run) title(it Item) (string, string) {
 	for _, n := range t.SeasonsOff {
 		if other == "" {
 			_ = shows.New(r.m.Library).SetSeason(r.ctx, id, n, false, r.by) // a season the show does not have is fine
+		}
+	}
+	if other == "" {
+		bySeason := map[int][]int{}
+		for _, e := range t.EpisodesOff {
+			bySeason[e.Season] = append(bySeason[e.Season], e.Episode)
+		}
+		for n, eps := range bySeason {
+			_ = shows.New(r.m.Library).SkipEpisodes(r.ctx, id, n, eps, r.by) // a season the show does not have is fine
 		}
 	}
 	d := "uses the folder " + filepath.ToSlash(dir) + " where it is"

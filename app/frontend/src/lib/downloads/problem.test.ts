@@ -22,6 +22,11 @@ describe('problem', () => {
 		expect(problem(row({ protocol: 'torrent', availability: 0.6 }))).toEqual({ text: 'no full copy', tone: 'wait' });
 		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', availability: 0.6 }))?.tone).toBe('fail');
 	});
+	it('blames the Downloader when every download on it stopped together (#443)', () => {
+		const text = 'Every download on this Downloader stopped at the same time; check its internet connection (a VPN, for example).';
+		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', seeds: 0, peers: 0, text }))).toEqual({ text: 'downloader stopped', tone: 'wait' });
+	});
+
 	it('says no peers for a stalled torrent nobody shares', () => {
 		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', seeds: 0, peers: 0 }))).toEqual({ text: 'no peers', tone: 'wait' });
 		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', seeds: 2 }))).toBeNull();

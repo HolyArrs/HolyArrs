@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Vyberte, o co požádat příště",
 	"home.newPopular": "Novinky a oblíbené",
 	"home.whatSTrending": "Co letí",
+	"home.gettingReady": "Připravuje se to…",
 	"home.top10sAndComing": "Top 10 a již brzy",
 	"home.whatSNext": "Co bude dál",
 	"home.airDatesAndReleases": "Data vysílání a vydání",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Díly a filmy, které vyjdou tento týden",
 	"home.popularThisWeek": "Oblíbené novinky, které vyjdou tento týden",
 	"home.peopleCheck": "Kontrola lidí",
-	"home.cantReadUsers": "seznam uživatelů nelze přečíst"
+	"home.cantReadUsers": "seznam uživatelů nelze přečíst",
+	"home.joined.title": "Vítejte, {name}",
+	"home.joined.find": "Najděte něco v {explore} nebo {search}.",
+	"home.joined.ask": "Klepněte u titulu na {request} a získáte ho. Můžete žádat o:",
+	"home.joined.track": "Sledujte každou v {requests}.",
+	"home.joined.noLimit": "Bez týdenního limitu.",
+	"home.joined.gotIt": "Rozumím",
+	"home.joined.explore": "Otevřít {explore}"
 }

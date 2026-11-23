@@ -16,7 +16,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/encoding/unicode/utf32"
 	"golang.org/x/text/transform"
@@ -191,10 +190,17 @@ func unzip(data []byte) ([]Entry, error) {
 // mark is honoured, valid UTF-8 is kept as is and anything else is read as
 // Windows-1252. Text without a timed cue is refused.
 func Clean(b []byte, format string) (string, error) {
+	return CleanFor(b, format, "")
+}
+
+// CleanFor is Clean for a subtitle in a known language, a two-letter code.
+// Text that is not Unicode is read in the old encoding that suits the
+// language, such as Windows-1250 for Polish or GB18030 and Big5 for Chinese.
+func CleanFor(b []byte, format, lang string) (string, error) {
 	if len(b) > MaxText {
 		return "", ErrTooBig
 	}
-	text, err := decode(b)
+	text, _, err := decode(b, lang)
 	if err != nil {
 		return "", err
 	}
@@ -215,32 +221,37 @@ func Clean(b []byte, format string) (string, error) {
 	return out, nil
 }
 
-func decode(b []byte) (string, error) {
+func decode(b []byte, lang string) (string, string, error) {
 	var enc transform.Transformer
+	name := ""
 	switch {
 	case bytes.HasPrefix(b, []byte{0x00, 0x00, 0xFE, 0xFF}):
-		enc = utf32.UTF32(utf32.BigEndian, utf32.ExpectBOM).NewDecoder()
+		enc, name = utf32.UTF32(utf32.BigEndian, utf32.ExpectBOM).NewDecoder(), "utf-32be"
 	case bytes.HasPrefix(b, []byte{0xFF, 0xFE, 0x00, 0x00}):
-		enc = utf32.UTF32(utf32.LittleEndian, utf32.ExpectBOM).NewDecoder()
+		enc, name = utf32.UTF32(utf32.LittleEndian, utf32.ExpectBOM).NewDecoder(), "utf-32le"
 	case bytes.HasPrefix(b, []byte{0xFE, 0xFF}):
-		enc = unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM).NewDecoder()
+		enc, name = unicode.UTF16(unicode.BigEndian, unicode.ExpectBOM).NewDecoder(), "utf-16be"
 	case bytes.HasPrefix(b, []byte{0xFF, 0xFE}):
-		enc = unicode.UTF16(unicode.LittleEndian, unicode.ExpectBOM).NewDecoder()
+		enc, name = unicode.UTF16(unicode.LittleEndian, unicode.ExpectBOM).NewDecoder(), "utf-16le"
 	case bytes.HasPrefix(b, []byte{0xEF, 0xBB, 0xBF}):
-		return string(b[3:]), nil
+		return string(b[3:]), "utf-8", nil
 	case utf8.Valid(b):
-		return string(b), nil
-	default:
-		enc = charmap.Windows1252.NewDecoder()
+		return string(b), "utf-8", nil
 	}
-	out, _, err := transform.Bytes(enc, b)
+	var out []byte
+	var err error
+	if enc != nil {
+		out, _, err = transform.Bytes(enc, b)
+	} else {
+		out, name, err = decodeLegacy(b, lang)
+	}
 	if err != nil {
-		return "", fmt.Errorf("%w: %v", ErrNotSubtitle, err)
+		return "", "", fmt.Errorf("%w: %v", ErrNotSubtitle, err)
 	}
 	if len(out) > 2*MaxText {
-		return "", ErrTooBig
+		return "", "", ErrTooBig
 	}
-	return string(out), nil
+	return string(out), name, nil
 }
 
 // hasCue reports whether text holds at least one timed cue.

@@ -4,6 +4,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // A Plan says what a move would bring over from one or more Snapshots:
@@ -18,6 +19,7 @@ const (
 	GroupRules       = "pick_rules"
 	GroupTitles      = "titles"
 	GroupNeverAdd    = "never_add"
+	GroupTurnedDown  = "turned_down"
 	GroupLists       = "outside_lists"
 	GroupSources     = "sources"
 	GroupDownloaders = "downloaders"
@@ -31,12 +33,16 @@ const (
 )
 
 // GroupOrder lists the groups in the order they are shown and moved.
-var GroupOrder = []string{GroupFolders, GroupRules, GroupTitles, GroupNeverAdd, GroupLists, GroupSources, GroupDownloaders,
+// Sources come before the titles, so setup's Sources step shows them within
+// seconds while the long title list is still moving. Downloaders stay after
+// the titles: a linked client's items are matched to titles as it arrives.
+// The Turned down list comes after Sources: each release is kept under one.
+var GroupOrder = []string{GroupFolders, GroupRules, GroupSources, GroupTitles, GroupNeverAdd, GroupLists, GroupDownloaders, GroupTurnedDown,
 	GroupNaming, GroupSubtitles, GroupPeople, GroupRequests, GroupAlerts}
 
 // GroupLabels are the groups' names on the move screen.
 var GroupLabels = map[string]string{
-	GroupFolders: "Library folders", GroupRules: "Pick rules", GroupTitles: "Titles", GroupNeverAdd: "Never-add list", GroupLists: "Outside lists",
+	GroupFolders: "Library folders", GroupRules: "Pick rules", GroupTitles: "Titles", GroupNeverAdd: "Never-add list", GroupTurnedDown: "Turned down", GroupLists: "Outside lists",
 	GroupSources: "Sources", GroupDownloaders: "Downloaders", GroupNaming: "Naming", GroupSubtitles: "Subtitles",
 	GroupPeople: "People", GroupRequests: "Requests", GroupAlerts: "Alerts", GroupOther: "Other settings",
 }
@@ -76,7 +82,20 @@ type Choices struct {
 	// them": their titles stay behind, whether or not this server can see
 	// the folder.
 	LeaveFolders []string `json:"leave_folders,omitempty"`
+	// Names says what happens to the names of files already there and
+	// later imports: NamesKeep ("" too) or NamesRename.
+	Names string `json:"names,omitempty"`
 }
+
+// Names choices: keep the files' names as they are (rename on import off),
+// or rename to HolyArrs naming (on; files already there change only
+// through the Rename preview).
+const (
+	NamesKeep   = "keep"
+	NamesRename = "rename"
+)
+
+func validNames(v string) bool { return v == "" || v == NamesKeep || v == NamesRename }
 
 // Person choices on the move screen.
 const (
@@ -147,6 +166,8 @@ type Item struct {
 	AskSettings *AskSettingsPlan  `json:"ask_settings,omitempty"`
 	Ask         *AskPlan          `json:"ask,omitempty"`
 	Alert       *AlertPlan        `json:"alert,omitempty"`
+	FileRules   *FileRulesPlan    `json:"file_rules,omitempty"`
+	TurnDown    *TurnDownPlan     `json:"turn_down,omitempty"`
 }
 
 // NotMoved is one setting the move leaves behind, and why.
@@ -168,6 +189,18 @@ type FolderPlan struct {
 	// Unseen says this server cannot see OldPath as it is (set for the
 	// folder step only; the plan hash never covers it).
 	Unseen bool `json:"unseen,omitempty"`
+	// Checked and Found say how many of this folder's title folders were
+	// looked for in Path and how many are there (folder step only; the plan
+	// hash never covers them).
+	Checked int `json:"checked,omitempty"`
+	Found   int `json:"found,omitempty"`
+	// Missing says Path is not a folder this server can see.
+	Missing bool `json:"missing,omitempty"`
+	// ReadOnly says HolyArrs cannot write to Path, so the import would fail.
+	ReadOnly bool `json:"read_only,omitempty"`
+	// Suggest is the folder here that holds most of these titles, when the
+	// old folder is not seen as it is (folder step only).
+	Suggest string `json:"suggest,omitempty"`
 }
 
 // RulesPlan matches one of their profiles to our Pick rules.
@@ -198,12 +231,17 @@ type ProtocolPlan struct {
 	Part             string `json:"part,omitempty"` // movies, shows or music when only that part's apps set it
 }
 
-// OutsideListPlan is a Radarr TMDB or public Trakt list to add as an
-// Outside list, always paused.
+// OutsideListPlan is a Radarr TMDB or Trakt list, or a Sonarr Trakt list,
+// to add as an Outside list, always paused.
 type OutsideListPlan struct {
 	Kind string `json:"kind"` // tmdb_list, trakt_list
 	Ref  string `json:"ref"`
-	// Library is the movie Library folder's path here.
+	// TitleKind is "show" for a Sonarr list; empty for a movie list.
+	TitleKind string `json:"title_kind,omitempty"`
+	// Seasons and NewSeasons are a show list's choices (requests.OutsideListInput).
+	Seasons    string `json:"seasons,omitempty"`
+	NewSeasons string `json:"new_seasons,omitempty"`
+	// Library is the movie or show Library folder's path here.
 	Library        string `json:"library"`
 	Preset         string `json:"pick_rules,omitempty"`
 	KeepUpToDate   bool   `json:"keep_up_to_date"`
@@ -212,12 +250,23 @@ type OutsideListPlan struct {
 	SyncEveryHours int    `json:"sync_every_hours"`
 }
 
+// titleKind is what the list adds: "show" for a Sonarr list, else "movie".
+func (o *OutsideListPlan) titleKind() string {
+	if o.TitleKind == "show" {
+		return "show"
+	}
+	return "movie"
+}
+
 // TitlePlan is a movie, show or artist to add, adopting its folder.
 type TitlePlan struct {
-	Kind string            `json:"kind"` // movie, show, artist
-	ID   string            `json:"id"`   // tmdb:603, tvdb:81189, mbid:<id>
-	IDs  map[string]string `json:"ids"`
-	Year int               `json:"year,omitempty"`
+	// hasFiles says the old app had files for it (so its folder should be
+	// on disk); only the folder step's counts read it.
+	hasFiles bool
+	Kind     string            `json:"kind"` // movie, show, artist
+	ID       string            `json:"id"`   // tmdb:603, tvdb:81189, mbid:<id>
+	IDs      map[string]string `json:"ids"`
+	Year     int               `json:"year,omitempty"`
 	// Library is the Library folder's path here; Folder its folder in it.
 	Library      string `json:"library"`
 	Folder       string `json:"folder"`
@@ -225,6 +274,8 @@ type TitlePlan struct {
 	Preset       string `json:"pick_rules,omitempty"`
 	// Seasons left off (shows): season numbers not kept up to date.
 	SeasonsOff []int `json:"seasons_off,omitempty"`
+	// EpisodesOff are single episodes not kept up to date (shows).
+	EpisodesOff []sources.EpisodeNumber `json:"episodes_off,omitempty"`
 	// Unresolved says why the folder could not be placed ("" when it can).
 	Unresolved string           `json:"unresolved,omitempty"`
 	Music      *MusicPolicyPlan `json:"music,omitempty"`
@@ -239,6 +290,10 @@ type TitlePlan struct {
 	// OldEpisodes are the old app's episodes in each file, by the file's
 	// base name: a show whose seasons differ places a file by them.
 	OldEpisodes map[string][]OldEpisode `json:"old_episodes,omitempty"`
+	// History is the old app's past downloads of the title, brought to
+	// its History; App names the old app ("sonarr").
+	History []PastEvent `json:"history,omitempty"`
+	App     string      `json:"app,omitempty"`
 }
 
 // MusicPolicyPlan is the supported part of an artist's Lidarr monitoring
@@ -258,6 +313,28 @@ type MusicAlbumPlan struct {
 	PressingMBID string `json:"pressing_mbid,omitempty"`
 }
 
+// FileRulesPlan is an old app's "unmonitor deleted" switch: whether a
+// movie or an episode whose file is deleted from disk stops being kept up
+// to date.
+type FileRulesPlan struct {
+	Kind          string `json:"kind"` // movie or show
+	UnkeepDeleted bool   `json:"unkeep_deleted"`
+}
+
+// TurnDownPlan is one release on the old app's blocklist, for the Turned
+// down list of its title.
+type TurnDownPlan struct {
+	Kind     string                  `json:"kind"` // movie, show
+	ID       string                  `json:"id"`   // the title's TitlePlan id: tmdb:603, tvdb:81189
+	IDs      map[string]string       `json:"ids"`
+	Name     string                  `json:"name"`
+	InfoHash string                  `json:"info_hash,omitempty"`
+	Protocol string                  `json:"protocol"`
+	Indexer  string                  `json:"indexer,omitempty"`
+	Reason   string                  `json:"reason,omitempty"`
+	Episodes []sources.EpisodeNumber `json:"episodes,omitempty"`
+}
+
 // NeverAddPlan is one entry for the Never-add list.
 type NeverAddPlan struct {
 	Kind string            `json:"kind"`
@@ -272,19 +349,25 @@ type SourcePlan struct {
 	Kinds      []string         `json:"kinds"`
 	Categories map[string][]int `json:"categories,omitempty"`
 	MinSeeders *int             `json:"min_seeders,omitempty"`
-	Priority   int              `json:"priority"`
-	NeedsKey   bool             `json:"needs_key"`
-	On         bool             `json:"on"`
+	// MultiLanguages are the indexer's "Multi Languages": what MULTi means there.
+	MultiLanguages []string `json:"multi_languages,omitempty"`
+	Priority       int      `json:"priority"`
+	NeedsKey       bool     `json:"needs_key"`
+	On             bool     `json:"on"`
 }
 
 // DownloaderPlan is a Downloader to add.
 type DownloaderPlan struct {
-	Adapter    string `json:"kind"` // qbittorrent, transmission, deluge, rtorrent, aria2, sabnzbd, nzbget
-	URL        string `json:"url"`
-	Username   string `json:"username,omitempty"`
-	Category   string `json:"category,omitempty"`
-	Priority   int    `json:"priority"`
-	NeedsInput bool   `json:"needs_input"`
+	Adapter  string `json:"kind"` // qbittorrent, transmission, deluge, rtorrent, aria2, sabnzbd, nzbget
+	URL      string `json:"url"`
+	Username string `json:"username,omitempty"`
+	Category string `json:"category,omitempty"`
+	// The category each old app used on this client for its kind of title.
+	CategoryShows  string `json:"category_shows,omitempty"`
+	CategoryMovies string `json:"category_movies,omitempty"`
+	CategoryMusic  string `json:"category_music,omitempty"`
+	Priority       int    `json:"priority"`
+	NeedsInput     bool   `json:"needs_input"`
 	// PathMap is the old apps' path rewrites for this client's host.
 	PathMap []domain.PathMap `json:"path_map,omitempty"`
 }
@@ -343,6 +426,8 @@ type AskPlan struct {
 	IDs      map[string]string `json:"ids"`
 	Seasons  []int             `json:"seasons,omitempty"`
 	Approved bool              `json:"approved"`
+	// Done: finished in the old app, so it lands as Done, not Waiting.
+	Done bool `json:"done,omitempty"`
 	// By is the asker's Person key; ByName their name there.
 	By        string `json:"by"`
 	ByName    string `json:"by_name,omitempty"`
@@ -363,13 +448,20 @@ type AskSettingsPlan struct {
 
 // AlertPlan is an Alert to add (always off until its secret is typed).
 type AlertPlan struct {
-	Kind         string `json:"kind"` // discord, webhook, email
+	Kind         string `json:"kind"` // discord, webhook, email, telegram, ntfy, gotify, pushover
 	SMTPHost     string `json:"smtp_host,omitempty"`
 	SMTPPort     int    `json:"smtp_port,omitempty"`
 	SMTPSecurity string `json:"smtp_security,omitempty"`
 	SMTPFrom     string `json:"smtp_from,omitempty"`
 	SMTPUser     string `json:"smtp_user,omitempty"`
 	StaffTo      string `json:"staff_to,omitempty"`
+	ChatID       string `json:"chat_id,omitempty"` // telegram
+	// ServerURL is an ntfy or Gotify server, scheme and host only.
+	ServerURL string `json:"server_url,omitempty"`
+	// AllowLocal is set when that server is on the local network.
+	AllowLocal bool `json:"allow_local,omitempty"`
+	// Moments are the moments the old app spoke for (nil: every moment).
+	Moments []string `json:"moments,omitempty"`
 }
 
 // Group returns the named group (nil when there is none).

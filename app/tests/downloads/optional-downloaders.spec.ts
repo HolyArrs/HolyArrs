@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { plainForm } from '../helpers/helpers.ts';
+import { plainForm, reachSetupAccount } from '../helpers/helpers.ts';
 
 type Kind = 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent' | 'aria2';
 
@@ -49,14 +49,13 @@ async function signIn(page: Page) {
 
 async function bootstrap(page: Page) {
 	await page.goto('/');
-	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill(owner.name);
+	await reachSetupAccount(page);
+	await page.getByLabel('Username').fill(owner.name);
 	await page.getByLabel('Password', { exact: true }).fill(owner.password);
-	await page.getByLabel('Password again').fill(owner.password);
-	await page.getByRole('button', { name: 'Create account' }).click();
+	await page.getByLabel('Confirm password').fill(owner.password);
+	await page.getByRole('button', { name: 'Create account and continue' }).click();
 
-	await expect(page).toHaveURL(/\/welcome\?first=1$/);
+	await expect(page).toHaveURL(/\/welcome\?first=1/);
 	const firstRun = await page.evaluate(async ({ folder }) => {
 		const me = await fetch('/api/v1/auth/me');
 		if (!me.ok) throw new Error(`first-run session check returned ${me.status}`);

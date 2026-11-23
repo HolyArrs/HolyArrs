@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Só estes podem dizer de onde veio uma visita.",
 	"settings.signIn.fixToSaveOne": "Corrige 1 linha para guardar",
 	"settings.signIn.fixToSaveOther": "Corrige {n} linhas para guardar",
-	"settings.signIn.localSaved": "Rede local guardada"
+	"settings.signIn.localSaved": "Rede local guardada",
+	"settings.signIn.forgotTitle": "Esqueceu a palavra-passe?",
+	"settings.signIn.forgotOn": "Mostrar Esqueceu a palavra-passe? na página de início de sessão",
+	"settings.signIn.forgotNote": "O proprietário recebe um código de utilização única no registo do servidor. Desligue-o se as pessoas entram por início de sessão único. O comando reset-owner continua a funcionar.",
+	"settings.signIn.forgotShown": "Esqueceu a palavra-passe? está ligado",
+	"settings.signIn.forgotHidden": "Esqueceu a palavra-passe? está desligado"
 }

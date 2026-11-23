@@ -9,4 +9,6 @@ const (
 	KindSearchAlbum   = "search_album"
 	KindSearchSlot    = "search_slot"
 	KindSearchSeason  = "search_season"
+	// KindReleaseCheck lists the releases for a movie not in the Library yet.
+	KindReleaseCheck = "release_check"
 )

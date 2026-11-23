@@ -25,6 +25,29 @@ export const GROW_MS = 220;
 export const SHRINK_MS = 180;
 export const GROW_DELAY = 400;
 export const TRAILER_AFTER = 0;
+// Room around a row arrow where hovering a card does not start the grow timer.
+export const ARROW_PAD = 12;
+
+// Narrows the row bounds so a grown card stops short of the row's shown arrows and never covers them.
+export function clearOfArrows(bounds: { left: number; right: number }, arrows: readonly Rect[], gap = 8): { left: number; right: number } {
+	let { left, right } = bounds;
+	const mid = (left + right) / 2;
+	for (const a of arrows) {
+		if (a.left + a.width / 2 > mid) right = Math.min(right, a.left - gap);
+		else left = Math.max(left, a.left + a.width + gap);
+	}
+	return { left, right };
+}
+
+// The shown arrows of the row a card sits in, as screen rectangles.
+export function rowArrows(node: Element | null | undefined): Rect[] {
+	return [...(node?.closest('.ui-shelf')?.querySelectorAll('.arrow:not(.hide) .ui-ibtn') ?? [])].map((a) => a.getBoundingClientRect());
+}
+
+// True when the point sits on, or close to, one of the shown row arrows.
+export function nearArrow(x: number, y: number, arrows: readonly Rect[], pad = ARROW_PAD): boolean {
+	return arrows.some((a) => x >= a.left - pad && x <= a.left + a.width + pad && y >= a.top - pad && y <= a.top + a.height + pad);
+}
 
 // Keeps the grown card inside the view and bounds, and returns the offset to animate from.
 export function growPlacement(

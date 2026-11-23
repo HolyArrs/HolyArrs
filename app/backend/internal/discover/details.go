@@ -347,10 +347,18 @@ func (h *Handlers) metadataDetails(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Caching(w, r, "")
 	det := *e.Details
+	// Read again here so details kept before notes existed carry them too.
+	det.ContentNotes = metadata.ContentNotes(det.Keywords)
 	if det.People == nil {
 		det.People = []metadata.DetailPerson{}
 	}
-	detailsText(&det, text)
+	if src, ok := metadata.TitleLogoerFor(r.Context(), h.Metadata); ok && readerLogo(r.Context(), src, &det, kind, id, lang) {
+		kept := *e.Details
+		kept.Logos = det.Logos
+		h.Cache.Put(key, Entry{At: e.At, Details: &kept})
+		metadata.KeepOnDisk(r.Context(), h.Store, key, kept)
+	}
+	detailsText(&det, text, lang)
 	type collectionView struct {
 		ID    string     `json:"id"`
 		Name  string     `json:"name"`

@@ -36,5 +36,7 @@
 	"settings.move.undoId": "التراجع عن الاستيراد {id}؟",
 	"settings.move.undoQuestion": "التراجع عن هذا الاستيراد؟",
 	"settings.move.undoNote": "يزيل ما أضافه هذا الاستيراد؛ وتبقى تغييراتك اللاحقة. نزّل التقرير أولًا إن أردته.",
-	"settings.move.undoMove": "التراجع عن الاستيراد"
+	"settings.move.undoMove": "التراجع عن الاستيراد",
+	"settings.move.continueSetup": "متابعة الإعداد",
+	"settings.move.backToChoose": "العودة إلى الاختيار"
 }

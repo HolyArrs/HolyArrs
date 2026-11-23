@@ -36,7 +36,7 @@ func jobCount(t *testing.T, s *database.Store, kind string) int {
 	return n
 }
 
-func TestScheduleProbeNoWorkUsesMemoryOnlyUntilNextProbe(t *testing.T) {
+func TestScheduleProbeNoWorkKeepsCheckOnceThenMemory(t *testing.T) {
 	s := newStore(t, t.TempDir())
 	t.Cleanup(func() { _ = s.Close() })
 	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
@@ -58,9 +58,11 @@ func TestScheduleProbeNoWorkUsesMemoryOnlyUntilNextProbe(t *testing.T) {
 	if kinds, err := q.RunSchedules(context.Background(), now); err != nil || len(kinds) != 0 {
 		t.Fatalf("first probe: kinds %v err %v", kinds, err)
 	}
-	if calls.Load() != 1 || s.WriteCount() != writes || jobCount(t, s, sc.Kind) != 0 || changes.Load() != 0 {
+	// The first no-work check is kept once; nothing else is written.
+	if calls.Load() != 1 || s.WriteCount() != writes+1 || jobCount(t, s, sc.Kind) != 0 || changes.Load() != 0 {
 		t.Fatalf("false probe calls=%d writes=%d jobs=%d changes=%d", calls.Load(), s.WriteCount()-writes, jobCount(t, s, sc.Kind), changes.Load())
 	}
+	writes++
 	_, eventsAfter, err := s.Events(context.Background(), database.EventFilter{Limit: 1})
 	if err != nil || eventsAfter != eventsBefore {
 		t.Fatalf("false probe events: before=%d after=%d err=%v", eventsBefore, eventsAfter, err)
@@ -107,13 +109,20 @@ func TestScheduleProbeWatermarkInvalidatesOnEditAndRestart(t *testing.T) {
 		t.Fatalf("edited schedule did not invalidate watermark: %d calls", calls.Load())
 	}
 
+	// A restart keeps the check: no reprobe until its interval is over.
 	q2 := New(s, Options{})
 	q2.ProbeSchedule(sc.Kind, probe)
 	if _, err := q2.RunSchedules(context.Background(), now.Add(2*time.Minute)); err != nil {
 		t.Fatal(err)
 	}
+	if calls.Load() != 2 {
+		t.Fatalf("new queue reprobed inside the kept check: %d calls", calls.Load())
+	}
+	if _, err := q2.RunSchedules(context.Background(), now.Add(time.Minute+1800*time.Second)); err != nil {
+		t.Fatal(err)
+	}
 	if calls.Load() != 3 {
-		t.Fatalf("new queue did not reprobe: %d calls", calls.Load())
+		t.Fatalf("new queue did not reprobe after the interval: %d calls", calls.Load())
 	}
 }
 
@@ -598,10 +607,10 @@ func TestQueueStopClearsProcessLocalScheduleState(t *testing.T) {
 		t.Fatal(err)
 	}
 	q.Stop()
-	if len(q.scheduleNoop) != 0 || len(q.prepared) != 0 {
+	if len(q.scheduleNoop) != 0 || len(q.scheduleChecked) != 0 || len(q.prepared) != 0 {
 		t.Fatalf("Stop kept process state: no-op=%v prepared=%v", q.scheduleNoop, q.prepared)
 	}
-	if _, err := q.RunSchedules(context.Background(), now.Add(time.Minute)); err != nil {
+	if _, err := q.RunSchedules(context.Background(), now.Add(15*time.Minute)); err != nil {
 		t.Fatal(err)
 	}
 	if calls.Load() != 2 || len(q.prepared) != 1 {

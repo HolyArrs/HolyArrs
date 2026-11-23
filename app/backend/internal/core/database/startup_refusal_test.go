@@ -136,3 +136,20 @@ func TestSchemaVersionMatchesTheMigrator(t *testing.T) {
 		t.Fatalf("SchemaVersion = %d, SchemaVersions = %d", have, know)
 	}
 }
+
+// Someone who chooses to keep /config on an Unraid user share can.
+func TestFuseFolderOverride(t *testing.T) {
+	if _, err := Open(t.TempDir(), Options{NetworkShare: shareAs("fuse")}); !errors.Is(err, ErrNetworkShare) {
+		t.Fatalf("no override, FUSE not refused: %v", err)
+	}
+	t.Setenv("HOLYARRS_ALLOW_FUSE_FOLDER", "1")
+	s, err := Open(t.TempDir(), Options{NetworkShare: shareAs("fuse")})
+	if err != nil {
+		t.Fatalf("override set, FUSE refused: %v", err)
+	}
+	_ = s.Close()
+	// The override is only for FUSE, never for a network share.
+	if _, err := Open(t.TempDir(), Options{NetworkShare: shareAs("nfs")}); !errors.Is(err, ErrNetworkShare) {
+		t.Fatalf("FUSE override lifted an NFS refusal: %v", err)
+	}
+}

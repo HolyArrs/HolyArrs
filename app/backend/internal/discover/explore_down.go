@@ -1,6 +1,7 @@
 package discover
 
 import (
+	"context"
 	"errors"
 	"log"
 	"sync"
@@ -26,13 +27,19 @@ type serverHold struct {
 	down  bool
 	fails int
 	until time.Time
+	since time.Time // when this spell started
+	waits int       // list asks held back during the spell
 }
 
 // held says outside list asks wait now.
 func (h *serverHold) held(now time.Time) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return h.down && now.Before(h.until)
+	if h.down && now.Before(h.until) {
+		h.waits++
+		return true
+	}
+	return false
 }
 
 // note records one outside ask's answer; err nil is an answer. Our own
@@ -40,7 +47,8 @@ func (h *serverHold) held(now time.Time) bool {
 // already running), so it does not start or lengthen the wait. It says true
 // when the server answers again after a spell down.
 func (h *serverHold) note(err error, now time.Time) (back bool) {
-	if errors.Is(err, outbound.ErrSuppressed) {
+	// A browser that left cancels its ask: that says nothing about the server.
+	if errors.Is(err, outbound.ErrSuppressed) || errors.Is(err, context.Canceled) {
 		return false
 	}
 	h.mu.Lock()
@@ -48,9 +56,9 @@ func (h *serverHold) note(err error, now time.Time) (back bool) {
 	if err == nil {
 		back = h.down
 		if back {
-			log.Printf("explore: metadata server answers again")
+			log.Printf("explore: metadata server answers again after %s, %d list asks waited", now.Sub(h.since).Round(time.Second), h.waits)
 		}
-		h.down, h.fails, h.until = false, 0, time.Time{}
+		h.down, h.fails, h.until, h.waits = false, 0, time.Time{}, 0
 		return back
 	}
 	until := now.Add(min(downWaitMin<<min(h.fails, 5), downWaitMax))
@@ -60,6 +68,9 @@ func (h *serverHold) note(err error, now time.Time) (back bool) {
 		until = r.Until
 	} else if !h.down {
 		log.Printf("explore: metadata server is not answering, Explore uses kept lists and tries again later: %v", err)
+	}
+	if !h.down {
+		h.since = now
 	}
 	h.down, h.fails, h.until = true, h.fails+1, until
 	return false
@@ -127,3 +138,17 @@ func serverDown(err error) bool {
 
 // lookupsOff says the owner turned lookups off, so Explore asks no one.
 func (e *Explore) lookupsOff() bool { return e.LookupsOff != nil && e.LookupsOff() }
+
+// QueueSeen queues a build for a page view, unless the pool came out empty:
+// its backed-off retries, the server answering again and the daily build
+// refill it, while a page polling every few seconds would otherwise rebuild
+// it on every poll.
+func (e *Explore) QueueSeen(k PoolKey, now time.Time) {
+	e.mu.Lock()
+	_, retrying := e.empty[k]
+	e.mu.Unlock()
+	if retrying {
+		return
+	}
+	e.QueuePool(k, now, false)
+}

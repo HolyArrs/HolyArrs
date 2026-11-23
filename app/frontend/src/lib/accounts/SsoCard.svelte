@@ -24,6 +24,8 @@
 		redirect_url: string;
 		suggested_redirect_url: string;
 		allow_join: boolean;
+		groups_claim: string;
+		group_roles: string;
 		links: number;
 		local_network_allowed: boolean;
 		forward: { on: boolean; issuer?: string; allow_join: boolean; links: number };
@@ -37,6 +39,8 @@
 	let typedCred = $state(''); // The client secret as typed; cleared after a save that worked.
 	let publicClient = $state(false);
 	let allowJoin = $state(false);
+	let groupsClaim = $state('');
+	let groupRoles = $state('');
 	let proof = $state(''); // The owner's HolyArrs password, sent with every save.
 	let code = $state('');
 	let busy = $state(false);
@@ -60,6 +64,8 @@
 		issuer = v.issuer;
 		clientId = v.client_id;
 		allowJoin = v.allow_join;
+		groupsClaim = v.groups_claim ?? '';
+		groupRoles = v.group_roles ?? '';
 		publicClient = !v.secret_set && !!v.issuer;
 		typedCred = '';
 	}
@@ -108,6 +114,8 @@
 				public_client: publicClient,
 				redirect_url: callback,
 				allow_join: allowJoin,
+				groups_claim: groupsClaim.trim(),
+				group_roles: groupRoles.trim(),
 				confirm_everyone: confirmEveryone
 			});
 			fill(out.sso); // Clears the typed secret too.
@@ -117,7 +125,7 @@
 			toasts.push(t('accounts.sso.saved'), 'ok', gone ? { body: gone } : undefined);
 			await session.loadWays();
 		} catch (err) {
-			saveError = err instanceof ApiError && err.body.code === 'wrong_proof' ? t('accounts.sso.wrongProof') : message(err);
+			saveError = err instanceof ApiError && err.body.code === 'wrong_proof' ? t('accounts.sso.wrongProof') : err instanceof ApiError && err.body.code === 'group_roles' ? t('accounts.sso.groupRolesHint') : message(err);
 		} finally {
 			// A failed save keeps the typed secret, so fixing the password does not save without it.
 			busy = false;
@@ -197,6 +205,12 @@
 						<span class="sw" aria-hidden="true"></span>
 						<span>{t('accounts.sso.allowJoin')}</span>
 					</label>
+					<Field id="sso-groups-claim" label={t('accounts.sso.groupsClaimLabel')} hint={t('accounts.sso.groupsClaimHint')}>
+						<input id="sso-groups-claim" class="input mono" bind:value={groupsClaim} maxlength="100" autocomplete="off" spellcheck="false" placeholder="groups" />
+					</Field>
+					<Field id="sso-group-roles" label={t('accounts.sso.groupRolesLabel')} hint={t('accounts.sso.groupRolesHint')}>
+						<input id="sso-group-roles" class="input mono" bind:value={groupRoles} maxlength="4000" autocomplete="off" spellcheck="false" placeholder="admins=admin, family=member" disabled={!groupsClaim.trim()} />
+					</Field>
 					{#if opening}
 						<label class="check small notice warn">
 							<input type="checkbox" bind:checked={confirmEveryone} data-testid="sso-confirm-everyone" />

@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Mensajes de plugins",
+	"requests.moment.plugin_message.body": "Un plugin que permitiste envía un mensaje.",
+	"requests.words.via": "{who} vía {plugin}",
 	"requests.moment.ask_waiting.title": "Solicitud nueva",
 	"requests.moment.ask_waiting.body": "Para el personal: una película, serie o artista espera aprobación.",
 	"requests.moment.ask_approved.title": "Aprobada",
@@ -171,7 +174,7 @@
 	"requests.lists.tmdb": "Lista de TMDB",
 	"requests.lists.tmdbHint": "El número de la lista o su enlace, por ejemplo themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Lista de Trakt",
-	"requests.lists.traktHint": "user/list, user/watchlist o el enlace, por ejemplo trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist o el enlace, por ejemplo trakt.tv/users/ana/lists/favourites. O una clasificación: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "Lista de MDBList",
 	"requests.lists.mdblistHint": "user/list o el enlace, por ejemplo mdblist.com/lists/ana/favourites. Las listas públicas funcionan sin clave.",
 	"requests.lists.everyDay": "cada día",
@@ -199,6 +202,7 @@
 	"requests.report.reply.nothingWrong": "No se encontró ningún problema",
 	"requests.outcome.noResults": "Aún sin resultados",
 	"requests.outcome.nothingFound": "No se encontró nada:",
+	"requests.outcome.refused": "Encontrado, pero nada cumple las reglas de elección",
 	"requests.outcome.why.slowed": "se pausó (ralentizada)",
 	"requests.outcome.why.down": "estaba caída",
 	"requests.outcome.why.blocked": "estaba bloqueada",
@@ -229,6 +233,7 @@
 	"requests.add.titleBare": "Añadir",
 	"requests.addMovie.titleBare": "Añadir una película",
 	"requests.add.loadingDefaults": "Cargando los valores por defecto",
+	"requests.add.defaultsLate": "Tus valores predeterminados guardados no cargaron a tiempo, así que se eligieron las opciones habituales. Revísalas antes de añadir.",
 	"requests.add.noFolder.music": "Aún no hay una carpeta de la Biblioteca para música. Primero <a>añade una</a>.",
 	"requests.add.noFolder.movie": "Aún no hay una carpeta de la Biblioteca para películas. Primero <a>añade una</a>.",
 	"requests.add.noFolder.show": "Aún no hay una carpeta de la Biblioteca para series. Primero <a>añade una</a>.",
@@ -246,6 +251,7 @@
 	"requests.add.followHint": "Mostrarla en mi calendario.",
 	"requests.add.cancel": "Cancelar",
 	"requests.add.submit": "Añadir a la Biblioteca",
+	"requests.add.submitChoose": "Añadir y elegir una versión",
 	"requests.addArtist.albums": "Álbumes que se mantienen al día",
 	"requests.addArtist.newAlbums": "Álbumes nuevos",
 	"requests.addArtist.newAlbumsHint": "Qué pasa con un álbum que sale más adelante.",
@@ -502,6 +508,8 @@
 	"requests.board.tabShowing": ", mostrando {status}",
 	"requests.board.reportsOpen": "Informes, {n} abiertos",
 	"requests.board.approveAll": "Aprobar todas",
+	"requests.board.approveAllTitle": "¿Aprobar todas las solicitudes pendientes ({n})?",
+	"requests.board.approveAllDesc": "Incluye las solicitudes más abajo en la lista que aún no se han cargado.",
 	"requests.board.requests": "Solicitudes",
 	"requests.board.open": "Abrir {name}, pedido por {who}",
 	"requests.board.pageForArtist": "Página del artista {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Añadida",
 	"requests.addAll.summary": "Añadidas: {added}, omitidas: {skipped}",
 	"requests.addAll.summaryClean": "Añadidas: {added}",
-	"requests.addAll.intro": "Cada película se añade a tu Biblioteca con la carpeta y las reglas de selección de abajo y tus valores por defecto guardados. Las películas que ya están en tu Biblioteca salen en la lista, pero no se añaden otra vez."
+	"requests.addAll.intro": "Cada película se añade a tu Biblioteca con la carpeta y las reglas de selección de abajo y tus valores por defecto guardados. Las películas que ya están en tu Biblioteca salen en la lista, pero no se añaden otra vez.",
+	"requests.ask.alsoAsk": "Pedir también {name}",
+	"requests.add.handsOff": "El modo sin intervención está activado: no hace falta carpeta de la Biblioteca. Va al gestor de descargas y los archivos se quedan allí."
 }

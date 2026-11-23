@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Не може да се отмени. Файловете остават.",
 	"settings.pickRules.removeUsed": "{used}. Първо изберете други правила там.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Отказ"
+	"settings.pickRules.cancel": "Отказ",
+	"settings.pickRules.check.title": "Проверка на име на издание",
+	"settings.pickRules.check.desc": "Поставете име на издание, за да видите как HolyArrs го чете и как го оценяват вашите набори за качество. Нищо не се търси и не се изтегля.",
+	"settings.pickRules.check.name": "Име на издание",
+	"settings.pickRules.check.rules": "Оценка с",
+	"settings.pickRules.check.copies": "Копията на съвпадащото заглавие",
+	"settings.pickRules.check.size": "Размер в GB (по избор)",
+	"settings.pickRules.check.check": "Провери",
+	"settings.pickRules.check.failed": "Името не можа да бъде проверено",
+	"settings.pickRules.check.readAs": "Прочетено като",
+	"settings.pickRules.check.matches": "Съвпада с {name}",
+	"settings.pickRules.check.noTitle": "Не съвпада с никое заглавие във вашата Библиотека. Изберете набор за качество отгоре, за да го оцените все пак.",
+	"settings.pickRules.check.noAlbum": "Съвпада с {name}, но с никой от албумите му.",
+	"settings.pickRules.check.noCopies": "Това заглавие няма копия за оценка.",
+	"settings.pickRules.check.hasFile": "Има файл"
 }

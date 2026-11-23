@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -105,7 +106,8 @@ func (m *Manager) Routes(mux *http.ServeMux, restart func()) {
 		if !webserver.RequireStrong(w, r) {
 			return
 		}
-		if err := m.Stage(r.Context(), http.MaxBytesReader(w, r.Body, MaxUpload)); err != nil {
+		body := &movingDeadline{r: http.MaxBytesReader(w, r.Body, MaxUpload), rc: http.NewResponseController(w)}
+		if err := m.Stage(r.Context(), body); err != nil {
 			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -132,4 +134,34 @@ func (m *Manager) audit(r *http.Request, action, name string) {
 	}
 	_ = m.Store.AddEvent(context.WithoutCancel(r.Context()), &domain.Event{Actor: webserver.Actor(r.Context()), Kind: "backup_used",
 		Summary: "Backup " + name + " " + action + " by " + who, Data: map[string]any{"action": action, "name": name}})
+}
+
+// uploadStall is how long a restore upload may send nothing, and
+// uploadMost how long one upload may take in all, so a client that trickles
+// a byte now and then cannot hold the upload open for ever.
+var (
+	uploadStall = 60 * time.Second
+	uploadMost  = 6 * time.Hour
+)
+
+// movingDeadline reads a restore upload with a read deadline that moves on
+// before every read. The server's read timeout covers the whole request,
+// and a big backup takes longer than that to send; this way an upload that
+// keeps sending finishes, and one that stalls still fails.
+type movingDeadline struct {
+	r     io.Reader
+	rc    *http.ResponseController
+	start time.Time
+}
+
+func (d *movingDeadline) Read(p []byte) (int, error) {
+	if d.start.IsZero() {
+		d.start = time.Now()
+	}
+	until := time.Now().Add(uploadStall)
+	if end := d.start.Add(uploadMost); end.Before(until) {
+		until = end
+	}
+	_ = d.rc.SetReadDeadline(until)
+	return d.r.Read(p)
 }

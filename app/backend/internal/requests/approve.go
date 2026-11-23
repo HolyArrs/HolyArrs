@@ -74,6 +74,16 @@ func (s *Service) ApproveSaying(ctx context.Context, id int64, by Person, opt Ap
 const CopyKept = "The quality you picked was not used: this title already has that copy."
 
 func (s *Service) decide(ctx context.Context, id int64, by Person, opt ApproveOptions, auto bool) (domain.Ask, string, error) {
+	// A title on one of the owner's streaming services is turned down, not
+	// downloaded; approving it again (from turned down) downloads it anyway.
+	if cur, err := get(ctx, s.Store.Read(), id); err == nil && cur.State == domain.AskAsked {
+		if set, err := ReadSettings(ctx, s.Store.Read()); err == nil {
+			if on := s.streamingOn(ctx, cur, set); on != "" {
+				a, err := s.TurnDown(ctx, id, by, skipNote(on))
+				return a, SkippedOnServices(on), err
+			}
+		}
+	}
 	a, kept, err := s.decideAsk(ctx, id, by, opt, auto)
 	if kept {
 		return a, CopyKept, err

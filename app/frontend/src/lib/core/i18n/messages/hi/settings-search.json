@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "सबसे अच्छी कॉपी पहले; बराबरी पर सीज़न पैक जीतता है",
 	"settings.search.preferAlways": "क्वालिटी सेट पास करने वाला सीज़न पैक हमेशा",
 	"settings.search.multi": "कई सीज़न वाली रिलीज़ लें",
-	"settings.search.multiHint": "उसमें मौजूद हर छूटा एपिसोड भर देती है",
+	"settings.search.multiHint": "उसमें मौजूद हर छूटा एपिसोड भर देती है। बराबर क्वालिटी पर, ज़्यादा चाहे गए एपिसोड वाली रिलीज़ जीतती है",
 	"settings.search.music": "संगीत",
 	"settings.search.albums": "छूटे हुए एल्बम भी खोजें",
 	"settings.search.albumsHint": "रिलीज़ हो चुके एल्बम, हर एक की अलग खोज",

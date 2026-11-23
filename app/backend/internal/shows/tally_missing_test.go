@@ -46,7 +46,9 @@ func TestTallyNextAirDayIsOfEarliestUnaired(t *testing.T) {
 // "not out yet".
 func TestTallyFileHolders(t *testing.T) {
 	now := time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)
-	at := func(t time.Time) sql.NullString { return sql.NullString{String: t.UTC().Format(database.TimeLayout), Valid: true} }
+	at := func(t time.Time) sql.NullString {
+		return sql.NullString{String: t.UTC().Format(database.TimeLayout), Valid: true}
+	}
 	var ss SeasonSummary
 	past, later := at(now.Add(-time.Hour)), at(now.Add(3*time.Hour))
 	ss.tally(past, "", true, "better_wanted", true, now)

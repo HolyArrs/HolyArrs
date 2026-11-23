@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "انصراف",
 	"settings.schedules.stages": "مرحله‌ها",
 	"settings.schedules.stagesNote": "آن‌ها را در <a>بخش‌ها</a> متوقف یا دوباره راه‌اندازی کن.",
-	"settings.schedules.allTime": "همیشه"
+	"settings.schedules.allTime": "همیشه",
+	"settings.schedules.skip.nothing": "کاری برای انجام نیست",
+	"settings.schedules.skip.plexOff": "خاموش: {setting} را در {page} روشن کنید",
+	"settings.schedules.skip.plexNobody": "کاری برای انجام نیست: هیچ‌کس فهرست تماشای Plex خود را روشن نکرده است",
+	"settings.schedules.skip.settingOff": "خاموش: آن را در تنظیماتش روشن کنید",
+	"settings.schedules.skip.starting": "رد شد: HolyArrs هنوز در حال شروع بود",
+	"settings.schedules.took": "{time} طول کشید",
+	"settings.schedules.finished": "{label} تمام شد",
+	"settings.schedules.nothingToDo": "{label}: کاری برای انجام نیست",
+	"settings.schedules.runFailed": "{label} ناموفق بود"
 }

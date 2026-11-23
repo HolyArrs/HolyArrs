@@ -1,0 +1,202 @@
+version = "1.2.1"
+theme = "Plugins arrive, Library folders get flexible, and release picking shows its work."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""
+known_issues = []
+security = []
+credits = [
+  {github = "wozniakpawel", link = "https://github.com/HolyArrs/HolyArrs/pull/569", issues = [568, 564, 560, 562]},
+  {github = "chadouming", link = "https://github.com/HolyArrs/HolyArrs/issues/522", issues = [470, 522, 527, 471]},
+  {github = "bluescreenofwin", link = "https://github.com/HolyArrs/HolyArrs/pull/466", issues = [452]},
+  {github = "soccerzebra", link = "https://github.com/HolyArrs/HolyArrs/pull/430", issues = [380]},
+  {github = "zhu327", link = "https://github.com/HolyArrs/HolyArrs/pull/464", issues = [508]},
+  {github = "Jaylouisw", link = "https://github.com/HolyArrs/HolyArrs/issues/461", issues = [461]},
+  {github = "mandopatriot", link = "https://github.com/HolyArrs/HolyArrs/pull/478", issues = [478, 511]},
+  {github = "ogossiaux", link = "https://github.com/HolyArrs/HolyArrs/issues/550", issues = [550]},
+  {github = "Harybo", link = "https://github.com/HolyArrs/HolyArrs/issues/546", issues = [546]},
+  {github = "futureaeons", link = "https://github.com/HolyArrs/HolyArrs/issues/545", issues = [545]},
+  {github = "rrik", link = "https://github.com/HolyArrs/HolyArrs/issues/541", issues = [541]},
+  {github = "volemont", link = "https://github.com/HolyArrs/HolyArrs/issues/540", issues = [540]},
+  {github = "coffbr01", link = "https://github.com/HolyArrs/HolyArrs/issues/537", issues = [537]},
+  {github = "jorgytim", link = "https://github.com/HolyArrs/HolyArrs/issues/379", issues = [379]},
+  {github = "helamonster", link = "https://github.com/HolyArrs/HolyArrs/issues/533", issues = [533]},
+  {github = "jeremyhalin", link = "https://github.com/HolyArrs/HolyArrs/issues/530", issues = [530]},
+  {github = "kenziezero", link = "https://github.com/HolyArrs/HolyArrs/issues/514", issues = [514]},
+  {github = "decairn", link = "https://github.com/HolyArrs/HolyArrs/issues/512", issues = [512]},
+  {github = "atocqueville", link = "https://github.com/HolyArrs/HolyArrs/issues/509", issues = [509]},
+  {github = "fasemix337", link = "https://github.com/HolyArrs/HolyArrs/issues/507", issues = [507]},
+  {github = "levaib-git", link = "https://github.com/HolyArrs/HolyArrs/issues/504", issues = [504]},
+  {github = "angelgtc87", link = "https://github.com/HolyArrs/HolyArrs/issues/503", issues = [503]},
+  {github = "redzacmx3", link = "https://github.com/HolyArrs/HolyArrs/issues/497", issues = [497]},
+  {github = "xeonixo", link = "https://github.com/HolyArrs/HolyArrs/issues/496", issues = [496]},
+  {github = "intellectualpeaceful", link = "https://github.com/HolyArrs/HolyArrs/issues/486", issues = [486]},
+  {github = "golgoth85", link = "https://github.com/HolyArrs/HolyArrs/issues/483", issues = [483]},
+  {github = "snizhock", link = "https://github.com/HolyArrs/HolyArrs/issues/469", issues = [469]},
+  {github = "nickbock", link = "https://github.com/HolyArrs/HolyArrs/issues/465", issues = [465]},
+  {github = "JulianAtkins", link = "https://github.com/HolyArrs/HolyArrs/issues/456", issues = [456]},
+  {github = "tydude001", link = "https://github.com/HolyArrs/HolyArrs/issues/443", issues = [443]},
+  {github = "George-RD", link = "https://github.com/HolyArrs/HolyArrs/issues/440", issues = [440]},
+  {github = "Oiligriv", link = "https://github.com/HolyArrs/HolyArrs/issues/439", issues = [439]},
+  {github = "Yakouaho", link = "https://github.com/HolyArrs/HolyArrs/issues/437", issues = [437]},
+  {github = "Epic-dog", link = "https://github.com/HolyArrs/HolyArrs/issues/419", issues = [419]},
+  {github = "johngully", link = "https://github.com/HolyArrs/HolyArrs/issues/404", issues = [404]},
+  {github = "arthurhov1985", link = "https://github.com/HolyArrs/HolyArrs/issues/382", issues = [382]},
+  {github = "stormbyte", link = "https://github.com/HolyArrs/HolyArrs/issues/359", issues = [359]},
+  {github = "tayzer522", link = "https://github.com/HolyArrs/HolyArrs/issues/329", issues = [329]},
+  {github = "Nviviri", link = "https://github.com/HolyArrs/HolyArrs/issues/271", issues = [271]},
+  {github = "mshoe007", link = "https://github.com/HolyArrs/HolyArrs/issues/210", issues = [210, 379]},
+  {name = "u/clayuk62", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnv6u/comment/19rvebi6rzqm8/", issues = []},
+  {name = "u/mrasstits", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/ph3guqu/", issues = []},
+  {name = "u/allexiel", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rlfc9yu4j5t/", issues = []},
+  {name = "u/Dave-The-Chef", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rjdlv948dtt/", issues = []},
+  {name = "u/Sebi2727", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19ri5gywe9udc/", issues = []},
+  {name = "u/selop212", link = "https://www.reddit.com/r/radarr/comments/1x5jmmh/comment/phpd9dk/", issues = []},
+  {name = "u/OneDisplayOneVGA", link = "https://www.reddit.com/r/PlexServers/comments/1xjnjhf/comment/19s0fvfseb3ls/", issues = []},
+  {name = "u/LookAtYourEyes", link = "https://www.reddit.com/r/SideProject/comments/1xjjuwp/comment/19rw6wyhozm69/", issues = []},
+  {name = "u/Agile_Beyond_6025", link = "https://www.reddit.com/r/HolyArrs/comments/1xcnpvo/comment/19rhsf1tj4cn5/", issues = []},
+  {name = "u/SirSlothyGod", link = "https://www.reddit.com/r/GeminiAI/comments/1xcshr5/comment/19ri2n83gkspv/", issues = []},
+  {name = "Wideground", issues = []},
+  {name = "wertra154229", issues = []},
+  {name = "Seapoint", issues = []},
+  {name = "Nippo", issues = []},
+  {name = "almostepic89", issues = []},
+  {name = "SlicKrusader", issues = []},
+  {name = "Jeff", issues = []},
+]
+
+[[highlights]]
+line = "Plugins add features without changing HolyArrs, each in its own sandbox."
+issues = [431, 115, 114]
+shot = "Plugins page with Tailscale and the Add sheet"
+
+[[highlights]]
+line = "Movies can sit loose with no folders; Libraries can use letter folders."
+issues = [379, 329, 419]
+shot = "Library folder settings with loose files and letter folders"
+
+[[highlights]]
+line = "Choose a release shows every release's points and reasons."
+issues = [539, 456]
+shot = "Choose a release sheet with reasons open"
+
+[groups]
+Requests = [
+  "Pick more than one quality when you ask for a title. (#335)",
+  "Request a whole movie series in one go. (#104)",
+  "Bigger browse-row arrows, and a setting to turn hover previews off. (#541)",
+  "Fixed: hover previews no longer cover the row arrows. (#542)",
+  "Fixed: the Explore Add box always finishes loading. (#447)",
+  "Fixed: Add from a hover card loads its defaults. (#525)",
+  "Fixed: request emails to several people go out one per person. (#535)",
+  "Rotating Home and Explore row titles in all 44 languages. (#441)",
+]
+Library = [
+  "Watch a folder and import files dropped there. (#133)",
+  "Default audio language for new titles, with bulk apply. (#439)",
+  "Open a title in Plex, Jellyfin or Emby. (#455)",
+  "{tmdb} and {tvdb} naming tokens, Plex-style braces and editions. (#459) (#514)",
+  "Full release dates on movie posters. (#494)",
+  "Current file points shown next to good enough points. (#465)",
+  "Changed: a view picked on Movies, Shows or All applies everywhere. (#564)",
+  "Fixed: files replaced by an upgrade show in Recently deleted. (#489)",
+  "Fixed: the Columns picker shows every column, Status included. (#483)",
+  "Fixed: scans no longer freeze on two same-name folders. (#452)",
+  "Fixed: folders are found on Linux whatever their letter case. (#437)",
+  "Fixed: AVI and M2TS files are read, not marked unreadable. (#496)",
+  "Fixed: big show imports no longer stop on \"a write took too long\". (#446)",
+]
+Downloads = [
+  "Failed downloads reuse the search results already found. (#127)",
+  "Better download controls on the Calendar. (#404)",
+  "Changed: stalled downloads keep release and files; Status flags a stopped Downloader. (#443)",
+  "Fixed: rdt-client works again as a qBittorrent Downloader. (#550)",
+  "Fixed: qBittorrent closing an idle connection no longer stops grabs. (#461)",
+  "Fixed: seeding cleanup waits for the goal on paused torrents. (#469)",
+  "Fixed: partly imported torrents show what they wait for, and never hang. (#521)",
+  "Fixed: removed downloads leave the Downloads page. (#508)",
+  "Fixed: unpacked scene files named \"group-title\" import. (#527)",
+  "Fixed: tag-routed folders on two disks stop giving false warnings. (#504)",
+]
+Indexers = [
+  "Check how a release name is read, from a card or API. (#538)",
+  "Pick rules can reorder quality steps. (#386)",
+  "Pick rules can wait for a dub in your language. (#128)",
+  "Pick rules can prefer releases your devices play without transcoding. (#129)",
+  "Pick rules can ask for French versions: VFF, VFQ, VFI, VF2. (#544)",
+  "Releases with a resolution but no source are allowed as TV quality. (#493)",
+  "4K quality names say 2160p too. (#454)",
+  "IPTorrents signs in with user ID and passkey. (#522)",
+  "Alternative series titles are searched. (#359)",
+  "Fixed: accented titles like \"Pokémon\" find results. (#440) (#509)",
+  "Fixed: apostrophes in show names no longer break Torznab searches. (#271)",
+  "Fixed: shows with a non-Latin original name search their other names too. (#537)",
+  "Fixed: releases with a local title plus the original title match. (#484)",
+  "Fixed: BRRip, WebHD and UHDBD names read the right quality. (#543) (#497) (#453)",
+  "Fixed: French and Ukrainian language tags read right. (#526) (#468)",
+  "Fixed: Choose a release with no Source says so at once. (#530)",
+  "Fixed: Test spots Prowlarr or Jackett on any port. (#533)",
+  "Fixed: big libraries open a title's release list fast. (#470)",
+  "Fixed: old search results are cleaned up daily. (#532)",
+]
+Accounts = [
+  "Forgot password? gives a one-time code in the container log. (#451)",
+  "Fixed: single sign-on with Google works. (#568)",
+  "Fixed: a new display name shows on Home. (#540)",
+  "Fixed: Jellyfin sign-in only says \"account turned off\" when it is. (#529)",
+]
+Health = [
+  "Each schedule row shows its last run, time taken and result. (#518)",
+  "Fixed: container health checks pass with sign-in on, using the open /ping. (#510)",
+  "Fixed: coming back to a hidden tab reconnects at once. (#480)",
+]
+Shows = [
+  "Search prefers a pack that covers more missing seasons. (#520)",
+  "Search by hand works on unreleased and same-day episodes. (#546)",
+  "Fixed: multi-episode files like 1x01-02 and S01E01-02 read as several episodes. (#474) (#495)",
+  "Fixed: new episodes reuse an existing season folder. (#549)",
+  "Fixed: folder import finds shows with release details in the name. (#536)",
+]
+"Import from your old apps" = [
+  "Bring your download history over from Sonarr and Radarr. (#157)",
+  "Import full quality profiles from Sonarr and Radarr. (#382)",
+  "Stop looking for deleted titles; the old apps' blocklist comes across. (#562)",
+  "Fixed: Telegram, ntfy, Gotify and Pushover Alerts come across. (#380)",
+  "Fixed: shows, movies and music each keep their own naming. (#485)",
+  "Fixed: large Sonarr libraries import. (#503)",
+  "Fixed: slow lookups no longer stop an import. (#486)",
+  "Fixed: unmonitored Radarr movies get details and posters. (#477)",
+  "Fixed: ITA in a file name sets the language of untagged audio. (#476)",
+  "Fixed: imported SABnzbd and qBittorrent keep the right port and path. (#375)",
+]
+Subtitles = [
+  "Clean subtitles after they're saved, per language, with Clean again. (#331)",
+  "Polish and Chinese subtitle sites, and TVsubtitles finds results again. (#560)",
+  "Default audio and subtitle language set in Plex or Jellyfin. (#126)",
+  "Fixed: Chinese subtitles: pick Simplified, Traditional or Cantonese. (#507)",
+  "Fixed: Choose a subtitle always lists results. (#511)",
+  "Fixed: trailers no longer log a subtitle error. (#471)",
+]
+Music = [
+  "Navidrome and other Subsonic servers hear about new music. (#125)",
+  "Fixed: scanned music matches your artists' tracks; the rest is listed. (#519)",
+  "Fixed: music files can be ticked in Import files by hand. (#406)",
+  "Fixed: adopting one artist works. (#490)",
+  "Fixed: \"Lisa Lisa\" no longer scores 100% for \"Lisa Knapp\". (#545)",
+]
+Updates = [
+  "Automatic updates, and roll back an update in one click. (#146) (#154)",
+  "Title logos and taglines follow your display language. (#513)",
+  "TheTVDB fields say which key to use, plus a Get a key link. (#449)",
+]
+Install = [
+  "A \"Tell me about new versions\" switch next to the install mode. (#387)",
+  "Unraid /config on /mnt/user starts on its own. (#512)",
+  "The Mac start-up page shows how to skip the /config check. (#210)",
+]
+
+[stats]
+issues_done = 104
+still_building = 0
+people_credited = 57

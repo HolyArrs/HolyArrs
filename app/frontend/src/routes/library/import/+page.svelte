@@ -12,7 +12,7 @@
 	import { densityLabels, loadDensity, loadPosterSize, posterLabels, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/ui/library-art.ts';
 	import { reaskWhileFilling } from '#lib/music/index.ts';
 	import { DlFind } from '#lib/downloads/index.ts';
-	import { ImportList, ImportToolbar, adoptInParts, askThrough, canAdopt, cutFromJobs, cutKeyOf, cutsGone, findCut, findKept, holdWhile, foldersThenNotes, jobForgotten, notesThenLocks, scansGone, staleCuts, keepAsking, partEnd, lookFail, quiet, scanEnd, scanFromFirstLeft, throughNow, type Cut, type PartResult, LibraryToolPage, PosterLightbox, choices, fileName, findFolders, followJob, scanCount, matchKey, canTick, pickedOf, readImportView, showIdOf, sortFolders, startPicks, statusCounts, statusLabel, tickCounts, type AdoptCandidate, type AdoptPlan, type AdoptResult, type ImportFilter, type ImportView, type JobView, type Named } from '#lib/mediafiles/index.ts';
+	import { ImportList, ImportToolbar, adoptInParts, askThrough, canAdopt, cutFromJobs, cutKeyOf, cutsGone, findCut, findKept, holdWhile, importKey, itemsAreFiles, foldersThenNotes, jobForgotten, notesThenLocks, scansGone, staleCuts, keepAsking, partEnd, lookFail, quiet, scanEnd, scanFromFirstLeft, throughNow, type Cut, type PartResult, LibraryToolPage, PosterLightbox, TidyFolders, choices, fileName, findFolders, followJob, scanCount, waitOf, matchKey, canTick, pickedOf, readImportView, showIdOf, sortFolders, startPicks, statusCounts, statusLabel, tickCounts, type AdoptCandidate, type AdoptPlan, type AdoptResult, type ImportFilter, type ImportView, type JobView, type Named } from '#lib/mediafiles/index.ts';
 	import type { LookupArtist } from '#lib/music/index.ts';
 	import { onDestroy, onMount } from 'svelte';
 	import { beforeNavigate } from '$app/navigation';
@@ -123,6 +123,8 @@
 		const iv = setInterval(() => (clock = Date.now()), 1000);
 		return () => clearInterval(iv);
 	});
+	// A part waiting on the metadata server says so, with when it tries again.
+	const waiting = $derived(waitOf(job?.ProgressNote));
 	const silent = $derived((adopting || scanning) && quiet(heard, clock));
 	function answered<T>(p: Promise<T>): Promise<T> {
 		return p.then(
@@ -146,6 +148,8 @@
 	/** The kind of the picked Library folder: movies, shows or music. */
 	const kind = $derived<'movie' | 'show' | 'music'>(plan?.kind ?? folderKind(folders.find((f) => f.id === folderId)?.kind));
 	const word = $derived(kind === 'show' ? 'show' : kind === 'music' ? 'artist' : 'movie');
+	/** The picked Library folder keeps movies as files right in it. */
+	const flat = $derived(plan ? itemsAreFiles(plan) : kind === 'movie' && !!folders.find((f) => f.id === folderId)?.flat);
 	const w = $derived(t(`library.import.word.${word}`));
 	const ws = $derived(t(`library.import.words.${word}`));
 	const lookFolder = $derived(lookFor === null ? undefined : plan?.folders.find((f) => f.folder === lookFor));
@@ -153,7 +157,7 @@
 	// A scan's note says how many folders are read: shown in the person's words.
 	const scanned = $derived(scanning ? scanCount(job?.ProgressNote) : null);
 	const running = $derived(!!job && !['done', 'failed', 'cancelled'].includes(job.State));
-	const okCount = $derived(results ? results.filter((r) => r.title_id).length : 0);
+	const okCount = $derived(results ? results.filter((r) => r.title_id && !r.error).length : 0);
 	const unknownCount = $derived(results ? results.filter((r) => r.notKnown).length : 0);
 	// Folders the metadata server did not answer for: all of them, or how many.
 	const fail = $derived(plan ? lookFail(plan.folders) : null);
@@ -281,7 +285,7 @@
 	beforeNavigate((nav) => {
 		if (!adopting || nav.willUnload) return;
 		if (session.s.state !== 'signed_in') return signedOut();
-		if (!confirm(t('library.import.leaveAsk'))) nav.cancel();
+		if (!confirm(t(importKey('leaveAsk', flat)))) nav.cancel();
 		else noteWhy('left');
 	});
 
@@ -454,7 +458,7 @@
 			// The ones not adopted come first, so a long list shows them.
 			results = [...all].sort((a, b) => Number(!!a.title_id) - Number(!!b.title_id));
 			error = partFail;
-			const n = results.filter((x) => x.title_id).length;
+			const n = results.filter((x) => x.title_id && !x.error).length;
 			toasts.push(t(n === 1 ? 'library.import.adoptedOne' : 'library.import.adoptedMany', { n: n.toLocaleString(appLocale()), word: w, words: ws }), n ? 'ok' : 'info', { body: t('library.import.noFileMoved') });
 			retryFrom = scanFromFirstLeft(order, results, scanFrom);
 			restFrom = plan?.more ? (plan.next ?? '') : '';
@@ -471,7 +475,7 @@
 
 	// Scanning the rest clears the ticks here: ask first when some are ticked.
 	function scanRest(next: string) {
-		if (picks.length && !confirm(t(picks.length === 1 ? 'library.import.askScanRestOne' : 'library.import.askScanRestMany', { n: picks.length.toLocaleString(appLocale()) }))) return;
+		if (picks.length && !confirm(t(importKey(picks.length === 1 ? 'askScanRestOne' : 'askScanRestMany', flat), { n: picks.length.toLocaleString(appLocale()) }))) return;
 		void scan(next);
 	}
 </script>
@@ -506,18 +510,20 @@
 			<Button variant="primary" icon="search" onclick={() => scan()} disabled={adopting || !folderId} busy={scanning}>{t('library.byHand.scan')}</Button>
 		</div>
 		{#if cut && !plan && !results && !scanning}
-			<p class="notice bad" role="status" data-testid="adopt-cut">{t(cut.key, { done: cut.done.toLocaleString(appLocale()), total: cut.total.toLocaleString(appLocale()) })}</p>
+			{@const cutFlat = !!folders.find((f) => f.id === cut?.lf)?.flat}
+			<p class="notice bad" role="status" data-testid="adopt-cut">{t(importKey(cut.key, cutFlat), { done: cut.done.toLocaleString(appLocale()), total: cut.total.toLocaleString(appLocale()) })}</p>
 		{/if}
 		{#if sent}
 			{@const through = throughNow(sent, scanCount(job?.ProgressNote))}
 			<div aria-live="polite" data-testid="adopt-progress">
 				<div class="bar"><ProgressBar value={sent.total ? (through / sent.total) * 100 : 0} label={t('library.import.progress')} /></div>
 				<p class="xs muted">{t('library.import.adoptCount', { done: through.toLocaleString(appLocale()), total: sent.total.toLocaleString(appLocale()) })} {t('library.import.keepOpen')}</p>
+				{#if waiting}<p class="xs muted" role="status" data-testid="adopt-waiting">{t('library.import.waiting', { left: waiting.left.toLocaleString(appLocale()), min: waiting.min.toLocaleString(appLocale()) })}</p>{/if}
 			</div>
 		{:else if running}
 			<div aria-live="polite">
 				<div class="bar"><ProgressBar value={(job?.Progress ?? 0) * 100} label={t('library.import.progress')} /></div>
-				<p class="xs muted">{scanned ? t('library.import.readCount', { done: scanned.done.toLocaleString(appLocale()), total: scanned.total.toLocaleString(appLocale()) }) : job?.ProgressNote || (scanning ? t('library.import.reading', { word: w }) : t('library.import.adopting'))}</p>
+				<p class="xs muted">{scanned ? t(importKey('readCount', flat), { done: scanned.done.toLocaleString(appLocale()), total: scanned.total.toLocaleString(appLocale()) }) : job?.ProgressNote || (scanning ? t('library.import.reading', { word: w }) : t('library.import.adopting'))}</p>
 			</div>
 		{/if}
 		{#if silent}<p class="xs bad-text" role="status" data-testid="not-answering">{t('library.import.stillTrying')}</p>{/if}
@@ -531,13 +537,14 @@
 			<p class="small">{t(okCount === 1 ? 'library.import.nowOne' : 'library.import.nowMany', { n: okCount.toLocaleString(appLocale()), word: w, words: ws })}</p>
 			{#if results.length > okCount + unknownCount}<p class="small bad-text" data-testid="adopt-not-count">{t('library.import.notCount', { n: (results.length - okCount - unknownCount).toLocaleString(appLocale()) })}</p>{/if}
 			{#if unknownCount}<p class="small" data-testid="adopt-unknown-count">{t('library.import.unknownCount', { n: unknownCount.toLocaleString(appLocale()) })}</p>{/if}
-			{#if retryFrom !== null}<p class="small" data-testid="adopt-left">{t('library.import.leftHint')}</p>{/if}
+			{#if retryFrom !== null}<p class="small" data-testid="adopt-left">{t(importKey('leftHint', flat))}</p>{/if}
 			<ul class="list">
 				{#each results as r (r.folder)}
 					<li>
 						<span class="mono small path"><bdi>{r.folder}</bdi></span>
 						{#if r.title_id}
 							<a class="small" href={to(`/library/${r.title_id}`)}>{t('library.import.openThe', { word: w })}</a>
+							{#if r.error}<span class="small bad-text" data-testid="adopt-added-problem">{serverWords(r.error)}</span>{/if}
 							{#if r.episodes !== undefined || r.unknown?.length}
 								<span class="xs muted"
 									>{unit(kind === 'music' ? 'track' : 'episode', r.episodes ?? 0)}{r.unknown?.length
@@ -562,14 +569,15 @@
 			<h2 id="h-check" class="h2">{t('library.import.step2')}</h2>
 			<p class="small muted" data-testid="plan-count">
 				{#if (plan.total ?? 0) > plan.folders.length}
-					<Isolated text={t('library.import.foldersPart', { total: (plan.total ?? 0).toLocaleString(appLocale()), path: ltr(plan.path), from: ((plan.offset ?? 0) + 1).toLocaleString(appLocale()), to: ((plan.offset ?? 0) + plan.folders.length).toLocaleString(appLocale()) })} />
+					<Isolated text={t(importKey('foldersPart', flat), { total: (plan.total ?? 0).toLocaleString(appLocale()), path: ltr(plan.path), from: ((plan.offset ?? 0) + 1).toLocaleString(appLocale()), to: ((plan.offset ?? 0) + plan.folders.length).toLocaleString(appLocale()) })} />
 				{:else}
-					<Isolated text={t(plan.folders.length === 1 ? 'library.import.foldersInOne' : 'library.import.foldersInMany', { n: plan.folders.length.toLocaleString(appLocale()), path: ltr(plan.path), words: ws })} />
+					<Isolated text={t(importKey(plan.folders.length === 1 ? 'foldersInOne' : 'foldersInMany', flat), { n: plan.folders.length.toLocaleString(appLocale()), path: ltr(plan.path), words: ws })} />
 				{/if}
 			</p>
 			{#if fail}<p class="notice bad" role="alert" data-testid="scan-warning">{t(fail.all ? 'library.import.lookFailAll' : 'library.import.lookFailSome', { n: fail.n.toLocaleString(appLocale()), total: fail.of.toLocaleString(appLocale()) })}</p>
 			{:else if plan.warning}<p class="notice bad" role="alert" data-testid="scan-warning">{serverWords(plan.warning)}</p>{/if}
-			{#if !plan.folders.length}<p class="notice">{t('library.import.noFolders', { word: w })}</p>{/if}
+			{#if plan.kind !== 'show' && plan.kind !== 'music'}<TidyFolders folderId={plan.library_folder_id} loose={plan.loose_movies ?? 0} looseTop={plan.loose_top ?? 0} suggestFlat={!!plan.suggest_flat} onDone={() => scan()} />{/if}
+			{#if !plan.folders.length}<p class="notice">{t(importKey('noFolders', flat), { word: w })}</p>{/if}
 			{#if plan.more && (plan.partial || !fail?.every)}
 				<div class="notice" data-testid="scan-more">
 					{#if plan.partial}<p class="small"><Isolated text={t('library.import.stopped', { next: ltr(plan.next ?? '') })} /></p>{/if}
@@ -579,15 +587,15 @@
 			{/if}
 			{#if plan.folders.length}
 				<div class="checkbar" class:held={adopting} bind:clientWidth={planWidth} inert={adopting} aria-busy={adopting}>
-					<ImportToolbar {phone} compact={phone || planWidth < 900} {view} {setView} {sizeItems} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} {filters} bind:filter findLabel={t('library.import.searchFolders')} bind:findOpen hasWords={!!q.trim()}>
-						{#snippet find()}<DlFind bind:term={q} shown={shown.length} total={plan?.folders.length ?? 0} searchKey="" placeholder={t('library.import.searchFolders')} note={t(shown.length === 1 ? 'library.import.folderCountOne' : 'library.import.folderCountMany', { n: shown.length.toLocaleString(appLocale()) })} testid="import-find" />{/snippet}
+					<ImportToolbar {phone} compact={phone || planWidth < 900} {view} {setView} {sizeItems} sizeLabel={view === 'posters' ? posterLabels[posterSize] : densityLabels[density]} {filters} bind:filter findLabel={t(importKey('searchFolders', flat))} bind:findOpen hasWords={!!q.trim()}>
+						{#snippet find()}<DlFind bind:term={q} shown={shown.length} total={plan?.folders.length ?? 0} searchKey="" placeholder={t(importKey('searchFolders', flat))} note={t(importKey(shown.length === 1 ? 'folderCountOne' : 'folderCountMany', flat), { n: shown.length.toLocaleString(appLocale()) })} testid="import-find" />{/snippet}
 					</ImportToolbar>
 					{#if shown.length}
 						<div class="tickbar" data-testid="import-tickbar">
 							<span class="count" aria-live="polite">{t('mediafiles.select.count', { n: tickNow.on.toLocaleString(appLocale()) })}</span>
 							{#if tickNow.can > 0}<Button variant="plain" size="md" onclick={tickShown} data-testid="import-select-all">{allTicked ? t('mediafiles.select.none') : t('mediafiles.select.all', { n: tickNow.can.toLocaleString(appLocale()) })}</Button>{/if}
 						</div>
-						<ImportList folders={shown} {view} size={posterSize} {density} {kind} {phone} bind:sel bind:ticked {named} onlook={openLookup} onzoom={(f) => (zoom = f)} />
+						<ImportList {flat} folders={shown} {view} size={posterSize} {density} {kind} {phone} bind:sel bind:ticked {named} onlook={openLookup} onzoom={(f) => (zoom = f)} />
 					{:else}
 						<p class="notice" data-testid="import-none">{t('library.import.noneMatch')}</p>
 					{/if}

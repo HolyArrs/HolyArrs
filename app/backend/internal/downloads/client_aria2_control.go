@@ -62,40 +62,87 @@ func (a *Aria2) ResumeAll(ctx context.Context) error {
 // MoveTop is not supported.
 func (a *Aria2) MoveTop(context.Context, string) error { return ErrNotSupported }
 
-// SetSpeedLimit caps aria2's total speeds in bytes per second; 0 removes a
-// cap. aria2 does not keep them across a restart.
+// SetSpeedLimit caps the speed of this Downloader's own downloads in bytes per
+// second; 0 removes a cap. The cap goes on each download, not on aria2's global
+// options, so another app's downloads in the same aria2 are left alone and the
+// limits in aria2's own config stay as they are. The cap reached here is kept by
+// the Manager and put on every later add.
 func (a *Aria2) SetSpeedLimit(ctx context.Context, down, up int64) error {
-	want := map[string]string{"max-overall-download-limit": strconv.FormatInt(max(0, down), 10), "max-overall-upload-limit": strconv.FormatInt(max(0, up), 10)}
-	if err := a.call(ctx, "aria2.changeGlobalOption", nil, want); err != nil {
+	down, up = max(0, down), max(0, up)
+	rows, err := a.all(ctx)
+	if err != nil {
 		return err
 	}
-	var got map[string]string
-	if err := a.call(ctx, "aria2.getGlobalOption", &got); err != nil {
+	dirs, err := a.ourDirs(ctx)
+	if err != nil {
 		return err
 	}
-	for k, v := range want {
-		if a2Num(got[k]) != a2Num(v) {
-			return errors.New("aria2 did not keep the speed caps")
+	caps := func() map[string]string {
+		return map[string]string{"max-download-limit": strconv.FormatInt(down, 10), "max-upload-limit": strconv.FormatInt(up, 10)}
+	}
+	// A stopped job is not downloading and aria2 refuses to change its options,
+	// so only a running one is capped; the next add carries the cap itself.
+	gids := []string{}
+	calls := []a2Call{}
+	for _, group := range byHash(rows) {
+		for _, s := range group {
+			if live(s) && owns(s, dirs) {
+				gids = append(gids, s.GID)
+				calls = append(calls, a2Call{"aria2.changeOption", []any{s.GID, caps()}})
+			}
 		}
 	}
+	if len(calls) > 0 {
+		_, errs, err := a.multicall(ctx, calls)
+		if err != nil {
+			return err
+		}
+		if err := errors.Join(errs...); err != nil {
+			return err
+		}
+		// aria2 answers OK for an option it then drops, so read them back.
+		reads := []a2Call{}
+		for _, gid := range gids {
+			reads = append(reads, a2Call{"aria2.getOption", []any{gid}})
+		}
+		answers, errs, err := a.multicall(ctx, reads)
+		if err != nil {
+			return err
+		}
+		if err := errors.Join(errs...); err != nil {
+			return err
+		}
+		for _, raw := range answers {
+			var got map[string]string
+			if json.Unmarshal(raw, &got) != nil {
+				return errNotAria2
+			}
+			for k, v := range caps() {
+				if a2Num(got[k]) != a2Num(v) {
+					return errors.New("aria2 did not keep the speed caps")
+				}
+			}
+		}
+	}
+	a.LimitDown, a.LimitUp = down, up
 	return nil
 }
 
-// Status reports aria2's speeds and caps.
+// Status reports aria2's speeds and the caps of this Downloader's downloads.
 func (a *Aria2) Status(ctx context.Context) (ClientStatus, error) {
-	answers, errs, err := a.multicall(ctx, []a2Call{{"aria2.getGlobalStat", nil}, {"aria2.getGlobalOption", nil}})
+	answers, errs, err := a.multicall(ctx, []a2Call{{"aria2.getGlobalStat", nil}})
 	if err != nil {
 		return ClientStatus{}, err
 	}
 	if err := errors.Join(errs...); err != nil {
 		return ClientStatus{}, err
 	}
-	var stat, opts map[string]string
-	if json.Unmarshal(answers[0], &stat) != nil || json.Unmarshal(answers[1], &opts) != nil {
+	var stat map[string]string
+	if json.Unmarshal(answers[0], &stat) != nil {
 		return ClientStatus{}, errNotAria2
 	}
 	st := ClientStatus{Speed: max(0, a2Num(stat["downloadSpeed"])), UpSpeed: max(0, a2Num(stat["uploadSpeed"])),
-		SpeedLimit: max(0, a2Num(opts["max-overall-download-limit"])), UpLimit: max(0, a2Num(opts["max-overall-upload-limit"]))}
+		SpeedLimit: max(0, a.LimitDown), UpLimit: max(0, a.LimitUp)}
 	rows, err := a.all(ctx)
 	if err != nil {
 		return ClientStatus{}, err
@@ -104,13 +151,15 @@ func (a *Aria2) Status(ctx context.Context) (ClientStatus, error) {
 	if err != nil {
 		return ClientStatus{}, err
 	}
-	// Paused as a whole when there are torrents of ours and none of them runs.
+	// Paused as a whole when there are torrents of ours and none of them runs. A
+	// waiting one runs in aria2's queue, so only a paused one counts as stopped
+	// by a person.
 	for _, group := range byHash(rows) {
 		s, ok := pick(group)
 		if !ok || !owns(s, dirs) {
 			continue
 		}
-		if s.Status == "active" {
+		if s.Status == "active" || s.Status == "waiting" {
 			st.Paused = false
 			break
 		}

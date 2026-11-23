@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Ångra import {id}?",
 	"settings.move.undoQuestion": "Ångra den här importen?",
 	"settings.move.undoNote": "Tar bort det den här importen lade till; dina senare ändringar blir kvar. Ladda först ned rapporten om du vill ha den.",
-	"settings.move.undoMove": "Ångra import"
+	"settings.move.undoMove": "Ångra import",
+	"settings.move.continueSetup": "Fortsätt konfigurationen",
+	"settings.move.backToChoose": "Tillbaka till Välj"
 }

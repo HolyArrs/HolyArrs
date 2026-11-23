@@ -78,5 +78,6 @@
   },
   "problem": "s",
   "adding": true,
-  "mine": true
+  "mine": true,
+  "via_plugin": "s"
 }

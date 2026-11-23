@@ -16,13 +16,8 @@ import (
 	"time"
 )
 
-// Resource caps for a plugin's own cgroup.
-const (
-	cgroupPidsMax   = "256"
-	cgroupCPUMax    = "100000 100000" // 1 CPU
-	cgroupMemoryMax = 512 << 20
-	cgroupRoot      = "/sys/fs/cgroup"
-)
+// cgroupRoot is where cgroup v2 is mounted; a start's caps: cgroupValues.
+const cgroupRoot = "/sys/fs/cgroup"
 
 // cgroupBase is the app's own cgroup v2 folder with pids, memory and cpu
 // enabled for its children, or "" when it is not delegated to us.
@@ -123,15 +118,7 @@ func cgroupCreate(id string, lim Limits) (string, error) {
 	if err := os.Mkdir(dir, 0o755); err != nil {
 		return "", fmt.Errorf("plugin cgroup: %w", err)
 	}
-	mem := lim.MemoryMax
-	if mem <= 0 {
-		mem = cgroupMemoryMax
-	}
-	for file, v := range map[string]string{
-		"pids.max":   cgroupPidsMax,
-		"memory.max": strconv.FormatInt(mem, 10),
-		"cpu.max":    cgroupCPUMax,
-	} {
+	for file, v := range cgroupValues(lim) {
 		if err := os.WriteFile(filepath.Join(dir, file), []byte(v), 0); err != nil {
 			_ = os.Remove(dir)
 			return "", fmt.Errorf("plugin cgroup %s: %w", file, err)
@@ -197,8 +184,9 @@ func randomHex() string {
 	return hex.EncodeToString(b)
 }
 
-// cgroupActive reports which caps cgroups give on this host. Cgroups are
-// only used under Landlock, which keeps the plugin from raising its caps.
+// cgroupActive reports which caps cgroups give on this host. They stay on
+// without Landlock too (a plugin the owner let run without the file lock),
+// where they still cap it and stop its whole group.
 func cgroupActive() ActiveLimits {
 	if !cgroupUsable() {
 		return ActiveLimits{GroupKill: true}
@@ -206,11 +194,11 @@ func cgroupActive() ActiveLimits {
 	return ActiveLimits{Cgroup: true, Pids: true, Memory: true, CPU: true, GroupKill: true}
 }
 
-// cgroupUsable is true when Landlock is on and the delegated cgroup has
-// cgroup.kill, so a start gets caps and a whole-group kill.
+// cgroupUsable is true when the delegated cgroup has cgroup.kill, so a start
+// gets caps and a whole-group kill.
 func cgroupUsable() bool {
 	base := cgroupBase()
-	if landlockABI() < 1 || base == "" {
+	if base == "" {
 		return false
 	}
 	_, err := os.Stat(filepath.Join(base, "cgroup.kill"))

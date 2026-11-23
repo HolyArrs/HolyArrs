@@ -139,8 +139,12 @@ func TestConfig_Naming(t *testing.T) {
 		t.Fatalf("put: %d %s", st, out)
 	}
 	n, err := mediafiles.ReadNaming(context.Background(), h.st.Read())
-	if err != nil || n.RenameOnImport || n.Colon != mediafiles.ColonDash || n.Illegal != mediafiles.IllegalRemove || n.MultiEpisodeStyle != mediafiles.MultiEachDash {
+	if err != nil || n.ShowRenameOnImport || n.ShowColon != mediafiles.ColonDash || n.ShowIllegal != mediafiles.IllegalRemove || n.MultiEpisodeStyle != mediafiles.MultiEachDash {
 		t.Fatalf("naming: %+v %v", n, err)
+	}
+	// The Sonarr side changes only show rules.
+	if !n.RenameOnImport || n.Colon != mediafiles.ColonSmart || n.Illegal != mediafiles.IllegalReplace || !n.MusicRenameOnImport {
+		t.Fatalf("sonarr side changed movies or music: %+v", n)
 	}
 	if n.EpisodePattern == m["standardEpisodeFormat"] {
 		t.Fatal("old-app pattern used")
@@ -151,16 +155,24 @@ func TestConfig_Naming(t *testing.T) {
 	}
 	st, out = h.do("radarr", "GET", "config/naming", "")
 	r := decodeObj(t, st, out, 200)
-	if r["renameMovies"] != false || r["colonReplacementFormat"] != "dash" {
-		t.Fatalf("radarr view: %s", out)
+	if r["renameMovies"] != true || r["colonReplacementFormat"] != "smart" || r["replaceIllegalCharacters"] != true {
+		t.Fatalf("radarr view shows show rules: %s", out)
 	}
-	r["colonReplacementFormat"], r["renameMovies"] = "spaceDashSpace", true
+	r["colonReplacementFormat"], r["renameMovies"], r["replaceIllegalCharacters"] = "spaceDashSpace", false, false
 	b, _ = json.Marshal(r)
 	if st, _ := h.do("radarr", "PUT", "config/naming", string(b)); st != 202 {
 		t.Fatalf("radarr put: %d", st)
 	}
-	if n, _ := mediafiles.ReadNaming(context.Background(), h.st.Read()); n.Colon != mediafiles.ColonSpaceDashSpace || !n.RenameOnImport {
+	n, _ = mediafiles.ReadNaming(context.Background(), h.st.Read())
+	if n.Colon != mediafiles.ColonSpaceDashSpace || n.RenameOnImport || n.Illegal != mediafiles.IllegalRemove {
 		t.Fatalf("radarr naming: %+v", n)
+	}
+	if n.ShowColon != mediafiles.ColonDash || n.ShowRenameOnImport {
+		t.Fatalf("radarr side changed shows: %+v", n)
+	}
+	st, out = h.do("sonarr", "GET", "config/naming", "")
+	if back := decodeObj(t, st, out, 200); back["colonReplacementFormat"] != 1.0 || back["renameEpisodes"] != false {
+		t.Fatalf("sonarr read back after radarr put: %s", out)
 	}
 }
 

@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "درخواست‌ها",
 	"settings.appearance.colRate": "در هر ردیف",
 	"settings.appearance.noRows": "هنوز ردیف کاوشی شمرده نشده.",
+	"settings.appearance.rowStats": "ردیف‌های کاوش",
+	"settings.appearance.rowStatsDesc": "بازکردن‌ها و درخواست‌های هر ردیف در ۳۰ روز گذشته، برای همه با هم. فقط روی همین سرور شمرده می‌شود.",
+	"settings.appearance.colRow": "ردیف",
+	"settings.appearance.row.because_have": "مثل عنوان‌هایی که داری",
+	"settings.appearance.row.because_asked": "مثل درخواست‌هایت",
+	"settings.appearance.row.person": "بیشتر از یک نفر",
+	"settings.appearance.row.genre": "انتخاب‌های ژانر برای تو",
+	"settings.appearance.row.popular_genre": "محبوب بر اساس ژانر",
+	"settings.appearance.row.popular_decade": "محبوب بر اساس دهه",
+	"settings.appearance.row.decade": "بر اساس دهه",
+	"settings.appearance.row.mood": "بر اساس حال‌وهوا",
+	"settings.appearance.row.hero": "بنر بالا",
 	"settings.appearance.motion": "حرکت",
 	"settings.appearance.motionNote": "از تنظیم «کاهش حرکت» دستگاهت پیروی می‌کند"
 }

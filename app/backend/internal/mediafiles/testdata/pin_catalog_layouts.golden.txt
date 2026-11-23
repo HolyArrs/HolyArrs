@@ -12,6 +12,10 @@ HealthReason string `db:"health_reason"`
 CopiesExpected bool `db:"copies_expected"`
 NewTitleTags []string `db:"new_title_tags,json"`
 OnlyTaggedSources bool `db:"only_tagged_sources"`
+NewTitleAudio []string `db:"new_title_audio,json"`
+LookOnly bool `db:"look_only"`
+Flat bool `db:"flat"`
+StandIn bool `db:"stand_in"`
 == Title
 Meta Meta ``
 Kind string `db:"kind"`
@@ -54,6 +58,7 @@ MusicStatuses []string `db:"music_statuses,json"`
 ArtistType *string `db:"artist_type"`
 Disambiguation *string `db:"disambiguation"`
 Backdrop string `db:"backdrop"`
+PosterURL string `db:"poster_url"`
 Logo string `db:"logo"`
 Genres []string `db:"genres,json"`
 RuntimeMinutes int `db:"runtime_minutes"`
@@ -61,6 +66,14 @@ Rating string `db:"rating"`
 People []string `db:"people,json"`
 Score *float64 `db:"score"`
 Votes int `db:"votes"`
+IMDbRating *float64 `db:"imdb_rating"`
+IMDbVotes int `db:"imdb_votes"`
+RottenTomatoes *int `db:"rotten_tomatoes"`
+Metacritic *int `db:"metacritic"`
+OMDbCheckedAt *time.Time `db:"omdb_checked_at"`
+TraktRating *float64 `db:"trakt_rating"`
+TraktVotes int `db:"trakt_votes"`
+TraktCheckedAt *time.Time `db:"trakt_checked_at"`
 Directors []string `db:"directors,json"`
 Studio string `db:"studio"`
 Tags []string `db:"tags,json"`
@@ -124,6 +137,7 @@ IsMain bool `db:"is_main"`
 Edition string `db:"edition"`
 AudioLanguages []string `db:"audio_languages,json"`
 FourK bool `db:"four_k"`
+SharedFolder bool `db:"shared_folder"`
 == Slot
 Meta Meta ``
 ItemID int64 `db:"item_id"`
@@ -149,6 +163,7 @@ TargetSlotIDs []int64 `json:"target_slot_ids"`
 TargetPath string `json:"target_path"`
 Method string `json:"method"`
 Move bool `json:"move,omitempty"`
+Symlink bool `json:"symlink,omitempty"`
 ReplacesFileID *int64 `json:"replaces_file_id,omitempty"`
 Confidence float64 `json:"confidence"`
 Why []string `json:"why"`
@@ -157,6 +172,7 @@ SourceFile string `json:"source_file"`
 Outcome string `json:"outcome"`
 PlacedBy string `json:"placed_by"`
 FellBack bool `json:"fell_back"`
+Linked bool `json:"linked,omitempty"`
 Error string `json:"error,omitempty"`
 HeldAside string `json:"held_aside,omitempty"`
 MoveSize int64 `json:"move_size,omitempty"`
@@ -207,6 +223,7 @@ GoodEnoughAt string `json:"good_enough_at"`
 Traits []TraitPoints `json:"traits"`
 MustHave []string `json:"must_have"`
 Never []string `json:"never"`
+BlockedGroups []string `json:"blocked_groups,omitempty"`
 MinPoints int `json:"min_points"`
 GoodEnoughPoints *int `json:"good_enough_points,omitempty"`
 SizeLimits map[string]SizeLimit `json:"size_limits"`
@@ -214,9 +231,12 @@ Protocol ProtocolRule `json:"protocol"`
 Language LanguageRule `json:"language"`
 Order string `json:"order"`
 UpgradeMinPoints int `json:"upgrade_min_points"`
+ReplaceUnderMin bool `json:"replace_under_min,omitempty"`
 ProperPolicy ProperPolicy `json:"proper_policy"`
 Tags []string `json:"tags,omitempty"`
 Synced *SyncedProfile `json:"synced,omitempty"`
+EqualSteps [][]string `json:"equal_steps,omitempty"`
+Devices []string `json:"devices,omitempty"`
 == OwnTrait
 Meta Meta ``
 Name string `db:"name"`

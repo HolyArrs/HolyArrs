@@ -18,7 +18,7 @@ HolyArrs tells you when a new version is out and never installs it. You pull the
 | "This is the newest version." | Nothing to do |
 | "No HolyArrs release is published yet." | The feed is empty. Nothing is wrong |
 | "The last check did not work: ..." | Feed not reached, often no internet |
-| "The update check is off: ..." | Turned off in Settings |
+| "Update check is off." | **Tell me about new versions** is off |
 
 3. To ask now, select **Check now** (or **Check again**). It needs the **Change settings** permission.
 
@@ -52,13 +52,18 @@ Without the page: `docker exec <container> /holyarrs restore --pre-update`, then
 
 Nothing is deleted. The newer data moves to `backups/before-restore-<time>/`, so you can undo. Going back more than one version picks the newest pre-update backup that version can read.
 
+## Turn the check off
+
+**Tell me about new versions** sits on the **Status** page under **Updates in the app**, next to **Install updates**. It is on by default. Turn it off and HolyArrs sends no update request at all and shows no notice. **Ask me** and **Automatic** need it on, so they are greyed out while it is off.
+
+For Docker, set `HOLYARRS_UPDATE_CHECK=off` to start with the check off, for installs updated by Watchtower or similar. Changing the switch later wins over the variable.
+
 ## Choices
 
-All in **Settings > Health checks**. The last three sit under the card's advanced part.
+The rest are in **Settings > Health checks**. The last three sit under the card's advanced part.
 
 | Setting | Default | Change it when |
 |---|---|---|
-| **Check for a newer HolyArrs** | On | You want no outside request at all |
 | **Check for updates every** | day | You want fewer checks: 3, 7, 14 or 30 days |
 | **Release feed** | Empty (HolyArrs releases) | You host your own feed |
 | **Feed may be on the local network** | Off | Your feed is on your own network |
@@ -90,7 +95,7 @@ To turn one on, add its switch to `HOLYARRS_FLAGS`, comma-separated, and restart
 
 ```yaml
 environment:
-  HOLYARRS_FLAGS: "subtitle_sites,trakt_lists"
+  HOLYARRS_FLAGS: "ai_apps,go_back"
 ```
 
 Remove the name and restart to turn it off. Hidden settings come back when you turn it on again.
@@ -99,9 +104,6 @@ Remove the name and restart to turn it off. Hidden settings come back when you t
 |---|---|
 | `ai_apps` | Connect AI apps: **Settings > AI apps**, the `/ai` page and its routes |
 | `row_title_stats` | Explore row title statistics in Appearance |
-| `trakt_lists` | Trakt key, Trakt lists and Trakt reviews. TMDB lists stay on |
-| `subtitle_sites` | Subtitle sites and subtitle search. Your subtitle language stays on |
-| `emby_signin` | Sign in with Emby. Emby library refresh still works |
 | `go_back` | The **Go back** panel on the Status page. The steps in [Go back](#go-back-to-the-older-version) work without it |
 
 Nothing changed after adding a switch? Check the spelling (lowercase, underscores) and restart the container, not only the page.
@@ -110,7 +112,7 @@ Nothing changed after adding a switch? Check the spelling (lowercase, underscore
 
 <details class="ha-more"><summary>What the check sends</summary>
 
-One request to `api.github.com` for the newest release, with only `User-Agent: HolyArrs/<version>`. No account, key or media list. With the check off, no request at all.
+One request to `updates.holyarrs.com` for the signed list of releases (`v1/manifest.json` and its `.minisig`); when that list cannot be read, one request to `api.github.com` for the newest release instead. Each goes with only `User-Agent: HolyArrs/<version>`. No account, key or media list. With the check off, no request at all.
 
 The last answer is saved, so a restart does not check before it is due. One check waits at most 15 s, reads at most 512 KB and follows at most 3 redirects, never switching between http and https. A release-notes link shows only when it points to the HolyArrs release pages on GitHub; otherwise the version shows as plain text.
 

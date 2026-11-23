@@ -15,7 +15,7 @@ func TestWish_CleanWants(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got[0].Language != "en" || got[0].HearingImpaired != HINormal || got[1].Language != "es" || got[2].Language != "en" || !got[2].Forced {
+	if got[0].Language != "en" || got[0].HearingImpaired != HINormal || got[1].Language != "es-419" || got[2].Language != "en" || !got[2].Forced {
 		t.Fatalf("%+v", got)
 	}
 	for _, bad := range [][]Want{
@@ -171,7 +171,7 @@ func TestWish_SettingsRoundTrip(t *testing.T) {
 }
 
 func TestWish_NormLanguage(t *testing.T) {
-	for in, want := range map[string]string{"eng": "en", "EN": "en", "en-US": "en", "pt_BR": "pt-br", "pt-PT": "pt", "ger": "de", "deu": "de", "French": "fr",
+	for in, want := range map[string]string{"eng": "en", "EN": "en", "en-US": "en", "pt_BR": "pt-br", "pt-PT": "pt-pt", "ger": "de", "deu": "de", "French": "fr",
 		"und": "", "": "", "zxx": "", "chi": "zh", "zho": "zh", "pob": "pt-br"} {
 		if got := NormLanguage(in); got != want {
 			t.Errorf("%q: %q, want %q", in, got, want)

@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Sestavuje se {what}… pokus {attempt}",
 	"core.testTag.connected": "Připojeno",
 	"core.api.notAnswering": "HolyArrs neodpovídá. Zkontrolujte, zda běží.",
+	"core.api.tooSlow": "HolyArrs odpovídal příliš dlouho. Zkus to znovu za minutu.",
 	"core.api.requestFailed": "Požadavek selhal ({status})",
 	"core.api.wentWrong": "Něco se pokazilo.",
 	"core.trailerMiss.trailer": "upoutávku",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Schváleno automaticky",
 	"core.plain.approvedBy": "Schválil(a) {who}",
 	"core.settings.cantReach": "Na tuto adresu se nelze dostat. Zkontrolujte ji a zda aplikace běží.",
+	"core.settings.tryHttp": "Tato adresa neodpovídá přes https. Zkus místo toho http://.",
 	"core.settings.groupLibrary.label": "Knihovna",
 	"core.settings.groupLibrary.line": "Kde tituly žijí",
 	"core.settings.groupLibrary.about": "Složky, části, výchozí hodnoty, titulky, názvy souborů a import.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dva stahovače vedou na stejnou stahovací aplikaci, takže se stahování může zobrazit dvakrát.",
 	"core.plain.peopleCheck": "Seznam uživatelů mediálního serveru nelze přečíst, proto se zde nevypínají lidé, kteří tam byli odebráni.",
 	"core.plain.deleted": "smazán",
-	"core.plain.deletedName": "{name} (smazán)"
+	"core.plain.deletedName": "{name} (smazán)",
+	"core.api.handsOffFiles": "Režim bez zásahu je zapnutý, takže HolyArrs stažené soubory nechává být. Pro import, přejmenování, přesun nebo prohledání souborů ho vypněte v Nastavení.",
+	"core.api.handsOffSubtitles": "Režim bez zásahu je zapnutý, takže HolyArrs stažené soubory nikdy neotevírá. Pro titulky ho vypněte v Nastavení."
 }

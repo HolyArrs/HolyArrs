@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Поништити увоз {id}?",
 	"settings.move.undoQuestion": "Поништити овај увоз?",
 	"settings.move.undoNote": "Уклања оно што је овај увоз додао; твоје касније измене остају. Прво преузми извештај ако ти треба.",
-	"settings.move.undoMove": "Поништи увоз"
+	"settings.move.undoMove": "Поништи увоз",
+	"settings.move.continueSetup": "Nastavi podešavanje",
+	"settings.move.backToChoose": "Nazad na izbor"
 }

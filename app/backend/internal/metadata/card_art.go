@@ -20,10 +20,12 @@ type CardArt struct {
 
 // CardImage is one image from a title's image list.
 type CardImage struct {
-	Path  string  `json:"file_path"`
-	Lang  *string `json:"iso_639_1"`
-	Vote  float64 `json:"vote_average"`
-	Width int     `json:"width"`
+	Path string  `json:"file_path"`
+	Lang *string `json:"iso_639_1"`
+	// Country is the region of the text (BR in pt-BR), when the source says.
+	Country *string `json:"iso_3166_1,omitempty"`
+	Vote    float64 `json:"vote_average"`
+	Width   int     `json:"width"`
 	// Height is the native height in pixels (the sign-in art's quality gate).
 	Height int `json:"height,omitempty"`
 }
@@ -59,8 +61,10 @@ func (t *TMDB) CardImages(ctx context.Context, kind, tmdbID, lang string) (CardI
 		return CardImages{}, ErrNotFound
 	}
 	langs := "en,null"
-	if lang = strings.ToLower(lang); len(lang) == 2 && lang != "en" {
-		langs = lang + ",en,null"
+	if lang = strings.ToLower(lang); IsTextLanguage(lang) || len(lang) == 2 && trailerLangRe.MatchString(lang) {
+		if code := TMDBCode(lang); code != "en" {
+			langs = code + ",en,null"
+		}
 	}
 	b, err := t.get(ctx, "/"+tvPath(kind)+"/"+strconv.FormatInt(n, 10)+"/images", url.Values{"include_image_language": {langs}})
 	if err != nil {
@@ -91,18 +95,24 @@ func PickCardArt(im CardImages, lang, fallback string) CardArt {
 	if lang == "" {
 		lang = "en"
 	}
+	// best is the highest voted image in want's language (its region
+	// first, PNG only for logos); want "" is textless.
 	best := func(list []CardImage, want string, png bool) string {
-		pick, vote := "", -1.0
+		pick, score, vote := "", 0, -1.0
 		for _, x := range list {
 			if png && !strings.HasSuffix(strings.ToLower(x.Path), ".png") {
 				continue
 			}
-			l := ""
-			if x.Lang != nil {
-				l = strings.ToLower(*x.Lang)
+			s := 0
+			if want == "" {
+				if x.Lang == nil || *x.Lang == "" {
+					s = 1
+				}
+			} else {
+				s = LangScore(want, x.Lang, x.Country)
 			}
-			if l == want && x.Vote > vote {
-				pick, vote = x.Path, x.Vote
+			if s > 0 && (s > score || s == score && x.Vote > vote) {
+				pick, score, vote = x.Path, s, x.Vote
 			}
 		}
 		return pick

@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Idagdag sa listahan ng Huwag Idagdag",
 	"settings.outsideLists.showDot": "show ·",
 	"settings.outsideLists.takeOff": "Alisin ang {name}",
-	"settings.outsideLists.empty": "Wala pang laman ang listahang ito"
+	"settings.outsideLists.empty": "Wala pang laman ang listahang ito",
+	"settings.outsideLists.traktSignInTitle": "Pag-sign in sa Trakt",
+	"settings.outsideLists.traktSignInInfo": "Mag-sign in para mabasa ang mga pribado mong listahan at watchlist sa Trakt, at para maidagdag sa kasaysayan ng panonood ang mga napanood mo sa Trakt.",
+	"settings.outsideLists.traktSignedInAs": "Naka-sign in bilang {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Hindi naka-sign in. Mga pampublikong listahan lang ang binabasa.",
+	"settings.outsideLists.traktSignIn": "Mag-sign in gamit ang Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Sa kahit anong device, buksan ang <a>{url}</a> at ilagay ang <code>{code}</code>. Maghihintay ang page na ito hanggang mag-apruba ka.",
+	"settings.outsideLists.traktDenied": "Tinanggihan ang pag-sign in sa Trakt.",
+	"settings.outsideLists.traktExpired": "Nag-expire ang code. Magsimula ulit.",
+	"settings.outsideLists.traktSignOut": "Mag-sign out sa Trakt",
+	"settings.outsideLists.traktSignedIn": "Naka-sign in sa Trakt",
+	"settings.outsideLists.traktSignedOut": "Naka-sign out sa Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (kailangan para mag-sign in gamit ang Trakt)",
+	"settings.outsideLists.traktSecretFirst": "I-save muna ang client secret ng iyong Trakt app; kailangan ito ng Trakt para manatili kang naka-sign in."
 }

@@ -14,9 +14,13 @@ import (
 
 // PinnedKeys are the trusted minisign public keys (main and next), in
 // minisign's public key format (the base64 line of a .pub file).
-// The list stays empty until release keys exist; while it is empty the
-// release feed check is used instead.
-var PinnedKeys = []string{}
+// The release key is made with "updatekey keygen -plain -pipe" straight
+// into the release workflow's secret; its public half is
+// deploy/release/updates/keys/main.pub, and a test checks both match.
+// While the list is empty the release feed check is used instead.
+var PinnedKeys = []string{
+	"RWS0UCPwcKD9LkgyAWi7c3i9SvDhfki65gYNcPVMQhccHF1kEhxH4Od6", // main, 2EFDA070F02350B4
+}
 
 // ErrSignature is any problem with the signature: the file is ignored.
 var ErrSignature = errors.New("the update list signature is not valid")
@@ -25,6 +29,11 @@ var ErrSignature = errors.New("the update list signature is not valid")
 type PublicKey struct {
 	ID  [8]byte
 	Key ed25519.PublicKey
+}
+
+// Line is the key in minisign's public key format (what PinnedKeys holds).
+func (k PublicKey) Line() string {
+	return base64.StdEncoding.EncodeToString(append(append([]byte("Ed"), k.ID[:]...), k.Key...))
 }
 
 // KeyID is minisign's key id in hex, as minisign prints it.

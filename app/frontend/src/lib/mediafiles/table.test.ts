@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TitleView } from '../core/types.ts';
-import { activeCount, applyLayout, chosenColumns, columnsFor, columnSort, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortLabel, sortLabels, sortsFor, sortTitles, startDir, tableMinWidth, type FilterContext } from './table.ts';
+import { activeCount, applyLayout, chosenColumns, columnsFor, columnSort, fitColumns, filterCounts, loadColumns, loadSaved, moveColumn, noFilter, passes, saveColumns, saveSaved, sortLabel, sortLabels, sortsFor, sortTitles, startDir, tableMinWidth, type FilterContext } from './table.ts';
 
 function memory() {
 	const m = new Map<string, string>();
@@ -196,5 +196,36 @@ describe('sortLabel', () => {
 		expect(sortLabel('next', 'artist')).toBe('Next release');
 		expect(sortLabel('next', 'show')).toBe('Next episode');
 		expect(sortLabel('release', 'movie')).toBe('Out');
+	});
+});
+
+describe('fitColumns (#483)', () => {
+	const w = () => 100;
+	const cols = columnsFor('movie');
+	it('keeps the order and shows every chosen column that fits', () => {
+		const r = fitColumns(cols.slice(0, 4), 1000, w);
+		expect(r.shown.map((c) => c.id)).toEqual(cols.slice(0, 4).map((c) => c.id));
+		expect(r.cut).toEqual([]);
+	});
+	it('cuts from the end, never from the middle, and says what was cut', () => {
+		const r = fitColumns(cols.slice(0, 5), 340, w);
+		expect(r.shown.map((c) => c.id)).toEqual(cols.slice(0, 3).map((c) => c.id));
+		expect(r.cut.map((c) => c.id)).toEqual(cols.slice(3, 5).map((c) => c.id));
+	});
+	it('always shows the first column, even with no room', () => {
+		expect(fitColumns(cols.slice(0, 3), 0, w).shown).toHaveLength(1);
+		expect(fitColumns([], 500, w)).toEqual({ shown: [], cut: [] });
+	});
+	it('status is an ordinary column: it can be hidden or placed anywhere', () => {
+		const noStatus = columnsFor('show').filter((c) => c.id !== 'status');
+		expect(fitColumns(noStatus, 2000, w).shown.some((c) => c.id === 'status')).toBe(false);
+		const last = [...noStatus.slice(0, 3), columnsFor('show')[0]];
+		expect(fitColumns(last, 2000, w).shown.at(-1)?.id).toBe('status');
+	});
+	it('every column of every part can be chosen and shown at a wide width', () => {
+		for (const k of ['movie', 'show', 'artist'] as const) {
+			const all = columnsFor(k).map((c) => ({ ...c, on: true }));
+			expect(fitColumns(chosenColumns(all, 'name'), 99999, w).shown).toHaveLength(all.length);
+		}
 	});
 });

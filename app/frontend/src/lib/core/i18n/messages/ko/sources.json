@@ -85,5 +85,21 @@
 	"sources.uses.auto": "자동 검색",
 	"sources.uses.feed": "최신 목록",
 	"sources.uses.hand": "직접 검색",
-	"sources.uses.none": "사용 안 함"
+	"sources.uses.none": "사용 안 함",
+	"sources.bridge.removeTitle": "{name}을(를) 제거할까요?",
+	"sources.bridge.find": "내 네트워크에서 {name} 찾기",
+	"sources.bridge.noneFound": "네트워크에서 응답한 {name}이(가) 없습니다.",
+	"sources.bridge.keyFound": "{name}에서 키를 가져왔습니다",
+	"sources.bridge.keyKept": "{name}이(가) 키를 주지 않았습니다(로그인이 켜져 있음). 키 가져오기로 복사하세요.",
+	"sources.bridge.keyKeptJackett": "Jackett이 키를 주지 않았습니다(관리자 비밀번호가 있음). 키 가져오기(으)로 복사하세요.",
+	"sources.bridge.notReached": "{name}에 연결할 수 없습니다.",
+	"sources.bridge.brings.title": "가져오는 항목",
+	"sources.bridge.brings.sites": "인덱서(소스로)",
+	"sources.bridge.brings.categories": "카테고리",
+	"sources.bridge.brings.search": "검색은 {name}을(를) 거칩니다",
+	"sources.bridge.brings.sync": "{name}의 변경 사항이 반영됩니다",
+	"sources.bridge.brings.stays": "인덱서는 {name}에 그대로 설정되어 있습니다.",
+	"sources.bridge.brings.had": "이미 인덱서 {n}개 있음",
+	"sources.bridge.brings.hadFrom": "{apps}에서 가져옴",
+	"sources.bridge.brings.keyKept": "키를 비워 두면 이미 있는 키를 사용합니다."
 }

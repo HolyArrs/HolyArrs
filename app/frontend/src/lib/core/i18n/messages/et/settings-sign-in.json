@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Ainult need saavad öelda, kust külastus tuli.",
 	"settings.signIn.fixToSaveOne": "Salvestamiseks paranda 1 rida",
 	"settings.signIn.fixToSaveOther": "Salvestamiseks paranda {n} rida",
-	"settings.signIn.localSaved": "Kohalik võrk salvestatud"
+	"settings.signIn.localSaved": "Kohalik võrk salvestatud",
+	"settings.signIn.forgotTitle": "Unustasid parooli?",
+	"settings.signIn.forgotOn": "Näita sisselogimislehel Unustasid parooli?",
+	"settings.signIn.forgotNote": "Omanik saab serveri logist ühekordse koodi. Lülita välja, kui kõik logivad sisse ühekordse sisselogimisega. Käsk reset-owner töötab edasi.",
+	"settings.signIn.forgotShown": "Unustasid parooli? on sees",
+	"settings.signIn.forgotHidden": "Unustasid parooli? on väljas"
 }

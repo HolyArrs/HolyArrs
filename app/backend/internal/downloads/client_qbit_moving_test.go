@@ -16,7 +16,8 @@ func TestQbitCompleteButStillInIncompleteFolder(t *testing.T) {
 		{"no incomplete folder", "/data/inc/holyarrs", "", "/data/inc/Dune.mkv", "/data/inc/holyarrs"},
 		{"windows paths", `D:\inc\holyarrs`, `D:\inc`, `D:\inc\Dune.mkv`, `D:\inc`},
 	} {
-		tt := qbitTorrent{Hash: "AB", Name: "Dune.mkv", State: "stalledUP", Progress: 1, SavePath: c.save, DownloadPath: c.download, ContentPath: c.content}
+		// Finished long ago and never moved: read where it is.
+		tt := qbitTorrent{Hash: "AB", Name: "Dune.mkv", State: "stalledUP", Progress: 1, SavePath: c.save, DownloadPath: c.download, ContentPath: c.content, DoneOn: 1}
 		j := jobFromTorrent(tt)
 		if j.State != StateFinished || j.SavePath != c.want {
 			t.Errorf("%s: %s in %s, want finished in %s", c.name, j.State, j.SavePath, c.want)

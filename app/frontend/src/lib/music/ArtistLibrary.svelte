@@ -16,6 +16,7 @@
 	import { ago, bytes } from '#lib/core/format.ts';
 	import type { AlbumSummary, EventRecord, LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
 	import { to } from '#lib/core/paths.ts';
+	import ArtistUnmatched from './ArtistUnmatched.svelte';
 
 	// This sits on the artist page's dark panel in both themes, so status text uses the *-on-art colours.
 
@@ -262,6 +263,7 @@
 					{#if missing}<button type="button" class="al-btn primary" disabled={busy === 'all'} onclick={() => search({}, 'all', t('music.searchingForAllMissing'))}><Icon name="search" size={16} />{t('music.getAllMissing')}</button>{/if}
 				{/if}
 			</section>
+			{#if manage}<ArtistUnmatched {titleId} {albums} onchange={load} />{/if}
 
 			<div class="al-head">
 				<h3 class="al-h">{t('music.releases')}</h3>

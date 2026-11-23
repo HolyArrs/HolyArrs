@@ -2,9 +2,13 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 )
 
 // newServer wraps every request in stallGuard, so the wrapper must still
@@ -58,5 +62,28 @@ func TestStallGuardPassesFlushAndHijack(t *testing.T) {
 	}
 	if err := <-hijacked; err != nil {
 		t.Fatalf("hijack: %v", err)
+	}
+}
+
+// A picture between the app-wide limit and the picture limit reaches the
+// picture handler instead of being refused early.
+func TestLimitBodiesLetsLargerAvatarThrough(t *testing.T) {
+	var got int64
+	h := limitBodies(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n, _ := io.Copy(io.Discard, r.Body)
+		got = n
+	}))
+	size := int64(3 << 20)
+	req := httptest.NewRequest(http.MethodPut, accounts.AvatarUploadPath, bytes.NewReader(make([]byte, size)))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || got != size {
+		t.Fatalf("avatar of %d bytes: status %d, read %d", size, rec.Code, got)
+	}
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/other", bytes.NewReader(make([]byte, size)))
+	rec = httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("other path: status %d, want 413", rec.Code)
 	}
 }

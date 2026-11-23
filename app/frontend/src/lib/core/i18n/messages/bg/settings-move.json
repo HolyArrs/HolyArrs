@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Да се отмени ли импорт {id}?",
 	"settings.move.undoQuestion": "Да се отмени ли този импорт?",
 	"settings.move.undoNote": "Премахва това, което е добавил този импорт; по-късните ви промени остават. Първо изтеглете отчета, ако ви трябва.",
-	"settings.move.undoMove": "Отмяна на импорта"
+	"settings.move.undoMove": "Отмяна на импорта",
+	"settings.move.continueSetup": "Продължи настройката",
+	"settings.move.backToChoose": "Назад към избора"
 }

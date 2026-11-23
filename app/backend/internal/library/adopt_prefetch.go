@@ -2,7 +2,6 @@ package library
 
 import (
 	"context"
-	"path"
 	"strconv"
 	"strings"
 
@@ -20,8 +19,9 @@ const scanWindow = 40
 
 // folderRead is the first lookup matchFolder makes for a folder.
 func folderRead(folder string) metadata.TMDBRead {
-	if m := reTMDBTag.FindStringSubmatch(folder); m != nil {
-		if n, err := strconv.ParseInt(m[1], 10, 64); err == nil && n > 0 {
+	folder = matchingLookup(folder)
+	if m := reTMDBTag.FindStringSubmatch(folder); m != nil && strings.EqualFold(m[1], "tmdb") {
+		if n, err := strconv.ParseInt(m[2], 10, 64); err == nil && n > 0 {
 			return metadata.MovieDetailRead(n)
 		}
 	}
@@ -32,7 +32,7 @@ func folderRead(folder string) metadata.TMDBRead {
 // scanAhead fetches the lookups of a scan's folders one window ahead of
 // the scan, so each folder's lookup is answered from memory.
 type scanAhead struct {
-	index map[string]int
+	index map[string]int // full relative paths: basenames can repeat across groups
 	ready []chan struct{}
 	free  chan struct{}
 	stop  chan struct{}
@@ -52,11 +52,15 @@ func startAhead(ctx context.Context, md metadata.Provider, folders []string) *sc
 	if !ok || len(folders) == 0 {
 		return nil
 	}
-	a := &scanAhead{index: map[string]int{}, free: make(chan struct{}, 2), stop: make(chan struct{}), at: -1}
+	windows := (len(folders) + scanWindow - 1) / scanWindow
+	a := &scanAhead{index: map[string]int{}, free: make(chan struct{}, windows+1), stop: make(chan struct{}), at: -1}
 	for i, f := range folders {
-		a.index[f] = i
+		// Two folders can share a name; the first one is reached first.
+		if _, dup := a.index[f]; !dup {
+			a.index[f] = i
+		}
 	}
-	for range (len(folders) + scanWindow - 1) / scanWindow {
+	for range windows {
 		a.ready = append(a.ready, make(chan struct{}))
 	}
 	a.free <- struct{}{}
@@ -101,9 +105,9 @@ func (a *scanAhead) wait(ctx context.Context, folder string) {
 		return
 	}
 	w := i / scanWindow
-	if w > a.at {
-		a.at = w
-		// Entering a window lets the next one be fetched meanwhile.
+	// Entering a window lets the next one be fetched meanwhile; a jump over
+	// several windows frees one fetch per window crossed.
+	for ; a.at < w; a.at++ {
 		select {
 		case a.free <- struct{}{}:
 		default:
@@ -115,7 +119,7 @@ func (a *scanAhead) wait(ctx context.Context, folder string) {
 	}
 }
 
-// scanLookups lists the folder names a scan will look up, in scan order: those
+// scanLookups lists the relative folder paths a scan will look up, in scan order: those
 // it reads (at most limit), less those already in the Library. names are paths
 // inside the Library folder; a lookup goes by the last part.
 func scanLookups(names []string, limit int, known map[string]int64, fold bool) []string {
@@ -125,7 +129,7 @@ func scanLookups(names []string, limit int, known map[string]int64, fold bool) [
 			break
 		}
 		if _, ok := known[FolderKey(n, fold)]; !ok {
-			out = append(out, path.Base(n))
+			out = append(out, n)
 		}
 	}
 	return out

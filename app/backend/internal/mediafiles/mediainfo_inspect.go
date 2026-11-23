@@ -1,6 +1,6 @@
 // Media header reading: a bounded subset of media container headers.
 //
-// One reader serves Matroska/WebM and MP4/MOV. It reads only headers (never
+// One reader serves Matroska/WebM, MP4/MOV, AVI and MPEG-TS/M2TS. It reads only headers (never
 // samples), and hard limits on elements, nesting, tracks and bytes per read
 // keep a hostile file from hanging it or making it allocate much.
 
@@ -32,7 +32,7 @@ const (
 // Errors. Every reading error wraps ErrMalformed or ErrLimit, except plain
 // I/O errors from the reader itself.
 var (
-	ErrUnsupported = errors.New("not a Matroska or MP4 file")
+	ErrUnsupported = errors.New("not a supported media container")
 	ErrMalformed   = errors.New("malformed container")
 	ErrLimit       = errors.New("container is past a reading limit")
 )
@@ -199,7 +199,7 @@ func InspectReaderAt(r io.ReaderAt, size int64) (Info, error) {
 	return buildInfo(h, size), nil
 }
 
-// ReadTracks lists every track of a Matroska/WebM or MP4/MOV file of size
+// ReadTracks lists every track of a Matroska/WebM, MP4/MOV, AVI or TS file of size
 // bytes. It returns ErrUnsupported for other files and ErrMalformed when the
 // movie header is missing.
 func ReadTracks(r io.ReaderAt, size int64) ([]Track, error) {
@@ -229,6 +229,17 @@ func readHeaders(r io.ReaderAt, size int64) (headers, error) {
 		return inspectMatroska(r, size)
 	case looksLikeMP4(prefix):
 		return inspectMP4(r, size)
+	}
+	// AVI needs 12 bytes and a transport stream three packets in a row.
+	prefix, err = readAt(r, 0, min64(size, 1024))
+	if err != nil {
+		return headers{}, fmt.Errorf("inspect media header: %w", err)
+	}
+	if looksLikeAVI(prefix) {
+		return inspectAVI(r, size)
+	}
+	if packet, sync, start, ok := tsLayout(prefix); ok {
+		return inspectTS(r, size, packet, sync, start)
 	}
 	return headers{}, ErrUnsupported
 }
@@ -310,7 +321,9 @@ func normalizeLanguage(value string) (string, bool) {
 		return "", false
 	}
 	base, confidence := tag.Base()
-	if confidence == language.No || base.String() == "und" {
+	switch b := base.String(); {
+	case confidence == language.No, b == "und", b == "mul", b == "zxx", b == "mis", b == "unk",
+		len(b) == 3 && b >= "qaa" && b <= "qtz": // no, many, other or private-use language: not one we can name
 		return "", false
 	}
 	return base.String(), true

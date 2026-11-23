@@ -1,0 +1,125 @@
+[
+ {
+  "type": "ReleaseTitleSpecification",
+  "body": {
+   "order": 1,
+   "implementationName": "Release Title",
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "value": "x265",
+   "name": "x265",
+   "negate": false,
+   "required": true
+  }
+ },
+ {
+  "type": "LanguageSpecification",
+  "body": {
+   "order": 3,
+   "implementationName": "Language",
+   "value": 1,
+   "exceptLanguage": true,
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "name": "NotEn",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "EditionSpecification",
+  "body": {
+   "order": 2,
+   "implementationName": "Edition",
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "value": "imax",
+   "name": "IMAX",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "QualityModifierSpecification",
+  "body": {
+   "order": 7,
+   "implementationName": "Quality Modifier",
+   "value": 5,
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "name": "Remux",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "YearSpecification",
+  "body": {
+   "order": 10,
+   "implementationName": "Year",
+   "min": 1900,
+   "max": 1999,
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "name": "Old",
+   "negate": true,
+   "required": false
+  }
+ },
+ {
+  "type": "SizeSpecification",
+  "body": {
+   "order": 8,
+   "implementationName": "Size",
+   "min": 1.5,
+   "max": 40,
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "name": "Big",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "SourceSpecification",
+  "body": {
+   "order": 5,
+   "implementationName": "Source",
+   "value": 9,
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "name": "Blu",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "ResolutionSpecification",
+  "body": {
+   "order": 6,
+   "implementationName": "Resolution",
+   "value": 1080,
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "name": "1080",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "ReleaseGroupSpecification",
+  "body": {
+   "order": 9,
+   "implementationName": "Release Group",
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "value": "^NTb$",
+   "name": "Grp",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "IndexerFlagSpecification",
+  "body": {
+   "order": 4,
+   "implementationName": "Indexer Flag",
+   "value": 1,
+   "infoLink": "https://wiki.servarr.com/radarr/settings#custom-formats-2",
+   "name": "Flag",
+   "negate": false,
+   "required": false
+  }
+ }
+]

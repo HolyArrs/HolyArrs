@@ -14,6 +14,12 @@ import (
 // signedOut is the disabled reason a sign-out leaves.
 const signedOut = "signed out by the owner"
 
+// stoppedByOwner is the reason Stop records.
+const stoppedByOwner = "stopped by the owner"
+
+// ownerStopped is true for a plugin the owner stopped or signed out himself.
+func ownerStopped(reason string) bool { return reason == stoppedByOwner || reason == signedOut }
+
 // signOutWithin caps a sign-out run; the plugin's own logout gives up sooner.
 const signOutWithin = 30 * time.Second
 

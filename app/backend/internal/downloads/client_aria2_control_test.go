@@ -227,21 +227,48 @@ func TestAria2Controls(t *testing.T) {
 	var _ Controller = e
 }
 
+// A cap goes on this Downloader's own downloads, not on aria2's global options: a
+// download another app added keeps its speed, and the limits in aria2's own
+// config stay as they are.
 func TestAria2SpeedLimit(t *testing.T) {
-	f := &fakeAria2{}
+	f := &fakeAria2{opts: map[string]string{"max-overall-download-limit": "999"}}
 	e := NewAria2(startAria2(t, f), "", nil)
+	e.Category, e.SaveRoot = "movies", "/downloads"
 	ctx := context.Background()
+	// Nothing of ours runs yet, and the Downloader still reads back the cap it was given.
 	if err := e.SetSpeedLimit(ctx, 1048576, 524288); err != nil {
 		t.Fatal(err)
-	}
-	if f.opts["max-overall-download-limit"] != "1048576" || f.opts["max-overall-upload-limit"] != "524288" {
-		t.Errorf("options %v", f.opts)
 	}
 	if st, err := e.Status(ctx); err != nil || st.SpeedLimit != 1048576 || st.UpLimit != 524288 || st.Paused {
 		t.Errorf("status: %+v %v", st, err)
 	}
-	if err := e.SetSpeedLimit(ctx, 0, -5); err != nil || f.opts["max-overall-upload-limit"] != "0" {
-		t.Errorf("no caps: %v %v", err, f.opts)
+	own := f.put(&a2Job{status: "active", hash: rtHash, dir: "/downloads/movies", name: "a.mkv", total: 10, done: 4})
+	other := f.put(&a2Job{status: "active", hash: a2Other, dir: "/downloads/tv", name: "b.mkv", total: 10, done: 4})
+	if err := e.SetSpeedLimit(ctx, 2048, 1024); err != nil {
+		t.Fatal(err)
+	}
+	if own.opts["max-download-limit"] != "2048" || own.opts["max-upload-limit"] != "1024" {
+		t.Errorf("our download %v", own.opts)
+	}
+	if len(other.opts) != 0 {
+		t.Errorf("another app's download was capped: %v", other.opts)
+	}
+	if f.opts["max-overall-download-limit"] != "999" {
+		t.Errorf("aria2's own limit was changed: %v", f.opts)
+	}
+	// Clearing the cap clears the download too.
+	if err := e.SetSpeedLimit(ctx, 0, 0); err != nil || own.opts["max-download-limit"] != "0" || own.opts["max-upload-limit"] != "0" {
+		t.Errorf("no caps: %v %v", err, own.opts)
+	}
+	// What the Downloader takes next carries the cap itself.
+	if err := e.SetSpeedLimit(ctx, 4096, 0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.Add(ctx, AddRequest{URL: "magnet:?xt=urn:btih:3333333333333333333333333333333333333333&dn=Lab", Category: "movies"}); err != nil {
+		t.Fatal(err)
+	}
+	if o := f.adds[0].opts; o["max-download-limit"] != "4096" {
+		t.Errorf("the added torrent was not capped: %v", o)
 	}
 	f.capsIgnore = true
 	if err := e.SetSpeedLimit(ctx, 2048, 0); err == nil {

@@ -59,6 +59,17 @@
 		});
 		return () => cancelAnimationFrame(raf);
 	});
+	// Fade the bottom edge while more rows sit below, so a row never looks cut in half.
+	let scroller = $state<HTMLElement>();
+	let more = $state(false);
+	const edge = () => { if (scroller) more = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight > 1; };
+	$effect(() => {
+		if (!scroller || !list) return;
+		const ro = new ResizeObserver(edge);
+		ro.observe(scroller);
+		ro.observe(list);
+		return () => ro.disconnect();
+	});
 	const key = (s: NavSection, i: NavItem) => `${s.id}:${i.href}:${i.label}`;
 </script>
 
@@ -71,7 +82,7 @@
 			<IconButton bind:node={toggle} icon="sidebar" label={collapsed ? t('frame.sidebar.show') : t('frame.sidebar.hide')} aria-expanded={!collapsed} aria-controls={id} tipSide={collapsed ? 'right' : 'below'} onclick={ontoggle} />
 		</span>
 	</div>
-	<nav aria-label={t('frame.tabs.main')} class="scroll">
+	<nav aria-label={t('frame.tabs.main')} class="scroll" class:more bind:this={scroller} onscroll={edge}>
 		<div class="list" bind:this={list}>
 			<span class="pill" class:on={pill.on} class:still={pill.still} style="transform: translateY({pill.top}px); height: {pill.height}px" aria-hidden="true"></span>
 			{#each sections as s (s.id)}
@@ -130,7 +141,11 @@
 	.collapsed .sec .t { opacity: 0; }
 	.div { position: absolute; left: 14px; right: 14px; top: 13px; height: 1px; background: var(--line-strong); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
 	.collapsed .div { opacity: 1; }
-	.collapsed .section + .section { margin-top: 6px; }
+	.collapsed .section + .section { margin-top: 2px; }
+	/* Icons only: a thin divider instead of a heading, so every row fits on a laptop screen. */
+	.collapsed .sec { height: 14px; padding-top: 0; }
+	.collapsed .div { top: 7px; }
+	.scroll.more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); }
 	ul { display: flex; flex-direction: column; gap: 2px; }
 	li { position: relative; }
 	.foot { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }

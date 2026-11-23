@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,6 +25,15 @@ func str(v any) string {
 		return strconv.FormatBool(x)
 	}
 	return ""
+}
+
+// smallInt narrows a number to int; one that does not fit in 32 bits (the
+// 32-bit builds' int) counts as bad input and gives 0.
+func smallInt(n int64) int {
+	if n < math.MinInt32 || n > math.MaxInt32 {
+		return 0
+	}
+	return int(n)
 }
 
 // num reads a value as a whole number (0 when it is not one).
@@ -50,6 +60,21 @@ func num(v any) int64 {
 		return n
 	}
 	return 0
+}
+
+// fnum reads a value as a number with a fraction (0 when it is not one).
+func fnum(v any) float64 {
+	switch x := v.(type) {
+	case json.Number:
+		f, _ := x.Float64()
+		return f
+	case float64:
+		return x
+	case string:
+		f, _ := strconv.ParseFloat(strings.TrimSpace(x), 64)
+		return f
+	}
+	return float64(num(v))
 }
 
 // boolean reads a value as true or false (1, "true", "yes", "on" are true).

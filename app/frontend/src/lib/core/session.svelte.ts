@@ -34,11 +34,14 @@ export interface Me {
 	recent_proof?: boolean;
 	has_password?: boolean;
 	setup_open?: boolean;
+	setup_skipped?: boolean;
 	avatar?: string | null;
 	max_rating?: string;
 	rating_country?: string;
 	held?: string[];
 	views?: Record<string, unknown>;
+	// Hands-off mode: HolyArrs only sends to the Downloader and needs no Library folder.
+	hands_off?: boolean;
 }
 
 export interface FoundServer {
@@ -62,8 +65,14 @@ interface AuthState {
 	setup_ways?: Way[];
 	safe_mode?: boolean;
 	min_password_length?: number;
+	// The owner exists but first-run setup is not finished: sign-in stays a setup step.
+	setup_skipped?: boolean;
+	setup_open?: boolean;
 	config_unmapped?: boolean;
 	host_refused?: string;
+	// "Forgot password?" is shown; _env: HOLYARRS_RESET_OWNER printed a code at start-up.
+	owner_reset?: boolean;
+	owner_reset_env?: boolean;
 }
 // One session store per client; the default one is exported below. The person's saved page views ride along with the session.
 export function createSession(client: Client = defaultClient, views: Pick<typeof accountViews, 'take' | 'forget'> = accountViews) {
@@ -83,15 +92,21 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		outsideRecent: boolean;
 		hasPassword: boolean;
 		setupOpen: boolean;
+		/** The owner skipped the rest of first-run setup; a Finish setup card offers it again. */
+		setupSkipped: boolean;
 		avatar: string | null;
 		maxRating: string;
 		ways: Way[];
 		setupWays: Way[];
+		setupPending: boolean;
 		safeMode: boolean;
+		handsOff: boolean;
 		held: string[];
 		configUnmapped: boolean;
 		hostRefused: string;
 		minPassword: number;
+		ownerReset: boolean;
+		ownerResetEnv: boolean;
 	}>({
 		state: 'unknown',
 		id: undefined,
@@ -106,15 +121,20 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		outsideRecent: false,
 		hasPassword: true,
 		setupOpen: false,
+		setupSkipped: false,
 		avatar: null,
 		maxRating: '',
 		ways: ['password'],
 		setupWays: ['password'],
+		setupPending: false,
 		safeMode: false,
+		handsOff: false,
 		held: [],
 		configUnmapped: false,
 		hostRefused: '',
-		minPassword: 8
+		minPassword: 8,
+		ownerReset: false,
+		ownerResetEnv: false
 	});
 
 	// Applies the public auth settings the server shares before and after sign-in.
@@ -123,9 +143,12 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		s.minPassword = Math.max(4, st.min_password_length ?? 8);
 		if (st.ways) s.ways = st.ways;
 		s.setupWays = st.setup_ways?.length ? st.setup_ways : ['password'];
+		s.setupPending = !!st.setup_open;
 		if (st.safe_mode !== undefined) s.safeMode = !!st.safe_mode;
 		s.configUnmapped = !!st.config_unmapped;
 		s.hostRefused = st.host_refused ?? '';
+		s.ownerReset = !!st.owner_reset;
+		s.ownerResetEnv = !!st.owner_reset_env;
 	}
 
 	// Failure keeps the last value; the server checks the length again.
@@ -162,9 +185,11 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		s.outsideRecent = !!me.outside_recent;
 		s.hasPassword = me.has_password ?? true;
 		s.setupOpen = !!me.setup_open;
+		s.setupSkipped = !!me.setup_skipped;
 		s.avatar = me.avatar ?? null;
 		s.maxRating = me.max_rating ?? '';
 		s.safeMode = !!me.safe_mode;
+		s.handsOff = !!me.hands_off;
 		s.held = me.held ?? [];
 		setHeld((f) => s.held.includes(f));
 		views.take(me.views);
@@ -187,8 +212,10 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		s.outsideRecent = false;
 		s.hasPassword = true;
 		s.setupOpen = false;
+		s.setupSkipped = false;
 		s.avatar = null;
 		s.maxRating = '';
+		s.handsOff = false;
 		try {
 			const st = await client.get<AuthState>('/auth/state');
 			if (expected !== generation) return;
@@ -239,8 +266,24 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		return finish(await client.post<SignInAnswer>(`/auth/media-server/${kind}`, { name, password }));
 	}
 
-	async function oidcStart(): Promise<{ auth_url: string }> {
-		return client.post('/auth/oidc/start');
+	async function oidcStart(fresh = false): Promise<{ auth_url: string }> {
+		return client.post('/auth/oidc/start', fresh ? { fresh: true } : undefined);
+	}
+
+	// Proof for someone with no password: single sign-on goes straight to the provider, which must ask again, and comes back to `back`; Plex, Jellyfin and Emby sign out and sign in again on the sign-in page.
+	async function signInAgain(back: string, goto: (url: string) => unknown, to: (path: string) => string): Promise<void> {
+		if (s.authMethod === 'oidc') {
+			const { auth_url } = await oidcStart(true);
+			try {
+				sessionStorage.setItem('holyarrs-sso-next', back);
+			} catch {
+				// No storage: the sign-in page opens Home instead.
+			}
+			window.location.assign(auth_url);
+			return;
+		}
+		await logout();
+		await goto(to(`/login?next=${encodeURIComponent(back)}`));
 	}
 
 	async function oidcFinish(): Promise<SignInResult> {
@@ -296,8 +339,8 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		return finish(await client.post<SignInAnswer>(`/auth/invites/${encodeURIComponent(token)}/media-server/${kind}`, { name, password }));
 	}
 
-	async function setup(name: string, password: string) {
-		await finish(await client.post<SignInAnswer>('/auth/setup', { name, password }));
+	async function setup(name: string, password: string, displayName = '') {
+		await finish(await client.post<SignInAnswer>('/auth/setup', { name, password, display_name: displayName }));
 	}
 
 	async function setupPlexStart(): Promise<{ id: number; auth_url: string }> {
@@ -358,6 +401,7 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		loginCode,
 		mediaServer,
 		oidcStart,
+		signInAgain,
 		oidcFinish,
 		forwardLogin,
 		reauth,
@@ -383,6 +427,10 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		},
 		loadMinPassword,
 		loadWays,
+		// The Settings switch saved a new hands-off mode.
+		setHandsOff(on: boolean) {
+			s.handsOff = on;
+		},
 		setAvatar(url: string | null) {
 			s.avatar = url;
 		}

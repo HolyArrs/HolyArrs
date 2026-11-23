@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "{what} hazırlanıyor… deneme {attempt}",
 	"core.testTag.connected": "Bağlı",
 	"core.api.notAnswering": "HolyArrs yanıt vermiyor. Çalıştığından emin ol.",
+	"core.api.tooSlow": "HolyArrs yanıt vermekte çok gecikti. Bir dakika sonra yeniden dene.",
 	"core.api.requestFailed": "İstek başarısız ({status})",
 	"core.api.wentWrong": "Bir şeyler ters gitti.",
 	"core.trailerMiss.trailer": "fragman",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Otomatik onaylandı",
 	"core.plain.approvedBy": "{who} onayladı",
 	"core.settings.cantReach": "Bu adrese ulaşılamıyor. Adresi ve uygulamanın çalıştığını denetle.",
+	"core.settings.tryHttp": "Bu adres https üzerinden yanıt vermiyor. Bunun yerine http:// dene.",
 	"core.settings.groupLibrary.label": "Kütüphane",
 	"core.settings.groupLibrary.line": "Başlıkların durduğu yer",
 	"core.settings.groupLibrary.about": "Klasörler, modüller, varsayılanlar, altyazı, dosya adları ve içe aktarma.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "İki indirici aynı indirme uygulamasına ulaşıyor; bu yüzden indirmeler iki kez görünebilir.",
 	"core.plain.peopleCheck": "Medya sunucusunun kullanıcı listesi okunamıyor, bu yüzden orada kaldırılanlar burada kapatılmıyor.",
 	"core.plain.deleted": "silindi",
-	"core.plain.deletedName": "{name} (silindi)"
+	"core.plain.deletedName": "{name} (silindi)",
+	"core.api.handsOffFiles": "Dokunmama modu açık, bu yüzden HolyArrs indirilen dosyalara dokunmaz. Dosyaları içe aktarmak, yeniden adlandırmak, taşımak veya taramak için Ayarlar'dan kapatın.",
+	"core.api.handsOffSubtitles": "Dokunmama modu açık, bu yüzden HolyArrs indirilen dosyaları asla açmaz. Altyazı kullanmak için Ayarlar'dan kapatın."
 }

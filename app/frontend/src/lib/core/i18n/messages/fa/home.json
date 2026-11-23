@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "انتخاب کن بعدی را چه درخواست کنی",
 	"home.newPopular": "جدید و محبوب",
 	"home.whatSTrending": "چه چیزی پرطرفدار است",
+	"home.gettingReady": "در حال آماده‌سازی…",
 	"home.top10sAndComing": "10 برتر و به‌زودی",
 	"home.whatSNext": "بعدی چیست",
 	"home.airDatesAndReleases": "تاریخ‌های پخش و انتشار",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "قسمت‌ها و فیلم‌هایی که این هفته می‌رسند",
 	"home.popularThisWeek": "انتشارهای محبوبی که این هفته می‌رسند",
 	"home.peopleCheck": "بررسی افراد",
-	"home.cantReadUsers": "فهرست کاربران خوانده نمی‌شود"
+	"home.cantReadUsers": "فهرست کاربران خوانده نمی‌شود",
+	"home.joined.title": "خوش آمدید، {name}",
+	"home.joined.find": "چیزی را در {explore} یا {search} پیدا کنید.",
+	"home.joined.ask": "روی {request} یک عنوان بزنید تا آن را بگیرید. می‌توانید درخواست کنید:",
+	"home.joined.track": "هر کدام را در {requests} دنبال کنید.",
+	"home.joined.noLimit": "بدون محدودیت هفتگی.",
+	"home.joined.gotIt": "فهمیدم",
+	"home.joined.explore": "باز کردن {explore}"
 }

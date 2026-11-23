@@ -77,7 +77,8 @@ func changedSince(lastStart time.Time) time.Time {
 // RefreshPlan picks the Titles a refresh-all run covers. byHand covers every
 // movie. Otherwise, when the last start is under 14 days ago and the
 // provider has a changed list, the movies on it are refreshed; when that
-// list is empty or unavailable the rules decide (ShouldRefresh). Either
+// list is empty or unavailable the rules decide (ShouldRefresh); movies
+// never fetched are always included. Either
 // way, up to ScoreFillPerRun movies with no score yet are added.
 func (s *Service) RefreshPlan(ctx context.Context, byHand bool, lastStart *time.Time) (ids []int64, why map[int64]string, err error) {
 	ts, err := database.Select[mediafiles.Title](ctx, s.Store.Read(), "titles", "kind = 'movie' AND state != 'removed' ORDER BY id")
@@ -115,6 +116,8 @@ func (s *Service) RefreshPlan(ctx context.Context, byHand bool, lastStart *time.
 		if len(changed) > 0 {
 			if changed[lookupID(t)] {
 				ids, why[t.ID] = append(ids, t.ID), "on the changed list"
+			} else if t.RefreshedAt == nil { // never fetched, e.g. an unkept import
+				ids, why[t.ID] = append(ids, t.ID), "never fetched"
 			}
 			continue
 		}
@@ -359,6 +362,32 @@ func movieSeries(ctx context.Context, db Reader, ids []any) (map[int64]string, e
 	return out, rows.Err()
 }
 
+// movieSlotStates reads each movie's Slot states, main Version first, so
+// the calendar can say whether a movie is wanted, on its way, stuck or in
+// the Library.
+func movieSlotStates(ctx context.Context, db Reader, ids []any) (map[int64][]VersionState, error) {
+	out := map[int64][]VersionState{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := db.QueryContext(ctx, `SELECT i.title_id, v.label, s.state FROM slots s JOIN items i ON i.id = s.item_id
+		JOIN versions v ON v.id = s.version_id WHERE i.title_id IN (`+marks(len(ids))+`) AND s.state != 'removed'
+		ORDER BY i.title_id, v.is_main DESC, v.id`, ids...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var v VersionState
+		if err := rows.Scan(&id, &v.Label, &v.State); err != nil {
+			return nil, err
+		}
+		out[id] = append(out[id], v)
+	}
+	return out, rows.Err()
+}
+
 // posterOf is a title's first stored picture ("" when it has none).
 func posterOf(t mediafiles.Title) string {
 	if len(t.Artwork) > 0 {
@@ -426,6 +455,10 @@ func Calendar(ctx context.Context, db Reader, from, to time.Time, titles ...stri
 	if err != nil {
 		return nil, err
 	}
+	slotStates, err := movieSlotStates(ctx, db, ids)
+	if err != nil {
+		return nil, err
+	}
 	for _, ti := range ts {
 		for _, d := range []struct {
 			kind string
@@ -435,6 +468,12 @@ func Calendar(ctx context.Context, db Reader, from, to time.Time, titles ...stri
 				e := CalendarEntry{TitleID: ti.ID, Name: ti.Name, Year: ti.Year, Kind: d.kind, Date: *d.at, TMDB: ti.SourceIDs["tmdb"],
 					Poster: posterOf(ti), Backdrop: ti.Backdrop}
 				movieDetails(&e, ti, series)
+				if vs := slotStates[ti.ID]; len(vs) > 0 {
+					e.State = vs[0].State
+					if len(vs) > 1 {
+						e.Versions = vs
+					}
+				}
 				out = append(out, e)
 			}
 		}

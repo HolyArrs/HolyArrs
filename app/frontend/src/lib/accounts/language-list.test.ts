@@ -24,4 +24,12 @@ describe('language list', () => {
 		expect(matchLanguages('  ', 'en')).toHaveLength(44);
 		expect(matchLanguages('qqqq', 'en')).toHaveLength(0);
 	});
+	it('shows only English, the installed packs and the current choice once the installed set is known', () => {
+		const shown = new Set(['de', 'ja']);
+		const g = languageGroups(shown, 'fr');
+		expect([...g.top, ...g.more].map((l) => l.code).sort()).toEqual(['de', 'en', 'fr', 'ja']);
+		expect(matchLanguages('', 'en', shown, 'en').map((l) => l.code).sort()).toEqual(['de', 'en', 'ja']);
+		expect(matchLanguages('ital', 'en', shown, 'en')).toHaveLength(0);
+		expect(languageGroups(null, 'en').top.length + languageGroups(null, 'en').more.length).toBe(44);
+	});
 });

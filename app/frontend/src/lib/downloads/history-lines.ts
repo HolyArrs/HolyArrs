@@ -6,6 +6,7 @@ import type { IconName } from '#lib/ui/Icon.svelte';
 import { dayKey } from './history-kinds.ts';
 import type { HistoryRow } from './history.ts';
 import { bytes } from '../core/format.ts';
+import { cleanupHold } from './imports.ts';
 import type { EventRecord, TitleView } from '../core/types.ts';
 
 /** A dot and a word. */
@@ -247,21 +248,21 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'turned_down_removed': return t(TAG.changed, say('downloads.hl.unblocked'));
 		case 'release_held': return t(TAG.stalled, join(say('downloads.hl.heldBack'), plainWhy(str(d.reason)), serverWords(str(d.sources_note))));
 		case 'held_removed': return t(TAG.changed, say('downloads.hl.heldGone'));
-		case 'download_sent': return t(TAG.getting, res);
+		case 'download_sent': return t(TAG.getting, join(res, fromApp(d)));
 		case 'download_queued': return t(TAG.getting, join(say('downloads.hl.waiting'), res));
 		case 'download_downloading': return t(TAG.getting, join(num(d.progress) ? say('downloads.hl.downloadingPct', { pct: Math.round(num(d.progress) * 100) }) : say('downloads.hl.downloading'), res));
 		case 'download_stalled': return t(TAG.stalled, join(say('downloads.hl.stalledLine'), plainWhy(str(d.reason))));
 		case 'download_paused': return t(TAG.paused, join(num(d.progress) ? say('downloads.hl.pausedAt', { pct: Math.round(num(d.progress) * 100) }) : say('downloads.hl.paused'), res));
 		case 'download_finished': return t(TAG.getting, join(res, sizeOf(d)));
 		case 'download_seeding': return t(TAG.came, join(say('downloads.hl.sharing'), res));
-		case 'download_removed': return t(TAG.changed, removedLine(d));
+		case 'download_removed': return d.moved_out === true ? t(TAG.changed, say('downloads.hl.movedOut')) : d.outside === true ? t(TAG.removed, say('downloads.hl.removedOutside')) : t(TAG.changed, removedLine(d));
 		case 'download_changed': return t(TAG.changed, e.Summary || say('downloads.hl.changedDl'));
-		case 'download_failed': return t(TAG.failed, plainWhy(str(d.reason)) || say('downloads.hl.dlFailed'));
-		case 'download_vanished': return t(TAG.failed, say('downloads.hl.vanished'));
+		case 'download_failed': return t(TAG.failed, join(plainWhy(str(d.reason)) || say('downloads.hl.dlFailed'), fromApp(d)));
+		case 'download_vanished': return t(TAG.removed, say('downloads.hl.removedOutside'));
 		case 'download_not_removed': return t(TAG.failed, (e.Summary && serverWords(e.Summary.trim())) || say('downloads.hl.notRemoved'));
 		case 'download_not_moved': return t(TAG.failed, say('downloads.hl.notMoved'));
-		case 'import_done': return t(TAG.came, join(resolutionOf(releaseOf([e])), sizeOf(d)));
-		case 'import_partly_done': return t({ ...TAG.came, tone: 'wait' }, join(say('downloads.hl.partly'), say('downloads.hl.needLook')));
+		case 'import_done': return t(TAG.came, join(resolutionOf(releaseOf([e])), sizeOf(d), fromApp(d)));
+		case 'import_partly_done': return t({ ...TAG.came, tone: 'wait' }, join(say('downloads.hl.partly'), Array.isArray(d.cleanup_wait) && d.cleanup_wait.length ? cleanupHold(d.cleanup_wait.map(String)) : say('downloads.hl.needLook')));
 		case 'import_failed':
 		case 'import_rejected': return t(TAG.failed, plainWhy(str(d.reason)) || say('downloads.hl.nothingPlaced'));
 		case 'file_replaced': return t(TAG.came, join(say('downloads.hl.better'), say('downloads.hl.oldAside')));
@@ -365,6 +366,11 @@ function foldedText(row: HistoryRow, ctx: LineContext): RowText {
 function sizeOf(d: Record<string, unknown>): string {
 	const n = num(d.size_bytes) || num(d.size) || num(d.bytes);
 	return n > 0 ? bytes(n) : '';
+}
+
+/** "From Sonarr" on a past download an import brought from an old app. */
+function fromApp(d: Record<string, unknown>): string {
+	return str(d.moved_from) ? say('downloads.hl.fromApp', { app: str(d.moved_from) }) : '';
 }
 
 function releaseOf(events: EventRecord[]): string {

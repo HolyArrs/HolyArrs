@@ -30,7 +30,6 @@ export interface HealthSettings {
 	flap_guard: number;
 	low_space_mb: number;
 	update_check_url: string;
-	update_check?: boolean;
 	update_check_every_days?: number;
 	update_check_local?: boolean;
 	update_prerelease?: boolean;

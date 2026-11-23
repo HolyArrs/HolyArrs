@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Atšaukti",
 	"settings.schedules.stages": "Etapai",
 	"settings.schedules.stagesNote": "Pristabdykite ar paleiskite juos iš naujo skiltyje <a>Dalys</a>.",
-	"settings.schedules.allTime": "Visą laiką"
+	"settings.schedules.allTime": "Visą laiką",
+	"settings.schedules.skip.nothing": "Nėra ką veikti",
+	"settings.schedules.skip.plexOff": "Išjungta: įjunkite {setting} skiltyje {page}",
+	"settings.schedules.skip.plexNobody": "Nėra ką veikti: niekas neįjungė savo Plex žiūrėjimo sąrašo",
+	"settings.schedules.skip.settingOff": "Išjungta: įjunkite tai jo nustatymuose",
+	"settings.schedules.skip.starting": "Praleista: HolyArrs dar tik paleidžiama",
+	"settings.schedules.took": "Truko {time}",
+	"settings.schedules.finished": "{label} baigta",
+	"settings.schedules.nothingToDo": "{label}: nėra ką veikti",
+	"settings.schedules.runFailed": "{label} nepavyko"
 }

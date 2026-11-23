@@ -8,10 +8,14 @@
 	"setup.fullPath": "اكتب مسار المجلد كاملًا، مثل {path}.",
 	"setup.folderUsed": "هذا المجلد مستخدم بالفعل، أو يقع داخل مجلد مستخدم.",
 	"setup.folderMissing": "هذا المجلد غير موجود. تحقق من المسار.",
-	"setup.addFolderOrOff": "أضف مجلدًا أو أوقف هذا الخيار.",
+	"setup.addFolderOrOff": "أضف مجلدًا، أو اضغط تخطَّ الآن.",
 	"setup.notAnswering": "HolyArrs لا يستجيب. حاول مرة أخرى بعد قليل.",
 	"setup.addUserPasswordHint": "أضف اسم المستخدم وكلمة المرور.",
 	"setup.folders": "المجلدات",
 	"setup.downloader": "برنامج التنزيل",
-	"setup.source": "المصدر"
+	"setup.source": "المصدر",
+	"setup.alertsNeedKeyOne": "التنبيهات: 1 يحتاج مفتاحًا",
+	"setup.alertsNeedKey": "التنبيهات: {n} تحتاج مفتاحًا",
+	"setup.folderNoAccess": "لا يستطيع HolyArrs فتح هذا المجلد. تحقق من أذوناته.",
+	"setup.folderCantUse": "لا يستطيع HolyArrs استخدام هذا المجلد. تحقق من المسار."
 }

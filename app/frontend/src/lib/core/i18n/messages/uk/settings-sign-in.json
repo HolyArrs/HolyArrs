@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Лише вони можуть повідомляти, звідки прийшов візит.",
 	"settings.signIn.fixToSaveOne": "Виправте 1 рядок, щоб зберегти",
 	"settings.signIn.fixToSaveOther": "Виправте рядки ({n}), щоб зберегти",
-	"settings.signIn.localSaved": "Локальну мережу збережено"
+	"settings.signIn.localSaved": "Локальну мережу збережено",
+	"settings.signIn.forgotTitle": "Забули пароль?",
+	"settings.signIn.forgotOn": "Показувати Забули пароль? на сторінці входу",
+	"settings.signIn.forgotNote": "Власник отримує одноразовий код із журналу сервера. Вимкніть, якщо всі входять через єдиний вхід. Команда reset-owner і далі працює.",
+	"settings.signIn.forgotShown": "Забули пароль? увімкнено",
+	"settings.signIn.forgotHidden": "Забули пароль? вимкнено"
 }

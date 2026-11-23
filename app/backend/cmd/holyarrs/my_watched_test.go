@@ -86,3 +86,19 @@ func TestWatchedByAnyoneOverHTTP(t *testing.T) {
 	}
 	r.ana.call("GET", "/api/v1/library/watched-by-anyone", "", 403)
 }
+
+// The clean-up list names who watched what and when, so it is gated like
+// watched-by-anyone: a person who only manages the Library is refused.
+// route: GET /api/v1/library/watched-cleanup
+func TestWatchedCleanupOverHTTP(t *testing.T) {
+	t.Parallel()
+	r := newAskRig(t)
+	r.owner.call("PUT", "/api/v1/settings/watch-history", `{"enabled":true}`, 200)
+	var out mediaservers.WatchedCleanup
+	if err := json.Unmarshal(r.owner.call("GET", "/api/v1/library/watched-cleanup?days=7", "", 200), &out); err != nil || !out.Enabled || out.Days != 7 || out.Found == nil {
+		t.Fatalf("owner %+v %v", out, err)
+	}
+	r.ana.call("GET", "/api/v1/library/watched-cleanup", "", 403)
+	r.owner.call("PUT", "/api/v1/users/"+itoa(r.ana.id), `{"perms":["ask","manage_library"]}`, 200)
+	r.ana.call("GET", "/api/v1/library/watched-cleanup", "", 403)
+}

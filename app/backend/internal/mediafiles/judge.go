@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"math"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
@@ -80,6 +82,9 @@ type SlotSet struct {
 	// MatchReasons are match lines the caller decided (which episodes a
 	// show Release covers, season pack rules); a fail refuses the Release.
 	MatchReasons []Reason
+	// EpisodeTitles are the names of the episodes a show Release holds;
+	// languages read only from their words (or the title's) are dropped.
+	EpisodeTitles []string
 	// OutSince is when the Items came out: a movie's first release day, the
 	// last air time of the episodes held, an album's release day. nil: not known.
 	OutSince *time.Time
@@ -137,6 +142,9 @@ type Verdict struct {
 	Reasons    []Reason   `json:"reasons"`
 
 	sizeOff int64 // distance from the middle of the size band, for ranking
+	// originalOnly: the language step passed only on the original language
+	// while other languages are wanted (the language wait applies).
+	originalOnly bool
 }
 
 func (v *Verdict) add(step, rule, effect, detail string, pts int) {
@@ -158,6 +166,15 @@ func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 		return matchArtist(p, lib)
 	}
 	name := releasename.CleanName(p.Title.Value)
+	// "Local title / Original title" (RuTracker): either side may be the name.
+	var sides []string
+	if strings.Contains(p.Title.Value, " / ") {
+		for _, part := range strings.Split(p.Title.Value, " / ") {
+			if c := releasename.CleanName(part); c != "" {
+				sides = append(sides, c)
+			}
+		}
+	}
 	var cands []*TitleRef
 	for i := range lib {
 		t := &lib[i]
@@ -167,15 +184,8 @@ func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 		if yearInName(p, t) {
 			return Match{Title: t, Conf: releasename.Sure, Detail: t.Name + " by clean name"}
 		}
-		if releasename.SameName(t.Name, name) {
+		if nameMatch(t, name) || slices.ContainsFunc(sides, func(n string) bool { return nameMatch(t, n) }) {
 			cands = append(cands, t)
-			continue
-		}
-		for _, a := range t.Aliases {
-			if releasename.SameName(a, name) {
-				cands = append(cands, t)
-				break
-			}
 		}
 	}
 	if p.IsShow() {
@@ -208,6 +218,73 @@ func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 	return Match{Conf: releasename.Unknown, Detail: fmt.Sprintf("no Title called %q matches year %d", p.Title.Value, p.Year.Value)}
 }
 
+// nameMatch says whether a clean release name is one of the Title's names,
+// or two of its different names one after the other, as Italian trackers
+// write "<local> <original>". Each name's forms are made once, so the
+// two-name check costs no more than the plain one on a miss.
+func nameMatch(t *TitleRef, name string) bool {
+	if tag, rest, ok := strings.Cut(name, " "); ok && leadTags[tag] && nameMatch(t, rest) { // "[ITA] Streghe"
+		return true
+	}
+	type head struct {
+		i    int
+		rest string
+	}
+	var heads []head
+	for i := 0; i <= len(t.Aliases); i++ {
+		a := t.Name
+		if i > 0 {
+			a = t.Aliases[i-1]
+		}
+		forms := releasename.NameForms(a)
+		if slices.Contains(forms, name) || (strings.IndexFunc(a, unicode.IsLower) < 0 && releasename.SameName(a, name)) { // only an all-capitals name has a second way to match
+			return true
+		}
+		for _, f := range forms {
+			if f != "" && len(name) > len(f)+1 && name[len(f)] == ' ' && strings.HasPrefix(name, f) {
+				rest := name[len(f)+1:]
+				for _, aka := range []string{"aka ", "a k a "} { // "<local> AKA <original>"
+					rest = strings.TrimPrefix(rest, aka)
+				}
+				heads = append(heads, head{i, releasename.CleanName(skipYear(rest, t.Year))}) // "the" can start the second name
+			}
+		}
+	}
+	for _, h := range heads {
+		first := t.Name
+		if h.i > 0 {
+			first = t.Aliases[h.i-1]
+		}
+		for j := 0; j <= len(t.Aliases); j++ {
+			b := t.Name
+			if j > 0 {
+				b = t.Aliases[j-1]
+			}
+			// the same name twice ("Lost Lost") is not two names
+			if j != h.i && releasename.CleanName(b) != releasename.CleanName(first) && releasename.SameName(b, h.rest) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// skipYear drops the Title's own year (one off either way) standing between
+// two names ("Charmed (1998) Streghe").
+func skipYear(rest string, year int) string {
+	if w, r, ok := strings.Cut(rest, " "); ok && len(w) == 4 && year > 0 {
+		if y, err := strconv.Atoi(w); err == nil && y >= year-1 && y <= year+1 {
+			return r
+		}
+	}
+	return rest
+}
+
+// leadTags are language tags trackers put before the name ("[ITA] Streghe").
+var leadTags = map[string]bool{"ita": true, "eng": true, "multi": true, "fre": true, "french": true, "vff": true,
+	"truefrench": true, "ger": true, "german": true, "spa": true, "esp": true, "latino": true, "castellano": true,
+	"rus": true, "pol": true, "sub": true, "subita": true}
+
 // safetyTraits are checked by the safety step, so the never step leaves them out.
 var safetyTraits = map[string]bool{"sample": true, "executable": true, "password_protected": true, "disc_image": true}
 
@@ -237,9 +314,11 @@ func traitMatches(trait string, p releasename.Result) (bool, string) {
 	case "3d":
 		return p.Has("three_d"), "is 3D"
 	case "cam":
-		return src.Value == "cam", "is a cam recording"
+		// A workprint is an unfinished cut, ranked with cam copies.
+		return src.Value == "cam" || src.Value == "workprint", "is a cam recording or workprint"
 	case "telesync":
-		return src.Value == "telesync", "is a telesync recording"
+		// Telecine, screener and R5 copies are pre-release copies too.
+		return slices.Contains([]string{"telesync", "telecine", "screener", "regional"}, src.Value), "is a pre-release copy (telesync, telecine, screener or R5)"
 	case "remux":
 		return src.Value == "remux", "is a remux"
 	case "av1":
@@ -252,6 +331,20 @@ func traitMatches(trait string, p releasename.Result) (bool, string) {
 		return slices.Contains(p.HDR.Value, "hdr10plus"), "has HDR10+"
 	case "atmos":
 		return p.Audio.Atmos, "has Atmos"
+	// Device traits: what many TVs, sticks and browsers can't play
+	// directly, so the media server would have to convert it.
+	case "h264":
+		return p.Codec.Value == "h264" && p.Codec.Conf == releasename.Sure, "video is H.264"
+	case "dts_audio":
+		return strings.HasPrefix(p.Audio.Format, "dts"), "audio is DTS"
+	case "truehd_audio":
+		return p.Audio.Format == "truehd", "audio is TrueHD"
+	case "dv_no_fallback":
+		// Dolby Vision with no HDR10 layer named: players without Dolby
+		// Vision show wrong colours.
+		hdr := p.HDR.Value
+		return slices.Contains(hdr, "dv") && !slices.Contains(hdr, "hdr10") && !slices.Contains(hdr, "hdr10plus"),
+			"has Dolby Vision without an HDR10 fallback"
 	}
 	return false, "unknown trait " + trait
 }
@@ -262,11 +355,21 @@ func StepFor(p releasename.Result) string {
 		return musicStep(p.Music)
 	}
 	res := p.Resolution.Value
-	band := map[int]string{720: "720p", 1080: "1080p", 2160: "2160p"}[res]
+	// Sizes between the bands fall to the band below: 1440p is 1080p,
+	// 4320p is 2160p, 540p and 576p are SD.
+	band := ""
+	switch {
+	case res >= 2160:
+		band = "2160p"
+	case res >= 1080:
+		band = "1080p"
+	case res >= 720:
+		band = "720p"
+	}
 	switch p.Source.Value {
-	case "cam":
+	case "cam", "workprint":
 		return "cam"
-	case "telesync":
+	case "telesync", "telecine", "screener", "regional":
 		return "telesync"
 	case "dvd":
 		return "sd_dvd"
@@ -290,6 +393,19 @@ func StepFor(p releasename.Result) string {
 			return "1080p_remux"
 		}
 		return band + "_remux"
+	}
+	// No source in the name but a size: guess the TV step for that size,
+	// as Sonarr and Radarr do, so groups that leave WEB-DL or BluRay out
+	// are not turned down. The ladder has no 2160p TV step, so 2160p goes
+	// to the lowest 2160p step. No size and no source stays unknown.
+	if p.Source.Value == "" && res > 0 {
+		switch band {
+		case "":
+			return "sd_tv"
+		case "2160p":
+			return "2160p_web"
+		}
+		return band + "_tv"
 	}
 	return ""
 }
@@ -342,11 +458,27 @@ func scaledSizeLimit(l SizeLimit, runtime int) (int64, int64) {
 
 func sizeMidpoint(lo, hi int64) int64 { return lo + (hi-lo)/2 }
 
+// sizeTarget is the size a tie goes toward: the preferred size for this
+// runtime when set, else the middle of the band.
+func sizeTarget(l SizeLimit, runtime int, lo, hi int64) int64 {
+	if l.Preferred <= 0 {
+		return sizeMidpoint(lo, hi)
+	}
+	if !l.PerMinute {
+		return l.Preferred
+	}
+	return saturatingPositiveMul(l.Preferred, runtime)
+}
+
 // Judge runs the pipeline of pick-rules.md section 3.1 for one Release.
 // Hard steps all run so every refusal is reported at once.
 func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	if set.Match.Title != nil && rel.Parse.OriginalLanguage == "" {
 		rel.Parse.OriginalLanguage = set.Match.Title.OriginalLanguage
+	}
+	if set.Match.Title != nil && len(rel.Parse.Languages) > 0 {
+		titles := append([]string{set.Match.Title.Name}, set.EpisodeTitles...)
+		rel.Parse.Languages = releasename.WithoutTitleWords(rel.Name, releasename.Hints{Show: set.Match.Title.Kind == "show"}, rel.Parse.Languages, titles...)
 	}
 	if set.Match.Title != nil && rel.Parse.TitleYear == 0 {
 		rel.Parse.TitleYear = set.Match.Title.Year
@@ -385,6 +517,9 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	}
 	title := set.Match.Title
 	step := StepFor(p)
+	// Scored before the refusals, so Choose a release shows a score for refused ones too.
+	points, hits := scoreTraits(p, rules)
+	v.Points = points
 
 	// 2. Hard refusals, in the spec order: never, must have, safety, size,
 	// language, seeders, gate, turned down.
@@ -399,6 +534,9 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	if !hasFail(v, "hard", "never:") {
 		v.add("hard", "never", "pass", "nothing from the never list", 0)
 	}
+	if GroupBlocked(rules.BlockedGroups, p.Group.Value) {
+		v.add("hard", "blocked_group", "fail", fmt.Sprintf("the group %s is blocked in these Pick rules", p.Group.Value), 0)
+	}
 	for _, tr := range rules.MustHave {
 		if ok, why := traitMatches(tr, p); !ok {
 			v.add("hard", "must_have:"+tr, "fail", "must have: "+why, 0)
@@ -410,12 +548,13 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 		v.add("hard", "language", "pass", "music: the language is not checked", 0)
 	} else {
 		v.language(p, rules, title)
+		v.frenchVersion(p, rules)
 	}
 	if rel.Protocol == "torrent" && set.MinSeeders != nil && rel.Seeders != nil {
 		if *rel.Seeders < *set.MinSeeders {
-			v.add("hard", "seeders", "fail", fmt.Sprintf("%d seeders, needs at least %d", *rel.Seeders, *set.MinSeeders), 0)
+			v.add("hard", "seeders", "fail", seedersLine(*rel.Seeders, *set.MinSeeders, true), 0)
 		} else {
-			v.add("hard", "seeders", "pass", fmt.Sprintf("%d seeders, at least %d", *rel.Seeders, *set.MinSeeders), 0)
+			v.add("hard", "seeders", "pass", seedersLine(*rel.Seeders, *set.MinSeeders, false), 0)
 		}
 	}
 	switch {
@@ -450,17 +589,16 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 		v.add("step", "none", "fail", "no ladder step: the source is unknown", 0)
 	case !rules.Steps[idx].Allowed:
 		v.Step = &StepRef{Index: idx, Name: step}
-		v.add("step", "not_allowed", "fail", fmt.Sprintf("%s is not allowed in these Pick rules", step), 0)
+		v.add("step", "not_allowed", "fail", fmt.Sprintf("%s is not allowed in these Pick rules", StepWord(step)), 0)
 	default:
 		v.Step = &StepRef{Index: idx, Name: step}
-		v.add("step", "allowed", "pass", step+" is allowed", 0)
+		v.add("step", "allowed", "pass", StepWord(step)+" is allowed", 0)
 	}
 
 	// 4. Better than what we have.
-	points, hits := scoreTraits(p, rules)
 	if set.Current != nil && v.Step != nil {
 		set.Current = currentWithTitle(set.Current, p, rules)
-		v.better(rel, rules, set.Current, idx, points)
+		v.better(rel, rules, set.Current, idx, points, set.RuntimeMinutes)
 	}
 	if v.failed() {
 		return v.refuse()
@@ -476,23 +614,33 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 			v.add("points", "trait:"+tp.Trait, eff, hits[i].why, tp.Points)
 		}
 	}
+	for _, m := range deviceMisses(p, rules.Devices) {
+		v.add("points", "device:"+m.Feature, "subtract", m.why(), -DevicePenalty)
+	}
 	v.Points = points
 	if points < rules.MinPoints {
 		v.add("points", "below_min", "fail", fmt.Sprintf("%d points, needs at least %d", points, rules.MinPoints), 0)
 		return v.refuse()
 	}
-	v.add("points", "total", "pass", fmt.Sprintf("%d points, at least %d", points, rules.MinPoints), points)
+	if rules.MinPoints == 0 {
+		v.add("points", "total", "pass", fmt.Sprintf("%d points", points), points)
+	} else {
+		v.add("points", "total", "pass", fmt.Sprintf("%d points (needs at least %d)", points, rules.MinPoints), points)
+	}
 
 	// 6. Good enough.
-	ge := idx >= stepIndex(rules, rules.GoodEnoughAt)
+	ge := rankStep(rules, idx) >= stepIndex(rules, rules.GoodEnoughAt)
 	if rules.GoodEnoughPoints != nil && points < *rules.GoodEnoughPoints {
 		ge = false
 	}
 	v.GoodEnough = ge
-	if ge {
-		v.add("good_enough", "reached", "pass", "reaches good enough ("+rules.GoodEnoughAt+")", 0)
-	} else {
-		v.add("good_enough", "not_reached", "warn", "below good enough ("+rules.GoodEnoughAt+")", 0)
+	switch {
+	case ge:
+		v.add("good_enough", "reached", "pass", "reaches good enough, which starts at "+StepWord(rules.GoodEnoughAt), 0)
+	case rankStep(rules, idx) >= stepIndex(rules, rules.GoodEnoughAt):
+		v.add("good_enough", "not_reached", "warn", fmt.Sprintf("below good enough, which needs %d points", *rules.GoodEnoughPoints), 0)
+	default:
+		v.add("good_enough", "not_reached", "warn", "below good enough, which starts at "+StepWord(rules.GoodEnoughAt), 0)
 	}
 
 	// 7. Protocol wait.
@@ -516,6 +664,22 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 	default:
 		v.add("wait", "over", "pass", "wait is over", 0)
 	}
+	if v.languageWait(rel, rules, set) {
+		return v
+	}
 	v.Passed, v.Outcome = true, "chosen"
 	return v
+}
+
+// seedersLine is a Release's seeders reason, "1 seeder, at least 1" or "5 seeders, needs at least 10";
+// the page shows it in the picked language (server-lines seeders keys).
+func seedersLine(n, min int, failed bool) string {
+	word := "seeders"
+	if n == 1 {
+		word = "seeder"
+	}
+	if failed {
+		return fmt.Sprintf("%d %s, needs at least %d", n, word, min)
+	}
+	return fmt.Sprintf("%d %s, at least %d", n, word, min)
 }

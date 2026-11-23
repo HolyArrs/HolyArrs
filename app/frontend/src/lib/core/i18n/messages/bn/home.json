@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "পরে কী রিকোয়েস্ট করবেন তা বাছুন",
 	"home.newPopular": "নতুন ও জনপ্রিয়",
 	"home.whatSTrending": "কী ট্রেন্ডিং",
+	"home.gettingReady": "সব প্রস্তুত করা হচ্ছে…",
 	"home.top10sAndComing": "টপ ১০ ও শিগগিরই আসছে",
 	"home.whatSNext": "এরপর কী",
 	"home.airDatesAndReleases": "সম্প্রচারের তারিখ ও রিলিজ",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "এই সপ্তাহে আসছে পর্ব ও সিনেমা",
 	"home.popularThisWeek": "এই সপ্তাহে আসছে জনপ্রিয় রিলিজ",
 	"home.peopleCheck": "মানুষ পরীক্ষা",
-	"home.cantReadUsers": "ব্যবহারকারী তালিকা পড়া যাচ্ছে না"
+	"home.cantReadUsers": "ব্যবহারকারী তালিকা পড়া যাচ্ছে না",
+	"home.joined.title": "স্বাগতম, {name}",
+	"home.joined.find": "{explore} বা {search}-এ কিছু খুঁজুন।",
+	"home.joined.ask": "পেতে কোনো টাইটেলে {request} চাপুন। আপনি চাইতে পারেন:",
+	"home.joined.track": "প্রতিটি {requests}-এ দেখুন।",
+	"home.joined.noLimit": "কোনো সাপ্তাহিক সীমা নেই।",
+	"home.joined.gotIt": "বুঝেছি",
+	"home.joined.explore": "{explore} খুলুন"
 }

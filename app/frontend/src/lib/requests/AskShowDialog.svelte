@@ -10,7 +10,7 @@
 	import type { LookupShow } from '../core/types.ts';
 	import { askQualities } from './four-k-ready.ts';
 	import QualityPills from './QualityPills.svelte';
-	import { memberRow } from './quality-row.ts';
+	import { alsoPills, memberRow } from './quality-row.ts';
 	import type { QualityChoice } from './types.ts';
 
 	let {
@@ -35,6 +35,12 @@
 	// Each opening reads the lines again; an answer for an earlier opening is dropped.
 	let opened = 0;
 	const row = $derived(memberRow(choices));
+	// With "pick more than one" on: lines kept as their own copy (4K) asked for too, each as its own ask.
+	let pickMany = $state(false);
+	let also = $state<string[]>([]);
+	// Lines already asked for in this opening, so a retry after an error sends only the rest.
+	let sent: string[] = [];
+	const extras = $derived(alsoPills(row.pills, quality, pickMany));
 	let mode = $state<'all' | 'choose' | 'future'>('all');
 	let chosen = $state<number[]>([]);
 	// Single episodes picked, by season (seasons not ticked whole).
@@ -56,10 +62,14 @@
 		follow = true;
 		choices = [];
 		quality = '';
+		also = [];
+		sent = [];
+		pickMany = false;
 		const asked = ++opened;
 		void askQualities().then((q) => {
 			if (asked !== opened) return;
 			choices = q.show;
+			pickMany = q.pickMany;
 			quality = row.selected;
 		});
 		picked = s;
@@ -107,13 +117,20 @@
 		if (!picked) return;
 		busy = true;
 		error = '';
+		const show = picked;
+		// The picked line, then each added line as its own ask; one that went through is not asked again on a retry.
+		const todo = [quality, ...extras.filter((p) => also.includes(p.key)).map((p) => p.key)];
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', {
-				...(mode === 'future' ? { kind: 'show', id: idOf(picked), future_only: true, follow } : { kind: 'show', id: idOf(picked), seasons: mode === 'all' ? [] : chosen, ...(mode === 'choose' && pickedEps.length ? { episodes: pickedEps } : {}), follow }),
-				...(quality ? { quality } : {})
-			});
-			(sheetOpen = false);
-			onasked(picked, r);
+			for (const q of todo) {
+				const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', {
+					...(mode === 'future' ? { kind: 'show', id: idOf(show), future_only: true, follow } : { kind: 'show', id: idOf(show), seasons: mode === 'all' ? [] : chosen, ...(mode === 'choose' && pickedEps.length ? { episodes: pickedEps } : {}), follow }),
+					...(q ? { quality: q } : {})
+				});
+				sent.push(q);
+				also = also.filter((k) => k !== q);
+				onasked(show, r);
+			}
+			sheetOpen = false;
 		} catch (err) {
 			error = message(err);
 			if (err instanceof ApiError && err.status === 409) onrefused?.(picked, err.body);
@@ -182,6 +199,12 @@
 				</fieldset>
 			{/if}
 			{#if row.shown}<QualityPills pills={row.pills} bind:selected={quality} stacked />{/if}
+			{#each extras as p (p.key)}
+				<label class="checkline" data-testid="also-{p.key}">
+					<input type="checkbox" bind:group={also} value={p.key} />
+					<span><b>{t('requests.ask.alsoAsk', { name: p.label })}</b></span>
+				</label>
+			{/each}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
 				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>

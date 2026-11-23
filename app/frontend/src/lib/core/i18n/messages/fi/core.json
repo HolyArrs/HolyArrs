@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Rakennetaan: {what}… yritys {attempt}",
 	"core.testTag.connected": "Yhdistetty",
 	"core.api.notAnswering": "HolyArrs ei vastaa. Tarkista, että se on käynnissä.",
+	"core.api.tooSlow": "HolyArrs vastasi liian hitaasti. Yritä uudelleen hetken päästä.",
 	"core.api.requestFailed": "Pyyntö epäonnistui ({status})",
 	"core.api.wentWrong": "Jokin meni pieleen.",
 	"core.trailerMiss.trailer": "traileri",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Hyväksytty automaattisesti",
 	"core.plain.approvedBy": "Hyväksynyt {who}",
 	"core.settings.cantReach": "Osoitteeseen ei saada yhteyttä. Tarkista se ja että sovellus on käynnissä.",
+	"core.settings.tryHttp": "Osoite ei vastaa https:n kautta. Kokeile sen sijaan http://.",
 	"core.settings.groupLibrary.label": "Kirjasto",
 	"core.settings.groupLibrary.line": "Missä nimikkeet sijaitsevat",
 	"core.settings.groupLibrary.about": "Kansiot, osat, oletukset, tekstitykset, tiedostonimet ja tuonti.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Kaksi lataajaa yltää samaan lataussovellukseen, joten lataukset voivat näkyä kahdesti.",
 	"core.plain.peopleCheck": "Mediapalvelimen käyttäjäluetteloa ei voi lukea, joten sieltä poistettuja ei poisteta täällä käytöstä.",
 	"core.plain.deleted": "poistettu",
-	"core.plain.deletedName": "{name} (poistettu)"
+	"core.plain.deletedName": "{name} (poistettu)",
+	"core.api.handsOffFiles": "Koskematon tila on päällä, joten HolyArrs ei koske ladattuihin tiedostoihin. Laita se pois asetuksista, jos haluat tuoda, nimetä uudelleen, siirtää tai tarkistaa tiedostoja.",
+	"core.api.handsOffSubtitles": "Koskematon tila on päällä, joten HolyArrs ei koskaan avaa ladattuja tiedostoja. Laita se pois asetuksista, jos haluat käyttää tekstityksiä."
 }

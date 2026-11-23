@@ -8,10 +8,14 @@
 	"setup.fullPath": "पूरा फ़ोल्डर पाथ लिखें, जैसे {path}।",
 	"setup.folderUsed": "यह फ़ोल्डर पहले से इस्तेमाल में है, या किसी इस्तेमाल वाले फ़ोल्डर के अंदर है।",
 	"setup.folderMissing": "वह फ़ोल्डर मौजूद नहीं है। पाथ जांचें।",
-	"setup.addFolderOrOff": "फ़ोल्डर जोड़ें या इसे बंद करें।",
+	"setup.addFolderOrOff": "एक फ़ोल्डर जोड़ें, या अभी छोड़ें दबाएँ।",
 	"setup.notAnswering": "HolyArrs जवाब नहीं दे रहा। थोड़ी देर में फिर कोशिश करें।",
 	"setup.addUserPasswordHint": "यूज़र नेम और पासवर्ड डालें।",
 	"setup.folders": "फ़ोल्डर",
 	"setup.downloader": "डाउनलोडर",
-	"setup.source": "सोर्स"
+	"setup.source": "सोर्स",
+	"setup.alertsNeedKeyOne": "अलर्ट: 1 को एक की चाहिए",
+	"setup.alertsNeedKey": "अलर्ट: {n} को एक की चाहिए",
+	"setup.folderNoAccess": "HolyArrs यह फ़ोल्डर नहीं खोल पा रहा। इसकी अनुमतियाँ जाँचें।",
+	"setup.folderCantUse": "HolyArrs यह फ़ोल्डर इस्तेमाल नहीं कर पा रहा। पाथ जाँचें।"
 }

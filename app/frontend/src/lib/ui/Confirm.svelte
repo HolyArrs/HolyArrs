@@ -28,9 +28,11 @@
 	// No password to type: a fresh sign-in with their own way is the proof, so sign out and come back through it.
 	const way = $derived(outsideWay(session.s));
 	async function signInAgain() {
-		const back = appPath(page.url.pathname) + page.url.search;
-		await session.logout();
-		await goto(to(`/login?next=${encodeURIComponent(back)}`));
+		try {
+			await session.signInAgain(appPath(page.url.pathname) + page.url.search, goto, to);
+		} catch (err) {
+			error = message(err);
+		}
 	}
 
 	// Secrets are cleared whether or not it worked.
@@ -62,6 +64,7 @@
 {:else if need && way}
 	<div class="confirm" use:inView={reveal} data-testid="confirm-outside">
 		<p class="hint">{t('ui.confirm.outsideAgain', { method: way })}</p>
+		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 		<div class="row acts">
 			<Button size="sm" variant="primary" type="button" onclick={signInAgain}>{t('ui.confirm.signInAgainWith', { method: way })}</Button>
 			{#if onCancel}<Button size="sm" variant="plain" type="button" onclick={onCancel}>{t('ui.confirm.cancel')}</Button>{/if}

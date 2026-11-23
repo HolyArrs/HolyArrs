@@ -63,7 +63,7 @@ func WithURLBase(ctx context.Context, base string) context.Context {
 // UnderURLBase serves h under base so HolyArrs can sit behind a reverse
 // proxy at a path such as /holyarrs. The base itself redirects to base/, a
 // path under it is served with the base taken off, and any other path is
-// not found. Exact GET and HEAD of /healthz and /readyz also answer at the
+// not found. Exact GET and HEAD of /healthz, /readyz and /ping also answer at the
 // root, because the container health check cannot know a base that was set
 // by flag or in Settings. Without a base, h is returned as it is.
 func UnderURLBase(base string, h http.Handler) http.Handler {
@@ -76,7 +76,7 @@ func UnderURLBase(base string, h http.Handler) http.Handler {
 			http.Redirect(w, r, base+"/", http.StatusMovedPermanently)
 			return
 		}
-		if (p == "/healthz" || p == "/readyz") && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		if (p == "/healthz" || p == "/readyz" || p == "/ping") && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
 			h.ServeHTTP(w, r.WithContext(WithURLBase(r.Context(), base)))
 			return
 		}

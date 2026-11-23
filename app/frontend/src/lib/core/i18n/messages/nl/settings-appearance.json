@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Aanvragen",
 	"settings.appearance.colRate": "Per rij",
 	"settings.appearance.noRows": "Nog geen rijen in Ontdekken geteld.",
+	"settings.appearance.rowStats": "Rijen in Ontdekken",
+	"settings.appearance.rowStatsDesc": "Geopend en aanvragen per rij in de laatste 30 dagen, van iedereen samen. Alleen op deze server geteld.",
+	"settings.appearance.colRow": "Rij",
+	"settings.appearance.row.because_have": "Zoals titels die je hebt",
+	"settings.appearance.row.because_asked": "Zoals je aanvragen",
+	"settings.appearance.row.person": "Meer van een persoon",
+	"settings.appearance.row.genre": "Genretips voor jou",
+	"settings.appearance.row.popular_genre": "Populair per genre",
+	"settings.appearance.row.popular_decade": "Populair per decennium",
+	"settings.appearance.row.decade": "Per decennium",
+	"settings.appearance.row.mood": "Per stemming",
+	"settings.appearance.row.hero": "Bovenste banner",
 	"settings.appearance.motion": "Beweging",
 	"settings.appearance.motionNote": "Volgt de instelling Beweging beperken van je apparaat"
 }

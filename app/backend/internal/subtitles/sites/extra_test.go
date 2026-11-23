@@ -202,6 +202,90 @@ func TestTVSubtitlesSearchAndDownload(t *testing.T) {
 	}
 }
 
+func TestTVSubtitlesReadsTheHomePageFirst(t *testing.T) {
+	f := tvFake()
+	f.SearchPage = "/search3.php"
+	s := fakeSite(t, "tvsubtitles", f)
+	ctx := context.Background()
+	// The home page sets the cookie and names the search page.
+	if got, err := s.Search(ctx, tvQuery); err != nil || len(got) != 1 {
+		t.Fatalf("%+v %v", got, err)
+	}
+	if f.Homes != 1 || f.Paths[0] != "/" || f.Paths[1] != "/search3.php" {
+		t.Fatalf("paths %v", f.Paths)
+	}
+	// The site moves its search page: a search that finds no page reads the
+	// home page again and follows it.
+	f.SearchPage = "/search4.php"
+	q := tvQuery
+	q.Year = 2019
+	if got, err := s.Search(ctx, q); err != nil || len(got) != 1 || got[0].Key != "601" {
+		t.Fatalf("moved: %+v %v", got, err)
+	}
+	if f.Homes != 2 {
+		t.Fatalf("homes %d", f.Homes)
+	}
+	// The session ends: the refused search gets a new cookie and goes through.
+	f.Session = "2"
+	q.Title = "Quiet Harbour Nights"
+	q.Year = 0
+	if _, err := s.Search(ctx, q); err != nil || f.Homes != 3 || len(f.Searches) != 3 {
+		t.Fatalf("new session: %v homes %d searches %v", err, f.Homes, f.Searches)
+	}
+}
+
+func TestTVSubtitlesSearchPageGone(t *testing.T) {
+	// A home page whose search page is missing is an unreadable answer, not an
+	// empty result, so the site rests and the problem shows.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			_, _ = w.Write([]byte(`<form action="search9.php"><input name="qs"></form>`))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	t.Cleanup(srv.Close)
+	s, err := New("tvsubtitles", cfg(srv.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Search(context.Background(), tvQuery); kindOf(err) != KindUnreadable {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestTVSubtitlesUsesHTTPS(t *testing.T) {
+	for _, u := range []string{"http://www.tvsubtitles.net", "http://tvsubtitles.net/", "https://www.tvsubtitles.net"} {
+		s, err := New("tvsubtitles", Config{Name: "t", URL: u})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := s.(*tvsubs).c.base.Scheme; got != "https" {
+			t.Errorf("%s: %s", u, got)
+		}
+	}
+	// Another host keeps the address it was given.
+	s, _ := New("tvsubtitles", Config{Name: "t", URL: "http://mirror.example"})
+	if got := s.(*tvsubs).c.base.Scheme; got != "http" {
+		t.Errorf("mirror: %s", got)
+	}
+}
+
+func TestTVSearchForm(t *testing.T) {
+	for page, want := range map[string]string{
+		// The real home page's form, trimmed.
+		`<form method="post" action="search2.php"><input type="text" name="qs" size="12"></form>`:                 "/search2.php",
+		`<form action="/search1.php"><input name="qs"></form>`:                                                    "/search1.php",
+		`<form action="lang.php"><input name="setlang"></form><form action="search.php"><input name="qs"></form>`: "/search.php",
+		`<form action="http://evil.example/search.php"><input name="qs"></form>`:                                  "",
+		`<form action="search2.php"><input name="other"></form><input name="qs">`:                                 "",
+	} {
+		if got := tvSearchForm([]byte(page)); got != want {
+			t.Errorf("%q: %q", page, got)
+		}
+	}
+}
+
 func TestTVSubtitlesSkipsMoviesAndUnknownShows(t *testing.T) {
 	f := tvFake()
 	s := fakeSite(t, "tvsubtitles", f)
@@ -352,6 +436,20 @@ func TestBSPlayerServerList(t *testing.T) {
 	for _, h := range hosts {
 		if !strings.HasSuffix(h, ".api.bsplayer-subtitles.com") {
 			t.Fatalf("host %s", h)
+		}
+	}
+}
+
+func TestTagEndStrayQuote(t *testing.T) {
+	for in, want := range map[string]int{
+		`p style="a;\ alt="up" title="up">rest`: 32,
+		`a href="x>y">z`:                        12,
+		`img alt='it"s'>`:                       14,
+		`p "loose">`:                            9,
+		`a href="never closed>`:                 -1,
+	} {
+		if got := tagEnd([]byte(in)); got != want {
+			t.Errorf("%q: %d, want %d", in, got, want)
 		}
 	}
 }

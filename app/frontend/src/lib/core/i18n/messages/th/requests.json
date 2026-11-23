@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "ข้อความจากปลั๊กอิน",
+	"requests.moment.plugin_message.body": "ปลั๊กอินที่คุณอนุญาตส่งข้อความ",
+	"requests.words.via": "{who} ผ่าน {plugin}",
 	"requests.moment.ask_waiting.title": "คำขอใหม่",
 	"requests.moment.ask_waiting.body": "ถึงทีมงาน: ภาพยนตร์ ซีรีส์ หรือศิลปินรอการอนุมัติ",
 	"requests.moment.ask_approved.title": "อนุมัติแล้ว",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "รายการ TMDB",
 	"requests.lists.tmdbHint": "เลขรายการหรือลิงก์ เช่น themoviedb.org/list/12345",
 	"requests.lists.trakt": "รายการ Trakt",
-	"requests.lists.traktHint": "user/list, user/watchlist หรือลิงก์ เช่น trakt.tv/users/ana/lists/favourites",
+	"requests.lists.traktHint": "user/list, user/watchlist หรือลิงก์ เช่น trakt.tv/users/ana/lists/favourites หรือชาร์ต: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "รายการ MDBList",
 	"requests.lists.mdblistHint": "user/list หรือลิงก์ เช่น mdblist.com/lists/ana/favourites รายการสาธารณะใช้ได้โดยไม่ต้องมีคีย์",
 	"requests.lists.everyDay": "ทุกวัน",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "ไม่พบสิ่งผิดปกติ",
 	"requests.outcome.noResults": "ยังไม่มีผลลัพธ์",
 	"requests.outcome.nothingFound": "ไม่พบอะไร:",
+	"requests.outcome.refused": "พบแล้ว แต่ไม่มีรายการใดตรงกับกฎการเลือก",
 	"requests.outcome.why.slowed": "ถูกหยุดชั่วคราว (ถูกชะลอ)",
 	"requests.outcome.why.down": "ล่ม",
 	"requests.outcome.why.blocked": "ถูกบล็อก",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "เพิ่ม",
 	"requests.addMovie.titleBare": "เพิ่มภาพยนตร์",
 	"requests.add.loadingDefaults": "กำลังโหลดค่าเริ่มต้น",
+	"requests.add.defaultsLate": "ค่าเริ่มต้นที่บันทึกไว้โหลดไม่ทัน จึงใช้ตัวเลือกปกติแทน โปรดตรวจสอบก่อนเพิ่ม",
 	"requests.add.noFolder.music": "ยังไม่มีโฟลเดอร์ไลบรารีสำหรับเพลง <a>เพิ่ม</a>ก่อน",
 	"requests.add.noFolder.movie": "ยังไม่มีโฟลเดอร์ไลบรารีสำหรับภาพยนตร์ <a>เพิ่ม</a>ก่อน",
 	"requests.add.noFolder.show": "ยังไม่มีโฟลเดอร์ไลบรารีสำหรับซีรีส์ <a>เพิ่ม</a>ก่อน",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "แสดงในปฏิทินของฉัน",
 	"requests.add.cancel": "ยกเลิก",
 	"requests.add.submit": "เพิ่มเข้าไลบรารี",
+	"requests.add.submitChoose": "เพิ่มและเลือกรีลีส",
 	"requests.addArtist.albums": "อัลบั้มที่จะอัปเดตให้ทันสมัย",
 	"requests.addArtist.newAlbums": "อัลบั้มใหม่",
 	"requests.addArtist.newAlbumsHint": "สิ่งที่เกิดกับอัลบั้มที่ออกภายหลัง",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", แสดง {status}",
 	"requests.board.reportsOpen": "รายงาน เปิดอยู่ {n}",
 	"requests.board.approveAll": "อนุมัติทั้งหมด",
+	"requests.board.approveAllTitle": "อนุมัติคำขอที่รออยู่ทั้งหมด ({n}) ไหม?",
+	"requests.board.approveAllDesc": "รวมถึงคำขอที่อยู่ด้านล่างของรายการซึ่งยังไม่ได้โหลด",
 	"requests.board.requests": "คำขอ",
 	"requests.board.open": "เปิด {name} ขอโดย {who}",
 	"requests.board.pageForArtist": "หน้าศิลปินของ {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "เพิ่มแล้ว",
 	"requests.addAll.summary": "เพิ่มแล้ว: {added}, ข้ามไป: {skipped}",
 	"requests.addAll.summaryClean": "เพิ่มแล้ว: {added}",
-	"requests.addAll.intro": "หนังแต่ละเรื่องจะถูกเพิ่มเข้าไลบรารีของคุณด้วยโฟลเดอร์และกฎการเลือกด้านล่าง และค่าเริ่มต้นที่คุณบันทึกไว้ เรื่องที่อยู่ในไลบรารีอยู่แล้วจะแสดงในรายการแต่ไม่ถูกเพิ่มซ้ำ"
+	"requests.addAll.intro": "หนังแต่ละเรื่องจะถูกเพิ่มเข้าไลบรารีของคุณด้วยโฟลเดอร์และกฎการเลือกด้านล่าง และค่าเริ่มต้นที่คุณบันทึกไว้ เรื่องที่อยู่ในไลบรารีอยู่แล้วจะแสดงในรายการแต่ไม่ถูกเพิ่มซ้ำ",
+	"requests.ask.alsoAsk": "ขอ {name} ด้วย",
+	"requests.add.handsOff": "เปิดโหมดไม่แตะต้องอยู่: ไม่ต้องมีโฟลเดอร์ไลบรารี ส่งไปที่ตัวดาวน์โหลดและไฟล์จะอยู่ที่นั่น"
 }

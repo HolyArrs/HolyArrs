@@ -83,7 +83,7 @@ func (m *Manager) cleanSeeded(ctx context.Context) {
 	// Only after a done import, with nothing placing or waiting for a person.
 	var list []domain.Download
 	for _, d := range found {
-		if ok, err := mediafiles.ImportSettled(ctx, m.Store.Read(), d.ID); err == nil && ok {
+		if ok, err := mediafiles.ImportSettled(ctx, m.Store.Read(), d.ID, d.SlotIDs); err == nil && ok {
 			list = append(list, d)
 		}
 	}
@@ -172,13 +172,16 @@ func seedingDone(dr domain.Downloader, j Job) string {
 	if j.State != StateFinished || j.Progress < 1 || clientError(j.Detail) {
 		return ""
 	}
-	if clientStopped(dr.Adapter, j) {
+	g := dr.SeedGoal
+	// With a goal set, a pause (by hand or by a lower client limit) is not
+	// enough: the goal must be met too.
+	hasGoal := seedGoalAdapters[dr.Adapter] && ((g.Ratio != nil && *g.Ratio > 0) || (g.Minutes != nil && *g.Minutes > 0))
+	if !hasGoal && clientStopped(dr.Adapter, j) {
 		return dr.Name + " stopped seeding it"
 	}
 	if !seedGoalAdapters[dr.Adapter] {
 		return ""
 	}
-	g := dr.SeedGoal
 	// A ratio or time of 0 is unknown and never meets a goal.
 	if g.Ratio != nil && *g.Ratio > 0 && j.Ratio > 0 && j.Ratio >= *g.Ratio {
 		return fmt.Sprintf("it reached the ratio goal of %s", trimFloat(*g.Ratio))
@@ -228,6 +231,8 @@ func (m *Manager) removeSeeded(ctx context.Context, dr domain.Downloader, e Engi
 	reason := "removed after seeding: " + why
 	next := d
 	next.State, next.StateReason, next.Speed, next.UpSpeed, next.Seeds, next.Peers, next.ETA = "cleaned", &reason, 0, 0, 0, 0, nil
+	cleanNow := m.now()
+	next.CleanedAt = &cleanNow
 	var done bool
 	if err := m.Store.Write(ctx, func(tx *sql.Tx) error {
 		var err error

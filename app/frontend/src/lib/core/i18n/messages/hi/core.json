@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "{what} बन रहा है… कोशिश {attempt}",
 	"core.testTag.connected": "जुड़ा हुआ",
 	"core.api.notAnswering": "HolyArrs जवाब नहीं दे रहा। देखें कि वह चल रहा है।",
+	"core.api.tooSlow": "HolyArrs ने जवाब देने में बहुत देर लगाई। एक मिनट बाद फिर कोशिश करें।",
 	"core.api.requestFailed": "रिक्वेस्ट नाकाम रही ({status})",
 	"core.api.wentWrong": "कुछ गड़बड़ हो गई।",
 	"core.trailerMiss.trailer": "ट्रेलर",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "अपने-आप मंज़ूर",
 	"core.plain.approvedBy": "{who} ने मंज़ूर किया",
 	"core.settings.cantReach": "उस पते तक नहीं पहुँच पा रहे। उसे जाँचें और देखें कि ऐप चल रहा है।",
+	"core.settings.tryHttp": "यह पता https पर जवाब नहीं देता। इसकी जगह http:// आज़माएँ।",
 	"core.settings.groupLibrary.label": "लाइब्रेरी",
 	"core.settings.groupLibrary.line": "टाइटल कहाँ रहते हैं",
 	"core.settings.groupLibrary.about": "फ़ोल्डर, हिस्से, डिफ़ॉल्ट, सबटाइटल, फ़ाइल के नाम और इंपोर्ट।",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "दो डाउनलोडर एक ही डाउनलोड ऐप तक पहुँचते हैं, इसलिए डाउनलोड दो बार दिख सकते हैं।",
 	"core.plain.peopleCheck": "मीडिया सर्वर की उपयोगकर्ता सूची पढ़ी नहीं जा सकती, इसलिए वहाँ हटाए गए लोग यहाँ बंद नहीं होते।",
 	"core.plain.deleted": "हटाया गया",
-	"core.plain.deletedName": "{name} (हटाया गया)"
+	"core.plain.deletedName": "{name} (हटाया गया)",
+	"core.api.handsOffFiles": "हैंड्स-ऑफ़ मोड चालू है, इसलिए HolyArrs डाउनलोड की गई फ़ाइलों को नहीं छूता। फ़ाइलें इम्पोर्ट करने, नाम बदलने, हटाने या स्कैन करने के लिए इसे सेटिंग्स में बंद करें।",
+	"core.api.handsOffSubtitles": "हैंड्स-ऑफ़ मोड चालू है, इसलिए HolyArrs डाउनलोड की गई फ़ाइलें कभी नहीं खोलता। सबटाइटल इस्तेमाल करने के लिए इसे सेटिंग्स में बंद करें।"
 }

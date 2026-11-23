@@ -68,7 +68,7 @@ func TestEveryRouteChecksItsScope(t *testing.T) {
 			req := httptest.NewRequest(method, path, nil).WithContext(webserver.ContextWith(context.Background(), who))
 			rec := httptest.NewRecorder()
 			gate.ServeHTTP(rec, req)
-			want := webserver.ScopesCover(held, scope)
+			want := webserver.ScopesCover(held, scope) || alsoScopes[r] != "" && webserver.ScopesCover(held, alsoScopes[r])
 			got := rec.Code == http.StatusTeapot
 			if want != got {
 				t.Errorf("%s (needs %s) with key %v: got %d, want through=%v", r, scope, held, rec.Code, want)

@@ -2,6 +2,62 @@
 import { OTHER, setChoice, type PathRule, type PersonChoice, type Plan, type Report } from './move.ts';
 import { api, ApiError } from '#lib/core/api.ts';
 import { plainMessage as message } from '#lib/core/settings.ts';
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
+
+/** A plan or test run worked out on the server in the background. */
+export interface CheckView {
+	check_id?: string;
+	state?: 'running' | 'done' | 'failed';
+	step?: string;
+	done?: number;
+	total?: number;
+	now?: string;
+	counts?: Record<string, number>;
+}
+
+/** Short progress text for a running check: what it does, how far, problems so far. */
+export function checkNote(v: CheckView | null): string {
+	if (!v || v.state !== 'running') return '';
+	if (v.step === 'titles' && (v.total ?? 0) > 0) {
+		let s = t('migrate.checkedOf', { done: v.done ?? 0, total: v.total ?? 0 });
+		if (v.now) s += ` · ${v.now}`;
+		const issues = (v.counts?.not_found ?? 0) + (v.counts?.failed ?? 0);
+		if (issues > 0) s += ` · ${t('migrate.checkIssuesSoFar', { n: issues })}`;
+		return s;
+	}
+	return v.step === 'titles' ? t('migrate.checkTitles') : v.step === 'folders' ? t('migrate.checkFolders') : t('migrate.checkReading');
+}
+
+const pause = (ms: number, signal?: AbortSignal) =>
+	new Promise<void>((done, fail) => {
+		const id = setTimeout(done, ms);
+		signal?.addEventListener('abort', () => {
+			clearTimeout(id);
+			fail(new DOMException('aborted', 'AbortError'));
+		}, { once: true });
+	});
+
+/**
+ * Starts a check and follows it until it is done: the POST answers at once and
+ * GET /migrate/checks/{id} tells how far it is. A restart forgets checks (410):
+ * it is then started again.
+ */
+export async function runCheck<T>(path: string, body: unknown, signal: AbortSignal, onprogress: (v: CheckView) => void): Promise<T> {
+	for (let attempt = 0; ; attempt++) {
+		let v = await api.request<CheckView & T>(path, { method: 'POST', body, signal });
+		try {
+			while (v.state === 'running') {
+				onprogress(v);
+				await pause(800, signal);
+				v = await api.request<CheckView & T>(`/migrate/checks/${encodeURIComponent(v.check_id ?? '')}`, { signal });
+			}
+			return v;
+		} catch (err) {
+			if (attempt < 3 && err instanceof ApiError && err.status === 410) continue;
+			throw err;
+		}
+	}
+}
 
 export function createMovePlan(ctx: { extra: PathRule[]; skip: string[]; [key: string]: any }) {
 	function replan(wait: boolean) {
@@ -18,11 +74,16 @@ export function createMovePlan(ctx: { extra: PathRule[]; skip: string[]; [key: s
 		ctx.planning = true;
 		ctx.planError = '';
 		try {
-			const r = await api.request<{ plan: Plan; suggested_path_rules?: PathRule[]; missing_paths?: Record<string, string>; seen_folders?: string[] }>('/migrate/plan', { method: 'POST', body: ctx.choices(), signal: ctx.planCtrl.signal });
+			const r = await runCheck<{ plan: Plan; suggested_path_rules?: PathRule[]; missing_paths?: Record<string, string>; seen_folders?: string[]; here_folders?: string[]; plan_hash?: string }>('/migrate/plan', { ...ctx.choices(), quick: !!ctx.quick }, ctx.planCtrl.signal, (v) => {
+				if (seq === ctx.planSeq) ctx.checkNote = checkNote(v);
+			});
 			if (seq !== ctx.planSeq || ctx.destroyed) return;
 			ctx.plan = r.plan;
+			// Setup starts the import from this very plan (no test run first): the server checks the same hash.
+			if (ctx.quick) ctx.planHash = r.plan_hash ?? '';
 			ctx.missingPaths = r.missing_paths ?? {};
 			ctx.seenFolders = r.seen_folders ?? [];
+			ctx.hereFolders = r.here_folders ?? [];
 			const sug: Record<string, string> = {};
 			for (const s of r.suggested_path_rules ?? []) sug[s.from] = s.to;
 			ctx.suggested = sug;
@@ -39,7 +100,8 @@ export function createMovePlan(ctx: { extra: PathRule[]; skip: string[]; [key: s
 				ctx.picks = next;
 				ctx.changed();
 				void makePlan();
-			} else if (ctx.step === 'choose' && (!ctx.dry || ctx.dryAt !== ctx.changes)) {
+			} else if (ctx.step === 'choose' && !ctx.quick && (!ctx.dry || ctx.dryAt !== ctx.changes)) {
+				// Setup's Folders step skips this: Continue runs the test itself.
 				// The test run marks what needs a look (a show to check) before Import is pressed.
 				void runTry();
 			}
@@ -48,7 +110,10 @@ export function createMovePlan(ctx: { extra: PathRule[]; skip: string[]; [key: s
 			if (err instanceof ApiError && err.status === 404) ctx.gone = true;
 			else ctx.planError = message(err);
 		} finally {
-			if (seq === ctx.planSeq) ctx.planning = false;
+			if (seq === ctx.planSeq) {
+				ctx.planning = false;
+				ctx.checkNote = '';
+			}
 		}
 	}
 	function onfolder(from: string, value: string) {
@@ -91,7 +156,9 @@ export function createMovePlan(ctx: { extra: PathRule[]; skip: string[]; [key: s
 		ctx.tryFailed = false;
 		ctx.actionError = '';
 		try {
-			const r = await api.request<{ report: Report; plan_hash: string }>('/migrate/dry-run', { method: 'POST', body: ctx.choices(), signal: ctx.tryCtrl.signal });
+			const r = await runCheck<{ report: Report; plan_hash: string }>('/migrate/dry-run', ctx.choices(), ctx.tryCtrl.signal, (v) => {
+				if (seq === ctx.trySeq) ctx.checkNote = checkNote(v);
+			});
 			if (seq !== ctx.trySeq || ctx.destroyed) return;
 			ctx.dry = r.report;
 			ctx.planHash = r.plan_hash;
@@ -109,7 +176,10 @@ export function createMovePlan(ctx: { extra: PathRule[]; skip: string[]; [key: s
 				ctx.actionError = message(err);
 			}
 		} finally {
-			if (seq === ctx.trySeq) ctx.trying = false;
+			if (seq === ctx.trySeq) {
+				ctx.trying = false;
+				ctx.checkNote = '';
+			}
 		}
 	}
 	function onchoose(key: string, c: PersonChoice) {

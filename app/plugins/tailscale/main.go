@@ -11,17 +11,20 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
 
 	"tailscale.com/client/local"
+	"tailscale.com/envknob"
 	"tailscale.com/tsnet"
 )
 
@@ -32,6 +35,7 @@ const (
 	envMark     = "HOLYARRS_PLUGIN_MARK"   // per-start random token
 	envLogin    = "HOLYARRS_TAILSCALE_LOGIN_SERVER"
 	envHostname = "HOLYARRS_TAILSCALE_HOSTNAME"
+	envNoUDP    = "HOLYARRS_PLUGIN_NO_UDP" // set by HolyArrs 1.2.1+: UDP is blocked
 )
 
 // stopWithin bounds a clean stop.
@@ -61,12 +65,17 @@ func readAuthKey(data string) string {
 func main() {
 	signOutFlag := flag.Bool("sign-out", false, "log out, wipe the Tailscale state and exit")
 	loginServer := flag.String("login-server", os.Getenv(envLogin), "control server (Headscale); empty for Tailscale")
-	hostname := flag.String("hostname", envOr(envHostname, "holyarrs"), "device name on the tailnet")
+	hostname := flag.String("hostname", savedName(envOr(envHostname, "holyarrs")), "device name on the tailnet")
 	flag.Parse()
 	os.Unsetenv("TS_AUTHKEY")
 	os.Unsetenv("TS_AUTH_KEY")
 	// No log upload to Tailscale.
 	os.Setenv("TS_NO_LOGS_NO_SUPPORT", "true")
+	// HolyArrs blocks UDP for plugins, so use only Tailscale's relays (DERP
+	// over HTTPS); without this tsnet fails to start when it cannot bind UDP.
+	if os.Getenv(envNoUDP) == "1" {
+		envknob.Setenv("TS_DEBUG_ALWAYS_USE_DERP", "true")
+	}
 
 	data := os.Getenv(envData)
 	if data == "" {
@@ -138,7 +147,10 @@ func run(ctx context.Context, srv *tsnet.Server, data string, target *url.URL, m
 		srv.Close()
 		return err
 	}
-	ln, err := srv.ListenTLS("tcp", ":443")
+	// ListenTLS waits until the device is signed in, so status (and the
+	// sign-in link) must be watched before it.
+	go watchStatus(ctx, lc, data)
+	ln, err := listen(srv)
 	if err != nil {
 		srv.Close()
 		return err
@@ -165,7 +177,6 @@ func run(ctx context.Context, srv *tsnet.Server, data string, target *url.URL, m
 	}
 	served := make(chan error, 1)
 	go func() { served <- hs.Serve(ln) }()
-	go watchStatus(ctx, lc, data)
 
 	select {
 	case <-ctx.Done():
@@ -263,6 +274,39 @@ func redact(s string) string {
 func envOr(k, def string) string {
 	if v := os.Getenv(k); v != "" {
 		return v
+	}
+	return def
+}
+
+// listen serves HTTPS on :443 when the tailnet has HTTPS certificates turned on.
+// New tailnets have them off, and ListenTLS then fails; fall back to plain HTTP
+// on :80, which is still end-to-end encrypted by Tailscale itself.
+func listen(srv *tsnet.Server) (net.Listener, error) {
+	ln, err := srv.ListenTLS("tcp", ":443")
+	if err == nil {
+		return ln, nil
+	}
+	if !httpsOff(err) {
+		return nil, err
+	}
+	log.Printf("HTTPS is off for this tailnet, so HolyArrs is served over plain HTTP on the tailnet (Tailscale still encrypts it): %v", err)
+	return srv.Listen("tcp", ":80")
+}
+
+// httpsOffText is part of the error tsnet's ListenTLS returns when the
+// tailnet has HTTPS certificates off (pinned by a test against tsnet's source).
+const httpsOffText = "you must enable HTTPS in the admin panel"
+
+func httpsOff(err error) bool { return err != nil && strings.Contains(err.Error(), httpsOffText) }
+
+var nameRE = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$`)
+
+// savedName is the device name the owner picked in HolyArrs (the hostname
+// file in the data folder), or def.
+func savedName(def string) string {
+	b, err := os.ReadFile(filepath.Join(os.Getenv(envData), "hostname"))
+	if n := strings.TrimSpace(string(b)); err == nil && nameRE.MatchString(n) {
+		return n
 	}
 	return def
 }

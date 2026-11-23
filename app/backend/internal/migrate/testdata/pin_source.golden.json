@@ -8,6 +8,7 @@
   "AllowLocal": true,
   "Limits": {
     "MaxAnswer": 7,
+    "MaxList": 7,
     "MaxDepth": 7,
     "Timeout": 7,
     "MaxFile": 7,

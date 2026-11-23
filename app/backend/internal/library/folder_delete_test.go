@@ -87,7 +87,7 @@ func TestDeleteFolderKeepsRestorableHeldFiles(t *testing.T) {
 	if _, err := svc.Remove(ctx, id, RemoveChoice{DeleteFiles: true}, true, domain.System); err != nil {
 		t.Fatal(err)
 	}
-	held, err := svc.HeldFiles(ctx)
+	held, err := svc.HeldFiles(ctx, 0)
 	if err != nil || len(held) == 0 {
 		t.Fatalf("held %v %v", held, err)
 	}
@@ -98,7 +98,7 @@ func TestDeleteFolderKeepsRestorableHeldFiles(t *testing.T) {
 	if f, v, n := folderRows(t, s, lf, id); f != f0 || v != v0 || n != n0 {
 		t.Fatalf("rows changed on a refused delete: %d/%d/%d, were %d/%d/%d", f, v, n, f0, v0, n0)
 	}
-	if again, _ := svc.HeldFiles(ctx); len(again) != len(held) {
+	if again, _ := svc.HeldFiles(ctx, 0); len(again) != len(held) {
 		t.Fatalf("held files after a refused delete: %d, were %d", len(again), len(held))
 	}
 	if err := os.RemoveAll(filepath.Join(lf.Path, importer.HoldingDir)); err != nil {
@@ -109,9 +109,9 @@ func TestDeleteFolderKeepsRestorableHeldFiles(t *testing.T) {
 	}
 }
 
-// An old copy an upgrade kept in holding cannot be restored from Recently
-// deleted, so it does not keep the folder; it stays on disk like every file.
-func TestDeleteFolderIgnoresReplacedCopies(t *testing.T) {
+// An old copy an upgrade kept in holding can be restored from Recently
+// deleted, so it keeps the folder like a deleted file does.
+func TestDeleteFolderKeepsReplacedCopies(t *testing.T) {
 	svc, s, lf, id, fs := deleteWorld(t)
 	ctx := context.Background()
 	if _, err := svc.Remove(ctx, id, RemoveChoice{}, true, domain.System); err != nil {
@@ -125,8 +125,8 @@ func TestDeleteFolderIgnoresReplacedCopies(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(rel)), "x")
-	if err := DeleteFolder(ctx, s, lf.ID); err != nil {
-		t.Fatalf("an upgrade's old copy kept the folder: %v", err)
+	if err := DeleteFolder(ctx, s, lf.ID); !errors.Is(err, ErrFolderHeld) {
+		t.Fatalf("err = %v, want ErrFolderHeld for an upgrade's held old copy", err)
 	}
 	if !onDisk(lf, rel) {
 		t.Fatal("the old copy left the disk")

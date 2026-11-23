@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: црвена тачка показује шта тражи пажњу, а тест везе именује тачан проблем.** Ознаке у Plex-у за тражене наслове, имена на вашем језику и више од 30 исправки. Повежите апликације преко MCP-а кључевима које ви контролишете. [Погледај шта је ново](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: више од 150 исправки и функција од 101 људи.** Систем додатака, нови чаробњак за подешавање и режим без мешања који никад не дира твоје датотеке. [Погледај шта је ново](https://holyarrs.com/whats-new/)
 
 > Сваки постер, трејлер и оцена у твом HolyArrs-у долази са сервера који сам водим и плаћам сâм, да би остао бесплатан за све. Ако је HolyArrs учинио твоје филмске вечери мало лепшим, спонзор држи светло упаљеним за све нас 💛
 >
@@ -374,7 +374,7 @@ Image нема shell, зато `docker exec -it holyarrs /bin/bash` неће р�
 - Закључан си са налога власника:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Број верзије:

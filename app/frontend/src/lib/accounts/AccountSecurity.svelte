@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { RESET_CMD } from './reset-owner.ts';
+	import { closePlexWindow, openPlexWindow, sendToPlex } from './plex-window.ts';
 	import Words from '#lib/ui/Words.svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -194,16 +196,11 @@
 	async function linkPlexMine() {
 		linkError = '';
 		linkBusy = true;
-		const win = window.open('about:blank', 'plex-link', 'width=600,height=720');
-		// The Plex page must not reach back into this tab.
-		if (win) win.opener = null;
+		const win = openPlexWindow('plex-link');
 		try {
 			const r = await api.post<{ id: number; auth_url: string }>('/auth/plex/my-link/start', {});
-			if (!win) {
-				linkError = t('accounts.security.popup');
-				return;
-			}
-			win.location.href = r.auth_url;
+			// A blocked popup (or a phone) opens Plex in a new tab instead.
+			sendToPlex(win, r.auth_url);
 			const until = Date.now() + 10 * 60 * 1000;
 			while (Date.now() < until) {
 				await new Promise((ok) => setTimeout(ok, 2000));
@@ -225,11 +222,7 @@
 			linkError = message(err);
 		} finally {
 			linkBusy = false;
-			try {
-				win?.close();
-			} catch {
-				// The window may already be gone.
-			}
+			closePlexWindow(win);
 		}
 	}
 	async function unlinkPlexMine() {
@@ -249,7 +242,7 @@
 	let resetCopied = $state(false);
 	async function copyReset() {
 		try {
-			await navigator.clipboard.writeText('holyarrs reset-owner');
+			await navigator.clipboard.writeText(RESET_CMD);
 			resetCopied = true;
 			setTimeout(() => (resetCopied = false), 1500);
 		} catch {
@@ -395,7 +388,7 @@
 	<MediaServerLink />
 	{#if session.s.role === 'owner'}
 		<div class="srow">
-			<div class="txt"><span class="label">{t('accounts.security.locked')}</span><span class="hint">{t('accounts.signin.runThis')} <code class="cmd">holyarrs reset-owner</code></span></div>
+			<div class="txt"><span class="label">{t('accounts.security.locked')}</span><span class="hint">{t('accounts.signin.runThis')} <code class="cmd">{RESET_CMD}</code></span></div>
 			<div class="ctl"><Button variant="secondary" type="button" onclick={copyReset} data-testid="copy-reset">{resetCopied ? t('accounts.signin.copied') : t('accounts.signin.copy')}</Button></div>
 		</div>
 	{/if}

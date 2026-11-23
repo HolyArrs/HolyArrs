@@ -82,6 +82,11 @@ var (
 	hak = regexp.MustCompile(`\bhak_[A-Za-z0-9_-]+`)
 	// long token-like runs: 32+ letters, digits, - or _ holding both letters and digits
 	longTok = regexp.MustCompile(`\b[A-Za-z0-9_-]{32,}\b`)
+	// an owner reset code (accounts.newResetCode): six groups of four from
+	// its look-alike-free alphabet. It belongs on the program's output and in
+	// its 0600 file only, never in the stored log an admin can read, so it is
+	// hidden in the file and on every read, but not by Mask.
+	ownerCode = regexp.MustCompile(`\b[2-9A-HJKMNP-Z]{4}(?:-[2-9A-HJKMNP-Z]{4}){5}\b`)
 )
 
 var (
@@ -342,6 +347,11 @@ func (l *Log) Redact(s string) string { return l.redact(s) }
 // vault values.
 func RedactPatterns(s string) string { return redactPatterns(s) }
 
+// HideOwnerCode masks owner reset codes. The stored log (viewer, download,
+// support bundle) uses it; the container output does not, so the owner still
+// finds the code there.
+func HideOwnerCode(s string) string { return ownerCode.ReplaceAllString(s, Hidden) }
+
 // LevelOf guesses a line's level from its words.
 func LevelOf(text string) string {
 	switch {
@@ -545,7 +555,7 @@ func (l *Log) writeLine(s string) {
 	if l.f == nil {
 		return
 	}
-	s = l.Redact(Clean(s))
+	s = HideOwnerCode(l.Redact(Clean(s)))
 	if len(s) > MaxLine {
 		s = s[:MaxLine] + " [cut]"
 	}
@@ -708,7 +718,7 @@ func (l *Log) lines() []string {
 		for sc.Scan() && budget > 0 {
 			t := sc.Text()
 			budget -= int64(len(t) + 1)
-			out = append(out, l.Redact(Clean(t)))
+			out = append(out, HideOwnerCode(l.Redact(Clean(t))))
 		}
 		_ = f.Close()
 	}

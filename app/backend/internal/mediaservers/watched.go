@@ -47,7 +47,7 @@ func (l *Linker) AdvancePacks(ctx context.Context, titles []int64, advance Advan
 	}
 	servers := make([]*watchedOn, 0, len(ms))
 	for _, m := range ms {
-		if m.TokenSecretID != nil {
+		if m.TokenSecretID != nil && !refreshOnly(m) {
 			servers = append(servers, &watchedOn{m: m})
 		}
 	}

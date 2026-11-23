@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Správy doplnkov",
+	"requests.moment.plugin_message.body": "Povolený doplnok pošle správu.",
+	"requests.words.via": "{who} cez {plugin}",
 	"requests.moment.ask_waiting.title": "Nová žiadosť",
 	"requests.moment.ask_waiting.body": "Pre personál: film, seriál alebo interpret čaká na schválenie.",
 	"requests.moment.ask_approved.title": "Schválené",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "Zoznam TMDB",
 	"requests.lists.tmdbHint": "Číslo zoznamu alebo jeho odkaz, napríklad themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Zoznam Trakt",
-	"requests.lists.traktHint": "user/list, user/watchlist alebo odkaz, napríklad trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist alebo odkaz, napríklad trakt.tv/users/ana/lists/favourites. Alebo rebríček: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "Zoznam MDBList",
 	"requests.lists.mdblistHint": "user/list alebo odkaz, napríklad mdblist.com/lists/ana/favourites. Verejné zoznamy fungujú bez kľúča.",
 	"requests.lists.everyDay": "každý deň",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Nenašli sme nič zlé",
 	"requests.outcome.noResults": "Zatiaľ žiadne výsledky",
 	"requests.outcome.nothingFound": "Nič sa nenašlo:",
+	"requests.outcome.refused": "Nájdené, ale nič nespĺňa pravidlá výberu",
 	"requests.outcome.why.slowed": "bol pozastavený (spomalený)",
 	"requests.outcome.why.down": "nebol dostupný",
 	"requests.outcome.why.blocked": "bol zablokovaný",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Pridať",
 	"requests.addMovie.titleBare": "Pridať film",
 	"requests.add.loadingDefaults": "Načítavajú sa predvolené hodnoty",
+	"requests.add.defaultsLate": "Vaše uložené predvolené voľby sa nenačítali včas, preto sú vybrané obvyklé. Pred pridaním ich skontrolujte.",
 	"requests.add.noFolder.music": "Pre hudbu zatiaľ nie je žiadny priečinok Knižnice. Najprv <a>pridajte jeden</a>.",
 	"requests.add.noFolder.movie": "Pre filmy zatiaľ nie je žiadny priečinok Knižnice. Najprv <a>pridajte jeden</a>.",
 	"requests.add.noFolder.show": "Pre seriály zatiaľ nie je žiadny priečinok Knižnice. Najprv <a>pridajte jeden</a>.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Zobraziť v mojom kalendári.",
 	"requests.add.cancel": "Zrušiť",
 	"requests.add.submit": "Pridať do Knižnice",
+	"requests.add.submitChoose": "Pridať a vybrať vydanie",
 	"requests.addArtist.albums": "Albumy, ktoré udržiavať aktuálne",
 	"requests.addArtist.newAlbums": "Nové albumy",
 	"requests.addArtist.newAlbumsHint": "Čo sa stane s albumom, ktorý vyjde neskôr.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", zobrazuje sa {status}",
 	"requests.board.reportsOpen": "Hlásenia, otvorené: {n}",
 	"requests.board.approveAll": "Schváliť všetko",
+	"requests.board.approveAllTitle": "Schváliť všetky čakajúce žiadosti ({n})?",
+	"requests.board.approveAllDesc": "Patria sem aj žiadosti nižšie v zozname, ktoré sa ešte nenačítali.",
 	"requests.board.requests": "Žiadosti",
 	"requests.board.open": "Otvoriť {name}, požiadal {who}",
 	"requests.board.pageForArtist": "Stránka interpreta {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Pridaný",
 	"requests.addAll.summary": "Pridané: {added}, vynechané: {skipped}",
 	"requests.addAll.summaryClean": "Pridané: {added}",
-	"requests.addAll.intro": "Každý film sa pridá do vašej Knižnice s priečinkom a pravidlami výberu nižšie a s vaším uloženým predvoleným nastavením. Filmy, ktoré už v Knižnici sú, sú v zozname, ale znova sa nepridajú."
+	"requests.addAll.intro": "Každý film sa pridá do vašej Knižnice s priečinkom a pravidlami výberu nižšie a s vaším uloženým predvoleným nastavením. Filmy, ktoré už v Knižnici sú, sú v zozname, ale znova sa nepridajú.",
+	"requests.ask.alsoAsk": "Požiadať aj o {name}",
+	"requests.add.handsOff": "Režim bez zásahu je zapnutý: priečinok Knižnice nie je potrebný. Ide do sťahovača a súbory zostanú tam."
 }

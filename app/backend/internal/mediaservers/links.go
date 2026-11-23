@@ -3,8 +3,10 @@ package mediaservers
 import (
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -19,7 +21,7 @@ import (
 // WatchLink is where one Library title opens on one media server.
 type WatchLink struct {
 	Server string `json:"server"` // the media server's name
-	Kind   string `json:"kind"`   // jellyfin or emby
+	Kind   string `json:"kind"`   // plex, jellyfin or emby
 	URL    string `json:"url"`
 }
 
@@ -62,11 +64,11 @@ func (c *watchCache) put(key string, ix itemIndex) {
 	c.m[key] = ix
 }
 
-// WatchLinks are the switched-on Jellyfin and Emby servers with a browser
-// address that have the movie or show titleID, each with the link that
-// opens it there. A server that fails is logged and left out, so one server
-// down never hides the others. Plex is not offered: its web app links need
-// the owner's Plex account rather than the server.
+// WatchLinks are the switched-on servers that have the movie or show
+// titleID, each with the link that opens it there: Plex always (in Plex's
+// own web app at app.plex.tv, as Seerr does), Jellyfin and Emby once they
+// have a browser address. A server that fails is logged and left out, so
+// one server down never hides the others.
 func (l *Linker) WatchLinks(ctx context.Context, titleID int64) ([]WatchLink, error) {
 	var t mediafiles.Title
 	if err := mediafiles.LoadTitle(ctx, l.Store.Read(), titleID, &t); err != nil {
@@ -82,7 +84,10 @@ func (l *Linker) WatchLinks(ctx context.Context, titleID int64) ([]WatchLink, er
 		return nil, err
 	}
 	for _, m := range ms {
-		if m.WebURL == "" || m.TokenSecretID == nil || (m.Kind != "jellyfin" && m.Kind != "emby") {
+		if m.Kind != "plex" {
+			m.WebURL = browserAddress(m)
+		}
+		if m.TokenSecretID == nil || (m.Kind != "plex" && m.WebURL == "") || (m.Kind != "plex" && m.Kind != "jellyfin" && m.Kind != "emby") {
 			continue
 		}
 		item, sid, err := l.findItem(ctx, m, t.Kind, ids)
@@ -109,15 +114,24 @@ func (l *Linker) findItem(ctx context.Context, m domain.MediaServer, kind string
 			return it, ix.serverID, nil
 		}
 	}
-	itemType := "Movie"
-	if kind == "show" {
-		itemType = "Series"
+	var items map[string]string
+	var sid string
+	var err error
+	if m.Kind == "plex" {
+		items, err = l.plexKeys(ctx, m, kind)
+		if err == nil {
+			sid, err = l.plexMachineID(ctx, m)
+		}
+	} else {
+		itemType := "Movie"
+		if kind == "show" {
+			itemType = "Series"
+		}
+		items, err = l.jellyItems(ctx, m, itemType)
+		if err == nil {
+			sid, err = l.jellyServerID(ctx, m)
+		}
 	}
-	items, err := l.jellyItems(ctx, m, itemType)
-	if err != nil {
-		return "", "", err
-	}
-	sid, err := l.jellyServerID(ctx, m)
 	if err != nil {
 		return "", "", err
 	}
@@ -182,12 +196,110 @@ func (l *Linker) jellyServerID(ctx context.Context, m domain.MediaServer) (strin
 	return info.ID, nil
 }
 
-// watchURL is item's page in the server's web app: Jellyfin's details page
-// or Emby's item page.
+// plexKeys maps the ids of every movie (or show) in the server's movie (or
+// TV) libraries to its ratingKey, a page at a time.
+func (l *Linker) plexKeys(ctx context.Context, m domain.MediaServer, kind string) (map[string]string, error) {
+	if kind == "show" {
+		return l.plexShows(ctx, m)
+	}
+	secs, err := l.plexSections(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]string{}
+	for _, s := range secs {
+		if s.Type != "movie" {
+			continue
+		}
+		for start := 0; ; start += watchPage {
+			b, err := l.do(ctx, m, http.MethodGet, "/library/sections/"+url.PathEscape(s.Key)+"/all?type=1&includeGuids=1"+plexRange(start), nil)
+			if err != nil {
+				return nil, err
+			}
+			var mc struct {
+				Videos []struct {
+					RatingKey string `xml:"ratingKey,attr"`
+					GUID      string `xml:"guid,attr"`
+					Guids     []struct {
+						ID string `xml:"id,attr"`
+					} `xml:"Guid"`
+				} `xml:"Video"`
+			}
+			if err := xml.Unmarshal(b, &mc); err != nil {
+				return nil, errors.New("the server's answer was not a Plex movie list")
+			}
+			for _, v := range mc.Videos {
+				gs := []string{v.GUID}
+				for _, g := range v.Guids {
+					gs = append(gs, g.ID)
+				}
+				for _, g := range gs {
+					if id := plexGUID(g); id != "" {
+						out[id] = v.RatingKey
+					}
+				}
+			}
+			if len(mc.Videos) < watchPage {
+				break
+			}
+		}
+	}
+	return out, nil
+}
+
+// plexMachineID is the Plex server's machine identifier, which Plex's web
+// app wants in a link.
+func (l *Linker) plexMachineID(ctx context.Context, m domain.MediaServer) (string, error) {
+	b, err := l.do(ctx, m, http.MethodGet, "/identity", nil)
+	if err != nil {
+		return "", err
+	}
+	var mc struct {
+		ID string `xml:"machineIdentifier,attr"`
+	}
+	if err := xml.Unmarshal(b, &mc); err != nil || mc.ID == "" {
+		return "", errors.New("the server's answer was not its Plex identity")
+	}
+	return mc.ID, nil
+}
+
+// watchURL is item's page in the server's web app: Plex's details page
+// (at app.plex.tv, or the server's own web app when it has a browser
+// address), Jellyfin's details page or Emby's item page.
 func watchURL(m domain.MediaServer, item, serverID string) string {
+	if m.Kind == "plex" {
+		web := "https://app.plex.tv/desktop"
+		if m.WebURL != "" {
+			web = m.WebURL + "/web/index.html"
+		}
+		return web + "#!/server/" + url.PathEscape(serverID) + "/details?key=" + url.QueryEscape("/library/metadata/"+item)
+	}
 	q := "id=" + url.QueryEscape(item) + "&serverId=" + url.QueryEscape(serverID)
 	if m.Kind == "emby" {
 		return m.WebURL + "/web/index.html#!/item?" + q
 	}
 	return m.WebURL + "/web/#/details?" + q
+}
+
+// browserAddress is where browsers open a Jellyfin or Emby server: its
+// browser address, else its connection address when a browser elsewhere can
+// reach that too (an IP that is not loopback, or a dotted name). Docker-only
+// names like http://jellyfin:8096 and localhost give none, so no button.
+func browserAddress(m domain.MediaServer) string {
+	if m.WebURL != "" {
+		return m.WebURL
+	}
+	u, err := url.Parse(strings.TrimRight(strings.TrimSpace(m.URL), "/"))
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		return ""
+	}
+	h := strings.ToLower(u.Hostname())
+	if ip := net.ParseIP(h); ip != nil {
+		if ip.IsLoopback() || ip.IsUnspecified() {
+			return ""
+		}
+	} else if !strings.Contains(strings.Trim(h, "."), ".") || strings.HasSuffix(h, ".localhost") {
+		return ""
+	}
+	return u.Scheme + "://" + u.Host + strings.TrimRight(u.Path, "/")
 }

@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: en rød prik viser, hvad der kræver opmærksomhed, og forbindelsestesten nævner det præcise problem.** Plex-mærker til ønskede titler, navne på dit sprog og over 30 rettelser. Forbind apps via MCP med nøgler, du selv styrer. [Se hvad der er nyt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: over 150 rettelser og funktioner fra 101 personer.** Et pluginsystem, en ny opsætningsguide og en hands-off-tilstand, der aldrig rører dine filer. [Se hvad der er nyt](https://holyarrs.com/whats-new/)
 
 > Hver eneste plakat, trailer og score i dit HolyArrs kommer fra en server, som jeg selv kører og betaler for, så det forbliver gratis for alle. Hvis HolyArrs har gjort din filmaften lidt bedre, holder en sponsor lyset tændt for os alle sammen 💛
 >
@@ -374,7 +374,7 @@ Imaget har ingen shell, så `docker exec -it holyarrs /bin/bash` virker ikke. Ho
 - Låst ude af ejerkontoen:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Versionsnummer:

@@ -114,7 +114,7 @@ test('Schedules: next feed check, run it now, change how often', async () => {
 	await phone(page, '/settings/schedules');
 });
 
-test('a newer release shows a notice; off asks nothing', async () => {
+test('a newer release shows a notice, and the check is always on', async () => {
 	// The update check settings moved to System > Health checks; the notice stays on This app.
 	const saved = async () => {
 		await page.getByRole('button', { name: 'Save' }).click();
@@ -133,14 +133,7 @@ test('a newer release shows a notice; off asks nothing', async () => {
 	await expect(upd.getByRole('link', { name: 'What changed' })).toHaveAttribute('href', 'https://github.com/HolyArrs/HolyArrs/releases/tag/v9.9.9');
 	await page.goto('/settings/health');
 	await expect(page.getByTestId('update-privacy')).toContainText('api.github.com');
-	await page.getByLabel('Check for a newer HolyArrs').uncheck();
-	await saved();
-	await page.goto('/health?tab=updates');
-	await expect(page.getByTestId('status-updates')).toContainText('Update check is off');
-	await expect(page.getByTestId('status-updates').getByRole('button', { name: /^Check (now|again)$/ })).toHaveCount(0);
-	await page.goto('/settings/health');
-	await page.getByLabel('Check for a newer HolyArrs').check();
-	await saved();
+	await expect(page.getByLabel('Check for a newer HolyArrs')).toHaveCount(0);
 	await axe(page, '/settings/health');
 	await page.goto('/settings/this-app');
 	await axe(page, '/settings/this-app');

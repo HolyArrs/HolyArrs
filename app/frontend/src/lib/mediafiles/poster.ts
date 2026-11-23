@@ -1,6 +1,8 @@
 // Poster card helpers: attention state, progress bar, tilt, detail level and move animation.
 import type { LibState, LibStateKey } from './library-state.ts';
 import { t } from '../core/i18n/i18n.svelte.ts';
+import type { TitleView } from '../core/types.ts';
+import { date } from '../core/format.ts';
 
 export type BarTone = 'ok' | 'busy' | 'gap' | 'fail' | 'idle';
 export type PosterDetail = 'title' | 'status' | 'full';
@@ -27,6 +29,7 @@ export const detailLabels: Record<PosterDetail, string> = {
 
 const clamp01 = (n: number) => (Number.isFinite(n) ? Math.min(Math.max(n, 0), 1) : 0);
 const detailKey = (member: number | undefined) => `holyarrs.poster-detail.${member ?? 'guest'}`;
+const datesKey = (member: number | undefined) => `holyarrs.poster-dates.${member ?? 'guest'}`;
 
 export function needsAttention(s: LibState | null | undefined): boolean {
 	return !!s && attentionKeys.includes(s.key);
@@ -72,6 +75,55 @@ export function loadPosterDetail(member: number | undefined, store: Store = glob
 export function savePosterDetail(member: number | undefined, d: PosterDetail, store: Store = globalThis.localStorage) {
 	try {
 		store?.setItem(detailKey(member), d);
+	} catch {
+		// Storage can be blocked (private window); nothing to do.
+	}
+}
+
+// The poster caption's date: the year, or with full dates on, a movie's first release day, so it is the same day the year counts from
+// (a later home release, such as a 4K re-release, would read as a different year). Shows and artists keep the year here; their day
+// goes on its own line (posterNote).
+type DatedTitle = Pick<TitleView, 'kind' | 'year' | 'digital_date' | 'physical_date' | 'cinema_date'> & {
+	show?: Pick<NonNullable<TitleView['show']>, 'next_air_date' | 'last_air_date'>;
+	artist?: Pick<NonNullable<TitleView['artist']>, 'last_release'>;
+};
+export function posterYear(x: DatedTitle, full: boolean): string {
+	if (full && x.kind === 'movie') {
+		const first = [x.cinema_date, x.digital_date, x.physical_date].filter((s): s is string => !!s && !Number.isNaN(Date.parse(s))).sort((a, b) => Date.parse(a) - Date.parse(b))[0];
+		const d = date(first);
+		if (d) return d;
+	}
+	return x.year ? String(x.year) : '';
+}
+
+// With full dates on, the labelled day under a show's or artist's caption: the next episode's air day (or, with none coming,
+// the last one that aired) and an artist's newest album out. '' when off or unknown.
+export function posterNote(x: DatedTitle, full: boolean): string {
+	if (!full) return '';
+	if (x.kind === 'show') {
+		const next = date(x.show?.next_air_date);
+		if (next) return t('library.page.dateNextEpisode', { date: next });
+		const last = date(x.show?.last_air_date);
+		return last ? t('library.page.dateLastAired', { date: last }) : '';
+	}
+	if (x.kind === 'artist') {
+		const last = date(x.artist?.last_release);
+		return last ? t('library.page.dateNewestRelease', { date: last }) : '';
+	}
+	return '';
+}
+
+export function loadPosterDates(member: number | undefined, store: Store = globalThis.localStorage): boolean {
+	try {
+		return store?.getItem(datesKey(member)) === '1';
+	} catch {
+		return false;
+	}
+}
+
+export function savePosterDates(member: number | undefined, on: boolean, store: Store = globalThis.localStorage) {
+	try {
+		store?.setItem(datesKey(member), on ? '1' : '0');
 	} catch {
 		// Storage can be blocked (private window); nothing to do.
 	}

@@ -14,6 +14,8 @@ export interface ImportRecord {
 export interface PickRulesSize {
 	min: number;
 	max: number;
+	/** The size a tie goes toward; absent for none. */
+	preferred?: number;
 	per_minute: boolean;
 }
 
@@ -24,14 +26,20 @@ export interface PickRulesBody {
 	traits: { trait: string; points: number }[];
 	must_have: string[];
 	never: string[];
+	/** Release groups never picked, matched by whole name in any case. */
+	blocked_groups?: string[];
+	/** Device families played on: formats they can't play directly cost points. */
+	devices?: string[];
 	min_points: number;
 	good_enough_points?: number;
 	/** By step; "*" is every step. */
 	size_limits: Record<string, PickRulesSize>;
 	protocol: { prefer: 'torrent' | 'usenet' | 'either'; wait_minutes_torrent: number; wait_minutes_usenet: number; skip_wait_at_good_enough: boolean };
-	language: { wanted: string[]; original_ok: boolean };
+	language: { wanted: string[]; original_ok: boolean; wait_days?: number; french_versions?: string[] };
 	order: 'quality_then_points' | 'points_then_quality';
 	upgrade_min_points: number;
+	/** Counts a file below its step's smallest size as worth replacing. */
+	replace_under_min?: boolean;
 	proper_policy: { mode: 'take_any' | 'same_group_only' | 'prefer_only' | 'ignore'; max_age_days?: number };
 	/** With any, a search asks only the Sources sharing one of these tags. */
 	tags?: string[];

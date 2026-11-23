@@ -61,6 +61,42 @@ func (s ExploreSource) List(ctx context.Context, q engine.Request) ([]engine.Ite
 	}
 	p := e.Paced
 	e.mu.Unlock()
+	go s.fill(ctx, key, q, f, p, ok)
+	select {
+	case <-f.done:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	if f.err == nil {
+		return f.items, nil
+	}
+	if ok {
+		return got.items, nil
+	}
+	return nil, f.err
+}
+
+// Explore list asks wait this long for the server: longer while nothing is
+// kept yet (a fresh install's first fill), so a slow server still fills it.
+const (
+	listWaitKept  = 45 * time.Second
+	firstFillWait = 3 * time.Minute
+)
+
+func listWait(kept bool) time.Duration {
+	if kept {
+		return listWaitKept
+	}
+	return firstFillWait
+}
+
+// fill runs one list's outside ask for everyone waiting on it. It is not
+// tied to the first asker: a page that leaves does not cancel it, so the
+// list still lands for the next page.
+func (s ExploreSource) fill(ctx context.Context, key string, q engine.Request, f *listFlight, p *engine.Paced, kept bool) {
+	e := s.E
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), listWait(kept))
+	defer cancel()
 	defer func() {
 		e.mu.Lock()
 		delete(e.flight, key)
@@ -69,17 +105,14 @@ func (s ExploreSource) List(ctx context.Context, q engine.Request) ([]engine.Ite
 	}()
 	s.Calls.Add(q)
 	f.items, f.err = p.List(ctx, q)
-	if f.err != nil && ctx.Err() == nil && serverDown(f.err) {
+	if f.err != nil && serverDown(f.err) {
 		e.hold.note(f.err, time.Now())
 	}
 	if f.err != nil {
-		if ctx.Err() == nil && !serverDown(f.err) && !metadata.SourceOff(f.err) && s.noteListDown(key, true) && (!errors.Is(f.err, metadata.ErrNoAccess) || listLogDue(f.err, time.Now())) {
+		if ctx.Err() == nil && !serverDown(f.err) && !serverBusy(f.err) && !metadata.SourceOff(f.err) && s.noteListDown(key, true) && (!errors.Is(f.err, metadata.ErrNoAccess) || listLogDue(f.err, time.Now())) {
 			log.Printf("explore: list %s failed: %v", q.List, f.err)
 		}
-		if ok {
-			return got.items, nil
-		}
-		return nil, f.err
+		return
 	}
 	s.noteListDown(key, false)
 	if e.hold.note(nil, time.Now()) {
@@ -89,10 +122,9 @@ func (s ExploreSource) List(ctx context.Context, q engine.Request) ([]engine.Ite
 	s.keepList(key, exploreList{at: now, items: f.items})
 	if s.E.Store() != nil {
 		if b, err := json.Marshal(storedList{At: now, Items: f.items}); err == nil {
-			_ = metadata.LookupCache{Store: s.E.Store()}.Put(context.WithoutCancel(ctx), "explore|"+key, b, now, now.Add(ttl))
+			_ = metadata.LookupCache{Store: s.E.Store()}.Put(ctx, "explore|"+key, b, now, now.Add(ExploreListTTL[q.List]))
 		}
 	}
-	return f.items, nil
 }
 
 // noteListDown records whether key's last outside ask failed and says
@@ -374,7 +406,9 @@ func (e *Explore) BuildPool(ctx context.Context, member int64, sw string) error 
 	if err != nil {
 		return err
 	}
-	log.Printf("explore: pool %d/%s built in %s, %d seeds, outside calls %s", member, sw, time.Since(start).Round(time.Millisecond), pool.Seeds, calls)
+	if took := time.Since(start); poolLineDue(took, calls.Total()) {
+		log.Printf("explore: pool %d/%s built in %s, %d seeds, outside calls %s", member, sw, took.Round(time.Millisecond), pool.Seeds, calls)
+	}
 	empty := pool.Seeds == 0 && !e.lookupsOff()
 	raw, err := json.Marshal(pool)
 	if err != nil {
@@ -433,3 +467,9 @@ var (
 	listLogMu sync.Mutex
 	listLogAt = map[string]time.Time{}
 )
+
+// poolLineDue says a pool build is worth a log line: it was slow or asked
+// outside. A quick build from kept lists is routine and stays quiet.
+func poolLineDue(took time.Duration, calls int) bool {
+	return took > time.Second || calls > 0
+}

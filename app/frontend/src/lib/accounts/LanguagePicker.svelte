@@ -9,6 +9,7 @@
 	import { press } from '#lib/core/motion.ts';
 	import { saveLanguage } from './profile.svelte.ts';
 	import { languageGroups, languageName, matchLanguages } from './language-list.ts';
+	import { listLanguages, packList } from '#lib/core/i18n/language-packs.svelte.ts';
 
 	let {
 		id = 'language',
@@ -26,7 +27,13 @@
 
 	const uid = $props.id();
 	const listId = `${uid}-list`;
-	const { top, more } = languageGroups();
+	// English and the installed language packs; every language on the sign-in page, where the list can't be read.
+	const groups = $derived(languageGroups(packList.installed, lang.choice));
+	// Only a few languages installed: a plain list, no search box and no group headings.
+	const few = $derived(groups.top.length + groups.more.length <= 8);
+	$effect(() => {
+		if (variant !== 'signin') listLanguages().catch(() => {});
+	});
 
 	let wide = $state(typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches);
 	$effect(() => {
@@ -51,9 +58,9 @@
 	const name = $derived(`${t('accounts.language.label')}: ${current}`);
 
 	const autoShown = $derived(!q.trim() || t('accounts.language.auto').toLowerCase().includes(q.trim().toLowerCase()));
-	const found = $derived(matchLanguages(q, lang.value));
-	const foundTop = $derived(found.filter((l) => top.includes(l)));
-	const foundMore = $derived(found.filter((l) => more.includes(l)));
+	const found = $derived(matchLanguages(q, lang.value, packList.installed, lang.choice));
+	const foundTop = $derived(found.filter((l) => groups.top.includes(l)));
+	const foundMore = $derived(found.filter((l) => groups.more.includes(l)));
 	const flat = $derived<LocaleChoice[]>([...(autoShown ? (['auto'] as const) : []), ...found.map((l) => l.code)]);
 	const count = $derived(t(flat.length === 1 ? 'accounts.language.count.one' : 'accounts.language.count.other', { n: flat.length }));
 
@@ -144,6 +151,7 @@
 
 {#snippet body(close: () => void)}
 	<div class="lp" class:sheet={!wide}>
+		{#if !few}
 		<div class="lp-find">
 			<Icon name="search" size={16} />
 			<input
@@ -163,15 +171,18 @@
 				data-testid="language-search"
 			/>
 		</div>
-		<div class="list" id={listId} role="listbox" tabindex="-1" aria-label={t('accounts.language.label')} bind:this={listEl} onkeydown={(e) => keys(e, close)}>
+		{/if}
+		<div class="list" id={listId} role="listbox" tabindex="-1" aria-activedescendant={flat.length && active >= 0 ? `${uid}-o${active}` : undefined} aria-label={t('accounts.language.label')} bind:this={listEl} onkeydown={(e) => keys(e, close)}>
 			{#if autoShown}{@render row('auto', t('accounts.language.auto'), 0, close)}{/if}
-			{#if foundTop.length}
+			{#if few}
+				{#each found as l, k (l.code)}{@render row(l.code, l.name, (autoShown ? 1 : 0) + k, close)}{/each}
+			{:else if foundTop.length}
 				<div role="group" aria-labelledby="{uid}-gt">
 					<div class="heading" id="{uid}-gt" role="presentation">{t('accounts.language.top')}</div>
 					{#each foundTop as l, k (l.code)}{@render row(l.code, l.name, (autoShown ? 1 : 0) + k, close)}{/each}
 				</div>
 			{/if}
-			{#if foundMore.length}
+			{#if !few && foundMore.length}
 				<div role="group" aria-labelledby="{uid}-gm">
 					<div class="heading" id="{uid}-gm" role="presentation">{t('accounts.language.more')}</div>
 					{#each foundMore as l, k (l.code)}{@render row(l.code, l.name, (autoShown ? 1 : 0) + foundTop.length + k, close)}{/each}
@@ -203,11 +214,14 @@
 			}}
 			onopen={(p) => {
 				reset();
-				p.querySelector<HTMLInputElement>('.lp-search')?.focus({ preventScroll: true });
+				const search = p.querySelector<HTMLElement>('.lp-search');
+				// Few languages (no search box): the list takes focus, so arrows and Enter work.
+				if (!search) keyed = true;
+				(search ?? listEl)?.focus({ preventScroll: true });
 			}}
 		>
 			{#snippet trigger()}
-				<Icon name="globe" size={variant === 'signin' ? 16 : 17} /><span class="cur">{current}</span>{#if variant === 'field'}<Icon name="chevronDown" size={14} />{/if}
+				<Icon name="translate" size={variant === 'signin' ? 16 : 17} /><span class="cur">{current}</span>{#if variant === 'field'}<Icon name="chevronDown" size={14} />{/if}
 			{/snippet}
 			{#snippet children(close)}{@render body(close)}{/snippet}
 		</Popover>
@@ -223,7 +237,7 @@
 			onclick={openSheet}
 			use:press={variant === 'signin' ? 'round' : 'button'}
 		>
-			<Icon name="globe" size={variant === 'signin' ? 19 : 17} />{#if variant === 'field'}<span class="cur">{current}</span><Icon name="chevronDown" size={14} />{/if}
+			<Icon name="translate" size={variant === 'signin' ? 19 : 17} />{#if variant === 'field'}<span class="cur">{current}</span><Icon name="chevronDown" size={14} />{/if}
 		</button>
 		<Sheet bind:open={sheetOpen} title={t('accounts.language.label')} size="sm" onclose={() => sheetBtn?.focus({ preventScroll: true })}>
 			{@render body(closeSheet)}
@@ -257,7 +271,7 @@
 	.item.ring { background: var(--surface-3); box-shadow: inset 0 0 0 2px var(--accent); }
 	.ic { width: 20px; display: grid; place-items: center; color: var(--text-muted); flex: none; }
 	.grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.hint { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: clip; color: var(--text-muted); font: var(--t-footnote); position: relative; top: 2px; }
+	.hint { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text-muted); font: var(--t-footnote); position: relative; top: 2px; }
 	.heading { padding-block: 8px 4px; padding-inline: 38px 10px; color: var(--text-muted); font: var(--t-footnote); font-weight: 600; }
 	.none { margin: 0; padding: 10px 10px 8px; padding-inline-start: 38px; color: var(--text-muted); font: var(--t-callout); font-size: 14px; overflow-wrap: anywhere; }
 	.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

@@ -21,7 +21,7 @@ type ModeHandlers struct {
 	// EnvTMDB says a TMDB key comes from the Docker settings.
 	EnvTMDB bool
 	// Test checks one own key (KeyTMDB, KeyTVDB with its PIN, KeyMDBList,
-	// KeyFanart); nil answers that the key cannot be tested.
+	// KeyFanart, KeyOMDb); nil answers that the key cannot be tested.
 	Test func(ctx context.Context, key, value, pin string) error
 }
 
@@ -104,7 +104,7 @@ func (h *ModeHandlers) get(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, h.Answer(r.Context()))
 }
 
-const modeHelp = `send {"mode": "full" | "own" | "off", "keys": {"tmdb_token": "...", "tvdb_key": "...", "tvdb_pin": "...", "mdblist_key": "...", "fanart_key": "..."}}; an empty key removes it, a left-out key stays`
+const modeHelp = `send {"mode": "full" | "own" | "off", "keys": {"tmdb_token": "...", "tvdb_key": "...", "tvdb_pin": "...", "mdblist_key": "...", "fanart_key": "...", "omdb_key": "..."}}; an empty key removes it, a left-out key stays`
 
 func (h *ModeHandlers) put(w http.ResponseWriter, r *http.Request) {
 	var in struct {
@@ -155,7 +155,7 @@ func (h *ModeHandlers) put(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, h.Answer(r.Context()))
 }
 
-const testHelp = `send {"key": "tmdb_token" | "tvdb_key" | "mdblist_key" | "fanart_key", "value": "<key, or empty for the saved one>", "pin": "<TheTVDB PIN, optional>"}`
+const testHelp = `send {"key": "tmdb_token" | "tvdb_key" | "mdblist_key" | "fanart_key" | "omdb_key", "value": "<key, or empty for the saved one>", "pin": "<TheTVDB PIN, optional>"}`
 
 func (h *ModeHandlers) test(w http.ResponseWriter, r *http.Request) {
 	var in struct {
@@ -179,28 +179,40 @@ func (h *ModeHandlers) test(w http.ResponseWriter, r *http.Request) {
 			pin, _ = h.Vault.Setting(r.Context(), KeyGroup, KeyTVDBPIN)
 		}
 	}
+	// code tells the page which fix to show; message stays for older pages.
 	answer := map[string]any{"ok": false}
+	set := func(code, msg string) { answer["code"], answer["message"] = code, msg }
 	switch err := h.check(r.Context(), in.Key, value, pin); {
 	case err == nil:
-		answer["ok"], answer["message"] = true, "Key works"
+		answer["ok"] = true
+		set("works", "Key works")
 	case errors.Is(err, errNoKey):
-		answer["message"] = "No key saved yet"
+		set("no_key", "Enter a key first")
+	case errors.Is(err, ErrTVDBRefused) && pin == "":
+		// TheTVDB answers the same for a wrong key and a missing PIN.
+		set("tvdb_refused", "Key refused; a PIN may be needed")
 	case errors.Is(err, ErrTVDBRefused):
-		answer["message"] = "Key or PIN refused"
-	case errors.Is(err, ErrNoAccess), errors.Is(err, ErrNoTVDBKey):
-		answer["message"] = "Key refused"
+		set("tvdb_pin_refused", "Key or PIN refused")
+	case errors.Is(err, ErrNoAccess), errors.Is(err, ErrNoTVDBKey), errors.Is(err, errKeyBroken):
+		set("refused", "Key refused")
 	default:
-		answer["message"] = "Could not reach the service; try again"
+		set("unreachable", "Could not reach the service; try again")
 	}
 	// A test answers 200 either way: the page shows the line it gets.
 	webserver.WriteJSON(w, http.StatusOK, answer)
 }
 
-var errNoKey = errors.New("no key")
+var (
+	errNoKey     = errors.New("no key")
+	errKeyBroken = errors.New("line break inside the key")
+)
 
 func (h *ModeHandlers) check(ctx context.Context, key, value, pin string) error {
 	if value == "" {
 		return errNoKey
+	}
+	if strings.ContainsAny(value+pin, "\r\n") {
+		return errKeyBroken // pasted across two lines: no service takes it, and it is not the network
 	}
 	if h.Test == nil {
 		return errors.New("no tester")

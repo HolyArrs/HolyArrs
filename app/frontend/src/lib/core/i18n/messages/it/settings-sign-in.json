@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Solo questi possono dire da dove arriva una visita.",
 	"settings.signIn.fixToSaveOne": "Correggi 1 riga per salvare",
 	"settings.signIn.fixToSaveOther": "Correggi {n} righe per salvare",
-	"settings.signIn.localSaved": "Rete locale salvata"
+	"settings.signIn.localSaved": "Rete locale salvata",
+	"settings.signIn.forgotTitle": "Password dimenticata?",
+	"settings.signIn.forgotOn": "Mostra Password dimenticata? nella pagina di accesso",
+	"settings.signIn.forgotNote": "Il proprietario riceve un codice monouso dal log del server. Spegnilo se l'accesso passa dal single sign-on. Il comando reset-owner funziona comunque.",
+	"settings.signIn.forgotShown": "Password dimenticata? è attivo",
+	"settings.signIn.forgotHidden": "Password dimenticata? è spento"
 }

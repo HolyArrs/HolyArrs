@@ -5,9 +5,12 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -17,17 +20,57 @@ import (
 
 // status answers the server test. Seerr reads urlBase and uses it as the
 // base path from then on. On the Sonarr side it also reads the version.
+// Phone apps such as Helmarr decode every field the old app sends and
+// treat a missing one as an unreachable server, so all of them are here.
 // Pulsarr connects only when appName is the old app's own name and
 // authentication is text, so the side's old name goes there and HolyArrs
 // stays the instance name.
 func (h *handler) status(w http.ResponseWriter, r *http.Request) {
 	docker := startup.InContainer(func(p string) bool { _, err := os.Stat(p); return err == nil }, os.Getenv)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"appName": oldAppNames[h.side], "instanceName": AppName, "version": h.version, "urlBase": h.base(r.Context()), "authentication": "apikey",
+		"appName": oldAppNames[h.side], "instanceName": AppName, "version": h.version, "urlBase": h.base(r.Context()), "authentication": "forms",
 		"isDebug": false, "isProduction": true, "isAdmin": false, "isUserInteractive": false,
 		"osName": runtime.GOOS, "isLinux": runtime.GOOS == "linux", "isOsx": runtime.GOOS == "darwin", "isWindows": runtime.GOOS == "windows",
-		"isDocker": docker, "mode": "console", "branch": "main", "databaseType": "sqLite", "runtimeName": "go",
+		"isDocker": docker, "isContainerized": docker, "isNetCore": false, "mode": "console", "branch": "main",
+		"databaseType": "sqLite", "databaseVersion": h.sqliteVersion(r), "migrationVersion": 0,
+		"runtimeName": "go", "runtimeVersion": strings.TrimPrefix(runtime.Version(), "go"), "osVersion": "",
+		"appData": h.Store.Dir(), "startupPath": startupPath(), "startTime": utc(processStart), "buildTime": utc(buildTime()),
+		"packageVersion": h.version, "packageAuthor": AppName, "packageUpdateMechanism": map[bool]string{true: "docker", false: "builtIn"}[docker],
 	})
+}
+
+// processStart is when this process started, for the status startTime.
+var processStart = time.Now()
+
+// startupPath is the folder of the running binary.
+func startupPath() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	return filepath.Dir(exe)
+}
+
+// buildTime is the commit time of this build, or the start time when the
+// build carries none.
+func buildTime() time.Time {
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		for _, s := range bi.Settings {
+			if s.Key == "vcs.time" {
+				if t, err := time.Parse(time.RFC3339, s.Value); err == nil {
+					return t
+				}
+			}
+		}
+	}
+	return processStart
+}
+
+// sqliteVersion is the SQLite library version, or empty when it cannot be read.
+func (h *handler) sqliteVersion(r *http.Request) string {
+	var v string
+	_ = h.Store.Read().QueryRowContext(r.Context(), "SELECT sqlite_version()").Scan(&v)
+	return v
 }
 
 // folderKind returns the Library folder kind of this side.
@@ -40,7 +83,7 @@ func (h *handler) folderKind() string {
 
 // rootFolders lists this side's Library folders.
 func (h *handler) rootFolders(w http.ResponseWriter, r *http.Request) {
-	fs, err := database.Select[mediafiles.LibraryFolder](r.Context(), h.Store.Read(), "library_folders", "kind = ? ORDER BY id", h.folderKind())
+	fs, err := database.Select[mediafiles.LibraryFolder](r.Context(), h.Store.Read(), "library_folders", "kind = ? AND stand_in = 0 ORDER BY id", h.folderKind())
 	if err != nil {
 		internalError(w, err)
 		return

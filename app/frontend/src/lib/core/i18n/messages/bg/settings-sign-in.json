@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Само те могат да кажат откъде е дошло посещение.",
 	"settings.signIn.fixToSaveOne": "Поправете 1 ред, за да запазите",
 	"settings.signIn.fixToSaveOther": "Поправете {n} реда, за да запазите",
-	"settings.signIn.localSaved": "Локалната мрежа е запазена"
+	"settings.signIn.localSaved": "Локалната мрежа е запазена",
+	"settings.signIn.forgotTitle": "Забравена парола?",
+	"settings.signIn.forgotOn": "Показвай Забравена парола? на страницата за вход",
+	"settings.signIn.forgotNote": "Собственикът получава еднократен код от дневника на сървъра. Изключи го, ако всички влизат с единен вход. Командата reset-owner продължава да работи.",
+	"settings.signIn.forgotShown": "Забравена парола? е включено",
+	"settings.signIn.forgotHidden": "Забравена парола? е изключено"
 }

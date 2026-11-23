@@ -61,4 +61,9 @@ describe('failReason and statusDetail', () => {
 		expect(statusDetail({ phase: 'import_refused', state: 'finished', progress: 1, refused_why: 'the file is 50 MB, too small to be the full video; likely a fake' }, undefined)).toBe('the file is 50 MB, too small to be the full video; likely a fake');
 		expect(statusDetail({ phase: 'done', state: 'seeding', progress: 1, ratio: 1.5 }, undefined)).toBe('ratio 1.50');
 	});
+	it('says removal after seeding waits for the episodes a partly done import left (#521)', () => {
+		expect(statusDetail({ phase: 'done', state: 'finished', progress: 1, cleanup_wait: ['S02E01', 'S02E02'] }, undefined)).toBe('removal on hold: S02E01, S02E02 still to import');
+		expect(statusDetail({ phase: 'done', state: 'seeding', progress: 1, ratio: 1.5, cleanup_wait: ['S01E01', 'S01E02', 'S01E03', 'S01E04', 'S01E05', 'S01E06'] }, undefined))
+			.toBe('removal on hold: S01E01, S01E02, S01E03, S01E04 +2 still to import');
+	});
 });

@@ -25,7 +25,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	confirm := func(w http.ResponseWriter, r *http.Request, what string) bool {
 		return h.confirm.Confirmed(w, r, actor(r).ID, what)
 	}
-	(&PartHandlers{Parts: h.Parts, SafeMode: h.SafeMode, Actor: actor, Confirm: confirm, Event: h.ControlEvent}).Routes(m)
+	(&PartHandlers{Store: h.Store, Parts: h.Parts, SafeMode: h.SafeMode, Actor: actor, Confirm: confirm, Event: h.ControlEvent}).Routes(m)
 	(&accounts.ControlHandlers{Parts: h.Parts, States: h.States, ExitApp: h.ExitApp, Confirm: confirm, Event: h.ControlEvent,
 		LinkTest: h.linkTest}).Routes(m)
 }
@@ -60,6 +60,10 @@ func (h *Handlers) PartGate(m *http.ServeMux, next http.Handler) http.Handler {
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, pattern := m.Handler(r)
+		if parts.HandsOffRoutes[pattern] && h.Parts.HandsOffOn() {
+			webserver.WriteJSON(w, http.StatusConflict, map[string]string{"error": "hands-off mode is on", "text": parts.HandsOffFilesText})
+			return
+		}
 		o, ok := parts.RouteOwner(pattern)
 		if !ok || o == parts.Core || (h.Parts.SafeMode && parts.SafeLibrary[pattern]) {
 			next.ServeHTTP(w, r)
@@ -74,6 +78,10 @@ func (h *Handlers) PartGate(m *http.ServeMux, next http.Handler) http.Handler {
 			}
 		}
 		if !h.Parts.OwnerOn(o) {
+			if o == parts.Of(parts.Subtitles) && h.Parts.HandsOffOn() {
+				webserver.WriteJSON(w, http.StatusConflict, map[string]string{"error": "hands-off mode is on", "part": string(o), "text": parts.HandsOffSubtitlesReason})
+				return
+			}
 			webserver.WriteJSON(w, http.StatusConflict, PartOffBody(o))
 			return
 		}

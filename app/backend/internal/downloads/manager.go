@@ -84,6 +84,9 @@ type Manager struct {
 	// through the proxy with every address checked. Nil refuses such a send to
 	// qBittorrent or SABnzbd.
 	SourceTransport func(ctx context.Context, src domain.Source) (http.RoundTripper, error)
+	// PluginEngine is the download client a plugin serves (adapters
+	// plugin-torrent and plugin-usenet, URL plugin://<id>); nil means none.
+	PluginEngine func(id string) Engine
 	// SourceHeader gives headers a Source's own site needs to hand out a
 	// Release file, such as a sign-in cookie; nil or empty needs none. With
 	// one, HolyArrs fetches the file itself and sends it, so the Downloader
@@ -100,15 +103,21 @@ type Manager struct {
 	mu               sync.Mutex
 	engines          map[int64]Engine
 	engineGeneration map[int64]uint64
+	settled          map[int64]bool // imported Downloaders settleImported has fitted this run
 	wake             chan struct{}
 	rr               map[string]int           // round robin turn per protocol and priority
 	hosts            map[string]chan struct{} // one send at a time per host (a slot of one)
 	lastSend         map[string]time.Time
 	missed           map[int64]missCount // downloads missing from their Downloader, by id
+	emptySince       map[int64]time.Time // Downloaders that answer with none of the followed jobs, since when
+	sessions         map[int64]string    // a Downloader's client run id, by Downloader id
+	restarts         map[int64]time.Time // when that client last started again, by Downloader id
+	caps             map[int64]speedCap  // speed caps set by a person, by Downloader id
 	crawl            map[int64]crawlMark // speed windows of the crawling torrent rule, by download id
 	relinkTried      map[int64]time.Time // last look for a removed Downloader's download in the others, by download id
 	rereading        map[int64]bool      // downloads whose Import again reads their folder now
 	walking          map[int64]bool      // downloads whose folder walk has not returned yet, even after Import again gave up on it
+	retried          map[int64]retryMark // downloads whose waiting import is tried again on its own: how often, and the last try
 	packMu           sync.Mutex          // one Widen at a time
 }
 
@@ -119,6 +128,11 @@ type missCount struct {
 	n     int
 	at    time.Time
 	first time.Time
+}
+
+// speedCap is what a person capped a Downloader's speeds to, in bytes per second.
+type speedCap struct {
+	down, up int64
 }
 
 // releaseRefused is a send this Release can never make on any Downloader, so
@@ -144,12 +158,50 @@ type TagsError struct {
 func (m *Manager) Forget(id int64) {
 	m.mu.Lock()
 	delete(m.engines, id)
+	delete(m.sessions, id) // a new address may be another client, so its run id says nothing
+	delete(m.restarts, id)
 	if m.engineGeneration == nil {
 		m.engineGeneration = map[int64]uint64{}
 	}
 	m.engineGeneration[id]++
 	m.mu.Unlock()
 	m.Kick(id) // read with the new settings now, not after a widened wait
+}
+
+// SetSpeedLimit caps a Downloader's speeds in bytes per second now and for the
+// downloads it is given next; 0 removes a cap. It returns what the Downloader
+// refused.
+func (m *Manager) SetSpeedLimit(ctx context.Context, d domain.Downloader, down, up int64) error {
+	m.mu.Lock()
+	if m.caps == nil {
+		m.caps = map[int64]speedCap{}
+	}
+	before, had := m.caps[d.ID]
+	m.caps[d.ID] = speedCap{max(0, down), max(0, up)}
+	m.mu.Unlock()
+	err := m.ControlEngine(ctx, d, func(e Engine) error {
+		return asController(e, func(c Controller) error { return c.SetSpeedLimit(ctx, down, up) })
+	})
+	if err != nil {
+		// A cap the Downloader did not take is not promised to the next add.
+		m.mu.Lock()
+		if m.caps[d.ID] == (speedCap{max(0, down), max(0, up)}) {
+			if had {
+				m.caps[d.ID] = before
+			} else {
+				delete(m.caps, d.ID)
+			}
+		}
+		m.mu.Unlock()
+	}
+	return err
+}
+
+// speedCapOf returns the caps a person set on a Downloader.
+func (m *Manager) speedCapOf(id int64) speedCap {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.caps[id]
 }
 
 // Generation is the Downloader's engine generation. It moves on every Forget
@@ -189,7 +241,13 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 			return nil, errors.New("the Downloader's key cannot be read from the vault")
 		}
 	}
+	return m.engineWith(d, secret)
+}
+
+// engineWith builds the built-in adapter for d with the given key or password.
+func (m *Manager) engineWith(d domain.Downloader, secret string) (Engine, error) {
 	h := Client(d.URL, d.AllowLocal)
+	caps := m.speedCapOf(d.ID)
 	switch d.Adapter {
 	case "qbittorrent":
 		q := NewQbittorrentKey(d.URL, secret, h)
@@ -218,11 +276,18 @@ func (m *Manager) EngineFor(ctx context.Context, d domain.Downloader) (Engine, e
 		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
 		e.Keep = m.libraryFolders
 		return e, nil
+	case "plugin-torrent", "plugin-usenet":
+		id, ok := PluginID(d.URL)
+		if !ok || m.PluginEngine == nil {
+			return nil, errors.New("plugin download clients are not available")
+		}
+		return m.PluginEngine(id), nil
 	case "aria2":
 		e := NewAria2(d.URL, secret, h)
 		e.Category, e.Others = d.Category, otherCategories(d)
 		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
 		e.Keep = m.libraryFolders
+		e.LimitDown, e.LimitUp = caps.down, caps.up // a cap set on this Downloader goes on what it takes
 		return e, nil
 	}
 	return nil, fmt.Errorf("no engine for adapter %q", d.Adapter)
@@ -234,7 +299,7 @@ func (m *Manager) libraryFolders(ctx context.Context) ([]string, error) {
 	if m.Store == nil {
 		return nil, errors.New("no database")
 	}
-	fs, err := database.Select[mediafiles.LibraryFolder](ctx, m.Store.Read(), "library_folders", "1 = 1")
+	fs, err := database.Select[mediafiles.LibraryFolder](ctx, m.Store.Read(), "library_folders", "stand_in = 0")
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
 	}

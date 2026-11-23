@@ -8,7 +8,8 @@
 		vars,
 		links = {},
 		linkClass,
-		codeClass
+		codeClass,
+		external = false
 	}: {
 		key: string;
 		vars?: Record<string, string | number>;
@@ -16,9 +17,11 @@
 		links?: Record<string, string>;
 		linkClass?: string;
 		codeClass?: string;
+		/** Links open another site in a new tab. */
+		external?: boolean;
 	} = $props();
 
 	const parts = $derived(splitWords(t(key)).map((p) => ({ tag: p.tag, text: fillWords(p.text, vars) })));
 </script>
 
-{#each parts as p, i (i)}{#if p.tag === 'b' || p.tag === 'strong'}<b>{p.text}</b>{:else if p.tag === 'em'}<em>{p.text}</em>{:else if p.tag === 'code'}<code class={codeClass}>{p.text}</code>{:else if p.tag === 'mono'}<span class="mono">{p.text}</span>{:else if p.tag && links[p.tag] !== undefined}<a class={linkClass} href={links[p.tag]}>{p.text}</a>{:else}{p.text}{/if}{/each}
+{#each parts as p, i (i)}{#if p.tag === 'b' || p.tag === 'strong'}<b>{p.text}</b>{:else if p.tag === 'em'}<em>{p.text}</em>{:else if p.tag === 'code'}<code class={codeClass}>{p.text}</code>{:else if p.tag === 'mono'}<span class="mono">{p.text}</span>{:else if p.tag && links[p.tag] !== undefined}<a class={linkClass} href={links[p.tag]} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>{p.text}</a>{:else}{p.text}{/if}{/each}

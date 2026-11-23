@@ -52,6 +52,13 @@ describe('sources', () => {
 		expect(b.proxy).toBe('socks5://me@10.0.0.2:1080');
 	});
 
+	it('round-trips the languages a name without one carries (#439)', () => {
+		expect(emptyForm().no_language_languages).toBe('');
+		const f = formFrom({ ...saved, no_language_languages: ['uk'] });
+		expect(f.no_language_languages).toBe('uk');
+		expect(formBody({ ...f, no_language_languages: ' UK, it;' }).no_language_languages).toEqual(['uk', 'it']);
+	});
+
 	it('keeps the Downloader a Source sends to', () => {
 		expect(emptyForm().downloader_id).toBe(0);
 		expect(formBody(formFrom({ ...saved, downloader_id: 4 })).downloader_id).toBe(4);
@@ -104,5 +111,43 @@ describe('source health by reason', async () => {
 		expect(pausedUntil({})).toBe('');
 		expect(pausedUntil({ until: 'nope' })).toBe('');
 		expect(pausedUntil({ until: '2026-11-02T14:05:00Z' })).toMatch(/^Paused until /);
+	});
+});
+
+describe('a built-in site that asks for a user id', async () => {
+	const { builtInSites, pickSite } = await import('./api.ts');
+	it('sends the user id beside the passkey for IPTorrents only', () => {
+		const f = emptyForm();
+		f.format = 'site';
+		pickSite(f, 'iptorrents');
+		f.site_user = ' 2134 ';
+		f.api_key = 'passkey';
+		expect(formBody(f)).toMatchObject({ site: 'iptorrents', site_user: '2134', api_key: 'passkey', protocol: 'torrent' });
+		pickSite(f, 'knaben');
+		expect(formBody(f)).not.toHaveProperty('site_user');
+		expect(builtInSites.filter((s) => s.user).map((s) => s.id)).toEqual(['iptorrents']);
+	});
+	it('shows the stored user id when a Source is edited', () => {
+		const view = { name: 'IPT', format: 'site', site: 'iptorrents', site_user: '2134', protocol: 'torrent', url: 'https://iptorrents.com', api_key: 'kept', priority: 25 } as unknown as SourceView;
+		expect(formFrom(view).site_user).toBe('2134');
+		expect(formFrom({ ...view, site_user: undefined }).site_user).toBe('');
+		expect(formFrom(view).site_login).toBe('passkey');
+	});
+	it('sends the browser cookie way with its user agent and no user id', () => {
+		const f = emptyForm();
+		f.format = 'site';
+		pickSite(f, 'iptorrents');
+		f.site_login = 'cookie';
+		f.site_user = '2134';
+		f.site_agent = ' Mozilla/5.0 ';
+		f.api_key = 'uid=1; pass=x';
+		const body = formBody(f);
+		expect(body).toMatchObject({ site_login: 'cookie', site_agent: 'Mozilla/5.0', api_key: 'uid=1; pass=x' });
+		expect(body).not.toHaveProperty('site_user');
+		f.site_login = 'passkey';
+		expect(formBody(f)).toMatchObject({ site_login: 'passkey', site_user: '2134' });
+		expect(formBody(f)).not.toHaveProperty('site_agent');
+		const view = { name: 'IPT', format: 'site', site: 'iptorrents', site_login: 'cookie', site_agent: 'UA', protocol: 'torrent', url: 'https://iptorrents.com', api_key: 'kept', priority: 25 } as unknown as SourceView;
+		expect(formFrom(view)).toMatchObject({ site_login: 'cookie', site_agent: 'UA' });
 	});
 });

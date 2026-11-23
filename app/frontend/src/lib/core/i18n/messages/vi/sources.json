@@ -85,5 +85,21 @@
 	"sources.uses.auto": "tự tìm kiếm",
 	"sources.uses.feed": "danh sách mới nhất",
 	"sources.uses.hand": "tìm thủ công",
-	"sources.uses.none": "không dùng"
+	"sources.uses.none": "không dùng",
+	"sources.bridge.removeTitle": "Gỡ {name}?",
+	"sources.bridge.find": "Tìm {name} trong mạng của tôi",
+	"sources.bridge.noneFound": "Không có {name} nào phản hồi trong mạng của bạn.",
+	"sources.bridge.keyFound": "Đã lấy khóa từ {name}",
+	"sources.bridge.keyKept": "{name} không cung cấp khóa (đang bật đăng nhập). Dùng Lấy khóa để sao chép.",
+	"sources.bridge.keyKeptJackett": "Jackett không cung cấp khóa (có mật khẩu quản trị). Dùng Lấy khóa để sao chép.",
+	"sources.bridge.notReached": "Không kết nối được {name}.",
+	"sources.bridge.brings.title": "Những gì được chuyển sang",
+	"sources.bridge.brings.sites": "Các indexer của nó, dưới dạng Nguồn",
+	"sources.bridge.brings.categories": "Danh mục của chúng",
+	"sources.bridge.brings.search": "Tìm kiếm đi qua {name}",
+	"sources.bridge.brings.sync": "Thay đổi trong {name} được chuyển sang",
+	"sources.bridge.brings.stays": "Các indexer của bạn vẫn được thiết lập trong {name}.",
+	"sources.bridge.brings.had": "Đã có {n} indexer ở đây",
+	"sources.bridge.brings.hadFrom": "Đã nhập qua {apps}",
+	"sources.bridge.brings.keyKept": "Để trống khóa để dùng khóa họ đã có."
 }
