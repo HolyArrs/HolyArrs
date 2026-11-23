@@ -47,6 +47,99 @@ func TestSabnzbdHealthChecksTheKey(t *testing.T) {
 	}
 }
 
+func TestSabnzbdHealthWithAuthenticatedVersion(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("apikey") != sabKey {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"error":"Not Authorised"}`))
+			return
+		}
+		switch r.URL.Query().Get("mode") {
+		case "version":
+			_, _ = w.Write([]byte(`{"version":"4.2.2"}`))
+		case "queue":
+			_, _ = w.Write([]byte(`{"queue":{"slots":[]}}`))
+		default:
+			t.Errorf("unexpected mode: %s", r.URL.Query().Get("mode"))
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	h, err := NewSabnzbd(srv.URL, sabKey, nil).Health(context.Background())
+	if err != nil || h.Version != "4.2.2" {
+		t.Fatalf("health %+v %v", h, err)
+	}
+	if _, err := NewSabnzbd(srv.URL, "wrong", nil).Health(context.Background()); err == nil {
+		t.Fatal("wrong key accepted")
+	}
+}
+
+func TestSabnzbdOptionalModes(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		status   int
+		body     string
+		optional bool
+	}{
+		{"unsupported", 404, `{"error":"API Not Found"}`, true},
+		{"bad address", 404, "404 page not found", false},
+		{"unauthorized", 401, `{"error":"Not Authorised"}`, false},
+		{"server error", 500, `{"error":"API Not Found"}`, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				q := r.URL.Query()
+				if q.Get("apikey") != sabKey {
+					t.Error("missing API key")
+				}
+				switch q.Get("mode") {
+				case "get_cats", "fullstatus":
+					w.WriteHeader(tc.status)
+					_, _ = w.Write([]byte(tc.body))
+				case "addfile":
+					if q.Get("cat") != "tv" {
+						t.Errorf("category %q", q.Get("cat"))
+					}
+					_, _ = w.Write([]byte(`{"status":true,"nzo_ids":["job-1"]}`))
+				default:
+					t.Errorf("unexpected mode: %s", q.Get("mode"))
+					w.WriteHeader(http.StatusBadRequest)
+				}
+			}))
+			t.Cleanup(srv.Close)
+			s := NewSabnzbd(srv.URL, sabKey, nil)
+			ctx := context.Background()
+			ok, err := s.HasCategory(ctx, "tv")
+			if tc.optional {
+				if err != nil || !ok {
+					t.Errorf("category %v %v", ok, err)
+				}
+			} else if err == nil {
+				t.Error("category failure ignored")
+			}
+			folders, err := s.finishedFolders(ctx, []string{"tv"})
+			if tc.optional {
+				if err != nil || len(folders) != 0 {
+					t.Errorf("folders %v %v", folders, err)
+				}
+			} else if err == nil {
+				t.Error("folder failure ignored")
+			}
+			id, err := s.Add(ctx, AddRequest{File: []byte("nzb"), Category: "tv"})
+			if tc.optional {
+				if err != nil || id != "job-1" {
+					t.Errorf("add %q %v", id, err)
+				}
+			} else if err == nil {
+				t.Error("add ignored category failure")
+			}
+			if _, err := s.call(ctx, "get_cats", nil, true); err == nil {
+				t.Error("required call ignored failure")
+			}
+		})
+	}
+}
+
 func TestSabnzbdQueueStates(t *testing.T) {
 	f := &fakeSab{queue: "queue-downloading.json"}
 	s := NewSabnzbd(startSab(t, f), sabKey, nil)

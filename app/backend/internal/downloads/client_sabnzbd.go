@@ -22,6 +22,7 @@ import (
 var ErrNoCategory = errors.New("the category does not exist in SABnzbd; add it there first (Config > Categories)")
 
 var errSabNo = errors.New("sabnzbd said no")
+var errSabUnsupported = errors.New("sabnzbd mode is not supported")
 
 var trailLink = regexp.MustCompile(`\s+-\s+https?://\S+$`)
 
@@ -83,7 +84,7 @@ func NewSabnzbd(base, key string, h *http.Client) *Sabnzbd {
 
 // Health reports whether SABnzbd answers and accepts the key.
 func (s *Sabnzbd) Health(ctx context.Context) (Health, error) {
-	b, err := s.call(ctx, "version", nil, false)
+	b, err := s.call(ctx, "version", nil, true)
 	if err != nil {
 		return Health{}, err
 	}
@@ -99,9 +100,13 @@ func (s *Sabnzbd) Health(ctx context.Context) (Health, error) {
 	return Health{Version: v.Version, At: time.Now().UTC()}, nil
 }
 
-// HasCategory reports whether cat exists in SABnzbd.
+// HasCategory reports whether cat exists in SABnzbd. Compatible clients that
+// cannot list categories leave validation to the add call.
 func (s *Sabnzbd) HasCategory(ctx context.Context, cat string) (bool, error) {
 	b, err := s.call(ctx, "get_cats", nil, true)
+	if errors.Is(err, errSabUnsupported) {
+		return true, nil
+	}
 	if err != nil {
 		return false, err
 	}
@@ -120,6 +125,9 @@ func (s *Sabnzbd) HasCategory(ctx context.Context, cat string) (bool, error) {
 // Other category folders sit inside the completed one.
 func (s *Sabnzbd) finishedFolders(ctx context.Context, cats []string) ([]string, error) {
 	b, err := s.call(ctx, "fullstatus", url.Values{"skip_dashboard": {"1"}}, true)
+	if errors.Is(err, errSabUnsupported) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -323,6 +331,13 @@ func (s *Sabnzbd) do(req *http.Request, mode string) ([]byte, error) {
 		return nil, fmt.Errorf("sabnzbd refused the call (%s)", resp.Status)
 	}
 	if resp.StatusCode == http.StatusNotFound {
+		// iPlayarr distinguishes an unsupported mode from a missing API URL.
+		var e struct {
+			Error string `json:"error"`
+		}
+		if json.Unmarshal(b, &e) == nil && e.Error == "API Not Found" {
+			return nil, fmt.Errorf("sabnzbd %s: %w", mode, errSabUnsupported)
+		}
 		return nil, fmt.Errorf("sabnzbd %s: no API at this address", mode)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
