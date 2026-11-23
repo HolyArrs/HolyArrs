@@ -233,11 +233,15 @@ func foldSource(to, from *SourcePlan) {
 		}
 	}
 	for _, k := range to.Kinds {
-		if cs := from.Categories[k]; len(cs) > 0 && len(to.Categories[k]) == 0 {
-			if to.Categories == nil {
-				to.Categories = map[string][]int{}
+		// Another app of the same kind (a 4K Sonarr) may search other
+		// categories on the same site: the Source searches both.
+		for _, c := range from.Categories[k] {
+			if !slices.Contains(to.Categories[k], c) {
+				if to.Categories == nil {
+					to.Categories = map[string][]int{}
+				}
+				to.Categories[k] = append(slices.Clone(to.Categories[k]), c)
 			}
-			to.Categories[k] = slices.Clone(cs)
 		}
 	}
 	to.MultiLanguages = appendNew(to.MultiLanguages, from.MultiLanguages...)
