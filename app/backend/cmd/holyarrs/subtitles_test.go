@@ -167,6 +167,18 @@ func TestSubtitleRoutes(t *testing.T) {
 		t.Fatalf("%+v", ch)
 	}
 	do(t, "POST", u+"/files/9999/subtitles/choices", "", 404)
+	// A language can be named: German is outside the wish and listed too, Spanish
+	// is already listed and is not repeated; a bad body or language is refused.
+	var named struct {
+		Outcomes []struct{ Want struct{ Language string } }
+	}
+	decodeJSON(t, do(t, "POST", u+"/files/"+itoa(fileID)+"/subtitles/choices", `{"languages": ["German", "es"]}`, 200), &named)
+	if len(named.Outcomes) != 3 || named.Outcomes[2].Want.Language != "de" {
+		t.Fatalf("%+v", named)
+	}
+	do(t, "POST", u+"/files/"+itoa(fileID)+"/subtitles/choices", `{"languages": ["klingon"]}`, 400)
+	do(t, "POST", u+"/files/"+itoa(fileID)+"/subtitles/choices", `{"languages": "de"}`, 400)
+	do(t, "POST", u+"/files/"+itoa(fileID)+"/subtitles/choices", `{`, 400)
 	do(t, "POST", u+"/files/"+itoa(fileID)+"/subtitles/choose", `{"site": "Lab", "key": "nope"}`, 404)
 	c := ch.Outcomes[0].Choices[0]
 	var saved struct{ Path string }

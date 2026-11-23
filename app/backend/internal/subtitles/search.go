@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +32,10 @@ type SearchOptions struct {
 	BetterDays int
 	// Show only lists the candidates for a person to pick; nothing is saved.
 	Show bool
+	// Languages, with Show, also lists candidates for these languages when the
+	// File already has them or the wish does not name them. Without it a
+	// language is listed only while it is missing or HolyArrs saved it.
+	Languages []string
 	// NoTranslate never queues a translation; the search a failed translation
 	// falls back to sets it.
 	NoTranslate bool
@@ -68,6 +73,10 @@ type target struct {
 // improvable ones when Better is set, and saves the best one over the pass mark.
 func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, by domain.Actor) (SearchResult, error) {
 	res := SearchResult{FileID: fileID, Outcomes: []Outcome{}, Asked: []string{}}
+	asked, err := askedLanguages(opt.Languages)
+	if err != nil {
+		return res, err
+	}
 	fc, err := s.load(ctx, fileID)
 	if err != nil {
 		return res, err
@@ -111,6 +120,13 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 					targets = append(targets, t)
 					break
 				}
+			}
+		}
+	}
+	if opt.Show {
+		for _, code := range asked {
+			if !slices.ContainsFunc(targets, func(t target) bool { return t.want.Language == code }) {
+				targets = append(targets, target{want: wantFor(st.Wish.Wants, code), beat: -1})
 			}
 		}
 	}
@@ -235,6 +251,35 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		res.Outcomes = append(res.Outcomes, out)
 	}
 	return res, nil
+}
+
+// askedLanguages turns the languages a person asked for into codes, once each.
+func askedLanguages(in []string) ([]string, error) {
+	if len(in) > MaxWishLanguages {
+		return nil, ErrTooManyWants
+	}
+	var out []string
+	for _, l := range in {
+		code := NormLanguage(l)
+		if code == "" {
+			return nil, fmt.Errorf("%w: %q", ErrBadLanguage, l)
+		}
+		if !slices.Contains(out, code) {
+			out = append(out, code)
+		}
+	}
+	return out, nil
+}
+
+// wantFor is the wish's entry for a language, or a plain want for it when the
+// wish does not name the language.
+func wantFor(wants []Want, code string) Want {
+	for _, w := range wants {
+		if w.Language == code {
+			return w
+		}
+	}
+	return Want{Language: code, HearingImpaired: HINormal}
 }
 
 // afterTarget records how a target ended: its wish row state and an Event.

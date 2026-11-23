@@ -56,6 +56,24 @@ func Decode(w http.ResponseWriter, r *http.Request, v any, help string) bool {
 	return true
 }
 
+// DecodeOptional is Decode for a body the caller may leave out: an empty body
+// leaves v as it is. Anything else must be valid JSON for v.
+func DecodeOptional(w http.ResponseWriter, r *http.Request, v any, help string) bool {
+	err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxJSONBody)).Decode(v)
+	if errors.Is(err, io.EOF) {
+		return true
+	}
+	if tooBig(err) {
+		Fail(w, http.StatusRequestEntityTooLarge, "request body too large")
+		return false
+	}
+	if err != nil {
+		Fail(w, http.StatusBadRequest, help)
+		return false
+	}
+	return true
+}
+
 // DecodeKeys is Decode that also answers which top-level keys the body holds,
 // so a left-out field can take a saved default.
 func DecodeKeys(w http.ResponseWriter, r *http.Request, v any, help string) (map[string]json.RawMessage, bool) {

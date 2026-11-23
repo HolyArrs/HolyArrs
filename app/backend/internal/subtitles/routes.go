@@ -319,7 +319,13 @@ func (a *Handlers) subtitleChoices(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusNotFound, "no such File")
 		return
 	}
-	res, err := a.svc.Search(r.Context(), id, SearchOptions{Show: true}, actorOf(r))
+	var in struct {
+		Languages []string `json:"languages"`
+	}
+	if !webserver.DecodeOptional(w, r, &in, `send nothing, or {"languages": ["hr"]} to list candidates for those languages too`) {
+		return
+	}
+	res, err := a.svc.Search(r.Context(), id, SearchOptions{Show: true, Languages: in.Languages}, actorOf(r))
 	if err != nil {
 		subtitleError(w, err)
 		return

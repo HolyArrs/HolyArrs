@@ -17098,7 +17098,7 @@
     },
     "/api/v1/files/{id}/subtitles/choices": {
       "post": {
-        "description": "Asks every usable Subtitle site now and lists the scored candidates per wished language, best first, with the parts of each score. No subtitle file is saved; what the File has and wants is recorded first, and each site's answer counts against its limits, so this is a POST (send no body).",
+        "description": "Asks every usable Subtitle site now and lists the scored candidates per wished language, best first, with the parts of each score. No subtitle file is saved; what the File has and wants is recorded first, and each site's answer counts against its limits, so this is a POST. Send no body, or {\"languages\": [\"hr\"]} to list candidates for those languages too, even when the File already has them or the wish does not name them.",
         "operationId": "subtitleChoices",
         "parameters": [
           {
@@ -17110,6 +17110,24 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "languages": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
         "responses": {
           "200": {
             "content": {

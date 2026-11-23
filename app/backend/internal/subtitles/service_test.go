@@ -713,3 +713,79 @@ func TestService_ChoicesAfterAHandPick(t *testing.T) {
 		t.Fatalf("a better search touched the hand pick: %+v %v", res, err)
 	}
 }
+
+// A language the File already has from somewhere else is not asked for again,
+// unless the person names it: then the sites are asked for it too.
+func TestService_ChoicesForANamedLanguage(t *testing.T) {
+	f := newFix(t)
+	site := &fakesite.Site{Subs: []fakesite.Sub{{ID: "s1", Kind: "movie", Language: "en", Title: "The Lantern", Year: 2010,
+		Release: "The.Lantern.2010.720p.WEB.x264-OTHER", Format: "srt", Text: fakesite.Cue("x", 1000)}}}
+	s, _ := svc(t, f, site)
+	wishAll(t, f, Want{Language: "en"})
+	ctx := context.Background()
+	fc, _ := s.load(ctx, f.movieFile)
+	if _, err := s.save(ctx, fc, fetchedRow(f.movieFile, "en"), fakesite.Cue("kept", 0), "srt", DefaultSettings(), nil, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.st.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE subtitles SET origin = 'found' WHERE file_id = ? AND state = 'present'", f.movieFile)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	res, err := s.Search(ctx, f.movieFile, SearchOptions{Show: true}, domain.System)
+	if err != nil || len(res.Outcomes) != 0 {
+		t.Fatalf("a subtitle from elsewhere is left alone by default: %+v %v", res, err)
+	}
+	// "eng", "en" and "EN" name one language, asked once.
+	res, err = s.Search(ctx, f.movieFile, SearchOptions{Show: true, Languages: []string{"eng", "en", "EN"}}, domain.System)
+	if err != nil || len(res.Outcomes) != 1 || res.Outcomes[0].Want.Language != "en" || len(res.Outcomes[0].Choices) != 1 {
+		t.Fatalf("named language: %+v %v", res, err)
+	}
+	if res.Outcomes[0].Result != "shown" || res.Outcomes[0].Path != "" {
+		t.Fatalf("listing saves nothing: %+v", res.Outcomes[0])
+	}
+}
+
+// A named language the wish does not mention is listed with a plain want, next
+// to the missing ones.
+func TestService_ChoicesForALanguageOutsideTheWish(t *testing.T) {
+	f := newFix(t)
+	site := &fakesite.Site{Subs: []fakesite.Sub{
+		{ID: "e1", Kind: "movie", Language: "en", Title: "The Lantern", Year: 2010, Release: "The.Lantern.2010.720p.WEB.x264-OTHER", Format: "srt", Text: fakesite.Cue("x", 1000)},
+		{ID: "d1", Kind: "movie", Language: "de", Title: "The Lantern", Year: 2010, Release: "The.Lantern.2010.720p.WEB.x264-OTHER", Format: "srt", Text: fakesite.Cue("y", 1000)},
+	}}
+	s, _ := svc(t, f, site)
+	wishAll(t, f, Want{Language: "en"})
+	res, err := s.Search(context.Background(), f.movieFile, SearchOptions{Show: true, Languages: []string{"German"}}, domain.System)
+	if err != nil || len(res.Outcomes) != 2 {
+		t.Fatalf("%+v %v", res, err)
+	}
+	if res.Outcomes[0].Want.Language != "en" || res.Outcomes[1].Want != (Want{Language: "de", HearingImpaired: HINormal}) || len(res.Outcomes[1].Choices) != 1 {
+		t.Fatalf("outcomes %+v", res.Outcomes)
+	}
+}
+
+// Languages are checked, there are at most a wish's worth, and they only mean
+// something to a search that lists.
+func TestService_ChoicesLanguageChecks(t *testing.T) {
+	f := newFix(t)
+	s, _ := svc(t, f, &fakesite.Site{})
+	wishAll(t, f, Want{Language: "en"})
+	ctx := context.Background()
+	if _, err := s.Search(ctx, f.movieFile, SearchOptions{Show: true, Languages: []string{"klingon"}}, domain.System); !errors.Is(err, ErrBadLanguage) {
+		t.Fatalf("an unknown language: %v", err)
+	}
+	if _, err := s.Search(ctx, f.movieFile, SearchOptions{Show: true, Languages: make([]string, MaxWishLanguages+1)}, domain.System); !errors.Is(err, ErrTooManyWants) {
+		t.Fatalf("too many: %v", err)
+	}
+	res, err := s.Search(ctx, f.movieFile, SearchOptions{Better: true, Languages: []string{"de"}}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, o := range res.Outcomes {
+		if o.Want.Language == "de" {
+			t.Fatalf("a search that saves ignores the named languages: %+v", res)
+		}
+	}
+}
