@@ -7,13 +7,14 @@
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { folderLabel, needLabel } from './view.ts';
+	import { folderLabel, needLabel, scopeWarnings } from './view.ts';
 	import type { Plugin, PluginResources } from './types.ts';
 
 	let { p, reload }: { p: Plugin; reload: () => Promise<void> } = $props();
 	// Older lists sent plain names; a plain name is a read-only folder.
 	const folders = $derived((p.access?.folders ?? []).map((f) => (typeof f === 'string' ? { name: f, mode: 'read' as const } : f)));
 	const needs = $derived(p.needs_approval ?? []);
+	const warns = $derived(scopeWarnings(p.scope_groups));
 	const ownHosts = $derived(p.id === 'tailscale');
 	let paths = $state<Record<string, string>>({});
 	let hosts = $state('');
@@ -61,7 +62,9 @@
 				<ul class="nchips xs">{#each needs as n (n)}<li class="nchip" dir="auto" title={needLabel(n, p)}><Icon name="plus" size={12} /><span class="nt">{needLabel(n, p)}</span></li>{/each}</ul>
 			{/if}
 		</div>
-		<div class="boxes">
+		<!-- The red warnings (network.forward and the like) show where the access is approved too, not only in the details. -->
+		{#each warns as w (w)}<p class="small warn" role="note" data-testid="approve-warning"><Icon name="alert" size={15} /><span>{w}</span></p>{/each}
+		{#if folders.length || ownHosts}<div class="boxes">
 		{#each folders as f (f.name)}
 			<label class="row">
 				<span class="small lab">{folderLabel(f)}</span>
@@ -75,7 +78,7 @@
 				<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder="headscale.example.com:8080" bind:value={hosts} data-testid="plugin-owner-hosts" />
 			</label>
 		{/if}
-		</div>
+		</div>{/if}
 		<fieldset class="limits boxes">
 			<legend class="small lab">{t('plugins.limitsTitle')}</legend>
 			{#each limitKeys as [k, label] (k)}
@@ -121,8 +124,11 @@
 	@media (min-width: 1100px) {
 		.approve { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; }
 		.approve > :not(.boxes):not(.limits) { grid-column: 1 / -1; }
-		.approve > .boxes:empty { display: none; }
+		/* No folders: the limits take the whole width. */
+		.approve:not(:has(> div.boxes)) > .limits { grid-column: 1 / -1; }
 	}
 	/* The heading, the notice and the new access share one line while they fit, then wrap. */
 	.head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
+	.warn { display: flex; gap: var(--s-2); align-items: flex-start; margin: 0; color: var(--fail-text, var(--fail)); }
+	.warn :global(svg) { flex: none; margin-top: 2px; }
 </style>
