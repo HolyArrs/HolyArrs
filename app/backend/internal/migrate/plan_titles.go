@@ -3,7 +3,11 @@ package migrate
 import (
 	"fmt"
 	"path"
+	"slices"
+	"strconv"
 	"strings"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // place finds the Library folder (here) and the one folder in it that hold
@@ -50,6 +54,43 @@ type titleCopy struct {
 	addr  string // the app's address ("" for a backup)
 }
 
+// unplacedCopy is a movie copy that could not be placed, kept so a copy of
+// the same movie that a later read of the other kind of Radarr places can
+// carry it as its 4K copy. note is its own not-moved line: another app's
+// lines can have the same from.
+type unplacedCopy struct {
+	tp    *TitlePlan
+	from  string
+	snap  int64
+	fourK bool
+	addr  string
+	note  NotMoved
+}
+
+// carryUnplacedFourK gives the movie just planned at idx the 4K copy of it
+// that an earlier read could not place, as mergeFourK does when the 4K
+// read comes second: the copy rides along with its reason instead of a
+// not-moved line, so the main copy still keeps its own app's file. An
+// unplaced 1080p copy keeps its not-placed line, as before.
+func (b *builder) carryUnplacedFourK(key string, idx int, fourK bool) {
+	u, ok := b.unplaced[key]
+	if !ok || !u.fourK || fourK || u.snap == b.snapID || u.addr != "" && u.addr == b.addr {
+		return
+	}
+	it := &b.items[GroupTitles].Items[idx]
+	if it.Title == nil || it.Title.FourK != nil {
+		return
+	}
+	fk := fourKPlanOf(it.Title, u.tp, u.from)
+	it.Title.FourK = fk
+	it.Detail += fourKNote(fk)
+	b.p.Mapped = append(b.p.Mapped, u.from)
+	if i := slices.Index(b.p.NotMoved, u.note); i >= 0 {
+		b.p.NotMoved = slices.Delete(b.p.NotMoved, i, i+1)
+	}
+	delete(b.unplaced, key)
+}
+
 // titleDetail says where a title's folder is, its Keep up to date choice
 // and its Release gate, for the plan's line.
 func titleDetail(tp *TitlePlan, monitored bool, gateNote string) string {
@@ -62,13 +103,17 @@ func titleDetail(tp *TitlePlan, monitored bool, gateNote string) string {
 
 // fourKPlanOf takes a movie copy's plan as the 4K copy of a merged title
 // whose main copy is main. A 4K copy in the main copy's own folder (one
-// folder holding both apps' files) is not placed: each Version needs a
-// folder of its own, so the real run could not add it.
+// folder holding both apps' files), or in a folder whose name a Version
+// cannot keep, is not placed: the real run could not add it.
 func fourKPlanOf(main, tp *TitlePlan, from string) *FourKPlan {
 	fk := &FourKPlan{Library: tp.Library, Folder: tp.Folder, Preset: tp.Preset, KeepUpToDate: tp.KeepUpToDate,
-		Qualities: tp.Qualities, Unresolved: tp.Unresolved, From: from}
-	if fk.Unresolved == "" && main.Unresolved == "" && main.Folder != "" && main.Library == fk.Library && strings.EqualFold(main.Folder, fk.Folder) {
+		Qualities: tp.Qualities, File: tp.File, Unresolved: tp.Unresolved, From: from}
+	switch {
+	case fk.Unresolved != "":
+	case main.Unresolved == "" && main.Folder != "" && main.Library == fk.Library && foldName(main.Folder) == foldName(fk.Folder):
 		fk.Unresolved = "it shares the folder " + path.Join(main.Library, main.Folder) + " with the main copy, and a 4K Version needs a folder of its own"
+	case !library.ExistingVersionFolderOK(fk.Folder):
+		fk.Unresolved = "its folder name " + strconv.Quote(fk.Folder) + " cannot be a Version's folder"
 	}
 	return fk
 }
@@ -147,4 +192,57 @@ func titlePlaces(t *TitlePlan) [][2]string {
 		out = append(out, [2]string{t.FourK.Library, t.FourK.Folder})
 	}
 	return out
+}
+
+// fourKClashes leaves out a merged movie's 4K copy whose folder another
+// planned title also uses, as its own folder or as its 4K copy's: adding
+// a Version refuses a folder that is taken, so the real run could not add
+// it, whatever order the titles come in. Folders match without regard to
+// case, as that check does. Titles' own folders are never changed.
+func (b *builder) fourKClashes() {
+	g := b.items[GroupTitles]
+	if g == nil {
+		return
+	}
+	key := func(lib, folder string) string { return lib + "\x00" + foldName(folder) }
+	users := map[string][]int{}
+	for i, it := range g.Items {
+		t := it.Title
+		if t == nil {
+			continue
+		}
+		if t.Folder != "" && t.Unresolved == "" {
+			users[key(t.Library, t.Folder)] = append(users[key(t.Library, t.Folder)], i)
+		}
+		if fk := t.FourK; fk != nil && fk.Folder != "" && fk.Unresolved == "" {
+			users[key(fk.Library, fk.Folder)] = append(users[key(fk.Library, fk.Folder)], i)
+		}
+	}
+	for i := range g.Items {
+		it := &g.Items[i]
+		if it.Title == nil || it.Title.FourK == nil || it.Title.FourK.Unresolved != "" || it.Title.FourK.Folder == "" {
+			continue
+		}
+		fk := it.Title.FourK
+		for _, j := range users[key(fk.Library, fk.Folder)] {
+			if j != i {
+				before := fourKNote(fk)
+				fk.Unresolved = "its folder " + path.Join(fk.Library, fk.Folder) + " is also used by " + g.Items[j].Name
+				it.Detail = strings.Replace(it.Detail, before, fourKNote(fk), 1)
+				break
+			}
+		}
+	}
+}
+
+// foldName lowers a folder name as SQLite's lower() does, letters A to Z
+// only: the way adding a Version compares folders, so the plan and the dry
+// run match the real run (on Linux "Ä" and "ä" are two folders).
+func foldName(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r >= 'A' && r <= 'Z' {
+			return r + ('a' - 'A')
+		}
+		return r
+	}, s)
 }

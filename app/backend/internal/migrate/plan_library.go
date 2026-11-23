@@ -632,6 +632,9 @@ func (b *builder) titleList(s *Snapshot) {
 			tp.Preset = "Standard"
 		}
 		tp.Qualities, tp.OldEpisodes = fileFacts(t.Files)
+		if kind == "movie" && len(t.Files) == 1 {
+			tp.File = t.Files[0].Name
+		}
 		tp.hasFiles = len(t.Files) > 0 || num(t.Extra["track_files"]) > 0
 		tp.History, tp.App = t.History, string(s.Kind)
 		for _, se := range t.Seasons {
@@ -676,6 +679,10 @@ func (b *builder) titleList(s *Snapshot) {
 		}
 		if tp.Unresolved != "" {
 			b.not(GroupTitles, from, name, "not placed: "+tp.Unresolved+"; add a path rule and plan again")
+			if _, seen := b.unplaced[key]; kind == "movie" && !seen {
+				b.unplaced[key] = unplacedCopy{tp: tp, from: from, snap: b.snapID, fourK: b.fourK[b.presetKey(s.Kind, t.ProfileID)], addr: b.addr,
+					note: b.p.NotMoved[len(b.p.NotMoved)-1]}
+			}
 			continue
 		}
 		detail := titleDetail(tp, t.Monitored, gateNote)
@@ -686,6 +693,9 @@ func (b *builder) titleList(s *Snapshot) {
 		b.add(GroupTitles, Item{Key: key, Name: name, From: from, Detail: detail, Title: tp})
 		if len(b.items[GroupTitles].Items) > before {
 			b.titleSrc[key] = titleCopy{snap: b.snapID, fourK: b.fourK[b.presetKey(s.Kind, t.ProfileID)], idx: len(b.items[GroupTitles].Items) - 1, addr: b.addr}
+			if kind == "movie" {
+				b.carryUnplacedFourK(key, len(b.items[GroupTitles].Items)-1, b.fourK[b.presetKey(s.Kind, t.ProfileID)])
+			}
 		}
 		if tp.GateDelayDays != nil && len(b.items[GroupTitles].Items) > before {
 			gated++

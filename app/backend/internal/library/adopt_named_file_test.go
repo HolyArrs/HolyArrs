@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
@@ -24,6 +26,7 @@ func TestAdoptKeepsTheNamedFile(t *testing.T) {
 		{"Missing.1995.mkv", "Heat.1995.2160p.mkv"},
 		{"Heat (1995)-trailer.mkv", "Heat.1995.2160p.mkv"},
 		{"../Heat.1995.1080p.mkv", "Heat.1995.2160p.mkv"},
+		{`..\Heat (1995)\Heat.1995.1080p.mkv`, "Heat.1995.2160p.mkv"},
 		{"Extras/Heat.1995.1080p.mkv", "Heat.1995.2160p.mkv"},
 	} {
 		s := open(t)
@@ -57,6 +60,39 @@ func TestAdoptKeepsTheNamedFile(t *testing.T) {
 		}
 		if got := mainFile(); got != dir+"/"+c.want {
 			t.Fatalf("name %q: after a rescan the movie's file is %q, want %q", c.name, got, c.want)
+		}
+	}
+}
+
+// Where links are followed, the named file may be a link to the movie, as
+// listing the folder counts it; where they are not, the link is passed
+// over and the biggest plain video is the File, as before.
+func TestAdoptKeepsANamedLinkedFile(t *testing.T) {
+	for _, follow := range []bool{true, false} {
+		s := open(t)
+		lf := addFolder(t, s)
+		target := filepath.Join(t.TempDir(), "Heat.1995.1080p.mkv")
+		writeFile(t, target, strings.Repeat("h", 100))
+		writeFile(t, filepath.Join(lf.Path, "Heat (1995)", "Heat.1995.2160p.mkv"), strings.Repeat("u", 400))
+		if err := os.Symlink(target, filepath.Join(lf.Path, "Heat (1995)", "Heat.1995.1080p.mkv")); err != nil {
+			t.Skip("symlinks not available:", err)
+		}
+		old := importer.FollowLinks
+		importer.FollowLinks = follow
+		svc := &Service{Store: s, Metadata: adoptTMDB, Now: func() time.Time { return now }}
+		res, err := svc.Adopt(context.Background(), lf.ID, []AdoptChoice{{Folder: "Heat (1995)", TMDB: "949", File: "Heat.1995.1080p.mkv"}}, domain.System)
+		importer.FollowLinks = old
+		if err != nil || len(res) != 1 || res[0].TitleID == 0 || res[0].Error != "" {
+			t.Fatalf("follow %v: %+v %v", follow, res, err)
+		}
+		want := "Heat (1995)/Heat.1995.1080p.mkv"
+		if !follow {
+			want = "Heat (1995)/Heat.1995.2160p.mkv"
+		}
+		sl := slotsOf(t, s, res[0].TitleID)[0]
+		var f mediafiles.File
+		if sl.FileID == nil || database.Get(context.Background(), s.Read(), "files", *sl.FileID, &f) != nil || f.RelativePath != want {
+			t.Fatalf("follow %v: the movie's file is %+v, want %s", follow, f.RelativePath, want)
 		}
 	}
 }

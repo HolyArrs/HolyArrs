@@ -74,6 +74,32 @@ func TestPlanFourKCopySharingTheFolderIsNotPlaced(t *testing.T) {
 	}
 }
 
+// TestPlanFourKCopyInAnotherTitlesFolderIsNotPlaced: a merged movie's 4K
+// folder that another planned movie uses as its own folder (told by case
+// only) is not placed, in either read order, since the real run could not
+// add it; the other movie keeps its folder.
+func TestPlanFourKCopyInAnotherTitlesFolderIsNotPlaced(t *testing.T) {
+	hd := radarrOneMovie("/movies", "Bluray-1080p", true)
+	hd.Folders = append(hd.Folders, Folder{Path: "/movies4k"})
+	hd.Titles = append(hd.Titles, Title{SourceID: 2, Kind: "movie", Name: "Other", Year: 2000, IDs: map[string]string{"tmdb": "999"},
+		Path: "/movies4k/the matrix (1999)", Monitored: true, ProfileID: 1})
+	uhd := radarrOneMovie("/movies4k", "Remux-2160p", true)
+	for _, in := range [][]Input{{{1, hd}, {2, uhd}}, {{1, uhd}, {2, hd}}} {
+		p := BuildPlan(in, Choices{})
+		it := item(t, p, GroupTitles, "title:movie:tmdb:603")
+		fk := it.Title.FourK
+		if fk == nil || !strings.Contains(fk.Unresolved, "is also used by Other (2000)") ||
+			!strings.Contains(it.Detail, "its 4K copy is not placed: its folder /movies4k/The Matrix (1999) is also used by Other (2000)") ||
+			strings.Contains(it.Detail, "its 4K copy uses the folder") {
+			t.Fatalf("4K plan %+v detail %q", fk, it.Detail)
+		}
+		other := item(t, p, GroupTitles, "title:movie:tmdb:999")
+		if other.Title.Unresolved != "" || other.Title.Library != "/movies4k" || other.Title.Folder != "the matrix (1999)" {
+			t.Fatalf("the other movie's plan %+v", other.Title)
+		}
+	}
+}
+
 // TestPlanSameKindRadarrsImportOnce: two 1080p Radarrs, or two 4K ones,
 // keep today's "imported once" line for the second copy.
 func TestPlanSameKindRadarrsImportOnce(t *testing.T) {
@@ -155,5 +181,100 @@ func TestPlanMergesUnplacedFourKCopy(t *testing.T) {
 	}
 	if n, ok := notMoved(p, "radarr titles[0]"); !ok || !strings.Contains(n.Why, "not placed") {
 		t.Fatalf("unplaced 1080p copy %+v", n)
+	}
+}
+
+// TestPlanFourKCopyInAFolderAVersionCannotKeep: a 4K copy whose folder name
+// starts with a space cannot be a Version's folder, as adding the Version
+// checks, so the plan says the 4K copy is not placed, in either read order,
+// instead of promising it.
+func TestPlanFourKCopyInAFolderAVersionCannotKeep(t *testing.T) {
+	hd := radarrOneMovie("/movies", "Bluray-1080p", true)
+	uhd := radarrOneMovie("/movies4k", "Remux-2160p", true)
+	uhd.Titles[0].Path = "/movies4k/ The Matrix (1999)"
+	for _, in := range [][]Input{{{1, hd}, {2, uhd}}, {{1, uhd}, {2, hd}}} {
+		p := BuildPlan(in, Choices{})
+		it := item(t, p, GroupTitles, "title:movie:tmdb:603")
+		if it.Title.Folder != "The Matrix (1999)" || it.Title.FourK == nil {
+			t.Fatalf("main plan %+v", it.Title)
+		}
+		if !strings.Contains(it.Detail, `its 4K copy is not placed: its folder name " The Matrix (1999)" cannot be a Version's folder`) {
+			t.Fatalf("detail %q", it.Detail)
+		}
+	}
+}
+
+// TestPlanFolderCaseIsAToZOnly: folders are matched as adding a Version
+// matches them, letters A to Z in either case and every other letter as it
+// is, so "Ämélie (2001)" and "ämélie (2001)" are two folders and the 4K
+// copy is placed, while "AMÉLIE (2001)" and "amÉlie (2001)" are one.
+func TestPlanFolderCaseIsAToZOnly(t *testing.T) {
+	for _, c := range []struct {
+		main, fourK string
+		shared      bool
+	}{{"Ämélie (2001)", "ämélie (2001)", false}, {"AMÉLIE (2001)", "amÉlie (2001)", true}} {
+		hd := radarrOneMovie("/movies", "Bluray-1080p", true)
+		hd.Titles[0].Path = "/movies/" + c.main
+		uhd := radarrOneMovie("/movies", "Remux-2160p", true)
+		uhd.Titles[0].Path = "/movies/" + c.fourK
+		fk := item(t, BuildPlan([]Input{{1, hd}, {2, uhd}}, Choices{}), GroupTitles, "title:movie:tmdb:603").Title.FourK
+		if fk == nil || strings.Contains(fk.Unresolved, "shares the folder") != c.shared {
+			t.Fatalf("%q and %q: 4K plan %+v, want shared %v", c.main, c.fourK, fk, c.shared)
+		}
+	}
+}
+
+// TestPlanUnplacedFourKCopyReadFirst: a 4K copy that cannot be placed,
+// read before the 1080p copy, still rides along with the 1080p title with
+// its reason, as when it is read second, instead of a not-moved line; so
+// the main copy keeps the merged movie's rules for its file.
+func TestPlanUnplacedFourKCopyReadFirst(t *testing.T) {
+	hd := radarrOneMovie("/movies", "Bluray-1080p", true)
+	uhd := radarrOneMovie("/movies4k", "Remux-2160p", true)
+	uhd.Titles[0].Path = "/elsewhere/The Matrix (1999)"
+	for _, in := range [][]Input{{{1, uhd}, {2, hd}}, {{1, hd}, {2, uhd}}} {
+		p := BuildPlan(in, Choices{})
+		it := item(t, p, GroupTitles, "title:movie:tmdb:603")
+		if it.Title.Library != "/movies" || it.Title.FourK == nil || it.Title.FourK.Unresolved == "" || !strings.Contains(it.Detail, "its 4K copy is not placed:") {
+			t.Fatalf("plan %+v detail %q", it.Title, it.Detail)
+		}
+		for _, n := range p.NotMoved {
+			if n.Group == GroupTitles {
+				t.Fatalf("the merged movie is listed: %+v", n)
+			}
+		}
+	}
+}
+
+// TestPlanUnplacedFourKCopyKeepsOtherLines: carrying an unplaced 4K copy
+// takes away its own not-moved line only, not another movie's line with
+// the same from (both apps' first title is "radarr titles[0]").
+func TestPlanUnplacedFourKCopyKeepsOtherLines(t *testing.T) {
+	uhd := radarrOneMovie("/movies4k", "Remux-2160p", true)
+	uhd.Titles[0].Path = "/elsewhere/The Matrix (1999)"
+	hd := radarrOneMovie("/movies", "Bluray-1080p", true)
+	hd.Titles[0].SourceID = 2
+	hd.Titles = append([]Title{{SourceID: 1, Kind: "movie", Name: "Heat", Year: 1995, IDs: map[string]string{"tmdb": "949"},
+		Path: "/elsewhere/Heat (1995)", Monitored: true, ProfileID: 1}}, hd.Titles...)
+	p := BuildPlan([]Input{{1, uhd}, {2, hd}}, Choices{})
+	if it := item(t, p, GroupTitles, "title:movie:tmdb:603"); it.Title.FourK == nil || it.Title.FourK.Unresolved == "" {
+		t.Fatalf("the 4K copy was not carried: %+v", it.Title)
+	}
+	var lines []string
+	for _, n := range p.NotMoved {
+		if n.Group == GroupTitles {
+			lines = append(lines, n.From+" "+n.What)
+		}
+	}
+	if len(lines) != 1 || !strings.Contains(lines[0], "Heat") {
+		t.Fatalf("not-moved title lines %q, want only Heat's", lines)
+	}
+}
+
+// TestSameFileName: where the file system ignores case, a recorded name in
+// another case is the same file; where it does not, it is another file.
+func TestSameFileName(t *testing.T) {
+	if !sameFileName(true, "Movie.2160p.mkv", "MOVIE.2160P.MKV") || sameFileName(false, "Movie.2160p.mkv", "MOVIE.2160P.MKV") || !sameFileName(false, "a.mkv", "a.mkv") {
+		t.Fatal("file names compared without the file system's case rule")
 	}
 }

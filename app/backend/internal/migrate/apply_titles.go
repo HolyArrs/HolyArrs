@@ -185,7 +185,13 @@ func (r *run) title(it Item) (string, string) {
 			r.attn = AttnSeasons
 		}
 	}
+	// A merged movie's 4K copy as this run brings it: not at all when the
+	// main copy lands in the 4K copy's own folder.
+	fk := fourKAt(t, lib, fallback)
 	if r.dry {
+		// The folder this title takes here, so a merged movie's 4K copy
+		// later in this import is not promised it.
+		r.claim(mainHere(lib, fallback), t.Folder, claimMain)
 		res, d := ResAdopt, "uses the folder "+filepath.ToSlash(dir)+" where it is; no file is moved or renamed"
 		if fallback != "" {
 			res, d = ResCreate, "will be added to "+fallback+" as wanted with no files; needs attention: its old folder "+filepath.ToSlash(dir)+" is not on this server; fix its folder or add a path rule"
@@ -195,8 +201,8 @@ func (r *run) title(it Item) (string, string) {
 		if other != "" {
 			r.here, d = other, seasonsNote(d, other, res == ResAdopt)
 		}
-		if t.FourK != nil {
-			d += r.fourKDryWords(t.FourK)
+		if fk != nil {
+			d += r.fourKDryWords(fk)
 		}
 		return res, d
 	}
@@ -220,9 +226,7 @@ func (r *run) title(it Item) (string, string) {
 			// A merged movie's main copy keeps the file its own app
 			// recorded: the folder may hold the 4K app's bigger file too.
 			if t.FourK != nil {
-				if rel := recordedFile(lib, t.Folder, t.Qualities); rel != "" {
-					c.File = path.Base(rel)
-				}
+				c.File = mainCopyFile(lib, t)
 			}
 		}
 		err = r.withShowIDs(t, func(sid, o string) error {
@@ -282,20 +286,11 @@ func (r *run) title(it Item) (string, string) {
 	// quality read from its name and the file.
 	_ = r.recordQualities(id, t)
 	pr := r.presetID(t.Preset, t.Kind)
-	// A movie the 1080p app did not keep up to date but the 4K app did
-	// stays kept up to date as a title, with its main copy switched off,
-	// so its 4K copy can still be upgraded.
-	keepFourK := t.FourK != nil && t.FourK.KeepUpToDate && !t.KeepUpToDate && other == ""
 	err = r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		// A show whose seasons differ stays not kept up to date until the
 		// owner places its files and turns it on.
-		if err := SetKeepUpToDateTx(tx, id, t.KeepUpToDate && other == "" || keepFourK); err != nil {
+		if err := SetKeepUpToDateTx(tx, id, t.KeepUpToDate && other == ""); err != nil {
 			return err
-		}
-		if keepFourK {
-			if _, err := tx.Exec("UPDATE versions SET keep_up_to_date = 0 WHERE title_id = ? AND is_main = 1", id); err != nil {
-				return err
-			}
 		}
 		if t.Music != nil {
 			if err := r.applyMusicPolicyTx(tx, id, t.Music); err != nil {
@@ -325,8 +320,8 @@ func (r *run) title(it Item) (string, string) {
 	// undoing the title takes its 4K Version too. A failure here never
 	// fails or removes the main title; it only notes the line.
 	fourKNote := ""
-	if t.FourK != nil {
-		fourKNote = r.addFourK(id, t.FourK)
+	if fk != nil {
+		fourKNote = r.addFourK(id, fk) + r.keepForFourK(id, t, fk, other)
 	}
 	placed := 0
 	if other != "" && !noFiles && fallback == "" {
@@ -734,4 +729,32 @@ func (r *run) applyMusicPolicyTx(tx *sql.Tx, titleID int64, p *MusicPolicyPlan) 
 		}
 	}
 	return nil
+}
+
+// keepForFourK keeps a merged movie up to date for its 4K copy when the
+// 1080p app did not keep it up to date but the 4K app did: the title is
+// kept up to date with its main copy switched off, so the 4K copy can
+// still be upgraded. Only a 4K Version that came over and was saved kept
+// up to date counts; otherwise the title stays as the 1080p app had it.
+// The run that makes the title calls it, so undoing that run takes the
+// change back with the title. It returns what to add to the line.
+func (r *run) keepForFourK(id int64, t *TitlePlan, fk *FourKPlan, other string) string {
+	if fk == nil || !fk.KeepUpToDate || t.KeepUpToDate || other != "" {
+		return ""
+	}
+	// The 4K Version as saved: a look-only Library folder keeps it switched off.
+	if r.id("SELECT count(*) FROM versions WHERE title_id = ? AND four_k = 1 AND is_main = 0 AND keep_up_to_date = 1", id) == 0 {
+		return ""
+	}
+	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+		if err := SetKeepUpToDateTx(tx, id, true); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE versions SET keep_up_to_date = 0 WHERE title_id = ? AND is_main = 1", id)
+		return err
+	})
+	if err != nil {
+		return "; it is not kept up to date for its 4K copy: " + err.Error()
+	}
+	return ""
 }

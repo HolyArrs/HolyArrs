@@ -180,7 +180,7 @@ func AddVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in Versio
 	}
 	if in.FolderName != "" {
 		folder = strings.TrimSpace(in.FolderName)
-		if folder != in.FolderName || !(customFolderOK(folder) || in.ExistingFolder && validFolder(folder) && !strings.Contains(folder, "/")) {
+		if folder != in.FolderName || !(customFolderOK(folder) || in.ExistingFolder && ExistingVersionFolderOK(folder)) {
 			return v, ErrVersionFolder
 		}
 	}
@@ -493,6 +493,13 @@ func MainLabel(fourK bool) string {
 		return mediafiles.FourKName
 	}
 	return "Main"
+}
+
+// ExistingVersionFolderOK says a folder already on disk, named as another
+// app named it, can be kept as a Version's folder: the check adding a
+// Version with ExistingFolder makes, so the move's plan can make it first.
+func ExistingVersionFolderOK(folder string) bool {
+	return folder == strings.TrimSpace(folder) && (customFolderOK(folder) || validFolder(folder) && !strings.Contains(folder, "/"))
 }
 
 // customFolderOK says a Version's own folder name is safe: one folder, or

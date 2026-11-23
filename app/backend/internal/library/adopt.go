@@ -664,24 +664,10 @@ func (s *Service) adoptOne(ctx context.Context, lf mediafiles.LibraryFolder, c A
 	if v, ok := mainCandidateVideo(lf.Path, c.Folder, nil, false); ok {
 		a.File, a.Size = v.Path, v.Size
 	}
-	if v, ok := namedMovieVideo(lf.Path, c.Folder, c.File); ok && !fileOnly {
+	if v, ok := NamedMovieVideo(lf.Path, c.Folder, c.File); ok && !fileOnly {
 		a.File, a.Size = v.Path, v.Size
 	}
 	return s.adoptAs(ctx, lf, c, m, a, by)
-}
-
-// namedMovieVideo is the video called name directly in a movie folder,
-// when it is a plain file that is not a sample or an extra.
-func namedMovieVideo(root, folder, name string) (AdoptVideo, bool) {
-	rel := path.Join(folder, name)
-	if name == "" || path.Base(rel) != name || path.Dir(rel) != path.Clean(folder) {
-		return AdoptVideo{}, false
-	}
-	fi, err := os.Lstat(filepath.Join(root, filepath.FromSlash(rel)))
-	if err != nil || !fi.Mode().IsRegular() || !videoExt[strings.ToLower(path.Ext(name))] || sampleVideo(name) || MovieExtra(name) {
-		return AdoptVideo{}, false
-	}
-	return AdoptVideo{Path: rel, Size: fi.Size()}, true
 }
 
 // looseChoice says an adopt choice names a video file directly in the

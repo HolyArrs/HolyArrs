@@ -216,9 +216,11 @@
               "qualities": {
                 "": ""
               },
+              "file": "s",
               "unresolved": "s",
               "from": "s"
-            }
+            },
+            "file": "s"
           },
           "never_add": {
             "kind": "s",

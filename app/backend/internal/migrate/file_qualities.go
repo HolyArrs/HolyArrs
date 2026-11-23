@@ -157,6 +157,28 @@ func filesByTitle(rows []map[string]any) map[int64][]TitleFile {
 	return out
 }
 
+// movieFileNames is each title's recorded file by base name, whatever its
+// quality: Radarr keeps one file per movie. A title with two rows keeps
+// none, so a file is never guessed.
+func movieFileNames(rows []map[string]any) map[int64]string {
+	out, seen := map[int64]string{}, map[int64]int{}
+	for _, m := range rows {
+		p := str(m["relativepath"])
+		if p == "" {
+			continue
+		}
+		id := num(m["titleid"])
+		seen[id]++
+		out[id] = path.Base(strings.ReplaceAll(p, `\`, "/"))
+	}
+	for id, n := range seen {
+		if n > 1 {
+			delete(out, id)
+		}
+	}
+	return out
+}
+
 // oldEpisodesByFile groups the old app's episodes (API rows or a backup's
 // Episodes table) by the file that holds them.
 func oldEpisodesByFile(rows []any) map[int64][]OldEpisode {

@@ -25,6 +25,8 @@ type builder struct {
 	// second Radarr's 4K copy of a movie merges into one title.
 	fourK    map[string]bool
 	titleSrc map[string]titleCopy
+	// unplaced keeps a movie copy that could not be placed, by title key.
+	unplaced map[string]unplacedCopy
 	// snapRules are the Pick rules made from the current Snapshot's
 	// profiles; its default wait goes into them.
 	snapRules  []*RulesPlan
@@ -163,7 +165,7 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 	p := &Plan{covered: map[string]bool{}, Snapshots: []int64{}, Apps: []string{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Paths: []string{}}
 	b := &builder{p: p, rules: ch.PathRules, skip: map[string]bool{}, items: map[string]*Group{}, keys: map[string]bool{},
 		presets: map[string]string{}, imported: map[string]bool{}, noFormats: ch.NoFormats, rename: ch.Names == NamesRename, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
-		waits: map[string][]waitFrom{}, listNames: map[string]bool{}, fourK: map[string]bool{}, titleSrc: map[string]titleCopy{}}
+		waits: map[string][]waitFrom{}, listNames: map[string]bool{}, fourK: map[string]bool{}, titleSrc: map[string]titleCopy{}, unplaced: map[string]unplacedCopy{}}
 	for _, s := range ch.Skip {
 		b.skip[s] = true
 	}
@@ -212,6 +214,7 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 		p.Apps = append(p.Apps, string(x.Snap.Kind))
 		b.snapshot(x.Snap)
 	}
+	b.fourKClashes()
 	b.waitItems()
 	b.pathMaps()
 	p.NeedsInput = noteList(p.NeedsInput)

@@ -5,6 +5,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
 // looseOwner is the movie one of a loose candidate's videos belongs to.
@@ -34,4 +36,27 @@ func mainCandidateVideo(root, rel string, vids []AdoptVideo, loose bool) (AdoptV
 		return AdoptVideo{Path: rel, Size: fi.Size()}, true
 	}
 	return mainMovieVideo(root, rel)
+}
+
+// NamedMovieVideo is the video called name directly in a movie folder,
+// when it is a plain file (or, where links are followed, a link to one, as
+// listing the folder counts it) that is not a sample or an extra. A name
+// with either separator is refused, so a backslash can never leave the
+// folder on Windows.
+func NamedMovieVideo(root, folder, name string) (AdoptVideo, bool) {
+	rel := path.Join(folder, name)
+	if name == "" || strings.ContainsAny(name, `/\`) || path.Base(rel) != name || path.Dir(rel) != path.Clean(folder) {
+		return AdoptVideo{}, false
+	}
+	p := filepath.Join(root, filepath.FromSlash(rel))
+	fi, err := os.Lstat(p)
+	if err == nil && !fi.Mode().IsRegular() {
+		if linked, ok := importer.LinkedFile(p); ok {
+			fi = linked
+		}
+	}
+	if err != nil || !fi.Mode().IsRegular() || !videoExt[strings.ToLower(path.Ext(name))] || sampleVideo(name) || MovieExtra(name) {
+		return AdoptVideo{}, false
+	}
+	return AdoptVideo{Path: rel, Size: fi.Size()}, true
 }
