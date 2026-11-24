@@ -26,6 +26,7 @@
 	import { orderLabel, splitOutside } from './episode-groups.ts';
 	import { EpisodeOrder } from './episode-order.svelte.ts';
 	import { belowGoodEnough, pointsOf, shownEpisodes } from './episode-points.ts';
+	import { deriveSeasonPick, type SeasonPick } from './season-pick.ts';
 
 	let { own, folders, rules }: { own: OwnedTitle; folders: LibraryFolder[]; rules: PickRulesView[] } = $props();
 	const manage = $derived(own.manage);
@@ -198,20 +199,11 @@
 	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: folderName(f), checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
 
 	// One choice sets every season and new seasons together; a mix made season by season reads Custom.
-	type SeasonPick = 'all' | 'latest' | 'none';
-
 	const realSeasons = $derived((owned?.show?.seasons ?? []).filter((x) => x.number > 0));
 
 	const latestSeason = $derived(Math.max(0, ...realSeasons.map((x) => x.number)));
 
-	const seasonPick = $derived.by((): SeasonPick | 'custom' => {
-		const kept = realSeasons.filter((x) => x.keep_up_to_date);
-		const newOn = owned?.show?.new_seasons !== 'none';
-		if (kept.length === realSeasons.length && newOn) return 'all';
-		if (kept.length === 0 && !newOn) return 'none';
-		if (kept.length === 1 && kept[0].number === latestSeason && newOn) return 'latest';
-		return 'custom';
-	});
+	const seasonPick = $derived(deriveSeasonPick(owned?.show?.seasons ?? [], owned?.show?.new_seasons, owned?.show?.season_choice));
 
 	const seasonPickWords = $derived<Record<SeasonPick | 'custom', string>>({ all: t('discover.titleLibrary.pickAll'), latest: t('discover.titleLibrary.pickLatest'), none: t('discover.titleLibrary.pickNone'), custom: t('discover.titleLibrary.pickCustom') });
 
@@ -225,7 +217,10 @@
 				if (want !== x.keep_up_to_date) await api.put(`/titles/${o.id}/seasons/${x.number}`, { keep_up_to_date: want });
 			}
 			const newSeasons = pick === 'none' ? 'none' : 'all';
-			if (o.show?.new_seasons !== newSeasons) await api.put(`/titles/${o.id}`, { new_seasons: newSeasons });
+			const patch: Record<string, string> = {};
+			if (o.show?.new_seasons !== newSeasons) patch.new_seasons = newSeasons;
+			if (o.show?.season_choice !== pick) patch.season_choice = pick;
+			if (Object.keys(patch).length) await api.put(`/titles/${o.id}`, patch);
 			seasonEps = {};
 			openSeasons.clear();
 			await own.loadOwned(o.id);

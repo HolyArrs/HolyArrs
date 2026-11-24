@@ -30,6 +30,7 @@ type TitleChange struct {
 	LibraryFolderID *int64  `json:"library_folder_id"`
 	EpisodeOrder    *string `json:"episode_order"`
 	NewSeasons      *string `json:"new_seasons"`
+	SeasonChoice    *string `json:"season_choice"`
 	// EpisodeGroupID picks one of the show's TMDB episode orders; "" goes
 	// back to TMDB's own numbering.
 	EpisodeGroupID *string `json:"episode_group_id"`
@@ -82,7 +83,7 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 	switch {
 	case show && (c.ReleaseGate != nil || c.GateDelayDays != nil):
 		return res, ErrMovieOnly
-	case !show && (c.EpisodeOrder != nil || c.NewSeasons != nil || c.EpisodeGroupID != nil || c.PackWindow != nil):
+	case !show && (c.EpisodeOrder != nil || c.NewSeasons != nil || c.SeasonChoice != nil || c.EpisodeGroupID != nil || c.PackWindow != nil):
 		return res, ErrShowOnly
 	case c.PackWindow != nil && (*c.PackWindow < 0 || *c.PackWindow > MaxPackWindow):
 		return res, ErrBadPackWindow
@@ -90,6 +91,8 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		return res, ErrBadOrder
 	case c.NewSeasons != nil && *c.NewSeasons != "all" && *c.NewSeasons != "none":
 		return res, ErrBadNewSeasons
+	case c.SeasonChoice != nil && !ValidSeasonChoice(*c.SeasonChoice):
+		return res, ErrBadSeasonChoice
 	}
 	if c.EpisodeGroupID != nil && *c.EpisodeGroupID != "" {
 		if err := s.checkGroup(ctx, cur, *c.EpisodeGroupID); err != nil {
@@ -157,6 +160,12 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		}
 		if c.NewSeasons != nil {
 			t.NewPartsPolicy = *c.NewSeasons
+		}
+		if c.SeasonChoice != nil {
+			t.SeasonChoice = c.SeasonChoice
+			if *c.SeasonChoice != SeasonsFuture {
+				t.FutureFrom = nil
+			}
 		}
 		if c.PackWindow != nil {
 			t.PackWindow = *c.PackWindow
