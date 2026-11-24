@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Отмена",
 	"settings.schedules.stages": "Этапы",
 	"settings.schedules.stagesNote": "Приостановить или перезапустить их можно в разделе <a>Части</a>.",
-	"settings.schedules.allTime": "Всё время"
+	"settings.schedules.allTime": "Всё время",
+	"settings.schedules.skip.nothing": "Делать нечего",
+	"settings.schedules.skip.plexOff": "Выключено: включите «{setting}» в разделе «{page}»",
+	"settings.schedules.skip.plexNobody": "Делать нечего: никто не включил свой список просмотра Plex",
+	"settings.schedules.skip.settingOff": "Выключено: включите это в его настройках",
+	"settings.schedules.skip.starting": "Пропущено: HolyArrs ещё запускался",
+	"settings.schedules.took": "Заняло {time}",
+	"settings.schedules.finished": "{label}: готово",
+	"settings.schedules.nothingToDo": "{label}: делать нечего",
+	"settings.schedules.runFailed": "{label}: ошибка"
 }

@@ -69,6 +69,10 @@ func SSOFromEnv(urlBase string) (SSOOptions, error) {
 				return out, err
 			}
 		}
+		v.GroupsClaim = strings.TrimSpace(os.Getenv(prefix + "OIDC_GROUPS_CLAIM"))
+		if v.GroupRoles, err = parseGroupRoles(os.Getenv(prefix + "OIDC_GROUP_ROLES")); err != nil || !validGroupsClaim(v.GroupsClaim) {
+			return out, errors.New("HOLYARRS_OIDC_GROUPS_CLAIM must be one claim name and HOLYARRS_OIDC_GROUP_ROLES like admins=admin,family=member")
+		}
 		if path := os.Getenv(prefix + "OIDC_CLIENT_SECRET_FILE"); path != "" {
 			f, err := os.Open(path)
 			if err != nil {
@@ -175,7 +179,7 @@ func (a *Auth) ssoRoutes(m *http.ServeMux) {
 
 func (a *Auth) requireSSOLink(w http.ResponseWriter, r *http.Request) (webserver.Caller, bool) {
 	who, ok := webserver.From(r.Context())
-	if !ok || who.Via != "session" || !(who.LocalRecent || outsideCounts(who)) || who.MustTwoFactor {
+	if !ok || who.Via != "session" || !(who.LocalRecent || who.SetupRecent || outsideCounts(who)) || who.MustTwoFactor {
 		fail(w, http.StatusForbidden, "confirm your local password in My account before linking")
 		return webserver.Caller{}, false
 	}

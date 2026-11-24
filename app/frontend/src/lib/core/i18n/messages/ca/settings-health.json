@@ -14,7 +14,6 @@
 	"settings.health.none": "Cap resultat. Torna a comprovar per executar-les.",
 	"settings.health.since": "Des de",
 	"settings.health.settings": "Configuració de les comprovacions d'estat",
-	"settings.health.updateCheck": "Comprova si hi ha un HolyArrs més nou",
 	"settings.health.onlyChecks": "Només comprova. Mai instal·la.",
 	"settings.health.every": "Comprova les actualitzacions cada",
 	"settings.health.day": "dia",

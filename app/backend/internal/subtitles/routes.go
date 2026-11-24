@@ -48,6 +48,9 @@ func (a *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/files/{id}/subtitles/choose", a.chooseSubtitle)
 	m.HandleFunc("POST /api/v1/subtitles/{id}/sync", a.syncSubtitle)
 	m.HandleFunc("POST /api/v1/subtitles/{id}/turn-down", a.turnDownSubtitle)
+	m.HandleFunc("POST /api/v1/subtitles/{id}/clean", a.cleanSubtitle)
+	m.HandleFunc("POST /api/v1/titles/{id}/subtitles/clean", a.cleanTitleSubtitles)
+	m.HandleFunc("POST /api/v1/subtitles/clean", a.cleanAllSubtitles)
 	m.HandleFunc("GET /api/v1/subtitle-sites", a.listSubtitleSites)
 	m.HandleFunc("GET /api/v1/subtitle-sites/kinds", a.subtitleSiteKinds)
 	m.HandleFunc("POST /api/v1/subtitle-sites", a.addSubtitleSite)
@@ -87,8 +90,14 @@ func (a *Handlers) getSubtitleSettings(w http.ResponseWriter, r *http.Request) {
 
 func (a *Handlers) putSubtitleSettings(w http.ResponseWriter, r *http.Request) {
 	st := ReadSettings(r.Context(), a.store.Read()) // fields the request leaves out keep their current value
-	if !webserver.Decode(w, r, &st, `send any of languages, pass_mark_movie, pass_mark_episode, use_built_in, ignore_picture_tracks, hi_suffix, search_hours, better, better_hours, better_days, batch, adaptive, sync_from_fps, sync_to_fps, sync_step_ms`) {
+	// A sent clean map replaces the old one whole, so a removed language goes.
+	oldClean := st.Clean
+	st.Clean = nil
+	if !webserver.Decode(w, r, &st, `send any of languages, pass_mark_movie, pass_mark_episode, use_built_in, ignore_picture_tracks, hi_suffix, search_hours, better, better_hours, better_days, batch, adaptive, sync_from_fps, sync_to_fps, sync_step_ms, clean`) {
 		return
+	}
+	if st.Clean == nil {
+		st.Clean = oldClean
 	}
 	if err := SaveSettings(r.Context(), a.store, st, actorOf(r)); err != nil {
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
@@ -502,4 +511,39 @@ func limitOf(r *http.Request, def int) int {
 		return def
 	}
 	return n
+}
+
+func (a *Handlers) cleanSubtitle(w http.ResponseWriter, r *http.Request) {
+	id, ok := subID(r)
+	if !ok {
+		webserver.Fail(w, http.StatusNotFound, "no such subtitle")
+		return
+	}
+	changed, err := a.svc.CleanAgain(r.Context(), id, actorOf(r))
+	if err != nil {
+		subtitleError(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"changed": changed})
+}
+
+func (a *Handlers) cleanTitleSubtitles(w http.ResponseWriter, r *http.Request) {
+	t, ok := a.titleID(w, r)
+	if !ok {
+		return
+	}
+	n, err := a.svc.CleanTitle(r.Context(), t.ID, actorOf(r))
+	if err != nil {
+		subtitleError(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"changed": n})
+}
+
+func (a *Handlers) cleanAllSubtitles(w http.ResponseWriter, r *http.Request) {
+	if err := a.svc.QueueCleanAll(r.Context()); err != nil {
+		subtitleError(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"queued": true})
 }

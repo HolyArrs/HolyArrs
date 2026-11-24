@@ -85,5 +85,21 @@
 	"sources.uses.auto": "søker av seg selv",
 	"sources.uses.feed": "nyeste-liste",
 	"sources.uses.hand": "søk for hånd",
-	"sources.uses.none": "ikke i bruk"
+	"sources.uses.none": "ikke i bruk",
+	"sources.bridge.removeTitle": "Fjerne {name}?",
+	"sources.bridge.find": "Finn {name} på nettverket mitt",
+	"sources.bridge.noneFound": "Ingen {name} svarte på nettverket ditt.",
+	"sources.bridge.keyFound": "Fikk nøkkelen fra {name}",
+	"sources.bridge.keyKept": "{name} ga ikke ut nøkkelen (innlogging er på). Kopier den via Hent nøkkel.",
+	"sources.bridge.keyKeptJackett": "Jackett ga ikke ut nøkkelen (den har et administratorpassord). Kopier den via Hent nøkkel.",
+	"sources.bridge.notReached": "Kunne ikke nå {name}.",
+	"sources.bridge.brings.title": "Hva som blir med",
+	"sources.bridge.brings.sites": "Indekserne derfra, som Kilder",
+	"sources.bridge.brings.categories": "Kategoriene deres",
+	"sources.bridge.brings.search": "Søk går gjennom {name}",
+	"sources.bridge.brings.sync": "Endringer i {name} blir med",
+	"sources.bridge.brings.stays": "Indekserne dine forblir satt opp i {name}.",
+	"sources.bridge.brings.had": "{n} indeksere allerede her",
+	"sources.bridge.brings.hadFrom": "Importert via {apps}",
+	"sources.bridge.brings.keyKept": "La nøkkelen stå tom for å bruke den de allerede har."
 }

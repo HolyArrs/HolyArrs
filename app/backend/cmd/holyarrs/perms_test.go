@@ -29,13 +29,14 @@ func TestEveryRouteHasAPermission(t *testing.T) {
 	t.Parallel()
 	re := regexp.MustCompile(`m(?:ux)?\.Handle(?:Func)?\("([A-Z]+ [^"]*)"(\+RestorePath)?`)
 	public := map[string]bool{
-		"GET /healthz": true, "GET /readyz": true, "GET /api/v1/auth/state": true, "POST /api/v1/auth/setup": true, "POST /api/v1/auth/login": true,
+		"GET /healthz": true, "GET /readyz": true, "GET /ping": true, "GET /api/v1/auth/state": true, "POST /api/v1/auth/setup": true, "POST /api/v1/auth/login": true,
 		"POST /api/v1/auth/login/two-factor": true, "POST /api/v1/auth/plex/start": true, "POST /api/v1/auth/plex/finish": true,
 		"POST /api/v1/auth/media-server/{kind}": true, "GET /api/v1/auth/invites/{token}": true, "POST /api/v1/auth/invites/{token}": true,
 		"POST /api/v1/auth/setup/plex/start": true, "POST /api/v1/auth/setup/plex/finish": true,
 		"POST /api/v1/auth/setup/media-server/{kind}": true, "GET /api/v1/auth/setup/discover": true,
 		"POST /api/v1/auth/invites/{token}/plex/start": true, "POST /api/v1/auth/invites/{token}/plex/finish": true,
 		"POST /api/v1/auth/invites/{token}/media-server/{kind}": true,
+		"POST /api/v1/auth/owner-reset/code":                    true, "POST /api/v1/auth/owner-reset/check": true, "POST /api/v1/auth/owner-reset/finish": true,
 	}
 	seen := 0
 	for _, dir := range routePackages {

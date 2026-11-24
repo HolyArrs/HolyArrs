@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Avbryt",
 	"settings.schedules.stages": "Trinn",
 	"settings.schedules.stagesNote": "Sett dem på pause eller start dem på nytt under <a>Deler</a>.",
-	"settings.schedules.allTime": "Hele tiden"
+	"settings.schedules.allTime": "Hele tiden",
+	"settings.schedules.skip.nothing": "Ingenting å gjøre",
+	"settings.schedules.skip.plexOff": "Av: slå på {setting} i {page}",
+	"settings.schedules.skip.plexNobody": "Ingenting å gjøre: ingen har slått på Plex-ønskelisten sin",
+	"settings.schedules.skip.settingOff": "Av: slå det på i innstillingene",
+	"settings.schedules.skip.starting": "Hoppet over: HolyArrs startet fortsatt",
+	"settings.schedules.took": "Tok {time}",
+	"settings.schedules.finished": "{label} er ferdig",
+	"settings.schedules.nothingToDo": "{label}: ingenting å gjøre",
+	"settings.schedules.runFailed": "{label} mislyktes"
 }

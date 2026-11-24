@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "选择接下来要请求的内容",
 	"home.newPopular": "最新与热门",
 	"home.whatSTrending": "当前热门",
+	"home.gettingReady": "正在准备…",
 	"home.top10sAndComing": "Top 10 与即将推出",
 	"home.whatSNext": "接下来是什么",
 	"home.airDatesAndReleases": "播出日期和发行",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "本周上线的剧集和电影",
 	"home.popularThisWeek": "本周上线的热门作品",
 	"home.peopleCheck": "人员检查",
-	"home.cantReadUsers": "无法读取用户列表"
+	"home.cantReadUsers": "无法读取用户列表",
+	"home.joined.title": "欢迎，{name}",
+	"home.joined.find": "在{explore}或{search}中查找内容。",
+	"home.joined.ask": "在作品上点按{request}即可获取。你可以请求：",
+	"home.joined.track": "在{requests}中查看每一项。",
+	"home.joined.noLimit": "没有每周上限。",
+	"home.joined.gotIt": "知道了",
+	"home.joined.explore": "打开{explore}"
 }

@@ -13,6 +13,10 @@ const (
 	EnvAllowDesktopFolder = "HOLYARRS_ALLOW_DESKTOP_FOLDER"
 	// EnvConfigInMemory keeps the config folder in memory anyway.
 	EnvConfigInMemory = "HOLYARRS_CONFIG_IN_MEMORY"
+	// EnvAllowFuseFolder lifts the FUSE refusal (mergerfs and other FUSE
+	// kinds), for someone who chooses to keep /config there anyway. An
+	// Unraid user share (fuse.shfs) needs no override.
+	EnvAllowFuseFolder = "HOLYARRS_ALLOW_FUSE_FOLDER"
 )
 
 // ShareFix is the plain fix for a config folder refused as a share of this
@@ -22,15 +26,28 @@ func ShareFix(kind string) string {
 	case "9p":
 		return `This folder is shared from the host (Docker Desktop on Windows shares C:\ folders this way, and so do VM folder shares). The database is not safe there. Put /config on a named volume (holyarrs-config:/config), or on the VM's own disk. Media folders can stay where they are.`
 	case "fakeowner":
-		return "This folder is shared from the Mac by Docker Desktop, where file locks do not work, so the database is not safe there. Put /config on a named volume (holyarrs-config:/config). Media folders can stay where they are."
+		return "This folder is shared from the Mac by Docker Desktop, where file locks do not work, so the database is not safe there. Put /config on a named volume (holyarrs-config:/config). Media folders can stay where they are. If you have checked that file locks work in this folder, set " + EnvAllowDesktopFolder + "=1 to start HolyArrs on it anyway; HolyArrs then warns on every start."
 	case "fuse":
-		return "This is a FUSE filesystem (for example an Unraid user share under /mnt/user, mergerfs or rclone), where the database is not safe. On Unraid, use /mnt/<pool>/appdata/holyarrs, or set the appdata share to Exclusive access (turn on Permit exclusive shares in Settings > Global Share Settings first). On a Mac, use a named volume (holyarrs-config:/config). Otherwise put /config on a local disk."
+		return "This is a FUSE filesystem (for example mergerfs, rclone or sshfs), where the database is not safe. For mergerfs, put /config on one member disk of the pool. On Unraid, a user share under /mnt/user normally starts in a safer database mode; if it was refused, use /mnt/<pool>/appdata/holyarrs, or /mnt/disk1/appdata/holyarrs with no pool. On a Mac, use a named volume (holyarrs-config:/config). Otherwise put /config on a local disk. To keep it on this folder anyway, set " + EnvAllowFuseFolder + "=1; HolyArrs then warns on every start."
 	}
 	return "The database needs a local disk: put /config on a local disk of the machine that runs HolyArrs. Media folders can stay on the share."
 }
 
+// UnraidShareFix is the fix shown while /config is on an Unraid user share.
+const UnraidShareFix = "for full speed, map /config to a pool path (/mnt/<pool>/appdata/holyarrs), or to one array disk with no pool (/mnt/disk1/appdata/holyarrs), or set the appdata share to Exclusive access; keep the mover off appdata while HolyArrs runs"
+
+// UnraidUserShare reports a folder on an Unraid user share: the statfs
+// kind is fuse and the mount type is fuse.shfs. Only this FUSE kind is
+// adapted to; mergerfs and the rest stay refused.
+func UnraidUserShare(kind, mountType string) bool {
+	return kind == "fuse" && mountType == "fuse.shfs"
+}
+
 // DesktopFolderAllowed reports the Docker Desktop folder override.
 func DesktopFolderAllowed() bool { return on(EnvAllowDesktopFolder) }
+
+// FuseFolderAllowed reports the FUSE folder override.
+func FuseFolderAllowed() bool { return on(EnvAllowFuseFolder) }
 
 // ConfigInMemoryAllowed reports the in-memory override.
 func ConfigInMemoryAllowed() bool { return on(EnvConfigInMemory) }

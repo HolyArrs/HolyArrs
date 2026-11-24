@@ -16,6 +16,9 @@ var reNameTag = regexp.MustCompile(`^(.*\S)\s*\(([A-Za-z]{2}|\d{4})\)\s*$`)
 // "The Office (US)" gives "The Office", "us", 0 and "Doctor Who (2005)" gives
 // "Doctor Who", "", 2005. ok is false when the name has no such mark.
 func SplitNameTag(name string) (base, country string, year int, ok bool) {
+	if !strings.HasSuffix(strings.TrimSpace(name), ")") {
+		return "", "", 0, false // no mark; skips the slow pattern for nearly every name
+	}
 	m := reNameTag.FindStringSubmatch(name)
 	if m == nil {
 		return "", "", 0, false

@@ -5,11 +5,13 @@
 	import Button from '#lib/ui/Button.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
-	import { LibraryToolPage, adoptParts, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, oneTickPerTrack, type ByHandFile, type ByHandResult, type ByHandScan, type Pick } from '#lib/mediafiles/index.ts';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
+	import { FolderPicker, LibraryToolPage, adoptParts, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, oneTickPerTrack, type ByHandFile, type ByHandResult, type ByHandScan, type ImportMode, type Pick } from '#lib/mediafiles/index.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { bytes } from '#lib/core/format.ts';
+	import { stepLabel } from '#lib/downloads/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import type { AlbumSummary, EpisodeView, TitleView } from '#lib/core/types.ts';
 	import type { TrackView } from '#lib/music/index.ts';
@@ -26,6 +28,8 @@
 	let results = $state<Record<string, ByHandResult>>({});
 	let importing = $state(false);
 	let error = $state('');
+	let picking = $state(false);
+	let mode = $state<ImportMode>('copy');
 
 	// The match editor: one file at a time.
 	let editFor = $state<string | null>(null);
@@ -45,7 +49,7 @@
 	let trackId = $state<number | undefined>(undefined);
 
 	const files = $derived(scan?.files ?? []);
-	const items = $derived(itemsFor(files, picks, ticked));
+	const items = $derived(itemsFor(files, picks, ticked, mode));
 	const seasons = $derived([...new Set(episodes.map((e) => e.season))].sort((a, b) => a - b));
 	const seasonEps = $derived(episodes.filter((e) => e.season === season));
 	const pickedTrack = $derived(tracks.find((x) => x.id === trackId));
@@ -247,6 +251,7 @@
 				<label for="mi-path">{tr('library.byHand.folderOrFile')}</label>
 				<input id="mi-path" class="input mono" bind:value={path} placeholder="/downloads/complete/Some.Show.S01" autocomplete="off" spellcheck="false" aria-describedby="mi-where" />
 			</div>
+			{#if session.can('users')}<Button icon="folder" onclick={() => (picking = true)} disabled={importing}>{tr('library.byHand.browse')}</Button>{/if}
 			<Button type="submit" variant="primary" icon="search" busy={scanning} disabled={importing || !path.trim()}>{tr('library.byHand.scan')}</Button>
 		</form>
 		<p class="xs muted where" id="mi-where">{tr('library.byHand.where')} <a href={to('/settings/library-folders#import-folders')}>{tr('library.byHand.whereLink')}</a> {tr('library.byHand.whereEnd')}</p>
@@ -274,7 +279,7 @@
 									<input type="checkbox" bind:checked={ticked[f.path]} disabled={!!why || importing} aria-label={tr('library.byHand.importName', { name: ltr(f.name) })} />
 									<span class="mono small path">{f.name}</span>
 								</label>
-								<span class="meta xs muted">{bytes(f.size)}{#if f.quality}{' · '}{f.quality}{/if}</span>
+								<span class="meta xs muted">{bytes(f.size)}{#if f.quality}{' · '}{stepLabel(f.quality)}{/if}</span>
 							</div>
 							{#if f.kind === 'video' || p || f.guess.title_id || f.guess.reason}
 								<div class="match">
@@ -366,7 +371,10 @@
 						</li>
 					{/each}
 				</ul>
-				<p class="xs muted" data-testid="where-placed">{tr('library.byHand.wherePlaced')}</p>
+				<div class="mode">
+					<SegmentedControl label={tr('library.byHand.modeLabel')} bind:value={mode} testid="import-mode" options={[{ value: 'copy', label: tr('library.byHand.modeCopy') }, { value: 'move', label: tr('library.byHand.modeMove') }]} />
+				</div>
+				<p class="xs muted" data-testid="where-placed">{tr(mode === 'move' ? 'library.byHand.wherePlacedMove' : 'library.byHand.wherePlaced')}</p>
 				<div class="row end">
 					<span class="small muted">{tr('library.byHand.ticked', { n: items.length.toLocaleString(appLocale()) })}</span>
 					<Button variant="primary" icon="download" onclick={doImport} disabled={!items.length} busy={importing}>
@@ -380,6 +388,8 @@
 	{/if}
 {/if}
 </LibraryToolPage>
+
+<FolderPicker bind:open={picking} start={path} onpick={(p) => { path = p; void doScan(); }} />
 
 <style>
 	:global(.tp) .h2 { margin: 0 0 12px; font: var(--t-title3); }
@@ -408,10 +418,12 @@
 	.picks .field { margin-bottom: 0; min-width: 0; flex: 1 1 140px; }
 	.end { justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-5); }
 	.end.tight { margin-top: 0; }
+	.mode { margin-top: var(--s-4); max-width: 100%; }
 	.ok-text { color: var(--ok); }
 	.bad-text { color: var(--fail); }
 	@media (max-width: 600px) {
 		.pick > :global(.ui-btn), .end > :global(.ui-btn) { width: 100%; }
+		.mode :global([role='radiogroup']) { width: 100%; }
 		.top, .found li { align-items: flex-start; flex-direction: column; }
 	}
 </style>

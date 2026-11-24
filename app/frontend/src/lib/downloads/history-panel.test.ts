@@ -95,6 +95,8 @@ describe('panelView', () => {
 	});
 	it('a remove from the Downloader: files deleted, or kept and why', () => {
 		expect(panelView(one(ev('download_removed', { DownloadID: 3, Data: { delete_files: true } })), ctx).line).toBe('Removed from downloader · files deleted');
+		expect(panelView(one(ev('download_removed', { DownloadID: 3, Data: { moved_out: true } })), ctx).line).toBe("Moved out of HolyArrs's category in the downloader");
+		expect(panelView(one(ev('download_removed', { DownloadID: 3, Data: { outside: true } })), ctx).line).toBe('Removed outside HolyArrs');
 		expect(panelView(one(ev('download_removed', { DownloadID: 3, Data: { delete_files: false, kept: 'qBittorrent did not say where they are' } })), ctx).line).toBe('Removed from downloader · files kept: qBittorrent did not say where they are');
 	});
 	it('a rename: the new name and the old one', () => {

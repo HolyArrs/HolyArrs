@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: um ponto vermelho mostra o que precisa de atenção, e os testes de conexão dizem o problema exato.** Etiquetas do Plex para títulos pedidos, nomes no seu idioma e mais de 30 correções. Conecte apps por MCP com chaves que você controla. [Veja as novidades](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: mais de 150 correções e recursos de 101 pessoas.** Um sistema de plugins, um novo assistente de configuração e um modo sem intervenção que nunca mexe nos seus arquivos. [Veja as novidades](https://holyarrs.com/whats-new/)
 
 > Cada pôster, trailer e nota do seu HolyArrs vem de um servidor que eu mantenho e pago do meu bolso, para que continue grátis para todo mundo. Se o HolyArrs deixou sua noite de filme um pouco melhor, patrocinar mantém as luzes acesas para todos nós 💛
 >
@@ -374,7 +374,7 @@ A imagem não tem shell, então `docker exec -it holyarrs /bin/bash` não funcio
 - Trancado fora da conta de proprietário:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Número da versão:

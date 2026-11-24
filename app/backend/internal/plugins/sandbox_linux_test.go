@@ -9,9 +9,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
+
+	"golang.org/x/sys/unix"
 )
 
 // TestMain lets the test binary act as the sandbox helper.
@@ -32,6 +35,13 @@ func probeDirs(t *testing.T) (root, data, probe string) {
 		}
 	}
 	probe = filepath.Join(ver, "run-probe")
+	if pre := os.Getenv("HOLYARRS_PROBE"); pre != "" { // a prebuilt probe, for images without Go
+		b, err := os.ReadFile(pre)
+		if err != nil || os.WriteFile(probe, b, 0o700) != nil {
+			t.Fatalf("copy prebuilt probe: %v", err)
+		}
+		return root, data, probe
+	}
 	build := exec.Command("go", "build", "-o", probe, "./testdata/sandboxprobe")
 	build.Env = append(os.Environ(), "CGO_ENABLED=0")
 	if out, err := build.CombinedOutput(); err != nil {
@@ -208,7 +218,8 @@ func TestServerBinaryRunsSandboxHelper(t *testing.T) {
 		t.Fatalf("build server: %v\n%s", err, out)
 	}
 	ok := filepath.Join(data, "ok.txt")
-	cmd := exec.Command(server, sandboxHelperArg, data, "1", "", probe, "write", ok)
+	cfg := `{"data":"` + data + `","weaker":true,"net":"none"}`
+	cmd := exec.Command(server, sandboxHelperArg, cfg, probe, "write", ok)
 	cmd.Env = []string{}
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("helper mode: %v\n%s", err, out)
@@ -248,4 +259,56 @@ func TestLinuxSandboxCannotWriteCgroupLimits(t *testing.T) {
 	if after, _ := os.ReadFile(file); string(after) != string(before) {
 		t.Errorf("memory.max changed: %q -> %q", before, after)
 	}
+}
+
+// Without Landlock the default sandbox fails closed: it never allows a
+// weaker start on its own, keeps the cgroup caps, and says why the lock is
+// missing so the page can say what to fix.
+func TestDefaultSandboxWithoutLandlock(t *testing.T) {
+	for _, c := range []struct {
+		errno syscall.Errno
+		want  string
+	}{{unix.ENOSYS, FileLockOldKernel}, {unix.EPERM, FileLockBlocked}, {unix.EOPNOTSUPP, FileLockTurnedOff}, {unix.EINVAL, FileLockOldKernel}} {
+		sb, al := defaultSandbox(0, c.errno)
+		if sb.AllowWeaker || al.FileLock || al.FileLockReason != c.want {
+			t.Fatalf("%v: AllowWeaker=%v FileLock=%v reason=%q, want false/false/%q", c.errno, sb.AllowWeaker, al.FileLock, al.FileLockReason, c.want)
+		}
+		if want := cgroupActive(); al.Memory != want.Memory || al.Pids != want.Pids || al.GroupKill != want.GroupKill {
+			t.Fatalf("caps changed without Landlock: %+v, want %+v", al, want)
+		}
+	}
+	sb, al := defaultSandbox(3, 0)
+	if sb.AllowWeaker || !al.FileLock || al.FileLockReason != "" {
+		t.Fatalf("Landlock 3: %+v %+v", sb, al)
+	}
+}
+
+// Apply refuses a start without Landlock unless that start carries the
+// owner's opt-in; with Landlock the opt-in changes nothing.
+func TestApplyNeedsOptInWithoutLandlock(t *testing.T) {
+	spec := Spec{ID: "optin", Program: "/bin/true", DataDir: t.TempDir()}
+	cmd := exec.Command(spec.Program)
+	err := LinuxSandbox{Helper: "/bin/true"}.Apply(cmd, spec)
+	if landlockABI() >= 1 {
+		if err != nil {
+			t.Fatalf("with Landlock: %v", err)
+		}
+		if strings.Contains(cmd.Args[2], `"weaker"`) {
+			t.Fatalf("weaker flag set without opt-in: %v", cmd.Args)
+		}
+		LinuxSandbox{}.Cleanup(cmd)
+		return
+	}
+	if !errors.Is(err, ErrNoLandlock) {
+		t.Fatalf("no Landlock, no opt-in: %v, want ErrNoLandlock", err)
+	}
+	spec.AllowNoFileLock = true
+	cmd = exec.Command(spec.Program)
+	if err := (LinuxSandbox{Helper: "/bin/true"}).Apply(cmd, spec); err != nil {
+		t.Fatalf("no Landlock, opt-in: %v", err)
+	}
+	if !strings.Contains(cmd.Args[2], `"weaker":true`) {
+		t.Fatalf("weaker flag not passed to the helper: %v", cmd.Args)
+	}
+	LinuxSandbox{}.Cleanup(cmd)
 }

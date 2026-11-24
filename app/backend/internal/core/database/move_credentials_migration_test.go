@@ -40,7 +40,7 @@ func TestMoveCredentialsKeptByAllAppsMigration(t *testing.T) {
 	}
 }
 
-// 0102 keeps every saved key (with address '') and lets one app hold a key
+// 0102 keeps every saved key (with address ”) and lets one app hold a key
 // per address; reads gain an address.
 func TestMoveCredentialsPerAddressMigration(t *testing.T) {
 	dir := t.TempDir()

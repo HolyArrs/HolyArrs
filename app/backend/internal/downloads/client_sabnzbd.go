@@ -23,6 +23,9 @@ var ErrNoCategory = errors.New("the category does not exist in SABnzbd; add it t
 
 var errSabNo = errors.New("sabnzbd said no")
 
+// errNoMode means the address has no such API call; SAB-like apps lack some.
+var errNoMode = errors.New("no API at this address")
+
 var trailLink = regexp.MustCompile(`\s+-\s+https?://\S+$`)
 
 // Sabnzbd is a Client for the SABnzbd HTTP API.
@@ -83,7 +86,9 @@ func NewSabnzbd(base, key string, h *http.Client) *Sabnzbd {
 
 // Health reports whether SABnzbd answers and accepts the key.
 func (s *Sabnzbd) Health(ctx context.Context) (Health, error) {
-	b, err := s.call(ctx, "version", nil, false)
+	// SABnzbd answers version without a key, but SAB-like apps want it on
+	// every call, and SABnzbd does not mind it.
+	b, err := s.call(ctx, "version", nil, true)
 	if err != nil {
 		return Health{}, err
 	}
@@ -102,6 +107,9 @@ func (s *Sabnzbd) Health(ctx context.Context) (Health, error) {
 // HasCategory reports whether cat exists in SABnzbd.
 func (s *Sabnzbd) HasCategory(ctx context.Context, cat string) (bool, error) {
 	b, err := s.call(ctx, "get_cats", nil, true)
+	if errors.Is(err, errNoMode) {
+		return true, nil // a SAB-like app with no category list; let the add decide
+	}
 	if err != nil {
 		return false, err
 	}
@@ -311,7 +319,7 @@ func (s *Sabnzbd) do(req *http.Request, mode string) ([]byte, error) {
 	}
 	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
 		line := strings.TrimSpace(string(b))
-		if line == "" || strings.Contains(line, "API Key") {
+		if line == "" || strings.Contains(line, "API Key") || strings.Contains(line, "Not Authorised") {
 			return nil, ErrAuth
 		}
 		switch {
@@ -323,7 +331,7 @@ func (s *Sabnzbd) do(req *http.Request, mode string) ([]byte, error) {
 		return nil, fmt.Errorf("sabnzbd refused the call (%s)", resp.Status)
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("sabnzbd %s: no API at this address", mode)
+		return nil, fmt.Errorf("sabnzbd %s: %w", mode, errNoMode)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		if e := doctor.Answer(resp.StatusCode, b); e != nil {
@@ -361,8 +369,8 @@ func (x sabHistorySlot) job() Job {
 	case "Completed":
 		j.State, j.Progress = StateFinished, 1
 		j.DoneAt = x.Completed
-		j.ContentPath = x.Storage
-		j.SavePath = parentDir(x.Storage)
+		j.ContentPath = jobFolder(x.Storage, x.Name)
+		j.SavePath = parentDir(j.ContentPath)
 	case "Failed":
 		j.State, j.Progress = StateFailed, 0
 		if m := x.failReason(); m != "" {
@@ -424,6 +432,27 @@ func sabQueueState(s string) string {
 		return StateQueued
 	}
 	return StateDownloading
+}
+
+// jobFolder is the job's own folder when SABnzbd names a folder or file
+// inside it as the job's place (a pack unpacked into one folder per episode):
+// the nearest folder above named like the job. Otherwise storage as given.
+func jobFolder(storage, name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return storage
+	}
+	p := strings.TrimRight(storage, `/\`)
+	for {
+		i := strings.LastIndexAny(p, `/\`)
+		if i <= 0 {
+			return storage
+		}
+		if strings.EqualFold(p[i+1:], name) {
+			return p
+		}
+		p = p[:i]
+	}
 }
 
 func parentDir(p string) string {

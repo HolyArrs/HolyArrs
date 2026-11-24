@@ -11,7 +11,7 @@
 	import { plainReason } from '#lib/core/plain.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
-	import { LibraryToolPage, statFacts as factOrder, statValue as valueLabel, statUnit as unitWord, type KindStats, type Watched } from '#lib/mediafiles/index.ts';
+	import { LibraryToolPage, WatchedCleanup, statFacts as factOrder, statValue as valueLabel, statUnit as unitWord, type KindStats, type Watched } from '#lib/mediafiles/index.ts';
 
 	// Library stats: what the files are (Your files) and who watched what on the media servers.
 
@@ -27,7 +27,7 @@
 	const shownFacts = $derived.by(() => {
 		if (!shown) return [];
 		const all = factOrder.filter((f) => shown.facts[f]?.length);
-		const real = all.filter((f) => shown.facts[f].some((b) => b.value !== 'unknown' && b.value !== 'unchecked'));
+		const real = all.filter((f) => shown.facts[f].some((b) => b.value !== 'unknown' && b.value !== 'unchecked' && b.value !== 'unsupported'));
 		return real.length ? real : all.slice(0, 1);
 	});
 	const unchecked = $derived(shown?.facts.resolution?.find((b) => b.value === 'unchecked')?.files ?? shown?.facts.container?.find((b) => b.value === 'unchecked')?.files ?? 0);
@@ -101,8 +101,8 @@
 					<ul>
 						{#each shown.facts[f] as b (b.value)}
 							<li>
-								{#if b.value === 'unknown'}
-									<span class="nm hinted"><span class="tx">{valueLabel(f, b.value, t)}</span><Popover label={t('library.stats.value.unknown')} icon="info" width={260} portal><p class="hint">{t('library.stats.value.unknownHint')}</p></Popover></span>
+								{#if b.value === 'unknown' || b.value === 'unsupported'}
+									<span class="nm hinted"><span class="tx">{valueLabel(f, b.value, t)}</span><Popover label={t('library.stats.value.' + b.value)} icon="info" width={260} portal><p class="hint">{t('library.stats.value.' + b.value + 'Hint')}</p></Popover></span>
 								{:else}
 									<span class="nm">{valueLabel(f, b.value, t)}</span>
 								{/if}
@@ -150,6 +150,7 @@
 				{/each}
 			</ul>
 		</div>
+		{#if isOwner || session.s.role === 'admin'}<WatchedCleanup />{/if}
 		{/if}
 	{/if}
 	</PageLoader>

@@ -56,6 +56,18 @@ type series struct {
 	PreviousAiring    *utc              `json:"previousAiring,omitempty"`
 	LastAired         *utc              `json:"lastAired,omitempty"`
 	Statistics        *seriesCounts     `json:"statistics,omitempty"`
+	// Details Sonarr always sends; neutral values where HolyArrs has none.
+	FirstAired    *utc          `json:"firstAired,omitempty"`
+	CleanTitle    string        `json:"cleanTitle"`
+	Certification string        `json:"certification,omitempty"`
+	Ratings       seriesRatings `json:"ratings"`
+	TvRageID      int64         `json:"tvRageId"`
+	Folder        string        `json:"folder,omitempty"` // lookups: the folder a new show gets
+}
+
+type seriesRatings struct {
+	Votes int     `json:"votes"`
+	Value float64 `json:"value"`
 }
 
 type image struct {
@@ -83,8 +95,9 @@ type seasonCounts struct {
 	SizeOnDisk        int64    `json:"sizeOnDisk"`
 	ReleaseGroups     []string `json:"releaseGroups"`
 	PercentOfEpisodes float64  `json:"percentOfEpisodes"`
-	// lastAired is the newest past air date, kept or not.
-	lastAired *time.Time
+	// lastAired is the newest past air date, kept or not; firstAired the
+	// oldest.
+	lastAired, firstAired *time.Time
 }
 
 type seriesCounts struct {
@@ -173,6 +186,7 @@ func (h *handler) seasonCountsOf(ctx context.Context, ids []int64) (map[int64]ma
 		var c seasonCounts
 		c.TotalEpisodeCount, c.EpisodeCount, c.EpisodeFileCount, c.SizeOnDisk = row.Total, row.Wanted, row.WithFile, row.Size
 		c.NextAiring, c.PreviousAiring, c.lastAired = utcPtr(parseTime(row.NextAiring)), utcPtr(parseTime(row.PreviousAired)), parseTime(row.LastAired)
+		c.firstAired = parseTime(row.FirstAired)
 		c.ReleaseGroups = []string{}
 		for _, g := range strings.Split(row.ReleaseGroups, ",") {
 			if g != "" {
@@ -247,7 +261,7 @@ func (h *handler) mainVersions(ctx context.Context, ids []int64) (map[int64]medi
 }
 
 func (h *handler) folders(ctx context.Context) (map[int64]mediafiles.LibraryFolder, error) {
-	fs, err := database.Select[mediafiles.LibraryFolder](ctx, h.Store.Read(), "library_folders", "1=1")
+	fs, err := database.Select[mediafiles.LibraryFolder](ctx, h.Store.Read(), "library_folders", "stand_in = 0")
 	out := map[int64]mediafiles.LibraryFolder{}
 	for _, f := range fs {
 		out[f.ID] = f
@@ -262,7 +276,7 @@ func (h *handler) folderByPath(ctx context.Context, p string) (int64, bool) {
 	if p == "" {
 		return 0, true
 	}
-	fs, err := database.Select[mediafiles.LibraryFolder](ctx, h.Store.Read(), "library_folders", "kind = ? ORDER BY id", h.folderKind())
+	fs, err := database.Select[mediafiles.LibraryFolder](ctx, h.Store.Read(), "library_folders", "kind = ? AND stand_in = 0 ORDER BY id", h.folderKind())
 	if err != nil {
 		return 0, false
 	}
@@ -279,7 +293,7 @@ func sourceID(ids map[string]string, k string) int64 { return atoi64(ids[k]) }
 
 func (h *handler) librarySeries(ctx context.Context, t mediafiles.Title, parts []mediafiles.Part, v mediafiles.Version, folders map[int64]mediafiles.LibraryFolder, counts map[int]*seasonCounts) series {
 	s := series{ID: t.ID, Title: t.Name, SortTitle: t.SortName, Status: showStatus(t.Status), Ended: t.Status == "ended",
-		AlternateTitles: ptr(alternateTitles(t.Aliases)), OriginalLanguage: ptr(originalLanguage(t.OriginalLanguage)),
+		AlternateTitles: ptr(alternateTitles(h.side, t.ID, t.Aliases)), OriginalLanguage: ptr(originalLanguage(h.side, t.OriginalLanguage)),
 		Images: h.libraryImages(ctx, t), Seasons: []season{}, QualityProfileID: v.PickRulesID, LanguageProfileID: 1, SeasonFolder: true,
 		Monitored: t.KeepUpToDate, MonitorNewItems: "all", Runtime: t.RuntimeMinutes, TvdbID: sourceID(t.SourceIDs, "tvdb"),
 		TvMazeID: sourceID(t.SourceIDs, "tvmaze"), TmdbID: sourceID(t.SourceIDs, "tmdb"), ImdbID: t.SourceIDs["imdb"],
@@ -299,12 +313,17 @@ func (h *handler) librarySeries(ctx context.Context, t mediafiles.Title, parts [
 	if t.Year != nil {
 		s.Year = *t.Year
 	}
+	s.CleanTitle, s.Certification = cleanTitle(t.Name), t.Rating
+	if t.Score != nil {
+		s.Ratings.Value = *t.Score
+	}
+	s.Ratings.Votes = t.Votes
 	if f, ok := folders[v.LibraryFolderID]; ok {
 		s.RootFolderPath = f.Path
 		s.Path = filepath.Join(f.Path, v.FolderName)
 	}
 	all := seriesCounts{ReleaseGroups: []string{}}
-	var next, prev, last *time.Time
+	var next, prev, last, first *time.Time
 	for _, p := range parts {
 		n := 0
 		if p.Number != nil {
@@ -314,7 +333,11 @@ func (h *handler) librarySeries(ctx context.Context, t mediafiles.Title, parts [
 		if n > 0 {
 			all.SeasonCount++
 		}
-		if c := counts[n]; c != nil {
+		c := counts[n]
+		if c == nil {
+			c = &seasonCounts{ReleaseGroups: []string{}} // Sonarr sends a season's numbers even when it has no episodes
+		}
+		{
 			se.Statistics = c
 			all.EpisodeFileCount += c.EpisodeFileCount
 			all.EpisodeCount += c.EpisodeCount
@@ -337,6 +360,9 @@ func (h *handler) librarySeries(ctx context.Context, t mediafiles.Title, parts [
 			if n > 0 && c.lastAired != nil && (last == nil || c.lastAired.After(*last)) {
 				last = c.lastAired
 			}
+			if n > 0 && c.firstAired != nil && (first == nil || c.firstAired.Before(*first)) {
+				first = c.firstAired
+			}
 		}
 		s.Seasons = append(s.Seasons, se)
 	}
@@ -345,7 +371,7 @@ func (h *handler) librarySeries(ctx context.Context, t mediafiles.Title, parts [
 	// A single show always carries its counts, because Seerr reads them
 	// without a nil check.
 	s.Statistics = &all
-	s.NextAiring, s.PreviousAiring, s.LastAired = utcPtr(next), utcPtr(prev), utcPtr(last)
+	s.NextAiring, s.PreviousAiring, s.LastAired, s.FirstAired = utcPtr(next), utcPtr(prev), utcPtr(last), utcPtr(first)
 	return s
 }
 
@@ -357,6 +383,8 @@ func lookupSeriesOf(sh metadata.Show) series {
 		MonitorNewItems: "all", Runtime: sh.Runtime, TvdbID: sourceID(sh.IDs, "tvdb"), TvMazeID: sourceID(sh.IDs, "tvmaze"),
 		TmdbID: sourceID(sh.IDs, "tmdb"), ImdbID: sh.IDs["imdb"], SeriesType: "standard", Genres: nonNil(sh.Genres), Tags: []int64{},
 		Added: zeroDate, RemotePoster: sh.Poster}
+	s.CleanTitle, s.Certification, s.Ratings = cleanTitle(sh.Name), sh.Rating, seriesRatings{Votes: sh.Votes, Value: sh.Score}
+	s.Folder = sanitizeFolder(sh.Name, sh.Year)
 	s.TitleSlug = sh.IDs["tvdb"]
 	if s.TitleSlug == "" {
 		s.TitleSlug = sh.Source + "-" + sh.IDs[sh.Source]
@@ -510,4 +538,11 @@ func (h *handler) lookupSeries(w http.ResponseWriter, r *http.Request) {
 		out = append(out, lookupSeriesOf(sh))
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// sanitizeFolder is the folder name the old apps suggest for a new show:
+// its name without the characters a folder may not hold.
+func sanitizeFolder(name string, _ int) string {
+	r := strings.NewReplacer("<", "", ">", "", ":", "", "\"", "", "/", "", "\\", "", "|", "", "?", "", "*", "")
+	return strings.TrimSpace(r.Replace(name))
 }

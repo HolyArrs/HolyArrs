@@ -30,6 +30,18 @@ var ErrWriteTooLong = errors.New("store: a write took too long and was rolled ba
 // DefaultWriteCap is the time cap for one write transaction.
 const DefaultWriteCap = 20 * time.Second
 
+// LongWriteCap is the time cap for writes run under WithLongWrite: big
+// one-off saves, such as importing a show with hundreds of episodes on
+// slow disks.
+const LongWriteCap = 5 * time.Minute
+
+type longWriteKey struct{}
+
+// WithLongWrite gives writes run under ctx the longer LongWriteCap.
+func WithLongWrite(ctx context.Context) context.Context {
+	return context.WithValue(ctx, longWriteKey{}, true)
+}
+
 // goid returns the current goroutine's id, read from its stack header.
 func goid() uint64 {
 	var buf [64]byte
@@ -89,6 +101,8 @@ func StoreOf(tx *sql.Tx) *Store {
 // write transaction on one goroutine, so writers never fight over the lock.
 type writer struct {
 	db *sql.DB
+	// rollback: a rollback journal with full sync (Unraid user share).
+	rollback bool
 	// core is the lane for core writes (sign-in, sessions): the writer
 	// takes them before anything waiting in reqs.
 	core chan writeReq
@@ -136,8 +150,8 @@ func (r *waitRing) p95() (time.Duration, int) {
 	return ds[(len(ds)*95+99)/100-1], len(ds)
 }
 
-func newWriter(path string, cacheKiB int, limit time.Duration) (*writer, error) {
-	db, err := openPool(path, cacheKiB, false, 1)
+func newWriter(path string, cacheKiB int, limit time.Duration, rollback bool) (*writer, error) {
+	db, err := openPool(path, cacheKiB, false, 1, rollback)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +159,7 @@ func newWriter(path string, cacheKiB int, limit time.Duration) (*writer, error) 
 	// database closes, SQLite checkpoints, which would be a disk write
 	// minutes into an idle period.
 	db.SetConnMaxIdleTime(0)
-	w := &writer{db: db, core: make(chan writeReq), reqs: make(chan writeReq), limit: limit, quit: make(chan struct{}), end: make(chan struct{})}
+	w := &writer{db: db, rollback: rollback, core: make(chan writeReq), reqs: make(chan writeReq), limit: limit, quit: make(chan struct{}), end: make(chan struct{})}
 	go w.loop()
 	return w, nil
 }
@@ -283,7 +297,11 @@ func (w *writer) run(r writeReq) (err error) {
 }
 
 func (w *writer) do(ctx context.Context, fn func(*sql.Tx) error) error {
-	return w.send(ctx, fn, w.reqs, w.limit, false)
+	limit := w.limit
+	if long, _ := ctx.Value(longWriteKey{}).(bool); long && limit > 0 {
+		limit = max(limit, LongWriteCap)
+	}
+	return w.send(ctx, fn, w.reqs, limit, false)
 }
 
 // doCore is do on the core lane.

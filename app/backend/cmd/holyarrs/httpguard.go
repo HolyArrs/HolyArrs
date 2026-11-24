@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
@@ -15,8 +16,9 @@ const maxBody = 1 << 20
 
 // limitBodies refuses API request bodies over maxBody with 413.
 func limitBodies(h http.Handler) http.Handler {
-	restoreZip := func(path string) bool { return path == backups.RestorePath } // has its own, larger limit
-	return webserver.LimitBodies(maxBody, restoreZip, h)
+	// These handlers set their own, larger limits.
+	ownLimit := func(path string) bool { return path == backups.RestorePath || path == accounts.AvatarUploadPath }
+	return webserver.LimitBodies(maxBody, ownLimit, h)
 }
 
 // newServer has no WriteTimeout: the live stream stays open. Instead each

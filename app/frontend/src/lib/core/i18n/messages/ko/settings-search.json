@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "가장 좋은 사본 우선. 같으면 시즌 팩이 선택됩니다",
 	"settings.search.preferAlways": "품질 세트를 통과하는 시즌 팩이 있으면 항상 시즌 팩",
 	"settings.search.multi": "여러 시즌이 든 릴리스 받기",
-	"settings.search.multiHint": "그 안의 누락된 에피소드를 모두 채웁니다",
+	"settings.search.multiHint": "그 안의 누락된 에피소드를 모두 채웁니다. 화질이 같으면 원하는 에피소드를 더 많이 담은 쪽이 선택됩니다",
 	"settings.search.music": "음악",
 	"settings.search.albums": "누락된 앨범도 검색",
 	"settings.search.albumsHint": "발매된 앨범, 앨범당 검색 1회",

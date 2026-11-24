@@ -166,6 +166,9 @@ func (h *AppHandlers) readLogs(w http.ResponseWriter, r *http.Request) {
 	if lines == nil {
 		lines = []logs.Line{}
 	}
+	if who, ok := webserver.From(r.Context()); ok && who.Via == "plugin" {
+		lines = h.Log.ForPlugin(lines) // stricter: no sign-in lines, no addresses or names
+	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"lines": lines, "total": total, "offset": f.Offset, "limit": f.Limit})
 }
 

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 type R = { id: number; phase: string; state: string; progress: number; label: string };
 const r = (id: number, phase: string, state = phase, progress = 0): R => ({ id, phase, state, progress, label: phase });
 
-// One row of every phase the app knows, plus a Usenet job being unpacked (downloading at full progress) and a seeding torrent.
+// One row of every phase the app knows, plus a Usenet job being unpacked (downloading at full progress), a seeding torrent and an unknown phase that counts as finished.
 const rows: R[] = [
 	r(1, 'waiting', 'queued'),
 	r(2, 'downloading', 'downloading', 0.4),
@@ -16,7 +16,7 @@ const rows: R[] = [
 	r(8, 'done', 'finished', 1),
 	r(9, 'done', 'seeding', 1),
 	r(10, 'failed'),
-	r(11, 'removed', 'cleaned', 1),
+	r(11, 'unexpected', '', 1),
 	r(12, 'vanished'),
 	r(13, 'needs_a_decision', 'finished', 1),
 	r(14, 'import_refused', 'finished', 1)

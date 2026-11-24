@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Önce en iyi kopya; eşitlikte sezon paketi kazanır",
 	"settings.search.preferAlways": "Kalite setini geçen bir sezon paketi varsa her zaman o",
 	"settings.search.multi": "Birkaç sezonluk sürüm adaylarını al",
-	"settings.search.multiHint": "İçindeki her eksik bölümü doldurur",
+	"settings.search.multiHint": "İçindeki her eksik bölümü doldurur. Aynı kalitede, daha çok aranan bölümü kapsayan kazanır",
 	"settings.search.music": "Müzik",
 	"settings.search.albums": "Eksik albümleri de ara",
 	"settings.search.albumsHint": "Çıkmış albümler, her biri için bir arama",

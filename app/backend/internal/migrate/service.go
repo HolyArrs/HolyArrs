@@ -22,6 +22,8 @@ const (
 	Overseerr   Kind = "overseerr"
 	QBittorrent Kind = "qbittorrent"
 	SABnzbd     Kind = "sabnzbd"
+	// Jackett has no reader: only a network search and Fetch key know it (the Sources step links it).
+	Jackett Kind = "jackett"
 )
 
 // Kinds lists every kind a reader exists for.
@@ -29,7 +31,7 @@ var Kinds = []Kind{Radarr, Sonarr, Lidarr, Prowlarr, Bazarr, Seerr, Overseerr, Q
 
 // kindNames are the apps' own names, for text shown to the owner.
 var kindNames = map[Kind]string{Radarr: "Radarr", Sonarr: "Sonarr", Lidarr: "Lidarr", Prowlarr: "Prowlarr", Bazarr: "Bazarr",
-	Seerr: "Seerr", Overseerr: "Overseerr", QBittorrent: "qBittorrent", SABnzbd: "SABnzbd"}
+	Seerr: "Seerr", Overseerr: "Overseerr", QBittorrent: "qBittorrent", SABnzbd: "SABnzbd", Jackett: "Jackett"}
 
 // kindName names k as the app does, or k itself.
 func kindName(k Kind) string {

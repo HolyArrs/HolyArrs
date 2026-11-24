@@ -85,5 +85,21 @@
 	"sources.uses.auto": "αναζητά μόνη της",
 	"sources.uses.feed": "λίστα νεότερων",
 	"sources.uses.hand": "αναζήτηση με το χέρι",
-	"sources.uses.none": "δεν χρησιμοποιείται"
+	"sources.uses.none": "δεν χρησιμοποιείται",
+	"sources.bridge.removeTitle": "Αφαίρεση του {name};",
+	"sources.bridge.find": "Εύρεση του {name} στο δίκτυό μου",
+	"sources.bridge.noneFound": "Κανένα {name} δεν απάντησε στο δίκτυό σας.",
+	"sources.bridge.keyFound": "Το κλειδί λήφθηκε από το {name}",
+	"sources.bridge.keyKept": "Το {name} δεν έδωσε το κλειδί του (η σύνδεση είναι ενεργή). Αντιγράψτε το με τη Λήψη κλειδιού.",
+	"sources.bridge.keyKeptJackett": "Το Jackett δεν έδωσε το κλειδί του (έχει κωδικό διαχειριστή). Αντιγράψτε το με Λήψη κλειδιού.",
+	"sources.bridge.notReached": "Δεν ήταν δυνατή η σύνδεση με το {name}.",
+	"sources.bridge.brings.title": "Τι μεταφέρεται",
+	"sources.bridge.brings.sites": "Οι indexers του, ως Πηγές",
+	"sources.bridge.brings.categories": "Οι κατηγορίες τους",
+	"sources.bridge.brings.search": "Οι αναζητήσεις περνούν από το {name}",
+	"sources.bridge.brings.sync": "Οι αλλαγές στο {name} μεταφέρονται",
+	"sources.bridge.brings.stays": "Οι indexers σας παραμένουν ρυθμισμένοι στο {name}.",
+	"sources.bridge.brings.had": "{n} indexers ήδη εδώ",
+	"sources.bridge.brings.hadFrom": "Εισήχθησαν μέσω {apps}",
+	"sources.bridge.brings.keyKept": "Αφήστε το κλειδί κενό για να χρησιμοποιηθεί αυτό που ήδη έχουν."
 }

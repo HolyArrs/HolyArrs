@@ -59,7 +59,7 @@
 	.cat-strip :global(.ui-shelf > header) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
 	.cat-strip { margin-top: -12px; --ease-tile: var(--ease-out); }
 	.cat-strip :global(.ui-shelf .row) { padding-block: 4px 8px; }
-	.cat-strip :global(.ui-shelf .arrow) { top: calc(50% - 22px); }
+	.cat-strip :global(.ui-shelf .arrow) { top: calc(50% - 26px); }
 	/* Tiles stay dark in both themes. */
 	.cat {
 		position: relative; isolation: isolate; container-type: inline-size; display: block; height: 84px; overflow: hidden;

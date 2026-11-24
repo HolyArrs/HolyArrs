@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Δεν αναιρείται. Τα αρχεία μένουν.",
 	"settings.pickRules.removeUsed": "{used}. Επιλέξτε πρώτα άλλους κανόνες εκεί.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Ακύρωση"
+	"settings.pickRules.cancel": "Ακύρωση",
+	"settings.pickRules.check.title": "Έλεγχος ονόματος κυκλοφορίας",
+	"settings.pickRules.check.desc": "Επικολλήστε ένα όνομα κυκλοφορίας για να δείτε πώς το διαβάζει το HolyArrs και πώς το κρίνουν τα σύνολα ποιότητάς σας. Δεν γίνεται αναζήτηση ούτε λήψη.",
+	"settings.pickRules.check.name": "Όνομα κυκλοφορίας",
+	"settings.pickRules.check.rules": "Κρίση με",
+	"settings.pickRules.check.copies": "Τα αντίγραφα του τίτλου που ταιριάζει",
+	"settings.pickRules.check.size": "Μέγεθος σε GB (προαιρετικό)",
+	"settings.pickRules.check.check": "Έλεγχος",
+	"settings.pickRules.check.failed": "Δεν ήταν δυνατός ο έλεγχος του ονόματος",
+	"settings.pickRules.check.readAs": "Διαβάστηκε ως",
+	"settings.pickRules.check.matches": "Ταιριάζει με {name}",
+	"settings.pickRules.check.noTitle": "Δεν ταιριάζει με κανέναν τίτλο της Βιβλιοθήκης σας. Επιλέξτε ένα σύνολο ποιότητας παραπάνω για να το κρίνετε ούτως ή άλλως.",
+	"settings.pickRules.check.noAlbum": "Ταιριάζει με {name}, αλλά με κανένα από τα άλμπουμ του.",
+	"settings.pickRules.check.noCopies": "Αυτός ο τίτλος δεν έχει αντίγραφα για κρίση.",
+	"settings.pickRules.check.hasFile": "Έχει αρχείο"
 }

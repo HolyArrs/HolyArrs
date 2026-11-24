@@ -28,6 +28,9 @@ func (h *FolderHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("DELETE /api/v1/library-folders/{id}", h.deleteFolder)
 	m.HandleFunc("PUT /api/v1/library-folders/{id}/path", h.changeFolderPath)
 	m.HandleFunc("POST /api/v1/library-folders/{id}/check", h.checkFolder)
+	m.HandleFunc("GET /api/v1/library-folders/{id}/tidy", h.previewTidy)
+	m.HandleFunc("POST /api/v1/library-folders/{id}/tidy", h.applyTidy)
+	m.HandleFunc("POST /api/v1/library-folders/{id}/tidy/undo", h.undoTidy)
 	m.HandleFunc("GET /api/v1/never-add", h.listNeverAdd)
 	m.HandleFunc("POST /api/v1/never-add", h.addNeverAdd)
 	m.HandleFunc("DELETE /api/v1/never-add/{id}", h.deleteNeverAdd)
@@ -49,6 +52,9 @@ type FolderView struct {
 	CopiesExpected    bool       `json:"copies_expected"`
 	NewTitleTags      []string   `json:"new_title_tags"`
 	OnlyTaggedSources bool       `json:"only_tagged_sources"`
+	NewTitleAudio     []string   `json:"new_title_audio"`
+	LookOnly          bool       `json:"look_only"`
+	Flat              bool       `json:"flat"`
 }
 
 func nonNilTags(t []string) []string {
@@ -60,7 +66,7 @@ func nonNilTags(t []string) []string {
 
 func folderView(f mf.LibraryFolder) FolderView {
 	return FolderView{ID: f.ID, Path: f.Path, Kind: f.Kind, Label: f.Label, DefaultPickRules: f.DefaultPickRules, FreeSpace: f.FreeSpace,
-		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt, CopiesExpected: f.CopiesExpected, NewTitleTags: nonNilTags(f.NewTitleTags), OnlyTaggedSources: f.OnlyTaggedSources}
+		Health: f.Health, HealthReason: f.HealthReason, HealthCheckedAt: f.HealthCheckedAt, CopiesExpected: f.CopiesExpected, NewTitleTags: nonNilTags(f.NewTitleTags), OnlyTaggedSources: f.OnlyTaggedSources, NewTitleAudio: nonNilTags(f.NewTitleAudio), LookOnly: f.LookOnly, Flat: f.Flat}
 }
 
 // NeverAddView is a Never-add entry as the API shows it.
@@ -78,7 +84,7 @@ func neverAddView(n mf.NeverAdd) NeverAddView {
 }
 
 func (h *FolderHandlers) listFolders(w http.ResponseWriter, r *http.Request) {
-	fs, err := database.Select[mf.LibraryFolder](r.Context(), h.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	fs, err := database.Select[mf.LibraryFolder](r.Context(), h.Store.Read(), "library_folders", "stand_in = 0 ORDER BY id")
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
@@ -109,7 +115,7 @@ func (h *FolderHandlers) editFolder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var c FolderChange
-	if !webserver.Decode(w, r, &c, `send {"label": "...", "default_pick_rules_id": <id>, "copies_expected": true, "new_title_tags": ["anime"], "only_tagged_sources": true}`) {
+	if !webserver.Decode(w, r, &c, `send {"label": "...", "default_pick_rules_id": <id>, "copies_expected": true, "new_title_tags": ["anime"], "only_tagged_sources": true, "new_title_audio": ["it"], "look_only": true, "flat": true}`) {
 		return
 	}
 	lf, err := UpdateFolder(r.Context(), h.Store, id, c, h.Actor(r))

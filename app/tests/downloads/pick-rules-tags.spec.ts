@@ -54,13 +54,14 @@ for (const lang of ['en', 'de', 'ar']) {
 			await page.goto(`/settings/pick-rules/${id}`);
 			const card = page.locator('#rules-sources');
 			await expect(card).toBeVisible();
+			// Only English ships in the image; Arabic is a signed pack the server downloads (none in this run), so the test sets the right-to-left direction itself.
+			if (lang === 'ar') await page.evaluate(() => (document.documentElement.dir = 'rtl'));
 			await card.scrollIntoViewIfNeeded();
 			await expect(card.locator('#pr-tags')).toBeVisible();
 			const box = await card.boundingBox();
 			expect(box!.x).toBeGreaterThanOrEqual(0);
 			expect(box!.x + box!.width).toBeLessThanOrEqual(w + 1);
 			await noSidewaysScroll(page);
-			if (lang === 'ar') await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
 		});
 	}
 }

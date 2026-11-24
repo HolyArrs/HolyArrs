@@ -43,6 +43,9 @@ func actor(r *http.Request) domain.Actor {
 	return domain.Actor{Kind: "user", ID: 1}
 }
 
+// mainVersionSQL finds a title's main Version (the oldest when none is marked).
+const mainVersionSQL = "SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1"
+
 func versionID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("vid"), 10, 64)
 	if err != nil || id <= 0 {
@@ -76,12 +79,18 @@ func (h *VersionHandlers) editVersion(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	vid, ok := versionID(w, r)
-	if !ok {
+	var vid int64
+	if r.PathValue("vid") == "main" {
+		// "main" is the title's main copy, so a Library-wide edit needs no Version ids.
+		if err := h.Store.Read().QueryRowContext(r.Context(), mainVersionSQL, t.ID).Scan(&vid); err != nil {
+			webserver.Fail(w, http.StatusNotFound, "not found")
+			return
+		}
+	} else if vid, ok = versionID(w, r); !ok {
 		return
 	}
 	var c VersionChange
-	if !webserver.Decode(w, r, &c, `send any of label, pick_rules_id, keep_up_to_date`) {
+	if !webserver.Decode(w, r, &c, `send any of label, pick_rules_id, keep_up_to_date, edition, audio_languages`) {
 		return
 	}
 	v, err := EditVersion(r.Context(), h.Store, t.ID, vid, c, actor(r))

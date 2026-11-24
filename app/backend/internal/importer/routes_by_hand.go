@@ -15,6 +15,9 @@ type Deps struct {
 	SavePath string
 	// Live gets the import events; nil for none.
 	Live Publisher
+	// PluginFolders are the folders the owner granted a plugin; a plugin may
+	// scan, browse and import only inside them. Nil grants none.
+	PluginFolders func(plugin string) []string
 }
 
 // Handlers serve Import files by hand: scan a folder for
@@ -27,6 +30,7 @@ type Handlers struct {
 func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/manual-import/scan", h.scanByHand)
 	m.HandleFunc("POST /api/v1/manual-import", h.importByHand)
+	m.HandleFunc("POST /api/v1/manual-import/folders", h.browseByHand)
 	m.HandleFunc("GET /api/v1/settings/import-folders", h.getImportFolders)
 	m.HandleFunc("PUT /api/v1/settings/import-folders", h.putImportFolders)
 	m.HandleFunc("GET /api/v1/settings/side-files", h.getSideFiles)
@@ -45,7 +49,39 @@ func (h *Handlers) scanByHand(w http.ResponseWriter, r *http.Request) {
 	if !webserver.Decode(w, r, &body, want) {
 		return
 	}
+	if !h.pluginMay(w, r, body.Path) {
+		return
+	}
 	out, err := h.byHandImporter().ScanByHand(r.Context(), body.Path)
+	var outside *PlaceError
+	if errors.As(err, &outside) || errors.Is(err, ErrByHandPath) {
+		webserver.Fail(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, out)
+}
+
+// browseByHand lists the folders inside one allowed place for the folder
+// picker: the owner or an admin signed in with a password or an admin key,
+// since it shows what is on the server's disks.
+func (h *Handlers) browseByHand(w http.ResponseWriter, r *http.Request) {
+	if !webserver.RequireStrong(w, r) {
+		return
+	}
+	var body struct {
+		Path string `json:"path"`
+	}
+	if !webserver.Decode(w, r, &body, `send {"path": "<a folder>"}, or "" for the import places`) {
+		return
+	}
+	if !h.pluginMay(w, r, body.Path) {
+		return
+	}
+	out, err := h.byHandImporter().BrowseByHand(r.Context(), body.Path)
 	var outside *PlaceError
 	if errors.As(err, &outside) || errors.Is(err, ErrByHandPath) {
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
@@ -69,6 +105,11 @@ func (h *Handlers) importByHand(w http.ResponseWriter, r *http.Request) {
 	if len(body.Items) == 0 || len(body.Items) > 500 {
 		webserver.Fail(w, http.StatusBadRequest, "send 1 to 500 files to import")
 		return
+	}
+	for _, it := range body.Items {
+		if !h.pluginMay(w, r, it.Path) {
+			return
+		}
 	}
 	res, err := h.byHandImporter().ImportByHand(r.Context(), body.Items, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	if err != nil {
@@ -103,12 +144,18 @@ func (h *Handlers) putImportFolders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Extra []string `json:"extra_folders"`
+		Extra []string  `json:"extra_folders"`
+		Watch *[]string `json:"watch_folders"`
 	}
-	if !webserver.Decode(w, r, &body, `send {"extra_folders": ["/data/imports"]}, or [] for none`) {
+	if !webserver.Decode(w, r, &body, `send {"extra_folders": ["/data/imports"], "watch_folders": ["/data/drop"]}, or [] for none`) {
 		return
 	}
-	if _, err := SaveImportFolders(r.Context(), h.Store, body.Extra, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1})); err != nil {
+	by := webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1})
+	_, err := SaveImportFolders(r.Context(), h.Store, body.Extra, by)
+	if err == nil && body.Watch != nil {
+		_, err = SaveWatchFolders(r.Context(), h.Store, *body.Watch, by)
+	}
+	if err != nil {
 		if errors.Is(err, ErrImportFolder) {
 			webserver.Fail(w, http.StatusBadRequest, err.Error())
 			return

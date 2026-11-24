@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ReleaseTags from './ReleaseTags.svelte';
 	// Releases found for an episode, season or album, with pick and turn down actions.
 	import Button from '#lib/ui/Button.svelte';
 	import { chooseWarnings, facts, keyReasons, pager, verdict, verdictTone } from './releases.ts';
@@ -171,6 +172,7 @@
 						<span class="rel-name mono">{r.name}</span>
 						<span class="chip {verdictTone(r)}" data-testid="verdict">{verdict(r)}</span>
 					</div>
+					<div class="rel-tags"><ReleaseTags release={r} /></div>
 					<div class="xs muted">{facts(r, bytes)}{r.episode ? ` · ${r.episode}` : ''}{music && r.slot_ids?.length ? ` · ${unit('track', r.slot_ids.length)}` : ''}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</div>
 					{#if key.length}
 						<ul class="reasons">
@@ -340,4 +342,5 @@
 			flex-direction: column;
 		}
 	}
+	.rel-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
 </style>

@@ -81,15 +81,20 @@ func besideSubtitles(root, rel string) [][]string {
 	}
 	base := strings.TrimSuffix(path.Base(rel), path.Ext(rel))
 	idx := map[string]string{} // lower-case stem of each .idx: its name
+	var longer []string        // lower-case stems of other videos named base.something (a flat folder)
 	for _, e := range ents {
-		if n := e.Name(); e.Type().IsRegular() && strings.EqualFold(path.Ext(n), ".idx") {
+		n := e.Name()
+		if e.Type().IsRegular() && strings.EqualFold(path.Ext(n), ".idx") {
 			idx[strings.ToLower(strings.TrimSuffix(n, path.Ext(n)))] = n
+		}
+		if s := strings.ToLower(strings.TrimSuffix(n, path.Ext(n))); e.Type().IsRegular() && importer.IsVideo(path.Ext(n)) && strings.HasPrefix(s, strings.ToLower(base)+".") {
+			longer = append(longer, s)
 		}
 	}
 	var out [][]string
 	for _, e := range ents {
 		n := e.Name()
-		if !e.Type().IsRegular() || !subtitleNames().IsBeside(base, n) {
+		if !e.Type().IsRegular() || !subtitleNames().IsBeside(base, n) || ownedByLonger(longer, n) {
 			continue
 		}
 		one := path.Join(path.Dir(rel), n)
@@ -105,6 +110,18 @@ func besideSubtitles(root, rel string) [][]string {
 		out = append(out, []string{one})
 	}
 	return out
+}
+
+// ownedByLonger says a subtitle is named after another video whose name
+// starts with this one's (Up.De.srt beside Up.De.mkv): it is that video's.
+func ownedByLonger(stems []string, name string) bool {
+	s := strings.ToLower(strings.TrimSuffix(name, path.Ext(name)))
+	for _, o := range stems {
+		if s == o || strings.HasPrefix(s, o+".") {
+			return true
+		}
+	}
+	return false
 }
 
 // textSub reads the head of a .sub file and says whether it is clearly text.
@@ -186,6 +203,9 @@ func addMediaLabels(f mediafiles.File, fa *mediafiles.NameFacts) {
 		if h, ok := f.MediaInfo["hdr"].(string); ok && h != "" {
 			fa.HDR = mediafiles.HDRLabel(h)
 		}
+	}
+	if v, ok := f.MediaInfo["french_version"].(string); ok {
+		fa.AddFrenchVersion(v)
 	}
 }
 
@@ -406,12 +426,18 @@ func planRename(ctx context.Context, db Reader, ns mediafiles.NamingSettings, ti
 			if err := database.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
 				return nil, err
 			}
+			if lf.LookOnly {
+				continue // HolyArrs never renames in a look-only folder
+			}
 			st := RenameStep{FileID: f.ID, TitleID: t.ID, TitleName: t.Name, VersionID: v.ID, LibraryFolderID: lf.ID, Origin: f.Origin,
 				From: f.RelativePath, root: lf.Path}
 			facts := fileFacts(t, f)
 			to := path.Join(path.Dir(f.RelativePath), importer.EditionFileName(mediafiles.FileName(ns, facts), facts.Edition))
 			if path.Dir(f.RelativePath) == "." {
 				to = path.Join(v.FolderName, importer.EditionFileName(mediafiles.FileName(ns, facts), facts.Edition))
+			}
+			if t.Kind == "movie" {
+				to = genreMove(ns, t, v, lf.Path, f.RelativePath, to)
 			}
 			if t.Kind == "show" {
 				// An episode file: show folder, season folder, episode name,
@@ -484,4 +510,26 @@ func (s *Service) ApplyRename(ctx context.Context, plan []RenameStep, jobID int6
 	unlock := s.Store.LockFiles()
 	defer unlock()
 	return s.applyRenameLocked(ctx, plan, jobID, by, nil)
+}
+
+// genreMove is where a movie's file goes when Group by genre or Group by
+// first letter is on: its folder moves into that group folder. Only a
+// movie folder at the top that holds nothing but this video and its subtitles moves, so
+// no extra is left behind; any other file keeps the name to.
+func genreMove(ns mediafiles.NamingSettings, t mediafiles.Title, v mediafiles.Version, root, from, to string) string {
+	g := mediafiles.MovieGroupFolder(ns, t.Name, firstGenre(t.Genres))
+	if g == "" || strings.Contains(v.FolderName, "/") || path.Dir(from) != v.FolderName || path.Dir(to) != v.FolderName {
+		return to
+	}
+	ents, err := os.ReadDir(filepath.Join(root, filepath.FromSlash(v.FolderName)))
+	if err != nil {
+		return to
+	}
+	base := strings.TrimSuffix(path.Base(from), path.Ext(from))
+	for _, e := range ents {
+		if n := e.Name(); n != path.Base(from) && (!e.Type().IsRegular() || !subtitleNames().IsBeside(base, n)) {
+			return to
+		}
+	}
+	return path.Join(g, v.FolderName, path.Base(to))
 }

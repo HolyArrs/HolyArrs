@@ -14,7 +14,6 @@
 	"settings.health.none": "Нема резултата. Провери поново да их покренеш.",
 	"settings.health.since": "Од",
 	"settings.health.settings": "Подешавања провера стања",
-	"settings.health.updateCheck": "Провери има ли новијег HolyArrs-а",
 	"settings.health.onlyChecks": "Само проверава. Никад не инсталира.",
 	"settings.health.every": "Проверавај ажурирања сваких",
 	"settings.health.day": "дан",

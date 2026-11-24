@@ -35,6 +35,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if len(d.SlotIDs) == 0 {
 		return nil, fmt.Errorf("download %d has no Slot", downloadID)
 	}
+	if imp, ok, err := im.handsOff(ctx, d, dryRun, by); ok {
+		return imp, err
+	}
 	var dr domain.Downloader
 	if err := database.Get(ctx, db, "downloaders", d.DownloaderID, &dr); err != nil {
 		return nil, err
@@ -84,6 +87,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if err := database.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
 		return nil, err
 	}
+	if lf.LookOnly {
+		return nil, mediafiles.ErrLookOnly
+	}
 	if err := database.Get(ctx, db, "titles", it.TitleID, &ti); err != nil {
 		return nil, err
 	}
@@ -96,10 +102,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if !rootOK {
 		cands, bad = nil, []mediafiles.PlanStep{unpackStep(d.SavePath, "the Downloader reported a folder with \"..\" in it")}
 	}
-	folder := safeFolder(ver.FolderName)
-	if folder == "" || folder == "." || folder == ".." {
-		folder = FolderName(ti.Name, year)
-	}
+	folder := movieFolder(ver, lf, ti.Name, year)
 	ns, err := mediafiles.ReadNaming(ctx, db)
 	if err != nil {
 		return nil, err
@@ -135,6 +138,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		return nil, err
 	}
 	im.markMoves(ctx, db, plan, dr, unpacked)
+	markLinks(plan, dr)
 	imp := &mediafiles.Import{DownloadID: &d.ID, FromPath: root, Kind: "movie", Plan: plan, Result: []mediafiles.PlaceResult{}, Mode: "dry_run", State: "planned"}
 	if dryRun {
 		return imp, nil
@@ -356,6 +360,10 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	}
 	placed, failed := 0, 0
 	var fileID int64
+	oldRel := "" // where the replaced copy was, for a restore later
+	if up.old != nil {
+		oldRel = up.old.RelativePath
+	}
 	newName := ""
 	now := time.Now().UTC()
 	err = im.Store.Write(ctx, func(tx *sql.Tx) error {
@@ -468,7 +476,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	}
 	if up.old != nil && fileID > 0 {
 		e := &domain.Event{Actor: by, Kind: "file_replaced", TitleID: &titleID, SlotID: &slotID, DownloadID: &dlID,
-			Summary: "Replaced " + up.oldName + " with a better copy", Data: map[string]any{"old_file_id": up.old.ID, "new_file_id": fileID, "moved_to": replacedTo},
+			Summary: "Replaced " + up.oldName + " with a better copy", Data: map[string]any{"old_file_id": up.old.ID, "new_file_id": fileID, "moved_to": replacedTo, "from": oldRel},
 			GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}
 		im.upgradeFacts(ctx, e.Data, up.old.ID, fileID)
 		if im.Store.AddEvent(ctx, e) == nil {

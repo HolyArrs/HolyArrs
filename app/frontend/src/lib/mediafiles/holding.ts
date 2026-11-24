@@ -14,12 +14,36 @@ export interface HeldFile {
 	size: number;
 	deleted_at: string;
 	expires_at?: string;
+	replaced?: boolean;
+	replaced_by?: string;
 }
 
 export interface RestoreResult {
 	id: number;
 	path?: string;
 	result: string;
+	/** Another file sits where it was: ask, then restore again with how. */
+	taken?: boolean;
+	/** The file there is a tracked copy that can trade places with it. */
+	can_swap?: boolean;
+}
+
+/** What to do when the place is taken: swap sends the copy there to Recently deleted, both restores it beside it. */
+export type RestoreHow = '' | 'swap' | 'both';
+
+/** Which held files a reason filter keeps. */
+export function heldOfReason(files: HeldFile[], reason: 'all' | 'deleted' | 'replaced'): HeldFile[] {
+	return reason === 'all' ? files : files.filter((f) => !!f.replaced === (reason === 'replaced'));
+}
+
+/** The soonest expiry among held files (undefined: one is kept until emptied, or none). */
+export function soonestExpiry(files: HeldFile[]): string | undefined {
+	let at: string | undefined;
+	for (const f of files) {
+		if (!f.expires_at) return undefined;
+		if (!at || Date.parse(f.expires_at) < Date.parse(at)) at = f.expires_at;
+	}
+	return at;
 }
 
 // Null means the held file has no expiry.

@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Välj vad du vill efterfråga härnäst",
 	"home.newPopular": "Nytt och populärt",
 	"home.whatSTrending": "Vad som trendar",
+	"home.gettingReady": "Gör klart…",
 	"home.top10sAndComing": "Topp 10 och kommer snart",
 	"home.whatSNext": "Vad som kommer härnäst",
 	"home.airDatesAndReleases": "Sändningsdatum och releaser",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Avsnitt och filmer som kommer den här veckan",
 	"home.popularThisWeek": "Populära släpp som kommer den här veckan",
 	"home.peopleCheck": "Personkontroll",
-	"home.cantReadUsers": "användarlistan kan inte läsas"
+	"home.cantReadUsers": "användarlistan kan inte läsas",
+	"home.joined.title": "Välkommen, {name}",
+	"home.joined.find": "Hitta något i {explore} eller {search}.",
+	"home.joined.ask": "Tryck på {request} på en titel för att få den. Du kan be om:",
+	"home.joined.track": "Följ var och en i {requests}.",
+	"home.joined.noLimit": "Ingen veckogräns.",
+	"home.joined.gotIt": "Uppfattat",
+	"home.joined.explore": "Öppna {explore}"
 }

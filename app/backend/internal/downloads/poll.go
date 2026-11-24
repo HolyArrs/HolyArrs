@@ -28,15 +28,33 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 	m.relinkOrphans(ctx)
 	db := m.Store.Read()
 	dls, err := database.Select[domain.Download](ctx, db, "downloads", "state IN ("+activeStates+") ORDER BY id")
-	if err != nil || len(dls) == 0 {
+	if err != nil {
 		return 0, err
+	}
+	useStore := m.storeOn()
+	finished := finishedRows(ctx, db)
+	if len(dls) == 0 {
+		// Nothing active: finished torrents are checked only against a fresh
+		// snapshot, which costs no client call.
+		if useStore {
+			m.finishedFromSnapshots(ctx, db, finished)
+		}
+		return 0, nil
 	}
 	byDownloader := map[int64][]domain.Download{}
 	for _, d := range dls {
 		byDownloader[d.DownloaderID] = append(byDownloader[d.DownloaderID], d)
 	}
+	if useStore {
+		rest := map[int64][]domain.Download{}
+		for did, rows := range finished {
+			if _, ok := byDownloader[did]; !ok {
+				rest[did] = rows
+			}
+		}
+		m.finishedFromSnapshots(ctx, db, rest)
+	}
 	st := m.settings(ctx)
-	useStore := m.storeOn()
 	active := 0
 	var errs []error
 	for did, list := range byDownloader {
@@ -80,16 +98,30 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 			}
 			m.downloaderOK(ctx, dr)
 		}
-		have := map[string]Job{}
-		for _, j := range jobsIn {
-			have[j.ID] = j
+		have := jobIndex(jobsIn)
+		listed := len(jobsIn)
+		if fromStore {
+			listed = len(v.Items)
 		}
+		// An empty list from a client that answers is a real removal, except for a
+		// while after it starts or waits for its share (see clientLooksEmpty).
+		empty := m.clientLooksEmpty(dr.ID, listed, len(list)+len(finished[dr.ID]))
+		dst := st
+		dst.downloaderStuck = downloaderStuck(list, have, st.stallAfter, m.now())
+		// restarted is when the client started again, if that is known: it then forgot
+		// every download it was given, so one it does not list was not removed by hand.
+		// Asked for once, and only when a download is missing.
+		var restarted time.Time
+		asked := false
 		for _, d := range list {
 			j, ok := have[d.ExternalID]
 			if !ok {
 				j, ok = outsideJob(ctx, e, dr, v, fromStore, d.ExternalID)
 			}
-			if fromStore && !ok && !readAt.After(d.UpdatedAt) {
+			if !ok && !asked {
+				asked, restarted = true, m.restartedAt(ctx, e, dr.ID)
+			}
+			if fromStore && !ok && !readAt.After(d.UpdatedAt) || !ok && empty && !forgotSince(d, restarted) {
 				// Missing from a snapshot no newer than the row means unknown, so a grab the
 				// client has not listed yet is never marked vanished.
 				active++
@@ -105,10 +137,26 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 			}
 			if ok {
 				m.seen(d.ID)
-			} else if !(d.State == "sent" && m.now().Sub(lastMoved(d)) < m.vanishGrace()) && !m.missedLongEnough(d.ID, readAt) {
-				// Missing for a short while is not vanished yet.
-				active++
-				continue
+				d = m.adoptID(ctx, d, j)
+			} else if !(d.State == "sent" && m.now().Sub(lastMoved(d)) < m.vanishGrace()) {
+				if !m.missedLongEnough(d.ID, readAt) {
+					// Missing for a short while is not vanished yet.
+					active++
+					continue
+				}
+				// Missing long enough: ask for it by id once before calling it removed.
+				found, got := confirmGone(ctx, e, dr, v, fromStore, d.ExternalID)
+				switch got {
+				case goneUnknown:
+					active++
+					continue
+				case goneMoved:
+					m.movedOut(ctx, dr, d)
+					continue
+				case goneFound:
+					m.seen(d.ID)
+					j, ok = found, true
+				}
 			}
 			if ok && j.State == StateFinished {
 				if full, err := e.Get(ctx, d.ExternalID); err == nil {
@@ -124,9 +172,12 @@ func (m *Manager) SyncOnce(ctx context.Context) (int, error) {
 					j.Files = full.Files
 				}
 			}
-			if m.apply(ctx, dr, d, j, ok, st) {
+			if m.apply(ctx, dr, d, j, ok, dst, restarted) {
 				active++
 			}
+		}
+		if rows := finished[dr.ID]; len(rows) > 0 && !empty {
+			m.checkFinished(ctx, e, dr, rows, have, v, fromStore, readAt)
 		}
 	}
 	return active, errors.Join(errs...)
@@ -182,9 +233,11 @@ func (m *Manager) Run(ctx context.Context) {
 	for {
 		if time.Since(checked) >= every {
 			m.CheckAll(ctx)
+			m.settleImported(ctx)
 			m.tidy(ctx)
 			m.settleAttempts(ctx)
 			m.settleLostChoices(ctx)
+			m.retryWaitingImports(ctx)
 			checked = time.Now()
 		}
 		n, _ := m.SyncOnce(ctx)
@@ -245,19 +298,33 @@ func (m *Manager) eventWith(ctx context.Context, d *domain.Download, kind, summa
 }
 
 // apply records one Download's new state and reports whether it is still active.
-func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Download, j Job, found bool, st settings) bool {
+// restarted is when the Downloader's client started again, zero if unknown; a
+// Download last seen before that was forgotten by the client, not removed.
+func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Download, j Job, found bool, st settings, restarted time.Time) bool {
 	now := m.now()
 	next := d
 	last := lastMoved(d)
 	failReason := ""
+	forgot := forgotSince(d, restarted)
 	switch {
 	case !found && d.State == "sent" && now.Sub(last) < m.vanishGrace():
 		// Added by URL: the Downloader is still fetching the file.
 		return true
-	case !found:
+	case !found && forgot:
+		// The client started again and lost what it was given. The row still goes, since
+		// the download is not there to follow, but the reason is not a removal.
 		m.seen(d.ID)
 		next.State = "vanished"
-		next.StateReason = strPtr("removed outside HolyArrs: the Downloader no longer has it")
+		next.StateReason = strPtr(ForgotReason(dr.Name))
+		next.CleanedAt = &now
+	case !found:
+		m.seen(d.ID)
+		// Removed in the Downloader itself: the row leaves the Downloads list
+		// (only History keeps it), and cleaned_at starts the same short wait as a
+		// removal in HolyArrs before a job re-added by hand shows as an outside row.
+		next.State = "vanished"
+		next.StateReason = strPtr(VanishedReason(dr.Name))
+		next.CleanedAt = &now
 	case st.failDangerous && j.State != StateFailed && len(fakeFiles(j.Files, dr.Protocol)) > 0:
 		// Known as soon as the Downloader lists the files, so a fake is not downloaded
 		// to the end.
@@ -303,13 +370,24 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 			// Repairing or unpacking at full progress is never stalled.
 			next.State = "downloading"
 			next.StateReason = nil
+		case st.downloaderStuck && quiet >= st.stallAfter:
+			// Every download on this Downloader stopped together: most likely its
+			// connection (a VPN that died quietly), not bad Releases. The clock is held
+			// at the stall mark, so nothing fails while it lasts, and it runs on from
+			// there once any of them moves again.
+			next.State = "stalled"
+			next.StateReason = strPtr(StuckReason)
+			if quiet-st.stallAfter >= time.Minute {
+				held := now.Add(-st.stallAfter)
+				next.ProgressAt = &held
+			}
 		case quiet >= st.actAfter:
 			next.State = "failed"
-			failReason = fmt.Sprintf("no progress for %s", hours(quiet))
+			failReason = StallPrefix + hours(quiet)
 			next.StateReason = &failReason
 		case quiet >= st.stallAfter:
 			next.State = "stalled"
-			next.StateReason = strPtr(fmt.Sprintf("no progress for %s", hours(quiet)))
+			next.StateReason = strPtr(StallPrefix + hours(quiet))
 		default:
 			next.State = "downloading"
 			next.StateReason = nil
@@ -371,6 +449,42 @@ func (m *Manager) apply(ctx context.Context, dr domain.Downloader, d domain.Down
 	return isActive(next.State)
 }
 
+// StallPrefix starts the reason of a download that stalled. A stall alone never
+// turns the Release down or deletes its files: the Downloader or its VPN may be
+// offline, so the next search may pick the same Release again and resume.
+const StallPrefix = mediafiles.StallReasonPrefix
+
+// StuckReason is the stall reason while every download on a Downloader stopped
+// together. Health matches it word for word (health.downloaders).
+const StuckReason = "every download on this Downloader stopped at the same time; check its internet connection (a VPN, for example)"
+
+// downloaderStuck reports that at least two downloads on one Downloader are
+// downloading and none of them moved for the stall time: the Downloader's own
+// connection, not the Releases. Waiting, paused, complete and unlisted rows
+// don't count either way; one row that moved means it is not the connection.
+func downloaderStuck(list []domain.Download, have map[string]Job, stallAfter time.Duration, now time.Time) bool {
+	n := 0
+	for _, d := range list {
+		j, ok := have[d.ExternalID]
+		if !ok || d.State == "queued" || d.State == "paused" || d.State == "sent" || d.Progress >= 1 {
+			continue
+		}
+		if j.State != StateDownloading || j.Progress >= 1 {
+			continue
+		}
+		if j.Progress == 0 && d.Progress == 0 && (d.ProgressAt == nil || now.Sub(*d.ProgressAt) < stallAfter) {
+			// A fresh grab that never started (the next one sent in while the
+			// connection is down) proves nothing either way.
+			continue
+		}
+		if j.Progress > d.Progress || d.ProgressAt == nil || now.Sub(*d.ProgressAt) < stallAfter {
+			return false
+		}
+		n++
+	}
+	return n >= 2
+}
+
 func hours(d time.Duration) string {
 	if d >= time.Hour {
 		h := int(d.Hours())
@@ -406,6 +520,13 @@ func (m *Manager) stateMoved(ctx context.Context, from string, d *domain.Downloa
 			}
 		}
 	}
+	if d.State == "finished" && d.ReleaseID != nil {
+		// It worked: a later stall of this Release starts its wait from 1 day again.
+		var rel domain.Release
+		if database.Get(ctx, m.Store.Read(), "releases", *d.ReleaseID, &rel) == nil {
+			_ = mediafiles.ClearStall(ctx, m.Store, rel.Name)
+		}
+	}
 	if d.State == "finished" && m.OnFinished != nil {
 		m.OnFinished(ctx, d.ID)
 	}
@@ -417,6 +538,32 @@ func isActive(state string) bool {
 		return true
 	}
 	return false
+}
+
+// restartedAt is when the Downloader's client last started again, zero when it
+// has not been seen to. A client that restarts forgets the jobs it was given, so
+// a download it no longer lists was not removed by hand. Only a client that names
+// its own run can say (aria2 does).
+func (m *Manager) restartedAt(ctx context.Context, e Engine, id int64) time.Time {
+	s, ok := e.(Sessioner)
+	if !ok {
+		return time.Time{}
+	}
+	session, err := s.Session(ctx)
+	if err != nil || session == "" {
+		return time.Time{}
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.sessions == nil {
+		m.sessions, m.restarts = map[int64]string{}, map[int64]time.Time{}
+	}
+	before, seen := m.sessions[id]
+	m.sessions[id] = session
+	if seen && before != session {
+		m.restarts[id] = m.now()
+	}
+	return m.restarts[id]
 }
 
 // vanishGrace is how long a sent Download may be missing from its Downloader
@@ -456,6 +603,12 @@ func eqStr(a, b *string) bool {
 }
 
 // lastMoved is when a Download last made progress, or its row last changed.
+// forgotSince says the client started again after the download last moved, so a
+// download it no longer lists was lost by that restart, not removed by a person.
+func forgotSince(d domain.Download, restarted time.Time) bool {
+	return !restarted.IsZero() && restarted.After(lastMoved(d))
+}
+
 func lastMoved(d domain.Download) time.Time {
 	if d.ProgressAt != nil {
 		return *d.ProgressAt
@@ -483,4 +636,29 @@ func eqTime(a, b *time.Time) bool {
 		return a == b
 	}
 	return a.Equal(*b)
+}
+
+// finishedFromSnapshots checks finished torrents on Downloaders with nothing
+// active against their reader's fresh snapshot. A Downloader without one is
+// left for a later sync: this costs no client call.
+func (m *Manager) finishedFromSnapshots(ctx context.Context, db *sql.DB, rows map[int64][]domain.Download) {
+	for did, list := range rows {
+		v := m.Sync.View(did)
+		if !v.Fresh {
+			continue
+		}
+		var dr domain.Downloader
+		if err := database.Get(ctx, db, "downloaders", did, &dr); err != nil {
+			continue
+		}
+		e, err := m.engine(ctx, dr)
+		if err != nil {
+			continue
+		}
+		have := jobIndex(snapshotJobs(v, dr.Categories()))
+		if m.clientLooksEmpty(did, len(v.Items), len(list)) {
+			continue
+		}
+		m.checkFinished(ctx, e, dr, list, have, v, true, v.ReadAt)
+	}
 }

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { FromPlugin } from '#lib/plugins/index.ts';
+	import { editForm, withoutEditing } from '#lib/ui/edit-in-place.ts';
 	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { ltr, t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
@@ -91,6 +93,7 @@
 		form.downloader_id = 0;
 	});
 	const siteNeedsKey = $derived(builtInSites.find((x) => x.id === form.site)?.key ?? false);
+	const siteNeedsUser = $derived(builtInSites.find((x) => x.id === form.site)?.user ?? false);
 
 	function setFormat(v: string) {
 		form.format = v as SourceForm['format'];
@@ -175,8 +178,10 @@
 	{t('settings.sources.builtIn', { sites: ltr(builtInSites.map((x) => x.name).join(', ')), site: t('settings.sources.site'), kind: t('settings.sources.feedKind') })}
 </p>
 
+{#if !editing}<FromPlugin kind="source" taken={sources.map((x) => x.url)} onadded={load} />{/if}
+
 {#if editing}
-	<form class="sc-form" onsubmit={save} aria-label={isNew ? t('settings.sources.add') : t('settings.sources.change', { name: editing.name })}>
+	<form class="sc-form" use:editForm={isNew ? null : editing.id} onsubmit={save} aria-label={isNew ? t('settings.sources.add') : t('settings.sources.change', { name: editing.name })}>
 		<SettingsCard title={isNew ? t('settings.sources.add') : t('settings.sources.change', { name: editing.name })}>
 			<Field id="so-name" label={t('settings.sources.name')} style="margin-top: var(--s-4)">
 				<input id="so-name" class="input" bind:value={form.name} maxlength="80" required />
@@ -212,7 +217,27 @@
 				</span>
 			</Field>
 			{#if form.format === 'site'}
-				{#if siteNeedsKey}
+				{#if siteNeedsUser && isNew}
+					<Field id="so-login" label={t('settings.sources.siteLoginLabel')}>
+						<select id="so-login" class="input" bind:value={form.site_login} data-testid="so-login">
+							<option value="passkey">{t('settings.sources.siteLoginPasskey')}</option>
+							<option value="cookie">{t('settings.sources.siteLoginCookie')}</option>
+						</select>
+					</Field>
+				{/if}
+				{#if siteNeedsUser && form.site_login === 'cookie'}
+					<Field id="so-key" label={t('settings.sources.siteCookieLabel')} hint={t('settings.sources.siteCookieHint')}>
+						<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
+					</Field>
+					<Field id="so-agent" label={t('settings.sources.siteAgentLabel')} hint={t('settings.sources.siteAgentHint')}>
+						<input id="so-agent" class="input mono" bind:value={form.site_agent} maxlength="500" autocomplete="off" spellcheck="false" />
+					</Field>
+				{:else if siteNeedsUser}
+					<Field id="so-user" label={t('settings.sources.siteUserLabel')} hint={t('settings.sources.siteUserHint')}>
+						<input id="so-user" class="input mono" bind:value={form.site_user} inputmode="numeric" pattern="[0-9]*" autocomplete="off" spellcheck="false" />
+					</Field>
+				{/if}
+				{#if siteNeedsKey && !(siteNeedsUser && form.site_login === 'cookie')}
 					<Field id="so-key" label={t('settings.sources.siteKeyLabel')} hint={t('settings.sources.siteKeyHint')}>
 						<input id="so-key" class="input mono" type="password" bind:value={form.api_key} autocomplete="new-password" spellcheck="false" />
 					</Field>
@@ -258,6 +283,12 @@
 				</Field>
 				{#if sendGone}<p class="notice warn" role="status" data-testid="so-send-gone">{t('settings.sources.sendToGone')}</p>{/if}
 			{/if}
+			<Field id="so-multi" label={t('settings.sources.multiLanguages')} hint={t('settings.sources.multiLanguagesHint')}>
+				<input id="so-multi" class="input mono" bind:value={form.multi_languages} placeholder="fr, en" aria-describedby="so-multi-hint" spellcheck="false" data-testid="so-multi" />
+			</Field>
+			<Field id="so-nolang" label={t('settings.sources.noLanguage')} hint={t('settings.sources.noLanguageHint')}>
+				<input id="so-nolang" class="input mono" bind:value={form.no_language_languages} placeholder="uk" aria-describedby="so-nolang-hint" spellcheck="false" data-testid="so-nolang" />
+			</Field>
 			<details class="more">
 				<summary>{t('settings.sources.limits')}</summary>
 				<div class="two">
@@ -319,8 +350,8 @@
 	{#if error}<LoadError hasData message={error} onretry={load} />{/if}
 	{#if partOff('sources')}<EmptyState compact icon="source" title={t('settings.sources.off')} text={t('settings.sources.offText')} action={{ label: t('settings.sources.openParts'), href: to('/settings/parts') }} />{/if}
 	<ul class="fl">
-		{#each sources as s (s.id)}
-			<li class="dl" data-testid="source" title={t('settings.sources.rowTitle', { url: s.url, priority: s.priority, uses: uses(s) })}>
+		{#each withoutEditing(sources, editing?.id) as s (s.id)}
+			<li class="dl" data-testid="source" data-edit-row={s.id} title={t('settings.sources.rowTitle', { url: s.url, priority: s.priority, uses: uses(s) })}>
 				<div class="main">
 					<span class="ic"><Icon name="source" size={20} /></span>
 					<div class="grow">
@@ -345,7 +376,7 @@
 							{#if s.state === 'paused'}<Button variant="secondary" size="sm" type="button" disabled={testing === s.id} aria-busy={testing === s.id} onclick={() => test(s, 'try')} data-testid="source-try">{t('settings.sources.tryNow')}</Button>{/if}
 						{/if}
 						<Button variant="secondary" size="sm" href={to(`/settings/sources/${s.id}`)}>{t('settings.sources.health')}</Button>
-						<Button variant="secondary" size="sm" type="button" onclick={() => startChange(s)}>{t('settings.sources.changeButton')}</Button>
+						<Button variant="secondary" size="sm" type="button" data-edit-change onclick={() => startChange(s)}>{t('settings.sources.changeButton')}</Button>
 						<Button variant="secondary" size="sm" type="button" onclick={() => remove(s)} aria-label={t('settings.sources.removeName', { name: s.name })}>{t('settings.sources.remove')}</Button>
 					</div>
 				</div>

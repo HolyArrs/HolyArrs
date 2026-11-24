@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Besta eintakið fyrst; þáttaraðapakki vinnur þegar þau eru jöfn",
 	"settings.search.preferAlways": "Þáttaraðapakki alltaf þegar hann stenst gæðasettið",
 	"settings.search.multi": "Taka útgáfur með nokkrum þáttaröðum",
-	"settings.search.multiHint": "Fyllir alla vantandi þætti í honum",
+	"settings.search.multiHint": "Fyllir alla vantandi þætti í honum. Við sömu gæði vinnur útgáfan með fleiri eftirsótta þætti",
 	"settings.search.music": "Tónlist",
 	"settings.search.albums": "Leita líka að vantandi plötum",
 	"settings.search.albumsHint": "Útgefnar plötur, ein leit hver",

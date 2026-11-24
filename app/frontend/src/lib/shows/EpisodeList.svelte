@@ -9,6 +9,9 @@
 		when?: string;
 		overview?: string;
 		here?: boolean;
+		// Points column: the file's points against good enough ("42/60").
+		points?: string;
+		pointsLabel?: string;
 	}
 </script>
 
@@ -35,9 +38,10 @@
 
 	// Stills that errored, so the placeholder shows instead of a broken image.
 	let failed = $state<Record<string, boolean>>({});
+	const withPoints = $derived(rows.some((r) => r.points));
 </script>
 
-<ol class="eps">
+<ol class="eps" class:pts-on={withPoints}>
 	{#each rows as r, i (r.key)}
 		{@const src = r.still || fallback}
 		<li class="ep" data-testid="episode">
@@ -51,10 +55,11 @@
 					<h3 class="name"><span class="sr-only">{t('shows.list.episodeNumber', { number: r.number })} </span>{r.name}</h3>
 					{#if action}<span class="end">{@render action(i)}</span>{/if}
 				</div>
-				<p class="meta">{[runtimeWords(r.runtime), r.when].filter(Boolean).join(' · ')}{#if status}{' '}{@render status(i)}{/if}</p>
+				<p class="meta">{[runtimeWords(r.runtime), r.when].filter(Boolean).join(' · ')}{#if r.points}<span class="pts-meta" title={r.pointsLabel}><span class="sr-only">{t('shows.list.points')}: </span>{r.points}</span>{/if}{#if status}{' '}{@render status(i)}{/if}</p>
 				{#if r.overview}<p class="syn">{r.overview}</p>{/if}
 				{#if after}{@render after(i)}{/if}
 			</div>
+			{#if withPoints}<span class="pts" data-testid="episode-points" title={r.pointsLabel}>{#if r.points}<span class="pts-k">{t('shows.list.points')}</span>{r.points}{/if}</span>{/if}
 		</li>
 	{:else}
 		<li class="small muted">{t('shows.list.none')}</li>
@@ -64,6 +69,10 @@
 <style>
 	.eps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 	.ep { display: grid; grid-template-columns: 2.2em minmax(120px, 200px) minmax(0, 1fr); gap: 16px; align-items: center; padding: 16px 0; min-width: 0; }
+	.pts-on .ep { grid-template-columns: 2.2em minmax(120px, 200px) minmax(0, 1fr) 5.5em; }
+	.pts { align-self: start; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font: 600 15px/1.2 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+	.pts-k { color: var(--text-muted); font: var(--t-footnote); font-weight: 400; }
+	.pts-meta { display: none; font-variant-numeric: tabular-nums; }
 	.ep + .ep { border-top: 1px solid var(--line); }
 	.num { color: var(--text-muted); font: 600 22px/1 var(--font-display); text-align: center; font-variant-numeric: tabular-nums; }
 	.still { position: relative; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--surface-2); }
@@ -77,7 +86,9 @@
 	.meta { margin: 0; color: var(--text-muted); font: var(--t-footnote); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 	.syn { margin: 2px 0 0; color: var(--text-muted); font: var(--t-subhead); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 75ch; }
 	@media (max-width: 600px) {
-		.ep { grid-template-columns: minmax(0, 132px) minmax(0, 1fr); gap: 8px 12px; }
+		.ep, .pts-on .ep { grid-template-columns: minmax(0, 132px) minmax(0, 1fr); gap: 8px 12px; }
+		.pts { display: none; }
+		.pts-meta { display: inline; }
 		.num { display: none; }
 		.syn { grid-column: 1 / -1; }
 	}

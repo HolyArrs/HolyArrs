@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Papildinių žinutės",
+	"requests.moment.plugin_message.body": "Leistas papildinys siunčia žinutę.",
+	"requests.words.via": "{who} per {plugin}",
 	"requests.moment.ask_waiting.title": "Naujas užsakymas",
 	"requests.moment.ask_waiting.body": "Darbuotojams: filmas, serialas ar atlikėjas laukia patvirtinimo.",
 	"requests.moment.ask_approved.title": "Patvirtinta",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "TMDB sąrašas",
 	"requests.lists.tmdbHint": "Sąrašo numeris ar jo nuoroda, pavyzdžiui themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt sąrašas",
-	"requests.lists.traktHint": "user/list, user/watchlist ar nuoroda, pavyzdžiui trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist ar nuoroda, pavyzdžiui trakt.tv/users/ana/lists/favourites. Arba topas: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "MDBList sąrašas",
 	"requests.lists.mdblistHint": "user/list arba nuoroda, pavyzdžiui mdblist.com/lists/ana/favourites. Vieši sąrašai veikia be rakto.",
 	"requests.lists.everyDay": "kasdien",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Nieko blogo nepavyko rasti",
 	"requests.outcome.noResults": "Rezultatų dar nėra",
 	"requests.outcome.nothingFound": "Nieko nerasta:",
+	"requests.outcome.refused": "Rasta, bet niekas neatitinka pasirinkimo taisyklių",
 	"requests.outcome.why.slowed": "buvo pristabdytas (sulėtintas)",
 	"requests.outcome.why.down": "neveikė",
 	"requests.outcome.why.blocked": "buvo užblokuotas",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Pridėti",
 	"requests.addMovie.titleBare": "Pridėti filmą",
 	"requests.add.loadingDefaults": "Įkeliami numatytieji",
+	"requests.add.defaultsLate": "Išsaugoti numatytieji nustatymai neįsikėlė laiku, todėl parinkti įprasti. Patikrinkite juos prieš pridėdami.",
 	"requests.add.noFolder.music": "Muzikos Bibliotekos aplanko dar nėra. Pirmiausia <a>pridėkite jį</a>.",
 	"requests.add.noFolder.movie": "Filmų Bibliotekos aplanko dar nėra. Pirmiausia <a>pridėkite jį</a>.",
 	"requests.add.noFolder.show": "Serialų Bibliotekos aplanko dar nėra. Pirmiausia <a>pridėkite jį</a>.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Rodyti mano kalendoriuje.",
 	"requests.add.cancel": "Atšaukti",
 	"requests.add.submit": "Pridėti į Biblioteką",
+	"requests.add.submitChoose": "Pridėti ir pasirinkti leidimą",
 	"requests.addArtist.albums": "Albumai, kuriuos laikyti naujausius",
 	"requests.addArtist.newAlbums": "Nauji albumai",
 	"requests.addArtist.newAlbumsHint": "Kas nutinka vėliau išeinančiam albumui.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", rodoma: {status}",
 	"requests.board.reportsOpen": "Pranešimai, atvirų: {n}",
 	"requests.board.approveAll": "Patvirtinti visus",
+	"requests.board.approveAllTitle": "Patvirtinti visas laukiančias užklausas ({n})?",
+	"requests.board.approveAllDesc": "Įskaitomos ir žemiau sąraše esančios, dar neįkeltos užklausos.",
 	"requests.board.requests": "Užsakymai",
 	"requests.board.open": "Atidaryti: {name}, užsakė {who}",
 	"requests.board.pageForArtist": "Atlikėjo puslapis: {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Pridėta",
 	"requests.addAll.summary": "Pridėta: {added}, praleista: {skipped}",
 	"requests.addAll.summaryClean": "Pridėta: {added}",
-	"requests.addAll.intro": "Kiekvienas filmas pridedamas į jūsų Biblioteką su žemiau pasirinktu aplanku ir pasirinkimo taisyklėmis bei jūsų išsaugotomis numatytosiomis reikšmėmis. Filmai, kurie jau yra Bibliotekoje, rodomi sąraše, bet antrą kartą nepridedami."
+	"requests.addAll.intro": "Kiekvienas filmas pridedamas į jūsų Biblioteką su žemiau pasirinktu aplanku ir pasirinkimo taisyklėmis bei jūsų išsaugotomis numatytosiomis reikšmėmis. Filmai, kurie jau yra Bibliotekoje, rodomi sąraše, bet antrą kartą nepridedami.",
+	"requests.ask.alsoAsk": "Prašyti ir {name}",
+	"requests.add.handsOff": "Nesikišimo režimas įjungtas: bibliotekos aplanko nereikia. Siunčiama į atsisiuntėją, o failai lieka ten."
 }

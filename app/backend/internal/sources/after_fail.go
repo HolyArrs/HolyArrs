@@ -40,6 +40,7 @@ func (s *Searcher) QueueAfterFailure(ctx context.Context, slotID int64, by domai
 			return err
 		}
 	}
-	_, _, err = s.Queue.Enqueue(ctx, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, nil, "search_slot:"+strconv.FormatInt(slotID, 10), by)
+	// The last search's results are tried first (ReuseWindow).
+	_, _, err = s.Queue.Enqueue(ctx, jobs.KindSearchSlot, &domain.Subject{Type: "slot", ID: slotID}, map[string]any{reuseParam: true}, "search_slot:"+strconv.FormatInt(slotID, 10), by)
 	return err
 }

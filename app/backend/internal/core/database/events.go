@@ -44,6 +44,8 @@ type Event struct {
 	Summary    string         `db:"summary"`
 	Data       map[string]any `db:"data,json"`
 	GroupKey   string         `db:"group_key"`
+	// ViaPlugin is the plugin the change came through, nil for none.
+	ViaPlugin *string `db:"via_plugin"`
 }
 
 // EventFilter narrows a History list. Zero fields do not filter.
@@ -99,6 +101,9 @@ func (s *Store) AddEvent(ctx context.Context, e *Event) error {
 	if e.Actor.Kind == "" {
 		e.Actor = System
 	}
+	if e.ViaPlugin == nil {
+		e.ViaPlugin = ViaPlugin(ctx)
+	}
 	err := s.WriteEvents(ctx, func(tx *sql.Tx) error {
 		_, err := Insert(tx, "events", e, e.Actor)
 		return err
@@ -121,6 +126,35 @@ func (s *Store) AddEvent(ctx context.Context, e *Event) error {
 func (s *Store) RecentEvents(ctx context.Context, limit int) ([]Event, error) {
 	es, _, err := s.Events(ctx, EventFilter{Limit: limit})
 	return es, err
+}
+
+// TitleEventsOfKinds lists the Events of these kinds that name a Title,
+// newest first, up to limit. Only the columns History needs are read, and
+// Events allows no more than 500, so this has its own query.
+func (s *Store) TitleEventsOfKinds(ctx context.Context, kinds []string, limit int) ([]Event, error) {
+	args := make([]any, 0, len(kinds)+1)
+	for _, k := range kinds {
+		args = append(args, k)
+	}
+	args = append(args, limit)
+	rows, err := s.readEv.QueryContext(ctx, "SELECT id, at, kind, title_id, slot_id, download_id, summary, data FROM events WHERE title_id IS NOT NULL AND kind IN ("+
+		strings.TrimSuffix(strings.Repeat("?,", len(kinds)), ",")+") ORDER BY at DESC, id DESC LIMIT ?", args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Event
+	for rows.Next() {
+		var e Event
+		var at, data string
+		if err := rows.Scan(&e.ID, &at, &e.Kind, &e.TitleID, &e.SlotID, &e.DownloadID, &e.Summary, &data); err != nil {
+			return nil, err
+		}
+		e.At, _ = time.Parse(time.RFC3339Nano, at)
+		_ = json.Unmarshal([]byte(data), &e.Data)
+		out = append(out, e)
+	}
+	return out, rows.Err()
 }
 
 // Events lists the Events that match f, newest first, and how many match

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { browserLocale, readPack } from './i18n.svelte.ts';
+import { browserLocale, lang, langPack, readPack, setLang } from './i18n.svelte.ts';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const src = join(here, '..', '..', '..');
@@ -103,45 +103,51 @@ describe('browserLocale', () => {
 });
 
 describe('readPack', () => {
-	const kept = new Map<string, string>();
-	const reload = vi.fn();
 	const fitFile = join(here, 'packs', 'fit.json');
 	const fit = existsSync(fitFile) ? (JSON.parse(readFileSync(fitFile, 'utf8')) as { fit: string }).fit : '';
-	const answer = (status: number, body: unknown = {}) => vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(body), { status })));
+	const asked: string[] = [];
+	const answer = (status: number, body: unknown = {}) =>
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (url: string) => {
+				asked.push(url);
+				return new Response(JSON.stringify(body), { status });
+			})
+		);
+	const reload = vi.fn();
 	beforeEach(() => {
-		kept.clear();
+		asked.length = 0;
 		reload.mockReset();
-		vi.stubGlobal('sessionStorage', { getItem: (k: string) => kept.get(k) ?? null, setItem: (k: string, v: string) => void kept.set(k, v), removeItem: (k: string) => void kept.delete(k) });
 		vi.stubGlobal('location', { reload });
+		vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {}, removeItem: () => {} });
 	});
 	afterEach(() => vi.unstubAllGlobals());
 
-	it('reloads the page once when the pack is gone after an update', async () => {
+	it('shows English without reloading when the pack is not installed', async () => {
 		answer(404);
-		expect(await readPack('/_app/immutable/assets/fr.old.json')).toBe('reload');
-		expect(reload).toHaveBeenCalledTimes(1);
-		// The reloaded page still gets no pack: it shows English instead of reloading again.
-		expect(await readPack('/_app/immutable/assets/fr.old.json')).toBeNull();
-		expect(reload).toHaveBeenCalledTimes(1);
-	});
-
-	it('does not reload for other failures', async () => {
-		answer(500);
-		expect(await readPack('/_app/immutable/assets/fr.json')).toBeNull();
-		answer(200, { fit: 'not-this-build', values: [] });
-		expect(await readPack('/_app/immutable/assets/fr.json')).toBeNull();
+		expect(await readPack('/api/v1/languages/fr/pack')).toBeNull();
 		expect(reload).not.toHaveBeenCalled();
 	});
 
-	it('a pack that loads lets a later update reload again', async () => {
-		answer(404);
-		await readPack('/_app/immutable/assets/fr.old.json');
+	it('refuses a pack built for other keys', async () => {
+		answer(200, { lang: 'fr', app: '1.2.1', fit: 'not-this-build', values: [] });
+		expect(await readPack('/api/v1/languages/fr/pack')).toBeNull();
+	});
+
+	it('fills the lines a pack lacks with English', async () => {
 		const keys = Object.keys(en).sort();
-		answer(200, { fit, values: keys.map((k, i) => (i === 0 ? 'Bonjour' : null)) });
-		const words = await readPack('/_app/immutable/assets/fr.json');
-		expect(words && typeof words === 'object' ? [words[keys[0]], words[keys[1]]] : words).toEqual(['Bonjour', en[keys[1]]]);
+		answer(200, { lang: 'fr', app: '1.2.1', fit, values: keys.map((k, i) => (i === 0 ? 'Bonjour' : null)) });
+		const words = await readPack('/api/v1/languages/fr/pack');
+		expect(words ? [words[keys[0]], words[keys[1]]] : words).toEqual(['Bonjour', en[keys[1]]]);
+	});
+
+	it('asks the server for the pack and marks it missing when not installed', async () => {
 		answer(404);
-		expect(await readPack('/_app/immutable/assets/fr.old.json')).toBe('reload');
-		expect(reload).toHaveBeenCalledTimes(2);
+		await setLang('de');
+		expect(asked).toEqual(['/api/v1/languages/de/pack']);
+		expect(lang.value).toBe('en');
+		expect(langPack.missing).toBe('de');
+		await setLang('en');
+		expect(langPack.missing).toBeNull();
 	});
 });

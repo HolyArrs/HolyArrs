@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: נקודה אדומה מראה מה דורש תשומת לב, ובדיקת החיבור מציינת את הבעיה המדויקת.** תוויות Plex לכותרים שהתבקשו, שמות בשפה שלכם ויותר מ-30 תיקונים. חברו אפליקציות דרך MCP עם מפתחות שבשליטתכם. [מה חדש](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: יותר מ-150 תיקונים ותכונות מ-101 אנשים.** מערכת תוספים, אשף הגדרה חדש, ומצב ללא התערבות שאף פעם לא נוגע בקבצים שלך. [מה חדש](https://holyarrs.com/whats-new/)
 
 > כל פוסטר, טריילר וציון ב-HolyArrs שלך מגיעים משרת שאני מפעיל ומשלם עליו בעצמי, כדי שישאר חינמי לכולם. אם HolyArrs שיפר קצת את ערב הסרט שלך, תמיכה כספית שומרת על האור דלוק בשבילנו כולנו 💛
 >
@@ -374,7 +374,7 @@ docker compose up -d
 - ננעלת מחוץ לחשבון הבעלים:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - מספר גרסה:

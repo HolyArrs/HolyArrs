@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -110,6 +112,7 @@ type fileCtx struct {
 	item    mediafiles.Item
 	version mediafiles.Version
 	lib     string // path of the Library folder
+	look    bool   // the Library folder is look-only: nothing is written there
 }
 
 // video returns the File's full path.
@@ -167,7 +170,7 @@ func (s *Service) load(ctx context.Context, fileID int64) (*fileCtx, error) {
 	if fc.title.State == "removed" {
 		return nil, ErrNotMain
 	}
-	if err := db.QueryRowContext(ctx, "SELECT path FROM library_folders WHERE id = ?", fc.version.LibraryFolderID).Scan(&fc.lib); err != nil {
+	if err := db.QueryRowContext(ctx, "SELECT path, look_only FROM library_folders WHERE id = ?", fc.version.LibraryFolderID).Scan(&fc.lib, &fc.look); err != nil {
 		return nil, err
 	}
 	return fc, nil
@@ -289,19 +292,45 @@ func besideFiles(fc *fileCtx) ([]Have, error) {
 		return nil, err
 	}
 	relDir := path.Dir(fc.file.RelativePath)
+	longer := longerVideos(base, ents)
 	var out []Have
 	for _, e := range ents {
 		if !e.Type().IsRegular() {
 			continue
 		}
 		h, ok := besideName(base, e.Name())
-		if !ok {
+		if !ok || ownedByLonger(longer, e.Name()) {
 			continue
 		}
 		h.Path = path.Join(relDir, e.Name())
 		out = append(out, h)
 	}
 	return out, nil
+}
+
+// longerVideos lists the lower-case stems of the other videos named
+// base.something, as a flat folder can hold (Up.mkv and Up.De.mkv).
+func longerVideos(base string, ents []os.DirEntry) []string {
+	var out []string
+	for _, e := range ents {
+		n := e.Name()
+		if s := strings.ToLower(strings.TrimSuffix(n, path.Ext(n))); e.Type().IsRegular() && importer.IsVideo(path.Ext(n)) && strings.HasPrefix(s, strings.ToLower(base)+".") {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// ownedByLonger says a subtitle is named after one of those videos
+// (Up.De.srt beside Up.De.mkv): it is that video's, not base's.
+func ownedByLonger(stems []string, name string) bool {
+	s := strings.ToLower(strings.TrimSuffix(name, path.Ext(name)))
+	for _, o := range stems {
+		if s == o || strings.HasPrefix(s, o+".") {
+			return true
+		}
+	}
+	return false
 }
 
 // Status is what a File has and what it still wants.

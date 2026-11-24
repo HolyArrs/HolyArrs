@@ -38,7 +38,7 @@ func (m *Manager) doneRemovable(ctx context.Context, dr domain.Downloader, d dom
 	} else if running {
 		return ErrImporting
 	}
-	if settled, err := mediafiles.ImportSettled(ctx, m.Store.Read(), d.ID); err != nil {
+	if settled, err := mediafiles.ImportSettled(ctx, m.Store.Read(), d.ID, d.SlotIDs); err != nil {
 		return err
 	} else if settled {
 		c.TurnDown, c.SearchAgain = false, false
@@ -101,7 +101,7 @@ func (a *Web) markFilesStay(ctx context.Context, rows []DownloadRow, names map[i
 	if !slices.ContainsFunc(rows, ask) {
 		return // no read when no row needs it
 	}
-	fs, err := database.Select[mediafiles.LibraryFolder](ctx, a.read(), "library_folders", "1 = 1")
+	fs, err := database.Select[mediafiles.LibraryFolder](ctx, a.read(), "library_folders", "stand_in = 0")
 	if err != nil {
 		return
 	}

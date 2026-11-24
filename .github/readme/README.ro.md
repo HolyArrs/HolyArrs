@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: un punct roșu arată ce cere atenție, iar testul de conexiune numește problema exactă.** Etichete Plex pentru titlurile cerute, nume în limba ta și peste 30 de remedieri. Conectează aplicații prin MCP cu chei pe care le controlezi. [Vezi ce e nou](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: peste 150 de remedieri și funcții de la 101 de oameni.** Un sistem de pluginuri, un nou asistent de configurare și un mod fără intervenție care nu-ți atinge niciodată fișierele. [Vezi ce e nou](https://holyarrs.com/whats-new/)
 
 > Fiecare poster, trailer și scor din HolyArrs-ul tău vine de la un server pe care îl țin și îl plătesc eu, ca să rămână gratuit pentru toată lumea. Dacă HolyArrs ți-a făcut seara de film puțin mai frumoasă, un sponsor ține luminile aprinse pentru noi toți 💛
 >
@@ -374,7 +374,7 @@ Imaginea nu are shell, așa că `docker exec -it holyarrs /bin/bash` nu merge. C
 - Blocat în afara contului de proprietar:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Numărul versiunii:

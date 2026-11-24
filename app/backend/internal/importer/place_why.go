@@ -40,9 +40,10 @@ const SlowReadWhy = "reading the download folder took too long; try again"
 // CanImportAgain reports whether reason is one the person fixes outside
 // HolyArrs (a path pair, a mount, the save folder, a permission), or an
 // import that gave up on a passing fault, after which the same download can
-// be imported again.
+// be imported again. So can one that matched no file: by hand finds nothing
+// in a download that holds only archives.
 func CanImportAgain(reason string) bool {
-	return reason == notThereWhy || reason == noReadWhy || reason == noWriteWhy || reason == gaveUpWhy || reason == SlowReadWhy || strings.Contains(reason, "HOLYARRS_SAVE_PATH")
+	return reason == noMovieWhy || reason == noTrackWhy || reason == noEpisodeWhy || reason == notThereWhy || reason == noReadWhy || reason == noWriteWhy || reason == gaveUpWhy || reason == SlowReadWhy || strings.Contains(reason, "HOLYARRS_SAVE_PATH")
 }
 
 // goneWhy is the reason for a file that is not there: the path pair and the
@@ -181,4 +182,18 @@ func notPlacedWhy(root string, plan []mediafiles.PlanStep, res []mediafiles.Plac
 		}
 	}
 	return ""
+}
+
+// RetriesOnItsOwn reports whether an import that stopped for reason is tried
+// again on its own, the way Sonarr and Radarr look at a blocked download
+// again on each pass: the files may not be there yet (a sync from a seedbox
+// still copying them in), the folder read was too slow, or the import gave
+// up on a passing fault. A permission, a setting or a match by hand waits
+// for a person.
+func RetriesOnItsOwn(reason string) bool {
+	switch reason {
+	case notThereWhy, gaveUpWhy, SlowReadWhy:
+		return true
+	}
+	return false
 }

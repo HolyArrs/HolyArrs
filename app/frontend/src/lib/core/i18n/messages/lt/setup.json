@@ -8,10 +8,14 @@
 	"setup.fullPath": "Naudokite visą aplanko kelią, pavyzdžiui {path}.",
 	"setup.folderUsed": "Šis aplankas jau naudojamas arba yra naudojamame aplanke.",
 	"setup.folderMissing": "Tokio aplanko nėra. Patikrinkite kelią.",
-	"setup.addFolderOrOff": "Pridėkite aplanką arba išjunkite tai.",
+	"setup.addFolderOrOff": "Pridėkite aplanką arba paspauskite „Kol kas praleisti“.",
 	"setup.notAnswering": "HolyArrs neatsako. Pabandykite dar kartą po akimirkos.",
 	"setup.addUserPasswordHint": "Įveskite naudotojo vardą ir slaptažodį.",
 	"setup.folders": "Aplankai",
 	"setup.downloader": "Atsisiuntėjas",
-	"setup.source": "Šaltinis"
+	"setup.source": "Šaltinis",
+	"setup.alertsNeedKeyOne": "Pranešimai: 1 reikia rakto",
+	"setup.alertsNeedKey": "Pranešimai: {n} reikia rakto",
+	"setup.folderNoAccess": "HolyArrs negali atidaryti šio aplanko. Patikrinkite jo teises.",
+	"setup.folderCantUse": "HolyArrs negali naudoti šio aplanko. Patikrinkite kelią."
 }

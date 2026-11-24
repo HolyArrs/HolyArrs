@@ -219,8 +219,8 @@ func appOf(from string) string {
 	return app
 }
 
-// foldSource gives a Source the media kinds and categories of the same one
-// in another app.
+// foldSource gives a Source the media kinds, categories and MULTi languages
+// of the same one in another app.
 func foldSource(to, from *SourcePlan) {
 	to.On = to.On || from.On
 	if to.MinSeeders == nil && from.MinSeeders != nil && to.Protocol == "torrent" {
@@ -240,6 +240,7 @@ func foldSource(to, from *SourcePlan) {
 			to.Categories[k] = slices.Clone(cs)
 		}
 	}
+	to.MultiLanguages = appendNew(to.MultiLanguages, from.MultiLanguages...)
 }
 
 // dropNeeds takes an indexer that went into another Source off the list of

@@ -137,6 +137,11 @@ type Auth struct {
 	discoverTo   string
 	discoverWait time.Duration
 	discovering  atomic.Bool
+	// Owner reset codes from the sign-in page (owner_reset_code.go).
+	reset resetLimits
+	// Joins per invite link, so a shared link cannot be used to flood in accounts (invite_limits.go).
+	inviteJoins inviteJoinLimit
+	envReset    bool // HOLYARRS_RESET_OWNER made a code at start-up
 }
 
 // Options tunes Auth.
@@ -246,6 +251,7 @@ func New(s *database.Store, opt Options) *Auth {
 	a.requireAdmin2FA.Store(a.signInSetting(context.Background(), keyRequireAdmin2FA) == "true")
 	a.initSSO(opt.SSO)
 	a.ssoOpt = opt.SSO
+	a.startResetFromEnv()
 	if !opt.SSO.OIDCFromEnv {
 		a.loadSavedOIDC(context.Background())
 	}
@@ -254,6 +260,7 @@ func New(s *database.Store, opt Options) *Auth {
 
 // Cleanup drops ended sessions.
 func (a *Auth) Cleanup(ctx context.Context) error {
+	a.expireResetCode(ctx)
 	now := a.now()
 	expiresAt := database.FormatTime(now)
 	idleBefore := database.FormatTime(now.Add(-IdleTimeout))

@@ -85,5 +85,21 @@
 	"sources.uses.auto": "mencari sendiri",
 	"sources.uses.feed": "daftar terbaru",
 	"sources.uses.hand": "cari manual",
-	"sources.uses.none": "tidak dipakai"
+	"sources.uses.none": "tidak dipakai",
+	"sources.bridge.removeTitle": "Hapus {name}?",
+	"sources.bridge.find": "Cari {name} di jaringan saya",
+	"sources.bridge.noneFound": "Tidak ada {name} yang menjawab di jaringan Anda.",
+	"sources.bridge.keyFound": "Kunci didapat dari {name}",
+	"sources.bridge.keyKept": "{name} tidak memberikan kuncinya (login aktif). Pakai Ambil kunci untuk menyalinnya.",
+	"sources.bridge.keyKeptJackett": "Jackett tidak memberikan kuncinya (ada kata sandi admin). Pakai Ambil kunci untuk menyalinnya.",
+	"sources.bridge.notReached": "Tidak dapat menjangkau {name}.",
+	"sources.bridge.brings.title": "Yang ikut dibawa",
+	"sources.bridge.brings.sites": "Indexer-nya, sebagai Sumber",
+	"sources.bridge.brings.categories": "Kategorinya",
+	"sources.bridge.brings.search": "Pencarian lewat {name}",
+	"sources.bridge.brings.sync": "Perubahan di {name} ikut terbawa",
+	"sources.bridge.brings.stays": "Indexer Anda tetap disiapkan di {name}.",
+	"sources.bridge.brings.had": "{n} indexer sudah di sini",
+	"sources.bridge.brings.hadFrom": "Diimpor lewat {apps}",
+	"sources.bridge.brings.keyKept": "Kosongkan kunci untuk memakai kunci yang sudah mereka punya."
 }

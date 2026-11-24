@@ -61,9 +61,16 @@ func (h *Handlers) rowsText(r *http.Request, views []ExploreRowView) {
 	}
 }
 
-// detailsText shows a title page in x: its name, synopsis and tagline, and
+// detailsText shows a title page in x and lang: its name, synopsis, tagline
+// and logo (lang's, else the original language's, else English), and
 // the original title only while it differs from the name shown.
-func detailsText(d *metadata.Details, x metadata.TitleText) {
+func detailsText(d *metadata.Details, x metadata.TitleText, lang string) {
+	if l := d.Logos[lang]; l != "" {
+		d.Logo = l
+	} else if l := d.Logos[metadata.OrigLogo]; l != "" && metadata.TMDBCode(lang) != "en" {
+		d.Logo = l
+	}
+	d.Logos, d.LogosRead = nil, false
 	if x.Name != "" && x.Name != d.Name {
 		switch {
 		case d.OriginalTitle == "":

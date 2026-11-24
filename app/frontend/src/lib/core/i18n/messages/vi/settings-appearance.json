@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Yêu cầu",
 	"settings.appearance.colRate": "Mỗi hàng",
 	"settings.appearance.noRows": "Chưa đếm hàng Khám phá nào.",
+	"settings.appearance.rowStats": "Các hàng Khám phá",
+	"settings.appearance.rowStatsDesc": "Lượt mở và yêu cầu theo từng hàng trong 30 ngày qua, tính chung mọi người. Chỉ đếm trên máy chủ này.",
+	"settings.appearance.colRow": "Hàng",
+	"settings.appearance.row.because_have": "Giống phim bạn đang có",
+	"settings.appearance.row.because_asked": "Giống yêu cầu của bạn",
+	"settings.appearance.row.person": "Thêm từ một người",
+	"settings.appearance.row.genre": "Thể loại chọn cho bạn",
+	"settings.appearance.row.popular_genre": "Phổ biến theo thể loại",
+	"settings.appearance.row.popular_decade": "Phổ biến theo thập niên",
+	"settings.appearance.row.decade": "Theo thập niên",
+	"settings.appearance.row.mood": "Theo tâm trạng",
+	"settings.appearance.row.hero": "Biểu ngữ trên cùng",
 	"settings.appearance.motion": "Chuyển động",
 	"settings.appearance.motionNote": "Theo cài đặt Giảm chuyển động của thiết bị"
 }

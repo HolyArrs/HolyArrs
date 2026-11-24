@@ -85,5 +85,21 @@
 	"sources.uses.auto": "ค้นหาเอง",
 	"sources.uses.feed": "รายการใหม่สุด",
 	"sources.uses.hand": "ค้นหาด้วยตัวเอง",
-	"sources.uses.none": "ไม่ได้ใช้"
+	"sources.uses.none": "ไม่ได้ใช้",
+	"sources.bridge.removeTitle": "ลบ {name} ไหม",
+	"sources.bridge.find": "ค้นหา {name} ในเครือข่ายของฉัน",
+	"sources.bridge.noneFound": "ไม่มี {name} ตอบกลับในเครือข่ายของคุณ",
+	"sources.bridge.keyFound": "ได้คีย์จาก {name} แล้ว",
+	"sources.bridge.keyKept": "{name} ไม่ให้คีย์ (เปิดการลงชื่อเข้าใช้อยู่) ใช้ \"รับคีย์\" เพื่อคัดลอก",
+	"sources.bridge.keyKeptJackett": "Jackett ไม่ให้คีย์ (มีรหัสผ่านผู้ดูแล) ใช้ \"รับคีย์\" เพื่อคัดลอก",
+	"sources.bridge.notReached": "เชื่อมต่อ {name} ไม่ได้",
+	"sources.bridge.brings.title": "สิ่งที่ย้ายมา",
+	"sources.bridge.brings.sites": "ตัวทำดัชนีของมัน ในฐานะแหล่งที่มา",
+	"sources.bridge.brings.categories": "หมวดหมู่ของตัวทำดัชนี",
+	"sources.bridge.brings.search": "การค้นหาผ่าน {name}",
+	"sources.bridge.brings.sync": "การเปลี่ยนแปลงใน {name} ตามมาด้วย",
+	"sources.bridge.brings.stays": "ตัวทำดัชนีของคุณยังตั้งค่าอยู่ใน {name}",
+	"sources.bridge.brings.had": "มีตัวทำดัชนีอยู่แล้ว {n} ตัว",
+	"sources.bridge.brings.hadFrom": "นำเข้าผ่าน {apps}",
+	"sources.bridge.brings.keyKept": "เว้นคีย์ว่างไว้เพื่อใช้คีย์ที่มีอยู่แล้ว"
 }

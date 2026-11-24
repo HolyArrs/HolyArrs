@@ -33,7 +33,9 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 		}
 		return
 	}
-	if dr.Protocol != "usenet" || !dr.ClearFinished || readOnlyFor(dr) || dr.Removed {
+	// A path pair that places links needs the downloaded files kept: the
+	// Library entries point at them.
+	if dr.Protocol != "usenet" || !dr.ClearFinished || readOnlyFor(dr) || dr.Removed || domain.HasLinkPair(dr.PathMap) {
 		m.clearDone(ctx, downloadID)
 		return
 	}
@@ -74,6 +76,10 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 			return
 		}
 		said = "Cleared the imported download and its files from " + dr.Name
+	} else if folder != "" {
+		// The Downloader keeps a finished job's files when its history row
+		// goes, so say where they stayed and what lets HolyArrs reach them.
+		said += "; its files were kept in " + folder + ": HolyArrs deletes them only inside a path pair or the save path it can see, and never in or around a Library folder"
 	}
 	m.event(ctx, &d, "download_removed", said)
 }

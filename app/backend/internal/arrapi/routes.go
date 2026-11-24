@@ -18,8 +18,10 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // The versions each side reports. Seerr and Bazarr refuse a major version
@@ -65,6 +67,16 @@ type Deps struct {
 	SourceRemoved func(id int64)
 	// Now is the clock. Nil means time.Now.
 	Now func() time.Time
+	// Search sends a Release picked from a hand search and reads the
+	// Turned down list, as the app's own screens do. Nil refuses a grab
+	// and lists nothing turned down.
+	Search *sources.Searcher
+	// Downloads removes downloads as the Downloads page does. Nil, or nil
+	// returned, refuses a removal.
+	Downloads func() *downloads.Manager
+	// SearchWait is how long a hand search waits for its results. Zero
+	// means 90 seconds.
+	SearchWait time.Duration
 }
 
 type handler struct {
@@ -94,8 +106,16 @@ func Sonarr(d Deps) http.Handler {
 	mux.HandleFunc("PUT /series", h.putSeries)
 	mux.HandleFunc("PUT /series/{id}", h.putSeries)
 	mux.HandleFunc("DELETE /series/{id}", h.deleteTitle)
+	mux.HandleFunc("POST /series/import", h.importSeries)
+	mux.HandleFunc("PUT /series/editor", h.putEditor)
+	mux.HandleFunc("DELETE /series/editor", h.deleteEditor)
+	mux.HandleFunc("POST /seasonpass", h.seasonPass)
 	mux.HandleFunc("GET /episode", h.listEpisodes)
+	mux.HandleFunc("GET /episodefile", h.episodeFiles)
 	mux.HandleFunc("PUT /episode/monitor", h.monitorEpisodes)
+	mux.HandleFunc("GET /episode/{id}", h.getEpisode)
+	mux.HandleFunc("PUT /episode/{id}", h.putEpisode)
+	mux.HandleFunc("GET /history/series", h.titleHistory)
 	mux.HandleFunc("GET /wanted/missing", h.missingEpisodes)
 	mux.HandleFunc("GET /calendar", h.calendarEpisodes)
 	mux.HandleFunc("GET /importlistexclusion/paged", h.neverAddPage)
@@ -114,8 +134,14 @@ func Radarr(d Deps) http.Handler {
 	mux.HandleFunc("PUT /movie", h.putMovie)
 	mux.HandleFunc("PUT /movie/{id}", h.putMovie)
 	mux.HandleFunc("DELETE /movie/{id}", h.deleteTitle)
+	mux.HandleFunc("POST /movie/import", h.importMovies)
+	mux.HandleFunc("PUT /movie/editor", h.putEditor)
+	mux.HandleFunc("DELETE /movie/editor", h.deleteEditor)
 	mux.HandleFunc("GET /exclusions/paged", h.neverAddPage)
 	mux.HandleFunc("GET /wanted/missing", h.missingMovies)
+	mux.HandleFunc("GET /history/movie", h.titleHistory)
+	mux.HandleFunc("GET /moviefile", h.movieFiles)
+	mux.HandleFunc("GET /moviefile/{id}", h.movieFile)
 	mux.HandleFunc("GET /calendar", h.calendarMovies)
 	return h.serve(mux)
 }
@@ -141,10 +167,27 @@ func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /tag/{id}", h.putTag)
 	mux.HandleFunc("DELETE /tag/{id}", h.removeTag)
 	mux.HandleFunc("GET /tag/detail", h.tagDetail)
+	mux.HandleFunc("GET /tag/{id}", h.getTag)
 	mux.HandleFunc("GET /queue", h.queue)
+	mux.HandleFunc("GET /history", h.history)
+	mux.HandleFunc("GET /diskspace", h.diskSpace)
+	mux.HandleFunc("GET /customfilter", h.customFilters)
 	mux.HandleFunc("GET /queue/details", h.queueDetails)
 	mux.HandleFunc("GET /queue/status", h.queueStatus)
+	mux.HandleFunc("DELETE /queue/bulk", h.removeQueueBulk)
+	mux.HandleFunc("DELETE /queue/{id}", h.removeQueue)
+	mux.HandleFunc("GET /release", h.releases)
+	mux.HandleFunc("POST /release", h.grab)
+	mux.HandleFunc("GET /wanted/cutoff", h.cutoffUnmet)
+	mux.HandleFunc("GET /blocklist", h.blocklist)
+	mux.HandleFunc("DELETE /blocklist/bulk", h.unblockBulk)
+	mux.HandleFunc("DELETE /blocklist/{id}", h.unblock)
+	mux.HandleFunc("GET /system/task", h.systemTasks)
+	mux.HandleFunc("GET /system/task/{id}", h.systemTask)
+	mux.HandleFunc("GET /log", h.logPage)
+	mux.HandleFunc("GET /update", h.updates)
 	mux.HandleFunc("POST /command", h.command)
+	mux.HandleFunc("GET /command", h.listCommands)
 	mux.HandleFunc("GET /command/{id}", h.getCommand)
 	mux.HandleFunc("GET /mediacover/{id}/{file}", h.cover)
 	mux.HandleFunc("GET /indexer", h.listIndexers)
@@ -160,6 +203,7 @@ func (h *handler) common(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /notification/{id}", h.putHook)
 	mux.HandleFunc("DELETE /notification/{id}", h.deleteHook)
 	mux.HandleFunc("POST /notification/test", h.testHook)
+	mux.HandleFunc("GET /notification/schema", h.hookSchema)
 	h.configRoutes(mux)
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { notFound(w) })
 }
@@ -178,10 +222,21 @@ func (h *handler) serve(mux *http.ServeMux) http.Handler {
 			inner, ok = rest[1:], true
 		}
 		if !ok {
-			// The old apps answer anything outside their API with a bare
-			// 404. Bazarr's first probe (/api/system/status) then falls
-			// back to /api/v3. A JSON body would be read as a version.
-			w.WriteHeader(http.StatusNotFound)
+			switch rest {
+			case "/ping": // phone apps such as Helmarr check the server is up here
+				writeJSON(w, http.StatusOK, map[string]string{"status": "OK"})
+			case "/api": // the API versions on offer
+				writeJSON(w, http.StatusOK, map[string]any{"current": "v3", "deprecated": []string{}})
+			case "/system/status":
+				// A page of the old app's own site: it sends the caller to
+				// sign in. Helmarr asks for it while it works out the address.
+				http.Redirect(w, r, "/login", http.StatusFound) // the URL base layer adds the base
+			default:
+				// The old apps answer anything else outside their API with a
+				// bare 404. Bazarr's first probe (/api/system/status) then
+				// falls back to /api/v3. A JSON body would be read as a version.
+				w.WriteHeader(http.StatusNotFound)
+			}
 			return
 		}
 		// Bazarr lists with "series/", which means "series".

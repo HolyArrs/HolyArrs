@@ -283,6 +283,9 @@ func (t *TMDB) get(ctx context.Context, path string, q url.Values) ([]byte, erro
 	return body, err
 }
 
+// errBadQuery is a 400: the metadata server refused the query itself.
+var errBadQuery = errors.New("query refused")
+
 // tmdbAttempt is how long one request may take once the Gate lets it go. An
 // answer the server has not kept yet can take 20 s or more: it waits its
 // turn upstream, then keeps the answer for the next ask.
@@ -374,6 +377,11 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 		case resp.StatusCode == http.StatusNotFound:
 			outcome = outbound.TerminalFailure
 			return nil, ErrNotFound
+		case resp.StatusCode == http.StatusUnauthorized && !r.Direct:
+			// The metadata server no longer knows this install's sign-in;
+			// it is dropped and the install signs up again on its own.
+			outcome = outbound.TerminalFailure
+			return nil, InstallRefused(ErrNoAccess)
 		case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
 			outcome = outbound.TerminalFailure
 			return nil, ErrNoAccess
@@ -399,6 +407,9 @@ func (t *TMDB) fetch(ctx context.Context, u string) ([]byte, error) {
 			}
 			if resp.StatusCode >= 500 {
 				return nil, fmt.Errorf("TMDB answered %d: %w", resp.StatusCode, ErrServiceUnavailable)
+			}
+			if resp.StatusCode == http.StatusBadRequest {
+				return nil, fmt.Errorf("TMDB answered %d: %w", resp.StatusCode, errBadQuery)
 			}
 			return nil, fmt.Errorf("TMDB answered %d", resp.StatusCode)
 		}

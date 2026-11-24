@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "सिर्फ़ ये बता सकते हैं कि विज़िट कहाँ से आई।",
 	"settings.signIn.fixToSaveOne": "सेव करने के लिए 1 पंक्ति ठीक करें",
 	"settings.signIn.fixToSaveOther": "सेव करने के लिए {n} पंक्तियाँ ठीक करें",
-	"settings.signIn.localSaved": "लोकल नेटवर्क सेव हुआ"
+	"settings.signIn.localSaved": "लोकल नेटवर्क सेव हुआ",
+	"settings.signIn.forgotTitle": "पासवर्ड भूल गए?",
+	"settings.signIn.forgotOn": "साइन-इन पेज पर पासवर्ड भूल गए? दिखाएँ",
+	"settings.signIn.forgotNote": "मालिक को सर्वर लॉग से एक बार चलने वाला कोड मिलता है। अगर सब सिंगल साइन-ऑन से साइन इन करते हैं तो इसे बंद करें। reset-owner कमांड फिर भी चलता है।",
+	"settings.signIn.forgotShown": "पासवर्ड भूल गए? चालू है",
+	"settings.signIn.forgotHidden": "पासवर्ड भूल गए? बंद है"
 }

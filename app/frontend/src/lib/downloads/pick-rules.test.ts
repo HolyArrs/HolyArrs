@@ -1,6 +1,10 @@
 import {
 	applySize,
+	applyStepSizes,
+	stepSizeRows,
+	stepSizes,
 	blankBody,
+	deviceFamilies,
 	bytesPerMinute,
 	checkBody,
 	checkOwnTrait,
@@ -45,8 +49,8 @@ describe('ladders', () => {
 	it('names steps in plain words', () => {
 		expect(stepLabel('1080p_web')).toBe('1080p web');
 		expect(stepLabel('720p_bluray')).toBe('720p Blu-ray');
-		expect(stepLabel('2160p_remux')).toBe('4K remux');
-		expect(stepLabel('sd_dvd')).toBe('DVD');
+		expect(stepLabel('2160p_remux')).toBe('4K remux (2160p)');
+		expect(stepLabel('sd_dvd')).toBe('SD from disc (DVD, Blu-ray)');
 		expect(stepLabel('lossless')).toBe('Lossless (CD quality)');
 		expect(stepLabel('odd_step')).toBe('odd step');
 	});
@@ -56,6 +60,8 @@ describe('traits', () => {
 	it('names traits in plain words, unknown ones as they are', () => {
 		expect(traitLabel('hevc')).toBe('HEVC (smaller files)');
 		expect(traitLabel('hardcoded_subs')).toBe('Subtitles burned into the picture');
+		expect(traitLabel('dv_no_fallback')).toBe('Dolby Vision without an HDR10 backup');
+		expect(traitLabel('plays_on')).toBe('Needs converting on your devices');
 		expect(traitLabel('cd_source')).toBe('Ripped from a CD');
 		expect(traitLabel('sample')).toBe('Only a short sample');
 		expect(traitLabel('new_thing')).toBe('new thing');
@@ -241,7 +247,78 @@ describe('sizes', () => {
 	});
 });
 
+describe('stepSizes', () => {
+	it("lists each step's own sizes in GB per hour, best step first, open top as null",() => {
+		const limits = {
+			'*': { min: 1, max: 2, per_minute: true },
+			'tv-720p': { min: bytesPerMinute(0.42), max: bytesPerMinute(2.46), per_minute: true },
+			'bluray-2160p': { min: bytesPerMinute(3.12), max: 2 ** 50, per_minute: true }
+		};
+		expect(stepSizes(limits, ['bluray-2160p', 'bluray-1080p', 'tv-720p'])).toEqual([
+			{ step: 'bluray-2160p', min: 3.12, max: null },
+			{ step: 'tv-720p', min: 0.42, max: 2.46 }
+		]);
+	});
+});
+
+describe('step size rows', () => {
+	const limits = {
+		'*': { min: 1, max: 2, per_minute: true },
+		'720p_web': { min: bytesPerMinute(0.42), max: bytesPerMinute(2.46), preferred: bytesPerMinute(1.5), per_minute: true },
+		'2160p_web': { min: 1234567, max: 2 ** 50, per_minute: true }
+	};
+	const ladder = ['720p_web', '1080p_web', '2160p_web'];
+	it('reads each step of its own as editable GB per hour, low step first, an open top as empty', () => {
+		expect(stepSizeRows(limits, ladder)).toEqual([
+			{ step: '720p_web', min: 0.42, preferred: 1.5, max: 2.46 },
+			{ step: '2160p_web', min: 0.07, preferred: '', max: '' }
+		]);
+	});
+	const body = { ...blankBody('movie'), size_limits: limits };
+	const start = stepSizeRows(limits, ladder);
+	it.each([
+		['untouched rows keep their exact bytes', start, limits],
+		['a changed row is written', [{ step: '720p_web', min: 1, preferred: '', max: 3 }, start[1]],
+			{ ...limits, '720p_web': { min: bytesPerMinute(1), max: bytesPerMinute(3), per_minute: true } }],
+		['a preferred size is written', [{ step: '720p_web', min: 1, preferred: 2, max: 3 }, start[1]],
+			{ ...limits, '720p_web': { min: bytesPerMinute(1), max: bytesPerMinute(3), preferred: bytesPerMinute(2), per_minute: true } }],
+		['an empty smallest is 0 and an empty largest is open', [{ step: '720p_web', min: '', preferred: '', max: '' }, start[1]],
+			{ ...limits, '720p_web': { min: 0, max: 2 ** 50, per_minute: true } }],
+		['a removed row is dropped; the Every step limit stays', [start[1]],
+			{ '*': limits['*'], '2160p_web': limits['2160p_web'] }],
+		['a new row is added', [...start, { step: '1080p_web', min: 2, preferred: '', max: '' }],
+			{ ...limits, '1080p_web': { min: bytesPerMinute(2), max: 2 ** 50, per_minute: true } }]
+	] as const)('%s', (_, rows, want) => {
+		expect(applyStepSizes(body, rows as never, start).size_limits).toEqual(want);
+		expect(body.size_limits).toBe(limits);
+	});
+});
+
+describe('preferred size check', () => {
+	it.each([
+		[bytesPerMinute(2), true],
+		[undefined, true],
+		[bytesPerMinute(0.1), false],
+		[bytesPerMinute(9), false]
+	])('preferred %s inside 0.5 to 6 GB an hour: %s', (preferred, ok) => {
+		const b = blankBody('movie');
+		b.size_limits = { '1080p_web': { min: bytesPerMinute(0.5), max: bytesPerMinute(6), per_minute: true, ...(preferred ? { preferred } : {}) } };
+		expect(!checkBody('Mine', ['movie'], b, []).size_limits).toBe(ok);
+	});
+});
+
 describe('tidyBody', () => {
+	it.each([
+		[['fr'], ['VFQ'], ['VFQ']],
+		[['fr'], [], undefined],
+		[['de'], ['VFQ'], undefined]
+	])('keeps French versions only when French is wanted (%j, %j)', (wanted, versions, want) => {
+		const b = blankBody('movie');
+		b.language.wanted = wanted;
+		b.language.french_versions = versions;
+		expect(tidyBody(b).language.french_versions).toEqual(want);
+	});
+
 	it('turns empty or odd number boxes into whole numbers, and drops a 0 day limit', () => {
 		const b = blankBody('movie') as unknown as Record<string, unknown> & PickRulesBody;
 		b.traits = [{ trait: 'hevc', points: null as unknown as number }, { trait: 'av1', points: 2.6 }];
@@ -259,6 +336,10 @@ describe('tidyBody', () => {
 		expect('max_age_days' in t.proper_policy).toBe(false);
 		b.proper_policy.max_age_days = 14;
 		expect(tidyBody(b).proper_policy.max_age_days).toBe(14);
+		b.language.wait_days = '' as unknown as number;
+		expect('wait_days' in tidyBody(b).language).toBe(false);
+		b.language.wait_days = 7;
+		expect(tidyBody(b).language.wait_days).toBe(7);
 		expect(b.min_points).toBe('');
 	});
 
@@ -348,5 +429,14 @@ describe('your own traits', () => {
 		expect(checkSizeTrait('Back', '8', '2').terms).toBeTruthy();
 		expect(checkSizeTrait('Word', 'x', '').terms).toBeTruthy();
 		expect(checkSizeTrait('', '1', '').name).toBeTruthy();
+	});
+});
+
+describe('devices', () => {
+	it('keeps ticked devices and drops an empty list', () => {
+		const b = blankBody('movie');
+		expect(tidyBody({ ...b, devices: ['fire_tv'] }).devices).toEqual(['fire_tv']);
+		expect('devices' in tidyBody({ ...b, devices: [] })).toBe(false);
+		expect(deviceFamilies).toContain('web_browser');
 	});
 });

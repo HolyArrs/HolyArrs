@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Mégse",
 	"settings.schedules.stages": "Szakaszok",
 	"settings.schedules.stagesNote": "Szüneteltetésük vagy újraindításuk a <a>Modulok</a> alatt.",
-	"settings.schedules.allTime": "Folyamatosan"
+	"settings.schedules.allTime": "Folyamatosan",
+	"settings.schedules.skip.nothing": "Nincs teendő",
+	"settings.schedules.skip.plexOff": "Kikapcsolva: kapcsold be ezt: {setting} itt: {page}",
+	"settings.schedules.skip.plexNobody": "Nincs teendő: senki sem kapcsolta be a Plex-figyelőlistáját",
+	"settings.schedules.skip.settingOff": "Kikapcsolva: kapcsold be a beállításaiban",
+	"settings.schedules.skip.starting": "Kihagyva: a HolyArrs még indult",
+	"settings.schedules.took": "Időtartam: {time}",
+	"settings.schedules.finished": "{label} kész",
+	"settings.schedules.nothingToDo": "{label}: nincs teendő",
+	"settings.schedules.runFailed": "{label} sikertelen"
 }

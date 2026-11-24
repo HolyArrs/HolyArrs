@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t, startLang } from '#lib/core/i18n/i18n.svelte.ts';
+	import { t, startLang, langPack } from '#lib/core/i18n/i18n.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { personName } from '#lib/core/plain.ts';
 	import { setBase } from '#lib/core/paths.ts';
@@ -7,16 +7,18 @@
 	import { to, appPath } from '#lib/core/paths.ts';
 	import '../app.css';
 	import { onMount, tick, type Snippet } from 'svelte';
-	import { navigating, page } from '$app/state';
+	import { navigating, page, updated } from '$app/state';
 	import { afterNavigate, beforeNavigate, goto, onNavigate, preloadCode } from '$app/navigation';
-	import { hideReconnecting, loaderReady, navEnded, navWatch, showReconnecting } from '#lib/core/loader.ts';
+	import { hideReconnecting, loaderReady, navEnded, navWatch, reconnectWatch, showReconnecting } from '#lib/core/loader.ts';
+	import ReconnectPill from './(frame)/ReconnectPill.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Words from '#lib/ui/Words.svelte';
 	import ToastList from './(frame)/ToastList.svelte';
 	import Theater from './(frame)/Theater.svelte';
 	import { theater } from '#lib/core/trailer/theater.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
-	import { keepPersonPic, theme, setTheme, type ThemeChoice, backdrop, loadProfile, forgetProfile } from '#lib/accounts/index.ts';
+	import { keepPersonPic, theme, setTheme, type ThemeChoice, backdrop, loadProfile, forgetProfile, profile, LanguagePackNotice } from '#lib/accounts/index.ts';
+	import { fetchMissing } from '#lib/core/i18n/language-packs.svelte.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { dlPush, decisions, refreshDecisions, activeDownloads, refreshActiveDownloads, resetActiveDownloads, dlTop } from '#lib/downloads/index.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
@@ -28,6 +30,7 @@
 	import { installPersonPrefetch, installHeroAhead, checkHero, installScrollBar, showBar, arrived, leaving } from '#lib/discover/index.ts';
 	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen, installArtistVideoPrefetch } from '#lib/music/index.ts';
 	import { installHeroPrefetch } from '#lib/metadata/index.ts';
+	import { sidebarPluginPages, type SidebarPluginPage } from '#lib/ui/plugin-cards.ts';
 	import { idlePages, installRowAhead } from '#lib/core/smart-preload.ts';
 	import { preloadHero } from '#lib/core/tmdb-image.ts';
 	import { minimalLook } from '#lib/core/look.svelte.ts';
@@ -43,7 +46,7 @@
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { trackInputModality } from './(frame)/focus.ts';
-	import { focusField, rememberReturn, searchField } from '#lib/core/search-field.svelte.ts';
+	import { focusField, pluginScope, rememberReturn, searchField } from '#lib/core/search-field.svelte.ts';
 	import AskHost from './(frame)/AskHost.svelte';
 	import {
 		buildNav,
@@ -61,6 +64,10 @@
 
 	// The saved or browser language, before the first page draws (English is already in the bundle).
 	void startLang();
+	// Signed in with a language whose pack isn't installed yet: install it (or ask once, on a new install).
+	$effect(() => {
+		if (session.s.state === 'signed_in' && langPack.missing) void fetchMissing();
+	});
 
 	function allowed(need: Need): boolean {
 		if (need === null) return true;
@@ -97,6 +104,15 @@
 			.filter(([, part]) => partsNow.answer?.parts.find((p) => p.part === part)?.on !== false)
 			.map(([k]) => k)
 	);
+	// Pages running plugins add, listed under Plugins for the owner (the only one who may open them).
+	let pluginPages = $state<SidebarPluginPage[]>([]);
+	$effect(() => {
+		if (session.s.role !== 'owner') {
+			pluginPages = [];
+			return;
+		}
+		void sidebarPluginPages().then((p) => (pluginPages = p));
+	});
 	const sections = $derived(
 		buildNav({
 			allowed: (n) => allowed(n),
@@ -107,7 +123,8 @@
 			active: activeDownloads,
 			unread: inbox.unread,
 			kid: session.kid,
-			settingsAttention
+			settingsAttention,
+			pluginPages
 		})
 	);
 	const allItems = $derived(sections.flatMap((s) => s.items));
@@ -238,6 +255,8 @@
 			showBar();
 			if (!path.startsWith('/search')) rememberReturn();
 			const shown = focusField(true);
+			// On Plugins the field filters the plugin grid, so it stays on the page.
+			if (pluginScope.on && path.startsWith('/plugins') && shown) return;
 			// A key press means a keyboard is there: when no field showed yet (phones), focus the Search page's field once it opens, so typed words are not lost.
 			if (!path.startsWith('/search')) void goto(to(shown && searchField.term.trim() ? `/search?q=${encodeURIComponent(searchField.term.trim())}` : '/search'), { reset: !shown }).then(() => { if (!shown) void tick().then(() => focusField()); });
 		} else if (e.key === 'Escape' && overlayOpen) {
@@ -254,11 +273,13 @@
 	$effect(() => {
 		if (session.s.state !== 'unknown') void tick().then(loaderReady);
 	});
-	// The server went away (restart, update): Orbit with Reconnecting… until it answers.
-	$effect(() => {
-		if (live.status.state === 'reconnecting') showReconnecting();
-		else if (live.status.state === 'live') hideReconnecting();
-	});
+	// The server went away (restart, update): a small Reconnecting… pill keeps the page usable; Orbit covers it only after a minute straight.
+	let reconnectPill = $state(false);
+	const reconnect = reconnectWatch({ pill: (on) => (reconnectPill = on), cover: (on) => (on ? showReconnecting() : hideReconnecting()) });
+	$effect(() => reconnect(live.status.state));
+	// Back after a restart: ask at once whether it was an update, so the next page change loads the new app
+	// in full (SvelteKit does that once it knows) instead of waiting for the minute check.
+	onMount(() => live.on('resync', () => void updated.check().catch(() => {})));
 	beforeNavigate((nav) => {
 		if (!nav.willUnload) navWatch(nav.complete, () => navigating.to !== null);
 		leaving();
@@ -300,8 +321,8 @@
 	});
 
 	const roleWord = $derived(({ owner: t('frame.layout.owner'), admin: t('frame.layout.admin'), member: t('frame.layout.member') } as Record<string, string>)[session.s.role] ?? t('frame.layout.member'));
-	// An id-like account name (preview-..., e2e-...) reads as "You".
-	const shownName = $derived(personName(session.s.name, t('frame.layout.you')));
+	// The display name from My account when set; else an id-like account name (preview-..., e2e-...) reads as "You".
+	const shownName = $derived(profile.displayName.trim() || personName(session.s.name, t('frame.layout.you')));
 	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
 	const openFixes = $derived((settingsAttention ? (settingsNow.answer?.items.length ?? 0) : 0) + (allowed('manage_library') ? decisionPins().length : 0) + (feedPins.update ? 1 : 0));
 	// Request updates, failed downloads and a new version reach the bell from any page.
@@ -337,7 +358,7 @@
 	const offHere = $derived(offPartName(partsNow.answer, path));
 	const staff = $derived(allowed('staff'));
 	const mark = $derived(theme.value === 'light' ? '/brand/mark-color.svg' : '/brand/mark-color-on-dark.svg');
-	const bare = $derived(path === '/login' || path.startsWith('/invite/'));
+	const bare = $derived(path === '/login' || path === '/plex-done' || path.startsWith('/invite/'));
 	const firstRunWelcome = $derived(path === '/welcome' && page.url.searchParams.get('first') === '1');
 	const ready = $derived(session.s.state === 'signed_in');
 
@@ -365,7 +386,7 @@
 			void goto(to(back && back !== '/' ? `/login?next=${encodeURIComponent(back)}` : '/login'), { replace: true });
 		}
 		// The owner finishes the first-run wizard before the rest of the app opens.
-		if (st === 'signed_in' && session.s.setupOpen && !firstRunWelcome && path !== '/login') {
+		if (st === 'signed_in' && session.s.setupOpen && !firstRunWelcome && path !== '/login' && !bare) {
 			void goto(to('/welcome?first=1'), { replace: true });
 			return;
 		}
@@ -505,6 +526,8 @@
 	<div class="boot" aria-busy="true" aria-label={t('frame.layout.loading')}><img src={to(mark)} alt="" width="40" height="40" /></div>
 {:else if firstRunWelcome}
 	<main id="main">{@render children()}</main>
+{:else if session.s.setupOpen && path !== '/login'}
+	<!-- On the way to the first-run setup: draw nothing, so no app page shows before it. -->
 {:else}
 	<a class="skip" href="#main">{t('frame.layout.skip')}</a>
 	<!-- Background behind every page: plain by default, or this Library's posters (Settings > Appearance). Settings home draws its own. -->
@@ -574,7 +597,9 @@
 		{/if}
 	</Sheet>
 {/if}
+<ReconnectPill show={reconnectPill} />
 <ToastList />
+{#if session.s.state === 'signed_in'}<LanguagePackNotice />{/if}
 <AskHost />
 <Theater />
 

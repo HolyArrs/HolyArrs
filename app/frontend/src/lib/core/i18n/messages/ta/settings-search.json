@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "சிறந்த பிரதி முதலில்; சமமாக இருந்தால் பருவத் தொகுப்பு வெல்லும்",
 	"settings.search.preferAlways": "தரத் தொகுப்பைக் கடக்கும் எந்தப் பருவத் தொகுப்பும்",
 	"settings.search.multi": "பல பருவங்கள் கொண்ட வெளியீடுகளை எடு",
-	"settings.search.multiHint": "அதிலுள்ள விடுபட்ட ஒவ்வோர் எபிசோடையும் நிரப்பும்",
+	"settings.search.multiHint": "அதிலுள்ள விடுபட்ட ஒவ்வோர் எபிசோடையும் நிரப்பும். ஒரே தரத்தில், அதிக தேவையான எபிசோடுகள் உள்ளது வெல்லும்",
 	"settings.search.music": "இசை",
 	"settings.search.albums": "விடுபட்ட ஆல்பங்களையும் தேடு",
 	"settings.search.albumsHint": "வெளியான ஆல்பங்கள், ஒவ்வொன்றுக்கும் ஒரு தேடல்",

@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "เลือกสิ่งที่จะขอต่อไป",
 	"home.newPopular": "ใหม่และยอดนิยม",
 	"home.whatSTrending": "อะไรกำลังมาแรง",
+	"home.gettingReady": "กำลังเตรียมทุกอย่าง…",
 	"home.top10sAndComing": "ท็อป 10 และเร็ว ๆ นี้",
 	"home.whatSNext": "อะไรจะมาถัดไป",
 	"home.airDatesAndReleases": "วันออกอากาศและวันวางจำหน่าย",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "ตอนและภาพยนตร์ที่มาสัปดาห์นี้",
 	"home.popularThisWeek": "ผลงานยอดนิยมที่มาสัปดาห์นี้",
 	"home.peopleCheck": "ตรวจสอบผู้ใช้",
-	"home.cantReadUsers": "อ่านรายชื่อผู้ใช้ไม่ได้"
+	"home.cantReadUsers": "อ่านรายชื่อผู้ใช้ไม่ได้",
+	"home.joined.title": "ยินดีต้อนรับ {name}",
+	"home.joined.find": "หาสิ่งที่ชอบใน {explore} หรือ {search}",
+	"home.joined.ask": "แตะ {request} ที่เรื่องที่ต้องการเพื่อรับมา คุณขอได้:",
+	"home.joined.track": "ติดตามแต่ละรายการใน {requests}",
+	"home.joined.noLimit": "ไม่มีขีดจำกัดรายสัปดาห์",
+	"home.joined.gotIt": "เข้าใจแล้ว",
+	"home.joined.explore": "เปิด {explore}"
 }

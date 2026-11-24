@@ -44,14 +44,14 @@ def render(image: str, config: str, port: int, media: dict | None = None, allowe
     for name, text in {"Name": "holyarrs-candidate", "Repository": image, "Network": "bridge",
                        "Privileged": "false", "ExtraParams": "--restart unless-stopped",
                        "WebUI": "http://[IP]:[PORT:6262]/", "Category": "MediaApp:Other:",
-                       "Overview": "Unpublished candidate. NAS installation remains unverified. Keep config on a direct local pool. "
+                       "Overview": "Unpublished candidate. NAS installation remains unverified. Keep config on a pool or one array disk (/mnt/<pool>/appdata/holyarrs or /mnt/disk1/appdata/holyarrs), never /mnt/user. "
                                    "HolyArrs runs as PUID:PGID (99:100 here) and gives the config folder to that user; "
                                    "media folders are never changed. For hardlinks, map one share holding downloads and "
                                    "Library folders instead of separate paths."}.items():
         ET.SubElement(root, name).text = text
     entries = [
         ("Web port", "6262", str(port), "Port", "tcp", "Choose an unused host port.", "always", "true"),
-        ("Config", "/config", config, "Path", "rw", "Direct local pool only; do not use /mnt/user. HolyArrs gives it to PUID:PGID.", "always", "true"),
+        ("Config", "/config", config, "Path", "rw", "A pool path such as /mnt/<pool>/appdata/holyarrs, or /mnt/disk1/appdata/holyarrs with no pool; not /mnt/user. HolyArrs gives it to PUID:PGID.", "always", "true"),
     ]
     entries += [(name, target, media.get(target, ""), "Path", "rw", description, "always", "false")
                 for name, target, description in MEDIA]

@@ -119,7 +119,7 @@ func TestValidateRefusesBadPatterns(t *testing.T) {
 		{DefaultFilePattern, "{year}", ColonSmart, IllegalReplace, "{title}"},
 		{DefaultFilePattern, DefaultFolderPattern, "colon?", IllegalReplace, "colon"},
 		{DefaultFilePattern, DefaultFolderPattern, ColonSmart, "drop", "illegal"},
-		{strings.Repeat("{title}", 40), DefaultFolderPattern, ColonSmart, IllegalReplace, "too long"},
+		{strings.Repeat("{title}", 90), DefaultFolderPattern, ColonSmart, IllegalReplace, "too long"},
 	} {
 		s := NamingSettings{FilePattern: c.file, FolderPattern: c.folder, Colon: c.colon, Illegal: c.illegal, RenameOnImport: true}
 		err := s.Validate()

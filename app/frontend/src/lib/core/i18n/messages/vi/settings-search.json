@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Bản tốt nhất trước; gói mùa thắng khi bằng nhau",
 	"settings.search.preferAlways": "Gói mùa mỗi khi nó đạt bộ chất lượng",
 	"settings.search.multi": "Lấy bản phát hành nhiều mùa",
-	"settings.search.multiHint": "Điền mọi tập còn thiếu trong đó",
+	"settings.search.multiHint": "Điền mọi tập còn thiếu trong đó. Cùng chất lượng, bản có nhiều tập cần hơn sẽ được chọn",
 	"settings.search.music": "Nhạc",
 	"settings.search.albums": "Cũng tìm các album còn thiếu",
 	"settings.search.albumsHint": "Các album đã phát hành, mỗi album một lần tìm",

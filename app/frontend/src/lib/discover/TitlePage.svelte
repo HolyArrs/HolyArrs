@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PluginCards from '#lib/ui/PluginCards.svelte';
+	import { titleSections, type PluginCard } from '#lib/ui/plugin-cards.ts';
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import '#lib/ui/title-page.css';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
@@ -49,6 +51,9 @@
 	import { date } from '#lib/core/format.ts';
 	import type { MenuItem } from '#lib/ui/Menu.svelte';
 	import HideSheet from './HideSheet.svelte';
+	import CheckReleasesSheet from './CheckReleasesSheet.svelte';
+	import { chosenToast } from '#lib/mediafiles/index.ts';
+	import type { Choice, ReleaseView } from '#lib/core/types.ts';
 	import { hiddenPill, type Hide } from './hidden.ts';
 
 
@@ -132,6 +137,7 @@
 		if (mayAsk) void fourKReady().then((r) => (fourKMovies = r.movie));
 	});
 	// Phones share one row between the 4K, Follow and Trailer buttons: the 4K caption shortens to "4K" so it is never cut to "Req…".
+	// Choose a release does the same: a pill reading "Releases" on phones, where a round icon has no hover label.
 	let phone = $state(false);
 	$effect(() => {
 		const mq = matchMedia('(max-width: 767px)');
@@ -207,20 +213,54 @@
 			allCast = false;
 		});
 	});
+	// The Library folders and Pick rules the add sheets offer; a failed load shows in the sheet with Try again.
+	let choicesLoaded = $state(false);
+	let choicesFailed = $state(false);
+	function loadAddChoices() {
+		choicesFailed = false;
+		Promise.all([
+			api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)),
+			api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules))
+		]).then(
+			() => (choicesLoaded = true),
+			() => ((choicesFailed = true), (choicesLoaded = true))
+		);
+	}
 	$effect(() => {
 		if (!manage || loadedSettings) return;
 		loadedSettings = true;
-		api.get<{ library_folders: LibraryFolder[] }>('/library-folders').then((r) => (folders = r.library_folders)).catch(() => {});
-		api.get<{ pick_rules: PickRulesView[] }>('/pick-rules').then((r) => (rules = r.pick_rules)).catch(() => {});
+		loadAddChoices();
 		api.get<GateDefaults>('/settings/release-gate').then((r) => (gateDefault = r.release_gate)).catch(() => {});
 		api.get<ShowSettings>('/settings/shows').then((r) => (showDefaults = r)).catch(() => {});
 		// The add dialogs wait for the saved defaults, fetched once per visit.
 		savedDefaults.forget();
 		void savedDefaults.load();
 	});
-	function added(title: TitleView) {
+	// Check releases: the release picked before the movie was added; it is sent once the add sheet has added it.
+	let checkOpen = $state(false);
+	let checked: { checkId: number; release: ReleaseView } | null = null;
+	function checkPicked(r: ReleaseView, rulesId: number, checkId: number) {
+		checked = { checkId, release: r };
+		addMovie?.open(details?.movie as LookupMovie, { choose: true, rulesId });
+	}
+	async function added(title: TitleView, choose = false) {
 		toasts.push(t('discover.titlePage.added2', { name: title.name }), 'ok');
-		void goto(to(`/library/${title.id}`));
+		const pick = choose ? checked : null;
+		checked = null;
+		if (pick) {
+			// Send the checked release; if that fails, the release list on the Library page offers the rest.
+			try {
+				chosenToast(await api.post<Choice>(`/releases/check/${pick.checkId}/pick`, { release_id: pick.release.id, title_id: title.id, force: pick.release.needs_force }));
+				return void goto(to(`/library/${title.id}`));
+			} catch (e) {
+				toasts.push(t('mediafiles.releaseSheet.sendFailed'), 'fail', { body: message(e) });
+				await api.post(`/titles/${title.id}/search`, { choose: false }).catch(() => {});
+				return void goto(to(`/library/${title.id}?pick`));
+			}
+		}
+		// Choose a release: start the pick-it-yourself search, then open the release list on the Library page.
+		if (choose) await api.post(`/titles/${title.id}/search`, { choose: false }).catch((e) => toasts.push(t('mediafiles.title.startFailed'), 'fail', { body: message(e) }));
+		void goto(to(`/library/${title.id}${choose ? '?pick' : ''}`));
 	}
 	/** Add all put this page's own movie in the Library: the page shows it as owned, without leaving. */
 	function ownAdded(id: number) {
@@ -358,7 +398,9 @@
 		const languages = [
 			...row(t('discover.titlePage.originalLanguage'), lang),
 			...row(t('discover.titlePage.spokenLanguages'), (i?.spokenLanguages.length ?? 0) > 1 ? i?.spokenLanguages.join(', ') : ''),
-			...row(t('discover.titlePage.originalTitle'), i?.originalTitle)
+			...row(t('discover.titlePage.originalTitle'), i?.originalTitle),
+			// The other names searches and file matching also use.
+			...row(t('discover.titlePage.otherNames'), (owned?.other_names ?? []).filter((n) => n !== i?.originalTitle && n !== d.name).slice(0, 5).join(' · '))
 		];
 		const release = [
 			...row(t('discover.titlePage.digital'), i?.dates.digital ? fmtDay(i.dates.digital) : ''),
@@ -387,6 +429,13 @@
 	const crumbs = $derived(details ? [{ href: to('/explore'), label: t('discover.titlePage.explore') }, { href: to(detailPath(details.kind, details.tmdb)), label: details.year ? `${details.name} (${details.year})` : details.name }] : []);
 	// The breadcrumb's parent for a page opened fresh is the title's section (Movies or TV shows). From the Library grid it goes back to the grid with its filters (backHref).
 	const sectionCrumb = $derived(details?.kind === 'show' ? { label: t('discover.titlePage.tvShows'), href: backHref ?? to('/library?kind=show') } : { label: t('discover.titlePage.movies'), href: backHref ?? to('/library?kind=movie') });
+	// Title page sections from running plugins, for titles in the Library: plain data drawn here.
+	let pluginSections = $state<PluginCard[]>([]);
+	$effect(() => {
+		const id = owned?.id;
+		pluginSections = [];
+		if (id) void titleSections(id).then((c) => (pluginSections = c));
+	});
 </script>
 
 <svelte:head><title>{details?.name ? `${details.name} · HolyArrs` : `${kindWord} · HolyArrs`}</title></svelte:head>
@@ -435,6 +484,7 @@
 				{:else if manage && !d.neverAdd}
 					{#if d.kind === 'movie' && d.movie}
 						<ActionButton icon="plus" label={t('discover.titlePage.addToTheLibrary', { name: d.name })} caption={t('discover.titlePage.addToLibrary')} primary onclick={() => addMovie?.open(d.movie as LookupMovie)} />
+						<ActionButton icon="grid" pill={phone} label={t('discover.titleOwned.checkReleases')} caption={phone ? t('library.title.releases') : t('discover.titleOwned.checkReleases')} onclick={() => (checkOpen = true)} data-testid="hero-choose-release" />
 					{:else if d.kind === 'show' && d.show}
 						<ActionButton icon="plus" label={t('discover.titlePage.addToTheLibrary', { name: d.name })} caption={t('discover.titlePage.addToLibrary')} primary onclick={() => addShow?.open(d.show as LookupShow)} />
 					{/if}
@@ -512,6 +562,7 @@
 				{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 2)}</dd></div>{/if}
 				{#if stars.length}<div><dt>{t('discover.titlePage.starring')}</dt><dd>{@render names(stars, 3)}</dd></div>{/if}
 				{#if d.genres.length}<div><dt>{t('discover.titlePage.genres')}</dt><dd>{d.genres.slice(0, 3).join(', ')}</dd></div>{/if}
+				{#if info?.contentNotes.length}<div data-testid="title-content-notes"><dt>{t('discover.titlePage.contains')}</dt><dd>{info.contentNotes.join(', ')}</dd></div>{/if}
 				{#if network}<div><dt>{t('discover.titlePage.network')}</dt><dd>{network}</dd></div>
 				{:else if info?.studios.length}<div><dt>{t('discover.titlePage.studio')}</dt><dd>{info.studios[0]}</dd></div>{/if}
 			</dl>
@@ -519,6 +570,7 @@
 		{@render trailers()}
 		{#if d.kind === 'show'}<SeasonFolds tmdb={d.tmdb} {seasons} fallback={d.backdrop} />{/if}
 		{@render castRow()}
+		<PluginCards cards={pluginSections} testid="title-plugin-sections" />
 		<TitleRows kind={d.kind} tmdb={d.tmdb} bind:info band={false} quickAsk={QuickAsk} ownAsk={d.kind === 'movie' && d.ask?.mine ? d.ask.state : undefined} onasked={(a) => { if (details && !a.four_k) details = { ...details, ask: { id: a.id, state: a.state, state_label: a.state_label, mine: true, people: a.people.length } }; }} onadded={ownAdded} />
 			<!-- About band: a lighter strip to the page edges, a row of cards (the title, every score, awards), three columns of label and value facts, then links out. -->
 			<section class="atv" data-testid="title-ledger">
@@ -578,8 +630,9 @@
 {/if}
 
 {#if manage}
-	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, t) => added(t)} />
-	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, t) => added(t)} />
+	{#if details?.movie}<CheckReleasesSheet bind:open={checkOpen} movie={details.movie} {folders} {rules} onpick={checkPicked} />{/if}
+	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} loaded={choicesLoaded} failed={choicesFailed} onretry={loadAddChoices} onadded={(_m, t, choose) => void added(t, choose)} />
+	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} loaded={choicesLoaded} failed={choicesFailed} onretry={loadAddChoices} onadded={(_s, t) => added(t)} />
 {/if}
 {#if mayAsk}
 	<AskMovieDialog bind:this={askMovieDialog} onasked={(_m, r) => movieAsked(r)} onrefused={(_m, body) => { if (typeof body.title_id === 'number') { toasts.push(t('discover.titlePage.alreadyInLibrary', { name: details?.name ?? kindWord }), 'info'); void goto(to(`/library/${body.title_id}`)); } }} />
@@ -636,7 +689,7 @@
 	.atv-rows dd { margin: 0; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 	.atv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin: 0; }
 	.atv-grid dt { color: var(--text); font: 400 12px/16px var(--font-ui); }
-	.atv-grid dd { margin: 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); }
+	.atv-grid dd { margin: 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); overflow-wrap: anywhere; }
 	.atv-h3 { margin: 22px 0 13px; color: var(--text); font: 700 17px/21px var(--font-ui); }
 	.atv-links { display: flex; flex-wrap: wrap; align-items: center; margin: 20px 0 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); }
 	.atv-links .sep { margin: 0 8px; color: var(--text-faint); }

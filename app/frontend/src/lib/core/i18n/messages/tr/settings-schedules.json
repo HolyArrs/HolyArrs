@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Vazgeç",
 	"settings.schedules.stages": "Aşamalar",
 	"settings.schedules.stagesNote": "Bunları <a>Modüller</a>'de duraklat ya da yeniden başlat.",
-	"settings.schedules.allTime": "Her zaman"
+	"settings.schedules.allTime": "Her zaman",
+	"settings.schedules.skip.nothing": "Yapılacak bir şey yok",
+	"settings.schedules.skip.plexOff": "Kapalı: {page} içinde {setting} seçeneğini açın",
+	"settings.schedules.skip.plexNobody": "Yapılacak bir şey yok: kimse Plex izleme listesini açmadı",
+	"settings.schedules.skip.settingOff": "Kapalı: ayarlarından açın",
+	"settings.schedules.skip.starting": "Atlandı: HolyArrs hâlâ başlıyordu",
+	"settings.schedules.took": "{time} sürdü",
+	"settings.schedules.finished": "{label} bitti",
+	"settings.schedules.nothingToDo": "{label}: yapılacak bir şey yok",
+	"settings.schedules.runFailed": "{label} başarısız oldu"
 }

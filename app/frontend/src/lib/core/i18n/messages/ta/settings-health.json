@@ -14,7 +14,6 @@
 	"settings.health.none": "முடிவுகள் இல்லை. இயக்க மீண்டும் சோதியுங்கள்.",
 	"settings.health.since": "முதல்",
 	"settings.health.settings": "நலச் சோதனை அமைப்புகள்",
-	"settings.health.updateCheck": "புதிய HolyArrs உள்ளதா எனச் சோதி",
 	"settings.health.onlyChecks": "சோதிக்க மட்டும். ஒருபோதும் நிறுவாது.",
 	"settings.health.every": "புதுப்பிப்புகளைச் சோதிக்கும் இடைவெளி",
 	"settings.health.day": "நாள்",

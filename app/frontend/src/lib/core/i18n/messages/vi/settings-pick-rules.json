@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Không thể hoàn tác. Các tệp vẫn được giữ.",
 	"settings.pickRules.removeUsed": "{used}. Hãy chọn quy tắc khác ở đó trước.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Hủy"
+	"settings.pickRules.cancel": "Hủy",
+	"settings.pickRules.check.title": "Kiểm tra tên bản phát hành",
+	"settings.pickRules.check.desc": "Dán tên bản phát hành để xem HolyArrs đọc nó thế nào và các bộ chất lượng của bạn đánh giá nó ra sao. Không tìm kiếm hay tải xuống gì cả.",
+	"settings.pickRules.check.name": "Tên bản phát hành",
+	"settings.pickRules.check.rules": "Đánh giá theo",
+	"settings.pickRules.check.copies": "Các bản sao của tựa phù hợp",
+	"settings.pickRules.check.size": "Dung lượng theo GB (tùy chọn)",
+	"settings.pickRules.check.check": "Kiểm tra",
+	"settings.pickRules.check.failed": "Không thể kiểm tra tên",
+	"settings.pickRules.check.readAs": "Đọc thành",
+	"settings.pickRules.check.matches": "Khớp với {name}",
+	"settings.pickRules.check.noTitle": "Không khớp với tựa nào trong Thư viện của bạn. Chọn một bộ chất lượng ở trên để vẫn đánh giá.",
+	"settings.pickRules.check.noAlbum": "Khớp với {name}, nhưng không khớp album nào của nó.",
+	"settings.pickRules.check.noCopies": "Tựa này không có bản sao nào để đánh giá.",
+	"settings.pickRules.check.hasFile": "Có tệp"
 }

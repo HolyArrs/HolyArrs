@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "{what} wordt opgebouwd… poging {attempt}",
 	"core.testTag.connected": "Verbonden",
 	"core.api.notAnswering": "HolyArrs antwoordt niet. Controleer of het draait.",
+	"core.api.tooSlow": "HolyArrs deed er te lang over om te antwoorden. Probeer het over een minuut opnieuw.",
 	"core.api.requestFailed": "Aanvraag mislukt ({status})",
 	"core.api.wentWrong": "Er is iets misgegaan.",
 	"core.trailerMiss.trailer": "trailer",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Automatisch goedgekeurd",
 	"core.plain.approvedBy": "Goedgekeurd door {who}",
 	"core.settings.cantReach": "Dat adres is niet te bereiken. Controleer het en of de app draait.",
+	"core.settings.tryHttp": "Dat adres antwoordt niet via https. Probeer http://.",
 	"core.settings.groupLibrary.label": "Bibliotheek",
 	"core.settings.groupLibrary.line": "Waar titels staan",
 	"core.settings.groupLibrary.about": "Mappen, onderdelen, standaardinstellingen, ondertitels, bestandsnamen en importeren.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Twee Downloaders bereiken dezelfde download-app, dus downloads kunnen dubbel verschijnen.",
 	"core.plain.peopleCheck": "De gebruikerslijst van de mediaserver is niet leesbaar, dus mensen die daar zijn verwijderd, worden hier niet uitgezet.",
 	"core.plain.deleted": "verwijderd",
-	"core.plain.deletedName": "{name} (verwijderd)"
+	"core.plain.deletedName": "{name} (verwijderd)",
+	"core.api.handsOffFiles": "Handen-af-modus staat aan, dus HolyArrs laat de gedownloade bestanden met rust. Zet hem uit in Instellingen om bestanden te importeren, hernoemen, verplaatsen of scannen.",
+	"core.api.handsOffSubtitles": "Handen-af-modus staat aan, dus HolyArrs opent de gedownloade bestanden nooit. Zet hem uit in Instellingen om ondertitels te gebruiken."
 }

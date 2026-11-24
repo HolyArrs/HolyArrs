@@ -8,7 +8,7 @@ describe('the details answer', () => {
 		streaming: [{ id: 8, name: 'Netflix', logo: 'n.png' }, { id: 0, name: 'x' }],
 		similar: [{ tmdb_id: '2', kind: 'movie', name: 'Two', in_library: false }, { kind: 'movie', name: 'no id' }],
 		collection: { name: 'Set', parts: [{ tmdb_id: '7', kind: 'movie', name: 'Seven' }, { tmdb_id: '8', kind: 'movie', name: 'Eight' }] },
-		in_library: true, title_id: 4
+		in_library: true, title_id: 4, content_notes: ['gore', 'made_up']
 	};
 	it('reads people, services, similar, collection and the Library', () => {
 		const d = readInfo('movie', '7', raw);
@@ -19,12 +19,13 @@ describe('the details answer', () => {
 		expect(d.similar.map((s) => s.tmdb_id)).toEqual(['2']);
 		expect(d.collection?.parts).toHaveLength(2);
 		expect(d.titleId).toBe(4);
+		expect(d.contentNotes).toEqual(['Gore']);
 		expect(d.head).toMatchObject({ tmdb_id: '7', kind: 'movie', in_library: true, title_id: 4 });
 		expect(facts(d)).toEqual(['Movie', '1h 39m', '2020', 'R']);
 	});
 	it('tolerates an empty answer', () => {
 		const d = readInfo('show', '1', {});
-		expect(d).toMatchObject({ name: '', cast: [], seasons: [], streaming: [], similar: [], collection: null, titleId: undefined });
+		expect(d).toMatchObject({ name: '', cast: [], seasons: [], streaming: [], similar: [], collection: null, titleId: undefined, contentNotes: [] });
 		expect(facts(d)).toEqual([]);
 	});
 	it('counts real seasons and starts on season 1', () => {

@@ -291,24 +291,14 @@ func TestRemove(t *testing.T) {
 	os.MkdirAll(data, 0o700)
 	os.WriteFile(filepath.Join(data, "login"), []byte("x"), 0o600)
 
-	if err := f.store.Remove("tailscale", RemoveKeep); err != nil {
-		t.Fatal(err)
-	}
-	if p := f.state().Plugins["tailscale"]; p == nil || p.Enabled {
-		t.Fatalf("keep: %+v", p)
-	}
-	if _, err := os.Stat(filepath.Join(data, "login")); err != nil {
-		t.Fatalf("keep lost data: %v", err)
-	}
-	if _, err := f.store.CheckStart("tailscale", f.startInput("1.0.0", programFile)); !errors.Is(err, ErrDisabled) {
-		t.Fatalf("kept plugin started: %v", err)
-	}
-
 	if err := f.store.Remove("tailscale", RemoveDelete); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := f.state().Plugins["tailscale"]; ok {
 		t.Fatal("delete left state")
+	}
+	if _, err := os.Stat(filepath.Join(data, "login")); !os.IsNotExist(err) {
+		t.Fatalf("delete left data: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(f.store.dir, "tailscale")); !os.IsNotExist(err) {
 		t.Fatalf("delete left files: %v", err)
@@ -436,5 +426,26 @@ func TestNoFolderUntilInstall(t *testing.T) {
 	}
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
 		t.Fatalf("folder made before an install: %v", err)
+	}
+}
+
+// An old per-plugin "allow without the file lock" turns into the install-wide choice.
+func TestStoreFoldsOldPerPluginFileLock(t *testing.T) {
+	dir := t.TempDir()
+	sum := strings.Repeat("a", 64)
+	old := `{"list_counter":1,"block_counter":1,"plugins":{"x":{"id":"x","version":"1.0.0","sha256":"` + sum + `","dir":"1.0.0-` + sum[:16] + `","enabled":true,"allow_no_file_lock":true}}}`
+	if err := os.WriteFile(filepath.Join(dir, "state.json"), []byte(old), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s, err := NewStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := s.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !st.AllowNoFileLock || !st.NoFileLockAsked || st.Plugins["x"].AllowNoFileLock {
+		t.Fatalf("not folded: %+v %+v", st, st.Plugins["x"])
 	}
 }

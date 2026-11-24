@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Откажи",
 	"settings.schedules.stages": "Етапе",
 	"settings.schedules.stagesNote": "Паузирај их или поново покрени у <a>Деловима</a>.",
-	"settings.schedules.allTime": "Све време"
+	"settings.schedules.allTime": "Све време",
+	"settings.schedules.skip.nothing": "Нема шта да се ради",
+	"settings.schedules.skip.plexOff": "Искључено: укључите {setting} у {page}",
+	"settings.schedules.skip.plexNobody": "Нема шта да се ради: нико није укључио своју Plex листу за гледање",
+	"settings.schedules.skip.settingOff": "Искључено: укључите га у његовим подешавањима",
+	"settings.schedules.skip.starting": "Прескочено: HolyArrs се још покретао",
+	"settings.schedules.took": "Трајало је {time}",
+	"settings.schedules.finished": "{label} је завршено",
+	"settings.schedules.nothingToDo": "{label}: нема шта да се ради",
+	"settings.schedules.runFailed": "{label} није успело"
 }

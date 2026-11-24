@@ -13,7 +13,7 @@
 	import TagInput from '#lib/ui/TagInput.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { applySize, blankBody, checkBody, copyName, fieldKey, isMusic, isOwnTrait, kindChoices, languages, maxPoints, neverChoices, orderChoices, preferChoices, properChoices, sizeFields, stepLabel, tidyBody, toggleKind, traitLabel, traitsFor, usedWords, type RulesKind, type SizeFields } from '#lib/downloads/index.ts';
+	import { addBlockedGroup, applySize, applyStepSizes, blankBody, deviceFamilies, checkBody, copyName, fieldKey, frenchVersions, isMusic, isOwnTrait, kindChoices, languages, maxPoints, neverChoices, orderChoices, preferChoices, properChoices, sizeFields, stepLabel, stepSizeRows, tidyBody, toggleKind, traitLabel, traitsFor, usedWords, type RulesKind, type SizeFields, type StepSizeRow } from '#lib/downloads/index.ts';
 	import type { OwnTrait, PickRulesBody, PickRulesDetail, PickRulesUse, TrashProfile, TrashResult } from '#lib/downloads/index.ts';
 	import { tick, untrack } from 'svelte';
 	import { page } from '$app/state';
@@ -31,11 +31,12 @@
 		kinds: string[];
 		body: PickRulesBody;
 		size: SizeFields;
+		steps: StepSizeRow[];
 	}
 
 	// People without the settings permission see the rules but cannot change them.
 	const mayEdit = $derived(session.can('settings'));
-	let form = $state<Form>({ name: '', kinds: ['movie', 'show'], body: blankBody('movie'), size: { min: '', max: '' } });
+	let form = $state<Form>({ name: '', kinds: ['movie', 'show'], body: blankBody('movie'), size: { min: '', max: '' }, steps: [] });
 	let id = $state<number | null>(null);
 	let preset = $state(false);
 	let savedName = $state('');
@@ -43,6 +44,7 @@
 	// Your own traits, offered after the built-in ones.
 	let mine = $state<OwnTrait[]>([]);
 	let sizeStart = $state<SizeFields>({ min: '', max: '' });
+	let stepsStart = $state<StepSizeRow[]>([]);
 	let saved = $state('');
 	let loaded = $state(false);
 	let loadError = $state('');
@@ -64,11 +66,20 @@
 
 	const music = $derived(isMusic(form.kinds));
 	const ladderOn = $derived(form.body.steps.filter((s) => s.allowed));
+	// Moves a quality step one place up (1, toward best) or down (-1); the list is stored low to high.
+	function moveStep(quality: string, by: 1 | -1) {
+		const steps = form.body.steps;
+		const i = steps.findIndex((s) => s.quality === quality);
+		const j = i + by;
+		if (i < 0 || j < 0 || j >= steps.length) return;
+		[steps[i], steps[j]] = [steps[j], steps[i]];
+	}
 	const own = $derived(traitsFor(form.kinds, mine));
 	const checked = $derived(checkBody(form.name, form.kinds, tidyBody(form.body), mine));
 	const label = (t: string) => traitLabel(t, mine);
 	const errors = $derived<Record<string, string>>({ ...(tried ? checked : {}), ...serverErrors });
-	const otherSizes = $derived(Object.keys(form.body.size_limits).filter((k) => k !== '*').length);
+	// Allowed steps without a size of their own yet, offered to add one.
+	const sizeChoices = $derived(ladderOn.filter((s) => !form.steps.some((r) => r.step === s.quality)));
 	const dirty = $derived(loaded && !gone && !loadError && (id === null || JSON.stringify(form) !== saved));
 	const kindWords = $derived(form.kinds.map((k) => kindChoices.find(([c]) => c === k)?.[1] ?? k).join(', '));
 
@@ -76,6 +87,7 @@
 		f.body.tags ??= [];
 		form = f;
 		sizeStart = { ...f.size };
+		stepsStart = structuredClone(f.steps);
 		saved = JSON.stringify(f);
 		tried = false;
 		serverErrors = {};
@@ -98,9 +110,9 @@
 				savedName = '';
 				if (from) {
 					const d = await api.get<PickRulesDetail>(`/pick-rules/${encodeURIComponent(from)}`);
-					start({ name: copyName(d.name), kinds: [...d.kinds], body: structuredClone(d.body), size: sizeFields(d.body.size_limits) });
+					start({ name: copyName(d.name), kinds: [...d.kinds], body: structuredClone(d.body), ...sizesOf(d.body) });
 				} else {
-					start({ name: '', kinds: ['movie', 'show'], body: blankBody('movie'), size: sizeFields(blankBody('movie').size_limits) });
+					start({ name: '', kinds: ['movie', 'show'], body: blankBody('movie'), ...sizesOf(blankBody('movie')) });
 				}
 			} else {
 				const d = await api.get<PickRulesDetail>(`/pick-rules/${encodeURIComponent(param)}`);
@@ -119,7 +131,7 @@
 		preset = d.preset;
 		savedName = d.name;
 		inUse = d.in_use;
-		start({ name: d.name, kinds: [...d.kinds], body: structuredClone(d.body), size: sizeFields(d.body.size_limits) });
+		start({ name: d.name, kinds: [...d.kinds], body: structuredClone(d.body), ...sizesOf(d.body) });
 	}
 
 	function setKind(kind: RulesKind, on: boolean) {
@@ -127,7 +139,7 @@
 		// Video and music use different steps and traits: switching starts them again.
 		if (isMusic(next) !== isMusic(form.kinds) && next.length) {
 			const body = blankBody(next[0] as RulesKind);
-			form = { ...form, kinds: next, body, size: sizeFields(body.size_limits) };
+			form = { ...form, kinds: next, body, ...sizesOf(body) };
 		} else {
 			form.kinds = next;
 		}
@@ -199,6 +211,10 @@
 		}
 	}
 
+	function addGroup(el: HTMLInputElement) {
+		form.body.blocked_groups = addBlockedGroup(form.body.blocked_groups, el.value);
+		el.value = '';
+	}
 	function addTo(list: 'must_have' | 'never', trait: string) {
 		if (trait && !form.body[list].includes(trait)) form.body[list] = [...form.body[list], trait];
 	}
@@ -208,8 +224,32 @@
 		form.body.language.wanted = w.includes(code) ? w.filter((l) => l !== code) : [...w, code];
 	}
 
+	function toggleDevice(v: string) {
+		const w = form.body.devices ?? [];
+		form.body.devices = w.includes(v) ? w.filter((x) => x !== v) : [...w, v];
+	}
+	function toggleFrench(v: string) {
+		const w = form.body.language.french_versions ?? [];
+		form.body.language.french_versions = w.includes(v) ? w.filter((x) => x !== v) : [...w, v];
+	}
+
 	function setSize(which: 'min' | 'max', v: string) {
 		form.size[which] = v.trim() === '' ? '' : Number(v);
+	}
+
+	function sizesOf(body: PickRulesBody): { size: SizeFields; steps: StepSizeRow[] } {
+		return { size: sizeFields(body.size_limits), steps: stepSizeRows(body.size_limits, body.steps.map((s) => s.quality)) };
+	}
+
+	function setStepSize(i: number, which: 'min' | 'preferred' | 'max', v: string) {
+		form.steps[i][which] = v.trim() === '' ? '' : Number(v);
+	}
+
+	// A new step size starts from the Every step limit; the list keeps ladder order.
+	function addStepSize(step: string) {
+		if (!step) return;
+		const ladder = form.body.steps.map((s) => s.quality);
+		form.steps = [...form.steps, { step, min: form.size.min, preferred: '' as const, max: form.size.max }].sort((a, b) => ladder.indexOf(a.step) - ladder.indexOf(b.step));
 	}
 
 	// Each field that shows its own error line, and the element to focus for it. Any other server error shows under the form.
@@ -225,6 +265,7 @@
 		size_limits: 'pr-size-min',
 		prefer: 'pr-prefer',
 		wait_minutes_torrent: 'pr-wait-torrent',
+		wait_days: 'pr-lang-wait',
 		wait_minutes_usenet: 'pr-wait-usenet',
 		language: 'pr-languages',
 		min_points: 'pr-min-points',
@@ -250,7 +291,7 @@
 		tried = true;
 		serverErrors = {};
 		formError = '';
-		const body = applySize(tidyBody(form.body), form.size, sizeStart);
+		const body = applyStepSizes(applySize(tidyBody(form.body), form.size, sizeStart), form.steps, stepsStart);
 		const problems = checkBody(form.name, form.kinds, body, mine);
 		if (Object.keys(problems).length) {
 			focusFirst(Object.keys(problems));
@@ -335,13 +376,19 @@
 			<fieldset class="group" id="pr-steps" tabindex="-1">
 				<legend class="sr-only">{t('settings.pickRuleEdit.stepsLegend')}</legend>
 				<ul class="steps" data-testid="steps">
-					{#each [...form.body.steps].reverse() as s (s.quality)}
+					{#each [...form.body.steps].reverse() as s, i (s.quality)}
 						<li>
 							<label class="switch">
 								<input type="checkbox" role="switch" bind:checked={s.allowed} />
 								<span class="sw" aria-hidden="true"></span>
 								<span class="step-name">{stepLabel(s.quality)}{#if s.allowed && s.quality === form.body.good_enough_at}<span class="chip ok">{t('settings.pickRuleEdit.goodEnough')}</span>{/if}</span>
 							</label>
+							{#if mayEdit}
+								<span class="move">
+									<IconButton icon="chevronUp" size="sm" label={t('downloads.act.up')} tooltip={false} disabled={i === 0} onclick={() => moveStep(s.quality, 1)} data-testid="step-up-{s.quality}" />
+									<IconButton icon="chevronDown" size="sm" label={t('downloads.act.down')} tooltip={false} disabled={i === form.body.steps.length - 1} onclick={() => moveStep(s.quality, -1)} data-testid="step-down-{s.quality}" />
+								</span>
+							{/if}
 						</li>
 					{/each}
 				</ul>
@@ -484,6 +531,24 @@
 				</select>
 				{#if errors.never}<span class="field-error" id="pr-never-add-error" role="alert">{errors.never}</span>{/if}
 			</div>
+			<div class="field">
+				<span class="label" id="groups-label">{t('settings.pickRuleEdit.blockedGroups')}</span>
+				<div class="chips" role="group" aria-labelledby="groups-label" data-testid="blocked-groups">
+					{#each form.body.blocked_groups ?? [] as g (g)}<Chip label={g} onremove={() => (form.body.blocked_groups = (form.body.blocked_groups ?? []).filter((x) => x !== g))} />{:else}<span class="hint">{t('settings.pickRuleEdit.nothingYet')}</span>{/each}
+				</div>
+				<label class="sr-only" for="pr-group-add">{t('settings.pickRuleEdit.addBlockedGroup')}</label>
+				<input id="pr-group-add" class="input" type="text" autocomplete="off" spellcheck="false" maxlength="200" placeholder={t('settings.pickRuleEdit.addBlockedGroup')} aria-describedby="pr-group-hint" onkeydown={(e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); addGroup(e.currentTarget); } }} onblur={(e) => addGroup(e.currentTarget)} data-testid="blocked-groups-input" />
+				<span class="hint" id="pr-group-hint">{t('settings.pickRuleEdit.blockedGroupsHint')}</span>
+			</div>
+			{#if !music}
+				<div class="field">
+					<span class="label" id="devices-label">{t('settings.pickRuleEdit.devices')}</span>
+					<div class="chips" role="group" id="pr-devices" aria-labelledby="devices-label" aria-describedby="devices-hint" data-testid="devices">
+						{#each deviceFamilies as d (d)}<Chip label={t(`settings.pickRuleEdit.device.${d}`)} selected={form.body.devices?.includes(d) ?? false} onclick={() => toggleDevice(d)} />{/each}
+					</div>
+					<span class="hint" id="devices-hint">{t('settings.pickRuleEdit.devicesHint')}</span>
+				</div>
+			{/if}
 		</SettingsCard>
 
 		<SettingsCard id="rules-size" title={t('settings.pickRuleEdit.size')} description={music ? t('settings.pickRuleEdit.sizeMusic') : t('settings.pickRuleEdit.sizeVideo')}>
@@ -495,7 +560,37 @@
 					<input id="pr-size-max" class="input" type="number" min="0" step="0.01" inputmode="decimal" placeholder={t('settings.pickRuleEdit.noLimit')} value={form.size.max} oninput={(e) => setSize('max', e.currentTarget.value)} />
 				</Field>
 			</div>
-			<p class="hint">{t('settings.pickRuleEdit.sizeNote')}{#if otherSizes} {otherSizes === 1 ? t('settings.pickRuleEdit.oneStep') : t('settings.pickRuleEdit.manySteps', { n: otherSizes })}{/if}</p>
+			<p class="hint">{t('settings.pickRuleEdit.sizeNote')}</p>
+			{#if form.steps.length}
+				<p class="hint">{t('settings.pickRuleEdit.stepSizesNote')}</p>
+				<ul class="traits step-sizes" data-testid="own-sizes">
+					{#each form.steps as r, i (r.step)}
+						<li>
+							<span class="step-size-name">{stepLabel(r.step)}</span>
+							<label class="sr-only" for="size-min-{i}">{stepLabel(r.step)}: {t('settings.pickRuleEdit.smallest')}</label>
+							<input id="size-min-{i}" class="input points" type="number" min="0" step="0.01" inputmode="decimal" placeholder={t('settings.pickRuleEdit.noLimit')} value={r.min} oninput={(e) => setStepSize(i, 'min', e.currentTarget.value)} />
+							<label class="sr-only" for="size-pref-{i}">{stepLabel(r.step)}: {t('settings.pickRuleEdit.preferred')}</label>
+							<input id="size-pref-{i}" class="input points" type="number" min="0" step="0.01" inputmode="decimal" placeholder={t('settings.pickRuleEdit.noPreferred')} value={r.preferred} oninput={(e) => setStepSize(i, 'preferred', e.currentTarget.value)} />
+							<label class="sr-only" for="size-max-{i}">{stepLabel(r.step)}: {t('settings.pickRuleEdit.largest')}</label>
+							<input id="size-max-{i}" class="input points" type="number" min="0" step="0.01" inputmode="decimal" placeholder={t('settings.pickRuleEdit.noLimit')} value={r.max} oninput={(e) => setStepSize(i, 'max', e.currentTarget.value)} />
+							<IconButton icon="trash" label={t('settings.pickRuleEdit.removeStepSize', { step: stepLabel(r.step) })} tooltip={false} onclick={() => (form.steps = form.steps.filter((x) => x.step !== r.step))} />
+						</li>
+					{/each}
+				</ul>
+			{/if}
+			{#if sizeChoices.length}
+				<div class="trait-actions">
+					<label class="sr-only" for="pr-size-add">{t('settings.pickRuleEdit.addStepSize')}</label>
+					<select id="pr-size-add" class="input" value="" onchange={(e) => (addStepSize(e.currentTarget.value), (e.currentTarget.value = ''))}>
+						<option value="">{t('settings.pickRuleEdit.addStepSize')}</option>
+						{#each sizeChoices as s (s.quality)}<option value={s.quality}>{stepLabel(s.quality)}</option>{/each}
+					</select>
+				</div>
+			{/if}
+			<label class="checkline">
+				<input id="pr-replace-small" type="checkbox" bind:checked={form.body.replace_under_min} />
+				<span><b>{t('settings.pickRuleEdit.replaceSmall')}</b><br /><span class="hint">{t('settings.pickRuleEdit.replaceSmallHint')}</span></span>
+			</label>
 		</SettingsCard>
 
 		<SettingsCard id="rules-wait" title={t('settings.pickRuleEdit.waiting')} description={t('settings.pickRuleEdit.waitingDesc')}>
@@ -534,10 +629,24 @@
 				</div>
 				{#if errors.language}<span class="field-error" id="pr-languages-error" role="alert">{errors.language}</span>{/if}
 			</div>
+			{#if form.body.language.wanted.includes('fr')}
+				<div class="field">
+					<span class="label" id="fr-version-label">{t('settings.pickRuleEdit.frenchVersions')}</span>
+					<div class="chips" role="group" id="pr-french-versions" aria-labelledby="fr-version-label" aria-describedby="fr-version-hint">
+						{#each frenchVersions as fv (fv)}<Chip label={fv} selected={form.body.language.french_versions?.includes(fv) ?? false} onclick={() => toggleFrench(fv)} />{/each}
+					</div>
+					<span class="hint" id="fr-version-hint">{t('settings.pickRuleEdit.frenchVersionsHint')}</span>
+				</div>
+			{/if}
 			<label class="checkline">
 				<input id="pr-original" type="checkbox" bind:checked={form.body.language.original_ok} />
 				<span><b>{t('settings.pickRuleEdit.original')}</b><br /><span class="hint">{t('settings.pickRuleEdit.originalHint')}</span></span>
 			</label>
+			{#if form.body.language.original_ok && form.body.language.wanted.length}
+				<Field id="pr-lang-wait" label={t('settings.pickRuleEdit.langWait')} hint={t('settings.pickRuleEdit.langWaitHint')} error={errors.wait_days}>
+					<input id="pr-lang-wait" class="input" type="number" min="0" max="90" step="1" inputmode="numeric" placeholder="0" bind:value={form.body.language.wait_days} {...bad('wait_days')} />
+				</Field>
+			{/if}
 		</SettingsCard>
 
 	</fieldset>
@@ -565,6 +674,7 @@
 	.steps li { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 	.steps li + li { border-top: 1px solid var(--line); }
 	.switch { flex: 1; min-width: 0; font: var(--t-callout); }
+	.move { display: flex; gap: 2px; flex: none; }
 	.traits { display: flex; flex-direction: column; gap: 8px; }
 	.traits li { display: flex; align-items: center; gap: 8px; }
 	.traits select { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -577,6 +687,9 @@
 	.cards :global(.field > input.input[type='number']) { max-width: none; }
 	.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
 	.pair :global(.field + .field) { margin-top: 0; }
+	.step-sizes { margin-top: 12px; }
+	.step-sizes .points { width: 110px; min-width: 0; }
+	.step-size-name { flex: 1; min-width: 0; font: var(--t-callout); }
 	.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 32px; }
 	.field-error { color: var(--fail-text); font: var(--t-footnote); }
 	/* Phones: points stay on the trait's row, narrower. */
@@ -584,8 +697,8 @@
 		.traits .input { height: 40px; min-height: 40px; }
 		/* The trait gets the whole first line so its name is never cut; points and remove sit below. */
 		.traits li { flex-wrap: wrap; }
-		.traits select { flex: 1 1 100%; }
-		.points { flex: 1; width: auto; }
+		.traits select, .step-size-name { flex: 1 1 100%; }
+		.points, .step-sizes .points { flex: 1; width: auto; }
 	}
 	@media (pointer: coarse) { .traits .input { height: 44px; min-height: 44px; } }
 </style>

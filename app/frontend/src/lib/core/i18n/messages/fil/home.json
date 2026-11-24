@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Piliin kung ano ang susunod na hihilingin",
 	"home.newPopular": "Bago at Sikat",
 	"home.whatSTrending": "Ano ang trending",
+	"home.gettingReady": "Inihahanda ang lahat…",
 	"home.top10sAndComing": "Mga Top 10 at malapit na",
 	"home.whatSNext": "Ano ang susunod",
 	"home.airDatesAndReleases": "Mga petsa ng ere at labas",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Mga episode at pelikulang darating ngayong linggo",
 	"home.popularThisWeek": "Mga sikat na release na darating ngayong linggo",
 	"home.peopleCheck": "Pagsusuri ng mga tao",
-	"home.cantReadUsers": "hindi mabasa ang listahan ng user"
+	"home.cantReadUsers": "hindi mabasa ang listahan ng user",
+	"home.joined.title": "Maligayang pagdating, {name}",
+	"home.joined.find": "Maghanap ng gusto mo sa {explore} o {search}.",
+	"home.joined.ask": "I-tap ang {request} sa isang title para makuha ito. Puwede kang humingi ng:",
+	"home.joined.track": "Sundan ang bawat isa sa {requests}.",
+	"home.joined.noLimit": "Walang lingguhang limit.",
+	"home.joined.gotIt": "Sige",
+	"home.joined.explore": "Buksan ang {explore}"
 }

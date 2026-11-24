@@ -174,4 +174,8 @@ func TestPinArrAnswerShapes(t *testing.T) {
 		t.Fatalf("command: %d %s", rec.Code, rec.Body.String())
 	}
 	pinGoldenShape(t, "sonarr_command", rec.Body.Bytes())
+	// The list of commands is an array, empty while nothing runs.
+	if st, b := r.get("command"); st != 200 || strings.TrimSpace(string(b)) != "[]" {
+		t.Fatalf("command list: %d %s", st, b)
+	}
 }

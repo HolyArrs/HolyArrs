@@ -43,7 +43,7 @@ Open `/welcome` any time to change what you use: movies, TV shows, music, subtit
 
 | You see | Fix |
 |---|---|
-| Someone else became the owner | On the server, run `docker exec -i holyarrs /holyarrs reset-owner`. Everyone then signs in again. |
+| Someone else became the owner | On the server, run `docker exec -it holyarrs /holyarrs reset-owner`. Everyone then signs in again. |
 | Only the owner or an admin can finish setup | Sign in as the owner, or as an admin with Settings access. |
 | A folder is refused | Each folder is used once and cannot sit inside another one you added. Pick another path. |
 | HolyArrs is not answering | Wait a few seconds and retry. If it repeats, check `docker compose ps`. |

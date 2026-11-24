@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Mensagens de plugins",
+	"requests.moment.plugin_message.body": "Um plugin que você permitiu envia uma mensagem.",
+	"requests.words.via": "{who} via {plugin}",
 	"requests.moment.ask_waiting.title": "Novo pedido",
 	"requests.moment.ask_waiting.body": "Para a equipe: um filme, série ou artista aguarda aprovação.",
 	"requests.moment.ask_approved.title": "Aprovado",
@@ -171,7 +174,7 @@
 	"requests.lists.tmdb": "Lista do TMDB",
 	"requests.lists.tmdbHint": "O número da lista ou o link dela, por exemplo themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Lista do Trakt",
-	"requests.lists.traktHint": "usuario/lista, usuario/watchlist ou o link, por exemplo trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "usuario/lista, usuario/watchlist ou o link, por exemplo trakt.tv/users/ana/lists/favourites. Ou um ranking: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "Lista do MDBList",
 	"requests.lists.mdblistHint": "usuario/lista ou o link, por exemplo mdblist.com/lists/ana/favourites. Listas públicas funcionam sem chave.",
 	"requests.lists.everyDay": "todo dia",
@@ -199,6 +202,7 @@
 	"requests.report.reply.nothingWrong": "Não encontrei nada de errado",
 	"requests.outcome.noResults": "Ainda sem resultados",
 	"requests.outcome.nothingFound": "Nada encontrado:",
+	"requests.outcome.refused": "Encontrado, mas nada atende às regras de escolha",
 	"requests.outcome.why.slowed": "foi pausada (desacelerada)",
 	"requests.outcome.why.down": "estava fora do ar",
 	"requests.outcome.why.blocked": "estava bloqueada",
@@ -229,6 +233,7 @@
 	"requests.add.titleBare": "Adicionar",
 	"requests.addMovie.titleBare": "Adicionar um filme",
 	"requests.add.loadingDefaults": "Carregando os padrões",
+	"requests.add.defaultsLate": "Seus padrões salvos não carregaram a tempo, então as opções de sempre foram escolhidas. Confira antes de adicionar.",
 	"requests.add.noFolder.music": "Ainda não há pasta da Biblioteca para música. <a>Adicione uma</a> primeiro.",
 	"requests.add.noFolder.movie": "Ainda não há pasta da Biblioteca para filmes. <a>Adicione uma</a> primeiro.",
 	"requests.add.noFolder.show": "Ainda não há pasta da Biblioteca para séries. <a>Adicione uma</a> primeiro.",
@@ -246,6 +251,7 @@
 	"requests.add.followHint": "Mostrar no meu calendário.",
 	"requests.add.cancel": "Cancelar",
 	"requests.add.submit": "Adicionar à Biblioteca",
+	"requests.add.submitChoose": "Adicionar e escolher um lançamento",
 	"requests.addArtist.albums": "Álbuns para manter em dia",
 	"requests.addArtist.newAlbums": "Novos álbuns",
 	"requests.addArtist.newAlbumsHint": "O que acontece com um álbum que sai depois.",
@@ -502,6 +508,8 @@
 	"requests.board.tabShowing": ", mostrando {status}",
 	"requests.board.reportsOpen": "Relatórios, {n} abertos",
 	"requests.board.approveAll": "Aprovar todos",
+	"requests.board.approveAllTitle": "Aprovar todos os pedidos pendentes ({n})?",
+	"requests.board.approveAllDesc": "Inclui os pedidos mais abaixo na lista que ainda não foram carregados.",
 	"requests.board.requests": "Pedidos",
 	"requests.board.open": "Abrir {name}, pedido por {who}",
 	"requests.board.pageForArtist": "Página do artista {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Adicionado",
 	"requests.addAll.summary": "Adicionados: {added}, ignorados: {skipped}",
 	"requests.addAll.summaryClean": "Adicionados: {added}",
-	"requests.addAll.intro": "Cada filme é adicionado à sua Biblioteca com a pasta e as regras de escolha abaixo e seus padrões salvos. Os filmes que já estão na Biblioteca aparecem na lista, mas não são adicionados de novo."
+	"requests.addAll.intro": "Cada filme é adicionado à sua Biblioteca com a pasta e as regras de escolha abaixo e seus padrões salvos. Os filmes que já estão na Biblioteca aparecem na lista, mas não são adicionados de novo.",
+	"requests.ask.alsoAsk": "Pedir também {name}",
+	"requests.add.handsOff": "O modo sem intervenção está ativado: não é preciso pasta da Biblioteca. Vai para o gerenciador de downloads e os arquivos ficam lá."
 }

@@ -14,7 +14,6 @@
 	"settings.health.none": "결과가 없습니다. 다시 점검하면 실행됩니다.",
 	"settings.health.since": "시작 시점",
 	"settings.health.settings": "상태 점검 설정",
-	"settings.health.updateCheck": "최신 HolyArrs 확인",
 	"settings.health.onlyChecks": "확인만 합니다. 설치하지 않습니다.",
 	"settings.health.every": "업데이트 확인 주기",
 	"settings.health.day": "일",

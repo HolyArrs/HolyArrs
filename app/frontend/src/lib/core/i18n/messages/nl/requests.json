@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Berichten van plug-ins",
+	"requests.moment.plugin_message.body": "Een toegestane plug-in stuurt een bericht.",
+	"requests.words.via": "{who} via {plugin}",
 	"requests.moment.ask_waiting.title": "Nieuwe aanvraag",
 	"requests.moment.ask_waiting.body": "Aan de beheerders: een film, serie of artiest wacht op goedkeuring.",
 	"requests.moment.ask_approved.title": "Goedgekeurd",
@@ -171,7 +174,7 @@
 	"requests.lists.tmdb": "TMDB-lijst",
 	"requests.lists.tmdbHint": "Het nummer van de lijst of de link ernaar, bijvoorbeeld themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-lijst",
-	"requests.lists.traktHint": "user/list, user/watchlist of de link, bijvoorbeeld trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist of de link, bijvoorbeeld trakt.tv/users/ana/lists/favourites. Of een ranglijst: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "MDBList-lijst",
 	"requests.lists.mdblistHint": "user/list of de link, bijvoorbeeld mdblist.com/lists/ana/favourites. Openbare lijsten werken zonder sleutel.",
 	"requests.lists.everyDay": "elke dag",
@@ -199,6 +202,7 @@
 	"requests.report.reply.nothingWrong": "Kon niets vinden wat er mis is",
 	"requests.outcome.noResults": "Nog geen resultaten",
 	"requests.outcome.nothingFound": "Niets gevonden:",
+	"requests.outcome.refused": "Gevonden, maar niets past bij de keuzeregels",
 	"requests.outcome.why.slowed": "was gepauzeerd (vertraagd)",
 	"requests.outcome.why.down": "lag eruit",
 	"requests.outcome.why.blocked": "was geblokkeerd",
@@ -229,6 +233,7 @@
 	"requests.add.titleBare": "Toevoegen",
 	"requests.addMovie.titleBare": "Een film toevoegen",
 	"requests.add.loadingDefaults": "De standaardwaarden laden",
+	"requests.add.defaultsLate": "Je opgeslagen standaarden zijn niet op tijd geladen, dus de gebruikelijke keuzes zijn gekozen. Controleer ze voor het toevoegen.",
 	"requests.add.noFolder.music": "Er is nog geen Bibliotheekmap voor muziek. <a>Voeg er eerst een toe</a>.",
 	"requests.add.noFolder.movie": "Er is nog geen Bibliotheekmap voor films. <a>Voeg er eerst een toe</a>.",
 	"requests.add.noFolder.show": "Er is nog geen Bibliotheekmap voor series. <a>Voeg er eerst een toe</a>.",
@@ -246,6 +251,7 @@
 	"requests.add.followHint": "Toon het in mijn agenda.",
 	"requests.add.cancel": "Annuleren",
 	"requests.add.submit": "Aan Bibliotheek toevoegen",
+	"requests.add.submitChoose": "Toevoegen en release kiezen",
 	"requests.addArtist.albums": "Albums om actueel te houden",
 	"requests.addArtist.newAlbums": "Nieuwe albums",
 	"requests.addArtist.newAlbumsHint": "Wat er gebeurt met een album dat later uitkomt.",
@@ -502,6 +508,8 @@
 	"requests.board.tabShowing": ", toont {status}",
 	"requests.board.reportsOpen": "Rapporten, {n} open",
 	"requests.board.approveAll": "Alles goedkeuren",
+	"requests.board.approveAllTitle": "Alle wachtende verzoeken goedkeuren ({n})?",
+	"requests.board.approveAllDesc": "Dit omvat ook verzoeken verderop in de lijst die nog niet geladen zijn.",
 	"requests.board.requests": "Aanvragen",
 	"requests.board.open": "{name} openen, aangevraagd door {who}",
 	"requests.board.pageForArtist": "Artiestpagina van {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Toegevoegd",
 	"requests.addAll.summary": "Toegevoegd: {added}, overgeslagen: {skipped}",
 	"requests.addAll.summaryClean": "Toegevoegd: {added}",
-	"requests.addAll.intro": "Elke film wordt aan je Bibliotheek toegevoegd met de map en keuzeregels hieronder en je opgeslagen standaardwaarden. Films die al in je Bibliotheek staan, staan in de lijst maar worden niet opnieuw toegevoegd."
+	"requests.addAll.intro": "Elke film wordt aan je Bibliotheek toegevoegd met de map en keuzeregels hieronder en je opgeslagen standaardwaarden. Films die al in je Bibliotheek staan, staan in de lijst maar worden niet opnieuw toegevoegd.",
+	"requests.ask.alsoAsk": "Ook {name} vragen",
+	"requests.add.handsOff": "Handen-af-modus staat aan: geen bibliotheekmap nodig. Het gaat naar de Downloader en de bestanden blijven daar."
 }

@@ -85,5 +85,21 @@
 	"sources.uses.auto": "szuka samo",
 	"sources.uses.feed": "lista najnowszych",
 	"sources.uses.hand": "wyszukiwanie ręczne",
-	"sources.uses.none": "nieużywane"
+	"sources.uses.none": "nieużywane",
+	"sources.bridge.removeTitle": "Usunąć {name}?",
+	"sources.bridge.find": "Znajdź {name} w mojej sieci",
+	"sources.bridge.noneFound": "Żaden {name} nie odpowiedział w Twojej sieci.",
+	"sources.bridge.keyFound": "Pobrano klucz z {name}",
+	"sources.bridge.keyKept": "{name} nie udostępnił klucza (logowanie jest włączone). Użyj Pobierz klucz, aby go skopiować.",
+	"sources.bridge.keyKeptJackett": "Jackett nie udostępnił klucza (ma hasło administratora). Użyj Pobierz klucz, aby go skopiować.",
+	"sources.bridge.notReached": "Nie udało się połączyć z {name}.",
+	"sources.bridge.brings.title": "Co zostanie przeniesione",
+	"sources.bridge.brings.sites": "Jego indeksery, jako Źródła",
+	"sources.bridge.brings.categories": "Ich kategorie",
+	"sources.bridge.brings.search": "Wyszukiwania idą przez {name}",
+	"sources.bridge.brings.sync": "Zmiany w {name} są przenoszone",
+	"sources.bridge.brings.stays": "Twoje indeksery pozostają skonfigurowane w {name}.",
+	"sources.bridge.brings.had": "Indekserów już tutaj: {n}",
+	"sources.bridge.brings.hadFrom": "Zaimportowane przez {apps}",
+	"sources.bridge.brings.keyKept": "Zostaw klucz pusty, aby użyć tego, który już mają."
 }

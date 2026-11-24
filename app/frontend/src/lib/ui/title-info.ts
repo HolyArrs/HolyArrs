@@ -1,6 +1,7 @@
 // Reads loosely typed TMDB detail payloads into safe typed shapes.
 import type { ProviderItem } from './title-cards.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
+import { contentNotes } from './content-notes.ts';
 
 export type InfoKind = 'movie' | 'show';
 
@@ -54,6 +55,8 @@ export interface InfoDetails {
 	dates: { theaters?: string; digital?: string; physical?: string; firstAir?: string; lastAir?: string };
 	nextEpisode?: { season: number; episode: number; name?: string; airDate: string };
 	keywords: string[];
+	/** Words for what the title shows that some people want to know first (nudity, an animal dies). */
+	contentNotes: string[];
 	titleId?: number;
 	head: ProviderItem;
 }
@@ -108,6 +111,7 @@ export function readInfo(kind: InfoKind, tmdb: string, raw: Raw): InfoDetails {
 		dates: readDates(raw.dates),
 		nextEpisode: readNext(raw.next_episode),
 		keywords: words(raw.keywords),
+		contentNotes: contentNotes(raw.content_notes),
 		titleId,
 		head: {
 			tmdb_id: tmdb,

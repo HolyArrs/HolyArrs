@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Отказ",
 	"settings.schedules.stages": "Етапи",
 	"settings.schedules.stagesNote": "Поставете ги на пауза или ги рестартирайте в <a>Части</a>.",
-	"settings.schedules.allTime": "Постоянно"
+	"settings.schedules.allTime": "Постоянно",
+	"settings.schedules.skip.nothing": "Няма какво да се прави",
+	"settings.schedules.skip.plexOff": "Изключено: включете {setting} в {page}",
+	"settings.schedules.skip.plexNobody": "Няма какво да се прави: никой не е включил своя списък за гледане в Plex",
+	"settings.schedules.skip.settingOff": "Изключено: включете го в настройките му",
+	"settings.schedules.skip.starting": "Пропуснато: HolyArrs още се стартираше",
+	"settings.schedules.took": "Отне {time}",
+	"settings.schedules.finished": "{label} приключи",
+	"settings.schedules.nothingToDo": "{label}: няма какво да се прави",
+	"settings.schedules.runFailed": "{label} не успя"
 }

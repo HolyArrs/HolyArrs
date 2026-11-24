@@ -211,7 +211,7 @@ func (a *Auth) myPlexLinkFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	// The Plex calls above took a while: inside the write, the session must
 	// still be there and fresh, so a password change or reset meanwhile wins.
-	cookie, _ := r.Cookie(CookieName)
+	cookie, _ := sessionCookie(r)
 	proof := ssoLinkProof{family: a.currentFamily(r), userID: who.UserID}
 	if cookie != nil && cookie.Value != "" {
 		proof.hash = sum(cookie.Value)
@@ -222,7 +222,7 @@ func (a *Auth) myPlexLinkFinish(w http.ResponseWriter, r *http.Request) {
 		if proof.hash == "" || proof.family == "" {
 			return errNotAllowed
 		}
-		if err := a.linkSessionFreshTx(tx, proof); err != nil {
+		if err := a.mediaLinkSessionFreshTx(tx, proof); err != nil {
 			return err
 		}
 		var err error
@@ -248,6 +248,15 @@ func (a *Auth) myPlexLinkFinish(w http.ResponseWriter, r *http.Request) {
 		if err := a.vault.SetSetting(ctx, settingsGroup, signInPrefix+keyPlexOwner, tok, me); err != nil {
 			serverError(w, "plex link", err)
 			return
+		}
+		// Linked during first-run setup: Plex becomes a way to sign in, as when Plex made the owner.
+		if database.SettingOr(ctx, a.s.Read(), settingsGroup, settingFirstRunDone, "") != "1" {
+			if err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
+				return database.PutSetting(tx, settingsGroup, signInPrefix+ProviderPlex+"_on", "true", me, a.now())
+			}); err != nil {
+				serverError(w, "plex link", err)
+				return
+			}
 		}
 	}
 	log.Printf("auth: user %d linked a Plex account from My account", who.UserID)

@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "Choisissez ce que vous demanderez ensuite",
 	"home.newPopular": "Nouveautés et populaires",
 	"home.whatSTrending": "Ce qui est tendance",
+	"home.gettingReady": "Préparation en cours…",
 	"home.top10sAndComing": "Top 10 et prochainement",
 	"home.whatSNext": "Et ensuite",
 	"home.airDatesAndReleases": "Dates de diffusion et sorties",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Épisodes et films qui sortent cette semaine",
 	"home.popularThisWeek": "Sorties populaires de cette semaine",
 	"home.peopleCheck": "Vérification des personnes",
-	"home.cantReadUsers": "liste d’utilisateurs illisible"
+	"home.cantReadUsers": "liste d’utilisateurs illisible",
+	"home.joined.title": "Bienvenue, {name}",
+	"home.joined.find": "Trouvez quelque chose dans {explore} ou {search}.",
+	"home.joined.ask": "Touchez {request} sur un titre pour l’obtenir. Vous pouvez demander :",
+	"home.joined.track": "Suivez chacune dans {requests}.",
+	"home.joined.noLimit": "Aucune limite par semaine.",
+	"home.joined.gotIt": "Compris",
+	"home.joined.explore": "Ouvrir {explore}"
 }

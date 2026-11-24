@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Angre import {id}?",
 	"settings.move.undoQuestion": "Angre denne importen?",
 	"settings.move.undoNote": "Fjerner det denne importen la til. Senere endringer dine blir. Last ned rapporten først hvis du vil ha den.",
-	"settings.move.undoMove": "Angre import"
+	"settings.move.undoMove": "Angre import",
+	"settings.move.continueSetup": "Fortsett oppsettet",
+	"settings.move.backToChoose": "Tilbake til Velg"
 }

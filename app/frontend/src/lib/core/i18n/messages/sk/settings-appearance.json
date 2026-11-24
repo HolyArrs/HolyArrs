@@ -50,6 +50,18 @@
 "settings.appearance.colRequests": "Žiadosti",
 "settings.appearance.colRate": "Na riadok",
 "settings.appearance.noRows": "Zatiaľ nie sú spočítané žiadne riadky Preskúmať.",
+	"settings.appearance.rowStats": "Riadky v Preskúmať",
+	"settings.appearance.rowStatsDesc": "Otvorenia a žiadosti z každého riadku za posledných 30 dní, za všetkých spolu. Počíta sa len na tomto serveri.",
+	"settings.appearance.colRow": "Riadok",
+	"settings.appearance.row.because_have": "Podobné titulom, ktoré máte",
+	"settings.appearance.row.because_asked": "Podobné vašim žiadostiam",
+	"settings.appearance.row.person": "Viac od osoby",
+	"settings.appearance.row.genre": "Žánrový výber pre vás",
+	"settings.appearance.row.popular_genre": "Obľúbené podľa žánru",
+	"settings.appearance.row.popular_decade": "Obľúbené podľa desaťročia",
+	"settings.appearance.row.decade": "Podľa desaťročia",
+	"settings.appearance.row.mood": "Podľa nálady",
+	"settings.appearance.row.hero": "Horný banner",
 "settings.appearance.motion": "Pohyb",
 "settings.appearance.motionNote": "Riadi sa nastavením Obmedziť pohyb vášho zariadenia"
 }

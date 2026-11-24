@@ -47,7 +47,7 @@ func (h *Handlers) ExplorePageFor(ctx context.Context, r *http.Request, member i
 	if pool == nil || stale || pool.Version != engine.PoolVersion {
 		// A pool from an older build has other rows: build it again.
 		building = true
-		h.Explore.QueuePool(PoolKey{Member: member, Switch: sw}, now, false)
+		h.Explore.QueueSeen(PoolKey{Member: member, Switch: sw}, now)
 	}
 	if pool == nil {
 		if pool, _, err = h.Explore.ReadPool(ctx, member, sw, day, true); err != nil {

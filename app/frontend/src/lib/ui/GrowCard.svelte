@@ -8,7 +8,7 @@
 	import type { CardOwned } from './CardBadges.svelte';
 	import { followHint, followLabel, followPath, movieFollowHint, setFollow, type FollowTarget } from './follow.ts';
 	import { fitTags, growFacts } from './grow-lines.ts';
-	import { flipTransform, growPlacement, GROW_MS, GROW_SCALE, GROW_WIDTH, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from './grow.ts';
+	import { clearOfArrows, flipTransform, growPlacement, GROW_MS, GROW_SCALE, GROW_WIDTH, rowArrows, SHRINK_MS, TRAILER_AFTER, type Growth, type Rect } from './grow.ts';
 	import { onDestroy, onMount, type Snippet } from 'svelte';
 	import { api, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
@@ -233,7 +233,7 @@
 		const a = from();
 		const panel = card.querySelector<HTMLElement>('.panel')?.offsetHeight ?? 0;
 		const row = (anchor.closest('.row') ?? anchor.closest('main'))?.getBoundingClientRect();
-		return growPlacement({ left: a.left, top: a.top, width: a.width, height: a.height }, panel, { width: document.documentElement.clientWidth, height: window.innerHeight }, row ? { left: row.left, right: row.right } : undefined, { min: GROW_WIDTH, max: GROW_WIDTH });
+		return growPlacement({ left: a.left, top: a.top, width: a.width, height: a.height }, panel, { width: document.documentElement.clientWidth, height: window.innerHeight }, row ? clearOfArrows({ left: row.left, right: row.right }, rowArrows(anchor)) : undefined, { min: GROW_WIDTH, max: GROW_WIDTH });
 	}
 
 	// Cuts off the info panel so only the media shows while the card is small.

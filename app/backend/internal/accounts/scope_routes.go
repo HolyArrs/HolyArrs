@@ -10,6 +10,18 @@ import (
 // RouteScopes names routes whose scope is not the one the method and
 // RoutePerms give them (see RouteScope).
 var RouteScopes = map[string]string{
+	"GET /api/v1/plugin-hooks/metadata":                          webserver.ScopeAdmin,
+	"GET /api/v1/plugins/{id}/activity":                          webserver.ScopeAdmin,
+	"GET /api/v1/plugins/{id}/remote/status":                     webserver.ScopeAdmin,
+	"GET /api/v1/my/plugin-links":                                webserver.ScopeAdmin,
+	"GET /api/v1/plugin-hooks/downloader":                        webserver.ScopeAdmin,
+	"GET /api/v1/plugin-hooks/events":                            webserver.ScopeAdmin,
+	"GET /api/v1/plugin-hooks/pages":                             webserver.ScopeAdmin,
+	"GET /api/v1/plugin-hooks/releases":                          webserver.ScopeAdmin,
+	"GET /api/v1/plugin-hooks/sections":                          webserver.ScopeAdmin,
+	"GET /api/v1/plugin-hooks/tools":                             webserver.ScopeAdmin,
+	"GET /api/v1/plugin-hooks/users":                             webserver.ScopeAdmin,
+	"GET /api/v1/plugin-pages":                                   webserver.ScopeAdmin,
 	"GET /api/v1/trash/profiles":                                 webserver.ScopeAdmin,
 	"GET /api/v1/downloads/{id}/swarm":                           webserver.ScopeAdmin,
 	"GET /api/v1/downloads/{id}/detail":                          webserver.ScopeAdmin,
@@ -22,7 +34,9 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/downloaders/{id}/items/{hash}/usenet":           webserver.ScopeAdmin,
 	"GET /api/v1/downloads/{id}/usenet":                          webserver.ScopeAdmin,
 	"GET /api/v1/downloaders/{id}/attempts":                      webserver.ScopeAdmin,
+	"GET /api/v1/downloaders/{id}/categories":                    webserver.ScopeAdmin,
 	"GET /api/v1/explore/title-stats":                            webserver.ScopeAdmin,
+	"GET /api/v1/explore/row-stats":                              webserver.ScopeAdmin,
 	"GET /api/v1/settings/asks/plex-friends":                     webserver.ScopeAdmin,
 	"POST /api/v1/downloaders/{id}/attempts/{attemptID}/abandon": webserver.ScopeAdmin,
 	"POST /api/v1/auth/oidc/start":                               webserver.ScopeAdmin,
@@ -31,18 +45,24 @@ var RouteScopes = map[string]string{
 	"POST /api/v1/people/{id}/movies/review":                     webserver.ScopeRead,
 	"GET /api/v1/health/states":                                  webserver.ScopeHealthRead,
 	"GET /api/v1/plugins":                                        webserver.ScopeAdmin,
-	"GET /api/v1/plugins/tailscale/status":                       webserver.ScopeAdmin,
+	"GET /api/v1/plugin-images/{path...}":                        webserver.ScopeAdmin,
+	"GET /api/v1/plugins/{id}/settings":                          webserver.ScopeAdmin,
 	"GET /api/v1/data-packs":                                     webserver.ScopeAdmin,
 	"GET /api/v1/library/stats":                                  webserver.ScopeAdmin,
+	"GET /api/v1/library/unmatched-music":                        webserver.ScopeAdmin,
 	"GET /api/v1/library/stats/watched":                          webserver.ScopeAdmin,
 	"GET /api/v1/library/watched-by-anyone":                      webserver.ScopeAdmin,
+	"GET /api/v1/library/watched-cleanup":                        webserver.ScopeAdmin,
 	"GET /api/v1/settings/watch-history":                         webserver.ScopeAdmin,
+	"GET /api/v1/settings/hands-off":                             webserver.ScopeAdmin,
 	"GET /api/v1/settings/plex-labels":                           webserver.ScopeAdmin,
+	"GET /api/v1/settings/default-tracks":                        webserver.ScopeAdmin,
 	"GET /api/v1/data-packs/{id}":                                webserver.ScopeAdmin,
 	"GET /api/v1/data-packs/{id}/preview":                        webserver.ScopeAdmin,
 	"POST /api/v1/parts/{part}/on":                               webserver.ScopeControl,
 	"POST /api/v1/parts/{part}/off":                              webserver.ScopeControl,
 	"POST /api/v1/parts/{part}/restart":                          webserver.ScopeControl,
+	"PUT /api/v1/settings/hands-off":                             webserver.ScopeControl,
 	"POST /api/v1/stages/{name}/pause":                           webserver.ScopeControl,
 	"POST /api/v1/stages/{name}/resume":                          webserver.ScopeControl,
 	"POST /api/v1/stages/{name}/restart":                         webserver.ScopeControl,
@@ -80,6 +100,8 @@ var RouteScopes = map[string]string{
 	"POST /api/v1/auth/reauth":                  webserver.ScopeAdmin,
 	"POST /api/v1/auth/setup/done":              webserver.ScopeAdmin,
 	"POST /api/v1/auth/oidc/link":               webserver.ScopeAdmin,
+	"GET /api/v1/media-servers/{id}/libraries":  webserver.ScopeAdmin,
+	"GET /api/v1/auth/plex/servers":             webserver.ScopeAdmin,
 	"GET /api/v1/auth/sso":                      webserver.ScopeAdmin,
 	"PUT /api/v1/auth/sso":                      webserver.ScopeAdmin,
 	"POST /api/v1/auth/sso/test":                webserver.ScopeAdmin,
@@ -112,6 +134,11 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/settings/trakt-key":                  webserver.ScopeAdmin,
 	"GET /api/v1/settings/mdblist-key":                webserver.ScopeAdmin,
 	"GET /api/v1/settings/trakt-token":                webserver.ScopeAdmin,
+	"PUT /api/v1/settings/trakt-secret":               webserver.ScopeAdmin, // the Trakt sign-in
+	"GET /api/v1/settings/trakt-signin":               webserver.ScopeAdmin, // the Trakt sign-in
+	"POST /api/v1/settings/trakt-signin":              webserver.ScopeAdmin, // the Trakt sign-in
+	"POST /api/v1/settings/trakt-signin/check":        webserver.ScopeAdmin, // the Trakt sign-in
+	"DELETE /api/v1/settings/trakt-signin":            webserver.ScopeAdmin, // the Trakt sign-in
 	"GET /api/v1/users":                               webserver.ScopeAdmin,
 	"GET /api/v1/users/media-accounts":                webserver.ScopeAdmin,
 	"GET /api/v1/users/invites":                       webserver.ScopeAdmin,
@@ -126,13 +153,22 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/auth/state":                          webserver.ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/auth/invites/{token}":                webserver.ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/auth/setup/discover":                 webserver.ScopeAdmin, // public, first run only; a key never needs it
+	"GET /api/v1/public/languages":                    webserver.ScopeAdmin, // public, first run only; a key never needs it
+	"POST /api/v1/auth/setup/language/{code}":         webserver.ScopeAdmin, // public, first run only; a key never needs it
+	"DELETE /api/v1/auth/setup/language/{code}":       webserver.ScopeAdmin, // public, first run only; a key never needs it
 	"GET /api/v1/auth/oidc/callback":                  webserver.ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/public/signin-art":                   webserver.ScopeAdmin, // public; a key never needs it
+	"GET /api/v1/languages/{code}/pack":               webserver.ScopeAdmin, // public; a key never needs it
 	"GET /api/v1/public/signin-pic/t/p/{size}/{file}": webserver.ScopeAdmin, // public; a key never needs it
 
 	// The move tool: what old apps hold (people, emails, links) is admin.
 	"POST /api/v1/migrate/probe":            webserver.ScopeAdmin,
+	"POST /api/v1/migrate/preview":          webserver.ScopeAdmin,
 	"POST /api/v1/migrate/read":             webserver.ScopeAdmin,
+	"POST /api/v1/migrate/find":             webserver.ScopeAdmin,
+	"POST /api/v1/migrate/linked":           webserver.ScopeAdmin,
+	"POST /api/v1/migrate/folders":          webserver.ScopeAdmin,
+	"POST /api/v1/migrate/key-lookup":       webserver.ScopeAdmin,
 	"GET /api/v1/migrate/snapshots":         webserver.ScopeAdmin,
 	"GET /api/v1/migrate/snapshots/{id}":    webserver.ScopeAdmin,
 	"DELETE /api/v1/migrate/snapshots/{id}": webserver.ScopeAdmin,
@@ -142,11 +178,13 @@ var RouteScopes = map[string]string{
 	"PUT /api/v1/settings/import-folders":   webserver.ScopeAdmin, // widens what import by hand may read
 	"POST /api/v1/migrate/plan":             webserver.ScopeAdmin,
 	"POST /api/v1/migrate/dry-run":          webserver.ScopeAdmin,
+	"GET /api/v1/migrate/checks/{id}":       webserver.ScopeAdmin,
 	"GET /api/v1/migrate/moves":             webserver.ScopeAdmin,
 	"POST /api/v1/migrate/moves":            webserver.ScopeAdmin,
 	"GET /api/v1/migrate/moves/{id}":        webserver.ScopeAdmin,
 	"GET /api/v1/migrate/moves/{id}/report": webserver.ScopeAdmin,
 	"POST /api/v1/migrate/moves/{id}/undo":  webserver.ScopeAdmin,
+	"DELETE /api/v1/migrate/moves/{id}":     webserver.ScopeAdmin,
 }
 
 // ReadRoutes are the GET routes a read key may use. A GET route listed
@@ -176,9 +214,29 @@ func RouteScope(pattern string) string {
 	return webserver.ScopeWrite
 }
 
+// alsoScopes lets a second scope use a route: a key that can flip the
+// hands-off switch can read it too.
+var alsoScopes = map[string]string{
+	"GET /api/v1/settings/hands-off": webserver.ScopeControl,
+}
+
+// routeScopeOK reports whether the caller's key scope covers the route.
+func routeScopeOK(who webserver.Caller, pattern string) bool {
+	if who.HasScope(RouteScope(pattern)) {
+		return true
+	}
+	also := alsoScopes[pattern]
+	return also != "" && who.HasScope(also)
+}
+
 func init() {
 	for _, r := range []string{
 		"GET /api/v1/titles/{id}/copies",
+		"GET /api/v1/plugin-widgets",
+		"GET /api/v1/plugin-page-files/{token}/{path...}",
+		"GET /api/v1/plugin-stream/{token}",
+		"GET /api/v1/titles/{id}/plugin-sections",
+		"GET /api/v1/languages",
 		"GET /api/v1/people/search",
 		"GET /api/v1/people/popular",
 		"GET /api/v1/people/shelves",
@@ -193,19 +251,19 @@ func init() {
 		// The Allow page reads what is asking; allowing it needs a fresh password.
 		"GET /api/v1/auth/ai-connect",
 
-		"GET /", "GET /login", "GET /live",
+		"GET /", "GET /login", "GET /plex-done", "GET /live",
 		"GET /api/v1/albums/{id}", "GET /api/v1/albums/{id}/tracks", "GET /api/v1/albums/{id}/cover", "GET /api/v1/alerts",
 		"GET /api/v1/artists/lookup", "GET /api/v1/artwork/{name}", "GET /api/v1/artwork/tmdb/{size}/{file}", "GET /api/v1/artwork/img/{kind}/{id}/{file}", "GET /api/v1/asks",
 		"GET /api/v1/asks/limit", "GET /api/v1/asks/{id}", "GET /api/v1/asks/{id}/parts", "GET /api/v1/auth/me", "GET /api/v1/auth/sso/links", "GET /api/v1/auth/plex/my-link", "GET /api/v1/auth/media-link",
 		"GET /api/v1/calendar", "GET /api/v1/downloaders", "GET /api/v1/tags",
 		"GET /api/v1/downloads", "GET /api/v1/downloads/view", "GET /api/v1/downloads/matches", "GET /api/v1/downloads/clients", "GET /api/v1/events",
 		"GET /api/v1/health", "GET /api/v1/health/checks", "GET /api/v1/health/disks", "GET /api/v1/app/about",
-		"GET /api/v1/held", "GET /api/v1/holding", "GET /api/v1/imports", "GET /api/v1/jobs", "GET /api/v1/jobs/{id}", "GET /api/v1/jobs/active",
-		"GET /api/v1/library-folders", "GET /api/v1/home", "GET /api/v1/media-servers", "GET /api/v1/media-servers/watch-links", "GET /api/v1/messages",
+		"GET /api/v1/held", "GET /api/v1/releases/check/{id}", "GET /api/v1/holding", "GET /api/v1/imports", "GET /api/v1/jobs", "GET /api/v1/jobs/{id}", "GET /api/v1/jobs/active",
+		"GET /api/v1/library-folders", "GET /api/v1/library-folders/{id}/tidy", "GET /api/v1/home", "GET /api/v1/media-servers", "GET /api/v1/media-servers/watch-links", "GET /api/v1/messages",
 		"GET /api/v1/metadata/search", "GET /api/v1/metadata/health", "GET /api/v1/metadata/{kind}/{tmdb_id}", "GET /api/v1/metadata/{kind}/{tmdb_id}/more-from", "GET /api/v1/metadata/{kind}/{tmdb_id}/reviews", "GET /api/v1/metadata/{kind}/{tmdb_id}/anime", "GET /api/v1/extras/{kind}/{id}", "GET /api/v1/metadata/show/{tmdb_id}/seasons/{number}", "GET /api/v1/trailer/{kind}/{tmdb_id}", "GET /api/v1/trailer/batch", "GET /api/v1/trailer/stream/{id}/manifest.m3u8", "GET /api/v1/trailer/stream/{id}/seg/{n}", "GET /api/v1/settings/ui", "GET /api/v1/discover", "GET /api/v1/watch-services", "GET /api/v1/explore/head", "GET /api/v1/explore/tail", "GET /api/v1/explore/top", "GET /api/v1/explore/service-top", "GET /api/v1/explore/genre", "GET /api/v1/explore/genre-row", "GET /api/v1/explore/new", "GET /api/v1/explore/new/services", "GET /api/v1/explore/new/service", "GET /api/v1/explore/new/music", "GET /api/v1/metadata/album/{mbid}/follow", "GET /api/v1/explore/browse", "GET /api/v1/explore/browse/section", "GET /api/v1/explore/browse/category", "GET /api/v1/explore/strip", "GET /api/v1/music-trending", "GET /api/v1/music-trending/art/{kind}/{mbid}", "GET /api/v1/music/genre/{slug}", "GET /api/v1/music/browse/{kind}/{slug}", "GET /api/v1/music/browse-tiles", "GET /api/v1/music/genre-art/{slug}", "GET /api/v1/music/artists/{mbid}", "GET /api/v1/music/albums/{mbid}", "GET /api/v1/explore/music", "GET /api/v1/explore/music/rising", "GET /api/v1/my/alerts", "GET /api/v1/my/plex-watchlist", "GET /api/v1/asked-by", "GET /api/v1/my/profile", "GET /api/v1/my/views", "GET /api/v1/my/follows", "GET /api/v1/my/watched", "GET /api/v1/titles/{id}/follow", "GET /api/v1/metadata/show/{tmdb_id}/follow", "GET /api/v1/metadata/movie/{tmdb_id}/follow", "GET /api/v1/needs-decision",
 		"GET /api/v1/never-add", "GET /api/v1/openapi.json", "GET /api/v1/outside-lists",
 		"GET /api/v1/parts", "GET /api/v1/pick-rules", "GET /api/v1/pick-rules/{id}", "GET /api/v1/own-traits", "GET /api/v1/rename", "GET /api/v1/searches",
-		"GET /api/v1/settings/alerts", "GET /api/v1/settings/url-base", "GET /api/v1/settings/proxy", "GET /api/v1/settings/asks", "GET /api/v1/settings/downloaders",
+		"GET /api/v1/settings/alerts", "GET /api/v1/settings/url-base", "GET /api/v1/settings/proxy", "GET /api/v1/settings/asks", "GET /api/v1/settings/asks/streaming-cleanup", "GET /api/v1/settings/downloaders",
 		"GET /api/v1/settings/files", "GET /api/v1/settings/import-folders", "GET /api/v1/settings/side-files", "GET /api/v1/settings/health", "GET /api/v1/settings/music", "GET /api/v1/settings/metadata",
 		"GET /api/v1/settings/naming", "GET /api/v1/settings/release-gate", "GET /api/v1/settings/search", "GET /api/v1/bridges",
 		"GET /api/v1/settings/shows", "GET /api/v1/settings/status", "GET /api/v1/settings/subtitles", "GET /api/v1/settings/subtitles/translator", "GET /api/v1/settings/title-defaults", "GET /api/v1/shows/lookup",
@@ -213,7 +271,7 @@ func init() {
 		"GET /api/v1/subtitle-sites/kinds", "GET /api/v1/subtitles/languages", "GET /api/v1/subtitles/missing",
 		"GET /api/v1/titles", "GET /api/v1/titles/owned", "GET /api/v1/library/search", "GET /api/v1/search/suggest", "GET /api/v1/search", "GET /api/v1/titles/lookup", "GET /api/v1/titles/{id}",
 		"GET /api/v1/titles/{id}/albums", "GET /api/v1/titles/{id}/episodes", "GET /api/v1/titles/{id}/releases",
-		"GET /api/v1/titles/{id}/rename", "GET /api/v1/titles/{id}/leftovers", "GET /api/v1/titles/{id}/episode-groups", "GET /api/v1/titles/{id}/seasons", "GET /api/v1/titles/{id}/subtitles", "GET /api/v1/titles/{id}/search-outcome",
+		"GET /api/v1/titles/{id}/rename", "GET /api/v1/titles/{id}/leftovers", "GET /api/v1/titles/{id}/episode-groups", "GET /api/v1/titles/{id}/seasons", "GET /api/v1/titles/{id}/subtitles", "GET /api/v1/titles/{id}/search-outcome", "GET /api/v1/titles/{id}/points",
 		"GET /api/v1/turned-down", "GET /api/v1/users/{id}/avatar", "GET /api/v1/schedules", "GET /api/v1/app/update",
 	} {
 		ReadRoutes[r] = true

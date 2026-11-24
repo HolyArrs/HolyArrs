@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "ரத்துசெய்",
 	"settings.schedules.stages": "நிலைகள்",
 	"settings.schedules.stagesNote": "அவற்றை <a>பகுதிகள்</a> பக்கத்தில் இடைநிறுத்துங்கள் அல்லது மறுதொடக்குங்கள்.",
-	"settings.schedules.allTime": "எப்போதும்"
+	"settings.schedules.allTime": "எப்போதும்",
+	"settings.schedules.skip.nothing": "செய்ய எதுவும் இல்லை",
+	"settings.schedules.skip.plexOff": "அணைக்கப்பட்டது: {page} இல் {setting} ஐ இயக்குங்கள்",
+	"settings.schedules.skip.plexNobody": "செய்ய எதுவும் இல்லை: யாரும் தங்கள் Plex பார்வைப் பட்டியலை இயக்கவில்லை",
+	"settings.schedules.skip.settingOff": "அணைக்கப்பட்டது: அதன் அமைப்புகளில் இயக்குங்கள்",
+	"settings.schedules.skip.starting": "தவிர்க்கப்பட்டது: HolyArrs இன்னும் தொடங்கிக்கொண்டிருந்தது",
+	"settings.schedules.took": "{time} ஆனது",
+	"settings.schedules.finished": "{label} முடிந்தது",
+	"settings.schedules.nothingToDo": "{label}: செய்ய எதுவும் இல்லை",
+	"settings.schedules.runFailed": "{label} தோல்வியடைந்தது"
 }

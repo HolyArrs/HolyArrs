@@ -25,6 +25,14 @@ describe('search outcome', () => {
 		expect(outcomeLine({ empty: true, sources: [] })).toBe(MEMBER_LINE);
 		expect(outcomeLine({ empty: true, sources: [{ id: 1, name: 'A', why: 'down' }] })).toBe('Nothing found:');
 	});
+	it.each([
+		[{ empty: true, refused: true }, 'Found, but none fit the Pick rules'],
+		[{ empty: true, refused: true, sources: [{ id: 1, name: 'A', why: 'down' }] }, 'Found, but none fit the Pick rules'],
+		[{ empty: true, refused: false }, MEMBER_LINE],
+		[{ empty: false, refused: true }, ''],
+	])('says when the Pick rules turned every release down (%j)', (o, want) => {
+		expect(outcomeLine(o)).toBe(want);
+	});
 	it('passes on what the search said about the folder tags', () => {
 		const note = "No Source this search can use has this folder's tags, so Sources without tags were asked too.";
 		expect(outcomeNote({ empty: true, sources: [], note })).toBe(note);

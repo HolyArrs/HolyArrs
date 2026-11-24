@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Primer la millor còpia; el paquet de temporada guanya si empaten",
 	"settings.search.preferAlways": "Un paquet de temporada sempre que superi el conjunt de qualitat",
 	"settings.search.multi": "Accepta Llançaments amb diverses temporades",
-	"settings.search.multiHint": "Cobreix tots els episodis que falten que conté",
+	"settings.search.multiHint": "Cobreix tots els episodis que falten que conté. Amb la mateixa qualitat, guanya la que cobreix més episodis buscats",
 	"settings.search.music": "Música",
 	"settings.search.albums": "Cerca també els àlbums que falten",
 	"settings.search.albumsHint": "Àlbums publicats, una cerca per cadascun",

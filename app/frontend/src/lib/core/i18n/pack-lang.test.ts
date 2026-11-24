@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,8 +22,8 @@ function pack(fr: Record<string, string>) {
 	};
 	write('en', { 'a.hello': 'Hello {name}', 'a.bold': 'Say <b>yes</b>', 'a.left': 'Left out' });
 	write('fr', fr);
-	const r = spawnSync(process.execPath, [script], { cwd: dir, encoding: 'utf8' });
-	return { status: r.status, text: `${r.stdout}${r.stderr}` };
+	const r = spawnSync(process.execPath, [script, '--app', '1.2.3'], { cwd: dir, encoding: 'utf8' });
+	return { status: r.status, text: `${r.stdout}${r.stderr}`, dir };
 }
 
 describe('pack-lang', () => {
@@ -31,6 +31,11 @@ describe('pack-lang', () => {
 		const r = pack({ 'a.hello': 'Bonjour {name}', 'a.bold': 'Dites <b>oui</b>' });
 		expect(r.status).toBe(0);
 		expect(r.text).toContain('1 languages packed');
+		// The pack goes outside src, so no page build takes it in; it names its language and app version.
+		const fr = JSON.parse(readFileSync(join(r.dir, 'lang-out', 'fr.json'), 'utf8'));
+		const { fit } = JSON.parse(readFileSync(join(r.dir, 'src/lib/core/i18n/packs/fit.json'), 'utf8'));
+		expect(fr).toEqual({ lang: 'fr', app: '1.2.3', fit, values: ['Dites <b>oui</b>', 'Bonjour {name}', null] });
+		expect(existsSync(join(r.dir, 'src/lib/core/i18n/packs/fr.json'))).toBe(false);
 	});
 
 	it('fails the build when a line loses or renames a slot', () => {

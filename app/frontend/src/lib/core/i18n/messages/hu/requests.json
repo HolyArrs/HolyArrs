@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Bővítmények üzenetei",
+	"requests.moment.plugin_message.body": "Egy engedélyezett bővítmény üzenetet küld.",
+	"requests.words.via": "{who} ({plugin} által)",
 	"requests.moment.ask_waiting.title": "Új kérés",
 	"requests.moment.ask_waiting.body": "A munkatársaknak: egy film, sorozat vagy előadó jóváhagyásra vár.",
 	"requests.moment.ask_approved.title": "Jóváhagyva",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "TMDB-lista",
 	"requests.lists.tmdbHint": "A lista száma vagy a hivatkozása, például themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-lista",
-	"requests.lists.traktHint": "user/list, user/watchlist vagy a hivatkozás, például trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist vagy a hivatkozás, például trakt.tv/users/ana/lists/favourites. Vagy egy toplista: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "MDBList-lista",
 	"requests.lists.mdblistHint": "user/list vagy a hivatkozás, például mdblist.com/lists/ana/favourites. A nyilvános listák kulcs nélkül is működnek.",
 	"requests.lists.everyDay": "naponta",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Nem találtunk hibát",
 	"requests.outcome.noResults": "Még nincs találat",
 	"requests.outcome.nothingFound": "Nincs találat:",
+	"requests.outcome.refused": "Van találat, de egyik sem felel meg a kiválasztási szabályoknak",
 	"requests.outcome.why.slowed": "szünetelt (lelassítva)",
 	"requests.outcome.why.down": "nem működött",
 	"requests.outcome.why.blocked": "le volt tiltva",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Hozzáadás",
 	"requests.addMovie.titleBare": "Film hozzáadása",
 	"requests.add.loadingDefaults": "Az alapértékek betöltése",
+	"requests.add.defaultsLate": "A mentett alapértelmezéseid nem töltődtek be időben, ezért a szokásos beállítások lettek kiválasztva. Hozzáadás előtt ellenőrizd őket.",
 	"requests.add.noFolder.music": "Még nincs Médiatár-mappa a zenének. Előbb <a>adjon hozzá egyet</a>.",
 	"requests.add.noFolder.movie": "Még nincs Médiatár-mappa a filmeknek. Előbb <a>adjon hozzá egyet</a>.",
 	"requests.add.noFolder.show": "Még nincs Médiatár-mappa a sorozatoknak. Előbb <a>adjon hozzá egyet</a>.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Megjelenítés a naptáramon.",
 	"requests.add.cancel": "Mégse",
 	"requests.add.submit": "Hozzáadás a Médiatárhoz",
+	"requests.add.submitChoose": "Hozzáadás és kiadás választása",
 	"requests.addArtist.albums": "Naprakészen tartandó albumok",
 	"requests.addArtist.newAlbums": "Új albumok",
 	"requests.addArtist.newAlbumsHint": "Mi történik egy később megjelenő albummal.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", megjelenítve: {status}",
 	"requests.board.reportsOpen": "Jelentések, {n} nyitott",
 	"requests.board.approveAll": "Mind jóváhagyása",
+	"requests.board.approveAllTitle": "Jóváhagyod az összes várakozó kérést ({n})?",
+	"requests.board.approveAllDesc": "Ebbe a lista lejjebb lévő, még be nem töltött kérései is beletartoznak.",
 	"requests.board.requests": "Kérések",
 	"requests.board.open": "{name} megnyitása, kérte: {who}",
 	"requests.board.pageForArtist": "{name} előadói oldala",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Hozzáadva",
 	"requests.addAll.summary": "Hozzáadva: {added}, kihagyva: {skipped}",
 	"requests.addAll.summaryClean": "Hozzáadva: {added}",
-	"requests.addAll.intro": "Minden film a lent választott mappával és kiválasztási szabályokkal, valamint a mentett alapértékeiddel kerül a Médiatáradba. A már a Médiatárban lévő filmek szerepelnek a listán, de nem kerülnek be még egyszer."
+	"requests.addAll.intro": "Minden film a lent választott mappával és kiválasztási szabályokkal, valamint a mentett alapértékeiddel kerül a Médiatáradba. A már a Médiatárban lévő filmek szerepelnek a listán, de nem kerülnek be még egyszer.",
+	"requests.ask.alsoAsk": "{name} kérése is",
+	"requests.add.handsOff": "A beavatkozásmentes mód be van kapcsolva: nem kell médiatár-mappa. A letöltőbe kerül, és a fájlok ott maradnak."
 }

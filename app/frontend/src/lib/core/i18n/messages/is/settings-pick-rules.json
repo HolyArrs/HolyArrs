@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Ekki hægt að afturkalla. Skrár haldast.",
 	"settings.pickRules.removeUsed": "{used}. Veldu aðrar valreglur þar fyrst.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Hætta við"
+	"settings.pickRules.cancel": "Hætta við",
+	"settings.pickRules.check.title": "Athuga útgáfuheiti",
+	"settings.pickRules.check.desc": "Límdu inn útgáfuheiti til að sjá hvernig HolyArrs les það og hvernig gæðasettin þín meta það. Ekkert er leitað að eða sótt.",
+	"settings.pickRules.check.name": "Útgáfuheiti",
+	"settings.pickRules.check.rules": "Meta með",
+	"settings.pickRules.check.copies": "Afrit titilsins sem passar",
+	"settings.pickRules.check.size": "Stærð í GB (valfrjálst)",
+	"settings.pickRules.check.check": "Athuga",
+	"settings.pickRules.check.failed": "Ekki tókst að athuga heitið",
+	"settings.pickRules.check.readAs": "Lesið sem",
+	"settings.pickRules.check.matches": "Passar við {name}",
+	"settings.pickRules.check.noTitle": "Passar ekki við neinn titil í Safninu þínu. Veldu gæðasett hér fyrir ofan til að meta það samt.",
+	"settings.pickRules.check.noAlbum": "Passar við {name}, en ekkert af plötum þess.",
+	"settings.pickRules.check.noCopies": "Þessi titill hefur engin afrit til að meta.",
+	"settings.pickRules.check.hasFile": "Er með skrá"
 }

@@ -32,6 +32,26 @@ export function canImportAgain(d: D): boolean {
 	return !!d.download_id && (noSaveFolder(r) || noAccess(r) || gaveUp(r) || slowRead(r));
 }
 
+// No file matched: the same download can also be imported again from the menu (its archives are unpacked again); Import files by hand still leads.
+const noMatchAgain = (r: string) => /^\s*no file in the download matched (this movie|an episode|a track); match the files by hand\.?\s*$/i.test(r);
+
+// Import again is offered: as the lead fix (canImportAgain) or, when no file matched, in the menu.
+export function mayImportAgain(d: D): boolean {
+	return canImportAgain(d) || (!!d.download_id && noMatchAgain(d.reason ?? ''));
+}
+
+// Import again shows as its own button beside a lead fix that is something else, so it is found without opening the menu.
+export function importAgainBeside(d: D, fix: Fix): boolean {
+	return fix !== 'again' && mayImportAgain(d);
+}
+
+// Whole minutes until the import is tried again on its own, at least 1 (the try runs on the next minute's pass); null when it waits for a person.
+export function retryMinutes(retryAt: string | undefined, now: number): number | null {
+	const at = retryAt ? Date.parse(retryAt) : NaN;
+	if (Number.isNaN(at)) return null;
+	return Math.max(1, Math.ceil((at - now) / 60_000));
+}
+
 // Every file of one download waits on the same reason Import again answers: one press imports the whole download again.
 export function packImportAgain(items: D[]): boolean {
 	const [a] = items;

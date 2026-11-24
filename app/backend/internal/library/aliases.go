@@ -3,6 +3,7 @@ package library
 import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -31,7 +32,21 @@ func usableAlias(clean string) bool {
 	if digits {
 		return false
 	}
-	return strings.Contains(clean, " ") || utf8.RuneCountInString(clean) >= 5
+	if strings.Contains(clean, " ") {
+		return true
+	}
+	// One word: five Latin letters, or fewer in scripts where a word carries
+	// more ("Тьма", "寄生虫"); a lone letter never.
+	n := utf8.RuneCountInString(clean)
+	for _, c := range clean {
+		switch {
+		case unicode.In(c, unicode.Han, unicode.Hiragana, unicode.Katakana, unicode.Hangul):
+			return n >= 2
+		case unicode.IsLetter(c) && !unicode.Is(unicode.Latin, c):
+			return n >= 3
+		}
+	}
+	return n >= 5
 }
 
 // mergeAliases keeps the names a Title already has, then adds the usable new

@@ -15,7 +15,7 @@ func TestCSPHashesInlineScripts(t *testing.T) {
 	if !strings.Contains(got, "script-src 'self' 'sha256-"+base64.StdEncoding.EncodeToString(sum[:])+"'") {
 		t.Fatal(got)
 	}
-	if strings.Contains(CSP(nil), "sha256-") || !strings.Contains(got, "frame-src https://www.youtube-nocookie.com") {
+	if strings.Contains(CSP(nil), "sha256-") || !strings.Contains(got, "frame-src 'self' https://www.youtube-nocookie.com") {
 		t.Fatal(CSP(nil))
 	}
 }

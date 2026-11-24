@@ -14,7 +14,6 @@
 	"settings.health.none": "لا توجد نتائج. افحص مرة أخرى لتشغيلها.",
 	"settings.health.since": "منذ",
 	"settings.health.settings": "إعدادات فحص السلامة",
-	"settings.health.updateCheck": "تحقق من وجود HolyArrs أحدث",
 	"settings.health.onlyChecks": "يتحقق فقط. لا يثبّت أبدًا.",
 	"settings.health.every": "تحقق من التحديثات كل",
 	"settings.health.day": "يوم",

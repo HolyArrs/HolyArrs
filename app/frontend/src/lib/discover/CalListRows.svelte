@@ -31,7 +31,7 @@
 		onfollow: (e: CalendarEntry, on: boolean) => void;
 	} = $props();
 
-	const dotWord = $derived({ have: t('discover.calListRows.inTheLibrary'), missing: t('discover.calListRows.missing'), upcoming: t('discover.calListRows.comingUp') });
+	const dotWord = $derived({ have: t('discover.calListRows.inTheLibrary'), missing: t('discover.calListRows.missing'), getting: t('discover.calListRows.downloading'), problem: t('discover.calListRows.needsAttention'), upcoming: t('discover.calListRows.comingUp') });
 	const rows = $derived(days.map((d) => ({ day: d.day, groups: groupDates(d.items) })));
 	let sel = $state<CalGroup | null>(null);
 	let open = $state(false);
@@ -125,6 +125,9 @@
 	.sd { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; background: var(--text-faint); }
 	.sd.have { background: var(--ok); }
 	.sd.missing { background: var(--fail); }
+	.sd.getting { background: var(--wait); }
+	/* Stuck: a red ring, so it reads apart from plain missing. */
+	.sd.problem { background: transparent; box-shadow: inset 0 0 0 1.5px var(--fail); }
 	.sd.upcoming { background: var(--info); }
 	.who { margin-left: 8px; }
 	.tp { display: none; font-weight: 600; color: var(--text); }

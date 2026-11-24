@@ -67,7 +67,9 @@ type File struct {
 // Job is one download as the engine sees it.
 type Job struct {
 	// ID is the external id (the info hash for torrents).
-	ID          string
+	ID string
+	// AltID is a second id the job is known by: the v1 info hash of a hybrid torrent that qBittorrent lists by its v2 hash.
+	AltID       string
 	Name        string
 	Category    string
 	SavePath    string
@@ -136,4 +138,11 @@ type ActiveLister interface {
 // Nothing it returns becomes a HolyArrs download.
 type AllLister interface {
 	ListAll(ctx context.Context) ([]Job, error)
+}
+
+// Sessioner is an engine whose client names the run of its own process. A client that
+// started again has forgotten the jobs it was given, so a Download it no longer lists
+// was not removed by hand.
+type Sessioner interface {
+	Session(ctx context.Context) (string, error)
 }

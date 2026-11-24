@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -61,11 +62,17 @@ func (g *gestdown) Search(ctx context.Context, q Query) ([]Candidate, error) {
 		return nil, nil
 	}
 	var out []Candidate
-	for _, lang := range q.Languages {
-		name := langName(lang)
-		if name == "" {
-			continue
+	type ask struct{ name, lang string }
+	var asks []ask
+	for _, l := range q.Languages {
+		for _, name := range gdNames(siteLang(l)) {
+			if a := (ask{name, gdLang(name)}); !slices.Contains(asks, a) {
+				asks = append(asks, a)
+			}
 		}
+	}
+	for _, a := range asks {
+		name, lang := a.name, a.lang
 		p := "/subtitles/get/" + url.PathEscape(show.ID) + "/" + strconv.Itoa(q.Season) + "/" + strconv.Itoa(q.Episode) + "/" + url.PathEscape(name)
 		body, err := g.c.get(ctx, p, "application/json", maxSearchBody, true)
 		if err != nil {
@@ -152,7 +159,7 @@ func (p *podnapisi) Search(ctx context.Context, q Query) ([]Candidate, error) {
 		v.Set("movie_type", "movie")
 	}
 	var out []Candidate
-	for _, lang := range q.Languages {
+	for _, lang := range plainLangs(q.Languages, "pt-br") {
 		v.Set("language", lang)
 		body, err := p.c.get(ctx, "/subtitles/search/advanced?"+v.Encode(), "application/json", maxSearchBody, true)
 		if err != nil {
@@ -300,6 +307,40 @@ func fold(s string) string {
 var langNames = map[string]string{"en": "English", "es": "Spanish", "fr": "French", "de": "German", "it": "Italian", "pt": "Portuguese", "pt-br": "Portuguese (Brazilian)",
 	"nl": "Dutch", "pl": "Polish", "ro": "Romanian", "ru": "Russian", "sv": "Swedish", "tr": "Turkish", "el": "Greek", "he": "Hebrew",
 	"hu": "Hungarian", "cs": "Czech", "da": "Danish", "fi": "Finnish", "no": "Norwegian", "ar": "Arabic", "bg": "Bulgarian", "hr": "Croatian",
-	"sr": "Serbian", "sl": "Slovenian", "ca": "Catalan", "eu": "Euskera", "gl": "Galego", "ja": "Japanese", "ko": "Korean", "zh": "Chinese (Simplified)"}
+	"sr": "Serbian", "sl": "Slovenian", "ca": "Catalan", "eu": "Euskera", "gl": "Galego", "ja": "Japanese", "ko": "Korean",
+	"zh-hans": "Chinese (Simplified)", "zh-hant": "Chinese (Traditional)"}
 
-func langName(code string) string { return langNames[code] }
+// gdNames are the Gestdown names asked for one of our codes: a plain
+// language asks for every kind the site keeps apart.
+func gdNames(code string) []string {
+	if code == "pt-pt" {
+		return []string{"Portuguese"} // the site's plain Portuguese is Portugal
+	}
+	var out []string
+	if n := langNames[code]; n != "" {
+		out = append(out, n)
+	}
+	if !strings.Contains(code, "-") {
+		for c, n := range langNames {
+			if strings.HasPrefix(c, code+"-") {
+				out = append(out, n)
+			}
+		}
+		slices.Sort(out)
+	}
+	return out
+}
+
+// gdLang reads a Gestdown name back as our code. Its plain Portuguese is
+// Portugal, because Brazil has a name of its own.
+func gdLang(name string) string {
+	if name == "Portuguese" {
+		return "pt-pt"
+	}
+	for c, n := range langNames {
+		if n == name {
+			return c
+		}
+	}
+	return ""
+}

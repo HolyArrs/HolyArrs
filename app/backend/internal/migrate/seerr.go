@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
+	"sync"
 )
 
 // seerrReader reads Seerr and Overseerr: people (name, email, role,
@@ -42,7 +43,7 @@ func permNames(p int64) []string {
 	return out
 }
 
-// requestStates are the request status numbers; only pending and approved
+// requestStates are the request status numbers; pending, approved and completed
 // requests are kept (the rest are done or turned down).
 var requestStates = map[int64]string{1: "pending", 2: "approved", 3: "declined", 4: "failed", 5: "completed"}
 
@@ -110,8 +111,21 @@ func (r seerrReader) Probe(ctx context.Context, src Source) (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	return Info{Kind: r.kind, Via: ViaAPI, Version: v,
-		Notes: []string{"Seerr and Overseerr look alike through the API; the app you picked is kept"}}, nil
+	return Info{Kind: r.apiKind(ctx, c), Via: ViaAPI, Version: v}, nil
+}
+
+// apiKind tells Seerr from Overseerr through the API: only Seerr has the
+// blocklist (as its backup has the blocklist table). Anything but a clear
+// "not found" keeps the app that was picked.
+func (r seerrReader) apiKind(ctx context.Context, c *apiClient) Kind {
+	_, _, code, err := c.do(ctx, http.MethodGet, "/api/v1/blocklist", url.Values{"take": {"1"}}, nil)
+	switch {
+	case code == http.StatusNotFound:
+		return Overseerr
+	case err == nil && code == http.StatusOK:
+		return Seerr
+	}
+	return r.kind
 }
 
 func (r seerrReader) status(ctx context.Context, c *apiClient) (string, error) {
@@ -134,19 +148,40 @@ func (r seerrReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 	if src.Via() == ViaBackup {
 		return r.fromBackup(ctx, src)
 	}
-	c, err := r.client(src)
-	if err != nil {
-		return nil, err
+	// The version, people, requests and settings are asked at once (each on its own client), so the read takes as long as the slowest list, not all of them.
+	var (
+		wg                     sync.WaitGroup
+		v                      string
+		users, reqs            []map[string]any
+		main                   map[string]any
+		vErr, uErr, rErr, mErr error
+	)
+	run := func(f func(c *apiClient) error, e *error) {
+		c, err := r.client(src)
+		if err != nil {
+			*e = err
+			return
+		}
+		wg.Add(1)
+		go func() { defer wg.Done(); *e = f(c) }()
 	}
-	v, err := r.status(ctx, c)
-	if err != nil {
-		return nil, err
+	run(func(c *apiClient) (err error) { v, err = r.status(ctx, c); return }, &vErr)
+	run(func(c *apiClient) (err error) { users, err = r.pages(ctx, c, "/api/v1/user", nil); return }, &uErr)
+	run(func(c *apiClient) (err error) {
+		reqs, err = r.pages(ctx, c, "/api/v1/request", url.Values{"filter": {"all"}, "sort": {"added"}})
+		return
+	}, &rErr)
+	run(func(c *apiClient) error { return c.getJSON(ctx, "/api/v1/settings/main", nil, &main) }, &mErr)
+	wg.Wait()
+	for _, e := range []error{vErr, uErr, rErr} {
+		if e != nil {
+			return nil, e
+		}
+	}
+	if mErr != nil && !errors.Is(mErr, ErrBadAnswer) {
+		return nil, mErr
 	}
 	s := &Snapshot{Version: v}
-	users, err := r.pages(ctx, c, "/api/v1/user", nil)
-	if err != nil {
-		return nil, err
-	}
 	names := map[int64]string{}
 	limits := false
 	for _, m := range users {
@@ -158,15 +193,8 @@ func (r seerrReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 	if !limits {
 		s.Notes = append(s.Notes, "per-person ask limits are read from a backup only; through the API each person keeps the default")
 	}
-	reqs, err := r.pages(ctx, c, "/api/v1/request", url.Values{"filter": {"all"}, "sort": {"added"}})
-	if err != nil {
-		return nil, err
-	}
-	var main map[string]any
-	if err := c.getJSON(ctx, "/api/v1/settings/main", nil, &main); err == nil {
+	if mErr == nil {
 		s.Settings = seerrDefaults(main)
-	} else if !errors.Is(err, ErrBadAnswer) {
-		return nil, err
 	}
 	left := 0
 	for _, m := range reqs {
@@ -255,10 +283,20 @@ func seerrUser(m map[string]any) User {
 // seerrRequest builds one request; keep is false for done or turned-down ones.
 func seerrRequest(id, status int64, mediaType string, media map[string]any, by, decided int64, fourK bool, created, updated string) (Request, bool) {
 	state := requestStates[status]
+	// Completed requests and approved ones whose title is there (media
+	// status 4 partly or 5 fully available) are finished history.
+	ms := num(media["status"])
+	if fourK {
+		ms = num(media["status4k"])
+	}
+	done := status == 5 || state == "approved" && (ms == 4 || ms == 5)
+	if status == 5 {
+		state = "approved"
+	}
 	if state != "pending" && state != "approved" {
 		return Request{}, false
 	}
-	rq := Request{SourceID: id, State: state, By: by, FourK: fourK, Created: created, Updated: updated, IDs: map[string]string{}}
+	rq := Request{SourceID: id, State: state, Done: done, By: by, FourK: fourK, Created: created, Updated: updated, IDs: map[string]string{}}
 	if decided != 0 {
 		rq.DecidedBy = decided
 	}
@@ -340,7 +378,7 @@ func (r seerrReader) fromBackup(ctx context.Context, src Source) (*Snapshot, err
 		names[u.SourceID] = u.Name
 		s.Users = append(s.Users, u)
 	}
-	media, err := t.rows(ctx, "media", "id", "mediaType", "tmdbId", "tvdbId", "imdbId")
+	media, err := t.rows(ctx, "media", "id", "mediaType", "tmdbId", "tvdbId", "imdbId", "status", "status4k")
 	if err != nil {
 		return nil, err
 	}

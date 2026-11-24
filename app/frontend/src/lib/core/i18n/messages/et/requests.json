@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Pistikprogrammide teated",
+	"requests.moment.plugin_message.body": "Lubatud pistikprogramm saadab teate.",
+	"requests.words.via": "{who} läbi {plugin}",
 	"requests.moment.ask_waiting.title": "Uus taotlus",
 	"requests.moment.ask_waiting.body": "Personalile: film, sari või artist ootab heakskiitu.",
 	"requests.moment.ask_approved.title": "Heaks kiidetud",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "TMDB nimekiri",
 	"requests.lists.tmdbHint": "Nimekirja number või selle link, näiteks themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakti nimekiri",
-	"requests.lists.traktHint": "user/list, user/watchlist või link, näiteks trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist või link, näiteks trakt.tv/users/ana/lists/favourites. Või edetabel: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "MDBListi nimekiri",
 	"requests.lists.mdblistHint": "user/list või link, näiteks mdblist.com/lists/ana/favourites. Avalikud nimekirjad töötavad ilma võtmeta.",
 	"requests.lists.everyDay": "iga päev",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Ei leidnud midagi viga",
 	"requests.outcome.noResults": "Tulemusi veel pole",
 	"requests.outcome.nothingFound": "Midagi ei leitud:",
+	"requests.outcome.refused": "Leiti, kuid ükski ei vasta valikureeglitele",
 	"requests.outcome.why.slowed": "oli peatatud (aeglustatud)",
 	"requests.outcome.why.down": "oli maas",
 	"requests.outcome.why.blocked": "oli blokeeritud",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Lisa",
 	"requests.addMovie.titleBare": "Lisa film",
 	"requests.add.loadingDefaults": "Laadin vaikeväärtusi",
+	"requests.add.defaultsLate": "Sinu salvestatud vaikeväärtused ei laadinud õigel ajal, seega valiti tavalised. Kontrolli neid enne lisamist.",
 	"requests.add.noFolder.music": "Muusika jaoks pole veel meediakogu kausta. <a>Lisa esmalt üks</a>.",
 	"requests.add.noFolder.movie": "Filmide jaoks pole veel meediakogu kausta. <a>Lisa esmalt üks</a>.",
 	"requests.add.noFolder.show": "Sarjade jaoks pole veel meediakogu kausta. <a>Lisa esmalt üks</a>.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Näita seda minu kalendris.",
 	"requests.add.cancel": "Tühista",
 	"requests.add.submit": "Lisa meediakogusse",
+	"requests.add.submitChoose": "Lisa ja vali väljalase",
 	"requests.addArtist.albums": "Ajakohasena hoitavad albumid",
 	"requests.addArtist.newAlbums": "Uued albumid",
 	"requests.addArtist.newAlbumsHint": "Mis juhtub hiljem ilmuva albumiga.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", näitan: {status}",
 	"requests.board.reportsOpen": "Aruanded, {n} avatud",
 	"requests.board.approveAll": "Kiida kõik heaks",
+	"requests.board.approveAllTitle": "Kas kinnitada kõik ootel taotlused ({n})?",
+	"requests.board.approveAllDesc": "Siia kuuluvad ka loendis allpool olevad taotlused, mida pole veel laaditud.",
 	"requests.board.requests": "Taotlused",
 	"requests.board.open": "Ava {name}, taotles {who}",
 	"requests.board.pageForArtist": "Artisti leht: {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Lisatud",
 	"requests.addAll.summary": "Lisatud: {added}, vahele jäetud: {skipped}",
 	"requests.addAll.summaryClean": "Lisatud: {added}",
-	"requests.addAll.intro": "Iga film lisatakse sinu meediakogusse allpool valitud kausta ja valikureeglitega ning sinu salvestatud vaikeseadetega. Filmid, mis on juba meediakogus, on loendis, kuid neid ei lisata uuesti."
+	"requests.addAll.intro": "Iga film lisatakse sinu meediakogusse allpool valitud kausta ja valikureeglitega ning sinu salvestatud vaikeseadetega. Filmid, mis on juba meediakogus, on loendis, kuid neid ei lisata uuesti.",
+	"requests.ask.alsoAsk": "Küsi ka {name}",
+	"requests.add.handsOff": "Sekkumiseta režiim on sees: meediakogu kausta pole vaja. See läheb allalaadijasse ja failid jäävad sinna."
 }

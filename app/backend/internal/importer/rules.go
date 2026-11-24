@@ -19,6 +19,11 @@ type FileRules struct {
 	HoldingDays        int  `json:"holding_days"`
 	MinFreeMB          int  `json:"min_free_mb"`
 	SkipFreeSpaceCheck bool `json:"skip_free_space_check"`
+	// UnkeepDeletedMovies and UnkeepDeletedEpisodes turn Keep up to date off
+	// for a movie or an episode whose file a rescan finds gone, as the old
+	// apps' "unmonitor deleted" switch does, so nothing looks for it again.
+	UnkeepDeletedMovies   bool `json:"unkeep_deleted_movies"`
+	UnkeepDeletedEpisodes bool `json:"unkeep_deleted_episodes"`
 }
 
 var (
@@ -43,7 +48,7 @@ func (r FileRules) Validate() error {
 // ReadFileRules loads the saved rules, or the defaults.
 func ReadFileRules(ctx context.Context, db database.Lister) (FileRules, error) {
 	r := DefaultFileRules()
-	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = 'where_files_go' AND key IN ('holding_days', 'min_free_mb', 'skip_free_space_check')")
+	rows, err := db.QueryContext(ctx, "SELECT key, value FROM settings WHERE grp = 'where_files_go' AND key IN ('holding_days', 'min_free_mb', 'skip_free_space_check', 'unkeep_deleted_movies', 'unkeep_deleted_episodes')")
 	if err != nil {
 		return r, err
 	}
@@ -65,23 +70,34 @@ func ReadFileRules(ctx context.Context, db database.Lister) (FileRules, error) {
 			}
 		case "skip_free_space_check":
 			r.SkipFreeSpaceCheck = v == "true"
+		case "unkeep_deleted_movies":
+			r.UnkeepDeletedMovies = v == "true"
+		case "unkeep_deleted_episodes":
+			r.UnkeepDeletedEpisodes = v == "true"
 		}
 	}
 	return r, rows.Err()
 }
 
-// SaveFileRules validates and stores the rules.
-func SaveFileRules(ctx context.Context, s *database.Store, r FileRules, by domain.Actor) error {
+// SaveFileRules validates and stores the rules. Each then function runs in
+// the same transaction, so a caller can record the change with it.
+func SaveFileRules(ctx context.Context, s *database.Store, r FileRules, by domain.Actor, then ...func(tx *sql.Tx) error) error {
 	if err := r.Validate(); err != nil {
 		return err
 	}
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		now := database.FormatTime(time.Now())
 		for k, v := range map[string]string{"holding_days": strconv.Itoa(r.HoldingDays), "min_free_mb": strconv.Itoa(r.MinFreeMB),
-			"skip_free_space_check": strconv.FormatBool(r.SkipFreeSpaceCheck)} {
+			"skip_free_space_check": strconv.FormatBool(r.SkipFreeSpaceCheck), "unkeep_deleted_movies": strconv.FormatBool(r.UnkeepDeletedMovies),
+			"unkeep_deleted_episodes": strconv.FormatBool(r.UnkeepDeletedEpisodes)} {
 			if _, err := tx.Exec(`INSERT INTO settings (grp, key, value, created_at, created_by, updated_at, updated_by) VALUES ('where_files_go', ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (grp, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`,
 				k, v, now, actorText(by), now, actorText(by)); err != nil {
+				return err
+			}
+		}
+		for _, f := range then {
+			if err := f(tx); err != nil {
 				return err
 			}
 		}

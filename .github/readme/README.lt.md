@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: raudonas taškas rodo, kas reikalauja dėmesio, o ryšio testas įvardija tikslią problemą.** Plex žymos užsakytiems pavadinimams, pavadinimai jūsų kalba ir daugiau nei 30 pataisymų. Junkite programas per MCP raktais, kuriuos valdote jūs. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: daugiau nei 150 pataisymų ir funkcijų iš 101 žmonių.** Papildinių sistema, naujas sąrankos vedlys ir nesikišimo režimas, kuris niekada neliečia jūsų failų. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
 
 > Kiekvienas tavo HolyArrs plakatas, anonsas ir įvertinimas ateina iš serverio, kurį pats laikau ir apmoku, todėl visiems tai lieka nemokama. Jei HolyArrs padarė tavo filmų vakarą šiek tiek geresnį, rėmėjas padeda mums visiems išlaikyti šviesą 💛
 >
@@ -374,7 +374,7 @@ Image neturi shell, todėl `docker exec -it holyarrs /bin/bash` neveiks. Veikia 
 - Užrakintas iš savininko paskyros:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Versijos numeris:

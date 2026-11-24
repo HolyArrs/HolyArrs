@@ -18,6 +18,11 @@ import (
 func (h *Handlers) readRoutes(m *webserver.Router) {
 	m.Handle("POST /api/v1/migrate/probe", webserver.NeedUsers, http.HandlerFunc(h.probe))
 	m.Handle("POST /api/v1/migrate/read", webserver.NeedUsers, http.HandlerFunc(h.read))
+	m.Handle("POST /api/v1/migrate/preview", webserver.NeedUsers, http.HandlerFunc(h.preview))
+	m.Handle("POST /api/v1/migrate/find", webserver.NeedOwner, http.HandlerFunc(h.find))
+	m.Handle("POST /api/v1/migrate/linked", webserver.NeedOwner, http.HandlerFunc(h.linked))
+	m.Handle("POST /api/v1/migrate/folders", webserver.NeedOwner, http.HandlerFunc(h.browseFolders))
+	m.Handle("POST /api/v1/migrate/key-lookup", webserver.NeedOwner, http.HandlerFunc(h.keyLookup))
 	m.Handle("GET /api/v1/migrate/snapshots", webserver.NeedUsers, http.HandlerFunc(h.listSnapshots))
 	m.Handle("GET /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.getSnapshot))
 	m.Handle("DELETE /api/v1/migrate/snapshots/{id}", webserver.NeedUsers, http.HandlerFunc(h.deleteSnapshot))
@@ -40,13 +45,28 @@ type MigrateSourceInput struct {
 	// or a past read kept for this app (owner only): the one kept for url,
 	// or the newest when url is empty. The saved key stays after the read.
 	UseSavedKey bool `json:"use_saved_key"`
+	// Add names the addresses of linked apps to read in one go (only
+	// /migrate/linked).
+	Add []string `json:"add,omitempty"`
+	// SkipLinked names addresses already read: a Seerr or Overseerr read
+	// does not read its Sonarr or Radarr at those again.
+	SkipLinked []string `json:"skip_linked,omitempty"`
+	// LinkedFrom reads a Sonarr or Radarr at a new address with the key the
+	// Seerr or Overseerr read before keeps for it (owner only; the key never
+	// reaches the browser).
+	LinkedFrom *LinkedFrom `json:"linked_from,omitempty"`
 }
 
 // source reads and checks the body; it answers and returns false
 // on a bad one. saved says the read uses a saved key.
 func (h *Handlers) source(w http.ResponseWriter, r *http.Request) (src Source, savedID secretsfile.MoveCredentialVersion, ok bool) {
 	var in MigrateSourceInput
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&in); err != nil {
+	return h.sourceFrom(w, r, &in)
+}
+
+// sourceFrom is source, keeping the decoded body in in.
+func (h *Handlers) sourceFrom(w http.ResponseWriter, r *http.Request, in *MigrateSourceInput) (src Source, savedID secretsfile.MoveCredentialVersion, ok bool) {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(in); err != nil {
 		webserver.Fail(w, http.StatusBadRequest, "the body must be JSON naming the app and an address or a backup path")
 		return Source{}, secretsfile.MoveCredentialVersion{}, false
 	}
@@ -76,6 +96,11 @@ func (h *Handlers) source(w http.ResponseWriter, r *http.Request) (src Source, s
 			return Source{}, secretsfile.MoveCredentialVersion{}, false
 		}
 		in.URL, in.Key, in.Username, in.Password, in.AllowLocal, savedID = c.Address, c.APIKey, c.Username, c.Password, c.AllowLocalNetwork, id
+	}
+	if in.LinkedFrom != nil && in.Key == "" && in.Path == "" && !in.UseSavedKey {
+		if !h.linkedKey(w, r, in) {
+			return Source{}, secretsfile.MoveCredentialVersion{}, false
+		}
 	}
 	if (in.URL == "") == (in.Path == "") {
 		webserver.Fail(w, http.StatusBadRequest, ErrBadSource.Error())
@@ -138,7 +163,8 @@ func (h *Handlers) read(w http.ResponseWriter, r *http.Request) {
 	if !webserver.RequireStrong(w, r) {
 		return
 	}
-	src, usedSaved, ok := h.source(w, r)
+	var in MigrateSourceInput
+	src, usedSaved, ok := h.sourceFrom(w, r, &in)
 	if !ok {
 		return
 	}
@@ -153,6 +179,8 @@ func (h *Handlers) read(w http.ResponseWriter, r *http.Request) {
 	if src.Path == "" {
 		snap.Address = InstanceAddress(src.URL)
 	}
+	// The same app read before at another address (same key) is replaced, so it counts once.
+	older := h.sameAppReads(r.Context(), src, snap.Address)
 	var saved Saved
 	err = h.Store.Write(r.Context(), func(tx *sql.Tx) error {
 		var err error
@@ -172,7 +200,95 @@ func (h *Handlers) read(w http.ResponseWriter, r *http.Request) {
 	if h.movesDone(r.Context()) == movesDone {
 		h.keepMoveKey(r, src, usedSaved)
 	}
-	webserver.WriteJSON(w, http.StatusCreated, map[string]any{"snapshot": saved, "needs_reentry": snap.NeedsReentry, "notes": snap.Notes})
+	replaced := h.dropSameApp(r.Context(), older)
+	linked, unread, skipped := h.readSeerrArrs(r, src, movesDone, in.SkipLinked)
+	webserver.WriteJSON(w, http.StatusCreated, map[string]any{"snapshot": saved, "replaced": replaced, "counts": previewCounts(snap), "needs_reentry": snap.NeedsReentry, "notes": snap.Notes, "linked": linked, "unread": unread, "skipped": skipped})
+}
+
+// LinkedRead is a Sonarr or Radarr read along with the Overseerr or Seerr
+// that keeps it.
+type LinkedRead struct {
+	Kind     Kind  `json:"kind"`
+	Snapshot Saved `json:"snapshot"`
+	// Replaced names older reads of the same app at other addresses (same
+	// key), now forgotten, so the app counts once.
+	Replaced []int64 `json:"replaced,omitempty"`
+}
+
+// LinkedUnread is a Sonarr or Radarr an Overseerr or Seerr keeps that
+// HolyArrs could not read at the address it keeps (often a Docker name).
+type LinkedUnread struct {
+	Kind    Kind   `json:"kind"`
+	Address string `json:"address"`
+}
+
+// readSeerrArrs reads the Sonarr and Radarr servers an Overseerr or Seerr
+// keeps, with the keys it keeps, and keeps each key in the vault as a typed
+// read does. Addresses in skip are not read again; they come back as skipped
+// so the page can still count them. One that does not answer is listed as
+// unread: the Overseerr read counts. The same app kept under two addresses
+// (same kind and API key) is read once.
+func (h *Handlers) readSeerrArrs(r *http.Request, src Source, movesDone int, skip []string) ([]LinkedRead, []LinkedUnread, []LinkedUnread) {
+	out, unread, skipped := []LinkedRead{}, []LinkedUnread{}, []LinkedUnread{}
+	if src.URL == "" {
+		return out, unread, skipped
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), readTimeout)
+	defer cancel()
+	arrs, err := SeerrArrs(ctx, src)
+	if err != nil {
+		return out, unread, skipped
+	}
+	done := map[string]bool{}
+	for _, a := range skip {
+		done[InstanceAddress(a)] = true
+	}
+	// An app's API key is its identity here: two addresses with the same key are one app.
+	same := func(c Source) string { return string(c.Kind) + " " + c.Key }
+	seen := map[string]bool{}
+	for _, child := range arrs {
+		if done[InstanceAddress(child.URL)] {
+			skipped = append(skipped, LinkedUnread{Kind: child.Kind, Address: InstanceAddress(child.URL)})
+			if child.Key != "" {
+				seen[same(child)] = true
+			}
+		}
+	}
+	var failed []Source
+	for _, child := range arrs {
+		if done[InstanceAddress(child.URL)] || (child.Key != "" && seen[same(child)]) {
+			continue
+		}
+		snap, err := Read(ctx, child)
+		if err != nil {
+			failed = append(failed, child)
+			continue
+		}
+		if child.Key != "" {
+			seen[same(child)] = true
+		}
+		snap.Address = InstanceAddress(child.URL)
+		older := h.sameAppReads(r.Context(), child, snap.Address)
+		var saved Saved
+		if err := h.Store.Write(r.Context(), func(tx *sql.Tx) error {
+			var err error
+			saved, err = SaveTx(r.Context(), tx, actor(r).ID, snap)
+			return err
+		}); err != nil {
+			continue
+		}
+		if h.Secrets != nil && h.movesDone(r.Context()) == movesDone {
+			h.keepMoveKey(r, child, secretsfile.MoveCredentialVersion{})
+		}
+		out = append(out, LinkedRead{Kind: child.Kind, Snapshot: saved, Replaced: h.dropSameApp(r.Context(), older)})
+	}
+	// An address that did not answer for an app read at another address needs no look.
+	for _, child := range failed {
+		if child.Key == "" || !seen[same(child)] {
+			unread = append(unread, LinkedUnread{Kind: child.Kind, Address: InstanceAddress(child.URL)})
+		}
+	}
+	return out, unread, skipped
 }
 
 // keepMoveKey keeps the owner's typed key (or qBittorrent sign-in) after a

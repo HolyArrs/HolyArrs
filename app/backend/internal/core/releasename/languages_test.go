@@ -2,6 +2,7 @@ package releasename
 
 import (
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -42,7 +43,7 @@ func TestMoreLanguageWords_TitlesAndClashes(t *testing.T) {
 		}
 	}
 	// Short words that clash with names stay out, and subtitle tags are not audio.
-	for _, word := range []string{"FIN", "DAN", "TUR", "POL", "CHI", "PL", "NL", "VOSTFR", "SUBFRENCH", "NORDIC"} {
+	for _, word := range []string{"FIN", "DAN", "TUR", "POL", "CHI", "pl", "cz", "NL", "VOSTFR", "SUBFRENCH", "NORDIC"} {
 		r := Parse("Quiet.Harbour.2019."+word+".1080p.WEB.H264-GROUP", Hints{})
 		if len(r.Languages) != 0 {
 			t.Errorf("%s read as %v", word, r.Languages)
@@ -85,6 +86,18 @@ func TestDualLanguage_NotWebDL(t *testing.T) {
 	} {
 		if r := Parse(name, Hints{}); r.Has("dual") != dual {
 			t.Errorf("%s: dual %v, want %v", name, r.Has("dual"), dual)
+		}
+	}
+}
+
+func TestMoreLanguageWords_BeforeAJoinedSubTag(t *testing.T) {
+	for name, want := range map[string]string{
+		"Movie.Title.2019.HUN.SWESUB.1080p-GRP":         "hu",
+		"Movie.Title.2019.Castellano.ENGSUBS.1080p-GRP": "es",
+		"The.Hun.Sub.2019.1080p.WEB-GRP":                "",
+	} {
+		if got := strings.Join(Parse(name, Hints{}).Languages, " "); got != want {
+			t.Errorf("%q: languages %q, want %q", name, got, want)
 		}
 	}
 }

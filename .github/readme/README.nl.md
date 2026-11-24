@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: een rode stip toont wat aandacht nodig heeft, en verbindingstests noemen het precieze probleem.** Plex-labels voor aangevraagde titels, namen in jouw taal en meer dan 30 oplossingen. Koppel apps via MCP met sleutels die je zelf beheert. [Wat is er nieuw](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: meer dan 150 fixes en functies van 101 mensen.** Een plug-insysteem, een nieuwe installatiewizard en een handen-af-modus die nooit aan je bestanden komt. [Wat is er nieuw](https://holyarrs.com/whats-new/)
 
 > Elke poster, trailer en score in je HolyArrs komt van een server die ik zelf draai en betaal, zodat het voor iedereen gratis blijft. Heeft HolyArrs je filmavond een beetje beter gemaakt? Met een sponsor blijven de lichten aan voor ons allemaal 💛
 >
@@ -374,7 +374,7 @@ De image heeft geen shell, dus `docker exec -it holyarrs /bin/bash` werkt niet. 
 - Buitengesloten van het eigenaarsaccount:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Versienummer:

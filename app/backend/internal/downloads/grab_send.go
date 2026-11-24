@@ -117,8 +117,9 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 		}
 		hdr = sourceHeaderFor(src.URL, link, h)
 	}
+	fromPlugin := strings.HasPrefix(src.URL, "plugin://")
 	if d.Adapter == "transmission" || d.Adapter == "deluge" || d.Adapter == "rtorrent" || d.Adapter == "aria2" || d.Adapter == "nzbget" {
-		if !strings.HasPrefix(link, "magnet:") && src.ProxyURL != "" {
+		if !strings.HasPrefix(link, "magnet:") && (src.ProxyURL != "" || fromPlugin) {
 			return "", false, errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
 		}
 	}
@@ -135,9 +136,12 @@ func (m *Manager) send(ctx context.Context, d domain.Downloader, rel domain.Rele
 	// download can be followed.
 	var file []byte
 	noHash := d.Adapter == "qbittorrent" && hash == "" && linkHash(link) == ""
-	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash || hdr != nil) && !strings.HasPrefix(link, "magnet:") {
+	if (d.Adapter == "qbittorrent" || d.Adapter == "sabnzbd") && (!allowLocal || noHash || hdr != nil) && !strings.HasPrefix(link, "magnet:") ||
+		(PluginAdapter(d.Adapter) || fromPlugin) && !strings.HasPrefix(link, "magnet:") {
+		// A plugin download client gets the file, never the Source's link.
 		var rt http.RoundTripper
-		if src.ProxyURL != "" {
+		if src.ProxyURL != "" || fromPlugin {
+			// A plugin source's file comes only through that plugin.
 			if m.SourceTransport == nil {
 				return "", false, errors.New("this Downloader cannot yet fetch Release files through a Source proxy")
 			}
@@ -264,7 +268,10 @@ func grabLinkAllowed(adapter, link string, allowLocal bool) (string, error) {
 		clean, _, err := safeMagnet(link, allowLocal)
 		return clean, err
 	}
-	if (adapter == "qbittorrent" || adapter == "sabnzbd") && !trackerAllowed(link, allowLocal) {
+	if strings.HasPrefix(link, "plugin://") {
+		return link, nil // fetched only through that plugin (grab_fetch)
+	}
+	if (adapter == "qbittorrent" || adapter == "sabnzbd" || PluginAdapter(adapter)) && !trackerAllowed(link, allowLocal) {
 		return "", errors.New("the Release link points at a local or blocked address")
 	}
 	return link, nil

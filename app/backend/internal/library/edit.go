@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -104,10 +105,20 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 		if want, wrong := folderKindOf(cur.Kind); lf.Kind != want {
 			return res, wrong
 		}
-		if h := CheckFolder(lf.Path, s.DownloadFolders(ctx)); !h.Usable() {
+		if lf.LookOnly {
+			// Nothing is moved into a look-only folder; naming the one it is already in changes nothing.
+			var here int
+			_ = s.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM versions WHERE title_id = ? AND is_main = 1 AND library_folder_id = ?", titleID, lf.ID).Scan(&here)
+			if here == 0 {
+				return res, mediafiles.ErrLookOnly
+			}
+			c.LibraryFolderID = nil
+		} else if h := CheckFolder(lf.Path, s.DownloadFolders(ctx)); !h.Usable() {
 			return res, &FolderError{Health: h}
 		}
-		newFolder = &lf
+		if c.LibraryFolderID != nil {
+			newFolder = &lf
+		}
 	}
 	now := s.now()
 	var t mediafiles.Title
@@ -118,8 +129,13 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 			return err
 		}
 		if c.KeepUpToDate != nil {
+			// A title whose copies all live in look-only folders is never kept up to date.
+			if *c.KeepUpToDate && onlyLookOnly(ctx, tx, titleID) {
+				return mediafiles.ErrLookOnly
+			}
 			t.KeepUpToDate = *c.KeepUpToDate
-			qs := []string{"UPDATE items SET keep_up_to_date = ? WHERE title_id = ?", "UPDATE versions SET keep_up_to_date = ? WHERE title_id = ?"}
+			qs := []string{"UPDATE items SET keep_up_to_date = ? WHERE title_id = ?",
+				"UPDATE versions SET keep_up_to_date = ? WHERE title_id = ? AND library_folder_id NOT IN (SELECT id FROM library_folders WHERE look_only = 1)"}
 			if show {
 				// A show's seasons and episodes keep their own switches.
 				qs = qs[1:]
@@ -264,6 +280,9 @@ func goodEnoughTx(ctx context.Context, tx *sql.Tx, v mediafiles.Version, keep bo
 			name = *f.ReleaseName
 		}
 		ge := mediafiles.OwnedReachesGoodEnough(name, f.MediaInfo, pr.Body) && fileMeetsVersionChoices(v, f)
+		if ge && pr.Body.ReplaceUnderMin {
+			ge = !underMinTx(ctx, tx, v, sl, name, f, pr.Body)
+		}
 		to := sl.State
 		switch {
 		case sl.State == mediafiles.SlotInLibrary && !ge && keep && v.KeepUpToDate:
@@ -314,4 +333,29 @@ func (s *Service) checkGroup(ctx context.Context, t mediafiles.Title, id string)
 		return fmt.Errorf("%w: %v", ErrEpisodeGroupUnread, err)
 	}
 	return nil
+}
+
+// onlyLookOnly says the title has copies and every one lives in a look-only Library folder.
+func onlyLookOnly(ctx context.Context, q database.Querier, titleID int64) bool {
+	var all, look int
+	_ = q.QueryRowContext(ctx, `SELECT count(*), COALESCE(sum(`+mediafiles.LookOnlySQL+`), 0) FROM versions v WHERE v.title_id = ?`, titleID).Scan(&all, &look)
+	return all > 0 && all == look
+}
+
+// underMinTx says whether a Slot's File is below its step's smallest size
+// for the Item's runtime (the title's when the Item has none).
+func underMinTx(ctx context.Context, tx *sql.Tx, v mediafiles.Version, sl mediafiles.Slot, name string, f mediafiles.File, body mediafiles.PickRulesBody) bool {
+	runtime := 0
+	var it mediafiles.Item
+	if database.Get(ctx, tx, "items", sl.ItemID, &it) == nil && it.Runtime != nil {
+		runtime = *it.Runtime
+	}
+	if runtime <= 0 {
+		var t mediafiles.Title
+		if database.Get(ctx, tx, "titles", v.TitleID, &t) == nil {
+			runtime = t.RuntimeMinutes
+		}
+	}
+	step := mediafiles.CurrentOf(mediafiles.JudgeName(name, f.MediaInfo), f.Size, time.Time{}, body).Step
+	return mediafiles.FileUnderMin(body, step, f.Size, runtime)
 }

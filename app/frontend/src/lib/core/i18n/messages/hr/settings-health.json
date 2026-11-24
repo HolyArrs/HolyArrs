@@ -14,7 +14,6 @@
 	"settings.health.none": "Nema rezultata. Provjeri ponovno da ih pokreneš.",
 	"settings.health.since": "Od",
 	"settings.health.settings": "Postavke provjera stanja",
-	"settings.health.updateCheck": "Provjeri ima li novijeg HolyArrsa",
 	"settings.health.onlyChecks": "Samo provjerava. Nikad ne instalira.",
 	"settings.health.every": "Provjeri ažuriranja svakih",
 	"settings.health.day": "dan",

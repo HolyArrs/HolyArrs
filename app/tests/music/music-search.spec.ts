@@ -46,7 +46,7 @@ test('Choose a release on the album page: verdicts, a Release turned down, the F
 	await expect(flac).toContainText('4 tracks');
 	await expect(release(panel, '[MP3 320]').getByTestId('verdict')).toHaveText('Passed over');
 	const low = release(panel, '[128kbps]');
-	await expect(low).toContainText('lossy_low is not allowed');
+	await expect(low).toContainText('Lossy, under 192 kbps is not allowed');
 	await axe(page, 'album releases');
 
 	await low.getByRole('button', { name: /^Turn down/ }).click();

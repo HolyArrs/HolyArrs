@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "در حال ساختن {what}… تلاش {attempt}",
 	"core.testTag.connected": "متصل",
 	"core.api.notAnswering": "HolyArrs پاسخ نمی‌دهد. بررسی کن که در حال اجرا باشد.",
+	"core.api.tooSlow": "HolyArrs خیلی دیر پاسخ داد. یک دقیقه دیگر دوباره امتحان کنید.",
 	"core.api.requestFailed": "درخواست ناموفق بود ({status})",
 	"core.api.wentWrong": "مشکلی پیش آمد.",
 	"core.trailerMiss.trailer": "تریلر",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "خودکار تأیید شد",
 	"core.plain.approvedBy": "تأیید شده توسط {who}",
 	"core.settings.cantReach": "به آن آدرس دسترسی ندارم. آن را بررسی کن و ببین برنامه در حال اجراست.",
+	"core.settings.tryHttp": "این نشانی روی https پاسخ نمی‌دهد. به‌جای آن http:// را امتحان کنید.",
 	"core.settings.groupLibrary.label": "کتابخانه",
 	"core.settings.groupLibrary.line": "عنوان‌ها کجا هستند",
 	"core.settings.groupLibrary.about": "پوشه‌ها، بخش‌ها، پیش‌فرض‌ها، زیرنویس، نام فایل‌ها و ورود.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "دو دانلودر به یک برنامه دانلود می‌رسند، پس دانلودها ممکن است دو بار نشان داده شوند.",
 	"core.plain.peopleCheck": "فهرست کاربران سرور رسانه خوانده نمی‌شود، پس کسانی که آنجا حذف شده‌اند اینجا خاموش نمی‌شوند.",
 	"core.plain.deleted": "حذف‌شده",
-	"core.plain.deletedName": "{name} (حذف‌شده)"
+	"core.plain.deletedName": "{name} (حذف‌شده)",
+	"core.api.handsOffFiles": "حالت بدون دخالت روشن است، پس HolyArrs به فایل‌های دانلودشده دست نمی‌زند. برای وارد کردن، تغییر نام، جابه‌جایی یا اسکن فایل‌ها آن را در تنظیمات خاموش کنید.",
+	"core.api.handsOffSubtitles": "حالت بدون دخالت روشن است، پس HolyArrs هرگز فایل‌های دانلودشده را باز نمی‌کند. برای استفاده از زیرنویس آن را در تنظیمات خاموش کنید."
 }

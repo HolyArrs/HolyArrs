@@ -5,9 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -85,8 +89,46 @@ func (a *Auth) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Auth) setCookie(w http.ResponseWriter, r *http.Request, value string, maxAge int) {
-	http.SetCookie(w, &http.Cookie{Name: CookieName, Value: value, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode,
+	name := cookieNameFor(r)
+	http.SetCookie(w, &http.Cookie{Name: name, Value: value, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode,
 		Secure: a.behindHTTPS(r), MaxAge: maxAge})
+	// A session from before the per-port name is cleared when this one is set or ended.
+	if name != CookieName {
+		if _, err := r.Cookie(CookieName); err == nil {
+			http.SetCookie(w, &http.Cookie{Name: CookieName, Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode,
+				Secure: a.behindHTTPS(r), MaxAge: -1})
+		}
+	}
+}
+
+// cookieNameFor is the session cookie's name for this address. Browsers keep
+// cookies per host, not per port, so two HolyArrs on one machine (a test copy
+// beside the real one) would overwrite each other's sign-in; an address with a
+// port gets its own name. Behind a proxy with no port the plain name stays.
+func cookieNameFor(r *http.Request) string {
+	if _, p, err := net.SplitHostPort(r.Host); err == nil && p != "" {
+		return CookieName + "_" + p
+	}
+	return CookieName
+}
+
+// sessionCookie is this address's session cookie, or the plain-named one a
+// sign-in from before the per-port name left.
+func sessionCookie(r *http.Request) (*http.Cookie, error) {
+	if ck, err := r.Cookie(cookieNameFor(r)); err == nil {
+		return ck, nil
+	}
+	if ck, err := r.Cookie(CookieName); err == nil {
+		return ck, nil
+	}
+	// Asked under another address than the one that signed in (a host check
+	// then refuses it, or it is the same server): any session cookie of ours.
+	for _, ck := range r.Cookies() {
+		if strings.HasPrefix(ck.Name, CookieName+"_") {
+			return ck, nil
+		}
+	}
+	return nil, http.ErrNoCookie
 }
 
 // startSession drops the session the request came with (so a planted id
@@ -136,7 +178,7 @@ func (a *Auth) startSessionIn(w http.ResponseWriter, r *http.Request, userID int
 	now := a.now()
 	tok, csrf := token(32), token(32)
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		if ck, err := r.Cookie(CookieName); err == nil {
+		if ck, err := sessionCookie(r); err == nil {
 			if err := deletePresentedFamily(tx, ck.Value); err != nil {
 				return err
 			}
@@ -145,6 +187,10 @@ func (a *Auth) startSessionIn(w http.ResponseWriter, r *http.Request, userID int
 		localAt := ""
 		if method == AuthMethodLocalPassword || method == AuthMethodLocalSetup {
 			localAt = t
+		}
+		// An OIDC sign-in the provider really re-checked keeps its sign-in time.
+		if at, ok := outsideProofFrom(r.Context()); ok && method == "oidc" {
+			localAt = database.FormatTime(at)
 		}
 		return insertSession(r.Context(), tx, sum(tok), userID, csrf, t, database.FormatTime(now.Add(AbsoluteTimeout)),
 			truncate(r.UserAgent(), 200), family, method, localAt)
@@ -162,7 +208,7 @@ func (a *Auth) startSessionIn(w http.ResponseWriter, r *http.Request, userID int
 // session checks the cookie, ends idle or old sessions, and rotates the id
 // once an hour while the session is used.
 func (a *Auth) session(w http.ResponseWriter, r *http.Request) (webserver.Caller, bool) {
-	ck, err := r.Cookie(CookieName)
+	ck, err := sessionCookie(r)
 	if err != nil || ck.Value == "" {
 		return webserver.Caller{}, false
 	}
@@ -182,6 +228,9 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (webserver.Caller
 	case ProviderPlex, ProviderJellyfin, ProviderEmby:
 		at := parseTime(created)
 		who.OutsideRecent = !at.IsZero() && !at.After(now) && now.Sub(at) < localRecentFor
+	case "oidc":
+		// Only a sign-in the provider really re-checked has a time on record.
+		who.OutsideRecent = oidcFreshEnough(localAt, now)
 	}
 	if strings.HasPrefix(family, setupFamily) {
 		at := parseTime(created)
@@ -201,7 +250,7 @@ func (a *Auth) session(w http.ResponseWriter, r *http.Request) (webserver.Caller
 		tok := token(32)
 		abs := parseTime(created).Add(AbsoluteTimeout)
 		err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-			if err := copySessionRotated(r.Context(), tx, sum(tok), t, h); err != nil {
+			if err := copySessionRotated(r.Context(), tx, sum(tok), t, database.FormatTime(abs), h); err != nil {
 				return err
 			}
 			// The old id lives on briefly for requests already in flight.
@@ -226,7 +275,7 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 	if who, ok := webserver.From(r.Context()); ok && who.UserID != 0 {
 		a.event(r, webserver.Actor(r.Context()), "signed_out", who.Name+" signed out", map[string]any{"name": who.Name})
 	}
-	if ck, err := r.Cookie(CookieName); err == nil {
+	if ck, err := sessionCookie(r); err == nil {
 		_ = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 			return deletePresentedFamily(tx, ck.Value)
 		})
@@ -245,13 +294,27 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 		hasPw = has
 	}
 	// The owner stays in the first-run wizard until it is finished.
-	setupOpen := false
+	setupOpen, setupSkipped := false, false
 	if who.Role == webserver.RoleOwner {
 		setupOpen = database.SettingOr(r.Context(), a.s.Read(), settingsGroup, settingFirstRunDone, "") != "1"
+		setupSkipped = !setupOpen && database.SettingOr(r.Context(), a.s.Read(), settingsGroup, settingFirstRunSkipped, "") == "1"
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"id": who.UserID, "name": who.Name, "via": who.Via, "csrf": who.CSRF, "role": who.Role,
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
-		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "recent_proof": RecentLocal(r), "setup_open": setupOpen, "has_password": hasPw,
+		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "recent_proof": RecentLocal(r), "setup_open": setupOpen, "setup_skipped": setupSkipped, "has_password": hasPw,
 		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "held": startup.FeaturesOff(), "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry),
-		"views": a.viewsOf(r.Context(), who.UserID)})
+		"views": a.viewsOf(r.Context(), who.UserID), "hands_off": parts.HandsOff(r.Context(), a.s.Read())})
+}
+
+type outsideProofKey struct{}
+
+// withOutsideProof carries the provider's checked sign-in time to the session
+// an OIDC sign-in starts.
+func withOutsideProof(ctx context.Context, at time.Time) context.Context {
+	return context.WithValue(ctx, outsideProofKey{}, at)
+}
+
+func outsideProofFrom(ctx context.Context) (time.Time, bool) {
+	at, ok := ctx.Value(outsideProofKey{}).(time.Time)
+	return at, ok && !at.IsZero()
 }

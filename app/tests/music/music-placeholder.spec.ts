@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, finishFirstRun } from '../helpers/helpers.ts';
+import { moviesDir, newOwner, noSidewaysScroll, owner, signIn, finishFirstRun, reachSetupAccount } from '../helpers/helpers.ts';
 
 // A cover or photo no source has shows the one shared placeholder art (no
 // broken picture), on desktop and at phone widths 390 and 360. The fake
@@ -17,14 +17,13 @@ test.beforeAll(async ({ browser }) => {
 	if (existsSync(join(moviesDir, '..', 'owner.json'))) return;
 	const page = await browser.newPage();
 	await page.goto('/');
-	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
+	await reachSetupAccount(page);
 	const o = newOwner();
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill(o.name);
+	await page.getByLabel('Username').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
-	await page.getByLabel('Password again').fill(o.password);
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await expect(page).toHaveURL(/\/welcome\?first=1$/);
+	await page.getByLabel('Confirm password').fill(o.password);
+	await page.getByRole('button', { name: 'Create account and continue' }).click();
+	await expect(page).toHaveURL(/\/welcome\?first=1/);
 	await finishFirstRun(page, moviesDir, { music: true });
 	await expect(page).toHaveURL(/\/$/);
 	await page.close();

@@ -85,5 +85,21 @@
 	"sources.uses.auto": "söker på egen hand",
 	"sources.uses.feed": "nyaste listan",
 	"sources.uses.hand": "sök för hand",
-	"sources.uses.none": "används inte"
+	"sources.uses.none": "används inte",
+	"sources.bridge.removeTitle": "Ta bort {name}?",
+	"sources.bridge.find": "Hitta {name} i mitt nätverk",
+	"sources.bridge.noneFound": "Ingen {name} svarade i ditt nätverk.",
+	"sources.bridge.keyFound": "Fick nyckeln från {name}",
+	"sources.bridge.keyKept": "{name} lämnade inte ut nyckeln (inloggning är på). Kopiera den via Hämta nyckel.",
+	"sources.bridge.keyKeptJackett": "Jackett lämnade inte ut nyckeln (den har ett administratörslösenord). Kopiera den via Hämta nyckel.",
+	"sources.bridge.notReached": "Kunde inte nå {name}.",
+	"sources.bridge.brings.title": "Det här följer med",
+	"sources.bridge.brings.sites": "Dess indexerare, som Källor",
+	"sources.bridge.brings.categories": "Deras kategorier",
+	"sources.bridge.brings.search": "Sökningar går via {name}",
+	"sources.bridge.brings.sync": "Ändringar i {name} följer med",
+	"sources.bridge.brings.stays": "Dina indexerare ligger kvar i {name}.",
+	"sources.bridge.brings.had": "{n} indexerare redan här",
+	"sources.bridge.brings.hadFrom": "Importerade via {apps}",
+	"sources.bridge.brings.keyKept": "Lämna nyckeln tom för att använda den de redan har."
 }

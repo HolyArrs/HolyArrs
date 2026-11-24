@@ -70,7 +70,7 @@ export function failReason(im: ImportRecord | undefined): string | null {
 }
 
 /** The short line after a row's status word: what an import in progress is doing, why it failed, or a seeding torrent's ratio. Empty when the word says it all. */
-export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'ratio' | 'refused_why'>, im: ImportRecord | undefined): string {
+export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'ratio' | 'refused_why' | 'cleanup_wait'>, im: ImportRecord | undefined): string {
 	const stage = stageOf(r);
 	if ((stage === 'done' || stage === 'seeding' || stage === 'decide') && filesGone(im)) return t('downloads.detail.filesGone');
 	if (stage === 'importing') {
@@ -87,6 +87,13 @@ export function statusDetail(r: Pick<DownloadRow, 'phase' | 'state' | 'progress'
 		// A refused import says why in the importer's words, as History does.
 		if (r.phase === 'import_refused') return r.refused_why ? serverWords(r.refused_why) : t('downloads.detail.noMatch');
 	}
+	if ((stage === 'done' || stage === 'seeding') && r.cleanup_wait?.length) return cleanupHold(r.cleanup_wait);
 	if (stage === 'seeding' && typeof r.ratio === 'number') return t('downloads.detail.ratio', { ratio: r.ratio.toFixed(2) });
 	return '';
+}
+
+/** Remove after seeding waits for these episodes of a partly done import; a long list shows the first four and a count. */
+export function cleanupHold(eps: string[]): string {
+	const shown = eps.slice(0, 4).join(', ') + (eps.length > 4 ? ` +${eps.length - 4}` : '');
+	return t('downloads.detail.cleanupHold', { eps: shown });
 }

@@ -475,7 +475,7 @@ func TestPollKeepsAWidenThatLandedAfterItsRead(t *testing.T) {
 	if err := database.Get(ctx, w.s.Read(), "downloaders", stale.DownloaderID, &dr); err != nil {
 		t.Fatal(err)
 	}
-	m.apply(ctx, dr, stale, Job{ID: hash, State: StateDownloading, Progress: 0.3}, true, m.settings(ctx))
+	m.apply(ctx, dr, stale, Job{ID: hash, State: StateDownloading, Progress: 0.3}, true, m.settings(ctx), time.Time{})
 	d := w.download(t, id)
 	if !slices.Equal(d.SlotIDs, slots[:3]) || !d.PackFiles[2].On {
 		t.Fatalf("slots %v pack %+v", d.SlotIDs, d.PackFiles)

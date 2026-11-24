@@ -14,7 +14,6 @@
 	"settings.health.none": "אין תוצאות. בדוק שוב כדי להריץ אותן.",
 	"settings.health.since": "מאז",
 	"settings.health.settings": "הגדרות בדיקות התקינות",
-	"settings.health.updateCheck": "בדיקת גרסה חדשה של HolyArrs",
 	"settings.health.onlyChecks": "בודק בלבד. אף פעם לא מתקין.",
 	"settings.health.every": "בדיקת עדכונים כל",
 	"settings.health.day": "יום",

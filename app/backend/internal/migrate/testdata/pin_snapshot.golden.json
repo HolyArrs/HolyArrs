@@ -29,6 +29,12 @@
           "monitored": true
         }
       ],
+      "episodes_off": [
+        {
+          "season": 7,
+          "episode": 7
+        }
+      ],
       "music_albums": [
         {
           "mbid": "s",
@@ -51,6 +57,21 @@
               "title": "s"
             }
           ]
+        }
+      ],
+      "history": [
+        {
+          "old_id": 7,
+          "kind": "s",
+          "at": "s",
+          "release": "s",
+          "quality": "s",
+          "season": 7,
+          "episode": 7,
+          "source": "s",
+          "downloader": "s",
+          "reason": "s",
+          "size": 7
         }
       ]
     }
@@ -87,6 +108,11 @@
       "cutoff_qualities": [
         "s"
       ],
+      "groups": [
+        [
+          "s"
+        ]
+      ],
       "language": "s",
       "scores": {
         "s": 7
@@ -105,6 +131,14 @@
           "s": "x"
         }
       ]
+    }
+  ],
+  "quality_sizes": [
+    {
+      "quality": "s",
+      "min": 1.5,
+      "max": 1.5,
+      "preferred": 1.5
     }
   ],
   "release_profiles": [
@@ -400,6 +434,22 @@
       "local_path": "s"
     }
   ],
+  "blocklist": [
+    {
+      "title_id": 7,
+      "name": "s",
+      "info_hash": "s",
+      "protocol": "s",
+      "indexer": "s",
+      "reason": "s",
+      "episodes": [
+        {
+          "season": 7,
+          "episode": 7
+        }
+      ]
+    }
+  ],
   "users": [
     {
       "source_id": 7,
@@ -430,6 +480,7 @@
         "s": "s"
       },
       "state": "s",
+      "done": true,
       "seasons": [
         7
       ],

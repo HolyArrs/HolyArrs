@@ -95,3 +95,31 @@ func TestMyViewsArePerPerson(t *testing.T) {
 		t.Fatalf("ana's views: %v", v)
 	}
 }
+
+// The joined-person welcome is remembered per person through the same picks,
+// and comes back with the session so Home never flashes it again.
+func TestMyViewsKeepsWelcomeSeen(t *testing.T) {
+	cases := []struct {
+		name, body string
+		want       any
+	}{
+		{"seen", `{"welcome.seen":"1"}`, "1"},
+		{"forgotten", `{"welcome.seen":null}`, nil},
+		{"too long", `{"welcome.seen":"` + strings.Repeat("x", 300) + `"}`, nil},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			f := gated(t, Options{})
+			own := ownerOf(t, f)
+			if c.name == "forgotten" {
+				own.do(t, f, "PUT", "/api/v1/my/views", `{"welcome.seen":"1"}`)
+			}
+			if resp, out := own.do(t, f, "PUT", "/api/v1/my/views", c.body); resp.StatusCode != 200 {
+				t.Fatalf("put: %d %s", resp.StatusCode, out)
+			}
+			if got := myViews(t, f, own)["welcome.seen"]; got != c.want {
+				t.Fatalf("welcome.seen = %v, want %v", got, c.want)
+			}
+		})
+	}
+}

@@ -8,10 +8,14 @@
 	"setup.fullPath": "Folosește calea completă a dosarului, de exemplu {path}.",
 	"setup.folderUsed": "Acest dosar este deja folosit sau se află într-unul care este.",
 	"setup.folderMissing": "Dosarul nu există. Verifică calea.",
-	"setup.addFolderOrOff": "Adaugă un dosar sau oprește această opțiune.",
+	"setup.addFolderOrOff": "Adaugă un dosar sau apasă „Sari peste deocamdată”.",
 	"setup.notAnswering": "HolyArrs nu răspunde. Încearcă din nou peste un moment.",
 	"setup.addUserPasswordHint": "Adaugă numele de utilizator și parola.",
 	"setup.folders": "Dosare",
 	"setup.downloader": "Client de descărcare",
-	"setup.source": "Sursă"
+	"setup.source": "Sursă",
+	"setup.alertsNeedKeyOne": "Alerte: 1 are nevoie de o cheie",
+	"setup.alertsNeedKey": "Alerte: {n} au nevoie de o cheie",
+	"setup.folderNoAccess": "HolyArrs nu poate deschide acest folder. Verifică permisiunile lui.",
+	"setup.folderCantUse": "HolyArrs nu poate folosi acest folder. Verifică calea."
 }

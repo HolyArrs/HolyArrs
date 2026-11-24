@@ -101,3 +101,48 @@ func TestImportFoldersNeedOwnerOrAdmin(t *testing.T) {
 		t.Fatalf("local skip: %d %s", resp.StatusCode, b)
 	}
 }
+
+// route: POST /api/v1/manual-import/folders
+// The folder picker shows what is on the server's disks, so only the owner or
+// an admin signed in with a password may open it, and only inside the places.
+func TestImportFolderPickerNeedsOwnerOrAdmin(t *testing.T) {
+	t.Parallel()
+	r := lbNewAskRig(t)
+	place := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(place, "Some.Show.S01"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	r.owner.call("PUT", "/api/v1/settings/import-folders", fmt.Sprintf(`{"extra_folders":[%q]}`, place), 200)
+	body := fmt.Sprintf(`{"path":%q}`, place)
+	cases := []struct {
+		name string
+		who  *lbSignedIn
+		body string
+		want int
+	}{
+		{"member", r.ana, body, 403},
+		{"owner places", r.owner, `{"path":""}`, 200},
+		{"owner", r.owner, body, 200},
+		{"owner outside", r.owner, fmt.Sprintf(`{"path":%q}`, t.TempDir()), 400},
+		{"owner dot dot", r.owner, fmt.Sprintf(`{"path":%q}`, place+"/x/../.."), 400},
+	}
+	r.owner.call("PUT", fmt.Sprintf("/api/v1/users/%d", r.ana.id), `{"perms":["ask","settings"]}`, 200)
+	for _, c := range cases {
+		b := c.who.call("POST", "/api/v1/manual-import/folders", c.body, c.want)
+		if c.name == "owner" && !strings.Contains(string(b), "Some.Show.S01") {
+			t.Fatalf("listing %s", b)
+		}
+	}
+	r.owner.call("PUT", "/api/v1/users/"+lbItoa(r.bo.id), `{"role":"admin"}`, 200)
+	r.bo.call("POST", "/api/v1/manual-import/folders", body, 200)
+
+	r.owner.call("PUT", "/api/v1/auth/settings", `{"skip_login_local_network":true,"local_networks":["127.0.0.0/8"]}`, 200)
+	resp, err := http.Post(r.srv.URL+"/api/v1/manual-import/folders", "application/json", strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 403 {
+		t.Fatalf("local skip: %d", resp.StatusCode)
+	}
+}

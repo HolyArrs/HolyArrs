@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Veldu hvað á að biðja um næst",
 	"home.newPopular": "Nýtt og vinsælt",
 	"home.whatSTrending": "Hvað er vinsælt",
+	"home.gettingReady": "Undirbý hlutina…",
 	"home.top10sAndComing": "Topp 10 og væntanlegt",
 	"home.whatSNext": "Hvað er næst",
 	"home.airDatesAndReleases": "Sýningardagar og útgáfur",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Þættir og myndir sem koma í þessari viku",
 	"home.popularThisWeek": "Vinsælar útgáfur sem koma í þessari viku",
 	"home.peopleCheck": "Athugun á fólki",
-	"home.cantReadUsers": "ekki hægt að lesa notendalistann"
+	"home.cantReadUsers": "ekki hægt að lesa notendalistann",
+	"home.joined.title": "Velkomin(n), {name}",
+	"home.joined.find": "Finndu eitthvað í {explore} eða {search}.",
+	"home.joined.ask": "Ýttu á {request} á titli til að fá hann. Þú getur beðið um:",
+	"home.joined.track": "Fylgstu með hverri í {requests}.",
+	"home.joined.noLimit": "Engin vikumörk.",
+	"home.joined.gotIt": "Skilið",
+	"home.joined.explore": "Opna {explore}"
 }

@@ -94,10 +94,11 @@ test('Explore gives memory back after 20 rounds', async ({ browser }) => {
 
 	// Row cards ask the artwork cache for a picture sized to the card
 	// (w92-w342 posters and logos, w300 or w780 backdrops), never a full-size one.
+	// The hero is not a row card: it takes a wide backdrop of its own.
 	await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Explore', exact: true }).click();
 	const tmdbImg = page.locator('main img[src*="/artwork/tmdb/"]').first();
 	await expect(tmdbImg).toBeAttached();
-	const srcs = await page.locator('main img[src*="/artwork/tmdb/"]').evaluateAll((els) => els.map((e) => (e as HTMLImageElement).getAttribute('src') ?? ''));
+	const srcs = await page.locator('main img[src*="/artwork/tmdb/"]').evaluateAll((els) => els.filter((e) => !e.closest('[data-testid="explore-hero"]')).map((e) => (e as HTMLImageElement).getAttribute('src') ?? ''));
 	expect(srcs.filter((s) => !/\/artwork\/tmdb\/(w92|w154|w185|w300|w342|w780)\//.test(s))).toEqual([]);
 
 	await context.close();

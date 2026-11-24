@@ -21,6 +21,8 @@ export interface AskLimit {
 	four_k?: { movie: boolean; show: boolean };
 	/** The lines of what people can ask for that this person may use, per kind, in order. */
 	qualities?: { movie: QualityChoice[]; show: QualityChoice[] };
+	/** People may pick lines kept as their own copy (4K) on top of the one they pick. */
+	pick_many?: boolean;
 }
 
 /** One Quality button: a line of what people can ask for. */
@@ -75,6 +77,13 @@ export interface AskSettings {
 	owner_auto_approve?: boolean;
 	/** What people can ask for: the Quality buttons, per kind. Only names and hidden are saved. */
 	qualities?: { movie: QualityLine[]; show: QualityLine[] };
+	/** Let people pick more than one: a line kept as its own copy (4K) on top of the one picked. Off by default. */
+	pick_many?: boolean;
+	/** My streaming services: the country (two letters, '' for none) and the picked services there, in order. */
+	streaming_region?: string;
+	streaming_services?: number[];
+	/** Requests for movies and shows on one of those services are turned down instead of downloaded. */
+	skip_on_services?: boolean;
 }
 
 /** A TMDB, Trakt or MDBList list whose movies or shows are added on a schedule. */

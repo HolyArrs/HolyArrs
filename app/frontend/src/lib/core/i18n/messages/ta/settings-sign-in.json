@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "ஒரு வருகை எங்கிருந்து வந்தது என்பதை இவை மட்டுமே சொல்ல முடியும்.",
 	"settings.signIn.fixToSaveOne": "சேமிக்க 1 வரியைச் சரிசெய்யுங்கள்",
 	"settings.signIn.fixToSaveOther": "சேமிக்க {n} வரிகளைச் சரிசெய்யுங்கள்",
-	"settings.signIn.localSaved": "உள்ளூர் நெட்வொர்க் சேமிக்கப்பட்டது"
+	"settings.signIn.localSaved": "உள்ளூர் நெட்வொர்க் சேமிக்கப்பட்டது",
+	"settings.signIn.forgotTitle": "கடவுச்சொல் மறந்ததா?",
+	"settings.signIn.forgotOn": "உள்நுழைவு பக்கத்தில் கடவுச்சொல் மறந்ததா? காட்டு",
+	"settings.signIn.forgotNote": "உரிமையாளர் சர்வர் பதிவிலிருந்து ஒருமுறை குறியீட்டைப் பெறுவார். அனைவரும் ஒற்றை உள்நுழைவு மூலம் நுழைந்தால் இதை அணைக்கவும். reset-owner கட்டளை இன்னும் வேலை செய்யும்.",
+	"settings.signIn.forgotShown": "கடவுச்சொல் மறந்ததா? இயக்கத்தில்",
+	"settings.signIn.forgotHidden": "கடவுச்சொல் மறந்ததா? அணைப்பில்"
 }

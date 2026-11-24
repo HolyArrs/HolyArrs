@@ -33,6 +33,14 @@ type Handler func(ctx context.Context, r *Run) error
 // usual retry and failure record are preserved.
 type ScheduleProbe func(ctx context.Context, now time.Time) (needed bool, prepared any, err error)
 
+// SkipReason is what a ScheduleProbe returns as prepared when nothing is
+// needed and it can say why, such as "setting_off". It is kept on the
+// schedule as last_skip; a probe that says nothing keeps "nothing".
+type SkipReason string
+
+// SkipNothing is the reason kept when a probe gives none.
+const SkipNothing SkipReason = "nothing"
+
 // Options tunes the Queue. Zero values take the defaults.
 type Options struct {
 	Workers int // default 2; the size of the one shared pool when Pools is nil
@@ -76,6 +84,7 @@ type Queue struct {
 	// scheduleNoop is process-local. Restarting forgets every no-work result
 	// and safely probes again.
 	scheduleNoop          map[string]scheduleNoop
+	scheduleChecked       map[string]scheduleCheck
 	scheduleProbeInFlight map[string]bool
 	prepared              map[int64]preparedJob
 	live                  map[int64]context.CancelFunc
@@ -129,7 +138,7 @@ func New(s *database.Store, opt Options) *Queue {
 	if opt.PollInterval <= 0 {
 		opt.PollInterval = time.Second
 	}
-	return &Queue{s: s, opt: opt, hand: map[string]Handler{}, probe: map[string]ScheduleProbe{}, scheduleNoop: map[string]scheduleNoop{}, scheduleProbeInFlight: map[string]bool{}, prepared: map[int64]preparedJob{}, live: map[int64]context.CancelFunc{}, running: map[int64]Job{}, wake: make(chan struct{}, 1)}
+	return &Queue{s: s, opt: opt, hand: map[string]Handler{}, probe: map[string]ScheduleProbe{}, scheduleNoop: map[string]scheduleNoop{}, scheduleChecked: map[string]scheduleCheck{}, scheduleProbeInFlight: map[string]bool{}, prepared: map[int64]preparedJob{}, live: map[int64]context.CancelFunc{}, running: map[int64]Job{}, wake: make(chan struct{}, 1)}
 }
 
 // Handle registers the handler for a Job kind.
@@ -221,6 +230,7 @@ func (q *Queue) Stop() {
 	q.wg.Wait()
 	q.mu.Lock()
 	clear(q.scheduleNoop)
+	clear(q.scheduleChecked)
 	clear(q.prepared)
 	q.mu.Unlock()
 }
@@ -266,6 +276,9 @@ func ProgressOf(ctx context.Context, q database.Querier, id int64) (float64, str
 
 // SetResult stores a result to save when the Job is done.
 func (r *Run) SetResult(v map[string]any) { r.result = v }
+
+// Result is what SetResult last stored.
+func (r *Run) Result() map[string]any { return r.result }
 
 // SaveResult stores a result now, while the Job still runs, so the part
 // done so far is kept if the Job is cancelled or the app stops; it is

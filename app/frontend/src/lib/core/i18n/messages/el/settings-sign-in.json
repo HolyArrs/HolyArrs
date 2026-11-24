@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Μόνο αυτοί μπορούν να πουν από πού ήρθε μια επίσκεψη.",
 	"settings.signIn.fixToSaveOne": "Διορθώστε 1 γραμμή για αποθήκευση",
 	"settings.signIn.fixToSaveOther": "Διορθώστε {n} γραμμές για αποθήκευση",
-	"settings.signIn.localSaved": "Το τοπικό δίκτυο αποθηκεύτηκε"
+	"settings.signIn.localSaved": "Το τοπικό δίκτυο αποθηκεύτηκε",
+	"settings.signIn.forgotTitle": "Ξεχάσατε τον κωδικό;",
+	"settings.signIn.forgotOn": "Εμφάνιση του Ξεχάσατε τον κωδικό; στη σελίδα σύνδεσης",
+	"settings.signIn.forgotNote": "Ο κάτοχος παίρνει κωδικό μίας χρήσης από το αρχείο καταγραφής του διακομιστή. Απενεργοποιήστε το αν όλοι συνδέονται με ενιαία σύνδεση. Η εντολή reset-owner λειτουργεί ακόμα.",
+	"settings.signIn.forgotShown": "Το Ξεχάσατε τον κωδικό; είναι ενεργό",
+	"settings.signIn.forgotHidden": "Το Ξεχάσατε τον κωδικό; είναι ανενεργό"
 }

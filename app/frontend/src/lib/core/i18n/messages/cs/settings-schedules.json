@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Zrušit",
 	"settings.schedules.stages": "Fáze",
 	"settings.schedules.stagesNote": "Pozastavíte nebo restartujete je v <a>Částech</a>.",
-	"settings.schedules.allTime": "Pořád"
+	"settings.schedules.allTime": "Pořád",
+	"settings.schedules.skip.nothing": "Není co dělat",
+	"settings.schedules.skip.plexOff": "Vypnuto: zapněte {setting} v {page}",
+	"settings.schedules.skip.plexNobody": "Není co dělat: nikdo si nezapnul svůj seznam ke zhlédnutí v Plexu",
+	"settings.schedules.skip.settingOff": "Vypnuto: zapněte to v jeho nastavení",
+	"settings.schedules.skip.starting": "Přeskočeno: HolyArrs se ještě spouštěl",
+	"settings.schedules.took": "Trvalo {time}",
+	"settings.schedules.finished": "{label} dokončeno",
+	"settings.schedules.nothingToDo": "{label}: není co dělat",
+	"settings.schedules.runFailed": "{label} selhalo"
 }

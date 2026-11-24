@@ -3,6 +3,7 @@ package mediafiles
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"path/filepath"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -12,7 +13,7 @@ import (
 // first. A version without a folder name is left out.
 func TitleFolders(ctx context.Context, db database.Lister, titleID int64) ([]string, error) {
 	rows, err := db.QueryContext(ctx, `SELECT lf.path, v.folder_name FROM versions v JOIN library_folders lf ON lf.id = v.library_folder_id
-		WHERE v.title_id = ? ORDER BY v.is_main DESC, v.id`, titleID)
+		WHERE v.title_id = ? AND lf.stand_in = 0 ORDER BY v.is_main DESC, v.id`, titleID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,4 +97,32 @@ func TitleInFolder(ctx context.Context, db database.Querier, titleID int64, root
 	_ = db.QueryRowContext(ctx, `SELECT v.title_id FROM versions v JOIN library_folders f ON f.id = v.library_folder_id
 		WHERE v.title_id = ? AND f.path = ? AND v.folder_name = ?`, titleID, root, folder).Scan(&id)
 	return id != 0
+}
+
+// FilePath is the full path of a present media file, by its id.
+func FilePath(ctx context.Context, db database.Querier, fileID int64) (string, error) {
+	var root, rel string
+	err := db.QueryRowContext(ctx, `SELECT lf.path, f.relative_path FROM files f JOIN versions v ON v.id = f.version_id
+		JOIN library_folders lf ON lf.id = v.library_folder_id WHERE f.id = ? AND f.state = 'present'`, fileID).Scan(&root, &rel)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(root, filepath.FromSlash(rel)), nil
+}
+
+// TitleArtwork reads a title's artwork entries; sql.ErrNoRows for no title.
+func TitleArtwork(ctx context.Context, db database.Querier, titleID int64) ([]string, error) {
+	var raw sql.NullString
+	if err := db.QueryRowContext(ctx, "SELECT artwork FROM titles WHERE id = ?", titleID).Scan(&raw); err != nil {
+		return nil, err
+	}
+	var out []string
+	_ = json.Unmarshal([]byte(raw.String), &out)
+	return out, nil
+}
+
+// SetTitleArtwork writes a title's artwork entries (JSON) with who and when.
+func SetTitleArtwork(ctx context.Context, tx *sql.Tx, titleID int64, art, now, by string) error {
+	_, err := tx.ExecContext(ctx, "UPDATE titles SET artwork = ?, updated_at = ?, updated_by = ? WHERE id = ?", art, now, by, titleID)
+	return err
 }

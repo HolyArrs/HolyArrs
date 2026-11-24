@@ -47,6 +47,8 @@ func (h *OrganiseHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/library-folders/{id}/scan", h.scanFolder)
 	m.HandleFunc("POST /api/v1/library-folders/{id}/adopt", h.adoptFolders)
 	m.HandleFunc("GET /api/v1/titles/{id}/leftovers", h.listLeftovers)
+	m.HandleFunc("GET /api/v1/titles/{id}/points", h.slotPoints)
+	m.HandleFunc("GET /api/v1/library/unmatched-music", h.listUnmatchedMusic)
 	m.HandleFunc("POST /api/v1/titles/{id}/leftovers/match", h.matchLeftovers)
 	m.HandleFunc("POST /api/v1/titles/{id}/leftovers/unmatch", h.unmatchLeftovers)
 	m.HandleFunc("PUT /api/v1/titles/{id}/leftovers/{fid}", h.dismissLeftover)
@@ -278,8 +280,8 @@ func musicExamples(ns mediafiles.NamingSettings) map[string]string {
 // episodeExamples names sample episodes by the show patterns: one episode,
 // a multi-episode file, a daily show and an anime running number.
 func episodeExamples(ns mediafiles.NamingSettings) map[string]string {
-	show := mediafiles.NameFacts{Title: "Copper Valley", Year: 2025, Step: "1080p_web", Group: "HOLYARRS", Audio: "EAC3", Ext: ".mkv"}
-	folder := mediafiles.ShowFolder(ns, show)
+	show := mediafiles.NameFacts{Title: "Copper Valley", Year: 2025, TMDB: "1518204", TVDB: "445566", Step: "1080p_web", Group: "HOLYARRS", Audio: "EAC3", Channels: "5.1", VideoCodec: "h264", Ext: ".mkv"}
+	folder := mediafiles.ShowFolderIn(ns, show)
 	return map[string]string{
 		"show_folder": folder,
 		"episode":     mediafiles.EpisodePath(ns, folder, mediafiles.EpisodeFacts{NameFacts: show, Order: mediafiles.OrderAired, Season: 1, Episodes: []int{2}, Titles: []string{"The Mill"}}),
@@ -293,9 +295,9 @@ func episodeExamples(ns mediafiles.NamingSettings) map[string]string {
 // namingExamples names one sample movie by the settings, so the screen can
 // show what a pattern gives.
 func namingExamples(ns mediafiles.NamingSettings) (file, folder string) {
-	file = mediafiles.FileName(ns, mediafiles.NameFacts{Title: "Dune: Part Two", Year: 2024, Step: "1080p_bluray", Group: "HOLYARRS", TMDB: "693134",
-		IMDB: "tt15239678", Audio: "EAC3", Release: "Dune.Part.Two.2024.1080p.BluRay.x264-HOLYARRS", Ext: ".mkv"})
-	folder = mediafiles.Folder(ns, mediafiles.NameFacts{Title: "Dune: Part Two", Year: 2024, TMDB: "693134", IMDB: "tt15239678"})
+	file = mediafiles.FileName(ns, mediafiles.NameFacts{Title: "Dune: Part Two", Year: 2024, Step: "1080p_bluray", Group: "HOLYARRS", TMDB: "693134", Channels: "7.1", VideoCodec: "x264", Edition: "IMAX",
+		IMDB: "tt15239678", Audio: "EAC3", Release: "Dune.Part.Two.2024.1080p.BluRay.x264-HOLYARRS", FrenchVersion: "VFQ", Ext: ".mkv"})
+	folder = mediafiles.MovieFolder(ns, mediafiles.NameFacts{Title: "Dune: Part Two", Year: 2024, TMDB: "693134", IMDB: "tt15239678", Genre: "Science Fiction"})
 	return file, folder
 }
 
@@ -346,8 +348,13 @@ func (h *OrganiseHandlers) getFileRules(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *OrganiseHandlers) putFileRules(w http.ResponseWriter, r *http.Request) {
-	var fr importer.FileRules
-	if !webserver.Decode(w, r, &fr, `send {"holding_days","min_free_mb","skip_free_space_check"}`) {
+	// Fields left out keep their saved value.
+	fr, err := importer.ReadFileRules(r.Context(), h.Store.Read())
+	if err != nil {
+		webserver.Internal(w, "library", err)
+		return
+	}
+	if !webserver.Decode(w, r, &fr, `send any of {"holding_days","min_free_mb","skip_free_space_check","unkeep_deleted_movies","unkeep_deleted_episodes"}`) {
 		return
 	}
 	if err := importer.SaveFileRules(r.Context(), h.Store, fr, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1})); err != nil {

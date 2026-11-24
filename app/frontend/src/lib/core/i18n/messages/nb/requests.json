@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Meldinger fra utvidelser",
+	"requests.moment.plugin_message.body": "En utvidelse du har tillatt, sender en melding.",
+	"requests.words.via": "{who} via {plugin}",
 	"requests.moment.ask_waiting.title": "Ny forespørsel",
 	"requests.moment.ask_waiting.body": "Til staben: en film, serie eller artist venter på godkjenning.",
 	"requests.moment.ask_approved.title": "Godkjent",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "TMDB-liste",
 	"requests.lists.tmdbHint": "Listenummeret eller lenken, for eksempel themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-liste",
-	"requests.lists.traktHint": "bruker/liste, bruker/watchlist eller lenken, for eksempel trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "bruker/liste, bruker/watchlist eller lenken, for eksempel trakt.tv/users/ana/lists/favourites. Eller en topliste: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "MDBList-liste",
 	"requests.lists.mdblistHint": "bruker/liste eller lenken, for eksempel mdblist.com/lists/ana/favourites. Offentlige lister virker uten nøkkel.",
 	"requests.lists.everyDay": "hver dag",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Fant ikke noe galt",
 	"requests.outcome.noResults": "Ingen resultater ennå",
 	"requests.outcome.nothingFound": "Fant ingenting:",
+	"requests.outcome.refused": "Funnet, men ingenting passer valgreglene",
 	"requests.outcome.why.slowed": "var satt på pause (bremset)",
 	"requests.outcome.why.down": "var nede",
 	"requests.outcome.why.blocked": "ble blokkert",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Legg til",
 	"requests.addMovie.titleBare": "Legg til en film",
 	"requests.add.loadingDefaults": "Laster standardene",
+	"requests.add.defaultsLate": "De lagrede standardene dine ble ikke lastet i tide, så de vanlige valgene er brukt. Sjekk dem før du legger til.",
 	"requests.add.noFolder.music": "Det finnes ingen bibliotekmappe for musikk ennå. <a>Legg til en</a> først.",
 	"requests.add.noFolder.movie": "Det finnes ingen bibliotekmappe for filmer ennå. <a>Legg til en</a> først.",
 	"requests.add.noFolder.show": "Det finnes ingen bibliotekmappe for serier ennå. <a>Legg til en</a> først.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Vis den i kalenderen min.",
 	"requests.add.cancel": "Avbryt",
 	"requests.add.submit": "Legg til i Biblioteket",
+	"requests.add.submitChoose": "Legg til og velg en utgivelse",
 	"requests.addArtist.albums": "Album som holdes oppdatert",
 	"requests.addArtist.newAlbums": "Nye album",
 	"requests.addArtist.newAlbumsHint": "Hva som skjer med et album som kommer ut senere.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", viser {status}",
 	"requests.board.reportsOpen": "Rapporter, {n} åpne",
 	"requests.board.approveAll": "Godkjenn alle",
+	"requests.board.approveAllTitle": "Godkjenne alle ventende forespørsler ({n})?",
+	"requests.board.approveAllDesc": "Dette gjelder også forespørsler lenger ned i listen som ikke er lastet ennå.",
 	"requests.board.requests": "Forespørsler",
 	"requests.board.open": "Åpne {name}, forespurt av {who}",
 	"requests.board.pageForArtist": "Artistside for {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Lagt til",
 	"requests.addAll.summary": "Lagt til: {added}, hoppet over: {skipped}",
 	"requests.addAll.summaryClean": "Lagt til: {added}",
-	"requests.addAll.intro": "Hver film legges til i Biblioteket ditt med mappen og utvalgsreglene under og de lagrede standardverdiene dine. Filmer som allerede er i Biblioteket, står i listen, men legges ikke til på nytt."
+	"requests.addAll.intro": "Hver film legges til i Biblioteket ditt med mappen og utvalgsreglene under og de lagrede standardverdiene dine. Filmer som allerede er i Biblioteket, står i listen, men legges ikke til på nytt.",
+	"requests.ask.alsoAsk": "Be også om {name}",
+	"requests.add.handsOff": "Hands-off-modus er på: ingen bibliotekmappe trengs. Den sendes til nedlasteren, og filene blir der."
 }

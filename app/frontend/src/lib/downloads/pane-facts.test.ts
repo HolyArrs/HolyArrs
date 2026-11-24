@@ -22,4 +22,14 @@ describe('infoGroups / usenetGroups', () => {
 		const g = usenetGroups({ ...row, posted_at: '2026-01-01T00:00:00Z' } as DownloadRow, undefined, undefined);
 		expect(g.flatMap((x) => x.rows).some((f) => f.k === 'Posted')).toBe(true);
 	});
+	it('a failed download shows its whole reason, since the row cuts it and a tooltip is out of reach on touch', () => {
+		const why = 'ERROR: Bad archive /data/downloads/Some.Show.S01E01.1080p/some.show.s01e01.part07.rar';
+		const failed = { ...row, phase: 'failed', client_item: true, text: why } as unknown as DownloadRow;
+		const facts = infoGroups(failed, undefined).flatMap((x) => x.rows);
+		expect(facts.find((f) => f.k === 'Status')).toMatchObject({ wrap: true });
+		expect(facts.find((f) => f.k === 'Status')?.v).toContain(why);
+		const nzb = usenetGroups(failed, undefined, undefined).flatMap((x) => x.rows);
+		expect(nzb.find((f) => f.k === 'Status')?.v).toContain(why);
+		expect(infoGroups(row, undefined).flatMap((x) => x.rows).some((f) => f.k === 'Status')).toBe(false);
+	});
 });

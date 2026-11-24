@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Forespørsler",
 	"settings.appearance.colRate": "Per rad",
 	"settings.appearance.noRows": "Ingen Utforsk-rader er talt ennå.",
+	"settings.appearance.rowStats": "Utforsk-rader",
+	"settings.appearance.rowStatsDesc": "Åpninger og forespørsler per rad de siste 30 dagene, for alle samlet. Telles bare på denne serveren.",
+	"settings.appearance.colRow": "Rad",
+	"settings.appearance.row.because_have": "Som titler du har",
+	"settings.appearance.row.because_asked": "Som forespørslene dine",
+	"settings.appearance.row.person": "Mer fra en person",
+	"settings.appearance.row.genre": "Sjangervalg for deg",
+	"settings.appearance.row.popular_genre": "Populære etter sjanger",
+	"settings.appearance.row.popular_decade": "Populære etter tiår",
+	"settings.appearance.row.decade": "Etter tiår",
+	"settings.appearance.row.mood": "Etter stemning",
+	"settings.appearance.row.hero": "Toppbanner",
 	"settings.appearance.motion": "Bevegelse",
 	"settings.appearance.motionNote": "Følger Reduser bevegelse-innstillingen på enheten din"
 }

@@ -36,5 +36,7 @@
 	"settings.move.undoId": "ورود {id} برگردانده شود؟",
 	"settings.move.undoQuestion": "این ورود برگردانده شود؟",
 	"settings.move.undoNote": "آنچه این ورود اضافه کرده حذف می‌شود؛ تغییرهای بعدی تو می‌مانند. اگر گزارشش را می‌خواهی اول دانلودش کن.",
-	"settings.move.undoMove": "برگرداندن ورود"
+	"settings.move.undoMove": "برگرداندن ورود",
+	"settings.move.continueSetup": "ادامهٔ راه‌اندازی",
+	"settings.move.backToChoose": "بازگشت به انتخاب"
 }

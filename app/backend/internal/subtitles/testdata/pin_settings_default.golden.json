@@ -13,5 +13,17 @@
   "adaptive": true,
   "sync_from_fps": 25,
   "sync_to_fps": 23.976,
-  "sync_step_ms": 500
+  "sync_step_ms": 500,
+  "clean": {
+    "*": {
+      "ads": true,
+      "hi": false,
+      "tags": false,
+      "emoji": false,
+      "ocr": false,
+      "caps": false,
+      "spacing": false,
+      "overlap": false
+    }
+  }
 }

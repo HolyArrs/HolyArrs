@@ -6,8 +6,8 @@ WORKDIR /src/app/frontend
 COPY app/frontend/package.json app/frontend/package-lock.json ./
 RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY app/frontend/ ./
-# The language files stay plain here; the build stage packs them with bzip2.
-RUN HOLYARRS_LANGUAGES_PLAIN=1 npm run build
+# Only English is built in; the other languages are signed language packs.
+RUN npm run build
 
 # Build stage: runs on the build machine and cross-compiles for the target,
 # so multi-arch builds (amd64, arm64, armv7) need no emulation.
@@ -26,9 +26,6 @@ COPY . .
 # The pages just built are what the program embeds.
 RUN rm -rf app/frontend/dist
 COPY --from=web /src/app/frontend/dist ./app/frontend/dist
-# bzip2 is smaller than brotli for every language file (Python is part of the
-# Go image; the program unpacks with Go's own bzip2 reader).
-RUN python3 deploy/pack_languages.py app/frontend/dist
 # Inlining is off in HolyArrs's own packages and in the parts of Go's library
 # and the sign-in libraries that are not speed-critical (about 1.3 MB less to
 # download, same measured speed). The database, text handling, unpacking and

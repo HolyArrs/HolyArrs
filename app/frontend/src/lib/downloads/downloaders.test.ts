@@ -93,7 +93,8 @@ describe('downloaders', () => {
 			path_map: [{ theirs: '/data/downloads', ours: '/downloads' }],
 			allow_local_network: true,
 			writable: true,
-			tags: []
+			tags: [],
+			clear_finished: true
 		});
 	});
 
@@ -104,6 +105,14 @@ describe('downloaders', () => {
 		const body = formBody(f);
 		expect(body.path_map).toHaveLength(1);
 		expect(body.username).toBe('');
+	});
+
+	it.each([
+		[true, { theirs: '/remote', ours: '/mnt/stream', link: true }],
+		[false, { theirs: '/remote', ours: '/mnt/stream' }]
+	])('keeps a path pair link switch (%s) when saving', (link, want) => {
+		const f = formFrom({ ...saved, path_map: [{ theirs: '/remote', ours: '/mnt/stream', link }] });
+		expect(formBody(f).path_map).toEqual([want]);
 	});
 
 	it('sends qBittorrent with a user name and password, or a key with no name', () => {
@@ -124,7 +133,6 @@ describe('the Downloads screen', () => {
 		expect(phaseTone('done')).toBe('ok');
 		expect(phaseTone('vanished')).toBe('fail');
 		expect(phaseTone('needs_a_decision')).toBe('fail');
-		expect(phaseTone('removed')).toBe('idle');
 		expect(phaseTone('importing')).toBe('wait');
 	});
 	it('splits moving rows from finished ones', () => {

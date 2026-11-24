@@ -63,6 +63,7 @@ var ScheduleInfos = map[string]ScheduleInfo{
 	"rescan_library":        {"Rescan the Library", "Looks for files added, changed or removed by hand.", 6 * schHour, 7 * schDay, schHour, ""},
 	"clean_holding":         {"Clean the holding folder", "Removes deleted files whose keep time is over.", 6 * schHour, 7 * schDay, schHour, ""},
 	"health_check":          {"Health checks", "Library folders, free space, Sources, Downloaders, backups and the update check.", schMinute, schDay, schMinute, "/settings/this-app"},
+	"clean_releases":        {"Clean up old Releases", "Removes search results older than 14 days that were not picked, held, turned down or sent.", 6 * schHour, 7 * schDay, schHour, ""},
 	"clean_history":         {"Clean up History", "Removes History Events older than their keep time.", 6 * schHour, 7 * schDay, schHour, "/settings/this-app"},
 	"subtitle_missing":      {"Look for missing subtitles", "Searches the subtitle sites for every file missing a wished language.", schHour, 7 * schDay, schHour, "/settings/subtitles"},
 	"subtitle_better":       {"Look for better subtitles", "Searches again for subtitles under their Pass mark.", 6 * schHour, 7 * schDay, schHour, "/settings/subtitles"},
@@ -88,8 +89,16 @@ type ScheduleView struct {
 	LastJob      string     `json:"last_job,omitempty"`
 	LastJobEnded *time.Time `json:"last_job_ended,omitempty"`
 	LastJobError string     `json:"last_job_error,omitempty"`
-	Part         string     `json:"part"`
-	Settings     string     `json:"settings,omitempty"`
+	// LastJobNote is why the newest Job did nothing (its result's
+	// "skipped", such as setting_off), and LastJobSeconds how long it took.
+	LastJobNote    string   `json:"last_job_note,omitempty"`
+	LastJobSeconds *float64 `json:"last_job_s,omitempty"`
+	// LastChecked is the newest scheduled check that found nothing to do,
+	// LastSkip why (nothing, setting_off, nobody, ...).
+	LastChecked *time.Time `json:"last_checked,omitempty"`
+	LastSkip    string     `json:"last_skip,omitempty"`
+	Part        string     `json:"part"`
+	Settings    string     `json:"settings,omitempty"`
 }
 
 // Routes adds the Schedules page routes.
@@ -118,7 +127,14 @@ func (h *ScheduleHandlers) scheduleView(ctx context.Context, db *sql.DB, sc doma
 		info = ScheduleInfo{Label: strings.ReplaceAll(sc.Kind, "_", " "), Min: schMinute, Max: 7 * schDay, Step: schMinute}
 	}
 	v := ScheduleView{Kind: sc.Kind, Label: info.Label, About: info.About, EverySeconds: sc.EverySeconds, MinSeconds: info.Min, MaxSeconds: info.Max,
-		StepSeconds: info.Step, Enabled: sc.Enabled, LastRun: sc.LastRun, NextRun: sc.NextRun, Part: string(parts.JobOwner(sc.Kind)), Settings: info.Settings, State: "waiting"}
+		StepSeconds: info.Step, Enabled: sc.Enabled, LastRun: sc.LastRun, NextRun: sc.NextRun, Part: string(parts.JobOwner(sc.Kind)), Settings: info.Settings, State: "waiting",
+		LastChecked: sc.LastChecked}
+	if sc.LastSkip != nil {
+		v.LastSkip = *sc.LastSkip
+	}
+	if h.Queue != nil {
+		v.LastChecked, v.LastSkip = h.Queue.LastScheduleCheck(sc)
+	}
 	if h.Queue != nil {
 		v.NextRun = h.Queue.EffectiveScheduleNext(sc)
 	}
@@ -147,6 +163,13 @@ func (h *ScheduleHandlers) scheduleView(ctx context.Context, db *sql.DB, sc doma
 		v.LastJob, v.LastJobEnded = j.State, j.EndedAt
 		if j.Error != nil {
 			v.LastJobError = logs.RedactPatterns(j.Error.Message)
+		}
+		if note, ok := j.Result["skipped"].(string); ok {
+			v.LastJobNote = note
+		}
+		if j.StartedAt != nil && j.EndedAt != nil && !j.EndedAt.Before(*j.StartedAt) {
+			secs := j.EndedAt.Sub(*j.StartedAt).Seconds()
+			v.LastJobSeconds = &secs
 		}
 	}
 	return v, nil

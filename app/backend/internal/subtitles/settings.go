@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/subtext"
 )
 
 // Schedule kinds.
@@ -52,13 +54,49 @@ type Settings struct {
 	SyncFromFPS float64 `json:"sync_from_fps"`
 	SyncToFPS   float64 `json:"sync_to_fps"`
 	SyncStepMS  int     `json:"sync_step_ms"`
+	// Clean picks the cleanup steps run on each subtitle the app saves, per
+	// language. The "*" row is every other language.
+	Clean map[string]subtext.Tidy `json:"clean"`
 }
 
 // DefaultSettings returns the settings in use before anyone changes them.
 func DefaultSettings() Settings {
 	return Settings{Languages: []Want{}, PassMarkMovie: 70, PassMarkEpisode: 90, UseBuiltIn: true, HISuffix: "hi",
 		SearchHours: 6, Better: true, BetterHours: 12, BetterDays: 7, Batch: 100, Adaptive: true,
-		SyncFromFPS: 25, SyncToFPS: 23.976, SyncStepMS: 500}
+		SyncFromFPS: 25, SyncToFPS: 23.976, SyncStepMS: 500,
+		Clean: map[string]subtext.Tidy{EveryLanguage: {Ads: true}}}
+}
+
+// EveryLanguage is the Clean row used for a language with no row of its own.
+const EveryLanguage = "*"
+
+// CleanFor returns the cleanup steps for a subtitle language: its own row,
+// then its base language (pt for pt-BR), then the every-language row.
+func (s Settings) CleanFor(lang string) subtext.Tidy {
+	t, ok := s.Clean[strings.ToLower(lang)]
+	if !ok {
+		base, _, _ := strings.Cut(strings.ToLower(lang), "-")
+		if t, ok = s.Clean[base]; !ok {
+			t = s.Clean[EveryLanguage]
+		}
+	}
+	t.Language = lang
+	return t
+}
+
+func validClean(c map[string]subtext.Tidy) error {
+	if len(c) > 200 {
+		return fmt.Errorf("clean has more than 200 languages")
+	}
+	for k := range c {
+		if k == EveryLanguage {
+			continue
+		}
+		if k == "" || len(k) > 16 || k != strings.ToLower(k) || strings.Trim(k, "abcdefghijklmnopqrstuvwxyz0123456789-") != "" {
+			return fmt.Errorf("clean: %q is not a language tag", k)
+		}
+	}
+	return nil
 }
 
 // Validate checks every field.
@@ -68,6 +106,14 @@ func (s *Settings) Validate() error {
 		return err
 	}
 	s.Languages = ws
+	clean := make(map[string]subtext.Tidy, len(s.Clean))
+	for k, v := range s.Clean {
+		clean[strings.ToLower(strings.TrimSpace(k))] = v
+	}
+	if err := validClean(clean); err != nil {
+		return err
+	}
+	s.Clean = clean
 	switch {
 	case s.PassMarkMovie < 0 || s.PassMarkMovie > 100, s.PassMarkEpisode < 0 || s.PassMarkEpisode > 100:
 		return fmt.Errorf("pass marks must be 0 to 100")
@@ -91,7 +137,7 @@ func (s *Settings) Validate() error {
 
 var settingKeys = []string{"subtitle_languages", "subtitle_pass_mark_movie", "subtitle_pass_mark_episode", "subtitle_use_built_in",
 	"subtitle_ignore_picture_tracks", "subtitle_hi_suffix", "subtitle_better", "subtitle_better_days", "subtitle_batch", "subtitle_adaptive",
-	"subtitle_sync_from_fps", "subtitle_sync_to_fps", "subtitle_sync_step_ms"}
+	"subtitle_sync_from_fps", "subtitle_sync_to_fps", "subtitle_sync_step_ms", "subtitle_clean"}
 
 // ReadSettings reads the subtitle settings. Unset or odd values keep their
 // defaults so a bad row never breaks subtitles.
@@ -160,6 +206,11 @@ func ReadSettings(ctx context.Context, db *sql.DB) Settings {
 				if ferr == nil && fl >= 1 && fl <= 120 {
 					s.SyncToFPS = fl
 				}
+			case "subtitle_clean":
+				var c map[string]subtext.Tidy
+				if json.Unmarshal([]byte(v), &c) == nil && c != nil && validClean(c) == nil {
+					s.Clean = c
+				}
 			case "subtitle_sync_step_ms":
 				if nerr == nil && n >= 10 && n <= 60000 {
 					s.SyncStepMS = n
@@ -192,6 +243,8 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 		"subtitle_sync_from_fps": strconv.FormatFloat(s.SyncFromFPS, 'f', -1, 64), "subtitle_sync_to_fps": strconv.FormatFloat(s.SyncToFPS, 'f', -1, 64),
 		"subtitle_sync_step_ms": strconv.Itoa(s.SyncStepMS),
 	}
+	clean, _ := json.Marshal(s.Clean)
+	vals["subtitle_clean"] = string(clean)
 	actor, _ := json.Marshal(by)
 	ts := database.FormatTime(time.Now())
 	return st.Write(ctx, func(tx *sql.Tx) error {

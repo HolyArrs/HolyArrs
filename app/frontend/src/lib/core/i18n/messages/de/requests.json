@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Plugin-Nachrichten",
+	"requests.moment.plugin_message.body": "Ein erlaubtes Plugin sendet eine Nachricht.",
+	"requests.words.via": "{who} über {plugin}",
 	"requests.moment.ask_waiting.title": "Neue Anfrage",
 	"requests.moment.ask_waiting.body": "An das Team: Ein Film, eine Serie oder ein Künstler wartet auf Genehmigung.",
 	"requests.moment.ask_approved.title": "Genehmigt",
@@ -171,7 +174,7 @@
 	"requests.lists.tmdb": "TMDB-Liste",
 	"requests.lists.tmdbHint": "Die Listennummer oder ihr Link, zum Beispiel themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-Liste",
-	"requests.lists.traktHint": "user/list, user/watchlist oder der Link, zum Beispiel trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist oder der Link, zum Beispiel trakt.tv/users/ana/lists/favourites. Oder eine Rangliste: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "MDBList-Liste",
 	"requests.lists.mdblistHint": "user/list oder der Link, zum Beispiel mdblist.com/lists/ana/favourites. Öffentliche Listen funktionieren ohne Schlüssel.",
 	"requests.lists.everyDay": "jeden Tag",
@@ -199,6 +202,7 @@
 	"requests.report.reply.nothingWrong": "Ich konnte nichts Falsches finden",
 	"requests.outcome.noResults": "Noch keine Ergebnisse",
 	"requests.outcome.nothingFound": "Nichts gefunden:",
+	"requests.outcome.refused": "Gefunden, aber nichts passt zu den Auswahlregeln",
 	"requests.outcome.why.slowed": "wurde pausiert (gedrosselt)",
 	"requests.outcome.why.down": "war ausgefallen",
 	"requests.outcome.why.blocked": "war blockiert",
@@ -229,6 +233,7 @@
 	"requests.add.titleBare": "Hinzufügen",
 	"requests.addMovie.titleBare": "Film hinzufügen",
 	"requests.add.loadingDefaults": "Standards werden geladen",
+	"requests.add.defaultsLate": "Deine gespeicherten Standards wurden nicht rechtzeitig geladen, daher sind die üblichen gewählt. Prüfe sie vor dem Hinzufügen.",
 	"requests.add.noFolder.music": "Es gibt noch keinen Bibliotheksordner für Musik. <a>Füg zuerst einen hinzu</a>.",
 	"requests.add.noFolder.movie": "Es gibt noch keinen Bibliotheksordner für Filme. <a>Füg zuerst einen hinzu</a>.",
 	"requests.add.noFolder.show": "Es gibt noch keinen Bibliotheksordner für Serien. <a>Füg zuerst einen hinzu</a>.",
@@ -246,6 +251,7 @@
 	"requests.add.followHint": "In meinem Kalender anzeigen.",
 	"requests.add.cancel": "Abbrechen",
 	"requests.add.submit": "Zur Bibliothek hinzufügen",
+	"requests.add.submitChoose": "Hinzufügen und Release auswählen",
 	"requests.addArtist.albums": "Alben, die aktuell gehalten werden",
 	"requests.addArtist.newAlbums": "Neue Alben",
 	"requests.addArtist.newAlbumsHint": "Was mit einem Album passiert, das später erscheint.",
@@ -502,6 +508,8 @@
 	"requests.board.tabShowing": ", zeigt {status}",
 	"requests.board.reportsOpen": "Meldungen, {n} offen",
 	"requests.board.approveAll": "Alle genehmigen",
+	"requests.board.approveAllTitle": "Alle wartenden Anfragen genehmigen ({n})?",
+	"requests.board.approveAllDesc": "Dazu gehören auch Anfragen weiter unten in der Liste, die noch nicht geladen sind.",
 	"requests.board.requests": "Anfragen",
 	"requests.board.open": "{name} öffnen, angefragt von {who}",
 	"requests.board.pageForArtist": "Künstlerseite für {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Hinzugefügt",
 	"requests.addAll.summary": "Hinzugefügt: {added}, übersprungen: {skipped}",
 	"requests.addAll.summaryClean": "Hinzugefügt: {added}",
-	"requests.addAll.intro": "Jeder Film wird mit dem unten gewählten Ordner, den Auswahlregeln und deinen gespeicherten Standardwerten zu deiner Bibliothek hinzugefügt. Filme, die schon in deiner Bibliothek sind, stehen in der Liste, werden aber nicht noch einmal hinzugefügt."
+	"requests.addAll.intro": "Jeder Film wird mit dem unten gewählten Ordner, den Auswahlregeln und deinen gespeicherten Standardwerten zu deiner Bibliothek hinzugefügt. Filme, die schon in deiner Bibliothek sind, stehen in der Liste, werden aber nicht noch einmal hinzugefügt.",
+	"requests.ask.alsoAsk": "Auch {name} anfragen",
+	"requests.add.handsOff": "Hands-off-Modus ist an: kein Bibliotheksordner nötig. Es geht an den Downloader, und die Dateien bleiben dort."
 }

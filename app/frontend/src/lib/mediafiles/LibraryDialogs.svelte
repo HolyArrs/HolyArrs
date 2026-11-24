@@ -19,8 +19,12 @@
 		findCopies: () => void;
 		searchAllMissing: () => void;
 		saveCurrent: () => void;
+		audioDialog: HTMLDialogElement | null;
+		audioCodes: string;
+		audioCount: number;
+		setAudio: () => void;
 	};
-	let { deleteDialog = $bindable(), copyDialog = $bindable(), missingDialog = $bindable(), saveDialog = $bindable(), copyPreview = $bindable(), saveName = $bindable(), deleteIds, deleteWord, busy, missingCount, searchingAll, confirmDelete, findCopies, searchAllMissing, saveCurrent }: Props = $props();
+	let { deleteDialog = $bindable(), copyDialog = $bindable(), missingDialog = $bindable(), saveDialog = $bindable(), copyPreview = $bindable(), saveName = $bindable(), deleteIds, deleteWord, busy, missingCount, searchingAll, confirmDelete, findCopies, searchAllMissing, saveCurrent, audioDialog = $bindable(), audioCodes = $bindable(), audioCount, setAudio }: Props = $props();
 </script>
 
 <dialog bind:this={deleteDialog} aria-labelledby="bulk-delete-title" class="modal" data-testid="bulk-delete">
@@ -65,11 +69,25 @@
 	</form>
 </dialog>
 
+<dialog bind:this={audioDialog} aria-labelledby="bulk-audio-title" class="modal" data-testid="bulk-audio">
+	<form method="dialog" onsubmit={(e) => { e.preventDefault(); setAudio(); }}>
+		<h2 id="bulk-audio-title" class="h2">{t(audioCount === 1 ? 'mediafiles.dialogs.audioOne' : 'mediafiles.dialogs.audioMany', { n: audioCount })}</h2>
+		<label class="small muted" for="bulk-audio-codes">{t('mediafiles.dialogs.audioCodes')}</label>
+		<input id="bulk-audio-codes" class="input mono" dir="ltr" bind:value={audioCodes} placeholder="it" autocomplete="off" spellcheck="false" aria-describedby="bulk-audio-hint" data-testid="bulk-audio-codes" />
+		<p class="small muted hint" id="bulk-audio-hint">{t('mediafiles.dialogs.audioHint')}</p>
+		<div class="modal-actions">
+			<Button onclick={() => audioDialog?.close()} disabled={busy}>{t('mediafiles.dialogs.cancel')}</Button>
+			<Button variant="primary" type="submit" {busy} disabled={busy} data-testid="bulk-audio-confirm">{t('mediafiles.dialogs.audioSet')}</Button>
+		</div>
+	</form>
+</dialog>
+
 <style>
 	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
 	.modal::backdrop { background: var(--scrim); }
 	.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: var(--s-6); }
 	.modal .input { width: 100%; margin-top: 6px; }
+	.modal .hint { margin: 8px 0 0; }
 	.copy-list { display: grid; gap: 6px; max-height: 240px; overflow: auto; margin: 0 0 14px; padding: 0; list-style: none; font: var(--t-callout); }
 	.copy-list li { display: flex; justify-content: space-between; gap: 12px; }
 	.copy-list span { color: var(--text-muted); white-space: nowrap; }

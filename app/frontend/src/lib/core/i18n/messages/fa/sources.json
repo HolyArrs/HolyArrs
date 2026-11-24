@@ -85,5 +85,21 @@
 	"sources.uses.auto": "خودش جستجو می‌کند",
 	"sources.uses.feed": "فهرست جدیدترین‌ها",
 	"sources.uses.hand": "جستجوی دستی",
-	"sources.uses.none": "استفاده نمی‌شود"
+	"sources.uses.none": "استفاده نمی‌شود",
+	"sources.bridge.removeTitle": "{name} حذف شود؟",
+	"sources.bridge.find": "پیدا کردن {name} در شبکهٔ من",
+	"sources.bridge.noneFound": "هیچ {name} در شبکهٔ شما پاسخ نداد.",
+	"sources.bridge.keyFound": "کلید از {name} گرفته شد",
+	"sources.bridge.keyKept": "{name} کلیدش را نداد (ورود روشن است). با «دریافت کلید» آن را کپی کنید.",
+	"sources.bridge.keyKeptJackett": "Jackett کلیدش را نداد (رمز مدیر دارد). با «دریافت کلید» آن را کپی کنید.",
+	"sources.bridge.notReached": "دسترسی به {name} ممکن نشد.",
+	"sources.bridge.brings.title": "چه چیزی منتقل می‌شود",
+	"sources.bridge.brings.sites": "ایندکسرهای آن، به‌عنوان منبع",
+	"sources.bridge.brings.categories": "دسته‌بندی‌هایشان",
+	"sources.bridge.brings.search": "جست‌وجوها از طریق {name} انجام می‌شود",
+	"sources.bridge.brings.sync": "تغییرات در {name} منتقل می‌شود",
+	"sources.bridge.brings.stays": "ایندکسرهای شما در {name} تنظیم‌شده می‌مانند.",
+	"sources.bridge.brings.had": "{n} ایندکسر از قبل اینجاست",
+	"sources.bridge.brings.hadFrom": "واردشده از طریق {apps}",
+	"sources.bridge.brings.keyKept": "کلید را خالی بگذارید تا همان کلید فعلی‌شان استفاده شود."
 }

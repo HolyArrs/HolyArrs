@@ -200,15 +200,16 @@ func (s *Service) CachePoster(ctx context.Context, titleID int64, poster string,
 	if s.Artwork == nil || poster == "" {
 		return
 	}
-	name, err := s.Artwork.Fetch(ctx, strings.Replace(poster, "/w500/", "/w342/", 1))
+	src := strings.Replace(poster, "/w500/", "/w342/", 1)
+	name, err := s.Artwork.Fetch(ctx, src)
 	if err != nil {
 		log.Printf("library: poster for title %d: %v", titleID, err)
 		return
 	}
 	art := `["poster:` + name + `"]`
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE titles SET artwork = ?, updated_at = ?, updated_by = ? WHERE id = ? AND artwork != ?",
-			art, database.FormatTime(s.now()), ActorText(by), titleID, art)
+		_, err := tx.Exec("UPDATE titles SET artwork = ?, poster_url = ?, updated_at = ?, updated_by = ? WHERE id = ? AND (artwork != ? OR poster_url != ?)",
+			art, src, database.FormatTime(s.now()), ActorText(by), titleID, art, src)
 		return err
 	})
 	if err != nil {

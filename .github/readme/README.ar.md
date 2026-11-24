@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: نقطة حمراء تُظهر ما يحتاج إلى انتباه، واختبارات الاتصال تسمي المشكلة بدقة.** تسميات Plex للعناوين المطلوبة، وأسماء بلغتك، وأكثر من 30 إصلاحًا. اربط التطبيقات عبر MCP بمفاتيح تتحكم بها. [ما الجديد](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: أكثر من 150 إصلاحًا وميزة من 101 شخصًا.** نظام للإضافات، ومعالج إعداد جديد، ووضع عدم التدخل الذي لا يلمس ملفاتك أبدًا. [ما الجديد](https://holyarrs.com/whats-new/)
 
 > كل ملصق وإعلان وتقييم في HolyArrs لديك يأتي من خادم أشغّله وأدفع تكلفته بنفسي، ليبقى مجانيًا للجميع. إذا جعل HolyArrs سهرة الأفلام عندك أجمل قليلًا، فرعايتك تُبقي الأنوار مضاءة لنا جميعًا 💛
 >
@@ -376,7 +376,7 @@ docker compose up -d
 - إذا انقفل عليك حساب المالك:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - رقم الإصدار:

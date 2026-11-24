@@ -187,6 +187,12 @@ func (e *Explore) OnEvent(ev domain.Event) {
 		if ev.Actor.Kind == "user" && ev.Actor.ID > 0 {
 			e.MarkMemberStale(context.Background(), ev.Actor.ID, now)
 		}
+	case "signed_in":
+		// A member with no pool yet (the owner right after setup): build it
+		// now, so Explore is ready before the first visit.
+		if ev.Actor.Kind == "user" && ev.Actor.ID > 0 {
+			go e.firstFill(ev.Actor.ID)
+		}
 	case domain.EventTitleAdded:
 		kind := ""
 		if ev.TitleID != nil {
@@ -195,6 +201,20 @@ func (e *Explore) OnEvent(ev domain.Event) {
 		if kind == "movie" || kind == "show" {
 			e.markSwitchStale(context.Background(), kind, now.Add(exploreAddWait))
 		}
+	}
+}
+
+// firstFill queues the member's pools now when they have none at all.
+func (e *Explore) firstFill(member int64) {
+	ctx := context.Background()
+	day := engine.Day(e.Now())
+	for _, before := range []bool{false, true} {
+		if pool, _, err := e.ReadPool(ctx, member, "all", day, before); err != nil || pool != nil {
+			return
+		}
+	}
+	for _, sw := range ExploreSwitches {
+		e.QueuePool(PoolKey{member, sw}, e.Now(), false)
 	}
 }
 

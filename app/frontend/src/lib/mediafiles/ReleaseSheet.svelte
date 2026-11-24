@@ -2,35 +2,69 @@
 	// Sheet that lists the releases found for a title and lets the user pick or reject one.
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { keyReasons, verdict, verdictTone } from './releases.ts';
+	import { keyReasons, verdict, verdictTone, sortReleases, releaseSorts, resolutionsOf, resolutionWord, nameMatches, sourcesOf, languagesOf, type ReleaseSort } from './releases.ts';
+	import ReleaseTags from './ReleaseTags.svelte';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { api, message, ApiError } from '#lib/core/api.ts';
-	import { bytes } from '#lib/core/format.ts';
-	import type { Choice, ReleasePage, ReleaseView } from '#lib/core/types.ts';
+	import { bytes, agoLong } from '#lib/core/format.ts';
+	import type { Choice, LastSearch, ReleasePage, ReleaseView } from '#lib/core/types.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { chosenToast } from './chosen-toast.ts';
+	import { releasePage } from './release-link.ts';
+	import type { ReleaseCheck } from './releases.ts';
+	import type { Snippet } from 'svelte';
 
-	let { open = $bindable(false), titleId, name, scope = null, show = false, onchosen }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; show?: boolean; onchosen?: () => void } = $props();
+	// check: releases of a movie not in the Library yet; it loads, searches and picks in place of the title's own list, and head holds its choices.
+	let { open = $bindable(false), titleId, name, scope = null, show = false, onchosen, check, head }: { open?: boolean; titleId: number; name: string; scope?: { label: string; query: string; body: Record<string, unknown> } | null; show?: boolean; onchosen?: () => void; check?: ReleaseCheck; head?: Snippet } = $props();
 	// A show is searched by season or episode: the whole-show sheet lists what was found and says where to search.
 	const partOnly = $derived(show && !scope);
 
 	let releases = $state<ReleaseView[]>([]);
 	let total = $state(0);
+	let last = $state<LastSearch | null>(null);
 	let running = $state<number[]>([]);
+	let rulesChanged = $state(false);
 	let loading = $state(false);
 	let busyId = $state(0);
 	let confirmId = $state(0);
 	let filter = $state<'good' | 'all'>('good');
-	// Time of the last search start, so an empty list is not read as done too early.
-	let startedAt = 0;
+	// Sort is remembered on this device; resolution and name filters reset with the sheet.
+	const sortKey = 'holyarrs.releaseSort';
+	let sortBy = $state<ReleaseSort>(remembered());
+	let res = $state(0);
+	let q = $state('');
+	let src = $state('');
+	let lang = $state('');
+	let whyId = $state(0);
+	let limit = $state(100);
+	function remembered(): ReleaseSort {
+		try {
+			const v = localStorage.getItem(sortKey) as ReleaseSort | null;
+			return v && releaseSorts.includes(v) ? v : 'best';
+		} catch {
+			return 'best';
+		}
+	}
+	function setSort(v: ReleaseSort) {
+		sortBy = v;
+		try {
+			localStorage.setItem(sortKey, v);
+		} catch {
+			/* private window: the sort still works for this visit */
+		}
+	}
 
-	// Chosen first, then passed, then best rank. Good view hides failed and turned down ones.
+	// Good view hides failed and turned down ones; the resolution chip and name text narrow it further.
 	const sorted = $derived(
-		[...releases]
-			.filter((r) => filter === 'all' || (r.passed && r.state !== 'turned_down'))
-			.sort((a, b) => Number(b.outcome === 'chosen') - Number(a.outcome === 'chosen') || Number(b.passed) - Number(a.passed) || (a.rank || 999) - (b.rank || 999) || b.points - a.points)
+		sortReleases(
+			releases.filter((r) => (filter === 'all' || (r.passed && r.state !== 'turned_down')) && (!res || r.read?.resolution === res) && (!src || r.source_name === src) && (!lang || !!r.read?.languages?.includes(lang)) && (!q.trim() || nameMatches(r.name, q))),
+			sortBy
+		)
 	);
+	const resolutions = $derived(resolutionsOf(releases));
+	const sources = $derived(sourcesOf(releases));
+	const languages = $derived(languagesOf(releases));
 	const hidden = $derived(releases.length - releases.filter((r) => r.passed && r.state !== 'turned_down').length);
 
 	$effect(() => {
@@ -43,16 +77,29 @@
 		return () => clearInterval(t);
 	});
 
+	// Pick rules are often changed in another tab: look again on coming back so the verdicts are not stale.
+	$effect(() => {
+		if (!open) return;
+		const back = () => document.visibilityState === 'visible' && void load();
+		document.addEventListener('visibilitychange', back);
+		return () => document.removeEventListener('visibilitychange', back);
+	});
+
+	// Counts searches started, so a list asked for before one started does not drop its jobs.
+	let searches = 0;
 	async function load() {
 		loading = true;
+		const seen = searches;
 		try {
 			// Demo data only shows in dev builds.
-			const p = import.meta.env.DEV && new URLSearchParams(location.search).get('releases') === 'demo' ? demoPage(name) : await api.get<ReleasePage>(`/titles/${titleId}/releases?${scope ? scope.query + '&' : ''}limit=60&offset=0`);
+			const p = check ? await check.load() : import.meta.env.DEV && new URLSearchParams(location.search).get('releases') === 'demo' ? demoPage(name) : await api.get<ReleasePage>(`/titles/${titleId}/releases?${scope ? scope.query + '&' : ''}limit=${limit}&offset=0`);
 			releases = p.releases;
 			total = p.total;
-			// Keep our own job ids for a minute: the server may not list them yet.
-			const mine = Date.now() - startedAt < 60_000 && !p.releases.length ? running : [];
-			running = [...new Set([...(p.running_job_ids ?? []), ...mine])];
+			last = p.last_search ?? null;
+			rulesChanged = !!p.rules_changed;
+			// Jobs are written before the search answers, so the server's list is the truth
+			// unless a search started while this list was on its way.
+			running = seen === searches ? (p.running_job_ids ?? []) : [...new Set([...(p.running_job_ids ?? []), ...running])];
 		} catch (e) {
 			toasts.push(t('mediafiles.releaseSheet.loadFailed'), 'fail', { body: message(e) });
 		} finally {
@@ -61,9 +108,9 @@
 	}
 	async function search() {
 		try {
-			startedAt = Date.now();
-			const r = await api.post<{ job_ids: number[] }>(`/titles/${titleId}/search`, { ...(scope?.body ?? {}), choose: false });
-			running = [...new Set([...running, ...r.job_ids])];
+			searches++;
+			const ids = check ? await check.search() : (await api.post<{ job_ids: number[] }>(`/titles/${titleId}/search`, { ...(scope?.body ?? {}), choose: false })).job_ids;
+			running = [...new Set([...running, ...ids])];
 		} catch (e) {
 			toasts.push(t('mediafiles.title.startFailed'), 'fail', { body: message(e) });
 		}
@@ -73,6 +120,11 @@
 		if (r.needs_force && confirmId !== r.id) return void (confirmId = r.id);
 		busyId = r.id;
 		try {
+			if (check) {
+				await check.pick(r);
+				open = false;
+				return;
+			}
 			// Send the Slot the sheet was opened for; with none, the server picks the Version whose rules the Release fits.
 			const body: Record<string, unknown> = { force: r.needs_force };
 			if (typeof scope?.body.slot_id === 'number') body.slot_id = scope.body.slot_id;
@@ -103,6 +155,20 @@
 		}
 	}
 
+	// Blocks the release group in the Pick rules this title uses and turns this release down.
+	async function blockGroup(r: ReleaseView, group: string) {
+		busyId = r.id;
+		try {
+			await api.post(`/releases/${r.id}/turn-down`, { block_group: true });
+			toasts.push(t('mediafiles.releaseSheet.groupBlocked', { group }), 'ok', { body: t('mediafiles.releaseSheet.groupBlockedHint') });
+			await load();
+		} catch (e) {
+			toasts.push(t('mediafiles.releaseSheet.blockGroupFailed'), 'fail', { body: message(e) });
+		} finally {
+			busyId = 0;
+		}
+	}
+
 	// Sample releases for the dev demo view.
 	function demoPage(t: string): ReleasePage {
 		const n = t.replace(/[^A-Za-z0-9]+/g, '.');
@@ -128,29 +194,18 @@
 		return d < 1 ? t('mediafiles.releaseSheet.today') : d < 60 ? t('mediafiles.releaseSheet.days', { n: Math.round(d) }) : d < 365 ? t('mediafiles.releaseSheet.months', { n: Math.round(d / 30) }) : t('mediafiles.releaseSheet.years', { n: Math.round(d / 365) });
 	}
 
-	// Pull the quality tags out of a release name.
-	function tags(n: string): string[] {
-		const s = n.toLowerCase();
-		const out: string[] = [];
-		if (/2160p|\b4k\b|uhd/.test(s)) out.push('4K');
-		else if (/1080p/.test(s)) out.push('1080p');
-		else if (/720p/.test(s)) out.push('720p');
-		if (/dolby.?vision|\bdv\b|dovi/.test(s)) out.push('Dolby Vision');
-		else if (/hdr/.test(s)) out.push('HDR');
-		if (/remux/.test(s)) out.push('Remux');
-		else if (/blu-?ray|bdrip/.test(s)) out.push('BluRay');
-		else if (/web-?dl|webrip|\bweb\b/.test(s)) out.push('WEB');
-		if (/x265|h\.?265|hevc/.test(s)) out.push('x265');
-		if (/atmos/.test(s)) out.push('Atmos');
-		return out;
+	async function more() {
+		limit = Math.min(500, limit + 100);
+		await load();
 	}
 	// Lower weight shows first, so blockers come before ranking notes.
 	const weight: Record<string, number> = { fail: 0, hold: 1, rank: 2, warn: 3 };
 	const deciding = (r: ReleaseView) => keyReasons(r.reasons).sort((x, y) => (weight[x.effect] ?? 9) - (weight[y.effect] ?? 9)).slice(0, 2);
 </script>
 
-<Sheet bind:open title={t('mediafiles.releaseSheet.choose')} description={scope ? `${name} · ${scope.label}` : name} size="lg">
+<Sheet bind:open title={check ? t('discover.titleOwned.checkReleases') : t('mediafiles.releaseSheet.choose')} description={scope ? `${name} · ${scope.label}` : name} size="lg" steady>
 	<div class="rs" data-testid="release-sheet">
+		{@render head?.()}
 		<div class="rs-bar">
 			<div class="rs-seg" role="tablist">
 				<button type="button" role="tab" class:on={filter === 'good'} aria-selected={filter === 'good'} onclick={() => (filter = 'good')}>{t('mediafiles.releaseSheet.good')}</button>
@@ -158,6 +213,39 @@
 			</div>
 			{#if !partOnly}<button type="button" class="rs-search" disabled={running.length > 0} onclick={search}><Icon name="search" size={15} />{running.length ? t('mediafiles.releaseSheet.searchingDots') : t('mediafiles.releaseSheet.searchAgain')}</button>{/if}
 		</div>
+		{#if releases.length}
+			<div class="rs-tools">
+				<label class="rs-sort"><span>{t('mediafiles.releaseSheet.sortLabel')}</span>
+					<select value={sortBy} onchange={(e) => setSort(e.currentTarget.value as ReleaseSort)} data-testid="release-sort">
+						{#each releaseSorts as k (k)}<option value={k}>{t(`mediafiles.releaseSheet.sort.${k}`)}</option>{/each}
+					</select>
+				</label>
+				{#if resolutions.length > 1}
+					<div class="rs-chips" role="group" aria-label={t('mediafiles.releaseSheet.sort.quality')}>
+						<button type="button" class:on={!res} aria-pressed={!res} onclick={() => (res = 0)}>{t('mediafiles.releaseSheet.anyQuality')}</button>
+						{#each resolutions as n (n)}<button type="button" class:on={res === n} aria-pressed={res === n} onclick={() => (res = res === n ? 0 : n)}>{resolutionWord(n)}</button>{/each}
+					</div>
+				{/if}
+				{#if sources.length > 1}
+					<label class="rs-sort"><span class="sr-only">{t('mediafiles.releaseSheet.sourceLabel')}</span>
+						<select bind:value={src} data-testid="release-source">
+							<option value="">{t('mediafiles.releaseSheet.anySource')}</option>
+							{#each sources as n (n)}<option value={n}>{n}</option>{/each}
+						</select>
+					</label>
+				{/if}
+				{#if languages.length}
+					<label class="rs-sort"><span class="sr-only">{t('mediafiles.releaseSheet.languageLabel')}</span>
+						<select bind:value={lang} data-testid="release-language">
+							<option value="">{t('mediafiles.releaseSheet.anyLanguage')}</option>
+							{#each languages as l (l)}<option value={l}>{l.toUpperCase()}</option>{/each}
+						</select>
+					</label>
+				{/if}
+				<input class="rs-q" type="search" bind:value={q} placeholder={t('mediafiles.releaseSheet.filterName')} aria-label={t('mediafiles.releaseSheet.filterName')} data-testid="release-filter" />
+			</div>
+		{/if}
+		{#if rulesChanged && releases.length && !running.length}<div class="rs-run" role="status" data-testid="release-rules-changed"><Icon name="info" size={15} /><span>{t('mediafiles.releaseSheet.rulesChanged')}</span></div>{/if}
 		{#if running.length}<div class="rs-run" aria-live="polite"><span class="rs-spin" aria-hidden="true"></span>{t('mediafiles.releaseSheet.asking')}</div>{/if}
 
 		{#if loading && !releases.length}
@@ -165,48 +253,70 @@
 		{:else if !releases.length && !running.length}
 			<div class="rs-empty">
 				<Icon name="grid" size={28} />
-				<p><b>{t('mediafiles.releaseSheet.noSearch')}</b></p>
+				{#if last?.failed}
+					<p><b>{t('mediafiles.releaseSheet.searchFailed')}</b></p>
+					<p class="muted" data-testid="release-sheet-last">{t('mediafiles.releaseSheet.searchFailedHint', { when: agoLong(last.at) })}</p>
+				{:else if last?.dropped}
+					<p><b>{t('mediafiles.releaseSheet.allDropped')}</b></p>
+					<p class="muted" data-testid="release-sheet-last">{t('mediafiles.releaseSheet.allDroppedHint', { when: agoLong(last.at), sources: (last.dropped_sources ?? []).join(', '), n: last.dropped })}</p>
+				{:else if last}
+					<p><b>{t('mediafiles.releaseSheet.foundNone')}</b></p>
+					<p class="muted" data-testid="release-sheet-last">{t('mediafiles.releaseSheet.foundNoneHint', { when: agoLong(last.at) })}</p>
+				{:else}
+					<p><b>{t('mediafiles.releaseSheet.noSearch')}</b></p>
+				{/if}
 				{#if partOnly}
 					<p class="muted" data-testid="release-sheet-part">{t('mediafiles.releaseSheet.showPickPart', { choose: t('discover.titleOwned.chooseRelease') })}</p>
 				{:else}
-					<p class="muted">{t('mediafiles.releaseSheet.noSearchHint')}</p>
-					<button type="button" class="rs-primary" onclick={search}><Icon name="search" size={16} />{t('mediafiles.select.searchNow')}</button>
+					{#if !last}<p class="muted">{check ? t('mediafiles.releaseSheet.checkHint') : t('mediafiles.releaseSheet.noSearchHint')}</p>{/if}
+					<button type="button" class="rs-primary" onclick={search} data-testid="release-sheet-search"><Icon name="search" size={16} />{check ? t('discover.titleOwned.checkReleases') : t('mediafiles.select.searchNow')}</button>
 				{/if}
 			</div>
 		{:else}
 			<ul class="rs-list">
 				{#each sorted as r (r.id)}
 					{@const why = deciding(r)}
+					{@const page = releasePage(r.info_url)}
 					{@const best = r.outcome === 'chosen' && r.state !== 'chosen' && r.state !== 'turned_down'}
 					<li class="rs-row" class:best class:off={!r.passed || r.state === 'turned_down'} data-testid="release">
 						<div class="rs-main">
 							<p class="rs-tags">
 								{#if best}<span class="rs-rec">{t('mediafiles.releaseSheet.recommended')}</span>{/if}
-								{#each tags(r.name) as t (t)}<span class="rs-tag">{t}</span>{/each}
-								{#if !best && !(r.passed && r.outcome === 'passed_over' && r.state !== 'turned_down')}<span class="rs-verdict {verdictTone(r)}">{verdict(r)}</span>{/if}
+								<ReleaseTags release={r} />
+								{#if !best}<span class="rs-verdict {verdictTone(r)}" data-testid="verdict">{verdict(r)}</span>{/if}
 							</p>
-							<p class="rs-name" title={r.name}>{r.name}</p>
+							<p class="rs-name" title={r.name}>{#if page}<a class="rs-link" href={page} target="_blank" rel="noopener noreferrer" aria-label={t('mediafiles.releaseSheet.openPage', { name: r.name, source: r.source_name })} data-testid="release-page-link">{r.name}<Icon name="arrowUpRight" size={13} /></a>{:else}{r.name}{/if}</p>
 							<p class="rs-facts">
 								<span>{bytes(r.size)}</span>
 								{#if r.seeders != null}<span class:low={r.seeders < 5}>{t('mediafiles.release.seeders', { n: r.seeders })}</span>{/if}
 								<span>{r.source_name}</span>
+								<span>{r.protocol === 'usenet' ? 'Usenet' : 'Torrent'}</span>
+								{#if r.passed || r.points}<span data-testid="release-points">{t('mediafiles.release.points', { n: r.points })}</span>{/if}
 								{#if r.published_at}<span>{age(r.published_at)}</span>{/if}
 							</p>
-							{#each why as w, i (i)}<p class="rs-why {w.effect}">{serverWords(w.text)}</p>{/each}
+							{#if whyId === r.id || confirmId === r.id}
+								<ul class="rs-all" data-testid="release-reasons">{#each r.reasons as w, i (i)}<li class="rs-why {w.effect}">{serverWords(w.text)}</li>{/each}</ul>
+							{:else}
+								{#each why as w, i (i)}<p class="rs-why {w.effect}">{serverWords(w.text)}</p>{/each}
+							{/if}
+							{#if confirmId === r.id}<p class="rs-warn" role="alert">{t('mediafiles.releaseSheet.anywayWarn')}</p>{/if}
+							{#if r.reasons.length > why.length && confirmId !== r.id}<button type="button" class="rs-link rs-whybtn" aria-expanded={whyId === r.id} onclick={() => (whyId = whyId === r.id ? 0 : r.id)}>{whyId === r.id ? t('mediafiles.releaseSheet.whyHide') : t('mediafiles.releaseSheet.whyAll', { n: r.reasons.length })}</button>{/if}
 						</div>
 						<div class="rs-act">
 							{#if r.state === 'chosen'}
 								<span class="rs-sent"><Icon name="check" size={15} />{t('mediafiles.releaseSheet.sent')}</span>
 							{:else}
 								<button type="button" class="rs-choose" class:quiet={!best} class:warn={confirmId === r.id} disabled={busyId === r.id} onclick={() => choose(r)}>{confirmId === r.id ? t('mediafiles.releaseSheet.pickAnyway') : t('mediafiles.releaseSheet.pick')}</button>
-								{#if r.state !== 'turned_down'}<button type="button" class="rs-x" aria-label={t('mediafiles.releaseSheet.neverPick', { name: r.name })} title={t('mediafiles.releaseSheet.neverPickThis')} disabled={busyId === r.id} onclick={() => turnDown(r)}><Icon name="x" size={14} /></button>{/if}
+								{#if r.state !== 'turned_down' && !check}<button type="button" class="rs-x" aria-label={t('mediafiles.releaseSheet.neverPick', { name: r.name })} title={t('mediafiles.releaseSheet.neverPickThis')} disabled={busyId === r.id} onclick={() => turnDown(r)}><Icon name="x" size={14} /></button>{/if}
+								{#if r.state !== 'turned_down' && !check && r.read?.group}<button type="button" class="rs-x" aria-label={t('mediafiles.releaseSheet.blockGroup', { group: r.read.group })} title={t('mediafiles.releaseSheet.blockGroup', { group: r.read.group })} disabled={busyId === r.id} onclick={() => blockGroup(r, r.read?.group ?? '')} data-testid="release-block-group"><Icon name="declined" size={14} /></button>{/if}
 							{/if}
 						</div>
 					</li>
 				{:else}
-					<li class="rs-none muted">{t('mediafiles.releaseSheet.noMatches')}{#if hidden} <button type="button" class="rs-link" onclick={() => (filter = 'all')}>{t('mediafiles.releaseSheet.showHidden', { n: hidden })}</button>{/if}</li>
+					<li class="rs-none muted">{#if filter === 'good'}{t('mediafiles.releaseSheet.noMatches')}{' '}{#if hidden}<button type="button" class="rs-link" onclick={() => (filter = 'all')}>{t('mediafiles.releaseSheet.showHidden', { n: hidden })}</button>{/if}{:else}{t('mediafiles.releaseSheet.noFilterMatches')}{/if}</li>
 				{/each}
 			</ul>
+			{#if total > releases.length && limit < 500}<button type="button" class="rs-search rs-more" disabled={loading} onclick={more}>{t('mediafiles.releaseSheet.showMore', { shown: releases.length, total })}</button>{/if}
 		{/if}
 	</div>
 </Sheet>
@@ -233,14 +343,30 @@
 	.rs-main { flex: 1; min-width: 0; display: grid; gap: 6px; }
 	.rs-main p { margin: 0; }
 	.rs-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-	.rs-tag, .rs-rec, .rs-verdict { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; font: 700 11px/1 var(--font-ui); letter-spacing: .03em; }
-	.rs-tag { border: 1px solid color-mix(in srgb, var(--text) 28%, transparent); color: var(--text-muted); }
+	.rs-rec, .rs-verdict { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; font: 700 11px/1 var(--font-ui); letter-spacing: .03em; }
 	.rs-rec { background: var(--ok-fill); color: #fff; }
 	.rs-verdict { color: var(--text); background: color-mix(in srgb, var(--text) 7%, transparent); }
 	.rs-verdict.fail { color: var(--fail-text); background: color-mix(in srgb, var(--fail) 12%, transparent); }
 	.rs-verdict.wait { color: var(--wait-text); background: color-mix(in srgb, var(--wait) 14%, transparent); }
 	.rs-verdict.red { color: #fff; background: var(--accent-fill); }
-	.rs-name { font: 600 14px/1.35 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.rs-link { color: inherit; text-decoration: none; }
+	.rs-link :global(svg) { display: inline-block; vertical-align: -1px; margin-inline-start: 4px; opacity: 0.55; }
+	.rs-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+	.rs-link:hover :global(svg) { opacity: 1; }
+	.rs-link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
+	.rs-name { font: 600 14px/1.35 var(--font-ui); overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+	.rs-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+	.rs-sort { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font: 600 12.5px/1 var(--font-ui); }
+	.rs-sort select, .rs-q { height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); }
+	.rs-q { flex: 1 1 160px; min-width: 0; }
+	.rs-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+	.rs-chips button { height: 30px; padding: 0 12px; border: 1px solid color-mix(in srgb, var(--text) 18%, transparent); border-radius: 999px; background: none; color: var(--text); font: 600 12.5px/1 var(--font-ui); cursor: pointer; }
+	.rs-chips button.on { background: var(--text); color: var(--bg); border-color: transparent; }
+	.rs-all { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+	.rs-warn { color: var(--wait-text); font: 600 12.5px/1.35 var(--font-ui); }
+	.rs-whybtn { justify-self: start; font: 600 12.5px/1.35 var(--font-ui); }
+	.rs-more { justify-self: center; }
+	@media (pointer: coarse) { .rs-x { width: 44px; height: 44px; } .rs-choose, .rs-sort select, .rs-q { height: 44px; } .rs-chips button { height: 40px; } }
 	.rs-facts { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--text-muted); font: 500 12.5px/1.2 var(--font-ui); }
 	.rs-facts .low { color: var(--wait-text); }
 	.rs-why { color: var(--text-muted); font: 500 12.5px/1.35 var(--font-ui); }
@@ -257,7 +383,9 @@
 	.rs-empty p { margin: 0; max-width: 34ch; }
 	.rs-empty .rs-primary { margin-top: 12px; }
 	.rs-none { padding: 24px 4px; font: 500 14px/1.4 var(--font-ui); }
-	.rs-link { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
-	@media (max-width: 600px) { .rs-row { padding: 12px 12px 12px 14px; gap: 10px; } .rs-choose { padding: 0 14px; } }
+	.rs-link { padding: 0; border: 0; background: none; color: var(--accent-text); font: inherit; cursor: pointer; }
+	.rs-link.rs-whybtn { color: var(--text-muted); }
+	.rs-link.rs-whybtn:hover { color: var(--text); }
+	@media (max-width: 600px) { .rs-row { flex-direction: column; align-items: stretch; padding: 12px 12px 12px 14px; gap: 10px; } .rs-act { justify-content: flex-end; } .rs-name { -webkit-line-clamp: 4; line-clamp: 4; } .rs-choose { padding: 0 14px; } }
 	@media (prefers-reduced-motion: reduce) { .rs-spin, .rs-row.skel { animation: none; } }
 </style>

@@ -65,33 +65,33 @@ func TestFileShape_BazarrFields(t *testing.T) {
 		Quality: mediafiles.Quality{Resolution: 1080, Source: "web_dl", Audio: "AAC"}, Languages: []string{"en", "zz", "de"},
 		MediaInfo: map[string]any{"video_codec": "h264"}}
 	f.ID = 7
-	mf := mediaFileOf(f, "/tv", "Lab Show")
+	mf := mediaFileOf("sonarr", f, "/tv", "Lab Show")
 	if mf.RelativePath != "Season 01/e1.mkv" || mf.SceneName != scene || mf.Size != 5<<20 {
 		t.Errorf("file: %+v", mf)
 	}
 	if len(mf.Languages) != 2 || mf.Languages[0].Name != "English" || mf.Languages[1].Name != "German" {
 		t.Errorf("languages: %+v", mf.Languages)
 	}
-	if q := mf.Quality["quality"].(map[string]any); q["name"] != "WEBDL-1080p" || q["resolution"] != 1080 {
+	if q := mf.Quality["quality"].(wireQuality); q.Name != "WEBDL-1080p" || q.Resolution != 1080 || q.ID != 3 || q.Source != "web" {
 		t.Errorf("quality: %v", q)
 	}
 	if mf.MediaInfo["videoCodec"] != "h264" || mf.MediaInfo["audioCodec"] != "AAC" || mf.MediaInfo["resolution"] != "1920x1080" {
 		t.Errorf("media info: %v", mf.MediaInfo)
 	}
 	f.Quality.Codec, f.Quality.Audio, f.MediaInfo = "h265", "", map[string]any{}
-	if mf := mediaFileOf(f, "/tv", "Lab Show"); mf.MediaInfo["videoCodec"] != "h265" || mf.MediaInfo["audioCodec"] != nil {
+	if mf := mediaFileOf("sonarr", f, "/tv", "Lab Show"); mf.MediaInfo["videoCodec"] != "h265" || mf.MediaInfo["audioCodec"] != "" {
 		t.Errorf("parsed codec first: %v", mf.MediaInfo)
 	}
 	for src, want := range map[string]string{"remux": "Bluray-1080p Remux", "disc_image": "BR-DISK-1080p", "tv": "HDTV-1080p", "odd": "odd-1080p"} {
 		f.Quality.Source = src
-		if q := mediaFileOf(f, "/tv", "Lab Show").Quality["quality"].(map[string]any); q["name"] != want {
-			t.Errorf("%s: %v", src, q["name"])
+		if q := mediaFileOf("sonarr", f, "/tv", "Lab Show").Quality["quality"].(wireQuality); q.Name != want {
+			t.Errorf("%s: %v", src, q.Name)
 		}
 	}
-	if l := originalLanguage(nil); l.Name != "Unknown" {
+	if l := originalLanguage("sonarr", nil); l.Name != "Unknown" || originalLanguage("radarr", ptr("pl")).ID != 12 || originalLanguage("sonarr", ptr("ar")).ID != 26 {
 		t.Errorf("no original language: %+v", l)
 	}
-	if got := alternateTitles([]string{" Lab ", ""}); len(got) != 1 || got[0].Title != "Lab" {
+	if got := alternateTitles("sonarr", 1, []string{" Lab ", ""}); len(got) != 1 || got[0].Title != "Lab" || *got[0].SeasonNumber != -1 {
 		t.Errorf("alternate titles: %+v", got)
 	}
 }

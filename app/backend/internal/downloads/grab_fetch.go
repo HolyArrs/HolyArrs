@@ -36,7 +36,9 @@ func fetchGrabLink(ctx context.Context, raw string, limit int64, rt http.RoundTr
 // site's sign-in cookie (see sourceHeaderFor).
 func fetchGrabLinkHeader(ctx context.Context, raw string, limit int64, rt http.RoundTripper, localHost string, hdr http.Header) (file []byte, magnet string, err error) {
 	u, err := url.Parse(raw)
-	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
+	// plugin:// only through the plugin's own transport, which refuses any other plugin.
+	pluginLink := err == nil && u.Scheme == "plugin" && rt != nil
+	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https" && !pluginLink) {
 		return nil, "", errors.New("the Release file needs an http or https address without a sign-in")
 	}
 	d, home := outbound.PolicyDialer(grabAllow), outbound.PolicyDialer(outbound.NotMetadata)

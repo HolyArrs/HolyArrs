@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Скасувати",
 	"settings.schedules.stages": "Етапи",
 	"settings.schedules.stagesNote": "Призупини або перезапусти їх у <a>розділах</a>.",
-	"settings.schedules.allTime": "Постійно"
+	"settings.schedules.allTime": "Постійно",
+	"settings.schedules.skip.nothing": "Нічого робити",
+	"settings.schedules.skip.plexOff": "Вимкнено: увімкніть «{setting}» у розділі «{page}»",
+	"settings.schedules.skip.plexNobody": "Нічого робити: ніхто не ввімкнув свій список перегляду Plex",
+	"settings.schedules.skip.settingOff": "Вимкнено: увімкніть це в його налаштуваннях",
+	"settings.schedules.skip.starting": "Пропущено: HolyArrs ще запускався",
+	"settings.schedules.took": "Тривало {time}",
+	"settings.schedules.finished": "{label}: готово",
+	"settings.schedules.nothingToDo": "{label}: нічого робити",
+	"settings.schedules.runFailed": "{label}: помилка"
 }

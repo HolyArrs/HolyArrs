@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Desfer la importació {id}?",
 	"settings.move.undoQuestion": "Desfer aquesta importació?",
 	"settings.move.undoNote": "Elimina el que ha afegit aquesta importació; els canvis posteriors es mantenen. Baixa abans l'informe si el vols.",
-	"settings.move.undoMove": "Desfés la importació"
+	"settings.move.undoMove": "Desfés la importació",
+	"settings.move.continueSetup": "Continua la configuració",
+	"settings.move.backToChoose": "Torna a Tria"
 }

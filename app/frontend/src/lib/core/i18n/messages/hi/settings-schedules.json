@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "रद्द करें",
 	"settings.schedules.stages": "स्टेज",
 	"settings.schedules.stagesNote": "इन्हें <a>हिस्से</a> में रोकें या रीस्टार्ट करें।",
-	"settings.schedules.allTime": "हर समय"
+	"settings.schedules.allTime": "हर समय",
+	"settings.schedules.skip.nothing": "करने को कुछ नहीं",
+	"settings.schedules.skip.plexOff": "बंद: {page} में {setting} चालू करें",
+	"settings.schedules.skip.plexNobody": "करने को कुछ नहीं: किसी ने अपनी Plex वॉचलिस्ट चालू नहीं की है",
+	"settings.schedules.skip.settingOff": "बंद: इसे इसकी सेटिंग में चालू करें",
+	"settings.schedules.skip.starting": "छोड़ा गया: HolyArrs अभी शुरू हो रहा था",
+	"settings.schedules.took": "{time} लगा",
+	"settings.schedules.finished": "{label} पूरा हुआ",
+	"settings.schedules.nothingToDo": "{label}: करने को कुछ नहीं",
+	"settings.schedules.runFailed": "{label} विफल रहा"
 }

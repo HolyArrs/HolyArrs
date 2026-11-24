@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Cofnąć import {id}?",
 	"settings.move.undoQuestion": "Cofnąć ten import?",
 	"settings.move.undoNote": "Usuwa to, co dodał ten import; twoje późniejsze zmiany zostają. Jeśli chcesz, najpierw pobierz raport.",
-	"settings.move.undoMove": "Cofnij import"
+	"settings.move.undoMove": "Cofnij import",
+	"settings.move.continueSetup": "Kontynuuj konfigurację",
+	"settings.move.backToChoose": "Wróć do wyboru"
 }

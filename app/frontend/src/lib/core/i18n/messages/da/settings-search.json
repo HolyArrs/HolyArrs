@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Bedste kopi først; en sæsonpakke vinder, når de er lige gode",
 	"settings.search.preferAlways": "En sæsonpakke, så snart en består kvalitetssættet",
 	"settings.search.multi": "Tag Udgivelser med flere sæsoner",
-	"settings.search.multiHint": "Udfylder hvert manglende afsnit i den",
+	"settings.search.multiHint": "Udfylder hvert manglende afsnit i den. Ved samme kvalitet vinder udgivelsen med flere ønskede afsnit",
 	"settings.search.music": "Musik",
 	"settings.search.albums": "Søg også efter manglende albums",
 	"settings.search.albumsHint": "Udgivne albums, én søgning hver",

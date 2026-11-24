@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Batal",
 	"settings.schedules.stages": "Peringkat",
 	"settings.schedules.stagesNote": "Jeda atau mulakan semula dalam <a>Bahagian</a>.",
-	"settings.schedules.allTime": "Sepanjang masa"
+	"settings.schedules.allTime": "Sepanjang masa",
+	"settings.schedules.skip.nothing": "Tiada apa untuk dibuat",
+	"settings.schedules.skip.plexOff": "Mati: hidupkan {setting} dalam {page}",
+	"settings.schedules.skip.plexNobody": "Tiada apa untuk dibuat: tiada sesiapa menghidupkan senarai tontonan Plex mereka",
+	"settings.schedules.skip.settingOff": "Mati: hidupkannya dalam tetapannya",
+	"settings.schedules.skip.starting": "Dilangkau: HolyArrs masih bermula",
+	"settings.schedules.took": "Mengambil masa {time}",
+	"settings.schedules.finished": "{label} selesai",
+	"settings.schedules.nothingToDo": "{label}: tiada apa untuk dibuat",
+	"settings.schedules.runFailed": "{label} gagal"
 }

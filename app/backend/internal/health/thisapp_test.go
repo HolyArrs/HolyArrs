@@ -122,8 +122,8 @@ func TestUpdateNoticeOverHTTP(t *testing.T) {
 		t.Fatalf("check: %s", b)
 	}
 	do(t, "PUT", srv.URL+"/api/v1/settings/health", `{"every_minutes":5,"flap_guard":2,"low_space_mb":1024,"update_check_url":"`+feed.URL+`","update_check":false}`, 200)
-	if b := do(t, "POST", srv.URL+"/api/v1/app/update/check", "", 200); !strings.Contains(string(b), `"on":false`) || calls != 1 {
-		t.Fatalf("off: %d %s", calls, b)
+	if b := do(t, "POST", srv.URL+"/api/v1/app/update/check", "", 200); !strings.Contains(string(b), `"on":true`) || calls != 2 {
+		t.Fatalf("an old update_check field turned the check off: %d %s", calls, b)
 	}
 }
 

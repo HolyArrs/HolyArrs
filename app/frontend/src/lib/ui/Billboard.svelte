@@ -10,6 +10,8 @@
 	import { fromHandoff, openTheater, resumedPlaying, takeBack, theater, type TheaterHandoff } from '../core/trailer/theater.svelte.ts';
 	import { THEATER_CHROME_MS, THEATER_SHRINK_MS, viewTransitionName } from '../core/motion.ts';
 	import { minimalLook } from '../core/look.svelte.ts';
+	/** How long a hero picture may take before its title shows in its place. */
+	const ART_SLOW_MS = 6000;
 
 	let {
 		label,
@@ -148,10 +150,15 @@
 		return () => ctl.abort();
 	});
 
+	// A picture still not in after a while (a slow server): the title's name shows in its place, never an empty box; the picture still replaces it when it loads.
+	let artSlow = $state(false);
 	$effect(() => {
 		void pictures[0];
 		artLoaded = false;
 		artFailed = false;
+		artSlow = false;
+		const t = setTimeout(() => (artSlow = true), ART_SLOW_MS);
+		return () => clearTimeout(t);
 	});
 
 	// Two frames wait so the first paint is done before a trailer can start. 0.6 means mostly on screen.
@@ -194,7 +201,7 @@
 	{:else}
 	<div class="art" aria-hidden={!sources.length}>
 		{#if !art && (!pictures.length || artFailed || !artLoaded)}
-			<ArtPlaceholder name={!pictures.length || artFailed ? title : ''} shape="wide" loading={!!pictures.length && !artFailed} />
+			<ArtPlaceholder name={!pictures.length || artFailed || artSlow ? title : ''} shape="wide" loading={!!pictures.length && !artFailed && !artSlow} />
 		{/if}
 		{#if art}
 			{@render art()}

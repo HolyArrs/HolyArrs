@@ -17,12 +17,13 @@
 	});
 	const line = $derived(outcomeLine(o));
 	const note = $derived(outcomeNote(o));
+	const shown = $derived(o?.refused ? [] : (o?.sources ?? []));
 </script>
 
 {#if line}
 	<p class="outcome" data-testid="search-outcome">
 		{line}
-		{#each o?.sources ?? [] as s, i (s.id)}
+		{#each shown as s, i (s.id)}
 			<span>{i ? ', ' : ' '}<a href={to('/settings/sources/' + s.id)}>{s.name}</a> {whyWords(s.why)}</span>
 		{/each}
 		{#if note}<span data-testid="search-outcome-note"> · {note}</span>{/if}

@@ -237,7 +237,7 @@ func Gains(rel ReleaseFacts, rules PickRulesBody, cur *Current) bool {
 		return false
 	}
 	var v Verdict
-	v.better(rel, rules, cur, idx, sumPoints(rel.Parse, rules))
+	v.better(rel, rules, cur, idx, sumPoints(rel.Parse, rules), 0)
 	return !v.failed()
 }
 

@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Requests",
 	"settings.appearance.colRate": "Per row",
 	"settings.appearance.noRows": "No Explore rows counted yet.",
+	"settings.appearance.rowStats": "Explore rows",
+	"settings.appearance.rowStatsDesc": "Opens and requests per row in the last 30 days, everyone together. Counted on this server only.",
+	"settings.appearance.colRow": "Row",
+	"settings.appearance.row.because_have": "Like titles you have",
+	"settings.appearance.row.because_asked": "Like your requests",
+	"settings.appearance.row.person": "More from a person",
+	"settings.appearance.row.genre": "Genre picks for you",
+	"settings.appearance.row.popular_genre": "Popular by genre",
+	"settings.appearance.row.popular_decade": "Popular by decade",
+	"settings.appearance.row.decade": "By decade",
+	"settings.appearance.row.mood": "By mood",
+	"settings.appearance.row.hero": "Top banner",
 	"settings.appearance.motion": "Motion",
 	"settings.appearance.motionNote": "Follows your device's Reduce motion setting"
 }

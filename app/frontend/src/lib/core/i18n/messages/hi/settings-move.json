@@ -36,5 +36,7 @@
 	"settings.move.undoId": "इंपोर्ट {id} वापस लें?",
 	"settings.move.undoQuestion": "यह इंपोर्ट वापस लें?",
 	"settings.move.undoNote": "इस इंपोर्ट ने जो जोड़ा उसे हटाता है; आपके बाद के बदलाव रहते हैं। रिपोर्ट चाहिए तो पहले डाउनलोड कर लें।",
-	"settings.move.undoMove": "इंपोर्ट वापस लें"
+	"settings.move.undoMove": "इंपोर्ट वापस लें",
+	"settings.move.continueSetup": "सेटअप जारी रखें",
+	"settings.move.backToChoose": "चुनने पर वापस"
 }

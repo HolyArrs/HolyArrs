@@ -27,6 +27,9 @@ func TestSharedNamesOfABigLibraryAreQuick(t *testing.T) {
 	shows = append(shows, mediafiles.ShowName{ID: 1, Name: "The Harbour!", Year: 2021}, mediafiles.ShowName{ID: 2, Name: "S.W.A.T.", Year: 2015},
 		mediafiles.ShowName{ID: 3, Name: "Copper Valley", Year: 2015}, mediafiles.ShowName{ID: 3, Name: "Own Other Name", Year: 2015})
 	year := 2015
+	// The process-wide kept name forms (releasename.NameForms) fill on the
+	// first build; build once first so only the set itself is measured.
+	newSharedNames(shows)
 	var before, after runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&before)
@@ -119,9 +122,9 @@ func TestLibraryNamesFailedReadIsNotKept(t *testing.T) {
 	}
 }
 
-// A movie search asks a Source once, by the movie's name and year, and takes
-// nothing found under another name: other names are for shows.
-func TestNameSearches_MovieAsksNoOtherNames(t *testing.T) {
+// A movie search asks by the movie's name and year first, and by its other
+// name with the year only when that finds nothing.
+func TestNameSearches_MovieAsksOtherNameWithYear(t *testing.T) {
 	var mu sync.Mutex
 	var asks []url.Values
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
@@ -154,8 +157,8 @@ func TestNameSearches_MovieAsksNoOtherNames(t *testing.T) {
 			t.Fatal(err)
 		}
 		mu.Lock()
-		if len(asks) != 1 || asks[0].Get("q") != "Dune Part Two 2024" || st == string(mediafiles.SlotChosen) {
-			t.Fatalf("%v: want one search by the movie's name and nothing chosen, got %s after %v", params, st, asks)
+		if len(asks) != 2 || asks[0].Get("q") != "Dune Part Two 2024" || asks[1].Get("q") != "sand planet 2024" {
+			t.Fatalf("%v: want the movie's name, then its other name with the year, got %s after %v", params, st, asks)
 		}
 		mu.Unlock()
 	}

@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: sarkans punkts rāda, kam vajag uzmanību, un savienojuma tests nosauc precīzu problēmu.** Plex birkas pieprasītajiem nosaukumiem, nosaukumi jūsu valodā un vairāk nekā 30 labojumu. Savieno lietotnes caur MCP ar atslēgām, ko pārvaldi tu. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: vairāk nekā 150 labojumu un funkciju no 101 cilvēkiem.** Spraudņu sistēma, jauns iestatīšanas vednis un neiejaukšanās režīms, kas nekad neaiztiek tavus failus. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
 
 > Katrs plakāts, treileris un vērtējums tavā HolyArrs nāk no servera, ko es pats uzturu un apmaksāju, lai tas paliktu bezmaksas visiem. Ja HolyArrs ir padarījis filmu vakaru mazliet labāku, sponsors palīdz mums visiem uzturēt gaismu 💛
 >
@@ -374,7 +374,7 @@ Attēlā nav shell, tāpēc `docker exec -it holyarrs /bin/bash` nedarbosies. Ho
 - Nevari piekļūt īpašnieka kontam:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Versijas numurs:

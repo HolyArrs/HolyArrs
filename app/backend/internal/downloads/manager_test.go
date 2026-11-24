@@ -23,6 +23,7 @@ type world struct {
 	clock   time.Time
 	mu      sync.Mutex
 	topics  []string
+	sent    []any
 	finshed []int64
 	// failedSlots are the Slots OnFailed was told about; slept holds the grab
 	// spacing waits.
@@ -30,10 +31,11 @@ type world struct {
 	slept       []time.Duration
 }
 
-func (w *world) Publish(topic string, _ any) uint64 {
+func (w *world) Publish(topic string, data any) uint64 {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.topics = append(w.topics, topic)
+	w.sent = append(w.sent, data)
 	return 0
 }
 

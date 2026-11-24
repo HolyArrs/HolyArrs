@@ -108,6 +108,7 @@ func episodeTitles(ts []string) string {
 // pattern of the show's episode order, at most MaxComponent bytes.
 func EpisodeFile(s NamingSettings, f EpisodeFacts) string {
 	s.fillShows()
+	s = s.For(PartShows)
 	f.NameFacts = inLanguage(s, "show", f.NameFacts)
 	pat := s.EpisodePattern
 	switch {
@@ -123,6 +124,8 @@ func EpisodeFile(s NamingSettings, f EpisodeFacts) string {
 	vals["episode_title"] = episodeTitles(f.Titles)
 	vals["air_date"] = airDate(f.AirDate, s.AirDateStyle)
 	vals["absolute"] = absoluteCode(f.Absolute, s.AbsoluteDigits)
+	vals[keyEpisodes], vals[keyAbsolute] = numbers(f.Episodes), numbers(f.Absolute)
+	pat = oldEpisodeCode(pat)
 	ext := strings.ToLower(f.Ext)
 	name := capName(renderVals(s, pat, vals), MaxComponent-len(ext))
 	if name == "" {
@@ -135,6 +138,7 @@ func EpisodeFile(s NamingSettings, f EpisodeFacts) string {
 // off); season 0 goes to the specials folder.
 func SeasonFolder(s NamingSettings, season int) string {
 	s.fillShows()
+	s = s.For(PartShows)
 	if !s.SeasonFolders {
 		return ""
 	}
@@ -147,6 +151,7 @@ func SeasonFolder(s NamingSettings, season int) string {
 // ShowFolder renders a show folder name from the show folder pattern.
 func ShowFolder(s NamingSettings, f NameFacts) string {
 	s.fillShows()
+	s = s.For(PartShows)
 	f = inLanguage(s, "show", f)
 	name := capName(render(s, s.ShowFolderPattern, f), MaxComponent)
 	if name == "" {

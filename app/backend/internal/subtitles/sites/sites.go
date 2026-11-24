@@ -34,7 +34,10 @@ type Query struct {
 	// digits. It is empty when the file could not be read.
 	Hash string
 	// Size is the video file's size in bytes, sent with the hash. 0 when unknown.
-	Size      int64
+	Size int64
+	// File is the video's path on disk, for sites that hash it their own way.
+	// Empty when the file could not be read.
+	File      string
 	Languages []string // two-letter codes
 }
 
@@ -111,10 +114,16 @@ var Kinds = []Kind{
 		Note: "Needs your account: your Addic7ed user name and password; HolyArrs signs in itself. Shows only. Used gently (one call every 3 seconds at most, a daily cap); an anti-bot check makes it rest. Checked against fake pages only."},
 	{Kind: "yifysubtitles", Name: "YIFY Subtitles", DefaultURL: "https://yifysubtitles.ch", Movies: true,
 		Note: "Movies only, found by their IMDb id. No account. Checked against fake pages only."},
-	{Kind: "tvsubtitles", Name: "TVsubtitles", DefaultURL: "http://www.tvsubtitles.net", Shows: true,
-		Note: "Shows only. No account. The site has no https, so calls to it are not encrypted. Checked against fake pages only."},
+	{Kind: "tvsubtitles", Name: "TVsubtitles", DefaultURL: "https://www.tvsubtitles.net", Shows: true,
+		Note: "Shows only. No account. HolyArrs reads the home page first for the site's cookie and its current search page."},
 	{Kind: "bsplayer", Name: "BSPlayer", DefaultURL: "http://s1.api.bsplayer-subtitles.com", Movies: true, Shows: true, DefaultOff: true,
 		Note: "Movies and shows, matched by the video file's hash, so it needs the file on disk. No account. Starts turned off: the site is often down. Checked against fake replies only."},
+	{Kind: "napiprojekt", Name: "NapiProjekt", DefaultURL: "https://napiprojekt.pl", Movies: true, Shows: true,
+		Note: "Polish only. Movies and shows, matched by the video file's own hash, so it needs the file on disk. No account. Only the file's hash is sent, over https."},
+	{Kind: "napisy24", Name: "Napisy24", DefaultURL: "https://napisy24.pl", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"username", "password"},
+		Note: "Polish only. Movies and shows, matched by the video file's hash and size, so it needs the file on disk. Needs your account: your Napisy24 user name and password."},
+	{Kind: "assrt", Name: "Assrt", DefaultURL: "https://api.assrt.net/v1", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"api_key"},
+		Note: "Chinese subtitles, some with English. Needs your account: the free token from your assrt.net user page goes in API key. Searches by name, so it works best with release names in English. One call every 3 seconds at most by default."},
 	{Kind: "fake", Name: "Lab subtitle site", Movies: true, Shows: true, Lab: true, Note: "The lab's fake site, for tests."},
 	{Kind: "fake_account", Name: "Lab subtitle site with an account", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"api_key"}, Lab: true,
 		Note: "The lab's fake site asking for a key, for tests of sites that need your account."},
@@ -169,6 +178,12 @@ func New(kind string, cfg Config) (Site, error) {
 		return newTVSubs(c), nil
 	case "bsplayer":
 		return newBSPlayer(c), nil
+	case "napiprojekt":
+		return newNapiProjekt(c), nil
+	case "napisy24":
+		return newNapisy24(c), nil
+	case "assrt":
+		return newAssrt(c), nil
 	case "subdl":
 		c.keyHeader = "" // subdl takes the key in the query
 		return &subdl{c: c}, nil

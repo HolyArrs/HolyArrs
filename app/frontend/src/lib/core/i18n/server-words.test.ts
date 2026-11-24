@@ -51,6 +51,20 @@ describe('serverWords', () => {
 		for (const line of ['Popular drama', 'Out Nov 11', 'Added 3d ago', 'Season 2', 'Directing']) expect(serverWords(line)).toBe(line);
 	});
 
+	it("shows a Release's step and points reasons with the step named as the Pick rules page names it", () => {
+		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>(['./messages/de/server-lines.json', './messages/de/downloads.json'], { eager: true })).map((f) => f.default));
+		speak(de);
+		expect(serverWords('4K Blu-ray (2160p) is allowed')).toBe('4K Blu-ray (2160p) ist erlaubt');
+		expect(serverWords('SD from disc (DVD, Blu-ray) is not allowed in these Pick rules')).toBe(`${de['downloads.pr.steps.sd_dvd']} ist in diesen Auswahlregeln nicht erlaubt`);
+		expect(serverWords('reaches good enough, which starts at 1080p web')).toBe(`erreicht gut genug, das bei ${de['downloads.pr.steps.1080p_web']} beginnt`);
+		expect(serverWords('15 points')).toBe('15 Punkte');
+		expect(serverWords('15 points (needs at least 10)')).toBe('15 Punkte (mindestens 10 nötig)');
+		expect(serverWords('1 seeder, at least 1')).toBe('Seeder: 1, mindestens 1');
+		expect(serverWords('0 seeders, needs at least 3')).toBe('Seeder: 0, mindestens 3 nötig');
+		// A gap that is not a number leaves a line ending in "points" alone.
+		expect(serverWords('many points')).toBe('many points');
+	});
+
 	it('shows what a name turned into in the picked language', async () => {
 		const de = Object.assign({}, ...Object.values(import.meta.glob<{ default: Record<string, string> }>('./messages/de/server-lines.json', { eager: true })).map((f) => f.default));
 		speak(de);
@@ -208,6 +222,15 @@ describe('serverWords', () => {
 		expect(serverWords(line('Emby'))).toBe('حسابك متوقف على خادم Emby. اطلب ممن يدير الخادم أن يعيد تفعيله.');
 		speak(packs['./messages/ja/server-lines.json'].default);
 		expect(serverWords(line('Jellyfin'))).toBe('あなたのアカウントは、Jellyfin サーバーでオフになっています。サーバーの管理者に、オンに戻すよう依頼してください。');
+	});
+
+	it('says the Jellyfin or Emby server refused the sign-in without claiming why (#529)', () => {
+		const packs = import.meta.glob<{ default: Record<string, string> }>('./messages/{fr,de}/server-lines.json', { eager: true });
+		const line = (word: string) => `The ${word} server refused the sign-in. Your account may be turned off there, or not allowed to connect from this address. Ask the person who runs it.`;
+		speak(packs['./messages/fr/server-lines.json'].default);
+		expect(serverWords(line('Jellyfin'))).toBe("Le serveur Jellyfin a refusé la connexion. Votre compte y est peut-être désactivé, ou n'a pas le droit de se connecter depuis cette adresse. Demandez à la personne qui le gère.");
+		speak(packs['./messages/de/server-lines.json'].default);
+		expect(serverWords(line('Emby'))).toContain('Emby-Server');
 	});
 
 	it('shows a known line in the picked language', () => {

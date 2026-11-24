@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barOf, flipFrom, loadPosterDetail, needsAttention, savePosterDetail, tiltFor } from './poster.ts';
+import { barOf, flipFrom, loadPosterDates, loadPosterDetail, needsAttention, posterNote, posterYear, savePosterDates, savePosterDetail, tiltFor } from './poster.ts';
 import type { LibState } from './library-state.ts';
 
 const st = (key: LibState['key'], percent?: number): LibState => ({ key, label: key, tone: 'ok', icon: 'owned', pill: 'in_library', rank: 0, ...(percent !== undefined ? { percent } : {}) });
@@ -45,4 +45,34 @@ describe('poster detail', () => {
 describe('flipFrom', () => {
 	it('is null when nothing moved', () => expect(flipFrom({ left: 0, top: 0, width: 100 }, { left: 0, top: 0, width: 100 })).toBeNull());
 	it('inverts a move and a resize', () => expect(flipFrom({ left: 10, top: 300, width: 120 }, { left: 200, top: 0, width: 160 })).toBe('translate(-190px, 300px) scale(0.75)'));
+});
+
+describe('poster dates', () => {
+	it('shows the year until full dates are on', () => {
+		const m = { kind: 'movie', year: 2026, digital_date: '2026-03-14', cinema_date: '2026-01-02' };
+		expect(posterYear(m, false)).toBe('2026');
+		expect(posterYear(m, true)).toMatch(/2026/);
+		expect(posterYear(m, true)).not.toMatch(/14/);
+		expect(posterYear({ kind: 'movie', year: 2010, cinema_date: '2010-07-15', digital_date: '2020-08-13' }, true)).toMatch(/2010/);
+		expect(posterYear({ kind: 'movie', year: 2027, cinema_date: '2027-05-01' }, true)).toMatch(/2027/);
+		expect(posterYear({ kind: 'movie', year: 2027 }, true)).toBe('2027');
+		expect(posterYear({ kind: 'movie' }, true)).toBe('');
+		expect(posterYear({ kind: 'show', year: 2020, digital_date: '2020-02-02' }, true)).toBe('2020');
+		expect(posterYear({ kind: 'show', year: 2020, show: { next_air_date: '2026-12-03T00:00:00Z', last_air_date: '2026-11-26T00:00:00Z' } }, true)).toBe('2020');
+		expect(posterNote({ kind: 'show', show: { next_air_date: '2026-12-03T00:00:00Z' } }, false)).toBe('');
+		expect(posterNote({ kind: 'show', year: 2020, show: { next_air_date: '2026-12-03T00:00:00Z', last_air_date: '2026-11-26T00:00:00Z' } }, true)).toMatch(/^Next episode .*3/);
+		expect(posterNote({ kind: 'show', year: 2020, show: { last_air_date: '2026-11-26T00:00:00Z' } }, true)).toMatch(/^Last aired .*26/);
+		expect(posterNote({ kind: 'artist', year: 1999, artist: { last_release: '2024-05-17T00:00:00Z' } }, true)).toMatch(/^Newest release .*2024/);
+		expect(posterNote({ kind: 'artist', year: 1999, artist: {} }, true)).toBe('');
+		expect(posterNote({ kind: 'movie', cinema_date: '2026-01-02' }, true)).toBe('');
+	});
+	it('remembers the choice per person', () => {
+		const m = new Map<string, string>();
+		const store = { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
+		expect(loadPosterDates(1, store)).toBe(false);
+		savePosterDates(1, true, store);
+		expect(loadPosterDates(1, store)).toBe(true);
+		expect(loadPosterDates(2, store)).toBe(false);
+		expect(loadPosterDates(1, { getItem: () => { throw new Error('blocked'); }, setItem: () => {} })).toBe(false);
+	});
 });

@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "{what} তৈরি হচ্ছে… চেষ্টা {attempt}",
 	"core.testTag.connected": "সংযুক্ত",
 	"core.api.notAnswering": "HolyArrs সাড়া দিচ্ছে না। এটি চালু আছে কি না দেখুন।",
+	"core.api.tooSlow": "HolyArrs উত্তর দিতে বেশি সময় নিয়েছে। এক মিনিট পরে আবার চেষ্টা করুন।",
 	"core.api.requestFailed": "রিকোয়েস্ট ব্যর্থ হয়েছে ({status})",
 	"core.api.wentWrong": "কিছু একটা ভুল হয়েছে।",
 	"core.trailerMiss.trailer": "ট্রেলার",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "নিজে থেকে অনুমোদিত",
 	"core.plain.approvedBy": "{who} অনুমোদন করেছেন",
 	"core.settings.cantReach": "ওই ঠিকানায় পৌঁছানো যাচ্ছে না। ঠিকানাটি এবং অ্যাপ চালু আছে কি না দেখুন।",
+	"core.settings.tryHttp": "এই ঠিকানা https-এ সাড়া দেয় না। এর বদলে http:// দিয়ে চেষ্টা করুন।",
 	"core.settings.groupLibrary.label": "লাইব্রেরি",
 	"core.settings.groupLibrary.line": "টাইটেল যেখানে থাকে",
 	"core.settings.groupLibrary.about": "ফোল্ডার, অংশ, ডিফল্ট, সাবটাইটেল, ফাইলের নাম ও ইমপোর্ট।",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "দুটি ডাউনলোডার একই ডাউনলোড অ্যাপে পৌঁছায়, তাই ডাউনলোড দুবার দেখা যেতে পারে।",
 	"core.plain.peopleCheck": "মিডিয়া সার্ভারের ব্যবহারকারী তালিকা পড়া যাচ্ছে না, তাই সেখানে সরানো লোকদের এখানে বন্ধ করা হচ্ছে না।",
 	"core.plain.deleted": "মুছে ফেলা",
-	"core.plain.deletedName": "{name} (মুছে ফেলা)"
+	"core.plain.deletedName": "{name} (মুছে ফেলা)",
+	"core.api.handsOffFiles": "হ্যান্ডস-অফ মোড চালু, তাই HolyArrs ডাউনলোড করা ফাইলে হাত দেয় না। ফাইল ইমপোর্ট, নাম বদল, সরানো বা স্ক্যান করতে সেটিংসে এটি বন্ধ করুন।",
+	"core.api.handsOffSubtitles": "হ্যান্ডস-অফ মোড চালু, তাই HolyArrs ডাউনলোড করা ফাইল কখনো খোলে না। সাবটাইটেল ব্যবহার করতে সেটিংসে এটি বন্ধ করুন।"
 }

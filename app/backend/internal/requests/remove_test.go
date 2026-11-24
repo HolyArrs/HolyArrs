@@ -468,8 +468,8 @@ func TestRemoveOnlyNarrowsTheIDsSent(t *testing.T) {
 		}
 		ids = append(ids, res.Ask.ID)
 	}
-	setState(t, r, ids[0], "approved") // failed, shown
-	setState(t, r, ids[1], "approved") // failed, not shown
+	setState(t, r, ids[0], "approved")  // failed, shown
+	setState(t, r, ids[1], "approved")  // failed, not shown
 	setState(t, r, ids[2], "available") // was shown as failed, finished meanwhile
 	decidedAgo(t, r, ids[0], time.Hour)
 	decidedAgo(t, r, ids[1], time.Hour)

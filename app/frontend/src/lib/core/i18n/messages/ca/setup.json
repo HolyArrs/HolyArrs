@@ -8,10 +8,14 @@
 	"setup.fullPath": "Fes servir la ruta completa de la carpeta, com {path}.",
 	"setup.folderUsed": "Aquesta carpeta ja s'utilitza o es troba dins d'una que ja s'utilitza.",
 	"setup.folderMissing": "Aquesta carpeta no existeix. Comprova la ruta.",
-	"setup.addFolderOrOff": "Afegeix una carpeta o desactiva això.",
+	"setup.addFolderOrOff": "Afegeix una carpeta o prem «Omet-ho per ara».",
 	"setup.notAnswering": "HolyArrs no respon. Torna-ho a provar d'aquí a un moment.",
 	"setup.addUserPasswordHint": "Afegeix el nom d'usuari i la contrasenya.",
 	"setup.folders": "Carpetes",
 	"setup.downloader": "Gestor de baixades",
-	"setup.source": "Font"
+	"setup.source": "Font",
+	"setup.alertsNeedKeyOne": "Avisos: 1 necessita una clau",
+	"setup.alertsNeedKey": "Avisos: {n} necessiten una clau",
+	"setup.folderNoAccess": "HolyArrs no pot obrir aquesta carpeta. Comprova'n els permisos.",
+	"setup.folderCantUse": "HolyArrs no pot fer servir aquesta carpeta. Comprova el camí."
 }

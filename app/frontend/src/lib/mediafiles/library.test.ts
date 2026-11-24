@@ -139,7 +139,7 @@ describe('library letters and quiet states', () => {
 		});
 
 		it('never shows Failed to members', () => {
-			expect(posterStatus(title('A', 'failed'), 'staff')).toEqual({ kind: 'failed', label: 'Failed' });
+			expect(posterStatus(title('A', 'failed'), 'staff')).toEqual({ kind: 'failed', label: 'Failed — no reason recorded; open the title for details' });
 			expect(posterStatus(title('A', 'failed'), 'member')).toEqual({ kind: 'requested', label: 'Requested' });
 			expect(posterStatus({ ...title('A', 'failed'), asks: [{ state: 'approved' } as never] }, 'member')).toEqual({ kind: 'approved', label: 'Approved' });
 		});

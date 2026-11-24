@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"slices"
 	"strconv"
@@ -233,5 +234,43 @@ func TestSameSourceLine(t *testing.T) {
 	mv := l.move(t, Choices{})
 	if got := lineOf(t, mv.Report, "source:myjackett"); got.Result != ResAlready || got.Detail != "the same as MyJackett (Prowlarr), a Source that is here" {
 		t.Fatalf("line %+v", got)
+	}
+}
+
+// TestSameIndexerKeepsMultiLanguages: what MULTi means in each app comes
+// over on the one Source, whichever of them was read first.
+func TestSameIndexerKeepsMultiLanguages(t *testing.T) {
+	pr, so, ra := sameSetup()
+	so.Indexers[1].Settings["multiLanguages"] = []any{float64(2)}
+	ra.Indexers[1].Settings["multiLanguages"] = []any{float64(2), float64(4)}
+	for _, in := range [][]Input{{{1, pr}, {2, so}, {3, ra}}, {{2, so}, {3, ra}, {1, pr}}} {
+		jk := item(t, BuildPlan(in, Choices{}), GroupSources, "source:myjackett").Source
+		if !slices.Equal(jk.MultiLanguages, []string{"fr", "de"}) {
+			t.Fatalf("MULTi languages %v", jk.MultiLanguages)
+		}
+	}
+}
+
+// TestRemovedSourceIsNotTheSame: a Source removed here does not keep the
+// same indexer from coming over again.
+func TestRemovedSourceIsNotTheSame(t *testing.T) {
+	l := newMoveLab(t)
+	r := alreadyRun(t, l)
+	copied := Item{Key: "source:a", Name: "MyJackett (Prowlarr)", Source: &SourcePlan{Format: "torznab", Protocol: "torrent", URL: "http://prowlarr:9696/7/api", Priority: 25}}
+	if got, why := r.one(GroupSources, copied); got != ResCreated {
+		t.Fatalf("copy %s: %s", got, why)
+	}
+	own := Item{Key: "source:b", Name: "MyJackett", Source: &SourcePlan{Format: "torznab", Protocol: "torrent", URL: "http://jackett:9117/api/v2.0/indexers/x/results/torznab", Priority: 25, Through: []string{"http://prowlarr:9696/7/api"}}}
+	if got, why := r.one(GroupSources, own); got != ResAlready || why != "the same as MyJackett (Prowlarr), a Source that is here" {
+		t.Fatalf("own %s: %s", got, why)
+	}
+	if err := l.st.Write(r.ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE sources SET name = name || ' (removed ' || id || ')'")
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got, why := r.one(GroupSources, own); got != ResCreated {
+		t.Fatalf("after removing it %s: %s", got, why)
 	}
 }

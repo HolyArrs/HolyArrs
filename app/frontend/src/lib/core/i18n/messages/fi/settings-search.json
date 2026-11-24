@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Paras kopio ensin; kausipaketti voittaa tasatilanteessa",
 	"settings.search.preferAlways": "Kausipaketti aina, kun se läpäisee laatuasetuksen",
 	"settings.search.multi": "Ota usean kauden julkaisut",
-	"settings.search.multiHint": "Täyttää jokaisen siinä puuttuvan jakson",
+	"settings.search.multiHint": "Täyttää jokaisen siinä puuttuvan jakson. Samalla laadulla voittaa julkaisu, jossa on enemmän haluttuja jaksoja",
 	"settings.search.music": "Musiikki",
 	"settings.search.albums": "Hae myös puuttuvia albumeja",
 	"settings.search.albumsHint": "Julkaistut albumit, yksi haku kullekin",

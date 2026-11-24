@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Δημιουργία: {what}… προσπάθεια {attempt}",
 	"core.testTag.connected": "Συνδεδεμένο",
 	"core.api.notAnswering": "Το HolyArrs δεν απαντά. Ελέγξτε ότι εκτελείται.",
+	"core.api.tooSlow": "Το HolyArrs άργησε πολύ να απαντήσει. Δοκίμασε ξανά σε ένα λεπτό.",
 	"core.api.requestFailed": "Το αίτημα απέτυχε ({status})",
 	"core.api.wentWrong": "Κάτι πήγε στραβά.",
 	"core.trailerMiss.trailer": "τρέιλερ",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Αυτόματη έγκριση",
 	"core.plain.approvedBy": "Εγκρίθηκε από {who}",
 	"core.settings.cantReach": "Δεν είναι δυνατή η πρόσβαση σε αυτή τη διεύθυνση. Ελέγξτε τη και ότι η εφαρμογή εκτελείται.",
+	"core.settings.tryHttp": "Αυτή η διεύθυνση δεν απαντά σε https. Δοκίμασε http://.",
 	"core.settings.groupLibrary.label": "Βιβλιοθήκη",
 	"core.settings.groupLibrary.line": "Πού βρίσκονται οι τίτλοι",
 	"core.settings.groupLibrary.about": "Φάκελοι, ενότητες, προεπιλογές, υπότιτλοι, ονόματα αρχείων και εισαγωγή.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Δύο προγράμματα λήψης φτάνουν στην ίδια εφαρμογή, οπότε οι λήψεις μπορεί να εμφανίζονται δύο φορές.",
 	"core.plain.peopleCheck": "Η λίστα χρηστών του διακομιστή πολυμέσων δεν διαβάζεται, οπότε όσοι αφαιρούνται εκεί δεν απενεργοποιούνται εδώ.",
 	"core.plain.deleted": "διαγράφηκε",
-	"core.plain.deletedName": "{name} (διαγράφηκε)"
+	"core.plain.deletedName": "{name} (διαγράφηκε)",
+	"core.api.handsOffFiles": "Η λειτουργία χωρίς παρέμβαση είναι ενεργή, οπότε το HolyArrs δεν αγγίζει τα ληφθέντα αρχεία. Απενεργοποιήστε την στις Ρυθμίσεις για εισαγωγή, μετονομασία, μετακίνηση ή σάρωση αρχείων.",
+	"core.api.handsOffSubtitles": "Η λειτουργία χωρίς παρέμβαση είναι ενεργή, οπότε το HolyArrs δεν ανοίγει ποτέ τα ληφθέντα αρχεία. Απενεργοποιήστε την στις Ρυθμίσεις για να χρησιμοποιήσετε υπότιτλους."
 }

@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "அடுத்து எதைக் கோருவது எனத் தேர்ந்தெடுங்கள்",
 	"home.newPopular": "புதியவை & பிரபலமானவை",
 	"home.whatSTrending": "இப்போது பிரபலமானவை",
+	"home.gettingReady": "தயார்செய்கிறது…",
 	"home.top10sAndComing": "முதல் 10 பட்டியல்களும் விரைவில் வருபவையும்",
 	"home.whatSNext": "அடுத்து என்ன",
 	"home.airDatesAndReleases": "ஒளிபரப்பு, வெளியீட்டு தேதிகள்",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "இந்த வாரம் வரும் எபிசோடுகளும் திரைப்படங்களும்",
 	"home.popularThisWeek": "இந்த வாரம் வரும் பிரபல வெளியீடுகள்",
 	"home.peopleCheck": "நபர் சரிபார்ப்பு",
-	"home.cantReadUsers": "பயனர் பட்டியலைப் படிக்க முடியவில்லை"
+	"home.cantReadUsers": "பயனர் பட்டியலைப் படிக்க முடியவில்லை",
+	"home.joined.title": "வரவேற்கிறோம், {name}",
+	"home.joined.find": "{explore} அல்லது {search} இல் ஏதாவது தேடுங்கள்.",
+	"home.joined.ask": "பெற ஒரு தலைப்பில் {request} தட்டுங்கள். நீங்கள் கேட்கலாம்:",
+	"home.joined.track": "ஒவ்வொன்றையும் {requests} இல் பின்தொடருங்கள்.",
+	"home.joined.noLimit": "வாராந்திர வரம்பு இல்லை.",
+	"home.joined.gotIt": "புரிந்தது",
+	"home.joined.explore": "{explore} திற"
 }

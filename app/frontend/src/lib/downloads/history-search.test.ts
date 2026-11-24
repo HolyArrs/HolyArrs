@@ -1,3 +1,4 @@
+import { bytes } from '../core/format.ts';
 import { eventText } from './history-lines.ts';
 import { dropAiTwins, agoShort, canFind, findTarget, rowLinks, dateLabel, isProblem, isRoutine, rowExtra, rowStep, searchSteps, stepVerb, filterVerb, dirQuery, readSearch, searchChips, stepKinds, textMatches, toggleStep, typeMatches, whoMatches } from './history-search.ts';
 import { downloadSteps, type HistoryRow } from './history.ts';
@@ -94,6 +95,11 @@ describe('search look rows', () => {
 		expect(rowExtra(placed, rowStep(placed))).toBe('Nothing could be placed');
 		const imp = dl(ev('import_done', { Data: { size_bytes: 2_000_000_000 } }), ev('download_sent'));
 		expect(rowExtra(imp, rowStep(imp))).toMatch(/GB/);
+		// A past download brought from an old app says where it came from.
+		const old = one(ev('import_done', { TitleID: 1, Data: { size: 8_053_063_680, moved_from: 'Radarr' } }));
+		expect(rowExtra(old, rowStep(old))).toBe(`${bytes(8_053_063_680)} · From Radarr`);
+		const oldFail = one(ev('download_failed', { TitleID: 1, Data: { reason: 'Unpacking failed', moved_from: 'Sonarr' } }));
+		expect(rowExtra(oldFail, rowStep(oldFail))).toMatch(/ · From Sonarr$/);
 		const sub = one(ev('subtitle_saved', { Data: { language: 'en' } }));
 		expect(rowExtra(sub, rowStep(sub))).toBe('en');
 		const bad = dl(ev('download_failed', { Data: { reason: 'Tracker said no.' } }), ev('download_sent'));
@@ -214,10 +220,19 @@ describe('history detail actions', () => {
 		expect(links[0].label).toBe('Title page');
 		expect(rowLinks(row(ev('ask_made'))).map((l) => l.key)).toEqual(['requests']);
 		expect(rowLinks(row(ev('signed_in')))).toEqual([]);
+		// A replaced copy is one click away, in Recently deleted for its title.
+		const kept = rowLinks(row(ev('file_replaced', { TitleID: 5 })));
+		expect(kept.filter((l) => l.key === 'deleted').map((l) => [l.label, l.href])).toEqual([['Recently deleted', '/library/deleted?title=5']]);
 		expect(rowLinks(row(ev('ask_made', { Data: { ask_id: 12 } })))[0].href).toBe('/requests?ask=12');
 		expect(rowLinks(row(ev('import_done', { Data: { download_id: 3 } })))[0].href).toBe('/downloads?open=3');
 		const plan = rowLinks(row(ev('needs_decision', { SlotID: 8, title_name: 'Arrival' })), '/library/4');
 		expect(plan.map((l) => [l.label, l.href])).toEqual([['Import plan', '/downloads?slot=8'], ['Title page', '/library/4']]);
+	});
+	it('does not open a removed download that has left the Downloads list', () => {
+		expect(rowLinks(row(ev('download_removed', { DownloadID: 7, Data: { state: 'cleaned' } }))).map((l) => l.href)).toEqual(['/downloads']);
+		expect(rowLinks(row(ev('download_not_removed', { DownloadID: 7, Data: { state: 'cleaned' } }))).map((l) => l.href)).toEqual(['/downloads']);
+		// Clearing an imported job leaves its download row on the page.
+		expect(rowLinks(row(ev('download_removed', { DownloadID: 7, Data: { state: 'finished' } }))).map((l) => l.href)).toEqual(['/downloads?open=7']);
 	});
 });
 
@@ -249,5 +264,33 @@ describe('row step marks in the Filter words', () => {
 	it('names a grouped download by its furthest step', () => {
 		const events = [ev('download_seeding'), ev('import_done'), ev('download_sent')];
 		expect(mark({ key: 'd', head: events[0], events, steps: downloadSteps(events) })).toBe('Imported');
+	});
+});
+
+describe('subtitle outcomes in History', () => {
+	const one = (e: EventRecord): HistoryRow => ({ key: `e${e.ID}`, head: e, events: [e], steps: [] });
+	const mark = (r: HistoryRow) => filterVerb(r, eventText(r.head, { titles: new Map() }).tag);
+	// Subtitled counts only a subtitle file written beside the video.
+	it.each([
+		['subtitle_saved', 'Subtitled', true, false],
+		['subtitle_upgraded', 'Subtitled', true, false],
+		['subtitle_synced', 'Subtitled', true, false],
+		['subtitle_translated', 'Subtitled', true, false],
+		['subtitle_cleaned', 'Subtitled', true, false],
+		['subtitle_none_good_enough', 'None passed', false, false],
+		['subtitle_site_paused', 'Paused', false, false],
+		['subtitle_held', 'Held', false, false],
+		['subtitle_turned_down', 'Turned down', false, false],
+		['subtitle_failed', 'Failed', false, true],
+		['subtitle_translate_failed', 'Failed', false, true]
+	])('%s reads %s', (kind, word, subtitled, failed) => {
+		const v = mark(one(ev(kind, { Data: { language: 'en' } })));
+		expect(v.word).toBe(word);
+		expect(v.tone === 'fail').toBe(failed);
+		expect(stepKinds(['subtitles']).includes(kind)).toBe(subtitled);
+	});
+	it('files a paused subtitle site under Health, not Subtitled', () => {
+		expect(isProblem('subtitle_site_paused')).toBe(true);
+		expect(stepKinds(['subtitles'])).not.toContain('subtitle_*');
 	});
 });

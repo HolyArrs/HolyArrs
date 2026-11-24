@@ -28,10 +28,8 @@ type Settings struct {
 	// releases answer, JSON with tag_name or version, or plain text);
 	// empty uses UpdateCheckDefault.
 	UpdateCheckURL string `json:"update_check_url"`
-	// UpdateCheck turns the update check on or off (off: no request at
-	// all); UpdateCheckLocal lets the feed be on the local network. Nil in
-	// a change keeps the current value.
-	UpdateCheck      *bool `json:"update_check,omitempty"`
+	// UpdateCheckLocal lets the feed be on the local network. Nil in a
+	// change keeps the current value. The update check is always on.
 	UpdateCheckLocal *bool `json:"update_check_local,omitempty"`
 	// UpdatePrerelease lets a pre-release (v1.2.0-rc1) give a notice;
 	// default off. Nil in a change keeps the current value.
@@ -48,7 +46,6 @@ type Settings struct {
 // settings; the updates module reads them.
 const (
 	settingUpdateURL   = "update_check_url"
-	settingUpdateOn    = "update_check"
 	settingUpdateLocal = "update_check_local"
 	settingUpdatePre   = "update_prerelease"
 	settingUpdateDays  = "update_check_every_days"
@@ -65,13 +62,13 @@ func ReadSettings(ctx context.Context, s *database.Store, defaultFeed string) (S
 	e := &Engine{Store: s}
 	out := Settings{FlapGuard: e.intSetting(ctx, settingGuard, 2, 1, 20), LowSpaceMB: e.intSetting(ctx, settingLowMB, 1024, 0, 1<<24),
 		UpdateCheckURL: e.setting(ctx, settingUpdateURL), EveryMinutes: 5, UpdateCheckDefault: defaultFeed}
-	on, local := e.setting(ctx, settingUpdateOn) != "off", e.setting(ctx, settingUpdateLocal) == "true"
+	local := e.setting(ctx, settingUpdateLocal) == "true"
 	pre := e.setting(ctx, settingUpdatePre) == "true"
 	days := e.intSetting(ctx, settingUpdateDays, 1, 1, 30)
 	if !slices.Contains(updateDays, days) {
 		days = 1
 	}
-	out.UpdateCheck, out.UpdateCheckLocal, out.UpdatePrerelease, out.UpdateCheckEveryDays = &on, &local, &pre, &days
+	out.UpdateCheckLocal, out.UpdatePrerelease, out.UpdateCheckEveryDays = &local, &pre, &days
 	var every int
 	err := s.Read().QueryRowContext(ctx, "SELECT every_seconds FROM schedules WHERE kind = ?", KindCheck).Scan(&every)
 	if err == nil && every > 0 {
@@ -101,9 +98,6 @@ func SaveSettings(ctx context.Context, s *database.Store, in Settings, by domain
 	byText, _ := json.Marshal(by)
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		vals := map[string]string{settingGuard: strconv.Itoa(in.FlapGuard), settingLowMB: strconv.Itoa(in.LowSpaceMB), settingUpdateURL: in.UpdateCheckURL}
-		if in.UpdateCheck != nil {
-			vals[settingUpdateOn] = map[bool]string{true: "on", false: "off"}[*in.UpdateCheck]
-		}
 		if in.UpdatePrerelease != nil {
 			vals[settingUpdatePre] = strconv.FormatBool(*in.UpdatePrerelease)
 		}

@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
-	import { SigninBrand, SigninTheme, liftAboveKeyboard, SigninCode, SigninHelp, SigninLoginForm, SigninPerson, SigninRecent, SigninServerForm, SigninTiles, SigninWait, plexSignIn, safeNext, SigninBackdrop, SigninPortals, SIGNIN_GL_EVENT, providerTiles, type Way, forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay, pixelIn, blockDissolve, siteCell, theme } from '#lib/accounts/index.ts';
+	import Confirm from '#lib/ui/Confirm.svelte';
+	import { SigninBrand, SigninTheme, liftAboveKeyboard, SigninCode, SigninHelp, SigninForgot, SigninLoginForm, SigninPerson, SigninRecent, SigninServerForm, SigninTiles, SigninWait, signInNext, takeHandoff, staggerParts, focusFirstField, focusStepIn, SigninBackdrop, SigninPortals, SIGNIN_GL_EVENT, createSigninWays, providerTiles, type Way, forgetPerson, keepPersonPic, recentPeople, rememberPerson, type RecentPerson, type RecentWay, pixelIn, blockDissolve, siteCell, theme } from '#lib/accounts/index.ts';
+	import { SetupBar, phasesFor, PickLanguage, createSetupSignin, setupSaved, forgetSetup, passwordProblem, uploadAvatar, saveAccount, SetupIntro } from '#lib/setup/index.ts';
 	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { to } from '#lib/core/paths.ts';
 	import { loaderReady, playHandoff, playSignIn, SIGNIN_HOLD_MS, VEIL_MS } from '#lib/core/loader.ts';
-	import { ApiError, message } from '#lib/core/api.ts';
-	import { session, type FoundServer, type SignInResult } from '#lib/core/session.svelte.ts';
+	import { ApiError, api, message } from '#lib/core/api.ts';
+	import { session, type SignInResult } from '#lib/core/session.svelte.ts';
 
 	const MIN_LENGTH = $derived(session.s.minPassword);
-
 	let name = $state('');
 	// People who signed in on this device, with the way each one used.
 	let recent = $state<RecentPerson[]>([]);
@@ -20,16 +21,7 @@
 	let editing = $state(false);
 	// The way's name for people: Password, Plex, Jellyfin, Emby, Single sign-on.
 	const wayName = (w: RecentWay) => (w === 'oidc' ? t('accounts.tiles.sso') : w === 'password' ? t('accounts.signin.passwordLabel') : w.slice(0, 1).toUpperCase() + w.slice(1));
-	// After a view change the pressed button is gone, so focus would drop to the page: move it to the new step's first control. Touch screens are left alone (focusing a field there pops the keyboard).
-	function focusStep() {
-		if (!matchMedia('(pointer: fine)').matches && document.documentElement.dataset.input !== 'keyboard') return;
-		void tick().then(() => {
-			for (const s of ['.digit', '#otp', '#addr', '#name', '#password', '.acct-pick', '.step button']) {
-				const el = panelEl?.querySelector<HTMLElement>(s);
-				if (el) return el.focus({ preventScroll: true });
-			}
-		});
-	}
+	const focusStep = () => focusStepIn(() => panelEl);
 	function openPerson(i: number) {
 		editing = false;
 		acct = i;
@@ -57,6 +49,7 @@
 	let pw = $state('');
 	let pwAgain = $state('');
 	let error = $state('');
+	let forgot = $state(false);
 	let busy = $state(false);
 	// Counts failed sign-ins; each new one shakes and flickers the pressed button.
 	let failN = $state(0);
@@ -71,23 +64,52 @@
 	// Set once the first step passed and a two-factor code is needed.
 	let ticket = $state('');
 	let otp = $state('');
-	let plexWaiting = $state(false);
-	let ssoFinishing = $state(false);
-	let plexRun: { stop: () => void } | undefined;
+	const ways = createSigninWays({
+		set error(v: string) { error = v; },
+		set busy(v: boolean) { busy = v; },
+		set lastWay(v: Way | '') { lastWay = v; },
+		set firstRun(v: boolean) { firstRun = v; },
+		get mode() { return mode; },
+		get panelEl() { return panelEl; },
+		took,
+		failed,
+		pick,
+	});
 
-	const mode = $derived(session.s.state === 'needs_setup' ? 'setup' : ticket ? 'code' : 'login');
-	// First run: which way makes the owner. 'choose' shows them all; Plex signs in from its tile, the others open their form.
-	type SetupWay = 'password' | 'plex' | 'jellyfin' | 'emby';
-	let setupWay = $state<'choose' | 'password' | 'jellyfin' | 'emby'>('choose');
-	const setupName = (w: SetupWay) => (w === 'password' ? t('accounts.signin.passwordLabel') : w.charAt(0).toUpperCase() + w.slice(1));
-	const setupTiles = $derived((['password', 'plex', 'jellyfin', 'emby'] as const).filter((w) => session.s.setupWays.includes(w)));
-	const setupServer = $derived(setupWay === 'jellyfin' || setupWay === 'emby' ? setupWay : null);
-	// The Jellyfin or Emby server's address, and the servers that answered on the network.
-	let address = $state('');
-	let found = $state<FoundServer[]>([]);
-	let looking = $state(false);
-	let looked = false;
-	const foundHere = $derived(found.filter((f) => f.kind === setupServer));
+	// Back from the wizard's first step: the account step again, still signed in, to change the saved account (?setup=account&edit=1).
+	// Once the owner exists and this browser is signed in, the account step always edits it (never Create account); justMade covers the moment the account step itself made the owner.
+	const editAsked = page.url.searchParams.get('setup') === 'account';
+	let justMade = $state(false);
+	const editAcct = $derived(editAsked && !justMade && session.s.state === 'signed_in' && session.s.setupOpen);
+	let editLoaded = false;
+	// What the edit form opened with: nothing changed means nothing to save.
+	let loadedAcct: { name: string; display: string } | null = null;
+	// The account change needs a fresh password (the sign-in is older than setup's window).
+	let needProof = $state(false);
+	$effect(() => {
+		if (!editAcct || editLoaded) return;
+		editLoaded = true;
+		void api.get<{ username: string; display_name: string }>('/my/profile').then(
+			(p) => {
+				name = p.username;
+				displayName = p.display_name || p.username;
+				loadedAcct = { name: name, display: displayName };
+			},
+			() => ((name = session.s.name ?? ''), (displayName = name), (loadedAcct = { name, display: displayName })) // Not loaded: the signed-in name, never an empty one.
+		).finally(() => (editReady = true));
+	});
+	// A submit right as the account step opens (the Enter that pressed Get started) is not the person's.
+	let acctShownAt = 0;
+	$effect(() => {
+		if (mode === 'setup' && setup.welcomed) acctShownAt = Date.now();
+	});
+	// The saved values are in before the form shows, so it opens filled.
+	let editReady = $state(false);
+	let avatarGone = $state(false);
+	let madeOwner = $state(false); // keeps Create account up while the new owner's session opens: no sign-in card flash
+	const mode = $derived(session.s.state === 'needs_setup' || editAcct || madeOwner ? 'setup' : ticket ? 'code' : 'login');
+	// Waits for the picture upload before leaving for the wizard.
+	let holdLeave = $state(false);
 	// How the owner was made, for remembering them on this device.
 	let firstRunWay: RecentWay | '' = '';
 	const waiting = $derived(Math.max(0, Math.ceil((waitUntil - now) / 1000)));
@@ -99,8 +121,39 @@
 	const via = $derived(chosen === 'choose' && (formOn || !outside.length) ? 'password' : chosen);
 	// Remembered people whose way is on now.
 	const shown = $derived(recent.filter((p) => session.s.ways.includes(p.way)));
+	// The owner exists but first-run setup is not finished: sign-in stays the setup's Sign in step (step bar, owner only, no account list) until it is.
+	const setupSignin = $derived(mode !== 'setup' && session.s.setupPending);
+	const setup = createSetupSignin({
+		welcomed: page.url.searchParams.get('out') === '1' || page.url.searchParams.get('setup') === 'account',
+		get mode() { return mode; },
+		get editAcct() { return editAcct; },
+		get name() { return name; },
+		get displayName() { return displayName; },
+		get error() { return error; },
+		set error(v) { error = v; },
+		get pw() { return pw; },
+		set pw(v) { pw = v; },
+		set pwAgain(v: string) { pwAgain = v; },
+		set lastWay(v: Way | '') { lastWay = v; },
+		set busy(v: boolean) { busy = v; },
+		set firstRun(v: boolean) { firstRun = v; },
+		set firstRunWay(v: RecentWay | '') { firstRunWay = v; },
+		wayWord,
+		focusStep,
+		press: (w: Way) => ways.press(w),
+		pick,
+		failed,
+	});
+	let displayName = $state('');
+	{
+		const kept = setupSaved();
+		if (kept?.name) name = kept.name;
+		if (kept?.display) displayName = kept.display;
+	}
+	// The owner's picture, picked on the account step; sent once the account exists.
+	let avatarFile = $state<File | null>(null);
 	const acctView = $derived(
-		mode !== 'login' || !shown.length || acct === 'new' ? 'none' : acct === 'list' || (acct === 'auto' && shown.length > 1) ? 'list' : 'person'
+		mode !== 'login' || setupSignin || !shown.length || acct === 'new' ? 'none' : acct === 'list' || (acct === 'auto' && shown.length > 1) ? 'list' : 'person'
 	);
 	const person = $derived(acctView === 'person' ? (shown[typeof acct === 'number' ? acct : 0] ?? shown[0]) : null);
 	// A chosen person fills the name and way the form signs in with.
@@ -117,21 +170,26 @@
 	// The round back button in the panel's corner, when there is somewhere to go back to.
 	const backTo = $derived.by(() => {
 		if (mode === 'code') return { label: t('accounts.login.backToSignIn'), go: restart };
-		if (mode === 'setup') return setupWay !== 'choose' ? { label: t('accounts.login.otherWays'), go: () => setupPick('choose') } : null;
+		// Welcome goes back to the language step, for a new owner and for one editing their account during setup.
+		const toLang = setup.langDone ? { label: t('welcome.back'), go: setup.backToLang } : null;
+		if (editAcct) return setup.welcomed ? { label: t('welcome.back'), go: () => { setup.welcomed = false; focusStep(); } } : toLang;
+		if (mode === 'setup') return setup.welcomed ? { label: t('welcome.back'), go: () => { setup.welcomed = false; focusStep(); } } : toLang;
+		if (setupSignin && mode === 'login') return setup.ownerWays ? null : chosen !== 'choose' && outside.length ? { label: t('accounts.login.otherWays'), go: () => pick('choose') } : { label: t('welcome.back'), go: () => ((setup.ownerWays = true), focusStep()) };
 		if (mode !== 'login' || !shown.length) return null;
 		if (acctView === 'list' && shown.length === 1) return { label: t('accounts.login.backTo', { name: shown[0].name }), go: () => openPerson(0) };
 		if ((acctView === 'person' && shown.length > 1) || acct === 'new') return { label: t('accounts.login.allAccounts'), go: showList };
 		return null;
 	});
 	// One key per step: the panel's content rises in when it changes.
-	const step = $derived(plexWaiting ? 'plex' : `${mode}-${mode === 'setup' ? setupWay : via}-${acctView}-${person?.name ?? ''}`);
+	const step = $derived(forgot ? 'forgot' : ways.plexWaiting ? 'plex' : `${mode}-${mode === 'setup' ? `${setup.langDone}-${setup.welcomed}-${setup.setupWay}` : via}-${acctView}-${person?.name ?? ''}-${setup.ownerWays}`);
 	let calm = $state(false);
 	// The first step is there on the first frame; only later step changes rise in.
 	let firstStep = '';
 	const rise = $derived.by(() => {
 		if (session.s.state === 'unknown') return { duration: 0 };
 		if (!firstStep) firstStep = step;
-		return { duration: calm || step === firstStep ? 0 : 300 };
+		// Setup steps swap at once: the press shows only on the button, never as a dissolve over the whole card.
+		return { duration: calm || step === firstStep || mode === 'setup' || setupSignin ? 0 : 300 };
 	});
 	let leaving = $state(false);
 	let importPaused = $state(false);
@@ -139,54 +197,36 @@
 	let coverEl = $state<HTMLDivElement>();
 	let left = false;
 
-	function next(): string {
-		const n = page.url.searchParams.get('next') ?? '/';
-		// Only paths inside this app; never another site.
-		return safeNext(n);
-	}
-
 	// The card is there on the first frame; its contents come in as a soft stagger (logo, tiles, "or", fields, button: 70 ms apart, done in about 1 s). Focus goes to the name field at once, so typing never waits.
-	let intro = $state(true);
+	// Back from the setup wizard lands here still signed in (?out=1): it signs out in place, with no entrance, so it reads as the same card going back one step.
+	const fromSetup = page.url.searchParams.get('out') === '1' || page.url.searchParams.get('edit') === '1';
+	let outDone = $state(page.url.searchParams.get('out') !== '1');
+	let intro = $state(!fromSetup);
 	// The stagger waits (paused, at its first frame) while the wallpaper's wave shader compiles: on a first visit the GPU is busy with it for about 100 ms, and a fade caught in that would hitch. SigninBackdrop signals when it is ready.
-	let glWait = $state(true);
+	let glWait = $state(!fromSetup);
 	const GL_WAIT_CAP_MS = 450;
 	let staggered = false;
 	$effect(() => {
 		if (staggered || session.s.state === 'unknown' || !panelEl) return;
 		staggered = true;
-		const parts = panelEl.querySelectorAll<HTMLElement>(
-			'.title, .lead, .provs, .or, .field, .submit, .step .link, .help'
-		);
-		parts.forEach((el, i) => el.style.setProperty('--i', String(Math.min(i + 1, 9))));
+		if (fromSetup) return;
+		staggerParts(panelEl);
 		// Later step changes use their own rise, not this entrance.
 		setTimeout(() => (intro = false), 1400);
 	});
 	let focusedOnce = false;
 	$effect(() => {
-		if (focusedOnce || session.s.state === 'unknown' || !panelEl) return;
-		const field = panelEl.querySelector<HTMLInputElement>('#name') ?? panelEl.querySelector<HTMLInputElement>('#password');
-		if (!field) return;
-		focusedOnce = true;
-		// Phones: no focus on load, so the keyboard does not cover the art and the card.
-		if (!matchMedia('(pointer: fine)').matches) return;
-		if (!document.activeElement || document.activeElement === document.body) field.focus({ preventScroll: true });
+		if (focusedOnce || session.s.state === 'unknown' || !panelEl || (editAcct && !editReady)) return;
+		if (focusFirstField(panelEl)) focusedOnce = true;
 	});
 	onMount(() => {
-		// An invite join that needs a two-factor code hands its ticket over here (never in the address).
-		try {
-			const saved = sessionStorage.getItem('holyarrs-2fa-ticket');
-			if (saved) {
-				sessionStorage.removeItem('holyarrs-2fa-ticket');
-				ticket = saved;
-			}
-			// An import that stopped because the sign-in ended says so here.
-			if (sessionStorage.getItem('holyarrs-import-paused')) {
-				sessionStorage.removeItem('holyarrs-import-paused');
-				importPaused = true;
-			}
-		} catch {
-			// No storage: they sign in again.
-		}
+		if (fromSetup && page.url.searchParams.get('out') === '1')
+			void session.logout().then(() => {
+				outDone = true;
+				history.replaceState(history.state, '', to('/login'));
+			});
+		const handed = takeHandoff();
+		[ticket, importPaused] = [handed.ticket || ticket, handed.importPaused];
 		calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		recent = recentPeople();
 		const go = () => (glWait = false);
@@ -194,7 +234,7 @@
 		window.addEventListener(SIGNIN_GL_EVENT, go, { once: true });
 		const cap = setTimeout(go, GL_WAIT_CAP_MS);
 		const clock = setInterval(() => (now = Date.now()), 1000);
-		if (page.url.searchParams.get('sso') === 'finish') void finishOIDC();
+		if (page.url.searchParams.get('sso') === 'finish') void ways.finishOIDC();
 		else if (page.url.searchParams.get('sso') === 'failed') {
 			lastWay = 'oidc';
 			error = t('accounts.login.ssoFailed');
@@ -205,31 +245,18 @@
 			clearInterval(clock);
 			clearTimeout(cap);
 			window.removeEventListener(SIGNIN_GL_EVENT, go);
-			plexRun?.stop();
+			ways.stop();
 			// Elsewhere the boot screen works as usual (reconnecting, slow page changes).
 			document.documentElement.classList.remove('hl-skip');
 		};
 	});
-
-	async function finishOIDC() {
-		lastWay = 'oidc';
-		error = '';
-		ssoFinishing = true;
-		try {
-			took(await session.oidcFinish());
-		} catch (err) {
-			failed(err);
-		} finally {
-			ssoFinishing = false;
-		}
-	}
 
 	// Right after the owner is made, the first-run step asks which parts to use.
 	let firstRun = false;
 	$effect(() => {
 		// A visit let in by the local-network skip is not signed in: this page stays, so a password sign-in can follow.
 		if (session.s.state !== 'signed_in' || session.s.via === 'local_network') return;
-		if (left) return;
+		if (left || !outDone || holdLeave || editAcct) return;
 		left = true;
 		// Remember who signed in here, and how (the trusted proxy signs in by itself).
 		const way: RecentWay | '' =
@@ -244,7 +271,14 @@
 			void keepPersonPic(session.s.name, session.s.avatar);
 		}
 		// Success, one continuous move: the Orbit grows out of the Sign in button and glides to the centre while the panel and the art dissolve under a veil in the app colour; the app opens under the same Orbit, which then leaves as the page appears.
-		const target = to(firstRun ? '/welcome?first=1' : next());
+		// Setup not finished yet: go on at its first unfinished step (the wizard picks it).
+		const nx = signInNext(page.url.searchParams); // first run: back to the setup step it was on, else setup's start
+		const target = to(firstRun || session.s.setupOpen ? (nx.startsWith('/welcome?') ? nx : '/welcome?first=1') : nx);
+		// Setup goes on in the same card: no sign-in animation, no app reveal in between.
+		if (firstRun || session.s.setupOpen) {
+			void goto(target, { replace: true }).finally(loaderReady);
+			return;
+		}
 		if (calm) {
 			playSignIn(session.s.name, SIGNIN_HOLD_MS); // Reduced motion: a plain crossfade, no long hold.
 			void goto(target, { replace: true }).finally(loaderReady);
@@ -286,25 +320,62 @@
 		lastWay = '';
 		e.preventDefault();
 		error = '';
-		if (mode === 'setup') {
-			if (pw.length < MIN_LENGTH) {
-				error = t('accounts.login.useAtLeast', { n: MIN_LENGTH });
+		if (mode === 'setup' && Date.now() - acctShownAt < 400) return;
+		if (mode === 'setup' && !name.trim()) return void (error = t('accounts.login.enterName', { way: 'HolyArrs' }));
+		if (editAcct) {
+			const bad = pw ? passwordProblem(pw, pwAgain, MIN_LENGTH) : pwAgain ? t('accounts.login.noMatch') : '';
+			if (bad) return void (error = bad);
+			const same = loadedAcct && name.trim() === loadedAcct.name && displayName.trim() === loadedAcct.display.trim() && !pw && !avatarFile && !avatarGone;
+			if (same) {
+				await goto(to('/welcome?first=1'), { replace: true });
 				return;
 			}
-			if (pw !== pwAgain) {
-				error = t('accounts.login.noMatch');
-				return;
+			busy = true;
+			try {
+				await saveAccount({ username: name.trim(), display: displayName.trim(), password: pw, avatar: avatarFile, avatarGone });
+				await goto(to('/welcome?first=1'), { replace: true });
+			} catch (err) {
+				if (err instanceof ApiError && err.status === 403 && session.s.hasPassword) {
+					// Ask for the password once (below), then Save again; the typed changes stay.
+					needProof = true;
+					error = '';
+					return;
+				}
+				failed(err);
+				pw = '';
+				pwAgain = '';
+			} finally {
+				busy = false;
 			}
+			return;
 		}
+		if (mode === 'setup' && (error = passwordProblem(pw, pwAgain, MIN_LENGTH))) return;
 		busy = true;
 		try {
 			if (mode === 'setup') {
 				firstRun = true;
-				await session.setup(name.trim(), pw);
+				justMade = madeOwner = true;
+				// The picture goes up once the account exists; the step after already shows Home's work, so a failed upload is only skipped (My account can add it).
+				holdLeave = !!avatarFile;
+				await session.setup(name.trim(), pw, displayName.trim());
+				forgetSetup();
+				if (avatarFile) {
+					try {
+						await uploadAvatar(avatarFile);
+					} catch {
+						// Skipped; see above.
+					}
+					holdLeave = false;
+				}
 			}
-			else if (via === 'password') took(await session.login(name.trim(), pw));
+			else if (via === 'password') {
+				// Setup's sign-in goes on to the wizard, not the edit view.
+				if (setupSignin) justMade = true;
+				took(await session.login(name.trim(), pw));
+			}
 			else if (via !== 'choose') took(await session.mediaServer(via, name.trim(), pw));
 		} catch (err) {
+			madeOwner = false;
 			if (err instanceof ApiError && err.status === 409 && mode === 'setup') {
 				error = t('accounts.login.ownerExists');
 				await session.load();
@@ -313,6 +384,7 @@
 			}
 			pw = '';
 			pwAgain = '';
+			holdLeave = false;
 		} finally {
 			busy = false;
 		}
@@ -333,138 +405,58 @@
 		pw = '';
 	}
 
-	function setupPick(w: 'choose' | 'password' | 'jellyfin' | 'emby') {
-		setupWay = w;
-		error = '';
-		pw = '';
-		pwAgain = '';
-		if (w === 'jellyfin' || w === 'emby') void lookForServers(w);
-		focusStep();
-	}
-
-	function setupPress(w: SetupWay) {
-		lastWay = w === 'plex' ? 'plex' : '';
-		if (w === 'plex') void plex();
-		else setupPick(w);
-	}
-
-	// Asks the network once; a single server of the chosen kind fills the address.
-	async function lookForServers(kind: 'jellyfin' | 'emby') {
-		if (!looked) {
-			looked = true;
-			looking = true;
-			found = await session.setupFindServers();
-			looking = false;
-		}
-		const mine = found.filter((f) => f.kind === kind);
-		if (!address.trim() && mine.length === 1 && setupWay === kind) address = mine[0].address;
-	}
-
-	async function submitServer(e: SubmitEvent) {
-		e.preventDefault();
-		lastWay = '';
-		error = '';
-		const kind = setupServer;
-		if (!kind) return;
-		if (!address.trim()) {
-			error = t('accounts.login.enterAddress', { way: wayWord[kind] });
-			return;
-		}
-		if (!name.trim()) {
-			error = t('accounts.login.enterName', { way: wayWord[kind] });
-			return;
-		}
-		busy = true;
-		try {
-			firstRun = true;
-			firstRunWay = kind;
-			await session.setupMediaServer(kind, address.trim(), name.trim(), pw);
-		} catch (err) {
-			firstRunWay = '';
-			if (err instanceof ApiError && err.status === 409) {
-				error = t('accounts.login.ownerExists');
-				await session.load();
-			} else {
-				failed(err);
-			}
-			pw = '';
-		} finally {
-			busy = false;
-		}
-	}
-
-	function press(w: Way) {
-		lastWay = w;
-		if (w === 'plex') void plex();
-		else if (w === 'oidc') void oidc();
-		else if (w === 'forward_auth') void forwardAuth();
-		else pick(w);
-	}
-
-	function cancelPlex() {
-		plexRun?.stop();
-		plexWaiting = false;
-		// Focus goes back to the Plex button (or the first choice), not the page.
-		void tick().then(() => (panelEl?.querySelector<HTMLElement>('[data-way="plex"]') ?? panelEl?.querySelector<HTMLElement>('button:not([disabled])'))?.focus());
-	}
-
-	function plex() {
-		error = '';
-		// First run: the Plex account becomes the owner.
-		const setup = mode === 'setup';
-		if (setup) firstRun = true;
-		plexRun = plexSignIn({ setup, waiting: (on) => (plexWaiting = on), done: took, failed, timedOut: () => (error = t('accounts.security.plexTimeout')) });
-	}
-
-	async function oidc() {
-		error = '';
-		busy = true;
-		try {
-			const { auth_url } = await session.oidcStart();
-			window.location.assign(auth_url);
-		} catch (err) {
-			failed(err);
-			busy = false;
-		}
-	}
-
-	async function forwardAuth() {
-		error = '';
-		busy = true;
-		try {
-			took(await session.forwardLogin());
-		} catch (err) {
-			failed(err);
-		} finally {
-			busy = false;
-		}
-	}
 	let showPw = $state(false);
+	// "Forgot password?" (owner only). HOLYARRS_RESET_OWNER opens it at the code step.
+	$effect(() => {
+		if (session.s.ownerResetEnv && mode === 'login') untrack(() => (forgot = true));
+	});
+	function openForgot() {
+		forgot = true;
+		error = '';
+	}
+	async function forgotDone(n: string, p: string) {
+		forgot = false;
+		name = n;
+		pw = '';
+		took(await session.login(n, p));
+	}
 </script>
 
 <svelte:head>
-	<title>{t('accounts.login.pageTitle', { what: mode === 'setup' ? t('accounts.login.setUp') : t('accounts.signin.signIn') })}</title>
+	<title>{t('accounts.login.pageTitle', { what: mode === 'setup' || setupSignin ?t('accounts.login.setUp') : t('accounts.signin.signIn') })}</title>
 </svelte:head>
 
 <main class="wrap" class:leaving data-theme="dark">
 	<SigninBackdrop />
 	<div class="cover" bind:this={coverEl} aria-hidden="true"></div>
-	<div class="panel" class:intro class:gl-wait={glWait} class:light={theme.value === 'light'} data-theme={theme.value} bind:this={panelEl} data-signin-panel>
+	<div class="panel" class:setup={mode === 'setup' || setupSignin} class:welcome-intro={mode === 'setup' && !setup.welcomed} class:intro class:gl-wait={glWait} class:light={theme.value === 'light'} data-theme={theme.value} bind:this={panelEl} data-signin-panel>
 		<SigninBrand />
-		{#if backTo && session.s.state !== 'unknown' && !ssoFinishing && !plexWaiting}
+		{#if mode === 'setup' && session.s.state !== 'unknown'}<SetupBar current={setup.welcomed ? 'signin' : setup.langDone ? 'welcome' : 'language'} phases={phasesFor({ withServer: true })} />{/if}
+		{#if setupSignin && session.s.state !== 'unknown'}<SetupBar current="signin" phases={phasesFor({ withServer: true })} />{/if}
+		{#if backTo && session.s.state !== 'unknown' && !ways.ssoFinishing && !ways.plexWaiting}
 			<span class="corner"><IconButton icon="chevronLeft" variant="glass" label={backTo.label} onclick={backTo.go} /></span>
 		{/if}
 
-		{#if session.s.state === 'unknown' || ssoFinishing}
+		{#if session.s.state === 'unknown' || ways.ssoFinishing}
 			<!-- As tall as the usual sign-in form, so the card does not jump when the session answers. -->
 			<div class="sk" class:tall={recent.length > 1} style="border-radius: var(--r-card)"></div>
-			{#if ssoFinishing}<p class="small muted" role="status">{t('accounts.login.finishing')}</p>{/if}
+			{#if ways.ssoFinishing}<p class="small muted" role="status">{t('accounts.login.finishing')}</p>{/if}
 		{:else}
 			{#if importPaused}<p class="form-error" role="status" data-testid="import-paused">{t('accounts.login.importPaused')}</p>{/if}
 			{#key step}
-				<div class="step" in:pixelIn={rise}>
-					{#if plexWaiting}
-						<SigninWait {cancelPlex} />
+				<div class="step" class:intro-step={mode === 'setup' && setup.langDone && !setup.welcomed && !ways.plexWaiting} in:pixelIn={rise}>
+					{#if forgot && mode === 'login'}
+						<SigninForgot minLength={MIN_LENGTH} haveCode={session.s.ownerResetEnv} ondone={forgotDone} onback={() => (forgot = false)} />
+					{:else if ways.plexWaiting}
+						<SigninWait cancelPlex={ways.cancelPlex} />
+					{:else if setupSignin && setup.ownerWays && mode === 'login'}
+						<h1 class="title">{t('welcome.pickServer')}</h1>
+						<p class="lead">{t('welcome.ownerSignIn')}</p>
+						<SigninTiles setup setupTiles={setup.ownerTiles} setupName={setup.setupName} setupDesc={setup.setupDesc} {lastWay} {failN} {busy} onsetup={setup.ownerPick} />
+					{:else if mode === 'setup' && !setup.langDone}
+						<PickLanguage ondone={setup.finishLang} />
+					{:else if mode === 'setup' && !setup.welcomed}
+						<SetupIntro onstart={() => ((setup.welcomed = true), focusStep())} />
 					{:else if acctView !== 'none'}
 						<!-- One person: their face and name lead; the heading stays for screen readers. -->
 						<h1 class="title" class:sr-only={acctView === 'person'}>{acctView === 'list' ? t('accounts.login.who') : t('accounts.signin.signIn')}</h1>
@@ -472,14 +464,14 @@
 							<SigninRecent {shown} {editing} {wayName} {dropPerson} {openPerson} {another} />
 							<button class="link" type="button" aria-pressed={editing} onclick={() => (editing = !editing)}>{editing ? t('accounts.login.done') : t('accounts.login.editList')}</button>
 						{:else if person}
-							<SigninPerson {person} {name} bind:pw bind:showPw {error} {waiting} {busy} {lastWay} {tileWay} {failN} {wayName} {press} {submit} />
+							<SigninPerson {person} {name} bind:pw bind:showPw {error} {waiting} {busy} {lastWay} {tileWay} {failN} {wayName} press={ways.press} {submit} />
 							{#if shown.length === 1}<button class="link" type="button" onclick={showList}>{t('accounts.login.switch')}</button>{/if}
 						{/if}
-						{#if formOn}<SigninHelp {calm} />{/if}
+						{#if formOn}<SigninHelp {calm} onforgot={openForgot} />{/if}
 					{:else}
-						<h1 class="title">{mode === 'setup' ? t('accounts.login.setUp') : mode === 'code' ? t('accounts.login.twoStep') : via === 'jellyfin' || via === 'emby' ? t('accounts.signin.signInWith', { way: wayWord[via] }) : t('accounts.signin.signIn')}</h1>
+						<h1 class="title">{mode === 'setup' ? (setup.setupWay === 'choose' ? t('welcome.pickServer') : setup.setupWay === 'password' ? t('welcome.account.title') : t('accounts.signin.signInWith', { way: setup.setupName(setup.setupWay) })) : mode === 'code' ? t('accounts.login.twoStep') : via === 'jellyfin' || via === 'emby' ? t('accounts.signin.signInWith', { way: wayWord[via] }) : setupSignin ? t('welcome.account.title') : t('accounts.signin.signIn')}</h1>
 						{#if mode === 'setup'}
-							<p class="lead">{setupServer ? t('accounts.login.useAdmin', { way: wayWord[setupServer] }) : t('accounts.login.createOwner')}</p>
+							<p class="lead">{setup.setupWay === 'choose' ? t('welcome.pickServerLead') : setup.setupWay === 'plex' ? t('welcome.plexLead') : setup.setupServer ? t('accounts.login.useAdmin', { way: wayWord[setup.setupServer] }) : t('welcome.account.lead')}</p>
 							{#if session.s.configUnmapped}
 								<p class="form-error" role="status">{t('accounts.login.unmapped')}</p>
 							{/if}
@@ -487,39 +479,45 @@
 							<p class="lead">{useBackup ? t('accounts.login.enterBackup') : t('accounts.login.enterSix')}</p>
 						{:else if via === 'jellyfin' || via === 'emby'}
 							<p class="lead">{t('accounts.login.useYour', { way: wayWord[via] })}</p>
+						{:else if setupSignin}
+							<p class="lead">{t('welcome.ownerSignIn')}</p>
 						{:else if via === 'choose'}
 							<p class="lead">{t('accounts.login.choose')}</p>
 						{/if}
 
-						{#if mode === 'setup' && setupWay === 'choose'}
-							<SigninTiles setup {setupTiles} {setupName} {lastWay} {failN} {busy} onsetup={setupPress} />
+						{#if mode === 'setup' && setup.setupWay === 'choose'}
+							<SigninTiles setup setupTiles={setup.setupTiles} setupName={setup.setupName} setupDesc={setup.setupDesc} {lastWay} {failN} {busy} onsetup={setup.setupPress} />
 							{#if error}
 								<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
 							{/if}
-						{:else if mode === 'setup' && setupServer}
-							<SigninServerForm kind={setupServer} bind:address bind:name bind:pw bind:showPw {foundHere} {looking} {error} {waiting} {busy} {failN} {wayWord} {submitServer} {focusStep} />
+						{:else if mode === 'setup' && setup.setupWay === 'plex'}
+							<SigninTiles setup setupTiles={['plex']} setupName={setup.setupName} {lastWay} {failN} {busy} onsetup={() => ((lastWay = 'plex'), ways.plex())} />
+							{#if error}<p class="form-error" role="alert">{error}</p>{/if}
+						{:else if mode === 'setup' && setup.setupServer}
+							<SigninServerForm kind={setup.setupServer} bind:address={setup.address} bind:name bind:pw bind:showPw foundHere={setup.foundHere} looking={setup.looking} onrefresh={setup.refreshServers} {error} {waiting} {busy} {failN} {wayWord} submitServer={setup.submitServer} {focusStep} />
 						{:else if mode === 'code'}
 							<SigninCode bind:ticket bind:pw bind:otp bind:useBackup bind:busy bind:error bind:lastWay {waiting} {failN} {tileWay} {failed} />
 						{:else}
 							{#if mode === 'login' && (via === 'password' || via === 'choose') && tiles.length}
-								<SigninTiles {tiles} {lastWay} {failN} {busy} onpress={press} />
+								<SigninTiles {tiles} {lastWay} {failN} {busy} onpress={ways.press} />
 								{#if via === 'password'}<div class="or">{t('accounts.login.or')}</div>{/if}
 							{/if}
 
 							{#if via !== 'choose' || mode === 'setup'}
-								<SigninLoginForm {mode} {via} bind:name bind:pw bind:pwAgain bind:showPw {error} {waiting} {busy} {tileWay} {failN} minLength={MIN_LENGTH} {wayWord} {submit} {pick} />
+								{#if editAcct && needProof}<Confirm action="password" reveal={false} onCancel={() => (needProof = false)}>{#snippet children()}{/snippet}</Confirm>{/if}
+								{#if !editAcct || editReady}<SigninLoginForm {mode} {via} setupLook={setupSignin && mode === 'login' && via === 'password'} edit={editAcct} currentPic={editAcct ? session.s.avatar : null} bind:avatarGone bind:name bind:display={displayName} bind:avatar={avatarFile} bind:pw bind:pwAgain bind:showPw {error} {waiting} {busy} {tileWay} {failN} minLength={MIN_LENGTH} {wayWord} {submit} {pick} />{/if}
 							{:else if error}
 								<p class="form-error" role="alert">{error}{#if waiting > 0}<span class="mono" aria-hidden="true"> ({waiting}s)</span>{/if}</p>
 							{/if}
 
-							{#if mode === 'login' && via === 'password'}<SigninHelp {calm} />{/if}
+							{#if mode === 'login' && via === 'password' && !setupSignin}<SigninHelp {calm} onforgot={openForgot} />{/if}
 						{/if}
 					{/if}
 				</div>
 			{/key}
 		{/if}
 	</div>
-	<SigninPortals />
+	<SigninPortals symbols={mode !== 'setup'} />
 	<SigninTheme {panelEl} />
 </main>
 
@@ -567,6 +565,12 @@
 		border: 1px solid rgb(255 255 255 / 0.07);
 		box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35), 0 30px 90px rgb(0 0 0 / 0.55), 0 6px 18px rgb(0 0 0 / 0.35);
 	}
+	/* First-run setup: wider, so the six-step bar and the way tiles get room; welcome uses the same 672px content width, so steps never jump. */
+	.panel.setup { width: min(calc(740px / var(--z)), calc(100% / var(--z))); }
+	/* Setup header matches the wizard's: the 28px logo alone, the step bar right under it. */
+	.panel.setup :global(.brand) { margin-bottom: 0; min-height: 28px; }
+	.panel.setup :global(.brand span) { display: none; }
+	.panel.setup :global(.brand img) { width: 28px; height: 28px; }
 	/* Dev comparison (?panel=blur, set by SigninPortals): a heavier frosted material. */
 	.panel:global([data-mat='blur']) {
 		background: rgb(40 40 48 / 0.32);
@@ -590,7 +594,6 @@
 		.panel { background: rgb(18 18 22 / 0.92); }
 		.panel.light { background: rgb(248 246 242 / 0.94); }
 }
-
 	/* Light mode: tinted glass. The blur lifts the poster under the panel and keeps its colour; text is dark ink, links are dark and underlined (red on tinted glass reads poorly), and red stays on the main button. */
 	.panel.light {
 		/* Thick enough that the poster's dark patches read as tint, never as smudges behind the text. */
@@ -605,7 +608,7 @@
 	}
 	.wrap.leaving .panel.light { background: rgb(250 250 250 / 0.92); }
 	.light .title { color: #111; }
-	.light .lead { color: rgb(0 0 0 / 0.64); }
+	.light .lead { color: rgb(0 0 0 / 0.74); }
 	.light .or { color: rgb(0 0 0 / 0.62); }
 	.light .or::before, .light .or::after { background: rgb(0 0 0 / 0.14); }
 	.light :global(.input) { background: rgb(255 255 255 / 0.6); border-color: rgb(255 255 255 / 0.75); color: #111; }
@@ -638,16 +641,24 @@
 	@media (max-width: 600px) { .panel > .sk { height: 289px; }
 }
 	.title { font: var(--t-title1); letter-spacing: var(--t-title1-track); text-align: center; color: #fff; text-wrap: balance; }
-	.lead { margin: 8px 0 20px; color: rgb(255 255 255 / 0.68); font: var(--t-callout); text-align: center; text-wrap: pretty; }
+	/* One spacing scale for the card: --gap between blocks, --gap-field between fields. */
+	.panel { --gap: var(--s-5); --gap-field: var(--s-3); }
+	.lead { margin: var(--s-2) 0 var(--gap); color: rgb(255 255 255 / 0.68); font: var(--t-callout); text-align: center; text-wrap: pretty; }
+	/* Welcome fills the setup card: brand, headline and rows at the top, Get started at the foot like Continue. */
+	.panel.welcome-intro :global(.brand) { font-size: 30px; gap: 16px; margin-bottom: 20px; }
+	.panel.welcome-intro :global(.brand img) { width: 52px; height: 52px; }
+	/* Welcome is one group, centred in the card: no gap between the rows and Get started. */
+	.step.intro-step { display: flex; flex-direction: column; justify-content: center; }
 	/* Global: the next element often belongs to a child form component, which a scoped selector never matches. */
-	.title:not(.sr-only) + :global(:not(.lead)) { margin-top: 26px; }
-	.panel :global(.field + .field) { margin-top: 12px; }
+	.title:not(.sr-only) + :global(:not(.lead)) { margin-top: var(--gap); }
+	.panel :global(.field + .field) { margin-top: var(--gap-field); }
 	/* Labels, hints and errors centre like the title and button; typing stays left. */
 	.panel :global(.field) { text-align: center; }
-	.panel :global(.field .input) { text-align: left; }
+	.panel :global(.field .input) { text-align: start; }
 	/* Errors: a soft red note centred under the fields, with a small warning mark. */
+	/* Same gap above and below, so a warning never touches the buttons under it. */
 	.form-error {
-		margin-top: 14px;
+		margin: var(--gap) 0;
 		padding: 10px 14px;
 		border-radius: 12px;
 		background: rgb(255 69 58 / 0.12);
@@ -661,14 +672,14 @@
 		display: inline-block;
 		width: 15px;
 		height: 15px;
-		margin: 0 7px 0 0;
+		margin: 0; margin-inline-end: 7px;
 		vertical-align: -3px;
 		background: currentColor;
 		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm0 9h2v2h-2z'/%3E%3C/svg%3E") center / contain no-repeat;
 		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v7h-2zm0 9h2v2h-2z'/%3E%3C/svg%3E") center / contain no-repeat;
 	}
 	/* Back to the list: a round button in the panel's top-left corner, level with the logo. */
-	.corner { position: absolute; top: 34px; left: 34px; z-index: 1; }
+	.corner { position: absolute; top: 32px; inset-inline-start: 34px; z-index: 1; }
 	.or { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: rgb(255 255 255 / 0.45); font: var(--t-footnote); }
 	.or::before, .or::after { content: ''; flex: 1; height: 1px; background: rgb(255 255 255 / 0.12); }
 
@@ -715,6 +726,41 @@
 }
 	@media (min-width: 3000px) and (min-height: 1300px) { .panel { --z: 1.32; }
 }
+	/* Desktop setup: the one setup card (setup-glass.css), the same box as every wizard step, centred inside the frame; the step sits in its middle. */
+	@media (min-width: 1100px) {
+		.wrap:has(.panel.setup) { align-items: center; padding: 0; }
+		.panel.setup { --z: 1; box-sizing: border-box; width: var(--setup-w); height: var(--setup-h); display: flex; flex-direction: column; overflow: hidden; }
+		/* One spacing rhythm on every sign-in step: 44px from the lead to the form, 28px between fields, 32px before the button. */
+		.panel.setup { --gap-field: 28px; --gap: 32px; }
+		.panel.setup .lead + :global(*) { margin-top: clamp(20px, 3vh, 44px); }
+		.panel.setup .lead + .form-error { margin-bottom: clamp(16px, 2.5vh, 32px); }
+		/* Every sign-in step starts at the same spot under the step bar, so titles never jump between steps. */
+		.panel.setup > .step { width: min(100%, 560px); margin: clamp(24px, 4vh, 56px) auto auto; }
+		.panel.setup > .step.intro-step { flex: 1 1 auto; margin: 0 auto; min-height: 0; }
+		.panel.setup > .step :global(.tiles) { max-width: 560px; }
+		/* Every setup step fills the one card: bigger type, tiles and fields, as one centred group (scales with the window height so 900 px still fits). */
+		.panel.setup > .step:not(.intro-step) { width: min(100%, 900px); }
+		.panel.setup .title { font-size: clamp(32px, 3.6vh, 40px); line-height: 1.15; }
+		.panel.setup .lead { font-size: 17px; }
+		/* The ways: a 2x2 grid of large tiles, each with a plain line under its name. */
+		.panel.setup :global(.provs[data-testid='setup-ways']:not([data-n='1'])) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+		.panel.setup :global(.provs .prov) { min-height: clamp(170px, 21vh, 220px); justify-content: center; gap: 12px; padding: 20px 24px; font: 600 20px/1.2 var(--font-ui); border-radius: 22px; }
+		.panel.setup :global(.provs .prov svg) { width: 48px; height: 48px; }
+		.panel.setup :global(.provs .prov .desc) { font-size: 15px; }
+		.panel.setup :global(.provs[data-n='1'] .prov) { min-height: 64px; flex-direction: row; }
+		.panel.setup :global(.field label) { font-size: 15px; }
+		.panel.setup :global(.input) { min-height: 52px; height: 52px; font-size: 17px; }
+		.panel.setup :global(.submit .ui-btn) { min-height: 48px; height: 48px; font-size: 17px; } .panel.setup :global(.submit .ui-btn.primary) { border-radius: var(--r-card); }
+		/* Same frame as the wizard steps: the logo and step bar at one spot, the title at one spot, and the main button on the card's foot at the card's full width, so nothing moves between steps. */
+		.panel.setup.welcome-intro :global(.brand) { font-size: inherit; gap: 10px; margin-bottom: 0; }
+		.panel.setup.welcome-intro :global(.brand img) { width: 28px; height: 28px; }
+		.panel.setup > .step, .panel.setup > .step.intro-step, .panel.setup > .step:not(.intro-step) { flex: 1 1 auto; min-height: 0; width: 100%; margin: clamp(24px, 4vh, 56px) 0 0; display: flex; flex-direction: column; justify-content: flex-start; }
+		.panel.setup > .step > :global(form) { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+		.panel.setup > .step :global(.acct-grid), .panel.setup > .step :global(.tiles), .panel.setup > .step :global(.provs), .panel.setup > .step > :global(.form-error) { width: min(100%, 900px); margin-inline: auto; box-sizing: border-box; }
+		.panel.setup { padding-bottom: 34px; }
+		.panel.setup > .step :global(.submit.submit) { margin-top: auto; margin-inline-start: 0; padding-top: var(--s-4); }
+		.panel.setup > .step :global(.input.input) { min-height: 52px; height: 52px; font-size: 17px; border-radius: var(--g-r, 12px); }
+	}
 	/* Phones: the desktop card, floating low over full-bleed art with 24 px of art on every side; it rides above the keyboard (--kb) with a smooth lift. */
 	@media (max-width: 600px) {
 		.wrap {
@@ -732,16 +778,14 @@
 			transition: transform var(--dur) var(--ease-out);
 		}
 		.title { font-size: 20px; line-height: 1.15; }
-		.lead { margin: 4px 0 10px; }
-		.title:not(.sr-only) + :global(:not(.lead)) { margin-top: 16px; }
-		.corner { top: 6px; left: 16px; }
-		.panel :global(.field) { gap: 2px; }
+		.panel { --gap: var(--s-4); }
+		.lead { margin: var(--s-1) 0 var(--gap); }
+		.corner { top: 6px; inset-inline-start: 16px; }
+		.panel :global(.field) { gap: 6px; }
 		.panel :global(.field label) { font-size: 14px; line-height: 1.25; }
-		.panel :global(.field + .field) { margin-top: 4px; }
 		.panel :global(.input) { min-height: 48px; }
 		.panel > .sk.tall { height: 375px; }
 		/* Views that do not end on a 44 px link still get room at the bottom edge. */
-		.step > .form-error:last-child { margin-bottom: 12px; }
 		.or { margin: 10px 0; }
 		.link { min-height: 40px; margin-bottom: 0; margin-top: 0; }
 }

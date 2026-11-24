@@ -190,10 +190,10 @@
 	.prg.bad i { background: var(--text-muted); opacity: 0.3; }
 	.bl { position: relative; overflow: hidden; text-overflow: ellipsis; }
 	.bl { font-weight: 600; text-shadow: 0 0 3px var(--surface-1); }
-	.st { display: flex; align-items: center; gap: 6px; min-width: 0; font: var(--t-footnote); }
+	.st { display: flex; align-items: center; gap: 6px; min-width: 0; max-height: 100%; overflow: hidden; font: var(--t-footnote); } /* Never taller than its row: the list draws rows at one fixed height. */
 	.st .tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 	.st .sw { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.st .why { overflow-wrap: anywhere; white-space: normal; } /* A problem reason is shown in full, wrapped, never cut. */
+	.st .why { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; white-space: normal; } /* A long reason stays in its row: two lines, the full text in the cell's title. */
 	.st .why { color: var(--text-muted); font: var(--t-caption); }
 	.st.two { align-items: flex-start; }
 	.st.two .dot { margin-top: 4px; }
@@ -319,7 +319,7 @@
 		.dline > [data-col='status'].two .dot { margin-top: 0; }
 		.dline > [data-col='status'] .tx { flex-direction: row; align-items: baseline; gap: 4px; }
 		.dline > [data-col='status'] .sw { flex: 0 1 auto; }
-		.dline > [data-col='status'] .why { flex: 1 1 0%; min-width: 3ch; font: inherit; }
+		.dline > [data-col='status'] .why { display: block; flex: 1 1 0%; min-width: 3ch; font: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 		.dline > [data-col='status'] .why::before { content: '· '; }
 		.dline > [data-col='time'] { font-variant-numeric: tabular-nums; white-space: nowrap; }
 		.tg { align-self: center; }

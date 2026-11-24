@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "無法復原。檔案會保留。",
 	"settings.pickRules.removeUsed": "{used}。請先在那裡改選其他規則。",
 	"settings.pickRules.sentence": "{text}。",
-	"settings.pickRules.cancel": "取消"
+	"settings.pickRules.cancel": "取消",
+	"settings.pickRules.check.title": "檢查發佈名稱",
+	"settings.pickRules.check.desc": "貼上一個發佈名稱，看看 HolyArrs 如何解讀它，以及你的畫質方案如何評判它。不會搜尋或下載任何內容。",
+	"settings.pickRules.check.name": "發佈名稱",
+	"settings.pickRules.check.rules": "評判依據",
+	"settings.pickRules.check.copies": "符合作品的副本",
+	"settings.pickRules.check.size": "大小（GB，選填）",
+	"settings.pickRules.check.check": "檢查",
+	"settings.pickRules.check.failed": "無法檢查這個名稱",
+	"settings.pickRules.check.readAs": "解讀為",
+	"settings.pickRules.check.matches": "符合 {name}",
+	"settings.pickRules.check.noTitle": "沒有符合媒體庫中的任何作品。在上方選擇一個畫質方案，仍可評判。",
+	"settings.pickRules.check.noAlbum": "符合 {name}，但沒有符合其任何專輯。",
+	"settings.pickRules.check.noCopies": "這個作品沒有可評判的副本。",
+	"settings.pickRules.check.hasFile": "已有檔案"
 }

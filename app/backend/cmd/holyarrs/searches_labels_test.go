@@ -12,7 +12,8 @@ import (
 // season search through the library catalog adapters.
 func TestSearchesShowSlotAndPartLabels(t *testing.T) {
 	t.Parallel()
-	srv, _, _, _ := showSetup(t)
+	srv, st, _, _ := showSetup(t)
+	searchSource(t, st) // a search by hand needs a Source
 	u := srv.URL + "/api/v1"
 	var add addedShow
 	_ = json.Unmarshal(do(t, "POST", u+"/shows", `{"id":"tmdb:100"}`, 201), &add)

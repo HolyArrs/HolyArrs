@@ -152,7 +152,7 @@ func radarrDB() []string {
 		`CREATE TABLE QualityProfiles (Id INTEGER PRIMARY KEY, Name TEXT, UpgradeAllowed INTEGER, Cutoff INTEGER, Items TEXT, FormatItems TEXT, MinFormatScore INTEGER, CutoffFormatScore INTEGER, Language INTEGER)`,
 		`INSERT INTO QualityProfiles VALUES (1, 'HD', 1, 1000, '[{"quality":4,"items":[],"allowed":false},{"id":1000,"name":"HD group","items":[{"quality":7,"items":[],"allowed":true},{"quality":3,"items":[],"allowed":true}],"allowed":true}]', '[{"format":1,"score":40}]', 0, 0, 1)`,
 		`CREATE TABLE CustomFormats (Id INTEGER PRIMARY KEY, Name TEXT, Specifications TEXT, IncludeCustomFormatWhenRenaming INTEGER)`,
-		`INSERT INTO CustomFormats VALUES (1, 'x265', '[{"name":"x265","implementation":"ReleaseTitleSpecification","negate":false,"required":true,"fields":{"value":"x265"}}]', 0)`,
+		`INSERT INTO CustomFormats VALUES (1, 'x265', '[{"type":"ReleaseTitleSpecification","body":{"order":1,"implementationName":"Release Title","value":"x265","name":"x265","negate":false,"required":true}}]', 0)`,
 		`CREATE TABLE DelayProfiles (Id INTEGER PRIMARY KEY, EnableUsenet INTEGER, EnableTorrent INTEGER, PreferredProtocol INTEGER, UsenetDelay INTEGER, TorrentDelay INTEGER, "Order" INTEGER, Tags TEXT)`,
 		`INSERT INTO DelayProfiles VALUES (1, 1, 1, 2, 0, 30, 1, '[1]')`,
 		`CREATE TABLE NamingConfig (Id INTEGER PRIMARY KEY, RenameMovies INTEGER, StandardMovieFormat TEXT, MovieFolderFormat TEXT)`,

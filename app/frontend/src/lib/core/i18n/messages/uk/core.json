@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Будуємо {what}… спроба {attempt}",
 	"core.testTag.connected": "Підключено",
 	"core.api.notAnswering": "HolyArrs не відповідає. Перевірте, чи він запущений.",
+	"core.api.tooSlow": "HolyArrs надто довго не відповідав. Спробуйте ще раз за хвилину.",
 	"core.api.requestFailed": "Запит не вдався ({status})",
 	"core.api.wentWrong": "Щось пішло не так.",
 	"core.trailerMiss.trailer": "трейлер",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Схвалено автоматично",
 	"core.plain.approvedBy": "Схвалив(ла) {who}",
 	"core.settings.cantReach": "Не вдається з’єднатися з цією адресою. Перевірте її та чи запущено застосунок.",
+	"core.settings.tryHttp": "Ця адреса не відповідає через https. Спробуйте http://.",
 	"core.settings.groupLibrary.label": "Бібліотека",
 	"core.settings.groupLibrary.line": "Де живуть тайтли",
 	"core.settings.groupLibrary.about": "Теки, розділи, типові значення, субтитри, назви файлів та імпорт.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Два завантажувачі ведуть до одного застосунку завантаження, тож завантаження можуть показуватися двічі.",
 	"core.plain.peopleCheck": "Не вдається прочитати список користувачів медіасервера, тому видалені там тут не вимикаються.",
 	"core.plain.deleted": "видалено",
-	"core.plain.deletedName": "{name} (видалено)"
+	"core.plain.deletedName": "{name} (видалено)",
+	"core.api.handsOffFiles": "Режим «без втручання» увімкнено, тож HolyArrs не чіпає завантажені файли. Вимкніть його в Налаштуваннях, щоб імпортувати, перейменовувати, переміщати чи сканувати файли.",
+	"core.api.handsOffSubtitles": "Режим «без втручання» увімкнено, тож HolyArrs ніколи не відкриває завантажені файли. Вимкніть його в Налаштуваннях, щоб користуватися субтитрами."
 }

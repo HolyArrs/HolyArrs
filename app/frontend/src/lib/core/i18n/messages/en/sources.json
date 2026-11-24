@@ -85,5 +85,21 @@
 	"sources.uses.auto": "searches on its own",
 	"sources.uses.feed": "newest list",
 	"sources.uses.hand": "search by hand",
-	"sources.uses.none": "not used"
+	"sources.uses.none": "not used",
+	"sources.bridge.removeTitle": "Remove {name}?",
+	"sources.bridge.find": "Find {name} on my network",
+	"sources.bridge.noneFound": "No {name} answered on your network.",
+	"sources.bridge.keyFound": "Got the key from {name}",
+	"sources.bridge.keyKept": "{name} didn't hand out its key (its sign-in is on). Use Get key to copy it.",
+	"sources.bridge.keyKeptJackett": "Jackett didn't hand out its key (it has an admin password). Use Get key to copy it.",
+	"sources.bridge.notReached": "Couldn't reach {name}.",
+	"sources.bridge.brings.title": "What comes over",
+	"sources.bridge.brings.sites": "Its indexers, as Sources",
+	"sources.bridge.brings.categories": "Their categories",
+	"sources.bridge.brings.search": "Searches go through {name}",
+	"sources.bridge.brings.sync": "Changes in {name} carry over",
+	"sources.bridge.brings.stays": "Your indexers stay set up in {name}.",
+	"sources.bridge.brings.had": "{n} indexers already here",
+	"sources.bridge.brings.hadFrom": "Imported through {apps}",
+	"sources.bridge.brings.keyKept": "Leave the key empty to use the one they already have."
 }

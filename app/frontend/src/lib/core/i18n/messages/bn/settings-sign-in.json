@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "শুধু এগুলোই বলতে পারে একটি ভিজিট কোথা থেকে এসেছে।",
 	"settings.signIn.fixToSaveOne": "সেভ করতে ১ লাইন ঠিক করুন",
 	"settings.signIn.fixToSaveOther": "সেভ করতে {n}টি লাইন ঠিক করুন",
-	"settings.signIn.localSaved": "লোকাল নেটওয়ার্ক সেভ হয়েছে"
+	"settings.signIn.localSaved": "লোকাল নেটওয়ার্ক সেভ হয়েছে",
+	"settings.signIn.forgotTitle": "পাসওয়ার্ড ভুলে গেছেন?",
+	"settings.signIn.forgotOn": "সাইন-ইন পেজে পাসওয়ার্ড ভুলে গেছেন? দেখান",
+	"settings.signIn.forgotNote": "মালিক সার্ভার লগ থেকে একবার-ব্যবহারের কোড পান। সবাই সিঙ্গেল সাইন-অন দিয়ে সাইন ইন করলে এটি বন্ধ করুন। reset-owner কমান্ড তবুও কাজ করে।",
+	"settings.signIn.forgotShown": "পাসওয়ার্ড ভুলে গেছেন? চালু",
+	"settings.signIn.forgotHidden": "পাসওয়ার্ড ভুলে গেছেন? বন্ধ"
 }

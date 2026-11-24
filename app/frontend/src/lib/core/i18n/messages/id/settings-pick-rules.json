@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Tidak bisa dibatalkan. File tetap ada.",
 	"settings.pickRules.removeUsed": "{used}. Pilih aturan lain di sana dulu.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Batal"
+	"settings.pickRules.cancel": "Batal",
+	"settings.pickRules.check.title": "Periksa nama rilis",
+	"settings.pickRules.check.desc": "Tempel nama rilis untuk melihat cara HolyArrs membacanya dan cara set kualitasmu menilainya. Tidak ada yang dicari atau diunduh.",
+	"settings.pickRules.check.name": "Nama rilis",
+	"settings.pickRules.check.rules": "Nilai dengan",
+	"settings.pickRules.check.copies": "Salinan judul yang cocok",
+	"settings.pickRules.check.size": "Ukuran dalam GB (opsional)",
+	"settings.pickRules.check.check": "Periksa",
+	"settings.pickRules.check.failed": "Nama tidak bisa diperiksa",
+	"settings.pickRules.check.readAs": "Dibaca sebagai",
+	"settings.pickRules.check.matches": "Cocok dengan {name}",
+	"settings.pickRules.check.noTitle": "Tidak cocok dengan judul mana pun di Perpustakaanmu. Pilih set kualitas di atas untuk tetap menilainya.",
+	"settings.pickRules.check.noAlbum": "Cocok dengan {name}, tetapi tidak dengan albumnya.",
+	"settings.pickRules.check.noCopies": "Judul ini tidak punya salinan untuk dinilai.",
+	"settings.pickRules.check.hasFile": "Ada file"
 }

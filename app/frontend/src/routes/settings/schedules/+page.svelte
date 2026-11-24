@@ -6,7 +6,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
-	import { runTone, runWord, busyNow, dot, every, groupSchedules, mayRun, stateWords, unit, until, type LoopRow, type ScheduleRow } from '#lib/health/index.ts';
+	import { runTone, runWord, busyNow, dot, every, groupSchedules, lastSeen, mayRun, skipLinks, skipWords, stateWords, unit, until, type LoopRow, type ScheduleRow } from '#lib/health/index.ts';
 	import { onMount, tick } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
@@ -14,7 +14,7 @@
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { ago, dateTime } from '#lib/core/format.ts';
+	import { ago, dateTime, duration } from '#lib/core/format.ts';
 
 	let rows = $state<ScheduleRow[] | null>(null);
 	let loops = $state<LoopRow[]>([]);
@@ -25,6 +25,9 @@
 	let amount = $state(0);
 	let editError = $state('');
 	let now = $state(Date.now());
+	// Kinds started with Run now, watched until their Job ends so the
+	// button keeps spinning and the result is told.
+	let watching = $state<Record<string, true>>({});
 
 	const groups = $derived(rows ? groupSchedules(rows) : []);
 	const running = $derived(rows ? busyNow(rows) : []);
@@ -50,6 +53,7 @@
 			const r = await api.get<{ schedules: ScheduleRow[]; loops: LoopRow[]; safe_mode: boolean }>('/schedules');
 			rows = r.schedules;
 			loops = r.loops;
+			told(r.schedules);
 			safeMode = r.safe_mode;
 			now = Date.now();
 			error = '';
@@ -58,11 +62,27 @@
 		}
 	}
 
+	const inLine = (s: ScheduleRow) => s.state === 'running' || s.state === 'queued';
+	const spinning = (s: ScheduleRow) => busy === s.kind && editing !== s.kind || (!!watching[s.kind] && inLine(s));
+
+	// Tells how a run started here ended: failed, did nothing (and why) or
+	// finished.
+	function told(list: ScheduleRow[]) {
+		for (const s of list) {
+			if (!watching[s.kind] || inLine(s)) continue;
+			delete watching[s.kind];
+			if (s.last_job === 'failed') toasts.push(t('settings.schedules.runFailed', { label: s.label }), 'fail', s.last_job_error ? { body: s.last_job_error } : undefined);
+			else if (s.last_job_note) toasts.push(t('settings.schedules.nothingToDo', { label: s.label }), 'ok', { body: skipWords(s.kind, s.last_job_note) });
+			else if (s.last_job) toasts.push(t('settings.schedules.finished', { label: s.label }), 'ok');
+		}
+	}
+
 	async function runNow(s: ScheduleRow) {
 		busy = s.kind;
 		try {
 			const r = await api.post<{ job_id: number; already: boolean }>(`/schedules/${s.kind}/run`);
 			toasts.push(r.already ? t('settings.schedules.alreadyQueued', { label: s.label }) : t('settings.schedules.started', { label: s.label }), 'ok');
+			watching[s.kind] = true;
 			await load();
 		} catch (e) {
 			toasts.push(t('settings.schedules.couldntStart', { label: s.label }), 'fail', { body: message(e) });
@@ -165,6 +185,7 @@
 					<ul>
 						{#each g.rows as s (s.kind)}
 							{@const u = unit(s.step_s)}
+							{@const seen = lastSeen(s)}
 							<li data-testid="schedule" data-kind={s.kind} data-state={s.state} class:open={editing === s.kind}>
 								<div class="line">
 									<div class="name">
@@ -177,7 +198,7 @@
 									<div class="meta">
 									<div class="cell"><span class="k">{t('settings.schedules.howOften')}</span><span>{often(s.every_s)}</span></div>
 									<div class="cell"><span class="k">{t('settings.schedules.lastRun')}</span>
-										{#if s.last_run}<time datetime={s.last_run} title={dateTime(s.last_run)}>{ago(s.last_run, now)}</time>{:else}<span class="faint">{t('settings.schedules.notYet')}</span>{/if}
+										{#if seen.at}<time datetime={seen.at} title={dateTime(seen.at)}>{ago(seen.at, now)}</time>{#if seen.took != null}<span class="took" title={t('settings.schedules.took', { time: duration(seen.took) })}><span class="sr-only">{t('settings.schedules.took', { time: duration(seen.took) })}</span><span aria-hidden="true"> · {duration(seen.took)}</span></span>{/if}{:else}<span class="faint">{t('settings.schedules.notYet')}</span>{/if}
 									</div>
 									<div class="cell" data-testid="next"><span class="k">{t('settings.schedules.nextRun')}</span>
 										{#if s.enabled && s.next_run && s.state === 'waiting'}<time datetime={s.next_run} title={dateTime(s.next_run)}>{nextWords(s)}</time>{:else}<span class:faint={!s.enabled || s.state === 'part_off' || s.state === 'safe_mode'}>{nextWords(s)}</span>{/if}
@@ -185,7 +206,7 @@
 									</div>
 									<div class="acts">
 										{#if canRun && mayRun(s)}
-											<Button type="button" busy={busy === s.kind && editing !== s.kind} disabled={busy === s.kind} onclick={() => runNow(s)} aria-label={t('settings.schedules.runLabel', { label: s.label })}>{t('settings.schedules.runNow')}</Button>
+											<Button type="button" busy={spinning(s)} disabled={busy === s.kind || spinning(s)} onclick={() => runNow(s)} aria-label={t('settings.schedules.runLabel', { label: s.label })}>{t('settings.schedules.runNow')}</Button>
 										{/if}
 										{#if canChange && editing !== s.kind}
 											<Button type="button" id="change-{s.kind}" onclick={() => edit(s)} aria-label={t('settings.schedules.changeLabel', { label: s.label })} aria-expanded="false" aria-controls="ed-{s.kind}">{t('settings.schedules.change')}</Button>
@@ -196,6 +217,12 @@
 								{#if s.last_job === 'failed'}
 									<p class="failed" title={s.last_job_ended ? t('settings.schedules.ended', { when: dateTime(s.last_job_ended) }) : undefined}>
 										<Icon name="alert" size={13} />{s.last_job_error ? t('settings.schedules.failedWith', { error: s.last_job_error }) : t('settings.schedules.failed')}
+									</p>
+								{/if}
+								{#if seen.why && s.last_job !== 'failed'}
+									<p class="why" data-testid="skip-reason" data-code={seen.why}>
+										<Icon name="info" size={13} />
+										{#if s.settings && skipLinks(seen.why)}<a href={to(s.settings)}>{skipWords(s.kind, seen.why)}</a>{:else}<span>{skipWords(s.kind, seen.why)}</span>{/if}
 									</p>
 								{/if}
 								{#if s.kind === 'refresh_titles' && !s.enabled}
@@ -332,9 +359,12 @@
 	.dot.busy::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--wait); opacity: 0; animation: ping 1.6s var(--ease-out) infinite; }
 	@keyframes ping { 0% { transform: scale(0.6); opacity: 0.7; } 100% { transform: scale(1.4); opacity: 0; } }
 
-	.failed, .stale-note { display: flex; gap: 6px; align-items: flex-start; margin: -2px 16px 10px 36px; font: var(--t-footnote); font-weight: 400; overflow-wrap: anywhere; }
+	.failed, .stale-note, .why { display: flex; gap: 6px; align-items: flex-start; margin: -2px 16px 10px 36px; font: var(--t-footnote); font-weight: 400; overflow-wrap: anywhere; }
 	.failed { color: var(--fail-text); }
-	.failed :global(.icon) { flex: none; margin-top: 1px; }
+	.failed :global(.icon), .why :global(.icon) { flex: none; margin-top: 1px; }
+	.why { color: var(--text-muted); }
+	.why a { color: var(--accent-text); font-weight: 600; }
+	.took { color: var(--text-muted); }
 	.stale-note { padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--wait) 10%, transparent); color: var(--text); }
 
 	/* The interval editor opens under its row, like an inset sheet. */
@@ -368,7 +398,7 @@
 		.meta .cell:first-child .k { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 		.about { display: none; }
 		li + li::before { left: 34px; }
-		.failed, .stale-note, .editor { margin-left: 34px; }
+		.failed, .stale-note, .why, .editor { margin-left: 34px; }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.dot.busy::after, .editor { animation: none; }

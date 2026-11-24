@@ -275,8 +275,9 @@ func TestHoldAsideNamesAndSafety(t *testing.T) {
 		t.Fatal("a path outside the Library folder was accepted")
 	}
 	write(t, filepath.Join(lib, "M", "b.mkv"), 5)
+	prev := renameFile
 	renameFile = func(string, string) error { return &os.LinkError{Op: "rename", Err: os.ErrInvalid} }
-	t.Cleanup(func() { renameFile = os.Rename })
+	t.Cleanup(func() { renameFile = prev })
 	to, err := holdAside(lib, "M/b.mkv", now)
 	if err != nil {
 		t.Fatal(err)

@@ -20,13 +20,19 @@ export const videoLadder = [
 /** The music quality ladder, low to high. */
 export const musicLadder = ['lossy_low', 'lossy_mid', 'lossy_high', 'lossless', 'lossless_hires'];
 
-const videoTraits = ['hevc', 'ddp_audio', 'web_dl', 'upscaled', 'dubbed_only', 'hardcoded_subs', '3d', 'cam', 'telesync', 'remux', 'av1', 'dv', 'hdr10', 'hdr10plus', 'atmos'];
+const videoTraits = ['hevc', 'ddp_audio', 'web_dl', 'upscaled', 'dubbed_only', 'hardcoded_subs', '3d', 'cam', 'telesync', 'remux', 'av1', 'dv', 'hdr10', 'hdr10plus', 'atmos', 'h264', 'dts_audio', 'truehd_audio', 'dv_no_fallback'];
 const musicTraits = ['cd_source', 'web_source', 'vinyl_source', 'log_cue', 'hires', 'mp3', 'aac', 'opus', 'vorbis', 'flac', 'alac', 'single_image', 'lossy_transcode', 'deluxe'];
 
 /** Traits that can only be in Never. */
 export const safetyTraits = ['sample', 'executable', 'password_protected', 'disc_image'];
 
 /** Languages HolyArrs can tell apart in a Release name. */
+/** French dub versions Pick rules can ask for. */
+export const frenchVersions = ['VFF', 'VFQ', 'VFI', 'VF2'] as const;
+
+/** Device families Pick rules can play on, as the server knows them. */
+export const deviceFamilies = ['apple_tv', 'fire_tv', 'roku', 'chromecast', 'web_browser'] as const;
+
 export const languages: [string, string][] = [
 	tup<[string, string]>('en', () => say('downloads.pr.lang.en')),
 	tup<[string, string]>('fr', () => say('downloads.pr.lang.fr')),
@@ -53,7 +59,36 @@ export const languages: [string, string][] = [
 	tup<[string, string]>('zh', () => say('downloads.pr.lang.zh')),
 	tup<[string, string]>('th', () => say('downloads.pr.lang.th')),
 	tup<[string, string]>('vi', () => say('downloads.pr.lang.vi')),
-	tup<[string, string]>('uk', () => say('downloads.pr.lang.uk'))
+	tup<[string, string]>('uk', () => say('downloads.pr.lang.uk')),
+	tup<[string, string]>('bg', () => say('downloads.pr.lang.bg')),
+	tup<[string, string]>('ro', () => say('downloads.pr.lang.ro')),
+	tup<[string, string]>('ca', () => say('downloads.pr.lang.ca')),
+	tup<[string, string]>('lv', () => say('downloads.pr.lang.lv')),
+	tup<[string, string]>('lt', () => say('downloads.pr.lang.lt')),
+	tup<[string, string]>('sk', () => say('downloads.pr.lang.sk')),
+	tup<[string, string]>('is', () => say('downloads.pr.lang.is')),
+	tup<[string, string]>('fa', () => say('downloads.pr.lang.fa')),
+	tup<[string, string]>('bn', () => say('downloads.pr.lang.bn')),
+	tup<[string, string]>('ta', () => say('downloads.pr.lang.ta')),
+	tup<[string, string]>('te', () => say('downloads.pr.lang.te')),
+	tup<[string, string]>('ml', () => say('downloads.pr.lang.ml')),
+	tup<[string, string]>('kn', () => say('downloads.pr.lang.kn')),
+	tup<[string, string]>('ka', () => say('downloads.pr.lang.ka')),
+	tup<[string, string]>('ur', () => say('downloads.pr.lang.ur')),
+	tup<[string, string]>('et', () => say('downloads.pr.lang.et')),
+	tup<[string, string]>('sr', () => say('downloads.pr.lang.sr')),
+	tup<[string, string]>('hr', () => say('downloads.pr.lang.hr')),
+	tup<[string, string]>('sl', () => say('downloads.pr.lang.sl')),
+	tup<[string, string]>('id', () => say('downloads.pr.lang.id')),
+	tup<[string, string]>('ms', () => say('downloads.pr.lang.ms')),
+	tup<[string, string]>('sq', () => say('downloads.pr.lang.sq')),
+	tup<[string, string]>('af', () => say('downloads.pr.lang.af')),
+	tup<[string, string]>('mr', () => say('downloads.pr.lang.mr')),
+	tup<[string, string]>('tl', () => say('downloads.pr.lang.tl')),
+	tup<[string, string]>('mk', () => say('downloads.pr.lang.mk')),
+	tup<[string, string]>('bs', () => say('downloads.pr.lang.bs')),
+	tup<[string, string]>('pa', () => say('downloads.pr.lang.pa')),
+	tup<[string, string]>('gu', () => say('downloads.pr.lang.gu'))
 ];
 
 export const kindChoices: [RulesKind, string][] = [
@@ -264,6 +299,7 @@ export function checkBody(name: string, kinds: string[], body: PickRulesBody, mi
 		else if (l.min < 0 || l.max < 0) err.size_limits = say('downloads.pr.err.sizeNeg');
 		else if (l.max < l.min) err.size_limits = say('downloads.pr.err.sizeOrder');
 		else if (l.max > 2 ** 50) err.size_limits = say('downloads.pr.err.sizeBig');
+		else if (l.preferred && (l.preferred < l.min || (l.max > 0 && l.preferred > l.max))) err.size_limits = say('downloads.pr.err.sizePreferred');
 		if (err.size_limits) break;
 	}
 
@@ -275,6 +311,8 @@ export function checkBody(name: string, kinds: string[], body: PickRulesBody, mi
 	const lang = body.language.wanted.find((l) => !known.includes(l));
 	if (lang !== undefined) err.language = say('downloads.pr.err.langUnknown', { lang });
 	else if (new Set(body.language.wanted).size !== body.language.wanted.length) err.language = say('downloads.pr.err.langOnce');
+	const langWait = body.language.wait_days ?? 0;
+	if (!Number.isInteger(langWait) || langWait < 0 || langWait > 90) err.wait_days = say('downloads.pr.err.langWait');
 
 	const age = body.proper_policy.max_age_days ?? 0;
 	if (!Number.isInteger(age) || age < 0 || age > 36500) err.max_age_days = say('downloads.pr.err.days');
@@ -299,6 +337,12 @@ export function tidyBody(body: PickRulesBody): PickRulesBody {
 	b.protocol.wait_minutes_torrent = whole(b.protocol.wait_minutes_torrent);
 	b.protocol.wait_minutes_usenet = whole(b.protocol.wait_minutes_usenet);
 	if (!b.tags?.length) delete b.tags;
+	if (!b.blocked_groups?.length) delete b.blocked_groups;
+	if (!b.devices?.length) delete b.devices;
+	const langWait = whole(b.language.wait_days);
+	if (langWait) b.language.wait_days = langWait;
+	else delete b.language.wait_days;
+	if (!b.language.french_versions?.length || !b.language.wanted.includes('fr')) delete b.language.french_versions;
 	const days = whole(b.proper_policy.max_age_days);
 	if (days) b.proper_policy.max_age_days = days;
 	else delete b.proper_policy.max_age_days;
@@ -311,6 +355,47 @@ const open = 2 ** 50;
 /** Bytes per minute of runtime as GB per hour, to two places. */
 export function gbPerHour(bytesPerMin: number): number {
 	return Math.round(((bytesPerMin * 60) / gb) * 100) / 100;
+}
+
+/** The steps with sizes of their own, in ladder order, as GB per hour; an open top is null. */
+export function stepSizes(limits: Record<string, PickRulesSize>, ladder: string[]): { step: string; min: number; max: number | null }[] {
+	const order = (s: string) => (ladder.includes(s) ? ladder.indexOf(s) : ladder.length);
+	return Object.keys(limits)
+		.filter((s) => s !== '*' && limits[s].per_minute)
+		.sort((a, b) => order(a) - order(b))
+		.map((step) => {
+			const l = limits[step];
+			return { step, min: gbPerHour(l.min), max: l.max === 0 || l.max >= open ? null : gbPerHour(l.max) };
+		});
+}
+
+/** One step's own size limit as it is edited, in GB per hour; empty is no limit. */
+export interface StepSizeRow {
+	step: string;
+	min: number | '';
+	preferred: number | '';
+	max: number | '';
+}
+
+/** The steps with sizes of their own as rows to edit, low step first. */
+export function stepSizeRows(limits: Record<string, PickRulesSize>, ladder: string[]): StepSizeRow[] {
+	return stepSizes(limits, ladder).map((s) => {
+		const p = limits[s.step].preferred;
+		return { step: s.step, min: s.min, preferred: p ? gbPerHour(p) : '', max: s.max ?? '' };
+	});
+}
+
+/** Writes the step rows back into a copy of the body; untouched rows keep their exact bytes and removed rows are dropped. */
+export function applyStepSizes(body: PickRulesBody, rows: StepSizeRow[], start: StepSizeRow[]): PickRulesBody {
+	const size_limits = { ...body.size_limits };
+	for (const s of start) if (!rows.some((r) => r.step === s.step)) delete size_limits[s.step];
+	for (const r of rows) {
+		const was = start.find((s) => s.step === r.step);
+		if (was && was.min === r.min && was.preferred === r.preferred && was.max === r.max) continue;
+		size_limits[r.step] = { min: r.min === '' ? 0 : bytesPerMinute(r.min), max: r.max === '' ? open : bytesPerMinute(r.max), per_minute: true };
+		if (r.preferred !== '' && r.preferred > 0) size_limits[r.step].preferred = bytesPerMinute(r.preferred);
+	}
+	return { ...body, size_limits };
 }
 
 /** GB per hour as bytes per minute of runtime. */
@@ -339,7 +424,9 @@ const nested: Record<string, string> = {
 	'protocol.wait_minutes_torrent': 'wait_minutes_torrent',
 	'protocol.wait_minutes_usenet': 'wait_minutes_usenet',
 	'protocol.skip_wait_at_good_enough': 'prefer',
-	'proper_policy.max_age_days': 'max_age_days'
+	'proper_policy.max_age_days': 'max_age_days',
+	'language.wait_days': 'wait_days',
+	'language.french_versions': 'language'
 };
 
 /** Maps the field a server error names (such as "body.steps[2].quality") to the field on the page. */
@@ -369,4 +456,12 @@ function listProblem(values: string[], allowed: string[], what: string): string 
 	if (bad === undefined) return undefined;
 	if (safetyTraits.includes(bad)) return say('downloads.pr.err.cannotBe', { trait: traitLabel(bad), what });
 	return isOwnTrait(bad) ? say('downloads.pr.err.ownRemoved') : say('downloads.pr.err.notTrait', { bad });
+}
+
+/** Adds a typed release group unless it is empty or already listed in any case. */
+export function addBlockedGroup(list: string[] | undefined, raw: string): string[] {
+	const g = raw.trim();
+	const have = list ?? [];
+	if (!g || have.some((x) => x.toLowerCase() === g.toLowerCase())) return have;
+	return [...have, g];
 }

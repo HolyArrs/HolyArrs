@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Kumotaanko tuonti {id}?",
 	"settings.move.undoQuestion": "Kumotaanko tämä tuonti?",
 	"settings.move.undoNote": "Poistaa sen, minkä tämä tuonti lisäsi; myöhemmät muutoksesi säilyvät. Lataa raportti ensin, jos haluat sen.",
-	"settings.move.undoMove": "Kumoa tuonti"
+	"settings.move.undoMove": "Kumoa tuonti",
+	"settings.move.continueSetup": "Jatka asennusta",
+	"settings.move.backToChoose": "Takaisin valintaan"
 }

@@ -8,9 +8,9 @@ const row = (o: Partial<DownloadRow>): DownloadRow => ({
 });
 
 describe('sections', () => {
-	it('puts done, seeding, failed and removed in History, the rest in the Queue', () => {
-		const phases = ['waiting', 'paused', 'downloading', 'stalled', 'importing', 'needs_a_decision', 'done', 'failed', 'removed', 'vanished'];
-		expect(phases.map((p) => inHistory(row({ phase: p })))).toEqual([false, false, false, false, false, false, true, true, true, true]);
+	it('puts done, seeding and failed in History, the rest in the Queue', () => {
+		const phases = ['waiting', 'paused', 'downloading', 'stalled', 'importing', 'needs_a_decision', 'done', 'failed', 'vanished'];
+		expect(phases.map((p) => inHistory(row({ phase: p })))).toEqual([false, false, false, false, false, false, true, true, true]);
 	});
 	it('colours bars by state', () => {
 		expect(['downloading', 'waiting', 'paused', 'stalled', 'needs_a_decision'].map((p) => barTone(row({ phase: p })))).toEqual(['go', 'queued', 'held', 'held', 'bad']);

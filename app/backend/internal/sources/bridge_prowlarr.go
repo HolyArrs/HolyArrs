@@ -166,7 +166,7 @@ func (p *BridgeProwlarr) do(ctx context.Context, method, path string, body any, 
 	case status == http.StatusNotFound:
 		return fail("That address answers, but not like Prowlarr. Check the address (and its URL base, if Prowlarr has one).")
 	case status == http.StatusBadRequest:
-		return fail("Prowlarr refused it: %s", validationWords(b))
+		return fail("Prowlarr refused it: %s", p.withoutKey(validationWords(b)))
 	case status >= 300:
 		return fail("Prowlarr answered with status %d.", status)
 	}
@@ -174,6 +174,14 @@ func (p *BridgeProwlarr) do(ctx context.Context, method, path string, body any, 
 		return fail("That address answers, but not like Prowlarr.")
 	}
 	return nil
+}
+
+// withoutKey keeps the key out of words that came back from the other side.
+func (p *BridgeProwlarr) withoutKey(s string) string {
+	if p.Key == "" {
+		return s
+	}
+	return strings.ReplaceAll(s, p.Key, "…")
 }
 
 // validationWords reads Prowlarr's list of refusals (each a property and a

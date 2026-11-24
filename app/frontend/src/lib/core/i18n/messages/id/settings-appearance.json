@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Permintaan",
 	"settings.appearance.colRate": "Per baris",
 	"settings.appearance.noRows": "Belum ada baris Jelajahi yang dihitung.",
+	"settings.appearance.rowStats": "Baris Jelajahi",
+	"settings.appearance.rowStatsDesc": "Dibuka dan permintaan per baris dalam 30 hari terakhir, semua orang digabung. Hanya dihitung di server ini.",
+	"settings.appearance.colRow": "Baris",
+	"settings.appearance.row.because_have": "Seperti judul yang kamu punya",
+	"settings.appearance.row.because_asked": "Seperti permintaanmu",
+	"settings.appearance.row.person": "Lainnya dari seseorang",
+	"settings.appearance.row.genre": "Pilihan genre untukmu",
+	"settings.appearance.row.popular_genre": "Populer menurut genre",
+	"settings.appearance.row.popular_decade": "Populer menurut dekade",
+	"settings.appearance.row.decade": "Menurut dekade",
+	"settings.appearance.row.mood": "Menurut suasana",
+	"settings.appearance.row.hero": "Banner atas",
 	"settings.appearance.motion": "Gerakan",
 	"settings.appearance.motionNote": "Mengikuti pengaturan Kurangi gerakan di perangkatmu"
 }

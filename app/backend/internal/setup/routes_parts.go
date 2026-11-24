@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -12,6 +13,8 @@ import (
 // PartHandlers are the part switches (3.7.6). They need the owner or an
 // admin and, for an API key, the control scope (accounts.RouteScopes).
 type PartHandlers struct {
+	// Store keeps the hands-off setting.
+	Store *database.Store
 	// Parts switches the parts (nil: every part on, no switches).
 	Parts *parts.Control
 	// SafeMode says the app started with only the core.
@@ -30,6 +33,8 @@ func (h *PartHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/parts/{part}/on", h.partOn)
 	m.HandleFunc("POST /api/v1/parts/{part}/off", h.partOff)
 	m.HandleFunc("POST /api/v1/parts/{part}/restart", h.partRestart)
+	m.HandleFunc("GET /api/v1/settings/hands-off", h.getHandsOff)
+	m.HandleFunc("PUT /api/v1/settings/hands-off", h.putHandsOff)
 }
 
 // PartOffBody is what a route of a part that is off answers.

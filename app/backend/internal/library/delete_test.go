@@ -108,8 +108,8 @@ func TestDeleteWithNeverAdd(t *testing.T) {
 	if _, err := AddMovie(ctx, s, dune, AddOptions{}, nil, now, domain.System); !errors.Is(err, ErrNeverAdd) {
 		t.Fatalf("err %v", err)
 	}
-	if _, err := svc.Remove(ctx, id, RemoveChoice{}, true, domain.System); !errors.Is(err, ErrAlreadyRemoved) {
-		t.Fatalf("second delete %v", err)
+	if p, err := svc.Remove(ctx, id, RemoveChoice{}, true, domain.System); err != nil || !p.Applied || len(p.Held) != 0 {
+		t.Fatalf("second delete %+v %v", p, err)
 	}
 }
 
@@ -155,5 +155,31 @@ func TestHoldingCleanUp(t *testing.T) {
 	svc.Now = func() time.Time { return now.AddDate(1, 0, 0) }
 	if n, _ := svc.CleanHolding(ctx, domain.System); n != 0 {
 		t.Fatalf("0 days still cleaned %d", n)
+	}
+}
+
+// Deleting a title lets go of the Downloader links matched to it, and a
+// second delete of the same title succeeds instead of failing; applied, it
+// lets go of links an older delete left behind.
+func TestDeleteUnlinksDownloadsAndRepeats(t *testing.T) {
+	svc, s, _, id, _ := deleteWorld(t)
+	var unlinked []int64
+	svc.UnlinkDownloads = func(_ *sql.Tx, titleID int64) error {
+		unlinked = append(unlinked, titleID)
+		return nil
+	}
+	ctx := context.Background()
+	if _, err := svc.Remove(ctx, id, RemoveChoice{}, true, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	before := s.WriteCount()
+	if p, err := svc.Remove(ctx, id, RemoveChoice{DeleteFiles: true}, false, domain.System); err != nil || p.Applied || s.WriteCount() != before {
+		t.Fatalf("preview %+v %v", p, err)
+	}
+	if p, err := svc.Remove(ctx, id, RemoveChoice{DeleteFiles: true}, true, domain.System); err != nil || !p.Applied || p.TitleID != id || len(p.Held) != 0 {
+		t.Fatalf("again %+v %v", p, err)
+	}
+	if len(unlinked) != 2 || unlinked[0] != id || unlinked[1] != id {
+		t.Fatalf("unlinked %v", unlinked)
 	}
 }

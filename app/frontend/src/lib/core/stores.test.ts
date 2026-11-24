@@ -244,6 +244,17 @@ describe('session', () => {
 		expect(plain.s.safeMode).toBe(false);
 	});
 
+	it('knows hands-off mode from /auth/me and forgets it on sign-out', async () => {
+		const s = createSession(server({ 'GET /auth/me': json(200, { name: 'ana', via: 'session', csrf: 'abc', hands_off: true }) }));
+		await s.load();
+		expect(s.s.handsOff).toBe(true);
+		s.setHandsOff(false);
+		expect(s.s.handsOff).toBe(false);
+		const plain = createSession(server({ 'GET /auth/me': json(200, { name: 'luis', via: 'session', csrf: 'abc' }) }));
+		await plain.load();
+		expect(plain.s.handsOff).toBe(false);
+	});
+
 	it('asks for first-run setup when there is no owner', async () => {
 		const c = server({ 'GET /auth/me': json(401, { error: 'sign in first' }), 'GET /auth/state': json(200, { needs_setup: true }) });
 		const s = createSession(c);
@@ -345,7 +356,7 @@ describe('session', () => {
 		const s = createSession(c);
 		const pw = ['test', 'only'].join('-');
 		await s.setup('luis', pw);
-		expect(sent).toEqual({ name: 'luis', password: pw });
+		expect(sent).toEqual({ name: 'luis', password: pw, display_name: '' });
 		expect(s.s.state).toBe('signed_in');
 	});
 

@@ -14,7 +14,6 @@
 	"settings.health.none": "Результатов нет. Запустите проверку снова.",
 	"settings.health.since": "С",
 	"settings.health.settings": "Настройки проверок исправности",
-	"settings.health.updateCheck": "Проверять, нет ли новой версии HolyArrs",
 	"settings.health.onlyChecks": "Только проверяет. Ничего не устанавливает.",
 	"settings.health.every": "Проверять обновления каждые",
 	"settings.health.day": "день",
