@@ -62,9 +62,7 @@ export function createMovePassword(ctx: any) {
 		pwStale = !!outsideWay(session.s);
 	}
 	async function signInAgain() {
-		const back = location.pathname + location.search;
-		await session.logout();
-		await goto(to(`/login?next=${encodeURIComponent(back)}`));
+		await session.signInAgain(location.pathname + location.search, goto, to);
 	}
 
 	return {

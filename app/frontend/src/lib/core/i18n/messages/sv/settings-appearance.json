@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Förfrågningar",
 	"settings.appearance.colRate": "Per rad",
 	"settings.appearance.noRows": "Inga Utforska-rader räknade ännu.",
+	"settings.appearance.rowStats": "Utforska-rader",
+	"settings.appearance.rowStatsDesc": "Öppningar och förfrågningar per rad de senaste 30 dagarna, för alla tillsammans. Räknas bara på den här servern.",
+	"settings.appearance.colRow": "Rad",
+	"settings.appearance.row.because_have": "Som titlar du har",
+	"settings.appearance.row.because_asked": "Som dina förfrågningar",
+	"settings.appearance.row.person": "Mer från en person",
+	"settings.appearance.row.genre": "Genreval för dig",
+	"settings.appearance.row.popular_genre": "Populärt per genre",
+	"settings.appearance.row.popular_decade": "Populärt per decennium",
+	"settings.appearance.row.decade": "Per decennium",
+	"settings.appearance.row.mood": "Efter stämning",
+	"settings.appearance.row.hero": "Toppbanner",
 	"settings.appearance.motion": "Rörelse",
 	"settings.appearance.motionNote": "Följer enhetens inställning Minska rörelse"
 }

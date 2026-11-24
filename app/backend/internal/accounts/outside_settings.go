@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -29,7 +28,7 @@ type WayView struct {
 
 func (a *Auth) way(ctx context.Context, p string) WayView {
 	v := WayView{
-		On:       a.signInSetting(ctx, p+"_on") == "true" && (p != ProviderEmby || startup.FeatureOn(startup.EmbySignIn)),
+		On:       a.signInSetting(ctx, p+"_on") == "true",
 		URL:      a.signInSetting(ctx, p+"_url"),
 		ServerID: a.signInSetting(ctx, p+"_server_id"),
 		Join:     a.signInSetting(ctx, p+"_join"),
@@ -108,6 +107,7 @@ func (a *Auth) getSettings(w http.ResponseWriter, r *http.Request) {
 		// locked, they always apply.
 		"trusted_proxies_fixed": a.fixedProxyList(),
 		keyRequireAdmin2FA:      a.requireAdmin2FA.Load(),
+		keyResetLink:            a.resetLinkOn(ctx),
 		keyMinLength:            MinPasswordLength(ctx, a.s.Read()),
 		ProviderPlex:            a.way(ctx, ProviderPlex),
 		ProviderJellyfin:        a.way(ctx, ProviderJellyfin),
@@ -141,6 +141,7 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 		AddCGNAT      bool      `json:"add_cgnat"`
 		Proxies       *[]string `json:"trusted_proxies"`
 		RequireAdmin  *bool     `json:"require_two_factor_admins"`
+		ResetLink     *bool     `json:"owner_reset_link"`
 		MinPassword   *int      `json:"min_password_length"`
 		Plex          *WayView  `json:"plex"`
 		Jellyfin      *WayView  `json:"jellyfin"`
@@ -154,7 +155,7 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil ||
 		(body.SkipLocal == nil && body.LocalNets == nil && body.LocalPerson == nil && !body.AddHomeRanges && !body.AddCGNAT && body.Proxies == nil &&
-			body.RequireAdmin == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil && body.AllowedHosts == nil) {
+			body.RequireAdmin == nil && body.ResetLink == nil && body.MinPassword == nil && body.Plex == nil && body.Jellyfin == nil && body.Emby == nil && body.AllowedHosts == nil) {
 		fail(w, http.StatusBadRequest, `send {"skip_login_local_network": true|false, "local_networks": ["192.168.1.0/24"], "local_person": 0, "add_home_ranges": true, "add_cgnat": true, "trusted_proxies": ["172.18.0.2"], "require_two_factor_admins": true|false, "min_password_length": 4..64, "plex": {...}, "jellyfin": {...}, "emby": {...}}`)
 		return
 	}
@@ -236,6 +237,9 @@ func (a *Auth) putSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	if body.RequireAdmin != nil {
 		set[settingsGroup+"/"+signInPrefix+keyRequireAdmin2FA] = strconv.FormatBool(*body.RequireAdmin)
+	}
+	if body.ResetLink != nil {
+		set[settingsGroup+"/"+signInPrefix+keyResetLink] = strconv.FormatBool(*body.ResetLink)
 	}
 	if body.MinPassword != nil {
 		if *body.MinPassword < MinPassword || *body.MinPassword > MaxMinPassword {

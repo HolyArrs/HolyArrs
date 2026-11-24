@@ -3,6 +3,7 @@
 	import ArtPlaceholder from './ArtPlaceholder.svelte';
 	import { to } from '../core/paths.ts';
 	import { proxied } from '../core/tmdb-image.ts';
+	import { boxWidth } from './box-width.ts';
 
 	let { src, name }: { src?: string | null; name: string } = $props();
 
@@ -24,7 +25,7 @@
 	const sized = /^\/api\/v1\/(?:artwork\/[0-9a-f]+\.(?:jpg|jpeg|png|webp)|music-trending\/art\/(?:artist|album)\/[^/?]+|albums\/\d+\/cover)(?:\?(?!.*size=).*)?$/;
 </script>
 
-<div class="poster" bind:clientWidth={width}>
+<div class="poster" use:boxWidth={(w) => (width = w)}>
 	{#if !usable || !loaded}<ArtPlaceholder name={usable ? '' : name} shape="poster" loading={usable} />{/if}
 	{#if usable && width > 0}
 		<img src={shown} alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload={() => (loaded = true)} onerror={() => (broken = true)} />

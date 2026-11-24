@@ -219,6 +219,40 @@ func TestGoBackSkipsRunningVersion(t *testing.T) {
 	if !ok || cur.Version != "1.2.0" {
 		t.Fatalf("after go back picked %v %v", cur, ok)
 	}
+	if st := v.status(); !st.Chosen || st.Left != "1.3.0" || st.To != "1.2.0" {
+		t.Fatalf("go back not marked as chosen: %+v", st)
+	}
+	if v.exists("go-back.json") {
+		t.Fatal("go-back marker left behind")
+	}
+}
+
+// A failed start after a chosen go back is not marked as chosen, and a new
+// install clears the note.
+func TestGoBackNoteOnlyForChosenAndClearedByInstall(t *testing.T) {
+	v := newVolume(t)
+	v.set("previous.json", v.install("1.2.0", "previous"))
+	v.set("current.json", v.install("1.3.0", "current"))
+	v.set("skip.json", []string{"1.3.0"})
+	if _, ok := v.launcher().Pick(); !ok {
+		t.Fatal("nothing picked")
+	}
+	if st := v.status(); st.Chosen || st.Left != "1.3.0" || st.Rollback == "" {
+		t.Fatalf("automatic go back marked as chosen: %+v", st)
+	}
+	rel := newRelease(t, v.key, "program")
+	n := 0
+	in := v.installer(&n)
+	in.Version = "1.2.0"
+	if err := in.Prepare(context.Background(), emptyList, nil, nil, rel.channel("1.4.0")); err != nil {
+		t.Fatal(err)
+	}
+	if err := in.Install(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if st := v.status(); st.Rollback != "" || st.Left != "" {
+		t.Fatalf("note kept after a new install: %+v", st)
+	}
 }
 
 func TestGoBackRefusedOnImageProgram(t *testing.T) {

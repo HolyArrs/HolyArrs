@@ -7,7 +7,7 @@ import "testing"
 func TestLang_BrazilianPortugueseOwnCode(t *testing.T) {
 	for in, want := range map[string]string{"pt-BR": "pt-br", "pt_br": "pt-br", "PT-br": "pt-br", "pob": "pt-br", "pb": "pt-br", "ptbr": "pt-br",
 		"Portuguese (Brazil)": "pt-br", "portuguese (brazilian)": "pt-br", "Brazilian Portuguese": "pt-br", "pt-Latn-BR": "pt-br",
-		"pt": "pt", "por": "pt", "pt-PT": "pt", "Portuguese": "pt", "en-US": "en", "es-419": "es", "br": "", "xx-BR": ""} {
+		"pt": "pt", "por": "pt", "pt-PT": "pt-pt", "Portuguese": "pt", "en-US": "en", "es-ES": "es", "es-419": "es-419", "br": "", "xx-BR": ""} {
 		if got := NormLanguage(in); got != want {
 			t.Errorf("%q: %q, want %q", in, got, want)
 		}

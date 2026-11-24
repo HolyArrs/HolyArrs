@@ -1,5 +1,6 @@
 <!-- Held or turned down releases with undo, clear all and paging. -->
 <script lang="ts">
+	import ReleaseTags from './ReleaseTags.svelte';
 	import { ask as askSure } from '#lib/ui/ask.svelte.ts';
 	import { onMount } from 'svelte';
 	import Poster from '#lib/ui/Poster.svelte';
@@ -8,7 +9,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import LibraryToolPage from './LibraryToolPage.svelte';
-	import { facts, keyReasons, listedName, pager } from './releases.ts';
+	import { facts, keyReasons, listedName, pager, verdict, verdictTone } from './releases.ts';
 	import { titleArt } from './title-art.ts';
 	import { to } from '../core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
@@ -136,6 +137,7 @@
 							<a class="for" href={to(`/library/${r.title_id}`)} data-testid="listed-for">{listedName(r)}{r.version && r.version !== 'Main' ? ` · ${r.version}` : ''}</a>
 						{/if}
 						<div class="rel-name">{r.name}</div>
+						<div class="rel-tags"><ReleaseTags release={r} /><span class="chip {verdictTone(r)}" data-testid="verdict">{verdict(r)}</span></div>
 					</div>
 					<Button variant="secondary" icon="x" onclick={() => removeOne(r)} disabled={busy} aria-label={t('mediafiles.releaseList.undoOf', { word: undoWord, name: r.name })} data-testid="listed-undo">
 						{undoWord}
@@ -184,4 +186,5 @@
 	.reasons li.fail { border-left-color: var(--fail); }
 	.reasons li.hold, .reasons li.warn { border-left-color: var(--wait); }
 	@media (max-width: 600px) { .rel-top { flex-direction: column; } .switch-list a { flex: 1; justify-content: center; } }
+	.rel-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
 </style>

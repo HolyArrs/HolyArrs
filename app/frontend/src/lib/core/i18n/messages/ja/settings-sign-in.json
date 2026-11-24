@@ -133,5 +133,10 @@
 "settings.signIn.proxiesHelp": "訪問元を伝えられるのはこれらだけです。",
 "settings.signIn.fixToSaveOne": "保存するには 1 行を直してください",
 "settings.signIn.fixToSaveOther": "保存するには {n} 行を直してください",
-"settings.signIn.localSaved": "ローカルネットワークを保存しました"
+"settings.signIn.localSaved": "ローカルネットワークを保存しました",
+	"settings.signIn.forgotTitle": "パスワードをお忘れですか?",
+	"settings.signIn.forgotOn": "サインインページに「パスワードをお忘れですか?」を表示",
+	"settings.signIn.forgotNote": "オーナーはサーバーログからワンタイムコードを受け取ります。全員がシングルサインオンでサインインするならオフにしてください。reset-owner コマンドは引き続き使えます。",
+	"settings.signIn.forgotShown": "「パスワードをお忘れですか?」はオン",
+	"settings.signIn.forgotHidden": "「パスワードをお忘れですか?」はオフ"
 }

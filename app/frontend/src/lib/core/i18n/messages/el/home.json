@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Διαλέξτε τι θα ζητήσετε στη συνέχεια",
 	"home.newPopular": "Νέα και δημοφιλή",
 	"home.whatSTrending": "Τι είναι τάση",
+	"home.gettingReady": "Προετοιμασία…",
 	"home.top10sAndComing": "Top 10 και προσεχώς",
 	"home.whatSNext": "Τι ακολουθεί",
 	"home.airDatesAndReleases": "Ημερομηνίες προβολής και κυκλοφορίες",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Επεισόδια και ταινίες που βγαίνουν αυτή την εβδομάδα",
 	"home.popularThisWeek": "Δημοφιλείς κυκλοφορίες αυτής της εβδομάδας",
 	"home.peopleCheck": "Έλεγχος ατόμων",
-	"home.cantReadUsers": "η λίστα χρηστών δεν διαβάζεται"
+	"home.cantReadUsers": "η λίστα χρηστών δεν διαβάζεται",
+	"home.joined.title": "Καλώς ήρθες, {name}",
+	"home.joined.find": "Βρες κάτι στο {explore} ή στο {search}.",
+	"home.joined.ask": "Πάτησε {request} σε έναν τίτλο για να τον πάρεις. Μπορείς να ζητήσεις:",
+	"home.joined.track": "Παρακολούθησε το καθένα στο {requests}.",
+	"home.joined.noLimit": "Χωρίς εβδομαδιαίο όριο.",
+	"home.joined.gotIt": "Εντάξει",
+	"home.joined.explore": "Άνοιγμα {explore}"
 }

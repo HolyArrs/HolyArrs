@@ -40,6 +40,7 @@
 		busy: number;
 		decisionsOf: (r: DownloadRow) => Decision[];
 		ondone: () => void;
+		onsearch?: (slotID: number) => void;
 		onact?: (r: DownloadRow, action: ClientAction) => void;
 		onretry?: (rows: DownloadRow[]) => void;
 		onremove: (r: DownloadRow, withFiles?: boolean) => void;
@@ -47,7 +48,7 @@
 		paneMenu: (r: DownloadRow) => MenuItem[];
 		maxPane: () => number;
 	};
-	let { r, paneOpen = $bindable(), openId = $bindable(), tab, ontab, pane, importOf, titles, titlesReady, watch, busy, decisionsOf, ondone, onact, onretry, onremove, mayEdit, paneMenu, maxPane }: Props = $props();
+	let { r, paneOpen = $bindable(), openId = $bindable(), tab, ontab, pane, importOf, titles, titlesReady, watch, busy, decisionsOf, ondone, onsearch, onact, onretry, onremove, mayEdit, paneMenu, maxPane }: Props = $props();
 
 	// The pane height is kept per browser.
 	const PANE_KEY = 'holyarrs.downloads.pane';
@@ -55,6 +56,12 @@
 	// The pane fits its content, capped so the list keeps rows. Dragging the divider sets a height; a double-click goes back to fitting.
 	let paneFit = $state(true);
 	let grabY: number | null = null;
+	// The X closes the pane fully; clicking a row opens it again. Focus goes back to that row.
+	function closePane() {
+		const id = openId;
+		openId = 0;
+		document.querySelector<HTMLElement>(`[data-dl-id="${id}"] .dline`)?.focus();
+	}
 	try {
 		const v = typeof localStorage === 'undefined' ? null : Number(localStorage.getItem(PANE_KEY));
 		if (v && Number.isFinite(v)) paneH = Math.max(120, Math.min(900, Math.round(v)));
@@ -163,13 +170,14 @@
 			</div>
 			{/if}
 			<button type="button" class="pcl" aria-expanded={paneOpen} aria-label={paneOpen ? t('downloads.pane.collapse') : t('downloads.pane.expand')} onclick={() => (paneOpen = !paneOpen)} data-testid="dl-pane-toggle"><Icon name="chevronDown" size={14} stroke={2.2} /></button>
+			<button type="button" class="pcx" aria-label={t('downloads.pane.close')} title={t('downloads.pane.close')} onclick={closePane} data-testid="dl-pane-close"><Icon name="x" size={14} stroke={2.2} /></button>
 		</div>
 		{#if paneOpen}
 		<div class="pb" data-testid="dl-panel" data-card="d">
 			<span class="big" class:square={r.kind === 'artist'} data-testid="dl-big-poster"><Poster src={poster(r, titles)} name={titlesReady ? r.title || r.name.replace(/[._]+/g, ' ') : ''} /></span>
 			<div class="xb">
 				{#key tab}<div class="tview" role="tabpanel" id="dlv-{r.id}" aria-labelledby="dlt-{r.id}-{tab}"><DlTabsView {r} tab={tab} {pane} {importOf} {watch} {mayEdit} /></div>{/key}
-				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} /></div>{/if}
+				{#if ds.length && !watch}<div class="dp"><DecisionPanel items={ds} compact {ondone} {onsearch} /></div>{/if}
 			</div>
 		</div>
 		{/if}
@@ -219,6 +227,10 @@
 	.dpane.shut .pcl :global(svg) { transform: rotate(180deg); }
 	.pcl:hover { background: var(--surface-3); color: var(--text); }
 	.pcl:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	.pcx { position: relative; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--r-sm); background: none; color: var(--text-muted); cursor: pointer; }
+	.pcx::after { content: ''; position: absolute; inset: -8px; }
+	.pcx:hover { background: var(--surface-3); color: var(--text); }
+	.pcx:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	.pb { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: start; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 8px var(--dl-gutter); overflow: auto; }
 	.pb .big { width: 112px; height: 168px; border-radius: var(--r-card, 10px); }
 	.pb .big :global(.poster) { border-radius: var(--r-card, 10px); }
@@ -309,6 +321,7 @@
 		.phd .pt { order: 0; }
 		.phd .xtabs { order: 1; }
 		.phd .pcl { order: 2; margin-left: auto; }
+		.phd .pcx { order: 2; width: 32px; height: 32px; }
 		.pact { order: 3; flex: 1 0 100%; margin-left: 0; flex-wrap: wrap; padding-bottom: 4px; }
 		.pact .xbt { flex-wrap: wrap; }
 		.dpane { height: min(60dvh, calc(100dvh - var(--tabbar, 56px) - env(safe-area-inset-bottom) - 340px), 520px) !important; }
@@ -364,7 +377,7 @@
 	@media (min-width: 641px) and (max-width: 1240px) {
 		.dpane .pt { max-width: none; flex: 1 1 200px; }
 		.dpane .phd .xtabs { order: 2; flex: 0 1 auto; margin: 0 auto 6px 0; }
-		.dpane .pact, .dpane .pcl { order: 1; flex: none; }
+		.dpane .pact, .dpane .pcl, .dpane .pcx { order: 1; flex: none; }
 	}
 	@media (max-width: 767px) and (pointer: coarse) {
 		.tab { position: relative; }

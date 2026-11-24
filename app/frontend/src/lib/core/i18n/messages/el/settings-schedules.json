@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Ακύρωση",
 	"settings.schedules.stages": "Στάδια",
 	"settings.schedules.stagesNote": "Κάντε παύση ή επανεκκίνηση στις <a>Ενότητες</a>.",
-	"settings.schedules.allTime": "Συνεχώς"
+	"settings.schedules.allTime": "Συνεχώς",
+	"settings.schedules.skip.nothing": "Τίποτα για να γίνει",
+	"settings.schedules.skip.plexOff": "Ανενεργό: ενεργοποιήστε το {setting} στο {page}",
+	"settings.schedules.skip.plexNobody": "Τίποτα για να γίνει: κανείς δεν έχει ενεργοποιήσει τη λίστα παρακολούθησης Plex του",
+	"settings.schedules.skip.settingOff": "Ανενεργό: ενεργοποιήστε το στις ρυθμίσεις του",
+	"settings.schedules.skip.starting": "Παραλείφθηκε: το HolyArrs ξεκινούσε ακόμα",
+	"settings.schedules.took": "Διήρκεσε {time}",
+	"settings.schedules.finished": "Το {label} ολοκληρώθηκε",
+	"settings.schedules.nothingToDo": "{label}: τίποτα για να γίνει",
+	"settings.schedules.runFailed": "Το {label} απέτυχε"
 }

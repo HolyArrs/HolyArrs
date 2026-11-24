@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Anfragen",
 	"settings.appearance.colRate": "Pro Reihe",
 	"settings.appearance.noRows": "Noch keine Reihen unter Entdecken gezählt.",
+	"settings.appearance.rowStats": "Reihen unter Entdecken",
+	"settings.appearance.rowStatsDesc": "Öffnungen und Anfragen pro Reihe in den letzten 30 Tagen, für alle zusammen. Nur auf diesem Server gezählt.",
+	"settings.appearance.colRow": "Reihe",
+	"settings.appearance.row.because_have": "Wie Titel, die du hast",
+	"settings.appearance.row.because_asked": "Wie deine Anfragen",
+	"settings.appearance.row.person": "Mehr von einer Person",
+	"settings.appearance.row.genre": "Genre-Tipps für dich",
+	"settings.appearance.row.popular_genre": "Beliebt nach Genre",
+	"settings.appearance.row.popular_decade": "Beliebt nach Jahrzehnt",
+	"settings.appearance.row.decade": "Nach Jahrzehnt",
+	"settings.appearance.row.mood": "Nach Stimmung",
+	"settings.appearance.row.hero": "Oberes Banner",
 	"settings.appearance.motion": "Bewegung",
 	"settings.appearance.motionNote": "Folgt der Einstellung deines Geräts für reduzierte Bewegung"
 }

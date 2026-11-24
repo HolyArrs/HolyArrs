@@ -15,8 +15,9 @@ import (
 
 // Where the update list is read.
 const (
-	// DefaultURL is the metadata server's copy.
-	DefaultURL = "https://api.holyarrs.com/v1/manifest.json"
+	// DefaultURL is the signed list the release workflow uploads
+	// (.github/workflows/updates.yml), kept off the metadata server.
+	DefaultURL = "https://updates.holyarrs.com/v1/manifest.json"
 	// PagesURL is the GitHub Pages copy, tried when the server fails.
 	// Empty until the Pages copy is published.
 	PagesURL = ""

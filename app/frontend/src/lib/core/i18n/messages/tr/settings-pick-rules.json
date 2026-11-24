@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Geri alınamaz. Dosyalar kalır.",
 	"settings.pickRules.removeUsed": "{used}. Önce orada başka kurallar seç.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Vazgeç"
+	"settings.pickRules.cancel": "Vazgeç",
+	"settings.pickRules.check.title": "Bir sürüm adını denetle",
+	"settings.pickRules.check.desc": "HolyArrs'ın bir sürüm adını nasıl okuduğunu ve kalite setlerinin onu nasıl değerlendirdiğini görmek için adı yapıştır. Hiçbir şey aranmaz veya indirilmez.",
+	"settings.pickRules.check.name": "Sürüm adı",
+	"settings.pickRules.check.rules": "Şununla değerlendir",
+	"settings.pickRules.check.copies": "Eşleşen başlığın kopyaları",
+	"settings.pickRules.check.size": "GB cinsinden boyut (isteğe bağlı)",
+	"settings.pickRules.check.check": "Denetle",
+	"settings.pickRules.check.failed": "Ad denetlenemedi",
+	"settings.pickRules.check.readAs": "Şöyle okundu",
+	"settings.pickRules.check.matches": "Eşleşen: {name}",
+	"settings.pickRules.check.noTitle": "Kitaplığındaki hiçbir başlıkla eşleşmiyor. Yine de değerlendirmek için yukarıdan bir kalite seti seç.",
+	"settings.pickRules.check.noAlbum": "{name} ile eşleşiyor ama albümlerinden hiçbiriyle eşleşmiyor.",
+	"settings.pickRules.check.noCopies": "Bu başlığın değerlendirilecek kopyası yok.",
+	"settings.pickRules.check.hasFile": "Dosyası var"
 }

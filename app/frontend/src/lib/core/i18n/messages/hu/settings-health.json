@@ -14,7 +14,6 @@
 	"settings.health.none": "Nincs eredmény. Futtatáshoz ellenőrizze újra.",
 	"settings.health.since": "Mióta",
 	"settings.health.settings": "Állapotellenőrzés-beállítások",
-	"settings.health.updateCheck": "Újabb HolyArrs keresése",
 	"settings.health.onlyChecks": "Csak ellenőriz. Sosem telepít.",
 	"settings.health.every": "Frissítések ellenőrzése",
 	"settings.health.day": "naponta",

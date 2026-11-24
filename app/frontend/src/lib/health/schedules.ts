@@ -17,8 +17,57 @@ export interface ScheduleRow {
 	last_job?: string;
 	last_job_ended?: string;
 	last_job_error?: string;
+	// Why the newest Job did nothing (setting_off, nobody, starting) and
+	// how long it took, in seconds.
+	last_job_note?: string;
+	last_job_s?: number;
+	// The newest scheduled check that found nothing to do, and why.
+	last_checked?: string;
+	last_skip?: string;
 	part: string;
 	settings?: string;
+}
+
+// When the schedule last ran: the later of its clock start (last_run) and
+// its newest finished Job, so a run by hand counts too. last_run
+// alone only moves on scheduled runs.
+export function lastRan(s: Pick<ScheduleRow, 'last_run' | 'last_job_ended'>): string | undefined {
+	const a = s.last_run, b = s.last_job_ended;
+	if (!a || !b) return a || b;
+	return Date.parse(b) > Date.parse(a) ? b : a;
+}
+
+// What the Last run column shows: the newest run, run by hand or check
+// that found nothing to do. why is the reason code when that newest
+// thing did nothing; took is how long a run took, in seconds.
+export function lastSeen(s: Pick<ScheduleRow, 'last_run' | 'last_job_ended' | 'last_job_note' | 'last_job_s' | 'last_checked' | 'last_skip'>): { at?: string; checked: boolean; why?: string; took?: number } {
+	const ran = lastRan(s);
+	const chk = s.last_checked;
+	if (chk && (!ran || Date.parse(chk) > Date.parse(ran))) return { at: chk, checked: true, why: s.last_skip || 'nothing' };
+	if (!ran) return { checked: false };
+	const byJob = ran === s.last_job_ended;
+	return { at: ran, checked: false, why: byJob && s.last_job_note ? s.last_job_note : undefined, took: byJob ? s.last_job_s : undefined };
+}
+
+// A reason code in words. Plex watchlists name the switch and the page it
+// is on; any other code reads as plain "nothing to do".
+export function skipWords(kind: string, code: string | undefined): string {
+	const plex = kind === 'sync_plex_watchlists';
+	switch (code) {
+		case 'setting_off':
+			return plex ? t('settings.schedules.skip.plexOff', { setting: t('settings.requests.plexOn'), page: t('core.settings.requests.label') }) : t('settings.schedules.skip.settingOff');
+		case 'nobody':
+			return plex ? t('settings.schedules.skip.plexNobody') : t('settings.schedules.skip.nothing');
+		case 'starting':
+			return t('settings.schedules.skip.starting');
+		default:
+			return t('settings.schedules.skip.nothing');
+	}
+}
+
+// A reason that points at a setting gets a link to it.
+export function skipLinks(code: string | undefined): boolean {
+	return code === 'setting_off' || code === 'nobody';
 }
 
 export interface LoopRow extends StageState {
@@ -54,7 +103,8 @@ const groupOfKind: Record<string, ScheduleGroupId> = {
 	artist_pictures: 'metadata',
 	sync_outside_lists: 'metadata',
 	health_check: 'upkeep',
-	clean_history: 'upkeep'
+	clean_history: 'upkeep',
+	clean_releases: 'upkeep'
 };
 
 // Words for each state chip.

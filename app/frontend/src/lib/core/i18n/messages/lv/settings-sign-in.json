@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Tikai šie var pateikt, no kurienes apmeklējums nācis.",
 	"settings.signIn.fixToSaveOne": "Lai saglabātu, salabojiet 1 rindu",
 	"settings.signIn.fixToSaveOther": "Lai saglabātu, salabojiet rindas: {n}",
-	"settings.signIn.localSaved": "Vietējais tīkls saglabāts"
+	"settings.signIn.localSaved": "Vietējais tīkls saglabāts",
+	"settings.signIn.forgotTitle": "Aizmirsi paroli?",
+	"settings.signIn.forgotOn": "Rādīt Aizmirsi paroli? pieteikšanās lapā",
+	"settings.signIn.forgotNote": "Īpašnieks saņem vienreizēju kodu no servera žurnāla. Izslēdz, ja visi piesakās ar vienoto pieteikšanos. Komanda reset-owner joprojām darbojas.",
+	"settings.signIn.forgotShown": "Aizmirsi paroli? ir ieslēgts",
+	"settings.signIn.forgotHidden": "Aizmirsi paroli? ir izslēgts"
 }

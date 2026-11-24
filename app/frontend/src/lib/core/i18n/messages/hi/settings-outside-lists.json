@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "कभी-न-जोड़ें सूची में डालें",
 	"settings.outsideLists.showDot": "शो ·",
 	"settings.outsideLists.takeOff": "{name} हटाएं",
-	"settings.outsideLists.empty": "इस सूची में अभी कुछ नहीं है"
+	"settings.outsideLists.empty": "इस सूची में अभी कुछ नहीं है",
+	"settings.outsideLists.traktSignInTitle": "Trakt साइन-इन",
+	"settings.outsideLists.traktSignInInfo": "अपनी निजी Trakt सूचियां और वॉचलिस्ट पढ़ने, और Trakt पर देखी गई चीज़ें देखने के इतिहास में जोड़ने के लिए साइन इन करें।",
+	"settings.outsideLists.traktSignedInAs": "{name} के रूप में साइन इन है।",
+	"settings.outsideLists.traktNotSignedIn": "साइन इन नहीं है। केवल सार्वजनिक सूचियां पढ़ी जाती हैं।",
+	"settings.outsideLists.traktSignIn": "Trakt से साइन इन करें",
+	"settings.outsideLists.traktDeviceSteps": "किसी भी डिवाइस पर <a>{url}</a> खोलें और <code>{code}</code> डालें। यह पेज आपकी मंज़ूरी तक इंतज़ार करता है।",
+	"settings.outsideLists.traktDenied": "Trakt साइन-इन अस्वीकार कर दिया गया।",
+	"settings.outsideLists.traktExpired": "कोड की समय-सीमा खत्म हो गई। फिर से शुरू करें।",
+	"settings.outsideLists.traktSignOut": "Trakt से साइन आउट करें",
+	"settings.outsideLists.traktSignedIn": "Trakt में साइन इन हो गया",
+	"settings.outsideLists.traktSignedOut": "Trakt से साइन आउट हो गया",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (Trakt से साइन इन के लिए ज़रूरी)",
+	"settings.outsideLists.traktSecretFirst": "पहले अपने Trakt ऐप का client secret सहेजें; आपको साइन इन रखने के लिए Trakt को इसकी ज़रूरत है।"
 }

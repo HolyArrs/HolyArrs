@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Se construiește {what}… încercarea {attempt}",
 	"core.testTag.connected": "Conectat",
 	"core.api.notAnswering": "HolyArrs nu răspunde. Verifică dacă rulează.",
+	"core.api.tooSlow": "HolyArrs a răspuns prea greu. Încearcă din nou peste un minut.",
 	"core.api.requestFailed": "Cererea a eșuat ({status})",
 	"core.api.wentWrong": "Ceva n-a mers bine.",
 	"core.trailerMiss.trailer": "trailer",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Aprobată automat",
 	"core.plain.approvedBy": "Aprobată de {who}",
 	"core.settings.cantReach": "Adresa nu poate fi accesată. Verifică-o și asigură-te că aplicația rulează.",
+	"core.settings.tryHttp": "Adresa nu răspunde pe https. Încearcă http://.",
 	"core.settings.groupLibrary.label": "Bibliotecă",
 	"core.settings.groupLibrary.line": "Unde stau titlurile",
 	"core.settings.groupLibrary.about": "Dosare, module, valori implicite, subtitrări, nume de fișiere și importul.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Două programe de descărcare ajung la aceeași aplicație, așa că descărcările pot apărea de două ori.",
 	"core.plain.peopleCheck": "Lista de utilizatori a serverului media nu poate fi citită, deci persoanele eliminate acolo nu sunt oprite aici.",
 	"core.plain.deleted": "șters",
-	"core.plain.deletedName": "{name} (șters)"
+	"core.plain.deletedName": "{name} (șters)",
+	"core.api.handsOffFiles": "Modul fără intervenție este activ, deci HolyArrs nu atinge fișierele descărcate. Dezactivează-l în Setări pentru a importa, redenumi, muta sau scana fișiere.",
+	"core.api.handsOffSubtitles": "Modul fără intervenție este activ, deci HolyArrs nu deschide niciodată fișierele descărcate. Dezactivează-l în Setări pentru a folosi subtitrări."
 }

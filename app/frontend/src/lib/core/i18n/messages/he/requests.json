@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "הודעות תוספים",
+	"requests.moment.plugin_message.body": "תוסף שאישרתם שולח הודעה.",
+	"requests.words.via": "{who} דרך {plugin}",
 	"requests.moment.ask_waiting.title": "בקשה חדשה",
 	"requests.moment.ask_waiting.body": "לצוות: סרט, סדרה או אמן ממתינים לאישור.",
 	"requests.moment.ask_approved.title": "אושר",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "רשימת TMDB",
 	"requests.lists.tmdbHint": "מספר הרשימה או הקישור שלה, למשל themoviedb.org/list/12345.",
 	"requests.lists.trakt": "רשימת Trakt",
-	"requests.lists.traktHint": "user/list, user/watchlist או הקישור, למשל trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist או הקישור, למשל trakt.tv/users/ana/lists/favourites. או מצעד: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "רשימת MDBList",
 	"requests.lists.mdblistHint": "user/list או הקישור, למשל mdblist.com/lists/ana/favourites. רשימות ציבוריות עובדות בלי מפתח.",
 	"requests.lists.everyDay": "כל יום",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "לא נמצא שום דבר לא תקין",
 	"requests.outcome.noResults": "עדיין אין תוצאות",
 	"requests.outcome.nothingFound": "לא נמצא כלום:",
+	"requests.outcome.refused": "נמצאו, אבל אף אחד לא מתאים לכללי הבחירה",
 	"requests.outcome.why.slowed": "הושהה (האט)",
 	"requests.outcome.why.down": "היה למטה",
 	"requests.outcome.why.blocked": "נחסם",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "הוספה",
 	"requests.addMovie.titleBare": "הוספת סרט",
 	"requests.add.loadingDefaults": "טוען את ברירות המחדל",
+	"requests.add.defaultsLate": "ברירות המחדל השמורות שלך לא נטענו בזמן, ולכן נבחרו האפשרויות הרגילות. בדוק אותן לפני ההוספה.",
 	"requests.add.noFolder.music": "עדיין אין תיקיית ספרייה למוזיקה. <a>הוסף אחת</a> קודם.",
 	"requests.add.noFolder.movie": "עדיין אין תיקיית ספרייה לסרטים. <a>הוסף אחת</a> קודם.",
 	"requests.add.noFolder.show": "עדיין אין תיקיית ספרייה לסדרות. <a>הוסף אחת</a> קודם.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "הצגה בלוח השנה שלי.",
 	"requests.add.cancel": "ביטול",
 	"requests.add.submit": "הוספה לספרייה",
+	"requests.add.submitChoose": "הוסף ובחר גרסה",
 	"requests.addArtist.albums": "אלבומים לשמור מעודכנים",
 	"requests.addArtist.newAlbums": "אלבומים חדשים",
 	"requests.addArtist.newAlbumsHint": "מה קורה לאלבום שיוצא בהמשך.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", מוצג {status}",
 	"requests.board.reportsOpen": "דיווחים, {n} פתוחים",
 	"requests.board.approveAll": "אישור הכול",
+	"requests.board.approveAllTitle": "לאשר את כל הבקשות הממתינות ({n})?",
+	"requests.board.approveAllDesc": "כולל בקשות בהמשך הרשימה שעדיין לא נטענו.",
 	"requests.board.requests": "בקשות",
 	"requests.board.open": "פתיחת {name}, התבקש על ידי {who}",
 	"requests.board.pageForArtist": "עמוד האמן של {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "התווסף",
 	"requests.addAll.summary": "התווספו: {added}, דולגו: {skipped}",
 	"requests.addAll.summaryClean": "התווספו: {added}",
-	"requests.addAll.intro": "כל סרט מתווסף לספרייה שלך עם התיקייה וכללי הבחירה שלמטה וברירות המחדל ששמרת. סרטים שכבר בספרייה מופיעים ברשימה אבל לא מתווספים שוב."
+	"requests.addAll.intro": "כל סרט מתווסף לספרייה שלך עם התיקייה וכללי הבחירה שלמטה וברירות המחדל ששמרת. סרטים שכבר בספרייה מופיעים ברשימה אבל לא מתווספים שוב.",
+	"requests.ask.alsoAsk": "לבקש גם {name}",
+	"requests.add.handsOff": "מצב ללא התערבות פעיל: אין צורך בתיקיית ספרייה. זה נשלח למוריד והקבצים נשארים שם."
 }

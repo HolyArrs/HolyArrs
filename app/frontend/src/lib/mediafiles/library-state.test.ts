@@ -19,7 +19,7 @@ describe('libraryState: movies', () => {
 		expect(label(movie([slot('stalled', { download: dl('stalled', 0.31) })]))).toBe('Stalled · 31%');
 	});
 	it('names a needed decision, a missing file and a better copy', () => {
-		expect(label(movie([slot('needs_a_decision')]))).toBe('To review');
+		expect(label(movie([slot('needs_a_decision')]))).toBe('Decision needed — no reason recorded; open the title for details');
 		expect(label(movie([slot('in_library', { file: { RelativePath: 'a', Size: 1, AddedAt: '', State: 'missing' } })]))).toBe('Missing file');
 		expect(label(movie([slot('better_wanted', { file: { RelativePath: 'a', Size: 1, AddedAt: '', Quality: { resolution: 720 } } })]))).toBe('Better copy · 720p');
 	});
@@ -53,4 +53,32 @@ describe('libraryState: shows', () => {
 		expect(label(show({}))).toBe('Complete');
 		expect(label(show({ status: 'ended' }))).toBe('Complete · ended');
 	});
+});
+
+describe('library issue explanations', () => {
+ it('shows recorded causes, ignores stale healthy reasons, and deduplicates issues', () => {
+  const s = libraryState(movie([slot('needs_a_decision', { reason: 'Downloaded file not found' }), slot('needs_a_decision', { reason: 'Downloaded file not found' }), slot('in_library', { reason: 'Old failure' })]), now);
+  expect(s?.label).toBe('Downloaded file not found');
+  expect(s?.key).toBe('needs_decision');
+ });
+ it('retains distinct causes and failure priority', () => {
+  const s = libraryState(movie([slot('needs_a_decision', { reason: 'Choose an episode' }), slot('failed', { reason: 'Downloader unavailable' })]), now);
+  expect(s?.label).toBe('Choose an episode; Downloader unavailable');
+  expect(s?.key).toBe('failed');
+ });
+ it('shows TV issues ahead of active downloads', () => {
+  const s = libraryState(show({ failed: 1, downloading: 2, issues: [{state: 'needs_a_decision', reason: 'Episode file cannot be matched'}] }), now);
+  expect(s?.label).toBe('Episode file cannot be matched');
+  expect(s?.key).toBe('needs_decision');
+ });
+ it('does not invent a cause when the server has none', () => {
+  expect(label(movie([slot('failed', {reason:'  '})]))).toContain('no reason recorded');
+ });
+});
+
+it('summarizes missing download paths while preserving the repair instructions', () => {
+ const reason = "HolyArrs can't find the downloaded file where the Downloader says it is; check the path pair in Settings > Downloaders and that the download folder is mounted, then import again";
+ const s = libraryState(movie([slot('needs_a_decision', { reason })]), now);
+ expect(s?.label).toBe('Downloaded file not found');
+ expect(s?.detail).toBe(reason);
 });

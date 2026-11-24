@@ -8,7 +8,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
-	import { checkMetadata, clearSourceOff, keyBody, keyForm, metadataHealth, metadataDownText, testWords, type KeyName, type MetadataAnswer, type Mode } from '#lib/metadata/index.ts';
+	import { KEY_LINKS, checkMetadata, clearSourceOff, keyBody, keyForm, metadataHealth, metadataDownText, testWords, type KeyName, type MetadataAnswer, type Mode } from '#lib/metadata/index.ts';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -92,8 +92,8 @@
 	async function test(k: KeyName) {
 		tests[k] = { ok: false, text: '', busy: true };
 		try {
-			const r = await api.post<{ ok: boolean; message: string }>('/settings/metadata/test', { key: k, value: keys[k], pin: k === 'tvdb_key' ? keys.tvdb_pin : '' });
-			tests[k] = { ok: r.ok, text: testWords(r.message), busy: false };
+			const r = await api.post<{ ok: boolean; message: string; code?: string }>('/settings/metadata/test', { key: k, value: keys[k], pin: k === 'tvdb_key' ? keys.tvdb_pin : '' });
+			tests[k] = { ok: r.ok, text: testWords(r.message, r.code), busy: false };
 		} catch (e) {
 			tests[k] = { ok: false, text: message(e), busy: false };
 		}
@@ -114,6 +114,7 @@
 		trailers: () => t('settings.tmdb.src.trailers'),
 		ratings: () => t('settings.tmdb.src.ratings'),
 		art: () => t('settings.tmdb.src.art'),
+		omdb: () => t('settings.tmdb.src.omdb'),
 		charts: () => t('settings.tmdb.src.charts'),
 		streaming: () => t('settings.tmdb.src.streaming'),
 		wiki: () => t('settings.tmdb.src.wiki'),
@@ -121,20 +122,25 @@
 	};
 	const sourceName = (s: { id: string; name: string }) => sourceWords[s.id]?.() ?? s.name;
 	const offRows = $derived((answer?.sources ?? []).filter((s) => s.state !== 'on'));
-	const shownKeys = $derived<KeyName[]>(mode === 'own' ? ['tmdb_token', 'tvdb_key', 'mdblist_key', 'fanart_key'] : mode === 'full' ? ['tvdb_key'] : []);
+	// With the HolyArrs server, TheTVDB is an extra: its fields wait behind a button unless a key is saved. OMDb is always asked.
+	let tvdbOpen = $state(false);
+	const tvdbClosed = $derived(mode === 'full' && !answer?.keys.tvdb_key && !tvdbOpen);
+	const shownKeys = $derived<KeyName[]>(mode === 'own' ? ['tmdb_token', 'tvdb_key', 'mdblist_key', 'fanart_key', 'omdb_key'] : mode === 'full' ? (tvdbClosed ? ['omdb_key'] : ['tvdb_key', 'omdb_key']) : []);
 	const keyLabel: Record<KeyName, () => string> = {
 		tmdb_token: () => t('settings.tmdb.keyTmdb'),
 		tvdb_key: () => t('settings.tmdb.keyTvdb'),
 		tvdb_pin: () => t('settings.tmdb.keyTvdbPin'),
 		mdblist_key: () => t('settings.tmdb.keyMdblist'),
-		fanart_key: () => t('settings.tmdb.keyFanart')
+		fanart_key: () => t('settings.tmdb.keyFanart'),
+		omdb_key: () => t('settings.tmdb.keyOmdb')
 	};
 	const keyHint: Record<KeyName, () => string> = {
 		tmdb_token: () => t('settings.tmdb.keyTmdbHint'),
-		tvdb_key: () => t('settings.tmdb.keyTvdbHint'),
+		tvdb_key: () => (mode === 'own' ? t('settings.tmdb.keyTvdbHint') : t('settings.tmdb.tvdbDesc')),
 		tvdb_pin: () => t('settings.tmdb.keyTvdbPinHint'),
 		mdblist_key: () => t('settings.tmdb.keyMdblistHint'),
-		fanart_key: () => t('settings.tmdb.keyFanartHint')
+		fanart_key: () => t('settings.tmdb.keyFanartHint'),
+		omdb_key: () => t('settings.tmdb.keyOmdbHint')
 	};
 </script>
 
@@ -168,13 +174,18 @@
 		{/if}
 	</SettingsCard>
 
+	{#if mode === 'full' && tvdbClosed}
+	<SettingsCard id="metadata-keys" title={t('settings.tmdb.tvdbTitle')} description={t('settings.tmdb.tvdbDesc')}>
+		<div class="srow"><div class="ctl"><Button type="button" variant="secondary" data-testid="metadata-tvdb-open" onclick={() => (tvdbOpen = true)}>{t('settings.tmdb.tvdbUseOwn')}</Button></div></div>
+	</SettingsCard>
+	{/if}
 	{#if shownKeys.length}
-	<SettingsCard id="metadata-keys" title={mode === 'own' ? t('settings.tmdb.keysTitle') : t('settings.tmdb.tvdbTitle')} description={mode === 'own' ? t('settings.tmdb.keysDesc') : t('settings.tmdb.tvdbDesc')}>
+	<SettingsCard id="metadata-keys" title={t('settings.tmdb.keysTitle')} description={mode === 'own' ? t('settings.tmdb.keysDesc') : undefined}>
 		<form id="metadata-keys-form" onsubmit={saveKeys} aria-label={t('settings.tmdb.keysTitle')}>
 			{#each shownKeys as k (k)}
 				{@const fromDocker = k === 'tmdb_token' && answer.tmdb_key_from_docker}
 				<div class="srow keyrow">
-					<div class="txt"><label class="label" for="mk-{k}">{keyLabel[k]()}</label><span id="mk-{k}-hint" class="hint">{fromDocker ? t('settings.tmdb.tmdbFromDocker') : keyHint[k]()}</span></div>
+					<div class="txt"><label class="label" for="mk-{k}">{keyLabel[k]()}</label><span id="mk-{k}-hint" class="hint">{fromDocker ? t('settings.tmdb.tmdbFromDocker') : keyHint[k]()}{#if !fromDocker && KEY_LINKS[k]} <a class="get-key" href={KEY_LINKS[k]} target="_blank" rel="noopener noreferrer">{t('settings.tmdb.getKey')}</a>{/if}</span></div>
 					<div class="ctl">
 						<input id="mk-{k}" class="input mono" type="password" bind:value={keys[k]} autocomplete="new-password" spellcheck="false" disabled={fromDocker} aria-describedby="mk-{k}-hint" />
 						<Button type="button" variant="secondary" onclick={() => test(k)} disabled={tests[k]?.busy} aria-busy={tests[k]?.busy}>{t('settings.tmdb.testKey')}</Button>
@@ -277,6 +288,7 @@
 	.locked-note { display: flex; align-items: center; gap: 6px; margin-top: var(--s-3); }
 	.own-note, .notice.bad { margin-top: var(--s-4); }
 
+	.get-key { color: var(--text); text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
 	.kept { padding: var(--s-3) 0 var(--s-2); box-shadow: inset 0 1px 0 var(--line); }
 	@media (max-width: 700px) {
 		.presets { grid-template-columns: 1fr; }

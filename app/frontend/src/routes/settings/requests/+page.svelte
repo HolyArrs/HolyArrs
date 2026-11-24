@@ -6,7 +6,7 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { PlexFriends, QualityLines, approveChanges, approveRows, type ApproveRow, type ApproveUser, type AskSettings, type QualityLine } from '#lib/requests/index.ts';
+	import { PlexFriends, QualityLines, StreamingServices, approveChanges, approveRows, type ApproveRow, type ApproveUser, type AskSettings, type QualityLine } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
 	import { to } from '#lib/core/paths.ts';
 	import { api } from '#lib/core/api.ts';
@@ -14,6 +14,7 @@
 	import { session } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import type { LibraryFolder, PickRulesView } from '#lib/core/types.ts';
+	import { StreamingCleanup } from '#lib/mediafiles/index.ts';
 
 	let settings = $state<AskSettings>({
 		movies_per_week: 10,
@@ -33,7 +34,10 @@
 		plex_watchlists: false,
 		plex_watchlists_everyone: false,
 		plex_friends: false,
-		owner_auto_approve: true
+		owner_auto_approve: true,
+		streaming_region: '',
+		streaming_services: [],
+		skip_on_services: false
 	});
 	// "Approve requests automatically": the owner's switch is a Request setting, everyone else's is their own permission.
 	let users = $state<ApproveUser[]>([]);
@@ -47,6 +51,11 @@
 	let loading = $state(false);
 	let loadError = $state('');
 	let saved = $state('');
+	// The library check reads the saved services, so it waits until they are saved.
+	const streamingSaved = $derived.by(() => {
+		const s: AskSettings | null = saved ? JSON.parse(saved) : null;
+		return !!s?.streaming_region && !!s.streaming_services?.length;
+	});
 	const dirty = $derived(loaded && !!saved && (JSON.stringify(settings) !== saved || JSON.stringify(people) !== savedPeople));
 
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
@@ -287,6 +296,10 @@
 						<QualityLines bind:lines={settings.qualities[k.kind]} kind={k.kind} rules={k.rules} hint={(l) => lineHint(l, k.plain, k.fourK)} />
 					</div>
 				{/each}
+				<label class="checkline">
+					<input type="checkbox" bind:checked={settings.pick_many} data-testid="pick-many" />
+					<span><b>{t('settings.requests.pickMany')}</b><br /><span class="hint">{t('settings.requests.pickManyHint')}</span></span>
+				</label>
 			</SettingsCard>
 		{/if}
 		<SettingsCard id="plex-watchlists" title={t('settings.requests.plex')} description={t('settings.requests.plexDesc')}>
@@ -303,6 +316,12 @@
 				<span><b>{t('settings.requests.plexFriends')}</b><br /><span class="hint">{t('settings.requests.plexFriendsHint')}</span></span>
 			</label>
 			<PlexFriends on={!!settings.plex_watchlists && !!settings.plex_friends} />
+		</SettingsCard>
+		<SettingsCard id="my-streaming" title={t('settings.requests.streaming')} description={t('settings.requests.streamingDesc')}>
+			<StreamingServices bind:region={settings.streaming_region} bind:services={settings.streaming_services} bind:skip={settings.skip_on_services} />
+			<h3 class="q-kind">{t('settings.requests.cleanup')}</h3>
+			<p class="hint">{t('settings.requests.cleanupDesc')}</p>
+			<StreamingCleanup ready={streamingSaved} {dirty} />
 		</SettingsCard>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
 	</form>

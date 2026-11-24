@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -82,6 +83,18 @@ func scanProgress(ctx context.Context, r *jobs.Run, now func() time.Time) func(d
 	}
 }
 
+// waitProgress saves a waiting part's note as "done/total wait <seconds> <left>".
+func waitProgress(ctx context.Context, r *jobs.Run, total int) func(left int, next time.Duration) {
+	return func(left int, next time.Duration) {
+		_ = r.Progress(ctx, float64(total-left)/float64(max(total, 1)), WaitNote(total-left, total, next, left))
+	}
+}
+
+// WaitNote is a waiting import's progress note.
+func WaitNote(done, total int, next time.Duration, left int) string {
+	return strconv.Itoa(done) + "/" + strconv.Itoa(total) + " wait " + strconv.Itoa(int((next+time.Second-1)/time.Second)) + " " + strconv.Itoa(left)
+}
+
 func (s *Service) handleAdopt(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "library_folder" {
 		return errors.New("adopt_library needs a library_folder subject")
@@ -96,19 +109,23 @@ func (s *Service) handleAdopt(ctx context.Context, r *jobs.Run) error {
 		cs = append(cs, AdoptChoice{Folder: f, TMDB: t, ID: id})
 	}
 	// The page shows how many folders of this part are done, as a scan's.
-	res, err := s.Adopt(WithScanProgress(ctx, scanProgress(ctx, r, time.Now)), r.Job.Subject.ID, cs, JobActor(r))
-	adopted := 0
-	for _, x := range res {
-		if x.TitleID != 0 {
-			adopted++
-		}
+	// While the metadata server keeps folders out, the part waits and tries
+	// them again; the page shows the wait.
+	actx := WithAdoptWait(WithScanProgress(ctx, scanProgress(ctx, r, time.Now)), waitProgress(ctx, r, len(cs)))
+	res, err := s.Adopt(actx, r.Job.Subject.ID, cs, JobActor(r))
+	// A folder counts as adopted only when it went in without a problem; an
+	// artist added whose albums could not be read is a failure, so a
+	// job where nothing went in fails with the first reason, never "done".
+	adopted, failed, firstWhy := adoptTally(res)
+	if err == nil && adopted == 0 && failed > 0 {
+		err = errors.New(firstWhy)
 	}
 	if follow, _ := r.Job.Params["follow"].(bool); follow {
 		if ferr := s.followAdopted(ctx, r.Job.AskedBy, res); ferr != nil && err == nil {
 			err = ferr
 		}
 	}
-	r.SetResult(map[string]any{"adopted": adopted, "results": res})
+	r.SetResult(map[string]any{"adopted": adopted, "failed": failed, "results": res})
 	return err
 }
 
@@ -251,6 +268,11 @@ func (s *Service) rescanFolder(ctx context.Context, lf mediafiles.LibraryFolder,
 		if err := s.setFileState(ctx, c.f, c.to, by); err != nil {
 			return err
 		}
+		if c.to == "missing" {
+			if err := s.unkeepDeleted(ctx, lf, c.f, by); err != nil {
+				return err
+			}
+		}
 	}
 	n, err := s.recordFound(ctx, lf, titleID, knownPaths, by)
 	if err != nil {
@@ -328,11 +350,7 @@ func InspectLibraryVideo(root, relative string, old map[string]any, backfill boo
 }
 
 func InspectedLanguages(info map[string]any) []string {
-	langs, _ := info["audio_languages"].([]string)
-	if langs == nil {
-		return []string{}
-	}
-	return append([]string{}, langs...)
+	return importer.InspectedLanguages(info)
 }
 
 func (s *Service) updateFileInspection(ctx context.Context, fileID int64, info map[string]any, by domain.Actor) error {
@@ -410,6 +428,49 @@ func (s *Service) setFileState(ctx context.Context, f mediafiles.File, to string
 	return nil
 }
 
+// unkeepDeleted turns Keep up to date off for what a main File gone from
+// disk filled, when the owner chose that for its kind (the old apps'
+// "unmonitor deleted" switch). The mass-gone guard has already run, so a
+// dropped mount never gets here.
+func (s *Service) unkeepDeleted(ctx context.Context, lf mediafiles.LibraryFolder, f mediafiles.File, by domain.Actor) error {
+	if f.Role != "main" || lf.Kind != "movie" && lf.Kind != "show" {
+		return nil
+	}
+	rules, err := importer.ReadFileRules(ctx, s.Store.Read())
+	if err != nil {
+		return err
+	}
+	if lf.Kind == "movie" && !rules.UnkeepDeletedMovies || lf.Kind == "show" && !rules.UnkeepDeletedEpisodes {
+		return nil
+	}
+	var u mediafiles.UnkeptDeleted
+	var changed bool
+	if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+		u, changed, err = mediafiles.UnkeepDeletedTx(ctx, tx, f.ID, s.now(), by)
+		return err
+	}); err != nil || !changed {
+		return err
+	}
+	if u.Kind == "movie" {
+		summary := u.Name + ": Keep up to date off, its file was deleted from disk"
+		if u.Version {
+			summary = u.Name + ": Keep up to date off for one Version, its file was deleted from disk (" + f.RelativePath + ")"
+		}
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventTitleEdited, TitleID: &u.TitleID,
+			Summary: summary,
+			Data:    map[string]any{"keep_up_to_date": false, "file_id": f.ID, "reason": "file_deleted"}, GroupKey: GroupKey(u.TitleID)})
+		return nil
+	}
+	labels := make([]string, 0, len(f.SlotIDs))
+	for _, sid := range f.SlotIDs {
+		labels = append(labels, EpisodeLabel(ctx, s.Store.Read(), sid))
+	}
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventSeasonChanged, TitleID: &u.TitleID,
+		Summary: u.Name + " " + strings.Join(labels, ", ") + ": Keep up to date off, its file was deleted from disk",
+		Data:    map[string]any{"item_ids": u.Items, "keep_up_to_date": false, "file_id": f.ID, "reason": "file_deleted"}, GroupKey: GroupKey(u.TitleID)})
+	return nil
+}
+
 // recordFound records unknown videos in the movies' own folders as found
 // Files: shown, never renamed, moved or deleted.
 func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, titleID int64, known map[string]bool, by domain.Actor) (int, error) {
@@ -420,13 +481,16 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 	}
 	n := 0
 	for _, v := range vs {
-		if v.FolderName == "" || !filepath.IsLocal(v.FolderName) {
+		if v.SharedFolder || v.FolderName == "" || !filepath.IsLocal(v.FolderName) {
 			continue
 		}
 		if lf.Kind == "music" {
 			m, err := s.recordFoundTracks(ctx, lf, v, known, by)
 			n += m
 			if err != nil {
+				return n, err
+			}
+			if _, err := s.reconcileFoundTracks(ctx, lf, v, by); err != nil {
 				return n, err
 			}
 			continue
@@ -439,7 +503,16 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 			}
 			continue
 		}
-		for _, vid := range listVideos(lf.Path, v.FolderName) {
+		vids := listVideos(lf.Path, v.FolderName)
+		// The read limit counts extras too, so the videos that are not
+		// extras are added when many extras filled the list before them;
+		// two cuts of the movie then still ask the person.
+		for _, feature := range listVideosWhere(lf.Path, v.FolderName, maxScanVideos, func(rel string) bool { return !movieExtraIn(v.FolderName, rel) }) {
+			if !slices.ContainsFunc(vids, func(x AdoptVideo) bool { return x.Path == feature.Path }) {
+				vids = append(vids, feature)
+			}
+		}
+		for _, vid := range vids {
 			if known[strings.ToLower(vid.Path)] {
 				continue
 			}
@@ -469,7 +542,7 @@ func (s *Service) recordFound(ctx context.Context, lf mediafiles.LibraryFolder, 
 	return n, nil
 }
 
-// linkFoundMovie links the one found video in a movie Version's folder to
+// linkFoundMovie links the one found video, extras aside, in a movie Version's folder to
 // its slot when the slot has no file and no running download, as Radarr does
 // with a file another app placed: once the file is there the movie is no
 // longer wanted. A file that does not fit (edition, audio) stays a note.
@@ -480,7 +553,9 @@ func (s *Service) linkFoundMovie(ctx context.Context, v mediafiles.Version, by d
 	}
 	var only []mediafiles.File
 	for _, f := range notes {
-		if len(f.SlotIDs) == 0 && !f.Protected {
+		// An extra (a trailer, a featurette) is never the movie, so it is
+		// never linked as its copy; it stays a note beside it.
+		if len(f.SlotIDs) == 0 && !f.Protected && !movieExtraIn(v.FolderName, strings.TrimPrefix(f.RelativePath, v.FolderName+"/")) {
 			only = append(only, f)
 		}
 	}
@@ -517,4 +592,21 @@ func (s *Service) handleRescan(ctx context.Context, r *jobs.Run) error {
 	res, err := s.Rescan(ctx, JobActor(r))
 	r.SetResult(map[string]any{"folders": res.Folders, "unreachable": res.Unreachable, "missing": res.Missing, "back": res.Back, "found": res.Found})
 	return err
+}
+
+// adoptTally counts the folders that went in cleanly and the ones that did
+// not, with the first reason a folder failed.
+func adoptTally(res []AdoptResult) (adopted, failed int, firstWhy string) {
+	for _, x := range res {
+		switch {
+		case x.Error != "":
+			failed++
+			if firstWhy == "" {
+				firstWhy = x.Error
+			}
+		case x.TitleID != 0:
+			adopted++
+		}
+	}
+	return adopted, failed, firstWhy
 }

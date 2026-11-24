@@ -67,6 +67,10 @@ type DownloadRow struct {
 	// folder Import files by hand opens on (managers only; "" when unread).
 	RefusedWhy   string `json:"refused_why,omitempty"`
 	ImportFolder string `json:"import_folder,omitempty"`
+	// CleanupWait names the episodes a partly done import still waits for:
+	// remove after seeding holds this torrent until they are in or no
+	// longer wanted.
+	CleanupWait []string `json:"cleanup_wait,omitempty"`
 	// Replaced says a failed copy was turned down and HolyArrs moved on (it
 	// searches again or already has another copy), so it is no problem.
 	Replaced bool `json:"replaced,omitempty"`
@@ -144,6 +148,8 @@ type EpisodeLine struct {
 	Name    string `json:"name,omitempty"`
 	State   string `json:"state"`
 	Track   bool   `json:"track,omitempty"`
+	// elsewhere: the Slot waits on another download now.
+	elsewhere bool
 }
 
 // episodeLines reads the episodes of a show download's Slots, in order.
@@ -238,6 +244,9 @@ func phaseOfMany(d domain.Download, eps []EpisodeLine) string {
 	}
 	has := map[string]bool{}
 	for _, e := range eps {
+		if e.elsewhere {
+			continue
+		}
 		has[phase(d, e.State)] = true
 	}
 	for _, p := range []string{"importing", "needs_a_decision", "waiting_to_import"} {
@@ -325,13 +334,18 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 	// (No person on the request: the sign-in layer is off, as in tests.)
 	who, ok := webserver.From(r.Context())
 	manage := !ok || who.Has(webserver.PermManageLibrary)
-	where, args := "1=1", []any{}
+	// A download a person removed, or one removed in the Downloader itself
+	// (vanished), leaves the list; its row stays for History.
+	// Its Downloader's copy is kept off the client rows below while the removal
+	// is pending or new, and after that shows as an outside row (see
+	// knownTitles).
+	where, args := "state NOT IN ('cleaned', 'vanished')", []any{}
 	// People who approve read the downloads of every approved ask on the
 	// Requests page (?asked=1), as they read everyone's asks there;
 	// the rows stay the plain ones members get.
 	asked := r.URL.Query().Get("asked") == "1"
 	if !manage && !(asked && ok && who.Has(webserver.PermApprove)) {
-		where = `EXISTS (SELECT 1 FROM json_each(downloads.slot_ids) j JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
+		where += ` AND EXISTS (SELECT 1 FROM json_each(downloads.slot_ids) j JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
 			JOIN asks a ON a.title_id = i.title_id JOIN ask_people p ON p.ask_id = a.id WHERE p.user_id = ?)`
 		args = append(args, who.UserID)
 	}
@@ -388,6 +402,14 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 		refused, _ = mediafiles.RefusedDownloads(ctx, db, doneIDs)
 	}
 	gone, _ := mediafiles.GoneDownloads(ctx, db, endIDs)
+	// Only torrents whose Downloader removes them after seeding can be held.
+	holdIDs := map[int64][]int64{}
+	for _, d := range ds {
+		if n := names[d.DownloaderID]; d.State == "finished" && n.Protocol == "torrent" && n.AfterImport == "remove" {
+			holdIDs[d.ID] = d.SlotIDs
+		}
+	}
+	held, _ := mediafiles.CleanupWaiting(ctx, db, holdIDs)
 	slots := slotInfos(ctx, db, slotIDs)
 	waits := ClearWaits(ctx, db)
 	rows := make([]DownloadRow, 0, len(ds))
@@ -444,9 +466,16 @@ func (a *Web) DownloadsView(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if row.Kind == "show" || row.Kind == "artist" {
-			row.Episodes = linesOf(d.SlotIDs, slots)
+			row.Episodes = linesOf(d.ID, d.SlotIDs, slots)
 			row.Covers = Covers(row.Episodes)
 			row.Phase = phaseOfMany(d, row.Episodes)
+		}
+		for _, id := range held[d.ID] {
+			label := row.Title
+			if si, ok := slots[id]; ok && si.line.Label != "" && (row.Kind == "show" || row.Kind == "artist") {
+				label = si.line.Label
+			}
+			row.CleanupWait = append(row.CleanupWait, label)
 		}
 		if why, ok := refused[d.ID]; ok {
 			row.Phase, row.RefusedWhy = "import_refused", why
@@ -679,36 +708,6 @@ func pageOutside(rows []DownloadRow, cursor string, n int) ([]DownloadRow, strin
 	return rows[from:to], strconv.Itoa(to)
 }
 
-// releaseLine is a Release's name and size.
-type releaseLine struct {
-	name     string
-	size     int64
-	source   string
-	sourceID int64
-	posted   *time.Time
-}
-
-// inChunks calls f on ids in parts small enough for one IN (...) read.
-func inChunks(ids []int64, f func(part []any, marks string)) {
-	seen := map[int64]bool{}
-	uniq := make([]int64, 0, len(ids))
-	for _, id := range ids {
-		if !seen[id] {
-			seen[id] = true
-			uniq = append(uniq, id)
-		}
-	}
-	for len(uniq) > 0 {
-		n := min(len(uniq), 500)
-		part := make([]any, n)
-		for i, id := range uniq[:n] {
-			part[i] = id
-		}
-		uniq = uniq[n:]
-		f(part, "?"+strings.Repeat(", ?", n-1))
-	}
-}
-
 // releaseNames reads the names and sizes of many Releases at once.
 func releaseNames(ctx context.Context, db *sql.DB, ids []int64) map[int64]releaseLine {
 	out := map[int64]releaseLine{}
@@ -738,27 +737,13 @@ func releaseNames(ctx context.Context, db *sql.DB, ids []int64) map[int64]releas
 	return out
 }
 
-// slotInfo is what the Downloads screen shows about one Slot: its episode
-// line, and its Title, Version and (for tracks) album.
-type slotInfo struct {
-	line      EpisodeLine
-	titleID   int64
-	title     string
-	year      sql.NullInt64
-	kind      string
-	version   string
-	full      bool // the Slot has its Version (the Title line is shown)
-	album     sql.NullString
-	albumYear sql.NullString
-}
-
 // slotInfos reads many Slots at once.
 func slotInfos(ctx context.Context, db *sql.DB, ids []int64) map[int64]slotInfo {
 	out := map[int64]slotInfo{}
 	inChunks(ids, func(part []any, marks string) {
 		rs, err := db.QueryContext(ctx, `SELECT s.id, s.state, i.kind, CASE i.kind WHEN 'track' THEN COALESCE(json_extract(i.numbers, '$.disc'), 1) ELSE json_extract(i.numbers, '$.season') END,
 			CASE i.kind WHEN 'track' THEN json_extract(i.numbers, '$.track') ELSE json_extract(i.numbers, '$.episode') END, i.name,
-			t.id, t.name, t.year, t.kind, v.label, p.name, substr(p.release_date, 1, 4)
+			t.id, t.name, t.year, t.kind, v.label, p.name, substr(p.release_date, 1, 4), s.active_download_id
 			FROM slots s JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id
 			LEFT JOIN versions v ON v.id = s.version_id LEFT JOIN parts p ON p.id = i.part_id WHERE s.id IN (`+marks+`)`, part...)
 		if err != nil {
@@ -770,7 +755,7 @@ func slotInfos(ctx context.Context, db *sql.DB, ids []int64) map[int64]slotInfo 
 			var season, episode sql.NullInt64
 			var name, version sql.NullString
 			var kind string
-			if rs.Scan(&si.line.SlotID, &si.line.State, &kind, &season, &episode, &name, &si.titleID, &si.title, &si.year, &si.kind, &version, &si.album, &si.albumYear) != nil {
+			if rs.Scan(&si.line.SlotID, &si.line.State, &kind, &season, &episode, &name, &si.titleID, &si.title, &si.year, &si.kind, &version, &si.album, &si.albumYear, &si.active) != nil {
 				continue
 			}
 			si.line.Season, si.line.Episode, si.line.Name = int(season.Int64), int(episode.Int64), name.String
@@ -779,17 +764,5 @@ func slotInfos(ctx context.Context, db *sql.DB, ids []int64) map[int64]slotInfo 
 			out[si.line.SlotID] = si
 		}
 	})
-	return out
-}
-
-// linesOf is the episode lines of a download's Slots, in order.
-func linesOf(ids []int64, slots map[int64]slotInfo) []EpisodeLine {
-	out := []EpisodeLine{}
-	for _, id := range ids {
-		if si, ok := slots[id]; ok {
-			out = append(out, si.line)
-		}
-	}
-	SortLines(out)
 	return out
 }

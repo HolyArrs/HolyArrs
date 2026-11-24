@@ -8,10 +8,14 @@
 	"setup.fullPath": "ใช้พาธโฟลเดอร์แบบเต็ม เช่น {path}",
 	"setup.folderUsed": "โฟลเดอร์นี้ถูกใช้อยู่แล้ว หรืออยู่ภายในโฟลเดอร์ที่ถูกใช้อยู่",
 	"setup.folderMissing": "ไม่พบโฟลเดอร์นั้น ตรวจสอบพาธอีกครั้ง",
-	"setup.addFolderOrOff": "เพิ่มโฟลเดอร์ หรือปิดตัวเลือกนี้",
+	"setup.addFolderOrOff": "เพิ่มโฟลเดอร์ หรือกด ข้ามไปก่อน",
 	"setup.notAnswering": "HolyArrs ไม่ตอบสนอง ลองอีกครั้งในอีกสักครู่",
 	"setup.addUserPasswordHint": "ใส่ชื่อผู้ใช้และรหัสผ่าน",
 	"setup.folders": "โฟลเดอร์",
 	"setup.downloader": "ตัวดาวน์โหลด",
-	"setup.source": "แหล่งที่มา"
+	"setup.source": "แหล่งที่มา",
+	"setup.alertsNeedKeyOne": "การแจ้งเตือน: 1 รายการต้องใช้คีย์",
+	"setup.alertsNeedKey": "การแจ้งเตือน: {n} รายการต้องใช้คีย์",
+	"setup.folderNoAccess": "HolyArrs เปิดโฟลเดอร์นี้ไม่ได้ ตรวจสอบสิทธิ์ของโฟลเดอร์",
+	"setup.folderCantUse": "HolyArrs ใช้โฟลเดอร์นี้ไม่ได้ ตรวจสอบพาธ"
 }

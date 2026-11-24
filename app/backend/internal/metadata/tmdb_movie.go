@@ -285,14 +285,16 @@ func (m tmdbMovie) movieWithCollection(images string, collectionKnown bool) Movi
 	}
 	out.Rating = m.certification()
 	out.OtherNames = append(out.OtherNames, m.OriginalTitle)
-	if m.AltTitles != nil {
-		for _, a := range m.AltTitles.Titles {
-			out.OtherNames = append(out.OtherNames, a.Title)
-		}
-	}
+	// Translations first: they are the names local trackers use, and the
+	// list is capped, so a long list of other spellings must not push them out.
 	if m.Translations != nil {
 		for _, tr := range m.Translations.List {
 			out.OtherNames = append(out.OtherNames, tr.Data.Title)
+		}
+	}
+	if m.AltTitles != nil {
+		for _, a := range m.AltTitles.Titles {
+			out.OtherNames = append(out.OtherNames, a.Title)
 		}
 	}
 	return out

@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Žádosti",
 	"settings.appearance.colRate": "Na řadu",
 	"settings.appearance.noRows": "Zatím nebyly započítány žádné řady v Prozkoumat.",
+	"settings.appearance.rowStats": "Řady v Prozkoumat",
+	"settings.appearance.rowStatsDesc": "Otevření a žádosti z každé řady za posledních 30 dní, za všechny dohromady. Počítá se jen na tomto serveru.",
+	"settings.appearance.colRow": "Řada",
+	"settings.appearance.row.because_have": "Podobné titulům, které máte",
+	"settings.appearance.row.because_asked": "Podobné vašim žádostem",
+	"settings.appearance.row.person": "Další od osoby",
+	"settings.appearance.row.genre": "Žánrový výběr pro vás",
+	"settings.appearance.row.popular_genre": "Oblíbené podle žánru",
+	"settings.appearance.row.popular_decade": "Oblíbené podle desetiletí",
+	"settings.appearance.row.decade": "Podle desetiletí",
+	"settings.appearance.row.mood": "Podle nálady",
+	"settings.appearance.row.hero": "Horní banner",
 	"settings.appearance.motion": "Pohyb",
 	"settings.appearance.motionNote": "Řídí se nastavením Omezit pohyb ve vašem zařízení"
 }

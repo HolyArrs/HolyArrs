@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	sureName,
 	airDateChoices,
 	multiEpisodeChoices,
 	episodeExampleRows,
@@ -11,6 +12,7 @@ import {
 	finished,
 	followJob,
 	scanCount,
+	waitOf,
 	groupPlan,
 	score,
 	splitSteps,
@@ -152,5 +154,31 @@ describe('episode name examples', () => {
 	it('offers every multi-episode and air day style the server takes', () => {
 		expect(multiEpisodeChoices.map(([v]) => v)).toEqual(['range', 'short_range', 'each', 'each_dash']);
 		expect(airDateChoices.map(([v]) => v)).toEqual(['dash', 'dot', 'space']);
+	});
+});
+
+describe('an Unsure match whose name fits', () => {
+	it('is told apart from a weak name match, so its pill shows no percent', () => {
+		expect(sureName({ match: { id: '', tmdb: '1', name: 'Paper Harbour', year: 2023, score: 1 } as never })).toBe(true);
+		expect(sureName({ match: { id: '', tmdb: '1', name: 'Paper Harbour', year: 2023, score: 0.85 } as never })).toBe(false);
+		expect(sureName({ match: null as never })).toBe(false);
+	});
+});
+
+describe('waitOf', () => {
+	it.each([
+		['12/50 wait 600 38', { min: 10, left: 38 }],
+		['0/3 wait 2 3', { min: 1, left: 3 }],
+		['0/3 wait 61 3', { min: 2, left: 3 }],
+		['4/4 wait 0 0', null],
+		['12/50', null],
+		['Moving files', null],
+		[null, null]
+	])('%s', (note, want) => {
+		expect(waitOf(note)).toEqual(want);
+	});
+
+	it('a waiting note still counts what is done', () => {
+		expect(scanCount('12/50 wait 600 38')).toEqual({ done: 12, total: 50 });
 	});
 });

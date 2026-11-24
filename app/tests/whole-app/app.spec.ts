@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { finishFirstRun, moviesDir, newOwner, owner, plainForm, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch } from '../helpers/helpers.ts';
+import { finishFirstRun, moviesDir, newOwner, owner, plainForm, signIn, signOut, noSidewaysScroll, libraryStatus, libraryView, addFromSearch, reachSetupAccount } from '../helpers/helpers.ts';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -10,10 +10,10 @@ let context: BrowserContext;
 async function scanFirstRun() {
 	await expect(page.locator('main')).toHaveCount(1);
 	await expect(page.locator('#main')).toHaveCount(1);
-	// The first page fades in as the loader leaves; scan it once it is solid.
-	await page.waitForFunction(() => !document.documentElement.classList.contains('hl-arrive') && document.getAnimations().every((a) => a.playState !== 'running'));
+	// The first page fades in as the loader leaves; scan it once it is solid (the picture's endless loops are not waited for).
+	await page.waitForFunction(() => !document.documentElement.classList.contains('hl-arrive') && document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity));
 	const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
-	expect(result.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
+	expect(result.violations.map((v) => `${v.id}: ${v.help} ${v.nodes.map((n) => n.target.join(" ") + " " + n.failureSummary).join(" | ")}`)).toEqual([]);
 }
 
 test.beforeAll(async ({ browser }, info) => {
@@ -27,43 +27,118 @@ test.afterAll(async () => {
 	await context.close();
 });
 
+// The setup card keeps room (12 px or more) around the /config warning, at desktop and phone width.
+async function setupSpacing() {
+	await page.route('**/auth/state', async (r) => {
+		const res = await r.fetch();
+		await r.fulfill({ response: res, json: { ...(await res.json()), config_unmapped: true } });
+	});
+	for (const width of [1280, 390]) {
+		await page.setViewportSize({ width, height: 844 });
+		await page.reload();
+		await reachSetupAccount(page);
+		const warning = page.locator('.panel .step > .form-error');
+		await expect(warning).toBeVisible();
+		// The lead above the warning and the sign-in choices under it; polled while the card settles in.
+		const gaps = () => warning.evaluate((w) => {
+			const r = w.getBoundingClientRect();
+			const above = Math.round(r.top - w.previousElementSibling!.getBoundingClientRect().bottom);
+			const below = Math.round(w.nextElementSibling!.getBoundingClientRect().top - r.bottom);
+			return above >= 12 && below >= 12 ? 'room' : `${above} above, ${below} under`;
+		});
+		await expect.poll(gaps, { message: `gaps around the warning at ${width}` }).toBe('room');
+	}
+	await page.unroute('**/auth/state');
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await page.reload();
+	await reachSetupAccount(page);
+	for (const width of [1280, 390]) {
+		await page.setViewportSize({ width, height: 844 });
+		await expect(page.getByLabel('Confirm password')).toBeVisible();
+		const between = () => page.locator('.panel .field').evaluateAll((fs) => {
+			// The account form pairs fields in rows at desktop width: only gaps between rows (not side by side) count.
+			const g = fs.slice(1).map((f, i) => Math.round(f.getBoundingClientRect().top - fs[i].getBoundingClientRect().bottom)).filter((x) => x > 0);
+			return new Set(g).size === 1 && g[0] >= 8 ? 'equal' : g.join('/');
+		});
+		await expect.poll(between, { message: `field gaps at ${width}` }).toBe('equal');
+	}
+	// Tab from Password goes straight to Confirm password; the eye button is skipped by Tab but still works on click.
+	await page.setViewportSize({ width: 1280, height: 720 });
+	const pwBox = page.getByLabel('Password', { exact: true });
+	await pwBox.fill('tab-check-pw');
+	await pwBox.focus();
+	await page.keyboard.press('Tab');
+	await expect(page.getByLabel('Confirm password')).toBeFocused();
+	await expect(pwBox).toHaveAttribute('type', 'password');
+	await page.getByRole('button', { name: 'Show password' }).click();
+	await expect(pwBox).toHaveAttribute('type', 'text');
+	await page.setViewportSize({ width: 1280, height: 720 });
+	await page.goto('/login');
+	await reachSetupAccount(page);
+}
+
 test('first run makes the owner, adds the key and folder, then returns Home', async () => {
 	// Home's first visit waits (30 s at most) for Explore's lists, which the fake metadata server is slow to give.
 	test.setTimeout(120_000);
 	await page.goto('/');
 	await expect(page).toHaveURL(/\/login/);
-	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
+	// The bar walks Language, Welcome, then Account; each opens with its one button.
+	await expect(page.getByTestId('setup-bar')).toHaveAttribute('data-phase', 'language');
+	await expect(page.getByRole('heading', { name: 'Pick your languages' })).toBeVisible();
+	await page.getByTestId('setup-lang-go').click();
+	await expect(page.getByTestId('setup-bar')).toHaveAttribute('data-phase', 'welcome');
+	await page.getByTestId('setup-start').click();
+	await expect(page.getByRole('heading', { name: 'Your HolyArrs account' })).toBeVisible();
 
 	// No setup code: whoever opens a fresh HolyArrs first makes the owner.
 	const o = newOwner();
 	await expect(page.getByLabel('Setup code')).toHaveCount(0);
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill(o.name);
+	await setupSpacing();
+	// The step bar: Account is lit on the form. Its stops are not links.
+	await expect(page.getByTestId('setup-bar')).toHaveAttribute('data-phase', 'signin');
+	await expect(page.getByTestId('setup-bar').getByRole('link')).toHaveCount(0);
+	await page.getByLabel('Username').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
-	await page.getByLabel('Password again').fill(o.password);
-	await page.getByRole('button', { name: 'Create account' }).click();
+	await page.getByLabel('Confirm password').fill(o.password);
+	await page.getByRole('button', { name: 'Create account and continue' }).click();
 
-	// First run forks: bring the old apps, or start fresh.
-	await expect(page).toHaveURL(/\/welcome\?first=1$/);
-	await expect(page.getByRole('heading', { name: 'Coming from other apps?', level: 1 })).toBeVisible();
-	await expect(page.getByRole('button', { name: /^Bring my apps/ })).toBeVisible();
-	await scanFirstRun();
-	// The media step: Movies and TV shows on, Music off, one folder row each.
-	// It stays outside the app frame, and a reload stays on it. Metadata needs no key.
-	await page.getByRole('button', { name: /^Start fresh/ }).click();
-	await expect(page).toHaveURL(/\/welcome\?first=1&step=media$/);
-	await expect(page.getByLabel('Movies', { exact: true })).toBeChecked();
-	await expect(page.getByLabel('TV shows', { exact: true })).toBeChecked();
-	await expect(page.getByLabel('Music', { exact: true })).not.toBeChecked();
-	await expect(page.getByLabel('TV shows folder')).toBeVisible();
-	await expect(page.getByLabel('Music folder')).toHaveCount(0);
-	await page.reload();
-	await expect(page.getByRole('heading', { name: /^Where.s your media\?$/, level: 1 })).toBeVisible();
+	// The wizard opens at Media server (optional), then Parts with the two ways in (import or start fresh).
+	await expect(page).toHaveURL(/\/welcome\?first=1&step=server$/);
+	const bar = page.getByTestId('setup-bar');
+	await expect(bar).toHaveAttribute('data-phase', 'server');
+	await expect(bar.locator('li.done')).toHaveCount(3);
+	await expect(page.getByRole('heading', { name: 'Connect your media servers', level: 1 })).toBeVisible();
+	await page.getByTestId('link-continue').click();
+	await expect(page).toHaveURL(/\/welcome\?first=1&step=parts$/);
+	await expect(bar).toHaveAttribute('data-phase', 'parts');
+	await expect(bar.locator('li.done')).toHaveCount(4);
+	await expect(page.getByRole('heading', { name: 'What should HolyArrs do?', level: 1 })).toBeVisible();
+	await expect(page.getByTestId('welcome-bring')).toBeVisible();
+	await expect(page.getByTestId('welcome-fresh')).toBeVisible();
 	await expect(page.getByText(/TMDB|read access token/)).toHaveCount(0);
 	await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
 	await scanFirstRun();
-	// The browser tests use every part: Music here, Requests through Invite family.
+	// Phone width: the bar folds to one line and nothing scrolls sideways.
+	for (const width of [390, 1280]) {
+		await page.setViewportSize({ width, height: width === 390 ? 844 : 720 });
+		await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	}
+	// An address past the first unfinished step (Done) opens Folders instead.
+	await page.goto('/welcome?first=1&step=done');
+	await expect(page).toHaveURL(/\/welcome\?first=1&step=folders$/);
+	await expect(page.getByRole('heading', { name: /^Where.s your media\?$/, level: 1 })).toBeVisible();
+	// Folders can be skipped or left to Hands-off mode on this step, but an address past it still opens it.
+	await expect(page.getByTestId('folders-skip')).toBeVisible();
+	// One button: no Continue while no folder is checked.
+	await expect(page.getByTestId('folders-continue')).toHaveCount(0);
+	await expect(page.getByTestId('folders-hands-off')).toBeVisible();
+	await expect(bar).toHaveAttribute('data-phase', 'folders');
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+	await page.setViewportSize({ width: 1280, height: 720 });
+	// Back walks to Parts.
 	await page.getByRole('button', { name: 'Back' }).click();
+	// The browser tests use every part: Music here, Requests through Invite family.
 	await finishFirstRun(page, moviesDir, { tv: true, music: true, invite: true });
 
 	await page.goto('/');
@@ -160,9 +235,12 @@ test('settings pages render their forms', async () => {
 	}
 	await page.goto('/settings/tmdb');
 	await expect(page.getByText('Answering', { exact: true })).toBeVisible();
-	// Answering mode shows only the optional TVDB key and PIN; no TMDB token field.
+	// Answering mode shows the optional OMDb key, and the TVDB key and PIN folded away until asked for; no TMDB token field.
 	await expect(page.locator('#mk-tmdb_token')).toHaveCount(0);
-	await expect(page.locator('input[type=password]')).toHaveCount(2);
+	await expect(page.locator('input[type=password]')).toHaveCount(1);
+	await page.getByTestId('metadata-tvdb-open').click();
+	await expect(page.locator('input[type=password]')).toHaveCount(3);
+	for (const id of ['#mk-tvdb_key', '#mk-omdb_key', '#mk-tvdb_pin']) await expect(page.locator(id)).toBeVisible();
 	await expect(page.getByText(/read access token|TMDB key/i)).toHaveCount(0);
 	// No credit lines in the app: they live on GitHub.
 	await page.goto('/settings/backups');

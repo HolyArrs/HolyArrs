@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: a red dot shows what needs attention, and connection tests name the exact problem.** Plex labels for requested titles, names in your language, and over 30 fixes. Connect apps over MCP with keys you control. [See what's new](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: over 150 fixes and features from 101 people.** A plugin system, a new setup wizard, and a hands-off mode that never touches your files. [See what's new](https://holyarrs.com/whats-new/)
 
 > Every poster, trailer and score in your HolyArrs comes from a server I run and pay for myself, so it stays free for everyone. If HolyArrs made movie night a little better, a sponsor keeps the lights on for all of us 💛
 >
@@ -34,8 +34,9 @@
 >
 > | | |
 > |:--|:--|
-> | <a href="https://discord.com/invite/mthsvesKpC"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv9%2Finvites%2FmthsvesKpC%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&suffix=%20members&label=discord&logo=discord&logoColor=white&color=5865F2&style=flat-square" alt="Discord"></a> | Get help fast and hang out on [Discord](https://discord.com/invite/mthsvesKpC) |
-> | <a href="https://reddit.com/r/HolyArrs"><img src="https://img.shields.io/badge/r%2FHolyArrs-join-ff4500?style=flat-square&logo=reddit&logoColor=white" alt="r/HolyArrs"></a> | Share ideas and vote on [r/HolyArrs](https://reddit.com/r/HolyArrs) |
+> | <a href="https://community.holyarrs.com"><img src="https://img.shields.io/badge/community-join-3b82f6?style=flat-square&logo=discourse&logoColor=white" alt="HolyArrs Community"></a> | Ask, share ideas and vote on the [HolyArrs Community](https://community.holyarrs.com) |
+> | <a href="https://discord.com/invite/mthsvesKpC"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fdiscord.com%2Fapi%2Fv9%2Finvites%2FmthsvesKpC%3Fwith_counts%3Dtrue&query=%24.approximate_member_count&suffix=%20members&label=discord&logo=discord&logoColor=white&color=5865F2&style=flat-square" alt="Discord"></a> | Quick chat and hang out on [Discord](https://discord.com/invite/mthsvesKpC) |
+> | <a href="https://reddit.com/r/HolyArrs"><img src="https://img.shields.io/badge/r%2FHolyArrs-join-ff4500?style=flat-square&logo=reddit&logoColor=white" alt="r/HolyArrs"></a> | News and talk on [r/HolyArrs](https://reddit.com/r/HolyArrs) |
 > | <a href="https://x.com/CoderLuii"><img src="https://img.shields.io/badge/Follow-%40CoderLuii-000000?style=flat-square&logo=x&logoColor=white" alt="X"></a> | Sneak peeks on [X](https://x.com/CoderLuii) |
 > | <a href="https://github.com/CoderLuii"><img src="https://img.shields.io/github/followers/CoderLuii?style=flat-square&logo=github&label=followers&color=24292f" alt="GitHub followers"></a> | More projects on [GitHub](https://github.com/CoderLuii) |
 
@@ -182,7 +183,7 @@ Keys and passwords stay behind; you type them in again or import them from a fil
 - **Phone and TV apps.** Not built. The web app works on a phone.
 - **Music in Explore** is still being built.
 
-What's next is on the [roadmap](https://holyarrs.com/roadmap/). You vote, I build. Post ideas on [r/HolyArrs](https://reddit.com/r/HolyArrs).
+What's next is on the [roadmap](https://holyarrs.com/roadmap/). You vote, I build. Post ideas on the [HolyArrs Community](https://community.holyarrs.com).
 
 ## ❓ Questions people ask first
 
@@ -374,7 +375,7 @@ The image has no shell, so `docker exec -it holyarrs /bin/bash` won't work. Holy
 - Locked out of the owner account:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Version number:
@@ -399,8 +400,8 @@ More: [Troubleshooting](https://docs.HolyArrs.com/help/troubleshooting/).
 
 | You have | Go to |
 | --- | --- |
-| A question | [Discord](https://discord.com/invite/mthsvesKpC) |
-| An idea or a vote | [r/HolyArrs](https://reddit.com/r/HolyArrs) and the [roadmap](https://holyarrs.com/roadmap/) |
+| A question | The [HolyArrs Community](https://community.holyarrs.com), or [Discord](https://discord.com/invite/mthsvesKpC) |
+| An idea or a vote | The [HolyArrs Community](https://community.holyarrs.com), [r/HolyArrs](https://reddit.com/r/HolyArrs) and the [roadmap](https://holyarrs.com/roadmap/) |
 | A bug | [Issues](https://github.com/HolyArrs/HolyArrs/issues) (bugs and roadmap only) |
 | A security problem | [SECURITY](.github/SECURITY.md) |
 | Anything else | support@HolyArrs.com |
@@ -420,6 +421,8 @@ Want to build it into a closed product? Email support@HolyArrs.com for a commerc
 ## Keep it going
 
 HolyArrs is free, but it isn't free to run. By default, each install talks to a metadata server I pay for every month. Sponsors cover that, and buy more hours for the things you vote for.
+
+<p align="center"><a href="https://github.com/sponsors/CoderLuii"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-sponsor-light.png" height="34" alt="Sponsor HolyArrs" /></picture></a>&nbsp;<a href="https://holyarrs.com/roadmap/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-dark.png"><img src="https://raw.githubusercontent.com/HolyArrs/.github/main/profile/btn-vote-light.png" height="34" alt="Vote on the roadmap" /></picture></a></p>
 
 <!-- sponsors: start. Drawn by the HolyCore bot from the live sponsor list; shows nothing until the first sponsor. -->
 <p align="center">

@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Nie można cofnąć. Pliki zostają.",
 	"settings.pickRules.removeUsed": "{used}. Najpierw wybierz tam inne reguły.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Anuluj"
+	"settings.pickRules.cancel": "Anuluj",
+	"settings.pickRules.check.title": "Sprawdź nazwę wydania",
+	"settings.pickRules.check.desc": "Wklej nazwę wydania, aby zobaczyć, jak HolyArrs ją odczytuje i jak oceniają ją Twoje zestawy jakości. Nic nie jest wyszukiwane ani pobierane.",
+	"settings.pickRules.check.name": "Nazwa wydania",
+	"settings.pickRules.check.rules": "Oceń według",
+	"settings.pickRules.check.copies": "Kopie pasującego tytułu",
+	"settings.pickRules.check.size": "Rozmiar w GB (opcjonalnie)",
+	"settings.pickRules.check.check": "Sprawdź",
+	"settings.pickRules.check.failed": "Nie udało się sprawdzić nazwy",
+	"settings.pickRules.check.readAs": "Odczytano jako",
+	"settings.pickRules.check.matches": "Pasuje do {name}",
+	"settings.pickRules.check.noTitle": "Nie pasuje do żadnego tytułu w Twojej Bibliotece. Wybierz powyżej zestaw jakości, aby mimo to ją ocenić.",
+	"settings.pickRules.check.noAlbum": "Pasuje do {name}, ale do żadnego z jego albumów.",
+	"settings.pickRules.check.noCopies": "Ten tytuł nie ma kopii do oceny.",
+	"settings.pickRules.check.hasFile": "Ma plik"
 }

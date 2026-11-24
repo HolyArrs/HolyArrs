@@ -2,7 +2,9 @@ package migrate
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"net/url"
 	"reflect"
@@ -61,6 +63,9 @@ func (r *run) source(it Item) (string, string) {
 	if r.id("SELECT id FROM sources WHERE name = ?", it.Name) != 0 {
 		return ResAlready, "a Source with this name is here"
 	}
+	if r.sameSource(s) != "" {
+		return ResAlready, "a Source at this address is already there, kept"
+	}
 	what := s.Format + " at " + s.URL + ", paused until you check and resume it"
 	if r.dry {
 		return ResCreate, what
@@ -68,7 +73,7 @@ func (r *run) source(it Item) (string, string) {
 	local := false
 	prio := s.Priority
 	in := sources.Input{Name: it.Name, Format: s.Format, Protocol: s.Protocol, URL: s.URL, Kinds: s.Kinds, Categories: s.Categories,
-		MinSeeders: s.MinSeeders, Priority: &prio, AllowLocal: &local}
+		MinSeeders: s.MinSeeders, MultiLanguages: s.MultiLanguages, Priority: &prio, AllowLocal: &local}
 	if key := r.prowlarrKey(s.URL); key != "" {
 		in.APIKey = key
 		what += "; uses the key of the Prowlarr you imported from"
@@ -90,18 +95,32 @@ func (r *run) downloader(it Item) (string, string) {
 	if u := unseenMaps(maps); u != "" {
 		unseen = "; not visible here yet (check your mounts): " + u
 	}
-	if have := r.sameDownloader(d); have != "" {
-		if len(maps) > 0 {
-			// Nothing is changed on a Downloader that is already here.
-			return ResAlready, "a Downloader at this address is here; add these folder maps to it yourself if it needs them: " + mapList(maps) + unseen
+	if have, ok := r.sameDownloader(d); ok {
+		// The owner's own settings stay; only empty ones are filled.
+		filled, err := r.fillDownloader(have, d)
+		if err != nil {
+			return ResFailed, err.Error()
 		}
-		return ResAlready, "a Downloader at this address is here"
+		if added := r.addKindCategoriesTo(d, have.ID); added != "" {
+			unseen += "; " + added
+		}
+		if filled := r.fillEmptyMaps(it.Key, d, maps); filled != "" {
+			return ResAlready, "a Downloader at this address is here; " + filled + unseen
+		}
+		if len(maps) > 0 {
+			return ResAlready, "a Downloader at this address is already there, kept; add these folder maps to it yourself if it needs them: " + mapList(maps) + unseen
+		}
+		if filled {
+			return ResAlready, "a Downloader at this address is already there, kept; its empty user name was filled in" + unseen
+		}
+		return ResAlready, "a Downloader at this address is already there, kept" + unseen
 	}
 	name := it.Name
 	if r.id("SELECT id FROM downloaders WHERE name = ?", name) != 0 {
 		name = clip(name+" (imported)", 80)
 	}
-	what := d.Adapter + " at " + d.URL + ", paused until you check and resume it; it downloads into its own holyarrs category"
+	mainCat, cats := importedCategories(d)
+	what := d.Adapter + " at " + d.URL + ", paused until you check and resume it; " + categoryWords(d, mainCat)
 	if len(maps) > 0 {
 		what += "; folder maps: " + mapList(maps)
 	}
@@ -116,32 +135,58 @@ func (r *run) downloader(it Item) (string, string) {
 	if d.Adapter == "sabnzbd" || d.Adapter == "nzbget" {
 		proto = "usenet"
 	}
-	row := domain.Downloader{Name: name, Adapter: d.Adapter, Protocol: proto, URL: d.URL, Category: "holyarrs", Priority: d.Priority,
-		PathMap: maps, AfterImport: "leave", State: "disabled", Username: d.Username, AllowLocal: false, ClearFinished: true}
+	// Like the old apps, HolyArrs may change the client (make a missing
+	// category, remove what it imported), as a Downloader added here may.
+	row := domain.Downloader{Name: name, Adapter: d.Adapter, Protocol: proto, URL: d.URL, Category: mainCat, Priority: d.Priority,
+		CategoryShows: d.CategoryShows, CategoryMovies: d.CategoryMovies, CategoryMusic: d.CategoryMusic, CategoriesImported: cats,
+		PathMap: maps, AfterImport: "leave", State: "disabled", Username: d.Username, ClearFinished: true, Writable: true}
+	// an address on this machine or the local network is where the old
+	// app reached it, so it may be reached there from the start; the key typed
+	// for reading this same app is carried over and it is not paused.
+	local, _ := sources.BridgeIsLocal(r.ctx, d.URL)
+	c, secret := r.downloaderKey(d)
+	row.AllowLocal = local || (secret != "" && c.AllowLocalNetwork)
+	if secret != "" {
+		row.State = "ok"
+		if row.Username == "" {
+			row.Username = clip(c.Username, 100)
+		}
+		what = strings.Replace(what, "paused until you check and resume it", "uses the key you typed to read it", 1)
+	}
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+		if secret != "" {
+			ref, err := r.m.Secrets.PutTx(tx, "downloader_secret", secret, r.by)
+			if err != nil {
+				return err
+			}
+			row.SecretRef = &ref
+		}
 		id, err := database.Insert(tx, "downloaders", &row, r.by)
 		if err != nil {
 			return err
 		}
-		return r.markTx(tx, it.Key, "downloader", id, "", "")
+		// The carried key is marked by its id and sealed value, so undo can
+		// tell it from one typed later even when SQLite reuses the id.
+		carried := ""
+		if row.SecretRef != nil {
+			var sealed string
+			if err := tx.QueryRow("SELECT value FROM secrets WHERE id = ?", *row.SecretRef).Scan(&sealed); err != nil {
+				return err
+			}
+			carried = carriedKeyMark(*row.SecretRef, sealed)
+		}
+		return r.markTx(tx, it.Key, "downloader", id, "", carried)
 	})
 	return result(err, ResCreated, what)
 }
 
-// sameDownloader names a Downloader here that reaches the same app as d
-// (same kind, host and port; a path such as /sabnzbd does not count), or "".
-func (r *run) sameDownloader(d *DownloaderPlan) string {
-	have, err := database.Select[domain.Downloader](r.ctx, r.m.Store.Read(), "downloaders", "removed = 0 AND adapter = ? ORDER BY id", d.Adapter)
-	if err != nil {
-		return ""
+// sameDownloader finds a Downloader here that reaches the same app as d
+// (same kind, host and port; a path such as /sabnzbd does not count).
+func (r *run) sameDownloader(d *DownloaderPlan) (domain.Downloader, bool) {
+	if h := r.sameDownloaderRow(d); h != nil {
+		return *h, true
 	}
-	want := domain.Downloader{Adapter: d.Adapter, URL: d.URL}
-	for _, h := range have {
-		if domain.SameClient(h, want) {
-			return h.Name
-		}
-	}
-	return ""
+	return domain.Downloader{}, false
 }
 
 // setNaming puts one moved naming value on s.
@@ -153,6 +198,32 @@ func setNaming(s *mediafiles.NamingSettings, k, v string) {
 		s.Colon = v
 	case "illegal":
 		s.Illegal = v
+	case "show_rename_on_import":
+		s.ShowRenameOnImport = v == "true"
+	case "show_colon":
+		s.ShowColon = v
+	case "show_illegal":
+		s.ShowIllegal = v
+	case "music_rename_on_import":
+		s.MusicRenameOnImport = v == "true"
+	case "music_colon":
+		s.MusicColon = v
+	case "music_illegal":
+		s.MusicIllegal = v
+	case "specials_folder":
+		s.SpecialsFolder = v
+	case "artist_folder_pattern":
+		s.ArtistFolderPattern = v
+	case "album_folder_pattern":
+		s.AlbumFolderPattern = v
+	case "track_pattern":
+		s.TrackPattern = v
+	case "multi_disc_track_pattern":
+		s.MultiDiscTrackPattern = v
+	case "disc_folders":
+		s.DiscFolders = v == "true"
+	case "disc_folder_pattern":
+		s.DiscFolderPattern = v
 	case "file_pattern":
 		s.FilePattern = v
 	case "folder_pattern":
@@ -506,13 +577,16 @@ func (r *run) ask(it Item) (string, string) {
 	if a.FourK && titleID != 0 && r.id("SELECT id FROM versions WHERE title_id = ? AND four_k = 1", titleID) == 0 {
 		titleID = 0
 	}
-	if a.Approved && titleID != 0 {
+	// Approved in the old app stays approved here (Processing), and one it
+	// already finished is Done, whether or not its title came over too.
+	switch {
+	case a.Approved && a.Done:
+		state = "available"
+	case a.Approved:
 		state = "approved"
-	} else if a.Approved {
-		note = strings.TrimSpace(note + "; approved in " + a.App + ": approve it again here to add it")
 	}
 	note = strings.Trim(note, "; ")
-	what := map[string]string{"asked": "waiting", "approved": "approved"}[state]
+	what := map[string]string{"asked": "waiting", "approved": "approved", "available": "done"}[state]
 	if r.dry {
 		if by < 0 {
 			return ResCreate, what + ", by the new person"
@@ -542,7 +616,7 @@ func (r *run) ask(it Item) (string, string) {
 	r.askDetails(&row)
 	var decidedBy int64
 	var expectedDeciderFP string
-	if state == "approved" {
+	if state != "asked" {
 		decidedBy = r.personID(a.Decider)
 		if decidedBy <= 0 {
 			r.rep.NotMoved = append(r.rep.NotMoved, NotMoved{Group: GroupRequests, From: it.From, What: it.Name + ": decision owner", Why: "the source approver could not be matched, so HolyArrs records the current owner as the approver"})
@@ -590,12 +664,19 @@ func (r *run) alert(it Item) (string, string) {
 	if r.id("SELECT id FROM alerts WHERE name = ? COLLATE NOCASE", it.Name) != 0 {
 		return ResAlready, "an Alert with this name is here"
 	}
+	if r.sameAlert(a) != "" {
+		return ResAlready, "an Alert writing to the same place is already there, kept"
+	}
 	what := a.Kind + ", off until you type " + it.Needs
 	if r.dry {
 		return ResCreate, what
 	}
 	row := domain.Alert{Name: it.Name, Kind: a.Kind, Enabled: false, Moments: append([]string{}, alerts.Moments...), SMTPHost: a.SMTPHost,
-		SMTPPort: 587, SMTPSecurity: "starttls", SMTPFrom: a.SMTPFrom, SMTPUser: a.SMTPUser, StaffTo: a.StaffTo, WebhookAuth: "sign"}
+		SMTPPort: 587, SMTPSecurity: "starttls", SMTPFrom: a.SMTPFrom, SMTPUser: a.SMTPUser, StaffTo: a.StaffTo, WebhookAuth: "sign", ChatID: a.ChatID,
+		ServerURL: a.ServerURL, AllowLocal: a.AllowLocal}
+	if a.Moments != nil {
+		row.Moments = append([]string{}, a.Moments...)
+	}
 	if a.SMTPPort > 0 {
 		row.SMTPPort = a.SMTPPort
 	}
@@ -632,6 +713,29 @@ func (r *run) prowlarrKey(addr string) string {
 	return c.APIKey
 }
 
+// downloaderKey is the kept read credential of the SABnzbd or qBittorrent
+// at d's address (same scheme, host and port) and its secret: the API key
+// for SABnzbd, the password for qBittorrent. "" when none matches.
+func (r *run) downloaderKey(d *DownloaderPlan) (secretsfile.MoveCredential, string) {
+	kind := map[string]Kind{"sabnzbd": SABnzbd, "qbittorrent": QBittorrent}[d.Adapter]
+	if r.m.Secrets == nil || kind == "" || originOf(d.URL) == "" {
+		return secretsfile.MoveCredential{}, ""
+	}
+	c, _, ok, err := secretsfile.ReadMoveCredentialAt(r.ctx, r.m.Store, r.m.Secrets, string(kind), d.URL)
+	if err != nil || !ok {
+		if c, ok, err = secretsfile.ReadMoveCredential(r.ctx, r.m.Store, r.m.Secrets, string(kind)); err != nil || !ok {
+			return secretsfile.MoveCredential{}, ""
+		}
+	}
+	if originOf(c.Address) != originOf(d.URL) {
+		return secretsfile.MoveCredential{}, ""
+	}
+	if kind == QBittorrent {
+		return c, c.Password
+	}
+	return c, c.APIKey
+}
+
 // originOf is scheme://host:port in lower case, with the default port filled.
 func originOf(raw string) string {
 	u, err := url.Parse(strings.TrimSpace(raw))
@@ -650,4 +754,37 @@ func originOf(raw string) string {
 // becomes imported-user.
 func personName(s string) string {
 	return accounts.NewPersonName(s, "imported-user", 64)
+}
+
+// carriedKeyMark names one stored secret: its id plus a short hash of its sealed
+// value, which differs for every new secret (fresh nonce) even at a reused id.
+func carriedKeyMark(id int64, sealed string) string {
+	h := sha256.Sum256([]byte(sealed))
+	return strconv.FormatInt(id, 10) + ":" + hex.EncodeToString(h[:8])
+}
+
+// partOf is the part an item belongs to ("" for the core).
+func partOf(it Item) string {
+	kind := ""
+	switch {
+	case it.Folder != nil:
+		kind = it.Folder.Kind
+	case it.Title != nil:
+		kind = it.Title.Kind
+	case it.NeverAdd != nil:
+		kind = it.NeverAdd.Kind
+	case it.OutsideList != nil:
+		kind = it.OutsideList.titleKind()
+	case it.FileRules != nil:
+		kind = it.FileRules.Kind
+	case it.TurnDown != nil:
+		kind = it.TurnDown.Kind
+	case it.Protocol != nil:
+		return it.Protocol.Part
+	case it.Subtitles != nil:
+		return "subtitles"
+	case it.Ask != nil:
+		return "wishlist"
+	}
+	return map[string]string{"movie": "movies", "show": "shows", "music": "music", "artist": "music"}[kind]
 }

@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Csak ezek mondhatják meg, honnan jött egy látogatás.",
 	"settings.signIn.fixToSaveOne": "Javíts ki 1 sort a mentéshez",
 	"settings.signIn.fixToSaveOther": "Javíts ki {n} sort a mentéshez",
-	"settings.signIn.localSaved": "Helyi hálózat mentve"
+	"settings.signIn.localSaved": "Helyi hálózat mentve",
+	"settings.signIn.forgotTitle": "Elfelejtett jelszó?",
+	"settings.signIn.forgotOn": "Elfelejtett jelszó? megjelenítése a belépési oldalon",
+	"settings.signIn.forgotNote": "A tulajdonos egyszer használatos kódot kap a szerver naplójából. Kapcsold ki, ha mindenki egyszeri bejelentkezéssel lép be. A reset-owner parancs továbbra is működik.",
+	"settings.signIn.forgotShown": "Elfelejtett jelszó? bekapcsolva",
+	"settings.signIn.forgotHidden": "Elfelejtett jelszó? kikapcsolva"
 }

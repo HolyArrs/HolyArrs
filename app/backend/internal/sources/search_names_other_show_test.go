@@ -158,12 +158,13 @@ func TestNameSearches_OwnReleasesWithAnyYearReachTheJudge(t *testing.T) {
 	}
 }
 
-// Other names are for shows: a movie asks none and needs no Library check.
-func TestNameAskIsForShowsOnly(t *testing.T) {
+// A movie asks its other names (when its own finds nothing) and needs no
+// Library check; a show checks the Library.
+func TestNameAskMovieAndShow(t *testing.T) {
 	f := seedShow(t, "http://127.0.0.1:1/api", nil)
 	year := 2015
 	a := (&Searcher{Store: f.s}).nameAsk(context.Background(), mediafiles.Title{Kind: "movie", Year: &year, OriginalLanguage: ptr("da")}, true)
-	if a.n != 0 || a.shared != nil {
+	if a.n != maxAutoNameSearches || a.shared != nil {
 		t.Fatalf("a movie: %+v", a)
 	}
 	if a = (&Searcher{Store: f.s}).nameAsk(context.Background(), mediafiles.Title{Kind: "show", Year: &year, OriginalLanguage: ptr("da")}, false); a.n != 1 || a.shared == nil {

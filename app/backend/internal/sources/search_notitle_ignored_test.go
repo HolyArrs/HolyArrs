@@ -23,16 +23,17 @@ func idIgnoringSite(t *testing.T, byTitle ...string) *Client {
 	return New(Config{URL: srv.URL + "/api", Protocol: "torrent", AllowLocal: true})
 }
 
-// TestSearch_IgnoredIDNoTitleHits: a site that ignores the id and finds
-// nothing by title gives no results, not its newest releases.
-func TestSearch_IgnoredIDNoTitleHits(t *testing.T) {
+// TestSearch_IDAnswerKeptWhenTitleFindsNothing: when an id answer names the
+// title nowhere and a search by title finds nothing, the id answer is kept
+// for the judge, which turns down what is not the title, as a French site names a movie in French.
+func TestSearch_IDAnswerKeptWhenTitleFindsNothing(t *testing.T) {
 	q := Query{Title: "Cabin in the Woods", TV: true, Season: 1, Words: "S01", TVDB: 4242}
 	items, err := idIgnoringSite(t).Search(context.Background(), q)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(items) != 0 {
-		t.Fatalf("kept the site's newest releases: %v", titles(items))
+	if len(items) != len(notitleLatest) {
+		t.Fatalf("want the id answer kept for the judge, got %v", titles(items))
 	}
 }
 
@@ -57,8 +58,8 @@ func TestSearch_IDHitsUnderAlias(t *testing.T) {
 	}
 }
 
-// TestSearch_IgnoredIDTitleSearchFails: when the site ignored the id and the
-// follow-up title search fails, its newest releases are not kept.
+// TestSearch_IgnoredIDTitleSearchFails: when the follow-up title search
+// fails, the id answer is kept for the judge rather than lost.
 func TestSearch_IgnoredIDTitleSearchFails(t *testing.T) {
 	q := Query{Title: "Cabin in the Woods", TV: true, Season: 1, Words: "S01", TVDB: 4242}
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +74,7 @@ func TestSearch_IgnoredIDTitleSearchFails(t *testing.T) {
 		}
 	})
 	items, _ := New(Config{URL: srv.URL + "/api", Protocol: "torrent", AllowLocal: true}).Search(context.Background(), q)
-	if len(items) != 0 {
-		t.Fatalf("kept the site's newest releases: %v", titles(items))
+	if len(items) != len(notitleLatest) {
+		t.Fatalf("want the id answer kept for the judge, got %v", titles(items))
 	}
 }

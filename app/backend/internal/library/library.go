@@ -3,6 +3,7 @@
 package library
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"errors"
@@ -79,10 +80,11 @@ type AddOptions struct {
 // the Version takes the folder's name as it is, and its main video (if
 // any) becomes an adopted File. Nothing on disk changes.
 type Adoption struct {
-	FolderName string
-	File       string // relative to the Library folder; "" when there is none
-	Size       int64
-	MediaInfo  map[string]any
+	FolderName   string
+	SharedFolder bool
+	File         string // relative to the Library folder; "" when there is none
+	Size         int64
+	MediaInfo    map[string]any
 }
 
 // GateDefaults are the Release gate settings for new movies.
@@ -201,25 +203,11 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 
 	// Pick the Library folder and check it on disk before taking the writer.
 	db := s.Read()
-	var lf mediafiles.LibraryFolder
-	if opt.LibraryFolderID == 0 {
-		fs, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "kind = 'movie' ORDER BY id LIMIT 1")
-		if err != nil {
-			return 0, err
-		}
-		if len(fs) == 0 {
-			return 0, ErrNoFolder
-		}
-		lf = fs[0]
-	} else if err := database.Get(ctx, db, "library_folders", opt.LibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
-		return 0, ErrNoFolder
-	} else if err != nil {
+	lf, hands, err := TitleFolder(ctx, s, opt.LibraryFolderID, "movie", by)
+	if err != nil {
 		return 0, err
 	}
-	if lf.Kind != "movie" {
-		return 0, ErrNotMovieFolder
-	}
-	if h := CheckFolder(lf.Path, downloadPaths); !h.Usable() {
+	if h := CheckUse(lf, downloadPaths); !hands && !h.Usable() {
 		return 0, &FolderError{Health: h}
 	}
 
@@ -257,7 +245,23 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 	unlock := s.LockFiles()
 	defer unlock()
 	var titleID int64
+	fold := FoldsCase(lf.Path)
 	err = s.Write(ctx, func(tx *sql.Tx) error {
+		if opt.Adopt != nil && opt.Adopt.SharedFolder {
+			owners, err := mediafiles.AdoptedFileOwners(ctx, tx, lf.ID, fold, opt.Adopt.File)
+			if err != nil {
+				return err
+			}
+			if owner := owners[FolderKey(opt.Adopt.File, fold)]; owner.TitleID != 0 {
+				if err := checkAdoptedOwner(ctx, tx, owner, tmdbID); err != nil {
+					return err
+				}
+				return &AlreadyAddedError{TitleID: owner.TitleID}
+			}
+			if err := mediafiles.ShareMovieAncestors(ctx, tx, lf.ID, opt.Adopt.FolderName, fold); err != nil {
+				return err
+			}
+		}
 		if id, err := TitleByTMDB(ctx, tx, tmdbID); err != nil {
 			return err
 		} else if id != 0 {
@@ -278,6 +282,9 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 			}
 		} else if err := PickRulesFor(tx, &prID, "movie"); err != nil {
 			return err
+		}
+		if lf.LookOnly {
+			keep = false // look-only: never searched
 		}
 		t := &mediafiles.Title{Kind: "movie", Aliases: aliases, MetadataSource: "tmdb", KeepUpToDate: keep, NewPartsPolicy: "all",
 			ReleaseGate: gate, GateDelayDays: delay, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
@@ -301,9 +308,12 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		if t.Year != nil {
 			year = *t.Year
 		}
-		folderName := mediafiles.Folder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
+		folderName := mediafiles.MovieFolder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"], Genre: firstGenre(t.Genres)})
 		if opt.Adopt != nil {
 			folderName = opt.Adopt.FolderName
+		} else if lf.Flat {
+			// A flat Library folder: the movie is a file directly in it.
+			folderName = ""
 		} else {
 			// Reuse a folder already there under a slightly different name
 			// (case, accents, dots), like shows do, so no second folder is made.
@@ -318,10 +328,13 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 				}
 				rows.Close()
 			}
-			folderName = ExistingFolder(lf.Path, folderName, t.Name, year, func(d string) bool { return taken[FolderKey(d, fold)] })
+			folderName = FindFolder(lf.Path, folderName, TitleFacts(t, year), func(d string) bool { return taken[FolderKey(d, fold)] })
 		}
 		v := &mediafiles.Version{TitleID: t.ID, Label: MainLabel(opt.MainFourK), PickRulesID: prID, LibraryFolderID: lf.ID,
-			FolderName: folderName, KeepUpToDate: keep, IsMain: true, FourK: opt.MainFourK}
+			FolderName: folderName, KeepUpToDate: keep, IsMain: true, FourK: opt.MainFourK, AudioLanguages: NewTitleAudio(&lf, opt.Adopt != nil)}
+		if opt.Adopt != nil {
+			v.SharedFolder = opt.Adopt.SharedFolder
+		}
 		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
@@ -329,7 +342,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		sl := &mediafiles.Slot{ItemID: it.ID, VersionID: v.ID, State: state, LastReason: &reason}
 		if opt.Adopt != nil && opt.Adopt.File != "" {
 			sl.State = mediafiles.SlotInLibrary
-			why := "adopted from " + opt.Adopt.FolderName
+			why := "adopted from " + cmp.Or(opt.Adopt.FolderName, opt.Adopt.File)
 			sl.LastReason = &why
 		}
 		if _, err := database.Insert(tx, "slots", sl, by); err != nil {
@@ -450,4 +463,12 @@ func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, p
 		return mediafiles.MoveSlotTx(tx, slotID, mediafiles.SlotBetterWanted, "adopted below good enough, so a better copy is sought", by)
 	}
 	return nil
+}
+
+// firstGenre is a title's first genre, "" when it has none.
+func firstGenre(g []string) string {
+	if len(g) == 0 {
+		return ""
+	}
+	return g[0]
 }

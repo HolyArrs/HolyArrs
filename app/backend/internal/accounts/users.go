@@ -482,7 +482,7 @@ func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	keep := ""
-	if ck, err := r.Cookie(CookieName); err == nil {
+	if ck, err := sessionCookie(r); err == nil {
 		keep = sum(ck.Value)
 	}
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {

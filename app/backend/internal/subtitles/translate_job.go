@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"os"
 	"path/filepath"
 
@@ -165,6 +166,9 @@ func (s *Service) Translate(ctx context.Context, fileID int64, req TranslateRequ
 	fc, err := s.load(ctx, fileID)
 	if err != nil {
 		return res, err
+	}
+	if fc.look {
+		return TranslateResult{}, mediafiles.ErrLookOnly
 	}
 	if req.Language = NormLanguage(req.Language); req.Language == "" {
 		return res, ErrBadLanguage
@@ -445,7 +449,7 @@ func (s *Service) readSource(ctx context.Context, fc *fileCtx, src source) ([]su
 			return nil, err
 		}
 		e := pickEntry(entries)
-		text, err := subtext.Clean(e.Data, e.Format)
+		text, err := subtext.CleanFor(e.Data, e.Format, src.language)
 		if err != nil {
 			return nil, err
 		}
@@ -467,7 +471,7 @@ func (s *Service) readSource(ctx context.Context, fc *fileCtx, src source) ([]su
 		return nil, err
 	}
 	format := textFormat(src.path)
-	text, err := subtext.Clean(b, format)
+	text, err := subtext.CleanFor(b, format, src.language)
 	if err != nil {
 		return nil, err
 	}

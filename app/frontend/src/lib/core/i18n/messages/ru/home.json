@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "Выберите, что запросить дальше",
 	"home.newPopular": "Новое и популярное",
 	"home.whatSTrending": "Что в тренде",
+	"home.gettingReady": "Подготовка…",
 	"home.top10sAndComing": "Топ-10 и скоро в прокате",
 	"home.whatSNext": "Что дальше",
 	"home.airDatesAndReleases": "Даты выхода и релизы",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Серии и фильмы, которые выходят на этой неделе",
 	"home.popularThisWeek": "Популярные премьеры этой недели",
 	"home.peopleCheck": "Проверка людей",
-	"home.cantReadUsers": "не удаётся прочитать список пользователей"
+	"home.cantReadUsers": "не удаётся прочитать список пользователей",
+	"home.joined.title": "Добро пожаловать, {name}",
+	"home.joined.find": "Найдите что-нибудь в разделе {explore} или {search}.",
+	"home.joined.ask": "Нажмите {request} на странице, чтобы получить. Можно запросить:",
+	"home.joined.track": "Следите за каждым в разделе {requests}.",
+	"home.joined.noLimit": "Без недельного лимита.",
+	"home.joined.gotIt": "Понятно",
+	"home.joined.explore": "Открыть {explore}"
 }

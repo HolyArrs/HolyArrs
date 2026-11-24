@@ -13,7 +13,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { ShowList } from './ItemsSheet.svelte';
-	import { appName, cleanPath, folderProblem, folderTo, LEAVE, OTHER, seasonsShows, sharedTargets, unseenFolder, type Line, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem } from './move.ts';
+	import { appName, cleanPath, folderProblem, folderTo, LEAVE, OTHER, seasonsShows, sharedTargets, unseenFolder, type Line, type PathRule, type PersonChoice, type Plan, type PlanGroup, type PlanItem, type Names } from './move.ts';
 
 	const countSteps = moveContext<boolean | undefined>('move-hide-count') !== true;
 
@@ -32,6 +32,8 @@
 		people,
 		noFormats = false,
 		onformats,
+		names = 'keep',
+		onnames,
 		onfolder,
 		onother,
 		onextra,
@@ -56,6 +58,9 @@
 		people: Record<string, PersonChoice>;
 		noFormats?: boolean;
 		onformats?: (on: boolean) => void;
+		/** File names: keep them (the default) or rename to HolyArrs naming. */
+		names?: Names;
+		onnames?: (v: Names) => void;
 		onfolder: (from: string, pick: string) => void;
 		onother: (from: string, to: string) => void;
 		onextra: (rules: PathRule[]) => void;
@@ -210,6 +215,8 @@
 	}
 	const toCheck = $derived(new Map(seasonsShows(tried).map((s) => [s.key, { name: s.name, detail: tried.find((l) => l.key === s.key)?.detail }])));
 	// Profiles that score formats can bring them as traits; the switch shows while any could.
+	// Asked while any app with files comes over (the plan carries its names item).
+	const namesAsk = $derived((plan?.groups.find((g) => g.name === 'naming')?.items ?? []).some((it) => it.key.startsWith('names:')));
 	const formatsAsk = $derived(noFormats || (plan?.groups.find((g) => g.name === 'pick_rules')?.items ?? []).some((it) => !!it.rules?.body));
 	function openKeys(k: 'sources' | 'downloaders') {
 		keysOf = k;
@@ -342,6 +349,18 @@
 					{:else}
 						<li class="mrow"><span class="txt">{t('migrate.ownersAndAdmins', { n: asked.length })}</span><button type="button" class="quiet" aria-expanded={peopleOpen} onclick={() => (peopleOpen = true)}>{t('migrate.review')}</button></li>
 					{/if}
+				</ul>
+			{/if}
+
+			{#if namesAsk && onnames}
+				<h3 class="head" id="move-names">{t('migrate.fileNames')}</h3>
+				<ul class="box list" role="radiogroup" aria-labelledby="move-names" data-testid="names-choice">
+					{#each [{ v: 'keep' as const, label: t('migrate.namesKeep'), hint: t('migrate.namesKeepHint') }, { v: 'rename' as const, label: t('migrate.namesRename'), hint: t('migrate.namesRenameHint') }] as o (o.v)}
+						<li class="mrow">
+							<span class="txt"><label class="name" for="move-names-{o.v}">{o.label}</label><span class="sub">{o.hint}</span></span>
+							<input id="move-names-{o.v}" class="pick" type="radio" name="move-names" value={o.v} checked={names === o.v} onchange={() => onnames(o.v)} />
+						</li>
+					{/each}
 				</ul>
 			{/if}
 
@@ -512,6 +531,7 @@
 	.arrow { flex: none; color: var(--text-muted); }
 	.sw-word { color: var(--text-muted); font: var(--t-footnote); white-space: nowrap; }
 	.switch { flex: none; }
+	.pick { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
 	/* Settings pages stretch a switch that sits straight in a list row; here the row's words take that room. */
 	.list > .mrow > label.switch { width: auto; }
 

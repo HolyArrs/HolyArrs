@@ -85,5 +85,21 @@
 	"sources.uses.auto": "מחפש בעצמו",
 	"sources.uses.feed": "רשימת החדשים",
 	"sources.uses.hand": "חיפוש ידני",
-	"sources.uses.none": "לא בשימוש"
+	"sources.uses.none": "לא בשימוש",
+	"sources.bridge.removeTitle": "להסיר את {name}?",
+	"sources.bridge.find": "חיפוש {name} ברשת שלי",
+	"sources.bridge.noneFound": "אף {name} לא ענה ברשת שלכם.",
+	"sources.bridge.keyFound": "התקבל מפתח מ-{name}",
+	"sources.bridge.keyKept": "{name} לא מסר את המפתח (הכניסה מופעלת). השתמשו ב„קבלת מפתח” כדי להעתיק אותו.",
+	"sources.bridge.keyKeptJackett": "Jackett לא מסר את המפתח (יש לו סיסמת מנהל). השתמשו ב„קבלת מפתח” כדי להעתיק אותו.",
+	"sources.bridge.notReached": "לא ניתן להגיע אל {name}.",
+	"sources.bridge.brings.title": "מה עובר",
+	"sources.bridge.brings.sites": "האינדקסרים שלו, כמקורות",
+	"sources.bridge.brings.categories": "הקטגוריות שלהם",
+	"sources.bridge.brings.search": "החיפושים עוברים דרך {name}",
+	"sources.bridge.brings.sync": "שינויים ב-{name} עוברים",
+	"sources.bridge.brings.stays": "האינדקסרים שלכם נשארים מוגדרים ב-{name}.",
+	"sources.bridge.brings.had": "אינדקסרים שכבר כאן: {n}",
+	"sources.bridge.brings.hadFrom": "יובאו דרך {apps}",
+	"sources.bridge.brings.keyKept": "השאירו את המפתח ריק כדי להשתמש בזה שכבר יש להם."
 }

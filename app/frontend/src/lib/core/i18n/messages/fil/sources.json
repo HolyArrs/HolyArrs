@@ -85,5 +85,21 @@
 	"sources.uses.auto": "kusang naghahanap",
 	"sources.uses.feed": "listahan ng pinakabago",
 	"sources.uses.hand": "manu-manong paghahanap",
-	"sources.uses.none": "hindi ginagamit"
+	"sources.uses.none": "hindi ginagamit",
+	"sources.bridge.removeTitle": "Alisin ang {name}?",
+	"sources.bridge.find": "Hanapin ang {name} sa network ko",
+	"sources.bridge.noneFound": "Walang {name} na sumagot sa network mo.",
+	"sources.bridge.keyFound": "Nakuha ang key mula sa {name}",
+	"sources.bridge.keyKept": "Hindi ibinigay ng {name} ang key nito (naka-on ang sign-in). Gamitin ang Kunin ang key para kopyahin ito.",
+	"sources.bridge.keyKeptJackett": "Hindi ibinigay ng Jackett ang key nito (may admin password ito). Gamitin ang Kunin ang key para kopyahin ito.",
+	"sources.bridge.notReached": "Hindi maabot ang {name}.",
+	"sources.bridge.brings.title": "Ang dadalhin",
+	"sources.bridge.brings.sites": "Ang mga indexer nito, bilang mga Source",
+	"sources.bridge.brings.categories": "Ang mga category nila",
+	"sources.bridge.brings.search": "Dadaan sa {name} ang mga search",
+	"sources.bridge.brings.sync": "Dadalhin ang mga pagbabago sa {name}",
+	"sources.bridge.brings.stays": "Mananatiling naka-set up ang mga indexer mo sa {name}.",
+	"sources.bridge.brings.had": "{n} indexer na ang narito",
+	"sources.bridge.brings.hadFrom": "Na-import sa pamamagitan ng {apps}",
+	"sources.bridge.brings.keyKept": "Iwanang blangko ang key para gamitin ang key na mayroon na sila."
 }

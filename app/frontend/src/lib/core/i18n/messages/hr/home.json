@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Odaberi što ćeš sljedeće zatražiti",
 	"home.newPopular": "Novo i popularno",
 	"home.whatSTrending": "Što je u trendu",
+	"home.gettingReady": "Priprema…",
 	"home.top10sAndComing": "Top 10 i uskoro",
 	"home.whatSNext": "Što slijedi",
 	"home.airDatesAndReleases": "Datumi emitiranja i izlazaka",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Epizode i filmovi koji stižu ovaj tjedan",
 	"home.popularThisWeek": "Popularna izdanja koja stižu ovaj tjedan",
 	"home.peopleCheck": "Provjera osoba",
-	"home.cantReadUsers": "popis korisnika ne može se pročitati"
+	"home.cantReadUsers": "popis korisnika ne može se pročitati",
+	"home.joined.title": "Dobro došli, {name}",
+	"home.joined.find": "Pronađite nešto u {explore} ili {search}.",
+	"home.joined.ask": "Dodirnite {request} na naslovu da ga dobijete. Možete tražiti:",
+	"home.joined.track": "Pratite svaki u {requests}.",
+	"home.joined.noLimit": "Nema tjednog ograničenja.",
+	"home.joined.gotIt": "Razumijem",
+	"home.joined.explore": "Otvori {explore}"
 }

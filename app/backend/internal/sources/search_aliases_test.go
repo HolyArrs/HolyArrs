@@ -233,8 +233,9 @@ func TestPlainNameKeepsALetterBeforeAnApostrophe(t *testing.T) {
 	}
 }
 
-// A movie is asked by its own name and year only, never by an other name.
-func TestOtherNamesNotAskedForAMovie(t *testing.T) {
+// A movie whose own name finds nothing is asked by its other name with its
+// year, as the older movie app does.
+func TestOtherNamesAskedForAMovieFoundByNothingElse(t *testing.T) {
 	t.Parallel()
 	site := &aliasSite{}
 	srv := serve(t, site.handler([]string{"L.Auberge.Espagnole.2002.1080p.BluRay.x264-GRP"}, `<caps><searching><search available="yes" supportedParams="q"/><movie-search available="yes" supportedParams="q"/></searching></caps>`))
@@ -244,8 +245,8 @@ func TestOtherNamesNotAskedForAMovie(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(items) != 0 || len(site.asks) != 1 {
-		t.Fatalf("want the one search by the movie's name, got %d releases from %v", len(items), site.asks)
+	if len(items) != 1 || len(site.asks) != 2 || site.asks[1].Get("q") != "l auberge espagnole 2002" {
+		t.Fatalf("want the movie's name, then its other name with the year, got %d releases from %v", len(items), site.asks)
 	}
 }
 

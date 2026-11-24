@@ -96,7 +96,7 @@ func TestPinMoveCredentialStore(t *testing.T) {
 	}
 }
 
-// Two copies of one app keep a key each; a legacy row (address '') is found
+// Two copies of one app keep a key each; a legacy row (address ”) is found
 // by the address sealed in it and replaced by a save at that address.
 func TestMoveCredentialPerAddress(t *testing.T) {
 	d := deps(t)

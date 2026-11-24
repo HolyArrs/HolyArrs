@@ -1,24 +1,29 @@
 <script lang="ts">
-	// Plugins: the signed plugin list, what each may reach, and install, start, stop, remove. Owner only.
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	// Plugins: a directory of signed plugins with tabs, search and sort; each opens its details (what it does, what it can reach) with install, start, stop, remove. Owner only.
+	// Three views (List, Cards, Large), kept in this browser. The dev server adds a Design preview bar to try the surfaces and ten list looks.
+	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
-	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import Badge from '#lib/ui/Badge.svelte';
+	import IconButton from '#lib/ui/IconButton.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { to } from '#lib/core/paths.ts';
 	import '../(frame)/settings-content.css';
-	import { abilities, findPlugins, hasUpdate, notices, pluginAbout, pluginName, pluginState, reaches, shownVersion, sortPlugins, stateLabel, type Plugin, type PluginOverview, type PluginSort, type PluginView } from '#lib/plugins/index.ts';
-	import { DlFind, dlTop } from '#lib/downloads/index.ts';
-	import { LibraryViewSwitch } from '#lib/mediafiles/index.ts';
+	import { date } from '#lib/core/format.ts';
+	import { PluginInfo, PluginSettings, AddSheet, NoLockCard, NoNetLockCard, ApproveAccess, wheelSideways, fitChips, tagRoom, arrowKeys, tint, LanguagesSection, languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from '#lib/plugins/index.ts';
+	import { listLanguages, packList } from '#lib/core/i18n/language-packs.svelte.ts';
+	import { abilities, newAbilities, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, forwards, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
+	import Avatar from '#lib/ui/Avatar.svelte';
+	import { DlFind } from '#lib/downloads/index.ts';
+	import { barTools, barLead, pluginScope } from '#lib/core/search-field.svelte.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import { views as savedViews } from '#lib/core/views.svelte.ts';
 
@@ -28,40 +33,122 @@
 	let error = $state('');
 	let missing = $state(false);
 	let busy = $state('');
-	let reaching = $state<Plugin | null>(null);
-	let reachOpen = $state(false);
+	// The plugin being installed or updated from this page (busy also covers Stop, Start and Remove).
+	let installing = $state('');
+	let openId = $state('');
+	let panelOpen = $state(false);
+	let modalOpen = $state(false);
+	// The view: List, Cards or Large, kept in this browser. An old Compact pick opens as Cards.
+	type View = 'list' | 'cards' | 'large';
+	function readView(): View {
+		try {
+			const v = localStorage.getItem('plugins.view');
+			return v === 'list' || v === 'large' ? v : 'cards';
+		} catch {
+			return 'cards';
+		}
+	}
+	let view = $state<View>(readView());
+	function setView(v: View) {
+		view = v;
+		try {
+			localStorage.setItem('plugins.view', v);
+		} catch {
+			/* private window: the pick lasts this visit */
+		}
+	}
+	// The List view uses the table look (V1).
+	const lvv = 1 as number;
+	// A plugin that finished installing from its card shows Running for a moment.
+	let justRan = $state('');
+	// An update that asks for more than the installed version: the plugins and what they add, before updating.
+	let askAccess = $state<{ list: Plugin[]; adds: string[] } | null>(null);
 	let removing = $state<Plugin | null>(null);
+	// The plugin whose settings form shows in its dialog, in place of its details.
+	let editing = $state('');
 	let removeOpen = $state(false);
+	// The file lock question shows until answered, and again after Change.
+	let lockBusy = $state(false);
+	let askLock = $state(false);
 
-	// Search, sort and view: picked like the Library's, and kept on the account the same way.
-	let q = $state('');
-	let sortBy = $state<PluginSort>(savedViews.get('plugins.sort') === 'new' ? 'new' : 'name');
-	let view = $state<PluginView>(savedViews.get('plugins.view') === 'list' ? 'list' : 'grid');
+	// Search and sort are kept on the account like the Library's; the tab is per visit.
+	// The search text lives in the app's top search box (Ctrl K); on phones, where that bar is hidden, the page's own box edits the same text.
+	const q = $derived(pluginScope.term);
+	let tab = $state<PluginTab>('all');
+	let langOpen = $state(false);
+	// Language Packs' own logo (tinted like a plugin's) and its version as a plugin.
+	const LANG_ICON = to('/plugins/language-packs.svg');
+	const LANG_VERSION = LANGUAGE_PACKS_VERSION;
+	let sortBy = $state<PluginSort>((['new', 'trending'] as const).find((x) => x === savedViews.get('plugins.sort')) ?? 'name');
 	let pageWidth = $state(1200);
 	const phone = $derived(pageWidth < 640);
+	// The viewport width: the top bar (and its search box) shows from 768px.
+	let vw = $state(1200);
 	function setSort(v: PluginSort) {
 		sortBy = v;
 		savedViews.set('plugins.sort', v);
 	}
-	function setView(v: PluginView) {
-		view = v;
-		savedViews.set('plugins.view', v);
-	}
-	const sortItems = $derived<MenuItem[]>([
+	// Show narrows the list on top of the category chips; per visit, like the tab.
+	let showOnly = $state<'all' | 'installed' | 'updates'>('all');
+	const lang = $derived(languageCard(packList.installed, q, tab, showOnly, t('plugins.tabLanguagePacks')));
+	// Language Packs opens the same window as a plugin: its own logo, About, what it can reach, then the languages.
+	const langPlugin = $derived({ id: 'language-packs', version: LANGUAGE_PACKS_VERSION, installed: !!lang?.installed, running: false, enabled: true, name: t('plugins.tabLanguagePacks'), author: 'HolyArrs', category: t('plugins.languages'), description: t('plugins.languagesIntro'), icon: LANGUAGE_PACKS_ICON, access: { hosts: ['plugins.holyarrs.com'], folders: [], actions: [] } } as Plugin);
+	const trending = $derived(trendingIds(ov?.plugins ?? []));
+	const updates = $derived((ov?.plugins ?? []).filter((p) => p.installed && hasUpdate(p) && !p.needs_app));
+	const filterItems = $derived<MenuItem[]>([
+		{ kind: 'heading', label: t('plugins.viewLabel') },
+		{ label: t('plugins.viewList'), checked: view === 'list', onselect: () => setView('list') },
+		{ label: t('plugins.viewCards'), checked: view === 'cards', onselect: () => setView('cards') },
+		{ label: t('plugins.viewLarge'), checked: view === 'large', onselect: () => setView('large') },
+		{ kind: 'separator' },
 		{ kind: 'heading', label: t('plugins.sortBy') },
 		{ label: t('plugins.sortName'), checked: sortBy === 'name', onselect: () => setSort('name') },
-		{ label: t('plugins.sortNew'), checked: sortBy === 'new', onselect: () => setSort('new') }
+		{ label: t('plugins.sortNew'), checked: sortBy === 'new', onselect: () => setSort('new') },
+		...(trending.size ? [{ label: t('plugins.sortTrending'), checked: sortBy === 'trending', onselect: () => setSort('trending') }] : []),
+		{ kind: 'separator' },
+		{ kind: 'heading', label: t('plugins.show') },
+		{ label: t('plugins.showAll'), checked: showOnly === 'all', onselect: () => (showOnly = 'all') },
+		{ label: t('plugins.showInstalled'), checked: showOnly === 'installed', onselect: () => (showOnly = 'installed') },
+		{ label: updates.length ? t('plugins.showUpdatesN', { n: updates.length }) : t('plugins.showUpdates'), checked: showOnly === 'updates', onselect: () => (showOnly = 'updates') }
 	]);
-	const shown = $derived(ov ? findPlugins(sortPlugins(ov.plugins, sortBy), q) : []);
+	let addOpen = $state(false);
+	const all = $derived(ov?.plugins ?? []);
+	const cats = $derived(categories(all));
+	const anyInstalled = $derived(all.some((p) => p.installed));
+	const shown = $derived(findPlugins(sortPlugins(inTab(all, tab), sortBy), q).filter((p) => showOnly === 'all' || (showOnly === 'installed' ? p.installed : hasUpdate(p))));
 
+	// Your plugins first (on the plain All view), then the rest.
+	const plain = $derived(tab === 'all' && showOnly === 'all' && !q.trim());
+	const sections = $derived(
+		plain && anyInstalled
+			? [
+					{ key: 'mine', title: t('plugins.sectionMine'), list: shown.filter((p) => p.installed) },
+					{ key: 'more', title: t('plugins.sectionMore'), list: shown.filter((p) => !p.installed) }
+				].filter((x) => x.list.length)
+			: [{ key: 'all', title: '', list: shown }]
+	);
 	const notes = $derived(ov ? notices(ov) : []);
 	const canInstall = $derived(!!ov && ov.key_set && ov.can_run);
-	const can = $derived(reaching ? abilities(reaching) : []);
+	const sel = $derived(all.find((p) => p.id === openId) ?? null);
+	// List look V7 groups the rows under their category.
+	const groups = $derived(view === 'list' && lvv === 7 ? cats.map((c) => ({ c, list: shown.filter((p) => categoryOf(p) === c) })).filter((g) => g.list.length) : []);
+	const noLockCard = $derived(!!ov && showsNoLockCard(ov));
+	const noNetCard = $derived(!!ov && showsNoNetLockCard(ov));
+	const noLockTag = $derived(!!ov && showsNoLockTag(ov));
+	const asking = $derived(noLockCard && (askLock || !ov?.no_file_lock_asked));
 
+	let linked = false;
 	async function load() {
 		try {
 			ov = await api.get<PluginOverview>('/plugins');
 			error = '';
+			// A link to /plugins#<id> opens that plugin's dialog once.
+			if (!linked) {
+				linked = true;
+				const id = decodeURIComponent(location.hash.slice(1));
+				const p = id && ov.plugins.find((x) => x.id === id);
+				if (p) show(p);
+			}
 		} catch (e) {
 			if (e instanceof ApiError && e.status === 404) missing = true;
 			else error = message(e);
@@ -69,59 +156,332 @@
 			loaded = true;
 		}
 	}
+	// A /plugins#<id> link followed while on the page opens that plugin too.
+	function onHash() {
+		const id = decodeURIComponent(location.hash.slice(1));
+		const p = id && ov?.plugins.find((x) => x.id === id);
+		if (p) {
+			if (!(modalOpen && openId === p.id)) show(p);
+		}
+		// Back from a followed /plugins#<id> link drops the hash, and a link to an unknown plugin opens nothing: close the dialog too.
+		else if (modalOpen) void close();
+	}
 	onMount(() => {
-		if (owner) void load();
+		pluginScope.on = true;
+		pluginScope.term = '';
+		if (owner) void (load(), listLanguages().catch(() => {}));
 		else loaded = true;
+		return () => {
+			barTools.snippet = null;
+			barLead.snippet = null;
+			pluginScope.on = false;
+			pluginScope.term = '';
+		};
 	});
 
-	// After a dialog action, focus lands on the row's main button, or the heading when the row is gone.
-	async function act(p: Plugin, run: () => Promise<unknown>, done: string, fail: string, refocus = false) {
+	// From 768px the tools sit beside the top bar's search box; below that (bar hidden) beside the page's own box.
+	$effect(() => {
+		barTools.snippet = vw >= 768 ? pageTools : null;
+		barLead.snippet = vw >= 768 ? addBtn : null;
+	});
+
+	function show(p: Plugin) {
+		openId = p.id;
+		editing = '';
+		panelOpen = true;
+		modalOpen = true;
+		history.replaceState(history.state, '', `#${encodeURIComponent(p.id)}`);
+	}
+	function clearHash() {
+		if (location.hash) history.replaceState(history.state, '', location.pathname + location.search);
+	}
+	async function focusTile(id: string) {
+		await tick();
+		document.querySelector<HTMLElement>(`[data-testid="plugin-row"][data-id="${CSS.escape(id)}"] .open`)?.focus();
+	}
+	// Closing goes back to the tile that opened it.
+	async function close() {
+		const id = openId;
+		panelOpen = modalOpen = false;
+		clearHash();
+		await tick();
+		document.querySelector<HTMLElement>(`[data-testid="plugin-row"][data-id="${CSS.escape(id)}"] .open`)?.focus();
+	}
+
+	async function act(p: Plugin, run: () => Promise<unknown>, done: string, fail: string) {
 		if (busy) return;
 		busy = p.id;
+		const name = shownName(p);
 		try {
 			await run();
-			toasts.push(t(done, { name: pluginName(p.id) }), 'ok');
+			toasts.push(t(done, { name }), 'ok');
 		} catch (e) {
-			toasts.push(t(fail, { name: pluginName(p.id) }), 'fail', { body: message(e) });
+			toasts.push(t(fail, { name }), 'fail', { body: message(e) });
 		} finally {
 			await load();
 			busy = '';
 			removing = null;
 		}
-		if (refocus) {
+		// After a removal from the panel, focus goes back to the tile (or the list).
+		if (!panelOpen) {
 			await tick();
-			const row = document.querySelector<HTMLElement>(`[data-testid="plugin-row"][data-id="${CSS.escape(p.id)}"] .acts button:not([disabled])`);
-			(row ?? document.getElementById('h-plugins'))?.focus();
+			const tile = document.querySelector<HTMLElement>(`[data-testid="plugin-row"][data-id="${CSS.escape(p.id)}"] .open`);
+			(tile ?? document.getElementById('h-plugins'))?.focus();
 		}
 	}
 	// Start shows for an off plugin only when the owner stopped it (or no reason is given); other reasons need a fix first.
-	const startable = (p: Plugin) => !p.disabled_reason || p.disabled_reason === 'stopped by the owner' || p.disabled_reason === 'signed out by the owner';
+	// A plugin turned off for the missing file lock can start again once the owner allowed it to run without.
+	const startable = (p: Plugin) =>
+		!p.disabled_reason || p.disabled_reason === 'stopped by the owner' || p.disabled_reason === 'signed out by the owner' || (!!ov?.allow_no_file_lock && p.disabled_reason.includes('(Landlock)')) || (!!ov?.allow_no_net_lock && p.disabled_reason.includes('(seccomp user-notify)'));
 
 	const path = (p: Plugin) => `/plugins/${encodeURIComponent(p.id)}`;
 
-	function askInstall(p: Plugin) {
-		reaching = p;
-		reachOpen = true;
+	// Install or update with the steps on the button: the list is read again while the engine works.
+	// An update that asks for more than the installed version asks first.
+	function install(p: Plugin) {
+		const adds = newAbilities(p);
+		if (adds.length) askAccess = { list: [p], adds };
+		else void doInstall(p);
 	}
-	function install() {
-		const p = reaching;
-		reachOpen = false;
-		if (p) void act(p, () => api.post(`${path(p)}/install`), 'plugins.installed', 'plugins.installFailed', true);
+	async function doInstall(p: Plugin): Promise<boolean> {
+		if (busy) return false;
+		busy = installing = p.id;
+		const name = shownName(p);
+		const poll = setInterval(() => void load(), 500);
+		let ok = false;
+		try {
+			await api.post(`${path(p)}/install`);
+			ok = true;
+			toasts.push(t(p.installed ? 'plugins.updated' : 'plugins.installed', { name }), 'ok');
+		} catch (e) {
+			toasts.push(t('plugins.installFailed', { name }), 'fail', { body: message(e) });
+		} finally {
+			clearInterval(poll);
+			await load();
+			busy = installing = '';
+		}
+		if (ok) {
+			justRan = p.id;
+			setTimeout(() => justRan === p.id && (justRan = ''), 2500);
+		}
+		return ok;
+	}
+	function updateAll() {
+		const adds = [...new Set(updates.flatMap((p) => newAbilities(p)))];
+		if (adds.length) askAccess = { list: [...updates], adds };
+		else void runUpdates([...updates]);
+	}
+	async function runUpdates(list: Plugin[]) {
+		for (const p of list) await doInstall(p);
+	}
+	function confirmAccess() {
+		const a = askAccess;
+		askAccess = null;
+		if (a) void (a.list.length === 1 ? doInstall(a.list[0]) : runUpdates(a.list));
+	}
+	/** The card's install step in words; Running for a moment after it finished. */
+	function stepLabel(p: Plugin): string {
+		if (p.install_step) return t(`plugins.step.${p.install_step}`);
+		if (installing === p.id) return t('plugins.step.downloading');
+		return justRan === p.id ? t('plugins.step.running') : '';
 	}
 	function askRemove(p: Plugin) {
 		removing = p;
 		removeOpen = true;
 	}
-	function remove(keep: boolean) {
+	// Remove always deletes the plugin with its settings; the panel then offers Install again.
+	function remove() {
 		const p = removing;
 		removeOpen = false;
-		if (p) void act(p, () => api.del(path(p) + (keep ? '?keep=1' : '')), 'plugins.removed', 'plugins.removeFailed', true);
+		if (p) void act(p, () => api.del(path(p)), 'plugins.removed', 'plugins.removeFailed');
+	}
+
+	// A plugin whose settings live on an app page is listed here; its manifest's own fields, when it declares any, open in the dialog instead.
+	// Forwarding plugins (network.forward) open Remote access.
+	const settingsPage = (p: Plugin) => (p.settings?.length ? '' : forwards(p) ? `/settings/remote-access?plugin=${encodeURIComponent(p.id)}` : '');
+
+	/** The tile's small badge: only for installed plugins, so the directory stays calm. */
+	function badge(p: Plugin): string {
+		if (!p.installed) return '';
+		if (hasUpdate(p)) return t('plugins.stateUpdate');
+		return pluginState(p) === 'off' ? t('plugins.stateOff') : stateLabel(p);
 	}
 </script>
 
+<svelte:window bind:innerWidth={vw} onhashchange={onHash} />
 <svelte:head><title>{t('plugins.title')} · HolyArrs</title></svelte:head>
 
-<PageHeader title={t('plugins.title')} />
+<h1 class="sr-only">{t('plugins.title')}</h1>
+
+{#snippet logo(p: Plugin, size: number)}
+	{@const src = pluginIcon(p, size)}{#if src && !broken.has(src)}<img class="pic" {src} alt="" width={size} height={size} style:--pic={size + 'px'} onerror={() => broken.add(src)} />{:else}<span class="pic none" aria-hidden="true" style:--pic={size + 'px'}>{shownName(p).slice(0, 1)}</span>{/if}
+{/snippet}
+
+{#snippet card(p: Plugin)}
+	{@const name = shownName(p)}
+	{@const dev = developers(p)[0]}
+	{@const cv = 9}
+	<li class="tile card c{cv} s3 s4" use:tint={pluginIcon(p)} class:picked={panelOpen && openId === p.id} data-testid="plugin-row" data-id={p.id}>
+		<button type="button" class="open" aria-label={t('plugins.openDetails', { name })} onclick={() => show(p)}></button>
+		<span class="lg">{@render logo(p, cv === 9 ? 64 : 36)}</span>
+		<h2 class="pname" dir="auto" use:tagRoom>{name}<span class="tin">{@render tags(p)}</span></h2>
+		<span class="cat">{categoryLabel(categoryOf(p))}</span>
+		<p class="one small" dir="auto"><span class="tdown" aria-hidden="true">{@render tags(p, true)}</span><span class="otext">{pluginAbout(p)}</span></p>
+		<span class="by xs"><Avatar name={dev || p.author || 'HolyArrs'} src={devPicture(dev || p.author || 'HolyArrs')} bare={isProject(dev || p.author || 'HolyArrs')} size={16} /><span class="bn" dir="auto">{p.author || 'HolyArrs'}</span></span>
+		{#if hasUpdate(p) && p.installed}<span class="udot" role="img" aria-label={t('plugins.stateUpdate')} title={t('plugins.stateUpdate')} data-testid="plugin-update-dot"></span>{/if}
+		<div class="ft" data-testid="plugin-card-foot">{@render footChips(p)}<span class="st">{@render cardAct(p, name)}</span></div>
+		{#if p.install_error && !p.install_step}<p class="xs ierr" data-testid="plugin-install-error"><Icon name="alert" size={13} /><span>{p.install_error}</span></p>{/if}
+		{#if p.installed && p.needs_app && hasUpdate(p)}<p class="xs need full" data-testid="plugin-update-needs-app">{t('plugins.needsApp', { version: p.needs_app })}</p>{/if}
+		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+	</li>
+{/snippet}
+
+{#snippet langTile(kind: 'card' | 'big' | 'row')}
+	<!-- Language Packs: drawn like a plugin's tile (logo, by-line, category, version chip, footer) in every view; it opens its own sheet. -->
+	{#if lang}
+		{@const name = t('plugins.tabLanguagePacks')}{@const about = t('plugins.languagePacksAbout', { n: lang.n, i: lang.installed })}
+		{@const size = kind === 'big' ? 72 : kind === 'card' ? 64 : lvv === 2 ? 52 : 32}
+		<li class={kind === 'row' ? `lrow v${lvv}` : `tile card s3 s4 ${kind === 'big' ? 'big' : 'c9'}`} use:tint={LANG_ICON} class:picked={langOpen} data-testid="language-packs-card">
+			<button type="button" class="open" aria-label={t('plugins.openDetails', { name })} onclick={() => (langOpen = true)}></button>
+			{#if kind === 'big'}<span class="banner" aria-hidden="true"></span>{/if}
+			<span class="lg"><img class="pic" src={LANG_ICON} alt="" width={size} height={size} style:--pic={size + 'px'} /></span>
+			{#if kind === 'big'}
+				<div class="bhead"><h2 class="pname" dir="auto">{name}</h2><span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span><span class="cat">{t('plugins.languages')}</span></div>
+				<p class="full small" dir="auto">{about}</p>
+				<div class="bfoot" data-testid="language-packs-foot"><span class="chips"><span class="chip xs mono vchip">{LANG_VERSION}</span></span><span class="st">{@render langAct(name)}</span></div>
+			{:else if kind === 'card'}
+				<h2 class="pname" dir="auto">{name}</h2>
+				<span class="cat">{t('plugins.languages')}</span>
+				<p class="one small" dir="auto"><span class="otext">{about}</span></p>
+				<span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span>
+				<div class="ft" data-testid="language-packs-foot"><span class="chips"><span class="chip xs mono vchip">{LANG_VERSION}</span></span><span class="st">{@render langAct(name)}</span></div>
+			{:else}
+				<h2 class="pname" dir="auto">{name}</h2>
+				<p class="one small" dir="auto">{about}</p>
+				<span class="cat">{t('plugins.languages')}</span>
+				<span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span>
+				<span class="ver xs"><span class="mono">{LANG_VERSION}</span></span>
+				<span class="stt xs"></span>
+				<span class="st">{@render langAct(name)}</span>
+			{/if}
+		</li>
+	{/if}
+{/snippet}
+
+{#snippet langAct(name: string)}
+	<button type="button" class="get" aria-label={lang?.installed ? undefined : t('plugins.installName', { name })} onclick={() => (langOpen = true)} data-testid="language-packs-open"><Icon name={lang?.installed ? 'translate' : 'plus'} size={14} />{t(lang?.installed ? 'plugins.languages' : 'plugins.install')}</button>
+{/snippet}
+
+{#snippet tags(p: Plugin, down = false)}
+	{#if isNew(p)}<span class="tag new" data-testid={down ? 'plugin-new-down' : 'plugin-new'}>{t('plugins.tagNew')}</span>{/if}
+	{#if trending.has(p.id)}<span class="tag hot" data-testid={down ? 'plugin-trending-down' : 'plugin-trending'}>{t('plugins.tagTrending')}</span>{/if}
+{/snippet}
+
+{#snippet dls(p: Plugin)}
+	{#if p.stats?.downloads != null}<span class="dls" data-testid="plugin-downloads">{t('plugins.downloads', { n: shortCount(p.stats.downloads, appLocale()) })}</span>{/if}
+{/snippet}
+
+{#snippet footChips(p: Plugin)}
+	<!-- One line of chips: the version always shows whole; downloads drop first, then the date goes numeric, then chips tighten. -->
+	{@const dl = p.stats?.downloads != null ? shortCount(p.stats.downloads, appLocale()) : ''}
+	<span class="chips" use:fitChips>
+		<span class="chip xs mono vchip" title={shownVersion(p)}>{shownVersion(p)}</span>
+		{#if dl}<span class="chip xs dlc" data-drop="1" title={t('plugins.downloads', { n: dl })} data-testid="plugin-downloads"><span class="sr-only">{t('plugins.downloads', { n: dl })}</span><span class="dnum" aria-hidden="true"><Icon name="download" size={11} />{dl}</span></span>{/if}
+		{#if p.updated}<span class="chip xs dchip" class:fresh={freshUpdate(p)} title="{t('plugins.factUpdated')} {date(p.updated + 'T12:00:00Z')}" data-testid="plugin-card-updated"><span class="dlong">{shortDay(p.updated, appLocale())}</span><span class="dshort">{numDay(p.updated, appLocale())}</span></span>{/if}
+	</span>
+{/snippet}
+
+{#snippet cardAct(p: Plugin, name: string)}
+	{@const step = stepLabel(p)}
+	{@const s = pluginState(p)}
+	{#if step}<span class="get step" role="status" data-testid="plugin-step">{#if p.install_step || installing === p.id}<span class="spin" aria-hidden="true"></span>{:else}<Icon name="owned" size={14} />{/if}{step}</span>
+	{:else if p.needs_app && !p.installed}<span class="xs muted need nchip" title={t('plugins.needsApp', { version: p.needs_app })} data-testid="plugin-card-needs-app"><span class="sr-only">{t('plugins.needsApp', { version: p.needs_app })}</span><span aria-hidden="true">{t('plugins.needsAppShort', { version: p.needs_app })}</span></span>
+	{:else if p.install_error && !p.installed}<button type="button" class="get" aria-label={t('plugins.retryName', { name })} disabled={!canInstall || !!busy} onclick={() => install(p)} data-testid="plugin-card-retry"><Icon name="refresh" size={14} />{t('plugins.retry')}</button>
+	{:else if !p.installed}<button type="button" class="get" aria-label={t('plugins.installName', { name })} disabled={!canInstall || !!busy} onclick={() => install(p)} data-testid="plugin-card-install"><Icon name="plus" size={14} />{t('plugins.install')}</button>
+	{:else if hasUpdate(p) && !p.needs_app}<button type="button" class="get" aria-label={t('plugins.updateName', { name })} disabled={!canInstall || !!busy} onclick={() => install(p)} data-testid="plugin-card-update"><Icon name="download" size={14} />{t('plugins.update')}</button>
+	{:else if s === 'running'}<button type="button" class="get" aria-label={t('plugins.stopName', { name })} disabled={!!busy} onclick={() => act(p, () => api.post(`${path(p)}/stop`), 'plugins.stopped', 'plugins.stopFailed')} data-testid="plugin-card-stop">{#if busy === p.id}<span class="spin" aria-hidden="true"></span>{:else}<Icon name="pause" size={14} />{/if}{t('plugins.stop')}</button>
+	{:else}<button type="button" class="get" aria-label={t('plugins.startName', { name })} title={foldersMissing(p) ? t('plugins.chooseFolders') : s === 'off' && !startable(p) ? stateLabel(p) : undefined} disabled={!ov?.can_run || !!busy || foldersMissing(p) || (s === 'off' && !startable(p))} onclick={() => act(p, () => api.post(`${path(p)}/start`), 'plugins.started', 'plugins.startFailed')} data-testid="plugin-card-start">{#if busy === p.id}<span class="spin" aria-hidden="true"></span>{:else}<Icon name="play" size={14} />{/if}{t('plugins.start')}</button>{/if}
+{/snippet}
+
+{#snippet big(p: Plugin)}
+	{@const name = shownName(p)}
+	{@const dev = developers(p)[0]}
+	{@const can = abilities(p)}
+	{@const canShown = can.length > 3 ? can.slice(0, 2) : can}
+	{@const canMore = can.length - canShown.length}
+	<li class="tile card big s3 s4" use:tint={pluginIcon(p)} class:picked={panelOpen && openId === p.id} data-testid="plugin-row" data-id={p.id}>
+		<button type="button" class="open" aria-label={t('plugins.openDetails', { name })} onclick={() => show(p)}></button>
+		<span class="banner" aria-hidden="true"></span>
+		<span class="lg">{@render logo(p, 72)}</span>
+		<div class="bhead">
+			<h2 class="pname" dir="auto">{name}{@render tags(p)}</h2>
+			<span class="by xs"><Avatar name={dev || p.author || 'HolyArrs'} src={devPicture(dev || p.author || 'HolyArrs')} bare={isProject(dev || p.author || 'HolyArrs')} size={16} /><span class="bn" dir="auto">{p.author || 'HolyArrs'}</span></span>
+			<span class="cat">{categoryLabel(categoryOf(p))}</span>
+		</div>
+		<p class="full small" dir="auto">{pluginAbout(p)}</p>
+		<div class="bcan" data-testid="plugin-card-access"><span class="xs muted">{t('plugins.secAccess')}</span><ul class="can small">{#each canShown as c (c)}<li><Icon name="check" size={14} /><span dir="auto">{c}</span></li>{/each}{#if canMore}<li class="more muted">{t('plugins.accessMore', { n: canMore })}</li>{/if}</ul></div>
+		<div class="bfoot" data-testid="plugin-card-foot">
+			{@render footChips(p)}
+			{#if hasUpdate(p) && p.installed}<span class="udot inl" role="img" aria-label={t('plugins.stateUpdate')} title={t('plugins.stateUpdate')} data-testid="plugin-update-dot"></span>{/if}
+			<span class="st">{@render cardAct(p, name)}</span>
+		</div>
+		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+	</li>
+{/snippet}
+
+{#snippet row(p: Plugin)}
+	{@const name = shownName(p)}
+	{@const b = badge(p)}
+	{@const dev = developers(p)[0]}
+	<li class="lrow v{lvv}" use:tint={pluginIcon(p)} class:picked={panelOpen && openId === p.id} data-testid="plugin-row" data-id={p.id}>
+		<button type="button" class="open" aria-label={t('plugins.openDetails', { name })} onclick={() => show(p)}></button>
+		<span class="lg">{#if lvv === 9 && dev}<Avatar name={dev} src={devPicture(dev)} bare={isProject(dev)} size={40} />{:else}{@render logo(p, lvv === 2 ? 52 : 32)}{/if}</span>
+		<h2 class="pname" dir="auto">{name}{@render tags(p)}</h2>
+		<p class="one small" dir="auto">{pluginAbout(p)}</p>
+		<span class="cat">{categoryLabel(categoryOf(p))}</span>
+		<span class="by xs">{#if lvv !== 9}<Avatar name={dev || p.author || 'HolyArrs'} src={devPicture(dev || p.author || 'HolyArrs')} bare={isProject(dev || p.author || 'HolyArrs')} size={16} />{/if}<span class="bn" dir="auto">{p.author || 'HolyArrs'}</span></span>
+		<span class="ver xs"><span class="mono">{shownVersion(p)}</span>{@render dls(p)}{#if hasUpdate(p) && p.installed}<span class="udot inl" role="img" aria-label={t('plugins.stateUpdate')} title={t('plugins.stateUpdate')} data-testid="plugin-update-dot"></span>{/if}</span>
+		<span class="stt xs">{p.installed ? badge(p) : stateLabel(p)}</span>
+		<span class="st">{@render cardAct(p, name)}</span>
+		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+	</li>
+{/snippet}
+
+{#snippet info(p: Plugin)}
+	{#if editing === p.id}<PluginSettings {p} onback={() => (editing = '')} />{:else}
+	<PluginInfo {p} badge={badge(p)} {noLockTag} onclose={close}>
+		{#snippet actions()}{@render acts(p)}{/snippet}
+		{#snippet extra()}<ApproveAccess {p} reload={load} />{/snippet}
+	</PluginInfo>{/if}
+{/snippet}
+
+{#snippet acts(sel: Plugin)}
+	{@const s = pluginState(sel)}
+	{@const name = shownName(sel)}
+	{#if s === 'not_installed'}
+		{#if sel.needs_app}<span class="xs muted need" data-testid="plugin-needs-app">{t('plugins.needsApp', { version: sel.needs_app })}</span>
+		{:else}<Button variant="primary" aria-label={t('plugins.installName', { name })} disabled={!canInstall || !!busy || !!sel.install_step} busy={busy === sel.id || !!sel.install_step} onclick={() => install(sel)} data-testid="plugin-main-install">{stepLabel(sel) || (sel.install_error ? t('plugins.retry') : t('plugins.install'))}</Button>{/if}
+		<span class="signed xs" title={t('plugins.signedHint')} data-testid="plugin-signed"><Icon name="shield" size={13} />{t('plugins.signed')}</span>
+	{:else}
+		{#if hasUpdate(sel) && !sel.needs_app}
+			<Button variant="primary" aria-label={t('plugins.updateName', { name })} disabled={!canInstall || !!busy || !!sel.install_step} busy={(busy === sel.id && !removing) || !!sel.install_step} onclick={() => install(sel)} data-testid="plugin-main-update">{stepLabel(sel) || t('plugins.update')}</Button>
+		{:else if s === 'running'}
+			<Button variant="primary" aria-label={t('plugins.stopName', { name })} disabled={!!busy} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path(sel)}/stop`), 'plugins.stopped', 'plugins.stopFailed')} data-testid="plugin-main-stop">{t('plugins.stop')}</Button>
+		{:else}
+			<Button variant="primary" aria-label={t('plugins.startName', { name })} title={foldersMissing(sel) ? t('plugins.chooseFolders') : s === 'off' && !startable(sel) ? stateLabel(sel) : undefined} disabled={!ov?.can_run || !!busy || foldersMissing(sel) || (s === 'off' && !startable(sel))} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path(sel)}/start`), 'plugins.started', 'plugins.startFailed')} data-testid="plugin-main-start">{t('plugins.start')}</Button>
+		{/if}
+		{#if settingsPage(sel)}<Button href={to(settingsPage(sel))} icon="sliders" aria-label={t('plugins.settingsName', { name })} data-testid="plugin-settings">{t('plugins.settings')}</Button>
+		{:else if sel.settings?.length}<Button icon="sliders" aria-label={t('plugins.settingsName', { name })} onclick={() => (editing = sel.id)} data-testid="plugin-settings">{t('plugins.settings')}</Button>{/if}
+		{#if hasUpdate(sel) && !sel.needs_app && s === 'running'}
+			<Button aria-label={t('plugins.stopName', { name })} disabled={!!busy} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path(sel)}/stop`), 'plugins.stopped', 'plugins.stopFailed')} data-testid="plugin-stop">{t('plugins.stop')}</Button>
+		{:else if hasUpdate(sel) && !sel.needs_app}
+			<Button aria-label={t('plugins.startName', { name })} title={foldersMissing(sel) ? t('plugins.chooseFolders') : s === 'off' && !startable(sel) ? stateLabel(sel) : undefined} disabled={!ov?.can_run || !!busy || foldersMissing(sel) || (s === 'off' && !startable(sel))} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path(sel)}/start`), 'plugins.started', 'plugins.startFailed')} data-testid="plugin-start">{t('plugins.start')}</Button>
+		{/if}
+		<Button aria-label={t('plugins.removeName', { name })} disabled={!!busy} busy={busy === sel.id && removing?.id === sel.id} onclick={() => askRemove(sel)}>{t('plugins.remove')}</Button>
+		{#if sel.needs_app && hasUpdate(sel)}<span class="xs muted need" data-testid="plugin-needs-app">{t('plugins.needsApp', { version: sel.needs_app })}</span>{/if}
+	{/if}
+	{#if sel.install_error && !sel.install_step && sel.installed}<p class="xs ierr dlg" data-testid="plugin-install-error"><Icon name="alert" size={13} /><span>{sel.install_error}</span></p>{/if}
+{/snippet}
 
 {#if !owner}
 	<EmptyState icon="shield" title={t('plugins.title')} text={t('plugins.ownerOnly')} />
@@ -138,144 +498,303 @@
 	{/each}
 
 	<div class="settings-content" bind:clientWidth={pageWidth}>
-		{#if ov.plugins.length > 0}
-			<div class="ptools" class:phone role="toolbar" aria-label={t('plugins.toolsLabel')}>
-				<DlFind bind:term={q} shown={shown.length} total={ov.plugins.length} searchKey={phone ? '' : dlTop.searchKey} placeholder={t('plugins.search')} testid="plugins-find" />
-				<span class="cap" data-testid="plugins-sort"><Menu label={t('plugins.sortBy')} variant="icon" icon="sliders" items={sortItems} width={200} align="end" /></span>
-				<span class="cap t-view"><LibraryViewSwitch value={view} options={[{ value: 'list', label: t('plugins.viewList'), icon: 'menu' }, { value: 'grid', label: t('plugins.viewCards'), icon: 'grid' }]} onchange={setView} compact /></span>
-			</div>
-		{/if}
-		<div class="plist" id="h-plugins" tabindex="-1" role="region" aria-label={t('plugins.listLabel')}>
-			{#if ov.plugins.length === 0}
-				<EmptyState icon="grid" title={t('plugins.none')} text={t('plugins.noneText')} />
-			{:else if shown.length === 0}
-				<EmptyState icon="search" title={t('plugins.noMatch')} text={t('plugins.noMatchText', { q: q.trim() })} action={{ label: t('plugins.clearSearch'), onclick: () => (q = '') }} />
-			{:else}
-				<ul class="grid" class:list={view === 'list'} data-testid="plugins-{view}">
-					{#each shown as p (p.id)}
-						{@const s = pluginState(p)}
-						{@const name = pluginName(p.id)}
-						{@const about = pluginAbout(p)}
-						{@const reach = reaches(p)}
-						<li class="pcard" data-testid="plugin-row" data-id={p.id}>
-							<div class="top">
-								{#if p.icon}<img class="pic" src={p.icon} alt="" width="44" height="44" />{:else}<span class="pic none" aria-hidden="true">{name.slice(0, 1)}</span>{/if}
-								<div class="who">
-									<h2 class="pname">{name}</h2>
-									<div class="xs muted meta">
-										<span>{t('plugins.byAuthor', { author: p.author || 'HolyArrs' })}</span>
-										<span class="mono">{shownVersion(p)}</span>
-										<span class="signed"><Icon name="shield" size={13} />{t('plugins.signed')}</span>
-									</div>
-								</div>
-							</div>
-							{#if about}<p class="about small">{about}</p>{/if}
-							<div class="access xs" data-testid="plugin-access">
-								<span class="muted">{t('plugins.cardCan')}</span>
-								{#if reach.length}
-									<ul>{#each reach as r (r)}<li>{r}</li>{/each}</ul>
-								{:else}
-									<p>{t('plugins.cardNothing')}</p>
-								{/if}
-							</div>
-							<div class="state">
-								<Badge label={hasUpdate(p) ? t('plugins.stateUpdate') : s === 'off' ? t('plugins.stateOff') : stateLabel(p)} />
-								{#if s === 'off' && p.disabled_reason}<span class="xs muted" data-testid="plugin-hint">{p.disabled_reason}</span>{/if}
-							</div>
-							<div class="acts">
-								{#if s === 'not_installed'}
-									<Button variant="primary" aria-label={t('plugins.installName', { name })} disabled={!canInstall || !!busy} busy={busy === p.id} onclick={() => askInstall(p)}>{t('plugins.install')}</Button>
-								{:else}
-									{#if hasUpdate(p)}
-										<Button variant="primary" aria-label={t('plugins.updateName', { name })} disabled={!canInstall || !!busy} busy={busy === p.id && !removing} onclick={() => askInstall(p)}>{t('plugins.update')}</Button>
-									{/if}
-									{#if p.id === 'tailscale'}<Button href={to('/settings/remote-access')} aria-label={t('plugins.openName', { name })}>{t('plugins.open')}</Button>{/if}
-									{#if s === 'running'}
-										<Button aria-label={t('plugins.stopName', { name })} disabled={!!busy} busy={busy === p.id} onclick={() => act(p, () => api.post(`${path(p)}/stop`), 'plugins.stopped', 'plugins.stopFailed')}>{t('plugins.stop')}</Button>
-									{:else if s === 'stopped' || (s === 'off' && startable(p))}
-										<Button aria-label={t('plugins.startName', { name })} disabled={!ov.can_run || !!busy} busy={busy === p.id} onclick={() => act(p, () => api.post(`${path(p)}/start`), 'plugins.started', 'plugins.startFailed')}>{t('plugins.start')}</Button>
-									{/if}
-									<Button variant="plain" aria-label={t('plugins.removeName', { name })} disabled={!!busy} busy={busy === p.id && removing?.id === p.id} onclick={() => askRemove(p)}>{t('plugins.remove')}</Button>
-								{/if}
-							</div>
-						</li>
-					{/each}
-				</ul>
+		{#if noLockCard}<NoLockCard {ov} reload={load} />{/if}
+		{#if noNetCard}<NoNetLockCard {ov} reload={load} />{/if}
+		{#if all.length > 0 || lang}
+				<div class="ptools" class:phone role="toolbar" aria-label={t('plugins.toolsLabel')}>
+					{#if vw < 768}{@render addBtn()}{/if}
+					<span class="pfind"><DlFind bind:term={pluginScope.term} shown={shown.length} total={all.length} searchKey="" placeholder={t('plugins.search')} testid="plugins-find" /></span>
+					{#if vw < 768}{@render pageTools()}{/if}
+				</div>
+				<div class="tabs" role="group" aria-label={t('plugins.tabsLabel')} data-testid="plugins-tabs" use:wheelSideways>
+					<Chip label={t('plugins.tabAll')} selected={tab === 'all'} onclick={() => (tab = 'all')} />
+					{#each cats as c (c)}<Chip label={categoryLabel(c)} selected={tab === `cat:${c}`} onclick={() => (tab = `cat:${c}`)} />{/each}
+				</div>
 			{/if}
-		</div>
+			{#if !anyInstalled}<p class="small muted intro" data-testid="plugins-intro">{t('plugins.intro')}</p>{/if}
+			<div class="plist" id="h-plugins" tabindex="-1" role="region" aria-label={t('plugins.listLabel')}>
+				{#if all.length === 0 && !lang}
+					<EmptyState icon="grid" title={t('plugins.none')} text={t('plugins.noneText')} />
+				{:else if shown.length === 0 && !lang}
+					<EmptyState icon="search" title={t('plugins.noMatch')} text={q.trim() ? t('plugins.noMatchText', { q: q.trim() }) : t('plugins.noneInTab')} action={{ label: t('plugins.resetFilters'), onclick: () => ((pluginScope.term = ''), (tab = 'all'), (showOnly = 'all')) }} />
+				{:else if view === 'list'}
+					{#if lvv === 7}
+						<div class="groups" data-testid="plugins-list">
+							{#each groups as g (g.c)}
+								<section class="grp">
+									<h2 class="grph">{categoryLabel(g.c)}</h2>
+									<ul class="lrows v7">{#each g.list as p (p.id)}{@render row(p)}{/each}</ul>
+								</section>
+							{/each}
+						</div>
+					{:else}
+						<ul class="lrows v{lvv}" data-testid="plugins-list" use:arrowKeys>
+							{#if lvv === 1}<li class="lhead xs muted" aria-hidden="true"><span></span><span>{t('plugins.sortName')}</span><span>{t('plugins.factCategory')}</span><span>{t('plugins.factDevelopers')}</span><span>{t('plugins.factVersion')}</span><span></span></li>{/if}
+							{@render langTile('row')}{#each shown as p (p.id)}{@render row(p)}{/each}
+						</ul>
+					{/if}
+				{:else}
+					{#each sections.length && shown.length ? sections : [{ key: 'l', title: lang?.installed ? t('plugins.sectionMine') : '', list: [] }] as sec, i (sec.key)}
+						{#if sec.title}<h2 class="sech" data-testid="plugins-section">{sec.title}</h2>{/if}
+						{#if view === 'large'}
+							<ul class="tiles cards large" data-testid="plugins-grid" use:arrowKeys>
+								{#if i === 0}{@render langTile('big')}{/if}{#each sec.list as p (p.id)}{@render big(p)}{/each}
+							</ul>
+						{:else}
+							<ul class="tiles cards" style:--cw="270px" data-testid="plugins-grid" use:arrowKeys>
+								{#if i === 0}{@render langTile('card')}{/if}{#each sec.list as p (p.id)}{@render card(p)}{/each}
+							</ul>
+						{/if}
+					{/each}
+				{/if}
+			</div>
 	</div>
 {/if}
 
-<Sheet bind:open={reachOpen} size="sm" title={reaching ? t('plugins.reachTitle', { name: pluginName(reaching.id) }) : t('plugins.install')}>
-	{#if reaching}
-		<div class="rhead">
-			{#if reaching.icon}<img class="pic" src={reaching.icon} alt="" width="44" height="44" />{:else}<span class="pic none" aria-hidden="true">{pluginName(reaching.id).slice(0, 1)}</span>{/if}
-			<div class="who">
-				<div class="pname">{pluginName(reaching.id)}</div>
-				<div class="xs muted">{t('plugins.byAuthor', { author: reaching.author || 'HolyArrs' })} · <span class="mono">{reaching.version}</span></div>
-			</div>
-		</div>
-		{#if pluginAbout(reaching)}<p class="small about">{pluginAbout(reaching)}</p>{/if}
-	{/if}
-	<div class="reach" data-testid="plugin-reach">
-		<p class="small label">{t('plugins.canTitle')}</p>
-		<ul>{#each can as c (c)}<li class="small"><Icon name="check" size={15} /><span>{c}</span></li>{/each}</ul>
-	</div>
+<Sheet bind:open={langOpen} size="lg" placement={phone ? 'full' : 'center'} title={t('plugins.tabLanguagePacks')} hideTitle onclose={() => void tick().then(() => document.querySelector<HTMLElement>('[data-testid="language-packs-card"] .open')?.focus())}>
+	{#if langOpen}<PluginInfo p={langPlugin} wideExtra can={[t('plugins.languagesReach')]} onclose={() => (langOpen = false)}>{#snippet actions()}{/snippet}{#snippet extra()}<LanguagesSection />{/snippet}</PluginInfo>{/if}
+</Sheet>
+
+<Sheet bind:open={modalOpen} size="lg" placement={phone ? 'full' : 'center'} title={sel ? shownName(sel) : t('plugins.title')} hideTitle onclose={() => ((panelOpen = false), clearHash(), void focusTile(openId))}>
+	{#if sel}{@render info(sel)}{/if}
+</Sheet>
+
+<Sheet open={!!askAccess} size="sm" title={t('plugins.moreAccessTitle')} description={askAccess ? (askAccess.list.length === 1 ? t('plugins.moreAccessOne', { name: shownName(askAccess.list[0]) }) : t('plugins.moreAccessMany', { n: askAccess.list.length })) : ''} onclose={() => (askAccess = null)}>
+	{#if askAccess}<ul class="adds small" data-testid="plugin-more-access">{#each askAccess.adds as a (a)}<li><Icon name="plus" size={14} /><span>{a}</span></li>{/each}</ul>{/if}
 	<div class="confirm-actions">
-		<Button variant="plain" onclick={() => (reachOpen = false)}>{t('plugins.cancel')}</Button>
-		<Button variant="primary" disabled={!canInstall} onclick={install}>{t('plugins.install')}</Button>
+		<Button variant="plain" onclick={() => (askAccess = null)}>{t('plugins.cancel')}</Button>
+		<Button variant="primary" onclick={confirmAccess} data-testid="plugin-more-access-confirm">{t('plugins.update')}</Button>
 	</div>
 </Sheet>
 
-<Sheet bind:open={removeOpen} size="sm" title={removing ? t('plugins.removeTitle', { name: pluginName(removing.id) }) : t('plugins.remove')} description={t('plugins.removeAbout')}>
+<Sheet bind:open={removeOpen} size="sm" title={removing ? t('plugins.removeTitle', { name: shownName(removing) }) : t('plugins.remove')} description={t('plugins.removeBody')}>
 	<div class="confirm-actions">
 		<Button variant="plain" onclick={() => (removeOpen = false)}>{t('plugins.cancel')}</Button>
-		<Button onclick={() => remove(true)}>{t('plugins.removeKeep')}</Button>
-		<Button variant="destructive" onclick={() => remove(false)}>{t('plugins.removeAll')}</Button>
+		<Button variant="destructive" onclick={remove} data-testid="plugin-remove-confirm">{t('plugins.remove')}</Button>
 	</div>
 </Sheet>
 
+{#snippet addBtn()}
+	<span class="cap" data-testid="plugins-add"><IconButton icon="plus" label={t('plugins.addAria')} onclick={() => (addOpen = true)} /></span>
+{/snippet}
+
+{#snippet pageTools()}
+	<span class="cap" data-testid="plugins-filter"><Menu label={t('plugins.filter')} variant="icon" icon="sliders" items={filterItems} width={220} align="end" /></span>
+	{#if updates.length}<span class="cap" data-testid="plugins-update-all">{#if phone}<IconButton icon="download" label={t('plugins.updateN', { n: updates.length })} disabled={!canInstall || !!busy} onclick={updateAll} />{:else}<Button icon="download" disabled={!canInstall || !!busy} onclick={updateAll}>{t('plugins.updateN', { n: updates.length })}</Button>{/if}</span>{/if}
+{/snippet}
+
+<AddSheet bind:open={addOpen} />
+
 <style>
-	/* The toolbar row: the same search well and glass capsules as the Library's toolbar. */
-	.ptools { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+	/* The toolbar row: the same search well and glass capsule as the Library's toolbar. */
+	.ptools { position: relative; z-index: 2; grid-column: 1 / -1; display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; }
 	.ptools :global(.dlfind) { flex: 1 1 260px; min-width: 0; }
-	.ptools.phone :global(.dlfind) { flex-basis: 100%; }
+	.ptools.phone :global(.dlfind) { flex: 1 1 0; }
+	/* From 768px the app's top search box searches plugins, so the page's own box steps out. */
+	.pfind { display: contents; }
+	@media (min-width: 768px) { .ptools { display: none; } }
 	.cap { display: flex; flex: none; align-items: center; gap: 2px; height: 52px; box-sizing: border-box; padding: 3px; border: 1px solid var(--line); border-radius: 14px; background: color-mix(in srgb, var(--surface-1) 72%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 6px 20px -10px rgb(0 0 0 / 0.35); }
 	.cap :global(.ui-ibtn), .cap :global(.trigger) { width: 44px; height: 44px; border-radius: 10px; }
-	.t-view { --vs-bg: transparent; }
-	.t-view :global(.vs) { padding: 0; gap: 2px; }
-	.t-view :global(.vs button[role='radio']) { min-height: 44px; min-width: 44px; }
-	.t-view :global(.vs .seg) { border-radius: 10px; }
-	/* List view: one column of compact rows; icon and name, then about, state and buttons line up across rows. */
-	.grid.list { grid-template-columns: 1fr; gap: var(--s-2); }
-	.list .pcard { display: grid; grid-template-columns: minmax(200px, 1.1fr) minmax(0, 1.6fr) minmax(120px, 0.5fr) auto; grid-template-areas: 'top about state acts'; align-items: center; column-gap: var(--s-4); row-gap: var(--s-2); padding: var(--s-3) var(--s-4); }
-	.list .top { grid-area: top; }
-	.list .about { grid-area: about; }
-	.list .state { grid-area: state; }
-	.list .acts { grid-area: acts; margin-top: 0; justify-content: flex-end; }
-	.list .access { display: none; }
-	@container (max-width: 760px) { .list .pcard { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'top' 'about' 'state' 'acts'; } .list .acts { justify-content: flex-start; } }
+	/* In the top bar every tool matches the search box: 44px pill, its background, ring and shadow; icon-only tools are 44px circles. */
+	:global(:is(.btools, .blead)) .cap { height: 44px; padding: 0; border: 1px solid transparent; border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18), 0 0 0 0.5px color-mix(in srgb, var(--text) 14%, transparent); }
+	:global(:is(.btools, .blead)) .cap :global(.ui-ibtn), :global(:is(.btools, .blead)) .cap :global(.trigger) { width: 42px; height: 42px; border-radius: 999px; }
+	:global(:is(.btools, .blead)) .cap :global(.ui-btn) { height: 42px; padding-inline: 16px; border: 0; border-radius: 999px; background: none; box-shadow: none; }
+	/* On phones the tools match the page's own search box (52px, 14px corners); icon-only tools are square. */
+	.ptools .cap :global(.ui-btn) { height: 44px; border-radius: 10px; }
+	.views :global(.ui-ibtn[aria-pressed='true']) { background: var(--surface-2); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong); }
+	/* Tabs: one row of chips that scrolls sideways on a phone instead of wrapping into a wall. */
+	/* The chips scroll sideways; a soft fade at the right edge says there are more, and the last chip is never cut by a hard edge. */
+	.tabs { grid-column: 1 / -1; min-width: 0; display: flex; gap: var(--s-2); overflow-x: auto; scrollbar-width: none; padding-block: 2px; padding-inline-end: 32px; margin-block: calc(var(--s-1) * -1); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
+	.tabs :global(> *) { flex: none; }
+	.tabs::-webkit-scrollbar { display: none; }
+	.tabs :global(> *) { flex: none; }
 	.notice { margin-bottom: var(--s-4); }
 	.plist { grid-column: 1 / -1; outline: none; container-type: inline-size; }
-	.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--s-3); }
-	.pcard { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; padding: var(--s-4); border-radius: 12px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); }
-	.top, .rhead { display: flex; gap: var(--s-3); align-items: center; min-width: 0; }
-	.pic { flex: none; width: 44px; height: 44px; border-radius: 10px; object-fit: contain; }
-	.pic.none { display: grid; place-items: center; background: var(--surface-2); box-shadow: 0 0 0 1px var(--line); font-weight: var(--weight-semibold); font-size: 18px; color: var(--text-muted); }
-	.who { min-width: 0; }
-	.pname { margin: 0; font: var(--t-headline); font-size: 15px; font-weight: 600; letter-spacing: normal; overflow-wrap: anywhere; }
-	.meta { display: flex; flex-wrap: wrap; column-gap: var(--s-2); row-gap: var(--s-1); }
-	.signed { display: inline-flex; align-items: center; gap: var(--s-1); }
-	.about { margin: 0; color: var(--text-muted); overflow-wrap: anywhere; }
-	.access, .reach { display: grid; gap: var(--s-2); }
-	.access ul, .reach ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-1); }
-	.access p { margin: 0; }
-	.state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
-	.acts { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: auto; }
-	.rhead { margin-bottom: var(--s-3); }
-	.reach { margin-top: var(--s-3); }
-	.reach .label { margin: 0; font-weight: var(--weight-semibold); }
-	.reach li { display: flex; gap: var(--s-2); align-items: flex-start; }
-	.reach li :global(svg) { flex: none; margin-top: 2px; }
-	.confirm-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-4); }
+	/* Tiles: three across on a wide page, two on a tablet, one on a phone. */
+	.tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-3); }
+	@container (max-width: 900px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+	@container (max-width: 560px) { .tiles { grid-template-columns: minmax(0, 1fr); gap: var(--s-2); } }
+	.tile { position: relative; display: flex; align-items: flex-start; gap: var(--s-3); min-width: 0; padding: var(--s-4); border-radius: 12px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); transition: box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
+	.tile:has(.open:focus-visible) { box-shadow: 0 0 0 2px var(--focus, var(--accent)); }
+	/* The whole tile opens the panel; the + sits above it. */
+	.open { position: absolute; inset: 0; z-index: 0; border: 0; padding: 0; background: none; border-radius: inherit; cursor: pointer; outline: none; }
+	.pic { flex: none; width: var(--pic); height: var(--pic); border-radius: calc(var(--pic) * 0.23); object-fit: contain; pointer-events: none; }
+	.pic.none { display: grid; place-items: center; background: var(--surface-2); box-shadow: 0 0 0 1px var(--line); font-weight: var(--weight-semibold); font-size: calc(var(--pic) * 0.4); color: var(--text-muted); }
+	.who { min-width: 0; flex: 1; pointer-events: none; }
+	.line { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+	.pname { margin: 0; font: var(--t-headline); font-size: 15px; font-weight: 600; letter-spacing: normal; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.one { margin: 2px 0 0; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+	.by { margin: var(--s-1) 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+	.nolock { display: flex; align-items: center; gap: var(--s-1); margin: var(--s-1) 0 0; color: var(--wait); }
+	.tile.picked { box-shadow: 0 0 0 2px var(--line-strong); }
+	.grow { grid-column: 1 / -1; list-style: none; }
+
+	/* Large: two wide tiles per row (one on a phone), a tinted banner from the icon's colour and the full description. */
+	.tiles.cards.large { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); }
+	@container (max-width: 640px) { .tiles.cards.large { grid-template-columns: minmax(0, 1fr); } }
+	@media (max-width: 640px) { .tiles.cards.large { grid-template-columns: minmax(0, 1fr); } }
+	.card.big { display: flex; flex-direction: column; align-items: stretch; gap: var(--s-3); padding: 0 var(--s-4) var(--s-4); }
+	.card.big .banner { display: block; height: 72px; margin: 0 calc(-1 * var(--s-4)); background: linear-gradient(135deg, color-mix(in srgb, var(--tint, var(--accent)) 42%, var(--surface-1)), color-mix(in srgb, var(--tint, var(--accent)) 14%, var(--surface-1))); }
+	.card.big .lg { margin-top: -44px; width: max-content; border-radius: 18px; box-shadow: 0 0 0 4px var(--surface-1); }
+	/* Every Large tile is one fixed template, so the footer sits at the same height on every tile: name 2 lines, words 4 lines, Can access 3 lines. */
+	.bhead { display: grid; grid-template-columns: minmax(0, max-content) auto; justify-content: start; align-items: center; gap: 4px var(--s-2); min-width: 0; }
+	.card.big .bhead > * { grid-area: auto; }
+	.card.big .bhead .pname { grid-column: 1 / -1; font-size: 18px; line-height: 24px; height: 48px; white-space: normal; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+	.card.big .by { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); min-width: 0; }
+	.card.big .full { margin: 0; color: var(--text-muted); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; line-height: 20px; height: 80px; overflow-wrap: anywhere; }
+	.bcan { display: grid; gap: 4px; }
+	.bcan .can { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-rows: 20px; gap: 4px; height: 68px; overflow: hidden; }
+	.bcan .can li { display: flex; align-items: center; gap: 6px; min-width: 0; line-height: 20px; }
+	.bcan .can li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.bcan .can li.more { padding-inline-start: 20px; }
+	.bcan .can :global(svg) { flex: none; color: var(--ok, var(--accent)); }
+	.bfoot { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--s-2); min-width: 0; }
+	/* Footer chips (Cards and Large): one line that never wraps; the date keeps its year, the version then downloads shorten first. */
+	.chips { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: nowrap; gap: 6px; height: 22px; overflow: hidden; }
+	.chips .chip { flex: none; display: inline-block; height: 22px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.tiles.cards:not(.large) .chips { gap: 4px; }
+	.tiles.cards:not(.large) .chips .chip, .tiles.cards:not(.large) .st .nchip { padding: 0 6px; font-size: 11px; }
+	.chips .vchip, .chips .dlc, .chips .dchip { flex: none; text-overflow: clip; }
+	.chips .dshort, .chips:global(.sdate) .dlong { display: none; }
+	.chips:global(.sdate) .dshort { display: inline; }
+	.tiles.cards .chips:global(.tight) { gap: 2px; }
+	.tiles.cards .chips:global(.tight) .chip:not(.x) { padding: 0 4px; font-size: 10.5px; letter-spacing: -0.01em; }
+	.tiles.cards .chips:global(.tighter) .chip:not(.x):not(.y) { padding: 0 3px; font-size: 9.5px; letter-spacing: -0.02em; }
+	.chips :global(.chip[hidden]) { display: none; }
+	.chips .dnum { display: inline-flex; align-items: center; gap: 3px; }
+	.chips .chip .dls { color: inherit; }
+	.ft .st, .bfoot .st { flex: none; max-width: 60%; margin-inline-start: auto; }
+	/* A "needs" note gives way to the version and date first; it keeps at least 30% and ends in an ellipsis. */
+	.card .ft .st:has(.need), .card .bfoot .st:has(.need) { flex: 0 100 auto; min-width: 30%; }
+	.st .nchip { display: inline-block; height: 22px; line-height: 22px; padding: 0 8px; border-radius: 999px; background: var(--surface-2); }
+	.st .need { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.get { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+	.card.big.s3 { padding: 0 var(--s-4) var(--s-4); }
+
+	/* Cards: narrow tiles, as many per row as fit. */
+	/* Room around the grid so a lifted or scaled card never reaches the chips or gets clipped. */
+	.tiles.cards { padding: 12px 8px 16px; margin-inline: -8px; }
+	.tiles.cards { grid-template-columns: repeat(auto-fill, minmax(min(var(--cw), 100%), 1fr)); gap: var(--s-3); align-items: stretch; }
+	.tiles.cards > .card { min-width: 0; align-self: stretch; margin: 0; transform: none; }
+	@container (max-width: 560px) { .tiles.cards { grid-template-columns: repeat(auto-fill, minmax(min(var(--cw), 100%), 1fr)); } }
+	.card { display: grid; align-items: center; align-content: start; gap: 4px var(--s-2); padding: var(--s-3); overflow: hidden; grid-template-columns: auto minmax(0, 1fr) auto; }
+	.card > :not(.open) { position: relative; pointer-events: none; min-width: 0; }
+	.card .st { pointer-events: auto; z-index: 1; justify-self: end; display: inline-flex; }
+	.card .lg { display: inline-flex; position: relative; width: max-content; }
+	/* Cards are one fixed template too: name 2 lines, words 2 lines, one line for the developer, then the footer. */
+	.card .pname { white-space: normal; overflow-wrap: anywhere; line-height: 20px; height: 40px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+	.card .one { margin: 0; -webkit-line-clamp: 2; line-clamp: 2; line-height: 18px; height: 36px; overflow-wrap: anywhere; }
+	.one .tdown { display: none; }
+	:global(.card.tagdown) .tin { display: none; }
+	:global(.card.longname) .pname { font-size: 13px; }
+	:global(.card.longername) .pname { font-size: 12px; }
+	:global(.card.tagdown) .one { display: block; }
+	:global(.card.tagdown) .one .tdown { display: flex; height: 18px; align-items: center; }
+	:global(.card.tagdown) .one .tdown .tag:first-child { margin-left: 0; }
+	:global(.card.tagdown) .one .otext { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; line-clamp: 1; overflow: hidden; }
+	.card .cat { max-width: 100%; overflow: hidden; text-overflow: ellipsis; display: block; line-height: 20px; }
+	.cat { justify-self: start; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); color: var(--text); font-size: 11px; font-weight: 600; line-height: 1; white-space: nowrap; }
+	.card .by { display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--text-muted); }
+	.bn { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.ver { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+	.get { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--surface-2); box-shadow: 0 0 0 1px var(--line); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+	.get:hover { background: var(--surface-3, var(--line)); }
+	.card .nolock { grid-column: 1 / -1; }
+	/* C9 big logo: a tall logo column, the words beside it. */
+	.c9 { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--s-3); grid-template-areas: 'lg ct' 'lg nm' 'lg ds' 'lg by' 'ft ft'; } .c9 .lg { align-self: start; } .c9 .st { justify-self: end; } .c9 .ver { justify-self: start; align-self: center; } .card.c9 .ft { grid-area: ft; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; } .card .ft .ver { flex: none; white-space: nowrap; } .card .ft .st { flex: none; }
+	.card .lg { grid-area: lg; } .card .pname { grid-area: nm; } .card .cat { grid-area: ct; } .card .one { grid-area: ds; } .card .by { grid-area: by; } .card .ver { grid-area: vr; justify-self: end; } .card .st { grid-area: st; }
+	.sech { margin: var(--s-4) 0 var(--s-1); font-size: 15px; font-weight: 600; letter-spacing: normal; }
+	.sech:first-child { margin-top: 0; }
+	.intro { margin: 0 0 var(--s-2); }
+	.card > .udot.udot { position: absolute; top: 12px; right: 12px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--surface-1); pointer-events: none; }
+	.card .ierr { grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 6px; margin: 0; color: var(--fail-text); }
+	.card .ierr :global(svg), .ierr.dlg :global(svg) { flex: none; margin-top: 1px; }
+	.ierr.dlg { flex-basis: 100%; display: flex; align-items: flex-start; gap: 6px; margin: 0; color: var(--fail-text); }
+	.card .need.full { grid-column: 1 / -1; margin: 0; }
+	.get.step { cursor: default; color: var(--text-muted); }
+	.get:disabled { opacity: 0.55; cursor: default; }
+	.spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: pspin 0.8s linear infinite; }
+	@keyframes pspin { to { transform: rotate(360deg); } }
+	@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+	.need { color: var(--text-muted); }
+	.signed { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px; border-radius: 999px; background: color-mix(in srgb, var(--ok, var(--accent)) 14%, var(--surface-2)); font-weight: 600; white-space: nowrap; }
+	.adds { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: grid; gap: 6px; }
+	.adds li { display: flex; align-items: flex-start; gap: 6px; }
+	.adds :global(svg) { flex: none; margin-top: 2px; color: var(--wait, var(--accent)); }
+	.confirm-actions { display: flex; justify-content: flex-end; flex-wrap: nowrap; gap: var(--s-2); margin-top: var(--s-4); }
+	/* The plugin dialog: wide enough for every part side by side at 1366 x 768, no scrolling. */
+	:global(.ui-sheet.lg:has(.info.modal)) { --w: 1160px; max-height: calc(100dvh - 24px); }
+	/* P6b: a squarer dialog. */
+	/* The plugin window: narrow where it stacks, wide (About beside Can access) from 1100px so it fits one screen. */
+	:global(.ui-sheet.lg:has(.info.pv11)) { --w: 760px; }
+	@media (min-width: 1100px) { :global(.ui-sheet.lg:has(.info.pv11)), :global(.ui-sheet.lg:has(.ps)) { --w: 1180px; } }
+	/* Settings with many fields get a wider dialog, so the two-column form fits without scrolling. */
+	:global(.ui-sheet.lg:has(.ps .prow:nth-child(4))) { --w: 1240px; }
+	:global(.ui-sheet.lg:has(.info.s3)) { border-radius: 32px; background: var(--surface-2); }
+	@media (max-width: 600px) { :global(.ui-sheet.lg:has(.info.modal)) { border-radius: 0; } }
+
+	/* Surfaces S1-S3 on the cards: one material each.
+	   --tint is the icon's main colour (set from the icon); without it every look falls back to the plain surface. */
+	.card.s3 { --ease-tv: cubic-bezier(0.2, 0, 0, 1); border-radius: 20px; padding: 14px; }
+	/* S1 soft material: a lit top edge, a hairline and a wide soft shadow, as on a tvOS shelf. */
+	/* S2 tinted glass: a faint wash of the icon's colour from the top corner, a tinted hairline. */
+	/* S3 bezel tray: an outer tray with the card set inside it; inner corners follow the outer ones. */
+	.card.s3 { border-radius: 22px; padding: 16px; background: var(--surface-1); box-shadow: inset 0 0 0 5px var(--surface-2), inset 0 0 0 6px var(--line), inset 0 7px 0 -1px rgb(255 255 255 / 0.05), 0 0 0 1px var(--line), 0 14px 32px -20px rgb(0 0 0 / 0.45); }
+	/* S4: the S3 tray with a faint wash of the icon colour across the card top. */
+	.card.s4 { background: linear-gradient(180deg, color-mix(in srgb, var(--tint, var(--surface-1)) 12%, var(--surface-1)) 0%, var(--surface-1) 45%); }
+	/* Hover and keyboard focus (cards and list rows): a ring and soft glow in the icon's colour. Nothing moves, so neighbours stay put. */
+	.card, .lrow { transition: box-shadow 200ms ease, background-color 200ms ease; }
+	.card:is(:hover, :has(.open:focus-visible)), .lrow:is(:hover, :has(.open:focus-visible)) { z-index: 2; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--tint, var(--accent)) 70%, transparent), 0 0 28px -4px color-mix(in srgb, var(--tint, var(--accent)) 45%, transparent); }
+	.card:has(.open:focus-visible), .lrow:has(.open:focus-visible) { outline: 2px solid var(--focus, var(--accent)); outline-offset: 3px; }
+
+	/* List: one plugin per row. V1-V10 place the same parts differently (lab); release builds use V1. */
+	.lrows { list-style: none; margin: 0; padding: 4px; display: grid; gap: 6px; }
+	.lrow { position: relative; display: grid; align-items: center; gap: 2px var(--s-3); min-width: 0; padding: 10px 14px; border-radius: 12px; background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'lg nm st' 'lg ds st'; }
+	.lrow > :not(.open) { position: relative; pointer-events: none; min-width: 0; }
+	.lrow .st { pointer-events: auto; z-index: 1; justify-self: end; display: inline-flex; }
+	.lrow .lg { grid-area: lg; display: inline-flex; } .lrow .pname { grid-area: nm; } .lrow .one { grid-area: ds; margin: 0; -webkit-line-clamp: 1; line-clamp: 1; } .lrow .cat { grid-area: ct; } .lrow .by { grid-area: by; display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--text-muted); } .lrow .ver { grid-area: vr; } .lrow .stt { grid-area: tt; color: var(--text-muted); white-space: nowrap; } .lrow .st { grid-area: st; }
+	.lrow .cat, .lrow .by, .lrow .ver, .lrow .stt { display: none; }
+	.lrow .nolock { grid-column: 1 / -1; }
+	.lhead { display: grid; gap: var(--s-3); padding: 0 14px; grid-template-columns: 32px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(150px, 1fr) 96px; }
+	/* V1 table: columns for name, category, developer, version and state. */
+	.lrow.v1 { grid-template-columns: 32px minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(150px, 1fr) 96px; grid-template-areas: 'lg nm ct by vr st'; padding-block: 8px; }
+	.v1 .one { display: none; } .v1 .cat, .v1 .by, .v1 .ver { display: inline-flex; } .v1 .cat { justify-self: start; }
+	/* V2 big icon: a large logo, the name and two lines of words. */
+	.lrow.v2 { padding: 14px 16px; } .v2 .one { -webkit-line-clamp: 2; line-clamp: 2; } .v2 .pname { font-size: 16px; }
+	/* V3 description under the name (the default shape). */
+	/* V4 two lines with chips: name and words, then category, version and developer as chips. */
+	.lrow.v4 { grid-template-areas: 'lg nm st' 'lg ds st' 'lg ch st'; }
+	.v4 .cat, .v4 .ver, .v4 .by { display: inline-flex; }
+	.v4 .cat { grid-area: auto; grid-row: 3; grid-column: 2; justify-self: start; } .v4 .ver { grid-row: 3; grid-column: 2; justify-self: start; margin-inline-start: 90px; } .v4 .by { grid-row: 3; grid-column: 2; justify-self: start; margin-inline-start: 160px; }
+	/* V5 zebra rows: no boxes, every other row shaded. */
+	.lrows.v5 { gap: 0; } .lrow.v5 { border-radius: 8px; box-shadow: none; background: none; padding-block: 8px; } .lrow.v5:nth-child(even) { background: var(--surface-1); }
+	/* V6 actions on the right: version and a full Install button at the end of the row. */
+	.lrow.v6 { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: 'lg nm vr st' 'lg ds vr st'; } .v6 .ver { display: inline-flex; color: var(--text-muted); }
+	/* V7 grouped by category: a heading over each group. */
+	.groups { display: grid; gap: var(--s-4); } .grp { display: grid; gap: 6px; } .grph { margin: 0; padding-inline: 4px; font-size: 13px; font-weight: 600; color: var(--text-muted); letter-spacing: normal; }
+	/* V8 minimal: words only, one line each. */
+	.lrow.v8 { grid-template-columns: minmax(0, 14em) minmax(0, 1fr) auto; grid-template-areas: 'nm ds st'; box-shadow: none; background: none; border-bottom: 1px solid var(--line); border-radius: 0; padding-block: 8px; } .lrows.v8 { gap: 0; } .v8 .lg { display: none; }
+	/* V9 developer avatar: the developer's picture leads the row, their name under the plugin's. */
+	.lrow.v9 { grid-template-areas: 'lg nm st' 'lg by st'; } .v9 .one { display: none; } .v9 .by { display: inline-flex; }
+	/* V10 state column: name, words, then the state in words. */
+	.lrow.v10 { grid-template-columns: auto minmax(0, 1fr) 120px auto; grid-template-areas: 'lg nm tt st' 'lg ds tt st'; } .v10 .stt { display: inline; }
+	@container (max-width: 560px) {
+		.lhead { display: none; }
+		.lrow.v1, .lrow.v6, .lrow.v10 { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'lg nm st' 'lg ds st'; }
+		.v1 .one { display: -webkit-box; } .v1 .cat, .v1 .by, .v1 .ver, .v6 .ver, .v10 .stt { display: none; }
+		.lrow.v8 { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'nm st' 'ds st'; }
+	}
+	.card.s3 :global(.pic) { box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 4px 10px -4px rgb(0 0 0 / 0.35); }
+	.card.s3 .get { background: var(--surface-1); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); transition: background-color 150ms ease, scale 150ms ease; }
+	.card.s3 .get:active { scale: 0.96; }
+	.tag { display: inline-flex; align-items: center; height: 18px; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 11px; font-weight: 600; vertical-align: 2px; white-space: nowrap; }
+	.tag.new { background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); color: var(--text); }
+	.tag.hot { background: color-mix(in srgb, var(--wait) 18%, var(--surface-2)); color: var(--text); }
+	.dls { color: var(--text-muted); white-space: nowrap; }
+	.ver .dls::before { content: '·'; margin: 0 5px; }
+	.chip.fresh { background: color-mix(in srgb, var(--ok) 18%, var(--surface-2)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 40%, var(--line)); }
+	.lrow .get { background: var(--surface-1); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); white-space: nowrap; }
+	.get { white-space: nowrap; }
+	.udot.inl { display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: var(--accent); vertical-align: middle; }
 </style>

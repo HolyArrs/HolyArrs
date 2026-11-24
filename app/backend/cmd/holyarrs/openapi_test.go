@@ -19,7 +19,7 @@ import (
 // server's mux. Every such route must be in openapi.json; that each one is
 // served to at least one test request is checked by each package's
 // TestMain (internal/routehits), not by comments.
-var routePackages = []string{".", "../../internal/accounts", "../../internal/backups", "../../internal/alerts", "../../internal/health", "../../internal/updates", "../../internal/plugins", "../../internal/mediaservers", "../../internal/metadata", "../../internal/sources", "../../internal/subtitles", "../../internal/ai", "../../internal/arrapi", "../../internal/migrate", "../../internal/movies", "../../internal/shows", "../../internal/library", "../../internal/mediafiles", "../../internal/mediafiles/datapack", "../../internal/importer", "../../internal/setup", "../../internal/downloads", "../../internal/requests", "../../internal/music", "../../internal/discover", "../../internal/core/webserver"}
+var routePackages = []string{".", "../../internal/accounts", "../../internal/backups", "../../internal/alerts", "../../internal/health", "../../internal/updates", "../../internal/plugins", "../../internal/plugins/hooks", "../../internal/mediaservers", "../../internal/metadata", "../../internal/sources", "../../internal/subtitles", "../../internal/ai", "../../internal/arrapi", "../../internal/migrate", "../../internal/movies", "../../internal/shows", "../../internal/library", "../../internal/mediafiles", "../../internal/mediafiles/datapack", "../../internal/importer", "../../internal/setup", "../../internal/downloads", "../../internal/requests", "../../internal/music", "../../internal/discover", "../../internal/core/webserver"}
 
 type openapiOp struct {
 	Summary    string         `json:"summary"`

@@ -1,0 +1,100 @@
+[
+ {
+  "type": "ReleaseTitleSpecification",
+  "body": {
+   "order": 1,
+   "implementationName": "Release Title",
+   "infoLink": "https://wiki.servarr.com/sonarr/settings#custom-formats-2",
+   "value": "\\bx265\\b",
+   "name": "x265",
+   "negate": false,
+   "required": true
+  }
+ },
+ {
+  "type": "LanguageSpecification",
+  "body": {
+   "order": 3,
+   "implementationName": "Language",
+   "value": 2,
+   "exceptLanguage": false,
+   "infoLink": "https://wiki.servarr.com/sonarr/settings#custom-formats-2",
+   "name": "French",
+   "negate": true,
+   "required": false
+  }
+ },
+ {
+  "type": "SourceSpecification",
+  "body": {
+   "order": 5,
+   "implementationName": "Source",
+   "value": 3,
+   "infoLink": "https://wiki.servarr.com/sonarr/settings#custom-formats-2",
+   "name": "Web",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "ResolutionSpecification",
+  "body": {
+   "order": 6,
+   "implementationName": "Resolution",
+   "value": 2160,
+   "infoLink": "https://wiki.servarr.com/sonarr/settings#custom-formats-2",
+   "name": "2160p",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "SizeSpecification",
+  "body": {
+   "order": 8,
+   "implementationName": "Size",
+   "min": 1.5,
+   "max": 40,
+   "infoLink": "https://wiki.servarr.com/sonarr/settings#custom-formats-2",
+   "name": "Big",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "ReleaseGroupSpecification",
+  "body": {
+   "order": 9,
+   "implementationName": "Release Group",
+   "infoLink": "https://wiki.servarr.com/sonarr/settings#custom-formats-2",
+   "value": "^NTb$",
+   "name": "Grp",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "IndexerFlagSpecification",
+  "body": {
+   "order": 4,
+   "implementationName": "Indexer Flag",
+   "value": 4,
+   "infoLink": "https://wiki.servarr.com/sonarr/settings#custom-formats-2",
+   "name": "Flag",
+   "negate": false,
+   "required": false
+  }
+ },
+ {
+  "type": "ReleaseTypeSpecification",
+  "body": {
+   "order": 10,
+   "implementationName": "Release Type",
+   "value": 3,
+   "infoLink": "https://wiki.servarr.com/sonarr/settings#custom-formats-2",
+   "name": "Pack",
+   "negate": false,
+   "required": false
+  }
+ }
+]

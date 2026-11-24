@@ -57,7 +57,8 @@
     "Quality": "s",
     "QualityName": "s",
     "QualityRulesID": 7,
-    "QualityExtra": true
+    "QualityExtra": true,
+    "ViaPlugin": "s"
   },
   "Joined": true,
   "Already": true

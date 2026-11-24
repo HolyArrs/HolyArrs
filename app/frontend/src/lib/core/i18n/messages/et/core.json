@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Koostan: {what}… katse {attempt}",
 	"core.testTag.connected": "Ühendatud",
 	"core.api.notAnswering": "HolyArrs ei vasta. Kontrolli, kas see töötab.",
+	"core.api.tooSlow": "HolyArrs vastas liiga kaua. Proovi minuti pärast uuesti.",
 	"core.api.requestFailed": "Päring ebaõnnestus ({status})",
 	"core.api.wentWrong": "Midagi läks valesti.",
 	"core.trailerMiss.trailer": "treiler",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Automaatselt heaks kiidetud",
 	"core.plain.approvedBy": "Heaks kiitnud: {who}",
 	"core.settings.cantReach": "Sellele aadressile ei pääse ligi. Kontrolli seda ja seda, kas rakendus töötab.",
+	"core.settings.tryHttp": "See aadress ei vasta https-i kaudu. Proovi hoopis http://.",
 	"core.settings.groupLibrary.label": "Meediakogu",
 	"core.settings.groupLibrary.line": "Kus pealkirjad asuvad",
 	"core.settings.groupLibrary.about": "Kaustad, moodulid, vaikeväärtused, subtiitrid, failinimed ja importimine.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Kaks allalaadijat jõuavad samasse rakendusse, seega võivad allalaadimised näha kaks korda.",
 	"core.plain.peopleCheck": "Meediaserveri kasutajate loendit ei saa lugeda, seega sealt eemaldatud inimesi siin välja ei lülitata.",
 	"core.plain.deleted": "kustutatud",
-	"core.plain.deletedName": "{name} (kustutatud)"
+	"core.plain.deletedName": "{name} (kustutatud)",
+	"core.api.handsOffFiles": "Sekkumiseta režiim on sees, seega HolyArrs ei puutu alla laaditud faile. Lülita see seadetes välja, et faile importida, ümber nimetada, teisaldada või skannida.",
+	"core.api.handsOffSubtitles": "Sekkumiseta režiim on sees, seega HolyArrs ei ava kunagi alla laaditud faile. Lülita see seadetes välja, et subtiitreid kasutada."
 }

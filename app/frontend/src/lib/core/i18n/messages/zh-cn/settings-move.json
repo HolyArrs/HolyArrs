@@ -36,5 +36,7 @@
 	"settings.move.undoId": "撤销导入 {id}？",
 	"settings.move.undoQuestion": "撤销这次导入？",
 	"settings.move.undoNote": "移除这次导入添加的内容；你之后的更改会保留。如需报告，请先下载。",
-	"settings.move.undoMove": "撤销导入"
+	"settings.move.undoMove": "撤销导入",
+	"settings.move.continueSetup": "继续设置",
+	"settings.move.backToChoose": "返回选择"
 }

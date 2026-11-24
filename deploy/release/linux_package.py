@@ -69,8 +69,7 @@ def run(args: list[str], cwd: Path, env: dict | None = None) -> None:
 def build_web(source: Path, install: bool, prebuilt: bool) -> None:
     web = source / "app" / "frontend"
     if prebuilt:
-        # The pages were built already, with HOLYARRS_LANGUAGES_PLAIN=1.
-        run([sys.executable, str(source / "deploy" / "pack_languages.py"), str(web / "dist")], source)
+        # The pages were built already.
         return
     npm = "npm.cmd" if os.name == "nt" else "npm"
     if install:
@@ -80,8 +79,7 @@ def build_web(source: Path, install: bool, prebuilt: bool) -> None:
     if dist.is_dir():
         for p in sorted(dist.rglob("*"), reverse=True):
             p.rmdir() if p.is_dir() else p.unlink()
-    run([npm, "run", "build"], web, {**os.environ, "HOLYARRS_LANGUAGES_PLAIN": "1"})
-    run([sys.executable, str(source / "deploy" / "pack_languages.py"), str(dist)], source)
+    run([npm, "run", "build"], web)
 
 
 def go_build(source: Path, version: str, arch: str, out: Path) -> None:
@@ -117,6 +115,13 @@ def build_archive(output: Path, version: str, arch: str, binary: bytes, source: 
     return path
 
 
+def write_bare(output: Path, version: str, arch: str, binary: bytes) -> Path:
+    path = output / f"holyarrs_{version}_linux_{arch}"
+    path.write_bytes(binary)
+    path.chmod(0o755)
+    return path
+
+
 def checksums(files: list[Path]) -> str:
     return "".join(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n" for p in sorted(files))
 
@@ -137,6 +142,8 @@ def main() -> None:
     parser.add_argument("--skip-npm-ci", action="store_true", help="use the node_modules already installed")
     parser.add_argument("--prebuilt-web", action="store_true",
                         help="app/frontend/dist is built already (plain languages); only pack the languages")
+    parser.add_argument("--bare", action="store_true",
+                        help="also write the bare programs (holyarrs_<version>_linux_<arch>) that in-app updates install")
     args = parser.parse_args()
     try:
         version = checked_version(args.version)
@@ -157,6 +164,8 @@ def main() -> None:
             if version.encode() not in data:
                 raise ValueError(f"{arch}: the program does not carry version {version}")
             files.append(build_archive(output, version, arch, data, source, epoch))
+            if args.bare:
+                files.append(write_bare(output, version, arch, data))
         (output / "SHA256SUMS").write_text(checksums(files), encoding="utf-8", newline="\n")
         print("Packaged: " + ", ".join(p.name for p in files))
     except (ValueError, RuntimeError, OSError) as error:

@@ -38,6 +38,7 @@
 <script lang="ts">
 	import type { TitleView } from '../core/types.ts';
 	import { bannerAspect, bannerSrc, extrasIdOf } from '#lib/ui/library-art.ts';
+	import { boxWidth } from '#lib/ui/box-width.ts';
 
 	let { title, eager = false, width = 0 }: { title: Pick<TitleView, 'kind' | 'name' | 'ids' | 'artist' | 'artwork' | 'backdrop' | 'logo'>; eager?: boolean; width?: number } = $props();
 
@@ -95,7 +96,7 @@
 	});
 </script>
 
-<span class="banner" class:ready={banner !== null && (loaded || !src)} class:wide={usingBanner} class:music={title.kind === 'artist'} style:--banner-ratio={bannerAspect(title.kind)} bind:this={host} bind:clientWidth={cw} aria-hidden="true">
+<span class="banner" class:ready={banner !== null && (loaded || !src)} class:wide={usingBanner} class:music={title.kind === 'artist'} style:--banner-ratio={bannerAspect(title.kind)} bind:this={host} use:boxWidth={(w) => (cw = w)} aria-hidden="true">
 	{#if banner !== null && src}
 		<img {src} alt="" decoding="async" onload={(e) => (loadedSrc = (e.currentTarget as HTMLImageElement).getAttribute('src') ?? '')} onerror={() => (usingBanner ? (broken = true) : (loadedSrc = src))} />
 	{/if}

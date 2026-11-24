@@ -9,7 +9,8 @@
 	import { api } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { refreshInbox } from '../core/inbox.svelte.ts';
-	import { gateChoices, loadChoices, savedDefaults, startChoices } from '../mediafiles/index.ts';
+	import { gateChoices, loadChoices, needsFolder, savedDefaults, startChoices } from '../mediafiles/index.ts';
+	import { session } from '../core/session.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 	import type { AskLimit } from './types.ts';
 	import { countOf, joins, limitReason, lineWords, planAskAll, runAskAll, toSend, type AskAllLine, type AskAllPost } from './ask-all.ts';
@@ -31,6 +32,8 @@
 	let opened = 0;
 
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
+	// Hands-off mode needs no Library folder: each movie only goes to the Downloader.
+	const noFolder = $derived(needsFolder(movieFolders.length, session.s.handsOff));
 	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
 	const gateOf = () => {
 		const last = loadChoices().release_gate;
@@ -106,7 +109,7 @@
 
 	// The folders and Pick rules can arrive after the sheet opens: the starting choices are made then.
 	$effect(() => {
-		if (sheetOpen && adding && !busy && !finished && (!folderId || !rulesId) && movieFolders.length && movieRules.length) void chooseStart(opened);
+		if (sheetOpen && adding && !busy && !finished && (!folderId || !rulesId) && !noFolder && movieRules.length) void chooseStart(opened);
 	});
 </script>
 
@@ -122,15 +125,15 @@
 					<p class="hint failed" role="alert"><span>{t('library.import.foldersFailed')}</span><Button size="sm" onclick={() => onretry?.()}>{t('discover.titleLibrary.tryAgain')}</Button></p>
 				{:else if !loaded}
 					<!-- The Library folders have not answered yet: nothing is said about them. -->
-				{:else if movieFolders.length === 0}
+				{:else if noFolder}
 					<p class="hint"><Words key="requests.add.noFolder.movie" links={{ a: to('/settings/library-folders') }} linkClass="ul" /></p>
 				{:else}
-					<div class="field">
+					{#if movieFolders.length}<div class="field">
 						<label for="all-folder">{t('requests.add.folder')}</label>
 						<select id="all-folder" class="input" bind:value={folderId}>
 							{#each movieFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 						</select>
-					</div>
+					</div>{:else}<p class="hint" data-testid="hands-off-hint">{t('requests.add.handsOff')}</p>{/if}
 					<div class="field">
 						<label for="all-rules">{t('requests.add.rules')}</label>
 						<select id="all-rules" class="input" bind:value={rulesId}>
@@ -155,7 +158,7 @@
 			<Button variant="primary" onclick={() => (sheetOpen = false)}>{t('ui.sheet.close')}</Button>
 		{:else}
 			<Button variant="plain" onclick={() => (sheetOpen = false)}>{t('requests.add.cancel')}</Button>
-			<Button variant="primary" {busy} disabled={reading || !toSend(lines) || stuck || (adding && (!folderId || !rulesId))} onclick={go}>{t(adding ? 'requests.addAll.button' : 'requests.askAll.button')}</Button>
+			<Button variant="primary" {busy} disabled={reading || !toSend(lines) || stuck || (adding && ((!folderId && movieFolders.length > 0) || noFolder || !rulesId))} onclick={go}>{t(adding ? 'requests.addAll.button' : 'requests.askAll.button')}</Button>
 		{/if}
 	{/snippet}
 </Sheet>

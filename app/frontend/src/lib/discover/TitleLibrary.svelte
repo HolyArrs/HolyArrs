@@ -9,8 +9,8 @@
 	import type { OwnedTitle } from './title-owned.svelte.ts';
 	import { airWords, epFile, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
 	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, chosenWhy, type SheetEpisode } from '#lib/shows/index.ts';
-	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone } from '#lib/downloads/index.ts';
-	import { qualityBadges, ShowDeleteDialog, splitSteps, type RenameStep } from '#lib/mediafiles/index.ts';
+	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone, FilePoints } from '#lib/downloads/index.ts';
+	import { leftInDownloader, qualityBadges, ShowDeleteDialog, standInFolder, splitSteps, TitleHeldCopies, type RenameStep } from '#lib/mediafiles/index.ts';
 	import { copyBadges, MovieVersions } from '#lib/movies/index.ts';
 	import { SubtitlePanel, type TitleSubtitles } from '#lib/subtitles/index.ts';
 	import { goto } from '$app/navigation';
@@ -19,10 +19,12 @@
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView } from '#lib/core/types.ts';
 	import { bytes, ago, date } from '#lib/core/format.ts';
 	import { orderLabel, splitOutside } from './episode-groups.ts';
 	import { EpisodeOrder } from './episode-order.svelte.ts';
+	import { belowGoodEnough, pointsOf, shownEpisodes } from './episode-points.ts';
 
 	let { own, folders, rules }: { own: OwnedTitle; folders: LibraryFolder[]; rules: PickRulesView[] } = $props();
 	const manage = $derived(own.manage);
@@ -34,25 +36,22 @@
 	const ownFiles = $derived(own.ownFiles);
 	const ownBadges = $derived(own.ownBadges);
 	const ownDownload = $derived(own.ownDownload);
-
 	// Routine work stays out of the title page; History shows it all.
 	const ownedRows = $derived(groupDownloads(ownedEvents.filter((e) => !isRoutine(e.Kind))));
 	const ownedTitles = $derived(new Map(owned ? [[owned.id, owned]] : []));
-
 	let epOpen = $state(false);
-
+	// Shows only episodes held below good enough, in every open season.
+	let belowOnly = $state(false);
 	let epPicked = $state<SheetEpisode | null>(null);
-
 	// Seasons start closed; each one opened loads its episodes (with files) once.
 	const openSeasons = new SvelteSet<number>();
-
 	const seasonFailed = new SvelteSet<number>();
-
 	let seasonEps = $state<Record<number, SheetEpisode[]>>({});
+	const below = $derived(manage ? Object.values(seasonEps).flat().filter(belowGoodEnough).length : 0);
 
 	async function loadSeason(id: number, n: number) {
 		try {
-			const r = await api.get<{ episodes: SheetEpisode[] }>(`/titles/${id}/episodes?season=${n}&files=1`);
+			const r = await api.get<{ episodes: SheetEpisode[] }>(`/titles/${id}/episodes?season=${n}&files=1${manage ? '&points=1' : ''}`);
 			seasonEps = { ...seasonEps, [n]: r.episodes ?? [] };
 			seasonFailed.delete(n);
 		} catch {
@@ -97,11 +96,8 @@
 
 	// One season's files, rename and history, and the title's Edit panel.
 	let toolsOpen = $state(false);
-
 	let toolsSeason = $state(0);
-
 	let showDeleter: ReturnType<typeof ShowDeleteDialog> | undefined = $state();
-
 	let toolsMode = $state<'files' | 'rename' | 'history'>('files');
 
 	function openTools(id: number, n: number) {
@@ -128,15 +124,11 @@
 
 	// Ready-made quality sets sit in the control (4K stays for second versions); every other set is in the Custom menu.
 	const qOrder = ['Lite', 'Standard', 'Best'];
-
 	const qHints = (): Record<string, string> => ({ Lite: t('discover.titleLibrary.hintLite'), Standard: t('discover.titleLibrary.hintStandard'), Best: t('discover.titleLibrary.hintBest'), '4K': t('discover.titleLibrary.hint4k') });
 	const qKind = $derived(rules.filter((r) => r.kinds.includes(owned?.kind ?? '')));
 	const qPresets = $derived(qKind.filter((r) => r.preset && r.name !== '4K').sort((a, b) => (qOrder.indexOf(a.name) + 1 || 99) - (qOrder.indexOf(b.name) + 1 || 99)));
-
 	const qOthers = $derived(qKind.filter((r) => !qPresets.includes(r)));
-
 	const qCustom = $derived(qOthers.find((r) => r.id === owned?.pick_rules_id));
-
 	const qHint = $derived(qHints()[owned?.pick_rules_name ?? ''] ?? (qCustom ? (qCustom.preset ? '' : t('discover.titleLibrary.yourSet')) : ''));
 
 	const qMenu = $derived<MenuItem[]>([
@@ -285,30 +277,34 @@
 		const k = ownState.kind;
 		const pct = !o.show && ownDownload?.download ? Math.round(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100) : null;
 		const main = ownFiles[0]?.file;
+		// Hands-off: nothing comes into the Library; a finished download stays in the Downloader.
+		const handsOff = session.s.handsOff || standInFolder(o.folder_path), leftThere = !o.show && !ownFiles.length && (o.slots ?? []).some(leftInDownloader);
 		const sub =
-			k === 'have' && o.show ? [t('discover.titleLibrary.fullSeasons', { n: o.show.seasons.filter((x) => x.number > 0 && x.episodes && x.in_library >= x.episodes).length }), o.size_bytes ? bytes(o.size_bytes) : ''].filter(Boolean).join(' · ')
+			leftThere ? t('discover.titleLibrary.leftInDownloader')
+			: k === 'downloading' && handsOff ? t('discover.titleLibrary.onItsWayDownloader')
+			: k === 'have' && o.show ? [t('discover.titleLibrary.fullSeasons', { n: o.show.seasons.filter((x) => x.number > 0 && x.episodes && x.in_library >= x.episodes).length }), o.size_bytes ? bytes(o.size_bytes) : ''].filter(Boolean).join(' · ')
 			: k === 'have' ? [ownBadges.join(' · '), main?.Size ? bytes(main.Size) : '', o.added_at ? t('discover.titleLibrary.addedAgo', { when: ago(o.added_at) }) : ''].filter(Boolean).join(' · ')
 			: k === 'downloading' ? t('discover.titleLibrary.onItsWay')
 			: k === 'failed' ? t('discover.titleLibrary.lastTryFailed')
 			: o.keep_up_to_date ? t('discover.titleLibrary.downloadsWhenGood') : t('discover.titleLibrary.notKeptNothing');
 		const action = !manage ? null : k === 'failed' ? { label: t('discover.titleLibrary.tryAgain'), icon: 'refresh' as const } : k === 'missing' ? { label: t('discover.titleLibrary.searchNow'), icon: 'search' as const } : null;
-		return { kind: k, title: k === 'have' ? (o.show ? ownState.label : t('discover.titleLibrary.inYourLibrary')) : ownState.label, sub, pct, action };
+		return { kind: k, title: k === 'have' ? (o.show || leftThere ? ownState.label : t('discover.titleLibrary.inYourLibrary')) : ownState.label, sub, pct, action };
 	});
 
-	// Folder, size, quality, keep, status, network and language.
+	// Folder (none for the stand-in folder of a hands-off title), size, quality, keep, status, network and language.
 	const libFacts = $derived.by(() => {
 		const o = owned;
 		if (!o) return [];
-		const folderName = String(o.folder_path ?? '').split(/[\\/]/).filter(Boolean).pop() ?? '';
+		const folderName = standInFolder(o.folder_path) ? '' : (String(o.folder_path ?? '').split(/[\\/]/).filter(Boolean).pop() ?? '');
 		const lang = o.original_language ? new Intl.DisplayNames(undefined, { type: 'language' }).of(o.original_language) : '';
-		const out: { k: string; icon: 'folder' | 'archive' | 'star' | 'check' | 'x' | 'play' | 'tv' | 'sound'; v: string; title?: string }[] = [];
+		const out: { k: string; icon: 'folder' | 'archive' | 'star' | 'check' | 'x' | 'play' | 'tv' | 'globe'; v: string; title?: string }[] = [];
 		if (folderName) out.push({ k: 'folder', icon: 'folder', v: folderName, title: o.folder_path ?? '' });
 		if (o.size_bytes) out.push({ k: 'size', icon: 'archive', v: bytes(o.size_bytes) });
 		if (o.pick_rules_name) out.push({ k: 'rules', icon: 'star', v: o.pick_rules_name });
 		out.push({ k: 'keep', icon: o.keep_up_to_date ? 'check' : 'x', v: o.keep_up_to_date ? t('discover.titleLibrary.keptUpToDate') : t('discover.titleLibrary.notKeptUpToDate') });
 		if (o.show?.status) out.push({ k: 'status', icon: 'play', v: o.show.status.replace(/^./, (c) => c.toUpperCase()) });
 		if (o.show?.network) out.push({ k: 'net', icon: 'tv', v: o.show.network });
-		if (lang) out.push({ k: 'lang', icon: 'sound', v: lang });
+		if (lang) out.push({ k: 'lang', icon: 'globe', v: lang, title: `${t('discover.titlePage.originalLanguage')}: ${lang}` });
 		return out;
 	});
 
@@ -318,7 +314,7 @@
 		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
 		const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
-		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: copyBadges(qualityBadges([f]), m.edition ? String(m.edition) : '', f?.Protected ? t('mediafiles.copy.protectedBadge') : ''), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
+		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, left: leftInDownloader(x), state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: copyBadges(qualityBadges([f]), m.edition ? String(m.edition) : '', f?.Protected ? t('mediafiles.copy.protectedBadge') : ''), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 
 	let libAll = $state(false);
@@ -419,6 +415,7 @@
 					{#if o.show.episode_group?.name}<span class="lib-fact" data-testid="order-chip">{o.show.episode_group.name}</span>{/if}
 					<span class="lib-head-acts">
 						{#if getAllMissingShown(manage, !!o.keep_up_to_date, o.show.seasons)}<button type="button" class="lib-btn sm" disabled={busyAction === 'all'} onclick={() => epSearch({}, 'all', t('discover.titleLibrary.searchingMissing'))}><Icon name="search" size={15} />{t('discover.titleLibrary.getAllMissing')}</button>{/if}
+						{#if below || belowOnly}<button type="button" class="lib-btn sm" class:on={belowOnly} aria-pressed={belowOnly} data-testid="below-filter" onclick={() => (belowOnly = !belowOnly)}>{t('shows.list.belowGoodEnough')} · {below}</button>{/if}
 						<button type="button" class="lib-btn sm" onclick={() => toggleAll(o)}>{openSeasons.size ? t('discover.titleLibrary.collapseAll') : t('discover.titleLibrary.expandAll')}</button>
 					</span>
 				</div>
@@ -448,8 +445,9 @@
 							{#if isOpen}
 								<div class="lib-eps">
 									{#if seasonFailed.has(se.number) && !seasonEps[se.number]}<p class="form-error" role="alert">{t('discover.titleLibrary.couldnTLoadThis')} <button type="button" class="lib-link" onclick={() => loadSeason(o.id, se.number)}>{t('discover.titleLibrary.retry')}</button></p>{/if}
-									{#each splitOutside(seasonEps[se.number] ?? []).inside as e (e.id)}
+									{#each shownEpisodes(splitOutside(seasonEps[se.number] ?? []).inside, belowOnly) as e (e.id)}
 										{@const st = e.slots[0]}
+										{@const pts = manage ? pointsOf(e) : null}
 										{@const tone = epTone(st?.state ?? '', !!st?.file)}
 										{@const aired = !e.air_date || Date.parse(e.air_date) <= Date.now() || !!st?.file}
 										<!-- The row is not a button itself, since it holds buttons: the title button opens the episode and stretches over the row. -->
@@ -458,14 +456,15 @@
 											<span class="lib-ep-still">{#if e.still}<img src={e.still.replace('/w780/', '/w300/')} alt="" loading="lazy" decoding="async" />{/if}<span class="lib-ep-n">{e.episode}</span></span>
 											<button type="button" class="lib-ep-text" aria-label={t('discover.titleLibrary.episodeNamed', { episode: e.episode, name: e.name ?? '' })} onclick={() => { epPicked = e; epOpen = true; }}>
 												<b>{e.name ?? t('discover.titleLibrary.episodeN', { episode: e.episode })}{#if e.episode === (seasonEps[se.number]?.length ?? 0) && se.episodes > 1}<span class="lib-tag">{t('discover.titleLibrary.finale')}</span>{/if}</b>
-												<small>{[airWords(e.air_day, e.air_date), e.runtime_minutes ? t('discover.titleLibrary.runtimeMin', { n: e.runtime_minutes }) : '', epFile(e)].filter(Boolean).join(' · ')}</small>
+												<small>{[airWords(e.air_day, e.air_date), e.runtime_minutes ? t('discover.titleLibrary.runtimeMin', { n: e.runtime_minutes }) : '', epFile(e)].filter(Boolean).join(' · ')}{#if pts?.text}<span class="lib-ep-ptm" title={pts.label}> · {t('shows.list.points')} {pts.text}</span>{/if}</small>
 												{#if manage && chosenWhy(st)}<small class="lib-ep-why" data-testid="episode-chosen-why">{serverWords(chosenWhy(st))}</small>{/if}
 											</button>
+											{#if pts}<span class="lib-ep-pts" data-testid="episode-points" title={pts.label}>{#if pts.text}<small>{t('shows.list.points')}</small>{pts.text}{/if}</span>{/if}
 											<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || (st?.state === 'not_out_yet' ? t('discover.titleLibrary.waitingAfterAir') : '') || serverWords(st?.state_label) || t('discover.titleLibrary.missing') : t('discover.titleLibrary.notOutYet')}</span>
 											{#if manage && st}
 												<span class="lib-ep-acts">
-													<button type="button" class="lib-ico" title={t('discover.titleLibrary.lookForItNow')} aria-label={t('discover.titleLibrary.lookForEpisode', { episode: e.episode })} disabled={!aired || tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, t('discover.titleLibrary.searchingEpisode', { episode: e.episode })); }}><Icon name="search" size={14} /></button>
-													<button type="button" class="lib-ico" title={t('discover.titleLibrary.chooseAReleaseFor3')} aria-label={t('discover.titleLibrary.chooseAReleaseFor4', { episode: e.episode })} disabled={!aired} onclick={(ev) => { ev.stopPropagation(); own.openPick({ label: `S${se.number} E${e.episode}`, query: `item_id=${e.id}`, body: { slot_id: st.id } }); }}><Icon name="grid" size={14} /></button>
+													<button type="button" class="lib-ico" title={t('discover.titleLibrary.lookForItNow')} aria-label={t('discover.titleLibrary.lookForEpisode', { episode: e.episode })} disabled={tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, t('discover.titleLibrary.searchingEpisode', { episode: e.episode })); }}><Icon name="search" size={14} /></button>
+													<button type="button" class="lib-ico" title={t('discover.titleLibrary.chooseAReleaseFor3')} aria-label={t('discover.titleLibrary.chooseAReleaseFor4', { episode: e.episode })} onclick={(ev) => { ev.stopPropagation(); own.openPick({ label: `S${se.number} E${e.episode}`, query: `item_id=${e.id}`, body: { slot_id: st.id } }); }}><Icon name="grid" size={14} /></button>
 												</span>
 											{/if}
 										</div>
@@ -502,7 +501,8 @@
 							<p class="lib-file-top"><b>{f.label}</b>{#each f.badges as b (b)}<span class="lib-badge">{b}</span>{/each}{#if manage && v && o.kind !== 'show' && (!v.main || f.has)}<span class="lib-file-menu"><Menu label={t('discover.titleLibrary.versionActionsFor', { label: v.label })} items={own.movieVersions?.copyMenu(v, o.slots.find((x) => x.id === f.id)?.file) ?? []} width={360} /></span>{/if}</p>
 							{#if f.has}
 								<div class="lib-tiles"><div><span>{t('discover.titleLibrary.quality')}</span><b>{f.res || '—'}</b></div><div><span>{t('discover.titleLibrary.size')}</span><b>{f.size || '—'}</b></div><div><span>{t('discover.titleLibrary.added')}</span><b>{f.addedOn || '—'}</b></div></div>
-							{:else}<p class="lib-file-meta">{t('discover.titleLibrary.noFileYet', { state: f.state })}</p>{/if}
+							{:else}<p class="lib-file-meta">{f.left ? t('discover.titleLibrary.leftInDownloaderShort') : t('discover.titleLibrary.noFileYet', { state: f.state })}</p>{/if}
+							{#if manage && f.has && o.kind !== 'show'}<FilePoints titleId={o.id} slotId={f.id} />{/if}
 							{#if f.audio.length || f.subs.length}
 								<p class="lib-langs">{#if f.audio.length}<span class="muted">{t('discover.titleLibrary.audio')}</span>{#each f.audio as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}{#if f.subs.length}<span class="muted">{t('discover.titleLibrary.subtitles')}</span>{#each f.subs as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}</p>
 							{/if}
@@ -513,6 +513,7 @@
 					{/each}
 				</div>
 			{/if}
+			{#if manage}<TitleHeldCopies titleId={o.id} />{/if}
 			</div>
 			<aside class="lib-side">
 			<h3 class="lib-h">{t('discover.titleLibrary.history')}</h3>
@@ -658,7 +659,7 @@
 	.lib-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 18px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 14px/1 var(--font-ui); white-space: nowrap; text-decoration: none; cursor: pointer; }
 	.lib-btn.primary { background: var(--text); color: var(--bg); }
 	.lib-btn:hover { filter: brightness(1.08); }
-	.lib-head-acts { display: flex; gap: 8px; }
+	.lib-head-acts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; min-width: 0; }
 	.lib-sl { display: grid; gap: 8px; } .lib-off-hint { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--text-muted); font: var(--t-footnote); }
 	.lib-sr { border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
 	.lib-sr-head { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; min-height: 52px; }
@@ -682,19 +683,20 @@
 	.lib-keep.sm { width: 24px; height: 24px; border-radius: 5px; }
 	.lib-sr .lib-eps { padding: 0 6px 8px; border-top: .5px solid color-mix(in srgb, var(--text) 8%, transparent); }
 	.lib-sr .lib-ep { grid-template-columns: 24px 96px minmax(0, 1fr) auto auto; }
+	.lib-sr .lib-ep:has(.lib-ep-pts) { grid-template-columns: 24px 96px minmax(0, 1fr) auto auto auto; } .lib-ep-pts { display: grid; justify-items: end; font: 600 13px/1.2 var(--font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; } .lib-ep-pts small { color: var(--text-muted); font-weight: 400; } .lib-ep-ptm { display: none; } .lib-btn.on { background: var(--text); color: var(--bg); }
 	.lib-sr .lib-ep:hover, .lib-sr .lib-ep:has(.lib-ep-text:focus-visible) { background: color-mix(in srgb, var(--text) 5%, transparent); }
 	.lib-ep.future .lib-ep-still img { filter: grayscale(.8) brightness(.55); }
 	.lib-ep-st.future { color: var(--text-muted); background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 14%, transparent); }
 	.lib-tag { margin-left: 8px; display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--info) 10%, transparent); color: var(--text); font: 700 10.5px/1 var(--font-ui); letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
 	@media (max-width: 600px) {
 		.lib-sr-note { display: none; }
-		.lib-sr .lib-ep { grid-template-columns: 24px 84px minmax(0, 1fr) auto; }
+		.lib-sr .lib-ep, .lib-sr .lib-ep:has(.lib-ep-pts) { grid-template-columns: 24px 84px minmax(0, 1fr) auto; } .lib-ep-pts { display: none; } .lib-ep-ptm { display: inline; }
 		.lib-sr .lib-ep-st { grid-column: 3; grid-row: 2; }
 		.lib-sr .lib-ep-still { grid-row: span 2; grid-column: 2; }
 		.lib-sr .lib-ep-acts { grid-column: 4; grid-row: 1 / span 2; flex-direction: column; }
 		.lib-head-acts .lib-btn.sm { padding: 0 10px; }
 	}	.lib-eps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-	.lib-eps-head .lib-h { margin-bottom: 14px; }
+	.lib-eps-head .lib-h { margin-bottom: 14px; flex: none; white-space: nowrap; }
 	.lib-btn.sm { height: 36px; padding: 0 14px; font-size: 13px; margin-top: 22px; }
 	.lib-eps { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
 	.lib-ep { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto 34px; align-items: center; gap: 14px; padding: 6px; border-radius: 12px; transition: background var(--dur-fast) var(--ease-out); }

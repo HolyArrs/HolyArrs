@@ -8,10 +8,14 @@
 	"setup.fullPath": "Bruk hele mappestien, for eksempel {path}.",
 	"setup.folderUsed": "Denne mappen er allerede i bruk, eller ligger inni en som er det.",
 	"setup.folderMissing": "Den mappen finnes ikke. Sjekk stien.",
-	"setup.addFolderOrOff": "Legg til en mappe eller slå dette av.",
+	"setup.addFolderOrOff": "Legg til en mappe, eller trykk Hopp over for nå.",
 	"setup.notAnswering": "HolyArrs svarer ikke. Prøv igjen om et øyeblikk.",
 	"setup.addUserPasswordHint": "Legg til brukernavn og passord.",
 	"setup.folders": "Mapper",
 	"setup.downloader": "Nedlaster",
-	"setup.source": "Kilde"
+	"setup.source": "Kilde",
+	"setup.alertsNeedKeyOne": "Varsler: 1 trenger en nøkkel",
+	"setup.alertsNeedKey": "Varsler: {n} trenger en nøkkel",
+	"setup.folderNoAccess": "HolyArrs kan ikke åpne denne mappen. Sjekk tillatelsene.",
+	"setup.folderCantUse": "HolyArrs kan ikke bruke denne mappen. Sjekk stien."
 }

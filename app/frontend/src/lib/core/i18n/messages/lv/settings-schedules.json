@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Atcelt",
 	"settings.schedules.stages": "Posmi",
 	"settings.schedules.stagesNote": "Aptur vai restartē tos sadaļā <a>Daļas</a>.",
-	"settings.schedules.allTime": "Visu laiku"
+	"settings.schedules.allTime": "Visu laiku",
+	"settings.schedules.skip.nothing": "Nav ko darīt",
+	"settings.schedules.skip.plexOff": "Izslēgts: ieslēdziet {setting} sadaļā {page}",
+	"settings.schedules.skip.plexNobody": "Nav ko darīt: neviens nav ieslēdzis savu Plex skatīšanās sarakstu",
+	"settings.schedules.skip.settingOff": "Izslēgts: ieslēdziet to tā iestatījumos",
+	"settings.schedules.skip.starting": "Izlaists: HolyArrs vēl startēja",
+	"settings.schedules.took": "Ilga {time}",
+	"settings.schedules.finished": "{label} pabeigts",
+	"settings.schedules.nothingToDo": "{label}: nav ko darīt",
+	"settings.schedules.runFailed": "{label} neizdevās"
 }

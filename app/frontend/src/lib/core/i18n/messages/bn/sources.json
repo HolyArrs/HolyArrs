@@ -85,5 +85,21 @@
 	"sources.uses.auto": "নিজে থেকে খোঁজে",
 	"sources.uses.feed": "সবচেয়ে নতুনের তালিকা",
 	"sources.uses.hand": "হাতে খোঁজা",
-	"sources.uses.none": "ব্যবহার হয় না"
+	"sources.uses.none": "ব্যবহার হয় না",
+	"sources.bridge.removeTitle": "{name} সরাবেন?",
+	"sources.bridge.find": "আমার নেটওয়ার্কে {name} খুঁজুন",
+	"sources.bridge.noneFound": "আপনার নেটওয়ার্কে কোনো {name} সাড়া দেয়নি।",
+	"sources.bridge.keyFound": "{name} থেকে কী পাওয়া গেছে",
+	"sources.bridge.keyKept": "{name} তার কী দেয়নি (সাইন-ইন চালু আছে)। কপি করতে \"কী নিন\" ব্যবহার করুন।",
+	"sources.bridge.keyKeptJackett": "Jackett তার কী দেয়নি (এতে অ্যাডমিন পাসওয়ার্ড আছে)। কপি করতে \"কী নিন\" ব্যবহার করুন।",
+	"sources.bridge.notReached": "{name}-এ পৌঁছানো যায়নি।",
+	"sources.bridge.brings.title": "কী কী আসে",
+	"sources.bridge.brings.sites": "এর ইনডেক্সারগুলো, সোর্স হিসেবে",
+	"sources.bridge.brings.categories": "সেগুলোর ক্যাটাগরি",
+	"sources.bridge.brings.search": "সার্চ {name}-এর মাধ্যমে যায়",
+	"sources.bridge.brings.sync": "{name}-এর পরিবর্তন চলে আসে",
+	"sources.bridge.brings.stays": "আপনার ইনডেক্সারগুলো {name}-এ সেট করা থাকবে।",
+	"sources.bridge.brings.had": "{n}টি ইনডেক্সার আগে থেকেই আছে",
+	"sources.bridge.brings.hadFrom": "{apps}-এর মাধ্যমে ইমপোর্ট করা",
+	"sources.bridge.brings.keyKept": "তাদের কাছে থাকা কী ব্যবহার করতে কী ফাঁকা রাখুন।"
 }

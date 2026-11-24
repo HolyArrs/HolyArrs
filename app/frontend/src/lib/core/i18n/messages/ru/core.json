@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Собирается: {what}… попытка {attempt}",
 	"core.testTag.connected": "Подключено",
 	"core.api.notAnswering": "HolyArrs не отвечает. Проверьте, что он запущен.",
+	"core.api.tooSlow": "HolyArrs слишком долго не отвечал. Попробуйте снова через минуту.",
 	"core.api.requestFailed": "Запрос не удался ({status})",
 	"core.api.wentWrong": "Что-то пошло не так.",
 	"core.trailerMiss.trailer": "трейлер",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Одобрено автоматически",
 	"core.plain.approvedBy": "Одобрил: {who}",
 	"core.settings.cantReach": "Не удаётся связаться с этим адресом. Проверьте его и то, что приложение запущено.",
+	"core.settings.tryHttp": "Этот адрес не отвечает по https. Попробуйте http://.",
 	"core.settings.groupLibrary.label": "Медиатека",
 	"core.settings.groupLibrary.line": "Где живут тайтлы",
 	"core.settings.groupLibrary.about": "Папки, Части, значения по умолчанию, субтитры, имена файлов и импорт.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Два загрузчика ведут к одному приложению загрузки, поэтому загрузки могут показываться дважды.",
 	"core.plain.peopleCheck": "Не удаётся прочитать список пользователей медиасервера, поэтому удалённые там здесь не отключаются.",
 	"core.plain.deleted": "удалён",
-	"core.plain.deletedName": "{name} (удалён)"
+	"core.plain.deletedName": "{name} (удалён)",
+	"core.api.handsOffFiles": "Режим «без вмешательства» включён, поэтому HolyArrs не трогает загруженные файлы. Выключите его в Настройках, чтобы импортировать, переименовывать, перемещать или сканировать файлы.",
+	"core.api.handsOffSubtitles": "Режим «без вмешательства» включён, поэтому HolyArrs никогда не открывает загруженные файлы. Выключите его в Настройках, чтобы пользоваться субтитрами."
 }

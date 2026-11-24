@@ -66,6 +66,10 @@ func (m *Manager) deadRule(ctx context.Context) {
 				continue
 			}
 			live[d.ID] = true
+			if d.StateReason != nil && *d.StateReason == StuckReason {
+				// The whole Downloader stopped: its connection, not this torrent.
+				continue
+			}
 			if reason := m.deadReason(st, d, j); reason != "" {
 				m.failDead(ctx, dr, d, reason, st)
 			}

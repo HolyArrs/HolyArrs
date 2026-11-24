@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "ยกเลิก",
 	"settings.schedules.stages": "ขั้นตอน",
 	"settings.schedules.stagesNote": "หยุดชั่วคราวหรือรีสตาร์ตได้ใน<a>ส่วนเสริม</a>",
-	"settings.schedules.allTime": "ตลอดเวลา"
+	"settings.schedules.allTime": "ตลอดเวลา",
+	"settings.schedules.skip.nothing": "ไม่มีอะไรต้องทำ",
+	"settings.schedules.skip.plexOff": "ปิดอยู่: เปิด {setting} ใน {page}",
+	"settings.schedules.skip.plexNobody": "ไม่มีอะไรต้องทำ: ยังไม่มีใครเปิดรายการที่อยากดูใน Plex ของตัวเอง",
+	"settings.schedules.skip.settingOff": "ปิดอยู่: เปิดได้ในการตั้งค่าของมัน",
+	"settings.schedules.skip.starting": "ข้ามไป: HolyArrs ยังเริ่มทำงานไม่เสร็จ",
+	"settings.schedules.took": "ใช้เวลา {time}",
+	"settings.schedules.finished": "{label} เสร็จแล้ว",
+	"settings.schedules.nothingToDo": "{label}: ไม่มีอะไรต้องทำ",
+	"settings.schedules.runFailed": "{label} ล้มเหลว"
 }

@@ -4,11 +4,12 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
-	import { pickId } from '../mediafiles/index.ts';
+	import { needsFolder, pickId } from '../mediafiles/index.ts';
 	import { albumChoices, extraKinds, mainKinds, newAlbumChoices, pressingStatuses, toggle } from '../music/index.ts';
 	import type { LookupArtist, MusicSettings } from '../music/index.ts';
 	import { to } from '../core/paths.ts';
 	import { api, message } from '../core/api.ts';
+	import { session } from '../core/session.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 
 	// The add-an-artist dialog: Library folder, Pick rules, which albums to keep up to date, new albums, album kinds and Pressing statuses.
@@ -41,6 +42,8 @@
 	let error = $state('');
 
 	const musicFolders = $derived(folders.filter((f) => f.kind === 'music'));
+	// Hands-off mode needs no Library folder: the music only goes to the Downloader.
+	const noFolder = $derived(needsFolder(musicFolders.length, session.s.handsOff));
 	const musicRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('music')));
 
 	/** Shows the dialog for one looked-up artist. */
@@ -97,19 +100,19 @@
 	{#if picked}
 		<form id="add-artist-title" class="sheet-form" onsubmit={add}>
 			{#if picked.disambiguation}<p class="small muted">{picked.disambiguation}</p>{/if}
-			{#if musicFolders.length === 0}
-				<p class="notice warn" >
-					<Words key="requests.add.noFolder.music" links={{ a: to('/settings/library-folders') }} linkClass="ul" />
+			{#if noFolder}
+				<p class="notice warn">
+					<span><Words key="requests.add.noFolder.music" links={{ a: to('/settings/library-folders') }} linkClass="ul" /></span>
 				</p>
 			{:else}
-				<div class="field">
+				{#if musicFolders.length}<div class="field">
 					<label for="artist-folder">{t('requests.add.folder')}</label>
 					<select id="artist-folder" class="input" bind:value={folderId} onchange={() => chooseRules(folderId)}>
 						{#each musicFolders as f (f.id)}
 							<option value={f.id}>{f.label || f.path} ({f.path})</option>
 						{/each}
 					</select>
-				</div>
+				</div>{:else}<p class="hint" data-testid="hands-off-hint">{t('requests.add.handsOff')}</p>{/if}
 				<div class="field">
 					<label for="artist-rules">{t('requests.add.rules')}</label>
 					<select id="artist-rules" class="input" bind:value={rulesId}>
@@ -172,7 +175,7 @@
 	{/if}
 	{#snippet footer()}
 				<Button variant="plain" onclick={() => (sheetOpen = false)}>{t('requests.add.cancel')}</Button>
-				<Button variant="primary" type="submit" form="add-artist-title" disabled={musicFolders.length === 0 || !types.length || !extras.length || !statuses.length} busy={adding}>{t('requests.add.submit')}</Button>
+				<Button variant="primary" type="submit" form="add-artist-title" disabled={noFolder || !types.length || !extras.length || !statuses.length} busy={adding}>{t('requests.add.submit')}</Button>
 	{/snippet}
 </Sheet>
 

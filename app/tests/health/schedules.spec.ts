@@ -6,7 +6,7 @@ test.describe.configure({ mode: 'serial' });
 
 async function enterFreshApp(page: import('@playwright/test').Page) {
 	await page.goto('/login');
-	const setupHeading = page.getByRole('heading', { name: 'Set up HolyArrs' });
+	const setupHeading = page.getByRole('heading', { name: 'Pick your languages' });
 	const signInHeading = page.getByRole('heading', { name: 'Sign in' });
 	await expect(setupHeading.or(signInHeading)).toBeVisible();
 	if (await signInHeading.isVisible()) {

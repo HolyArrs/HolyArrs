@@ -33,7 +33,8 @@ func newWorld(t *testing.T) *world {
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	w := &world{s: s, now: time.Date(2026, 10, 13, 12, 0, 0, 0, time.UTC)}
-	w.e = &Checker{Store: s, Version: "v1.1.0", Now: func() time.Time { return w.now }}
+	// No list keys: these tests cover the release feed path.
+	w.e = &Checker{Store: s, Version: "v1.1.0", Now: func() time.Time { return w.now }, ListKeys: []PublicKey{}}
 	w.h = &health.Engine{Store: s, Version: "v1.1.0", Now: func() time.Time { return w.now }, FreeSpace: func(string) int64 { return 50 << 30 },
 		UpdateCheck: func(ctx context.Context) (string, bool, bool) {
 			info, ran := w.e.Scheduled(ctx)

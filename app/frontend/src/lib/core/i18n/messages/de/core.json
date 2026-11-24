@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "{what} wird aufgebaut … Versuch {attempt}",
 	"core.testTag.connected": "Verbunden",
 	"core.api.notAnswering": "HolyArrs antwortet nicht. Prüf, ob es läuft.",
+	"core.api.tooSlow": "HolyArrs hat zu lange gebraucht. Versuch es in einer Minute noch mal.",
 	"core.api.requestFailed": "Anfrage fehlgeschlagen ({status})",
 	"core.api.wentWrong": "Etwas ist schiefgegangen.",
 	"core.trailerMiss.trailer": "Trailer",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Automatisch genehmigt",
 	"core.plain.approvedBy": "Genehmigt von {who}",
 	"core.settings.cantReach": "Diese Adresse ist nicht erreichbar. Prüf sie und ob die App läuft.",
+	"core.settings.tryHttp": "Diese Adresse antwortet nicht über https. Versuch es mit http://.",
 	"core.settings.groupLibrary.label": "Bibliothek",
 	"core.settings.groupLibrary.line": "Wo die Titel liegen",
 	"core.settings.groupLibrary.about": "Ordner, Bereiche, Standards, Untertitel, Dateinamen und Import.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Zwei Downloader erreichen dieselbe Download-App, daher können Downloads doppelt erscheinen.",
 	"core.plain.peopleCheck": "Die Benutzerliste des Medienservers ist nicht lesbar, daher werden dort entfernte Personen hier nicht ausgeschaltet.",
 	"core.plain.deleted": "gelöscht",
-	"core.plain.deletedName": "{name} (gelöscht)"
+	"core.plain.deletedName": "{name} (gelöscht)",
+	"core.api.handsOffFiles": "Hands-off-Modus ist an, daher lässt HolyArrs die heruntergeladenen Dateien in Ruhe. Schalte ihn in den Einstellungen aus, um Dateien zu importieren, umzubenennen, zu verschieben oder zu scannen.",
+	"core.api.handsOffSubtitles": "Hands-off-Modus ist an, daher öffnet HolyArrs die heruntergeladenen Dateien nie. Schalte ihn in den Einstellungen aus, um Untertitel zu nutzen."
 }

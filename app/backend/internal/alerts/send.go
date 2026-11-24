@@ -64,9 +64,13 @@ const (
 	MomentDownloadFailed = "download_failed" // a download failed; its Release is turned down
 )
 
+// MomentPlugin is a message a plugin sends (alerts.webhooks.send), to the
+// staff; an Alert carries it only when the owner ticks it.
+const MomentPlugin = "plugin_message"
+
 // Moments lists the moments in the order screens show them.
 var Moments = []string{MomentWaiting, MomentApproved, MomentTurnedDown, MomentReady, MomentNewEpisodes, MomentNewAlbums,
-	MomentReported, MomentFixed, MomentGrab, MomentDownloaded, MomentDownloadFailed, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentHealth, MomentDecision, MomentSubtitle}
+	MomentReported, MomentFixed, MomentGrab, MomentDownloaded, MomentDownloadFailed, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentHealth, MomentDecision, MomentSubtitle, MomentPlugin}
 
 // Person is someone a message is about, with where Alerts reach them.
 type Person struct {
@@ -568,6 +572,21 @@ func (s *Sender) email(ctx context.Context, a domain.Alert, m Message) error {
 	if len(to) == 0 {
 		return nil // nobody to reach for this moment
 	}
+	if forPeople(m.Moment) {
+		// One mail each, so people who asked for the same title never see
+		// each other's address.
+		var errs []error
+		for _, x := range to {
+			if err := s.emailTo(ctx, a, m, []string{x}); err != nil {
+				errs = append(errs, err)
+			}
+		}
+		return errors.Join(errs...)
+	}
+	return s.emailTo(ctx, a, m, to)
+}
+
+func (s *Sender) emailTo(ctx context.Context, a domain.Alert, m Message, to []string) error {
 	if a.SMTPHost == "" || a.SMTPPort < 1 || a.SMTPPort > 65535 || !CheckAddress(a.SMTPFrom) {
 		return ErrSMTP
 	}

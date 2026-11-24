@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Meddelanden från tillägg",
+	"requests.moment.plugin_message.body": "Ett tillägg du tillåtit skickar ett meddelande.",
+	"requests.words.via": "{who} via {plugin}",
 	"requests.moment.ask_waiting.title": "Ny förfrågan",
 	"requests.moment.ask_waiting.body": "Till personalen: en film, serie eller artist väntar på godkännande.",
 	"requests.moment.ask_approved.title": "Godkänd",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "TMDB-lista",
 	"requests.lists.tmdbHint": "Listnumret eller dess länk, till exempel themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Trakt-lista",
-	"requests.lists.traktHint": "användare/lista, användare/watchlist eller länken, till exempel trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "användare/lista, användare/watchlist eller länken, till exempel trakt.tv/users/ana/lists/favourites. Eller en topplista: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "MDBList-lista",
 	"requests.lists.mdblistHint": "användare/lista eller länken, till exempel mdblist.com/lists/ana/favourites. Offentliga listor fungerar utan nyckel.",
 	"requests.lists.everyDay": "varje dag",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Hittade inget fel",
 	"requests.outcome.noResults": "Inga resultat ännu",
 	"requests.outcome.nothingFound": "Inget hittades:",
+	"requests.outcome.refused": "Hittat, men inget passar valreglerna",
 	"requests.outcome.why.slowed": "pausades (nedsaktad)",
 	"requests.outcome.why.down": "låg nere",
 	"requests.outcome.why.blocked": "blockerades",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Lägg till",
 	"requests.addMovie.titleBare": "Lägg till en film",
 	"requests.add.loadingDefaults": "Laddar standardvalen",
+	"requests.add.defaultsLate": "Dina sparade standardval laddades inte i tid, så de vanliga valen används. Kontrollera dem innan du lägger till.",
 	"requests.add.noFolder.music": "Det finns ingen Biblioteksmapp för musik ännu. <a>Lägg till en</a> först.",
 	"requests.add.noFolder.movie": "Det finns ingen Biblioteksmapp för filmer ännu. <a>Lägg till en</a> först.",
 	"requests.add.noFolder.show": "Det finns ingen Biblioteksmapp för serier ännu. <a>Lägg till en</a> först.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Visa den i min kalender.",
 	"requests.add.cancel": "Avbryt",
 	"requests.add.submit": "Lägg till i Biblioteket",
+	"requests.add.submitChoose": "Lägg till och välj en utgåva",
 	"requests.addArtist.albums": "Album som ska hållas uppdaterade",
 	"requests.addArtist.newAlbums": "Nya album",
 	"requests.addArtist.newAlbumsHint": "Vad som händer med ett album som kommer senare.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", visar {status}",
 	"requests.board.reportsOpen": "Rapporter, {n} öppna",
 	"requests.board.approveAll": "Godkänn alla",
+	"requests.board.approveAllTitle": "Godkänna alla väntande förfrågningar ({n})?",
+	"requests.board.approveAllDesc": "Det gäller även förfrågningar längre ner i listan som inte har laddats än.",
 	"requests.board.requests": "Förfrågningar",
 	"requests.board.open": "Öppna {name}, efterfrågad av {who}",
 	"requests.board.pageForArtist": "Artistsida för {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Tillagd",
 	"requests.addAll.summary": "Tillagda: {added}, överhoppade: {skipped}",
 	"requests.addAll.summaryClean": "Tillagda: {added}",
-	"requests.addAll.intro": "Varje film läggs till i ditt Bibliotek med mappen och urvalsreglerna nedan och dina sparade standardval. Filmer som redan finns i Biblioteket står i listan men läggs inte till igen."
+	"requests.addAll.intro": "Varje film läggs till i ditt Bibliotek med mappen och urvalsreglerna nedan och dina sparade standardval. Filmer som redan finns i Biblioteket står i listan men läggs inte till igen.",
+	"requests.ask.alsoAsk": "Be också om {name}",
+	"requests.add.handsOff": "Hands-off-läget är på: ingen biblioteksmapp behövs. Den skickas till nedladdaren och filerna stannar där."
 }

@@ -69,12 +69,12 @@ jobs:
 
       - name: Build the web app
         run: |
-          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e HOLYARRS_LANGUAGES_PLAIN=1 \
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
             -v "$PWD/app/frontend:/web" -w /web "$NODE_IMAGE" \
             sh -c 'npm ci --ignore-scripts --no-audit --no-fund && npm run build'
 
       - name: Build the archives
-        run: python3 deploy/release/linux_package.py --version "$VERSION" --output dist --prebuilt-web
+        run: python3 deploy/release/linux_package.py --version "$VERSION" --output dist --prebuilt-web --bare
 
       - name: Add the files to the GitHub release
         env:
@@ -82,4 +82,4 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           gh release view "$VERSION" >/dev/null || { echo "::error::no GitHub release named $VERSION"; exit 1; }
-          gh release upload "$VERSION" dist/holyarrs_"$VERSION"_linux_*.tar.gz dist/SHA256SUMS --clobber
+          gh release upload "$VERSION" dist/holyarrs_"$VERSION"_linux_* dist/SHA256SUMS --clobber

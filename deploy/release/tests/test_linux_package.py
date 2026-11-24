@@ -51,6 +51,15 @@ class LinuxPackageTests(unittest.TestCase):
                 self.assertIn("./holyarrs -config /var/lib/holyarrs", readme)
                 self.assertIn("6262", readme)
 
+    def test_bare_programs_for_in_app_updates(self):
+        with tempfile.TemporaryDirectory() as t:
+            src, out = self.source(Path(t) / "src"), Path(t) / "out"
+            with patch.object(linux, "build_web"),                     patch.object(linux, "go_build", lambda s, v, a, o: self.fake_build(v, a, o)):
+                run_main(["--version", "1.2.3", "--output", str(out), "--source", str(src), "--bare", "--arches", "amd64"])
+            bare = out / "holyarrs_1.2.3_linux_amd64"
+            self.assertEqual(bare.read_bytes(), b"ELF amd64 holyarrs 1.2.3")
+            self.assertIn("  holyarrs_1.2.3_linux_amd64" + chr(10), (out / "SHA256SUMS").read_text())
+
     def test_same_inputs_make_the_same_bytes_and_notices_ride_along(self):
         sums = []
         for _ in range(2):

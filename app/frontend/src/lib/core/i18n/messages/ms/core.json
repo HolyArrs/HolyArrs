@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Membina {what}… percubaan {attempt}",
 	"core.testTag.connected": "Bersambung",
 	"core.api.notAnswering": "HolyArrs tidak menjawab. Semak sama ada ia sedang berjalan.",
+	"core.api.tooSlow": "HolyArrs terlalu lama menjawab. Cuba lagi dalam seminit.",
 	"core.api.requestFailed": "Permintaan gagal ({status})",
 	"core.api.wentWrong": "Sesuatu telah tidak kena.",
 	"core.trailerMiss.trailer": "treler",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Diluluskan secara automatik",
 	"core.plain.approvedBy": "Diluluskan oleh {who}",
 	"core.settings.cantReach": "Tidak dapat mencapai alamat itu. Semak alamat dan sama ada apl sedang berjalan.",
+	"core.settings.tryHttp": "Alamat itu tidak menjawab melalui https. Cuba http:// sebaliknya.",
 	"core.settings.groupLibrary.label": "Pustaka",
 	"core.settings.groupLibrary.line": "Tempat tajuk berada",
 	"core.settings.groupLibrary.about": "Folder, bahagian, lalai, sari kata, nama fail dan import.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dua pemuat turun sampai ke aplikasi muat turun yang sama, jadi muat turun boleh muncul dua kali.",
 	"core.plain.peopleCheck": "Senarai pengguna pelayan media tidak dapat dibaca, jadi orang yang dibuang di sana tidak dimatikan di sini.",
 	"core.plain.deleted": "dipadam",
-	"core.plain.deletedName": "{name} (dipadam)"
+	"core.plain.deletedName": "{name} (dipadam)",
+	"core.api.handsOffFiles": "Mod lepas tangan dihidupkan, jadi HolyArrs tidak menyentuh fail yang dimuat turun. Matikannya dalam Tetapan untuk mengimport, menamakan semula, memindahkan atau mengimbas fail.",
+	"core.api.handsOffSubtitles": "Mod lepas tangan dihidupkan, jadi HolyArrs tidak pernah membuka fail yang dimuat turun. Matikannya dalam Tetapan untuk menggunakan sari kata."
 }

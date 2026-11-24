@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Vispirms labākā kopija; vienādās paka uzvar sezonas paka",
 	"settings.search.preferAlways": "Sezonas paka, kad vien tā iztur kvalitātes kopu",
 	"settings.search.multi": "Ņemt Izlaidumus ar vairākām sezonām",
-	"settings.search.multiHint": "Aizpilda katru trūkstošo epizodi tajā",
+	"settings.search.multiHint": "Aizpilda katru trūkstošo epizodi tajā. Ar vienādu kvalitāti uzvar laidiens ar vairāk vēlamajām epizodēm",
 	"settings.search.music": "Mūzika",
 	"settings.search.albums": "Meklēt arī trūkstošos albumus",
 	"settings.search.albumsHint": "Izdotie albumi, katram viena meklēšana",

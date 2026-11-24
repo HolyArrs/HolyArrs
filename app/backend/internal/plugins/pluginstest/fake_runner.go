@@ -14,6 +14,18 @@ type FakeRunner struct {
 	// OneShot, when set, runs for each one-shot start; its error is what
 	// that run's Wait returns (such as an exit code).
 	OneShot func(plugins.Spec) error
+	last    *fakeProcess
+}
+
+// Exit ends the last started program on its own with err, as a crash would.
+func (f *FakeRunner) Exit(err error) {
+	f.mu.Lock()
+	p := f.last
+	f.mu.Unlock()
+	if p != nil {
+		p.err = err
+		p.Stop()
+	}
 }
 
 // Start records spec and returns a process that runs until stopped or ctx
@@ -31,6 +43,8 @@ func (f *FakeRunner) Start(ctx context.Context, spec plugins.Spec) (plugins.Proc
 			p.err = f.OneShot(spec)
 		}
 		p.Stop()
+	} else {
+		f.last = p
 	}
 	go func() {
 		select {

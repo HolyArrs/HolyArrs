@@ -165,13 +165,13 @@ test('settings: patterns show a live example, a bad word is caught, and the choi
 	await page.getByLabel('File name pattern', { exact: true }).fill('{title} [{year}]');
 	await expect(ex).toContainText('Dune - Part Two [2024].mkv');
 	await openAdvanced(page);
-	await page.getByLabel('A colon in a name becomes').selectOption('remove');
+	await page.getByRole('region', { name: 'Movie names' }).getByLabel('A colon in a name becomes').selectOption('remove');
 	await expect(ex).toContainText('Dune Part Two [2024].mkv');
 	await page.getByLabel('File name pattern', { exact: true }).fill('{title} {nope}');
 	await expect(ex.getByRole('alert')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
 	await page.getByLabel('File name pattern', { exact: true }).fill('{title} ({year}) {quality}');
-	await page.getByLabel('A colon in a name becomes').selectOption('smart');
+	await page.getByRole('region', { name: 'Movie names' }).getByLabel('A colon in a name becomes').selectOption('smart');
 	await page.getByLabel('Keep deleted files for (days)').fill('14');
 	await page.getByLabel('Always leave this much free space (MB)').fill('250');
 	await expect(page.getByRole('button', { name: 'Save' })).toBeEnabled();

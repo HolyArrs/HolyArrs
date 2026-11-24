@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Hindi na ito maibabalik. Mananatili ang mga file.",
 	"settings.pickRules.removeUsed": "{used}. Pumili muna ng ibang panuntunan doon.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Kanselahin"
+	"settings.pickRules.cancel": "Kanselahin",
+	"settings.pickRules.check.title": "Suriin ang pangalan ng release",
+	"settings.pickRules.check.desc": "I-paste ang pangalan ng release para makita kung paano ito binabasa ng HolyArrs at paano ito hinuhusgahan ng mga set mo ng kalidad. Walang hinahanap o dina-download.",
+	"settings.pickRules.check.name": "Pangalan ng release",
+	"settings.pickRules.check.rules": "Husgahan gamit ang",
+	"settings.pickRules.check.copies": "Mga kopya ng tumutugmang title",
+	"settings.pickRules.check.size": "Laki sa GB (opsyonal)",
+	"settings.pickRules.check.check": "Suriin",
+	"settings.pickRules.check.failed": "Hindi masuri ang pangalan",
+	"settings.pickRules.check.readAs": "Binasa bilang",
+	"settings.pickRules.check.matches": "Tumutugma sa {name}",
+	"settings.pickRules.check.noTitle": "Walang tumutugmang title sa Library mo. Pumili ng set ng kalidad sa itaas para husgahan pa rin ito.",
+	"settings.pickRules.check.noAlbum": "Tumutugma sa {name}, pero sa wala sa mga album nito.",
+	"settings.pickRules.check.noCopies": "Walang kopyang huhusgahan ang title na ito.",
+	"settings.pickRules.check.hasFile": "May file"
 }

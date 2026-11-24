@@ -23,7 +23,9 @@ func ShowByIDs(ctx context.Context, db database.Querier, ids map[string]string) 
 			continue
 		}
 		var id int64
-		err := db.QueryRowContext(ctx, "SELECT id FROM titles WHERE kind = 'show' AND state != 'removed' AND json_extract(source_ids, '$.'||?) = ?", k, v).Scan(&id)
+		// The path is written out, not bound, so the titles_<id> index
+		// on that path is used. k comes only from the list above.
+		err := db.QueryRowContext(ctx, "SELECT id FROM titles WHERE kind = 'show' AND state != 'removed' AND json_extract(source_ids, '$."+k+"') = ?", v).Scan(&id)
 		if err == nil {
 			return id, nil
 		}
@@ -45,7 +47,8 @@ func showOnNeverAdd(ctx context.Context, db database.Querier, ids map[string]str
 			continue
 		}
 		var n int
-		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM never_add WHERE kind = 'show' AND json_extract(source_ids, '$.'||?) = ?", k, ids[k]).Scan(&n); err != nil || n > 0 {
+		// The path is written out, so never_add_tmdb is used for tmdb.
+		if err := db.QueryRowContext(ctx, "SELECT count(*) FROM never_add WHERE kind = 'show' AND json_extract(source_ids, '$."+k+"') = ?", ids[k]).Scan(&n); err != nil || n > 0 {
 			return n > 0, err
 		}
 	}

@@ -15,7 +15,7 @@ export interface SettingEntry {
 }
 
 /** Search entries for features held back from this release, by anchor. */
-const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats', 'emby-card': 'emby_signin' };
+const heldAnchors: Record<string, string> = { 'row-titles-card': 'row_title_stats' };
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 
@@ -124,7 +124,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/subtitles', 'sy-step', 'Sync fix shift', 'subtitles sync timing offset ms', true),
 	e('/settings/subtitles', 'sites-card', 'Subtitle sites', 'subtitles opensubtitles provider site add'),
 	e('/settings/tmdb', 'metadata-mode', 'Where details come from', 'metadata mode own keys off lookups privacy server independent'),
-	e('/settings/tmdb', 'metadata-keys', 'Your own keys', 'tmdb token tvdb pin mdblist fanart key api'),
+	e('/settings/tmdb', 'metadata-keys', 'Your own keys', 'tmdb token tvdb pin mdblist fanart omdb imdb rotten tomatoes metacritic key api'),
 	e('/settings/tmdb', 'metadata-hosts', 'Addresses for your firewall', 'firewall hosts outside addresses allow list'),
 	e('/settings/tmdb', 'metadata-card', 'Metadata server', 'metadata tmdb posters names artwork server'),
 	e('/settings/outside-lists', '', 'Outside lists', 'tmdb list trakt list import list auto add'),
@@ -214,7 +214,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/health', 'hs-every', 'Check health every', 'health minutes interval', true),
 	e('/settings/health', 'hs-guard', 'Alert after this many runs in a row', 'health flap', true),
 	e('/settings/health', 'hs-low', 'Warn when free space is under', 'free space low disk MB', true),
-	e('/settings/health', 'update-check', 'Check for a newer HolyArrs', 'update check daily every days'),
+	e('/settings/health', 'hs-days', 'Check for a newer HolyArrs', 'update check daily every days'),
 	e('/settings/health', 'hs-upd', 'Release feed', 'update feed url', true),
 	e('/settings/danger', 'danger-card', 'Restart or shut down HolyArrs', 'restart reboot shutdown safe mode stop danger'),
 

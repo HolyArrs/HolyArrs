@@ -8,10 +8,14 @@
 	"setup.fullPath": "Käytä kansion koko polkua, esimerkiksi {path}.",
 	"setup.folderUsed": "Tämä kansio on jo käytössä tai sijaitsee käytössä olevan kansion sisällä.",
 	"setup.folderMissing": "Kansiota ei ole. Tarkista polku.",
-	"setup.addFolderOrOff": "Lisää kansio tai poista tämä käytöstä.",
+	"setup.addFolderOrOff": "Lisää kansio tai paina Ohita toistaiseksi.",
 	"setup.notAnswering": "HolyArrs ei vastaa. Yritä hetken kuluttua uudelleen.",
 	"setup.addUserPasswordHint": "Lisää käyttäjätunnus ja salasana.",
 	"setup.folders": "Kansiot",
 	"setup.downloader": "Lataaja",
-	"setup.source": "Lähde"
+	"setup.source": "Lähde",
+	"setup.alertsNeedKeyOne": "Ilmoitukset: 1 tarvitsee avaimen",
+	"setup.alertsNeedKey": "Ilmoitukset: {n} tarvitsee avaimen",
+	"setup.folderNoAccess": "HolyArrs ei voi avata tätä kansiota. Tarkista sen oikeudet.",
+	"setup.folderCantUse": "HolyArrs ei voi käyttää tätä kansiota. Tarkista polku."
 }

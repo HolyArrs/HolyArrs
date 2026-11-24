@@ -185,6 +185,154 @@ test('add a movie with a second 4K Version; the Movie page shows both and can ad
 	await expect(page.getByRole('button', { name: /^Version actions for Main/ })).toHaveCount(0);
 });
 
+test('Back restores the query and results after opening a movie from Search', async () => {
+	for (const { title, detailUrl } of [
+		{ title: 'Driftwood Moon', detailUrl: /\/library\/\d+/ },
+		{ title: 'Iron Lullaby', detailUrl: /\/title\/movie\/900011/ }
+	]) {
+		await page.goto('/search');
+		const box = page.getByTestId('search-box');
+		await box.fill(title);
+		const card = page.getByRole('main').getByRole('link', { name: new RegExp('^' + title + ',') }).first();
+		await expect(card).toBeVisible();
+		await card.click();
+		await expect(page).toHaveURL(detailUrl);
+		await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
+		await page.goBack();
+		await expect(box).toHaveValue(title);
+		await expect(card).toBeVisible();
+	}
+});
+
+// every way back into Search keeps the words, the scope and the results.
+const driftwood = () => page.getByRole('main').getByRole('link', { name: /^Driftwood Moon,/ }).first();
+// Back only after the movie page shows: a Back while the kit is still loading it cancels that load and Search stays as it was.
+const onMovie = () => expect(page.getByRole('heading', { level: 1, name: 'Driftwood Moon' })).toBeVisible();
+const scopeRadio = (p: Page, name: string) => p.getByTestId('search-scope').getByRole('radio', { name });
+
+test('a typed search survives Back, Forward and Back again, with the scope', async () => {
+	await page.goto('/search');
+	const box = page.getByTestId('search-box');
+	await box.fill('Driftwood');
+	await expect(page).toHaveURL(/q=Driftwood($|&)/);
+	await scopeRadio(page, 'Movies').click();
+	await expect(page).toHaveURL(/kind=movie/);
+	await box.fill('Driftwood Moon');
+	await expect(page).toHaveURL(/q=Driftwood(\+|%20)Moon/);
+	await expect(driftwood()).toBeVisible();
+	await driftwood().click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
+	await onMovie();
+	await page.goBack();
+	await expect(box).toHaveValue('Driftwood Moon');
+	await expect(scopeRadio(page, 'Movies')).toBeChecked();
+	await expect(driftwood()).toBeVisible();
+	await page.goForward();
+	await expect(page).toHaveURL(/\/library\/\d+/);
+	await onMovie();
+	await page.goBack();
+	await expect(page).toHaveURL(/q=Driftwood(\+|%20)Moon&kind=movie/);
+	await expect(box).toHaveValue('Driftwood Moon');
+	await expect(scopeRadio(page, 'Movies')).toBeChecked();
+	await expect(driftwood()).toBeVisible();
+});
+
+test('switching the scope to All after Back sticks through the next Back and Forward', async () => {
+	await page.goto('/search?q=Driftwood+Moon&kind=movie');
+	const box = page.getByTestId('search-box');
+	await expect(driftwood()).toBeVisible();
+	await driftwood().click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
+	await onMovie();
+	await page.goBack();
+	await expect(scopeRadio(page, 'Movies')).toBeChecked();
+	await scopeRadio(page, 'All').click();
+	await expect(page).not.toHaveURL(/kind=/);
+	await expect(driftwood()).toBeVisible();
+	await driftwood().click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
+	await onMovie();
+	await page.goBack();
+	await expect(scopeRadio(page, 'All')).toBeChecked();
+	await expect(box).toHaveValue('Driftwood Moon');
+	await page.goForward();
+	await expect(page).toHaveURL(/\/library\/\d+/);
+	await onMovie();
+	await page.goBack();
+	await expect(page).not.toHaveURL(/kind=/);
+	await expect(scopeRadio(page, 'All')).toBeChecked();
+	await expect(box).toHaveValue('Driftwood Moon');
+	await expect(driftwood()).toBeVisible();
+});
+
+test('Search opened from the Home top bar keeps its words after Back from a movie', async () => {
+	await page.goto('/');
+	const box = page.getByTestId('search-box');
+	await box.click();
+	await expect(page).toHaveURL(/\/search/);
+	await box.fill('Driftwood Moon');
+	await expect(driftwood()).toBeVisible();
+	await driftwood().click();
+	await expect(page).toHaveURL(/\/library\/\d+/);
+	await onMovie();
+	await page.goBack();
+	await expect(page).toHaveURL(/\/search\?.*q=Driftwood/);
+	await expect(box).toHaveValue('Driftwood Moon');
+	await expect(driftwood()).toBeVisible();
+	await expect(box).toBeFocused();
+	// One more Back leaves Search for Home.
+	await page.goBack();
+	await expect(page).toHaveURL(/\/$/);
+});
+
+test('odd characters and a cleared field come back exactly after Back', async () => {
+	const box = page.getByTestId('search-box');
+	for (const words of ['a&b=c #d', 'café/été 100%', '+plus+', `o'brien "x"`]) {
+		await page.goto('/search');
+		await box.fill(words);
+		await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe(words);
+		await page.goto('/library');
+		await page.goBack();
+		await expect(box).toHaveValue(words);
+	}
+	await page.goto('/search?q=Driftwood');
+	await expect(box).toHaveValue('Driftwood');
+	await box.fill('');
+	await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe(null);
+	await page.goto('/library');
+	await page.goBack();
+	await expect(box).toHaveValue('');
+});
+
+test('on a phone (390) Back keeps the words, the results and the scroll', async ({ browser }) => {
+	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+	const p = await ctx.newPage();
+	await signIn(p, owner());
+	await p.goto('/search');
+	const box = p.getByTestId('search-box-phone');
+	await box.fill('Driftwood');
+	await expect(p).toHaveURL(/q=Driftwood/);
+	const card = p.getByRole('main').getByRole('link', { name: /^Driftwood Moon,/ }).first();
+	await expect(card).toBeVisible();
+	await card.scrollIntoViewIfNeeded();
+	const y0 = await p.evaluate(() => Math.round(scrollY));
+	await card.click();
+	await expect(p).toHaveURL(/\/library\/\d+/);
+	await expect(p.getByRole('heading', { level: 1, name: 'Driftwood Moon' })).toBeVisible();
+	await p.goBack();
+	await expect(p.getByTestId('search-box-phone')).toHaveValue('Driftwood');
+	await expect(card).toBeVisible();
+	await expect.poll(() => p.evaluate(() => Math.round(scrollY))).toBe(y0);
+	await p.goForward();
+	await expect(p).toHaveURL(/\/library\/\d+/);
+	await expect(p.getByRole('heading', { level: 1, name: 'Driftwood Moon' })).toBeVisible();
+	await p.goBack();
+	await expect(p.getByTestId('search-box-phone')).toHaveValue('Driftwood');
+	await expect(card).toBeVisible();
+	expect(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+	await ctx.close();
+});
+
 test('the top-bar search opens Search with Library results; a movie not in the Library opens its details with Add', async () => {
 	await page.goto('/');
 	// The one search field sits in the top bar; typing opens the Search page with the words.

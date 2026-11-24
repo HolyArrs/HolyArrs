@@ -62,6 +62,9 @@ describe('line 2', () => {
 		for (const [k, d] of [['title_added', { search_on_add: true }], ['search_done', {}], ['download_vanished', {}], ['file_missing', {}], ['release_chosen', { release: 'Dune.1080p' }], ['download_sent', { release: 'Dune.1080p' }], ['download_finished', { release: 'Dune.1080p' }]] as const)
 			expect(eventText(ev(k, { Data: { ...d } }), ctx).line, k).not.toMatch(/will look|brings it|sending it|bringing it|in the Library$|^Sent to download|^Downloaded/);
 		expect(eventText(ev('download_sent', { Data: { release: 'Dune.2021.1080p.WEB' } }), ctx).line).toBe('1080p');
+		// A past download an import brought from an old app says where it came from.
+		expect(eventText(ev('download_sent', { Data: { release: 'Dune.2021.1080p.WEB', moved_from: 'Radarr' } }), ctx).line).toBe('1080p · From Radarr');
+		expect(eventText(ev('import_done', { Data: { release: 'Dune.2021.1080p.WEB', moved_from: 'Sonarr' } }), ctx).line).toBe('1080p · From Sonarr');
 		expect(eventText(ev('needs_decision', { Data: { reason: 'nothing could be placed; look at the import plan' } }), ctx).line).toBe('Nothing could be placed');
 		expect(eventText(ev('needs_decision', { Data: { reason: 'no file in the download matched an episode; match the files by hand' } }), ctx).line).toBe('No file in the download matched an episode');
 	});
@@ -242,5 +245,13 @@ describe('people removed on a media server', () => {
 		const e = ev('account_changed', { TitleID: undefined, title_name: undefined, Summary: 'ana-2 was removed on the Jellyfin server, so turned off here', Data: { user_id: 3, reason: 'jellyfin' } });
 		expect(eventText(e, ctx).line).toBe('ana-2 was removed on the Jellyfin server, so turned off here');
 		inGerman(() => expect(eventText(e, ctx).line).toBe('ana-2 wurde auf dem Jellyfin-Server entfernt, daher hier ausgeschaltet'));
+	});
+});
+
+describe('partly imported (#521)', () => {
+	it('names the episodes removal after seeding waits for, else asks for a look', () => {
+		const held = eventText(ev('import_partly_done', { TitleID: 2, Data: { cleanup_wait: ['S02E01', 'S02E02'] } }), ctx).line;
+		expect(held).toContain('removal on hold: S02E01, S02E02 still to import');
+		expect(eventText(ev('import_partly_done', { TitleID: 2, Data: {} }), ctx).line).toContain('some files need a look');
 	});
 });

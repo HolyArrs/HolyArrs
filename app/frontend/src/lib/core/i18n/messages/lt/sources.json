@@ -85,5 +85,21 @@
 	"sources.uses.auto": "ieško pats",
 	"sources.uses.feed": "naujausių sąrašas",
 	"sources.uses.hand": "paieška ranka",
-	"sources.uses.none": "nenaudojamas"
+	"sources.uses.none": "nenaudojamas",
+	"sources.bridge.removeTitle": "Pašalinti {name}?",
+	"sources.bridge.find": "Rasti {name} mano tinkle",
+	"sources.bridge.noneFound": "Jūsų tinkle neatsakė nė vienas {name}.",
+	"sources.bridge.keyFound": "Raktas gautas iš {name}",
+	"sources.bridge.keyKept": "{name} nepateikė rakto (įjungtas prisijungimas). Nukopijuokite jį per Gauti raktą.",
+	"sources.bridge.keyKeptJackett": "Jackett nepateikė rakto (jis turi administratoriaus slaptažodį). Nukopijuokite jį per Gauti raktą.",
+	"sources.bridge.notReached": "Nepavyko pasiekti {name}.",
+	"sources.bridge.brings.title": "Kas perkeliama",
+	"sources.bridge.brings.sites": "Jo indeksuotojai, kaip Šaltiniai",
+	"sources.bridge.brings.categories": "Jų kategorijos",
+	"sources.bridge.brings.search": "Paieškos eina per {name}",
+	"sources.bridge.brings.sync": "Pakeitimai {name} perkeliami",
+	"sources.bridge.brings.stays": "Jūsų indeksuotojai lieka nustatyti {name}.",
+	"sources.bridge.brings.had": "Indeksuotojų jau čia: {n}",
+	"sources.bridge.brings.hadFrom": "Importuota per {apps}",
+	"sources.bridge.brings.keyKept": "Palikite raktą tuščią, kad būtų naudojamas jau turimas."
 }

@@ -93,7 +93,7 @@ func (a *Auth) sessionRoutes(m *http.ServeMux) {
 // currentFamily is the public id of the session the request came with
 // ("" for an API key or the local network).
 func (a *Auth) currentFamily(r *http.Request) string {
-	ck, err := r.Cookie(CookieName)
+	ck, err := sessionCookie(r)
 	if err != nil || ck.Value == "" {
 		return ""
 	}

@@ -3,7 +3,9 @@ package metadata
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -69,6 +71,9 @@ type TitlePages struct {
 	// PartOn says the part of the app that shows kind (movie, show,
 	// artist) is switched on.
 	PartOn func(kind string) bool
+	// Kept gives the OMDb scores kept for a Library movie or show by TMDB
+	// id; they fill sources the answer has none for. Nil adds none.
+	Kept func(ctx context.Context, kind, tmdbID string) KeptScores
 
 	extras extrasCache
 	wiki   wikiCache
@@ -151,6 +156,11 @@ func (p *TitlePages) titleExtras(w http.ResponseWriter, r *http.Request) {
 		if kind == "artist" {
 			p.Music.WriteJSON(w, r, v)
 			return
+		}
+		// Added on the way out, never kept: the kept answer is shared and
+		// the Library's scores change on their own.
+		if p.Kept != nil {
+			v = withKept(v, p.Kept(r.Context(), kind, id))
 		}
 		webserver.WriteJSON(w, http.StatusOK, v)
 	}
@@ -296,6 +306,50 @@ func (p *TitlePages) fetchExtras(parent context.Context, kind, id string) (Title
 		v.Scores = scores
 	}
 	return v, settledArt && settledRatings
+}
+
+// KeptScores are a Library title's IMDb, Rotten Tomatoes and Metacritic
+// scores read from OMDb; nil fields are not known.
+type KeptScores struct {
+	IMDbRating     *float64
+	IMDbVotes      int
+	RottenTomatoes *int
+	Metacritic     *int
+	// TraktRating is the kept Trakt rating out of 10, read with the Trakt
+	// client id; nil when not known.
+	TraktRating *float64
+	TraktVotes  int
+}
+
+// withKept adds the kept scores for sources the answer has none for. OMDb
+// gives no review counts for Rotten Tomatoes and Metacritic, so only IMDb's
+// is held to the fewest votes.
+func withKept(v TitleExtras, k KeptScores) TitleExtras {
+	var add []OutsideScore
+	if k.IMDbRating != nil && int64(k.IMDbVotes) >= minOutsideVotes["imdb"] {
+		add = append(add, OutsideScore{Source: "imdb", Value: *k.IMDbRating, Max: 10, Votes: int64(k.IMDbVotes)})
+	}
+	if k.RottenTomatoes != nil && *k.RottenTomatoes > 0 {
+		add = append(add, OutsideScore{Source: "rt_critics", Value: float64(*k.RottenTomatoes), Max: 100})
+	}
+	if k.Metacritic != nil && *k.Metacritic > 0 {
+		add = append(add, OutsideScore{Source: "metacritic", Value: float64(*k.Metacritic), Max: 100})
+	}
+	// Trakt's own pages show its rating as a percent, as MDBList's does.
+	if k.TraktRating != nil && *k.TraktRating > 0 && int64(k.TraktVotes) >= minOutsideVotes["trakt"] {
+		add = append(add, OutsideScore{Source: "trakt", Value: math.Round(*k.TraktRating * 10), Max: 100, Votes: int64(k.TraktVotes)})
+	}
+	if len(add) == 0 {
+		return v
+	}
+	scores := append([]OutsideScore{}, v.Scores...)
+	for _, a := range add {
+		if !slices.ContainsFunc(scores, func(s OutsideScore) bool { return s.Source == a.Source }) {
+			scores = append(scores, a)
+		}
+	}
+	v.Scores = scores
+	return v
 }
 
 func shownScores(in []ServerScore) []OutsideScore {

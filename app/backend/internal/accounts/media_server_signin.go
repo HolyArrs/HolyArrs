@@ -115,6 +115,22 @@ func (a *Auth) checkMediaServer(w http.ResponseWriter, r *http.Request, kind str
 		fail(w, http.StatusForbidden, mediaOffLine(kind))
 		return mediaMe{}, place{}, false
 	}
+	if mediaRefused(code, refusal) {
+		// The server refused without saying why (Jellyfin's remote access,
+		// a turned-off account, a time limit): not a wrong password either.
+		a.undoFail(byName)
+		a.failedEvent(r, a.linkedName(ctx, kind, "", c.Name), kind+" refused")
+		fail(w, http.StatusForbidden, mediaRefusedLine(kind))
+		return mediaMe{}, place{}, false
+	}
+	if code == http.StatusForbidden {
+		// A 403 page from a proxy or firewall in front of the server: the
+		// try still counts, but it is not a wrong password.
+		log.Printf("auth: %s sign-in from %s: 403 from something in front of the server", kind, r.RemoteAddr)
+		a.failedEvent(r, a.linkedName(ctx, kind, "", c.Name), kind)
+		fail(w, http.StatusForbidden, mediaRefusedLine(kind))
+		return mediaMe{}, place{}, false
+	}
 	if code/100 == 4 {
 		log.Printf("auth: failed %s sign-in from %s", kind, r.RemoteAddr)
 		a.failedEvent(r, a.linkedName(ctx, kind, "", c.Name), kind)

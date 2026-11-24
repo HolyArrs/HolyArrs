@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Kun disse kan sige, hvor et besøg kom fra.",
 	"settings.signIn.fixToSaveOne": "Ret 1 linje for at gemme",
 	"settings.signIn.fixToSaveOther": "Ret {n} linjer for at gemme",
-	"settings.signIn.localSaved": "Lokalt netværk gemt"
+	"settings.signIn.localSaved": "Lokalt netværk gemt",
+	"settings.signIn.forgotTitle": "Glemt adgangskode?",
+	"settings.signIn.forgotOn": "Vis Glemt adgangskode? på loginsiden",
+	"settings.signIn.forgotNote": "Ejeren får en engangskode fra serverloggen. Slå det fra, hvis alle logger ind med single sign-on. Kommandoen reset-owner virker stadig.",
+	"settings.signIn.forgotShown": "Glemt adgangskode? er slået til",
+	"settings.signIn.forgotHidden": "Glemt adgangskode? er slået fra"
 }

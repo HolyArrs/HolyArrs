@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Vrátit import {id}?",
 	"settings.move.undoQuestion": "Vrátit tento import?",
 	"settings.move.undoNote": "Odebere to, co tento import přidal; vaše pozdější změny zůstanou. Chcete-li zprávu, nejdřív ji stáhněte.",
-	"settings.move.undoMove": "Vrátit import"
+	"settings.move.undoMove": "Vrátit import",
+	"settings.move.continueSetup": "Pokračovat v nastavení",
+	"settings.move.backToChoose": "Zpět na výběr"
 }

@@ -100,7 +100,7 @@ A better copy takes the old one's place. The old file moves to `.holyarrs-replac
 
 **A download makes no progress.**
 Cause: stalled past the time set in **Settings > Downloaders**.
-Fix: none needed. HolyArrs marks it stalled, then tries the next release after **Try the next Release after (hours)**.
+Fix: check the Downloader and its VPN. HolyArrs marks it stalled, then searches again after **Try the next Release after (hours)**. It keeps the files and the release, so the same release can resume.
 
 **A download failed.**
 Cause: the Downloader or the files.
@@ -144,7 +144,7 @@ Fix: none needed. Watch an episode or press **Get the next 2 episodes**.
 
 `{episode}` gives `S01E02`, or `S01E02-E03` for a file with several episodes. `{episode_title}` joins several names with `+`. The examples under each pattern change as you type.
 
-The same page sets the free space an import must leave (default and minimum 100 MB) and the holding days (default 7). 0 holding days never removes replaced files.
+The same page sets the free space an import must leave (default and minimum 100 MB) and the holding days (default 7). 0 holding days never removes replaced files. **Stop looking for deleted episodes** (off by default) turns Keep up to date off for an episode whose file a rescan finds deleted from disk.
 
 </details>
 

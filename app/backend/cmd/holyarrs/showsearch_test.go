@@ -27,6 +27,7 @@ import (
 func TestShowSearchOverHTTP(t *testing.T) {
 	t.Parallel()
 	srv, s, _, _ := showSetup(t)
+	searchSource(t, s) // a search by hand needs a Source
 	u := srv.URL + "/api/v1"
 	var add addedShow
 	_ = json.Unmarshal(do(t, "POST", u+"/shows", `{"id":"tmdb:100"}`, 201), &add)
@@ -174,6 +175,7 @@ func TestShowSearchOverHTTP(t *testing.T) {
 func TestWholeShowSearchKeptOnly(t *testing.T) {
 	t.Parallel()
 	srv, s, _, _ := showSetup(t)
+	searchSource(t, s) // a search by hand needs a Source
 	u := srv.URL + "/api/v1"
 	var add addedShow
 	_ = json.Unmarshal(do(t, "POST", u+"/shows", `{"id":"tmdb:100"}`, 201), &add)

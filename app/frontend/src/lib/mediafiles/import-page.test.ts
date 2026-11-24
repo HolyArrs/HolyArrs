@@ -9,12 +9,12 @@ const library = read('../../routes/library/+page.svelte');
 describe('Import a library while the parts are being sent', () => {
 	it('asks before the tab closes or the person moves to another page, and says to keep it open', () => {
 		expect(page).toMatch(/<svelte:window onbeforeunload=\{\(e\) => \{ if \(adopting\) e\.preventDefault\(\); \}\}[^\n]*\/>/);
-		expect(page).toMatch(/beforeNavigate\(\(nav\) => \{[\s\S]*?confirm\(t\('library\.import\.leaveAsk'\)\)[\s\S]*?nav\.cancel\(\)/);
+		expect(page).toMatch(/beforeNavigate\(\(nav\) => \{[\s\S]*?confirm\(t\(importKey\('leaveAsk', flat\)\)\)[\s\S]*?nav\.cancel\(\)/);
 		expect(page).toContain("t('library.import.keepOpen')");
 	});
 	it('notes an import cut short and says where it stopped on the way back', () => {
 		expect(page).toContain("noteCut({ lf, total: picks.length, jobs: [], why: 'closed' })");
-		expect(page).toContain('t(cut.key,');
+		expect(page).toContain('t(importKey(cut.key, cutFlat),');
 	});
 	it('holds the folder list and the Follow box still while adopting', () => {
 		expect(page).toMatch(/class="checkbar"[^>]*inert=\{adopting\}/);
@@ -88,7 +88,7 @@ describe('Import files by hand', () => {
 		expect(byHand).toMatch(/\{#if done\?\.outcome !== 'placed'\}\{#if why\}/);
 	});
 	it('says where the files go before the import', () => {
-		expect(byHand).toContain("tr('library.byHand.wherePlaced')");
+		expect(byHand).toContain("tr(mode === 'move' ? 'library.byHand.wherePlacedMove' : 'library.byHand.wherePlaced')");
 	});
 });
 
@@ -113,8 +113,8 @@ describe('Paths in right-to-left sentences', () => {
 		// The marks are written as escapes, never as letters nobody can see.
 		expect(iso).toContain('String.fromCharCode(0x2066, 0x2069)');
 		expect(iso).not.toMatch(new RegExp('[' + String.fromCharCode(0x2066, 0x2069) + ']'));
-		expect(page).toContain("<Isolated text={t('library.import.foldersPart'");
-		expect(page).toContain("<Isolated text={t(plan.folders.length === 1 ? 'library.import.foldersInOne'");
+		expect(page).toContain("<Isolated text={t(importKey('foldersPart'");
+		expect(page).toContain("<Isolated text={t(importKey(plan.folders.length === 1 ? 'foldersInOne'");
 		expect(page).toContain("<Isolated text={t('library.import.stopped'");
 		expect(page).toContain("<Isolated text={t('library.import.lookUpFor'");
 		expect(byHand).toContain("<Isolated text={tr(files.length === 1 ? 'library.byHand.filesInOne'");
@@ -284,8 +284,8 @@ describe('The Ukrainian import wording', () => {
 		const uk = JSON.parse(read('../core/i18n/messages/uk/library.json'));
 		expect(uk['library.import.foldersPart'].startsWith('Тек у {path}: {total}.')).toBe(true);
 		const keys = ['foldersPart', 'leftHint', 'leaveAsk', 'interrupted', 'interruptedLeft', 'interruptedSignedOut', 'askScanRestOne', 'askScanRestMany', 'lookFailSome', 'lookFailAll'].map((k) => `library.import.${k}`);
-		for (const k of [...keys, 'library.byHand.wherePlaced']) expect(uk[k].toLowerCase(), k).not.toMatch(/папк|папок/);
-		expect(uk['library.byHand.wherePlaced']).toContain('у теку його тайтлу в Бібліотеці');
+		for (const k of [...keys, 'library.byHand.wherePlaced', 'library.byHand.wherePlacedMove']) expect(uk[k].toLowerCase(), k).not.toMatch(/папк|папок/);
+		expect(uk['library.byHand.wherePlaced']).toContain('у теку його назви в бібліотеці');
 	});
 	it('says тека in the server lines the import shows too', () => {
 		const srv = JSON.parse(read('../core/i18n/messages/uk/server-lines.json'));

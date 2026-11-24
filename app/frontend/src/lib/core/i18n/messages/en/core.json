@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Building {what}… try {attempt}",
 	"core.testTag.connected": "Connected",
 	"core.api.notAnswering": "HolyArrs is not answering. Check that it is running.",
+	"core.api.tooSlow": "HolyArrs took too long to answer. Try again in a minute.",
 	"core.api.requestFailed": "Request failed ({status})",
 	"core.api.wentWrong": "Something went wrong.",
 	"core.trailerMiss.trailer": "trailer",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Auto-approved",
 	"core.plain.approvedBy": "Approved by {who}",
 	"core.settings.cantReach": "Can't reach that address. Check it and that the app is running.",
+	"core.settings.tryHttp": "That address doesn't answer on https. Try http:// instead.",
 	"core.settings.groupLibrary.label": "Library",
 	"core.settings.groupLibrary.line": "Where titles live",
 	"core.settings.groupLibrary.about": "Folders, parts, defaults, subtitles, file names and importing.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Two Downloaders reach the same download app, so downloads can show twice.",
 	"core.plain.peopleCheck": "The media server's user list can't be read, so people removed there are not turned off here.",
 	"core.plain.deleted": "deleted",
-	"core.plain.deletedName": "{name} (deleted)"
+	"core.plain.deletedName": "{name} (deleted)",
+	"core.api.handsOffFiles": "Hands-off mode is on, so HolyArrs leaves the downloaded files alone. Turn it off in Settings to import, rename, move or scan files.",
+	"core.api.handsOffSubtitles": "Hands-off mode is on, so HolyArrs never opens the downloaded files. Turn it off in Settings to use subtitles."
 }

@@ -56,6 +56,7 @@
 	let set = $state<Pick<SubtitleSettings, 'pass_mark_movie' | 'pass_mark_episode' | 'sync_from_fps' | 'sync_to_fps' | 'sync_step_ms' | 'languages'> | null>(null);
 	let error = $state('');
 	let searching = $state(false);
+	let cleaning = $state(0); // a subtitle id, or -1 for the whole title
 
 	let editing = $state(false);
 	let own = $state(false);
@@ -65,6 +66,15 @@
 
 	let choosing = $state(0);
 	let choices = $state<Choices | null>(null);
+
+	// What the file already has for a wanted language, said above its results.
+	function coveredNote(c: { place: string; picture?: boolean }[]): string {
+		const inside = c.filter((h) => h.place === 'built_in');
+		if (inside.some((h) => !h.picture)) return t('subtitles.panel.coveredInside');
+		// A text file beside the file already covers it, so the picture-only advice would mislead.
+		if (inside.length && !c.some((h) => h.place === 'beside')) return t('subtitles.panel.coveredPicture', { setting: t('settings.subtitles.noPicture') });
+		return t('subtitles.panel.coveredBeside');
+	}
 	let choicesError = $state('');
 	let choosingKey = $state('');
 	let syncing = $state(0);
@@ -264,6 +274,24 @@
 		turnError = '';
 	}
 
+	// Runs the cleanup steps from Settings again; the text before goes to the holding folder.
+	async function clean(id?: number) {
+		cleaning = id ?? -1;
+		try {
+			const r = id
+				? await api.post<{ changed: boolean }>(`/subtitles/${id}/clean`, {})
+				: await api.post<{ changed: number }>(`/titles/${titleId}/subtitles/clean`, {});
+			const n = typeof r.changed === 'number' ? r.changed : r.changed ? 1 : 0;
+			if (n) toasts.push(id ? t('subtitles.panel.cleaned') : t('subtitles.panel.cleanedCount', { n }), 'ok', { body: t('subtitles.panel.oldInHolding') });
+			else toasts.push(t('subtitles.panel.nothingToClean'), 'ok');
+			if (n) await load();
+		} catch (e) {
+			toasts.push(t('subtitles.panel.cleanFailed'), 'fail', { body: message(e) });
+		} finally {
+			cleaning = 0;
+		}
+	}
+
 	async function turnDown(e: SubmitEvent) {
 		e.preventDefault();
 		busy = true;
@@ -286,6 +314,9 @@
 		<Button size="sm" icon="search" onclick={search} disabled={searching} busy={searching} data-testid="subtitle-search">
 			{t('subtitles.panel.look')}
 		</Button>
+		{#if showFiles && myFiles.some((f) => present(f.subtitles).some((s) => ours(s) && s.relative_path?.endsWith('.srt')))}
+			<Button size="sm" variant="plain" onclick={() => clean()} disabled={cleaning !== 0} busy={cleaning === -1} data-testid="subtitle-clean-all">{t('subtitles.panel.cleanAll')}</Button>
+		{/if}
 	</div>
 	{#if error}
 		<p class="notice bad" role="alert">{error}</p>
@@ -354,6 +385,7 @@
 										{#if ours(s)}
 											<span class="row sub-actions">
 												<Button variant="plain" size="sm" onclick={() => openSync(s)} aria-label={t('subtitles.panel.syncFor', { name: langName(s.language, langs) })} data-testid="subtitle-sync">{t('subtitles.panel.syncFix')}</Button>
+												{#if s.relative_path?.endsWith('.srt')}<Button variant="plain" size="sm" onclick={() => clean(s.ID)} disabled={cleaning !== 0} busy={cleaning === s.ID} aria-label={t('subtitles.panel.cleanFor', { name: langName(s.language, langs) })} data-testid="subtitle-clean">{t('subtitles.panel.clean')}</Button>{/if}
 												<Button variant="plain" size="sm" onclick={() => openTurn(s)} aria-label={t('subtitles.panel.turnDownFor', { name: langName(s.language, langs) })} data-testid="subtitle-turn-down">{t('subtitles.panel.turnDown')}</Button>
 											</span>
 										{/if}
@@ -463,6 +495,7 @@
 								</p>
 								{#each choices.outcomes as o, oi (oi)}
 									<h3 class="h3 lang">{wantLabel(o.want, langs)}</h3>
+									{#if o.covered?.length}<p class="xs muted" data-testid="subtitle-covered">{coveredNote(o.covered)}</p>{/if}
 									{#if o.result === 'translating'}
 										<p class="small muted" data-testid="subtitle-translating">{t('subtitles.panel.translating')}</p>
 									{:else if !o.choices?.length}

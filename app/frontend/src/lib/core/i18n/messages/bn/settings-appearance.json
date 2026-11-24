@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "রিকোয়েস্ট",
 	"settings.appearance.colRate": "প্রতি সারিতে",
 	"settings.appearance.noRows": "এখনো কোনো এক্সপ্লোর সারি গোনা হয়নি।",
+	"settings.appearance.rowStats": "এক্সপ্লোর সারি",
+	"settings.appearance.rowStatsDesc": "গত ৩০ দিনে প্রতিটি সারি থেকে খোলা ও রিকোয়েস্ট, সবার মিলিয়ে। শুধু এই সার্ভারেই গোনা হয়।",
+	"settings.appearance.colRow": "সারি",
+	"settings.appearance.row.because_have": "আপনার থাকা টাইটেলের মতো",
+	"settings.appearance.row.because_asked": "আপনার রিকোয়েস্টের মতো",
+	"settings.appearance.row.person": "একজন ব্যক্তির আরও",
+	"settings.appearance.row.genre": "আপনার জন্য জনরা বাছাই",
+	"settings.appearance.row.popular_genre": "জনরা অনুযায়ী জনপ্রিয়",
+	"settings.appearance.row.popular_decade": "দশক অনুযায়ী জনপ্রিয়",
+	"settings.appearance.row.decade": "দশক অনুযায়ী",
+	"settings.appearance.row.mood": "মুড অনুযায়ী",
+	"settings.appearance.row.hero": "উপরের ব্যানার",
 	"settings.appearance.motion": "মোশন",
 	"settings.appearance.motionNote": "আপনার ডিভাইসের মোশন কমানোর সেটিং অনুসরণ করে"
 }

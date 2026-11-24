@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "取消",
 	"settings.schedules.stages": "環節",
 	"settings.schedules.stagesNote": "可在<a>功能模組</a>中暫停或重新啟動。",
-	"settings.schedules.allTime": "一直執行"
+	"settings.schedules.allTime": "一直執行",
+	"settings.schedules.skip.nothing": "沒有要做的事",
+	"settings.schedules.skip.plexOff": "已關閉：在{page}中開啟{setting}",
+	"settings.schedules.skip.plexNobody": "沒有要做的事：還沒有人開啟自己的 Plex 待看清單",
+	"settings.schedules.skip.settingOff": "已關閉：在其設定中開啟",
+	"settings.schedules.skip.starting": "已略過：HolyArrs 仍在啟動",
+	"settings.schedules.took": "耗時 {time}",
+	"settings.schedules.finished": "{label} 已完成",
+	"settings.schedules.nothingToDo": "{label}：沒有要做的事",
+	"settings.schedules.runFailed": "{label} 失敗"
 }

@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Nelze vrátit zpět. Soubory zůstanou.",
 	"settings.pickRules.removeUsed": "{used}. Nejdřív tam vyberte jiná pravidla.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Zrušit"
+	"settings.pickRules.cancel": "Zrušit",
+	"settings.pickRules.check.title": "Zkontrolovat název vydání",
+	"settings.pickRules.check.desc": "Vložte název vydání a uvidíte, jak ho HolyArrs čte a jak ho hodnotí vaše sady kvality. Nic se nehledá ani nestahuje.",
+	"settings.pickRules.check.name": "Název vydání",
+	"settings.pickRules.check.rules": "Hodnotit podle",
+	"settings.pickRules.check.copies": "Kopie odpovídajícího titulu",
+	"settings.pickRules.check.size": "Velikost v GB (nepovinné)",
+	"settings.pickRules.check.check": "Zkontrolovat",
+	"settings.pickRules.check.failed": "Název se nepodařilo zkontrolovat",
+	"settings.pickRules.check.readAs": "Přečteno jako",
+	"settings.pickRules.check.matches": "Odpovídá: {name}",
+	"settings.pickRules.check.noTitle": "Neodpovídá žádnému titulu ve vaší Knihovně. Vyberte výše sadu kvality a ohodnoťte ho i tak.",
+	"settings.pickRules.check.noAlbum": "Odpovídá: {name}, ale žádnému z jeho alb.",
+	"settings.pickRules.check.noCopies": "Tento titul nemá žádné kopie k hodnocení.",
+	"settings.pickRules.check.hasFile": "Má soubor"
 }

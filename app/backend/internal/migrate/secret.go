@@ -160,8 +160,20 @@ func linkSafe(ps []Provider, notification bool) []Provider {
 		p := &ps[i]
 		for k, v := range p.Settings {
 			base := strings.TrimPrefix(strings.ToLower(k), "link.")
-			drop := base == "additionalparameters" || notification && strings.Contains(base, "topic")
+			// A Telegram topic id is a plain number, not an ntfy topic name.
+			drop := base == "additionalparameters" || notification && strings.Contains(base, "topic") && base != "topicid"
 			if !drop && hasLink(v) {
+				// An ntfy or Gotify server keeps its scheme and host only.
+				if kind := strings.ToLower(p.Kind); notification && (kind == "ntfy" && base == "serverurl" || kind == "gotify" && base == "server") {
+					sv, _ := v.(string)
+					if root, cut := serverRoot(sv); root != "" {
+						p.Settings[k] = root
+						if cut {
+							p.NeedsReentry = append(p.NeedsReentry, k)
+						}
+						continue
+					}
+				}
 				if !notification && base == "baseurl" {
 					sv, _ := v.(string)
 					if root, cut := apiRoot(sv); root != "" {
@@ -286,4 +298,15 @@ func providerSettings(in map[string]any) (map[string]any, []string) {
 	}
 	out, gone := plainSettings(rest)
 	return out, noteList(append(gone, forced...))
+}
+
+// serverRoot is an http or https address cut to its scheme and host (with
+// the port): no user, path, query or fragment. cut says something was left.
+func serverRoot(raw string) (string, bool) {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || strings.ContainsAny(u.Host, "@ ") {
+		return "", false
+	}
+	cut := u.User != nil || u.RawQuery != "" || u.Fragment != "" || strings.Trim(u.Path, "/") != ""
+	return strings.ToLower(u.Scheme + "://" + u.Host), cut
 }

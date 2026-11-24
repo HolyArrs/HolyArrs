@@ -14,7 +14,6 @@
 	"settings.health.none": "Aucun résultat. Vérifiez à nouveau pour les obtenir.",
 	"settings.health.since": "Depuis",
 	"settings.health.settings": "Paramètres des vérifications d'état",
-	"settings.health.updateCheck": "Chercher une version plus récente de HolyArrs",
 	"settings.health.onlyChecks": "Vérifie seulement. N'installe jamais.",
 	"settings.health.every": "Chercher des mises à jour tous les",
 	"settings.health.day": "jour",

@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Preparando {what}… intento {attempt}",
 	"core.testTag.connected": "Conectado",
 	"core.api.notAnswering": "HolyArrs no responde. Comprueba que esté en marcha.",
+	"core.api.tooSlow": "HolyArrs tardó demasiado en responder. Inténtalo de nuevo en un minuto.",
 	"core.api.requestFailed": "La petición falló ({status})",
 	"core.api.wentWrong": "Algo salió mal.",
 	"core.trailerMiss.trailer": "tráiler",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Aprobada automáticamente",
 	"core.plain.approvedBy": "Aprobada por {who}",
 	"core.settings.cantReach": "No se puede acceder a esa dirección. Revísala y comprueba que la app esté en marcha.",
+	"core.settings.tryHttp": "Esa dirección no responde por https. Prueba con http://.",
 	"core.settings.groupLibrary.label": "Biblioteca",
 	"core.settings.groupLibrary.line": "Dónde viven los títulos",
 	"core.settings.groupLibrary.about": "Carpetas, partes, valores, subtítulos, nombres de archivo e importación.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dos gestores de descargas llegan a la misma aplicación, así que las descargas pueden aparecer dos veces.",
 	"core.plain.peopleCheck": "No se puede leer la lista de usuarios del servidor multimedia, así que quien se elimina allí no se desactiva aquí.",
 	"core.plain.deleted": "eliminado",
-	"core.plain.deletedName": "{name} (eliminado)"
+	"core.plain.deletedName": "{name} (eliminado)",
+	"core.api.handsOffFiles": "El modo sin intervención está activado, así que HolyArrs no toca los archivos descargados. Desactívalo en Ajustes para importar, renombrar, mover o escanear archivos.",
+	"core.api.handsOffSubtitles": "El modo sin intervención está activado, así que HolyArrs nunca abre los archivos descargados. Desactívalo en Ajustes para usar subtítulos."
 }

@@ -175,6 +175,8 @@ func (in *Installer) Install(ctx context.Context) (err error) {
 		return err
 	}
 	f.keepOnly(st.Version, cur.Version)
+	// A new version clears the note about the last going back.
+	f.setStatus(func(s *LaunchStatus) { s.Rollback, s.RollbackAt, s.Chosen, s.Left, s.To = "", nil, false, "", "" })
 	in.progress(PhaseRestarting, st.Version, "")
 	log.Printf("updates: switching from %s to %s", in.Version, st.Version)
 	if in.Restart != nil {
@@ -193,7 +195,9 @@ func (in *Installer) GoBack() error {
 	if !in.canGoBack() {
 		return errNoCopy
 	}
-	in.folder().addSkip(in.Version)
+	f := in.folder()
+	f.addSkip(in.Version)
+	_ = f.write(goBackFile, Installed{Version: in.Version})
 	in.progress(PhaseRestarting, in.Version, "")
 	if in.Restart != nil {
 		in.Restart()

@@ -21,20 +21,21 @@ const (
 	Delete   Group = "delete"   // delete or remove anything
 	Admin    Group = "admin"    // users, keys, sign-in, backups, updates, the whole app
 	Approve  Group = "approve"  // approve or decline pending requests; Admin covers it too
+	Plugins  Group = "plugins"  // use tools that plugins add; off until the owner ticks it
 )
 
 // Set is the groups one key holds.
 type Set []Group
 
 // All lists every group.
-var All = []Group{See, Add, Control, Settings, Delete, Admin, Approve}
+var All = []Group{See, Add, Control, Settings, Delete, Admin, Approve, Plugins}
 
 // Default is what a new AI key holds, and what every key held when the tick
 // boxes came: all but Delete and Admin.
 var Default = Set{See, Add, Control, Settings}
 
 // labels are the tick-box names a person reads.
-var labels = map[Group]string{See: "See", Add: "Add", Control: "Control", Settings: "Settings", Delete: "Delete", Admin: "Admin", Approve: "Approve requests"}
+var labels = map[Group]string{See: "See", Add: "Add", Control: "Control", Settings: "Settings", Delete: "Delete", Admin: "Admin", Approve: "Approve requests", Plugins: "Plugin tools"}
 
 // Label is the tick-box name of g, as a screen and an error say it.
 func (g Group) Label() string { return labels[g] }
@@ -65,19 +66,28 @@ var overrides = map[string]Group{
 	"POST /api/v1/messages/read":                   See,
 	"POST /api/v1/settings/naming/example":         See,
 	"POST /api/v1/collections/{id}/remove/preview": See, // shows what a removal would do; changes nothing
-	"GET /mcp":                           See, // the AI route itself; tools are checked one by one
-	"POST /mcp":                          See,
-	"GET /api/v1/mcp":                    See,
-	"POST /api/v1/mcp":                   See,
-	"GET /healthz":                       See,
-	"HEAD /healthz":                      See,
-	"GET /readyz":                        See,
-	"HEAD /readyz":                       See,
-	"POST /api/v1/asks/{id}/approve":     Approve,
-	"POST /api/v1/asks/{id}/turn-down":   Approve,
-	"POST /api/v1/downloaders":           Settings, // adding a download app is setup
-	"PUT /api/v1/downloaders/{id}":       Settings,
-	"POST /api/v1/downloaders/{id}/test": Settings,
+	"GET /mcp":                 See, // the AI route itself; tools are checked one by one
+	"POST /mcp":                See,
+	"GET /api/v1/mcp":          See,
+	"POST /api/v1/mcp":         See,
+	"GET /healthz":             See,
+	"HEAD /healthz":            See,
+	"GET /readyz":              See,
+	"HEAD /readyz":             See,
+	"GET /ping":                See,
+	"HEAD /ping":               See,
+	"GET /api/v1/plugin-pages": Plugins,
+	"POST /api/v1/plugin-pages/{plugin}/{page}/open": Plugins,
+	"POST /api/v1/plugin-pages/{plugin}/call":        Plugins,
+	"POST /api/v1/plugin-pages/{plugin}/play":        Plugins,
+	"POST /api/v1/asks/{id}/approve":                 Approve,
+	"POST /api/v1/asks/{id}/turn-down":               Approve,
+	"POST /api/v1/downloaders":                       Settings, // adding a download app is setup
+	"POST /api/v1/manual-import/folders":             Admin,    // lists folders on the server's disks
+	"PUT /api/v1/downloaders/{id}":                   Settings,
+	"POST /api/v1/downloaders/{id}/test":             Settings,
+	"POST /api/v1/downloaders/{id}/category":         Settings,
+	"GET /api/v1/downloaders/{id}/categories":        Settings,
 }
 
 // wildOverrides are the override patterns with a {wildcard}, sorted so the
@@ -95,19 +105,20 @@ var wildOverrides = func() []string {
 
 // roots are the first path words the app serves. Anything else is unknown.
 var roots = []string{
-	"", "api", "sonarr", "radarr", "mcp", "oauth", ".well-known", "login", "live", "invite", "healthz", "readyz",
+	"", "api", "sonarr", "radarr", "mcp", "oauth", ".well-known", "login", "plex-done", "live", "invite", "healthz", "readyz", "ping",
 	// the old-app API, below /sonarr/ and /radarr/
 	"calendar", "command", "config", "customformat", "delayprofile", "episode", "exclusions", "importlistexclusion",
 	"indexer", "languageprofile", "mediacover", "movie", "notification", "qualitydefinition", "qualityprofile",
-	"queue", "rootfolder", "series", "system", "tag", "wanted", "health",
+	"queue", "rootfolder", "series", "system", "tag", "wanted", "health", "history", "diskspace", "customfilter", "episodefile", "seasonpass",
+	"release", "blocklist", "log", "update", "moviefile",
 }
 
 // adminPrefixes cover sign-in, people, keys and the whole app.
 var adminPrefixes = []string{
 	"/api/v1/auth", "/api/v1/users", "/api/v1/backups", "/api/v1/app", "/api/v1/system", "/api/v1/data-packs", "/api/v1/plugins",
-	"/api/v1/migrate", "/api/v1/logs", "/api/v1/support", "/api/v1/parts", "/api/v1/stages", "/api/v1/links",
+	"/api/v1/plugin-images", "/api/v1/migrate", "/api/v1/logs", "/api/v1/support", "/api/v1/parts", "/api/v1/stages", "/api/v1/links",
 	"/api/v1/settings/old-app-api/keys", "/api/v1/settings/import-secrets", "/api/v1/settings/url-base",
-	"/oauth", "/.well-known", "/invite", "/login", "/system", "/health",
+	"/oauth", "/.well-known", "/invite", "/login", "/plex-done", "/system", "/health",
 }
 
 // controlPrefixes cover running downloads, searches and imports.

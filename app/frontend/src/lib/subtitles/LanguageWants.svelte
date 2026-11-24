@@ -3,6 +3,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import { tick } from 'svelte';
 	import { hiWords, langName, type HI, type Language, type Want } from './api.ts';
 
 	// translate shows the per-language translate-from picker, for owners with a translator set up.
@@ -12,6 +13,12 @@
 		const used = new Set(wants.map((w) => w.language));
 		const next = ['en', 'es', 'fr', 'de'].find((c) => !used.has(c)) ?? '';
 		wants.push({ language: next, hearing_impaired: 'normal', forced: false });
+	}
+	// Taking a row off keeps focus in the list: the next row (or the one before), or Add once it is empty.
+	let addEl = $state<HTMLElement>();
+	function remove(i: number) {
+		wants.splice(i, 1);
+		void tick().then(() => (wants.length ? document.getElementById(`${id}-lang-${Math.min(i, wants.length - 1)}`) : addEl?.querySelector('button'))?.focus());
 	}
 </script>
 
@@ -44,14 +51,14 @@
 				<input type="checkbox" bind:checked={w.forced} />
 				<span>{t('subtitles.wants.forced')}</span>
 			</label>
-			<IconButton icon="x" variant="tinted" tooltip={false} onclick={() => wants.splice(i, 1)}  label={t('subtitles.wants.takeOff', { name: langName(w.language, langs) || t('subtitles.wants.thisLanguage') })} />
+			<IconButton icon="x" variant="tinted" tooltip={false} onclick={() => remove(i)} label={t('subtitles.wants.takeOff', { name: langName(w.language, langs) || t('subtitles.wants.thisLanguage') })} />
 		</li>
 	{:else}
 		<li class="none">{t('subtitles.wants.empty')}</li>
 	{/each}
 </ul>
 {#if wants.length < 10}
-	<div class="add"><Button icon="plus" onclick={add}>{t('subtitles.wants.add')}</Button></div>
+	<div class="add" bind:this={addEl}><Button icon="plus" onclick={add}>{t('subtitles.wants.add')}</Button></div>
 {/if}
 
 <style>
@@ -105,8 +112,13 @@
 		.want .field {
 			grid-column: 1 / -1;
 		}
-		.want :global(.input) {
+		.want :global(.input),
+		.forced {
 			min-height: 44px;
+		}
+		.forced {
+			white-space: normal;
+			min-width: 0;
 		}
 		.add :global(.ui-btn) {
 			width: 100%;

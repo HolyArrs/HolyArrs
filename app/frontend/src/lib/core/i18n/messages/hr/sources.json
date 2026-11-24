@@ -85,5 +85,21 @@
 	"sources.uses.auto": "sam traži",
 	"sources.uses.feed": "popis najnovijih",
 	"sources.uses.hand": "ručna pretraga",
-	"sources.uses.none": "ne koristi se"
+	"sources.uses.none": "ne koristi se",
+	"sources.bridge.removeTitle": "Ukloniti {name}?",
+	"sources.bridge.find": "Pronađi {name} na mojoj mreži",
+	"sources.bridge.noneFound": "Nijedan {name} se nije javio na vašoj mreži.",
+	"sources.bridge.keyFound": "Ključ dobiven od {name}",
+	"sources.bridge.keyKept": "{name} nije dao ključ (prijava je uključena). Kopirajte ga putem Dohvati ključ.",
+	"sources.bridge.keyKeptJackett": "Jackett nije dao ključ (ima administratorsku lozinku). Kopirajte ga putem Dohvati ključ.",
+	"sources.bridge.notReached": "Nije moguće doći do {name}.",
+	"sources.bridge.brings.title": "Što se prenosi",
+	"sources.bridge.brings.sites": "Njegovi indekseri, kao Izvori",
+	"sources.bridge.brings.categories": "Njihove kategorije",
+	"sources.bridge.brings.search": "Pretrage idu preko {name}",
+	"sources.bridge.brings.sync": "Promjene u {name} se prenose",
+	"sources.bridge.brings.stays": "Vaši indekseri ostaju postavljeni u {name}.",
+	"sources.bridge.brings.had": "Indeksera već ovdje: {n}",
+	"sources.bridge.brings.hadFrom": "Uvezeno preko {apps}",
+	"sources.bridge.brings.keyKept": "Ostavite ključ prazan za korištenje onoga koji već imaju."
 }

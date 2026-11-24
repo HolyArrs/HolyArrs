@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Añadir a la lista de nunca añadir",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "Quitar {name}",
-	"settings.outsideLists.empty": "Todavía no hay nada en esta lista"
+	"settings.outsideLists.empty": "Todavía no hay nada en esta lista",
+	"settings.outsideLists.traktSignInTitle": "Inicio de sesión en Trakt",
+	"settings.outsideLists.traktSignInInfo": "Inicia sesión para leer tus listas privadas y tu watchlist de Trakt, y para añadir lo que viste en Trakt al historial de visionado.",
+	"settings.outsideLists.traktSignedInAs": "Sesión iniciada como {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Sin sesión iniciada. Solo se leen las listas públicas.",
+	"settings.outsideLists.traktSignIn": "Iniciar sesión con Trakt",
+	"settings.outsideLists.traktDeviceSteps": "En cualquier dispositivo, abre <a>{url}</a> e introduce <code>{code}</code>. Esta página espera hasta que lo apruebes.",
+	"settings.outsideLists.traktDenied": "Se rechazó el inicio de sesión en Trakt.",
+	"settings.outsideLists.traktExpired": "El código caducó. Vuelve a empezar.",
+	"settings.outsideLists.traktSignOut": "Cerrar sesión en Trakt",
+	"settings.outsideLists.traktSignedIn": "Sesión iniciada en Trakt",
+	"settings.outsideLists.traktSignedOut": "Sesión de Trakt cerrada",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (necesario para iniciar sesión con Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Guarda primero el client secret de tu app de Trakt; Trakt lo necesita para mantener tu sesión iniciada."
 }

@@ -33,13 +33,17 @@ func TestDownloadsView(t *testing.T) {
 	if rr := rates.Downloads[0]; rr.UpSpeed != 512 || rr.Seeds != 40 || rr.Peers != 7 || rates.Totals.Speed != 2048 || rates.Totals.UpSpeed != 512 {
 		t.Fatalf("rates %+v totals %+v", rates.Downloads[0], rates.Totals)
 	}
+	// A download removed in the Downloader (vanished) leaves the list; History keeps it.
+	exec41(t, x.s, "UPDATE downloads SET state = 'vanished'")
+	if body := string(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?limit=10", "", 200)); strings.Contains(body, "Salt.Choir") {
+		t.Errorf("a vanished download is still listed: %s", body)
+	}
 	// Once the Downloader is done, the Slot says where it is; a finished one may be removed unless its files are being placed.
 	for _, c := range []struct{ dl, slot, phase, label string }{
 		{"finished", "downloading", "waiting_to_import", "Waiting to import"},
 		{"finished", "importing", "importing", "Importing"},
 		{"seeding", "in_library", "done", "Done"},
 		{"finished", "needs_a_decision", "needs_a_decision", "Review"},
-		{"vanished", "failed", "vanished", "Failed"},
 		{"stalled", "stalled", "stalled", "Stalled"},
 		{"failed", "failed", "failed", "Failed"},
 		{"queued", "downloading", "waiting", "Waiting its turn"},
@@ -49,6 +53,17 @@ func TestDownloadsView(t *testing.T) {
 		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?limit=10", "", 200), &out)
 		if r := out.Downloads[0]; r.Phase != c.phase || r.Label != c.label || r.CanAct != (c.dl == "stalled" || c.dl == "queued" || (c.dl == "finished" || c.dl == "seeding") && c.phase != "importing") {
 			t.Errorf("%s/%s: %s %q %v", c.dl, c.slot, r.Phase, r.Label, r.CanAct)
+		}
+	}
+	// Cleaned and confirmed-vanished downloads leave the list; the row stays for History.
+	for _, st := range []string{"cleaned", "vanished"} {
+		exec41(t, x.s, "UPDATE downloads SET state = ?", st)
+		out.Downloads = nil
+		_ = json.Unmarshal(do(t, "GET", x.srv.URL+"/api/v1/downloads/view?limit=10", "", 200), &out)
+		var n int
+		_ = x.s.Read().QueryRow("SELECT COUNT(*) FROM downloads WHERE state = ?", st).Scan(&n)
+		if len(out.Downloads) != 0 || n != 1 {
+			t.Errorf("%s: listed %d, kept %d", st, len(out.Downloads), n)
 		}
 	}
 }

@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "בקשות",
 	"settings.appearance.colRate": "לכל שורה",
 	"settings.appearance.noRows": "עדיין לא נספרו שורות בגילוי.",
+	"settings.appearance.rowStats": "שורות בגילוי",
+	"settings.appearance.rowStatsDesc": "פתיחות ובקשות לכל שורה ב-30 הימים האחרונים, של כולם יחד. נספר בשרת הזה בלבד.",
+	"settings.appearance.colRow": "שורה",
+	"settings.appearance.row.because_have": "כמו כותרים שיש לך",
+	"settings.appearance.row.because_asked": "כמו הבקשות שלך",
+	"settings.appearance.row.person": "עוד מאדם",
+	"settings.appearance.row.genre": "בחירות ז'אנר בשבילך",
+	"settings.appearance.row.popular_genre": "פופולרי לפי ז'אנר",
+	"settings.appearance.row.popular_decade": "פופולרי לפי עשור",
+	"settings.appearance.row.decade": "לפי עשור",
+	"settings.appearance.row.mood": "לפי מצב רוח",
+	"settings.appearance.row.hero": "באנר עליון",
 	"settings.appearance.motion": "תנועה",
 	"settings.appearance.motionNote": "עוקב אחר הגדרת הפחתת התנועה של המכשיר שלך"
 }

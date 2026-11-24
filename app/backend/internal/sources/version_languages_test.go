@@ -114,15 +114,15 @@ func TestJudgeShow_VersionAudioLanguages(t *testing.T) {
 }
 
 func TestAudioChoiceVerdict_LanguageNamesDoNotShow(t *testing.T) {
-	// The name reader cannot see Romanian, so a ROMANIAN name only warns; the media inspected at import decides.
-	ro := releasename.Parse("Quiet.Harbour.2019.ROMANIAN.1080p.WEB.H264-GROUP", releasename.Hints{})
-	if v := audioChoiceVerdict([]string{"ro"}, "en", ro, mediafiles.Verdict{Passed: true}); !v.Passed || !verdictHas(v, "inspected media decides") {
-		t.Fatalf("Romanian Version: %+v", v)
+	// The name reader cannot see Swahili, so a SWAHILI name only warns; the media inspected at import decides.
+	ro := releasename.Parse("Quiet.Harbour.2019.SWAHILI.1080p.WEB.H264-GROUP", releasename.Hints{})
+	if v := audioChoiceVerdict([]string{"sw"}, "en", ro, mediafiles.Verdict{Passed: true}); !v.Passed || !verdictHas(v, "inspected media decides") {
+		t.Fatalf("Swahili Version: %+v", v)
 	}
 	// A language the reader knows is still refused when clearly missing, whatever order the Version lists it in.
 	de := releasename.Parse("Quiet.Harbour.2019.GERMAN.1080p.WEB.H264-GROUP", releasename.Hints{})
-	if v := audioChoiceVerdict([]string{"ro", "fr"}, "en", de, mediafiles.Verdict{Passed: true}); v.Passed || !verdictHas(v, "French audio") {
-		t.Fatalf("Romanian and French Version: %+v", v)
+	if v := audioChoiceVerdict([]string{"sw", "fr"}, "en", de, mediafiles.Verdict{Passed: true}); v.Passed || !verdictHas(v, "French audio") {
+		t.Fatalf("Swahili and French Version: %+v", v)
 	}
 	// An untagged dotted WEB.DL name is the original language, not a dual-language one.
 	web := releasename.Parse("Quiet.Harbour.2019.1080p.WEB.DL.DD5.1.H264-GROUP", releasename.Hints{})

@@ -14,7 +14,6 @@
 	"settings.health.none": "Ingen resultater. Sjekk igjen for å kjøre dem.",
 	"settings.health.since": "Siden",
 	"settings.health.settings": "Innstillinger for helsesjekk",
-	"settings.health.updateCheck": "Se etter en nyere HolyArrs",
 	"settings.health.onlyChecks": "Bare sjekker. Installerer aldri.",
 	"settings.health.every": "Se etter oppdateringer hver",
 	"settings.health.day": "dag",

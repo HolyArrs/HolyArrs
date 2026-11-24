@@ -127,7 +127,29 @@ func (w *Watchlists) Probe(ctx context.Context, _ time.Time) (bool, any, error) 
 		return len(ids) > 0, nil, err
 	}
 	due, err := w.friendsDue(ctx)
-	return due, nil, err
+	if err != nil || due {
+		return due, nil, err
+	}
+	why, err := w.skipReason(ctx)
+	return false, why, err
+}
+
+// Skip reasons a pass with no one to read keeps.
+const (
+	SkipSettingOff jobs.SkipReason = "setting_off" // Request from Plex watchlists is off
+	SkipNobody     jobs.SkipReason = "nobody"      // on, but no one turned theirs on
+)
+
+// skipReason says why a pass has no one to read.
+func (w *Watchlists) skipReason(ctx context.Context) (jobs.SkipReason, error) {
+	set, err := ReadSettings(ctx, w.Asks.Store.Read())
+	if err != nil {
+		return "", err
+	}
+	if !set.PlexWatchlists {
+		return SkipSettingOff, nil
+	}
+	return SkipNobody, nil
 }
 
 // people are the users whose watchlist is read now (none while the
@@ -218,6 +240,11 @@ func (w *Watchlists) Run(ctx context.Context, r *jobs.Run) error {
 		}
 		result["friends"], result["friends_failed"] = fr.People, fr.Failed
 		result["entries_read"], result["asked"] = total.Read+fr.Read, total.Asked+fr.Asked
+		if len(ids) == 0 && fr.People == 0 && err == nil {
+			if why, err := w.skipReason(ctx); err == nil {
+				result["skipped"] = string(why)
+			}
+		}
 	}
 	r.SetResult(result)
 	return nil

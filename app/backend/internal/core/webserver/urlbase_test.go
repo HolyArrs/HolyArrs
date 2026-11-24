@@ -77,6 +77,7 @@ func TestHandlerHealthAtRootUnderBase(t *testing.T) {
 	inner := http.NewServeMux()
 	inner.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ok " + r.URL.Path)) })
 	inner.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ready " + r.URL.Path)) })
+	inner.HandleFunc("GET /ping", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("pong")) })
 	inner.HandleFunc("POST /healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("posted")) })
 	inner.HandleFunc("GET /healthz/", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("slash")) })
 	h := UnderURLBase("/holyarrs", inner)
@@ -87,7 +88,7 @@ func TestHandlerHealthAtRootUnderBase(t *testing.T) {
 	}
 	for _, c := range []struct{ method, path string }{
 		{"GET", "/healthz"}, {"HEAD", "/healthz"}, {"GET", "/readyz"}, {"HEAD", "/readyz"},
-		{"GET", "/holyarrs/healthz"}, {"GET", "/holyarrs/readyz"},
+		{"GET", "/holyarrs/healthz"}, {"GET", "/holyarrs/readyz"}, {"GET", "/ping"}, {"HEAD", "/ping"},
 	} {
 		if w := do(c.method, c.path); w.Code != 200 {
 			t.Errorf("%s %s under a base: %d, want 200", c.method, c.path, w.Code)

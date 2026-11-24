@@ -31,6 +31,10 @@ func DetailsTTL(e Entry) time.Duration {
 	if e.Details != nil && peopleWithoutIDs(e.Details.People) {
 		return 0
 	}
+	if e.Details != nil && !e.Details.LogosRead {
+		// Kept before logos were read in every language: read once more.
+		return 0
+	}
 	if e.Details != nil && len(e.Details.Videos) == 0 {
 		// No trailer yet: asked again soon (the server may find a season's).
 		return 15 * time.Minute

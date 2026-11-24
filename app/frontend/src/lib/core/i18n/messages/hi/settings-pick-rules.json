@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "वापस नहीं हो सकता। फ़ाइलें बनी रहेंगी।",
 	"settings.pickRules.removeUsed": "{used}। पहले वहां दूसरे नियम चुनें।",
 	"settings.pickRules.sentence": "{text}।",
-	"settings.pickRules.cancel": "रद्द करें"
+	"settings.pickRules.cancel": "रद्द करें",
+	"settings.pickRules.check.title": "रिलीज़ नाम जाँचें",
+	"settings.pickRules.check.desc": "रिलीज़ का नाम पेस्ट करें और देखें कि HolyArrs उसे कैसे पढ़ता है और आपके क्वालिटी सेट उसे कैसे परखते हैं। कुछ भी खोजा या डाउनलोड नहीं होता।",
+	"settings.pickRules.check.name": "रिलीज़ नाम",
+	"settings.pickRules.check.rules": "इससे परखें",
+	"settings.pickRules.check.copies": "मिलते टाइटल की कॉपियाँ",
+	"settings.pickRules.check.size": "आकार GB में (वैकल्पिक)",
+	"settings.pickRules.check.check": "जाँचें",
+	"settings.pickRules.check.failed": "नाम जाँचा नहीं जा सका",
+	"settings.pickRules.check.readAs": "ऐसे पढ़ा गया",
+	"settings.pickRules.check.matches": "{name} से मेल खाता है",
+	"settings.pickRules.check.noTitle": "आपकी लाइब्रेरी के किसी टाइटल से मेल नहीं खाता। फिर भी परखने के लिए ऊपर एक क्वालिटी सेट चुनें।",
+	"settings.pickRules.check.noAlbum": "{name} से मेल खाता है, पर उसके किसी एल्बम से नहीं।",
+	"settings.pickRules.check.noCopies": "इस टाइटल की परखने लायक कोई कॉपी नहीं है।",
+	"settings.pickRules.check.hasFile": "फ़ाइल है"
 }

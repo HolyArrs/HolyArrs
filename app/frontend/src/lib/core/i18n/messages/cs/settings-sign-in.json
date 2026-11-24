@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Jen tyto mohou říct, odkud návštěva přišla.",
 	"settings.signIn.fixToSaveOne": "Pro uložení opravte 1 řádek",
 	"settings.signIn.fixToSaveOther": "Pro uložení opravte řádky: {n}",
-	"settings.signIn.localSaved": "Místní síť uložena"
+	"settings.signIn.localSaved": "Místní síť uložena",
+	"settings.signIn.forgotTitle": "Zapomenuté heslo?",
+	"settings.signIn.forgotOn": "Zobrazit Zapomenuté heslo? na přihlašovací stránce",
+	"settings.signIn.forgotNote": "Vlastník dostane jednorázový kód z logu serveru. Vypněte to, pokud se všichni přihlašují přes jednotné přihlášení. Příkaz reset-owner funguje dál.",
+	"settings.signIn.forgotShown": "Zapomenuté heslo? je zapnuté",
+	"settings.signIn.forgotHidden": "Zapomenuté heslo? je vypnuté"
 }

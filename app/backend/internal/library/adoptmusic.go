@@ -541,6 +541,8 @@ func planMusicAdopt(ctx context.Context, db Reader, artists metadata.ArtistProvi
 			c.Status, c.Why = "never_add", "this artist is on the Never-add list"
 		case len(files) == 0:
 			c.Status, c.Why = "no_video", "no audio file in the folder; adopting adds the artist with every album missing"
+		case close && c.Match.Score >= MatchSure:
+			c.Status, c.Why = "unsure", fmt.Sprintf("%s and %s both fit this folder name; check which one it is", c.Match.Name, ms[1].Name)
 		case c.Match.Score < MatchSure || close:
 			c.Status, c.Why = "unsure", fmt.Sprintf("best match %s at %.0f%%; check it", c.Match.Name, c.Match.Score*100)
 		default:
@@ -760,7 +762,8 @@ func (s *Service) recordFoundTracks(ctx context.Context, lf mediafiles.LibraryFo
 			continue
 		}
 		var exists int
-		_ = db.QueryRowContext(ctx, "SELECT count(*) FROM files WHERE version_id = ? AND relative_path = ?", v.ID, f.Path).Scan(&exists)
+		// A found file passed on to another artist of this folder stays theirs.
+		_ = db.QueryRowContext(ctx, `SELECT count(*) FROM files WHERE relative_path = ? AND version_id IN (SELECT id FROM versions WHERE library_folder_id = ?)`, f.Path, lf.ID).Scan(&exists)
 		if exists > 0 {
 			continue
 		}

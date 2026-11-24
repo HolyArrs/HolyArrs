@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Går inte att ångra. Filerna blir kvar.",
 	"settings.pickRules.removeUsed": "{used}. Välj först andra regler där.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Avbryt"
+	"settings.pickRules.cancel": "Avbryt",
+	"settings.pickRules.check.title": "Kontrollera ett releasenamn",
+	"settings.pickRules.check.desc": "Klistra in ett releasenamn för att se hur HolyArrs läser det och hur dina kvalitetsuppsättningar bedömer det. Inget söks eller laddas ner.",
+	"settings.pickRules.check.name": "Releasenamn",
+	"settings.pickRules.check.rules": "Bedöm med",
+	"settings.pickRules.check.copies": "Kopiorna av titeln som passar",
+	"settings.pickRules.check.size": "Storlek i GB (valfritt)",
+	"settings.pickRules.check.check": "Kontrollera",
+	"settings.pickRules.check.failed": "Kunde inte kontrollera namnet",
+	"settings.pickRules.check.readAs": "Läst som",
+	"settings.pickRules.check.matches": "Passar {name}",
+	"settings.pickRules.check.noTitle": "Passar ingen titel i ditt Bibliotek. Välj en kvalitetsuppsättning ovan för att bedöma det ändå.",
+	"settings.pickRules.check.noAlbum": "Passar {name}, men inget av dess album.",
+	"settings.pickRules.check.noCopies": "Den här titeln har inga kopior att bedöma.",
+	"settings.pickRules.check.hasFile": "Har en fil"
 }

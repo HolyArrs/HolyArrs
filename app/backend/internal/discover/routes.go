@@ -131,6 +131,7 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/explore/head", h.exploreHead)
 	m.HandleFunc("GET /api/v1/explore/tail", h.exploreTail)
 	m.HandleFunc("POST /api/v1/explore/counts", h.exploreCounts)
+	m.HandleFunc("GET /api/v1/explore/row-stats", h.exploreRowStats)
 	m.HandleFunc("GET /api/v1/explore/new", h.exploreNew)
 	m.HandleFunc("GET /api/v1/explore/new/services", h.exploreNewServices)
 	m.HandleFunc("GET /api/v1/explore/new/service", h.exploreNewService)

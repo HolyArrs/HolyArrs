@@ -1,6 +1,7 @@
 package sources
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -21,6 +22,11 @@ type TitleSearchIn struct {
 	AlbumID   *int64 `json:"album_id"` // artists: one album
 }
 
+// RetryImport asks again for the import of the finished downloads the given
+// Slots wait on and returns the Slots it did that for (see
+// downloads.Manager.RetryImportFirst).
+type RetryImport func(ctx context.Context, slotIDs []int64, by domain.Actor) map[int64]bool
+
 // KindSearch answers a title search for one kind of Title (a show or an
 // artist), which its own module serves.
 type KindSearch func(w http.ResponseWriter, r *http.Request, t mediafiles.Title, in TitleSearchIn)
@@ -31,6 +37,9 @@ type TitleSearchHandlers struct {
 	Queue *jobs.Queue
 	// Show and Artist take the search of a show or an artist.
 	Show, Artist KindSearch
+	// RetryImport, when set, goes first: a movie whose download is on disk but
+	// failed to import is imported again instead of searched.
+	RetryImport RetryImport
 }
 
 // Routes registers the title search route.
@@ -58,6 +67,14 @@ func (h *TitleSearchHandlers) searchTitle(w http.ResponseWriter, r *http.Request
 	if r.ContentLength != 0 && !webserver.Decode(w, r, &in, `body is {"choose": bool, "slot_id": int}, both optional; for a show also "item_id", "season" and "version_id"; for an artist "album_id", "item_id" and "version_id"`) {
 		return
 	}
+	// A search no Source can take would end as an empty success; say so now.
+	if ok, err := handSearchable(r, h.Store); err != nil {
+		webserver.Internal(w, "sources", err)
+		return
+	} else if !ok {
+		webserver.Fail(w, http.StatusConflict, "No Source to search. Add one or turn one on in Settings > Sources.")
+		return
+	}
 	if t.Kind == "show" {
 		h.Show(w, r, t, in)
 		return
@@ -83,9 +100,19 @@ func (h *TitleSearchHandlers) searchTitle(w http.ResponseWriter, r *http.Request
 	if in.Choose != nil && !*in.Choose {
 		params["choose"] = false
 	}
+	var retried map[int64]bool
+	if h.RetryImport != nil && params["choose"] != false {
+		asked := []int64{}
+		for _, s := range slots {
+			if in.SlotID == nil || s.ID == *in.SlotID {
+				asked = append(asked, s.ID)
+			}
+		}
+		retried = h.RetryImport(r.Context(), asked, actorOf(r))
+	}
 	ids := []int64{}
 	for _, s := range slots {
-		if in.SlotID != nil && s.ID != *in.SlotID {
+		if in.SlotID != nil && s.ID != *in.SlotID || retried[s.ID] {
 			continue
 		}
 		// Its own key: a bulk search waiting for the same Slot must not
@@ -101,9 +128,25 @@ func (h *TitleSearchHandlers) searchTitle(w http.ResponseWriter, r *http.Request
 		}
 		ids = append(ids, id)
 	}
-	if in.SlotID != nil && len(ids) == 0 {
+	if in.SlotID != nil && len(ids) == 0 && !retried[*in.SlotID] {
 		webserver.Fail(w, http.StatusNotFound, "no such Slot on this Title")
 		return
 	}
-	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids})
+	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"job_ids": ids, "imports_again": len(retried)})
+}
+
+// handSearchable reports whether any Source is on and can search (not RSS
+// only). Paused Sources count: the search says why they were skipped. Kept
+// loose on purpose: finer filters (kind, tags, use) stay with the search.
+func handSearchable(r *http.Request, st *database.Store) (bool, error) {
+	srcs, err := database.Select[domain.Source](r.Context(), st.Read(), "sources", "state IN ('enabled', 'paused')")
+	if err != nil {
+		return false, err
+	}
+	for _, s := range srcs {
+		if s.Format != "rss" {
+			return true, nil
+		}
+	}
+	return false, nil
 }

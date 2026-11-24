@@ -31,40 +31,45 @@ func (r arrReader) fileQualitiesAPI(ctx context.Context, c *apiClient, out *arrR
 	switch r.kind {
 	case Radarr:
 		var rows []map[string]any
-		for _, m := range out.sets["titles"] {
+		out.eachTitle(func(m map[string]any) {
 			if f := mapOf(m["moviefile"]); f != nil {
 				rows = append(rows, map[string]any{"titleid": m["id"], "relativepath": f["relativepath"], "quality": qualityName(f["quality"], nil)})
 			}
-		}
+		})
 		out.sets["filequalities"] = rows
 	case Sonarr:
-		var rows []map[string]any
+		var rows, off []map[string]any
 		skipped := 0
-		for _, m := range out.sets["titles"] {
-			id := num(m["id"])
+		var ids []int64
+		out.eachTitle(func(m map[string]any) { ids = append(ids, num(m["id"])) })
+		for _, id := range ids {
 			if id == 0 || ctx.Err() != nil {
 				continue
 			}
-			var got []any
-			if err := c.getJSON(ctx, r.apiBase()+"/episodefile", url.Values{"seriesId": {strconv.FormatInt(id, 10)}}, &got); err != nil {
+			q := url.Values{"seriesId": {strconv.FormatInt(id, 10)}}
+			got, err := c.getList(ctx, r.apiBase()+"/episodefile", q, keepEpisodeFile)
+			if err != nil {
 				skipped++
 				continue
 			}
 			// The episode list is read once here: a show whose seasons differ
 			// places a file only where its episode's day and name agree.
-			var eps []any
-			_ = c.getJSON(ctx, r.apiBase()+"/episode", url.Values{"seriesId": {strconv.FormatInt(id, 10)}}, &eps)
+			epRows, _ := c.getList(ctx, r.apiBase()+"/episode", q, keepEpisode)
+			eps := make([]any, len(epRows))
+			for i, e := range epRows {
+				eps[i] = e
+			}
 			byFile := oldEpisodesByFile(eps)
-			for _, e := range got {
-				if f := mapOf(e); f != nil {
-					rows = append(rows, map[string]any{"titleid": id, "relativepath": f["relativepath"], "quality": qualityName(f["quality"], nil), "episodes": byFile[num(f["id"])]})
-				}
+			off = append(off, episodesOffRows(eps, id)...)
+			for _, f := range got {
+				rows = append(rows, map[string]any{"titleid": id, "relativepath": f["relativepath"], "quality": qualityName(f["quality"], nil), "episodes": byFile[num(f["id"])]})
 			}
 		}
 		if skipped > 0 {
 			out.notes = append(out.notes, "file qualities of "+strconv.Itoa(skipped)+" series could not be read; skipped")
 		}
 		out.sets["filequalities"] = rows
+		out.sets["episodesoff"] = off
 	}
 }
 
@@ -73,6 +78,19 @@ func (r arrReader) fileQualitiesAPI(ctx context.Context, c *apiClient, out *arrR
 // QualityDefinitions.
 func (r arrReader) fileQualitiesBackup(ctx context.Context, t table, out *arrRows) {
 	name, link := map[Kind]string{Radarr: "MovieFiles", Sonarr: "EpisodeFiles"}[r.kind], map[Kind]string{Radarr: "movieid", Sonarr: "seriesid"}[r.kind]
+	// The episode list is read first: its off episodes count even when
+	// the backup has no file table.
+	var byFile map[int64][]OldEpisode
+	if r.kind == Sonarr && t.exists(ctx, "Episodes") {
+		if eps, err := t.all(ctx, "Episodes"); err == nil {
+			list := make([]any, len(eps))
+			for i, e := range eps {
+				list[i] = e
+			}
+			byFile = oldEpisodesByFile(list)
+			out.sets["episodesoff"] = episodesOffRows(list, 0)
+		}
+	}
 	if name == "" || !t.exists(ctx, name) {
 		return
 	}
@@ -84,16 +102,6 @@ func (r arrReader) fileQualitiesBackup(ctx context.Context, t table, out *arrRow
 	defs := map[int64]string{}
 	for _, m := range out.sets["qualitydefs"] {
 		defs[num(m["quality"])] = str(m["title"])
-	}
-	var byFile map[int64][]OldEpisode
-	if r.kind == Sonarr && t.exists(ctx, "Episodes") {
-		if eps, err := t.all(ctx, "Episodes"); err == nil {
-			list := make([]any, len(eps))
-			for i, e := range eps {
-				list[i] = e
-			}
-			byFile = oldEpisodesByFile(list)
-		}
 	}
 	var outRows []map[string]any
 	for _, m := range rows {

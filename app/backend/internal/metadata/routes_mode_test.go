@@ -131,14 +131,17 @@ func TestSettingsMetadataTestKey(t *testing.T) {
 	h, srv := modeRig(t, nil)
 	ctx := context.Background()
 	for _, c := range []struct{ body, want string }{
-		{`{"key":"tmdb_token"}`, "No key saved yet"},
+		{`{"key":"tmdb_token"}`, "Enter a key first"},
 		{`{"key":"tmdb_token","value":"good"}`, "Key works"},
 		{`{"key":"mdblist_key","value":"bad"}`, "Key refused"},
 		{`{"key":"tvdb_key","value":"good","pin":"wrong"}`, "Key or PIN refused"},
+		{`{"key":"tvdb_key","value":"good"}`, "Key refused; a PIN may be needed"},
+		// A key pasted across two lines is refused, not blamed on the network.
+		{`{"key":"tmdb_token","value":"go\nod"}`, "Key refused"},
 		{`{"key":"tvdb_key","value":"good","pin":"right-pin"}`, "Key works"},
 	} {
 		st, a := modeCall(t, srv, "POST", "/api/v1/settings/metadata/test", c.body)
-		if st != 200 || a["message"] != c.want {
+		if st != 200 || a["message"] != c.want || a["code"] == nil {
 			t.Errorf("%s: %d %v", c.body, st, a)
 		}
 	}

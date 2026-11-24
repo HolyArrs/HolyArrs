@@ -1,6 +1,6 @@
 <script lang="ts">
-	// Open in Jellyfin or Emby for a Library title: one button per media
-	// server that has it and has a browser address. Shown only to people who
+	// Open in Plex, Jellyfin or Emby for a Library title: one button per media
+	// server that has it (Jellyfin and Emby only with an address browsers reach). Shown only to people who
 	// manage the Library (the route needs manage_library). Nothing shows while
 	// it loads, when no server has the title, or when asking fails.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
@@ -23,7 +23,7 @@
 		);
 	});
 
-	const kindName = { jellyfin: 'Jellyfin', emby: 'Emby' } as const;
+	const kindName = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' } as const;
 	// Two servers of one kind are told apart by their names.
 	const nameOf = (l: WatchLink) => (links.filter((o) => o.kind === l.kind).length > 1 ? l.server : kindName[l.kind]);
 </script>

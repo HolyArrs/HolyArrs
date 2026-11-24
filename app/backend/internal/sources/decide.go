@@ -139,19 +139,36 @@ func (s *Searcher) judgeAll(ctx context.Context, c slotCtx, all []found, out, ha
 	rels := make([]mediafiles.ReleaseFacts, len(all))
 	vs := make([]mediafiles.Verdict, len(all))
 	for i, f := range all {
-		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size})
+		p := parseItem(f.item, releasename.Hints{Size: f.item.Size, MultiLanguages: f.src.MultiLanguages, NoLanguage: f.src.NoLanguageLanguages})
 		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		m := mediafiles.MatchRelease(p, []mediafiles.TitleRef{ref})
+		// A local name the matcher cannot read ("La Mummia Il Ritorno") is
+		// still this movie when the Source's id for it is this movie's.
+		byID := m.Title == nil && outSince != nil && (f.byID || sameMovieID(c.ti, f.item))
+		if byID {
+			m = mediafiles.Match{Title: &ref, Conf: releasename.Sure, Detail: ref.Name + " by the id the Source gives"}
+		}
 		set := mediafiles.SlotSet{Match: m, RuntimeMinutes: ref.Runtime, Out: out, MinSeeders: f.src.MinSeeders, TurnedDown: turned,
 			HandSearch: hand, Listing: c.listing, SkipGate: skipGate, Current: c.cur, OutSince: outSince, Checks: checks}
+		if byID {
+			set.MatchReasons = append(set.MatchReasons, mediafiles.Reason{Step: "match", Rule: sourceIDRule, Effect: "pass", Detail: "the Source's id for it is this movie's"})
+		}
 		if m.Title != nil {
 			set.SlotIDs = []int64{c.sl.ID}
 		}
 		vs[i] = copyChoiceVerdict(c.ti, c.ver, rels[i], mediafiles.Judge(rels[i], set, body))
 	}
+	s.holdStalled(ctx, rels, vs, hand, time.Now())
 	mediafiles.Rank(rels, vs, body)
 	return rels, vs, nil
+}
+
+// sameMovieID says the TMDb or IMDb id a Source gives for a release is this movie's.
+func sameMovieID(ti mediafiles.Title, it Item) bool {
+	tmdb, _ := strconv.Atoi(ti.SourceIDs["tmdb"])
+	imdb := strings.TrimLeft(strings.TrimPrefix(ti.SourceIDs["imdb"], "tt"), "0")
+	return it.TMDb > 0 && it.TMDb == tmdb || it.IMDb != "" && it.IMDb == imdb
 }
 
 // overGrabLimit reports whether the Source has already given its picks for the current window, and says why in plain words. Picks not yet sent to a downloader count too, so a burst cannot pass the limit.
@@ -260,6 +277,12 @@ func (s *Searcher) storeAll(ctx context.Context, by domain.Actor, jobID *int64, 
 				HoldUntil: hold}
 			if rel.Flags == nil {
 				rel.Flags = []string{}
+			}
+			if u := keepInfoURL(f.item.InfoURL, f.keys); u != "" {
+				rel.Parsed[infoURLKey] = u
+			}
+			if len(f.item.Languages) > 0 {
+				rel.Parsed[sourceLanguagesKey] = f.item.Languages
 			}
 			if !f.item.Published.IsZero() {
 				p := f.item.Published

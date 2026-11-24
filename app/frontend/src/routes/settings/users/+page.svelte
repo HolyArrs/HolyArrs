@@ -12,7 +12,8 @@
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
-	import { choosePreset, presetOf, presetOptions, type Mix, Sessions, UserMediaLink, DeletePersonAsk, focusAfterAsk, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
+	import MoreOptions from '#lib/ui/MoreOptions.svelte';
+	import { choosePreset, presetOf, presetOptions, type Mix, Sessions, UserMediaLink, DeletePersonAsk, focusAfterAsk, InviteLinks, type Invite, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
 	import type { AskSettings, LimitKind, PersonLimit, PersonQualities, QualityLine } from '#lib/requests/index.ts';
 	import { QualityPicker, kindAsks } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
@@ -23,7 +24,7 @@
 	import { session, type Perm, type Role } from '#lib/core/session.svelte.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { shownPerson } from '#lib/core/plain.ts';
-	import { ago, date } from '#lib/core/format.ts';
+	import { ago } from '#lib/core/format.ts';
 	import { HiddenCard } from '#lib/discover/index.ts';
 
 	interface User {
@@ -42,19 +43,6 @@
 		max_rating?: string;
 		rating_country?: string;
 		off_reason?: string;
-	}
-	interface Invite {
-		id: string;
-		role: Role;
-		perms: Perm[];
-		note: string;
-		created_by: string;
-		created_at: string;
-		expires_at: string;
-		used_at?: string;
-		used_by?: string;
-		max_rating?: string;
-		rating_country?: string;
 	}
 
 	const permWord = $derived<Record<Perm, string>>({
@@ -118,8 +106,14 @@
 	let maxRating = $state('');
 	let note = $state('');
 	let days = $state(7);
+	// A link takes one person and ends unless asked otherwise: 0 days is no end date, 0 people no limit. An admin link always takes one and ends.
+	let uses = $state(1);
 	let making = $state(false);
 	let link = $state('');
+	// Whether the link just made takes one person only, for the line above it.
+	let linkOnce = $state(true);
+	// Only the owner may make a link with no end date or no limit; an admin's member links are counted and end.
+	const standing = $derived(role === 'member' && session.can('owner'));
 
 	// The person's own switches, kept per picker so choosing Custom again brings them back.
 	const mixes = $state<Record<string, Mix | null>>({});
@@ -206,6 +200,10 @@
 
 	function pickRole(r: 'admin' | 'member') {
 		role = r;
+		if (r === 'admin') {
+			uses = 1;
+			if (days < 1) days = 7;
+		}
 		mixes['invite-preset'] = null;
 		maxRating = '';
 		perms = defaults[r].filter((p) => session.can(p));
@@ -222,8 +220,9 @@
 		e.preventDefault();
 		making = true;
 		try {
-			const r = await api.post<{ path: string }>('/users/invites', { role, perms, note: note.trim(), days, max_rating: maxRating, rating_country: 'US' });
+			const r = await api.post<{ path: string; max_uses: number }>('/users/invites', { role, perms, note: note.trim(), days, max_uses: uses, max_rating: maxRating, rating_country: 'US' });
 			link = location.origin + to(r.path);
+			linkOnce = r.max_uses === 1;
 			note = '';
 			inviteOpen = false;
 			await load();
@@ -240,16 +239,6 @@
 			toasts.push(t('settings.users.linkCopied'), 'ok');
 		} catch {
 			toasts.push(t('settings.users.copyFailed'), 'fail', { body: t('settings.users.selectInstead') });
-		}
-	}
-
-	async function takeBack(i: Invite) {
-		try {
-			await api.del(`/users/invites/${i.id}`);
-			invites = invites.filter((x) => x.id !== i.id);
-			toasts.push(t('settings.users.takenBack'), 'ok');
-		} catch (e) {
-			toasts.push(t('settings.users.takeBackFailed'), 'fail', { body: message(e) });
 		}
 	}
 
@@ -409,11 +398,6 @@
 		}
 	}
 
-	function inviteState(i: Invite): string {
-		if (i.used_at) return t('settings.users.usedBy', { who: shownPerson(i.used_by) ?? t('settings.users.someone'), ago: ago(i.used_at) });
-		if (new Date(i.expires_at).getTime() < Date.now()) return t('settings.users.ended');
-		return t('settings.users.openUntil', { date: date(i.expires_at) });
-	}
 </script>
 
 <svelte:head><title>{t('settings.users.title')} · HolyArrs</title></svelte:head>
@@ -432,7 +416,7 @@
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	{#if link}
 		<div class="fresh" role="status">
-			<p class="small"><b>{t('settings.users.inviteLink')}</b> {t('settings.users.worksOnce')}</p>
+			<p class="small"><b>{t('settings.users.inviteLink')}</b> {linkOnce ? t('settings.users.worksOnce') : t('settings.users.copyNow')}</p>
 			<div class="row">
 				<code class="key grow">{link}</code>
 				<Button icon="copy" type="button" onclick={copyLink}>{t('settings.users.copy')}</Button>
@@ -513,25 +497,7 @@
 
 	{#if hasData}<HiddenCard people={names} />{/if}
 
-	<SettingsCard id="invites-card" title={t('settings.users.inviteLinks')}>
-		{#if invites.length === 0}
-			<p class="small muted">{t('settings.users.noInvites')}</p>
-		{:else}
-			<ul class="rows">
-				{#each invites as i (i.id)}
-					<li>
-						<div class="grow">
-							<div class="name">{i.note || t('settings.users.roleInvite', { role: roleWord[i.role] })} <span class="chip">{roleWord[i.role]}</span>{#if i.max_rating}<span class="chip">{kidLabel(i.max_rating)}</span>{/if}</div>
-							<div class="xs muted"><PersonText text={t('settings.users.madeBy', { who: shownPerson(i.created_by), ago: ago(i.created_at) })} /> · <PersonText text={inviteState(i)} /></div>
-						</div>
-						{#if !i.used_at && new Date(i.expires_at).getTime() > Date.now()}
-							<Button variant="secondary" type="button" onclick={() => takeBack(i)}>{t('settings.users.revoke')}</Button>
-						{/if}
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</SettingsCard>
+	<InviteLinks {invites} {roleWord} onchange={load} />
 {/if}
 
 {#snippet presetPicker(list: Perm[], set: (next: Perm[]) => void, name: string, max: string, setMax: (m: string) => void)}
@@ -664,7 +630,7 @@
 
 <Sheet bind:open={inviteOpen} title={t('settings.users.invite')} size="md">
 	<div id="invite-card">
-		<p class="small muted" style="margin-bottom: var(--s-4)">{t('settings.users.oneTime')}</p>
+		{#if uses === 1 && days !== 0}<p class="small muted" style="margin-bottom: var(--s-4)">{t('settings.users.oneTime')}</p>{/if}
 		<form class="invite" onsubmit={makeInvite}>
 			<div class="field">
 				{#if roleOptions.length > 1}
@@ -691,10 +657,19 @@
 					<label for="inv-note">{t('settings.users.note')}</label>
 					<input id="inv-note" class="input" bind:value={note} maxlength="100" placeholder={t('settings.users.noteExample')} />
 				</div>
-				<Field id="inv-days" label={t('settings.users.days')}>
-					<input id="inv-days" class="input" type="number" min="1" max="30" bind:value={days} style="max-width: 120px" />
+				<!-- 0 days is a link with no end date; an admin link always has one. -->
+				<Field id="inv-days" label={t('settings.users.days')} hint={standing ? t('settings.users.zeroNoLimit') : undefined}>
+					<input id="inv-days" class="input" type="number" min={standing ? 0 : 1} max="30" bind:value={days} aria-describedby={standing ? 'inv-days-hint' : undefined} style="max-width: 120px" />
 				</Field>
 			</div>
+			{#if role === 'member'}
+				<!-- A link that stays valid or takes several people only ever makes members. Folded away, so the plain one-time invite stays as short as it was. -->
+				<MoreOptions id="inv-more">
+					<Field id="inv-uses" label={t('settings.users.uses')} hint={standing ? t('settings.users.zeroNoLimit') : undefined}>
+						<input id="inv-uses" class="input" type="number" min={standing ? 0 : 1} max="1000" bind:value={uses} aria-describedby={standing ? 'inv-uses-hint' : undefined} style="max-width: 120px" />
+					</Field>
+				</MoreOptions>
+			{/if}
 			<Button icon="plus" variant="primary" type="submit" disabled={making} aria-busy={making}>{t('settings.users.makeInvite')}</Button>
 		</form>
 	</div>
@@ -737,6 +712,14 @@
 	}
 	.invite :global(button[type='submit']) {
 		margin-top: var(--s-3);
+	}
+	/* The fold starts beside the hint under the days box, not below it, so the main button stays on a phone's screen. */
+	.invite :global(.more-options) {
+		margin-top: -8px;
+	}
+	/* A shorter fold line, the height the details lines on a title page have. */
+	.invite :global(.more-options summary) {
+		min-height: 32px;
 	}
 	/* A legend is not a flex child of the column, so float it to keep the label gap other rows have. */
 	.invite fieldset.field > legend {

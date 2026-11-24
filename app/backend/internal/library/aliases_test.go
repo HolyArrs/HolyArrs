@@ -36,3 +36,22 @@ func TestApplyFillsAliasesForMovie(t *testing.T) {
 		t.Errorf("movie aliases %q", mv.Aliases)
 	}
 }
+
+func TestUsableAliasShortScripts(t *testing.T) {
+	for clean, want := range map[string]bool{"тьма": true, "寄生虫": true, "ζ": false, "ice": false, "dark": false, "ab": false, "君の": true} {
+		if got := usableAlias(clean); got != want {
+			t.Errorf("usableAlias(%q) = %v, want %v", clean, got, want)
+		}
+	}
+}
+
+// Other names in every script the app's languages use survive the
+// merge, so word-only sites can be searched with each of them.
+func TestMergeAliasesEveryScript(t *testing.T) {
+	more := []string{"夜桜さんちの大作戦", "오징어 게임", "Слово пацана", "الحشاشين", "पंचायत", "เด็กใหม่", "三体",
+		"Le Bureau des Légendes", "Büro der Legenden", "El juego del calamar", "Ψέματα", "שעת נעילה"}
+	got := MergeAliases(nil, "Show", more)
+	if len(got) != len(more) {
+		t.Fatalf("kept %q, want all of %q", got, more)
+	}
+}

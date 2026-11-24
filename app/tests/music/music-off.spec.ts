@@ -93,12 +93,14 @@ test('Search results show no artists or albums', async () => {
 	await expect(musicLinks()).toHaveCount(0);
 });
 
-test('the live search dropdown offers no artists, albums or songs', async () => {
-	await visit('/search');
+test('typing in the top search box offers no artists, albums or songs', async () => {
+	// Typing opens Search with live results (the dropdown only covers them when live results are off).
+	await visit('/calendar');
 	await page.getByTestId('search-box').first().fill('the');
-	await expect.poll(() => seen.some((u) => u.includes('/api/v1/search/suggest')), { timeout: 5_000 }).toBe(true);
+	await expect(page).toHaveURL(/\/search\?q=the/);
 	await page.waitForLoadState('networkidle');
 	expect(suggestKinds.filter((k) => k === 'artist' || k === 'album' || k === 'song')).toEqual([]);
+	await expect(musicLinks()).toHaveCount(0);
 });
 
 test('the Library has no Music', async () => {

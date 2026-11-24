@@ -85,5 +85,21 @@
 	"sources.uses.auto": "mencari sendiri",
 	"sources.uses.feed": "senarai terbaharu",
 	"sources.uses.hand": "cari dengan tangan",
-	"sources.uses.none": "tidak digunakan"
+	"sources.uses.none": "tidak digunakan",
+	"sources.bridge.removeTitle": "Buang {name}?",
+	"sources.bridge.find": "Cari {name} di rangkaian saya",
+	"sources.bridge.noneFound": "Tiada {name} yang menjawab di rangkaian anda.",
+	"sources.bridge.keyFound": "Kunci diperoleh daripada {name}",
+	"sources.bridge.keyKept": "{name} tidak memberikan kuncinya (log masuk dihidupkan). Guna Dapatkan kunci untuk menyalinnya.",
+	"sources.bridge.keyKeptJackett": "Jackett tidak memberikan kuncinya (ada kata laluan admin). Guna Dapatkan kunci untuk menyalinnya.",
+	"sources.bridge.notReached": "Tidak dapat mencapai {name}.",
+	"sources.bridge.brings.title": "Apa yang dibawa",
+	"sources.bridge.brings.sites": "Pengindeksnya, sebagai Sumber",
+	"sources.bridge.brings.categories": "Kategorinya",
+	"sources.bridge.brings.search": "Carian melalui {name}",
+	"sources.bridge.brings.sync": "Perubahan dalam {name} turut dibawa",
+	"sources.bridge.brings.stays": "Pengindeks anda kekal disediakan dalam {name}.",
+	"sources.bridge.brings.had": "{n} pengindeks sudah ada di sini",
+	"sources.bridge.brings.hadFrom": "Diimport melalui {apps}",
+	"sources.bridge.brings.keyKept": "Biarkan kunci kosong untuk menggunakan kunci yang sudah mereka ada."
 }

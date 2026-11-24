@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "Sıradaki isteğini seç",
 	"home.newPopular": "Yeni ve Popüler",
 	"home.whatSTrending": "Öne çıkanlar",
+	"home.gettingReady": "Hazırlanıyor…",
 	"home.top10sAndComing": "İlk 10'lar ve yakında gelecekler",
 	"home.whatSNext": "Sırada ne var",
 	"home.airDatesAndReleases": "Yayın tarihleri ve çıkışlar",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Bu hafta gelen bölümler ve filmler",
 	"home.popularThisWeek": "Bu hafta gelen popüler yapımlar",
 	"home.peopleCheck": "Kişi denetimi",
-	"home.cantReadUsers": "kullanıcı listesi okunamıyor"
+	"home.cantReadUsers": "kullanıcı listesi okunamıyor",
+	"home.joined.title": "Hoş geldin, {name}",
+	"home.joined.find": "{explore} ya da {search} içinde bir şey bul.",
+	"home.joined.ask": "Almak için bir başlıkta {request} düğmesine dokun. İsteyebileceklerin:",
+	"home.joined.track": "Her birini {requests} içinde takip et.",
+	"home.joined.noLimit": "Haftalık sınır yok.",
+	"home.joined.gotIt": "Anladım",
+	"home.joined.explore": "{explore} aç"
 }

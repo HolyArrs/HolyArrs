@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "只有这些能说明访问来自哪里。",
 	"settings.signIn.fixToSaveOne": "修正 1 行后才能保存",
 	"settings.signIn.fixToSaveOther": "修正 {n} 行后才能保存",
-	"settings.signIn.localSaved": "本地网络已保存"
+	"settings.signIn.localSaved": "本地网络已保存",
+	"settings.signIn.forgotTitle": "忘记密码?",
+	"settings.signIn.forgotOn": "在登录页显示“忘记密码?”",
+	"settings.signIn.forgotNote": "所有者从服务器日志获取一次性代码。如果大家都通过单点登录登录,请关闭。reset-owner 命令仍然可用。",
+	"settings.signIn.forgotShown": "“忘记密码?”已开启",
+	"settings.signIn.forgotHidden": "“忘记密码?”已关闭"
 }

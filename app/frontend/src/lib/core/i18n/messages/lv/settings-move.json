@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Atsaukt importu {id}?",
 	"settings.move.undoQuestion": "Atsaukt šo importu?",
 	"settings.move.undoNote": "Noņem to, ko šis imports pievienoja; tavas vēlākās izmaiņas paliek. Vispirms lejupielādē atskaiti, ja vēlies to.",
-	"settings.move.undoMove": "Atsaukt importu"
+	"settings.move.undoMove": "Atsaukt importu",
+	"settings.move.continueSetup": "Turpināt iestatīšanu",
+	"settings.move.backToChoose": "Atpakaļ uz izvēli"
 }

@@ -10,12 +10,12 @@
 	import ProgressBar from './ProgressBar.svelte';
 	import { shownFresh, typeWord, type Fresh } from './fresh.ts';
 	import { shelfNear, whenLoaded } from './lazy-art.ts';
-	import { GROW_DELAY } from './grow.ts';
+	import { GROW_DELAY, nearArrow, rowArrows } from './grow.ts';
 	import { press, viewTransitionName } from '../core/motion.ts';
 	import { sized } from '../core/tmdb-image.ts';
 	import { pictureOf } from '../core/pictures.ts';
 	import { prefetchTrailer, watchTrailer } from '../core/trailer/autoplay.svelte.ts';
-	import { dwell, finePointer, modalOpen, scrollHold } from '../core/trailer/trailer.ts';
+	import { dwell, finePointer, modalOpen, previewDelay, scrollHold } from '../core/trailer/trailer.ts';
 
 	let {
 		title,
@@ -89,7 +89,8 @@
 	let cw = $state(0);
 	let second = $state(false);
 	// Open waits for a pause; close waits a beat so moving between card and tile does not flicker.
-	const opener = dwell(GROW_DELAY, () => {
+	const hoverWait = previewDelay(GROW_DELAY);
+	const opener = dwell(hoverWait ?? 0, () => {
 		if (scrollHold() || modalOpen()) return;
 		leaving = false;
 		open = true;
@@ -128,9 +129,14 @@
 		closer.cancel();
 		if (open && leaving) leaving = false;
 		if (!open) {
+			if (hoverWait === null && !byKey) return;
 			opener.start();
 			prefetchTrailer(preview.kind, preview.tmdb);
 		}
+	}
+	// Near a row arrow the pointer is aiming at the arrow, not this card.
+	function byArrow(e: PointerEvent) {
+		return nearArrow(e.clientX, e.clientY, rowArrows(root));
 	}
 	function leave() {
 		if (!root?.contains(document.activeElement)) hot = false;
@@ -179,7 +185,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-poster" class:gone class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
+<div class="ui-poster" class:gone class:square={shape === 'square'} class:round={shape === 'round'} style:width bind:this={root} bind:clientWidth={cw} onpointerenter={(e) => ((byKey = false), byArrow(e) ? opener.cancel() : enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && (byArrow(e) ? opener.cancel() : !opener.pending && ((byKey = false), enter()))} onpointerleave={leave} onfocusin={focusIn} onfocusout={focusOut} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} aria-labelledby={href ? `${uid}-t` : undefined} aria-describedby={href && more ? `${uid}-d` : undefined} bind:this={hit} use:press={'card'}>
 		<span class="art" use:viewTransitionName={vtName} bind:this={artEl} style:background-color={tint}>
 			{#if !image || failed || !loaded}

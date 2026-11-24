@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Прво најбоља копија; пакет сезоне побеђује кад су једнаки",
 	"settings.search.preferAlways": "Пакет сезоне кад год задовољи скуп квалитета",
 	"settings.search.multi": "Узимај Издања са више сезона",
-	"settings.search.multiHint": "Попуњава сваку епизоду која недостаје у њему",
+	"settings.search.multiHint": "Попуњава сваку епизоду која недостаје у њему. Уз исти квалитет побеђује издање са више тражених епизода",
 	"settings.search.music": "Музика",
 	"settings.search.albums": "Тражи и албуме који недостају",
 	"settings.search.albumsHint": "Објављени албуми, једна претрага за сваки",

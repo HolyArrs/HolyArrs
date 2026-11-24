@@ -85,5 +85,21 @@
 	"sources.uses.auto": "sucht von selbst",
 	"sources.uses.feed": "Liste der Neuesten",
 	"sources.uses.hand": "Suche von Hand",
-	"sources.uses.none": "nicht verwendet"
+	"sources.uses.none": "nicht verwendet",
+	"sources.bridge.removeTitle": "{name} entfernen?",
+	"sources.bridge.find": "{name} in meinem Netzwerk suchen",
+	"sources.bridge.noneFound": "Kein {name} hat in deinem Netzwerk geantwortet.",
+	"sources.bridge.keyFound": "Schlüssel von {name} erhalten",
+	"sources.bridge.keyKept": "{name} hat seinen Schlüssel nicht herausgegeben (die Anmeldung ist an). Kopiere ihn über „Schlüssel holen“.",
+	"sources.bridge.keyKeptJackett": "Jackett hat seinen Schlüssel nicht herausgegeben (es hat ein Admin-Passwort). Kopiere ihn über „Schlüssel holen“.",
+	"sources.bridge.notReached": "{name} war nicht erreichbar.",
+	"sources.bridge.brings.title": "Was übernommen wird",
+	"sources.bridge.brings.sites": "Seine Indexer, als Quellen",
+	"sources.bridge.brings.categories": "Ihre Kategorien",
+	"sources.bridge.brings.search": "Suchen laufen über {name}",
+	"sources.bridge.brings.sync": "Änderungen in {name} werden übernommen",
+	"sources.bridge.brings.stays": "Deine Indexer bleiben in {name} eingerichtet.",
+	"sources.bridge.brings.had": "{n} Indexer schon hier",
+	"sources.bridge.brings.hadFrom": "Importiert über {apps}",
+	"sources.bridge.brings.keyKept": "Lass den Schlüssel leer, um den vorhandenen zu nutzen."
 }

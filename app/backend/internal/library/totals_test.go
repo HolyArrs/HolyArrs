@@ -48,6 +48,10 @@ func TestAlbumsBatchMatchesOne(t *testing.T) {
 				d := *a.ReleaseDate
 				want.NextRelease = &d
 			}
+			if a.ReleaseDate != nil && !a.ReleaseDate.After(now) && (want.LastRelease == nil || a.ReleaseDate.After(*want.LastRelease)) {
+				d := *a.ReleaseDate
+				want.LastRelease = &d
+			}
 		}
 		want.Tracks += a.Tracks
 		want.InLibrary += a.InLibrary
@@ -65,7 +69,10 @@ func TestAlbumsBatchMatchesOne(t *testing.T) {
 	if (got.NextRelease == nil) != (want.NextRelease == nil) || (got.NextRelease != nil && !got.NextRelease.Equal(*want.NextRelease)) {
 		t.Fatalf("next release %v, want %v", got.NextRelease, want.NextRelease)
 	}
-	got.NextRelease, want.NextRelease = nil, nil
+	if (got.LastRelease == nil) != (want.LastRelease == nil) || (got.LastRelease != nil && !got.LastRelease.Equal(*want.LastRelease)) {
+		t.Fatalf("last release %v, want %v", got.LastRelease, want.LastRelease)
+	}
+	got.NextRelease, want.NextRelease, got.LastRelease, want.LastRelease = nil, nil, nil, nil
 	if got != want {
 		t.Fatalf("totals %+v, want %+v", got, want)
 	}

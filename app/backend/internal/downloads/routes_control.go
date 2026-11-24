@@ -394,9 +394,7 @@ func (a *Web) speedLimit(w http.ResponseWriter, r *http.Request) {
 		webserver.Fail(w, http.StatusNotFound, "no such Downloader")
 		return
 	}
-	err := a.Manager().ControlEngine(r.Context(), d, func(e Engine) error {
-		return asController(e, func(c Controller) error { return c.SetSpeedLimit(r.Context(), in.Down, in.Up) })
-	})
+	err := a.Manager().SetSpeedLimit(r.Context(), d, in.Down, in.Up)
 	if err != nil {
 		clientControlError(w, err)
 		return

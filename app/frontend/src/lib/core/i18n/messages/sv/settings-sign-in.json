@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Bara dessa kan säga var ett besök kom ifrån.",
 	"settings.signIn.fixToSaveOne": "Rätta 1 rad för att spara",
 	"settings.signIn.fixToSaveOther": "Rätta {n} rader för att spara",
-	"settings.signIn.localSaved": "Lokalt nätverk sparat"
+	"settings.signIn.localSaved": "Lokalt nätverk sparat",
+	"settings.signIn.forgotTitle": "Glömt lösenordet?",
+	"settings.signIn.forgotOn": "Visa Glömt lösenordet? på inloggningssidan",
+	"settings.signIn.forgotNote": "Ägaren får en engångskod från serverloggen. Stäng av det om alla loggar in med enkel inloggning. Kommandot reset-owner fungerar ändå.",
+	"settings.signIn.forgotShown": "Glömt lösenordet? är på",
+	"settings.signIn.forgotHidden": "Glömt lösenordet? är av"
 }

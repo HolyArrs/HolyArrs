@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Alege ce să ceri în continuare",
 	"home.newPopular": "Noutăți și populare",
 	"home.whatSTrending": "Ce e în trend",
+	"home.gettingReady": "Se pregătește totul…",
 	"home.top10sAndComing": "Top 10 și în curând",
 	"home.whatSNext": "Ce urmează",
 	"home.airDatesAndReleases": "Date de difuzare și lansări",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Episoade și filme care apar săptămâna asta",
 	"home.popularThisWeek": "Lansări populare care apar săptămâna asta",
 	"home.peopleCheck": "Verificarea persoanelor",
-	"home.cantReadUsers": "lista de utilizatori nu poate fi citită"
+	"home.cantReadUsers": "lista de utilizatori nu poate fi citită",
+	"home.joined.title": "Bun venit, {name}",
+	"home.joined.find": "Găsește ceva în {explore} sau {search}.",
+	"home.joined.ask": "Atinge {request} la un titlu ca să-l primești. Poți cere:",
+	"home.joined.track": "Urmărește fiecare în {requests}.",
+	"home.joined.noLimit": "Fără limită săptămânală.",
+	"home.joined.gotIt": "Am înțeles",
+	"home.joined.explore": "Deschide {explore}"
 }

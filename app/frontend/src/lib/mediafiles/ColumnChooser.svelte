@@ -5,7 +5,7 @@
 	import { moveColumn, type Column } from './table.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
-	let { columns, onchange, onreset }: { columns: Column[]; onchange: (c: Column[]) => void; onreset: () => void } = $props();
+	let { columns, cut = [], phone = false, onchange, onreset }: { columns: Column[]; cut?: string[]; phone?: boolean; onchange: (c: Column[]) => void; onreset: () => void } = $props();
 
 	let dragFrom = $state<number | null>(null);
 	let dragOver = $state<number | null>(null);
@@ -34,6 +34,7 @@
 	{#snippet children()}
 		<div class="chooser">
 			<p class="head">{t('mediafiles.columns.title')}</p>
+			{#if phone}<p class="note">{t('mediafiles.columns.phoneNote')}</p>{/if}
 			<ul bind:this={list}>
 				{#each columns as c, i (c.id)}
 					<li
@@ -46,7 +47,7 @@
 						ondrop={(e) => { e.preventDefault(); drop(i); }}
 						ondragend={() => (dragFrom = dragOver = null)}
 					>
-						<label><input type="checkbox" checked={c.on} onchange={() => toggle(i)} /> <span>{c.label}</span></label>
+						<label><input type="checkbox" checked={c.on} onchange={() => toggle(i)} /> <span class="lab"><span>{c.label}</span>{#if c.on && cut.includes(c.id)}<small class="cut">{t('mediafiles.columns.hiddenAtWidth')}</small>{/if}</span></label>
 						<button type="button" class="grip" aria-label={t('mediafiles.columns.move', { label: c.label })} onkeydown={(e) => handleKey(e, i)}><Icon name="menu" size={15} /></button>
 					</li>
 				{/each}
@@ -66,6 +67,9 @@
 	li.over { box-shadow: inset 0 2px 0 var(--accent); }
 	li.dragging { opacity: .45; }
 	label { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; font: var(--t-callout); cursor: pointer; }
+	.lab { display: flex; flex-direction: column; min-width: 0; }
+	.cut, .note { font: var(--t-caption); color: var(--text-muted); letter-spacing: 0; }
+	.note { margin: -4px 8px 6px; }
 	input { width: 16px; height: 16px; accent-color: var(--accent); }
 	.grip { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: grab; }
 	.grip:focus-visible, .reset:focus-visible { outline: none; box-shadow: var(--focus-ring); }

@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Ang mga ito lang ang makakapagsabi kung saan galing ang isang bisita.",
 	"settings.signIn.fixToSaveOne": "Ayusin ang 1 linya para mag-save",
 	"settings.signIn.fixToSaveOther": "Ayusin ang {n} linya para mag-save",
-	"settings.signIn.localSaved": "Na-save ang lokal na network"
+	"settings.signIn.localSaved": "Na-save ang lokal na network",
+	"settings.signIn.forgotTitle": "Nakalimutan ang password?",
+	"settings.signIn.forgotOn": "Ipakita ang Nakalimutan ang password? sa sign-in page",
+	"settings.signIn.forgotNote": "Kumukuha ang owner ng one-time code mula sa log ng server. I-off kung lahat ay nagsa-sign in sa single sign-on. Gumagana pa rin ang command na reset-owner.",
+	"settings.signIn.forgotShown": "Naka-on ang Nakalimutan ang password?",
+	"settings.signIn.forgotHidden": "Naka-off ang Nakalimutan ang password?"
 }

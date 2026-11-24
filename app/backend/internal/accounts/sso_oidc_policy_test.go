@@ -41,3 +41,33 @@ func TestOIDCClientDialsThroughThePolicy(t *testing.T) {
 		})
 	}
 }
+
+// Google hands out tokens and keys from googleapis.com, so its discovery
+// document passes; other issuers still keep every endpoint on their own host.
+func TestOIDCEndpointsAllowGoogleSiblingHosts(t *testing.T) {
+	t.Parallel()
+	google, _ := url.Parse("https://accounts.google.com")
+	other, _ := url.Parse("https://id.example.com")
+	plain, _ := url.Parse("http://accounts.google.com")
+	tests := []struct {
+		issuer *url.URL
+		raw    string
+		want   bool
+	}{
+		{google, "https://accounts.google.com/o/oauth2/v2/auth", true},
+		{google, "https://oauth2.googleapis.com/token", true},
+		{google, "https://www.googleapis.com/oauth2/v3/certs", true},
+		{google, "https://openidconnect.googleapis.com/v1/userinfo", true},
+		{google, "https://evil.example.com/token", false},
+		{google, "https://oauth2.googleapis.com:8443/token", false},
+		{google, "http://oauth2.googleapis.com/token", false},
+		{plain, "http://oauth2.googleapis.com/token", false},
+		{other, "https://oauth2.googleapis.com/token", false},
+		{other, "https://id.example.com/token", true},
+	}
+	for _, tt := range tests {
+		if got := oidcEndpointAllowed(tt.issuer, tt.raw); got != tt.want {
+			t.Errorf("issuer %s endpoint %s: got %v, want %v", tt.issuer, tt.raw, got, tt.want)
+		}
+	}
+}

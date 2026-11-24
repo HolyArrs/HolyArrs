@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: may pulang tuldok na nagpapakita kung ano ang kailangang tingnan, at sinasabi ng connection test ang eksaktong problema.** Mga label sa Plex para sa hiniling na pamagat, mga pangalan sa wika mo, at higit 30 ayos. Ikonekta ang mga app sa MCP gamit ang mga key na hawak mo. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: higit 150 ayos at feature mula sa 101 tao.** Isang plugin system, bagong setup wizard, at hands-off mode na hindi kailanman gagalaw sa mga file mo. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
 
 > Ang bawat poster, trailer at score sa HolyArrs mo ay galing sa server na ako mismo ang nagpapatakbo at nagbabayad, kaya nananatili itong libre para sa lahat. Kung napaganda nang kaunti ng HolyArrs ang movie night mo, ang sponsor ang nagpapanatiling bukas ang ilaw para sa ating lahat 💛
 >
@@ -374,7 +374,7 @@ Walang shell ang image, kaya hindi gagana ang `docker exec -it holyarrs /bin/bas
 - Na-lock out sa owner account:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Numero ng bersyon:

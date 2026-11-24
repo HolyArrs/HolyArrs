@@ -88,3 +88,22 @@ func TestNestedWriteStillCaughtOnCoreLane(t *testing.T) {
 		t.Fatalf("outer %v inner %v", err, inner)
 	}
 }
+
+// A write under WithLongWrite gets the longer cap (importing a big
+// show on slow disks passed the normal cap and was rolled back).
+func TestLongWriteGetsLongerCap(t *testing.T) {
+	s, _ := openTest(t, Options{WriteCap: 50 * time.Millisecond})
+	ctx := WithLongWrite(context.Background())
+	if err := s.Write(ctx, func(tx *sql.Tx) error {
+		time.Sleep(150 * time.Millisecond)
+		return nil
+	}); err != nil {
+		t.Fatalf("long write: %v", err)
+	}
+	if err := s.Write(context.Background(), func(tx *sql.Tx) error {
+		time.Sleep(150 * time.Millisecond)
+		return nil
+	}); !errors.Is(err, ErrWriteTooLong) {
+		t.Fatalf("plain write: %v", err)
+	}
+}

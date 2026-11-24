@@ -25,5 +25,19 @@
 "settings.pickRules.removeNote": "元に戻せません。ファイルは残ります。",
 "settings.pickRules.removeUsed": "{used}。先にそちらで別のルールを選んでください。",
 "settings.pickRules.sentence": "{text}。",
-"settings.pickRules.cancel": "キャンセル"
+"settings.pickRules.cancel": "キャンセル",
+	"settings.pickRules.check.title": "リリース名をチェック",
+	"settings.pickRules.check.desc": "リリース名を貼り付けると、HolyArrs がどう読み取り、品質セットがどう判定するかがわかります。検索やダウンロードは行いません。",
+	"settings.pickRules.check.name": "リリース名",
+	"settings.pickRules.check.rules": "判定に使う設定",
+	"settings.pickRules.check.copies": "一致したタイトルのコピー",
+	"settings.pickRules.check.size": "サイズ (GB、任意)",
+	"settings.pickRules.check.check": "チェック",
+	"settings.pickRules.check.failed": "名前をチェックできませんでした",
+	"settings.pickRules.check.readAs": "読み取り結果",
+	"settings.pickRules.check.matches": "{name} に一致",
+	"settings.pickRules.check.noTitle": "ライブラリのどのタイトルにも一致しません。それでも判定するには、上で品質セットを選んでください。",
+	"settings.pickRules.check.noAlbum": "{name} に一致しますが、どのアルバムにも一致しません。",
+	"settings.pickRules.check.noCopies": "このタイトルには判定するコピーがありません。",
+	"settings.pickRules.check.hasFile": "ファイルあり"
 }

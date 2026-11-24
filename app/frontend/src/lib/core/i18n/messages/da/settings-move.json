@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Fortryd import {id}?",
 	"settings.move.undoQuestion": "Fortryd denne import?",
 	"settings.move.undoNote": "Fjerner det, denne import tilføjede; dine senere ændringer bliver. Download først rapporten, hvis du vil have den.",
-	"settings.move.undoMove": "Fortryd import"
+	"settings.move.undoMove": "Fortryd import",
+	"settings.move.continueSetup": "Fortsæt opsætningen",
+	"settings.move.backToChoose": "Tilbage til Vælg"
 }

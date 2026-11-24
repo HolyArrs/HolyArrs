@@ -117,6 +117,8 @@ test('the parts step turns parts off, and everything comes back', async () => {
 	await expect(page.getByLabel('Music', { exact: true })).not.toBeChecked();
 	await page.getByLabel('TV shows', { exact: true }).uncheck();
 	await page.getByLabel('Subtitles', { exact: true }).uncheck();
+	// Requests is a tile like the others now (it was a Yes / No question).
+	await page.getByLabel('Requests', { exact: true }).uncheck();
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/$/);
 	await page.goto('/settings/parts');
@@ -127,7 +129,7 @@ test('the parts step turns parts off, and everything comes back', async () => {
 	// The same step turns everything back on.
 	await page.goto('/welcome');
 	await page.getByLabel('Music', { exact: true }).check();
-	await page.getByLabel('Yes', { exact: true }).check();
+	await page.getByLabel('Requests', { exact: true }).check();
 	await page.getByRole('button', { name: 'Continue' }).click();
 	await expect(page).toHaveURL(/\/$/);
 	await page.goto('/settings/parts');

@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "La meilleure copie d'abord ; un pack de saison l'emporte à égalité",
 	"settings.search.preferAlways": "Un pack de saison dès qu'il passe le jeu de qualité",
 	"settings.search.multi": "Prendre les releases de plusieurs saisons",
-	"settings.search.multiHint": "Remplit chaque épisode manquant qu'elle contient",
+	"settings.search.multiHint": "Remplit chaque épisode manquant qu'elle contient. À qualité égale, celle qui couvre le plus d'épisodes voulus l'emporte",
 	"settings.search.music": "Musique",
 	"settings.search.albums": "Chercher aussi les albums manquants",
 	"settings.search.albumsHint": "Albums sortis, une recherche chacun",

@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "No es pot desfer. Els fitxers es mantenen.",
 	"settings.pickRules.removeUsed": "{used}. Tria-hi abans unes altres regles.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Cancel·la"
+	"settings.pickRules.cancel": "Cancel·la",
+	"settings.pickRules.check.title": "Comprova un nom de release",
+	"settings.pickRules.check.desc": "Enganxa un nom de release per veure com el llegeix HolyArrs i com el jutgen els teus conjunts de qualitat. No es cerca ni es baixa res.",
+	"settings.pickRules.check.name": "Nom de la release",
+	"settings.pickRules.check.rules": "Jutja amb",
+	"settings.pickRules.check.copies": "Les còpies del títol que coincideix",
+	"settings.pickRules.check.size": "Mida en GB (opcional)",
+	"settings.pickRules.check.check": "Comprova",
+	"settings.pickRules.check.failed": "No s'ha pogut comprovar el nom",
+	"settings.pickRules.check.readAs": "Llegit com",
+	"settings.pickRules.check.matches": "Coincideix amb {name}",
+	"settings.pickRules.check.noTitle": "No coincideix amb cap títol de la teva Biblioteca. Tria a dalt un conjunt de qualitat per jutjar-lo igualment.",
+	"settings.pickRules.check.noAlbum": "Coincideix amb {name}, però amb cap dels seus àlbums.",
+	"settings.pickRules.check.noCopies": "Aquest títol no té còpies per jutjar.",
+	"settings.pickRules.check.hasFile": "Té un fitxer"
 }

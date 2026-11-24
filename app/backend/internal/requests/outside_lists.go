@@ -34,7 +34,7 @@ var (
 	ErrName       = errors.New("a list needs a name of at most 80 characters")
 	ErrNameTaken  = errors.New("another Outside list has that name")
 	ErrKind       = errors.New("kind must be tmdb_list, trakt_list or mdblist_list")
-	ErrRef        = errors.New("for TMDB give the list number or its link; for Trakt give user/list, user/watchlist or the link; for MDBList give user/list or the link")
+	ErrRef        = errors.New("for TMDB give the list number or its link; for Trakt give user/list, user/watchlist, a chart (trending, popular, anticipated, boxoffice, watched-weekly) or the link; for MDBList give user/list or the link")
 	ErrEvery      = errors.New("sync_every_hours must be between 6 and 168")
 	ErrTitleKind  = errors.New("title_kind must be movie or show")
 	ErrSeasons    = errors.New("seasons must be all, future, latest, first or none, and new_seasons all or none")
@@ -80,6 +80,9 @@ func NormalListRef(kind, ref string) (string, error) {
 			return m[1], nil
 		}
 	case ListTrakt:
+		if c, ok := traktChartRef(ref); ok {
+			return c, nil
+		}
 		if m := traktURL.FindStringSubmatch(ref); m != nil {
 			return m[1] + "/" + m[2] + m[3], nil
 		}
@@ -189,6 +192,9 @@ func fill(ctx context.Context, tx *sql.Tx, in OutsideListInput, l *domain.Outsid
 	}
 	if kind == "" {
 		kind = "movie"
+	}
+	if in.Kind == ListTrakt && kind == "show" && ref == traktChartPrefix+"boxoffice" {
+		return ErrBoxOfficeShows
 	}
 	seasons, newSeasons, gate := "", "", in.ReleaseGate
 	switch kind {

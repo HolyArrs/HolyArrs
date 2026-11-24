@@ -11,13 +11,12 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 )
 
 // SignInServer is the address of the kind (jellyfin or emby) sign-in way's
 // server, or "" when that way is off.
 func SignInServer(ctx context.Context, q database.Querier, kind string) string {
-	if database.SettingOr(ctx, q, settingsGroup, signInPrefix+kind+"_on", "") != "true" || (kind == ProviderEmby && !startup.FeatureOn(startup.EmbySignIn)) {
+	if database.SettingOr(ctx, q, settingsGroup, signInPrefix+kind+"_on", "") != "true" {
 		return ""
 	}
 	return strings.TrimRight(database.SettingOr(ctx, q, settingsGroup, signInPrefix+kind+"_url", ""), "/")

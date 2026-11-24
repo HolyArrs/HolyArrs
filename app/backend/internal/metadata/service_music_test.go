@@ -343,8 +343,9 @@ func TestServiceMusicBoundsRelationshipFanout(t *testing.T) {
 	}
 	group := serviceItem{Source: "musicbrainz", SourceID: serviceAlbumID, Kind: "release-group",
 		SourceData: mustJSON(t, serviceReleaseGroupData{ID: serviceAlbumID, Releases: &releases})}
-	if _, err := parseServiceReleaseIDs(group); !errors.Is(err, ErrServiceIncomplete) {
-		t.Fatalf("release bound: %v", err)
+	// a long edition list keeps the first serviceReleaseLimit, never refused.
+	if ids, err := parseServiceReleaseIDs(group); err != nil || len(ids) != serviceReleaseLimit {
+		t.Fatalf("release bound: %d, %v", len(ids), err)
 	}
 
 	tracks := []serviceTrackData{{ID: serviceTrackID, Position: 1, Title: "Track"}}
@@ -376,12 +377,28 @@ func mustJSON(t *testing.T, v any) json.RawMessage {
 	return b
 }
 
-func TestServicePressingsOversizedReleaseListFetchesNoRelease(t *testing.T) {
-	var releaseHits atomic.Int32
+func oversizedReleases(n int) []any {
 	releases := []any{}
-	for i := 0; i <= serviceReleaseLimit; i++ {
+	for i := 0; i < n; i++ {
 		releases = append(releases, map[string]any{"id": fmt.Sprintf("b0000000-0000-4000-8000-%012d", i)})
 	}
+	return releases
+}
+
+func oneTrackRelease(w http.ResponseWriter, id string) {
+	tracks := []any{map[string]any{"id": "c0000000-0000-4000-8000-" + id[24:], "position": 1, "title": "T", "length": 1000,
+		"recording": map[string]any{"id": "d0000000-0000-4000-8000-" + id[24:], "title": "T", "length": 1000}}}
+	serviceReply(w, "musicbrainz", id, musicItem(id, "release", "Pressing", map[string]any{
+		"id": id, "title": "Pressing", "release-group": map[string]any{"id": serviceAlbumID},
+		"media": []any{map[string]any{"position": 1, "track-count": 1, "tracks": tracks}},
+	}))
+}
+
+// an album with more editions than the cap keeps the first ones,
+// marked cut, in full mode (no direct lookups) instead of being refused.
+func TestServicePressingsOversizedReleaseListKeepsFirstEditions(t *testing.T) {
+	var releaseHits atomic.Int32
+	releases := oversizedReleases(serviceReleaseLimit + 20)
 	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
 		id := musicRequestID(r)
 		if id == serviceAlbumID {
@@ -389,12 +406,28 @@ func TestServicePressingsOversizedReleaseListFetchesNoRelease(t *testing.T) {
 			return
 		}
 		releaseHits.Add(1)
-		w.WriteHeader(http.StatusNotFound)
+		oneTrackRelease(w, id)
 	})
-	direct := &serviceDirectMusic{pressings: []Pressing{{MBID: servicePressingID, Name: "Direct"}}}
-	got, err := s.Artists(direct).Pressings(context.Background(), serviceAlbumID)
-	if err != nil || len(got) != 1 || got[0].Name != "Direct" || releaseHits.Load() != 0 {
-		t.Fatalf("oversized list: %#v, %v, release hits %d", got, err, releaseHits.Load())
+	got, err := s.Artists(nil).Pressings(context.Background(), serviceAlbumID)
+	if !errors.Is(err, ErrListCut) || len(got) != serviceReleaseLimit || int(releaseHits.Load()) != serviceReleaseLimit {
+		t.Fatalf("oversized list: %d, %v, release hits %d", len(got), err, releaseHits.Load())
+	}
+}
+
+// 101 editions (Born to Run) in full mode adopt with every edition.
+func TestServicePressingsHundredOneEditionsFullMode(t *testing.T) {
+	releases := oversizedReleases(101)
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		id := musicRequestID(r)
+		if id == serviceAlbumID {
+			serviceReply(w, "musicbrainz", id, musicItem(id, "release-group", "Album", map[string]any{"id": id, "releases": releases}))
+			return
+		}
+		oneTrackRelease(w, id)
+	})
+	got, err := s.Artists(nil).Pressings(context.Background(), serviceAlbumID)
+	if (err != nil && !errors.Is(err, ErrListCut)) || len(got) != 101 {
+		t.Fatalf("101 editions: %d, %v", len(got), err)
 	}
 }
 
@@ -423,8 +456,9 @@ func TestServicePressingsTrackCapStopsFetchingRest(t *testing.T) {
 			"media": []any{map[string]any{"position": 1, "track-count": perRelease, "tracks": tracks}},
 		}))
 	})
-	if _, err := s.Artists(nil).Pressings(context.Background(), serviceAlbumID); err == nil {
-		t.Fatal("expected the track cap to stop the list")
+	got, err := s.Artists(nil).Pressings(context.Background(), serviceAlbumID)
+	if !errors.Is(err, ErrListCut) || len(got) != 9 {
+		t.Fatalf("track cap keeps the editions read, marked cut: %d, %v", len(got), err)
 	}
 	if hits := releaseHits.Load(); hits > 10+servicePressingFetches {
 		t.Fatalf("asked for %d releases after the cap; want at most %d", hits, 10+servicePressingFetches)
@@ -462,5 +496,24 @@ func TestServiceAlbumOneCallForPageViews(t *testing.T) {
 	ps, err := s.Artists(direct).Pressings(MemberLookup(context.Background()), serviceAlbumID)
 	if !errors.Is(err, ErrListCut) || len(ps) != 1 || ps[0].MBID != ed || len(ps[0].Tracks) != 2 || ps[0].Tracks[0].Name != "Wake Me Up" || ps[0].Tracks[0].RecordingID != "bbbbbbbb-0000-4000-8000-000000000001" || ps[0].Tracks[1].Position != 2 {
 		t.Fatalf("%+v %v", ps, err)
+	}
+}
+
+// an artist whose stored album list is longer than the cap and not
+// complete still adopts in full mode, where MusicBrainz itself is off.
+func TestServiceArtistLongListWithDirectOffKeepsServerList(t *testing.T) {
+	groups := []any{}
+	for i := 0; i <= serviceReleaseLimit; i++ {
+		groups = append(groups, map[string]any{"id": fmt.Sprintf("b0000000-0000-4000-8000-%012d", i), "title": "Album", "primary-type": "Album"})
+	}
+	s := testService(t, func(w http.ResponseWriter, r *http.Request) {
+		serviceReply(w, "musicbrainz", serviceArtistID, musicItem(serviceArtistID, "artist", "Big Artist", map[string]any{
+			"id": serviceArtistID, "name": "Big Artist", "release-groups": groups,
+		}))
+	})
+	direct := &serviceDirectMusic{artistErr: ErrSourceOff}
+	got, err := s.Artists(direct).Artist(context.Background(), serviceArtistID)
+	if err != nil || !got.Partial || len(got.Albums) != serviceReleaseLimit+1 {
+		t.Fatalf("long list, direct off: %d albums, partial %v, %v", len(got.Albums), got.Partial, err)
 	}
 }

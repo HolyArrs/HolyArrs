@@ -25,6 +25,7 @@
 		onagain,
 		onforget,
 		onopen,
+		onremovemove,
 		onretrymoves
 	}: {
 		snapshots: Snapshot[];
@@ -38,6 +39,7 @@
 		onagain: (s: Snapshot) => void;
 		onforget: (s: Snapshot) => void;
 		onopen: (m: Move) => void;
+		onremovemove?: (m: Move) => void;
 		onretrymoves: () => void;
 	} = $props();
 
@@ -123,6 +125,9 @@
 				<div class="ctl">
 					<span class="pill"><StatusPill kind={pills[st.tone]} label={st.word} /></span>
 					<Button onclick={() => onopen(m)} aria-label={t('migrate.openMove', { id: m.id })}>{t('migrate.open')}</Button>
+					{#if onremovemove && (m.state === 'undone' || m.state === 'failed') && !m.undo_state?.match(/queued|running/)}
+						<Button variant="plain" onclick={() => onremovemove(m)} aria-label={`${t('migrate.remove')} · ${t('migrate.move2', { id: m.id, date: dateTime(m.created_at) })}`} data-testid="remove-move">{t('migrate.remove')}</Button>
+					{/if}
 				</div>
 			</div>
 		{/each}
@@ -163,6 +168,7 @@
 	@media (max-width: 600px) {
 		.cap { width: 120px; }
 		.srow.earlier { grid-template-columns: minmax(0, 1fr); }
-		.earlier .ctl { justify-self: start; }
+		.earlier .ctl { justify-self: start; flex-wrap: wrap; max-width: 100%; }
+		.earlier .pill { width: auto; }
 	}
 </style>

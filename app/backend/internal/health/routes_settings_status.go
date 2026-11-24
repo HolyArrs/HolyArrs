@@ -12,6 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
@@ -47,7 +48,9 @@ type StatusInput struct {
 	Checks  []domain.HealthCheck
 	States  []jobs.Status
 	Folders *int
-	Sources []NamedState
+	// HandsOff says hands-off mode is on: no Library folder is needed.
+	HandsOff bool
+	Sources  []NamedState
 	// SourcesNear are the words for Sources close to a search or pick limit.
 	SourcesNear []string
 	Downloaders []NamedState
@@ -227,7 +230,7 @@ func SettingsStatus(in StatusInput) StatusAnswer {
 		}
 	}
 	if in.Folders != nil {
-		if *in.Folders == 0 {
+		if *in.Folders == 0 && !in.HandsOff {
 			a.Unset["library"] = []string{"/settings/library-folders"}
 		}
 		known("/settings/library-folders")
@@ -374,10 +377,11 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 	}
 	in.States = append(states, links...)
 	var folders int
-	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM library_folders").Scan(&folders); err != nil {
+	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM library_folders WHERE stand_in = 0").Scan(&folders); err != nil {
 		return in, err
 	}
 	in.Folders = &folders
+	in.HandsOff = parts.HandsOff(ctx, db)
 	srcs, err := database.Select[domain.Source](ctx, db, "sources", "1=1 ORDER BY priority, name")
 	if err != nil {
 		return in, err

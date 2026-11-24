@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Μηνύματα πρόσθετων",
+	"requests.moment.plugin_message.body": "Ένα πρόσθετο που επιτρέψατε στέλνει μήνυμα.",
+	"requests.words.via": "{who} μέσω {plugin}",
 	"requests.moment.ask_waiting.title": "Νέο αίτημα",
 	"requests.moment.ask_waiting.body": "Προς το προσωπικό: μια ταινία, σειρά ή καλλιτέχνης περιμένει έγκριση.",
 	"requests.moment.ask_approved.title": "Εγκρίθηκε",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "Λίστα TMDB",
 	"requests.lists.tmdbHint": "Ο αριθμός της λίστας ή ο σύνδεσμός της, για παράδειγμα themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Λίστα Trakt",
-	"requests.lists.traktHint": "user/list, user/watchlist ή ο σύνδεσμος, για παράδειγμα trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist ή ο σύνδεσμος, για παράδειγμα trakt.tv/users/ana/lists/favourites. Ή μια κατάταξη: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "Λίστα MDBList",
 	"requests.lists.mdblistHint": "user/list ή ο σύνδεσμος, για παράδειγμα mdblist.com/lists/ana/favourites. Οι δημόσιες λίστες λειτουργούν χωρίς κλειδί.",
 	"requests.lists.everyDay": "κάθε ημέρα",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Δεν βρέθηκε κάτι λάθος",
 	"requests.outcome.noResults": "Κανένα αποτέλεσμα ακόμη",
 	"requests.outcome.nothingFound": "Δεν βρέθηκε τίποτα:",
+	"requests.outcome.refused": "Βρέθηκαν, αλλά κανένα δεν ταιριάζει στους κανόνες επιλογής",
 	"requests.outcome.why.slowed": "τέθηκε σε παύση (επιβραδύνθηκε)",
 	"requests.outcome.why.down": "δεν λειτουργούσε",
 	"requests.outcome.why.blocked": "αποκλείστηκε",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Προσθήκη",
 	"requests.addMovie.titleBare": "Προσθήκη ταινίας",
 	"requests.add.loadingDefaults": "Φόρτωση των προεπιλογών",
+	"requests.add.defaultsLate": "Οι αποθηκευμένες προεπιλογές σας δεν φορτώθηκαν εγκαίρως, οπότε επιλέχθηκαν οι συνηθισμένες. Ελέγξτε τες πριν την προσθήκη.",
 	"requests.add.noFolder.music": "Δεν υπάρχει ακόμη φάκελος βιβλιοθήκης για μουσική. <a>Προσθέστε έναν</a> πρώτα.",
 	"requests.add.noFolder.movie": "Δεν υπάρχει ακόμη φάκελος βιβλιοθήκης για ταινίες. <a>Προσθέστε έναν</a> πρώτα.",
 	"requests.add.noFolder.show": "Δεν υπάρχει ακόμη φάκελος βιβλιοθήκης για σειρές. <a>Προσθέστε έναν</a> πρώτα.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Εμφάνιση στο ημερολόγιό μου.",
 	"requests.add.cancel": "Ακύρωση",
 	"requests.add.submit": "Προσθήκη στη Βιβλιοθήκη",
+	"requests.add.submitChoose": "Προσθήκη και επιλογή κυκλοφορίας",
 	"requests.addArtist.albums": "Άλμπουμ προς διατήρηση ενημερωμένων",
 	"requests.addArtist.newAlbums": "Νέα άλμπουμ",
 	"requests.addArtist.newAlbumsHint": "Τι γίνεται με ένα άλμπουμ που θα κυκλοφορήσει αργότερα.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", εμφάνιση: {status}",
 	"requests.board.reportsOpen": "Αναφορές, {n} ανοιχτές",
 	"requests.board.approveAll": "Έγκριση όλων",
+	"requests.board.approveAllTitle": "Έγκριση όλων των αιτημάτων σε αναμονή ({n});",
+	"requests.board.approveAllDesc": "Περιλαμβάνει και αιτήματα πιο κάτω στη λίστα που δεν έχουν φορτωθεί ακόμα.",
 	"requests.board.requests": "Αιτήματα",
 	"requests.board.open": "Άνοιγμα: {name}, αίτημα από {who}",
 	"requests.board.pageForArtist": "Σελίδα καλλιτέχνη: {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Προστέθηκε",
 	"requests.addAll.summary": "Προστέθηκαν: {added}, παραλείφθηκαν: {skipped}",
 	"requests.addAll.summaryClean": "Προστέθηκαν: {added}",
-	"requests.addAll.intro": "Κάθε ταινία προστίθεται στη Βιβλιοθήκη σας με τον φάκελο και τους κανόνες επιλογής παρακάτω και με τις αποθηκευμένες προεπιλογές σας. Οι ταινίες που υπάρχουν ήδη στη Βιβλιοθήκη εμφανίζονται στη λίστα, αλλά δεν προστίθενται ξανά."
+	"requests.addAll.intro": "Κάθε ταινία προστίθεται στη Βιβλιοθήκη σας με τον φάκελο και τους κανόνες επιλογής παρακάτω και με τις αποθηκευμένες προεπιλογές σας. Οι ταινίες που υπάρχουν ήδη στη Βιβλιοθήκη εμφανίζονται στη λίστα, αλλά δεν προστίθενται ξανά.",
+	"requests.ask.alsoAsk": "Ζήτησε και {name}",
+	"requests.add.handsOff": "Η λειτουργία χωρίς παρέμβαση είναι ενεργή: δεν χρειάζεται φάκελος βιβλιοθήκης. Πηγαίνει στο πρόγραμμα λήψης και τα αρχεία μένουν εκεί."
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { dragScroll } from '#lib/ui/drag-scroll.ts';
 	import { Orbit, SkRail } from '#lib/ui/sk/index.ts';
 	import Shelf from '#lib/ui/Shelf.svelte';
@@ -191,7 +192,7 @@
 {:else if all}
 	<section class="see-all" data-testid="new-music-all">
 		<button class="back" type="button" onclick={() => seeAll(null)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" /></svg>{t('music.newMusic')}</button>
-		<h2>{all.title}</h2>
+		<h2>{serverWords(all.title)}</h2>
 		<p class="sub">{all.reason}</p>
 		<ul class="grid">
 			{#each all.items as raw (raw.key)}
@@ -231,7 +232,7 @@
 
 		{#if tracks}
 			<section class="tracks-row" aria-labelledby="np-tracks-h">
-				<header class="sh"><h2 id="np-tracks-h"><button type="button" onclick={() => seeAll(tracks.id)}>{tracks.title}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg></button></h2><p>{tracks.reason}</p></header>
+				<header class="sh"><h2 id="np-tracks-h"><button type="button" onclick={() => seeAll(tracks.id)}>{serverWords(tracks.title)}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6" /></svg></button></h2><p>{tracks.reason}</p></header>
 				<div class="pager">
 					<ol class="tracks" use:dragScroll bind:this={trackList} onscroll={tEdges} data-testid="new-music-tracks">
 						{#each tracks.items as raw (raw.key)}
@@ -252,7 +253,7 @@
 		{#each rows as row, ri (row.id)}
 			{#if ri === 1 && rising}
 				<div class="row" data-row="rising_today">
-					<Shelf title={rising.title} subtitle={rising.reason} item="var(--music-circle, var(--album-item))" items={rising.items} key={(c) => c.key} placeholder="round" lines={2}>
+					<Shelf title={serverWords(rising.title)} subtitle={rising.reason} item="var(--music-circle, var(--album-item))" items={rising.items} key={(c) => c.key} placeholder="round" lines={2}>
 						{#snippet card(c: MusicCardData)}
 							<PosterCard title={c.name} href={musicCardHref(c)} image={coverFor(musicImage(c), 200).src} kind="artist" subtitle={c.note || undefined} shape="round" music needsArt
 								status={c.title_id ? 'in_library' : undefined} />
@@ -261,10 +262,10 @@
 				</div>
 			{/if}
 			{#if row.shape === 'wide'}
-			<MusicVideoRow title={row.title} reason={row.reason} items={row.items} />
+			<MusicVideoRow title={serverWords(row.title)} reason={row.reason} items={row.items} />
 			{:else}
 			<div class="row" data-row={row.type}>
-				<Shelf title={row.title} subtitle={row.reason} item="var(--album-item)" items={row.items} key={(c) => c.key} placeholder="square" lines={2} onseeall={() => seeAll(row.id)}>
+				<Shelf title={serverWords(row.title)} subtitle={row.reason} item="var(--album-item)" items={row.items} key={(c) => c.key} placeholder="square" lines={2} onseeall={() => seeAll(row.id)}>
 					{#snippet card(raw: NewMusicCard)}
 						{@render albumCard(row, live(raw))}
 					{/snippet}

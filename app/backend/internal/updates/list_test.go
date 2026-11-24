@@ -17,9 +17,9 @@ func listJSON(serial, gen string, extra string) []byte {
 		`"changelog_url":"https://github.com/HolyArrs/HolyArrs/releases/tag/v1.2.0","notes_short":"Fixes"` + extra + `}},"revoked":[]}`)
 }
 
-func TestPinnedKeysEmpty(t *testing.T) {
-	if len(updates.PinnedKeys) != 0 || len(updates.Pinned()) != 0 {
-		t.Fatal("PinnedKeys must stay empty until the key ceremony")
+func TestPinnedKeysParse(t *testing.T) {
+	if len(updates.PinnedKeys) == 0 || len(updates.Pinned()) < len(updates.PinnedKeys) {
+		t.Fatal("every pinned key must parse")
 	}
 }
 

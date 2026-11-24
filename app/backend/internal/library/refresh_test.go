@@ -227,10 +227,11 @@ func TestRefreshPlanChangedListDroppedAndArtwork(t *testing.T) {
 	id1, _ := AddMovie(ctx, s, first, AddOptions{}, nil, now, domain.System)
 	id2, _ := AddMovie(ctx, s, second, AddOptions{}, nil, now, domain.System)
 
-	// Changed list in use (last start 3 days ago): only the second movie.
+	// Changed list in use (last start 3 days ago): the second movie, plus
+	// the first because it was never fetched.
 	last := time.Date(2026, 10, 10, 9, 5, 0, 0, time.UTC)
 	ids, why, err := svc.RefreshPlan(ctx, false, &last)
-	if err != nil || len(ids) != 1 || ids[0] != id2 || why[id2] != "on the changed list" {
+	if err != nil || len(ids) != 2 || why[id2] != "on the changed list" || why[id1] != "never fetched" {
 		t.Fatalf("changed plan %v %v %v", ids, why, err)
 	}
 	// Last start too old for the list: the rules decide (both never fetched).

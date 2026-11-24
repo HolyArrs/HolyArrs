@@ -36,5 +36,7 @@
 	"settings.move.undoId": "가져오기 {id}을(를) 되돌릴까요?",
 	"settings.move.undoQuestion": "이 가져오기를 되돌릴까요?",
 	"settings.move.undoNote": "이 가져오기로 추가된 항목을 지웁니다. 이후에 바꾼 내용은 유지됩니다. 보고서가 필요하면 먼저 내려받으세요.",
-	"settings.move.undoMove": "가져오기 되돌리기"
+	"settings.move.undoMove": "가져오기 되돌리기",
+	"settings.move.continueSetup": "설정 계속하기",
+	"settings.move.backToChoose": "선택으로 돌아가기"
 }

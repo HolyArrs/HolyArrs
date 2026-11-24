@@ -2,6 +2,7 @@ package library
 
 import (
 	"context"
+	"database/sql"
 	"slices"
 	"testing"
 	"time"
@@ -62,5 +63,31 @@ func TestCalendarAlbumPlace(t *testing.T) {
 		if e.Nth < 1 || e.ArtistMBID == "" {
 			t.Fatalf("%+v", e)
 		}
+	}
+}
+
+// A movie's date says where its copy stands, as an episode's does.
+func TestCalendarMovieState(t *testing.T) {
+	s := open(t)
+	ctx := context.Background()
+	addFolder(t, s)
+	m := metadata.Movie{Name: "Odyssey", IDs: map[string]string{"tmdb": "9"}, DigitalDate: d("2026-11-20")}
+	id, err := AddMovie(ctx, s, m, AddOptions{}, nil, now, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	es, err := Calendar(ctx, s.Read(), *d("2026-11-01"), *d("2026-12-01"))
+	if err != nil || len(es) != 1 || es[0].State == "" {
+		t.Fatalf("%+v %v", es, err)
+	}
+	if err := s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE slots SET state = 'downloading' WHERE item_id IN (SELECT id FROM items WHERE title_id = ?)`, id)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	es, err = Calendar(ctx, s.Read(), *d("2026-11-01"), *d("2026-12-01"))
+	if err != nil || len(es) != 1 || es[0].State != "downloading" || len(es[0].Versions) != 0 {
+		t.Fatalf("%+v %v", es, err)
 	}
 }

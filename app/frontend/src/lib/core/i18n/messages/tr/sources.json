@@ -85,5 +85,21 @@
 	"sources.uses.auto": "kendiliğinden arar",
 	"sources.uses.feed": "en yenilerin listesi",
 	"sources.uses.hand": "elle arama",
-	"sources.uses.none": "kullanılmıyor"
+	"sources.uses.none": "kullanılmıyor",
+	"sources.bridge.removeTitle": "{name} kaldırılsın mı?",
+	"sources.bridge.find": "Ağımda {name} bul",
+	"sources.bridge.noneFound": "Ağında hiçbir {name} yanıt vermedi.",
+	"sources.bridge.keyFound": "Anahtar {name} uygulamasından alındı",
+	"sources.bridge.keyKept": "{name} anahtarını vermedi (girişi açık). Kopyalamak için Anahtarı al düğmesini kullan.",
+	"sources.bridge.keyKeptJackett": "Jackett anahtarını vermedi (yönetici şifresi var). Kopyalamak için Anahtarı al düğmesini kullan.",
+	"sources.bridge.notReached": "{name} uygulamasına ulaşılamadı.",
+	"sources.bridge.brings.title": "Neler aktarılır",
+	"sources.bridge.brings.sites": "İndeksleyicileri, Kaynak olarak",
+	"sources.bridge.brings.categories": "Kategorileri",
+	"sources.bridge.brings.search": "Aramalar {name} üzerinden yapılır",
+	"sources.bridge.brings.sync": "{name} içindeki değişiklikler aktarılır",
+	"sources.bridge.brings.stays": "İndeksleyicilerin {name} içinde kurulu kalır.",
+	"sources.bridge.brings.had": "{n} indeksleyici zaten burada",
+	"sources.bridge.brings.hadFrom": "{apps} üzerinden içe aktarıldı",
+	"sources.bridge.brings.keyKept": "Zaten kullandıkları anahtar için alanı boş bırak."
 }

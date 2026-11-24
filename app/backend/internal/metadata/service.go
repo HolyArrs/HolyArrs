@@ -418,7 +418,10 @@ func (s *Service) get(ctx context.Context, path, provider, id string, q url.Valu
 			if !pendingSleep(ctx, resp.Header.Get("Retry-After")) {
 				return out, ctx.Err()
 			}
-		case http.StatusUnauthorized, http.StatusForbidden:
+		case http.StatusUnauthorized:
+			// The server no longer knows this install's sign-in; it signs up again.
+			return out, InstallRefused(ErrServiceAccess)
+		case http.StatusForbidden:
 			return out, ErrServiceAccess
 		case http.StatusNotFound:
 			return out, ErrNotFound

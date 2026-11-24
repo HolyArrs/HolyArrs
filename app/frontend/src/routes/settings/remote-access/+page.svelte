@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Settings > Remote access: the Tailscale plugin's card when it is installed, else a pointer to the Plugins page. Owner only.
+	// Settings > Remote access: a card per forwarding plugin installed, else a pointer to the Plugins page. Owner only.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
@@ -9,12 +9,14 @@
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { to } from '#lib/core/paths.ts';
-	import { RemoteAccess, type PluginOverview } from '#lib/plugins/index.ts';
+	import { RemoteAccess, forwards, type PluginOverview } from '#lib/plugins/index.ts';
+	import { page } from '$app/state';
 
 	let ov = $state<PluginOverview | null>(null);
 	let loaded = $state(false);
 	let error = $state('');
-	const tailscale = $derived(ov?.plugins.find((p) => p.id === 'tailscale' && p.installed) ?? null);
+	// Every installed plugin the owner gave network.forward (Tailscale, NetBird, a tunnel); ?plugin= picks one.
+	const forwarders = $derived((ov?.plugins ?? []).filter((p) => p.installed && forwards(p)));
 
 	async function load() {
 		try {
@@ -39,9 +41,11 @@
 	<SkSettings rows={2} />
 {:else if error && !ov}
 	<LoadError hasData={false} message={error} onretry={load} />
-{:else if ov && tailscale}
+{:else if ov && forwarders.length}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
-	<RemoteAccess plugin={tailscale} canRun={ov.can_run} onchange={load} />
+	{#each forwarders.filter((p) => !page.url.searchParams.get('plugin') || p.id === page.url.searchParams.get('plugin')) as p (p.id)}
+		<RemoteAccess plugin={p} canRun={ov.can_run} onchange={load} />
+	{/each}
 {:else}
 	<section class="card" data-testid="remote-needs-plugin">
 		<p class="small">{t('plugins.remoteNeedsPlugin')}</p>

@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Αιτήματα",
 	"settings.appearance.colRate": "Ανά γραμμή",
 	"settings.appearance.noRows": "Δεν έχουν καταμετρηθεί ακόμη γραμμές της Εξερεύνησης.",
+	"settings.appearance.rowStats": "Γραμμές της Εξερεύνησης",
+	"settings.appearance.rowStatsDesc": "Ανοίγματα και αιτήματα ανά γραμμή τις τελευταίες 30 ημέρες, για όλους μαζί. Μετριούνται μόνο σε αυτόν τον διακομιστή.",
+	"settings.appearance.colRow": "Γραμμή",
+	"settings.appearance.row.because_have": "Σαν τίτλους που έχεις",
+	"settings.appearance.row.because_asked": "Σαν τα αιτήματά σου",
+	"settings.appearance.row.person": "Περισσότερα από ένα άτομο",
+	"settings.appearance.row.genre": "Επιλογές είδους για σένα",
+	"settings.appearance.row.popular_genre": "Δημοφιλή ανά είδος",
+	"settings.appearance.row.popular_decade": "Δημοφιλή ανά δεκαετία",
+	"settings.appearance.row.decade": "Ανά δεκαετία",
+	"settings.appearance.row.mood": "Ανά διάθεση",
+	"settings.appearance.row.hero": "Πάνω μπάνερ",
 	"settings.appearance.motion": "Κίνηση",
 	"settings.appearance.motionNote": "Ακολουθεί τη ρύθμιση Μείωση κίνησης της συσκευής σας"
 }

@@ -114,7 +114,7 @@ type calendarRow struct {
 // metadata server's picture route. Only stored data is read: no outside
 // call on the request, and a title without a pick keeps its backdrop.
 func (h *Handlers) calendarArt(r *http.Request, rows []calendarRow) {
-	lang := metadata.TrailerLanguage(r)
+	lang := metadata.TextLanguage(r)
 	ids := map[int64]string{}
 	var args []any
 	for _, e := range rows {

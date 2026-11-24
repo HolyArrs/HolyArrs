@@ -26,6 +26,9 @@ import (
 // ErrFlareSolverr is a FlareSolverr address that cannot be used.
 var ErrFlareSolverr = errors.New("the FlareSolverr address must look like http://host:8191")
 
+// ErrFlareAgain is a FlareSolverr address moved to another host: it would be handed the Source's address (with any key in it) and the proxy password.
+var ErrFlareAgain = errors.New("the FlareSolverr address changed to another host; type the Source's key and proxy password again so they are never sent to a new host by itself")
+
 // flareWait is how long FlareSolverr may take over one page; its browser
 // can need most of a minute for a check.
 const flareWait = 60 * time.Second
@@ -65,8 +68,9 @@ func (c *Client) useClearance(req *http.Request) *clearance {
 
 // canSolve says whether a blocked call goes to FlareSolverr. Only a plain
 // GET is handed over: FlareSolverr cannot send a JSON body or our headers.
+// Nor can it open a plugin's address, which is no page on the web.
 func (c *Client) canSolve(block, method string, head http.Header) bool {
-	return block == BlockBotCheck && c.cfg.FlareSolverr != nil && method == http.MethodGet && len(head) == 0
+	return !IsPluginSource(c.cfg.URL) && block == BlockBotCheck && c.cfg.FlareSolverr != nil && method == http.MethodGet && len(head) == 0
 }
 
 // forget drops cookies the site no longer takes.

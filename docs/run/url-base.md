@@ -99,7 +99,7 @@ More fixes: [Troubleshooting](../../help/troubleshooting/).
 - `holyarrs`, `/holyarrs` and `/holyarrs/` all mean `/holyarrs`.
 - A saved path that is not valid is ignored.
 - Everything moves under the path: pages, the API, live updates, sign-in, and links HolyArrs builds (invite links, the calendar feed).
-- `/healthz` and `/readyz` also answer at the root, so the image's own health check keeps working.
+- `/healthz`, `/readyz` and `/ping` also answer at the root, so the image's own health check and Kubernetes probes keep working. See [Health probes](probes.md).
 - Any other address outside the path answers not found.
 
 </details>

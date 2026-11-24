@@ -91,7 +91,7 @@ async function importTicked(page: Page, label: string): Promise<Result[]> {
 	return ((await (await answer).json()) as { results: Result[] }).results;
 }
 
-test('Import files by hand: Change matches a wrongly named file to another Library movie and imports it there without asking Copy or Move', async ({ page }) => {
+test('Import files by hand: Change matches a wrongly named file to another Library movie and imports it there with the default Copy or link', async ({ page }) => {
 	await signIn(page, owner());
 	const call = await api(page);
 	const wrong = await freshMovie(call, 900040, 'Tamarind Quay');
@@ -120,8 +120,8 @@ test('Import files by hand: Change matches a wrongly named file to another Libra
 	await expect(row.locator('.match')).not.toContainText('Tamarind Quay');
 	await expect(row.getByRole('checkbox', { name: `Import ${basename(file)}` })).toBeChecked();
 
-	// No Copy/Move choice: placed like automatic imports.
-	await expect(page.getByRole('radio')).toHaveCount(0);
+	// The Copy or Move choice sits above Import and starts on Copy or link: placed like automatic imports.
+	await expect(page.getByRole('radio', { name: 'Copy or link' })).toBeChecked();
 	const [res] = await importTicked(page, 'Import 1 file');
 	expect(res.outcome, res.error).toBe('placed');
 	expect(res.title_id).toBe(right);

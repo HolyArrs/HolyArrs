@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Prima la copia migliore; vince il pacchetto di stagione se sono pari",
 	"settings.search.preferAlways": "Un pacchetto di stagione ogni volta che supera l'insieme di qualità",
 	"settings.search.multi": "Prendi release con più stagioni",
-	"settings.search.multiHint": "Riempie ogni episodio mancante al suo interno",
+	"settings.search.multiHint": "Riempie ogni episodio mancante al suo interno. A parità di qualità vince quella che copre più episodi cercati",
 	"settings.search.music": "Musica",
 	"settings.search.albums": "Cerca anche gli album mancanti",
 	"settings.search.albumsHint": "Album usciti, una ricerca ciascuno",

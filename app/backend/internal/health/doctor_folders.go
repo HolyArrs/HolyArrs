@@ -9,6 +9,7 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 // Folder is the outcome of checking one Library or download folder.
@@ -108,11 +109,24 @@ func CheckFolders(ctx context.Context, db database.Lister, savePath string, budg
 		}
 	}
 	out := make([]Folder, 0, len(libs)+len(downloads))
+	links := make([][]string, 0, len(libs)+len(downloads))
+	routed := map[string][]string{} // a Library folder's new-title tags
+	lookOnly := map[string]bool{}   // nothing is written there, so only being there counts
+	if db != nil {
+		if lfs, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "stand_in = 0"); err == nil {
+			for _, lf := range lfs {
+				routed[lf.Path] = library.TagsFromFolder(lf)
+				lookOnly[lf.Path] = lf.LookOnly
+			}
+		}
+	}
 	for _, l := range libs {
 		out = append(out, Folder{Role: l[1] + " library", Path: l[0]})
+		links = append(links, downloads)
 	}
 	for _, d := range downloads {
 		out = append(out, Folder{Role: "downloads", Path: d})
+		links = append(links, nil)
 	}
 	type done struct {
 		i int
@@ -121,11 +135,10 @@ func CheckFolders(ctx context.Context, db database.Lister, savePath string, budg
 	ch := make(chan done, len(out))
 	for i, f := range out {
 		go func() {
-			var links []string
-			if f.Role != "downloads" {
-				links = downloads
+			if tags, ok := routed[f.Path]; ok && f.Role != "downloads" && !lookOnly[f.Path] {
+				links[i] = library.LinkPaths(ctx, db, f.Path, downloads, tags)
 			}
-			h := library.CheckFolder(f.Path, links)
+			h := library.CheckUse(mediafiles.LibraryFolder{Path: f.Path, LookOnly: lookOnly[f.Path] && f.Role != "downloads"}, links[i])
 			f.State, f.Reason, f.Free = h.State, h.Reason, h.FreeSpace
 			if f.State == "ok" && h.Reason != "" {
 				f.State = "low_space"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -264,5 +265,27 @@ func TestFlareSolverr_CallWaitsForTheCheck(t *testing.T) {
 	}
 	if c := New(Config{URL: "https://site.example", Timeout: 20 * time.Second}); c.cfg.Timeout != 20*time.Second {
 		t.Fatalf("without FlareSolverr: %v", c.cfg.Timeout)
+	}
+}
+
+// A plugin Source's address is no page on the web, so its answer is never
+// taken to FlareSolverr, however much it looks like a bot check.
+func TestFlareSolverr_PluginSourceIsNotHandedOver(t *testing.T) {
+	old := PluginTransport
+	t.Cleanup(func() { PluginTransport = old })
+	PluginTransport = func(string) http.RoundTripper {
+		return rtFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: http.StatusForbidden, Status: "403 Forbidden", Header: http.Header{"Server": {"cloudflare"}, "Content-Type": {"text/html"}},
+				Body: io.NopCloser(strings.NewReader("<html><head><title>Just a moment...</title></head></html>")), Request: r}, nil
+		})
+	}
+	var asked atomic.Int32
+	// The plugin's id may well be a name that resolves, so the address rule alone does not hold FlareSolverr back.
+	c := New(Config{URL: "plugin://lab", Format: "torznab", AllowLocal: true, FlareSolverr: fakeFlare(t, &asked, solved),
+		resolve: func(context.Context, string) ([]net.IP, error) { return []net.IP{net.IPv4(203, 0, 113, 7)}, nil }})
+	_, err := c.Caps(context.Background())
+	var se *Error
+	if !errors.As(err, &se) || se.Detail != BlockBotCheck || asked.Load() != 0 {
+		t.Fatalf("got %v, asked %d", err, asked.Load())
 	}
 }

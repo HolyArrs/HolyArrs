@@ -33,7 +33,7 @@ func TestFactsOfStoresHeaderFacts(t *testing.T) {
 			t.Errorf("unknown %s stored as %#v", k, bare[k])
 		}
 	}
-	if NeedsFacts(bare) || !NeedsFacts(map[string]any{"inspection_status": "complete"}) || NeedsFacts(map[string]any{"facts_version": json.Number("2")}) {
+	if NeedsFacts(bare) || !NeedsFacts(map[string]any{"inspection_status": "complete"}) || NeedsFacts(map[string]any{"facts_version": json.Number("4")}) || !NeedsFacts(map[string]any{"facts_version": json.Number("3")}) {
 		t.Error("facts version check")
 	}
 	if channelWords(2) != "2.0" || channelWords(8) != "7.1" {

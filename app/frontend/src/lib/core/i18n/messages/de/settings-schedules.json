@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Abbrechen",
 	"settings.schedules.stages": "Stufen",
 	"settings.schedules.stagesNote": "Pausiere oder starte sie neu unter <a>Bereiche</a>.",
-	"settings.schedules.allTime": "Dauerhaft"
+	"settings.schedules.allTime": "Dauerhaft",
+	"settings.schedules.skip.nothing": "Nichts zu tun",
+	"settings.schedules.skip.plexOff": "Aus: Schalte {setting} in {page} ein",
+	"settings.schedules.skip.plexNobody": "Nichts zu tun: Niemand hat seine Plex-Merkliste eingeschaltet",
+	"settings.schedules.skip.settingOff": "Aus: Schalte es in seinen Einstellungen ein",
+	"settings.schedules.skip.starting": "Übersprungen: HolyArrs startete noch",
+	"settings.schedules.took": "Dauer {time}",
+	"settings.schedules.finished": "{label} fertig",
+	"settings.schedules.nothingToDo": "{label}: nichts zu tun",
+	"settings.schedules.runFailed": "{label} fehlgeschlagen"
 }

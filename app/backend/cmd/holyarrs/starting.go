@@ -83,6 +83,7 @@ func keyHeldHandler(err error, configDir string) http.Handler {
 	}
 	m := http.NewServeMux()
 	m.Handle("GET /healthz", plain)
+	m.HandleFunc("GET /ping", ping)
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Vary", "Accept-Language")
 		failedHandler(msg+"\n\n"+keyLine(metadata.TextLanguage(r))).ServeHTTP(w, r)
@@ -143,6 +144,7 @@ func keyWhere(err error) string {
 
 func holdingPage(healthCode int, health, page string) http.Handler {
 	m := http.NewServeMux()
+	m.HandleFunc("GET /ping", ping)
 	m.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(healthCode)
@@ -296,6 +298,7 @@ func refusedHandler(dir string, err error, done chan<- struct{}) http.Handler {
 	}
 	m := http.NewServeMux()
 	m.Handle("GET /healthz", plain)
+	m.HandleFunc("GET /ping", ping)
 	m.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 4<<10)
 		given := ""

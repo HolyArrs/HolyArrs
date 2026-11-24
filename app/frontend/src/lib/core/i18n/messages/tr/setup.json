@@ -8,10 +8,14 @@
 	"setup.fullPath": "Tam klasör yolunu yaz, örneğin {path}.",
 	"setup.folderUsed": "Bu klasör zaten kullanılıyor ya da kullanılan bir klasörün içinde.",
 	"setup.folderMissing": "Böyle bir klasör yok. Yolu kontrol et.",
-	"setup.addFolderOrOff": "Bir klasör ekle ya da bunu kapat.",
+	"setup.addFolderOrOff": "Bir klasör ekle ya da Şimdilik geç düğmesine bas.",
 	"setup.notAnswering": "HolyArrs yanıt vermiyor. Biraz sonra tekrar dene.",
 	"setup.addUserPasswordHint": "Kullanıcı adını ve parolayı ekle.",
 	"setup.folders": "Klasörler",
 	"setup.downloader": "İndirici",
-	"setup.source": "Kaynak"
+	"setup.source": "Kaynak",
+	"setup.alertsNeedKeyOne": "Uyarılar: 1 tanesinin anahtara ihtiyacı var",
+	"setup.alertsNeedKey": "Uyarılar: {n} tanesinin anahtara ihtiyacı var",
+	"setup.folderNoAccess": "HolyArrs bu klasörü açamıyor. İzinlerini kontrol et.",
+	"setup.folderCantUse": "HolyArrs bu klasörü kullanamıyor. Yolu kontrol et."
 }

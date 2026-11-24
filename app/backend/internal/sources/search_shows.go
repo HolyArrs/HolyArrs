@@ -329,7 +329,7 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 	rels := make([]mediafiles.ReleaseFacts, len(all))
 	vs := make([]mediafiles.Verdict, len(all))
 	for i, f := range all {
-		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Show: true})
+		p := parseItem(f.item, releasename.Hints{Size: f.item.Size, Show: true, MultiLanguages: f.src.MultiLanguages, NoLanguage: f.src.NoLanguageLanguages})
 		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		m := mediafiles.MatchRelease(p, []mediafiles.TitleRef{tref})
@@ -365,6 +365,7 @@ func (s *Searcher) judgeShow(ctx context.Context, set showSet, all []found, hand
 			}
 		}
 	}
+	s.holdStalled(ctx, rels, vs, hand, time.Now())
 	if rules.packsFirst {
 		mediafiles.RankPacksFirst(rels, vs, body)
 	} else {
@@ -390,6 +391,11 @@ func (set showSet) lines(ss *mediafiles.SlotSet, rel mediafiles.ReleaseFacts, re
 	covered := make([]*epSlot, 0, len(found))
 	for _, r := range found {
 		covered = append(covered, byItem[r.ItemID])
+	}
+	for _, e := range covered {
+		if e != nil && e.it.Name != nil {
+			ss.EpisodeTitles = append(ss.EpisodeTitles, *e.it.Name)
+		}
 	}
 	ss.MatchReasons = append(ss.MatchReasons, mediafiles.Reason{Step: "match", Rule: "episode", Effect: "pass", Detail: "holds " + coverLabel(covered)})
 	pack := mediafiles.IsPack(p)

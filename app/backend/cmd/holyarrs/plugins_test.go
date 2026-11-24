@@ -14,8 +14,9 @@ func TestPluginRoutesAreOwnerOnly(t *testing.T) {
 		{http.MethodPost, "/api/v1/plugins/tailscale/start"},
 		{http.MethodPost, "/api/v1/plugins/tailscale/stop"},
 		{http.MethodDelete, "/api/v1/plugins/tailscale"},
-		{http.MethodGet, "/api/v1/plugins/tailscale/status"},
-		{http.MethodPost, "/api/v1/plugins/tailscale/signout"},
+		{http.MethodGet, "/api/v1/plugins/tailscale/remote/status"},
+		{http.MethodPost, "/api/v1/plugins/tailscale/remote/signout"},
+		{http.MethodPost, "/api/v1/plugins/tailscale/remote/name"},
 	} {
 		r.ana.call(rt.method, rt.path, "", http.StatusForbidden)
 	}

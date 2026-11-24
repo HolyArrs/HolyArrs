@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "ย้อนกลับไม่ได้ ไฟล์จะยังอยู่",
 	"settings.pickRules.removeUsed": "{used} ให้เลือกกฎอื่นที่นั่นก่อน",
 	"settings.pickRules.sentence": "{text}",
-	"settings.pickRules.cancel": "ยกเลิก"
+	"settings.pickRules.cancel": "ยกเลิก",
+	"settings.pickRules.check.title": "ตรวจชื่อรีลีส",
+	"settings.pickRules.check.desc": "วางชื่อรีลีสเพื่อดูว่า HolyArrs อ่านอย่างไร และชุดคุณภาพของคุณตัดสินอย่างไร ไม่มีการค้นหาหรือดาวน์โหลดใดๆ",
+	"settings.pickRules.check.name": "ชื่อรีลีส",
+	"settings.pickRules.check.rules": "ตัดสินด้วย",
+	"settings.pickRules.check.copies": "สำเนาของชื่อเรื่องที่ตรงกัน",
+	"settings.pickRules.check.size": "ขนาดเป็น GB (ไม่บังคับ)",
+	"settings.pickRules.check.check": "ตรวจ",
+	"settings.pickRules.check.failed": "ตรวจชื่อไม่ได้",
+	"settings.pickRules.check.readAs": "อ่านได้เป็น",
+	"settings.pickRules.check.matches": "ตรงกับ {name}",
+	"settings.pickRules.check.noTitle": "ไม่ตรงกับชื่อเรื่องใดในคลังของคุณ เลือกชุดคุณภาพด้านบนเพื่อตัดสินอยู่ดี",
+	"settings.pickRules.check.noAlbum": "ตรงกับ {name} แต่ไม่ตรงกับอัลบั้มใดของศิลปินนี้",
+	"settings.pickRules.check.noCopies": "ชื่อเรื่องนี้ไม่มีสำเนาให้ตัดสิน",
+	"settings.pickRules.check.hasFile": "มีไฟล์"
 }

@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Kérések",
 	"settings.appearance.colRate": "Soronként",
 	"settings.appearance.noRows": "Még nincs beszámított Felfedezés-sor.",
+	"settings.appearance.rowStats": "Felfedezés-sorok",
+	"settings.appearance.rowStatsDesc": "Megnyitások és kérések soronként az elmúlt 30 napban, mindenkié együtt. Csak ezen a szerveren számolva.",
+	"settings.appearance.colRow": "Sor",
+	"settings.appearance.row.because_have": "Mint a meglévő címeid",
+	"settings.appearance.row.because_asked": "Mint a kéréseid",
+	"settings.appearance.row.person": "Több egy személytől",
+	"settings.appearance.row.genre": "Műfaji válogatás neked",
+	"settings.appearance.row.popular_genre": "Népszerű műfaj szerint",
+	"settings.appearance.row.popular_decade": "Népszerű évtized szerint",
+	"settings.appearance.row.decade": "Évtized szerint",
+	"settings.appearance.row.mood": "Hangulat szerint",
+	"settings.appearance.row.hero": "Felső sáv",
 	"settings.appearance.motion": "Mozgás",
 	"settings.appearance.motionNote": "Követi az eszköz Kevesebb mozgás beállítását"
 }

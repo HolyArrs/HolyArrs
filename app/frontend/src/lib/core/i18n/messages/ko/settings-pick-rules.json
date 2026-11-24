@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "되돌릴 수 없습니다. 파일은 그대로 남습니다.",
 	"settings.pickRules.removeUsed": "{used}. 먼저 그곳에서 다른 규칙을 고르세요.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "취소"
+	"settings.pickRules.cancel": "취소",
+	"settings.pickRules.check.title": "릴리스 이름 확인",
+	"settings.pickRules.check.desc": "릴리스 이름을 붙여 넣으면 HolyArrs가 어떻게 읽는지, 품질 세트가 어떻게 판단하는지 볼 수 있습니다. 검색하거나 다운로드하지 않습니다.",
+	"settings.pickRules.check.name": "릴리스 이름",
+	"settings.pickRules.check.rules": "판단 기준",
+	"settings.pickRules.check.copies": "일치하는 타이틀의 사본",
+	"settings.pickRules.check.size": "크기(GB, 선택)",
+	"settings.pickRules.check.check": "확인",
+	"settings.pickRules.check.failed": "이름을 확인하지 못했습니다",
+	"settings.pickRules.check.readAs": "읽은 결과",
+	"settings.pickRules.check.matches": "{name}와 일치",
+	"settings.pickRules.check.noTitle": "라이브러리의 어떤 타이틀과도 일치하지 않습니다. 그래도 판단하려면 위에서 품질 세트를 고르세요.",
+	"settings.pickRules.check.noAlbum": "{name}와 일치하지만 어떤 앨범과도 일치하지 않습니다.",
+	"settings.pickRules.check.noCopies": "이 타이틀에는 판단할 사본이 없습니다.",
+	"settings.pickRules.check.hasFile": "파일 있음"
 }

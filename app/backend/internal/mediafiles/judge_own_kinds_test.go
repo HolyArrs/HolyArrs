@@ -248,13 +248,14 @@ func TestCurrentFileKnowsItsTitle(t *testing.T) {
 // language, so wanting another language refuses it, as there.
 func TestImportedLanguageReadsTheOriginal(t *testing.T) {
 	b := GoodEveryday()
-	b.Language = LanguageRule{Wanted: []string{"de"}}
+	b.Language = LanguageRule{Wanted: []string{"de"}, OriginalOK: true}
 	p := releasename.Parse("Film.2020.1080p.WEB-DL-X", releasename.Hints{})
 	var v Verdict
 	v.language(p, b, &TitleRef{OriginalLanguage: "en"})
 	if v.failed() {
 		t.Fatal("rules made here refused a Release with no language word")
 	}
+	b.Language.OriginalOK = false
 	b.Synced = &SyncedProfile{From: "import", App: "radarr"}
 	v = Verdict{}
 	v.language(p, b, &TitleRef{OriginalLanguage: "en"})

@@ -65,15 +65,9 @@ func hasClass(attrs []byte, name string) bool {
 	return false
 }
 
-func wantedLangs(asked []string) []string {
-	var out []string
-	for _, l := range asked {
-		if l = siteLang(l); l != "" {
-			out = append(out, l)
-		}
-	}
-	return out
-}
+// wantedLangs is what YIFY, TVsubtitles and BSPlayer are asked for: they
+// keep only Brazilian Portuguese apart, and have one Chinese and one Spanish.
+func wantedLangs(asked []string) []string { return plainLangs(asked, "pt-br") }
 
 // hrow is one table row: its cell texts, the first link in each cell, and the
 // classes of every tag inside it.

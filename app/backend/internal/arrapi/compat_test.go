@@ -78,13 +78,43 @@ func TestStages_RoundTrip(t *testing.T) {
 		}
 	}
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	past, ahead := now.AddDate(0, -1, 0), now.AddDate(0, 1, 0)
+	past, ahead, long := now.AddDate(0, -1, 0), now.AddDate(0, 1, 0), now.AddDate(-50, 0, 0)
 	for _, c := range []struct {
 		cinema, digital *time.Time
 		want            string
-	}{{nil, nil, "tba"}, {&ahead, nil, "announced"}, {&past, nil, "inCinemas"}, {&past, &past, "released"}, {&past, &ahead, "inCinemas"}} {
+	}{{nil, nil, "tba"}, {&ahead, nil, "announced"}, {&past, nil, "inCinemas"}, {&past, &past, "released"}, {&past, &ahead, "inCinemas"},
+		// An old movie with no home release date is out, as the old apps say.
+		{&long, nil, "released"}, {&long, &ahead, "inCinemas"}} {
 		if got := movieStatus(c.cinema, c.digital, nil, now); got != c.want {
-			t.Errorf("movieStatus = %q, want %q", got, c.want)
+			t.Errorf("movieStatus(%v, %v) = %q, want %q", c.cinema, c.digital, got, c.want)
 		}
+	}
+}
+
+// File qualities are named as the old apps name them, so each matches an
+// entry of the side's table: no resolution on DVD, CAM and TELESYNC, SDTV
+// for TV under 720p, and Radarr's BR-DISK for a disc image.
+func TestQualityNamesMatchTheTables(t *testing.T) {
+	for _, c := range []struct {
+		source string
+		res    int
+		want   string
+	}{{"dvd", 480, "DVD"}, {"dvd", 576, "DVD"}, {"cam", 0, "CAM"}, {"telesync", 720, "TELESYNC"}, {"disc_image", 1080, "BR-DISK-1080p"},
+		{"tv", 480, "SDTV"}, {"tv", 720, "HDTV-720p"}, {"web_dl", 1080, "WEBDL-1080p"}, {"remux", 1080, "Bluray-1080p Remux"}} {
+		if got := qualityName(c.source, c.res); got != c.want {
+			t.Errorf("qualityName(%q, %d) = %q, want %q", c.source, c.res, got, c.want)
+		}
+	}
+	for _, side := range []string{"radarr", "sonarr"} {
+		q := fullQuality(side, qualityName("dvd", 480), 480)["quality"].(wireQuality)
+		if q.ID != 2 || q.Name != "DVD" || q.Source != "dvd" {
+			t.Errorf("%s DVD: %+v", side, q)
+		}
+	}
+	if q := fullQuality("radarr", qualityName("disc_image", 1080), 1080)["quality"].(wireQuality); q.ID != 22 || q.Name != "BR-DISK" {
+		t.Errorf("Radarr disc image: %+v", q)
+	}
+	if l := originalLanguage("radarr", ptr("cn")); l.Name != "Chinese" {
+		t.Errorf("Cantonese: %+v", l)
 	}
 }

@@ -14,7 +14,6 @@
 	"settings.health.none": "Δεν υπάρχουν αποτελέσματα. Ελέγξτε ξανά για να εκτελεστούν.",
 	"settings.health.since": "Από",
 	"settings.health.settings": "Ρυθμίσεις ελέγχων υγείας",
-	"settings.health.updateCheck": "Έλεγχος για νεότερο HolyArrs",
 	"settings.health.onlyChecks": "Μόνο έλεγχος. Δεν εγκαθιστά ποτέ.",
 	"settings.health.every": "Έλεγχος ενημερώσεων κάθε",
 	"settings.health.day": "ημέρα",

@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "প্লাগইনের বার্তা",
+	"requests.moment.plugin_message.body": "আপনার অনুমতি দেওয়া প্লাগইন একটি বার্তা পাঠায়।",
+	"requests.words.via": "{plugin}-এর মাধ্যমে {who}",
 	"requests.moment.ask_waiting.title": "নতুন রিকোয়েস্ট",
 	"requests.moment.ask_waiting.body": "স্টাফদের জন্য: একটি সিনেমা, শো বা আর্টিস্ট অনুমোদনের অপেক্ষায়।",
 	"requests.moment.ask_approved.title": "অনুমোদিত",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "TMDB তালিকা",
 	"requests.lists.tmdbHint": "তালিকার নম্বর বা তার লিংক, যেমন themoviedb.org/list/12345।",
 	"requests.lists.trakt": "Trakt তালিকা",
-	"requests.lists.traktHint": "user/list, user/watchlist বা লিংক, যেমন trakt.tv/users/ana/lists/favourites।",
+	"requests.lists.traktHint": "user/list, user/watchlist বা লিংক, যেমন trakt.tv/users/ana/lists/favourites। অথবা একটি চার্ট: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "MDBList তালিকা",
 	"requests.lists.mdblistHint": "user/list বা লিংক, যেমন mdblist.com/lists/ana/favourites। পাবলিক তালিকা কী ছাড়াই কাজ করে।",
 	"requests.lists.everyDay": "প্রতিদিন",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "কোনো ভুল খুঁজে পাওয়া যায়নি",
 	"requests.outcome.noResults": "এখনো কোনো ফলাফল নেই",
 	"requests.outcome.nothingFound": "কিছু পাওয়া যায়নি:",
+	"requests.outcome.refused": "পাওয়া গেছে, কিন্তু কোনোটি বাছাইয়ের নিয়মে মেলেনি",
 	"requests.outcome.why.slowed": "থামানো হয়েছিল (ধীর করা)",
 	"requests.outcome.why.down": "বন্ধ ছিল",
 	"requests.outcome.why.blocked": "আটকানো হয়েছিল",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "যোগ করুন",
 	"requests.addMovie.titleBare": "একটি সিনেমা যোগ করুন",
 	"requests.add.loadingDefaults": "ডিফল্ট লোড হচ্ছে",
+	"requests.add.defaultsLate": "আপনার সংরক্ষিত ডিফল্ট সময়মতো লোড হয়নি, তাই সাধারণ পছন্দগুলো বেছে নেওয়া হয়েছে। যোগ করার আগে সেগুলো দেখে নিন।",
 	"requests.add.noFolder.music": "মিউজিকের জন্য এখনো কোনো লাইব্রেরি ফোল্ডার নেই। আগে <a>একটি যোগ করুন</a>।",
 	"requests.add.noFolder.movie": "সিনেমার জন্য এখনো কোনো লাইব্রেরি ফোল্ডার নেই। আগে <a>একটি যোগ করুন</a>।",
 	"requests.add.noFolder.show": "শোয়ের জন্য এখনো কোনো লাইব্রেরি ফোল্ডার নেই। আগে <a>একটি যোগ করুন</a>।",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "আমার ক্যালেন্ডারে দেখান।",
 	"requests.add.cancel": "বাতিল",
 	"requests.add.submit": "লাইব্রেরিতে যোগ করুন",
+	"requests.add.submitChoose": "যোগ করুন ও রিলিজ বাছুন",
 	"requests.addArtist.albums": "যে অ্যালবাম আপ-টু-ডেট রাখা হবে",
 	"requests.addArtist.newAlbums": "নতুন অ্যালবাম",
 	"requests.addArtist.newAlbumsHint": "পরে বেরোনো অ্যালবামের কী হবে।",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", {status} দেখানো হচ্ছে",
 	"requests.board.reportsOpen": "রিপোর্ট, {n}টি খোলা",
 	"requests.board.approveAll": "সব অনুমোদন করুন",
+	"requests.board.approveAllTitle": "অপেক্ষমাণ সব অনুরোধ অনুমোদন করবেন ({n})?",
+	"requests.board.approveAllDesc": "তালিকার নিচের দিকের যে অনুরোধগুলো এখনও লোড হয়নি, সেগুলোও এতে আছে।",
 	"requests.board.requests": "রিকোয়েস্ট",
 	"requests.board.open": "{name} খুলুন, রিকোয়েস্ট করেছেন {who}",
 	"requests.board.pageForArtist": "{name}-এর আর্টিস্ট পেজ",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "যোগ করা হয়েছে",
 	"requests.addAll.summary": "যোগ করা হয়েছে: {added}, বাদ গেছে: {skipped}",
 	"requests.addAll.summaryClean": "যোগ করা হয়েছে: {added}",
-	"requests.addAll.intro": "প্রতিটি মুভি নিচে বেছে নেওয়া ফোল্ডার ও পিক রুল এবং আপনার সংরক্ষিত ডিফল্ট দিয়ে আপনার লাইব্রেরিতে যোগ হয়। যেগুলো আগেই লাইব্রেরিতে আছে সেগুলো তালিকায় দেখানো হয়, কিন্তু আবার যোগ হয় না।"
+	"requests.addAll.intro": "প্রতিটি মুভি নিচে বেছে নেওয়া ফোল্ডার ও পিক রুল এবং আপনার সংরক্ষিত ডিফল্ট দিয়ে আপনার লাইব্রেরিতে যোগ হয়। যেগুলো আগেই লাইব্রেরিতে আছে সেগুলো তালিকায় দেখানো হয়, কিন্তু আবার যোগ হয় না।",
+	"requests.ask.alsoAsk": "{name}-ও চান",
+	"requests.add.handsOff": "হ্যান্ডস-অফ মোড চালু: লাইব্রেরি ফোল্ডার লাগবে না। এটি ডাউনলোডারে যায় এবং ফাইলগুলো সেখানেই থাকে।"
 }

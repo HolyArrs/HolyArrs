@@ -8,6 +8,36 @@ export const partBytes = 32 * 1024;
 /** The most folders one part carries, so progress moves often. */
 export const partMost = 250;
 
+const flatWords = {
+	foldersInOne: 'flatInOne',
+	foldersInMany: 'flatInMany',
+	foldersPart: 'flatPart',
+	noFolders: 'flatNone',
+	searchFolders: 'flatSearch',
+	folderCountOne: 'flatCountOne',
+	folderCountMany: 'flatCountMany',
+	readCount: 'flatReadCount',
+	titleAndFolder: 'flatTitleAndFile',
+	leftHint: 'flatLeftHint',
+	askScanRestOne: 'flatAskScanRestOne',
+	askScanRestMany: 'flatAskScanRestMany',
+	leaveAsk: 'flatLeaveAsk',
+	interrupted: 'flatInterrupted',
+	interruptedLeft: 'flatInterruptedLeft',
+	interruptedSignedOut: 'flatInterruptedSignedOut'
+} as const;
+
+/** The text key for scanned items: files, not folders, in a Library folder that keeps movies as files. Takes a bare name or a full library.import key. */
+export function importKey(key: string, flat?: boolean): string {
+	const name = key.replace('library.import.', '');
+	return `library.import.${flat && name in flatWords ? flatWords[name as keyof typeof flatWords] : name}`;
+}
+
+/** A scan lists files, not folders: its Library folder keeps movies as files, or every row is a loose file. */
+export function itemsAreFiles(plan: { flat?: boolean; folders: { loose?: boolean }[] } | null | undefined): boolean {
+	return !!plan && (!!plan.flat || (plan.folders.length > 0 && plan.folders.every((f) => f.loose)));
+}
+
 const bytes = (x: unknown) => new TextEncoder().encode(JSON.stringify(x)).length + 1;
 
 /** Splits the picks into parts under maxBytes of JSON and at most most folders each. */

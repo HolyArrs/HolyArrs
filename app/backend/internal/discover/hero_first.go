@@ -28,7 +28,7 @@ const (
 // or English.
 func (c *CardArt) FillNow(r *http.Request, items []ItemView, max int, wait time.Duration) {
 	if c.Store() != nil && c.Metadata != nil {
-		lang := metadata.TrailerLanguage(r)
+		lang := metadata.TextLanguage(r)
 		var keys [][2]string
 		for _, v := range items {
 			if (v.Kind == "movie" || v.Kind == "show") && v.TMDBID != "" {
@@ -115,7 +115,7 @@ func (h *Handlers) HeroArt(r *http.Request, vs []ItemView) {
 
 // HeroReady are the candidates the hero may show, in order: art ready with
 // a known trailer first, then (when fewer than half of max have one) art
-// ready without one yet. At most max.
+// ready without one yet; with none, titles with a backdrop. At most max.
 func HeroReady(vs []ItemView, max int) []ItemView {
 	var ready, artOnly []ItemView
 	for _, v := range vs {
@@ -129,6 +129,15 @@ func HeroReady(vs []ItemView, max int) []ItemView {
 	}
 	if len(ready) < max/2 {
 		ready = append(ready, artOnly...)
+	}
+	if len(ready) == 0 {
+		// No logo in yet (a slow server on a fresh install): titles with a
+		// backdrop still fill the hero, their name standing in for the logo.
+		for _, v := range vs {
+			if v.Backdrop != "" {
+				ready = append(ready, v)
+			}
+		}
 	}
 	return ready[:min(len(ready), max)]
 }

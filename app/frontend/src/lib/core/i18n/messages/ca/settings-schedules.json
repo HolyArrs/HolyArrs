@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Cancel·la",
 	"settings.schedules.stages": "Etapes",
 	"settings.schedules.stagesNote": "Posa-les en pausa o reinicia-les a <a>Parts</a>.",
-	"settings.schedules.allTime": "Tot el temps"
+	"settings.schedules.allTime": "Tot el temps",
+	"settings.schedules.skip.nothing": "Res a fer",
+	"settings.schedules.skip.plexOff": "Desactivat: activa {setting} a {page}",
+	"settings.schedules.skip.plexNobody": "Res a fer: ningú ha activat la seva llista de seguiment de Plex",
+	"settings.schedules.skip.settingOff": "Desactivat: activa-ho a la seva configuració",
+	"settings.schedules.skip.starting": "Omès: HolyArrs encara s'estava iniciant",
+	"settings.schedules.took": "Ha trigat {time}",
+	"settings.schedules.finished": "{label} ha acabat",
+	"settings.schedules.nothingToDo": "{label}: res a fer",
+	"settings.schedules.runFailed": "{label} ha fallat"
 }

@@ -85,5 +85,21 @@
 	"sources.uses.auto": "自动搜索",
 	"sources.uses.feed": "最新列表",
 	"sources.uses.hand": "手动搜索",
-	"sources.uses.none": "未使用"
+	"sources.uses.none": "未使用",
+	"sources.bridge.removeTitle": "移除 {name}？",
+	"sources.bridge.find": "在我的网络中查找 {name}",
+	"sources.bridge.noneFound": "你的网络中没有 {name} 响应。",
+	"sources.bridge.keyFound": "已从 {name} 获取密钥",
+	"sources.bridge.keyKept": "{name} 没有提供密钥（已开启登录）。请用“获取密钥”复制。",
+	"sources.bridge.keyKeptJackett": "Jackett 没有提供密钥（它设置了管理员密码）。请用“获取密钥”复制。",
+	"sources.bridge.notReached": "无法连接到 {name}。",
+	"sources.bridge.brings.title": "会带过来的内容",
+	"sources.bridge.brings.sites": "它的索引器（作为来源）",
+	"sources.bridge.brings.categories": "它们的分类",
+	"sources.bridge.brings.search": "搜索通过 {name} 进行",
+	"sources.bridge.brings.sync": "{name} 中的更改会同步过来",
+	"sources.bridge.brings.stays": "你的索引器仍在 {name} 中设置。",
+	"sources.bridge.brings.had": "已有 {n} 个索引器",
+	"sources.bridge.brings.hadFrom": "通过 {apps} 导入",
+	"sources.bridge.brings.keyKept": "密钥留空即可使用他们已有的密钥。"
 }

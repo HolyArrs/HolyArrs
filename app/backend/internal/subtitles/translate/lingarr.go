@@ -18,12 +18,19 @@ type Lingarr struct {
 }
 
 // tag writes a language code the way Lingarr expects it, with the region in
-// capitals: pt-br becomes pt-BR.
+// capitals (pt-br becomes pt-BR) and a script with a capital first letter
+// (zh-hant becomes zh-Hant). Cantonese goes as yue.
 func tag(code string) string {
-	if base, region, ok := strings.Cut(code, "-"); ok {
-		return base + "-" + strings.ToUpper(region)
+	base, sub, ok := strings.Cut(code, "-")
+	switch {
+	case !ok:
+		return code
+	case code == "zh-yue":
+		return "yue"
+	case len(sub) == 4:
+		return base + "-" + strings.ToUpper(sub[:1]) + sub[1:]
 	}
-	return code
+	return base + "-" + strings.ToUpper(sub)
 }
 
 // Translate posts one chunk to the content route and reads the lines back by

@@ -45,5 +45,14 @@
 "settings.schedules.cancel": "Zrušiť",
 "settings.schedules.stages": "Fázy",
 "settings.schedules.stagesNote": "Pozastavte alebo reštartujte ich v <a>Častiach</a>.",
-"settings.schedules.allTime": "Nepretržite"
+"settings.schedules.allTime": "Nepretržite",
+"settings.schedules.skip.nothing": "Nie je čo robiť",
+"settings.schedules.skip.plexOff": "Vypnuté: zapnite {setting} v {page}",
+"settings.schedules.skip.plexNobody": "Nie je čo robiť: nikto si nezapol svoj zoznam na pozretie v Plexe",
+"settings.schedules.skip.settingOff": "Vypnuté: zapnite to v jeho nastaveniach",
+"settings.schedules.skip.starting": "Preskočené: HolyArrs sa ešte spúšťal",
+"settings.schedules.took": "Trvalo {time}",
+"settings.schedules.finished": "{label} dokončené",
+"settings.schedules.nothingToDo": "{label}: nie je čo robiť",
+"settings.schedules.runFailed": "{label} zlyhalo"
 }

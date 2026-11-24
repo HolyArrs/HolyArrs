@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Parim koopia esimesena; võrdsete puhul võidab hooaja pakk",
 	"settings.search.preferAlways": "Hooaja pakk alati, kui see läbib kvaliteedikomplekti",
 	"settings.search.multi": "Võta väljalasked mitme hooajaga",
-	"settings.search.multiHint": "Täidab iga selles oleva puuduva episoodi",
+	"settings.search.multiHint": "Täidab iga selles oleva puuduva episoodi. Sama kvaliteedi korral võidab väljalase, kus on rohkem soovitud episoode",
 	"settings.search.music": "Muusika",
 	"settings.search.albums": "Otsi ka puuduvaid albumeid",
 	"settings.search.albumsHint": "Ilmunud albumid, iga kohta üks otsing",

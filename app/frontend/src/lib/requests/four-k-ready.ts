@@ -12,11 +12,11 @@ export async function fourKReady(): Promise<{ movie: boolean; show: boolean }> {
 }
 
 /** The lines of what people can ask for that this person may use, per kind, in order; none when they cannot be read. */
-export async function askQualities(): Promise<{ movie: QualityChoice[]; show: QualityChoice[] }> {
+export async function askQualities(): Promise<{ movie: QualityChoice[]; show: QualityChoice[]; pickMany: boolean }> {
 	try {
 		const l = await api.get<AskLimit>('/asks/limit');
-		return { movie: l.qualities?.movie ?? [], show: l.qualities?.show ?? [] };
+		return { movie: l.qualities?.movie ?? [], show: l.qualities?.show ?? [], pickMany: !!l.pick_many };
 	} catch {
-		return { movie: [], show: [] };
+		return { movie: [], show: [], pickMany: false };
 	}
 }

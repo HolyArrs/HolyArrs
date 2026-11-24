@@ -15,14 +15,21 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
 )
 
-// ReadNewOwner reads a name and a password for ResetOwner. It accepts
-// "name: ..." and "password: ..." lines (or "=" instead of ":"), or two bare
-// lines, name first. The values are never written anywhere but the database.
+// ErrNoOwnerInput means nothing came in on stdin, which is what docker exec
+// without -i gives. The command then says to add -it.
+var ErrNoOwnerInput = errors.New("no name or password came in")
+
+// ReadNewOwner reads a name and a password for ResetOwner from two lines:
+// the name first, then the password. Either line may carry a label
+// ("name: ...", "password: ..." or "=" instead of ":"), in any order. A line
+// after a name is the password as typed, so a password such as "pass:word"
+// stays whole. The values are never written anywhere but the database.
 func ReadNewOwner(r io.Reader) (name, password string, err error) {
-	var bare []string
 	sc := bufio.NewScanner(io.LimitReader(r, 64<<10))
-	first := true
-	for sc.Scan() {
+	first, any := true, false
+	var haveName, havePw bool
+	// Stop once both are in, so a terminal that never sends end of input works.
+	for !(haveName && havePw) && sc.Scan() {
 		line := strings.TrimRight(sc.Text(), "\r")
 		if first { // a byte order mark some Windows editors add
 			line, first = strings.TrimPrefix(line, string(rune(0xfeff))), false
@@ -30,31 +37,40 @@ func ReadNewOwner(r io.Reader) (name, password string, err error) {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		if k, v, ok := cutLabel(line); ok {
-			switch k {
-			case "name", "username", "user":
-				name = v
-				continue
-			case "password", "pass":
-				password = v
-				continue
-			}
+		any = true
+		k, v, labelled := cutLabel(line)
+		switch {
+		case labelled && !haveName && (k == "name" || k == "username" || k == "user"):
+			name, haveName = v, true
+		case labelled && !havePw && (k == "password" || (k == "pass" && !haveName)):
+			password, havePw = v, true
+		case !haveName:
+			name, haveName = strings.TrimSpace(line), true
+		default:
+			password, havePw = strings.TrimSpace(line), true
 		}
-		bare = append(bare, strings.TrimSpace(line))
 	}
 	if err := sc.Err(); err != nil {
 		return "", "", err
 	}
-	if name == "" && password == "" && len(bare) == 2 {
-		name, password = bare[0], bare[1]
+	if !any {
+		return "", "", ErrNoOwnerInput
 	}
-	if msg := nameProblem(name); msg != "" {
-		return "", "", errors.New(msg)
-	}
-	if msg := passwordProblem(password, MinPassword); msg != "" {
-		return "", "", errors.New(msg)
+	if err := CheckNewOwner(name, password, MinPassword); err != nil {
+		return "", "", err
 	}
 	return name, password, nil
+}
+
+// CheckNewOwner says what is wrong with a new owner name and password, or nil.
+func CheckNewOwner(name, password string, minLen int) error {
+	if msg := typedNameProblem(name); msg != "" {
+		return errors.New(msg)
+	}
+	if msg := passwordProblem(password, minLen); msg != "" {
+		return errors.New(msg)
+	}
+	return nil
 }
 
 // ResetOwner sets the owner's name and password, or makes the owner when there
@@ -62,6 +78,16 @@ func ReadNewOwner(r io.Reader) (name, password string, err error) {
 // two-factor sign-in, so anything
 // signed in with the old login has to sign in again.
 func ResetOwner(ctx context.Context, s *database.Store, name, password string) error {
+	return resetOwnerVia(ctx, s, name, password, resetByCommand)
+}
+
+// How the owner was reset, for the audit trail.
+const (
+	resetByCommand = "command"
+	resetByCode    = "log_code"
+)
+
+func resetOwnerVia(ctx context.Context, s *database.Store, name, password, how string) error {
 	if msg := passwordProblem(password, MinPasswordLength(ctx, s.Read())); msg != "" {
 		return errors.New(msg)
 	}
@@ -111,9 +137,13 @@ func ResetOwner(ctx context.Context, s *database.Store, name, password string) e
 	})
 	if err == nil && id != 0 {
 		// The reset is on the audit trail: someone with the server's shell took the owner account back.
+		summary := "Owner account reset from the server's command line: name and password set, two-factor off, signed out, API keys, open invites, arr keys and outside sign-in links removed"
+		if how == resetByCode {
+			summary = "Owner account reset with a one-time code from the log: name and password set, two-factor off, signed out, API keys, open invites, arr keys and outside sign-in links removed"
+		}
 		_ = s.AddEvent(ctx, &domain.Event{Actor: domain.System, Kind: EventAccountChanged,
-			Summary: "Owner account reset from the server's command line: name and password set, two-factor off, signed out, API keys, open invites, arr keys and outside sign-in links removed",
-			Data: map[string]any{"user_id": id, "action": "owner_reset", "name": name,
+			Summary: summary,
+			Data: map[string]any{"user_id": id, "action": "owner_reset", "how": how, "name": name,
 				"invites_removed": invites, "old_app_keys_removed": arrKeys}})
 	}
 	return err

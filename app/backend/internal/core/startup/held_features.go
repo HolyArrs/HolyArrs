@@ -8,7 +8,6 @@ import (
 const (
 	AIApps        = "ai_apps"         // AI connector (MCP) and AI keys
 	RowTitleStats = "row_title_stats" // Explore row titles statistics (owner table)
-	EmbySignIn    = "emby_signin"     // Sign in with Emby
 	GoBack        = "go_back"         // Go back to the previous version steps
 )
 
@@ -16,7 +15,7 @@ const (
 // wiring calls it once; calling it again does nothing.
 func RegisterHeldFeatures() {
 	registerOnce.Do(func() {
-		for _, n := range []string{AIApps, RowTitleStats, EmbySignIn, GoBack} {
+		for _, n := range []string{AIApps, RowTitleStats, GoBack} {
 			RegisterFeature(n)
 		}
 	})

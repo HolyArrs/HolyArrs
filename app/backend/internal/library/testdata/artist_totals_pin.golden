@@ -8,5 +8,6 @@
   "BetterWanted": 1,
   "Downloading": 0,
   "Failed": 1,
-  "NextRelease": "2099-01-01T00:00:00Z"
+  "NextRelease": "2099-01-01T00:00:00Z",
+  "LastRelease": "2019-02-28T00:00:00Z"
 }

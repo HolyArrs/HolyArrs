@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Wiadomości wtyczek",
+	"requests.moment.plugin_message.body": "Dozwolona wtyczka wysyła wiadomość.",
+	"requests.words.via": "{who} przez {plugin}",
 	"requests.moment.ask_waiting.title": "Nowa prośba",
 	"requests.moment.ask_waiting.body": "Do obsługi: film, serial lub wykonawca czeka na zatwierdzenie.",
 	"requests.moment.ask_approved.title": "Zatwierdzona",
@@ -171,7 +174,7 @@
 	"requests.lists.tmdb": "Lista TMDB",
 	"requests.lists.tmdbHint": "Numer listy albo jej link, na przykład themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Lista Trakt",
-	"requests.lists.traktHint": "user/list, user/watchlist albo link, na przykład trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist albo link, na przykład trakt.tv/users/ana/lists/favourites. Albo ranking: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "Lista MDBList",
 	"requests.lists.mdblistHint": "user/list albo link, na przykład mdblist.com/lists/ana/favourites. Listy publiczne działają bez klucza.",
 	"requests.lists.everyDay": "codziennie",
@@ -199,6 +202,7 @@
 	"requests.report.reply.nothingWrong": "Nie znaleziono nic złego",
 	"requests.outcome.noResults": "Brak jeszcze wyników",
 	"requests.outcome.nothingFound": "Nic nie znaleziono:",
+	"requests.outcome.refused": "Znaleziono, ale nic nie spełnia reguł wyboru",
 	"requests.outcome.why.slowed": "został wstrzymany (spowolniony)",
 	"requests.outcome.why.down": "nie działał",
 	"requests.outcome.why.blocked": "został zablokowany",
@@ -229,6 +233,7 @@
 	"requests.add.titleBare": "Dodaj",
 	"requests.addMovie.titleBare": "Dodaj film",
 	"requests.add.loadingDefaults": "Wczytywanie ustawień domyślnych",
+	"requests.add.defaultsLate": "Zapisane ustawienia domyślne nie wczytały się na czas, więc wybrano zwykłe opcje. Sprawdź je przed dodaniem.",
 	"requests.add.noFolder.music": "Nie ma jeszcze folderu biblioteki dla muzyki. Najpierw <a>dodaj go</a>.",
 	"requests.add.noFolder.movie": "Nie ma jeszcze folderu biblioteki dla filmów. Najpierw <a>dodaj go</a>.",
 	"requests.add.noFolder.show": "Nie ma jeszcze folderu biblioteki dla seriali. Najpierw <a>dodaj go</a>.",
@@ -246,6 +251,7 @@
 	"requests.add.followHint": "Pokaż w moim kalendarzu.",
 	"requests.add.cancel": "Anuluj",
 	"requests.add.submit": "Dodaj do Biblioteki",
+	"requests.add.submitChoose": "Dodaj i wybierz wydanie",
 	"requests.addArtist.albums": "Albumy do śledzenia",
 	"requests.addArtist.newAlbums": "Nowe albumy",
 	"requests.addArtist.newAlbumsHint": "Co się stanie z albumem, który wyjdzie później.",
@@ -502,6 +508,8 @@
 	"requests.board.tabShowing": ", pokazano: {status}",
 	"requests.board.reportsOpen": "Zgłoszenia, otwarte: {n}",
 	"requests.board.approveAll": "Zatwierdź wszystkie",
+	"requests.board.approveAllTitle": "Zatwierdzić wszystkie oczekujące prośby ({n})?",
+	"requests.board.approveAllDesc": "Obejmuje to też prośby niżej na liście, które nie zostały jeszcze wczytane.",
 	"requests.board.requests": "Prośby",
 	"requests.board.open": "Otwórz: {name}, prosi: {who}",
 	"requests.board.pageForArtist": "Strona wykonawcy: {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Dodano",
 	"requests.addAll.summary": "Dodano: {added}, pominięto: {skipped}",
 	"requests.addAll.summaryClean": "Dodano: {added}",
-	"requests.addAll.intro": "Każdy film jest dodawany do Twojej Biblioteki z folderem i regułami wyboru poniżej oraz z zapisanymi ustawieniami domyślnymi. Filmy, które już są w Bibliotece, są na liście, ale nie są dodawane ponownie."
+	"requests.addAll.intro": "Każdy film jest dodawany do Twojej Biblioteki z folderem i regułami wyboru poniżej oraz z zapisanymi ustawieniami domyślnymi. Filmy, które już są w Bibliotece, są na liście, ale nie są dodawane ponownie.",
+	"requests.ask.alsoAsk": "Poproś też o {name}",
+	"requests.add.handsOff": "Tryb bez ingerencji jest włączony: folder biblioteki nie jest potrzebny. Trafia do Downloadera, a pliki tam zostają."
 }

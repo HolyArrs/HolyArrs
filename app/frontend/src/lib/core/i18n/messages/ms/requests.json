@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Mesej pemalam",
+	"requests.moment.plugin_message.body": "Pemalam yang anda benarkan menghantar mesej.",
+	"requests.words.via": "{who} melalui {plugin}",
 	"requests.moment.ask_waiting.title": "Permintaan baharu",
 	"requests.moment.ask_waiting.body": "Kepada kakitangan: sebuah filem, siri atau artis menunggu kelulusan.",
 	"requests.moment.ask_approved.title": "Diluluskan",
@@ -167,7 +170,7 @@
 	"requests.lists.tmdb": "Senarai TMDB",
 	"requests.lists.tmdbHint": "Nombor senarai atau pautannya, contohnya themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Senarai Trakt",
-	"requests.lists.traktHint": "user/list, user/watchlist atau pautan, contohnya trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "user/list, user/watchlist atau pautan, contohnya trakt.tv/users/ana/lists/favourites. Atau carta: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "Senarai MDBList",
 	"requests.lists.mdblistHint": "user/list atau pautan, contohnya mdblist.com/lists/ana/favourites. Senarai awam berfungsi tanpa kunci.",
 	"requests.lists.everyDay": "setiap hari",
@@ -195,6 +198,7 @@
 	"requests.report.reply.nothingWrong": "Tidak menemui apa-apa yang salah",
 	"requests.outcome.noResults": "Belum ada hasil",
 	"requests.outcome.nothingFound": "Tiada yang ditemui:",
+	"requests.outcome.refused": "Ditemui, tetapi tiada yang sepadan dengan peraturan pilihan",
 	"requests.outcome.why.slowed": "dijeda (diperlahankan)",
 	"requests.outcome.why.down": "terhenti",
 	"requests.outcome.why.blocked": "disekat",
@@ -225,6 +229,7 @@
 	"requests.add.titleBare": "Tambah",
 	"requests.addMovie.titleBare": "Tambah filem",
 	"requests.add.loadingDefaults": "Memuatkan nilai lalai",
+	"requests.add.defaultsLate": "Lalai tersimpan anda tidak dimuatkan tepat pada masanya, jadi pilihan biasa digunakan. Semak sebelum menambah.",
 	"requests.add.noFolder.music": "Belum ada Folder pustaka untuk muzik. <a>Tambah satu</a> dahulu.",
 	"requests.add.noFolder.movie": "Belum ada Folder pustaka untuk filem. <a>Tambah satu</a> dahulu.",
 	"requests.add.noFolder.show": "Belum ada Folder pustaka untuk siri. <a>Tambah satu</a> dahulu.",
@@ -242,6 +247,7 @@
 	"requests.add.followHint": "Tunjukkan dalam kalendar saya.",
 	"requests.add.cancel": "Batal",
 	"requests.add.submit": "Tambah ke Pustaka",
+	"requests.add.submitChoose": "Tambah dan pilih keluaran",
 	"requests.addArtist.albums": "Album untuk dikekalkan terkini",
 	"requests.addArtist.newAlbums": "Album baharu",
 	"requests.addArtist.newAlbumsHint": "Apa yang berlaku kepada album yang keluar kemudian.",
@@ -498,6 +504,8 @@
 	"requests.board.tabShowing": ", memaparkan {status}",
 	"requests.board.reportsOpen": "Laporan, {n} terbuka",
 	"requests.board.approveAll": "Luluskan semua",
+	"requests.board.approveAllTitle": "Luluskan semua permintaan yang menunggu ({n})?",
+	"requests.board.approveAllDesc": "Termasuk permintaan di bahagian bawah senarai yang belum dimuatkan.",
 	"requests.board.requests": "Permintaan",
 	"requests.board.open": "Buka {name}, diminta oleh {who}",
 	"requests.board.pageForArtist": "Halaman artis untuk {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Ditambah",
 	"requests.addAll.summary": "Ditambah: {added}, dilangkau: {skipped}",
 	"requests.addAll.summaryClean": "Ditambah: {added}",
-	"requests.addAll.intro": "Setiap filem ditambah ke Pustaka anda dengan folder dan peraturan pilih di bawah serta lalai tersimpan anda. Filem yang sudah ada dalam Pustaka tetap disenaraikan, tetapi tidak ditambah semula."
+	"requests.addAll.intro": "Setiap filem ditambah ke Pustaka anda dengan folder dan peraturan pilih di bawah serta lalai tersimpan anda. Filem yang sudah ada dalam Pustaka tetap disenaraikan, tetapi tidak ditambah semula.",
+	"requests.ask.alsoAsk": "Minta juga {name}",
+	"requests.add.handsOff": "Mod lepas tangan dihidupkan: folder pustaka tidak diperlukan. Ia dihantar ke pemuat turun dan fail kekal di sana."
 }

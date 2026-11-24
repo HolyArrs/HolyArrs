@@ -9,17 +9,13 @@ Pick your subtitle languages once. HolyArrs reads what your files already have a
 
 Only staff see subtitles. Changing settings needs the **Change settings** permission. Music has no subtitles.
 
-:::note
-Subtitle sites and subtitle search are held back in the first release. They stay hidden unless the `subtitle_sites` switch is on, see [Held-back features](../run/updates.md#held-back-features). Languages and the Missing subtitles list work without it.
-:::
-
 ## Set your languages
 
 1. Open **Settings > Subtitles**.
 2. Under the default languages, add each language you want, such as English and Spanish.
 3. For each language, set **Hearing-impaired** and **Forced only** (see [Languages](#languages)).
 4. Click **Save**. You should see **Library > Missing subtitles** fill in. HolyArrs reads every file you have and asks no site.
-5. If Subtitle sites are on for you, click **Add a Subtitle site**, pick the site, fill in **Your account** if it asks, and save. You should see the result of a test search right away.
+5. Click **Add a Subtitle site**, pick the site, fill in **Your account** if it asks, and save. You should see the result of a test search right away.
 
 Files brought in with **Import a library** are read the same way.
 
@@ -41,6 +37,7 @@ A movie page has a **Subtitles** card. A show page has one for the whole show. E
 | **Look for subtitles** | Searches for what is missing now. |
 | **Choose a subtitle** | Lists every result from every site with its score out of 100 and what matched. **Choose** saves it, whatever its score. |
 | **Sync fix** | For subtitles HolyArrs saved. Shifts every line by up to 10 minutes, changes the frame rate (such as 25 to 23.976), or both. The old file goes to the holding folder. |
+| **Clean** | For SRT subtitles HolyArrs saved. Runs the cleanup steps again with today's settings. **Clean all** does every subtitle of the title. The text before goes to the holding folder. |
 | **Translate** | Next to a missing language, when a translator is set up. Pick a text subtitle beside the video or inside it, and your translator makes the missing one. |
 | **Turn down** | For subtitles HolyArrs saved. The file goes to the holding folder, that subtitle is never picked again for this file, and HolyArrs looks for another. |
 
@@ -74,8 +71,30 @@ Movie (2020).fr.forced.ass
 - A subtitle HolyArrs replaces goes to the holding folder first.
 - **Rename files** moves subtitles with their video. If the new name is taken, that subtitle stays and says why.
 - Deleting a title with its files sends its subtitles to the holding folder too.
+- Every saved subtitle is UTF-8. A file in an older encoding is read in the one that suits its language, such as Windows-1250 or ISO-8859-2 for Polish, GBK or Big5 for Chinese, and Windows-1251 or KOI8-R for Russian. A language without its own old encodings is read as Windows-1252.
 
 Portuguese (Brazil) has its own files, `Movie (2020).pt-BR.srt`. Older `.pt` files stay where they are, so both can sit next to the video.
+
+### Cleanup
+
+In **Settings > Subtitles > Cleanup**, pick what HolyArrs takes out of each SRT subtitle it saves. **Steps for** picks the language: **Every other language** covers each language without its own steps, and picking a language gives it its own. A Brazilian Portuguese subtitle uses Portuguese's steps when it has none of its own.
+
+| Step | What it does |
+|---|---|
+| **Remove ad and credit lines** | On by default. Takes out lines such as "Subtitles by", subtitle site names and web addresses with a call to visit them, in the first and last six lines only. Each language has its own words. A web address alone stays, since it may be said in the film. |
+| **Remove hearing-impaired text** | Sounds in square brackets, music notes, notes in capitals in round brackets such as (SIGHS), and speaker names such as JOHN:. An aside in round brackets stays, and so does a clock time such as 10:30. A file written in capitals keeps its speaker names. |
+| **Remove formatting tags** | `<i>`, `<b>`, `{n8}` and the like. |
+| **Remove emoji** | Music notes stay. |
+| **Fix l and I mix-ups** | Common mistakes from subtitles read off discs, such as lt's for It's. |
+| **Fix files written in all capitals** | Only when nearly the whole file is in capitals. One shouted line in a normal file stays. |
+| **Fix spacing and punctuation** | Double spaces, and spaces before punctuation. French keeps its space before ? and !. |
+| **Fix overlapping lines** | Each line ends two frames (84 ms) before the next one starts. |
+
+- A hearing-impaired subtitle you asked for keeps its sound notes. A forced subtitle keeps its notes and its capitals.
+- The subtitle as fetched waits in the holding folder and goes once its holding days are over. **Clean** on a subtitle puts the text before it there too.
+- History says what was removed, which steps ran and which were skipped for that file.
+- If a cleaned file would not read back the same, HolyArrs saves it as fetched.
+- **Clean every subtitle now** runs the cleanup on every SRT subtitle HolyArrs saved in the Library, as a background job.
 
 ### Translate subtitles
 
@@ -99,9 +118,6 @@ How scoring works, when HolyArrs searches, and the sites it uses are in [Subtitl
 **Symptom:** nothing is listed as missing.
 **Cause:** no language was saved, or the title has an empty own list.
 **Fix:** add a language and click **Save**.
-
-**Symptom:** you can't see Subtitle sites or **Look for subtitles**.
-**Cause:** they are held back, see [Held-back features](../run/updates.md#held-back-features).
 
 **Symptom:** subtitles are out of time.
 **Fix:** use **Sync fix**, or raise the Pass mark so only closer matches are saved. HolyArrs does not listen to the sound to line subtitles up.
@@ -137,4 +153,3 @@ Every subtitle route is in `http://your-server:6262/api/v1/openapi.json`, under 
 
 - [Subtitle scoring and sites](subtitle-scoring.md)
 - [Audio versions](audio-versions.md)
-- [Held-back features](../run/updates.md#held-back-features)

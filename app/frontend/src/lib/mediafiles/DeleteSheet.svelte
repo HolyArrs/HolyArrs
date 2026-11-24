@@ -6,6 +6,7 @@
 	import { api, message, ApiError } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 
 	let { open = $bindable(false), titleId, name, kind, ondone }: { open?: boolean; titleId: number; name: string; kind: 'movie' | 'show' | 'artist'; ondone?: (p: RemovePlan) => void } = $props();
 
@@ -71,10 +72,11 @@
 <Sheet bind:open title={t('mediafiles.delete.title', { name })} size="sm">
 	<div class="ds" data-testid="delete-sheet">
 		<div class="ds-rows">
-			<button type="button" class="ds-row" role="switch" aria-checked={files} onclick={() => flip('files')}>
+			<!-- Hands-off mode never deletes files, so the choice is not offered. -->
+			{#if session.s.handsOff}<p class="ds-note" data-testid="hands-off-kept">{t('mediafiles.delete.handsOffKept')}</p>{:else}<button type="button" class="ds-row" role="switch" aria-checked={files} onclick={() => flip('files')}>
 				<span><b>{t('mediafiles.delete.alsoFiles')}</b><small>{t('mediafiles.delete.alsoFilesHint')}</small></span>
 				<span class="ds-switch" class:on={files} aria-hidden="true"></span>
-			</button>
+			</button>{/if}
 			<button type="button" class="ds-row" role="switch" aria-checked={never} onclick={() => flip('never')}>
 				<span><b>{t('mediafiles.delete.never')}</b><small>{t('mediafiles.delete.neverHint')}</small></span>
 				<span class="ds-switch" class:on={never} aria-hidden="true"></span>
@@ -105,7 +107,8 @@
 	.ds-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
 	.ds-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
 	.ds-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
-	.ds-row + .ds-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
+	.ds-note { margin: 0; padding: 14px 16px; color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
+	.ds-row + .ds-row, .ds-note + .ds-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.ds-row span:first-child { display: grid; gap: 3px; }
 	.ds-row b { font: 600 15px/1.2 var(--font-ui); }
 	.ds-row small { color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }

@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Это нельзя отменить. Файлы останутся.",
 	"settings.pickRules.removeUsed": "{used}. Сначала выберите там другие правила.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Отмена"
+	"settings.pickRules.cancel": "Отмена",
+	"settings.pickRules.check.title": "Проверить название релиза",
+	"settings.pickRules.check.desc": "Вставьте название релиза, чтобы увидеть, как HolyArrs его читает и как его оценивают ваши наборы качества. Ничего не ищется и не скачивается.",
+	"settings.pickRules.check.name": "Название релиза",
+	"settings.pickRules.check.rules": "Оценить по",
+	"settings.pickRules.check.copies": "Копии подходящего тайтла",
+	"settings.pickRules.check.size": "Размер в ГБ (необязательно)",
+	"settings.pickRules.check.check": "Проверить",
+	"settings.pickRules.check.failed": "Не удалось проверить название",
+	"settings.pickRules.check.readAs": "Прочитано как",
+	"settings.pickRules.check.matches": "Подходит: {name}",
+	"settings.pickRules.check.noTitle": "Не подходит ни к одному тайтлу в вашей Медиатеке. Выберите набор качества выше, чтобы всё равно его оценить.",
+	"settings.pickRules.check.noAlbum": "Подходит: {name}, но ни к одному из его альбомов.",
+	"settings.pickRules.check.noCopies": "У этого тайтла нет копий для оценки.",
+	"settings.pickRules.check.hasFile": "Есть файл"
 }

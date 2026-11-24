@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: un punt vermell mostra què cal mirar, i les proves de connexió diuen el problema exacte.** Etiquetes de Plex per als títols demanats, noms en el teu idioma i més de 30 correccions. Connecta apps per MCP amb claus que controles tu. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: més de 150 correccions i funcions de 101 persones.** Un sistema de connectors, un nou assistent de configuració i un mode sense intervenció que mai toca els teus fitxers. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
 
 > Cada pòster, tràiler i puntuació del teu HolyArrs ve d'un servidor que porto i pago jo mateix, perquè segueixi sent gratuït per a tothom. Si HolyArrs t'ha fet la nit de pel·lícula una mica millor, un patrocini ens manté els llums encesos a tots 💛
 >
@@ -374,7 +374,7 @@ La imatge no té shell, així que `docker exec -it holyarrs /bin/bash` no funcio
 - T'has quedat fora del compte de propietari:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Número de versió:

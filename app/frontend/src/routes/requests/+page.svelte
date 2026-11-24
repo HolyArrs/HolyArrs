@@ -5,7 +5,7 @@
 	import { personText, shownPerson } from '#lib/core/plain.ts';
 	import { createDeclineDialog } from '#lib/requests/index.ts';
 	import { createAskLive } from '#lib/requests/index.ts';
-	import { createTakeBack, createRemoveFlow, anyShared } from '#lib/requests/index.ts';
+	import { createTakeBack, createRemoveFlow, anyShared, createApproveAll, readList, readMore, type ListPage } from '#lib/requests/index.ts';
 	import { createAskCards } from '#lib/requests/index.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import PageLoader from '#lib/ui/PageLoader.svelte';
@@ -199,7 +199,8 @@
 	async function load(quiet = false) {
 		const gen = ++loadGen;
 		try {
-			const r = await api.get<{ asks: Ask[]; counts?: { pending: number; processing: number; done: number; failed: number }; total?: number }>('/asks');
+			// As far as the list had scrolled, so a re-read keeps the cards already loaded.
+			const r = await readList((p) => api.get<ListPage>(p), asks.length);
 			if (gen !== loadGen) return;
 			asks = r.asks;
 			// An older server sends no totals: the tabs then count what is listed.
@@ -296,6 +297,24 @@
 	};
 	const takeBackFlow = createTakeBack(takeBackFlowCtx);
 	const removeFlow = createRemoveFlow({ load });
+	// The list holds the newest 200; the next ones load as it scrolls.
+	let moreBusy = false;
+	async function loadMore() {
+		if (moreBusy || !served || asks.length >= served.total) return;
+		moreBusy = true;
+		const gen = loadGen;
+		try {
+			const r = await readMore((p) => api.get<ListPage>(p), asks.length);
+			if (gen !== loadGen || !r.asks.length) return;
+			const have = new Set(asks.map((a) => a.id));
+			asks = [...asks, ...r.asks.filter((a) => !have.has(a.id))];
+		} catch {
+			// The next scroll near the end tries again.
+		} finally {
+			moreBusy = false;
+		}
+	}
+	const approveAll = createApproveAll({ capped: () => !!served && served.total > asks.length, approve: (list) => act(list, 'approve') });
 	let fresh = $state(new Set<number>());
 	let reading = false;
 	$effect(() => {
@@ -371,6 +390,8 @@
 		},
 		isPending: (id) => !!pending[id],
 		approve: (list) => act(list, 'approve'),
+		approveAll: (shown, match) => void approveAll.ask(shown, (a) => match(a) && (kind === 'all' || a.kind === kind) && (!person || askedByOne(a, person))),
+		loadMore: () => void loadMore(),
 		approveWith: (a, opt) => act([a], 'approve', opt.note ?? '', opt),
 		turnDown: (list) => declineFlow.askDecline(list),
 		turnDownWith: (a, note) => act([a], 'turn_down', note),
@@ -616,6 +637,13 @@
 			<Button variant="destructive" type="button" busy={takingBack.has(takeBackFlow.takeBackAsk.id)} onclick={() => takeBackFlow.takeBackAsk && void takeBackFlow.takeBack(takeBackFlow.takeBackAsk)}>{t('requests.page.takeBack')}</Button>
 		</div>
 	{/if}
+</Sheet>
+
+<Sheet bind:open={approveAll.open} size="sm" title={t('requests.board.approveAllTitle', { n: approveAll.n })} description={t('requests.board.approveAllDesc')}>
+	<div class="decide-actions">
+		<Button variant="secondary" type="button" onclick={() => (approveAll.open = false)}>{t('requests.add.cancel')}</Button>
+		<Button type="button" data-testid="approve-all-confirm" onclick={approveAll.confirm}>{t('requests.page.approveN', { n: approveAll.n })}</Button>
+	</div>
 </Sheet>
 
 <Sheet bind:open={removeFlow.open} size="sm" title={removeFlow.what ? ('one' in removeFlow.what ? t('requests.page.removeTitle') : t(removeFlow.what.all === 'failed' ? 'requests.board.clearFailedTitle' : 'requests.board.clearFinishedTitle', { n: removeFlow.what.n })) : t('requests.page.removeRequest')} description={removeFlow.what ? ('one' in removeFlow.what ? t('requests.page.removeDesc') : t(removeFlow.what.all === 'failed' ? 'requests.board.clearFailedDesc' : 'requests.board.clearFinishedDesc') + (removeFlow.what.shared ? ` ${t('requests.board.clearShared')}` : '')) : ''}>

@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Creant {what}… intent {attempt}",
 	"core.testTag.connected": "Connectat",
 	"core.api.notAnswering": "HolyArrs no respon. Comprova que s'estigui executant.",
+	"core.api.tooSlow": "HolyArrs ha trigat massa a respondre. Torna-ho a provar d'aquí a un minut.",
 	"core.api.requestFailed": "La petició ha fallat ({status})",
 	"core.api.wentWrong": "Alguna cosa ha anat malament.",
 	"core.trailerMiss.trailer": "tràiler",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Aprovat automàticament",
 	"core.plain.approvedBy": "Aprovat per {who}",
 	"core.settings.cantReach": "No s'hi pot accedir. Comprova l'adreça i que l'app s'estigui executant.",
+	"core.settings.tryHttp": "Aquesta adreça no respon per https. Prova amb http://.",
 	"core.settings.groupLibrary.label": "Biblioteca",
 	"core.settings.groupLibrary.line": "On viuen els títols",
 	"core.settings.groupLibrary.about": "Carpetes, parts, valors per defecte, subtítols, noms de fitxer i importació.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dos gestors de baixades arriben a la mateixa aplicació, així que les baixades poden sortir dues vegades.",
 	"core.plain.peopleCheck": "No es pot llegir la llista d’usuaris del servidor multimèdia, així que qui s’hi elimina no es desactiva aquí.",
 	"core.plain.deleted": "eliminat",
-	"core.plain.deletedName": "{name} (eliminat)"
+	"core.plain.deletedName": "{name} (eliminat)",
+	"core.api.handsOffFiles": "El mode sense intervenció està activat, així que HolyArrs no toca els fitxers baixats. Desactiva'l a Configuració per importar, canviar el nom, moure o escanejar fitxers.",
+	"core.api.handsOffSubtitles": "El mode sense intervenció està activat, així que HolyArrs no obre mai els fitxers baixats. Desactiva'l a Configuració per fer servir subtítols."
 }

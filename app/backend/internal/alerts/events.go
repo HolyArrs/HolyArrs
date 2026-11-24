@@ -22,6 +22,11 @@ func MomentOf(e domain.Event) string {
 	case "download_finished":
 		return MomentDownloaded
 	case "download_failed":
+		// A Release that keeps stalling speaks once more on its second stall,
+		// then stays quiet while it waits; History still lists each one.
+		if stallCount(e.Data) > 2 {
+			return ""
+		}
 		return MomentDownloadFailed
 	case "import_done", "import_partly_done":
 		return MomentImport
@@ -229,3 +234,14 @@ func (s *Sender) trackMessages(ctx context.Context, m Message) []Message {
 
 // Wait waits for the sends Watch started.
 func (s *Sender) Wait() { s.wg.Wait() }
+
+// stallCount reads an Event's stall_count, a number in memory or from JSON.
+func stallCount(data map[string]any) int {
+	switch n := data["stall_count"].(type) {
+	case int:
+		return n
+	case float64:
+		return int(n)
+	}
+	return 0
+}

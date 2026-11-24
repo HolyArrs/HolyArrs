@@ -1,6 +1,6 @@
 import { type MenuItem } from '#lib/ui/Menu.svelte';
 import { ShowVersions } from '#lib/shows/index.ts';
-import { airedEpisodes, qualityBadges } from '#lib/mediafiles/index.ts';
+import { airedEpisodes, leftInDownloader, qualityBadges } from '#lib/mediafiles/index.ts';
 import { MovieVersions } from '#lib/movies/index.ts';
 import { replaceState } from '$app/navigation';
 import { page } from '$app/state';
@@ -80,6 +80,8 @@ export function createOwnedTitle() {
 			}
 			if (ownDownload) return { kind: 'downloading', label: ownDownload.download ? t('discover.titleOwned.downloadingPercent', { percent: Math.floor(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100) }) : t('discover.titleOwned.downloading') };
 			if (ownFiles.length) return { kind: 'have', label: t('discover.titleOwned.inLibrary') };
+			// Finished in hands-off mode: the file stays in the Downloader.
+			if ((o.slots ?? []).some(leftInDownloader)) return { kind: 'have', label: t('discover.titleOwned.downloaded') };
 			if (ownFailed) return { kind: 'failed', label: t('discover.titleOwned.downloadFailed') };
 			return { kind: 'missing', label: t('discover.titleOwned.notDownloaded') };
 		});

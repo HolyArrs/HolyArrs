@@ -57,12 +57,24 @@ func (s *Store) checkStart(id string, in StartInput) (*Installed, []byte, error)
 	return p, file, s.save(st)
 }
 
-// Start checks the plugin and starts it with only its own data folder. The
-// checked bytes are copied to a fresh run file, which is hashed again and
-// run, so nothing can swap the program between the check and the start.
-// Of env only HOLYARRS_PLUGIN_* keys are passed; PATH, TZ and HOME (the
-// data folder) are added here.
-func (s *Store) Start(ctx context.Context, r Runner, id string, in StartInput, args, env []string) (Process, error) {
+// StartAccess is what one start may reach besides its data folder: the
+// proxy to its listed hosts, the app's own address and the folders the
+// owner approved (already open). Env is added as it is (proxy and folder
+// settings).
+type StartAccess struct {
+	Proxy    *ProxyHandle
+	SelfAddr string
+	Folders  []GrantedFolder
+	Env      []string
+	Limits   Limits
+}
+
+// Start checks the plugin and starts it with its own data folder plus what
+// acc gives (see StartAccess). The checked bytes are copied to a fresh run
+// file, which is hashed again and run, so nothing can swap the program
+// between the check and the start. Of env only HOLYARRS_PLUGIN_* keys are
+// passed; PATH, TZ and HOME (the data folder) are added here.
+func (s *Store) Start(ctx context.Context, r Runner, id string, in StartInput, args, env []string, acc ...StartAccess) (Process, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	p, file, err := s.checkStart(id, in)
@@ -85,7 +97,17 @@ func (s *Store) Start(ctx context.Context, r Runner, id string, in StartInput, a
 		os.Remove(run)
 		return nil, fmt.Errorf("%w: run copy %s", ErrTampered, got)
 	}
-	proc, err := r.Start(ctx, Spec{ID: id, Program: run, Args: args, Env: pluginEnv(env, data), DataDir: data})
+	allow, allowNet := false, false
+	if st, err := s.Load(); err == nil {
+		allow, allowNet = st.AllowNoFileLock, st.AllowNoNetLock
+	}
+	spec := Spec{ID: id, Program: run, Args: args, Env: pluginEnv(env, data), DataDir: data,
+		AllowNoFileLock: allow, AllowNoNetLock: allowNet}
+	for _, a := range acc {
+		spec.Proxy, spec.SelfAddr, spec.Folders, spec.Limits = a.Proxy, a.SelfAddr, a.Folders, a.Limits
+		spec.Env = append(spec.Env, a.Env...)
+	}
+	proc, err := r.Start(ctx, spec)
 	if err != nil {
 		os.Remove(run)
 		return nil, err

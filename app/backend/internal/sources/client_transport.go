@@ -9,7 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
@@ -18,6 +18,9 @@ import (
 // Transport is the checked way out for fetching a Source's release files: it
 // uses the Source's proxy and asks its network rule about every address.
 func Transport(cfg Config) http.RoundTripper {
+	if id, ok := pluginSource(cfg.URL); ok {
+		return pluginTransport(id)
+	}
 	if cfg.AllowAddr == nil {
 		cfg.AllowAddr = outbound.PublicOnly
 		if cfg.AllowLocal {
@@ -193,20 +196,24 @@ func feedError(body []byte) error {
 	return &Error{Kind: kind, Msg: fmt.Sprintf("code %d: %s", e.Code, e.Description), RetryAfter: Backoff(1)}
 }
 
-// feedAddress is a Newznab or Torznab address ready to call. An address
-// with no path (https://indexer.example) means its /api, and so do a
-// Prowlarr site address (http://prowlarr:9696/5) and a Jackett one
-// (.../results/torznab) saved without it by earlier versions.
-func feedAddress(raw string) string {
-	raw = strings.TrimRight(raw, "/")
+// parseProxy checks a proxy address and returns it without the password, which comes back apart.
+func parseProxy(raw string) (clean string, pass string, err error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", "", nil
+	}
 	u, err := url.Parse(raw)
-	if err != nil || u.Host == "" || u.RawQuery != "" {
-		return raw
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https" && u.Scheme != "socks5") || u.Port() == "" || u.Hostname() == "" ||
+		(u.Path != "" && u.Path != "/") || u.RawQuery != "" {
+		return "", "", ErrProxy
 	}
-	if u.Path == "" || prowlarrSitePath.MatchString(u.Path) || strings.HasSuffix(u.Path, "/results/torznab") {
-		return raw + "/api"
+	if n, err := strconv.Atoi(u.Port()); err != nil || n < 1 || n > 65535 {
+		return "", "", ErrProxy
 	}
-	return raw
+	out := url.URL{Scheme: u.Scheme, Host: u.Host}
+	if u.User != nil {
+		pass, _ = u.User.Password()
+		out.User = url.User(u.User.Username())
+	}
+	return out.String(), pass, nil
 }
-
-var prowlarrSitePath = regexp.MustCompile(`^/[0-9]+$`)

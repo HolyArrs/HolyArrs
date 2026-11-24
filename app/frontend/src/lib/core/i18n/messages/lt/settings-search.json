@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Pirmiausia geriausia kopija; esant lygiai, laimi sezono paketas",
 	"settings.search.preferAlways": "Sezono paketas, kai tik jis atitinka kokybės rinkinį",
 	"settings.search.multi": "Imti Leidimus su keliais sezonais",
-	"settings.search.multiHint": "Užpildo kiekvieną jame trūkstamą epizodą",
+	"settings.search.multiHint": "Užpildo kiekvieną jame trūkstamą epizodą. Esant tokiai pačiai kokybei, laimi leidimas su daugiau norimų epizodų",
 	"settings.search.music": "Muzika",
 	"settings.search.albums": "Ieškoti ir trūkstamų albumų",
 	"settings.search.albumsHint": "Išleisti albumai, po vieną paiešką",

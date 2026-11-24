@@ -1,4 +1,7 @@
 {
+	"requests.moment.plugin_message.title": "Messaggi dei plugin",
+	"requests.moment.plugin_message.body": "Un plugin che hai consentito invia un messaggio.",
+	"requests.words.via": "{who} tramite {plugin}",
 	"requests.moment.ask_waiting.title": "Nuova richiesta",
 	"requests.moment.ask_waiting.body": "Allo staff: un film, una serie o un artista aspetta l'approvazione.",
 	"requests.moment.ask_approved.title": "Approvata",
@@ -171,7 +174,7 @@
 	"requests.lists.tmdb": "Lista TMDB",
 	"requests.lists.tmdbHint": "Il numero della lista o il suo link, per esempio themoviedb.org/list/12345.",
 	"requests.lists.trakt": "Lista Trakt",
-	"requests.lists.traktHint": "utente/lista, utente/watchlist o il link, per esempio trakt.tv/users/ana/lists/favourites.",
+	"requests.lists.traktHint": "utente/lista, utente/watchlist o il link, per esempio trakt.tv/users/ana/lists/favourites. Oppure una classifica: trending, popular, anticipated, boxoffice, watched-weekly.",
 	"requests.lists.mdblist": "Lista MDBList",
 	"requests.lists.mdblistHint": "utente/lista o il link, per esempio mdblist.com/lists/ana/favourites. Le liste pubbliche funzionano senza chiave.",
 	"requests.lists.everyDay": "ogni giorno",
@@ -199,6 +202,7 @@
 	"requests.report.reply.nothingWrong": "Non ho trovato niente che non va",
 	"requests.outcome.noResults": "Ancora nessun risultato",
 	"requests.outcome.nothingFound": "Non ho trovato niente:",
+	"requests.outcome.refused": "Trovato, ma niente rispetta le regole di scelta",
 	"requests.outcome.why.slowed": "era in pausa (rallentata)",
 	"requests.outcome.why.down": "non funzionava",
 	"requests.outcome.why.blocked": "era bloccata",
@@ -229,6 +233,7 @@
 	"requests.add.titleBare": "Aggiungi",
 	"requests.addMovie.titleBare": "Aggiungi un film",
 	"requests.add.loadingDefaults": "Caricamento dei predefiniti",
+	"requests.add.defaultsLate": "I tuoi predefiniti salvati non sono stati caricati in tempo, quindi sono state scelte le opzioni solite. Controllale prima di aggiungere.",
 	"requests.add.noFolder.music": "Non c'è ancora una cartella della Libreria per la musica. Prima <a>aggiungine una</a>.",
 	"requests.add.noFolder.movie": "Non c'è ancora una cartella della Libreria per i film. Prima <a>aggiungine una</a>.",
 	"requests.add.noFolder.show": "Non c'è ancora una cartella della Libreria per le serie. Prima <a>aggiungine una</a>.",
@@ -246,6 +251,7 @@
 	"requests.add.followHint": "Mostralo nel mio calendario.",
 	"requests.add.cancel": "Annulla",
 	"requests.add.submit": "Aggiungi alla Libreria",
+	"requests.add.submitChoose": "Aggiungi e scegli una release",
 	"requests.addArtist.albums": "Album da tenere aggiornati",
 	"requests.addArtist.newAlbums": "Nuovi album",
 	"requests.addArtist.newAlbumsHint": "Cosa succede a un album che esce più avanti.",
@@ -502,6 +508,8 @@
 	"requests.board.tabShowing": ", in vista: {status}",
 	"requests.board.reportsOpen": "Segnalazioni, {n} aperte",
 	"requests.board.approveAll": "Approva tutte",
+	"requests.board.approveAllTitle": "Approvare tutte le richieste in attesa ({n})?",
+	"requests.board.approveAllDesc": "Include le richieste più in basso nell'elenco non ancora caricate.",
 	"requests.board.requests": "Richieste",
 	"requests.board.open": "Apri {name}, richiesto da {who}",
 	"requests.board.pageForArtist": "Pagina dell'artista {name}",
@@ -600,5 +608,7 @@
 	"requests.addAll.added": "Aggiunto",
 	"requests.addAll.summary": "Aggiunti: {added}, saltati: {skipped}",
 	"requests.addAll.summaryClean": "Aggiunti: {added}",
-	"requests.addAll.intro": "Ogni film viene aggiunto alla tua Libreria con la cartella e le regole di scelta qui sotto e le tue impostazioni predefinite salvate. I film già nella Libreria compaiono nell'elenco, ma non vengono aggiunti di nuovo."
+	"requests.addAll.intro": "Ogni film viene aggiunto alla tua Libreria con la cartella e le regole di scelta qui sotto e le tue impostazioni predefinite salvate. I film già nella Libreria compaiono nell'elenco, ma non vengono aggiunti di nuovo.",
+	"requests.ask.alsoAsk": "Chiedi anche {name}",
+	"requests.add.handsOff": "La modalità senza intervento è attiva: non serve una cartella della Libreria. Va al Downloader e i file restano lì."
 }

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -486,5 +487,49 @@ func TestWatchlistPeopleEveryoneSwitch(t *testing.T) {
 	}
 	if ids, _ = w.people(ctx); has(ids, r.luis.UserID) {
 		t.Fatalf("luis still read after turning off: %v", ids)
+	}
+}
+
+// A pass with no one to read says why: the Requests setting is off, or it
+// is on and no one turned their watchlist on. The clock's check and
+// a run by hand give the same reason.
+func TestWatchlistSkipReason(t *testing.T) {
+	r, _, w := watchRig(t)
+	ctx := context.Background()
+	run := func() any {
+		t.Helper()
+		jr := &jobs.Run{Job: domain.Job{Params: map[string]any{}}}
+		if err := w.Run(ctx, jr); err != nil {
+			t.Fatal(err)
+		}
+		return jr.Result()["skipped"]
+	}
+	if need, why, err := w.Probe(ctx, r.clock); err != nil || need || why != SkipNobody {
+		t.Fatalf("on with nobody: need %v why %v err %v", need, why, err)
+	}
+	if got := run(); got != string(SkipNobody) {
+		t.Fatalf("run by hand with nobody: %v", got)
+	}
+	set, _ := ReadSettings(ctx, r.st.Read())
+	set.PlexWatchlists = false
+	if err := SaveSettings(ctx, r.st, set, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if need, why, err := w.Probe(ctx, r.clock); err != nil || need || why != SkipSettingOff {
+		t.Fatalf("setting off: need %v why %v err %v", need, why, err)
+	}
+	if got := run(); got != string(SkipSettingOff) {
+		t.Fatalf("run by hand with the setting off: %v", got)
+	}
+	set.PlexWatchlists = true
+	_ = SaveSettings(ctx, r.st, set, domain.System)
+	if err := SaveWatchlistSwitches(ctx, r.st, r.ana.UserID, WatchlistSwitches{Movies: true}); err != nil {
+		t.Fatal(err)
+	}
+	if need, why, _ := w.Probe(ctx, r.clock); !need || why != nil {
+		t.Fatalf("someone on: need %v why %v", need, why)
+	}
+	if got := run(); got != nil {
+		t.Fatalf("a real pass says skipped %v", got)
 	}
 }

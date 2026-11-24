@@ -2,11 +2,21 @@
 // offline on the maintainer's own PC and never prints private key material.
 //
 //	pluginkey keygen -out <dir>
-//	pluginkey sign -key <file> -kind plugins|blocklist -in <payload.json> -out <list.json> [-min-counter N]
+//	pluginkey keygen -plain -pipe -pub <file>
+//	pluginkey sign -key <file> -kind plugins|blocklist|languages -in <payload.json> -out <list.json> [-min-counter N]
 //	pluginkey verify -pub <file> -in <list.json>
+//	pluginkey check -pub <file> -list <plugins.json> -blocklist <blocklist.json> -manifest <manifest.json> -file <plugin>
 //
-// The private key file holds the ed25519 seed sealed with XChaCha20-Poly1305
-// under a key derived from the passphrase with scrypt (golang.org/x/crypto).
+// A key is plain or sealed. A plain key is the base64 ed25519 seed on one
+// line, with no passphrase: the release automation keeps it as a GitHub
+// environment secret and signs with it unattended. "keygen -plain -pipe"
+// writes a new plain key only to stdout, for piping straight into
+// "gh secret set", and refuses when stdout is a terminal.
+//
+// A sealed key holds the seed sealed with XChaCha20-Poly1305 under a key
+// derived from a passphrase with scrypt (golang.org/x/crypto). keygen and sign
+// read that passphrase from the terminal, or with -pass-env NAME from that
+// environment variable. sign needs no passphrase for a plain key.
 package main
 
 import (
@@ -21,6 +31,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,6 +78,8 @@ func main() {
 		err = runSign(os.Args[2:])
 	case "verify":
 		err = runVerify(os.Args[2:])
+	case "check":
+		err = runCheck(os.Args[2:])
 	default:
 		usage()
 	}
@@ -77,22 +90,44 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: pluginkey keygen|sign|verify [flags]")
+	fmt.Fprintln(os.Stderr, "usage: pluginkey keygen|sign|verify|check [flags]")
 	os.Exit(2)
 }
 
 func runKeygen(args []string) error {
 	fs := flag.NewFlagSet("keygen", flag.ExitOnError)
 	out := fs.String("out", "", "folder for plugin-signing.key and plugin-signing.pub")
+	passEnv := fs.String("pass-env", "", "read the passphrase from this environment variable")
+	plain := fs.Bool("plain", false, "make a key with no passphrase")
+	pipe := fs.Bool("pipe", false, "with -plain: write the private key only to stdout")
+	pubOut := fs.String("pub", "", "with -pipe: public key file to write")
 	_ = fs.Parse(args)
+	if *plain {
+		if !*pipe || *pubOut == "" {
+			return errors.New("-plain needs -pipe and -pub")
+		}
+		if term.IsTerminal(int(os.Stdout.Fd())) {
+			return errors.New("-pipe writes the private key to stdout; pipe it into a secret store, not a terminal")
+		}
+		pub, err := keygenPlain(os.Stdout, *pubOut)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(os.Stderr, "Public key: ", base64.StdEncoding.EncodeToString(pub))
+		fmt.Fprintln(os.Stderr, "Fingerprint:", fingerprint(pub))
+		return nil
+	}
 	if *out == "" {
 		return errors.New("-out is required")
 	}
-	pass, err := readPassphrase("New passphrase: ")
+	pass, err := readPassphrase("New passphrase: ", *passEnv)
 	if err != nil {
 		return err
 	}
-	again, err := readPassphrase("Same passphrase again: ")
+	again := pass
+	if *passEnv == "" {
+		again, err = readPassphrase("Same passphrase again: ", "")
+	}
 	if err != nil {
 		return err
 	}
@@ -114,17 +149,22 @@ func runKeygen(args []string) error {
 func runSign(args []string) error {
 	fs := flag.NewFlagSet("sign", flag.ExitOnError)
 	key := fs.String("key", "", "plugin-signing.key")
-	kind := fs.String("kind", "", "plugins or blocklist")
+	kind := fs.String("kind", "", "plugins, blocklist or languages")
 	in := fs.String("in", "", "payload JSON")
 	out := fs.String("out", "", "signed list to write")
 	minCounter := fs.Uint64("min-counter", 0, "the payload counter must be above this")
+	passEnv := fs.String("pass-env", "", "sealed keys: read the passphrase from this environment variable")
 	_ = fs.Parse(args)
 	if *key == "" || *in == "" || *out == "" {
 		return errors.New("-key, -in and -out are required")
 	}
-	pass, err := readPassphrase("Passphrase: ")
-	if err != nil {
+	var pass []byte
+	if sealed, err := isSealed(*key); err != nil {
 		return err
+	} else if sealed {
+		if pass, err = readPassphrase("Passphrase: ", *passEnv); err != nil {
+			return err
+		}
 	}
 	if err := sign(*key, pass, *kind, *in, *out, *minCounter); err != nil {
 		return err
@@ -149,7 +189,62 @@ func runVerify(args []string) error {
 	return nil
 }
 
-func readPassphrase(prompt string) ([]byte, error) {
+func runCheck(args []string) error {
+	fs := flag.NewFlagSet("check", flag.ExitOnError)
+	pub := fs.String("pub", "", "plugin-signing.pub")
+	list := fs.String("list", "", "signed plugins.json")
+	block := fs.String("blocklist", "", "signed blocklist.json")
+	man := fs.String("manifest", "", "manifest.json")
+	file := fs.String("file", "", "plugin file")
+	_ = fs.Parse(args)
+	if *pub == "" || *list == "" || *block == "" || *man == "" || *file == "" {
+		return errors.New("-pub, -list, -blocklist, -manifest and -file are required")
+	}
+	m, err := check(*pub, *list, *block, *man, *file)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("OK: the app would install %s %s\n", m.ID, m.Version)
+	return nil
+}
+
+// check runs the app's own install check on a published set of files.
+func check(pubPath, listPath, blockPath, manPath, filePath string) (*plugins.Manifest, error) {
+	pub, err := readPub(pubPath)
+	if err != nil {
+		return nil, err
+	}
+	var raw [3][]byte
+	for i, p := range []string{listPath, blockPath, manPath} {
+		if raw[i], err = os.ReadFile(p); err != nil {
+			return nil, err
+		}
+	}
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	acc, err := plugins.CheckInstall(plugins.InstallInput{PublicKey: pub, List: raw[0], Blocklist: raw[1],
+		Manifest: raw[2], File: f, TempDir: os.TempDir()})
+	if err != nil {
+		return nil, err
+	}
+	defer acc.Close()
+	return acc.Manifest, nil
+}
+
+// readPassphrase reads from the environment variable env when set, else
+// from the terminal.
+func readPassphrase(prompt, env string) ([]byte, error) {
+	if env != "" {
+		// A secret pasted or piped in may carry a line ending; a passphrase never does.
+		p := strings.TrimRight(os.Getenv(env), "\r\n")
+		if p == "" {
+			return nil, fmt.Errorf("environment variable %s is empty", env)
+		}
+		return []byte(p), nil
+	}
 	fmt.Fprint(os.Stderr, prompt)
 	p, err := term.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Fprintln(os.Stderr)
@@ -196,6 +291,38 @@ func keygen(dir string, pass []byte) (ed25519.PublicKey, error) {
 	return pub, nil
 }
 
+// keygenPlain writes a new plain private key to w and the public key to
+// pubPath; the private key never touches the disk.
+func keygenPlain(w io.Writer, pubPath string) (ed25519.PublicKey, error) {
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+	if err := writeNew(pubPath, []byte(base64.StdEncoding.EncodeToString(pub)+"\n"), 0o644); err != nil {
+		return nil, err
+	}
+	if _, err := fmt.Fprintln(w, base64.StdEncoding.EncodeToString(priv.Seed())); err != nil {
+		return nil, err
+	}
+	return pub, nil
+}
+
+// plainSeed returns the seed when data is a plain key.
+func plainSeed(data []byte) ([]byte, bool) {
+	seed, err := base64.StdEncoding.DecodeString(strings.TrimSpace(string(data)))
+	return seed, err == nil && len(seed) == ed25519.SeedSize
+}
+
+// isSealed reports whether the key file needs a passphrase.
+func isSealed(path string) (bool, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+	_, plain := plainSeed(data)
+	return !plain, nil
+}
+
 // writeNew creates path and fails if it already exists.
 func writeNew(path string, data []byte, mode os.FileMode) error {
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
@@ -234,11 +361,14 @@ func (s *sealedKey) aead(pass []byte) (cipher.AEAD, error) {
 	return chacha20poly1305.NewX(k)
 }
 
-// loadKey opens the private key file with pass.
+// loadKey opens the private key file: a plain key as is, a sealed one with pass.
 func loadKey(path string, pass []byte) (ed25519.PrivateKey, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
+	}
+	if seed, ok := plainSeed(data); ok {
+		return ed25519.NewKeyFromSeed(seed), nil
 	}
 	var s sealedKey
 	if err := json.Unmarshal(data, &s); err != nil || s.KDF != "scrypt" || s.Cipher != "xchacha20poly1305" ||
@@ -258,8 +388,8 @@ func loadKey(path string, pass []byte) (ed25519.PrivateKey, error) {
 
 // sign signs the payload in inPath and writes the signed list to outPath.
 func sign(keyPath string, pass []byte, kind, inPath, outPath string, minCounter uint64) error {
-	if kind != plugins.KindPlugins && kind != plugins.KindBlocklist {
-		return errors.New("-kind must be plugins or blocklist")
+	if kind != plugins.KindPlugins && kind != plugins.KindBlocklist && kind != plugins.KindLanguages {
+		return errors.New("-kind must be plugins, blocklist or languages")
 	}
 	raw, err := os.ReadFile(inPath)
 	if err != nil {
@@ -294,13 +424,9 @@ func sign(keyPath string, pass []byte, kind, inPath, outPath string, minCounter 
 
 // verify checks a signed list against the public key file.
 func verify(pubPath, inPath string) (*plugins.List, error) {
-	b, err := os.ReadFile(pubPath)
+	pub, err := readPub(pubPath)
 	if err != nil {
 		return nil, err
-	}
-	pub, err := base64.StdEncoding.DecodeString(strings.TrimSpace(string(b)))
-	if err != nil || len(pub) != ed25519.PublicKeySize {
-		return nil, errors.New("not a plugin signing public key")
 	}
 	data, err := os.ReadFile(inPath)
 	if err != nil {
@@ -315,4 +441,17 @@ func verify(pubPath, inPath string) (*plugins.List, error) {
 	}
 	_ = json.Unmarshal(sl.Payload, &head)
 	return plugins.VerifyList(pub, data, head.Kind, 0)
+}
+
+// readPub reads a public key file.
+func readPub(path string) (ed25519.PublicKey, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	pub, err := base64.StdEncoding.DecodeString(strings.TrimSpace(string(b)))
+	if err != nil || len(pub) != ed25519.PublicKeySize {
+		return nil, errors.New("not a plugin signing public key")
+	}
+	return pub, nil
 }

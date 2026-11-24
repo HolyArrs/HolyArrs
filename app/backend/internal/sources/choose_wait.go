@@ -41,3 +41,7 @@ func (s *Searcher) waitSend(ctx context.Context, ch *Choice) {
 		}
 	}
 }
+
+// WaitSend waits for the send of a pick by hand the way the app's Choose
+// button does, for callers outside this package.
+func (s *Searcher) WaitSend(ctx context.Context, ch *Choice) { s.waitSend(ctx, ch) }

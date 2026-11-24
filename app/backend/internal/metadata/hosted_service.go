@@ -72,7 +72,9 @@ func NewHosted(v *secrets.Vault) (*Hosted, error) {
 	// answers here, and the server's pictures through the artwork client.
 	modes := EnvModes()
 	tr := &Gate{Next: NewServerTransport(outbound.WatchFakeIP(d.DialContext)), Modes: modes}
-	cl := &http.Client{Transport: keyCheck{next: tr, refused: dropUnknownKey(v)}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	// Every call has its own end, so a silent server never holds a caller
+	// that set no deadline (an import's show lookups) forever.
+	cl := &http.Client{Timeout: hostedCallTimeout, Transport: keyCheck{next: tr, refused: dropUnknownKey(v)}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	h := &Hosted{HTTP: cl, Transport: tr, Gate: tr, Modes: modes, Vault: v}
 	access := installationAccess(v, func(ctx context.Context) (string, error) { return h.Service.Register(ctx) })
 	service, err := NewService(ServiceOptions{URL: ServiceURL(), HTTP: cl, Access: access, AllowLocal: local})
@@ -218,3 +220,6 @@ func dropUnknownKey(v *secrets.Vault) func(string) {
 		log.Printf("metadata: the server no longer knows this install; registering again")
 	}
 }
+
+// hostedCallTimeout bounds one call to the metadata server, like own-key clients.
+const hostedCallTimeout = 30 * time.Second

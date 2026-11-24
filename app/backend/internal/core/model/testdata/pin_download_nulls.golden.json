@@ -29,6 +29,7 @@
     "kind": "system"
   },
   "ProgressAt": null,
+  "CleanedAt": null,
   "ConfirmedEdition": "",
   "PackFiles": null
 }

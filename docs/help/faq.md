@@ -37,7 +37,7 @@ No. Stored passwords, keys and tokens are locked with `holyarrs.key`, and backup
 
 ## I forgot the owner password.
 
-Run `docker exec -i holyarrs /holyarrs reset-owner`. It asks for a new name and password and signs everyone out. The same command fixes an owner account someone else made. See [First run](../start/first-run/).
+Run `docker exec -it holyarrs /holyarrs reset-owner`. It asks for a new name and password and signs everyone out. The same command fixes an owner account someone else made. See [First run](../start/first-run/).
 
 ## Why can't I open a shell in the container?
 

@@ -3,7 +3,7 @@ import type { ApiKey } from '../core/types.ts';
 export const AI_SCOPE = 'mcp';
 
 // An AI key's tick boxes (the server's mcp_groups), in screen order. The owner can change them later.
-export const MCP_GROUPS = ['see', 'add', 'control', 'settings', 'delete', 'admin', 'approve'] as const;
+export const MCP_GROUPS = ['see', 'add', 'control', 'settings', 'delete', 'admin', 'approve', 'plugins'] as const;
 export type McpGroup = (typeof MCP_GROUPS)[number];
 export const DEFAULT_MCP_GROUPS: McpGroup[] = ['see', 'add', 'control', 'settings'];
 

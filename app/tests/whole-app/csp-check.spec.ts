@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { moviesDir, newOwner, finishFirstRun } from '../helpers/helpers.ts';
+import { moviesDir, newOwner, finishFirstRun, reachSetupAccount } from '../helpers/helpers.ts';
 
 const tiny = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 
@@ -13,12 +13,12 @@ test('no CSP violations on Explore, More info, a trailer and a title page', asyn
 	const res = await page.goto('/');
 	expect(res?.headers()['content-security-policy']).toContain("frame-src https://www.youtube-nocookie.com");
 	const o = newOwner();
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill(o.name);
+	await reachSetupAccount(page);
+	await page.getByLabel('Username').fill(o.name);
 	await page.getByLabel('Password', { exact: true }).fill(o.password);
-	await page.getByLabel('Password again').fill(o.password);
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await expect(page).toHaveURL(/\/welcome\?first=1$/);
+	await page.getByLabel('Confirm password').fill(o.password);
+	await page.getByRole('button', { name: 'Create account and continue' }).click();
+	await expect(page).toHaveURL(/\/welcome\?first=1/);
 	await finishFirstRun(page, moviesDir);
 	await expect(page.getByRole('heading', { level: 1, name: 'Home' })).toBeVisible();
 
@@ -26,7 +26,7 @@ test('no CSP violations on Explore, More info, a trailer and a title page', asyn
 	const item = (i: number) => ({ tmdb_id: String(900002 + i), kind: 'movie', name: `Lab `, year: 2023, overview: 'A lab title.', poster: `https://image.tmdb.org/t/p/w500/p.jpg`, backdrop: `https://image.tmdb.org/t/p/original/b.jpg`, trailer_key: 'dQw4w9WgXcQ' });
 	await page.route('https://image.tmdb.org/**', (r) => r.fulfill({ body: tiny, contentType: 'image/png' }));
 	await page.route('**/api/v1/trailer/**', (r) => r.fulfill({ status: 404, json: { error: 'no direct stream' } }));
-	await page.route('**/api/v1/explore/head?**', (r) => r.fulfill({ json: { type: 'all', building: false, seeds: 0, tail_cap: 0, tail_rows: 0, hero: [item(0), item(1)], head: [{ id: 'row0', type: 'genre', title: 'Row 0', items: Array.from({ length: 8 }, (_, i) => item(i)) }] } }));
+	await page.route('**/api/v1/explore/head?**', (r) => r.fulfill({ json: { type: 'all', building: false, seeds: 0, tail_cap: 0, tail_rows: 0, hero: [item(0), item(1)], head: [{ id: 'row0', type: 'genre', title: 'Row 0', items: Array.from({ length: 8 }, (_, i) => item(i + 2)) }] } }));
 	await page.goto('/explore');
 	await expect(page.getByRole('heading', { level: 1, name: 'Explore' })).toBeVisible();
 	// The hero comes with the head answer, which can be slow on a busy machine:

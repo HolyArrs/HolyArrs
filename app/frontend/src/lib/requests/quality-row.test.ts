@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrowPill, memberRow, ownerRow, qualityName, qualityTag } from './quality-row.ts';
+import { alsoPills, arrowPill, memberRow, ownerRow, qualityName, qualityTag } from './quality-row.ts';
 import type { QualityChoice } from './types.ts';
 
 const std: QualityChoice = { id: 'standard', name: '', extra: false, pick_rules_id: 0 };
@@ -113,5 +113,19 @@ describe('arrow keys on the quality tiles', () => {
 	});
 	it('leaves other keys alone', () => {
 		expect(arrowPill(pills, 'a', 'Enter')).toBeNull();
+	});
+});
+
+describe('alsoPills', () => {
+	const pills = memberRow([std, uhd]).pills;
+	it('offers the 4K copy on top of Standard only when picking more than one is on', () => {
+		expect(alsoPills(pills, 'standard', true).map((p) => p.key)).toEqual(['4k']);
+		expect(alsoPills(pills, 'standard', false)).toEqual([]);
+	});
+	it('never offers the picked line, a second main-copy line or one that is off', () => {
+		const own: QualityChoice = { id: 'own-hd', name: 'HD', extra: false, pick_rules_id: 3 };
+		expect(alsoPills(memberRow([std, own, uhd]).pills, '4k', true)).toEqual([]);
+		expect(alsoPills(memberRow([std, uhd], { has4k: true }).pills, 'standard', true)).toEqual([]);
+		expect(alsoPills(pills, '', true)).toEqual([]);
 	});
 });

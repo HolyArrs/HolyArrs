@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: červená bodka ukáže, čo chce pozornosť, a test pripojenia pomenuje presný problém.** Štítky v Plexe pre vyžiadané tituly, názvy vo vašom jazyku a viac ako 30 opráv. Prepojte aplikácie cez MCP kľúčmi, ktoré máte pod kontrolou. [Pozri, čo je nové](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.0: viac ako 150 opráv a funkcií od 101 ľudí.** Systém pluginov, nový sprievodca nastavením a režim bez zásahu, ktorý sa nikdy nedotkne vašich súborov. [Pozri, čo je nové](https://holyarrs.com/whats-new/)
 
 > Každý plagát, trailer a hodnotenie v tvojom HolyArrs pochádza zo servera, ktorý prevádzkujem a platím sám, aby zostal zadarmo pre všetkých. Ak HolyArrs spravil tvoj filmový večer o trochu lepším, sponzorstvo nám všetkým udrží svetlá zapnuté 💛
 >
@@ -374,7 +374,7 @@ Image nemá shell, takže `docker exec -it holyarrs /bin/bash` nefunguje. Vlastn
 - Ak sa nevieš prihlásiť do účtu vlastníka:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Číslo verzie:

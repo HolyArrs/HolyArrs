@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Не можна скасувати. Файли лишаються.",
 	"settings.pickRules.removeUsed": "{used}. Спершу вибери там інші правила.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Скасувати"
+	"settings.pickRules.cancel": "Скасувати",
+	"settings.pickRules.check.title": "Перевірити назву релізу",
+	"settings.pickRules.check.desc": "Встав назву релізу, щоб побачити, як HolyArrs її читає і як її оцінюють твої набори якості. Нічого не шукається і не завантажується.",
+	"settings.pickRules.check.name": "Назва релізу",
+	"settings.pickRules.check.rules": "Оцінити за",
+	"settings.pickRules.check.copies": "Копії відповідного тайтлу",
+	"settings.pickRules.check.size": "Розмір у ГБ (необов'язково)",
+	"settings.pickRules.check.check": "Перевірити",
+	"settings.pickRules.check.failed": "Не вдалося перевірити назву",
+	"settings.pickRules.check.readAs": "Прочитано як",
+	"settings.pickRules.check.matches": "Відповідає: {name}",
+	"settings.pickRules.check.noTitle": "Не відповідає жодному тайтлу у твоїй Медіатеці. Обери набір якості вище, щоб усе одно його оцінити.",
+	"settings.pickRules.check.noAlbum": "Відповідає: {name}, але жодному з його альбомів.",
+	"settings.pickRules.check.noCopies": "Цей тайтл не має копій для оцінки.",
+	"settings.pickRules.check.hasFile": "Є файл"
 }

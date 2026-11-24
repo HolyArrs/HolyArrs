@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Não dá para desfazer. Os arquivos ficam.",
 	"settings.pickRules.removeUsed": "{used}. Escolha outras regras lá primeiro.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Cancelar"
+	"settings.pickRules.cancel": "Cancelar",
+	"settings.pickRules.check.title": "Verificar um nome de release",
+	"settings.pickRules.check.desc": "Cole um nome de release para ver como o HolyArrs o lê e como seus conjuntos de qualidade o avaliam. Nada é buscado nem baixado.",
+	"settings.pickRules.check.name": "Nome do release",
+	"settings.pickRules.check.rules": "Avaliar com",
+	"settings.pickRules.check.copies": "As cópias do título correspondente",
+	"settings.pickRules.check.size": "Tamanho em GB (opcional)",
+	"settings.pickRules.check.check": "Verificar",
+	"settings.pickRules.check.failed": "Não foi possível verificar o nome",
+	"settings.pickRules.check.readAs": "Lido como",
+	"settings.pickRules.check.matches": "Corresponde a {name}",
+	"settings.pickRules.check.noTitle": "Não corresponde a nenhum título da sua Biblioteca. Escolha um conjunto de qualidade acima para avaliar mesmo assim.",
+	"settings.pickRules.check.noAlbum": "Corresponde a {name}, mas a nenhum de seus álbuns.",
+	"settings.pickRules.check.noCopies": "Este título não tem cópias para avaliar.",
+	"settings.pickRules.check.hasFile": "Tem um arquivo"
 }

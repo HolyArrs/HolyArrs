@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Richieste",
 	"settings.appearance.colRate": "Per riga",
 	"settings.appearance.noRows": "Ancora nessuna riga di Esplora contata.",
+	"settings.appearance.rowStats": "Righe di Esplora",
+	"settings.appearance.rowStatsDesc": "Aperture e richieste per riga negli ultimi 30 giorni, di tutti insieme. Contate solo su questo server.",
+	"settings.appearance.colRow": "Riga",
+	"settings.appearance.row.because_have": "Come i titoli che hai",
+	"settings.appearance.row.because_asked": "Come le tue richieste",
+	"settings.appearance.row.person": "Altro da una persona",
+	"settings.appearance.row.genre": "Generi scelti per te",
+	"settings.appearance.row.popular_genre": "Popolari per genere",
+	"settings.appearance.row.popular_decade": "Popolari per decennio",
+	"settings.appearance.row.decade": "Per decennio",
+	"settings.appearance.row.mood": "Per umore",
+	"settings.appearance.row.hero": "Banner in alto",
 	"settings.appearance.motion": "Animazioni",
 	"settings.appearance.motionNote": "Segue l'impostazione Riduci animazioni del tuo dispositivo"
 }

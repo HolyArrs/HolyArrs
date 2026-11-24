@@ -45,7 +45,7 @@
 "settings.search.preferRank": "Najprv najlepšia kópia; pri rovnosti vyhrá balík série",
 "settings.search.preferAlways": "Balík série vždy, keď vyhovuje sade kvality",
 "settings.search.multi": "Brať Vydania s viacerými sériami",
-"settings.search.multiHint": "Doplní každú chýbajúcu epizódu v ňom",
+"settings.search.multiHint": "Doplní každú chýbajúcu epizódu v ňom. Pri rovnakej kvalite vyhrá vydanie s viac hľadanými epizódami",
 "settings.search.music": "Hudba",
 "settings.search.albums": "Hľadať aj chýbajúce albumy",
 "settings.search.albumsHint": "Vydané albumy, jedno hľadanie na každý",

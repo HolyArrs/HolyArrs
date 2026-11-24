@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -103,11 +104,79 @@ func (q *Queue) EffectiveScheduleNext(sc Schedule) *time.Time {
 		next := mark.next
 		return &next
 	}
+	if next, ok := checkedNext(sc); ok && (sc.NextRun == nil || next.After(*sc.NextRun)) {
+		return &next
+	}
 	if sc.NextRun == nil {
 		return nil
 	}
 	next := *sc.NextRun
 	return &next
+}
+
+// checkedNext is when a schedule whose newest check found nothing to do is
+// due again: its check plus every. It holds only while nothing changed the
+// schedule since (a queued run or an edit moves updated_at), so it
+// survives a restart where the in-memory mark does not.
+func checkedNext(sc Schedule) (time.Time, bool) {
+	if sc.LastChecked == nil || sc.EverySeconds <= 0 || sc.LastChecked.Before(sc.UpdatedAt) {
+		return time.Time{}, false
+	}
+	return sc.LastChecked.Add(time.Duration(sc.EverySeconds) * time.Second), true
+}
+
+// scheduleCheckKeep is how stale the kept check may grow before an
+// unchanged no-work check writes it again. Checks in between live in
+// memory only, so a one-minute schedule does not write every minute.
+const scheduleCheckKeep = time.Hour
+
+// scheduleCheckKept says whether the database already holds this check
+// closely enough: same reason, after the schedule last changed, and less
+// than scheduleCheckKeep old.
+func scheduleCheckKept(sc Schedule, now time.Time, reason SkipReason) bool {
+	return sc.LastChecked != nil && sc.LastSkip != nil && *sc.LastSkip == string(reason) &&
+		!sc.LastChecked.Before(sc.UpdatedAt) && now.Sub(*sc.LastChecked) < scheduleCheckKeep
+}
+
+// noteScheduleCheck keeps the newest no-work check in memory for the
+// Schedules page.
+func (q *Queue) noteScheduleCheck(kind string, now time.Time, reason SkipReason) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.scheduleChecked[kind] = scheduleCheck{at: now, reason: reason}
+}
+
+// LastScheduleCheck returns the newest no-work check of a schedule and its
+// reason: the later of the kept one and this process's own.
+func (q *Queue) LastScheduleCheck(sc Schedule) (*time.Time, string) {
+	at, reason := sc.LastChecked, ""
+	if sc.LastSkip != nil {
+		reason = *sc.LastSkip
+	}
+	q.mu.Lock()
+	c, ok := q.scheduleChecked[sc.Kind]
+	q.mu.Unlock()
+	if ok && (at == nil || c.at.After(*at)) {
+		t := c.at
+		at, reason = &t, string(c.reason)
+	}
+	return at, reason
+}
+
+// scheduleCheck is one no-work check held in memory.
+type scheduleCheck struct {
+	at     time.Time
+	reason SkipReason
+}
+
+// recordScheduleCheck keeps a no-work check and its reason. It leaves
+// last_run, next_run and updated_at alone, so the schedule's history and
+// fingerprint stay as they were.
+func (q *Queue) recordScheduleCheck(ctx context.Context, sc Schedule, now time.Time, reason SkipReason) error {
+	return q.s.Write(ctx, func(tx *sql.Tx) error {
+		_, err := tx.Exec("UPDATE schedules SET last_checked = ?, last_skip = ? WHERE id = ?", database.FormatTime(now), string(reason), sc.ID)
+		return err
+	})
 }
 
 // RunSchedules queues a Job for every enabled schedule that is due, and
@@ -187,6 +256,17 @@ func (q *Queue) RunSchedules(ctx context.Context, now time.Time) ([]string, erro
 		}
 		if result.err == nil && !result.needed {
 			q.markScheduleNoop(current, now)
+			reason, _ := result.prepared.(SkipReason)
+			if reason == "" {
+				reason = SkipNothing
+			}
+			q.noteScheduleCheck(current.Kind, now, reason)
+			if scheduleCheckKept(current, now, reason) {
+				continue
+			}
+			if err := q.recordScheduleCheck(ctx, current, now, reason); err != nil {
+				log.Printf("jobs: schedule %s: keep check: %v", current.Kind, err)
+			}
 			continue
 		}
 		q.clearScheduleNoop(result.schedule.Kind)
@@ -222,7 +302,13 @@ func (q *Queue) scheduleProbe(sc Schedule, now time.Time) (ScheduleProbe, bool) 
 		return nil, false
 	}
 	mark, ok := q.scheduleNoop[sc.Kind]
-	return probe, q.scheduleProbeInFlight[sc.Kind] || ok && mark.fingerprint == scheduleFingerprint(sc) && now.Before(mark.next)
+	return probe, q.scheduleProbeInFlight[sc.Kind] || ok && mark.fingerprint == scheduleFingerprint(sc) && now.Before(mark.next) || checkedLater(sc, now)
+}
+
+// checkedLater says a kept no-work check still covers now.
+func checkedLater(sc Schedule, now time.Time) bool {
+	next, ok := checkedNext(sc)
+	return ok && now.Before(next)
 }
 
 func (q *Queue) beginScheduleProbe(sc Schedule, now time.Time) (ScheduleProbe, bool) {
@@ -230,7 +316,7 @@ func (q *Queue) beginScheduleProbe(sc Schedule, now time.Time) (ScheduleProbe, b
 	defer q.mu.Unlock()
 	probe := q.probe[sc.Kind]
 	mark, marked := q.scheduleNoop[sc.Kind]
-	if probe == nil || q.scheduleProbeInFlight[sc.Kind] || marked && mark.fingerprint == scheduleFingerprint(sc) && now.Before(mark.next) {
+	if probe == nil || q.scheduleProbeInFlight[sc.Kind] || marked && mark.fingerprint == scheduleFingerprint(sc) && now.Before(mark.next) || checkedLater(sc, now) {
 		return nil, false
 	}
 	q.scheduleProbeInFlight[sc.Kind] = true
