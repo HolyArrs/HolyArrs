@@ -281,3 +281,33 @@ func TestMoveDryRunFallbackTakesAFolderThisRunAdds(t *testing.T) {
 		t.Fatalf("%d Versions, want 1: %+v", n, lineOf(t, mv.Report, "title:movie:tmdb:603"))
 	}
 }
+
+// TestMoveFourKCopySearchableBesideALookOnlyMainKeptUpToDate: both apps
+// keep the movie up to date, but the main copy's Library folder is
+// look-only, which leaves the movie's item off; it is turned on, so a
+// search finds the 4K copy, and the main copy stays off.
+func TestMoveFourKCopySearchableBesideALookOnlyMainKeptUpToDate(t *testing.T) {
+	l, _, _ := fourKLabWith(t, false, "", "The.Matrix.1999.2160p.mkv", "The Matrix (1999)", func(radarr *Snapshot) {
+		radarr.Titles[0].Monitored = true
+	}, nil)
+	if _, err := library.AddFolder(context.Background(), l.st, library.FolderInput{Path: l.movies, Kind: "movie", Label: "Movies", LookOnly: true}, nil, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	mv := l.move(t, Choices{})
+	if mv.Report == nil {
+		t.Fatalf("move %+v", mv)
+	}
+	if got := lineOf(t, mv.Report, "title:movie:tmdb:603"); strings.Contains(got.Detail, "Keep up to date") {
+		t.Fatalf("title line %+v", got)
+	}
+	for q, want := range map[string]int{
+		"SELECT count(*) FROM titles WHERE state != 'removed' AND keep_up_to_date = 1":                                         1,
+		"SELECT count(*) FROM items i JOIN titles t ON t.id = i.title_id WHERE t.state != 'removed' AND i.keep_up_to_date = 1": 1,
+		"SELECT count(*) FROM versions WHERE four_k = 1 AND is_main = 0 AND keep_up_to_date = 1":                               1,
+		"SELECT count(*) FROM versions WHERE is_main = 1 AND keep_up_to_date = 1":                                              0,
+	} {
+		if n := l.count(t, q); n != want {
+			t.Fatalf("%s: %d, want %d", q, n, want)
+		}
+	}
+}

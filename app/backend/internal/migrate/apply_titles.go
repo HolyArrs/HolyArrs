@@ -471,6 +471,18 @@ func (r *run) plainMainVersion(titleID int64) int64 {
 	return r.id("SELECT id FROM versions WHERE title_id = ? AND is_main = 1 AND four_k = 0", titleID)
 }
 
+// versionPlace is the path of Version vID's Library folder here and its
+// folder in it ("" when there is none).
+func (r *run) versionPlace(vID int64) (lib, folder string) {
+	_ = r.m.Store.Read().QueryRowContext(r.ctx, "SELECT lf.path, v.folder_name FROM versions v JOIN library_folders lf ON lf.id = v.library_folder_id WHERE v.id = ?", vID).Scan(&lib, &folder)
+	return lib, folder
+}
+
+// versionHasFile says Version vID has a file on disk.
+func (r *run) versionHasFile(vID int64) bool {
+	return r.id("SELECT count(*) FROM files WHERE version_id = ? AND state = 'present'", vID) > 0
+}
+
 // versionIn is the id of a title's Version in folder of the Library folder
 // at lib here, letters A to Z in either case, as adding a Version compares
 // folders (0: none).
@@ -744,36 +756,38 @@ func (r *run) applyMusicPolicyTx(tx *sql.Tx, titleID int64, p *MusicPolicyPlan) 
 // date for its 4K copy alone.
 const fourKOnlyKept = "; Keep up to date on for its 4K copy only"
 
-// keepForFourK keeps a merged movie up to date for its 4K copy when the
-// 1080p app did not keep it up to date but the 4K app did: the title and
-// its movie item are kept up to date with its main copy switched off, so
-// the 4K copy can still be searched for and upgraded. Only a 4K Version
+// keepForFourK keeps a merged movie's 4K copy searchable when the 4K app
+// kept it up to date: a search looks only at items kept up to date, and
+// the movie's one item, shared by both copies, is off beside a look-only
+// main copy, so it is turned on. When the 1080p app did not keep the movie
+// up to date, the title is kept up to date too, with its main copy
+// switched off, so the 4K copy can still be upgraded. Only a 4K Version
 // that came over and was saved kept up to date counts; otherwise the
-// title stays as the 1080p app had it. The run that makes the title calls
-// it, so undoing that run takes the change back with the title. It
-// returns what to add to the line, and whether it kept the title up to date.
+// title stays as the 1080p app had it. Running it again changes nothing.
+// The run that makes the title calls it, so undoing that run takes the
+// change back with the title. It returns what to add to the line, and
+// whether it kept the title up to date for its 4K copy alone.
 func (r *run) keepForFourK(id int64, t *TitlePlan, fk *FourKPlan, other string) (string, bool) {
-	if fk == nil || !fk.KeepUpToDate || t.KeepUpToDate || other != "" {
+	if fk == nil || !fk.KeepUpToDate || other != "" {
 		return "", false
 	}
 	// The 4K Version as saved: a look-only Library folder keeps it switched off.
 	if r.id("SELECT count(*) FROM versions WHERE title_id = ? AND four_k = 1 AND is_main = 0 AND keep_up_to_date = 1", id) == 0 {
 		return "", false
 	}
+	alone := !t.KeepUpToDate
 	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
-		if err := SetKeepUpToDateTx(tx, id, true); err != nil {
+		if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1 WHERE title_id = ?", id); err != nil || !alone {
 			return err
 		}
-		// A search looks only at items kept up to date: the movie's one item
-		// is shared by both copies, so it is on, and the main copy is off.
-		if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1 WHERE title_id = ?", id); err != nil {
+		if err := SetKeepUpToDateTx(tx, id, true); err != nil {
 			return err
 		}
 		_, err := tx.Exec("UPDATE versions SET keep_up_to_date = 0 WHERE title_id = ? AND is_main = 1", id)
 		return err
 	})
 	if err != nil {
-		return "; it is not kept up to date for its 4K copy: " + err.Error(), false
+		return "; its 4K copy is not kept up to date: " + err.Error(), false
 	}
-	return "", true
+	return "", alone
 }

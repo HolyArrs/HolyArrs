@@ -64,9 +64,10 @@ func NamedMovieVideo(root, folder, name string) (AdoptVideo, bool) {
 // RecordedMovieVideo is NamedMovieVideo for the path an old app recorded
 // in a movie folder, with forward slashes, which may name a file in a
 // subfolder ("Disc1/Feature.mkv"), as Radarr scans them: only where
-// listing the folder reaches (no ".", "..", hidden, system or sample
-// folder, at most maxScanDepth folders down), inside the folder on disk,
-// and never an extra by its folders or its name. A backslash is refused.
+// listing the folder reaches (no ".", "..", hidden, system, sample or
+// linked folder, at most maxScanDepth folders down), inside the folder on
+// disk, and never an extra by its folders or its name. A backslash is
+// refused.
 func RecordedMovieVideo(root, folder, rel string) (AdoptVideo, bool) {
 	dir, name := path.Split(rel)
 	if dir == "" {
@@ -76,8 +77,14 @@ func RecordedMovieVideo(root, folder, rel string) (AdoptVideo, bool) {
 		return AdoptVideo{}, false
 	}
 	dir = strings.TrimSuffix(dir, "/")
+	// Listing the folder never follows a linked folder, so neither does this.
+	at := filepath.Join(root, filepath.FromSlash(folder))
 	for _, d := range strings.Split(dir, "/") {
+		at = filepath.Join(at, d)
 		if strings.HasPrefix(d, ".") || NasSystemDir(d) || strings.EqualFold(d, "sample") || strings.EqualFold(d, "samples") {
+			return AdoptVideo{}, false
+		}
+		if fi, err := os.Lstat(at); err != nil || !fi.IsDir() {
 			return AdoptVideo{}, false
 		}
 	}

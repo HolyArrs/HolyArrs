@@ -157,13 +157,18 @@ func (r *run) folderHeld(lfID int64, folder string) bool {
 // same folder) leaves it no folder of its own, so the copy is not brought.
 // nil when the title has no 4K copy.
 func fourKAt(t *TitlePlan, lib, fallback string) *FourKPlan {
-	fk := t.FourK
+	return fourKBeside(t.FourK, mainHere(lib, fallback), t.Folder)
+}
+
+// fourKBeside is the 4K copy fk beside a main copy in folder of the
+// Library folder mainLib here: not brought when that is its own folder,
+// by name or on disk.
+func fourKBeside(fk *FourKPlan, mainLib, folder string) *FourKPlan {
 	if fk == nil || fk.Unresolved != "" {
 		return fk
 	}
-	mainDir := filepath.Join(mainHere(lib, fallback), t.Folder)
-	if claimKey(mainHere(lib, fallback), t.Folder) != claimKey(filepath.FromSlash(fk.Library), fk.Folder) &&
-		!sameFolder(mainDir, filepath.Join(filepath.FromSlash(fk.Library), fk.Folder)) {
+	fkLib := filepath.FromSlash(fk.Library)
+	if claimKey(mainLib, folder) != claimKey(fkLib, fk.Folder) && !sameFolder(filepath.Join(mainLib, folder), filepath.Join(fkLib, fk.Folder)) {
 		return fk
 	}
 	at := *fk
@@ -293,17 +298,26 @@ func (r *run) addFourK(titleID int64, fk *FourKPlan) string {
 	if !onDisk {
 		return "; its 4K copy came over as a 4K Version with no file yet; there is no folder at " + filepath.ToSlash(dir)
 	}
-	note := "; its 4K copy came over as a 4K Version using the folder " + filepath.ToSlash(dir) + " where it is"
+	return r.linkFourK(titleID, v.ID, lib, fk, true)
+}
+
+// linkFourK adopts the 4K copy's video in its folder into the 4K Version
+// vID and puts the quality the 4K app recorded on it, returning the note
+// for the title's line. A Version just added (fresh) whose file cannot be
+// adopted is removed again, so the line's "not brought" stays true.
+func (r *run) linkFourK(titleID, vID int64, lib string, fk *FourKPlan, fresh bool) string {
+	note := "; its 4K copy came over as a 4K Version using the folder " + filepath.ToSlash(filepath.Join(lib, fk.Folder)) + " where it is"
 	video := fourKVideo(lib, fk.Folder, recordedNames(fk.File, fk.Qualities))
-	if video == "" {
+	switch {
+	case video == "":
 		note += "; no file was linked: the 4K app's file is not there and the folder does not hold exactly one movie file"
-	}
-	if video != "" {
-		if _, err := r.m.Library.AdoptMovieCopy(r.ctx, titleID, v.ID, library.CopyAdoption{RelativePath: video}, r.by); err != nil {
+	default:
+		if _, err := r.m.Library.AdoptMovieCopy(r.ctx, titleID, vID, library.CopyAdoption{RelativePath: video}, r.by); err != nil {
 			why := err.Error()
-			// Leave no empty Version behind when the file could not be
-			// adopted, so the line's "not brought" stays true.
-			if rmErr := library.RemoveVersion(r.ctx, r.m.Store, titleID, v.ID, r.by); rmErr != nil {
+			if !fresh {
+				return note + "; its file was not adopted: " + why
+			}
+			if rmErr := library.RemoveVersion(r.ctx, r.m.Store, titleID, vID, r.by); rmErr != nil {
 				return "; its 4K Version was added but its file was not adopted (" + why + "); the empty Version stays: " + rmErr.Error()
 			}
 			return "; its 4K copy was not brought: " + why
@@ -312,7 +326,7 @@ func (r *run) addFourK(titleID int64, fk *FourKPlan) string {
 	}
 	if len(fk.Qualities) > 0 {
 		// The quality the 4K app recorded, on the 4K copy only.
-		_, _ = r.m.Library.SetVersionRecordedQualities(r.ctx, titleID, v.ID, fk.Qualities, r.by)
+		_, _ = r.m.Library.SetVersionRecordedQualities(r.ctx, titleID, vID, fk.Qualities, r.by)
 	}
 	return note
 }
@@ -383,8 +397,10 @@ func recordedFile(lib, folder string, names []string) string {
 // quality each app recorded. A merged 4K copy that the earlier run did not
 // bring is added on the title page, as for a title that was already here,
 // so each run's undo takes back only what that run made; the dry run says
-// so too. When this same move made the title and stopped before the 4K
-// copy, the copy comes over now. It returns what to add to the line.
+// so too. When this same move made the title and stopped before its 4K
+// copy was done (a restart), the steps left are done now, as the title's
+// own step does them: the 4K Version, beside the main copy where it
+// landed, its file and its monitoring. It returns what to add to the line.
 func (r *run) finishMovedTitle(id int64, key string, t *TitlePlan) string {
 	d := ""
 	if !r.dry {
@@ -395,18 +411,27 @@ func (r *run) finishMovedTitle(id int64, key string, t *TitlePlan) string {
 	if t.FourK == nil {
 		return d
 	}
-	if _, fourK := r.copyVersions(id, t); fourK != 0 {
-		return d
-	}
-	// This same move made the title and stopped before its 4K copy (a
-	// restart): the copy is added now, as the title's own step adds it.
-	if _, mine := r.madeThisMove(key); mine && !r.dry {
-		d += r.addFourK(id, t.FourK)
-		note, kept := r.keepForFourK(id, t, t.FourK, "")
-		if kept {
-			note = fourKOnlyKept
+	_, fourK := r.copyVersions(id, t)
+	if _, mine := r.madeThisMove(key); !mine || r.dry {
+		if fourK != 0 {
+			return d
 		}
-		return d + note
+		return d + "; add its 4K copy on the title page"
 	}
-	return d + "; add its 4K copy on the title page"
+	fk := t.FourK
+	if lib, folder := r.versionPlace(r.versionOf(id, false)); folder != "" {
+		fk = fourKBeside(fk, lib, folder)
+	}
+	lib := filepath.Clean(filepath.FromSlash(fk.Library))
+	switch {
+	case fourK == 0:
+		d += r.addFourK(id, fk)
+	case fk.Unresolved == "" && !r.versionHasFile(fourK) && isDir(filepath.Join(lib, fk.Folder)):
+		d += r.linkFourK(id, fourK, lib, fk, false)
+	}
+	note, kept := r.keepForFourK(id, t, fk, "")
+	if kept {
+		note = fourKOnlyKept
+	}
+	return d + note
 }

@@ -133,3 +133,17 @@ func TestRecordedMovieVideoInASubfolder(t *testing.T) {
 		t.Fatalf("features %+v", got)
 	}
 }
+
+// A recorded path through a linked folder is refused: listing the folder
+// never follows one, so an extra reached that way is never the movie.
+func TestRecordedMovieVideoNeverFollowsALinkedFolder(t *testing.T) {
+	root := t.TempDir()
+	const dir = "Heat (1995)"
+	writeFile(t, filepath.Join(root, dir, "Extras", "Feature.mkv"), "x")
+	if err := os.Symlink("Extras", filepath.Join(root, dir, "Disc1")); err != nil {
+		t.Skipf("no links here: %v", err)
+	}
+	if v, ok := RecordedMovieVideo(root, dir, "Disc1/Feature.mkv"); ok {
+		t.Fatalf("took %q through a linked folder", v.Path)
+	}
+}
