@@ -635,7 +635,7 @@ func musicPatterns(key, p string) (map[string]string, string) {
 
 // subtitleSiteKinds maps their subtitle site names to ours.
 var subtitleSiteKinds = map[string]string{"podnapisi": "podnapisi", "gestdown": "gestdown", "yifysubtitles": "yifysubtitles",
-	"tvsubtitles": "tvsubtitles", "bsplayer": "bsplayer", "napiprojekt": "napiprojekt"}
+	"tvsubtitles": "tvsubtitles", "bsplayer": "bsplayer", "napiprojekt": "napiprojekt", "titlovi": "titlovi"}
 
 func (b *builder) subtitles(s *Snapshot) {
 	b.cover("subtitles")

@@ -71,7 +71,7 @@ func fullSnapshots() []Input {
 		Profiles: []SubtitleProfile{{ID: 1, Name: "Main", Languages: []SubtitleLanguage{{Language: "en"}, {Language: "es", HI: true}}}, {ID: 2, Name: "Anime"}},
 		Providers: []Provider{{Name: "podnapisi", Kind: "podnapisi"}, {Name: "opensubtitlescom", Kind: "opensubtitlescom", NeedsReentry: []string{"password"}}, {Name: "addic7ed", Kind: "addic7ed"},
 			{Name: "yifysubtitles", Kind: "yifysubtitles"}, {Name: "tvsubtitles", Kind: "tvsubtitles"}, {Name: "bsplayer", Kind: "bsplayer"}, {Name: "subf2m", Kind: "subf2m"},
-			{Name: "napiprojekt", Kind: "napiprojekt"}, {Name: "napisy24", Kind: "napisy24"}},
+			{Name: "napiprojekt", Kind: "napiprojekt"}, {Name: "napisy24", Kind: "napisy24"}, {Name: "titlovi", Kind: "titlovi"}},
 		Defaults: map[string]any{"movie_default_profile": int64(1), "use_embedded_subs": true}}}
 	qbit := &Snapshot{Kind: QBittorrent, Downloader: &Downloader{Host: "10.0.0.5", Port: 8080, Username: "admin", NeedsPassword: true, SavePath: "/downloads",
 		Categories: []Category{{Name: "radarr", Path: "/downloads/radarr"}}}}
@@ -342,7 +342,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if n, ok := notMoved(p, "bazarr subtitles.providers[2]"); !ok || !strings.Contains(n.Why, "Gestdown") {
 		t.Fatalf("addic7ed %+v", n)
 	}
-	for _, k := range []string{"yifysubtitles", "tvsubtitles", "bsplayer", "napiprojekt"} {
+	for _, k := range []string{"yifysubtitles", "tvsubtitles", "bsplayer", "napiprojekt", "titlovi"} {
 		if it := item(t, p, GroupSubtitles, "subtitle_site:"+k); it.Subtitles.SiteKind != k {
 			t.Fatalf("%s %+v", k, it)
 		}
