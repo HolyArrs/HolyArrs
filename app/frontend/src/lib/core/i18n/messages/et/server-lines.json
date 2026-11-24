@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "See on teenuses {name}, mis on soovide seadetes üks voogedastusteenustest, seega jäi alla laadimata. Kinnita uuesti, et ikkagi alla laadida.",
 	"server.migrate.path-must-be-a-full-folder": "tee peab olema kausta täielik tee",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs ei näe seda kausta",
-	"server.plugins.send-name": "saada {\"name\": \"...\"}"
+	"server.plugins.send-name": "saada {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Uus kaanepilt",
+	"server.plugins.send-event-library-add": "saada {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "saada {\"on\": true} või {\"on\": false}"
 }

@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Είναι στο {name}, μία από τις υπηρεσίες streaming στις ρυθμίσεις αιτημάτων, οπότε δεν κατέβηκε. Ενέκρινέ το ξανά για να το κατεβάσεις ούτως ή άλλως.",
 	"server.migrate.path-must-be-a-full-folder": "η διαδρομή πρέπει να είναι πλήρης διαδρομή φακέλου",
 	"server.migrate.that-folder-is-not-one-holyarrs": "το HolyArrs δεν μπορεί να δει αυτόν τον φάκελο",
-	"server.plugins.send-name": "στείλτε {\"name\": \"...\"}"
+	"server.plugins.send-name": "στείλτε {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Νέο εξώφυλλο",
+	"server.plugins.send-event-library-add": "στείλε {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "στείλε {\"on\": true} ή {\"on\": false}"
 }

@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "A munkatársaknak: egy kézzel, listából vagy jóváhagyott kérésből hozzáadott film vagy sorozat.",
 	"requests.moment.delete.title": "Törölve",
 	"requests.moment.delete.body": "A munkatársaknak: egy film, egy sorozat, vagy egy sorozat egy évada vagy epizódjai kikerültek a Médiatárból.",
+	"requests.moment.artwork.title": "Borítókép megváltozott",
+	"requests.moment.artwork.body": "A munkatársaknak: a Médiatár egyik címe új borítóképet kapott.",
 	"requests.moment.health.title": "Állapot",
 	"requests.moment.health.body": "A munkatársaknak: egy állapot-ellenőrzés elromlott, vagy újra rendben van.",
 	"requests.moment.needs_decision.title": "Döntésre vár",

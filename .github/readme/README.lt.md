@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.0: daugiau nei 150 pataisymų ir funkcijų iš 101 žmonių.** Papildinių sistema, naujas sąrankos vedlys ir nesikišimo režimas, kuris niekada neliečia jūsų failų. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: papildiniai girdi, kas vyksta HolyArrs.** Kūrėjo režimas paleidžia kuriamą papildinį, o bandomosios versijos leidžia keliems žmonėms jį išbandyti pirmiems. [Žiūrėti, kas naujo](https://holyarrs.com/whats-new/)
 
 > Kiekvienas tavo HolyArrs plakatas, anonsas ir įvertinimas ateina iš serverio, kurį pats laikau ir apmoku, todėl visiems tai lieka nemokama. Jei HolyArrs padarė tavo filmų vakarą šiek tiek geresnį, rėmėjas padeda mums visiems išlaikyti šviesą 💛
 >

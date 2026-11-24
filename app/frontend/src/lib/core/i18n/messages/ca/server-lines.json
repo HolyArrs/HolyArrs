@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "És a {name}, un dels serveis de streaming de la configuració de sol·licituds, així que no s'ha baixat. Aprova-ho de nou per baixar-ho igualment.",
 	"server.migrate.path-must-be-a-full-folder": "el camí ha de ser el camí complet d'una carpeta",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs no pot veure aquesta carpeta",
-	"server.plugins.send-name": "envia {\"name\": \"...\"}"
+	"server.plugins.send-name": "envia {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Portada nova",
+	"server.plugins.send-event-library-add": "envia {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "envia {\"on\": true} o {\"on\": false}"
 }

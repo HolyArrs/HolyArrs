@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Osoblju: film ili serija dodani ručno, s popisa ili odobrenim zahtjevom.",
 	"requests.moment.delete.title": "Obrisano",
 	"requests.moment.delete.body": "Osoblju: film, serija ili sezona ili epizode serije napustili su biblioteku.",
+	"requests.moment.artwork.title": "Naslovnica promijenjena",
+	"requests.moment.artwork.body": "Osoblju: naslov u biblioteci dobio je novu naslovnicu.",
 	"requests.moment.health.title": "Stanje",
 	"requests.moment.health.body": "Osoblju: provjera stanja je pala ili je ponovno popravljena.",
 	"requests.moment.needs_decision.title": "Traži odluku",

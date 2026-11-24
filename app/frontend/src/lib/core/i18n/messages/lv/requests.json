@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Darbiniekiem: filma vai seriāls, ko pievienoja ar roku, no saraksta vai apstiprināta pieprasījuma.",
 	"requests.moment.delete.title": "Dzēsts",
 	"requests.moment.delete.body": "Darbiniekiem: filma, seriāls vai seriāla sezona vai epizodes pameta Bibliotēku.",
+	"requests.moment.artwork.title": "Vāka attēls mainījies",
+	"requests.moment.artwork.body": "Darbiniekiem: nosaukums Bibliotēkā ieguva jaunu vāka attēlu.",
 	"requests.moment.health.title": "Veselība",
 	"requests.moment.health.body": "Darbiniekiem: veselības pārbaude sabojājās vai atkal ir salabota.",
 	"requests.moment.needs_decision.title": "Jālemj",

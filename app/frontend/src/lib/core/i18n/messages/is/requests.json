@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Til starfsfólks: kvikmynd eða þætti var bætt við í höndunum, af lista eða með samþykktri beiðni.",
 	"requests.moment.delete.title": "Eytt",
 	"requests.moment.delete.body": "Til starfsfólks: kvikmynd, þáttur, eða þáttaröð eða þættir úr þætti fóru úr safninu.",
+	"requests.moment.artwork.title": "Forsíðumynd breyttist",
+	"requests.moment.artwork.body": "Til starfsfólks: titill í safninu fékk nýja forsíðumynd.",
 	"requests.moment.health.title": "Ástand",
 	"requests.moment.health.body": "Til starfsfólks: ástandsathugun bilaði, eða er lagfærð aftur.",
 	"requests.moment.needs_decision.title": "Þarfnast ákvörðunar",

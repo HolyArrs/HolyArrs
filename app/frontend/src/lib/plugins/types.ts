@@ -4,6 +4,8 @@ export interface PluginAccess {
 	hosts: string[] | null;
 	folders: FolderReq[] | null;
 	actions: string[] | null;
+	/** Moments the plugin is told as they happen, such as "library.add"; missing on older plugins. */
+	events?: string[] | null;
 }
 
 /** One folder a plugin asks for; the owner picks the real folder. */
@@ -67,7 +69,7 @@ export interface Plugin {
 	needs_app?: string;
 	/** Fields the plugin declares for its settings form. */
 	settings?: PluginSetting[];
-	/** What the installed version asks for beyond what the owner approved: "host:x", "folder:x" or "choose:x". */
+	/** What the installed version asks for beyond what the owner approved: "host:x", "event:x", "folder:x" or "choose:x". */
 	needs_approval?: string[];
 	/** The folders the owner chose, by folder name. */
 	grants?: Record<string, FolderGrant>;
@@ -75,6 +77,13 @@ export interface Plugin {
 	owner_hosts?: string[];
 	/** How often it tried to reach a blocked address since it started. */
 	blocked_count?: number;
+	/** A plugin from the developer folder (unsigned); dev_error says why its files can't be read. */
+	dev?: boolean;
+	dev_error?: string;
+	/** An installed test version; test_version is a newer test version; test_on is the owner's choice to get them. */
+	test?: boolean;
+	test_version?: string;
+	test_on?: boolean;
 	/** The API scopes it asks for, as install lines: one per group, with red warnings. */
 	scope_groups?: ScopeGroup[];
 	/** The installed version's asked caps, and the owner's own caps. */
@@ -120,6 +129,9 @@ export interface PluginOverview {
 	net_lock_reason?: FileLockReason;
 	allow_no_net_lock?: boolean;
 	no_net_lock_asked?: boolean;
+	/** The owner runs unsigned plugins from dev_dir. */
+	dev_mode?: boolean;
+	dev_dir?: string;
 	plugins: Plugin[];
 }
 

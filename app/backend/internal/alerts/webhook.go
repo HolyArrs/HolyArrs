@@ -133,6 +133,94 @@ func (s *Sender) webhook(ctx context.Context, a domain.Alert, m Message) error {
 	if err != nil {
 		return err
 	}
+	p := payloadOf(m)
+	for _, x := range m.People {
+		p.People = append(p.People, x.Name)
+	}
+	body, _ := json.Marshal(p)
+	return s.postWebhook(ctx, a, m, link, secret, body)
+}
+
+// PluginPayload is what plugins are told: the webhook payload for m
+// without the people who asked or a problem report, with every link in the
+// text and data replaced by "[link]" (an error may quote an indexer link
+// with its key) and every full path of this machine cut to its last name.
+// A plugin is someone else's program; a webhook goes where the owner chose.
+func PluginPayload(m Message) Payload {
+	p := payloadOf(m)
+	p.Report, p.People = nil, nil
+	p.Subject, p.Text = plainText(p.Subject), plainText(p.Text)
+	if p.Data != nil {
+		p.Data = noPeople(noLinks(p.Data)).(map[string]any)
+	}
+	return p
+}
+
+// peopleKeys are Event data keys that name people or hold what they wrote;
+// a plugin never gets them, even if a future Event carries one.
+var peopleKeys = []string{"asked_by", "asked_by_ids", "made_by", "decided_by", "by", "user", "user_id", "people", "note", "reply", "email"}
+
+// reSecretWord matches a word quoting a key or a login: apikey=, token=,
+// passkey=, password=, secret=, auth=, or user:pass@host.
+var reSecretWord = regexp.MustCompile(`(?i)(key|token|pass\w*|secret|auth\w*)=|[^\s:/@]+:[^\s/@]+@`)
+
+// noPeople is v without peopleKeys at any depth.
+func noPeople(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		for _, k := range peopleKeys {
+			delete(x, k)
+		}
+		for k, e := range x {
+			x[k] = noPeople(e)
+		}
+	case []any:
+		for i, e := range x {
+			x[i] = noPeople(e)
+		}
+	}
+	return v
+}
+
+// plainText replaces each word holding a link with "[link]" and cuts each
+// full path to its last name, keeping the lines.
+func plainText(s string) string {
+	lines := strings.Split(s, "\n")
+	for i, l := range lines {
+		words := strings.Split(l, " ")
+		for j, w := range words {
+			if strings.Contains(w, "://") || reSecretWord.MatchString(w) {
+				words[j] = "[link]"
+			} else if reFullPath.MatchString(w) {
+				words[j] = payloadData(w).(string)
+			}
+		}
+		lines[i] = strings.Join(words, " ")
+	}
+	return strings.Join(lines, "\n")
+}
+
+// noLinks is v with every string holding a link replaced by plainText's.
+func noLinks(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		for k, e := range x {
+			x[k] = noLinks(e)
+		}
+	case []any:
+		for i, e := range x {
+			x[i] = noLinks(e)
+		}
+	case string:
+		if strings.Contains(x, "://") || reSecretWord.MatchString(x) {
+			return plainText(x)
+		}
+	}
+	return v
+}
+
+// payloadOf is the webhook payload for m, without the people who asked.
+func payloadOf(m Message) Payload {
 	p := Payload{Moment: m.Moment, Subject: m.Subject, Text: m.Text, At: time.Now().UTC(), Test: m.Moment == MomentTest, Movie: m.Movie, Show: m.Show, Episodes: m.Episodes,
 		Artist: m.Artist, Tracks: m.Tracks, Report: m.Report}
 	if m.Event != nil {
@@ -146,10 +234,10 @@ func (s *Sender) webhook(ctx context.Context, a domain.Alert, m Message) error {
 			}
 		}
 	}
-	for _, x := range m.People {
-		p.People = append(p.People, x.Name)
-	}
-	body, _ := json.Marshal(p)
+	return p
+}
+
+func (s *Sender) postWebhook(ctx context.Context, a domain.Alert, m Message, link, secret string, body []byte) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, link, bytes.NewReader(body))
 	if err != nil {
 		return ErrHook

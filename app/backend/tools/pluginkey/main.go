@@ -3,9 +3,9 @@
 //
 //	pluginkey keygen -out <dir>
 //	pluginkey keygen -plain -pipe -pub <file>
-//	pluginkey sign -key <file> -kind plugins|blocklist|languages -in <payload.json> -out <list.json> [-min-counter N]
+//	pluginkey sign -key <file> -kind plugins|plugins_test|blocklist|languages -in <payload.json> -out <list.json> [-min-counter N]
 //	pluginkey verify -pub <file> -in <list.json>
-//	pluginkey check -pub <file> -list <plugins.json> -blocklist <blocklist.json> -manifest <manifest.json> -file <plugin>
+//	pluginkey check -pub <file> -list <plugins.json> -blocklist <blocklist.json> -manifest <manifest.json> -file <plugin> [-kind plugins_test]
 //
 // A key is plain or sealed. A plain key is the base64 ed25519 seed on one
 // line, with no passphrase: the release automation keeps it as a GitHub
@@ -149,7 +149,7 @@ func runKeygen(args []string) error {
 func runSign(args []string) error {
 	fs := flag.NewFlagSet("sign", flag.ExitOnError)
 	key := fs.String("key", "", "plugin-signing.key")
-	kind := fs.String("kind", "", "plugins, blocklist or languages")
+	kind := fs.String("kind", "", "plugins, plugins_test, blocklist or languages")
 	in := fs.String("in", "", "payload JSON")
 	out := fs.String("out", "", "signed list to write")
 	minCounter := fs.Uint64("min-counter", 0, "the payload counter must be above this")
@@ -196,11 +196,12 @@ func runCheck(args []string) error {
 	block := fs.String("blocklist", "", "signed blocklist.json")
 	man := fs.String("manifest", "", "manifest.json")
 	file := fs.String("file", "", "plugin file")
+	kind := fs.String("kind", plugins.KindPlugins, "the list's kind: plugins, or plugins_test for a test version")
 	_ = fs.Parse(args)
 	if *pub == "" || *list == "" || *block == "" || *man == "" || *file == "" {
 		return errors.New("-pub, -list, -blocklist, -manifest and -file are required")
 	}
-	m, err := check(*pub, *list, *block, *man, *file)
+	m, err := check(*pub, *list, *block, *man, *file, *kind)
 	if err != nil {
 		return err
 	}
@@ -209,7 +210,7 @@ func runCheck(args []string) error {
 }
 
 // check runs the app's own install check on a published set of files.
-func check(pubPath, listPath, blockPath, manPath, filePath string) (*plugins.Manifest, error) {
+func check(pubPath, listPath, blockPath, manPath, filePath string, kind ...string) (*plugins.Manifest, error) {
 	pub, err := readPub(pubPath)
 	if err != nil {
 		return nil, err
@@ -225,8 +226,11 @@ func check(pubPath, listPath, blockPath, manPath, filePath string) (*plugins.Man
 		return nil, err
 	}
 	defer f.Close()
-	acc, err := plugins.CheckInstall(plugins.InstallInput{PublicKey: pub, List: raw[0], Blocklist: raw[1],
-		Manifest: raw[2], File: f, TempDir: os.TempDir()})
+	in := plugins.InstallInput{PublicKey: pub, List: raw[0], Blocklist: raw[1], Manifest: raw[2], File: f, TempDir: os.TempDir()}
+	if len(kind) > 0 {
+		in.Kind = kind[0]
+	}
+	acc, err := plugins.CheckInstall(in)
 	if err != nil {
 		return nil, err
 	}
@@ -388,8 +392,8 @@ func loadKey(path string, pass []byte) (ed25519.PrivateKey, error) {
 
 // sign signs the payload in inPath and writes the signed list to outPath.
 func sign(keyPath string, pass []byte, kind, inPath, outPath string, minCounter uint64) error {
-	if kind != plugins.KindPlugins && kind != plugins.KindBlocklist && kind != plugins.KindLanguages {
-		return errors.New("-kind must be plugins, blocklist or languages")
+	if kind != plugins.KindPlugins && kind != plugins.KindTest && kind != plugins.KindBlocklist && kind != plugins.KindLanguages {
+		return errors.New("-kind must be plugins, plugins_test, blocklist or languages")
 	}
 	raw, err := os.ReadFile(inPath)
 	if err != nil {

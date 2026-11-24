@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "{name} 上有，它是请求设置中的流媒体服务之一，因此未下载。再次批准即可照常下载。",
 	"server.migrate.path-must-be-a-full-folder": "路径必须是完整的文件夹路径",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs 无法看到该文件夹",
-	"server.plugins.send-name": "请发送 {\"name\": \"...\"}"
+	"server.plugins.send-name": "请发送 {\"name\": \"...\"}",
+	"server.library.new-cover-art": "新封面",
+	"server.plugins.send-event-library-add": "发送 {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "发送 {\"on\": true} 或 {\"on\": false}"
 }

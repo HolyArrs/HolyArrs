@@ -35,6 +35,10 @@ type listServer struct {
 	file     []byte
 	version  string
 	redirect string // when set, plugins.json redirects here
+	// testList is plugins-test.json (nil: 404); extra serves other
+	// versions' manifest and file, by version.
+	testList []byte
+	extra    map[string][2][]byte
 }
 
 var pluginFile = []byte("plugin program bytes")
@@ -67,7 +71,23 @@ func newListServer(t *testing.T) (*listServer, ed25519.PublicKey) {
 		ls.mu.Lock()
 		defer ls.mu.Unlock()
 		base := "/list/plugins/tailscale/" + ls.version
+		for v, mf := range ls.extra {
+			switch r.URL.Path {
+			case "/list/plugins/tailscale/" + v + "/manifest.json":
+				w.Write(mf[0])
+				return
+			case "/list/plugins/tailscale/" + v + "/plugin":
+				w.Write(mf[1])
+				return
+			}
+		}
 		switch r.URL.Path {
+		case "/list/plugins-test.json":
+			if ls.testList == nil {
+				http.NotFound(w, r)
+				return
+			}
+			w.Write(ls.testList)
 		case "/list/plugins.json":
 			if ls.redirect != "" {
 				http.Redirect(w, r, ls.redirect, http.StatusFound)

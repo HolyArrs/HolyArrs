@@ -41,6 +41,19 @@ func ListName(p string) string {
 	return "plugins-" + p + ".json"
 }
 
+// TestListName is the signed list of test versions for platform p.
+func TestListName(p string) string {
+	if p == PlatformAMD64 {
+		return "plugins-test.json"
+	}
+	return "plugins-test-" + p + ".json"
+}
+
+// cacheTestListName keeps the cached test list apart from the plugin list.
+func (e *Engine) cacheTestListName() string {
+	return "cache-" + TestListName(e.platform())
+}
+
 // FileBase is the folder (with a trailing slash) holding manifest.json and
 // plugin for one version on platform p.
 func FileBase(id, version, p string) string {

@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Je na {name}, jedné ze streamovacích služeb v nastavení žádostí, proto se nestáhlo. Schval znovu, chceš-li to přesto stáhnout.",
 	"server.migrate.path-must-be-a-full-folder": "cesta musí být úplná cesta ke složce",
 	"server.migrate.that-folder-is-not-one-holyarrs": "tuto složku HolyArrs nevidí",
-	"server.plugins.send-name": "pošlete {\"name\": \"...\"}"
+	"server.plugins.send-name": "pošlete {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Nový obal",
+	"server.plugins.send-event-library-add": "pošli {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "pošli {\"on\": true} nebo {\"on\": false}"
 }

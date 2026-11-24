@@ -10,6 +10,7 @@ func (e *Engine) stopProc(id string) error {
 	delete(e.procs, id)
 	e.revoke(id)
 	e.mu.Unlock()
+	e.dropFeed(id, nil) // its event stream ends with it
 	if p == nil {
 		return nil
 	}

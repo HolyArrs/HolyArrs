@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Het staat op {name}, een van de streamingdiensten in de verzoekinstellingen, dus het is niet gedownload. Keur het opnieuw goed om het toch te downloaden.",
 	"server.migrate.path-must-be-a-full-folder": "het pad moet een volledig mappad zijn",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs kan die map niet zien",
-	"server.plugins.send-name": "stuur {\"name\": \"...\"}"
+	"server.plugins.send-name": "stuur {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Nieuwe hoesafbeelding",
+	"server.plugins.send-event-library-add": "stuur {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "stuur {\"on\": true} of {\"on\": false}"
 }

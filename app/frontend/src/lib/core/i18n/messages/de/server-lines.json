@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Läuft bei {name}, einem der Streamingdienste in den Anfrage-Einstellungen, daher nicht heruntergeladen. Genehmige es erneut, um es trotzdem herunterzuladen.",
 	"server.migrate.path-must-be-a-full-folder": "der Pfad muss ein vollständiger Ordnerpfad sein",
 	"server.migrate.that-folder-is-not-one-holyarrs": "diesen Ordner kann HolyArrs nicht sehen",
-	"server.plugins.send-name": "sende {\"name\": \"...\"}"
+	"server.plugins.send-name": "sende {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Neues Cover",
+	"server.plugins.send-event-library-add": "sende {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "sende {\"on\": true} oder {\"on\": false}"
 }

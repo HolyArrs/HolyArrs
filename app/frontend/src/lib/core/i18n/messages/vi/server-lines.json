@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Có trên {name}, một trong các dịch vụ phát trực tuyến trong cài đặt yêu cầu, nên chưa tải. Duyệt lại để vẫn tải xuống.",
 	"server.migrate.path-must-be-a-full-folder": "đường dẫn phải là đường dẫn thư mục đầy đủ",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs không thấy thư mục đó",
-	"server.plugins.send-name": "gửi {\"name\": \"...\"}"
+	"server.plugins.send-name": "gửi {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Ảnh bìa mới",
+	"server.plugins.send-event-library-add": "gửi {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "gửi {\"on\": true} hoặc {\"on\": false}"
 }

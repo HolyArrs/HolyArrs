@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "За особље: филм или серија додати ручно, са листе или из одобреног захтева.",
 	"requests.moment.delete.title": "Обрисано",
 	"requests.moment.delete.body": "За особље: филм, серија, или сезона или епизоде серије су напустили Библиотеку.",
+	"requests.moment.artwork.title": "Омот промењен",
+	"requests.moment.artwork.body": "За особље: наслов у библиотеци добио је нови омот.",
 	"requests.moment.health.title": "Стање",
 	"requests.moment.health.body": "За особље: провера стања је пукла или је поново исправљена.",
 	"requests.moment.needs_decision.title": "Захтева одлуку",

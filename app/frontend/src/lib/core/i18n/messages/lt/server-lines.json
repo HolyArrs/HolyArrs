@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Yra {name} – vienoje iš srautinių paslaugų prašymų nustatymuose, todėl neatsisiųsta. Patvirtink dar kartą, kad vis tiek atsisiųstum.",
 	"server.migrate.path-must-be-a-full-folder": "kelias turi būti visas aplanko kelias",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs šio aplanko nemato",
-	"server.plugins.send-name": "siųskite {\"name\": \"...\"}"
+	"server.plugins.send-name": "siųskite {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Naujas viršelis",
+	"server.plugins.send-event-library-add": "siųsk {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "siųsk {\"on\": true} arba {\"on\": false}"
 }

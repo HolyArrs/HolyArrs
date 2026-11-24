@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Personalile: film või sari lisati käsitsi, nimekirjast või heaks kiidetud taotlusest.",
 	"requests.moment.delete.title": "Kustutatud",
 	"requests.moment.delete.body": "Personalile: film, sari või sarja hooaeg või episoodid lahkusid meediakogust.",
+	"requests.moment.artwork.title": "Kaanepilt muutus",
+	"requests.moment.artwork.body": "Personalile: meediakogu pealkiri sai uue kaanepildi.",
 	"requests.moment.health.title": "Seisukord",
 	"requests.moment.health.body": "Personalile: seisukorra kontroll läks katki või on taas korras.",
 	"requests.moment.needs_decision.title": "Vajab otsust",

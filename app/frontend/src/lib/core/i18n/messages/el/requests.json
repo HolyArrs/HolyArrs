@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Προς το προσωπικό: μια ταινία ή σειρά προστέθηκε με το χέρι, από λίστα ή από εγκεκριμένο αίτημα.",
 	"requests.moment.delete.title": "Διαγράφηκε",
 	"requests.moment.delete.body": "Προς το προσωπικό: μια ταινία, μια σειρά, ή μια σεζόν ή επεισόδια μιας σειράς έφυγαν από τη Βιβλιοθήκη.",
+	"requests.moment.artwork.title": "Το εξώφυλλο άλλαξε",
+	"requests.moment.artwork.body": "Προς το προσωπικό: ένας τίτλος στη Βιβλιοθήκη πήρε νέο εξώφυλλο.",
 	"requests.moment.health.title": "Υγεία",
 	"requests.moment.health.body": "Προς το προσωπικό: ένας έλεγχος υγείας χάλασε ή διορθώθηκε ξανά.",
 	"requests.moment.needs_decision.title": "Χρειάζεται απόφαση",

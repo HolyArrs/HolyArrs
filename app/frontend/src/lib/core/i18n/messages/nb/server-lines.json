@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Den finnes på {name}, en av strømmetjenestene i forespørselsinnstillingene, så den ble ikke lastet ned. Godkjenn igjen for å laste ned likevel.",
 	"server.migrate.path-must-be-a-full-folder": "stien må være en full mappesti",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs kan ikke se den mappen",
-	"server.plugins.send-name": "send {\"name\": \"...\"}"
+	"server.plugins.send-name": "send {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Nytt coverbilde",
+	"server.plugins.send-event-library-add": "send {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "send {\"on\": true} eller {\"on\": false}"
 }

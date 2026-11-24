@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "إنه على {name}، إحدى خدمات البث في إعدادات الطلبات، لذا لم يُنزَّل. وافق مرة أخرى لتنزيله على أي حال.",
 	"server.migrate.path-must-be-a-full-folder": "يجب أن يكون المسار مسار مجلد كاملًا",
 	"server.migrate.that-folder-is-not-one-holyarrs": "هذا المجلد ليس من المجلدات التي يراها HolyArrs",
-	"server.plugins.send-name": "أرسل {\"name\": \"...\"}"
+	"server.plugins.send-name": "أرسل {\"name\": \"...\"}",
+	"server.library.new-cover-art": "غلاف جديد",
+	"server.plugins.send-event-library-add": "أرسل {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "أرسل {\"on\": true} أو {\"on\": false}"
 }

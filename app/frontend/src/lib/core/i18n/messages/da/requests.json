@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Til personalet: en film eller serie tilføjet manuelt, fra en liste eller fra en godkendt anmodning.",
 	"requests.moment.delete.title": "Slettet",
 	"requests.moment.delete.body": "Til personalet: en film, en serie eller en sæson eller episoder af en serie forlod Biblioteket.",
+	"requests.moment.artwork.title": "Coverbillede ændret",
+	"requests.moment.artwork.body": "Til personalet: en titel i Biblioteket fik et nyt coverbillede.",
 	"requests.moment.health.title": "Sundhed",
 	"requests.moment.health.body": "Til personalet: et sundhedstjek gik i stykker eller er rettet igen.",
 	"requests.moment.needs_decision.title": "Kræver en beslutning",

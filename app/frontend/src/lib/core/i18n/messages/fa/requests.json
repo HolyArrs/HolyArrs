@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "برای کارکنان: یک فیلم یا سریال دستی، از یک فهرست یا از یک درخواست تأییدشده اضافه شد.",
 	"requests.moment.delete.title": "حذف شد",
 	"requests.moment.delete.body": "برای کارکنان: یک فیلم، یک سریال، یا یک فصل یا قسمت‌های یک سریال از کتابخانه رفت.",
+	"requests.moment.artwork.title": "تصویر جلد عوض شد",
+	"requests.moment.artwork.body": "برای کارکنان: یک عنوان در کتابخانه تصویر جلد تازه گرفت.",
 	"requests.moment.health.title": "سلامت",
 	"requests.moment.health.body": "برای کارکنان: یک بررسی سلامت خراب شد، یا دوباره درست شد.",
 	"requests.moment.needs_decision.title": "نیاز به تصمیم دارد",

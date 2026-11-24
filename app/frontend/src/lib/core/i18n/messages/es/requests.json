@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "Para el personal: una película o serie añadida a mano, desde una lista o por una solicitud aprobada.",
 	"requests.moment.delete.title": "Eliminado",
 	"requests.moment.delete.body": "Para el personal: una película, una serie, o una temporada o episodios de una serie salieron de la Biblioteca.",
+	"requests.moment.artwork.title": "Portada cambiada",
+	"requests.moment.artwork.body": "Para el personal: un título de la Biblioteca tiene portada nueva.",
 	"requests.moment.health.title": "Salud",
 	"requests.moment.health.body": "Para el personal: una comprobación de salud falló o se arregló de nuevo.",
 	"requests.moment.needs_decision.title": "Requiere una decisión",

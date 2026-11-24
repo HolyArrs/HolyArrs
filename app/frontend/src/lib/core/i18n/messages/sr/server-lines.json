@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "На {name} је, једном од стриминг сервиса у подешавањима захтева, па није преузето. Одобри поново да га ипак преузмеш.",
 	"server.migrate.path-must-be-a-full-folder": "путања мора бити пуна путања фасцикле",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs не види ту фасциклу",
-	"server.plugins.send-name": "пошаљи {\"name\": \"...\"}"
+	"server.plugins.send-name": "пошаљи {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Нова насловна слика",
+	"server.plugins.send-event-library-add": "пошаљи {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "пошаљи {\"on\": true} или {\"on\": false}"
 }

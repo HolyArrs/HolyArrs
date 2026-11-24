@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.0: 101 kişiden 150'den fazla düzeltme ve özellik.** Bir eklenti sistemi, yeni bir kurulum sihirbazı ve dosyalarınıza asla dokunmayan dokunmama modu. [Yenilikler](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: eklentiler HolyArrs'ta olanları duyar.** Geliştirici modu geliştirdiğiniz eklentiyi çalıştırır, test sürümleri de birkaç kişinin önce denemesine izin verir. [Yenilikler](https://holyarrs.com/whats-new/)
 
 > HolyArrs'ındaki her afiş, fragman ve puan, kendim çalıştırıp ödediğim bir sunucudan geliyor; böylece herkes için ücretsiz kalıyor. HolyArrs film gecene biraz güzellik kattıysa, sponsor olmak hepimiz için ışıkları açık tutar 💛
 >

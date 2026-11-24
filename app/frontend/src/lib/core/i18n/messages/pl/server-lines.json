@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Jest w {name}, jednym z serwisów streamingowych w ustawieniach próśb, więc nie pobrano. Zatwierdź ponownie, aby mimo to pobrać.",
 	"server.migrate.path-must-be-a-full-folder": "ścieżka musi być pełną ścieżką folderu",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs nie widzi tego folderu",
-	"server.plugins.send-name": "wyślij {\"name\": \"...\"}"
+	"server.plugins.send-name": "wyślij {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Nowa okładka",
+	"server.plugins.send-event-library-add": "wyślij {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "wyślij {\"on\": true} lub {\"on\": false}"
 }

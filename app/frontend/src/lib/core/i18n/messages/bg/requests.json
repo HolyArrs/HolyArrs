@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "До екипа: филм или сериал, добавен на ръка, от списък или от одобрена заявка.",
 	"requests.moment.delete.title": "Изтрито",
 	"requests.moment.delete.body": "До екипа: филм, сериал или сезон или епизоди на сериал са напуснали библиотеката.",
+	"requests.moment.artwork.title": "Корицата е сменена",
+	"requests.moment.artwork.body": "До екипа: заглавие в библиотеката получи нова корица.",
 	"requests.moment.health.title": "Състояние",
 	"requests.moment.health.body": "До екипа: проверка на състоянието се е счупила или е поправена отново.",
 	"requests.moment.needs_decision.title": "Изисква решение",

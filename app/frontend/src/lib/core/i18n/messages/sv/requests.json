@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Till personalen: en film eller serie lades till för hand, från en lista eller från en godkänd förfrågan.",
 	"requests.moment.delete.title": "Raderad",
 	"requests.moment.delete.body": "Till personalen: en film, en serie eller en säsong eller avsnitt av en serie lämnade Biblioteket.",
+	"requests.moment.artwork.title": "Omslaget ändrat",
+	"requests.moment.artwork.body": "Till personalen: en titel i Biblioteket fick ett nytt omslag.",
 	"requests.moment.health.title": "Hälsa",
 	"requests.moment.health.body": "Till personalen: en hälsokontroll gick sönder, eller är åtgärdad igen.",
 	"requests.moment.needs_decision.title": "Behöver ett beslut",

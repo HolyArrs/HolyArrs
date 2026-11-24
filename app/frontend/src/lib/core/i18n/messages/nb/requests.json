@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Til staben: en film eller serie lagt til for hånd, fra en liste eller fra en godkjent forespørsel.",
 	"requests.moment.delete.title": "Slettet",
 	"requests.moment.delete.body": "Til staben: en film, en serie, eller en sesong eller episoder av en serie forlot Biblioteket.",
+	"requests.moment.artwork.title": "Coverbilde endret",
+	"requests.moment.artwork.body": "Til staben: en tittel i Biblioteket fikk nytt coverbilde.",
 	"requests.moment.health.title": "Helse",
 	"requests.moment.health.body": "Til staben: en helsesjekk sluttet å virke, eller er løst igjen.",
 	"requests.moment.needs_decision.title": "Trenger en avgjørelse",

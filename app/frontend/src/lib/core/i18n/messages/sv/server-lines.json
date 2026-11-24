@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Den finns på {name}, en av streamingtjänsterna i förfrågningsinställningarna, så den laddades inte ner. Godkänn igen för att ladda ner ändå.",
 	"server.migrate.path-must-be-a-full-folder": "sökvägen måste vara en fullständig mappsökväg",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs kan inte se den mappen",
-	"server.plugins.send-name": "skicka {\"name\": \"...\"}"
+	"server.plugins.send-name": "skicka {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Ny omslagsbild",
+	"server.plugins.send-event-library-add": "skicka {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "skicka {\"on\": true} eller {\"on\": false}"
 }

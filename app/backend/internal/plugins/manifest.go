@@ -11,6 +11,7 @@ import (
 	"io"
 	"path"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -102,6 +103,24 @@ type Access struct {
 	Hosts   []string    `json:"hosts"`
 	Folders []FolderReq `json:"folders"`
 	Actions []string    `json:"actions"`
+	// Events are the moments the plugin wants told as they happen (see
+	// EventNames); optional, and older manifests have none.
+	Events []string `json:"events,omitempty"`
+}
+
+// EventNames are the events a plugin may ask for, in the order screens show
+// them: the staff Alerts moments and more Library, download, search and
+// system events. Requests and problem reports are offered with their title
+// and ids only, so a plugin never learns who asked, who decided or what
+// anyone wrote.
+var EventNames = []string{
+	"library.add", "library.delete", "library.import", "library.upgraded", "library.rename", "library.artwork", "library.subtitle",
+	"library.needs_decision", "library.edited", "library.refreshed", "library.moved", "library.episodes_changed", "library.adopted",
+	"library.file_missing", "library.file_back",
+	"download.grab", "download.done", "download.failed", "download.rejected", "download.vanished",
+	"search.done", "search.failed", "search.release_held",
+	"request.made", "request.approved", "request.declined", "request.available", "report.made", "report.fixed",
+	"system.health", "system.media_server_updated", "system.list_synced", "system.folder_unreachable", "system.disk_low",
 }
 
 // Folder modes.
@@ -153,7 +172,7 @@ func ParseManifest(data []byte) (*Manifest, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := strictKeys(top["access"], "access.", nil, "hosts", "folders", "actions"); err != nil {
+	if _, err := strictKeys(top["access"], "access.", []string{"events"}, "hosts", "folders", "actions"); err != nil {
 		return nil, err
 	}
 
@@ -231,6 +250,13 @@ func (a Access) check() error {
 			return fmt.Errorf("%w: unknown or repeated permission %q", ErrManifest, sc)
 		}
 		seenScope[sc] = true
+	}
+	seenEvent := map[string]bool{}
+	for _, ev := range a.Events {
+		if seenEvent[ev] || !slices.Contains(EventNames, ev) {
+			return fmt.Errorf("%w: unknown or repeated event %q", ErrManifest, ev)
+		}
+		seenEvent[ev] = true
 	}
 	if len(a.Hosts) > maxHosts {
 		return fmt.Errorf("%w: more than %d hosts", ErrManifest, maxHosts)

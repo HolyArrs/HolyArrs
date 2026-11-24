@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Tas ir {name}, vienā no straumēšanas pakalpojumiem pieprasījumu iestatījumos, tāpēc nav lejupielādēts. Apstiprini vēlreiz, lai tomēr lejupielādētu.",
 	"server.migrate.path-must-be-a-full-folder": "ceļam jābūt pilnam mapes ceļam",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs šo mapi neredz",
-	"server.plugins.send-name": "sūti {\"name\": \"...\"}"
+	"server.plugins.send-name": "sūti {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Jauns vāka attēls",
+	"server.plugins.send-event-library-add": "sūti {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "sūti {\"on\": true} vai {\"on\": false}"
 }

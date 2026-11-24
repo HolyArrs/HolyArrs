@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "C'est sur {name}, l'un des services de streaming des réglages des demandes, donc non téléchargé. Approuvez à nouveau pour le télécharger quand même.",
 	"server.migrate.path-must-be-a-full-folder": "le chemin doit être le chemin complet d'un dossier",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs ne peut pas voir ce dossier",
-	"server.plugins.send-name": "envoyez {\"name\": \"...\"}"
+	"server.plugins.send-name": "envoyez {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Nouvelle jaquette",
+	"server.plugins.send-event-library-add": "envoie {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "envoie {\"on\": true} ou {\"on\": false}"
 }

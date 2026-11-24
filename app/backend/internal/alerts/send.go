@@ -53,6 +53,7 @@ const (
 	MomentRename   = "rename"         // files got new names
 	MomentAdd      = "add"            // a movie was added
 	MomentDelete   = "delete"         // a movie was deleted
+	MomentArtwork  = "artwork"        // a title got new cover art
 	MomentHealth   = "health"         // a health check broke or recovered
 	MomentDecision = "needs_decision" // a movie needs a decision
 	MomentSubtitle = "subtitle"       // a subtitle was saved or upgraded, could not be saved, or a Subtitle site rests
@@ -70,7 +71,7 @@ const MomentPlugin = "plugin_message"
 
 // Moments lists the moments in the order screens show them.
 var Moments = []string{MomentWaiting, MomentApproved, MomentTurnedDown, MomentReady, MomentNewEpisodes, MomentNewAlbums,
-	MomentReported, MomentFixed, MomentGrab, MomentDownloaded, MomentDownloadFailed, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentHealth, MomentDecision, MomentSubtitle, MomentPlugin}
+	MomentReported, MomentFixed, MomentGrab, MomentDownloaded, MomentDownloadFailed, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentArtwork, MomentHealth, MomentDecision, MomentSubtitle, MomentPlugin}
 
 // Person is someone a message is about, with where Alerts reach them.
 type Person struct {
@@ -202,6 +203,9 @@ type Sender struct {
 	// Backoff is the wait before each new try of a failed send; nil means
 	// DefaultBackoff, an empty list never tries again.
 	Backoff []time.Duration
+	// Tap, when set, is handed every Library message as it is built, whether
+	// or not an Alert speaks for it (the plugins' events). It must not wait.
+	Tap func(Message)
 	// Lang is the owner's app language for the fixed words of a message
 	// (nil or "" means English).
 	Lang func(context.Context) string

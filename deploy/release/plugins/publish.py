@@ -2,7 +2,7 @@
 """Builds and signs HolyArrs plugins and the two signed lists.
 
     publish.py init      [common flags]
-    publish.py publish   --id ID --version X.Y.Z --src DIR [common flags]
+    publish.py publish   --id ID --version X.Y.Z --src DIR [--test] [common flags]
     publish.py build     --src DIR --out DIR   (every platform, nothing signed)
     publish.py block     --id ID [--version X.Y.Z] [--sha256 HASH] --reason TEXT [common flags]
 
@@ -27,6 +27,11 @@ When the tree holds images/<id>/icon-128.webp and icon-256.webp (made by the
 plugins repo's picture robot), the manifest names icon_url
 "images/<id>/icon-256.webp" instead of an inline icon.
 Uploading the tree is the workflow's job.
+
+publish --test puts the version on the test lists instead (plugins-test.json
+and plugins-test-<platform>.json, kind plugins_test, their own counter). Only
+apps from 1.3.1 read them, and only for plugins whose owner asked for test
+versions; older apps never see them. A block re-signs them too.
 
 Before signing, the live lists at --live-url are fetched; if a live counter
 is ahead of the tree's, the tree is stale and nothing is signed.
@@ -61,6 +66,10 @@ FIRST = PLATFORMS[0][0]
 
 def list_name(plat):
     return "plugins.json" if plat == FIRST else f"plugins-{plat}.json"
+
+
+def test_list_name(plat):
+    return "plugins-test.json" if plat == FIRST else f"plugins-test-{plat}.json"
 
 
 def version_rel(pid, ver, plat):
@@ -264,19 +273,25 @@ def top_counter(lists):
     return max([p["counter"] for p in lists.values() if p] or [0])
 
 
-def sign_lists(a, lists, counter, min_block, add=None):
-    """Signs every platform's plugin list at one counter; add maps a
-    platform to the new entry for it."""
+def current_test_lists(a):
+    """Every platform's test-version list payload (None where there is none)."""
+    return {plat: current(a, test_list_name(plat), "plugins_test") for plat, *_ in PLATFORMS}
+
+
+def sign_lists(a, lists, counter, min_block, add=None, kind="plugins"):
+    """Signs every platform's plugin list (or, with kind plugins_test, test
+    list) at one counter; add maps a platform to the new entry for it."""
+    namer = test_list_name if kind == "plugins_test" else list_name
     files = []
     for plat, *_ in PLATFORMS:
         old = lists.get(plat) or {}
         entries = list(old.get("entries") or [])
         if add:
             entries.append(add[plat])
-        new = {"kind": "plugins", "counter": counter,
+        new = {"kind": kind, "counter": counter,
                "min_blocklist_counter": max(old.get("min_blocklist_counter") or 0, min_block),
                "entries": entries}
-        files.append(sign(a, "plugins", new, old.get("counter", 0), list_name(plat)))
+        files.append(sign(a, kind, new, old.get("counter", 0), namer(plat)))
     return files
 
 
@@ -369,10 +384,12 @@ def cmd_publish(a):
         raise Fail("--id must be lowercase letters, digits and dashes; --version plain semver")
     check_lengths({}, ver)
     pls, bl = current_lists(a), current(a, "blocklist.json", "blocklist")
+    tls = current_test_lists(a)
     for plat, *_ in PLATFORMS:
         rel_man = version_rel(pid, ver, plat) + "manifest.json"
         if fetch(a.out, rel_man) is not None or (a.live_url and fetch(a.live_url, rel_man) is not None) or any(
-                e["id"] == pid and e["version"] == ver for e in (pls[plat] or {}).get("entries") or []):
+                e["id"] == pid and e["version"] == ver
+                for e in ((pls[plat] or {}).get("entries") or []) + ((tls[plat] or {}).get("entries") or [])):
             raise Fail(f"{pid} {ver} is already published; a published version never changes, use a new version")
     for e in (bl or {}).get("entries") or []:
         if e.get("id") == pid and e.get("version") in ("", ver):
@@ -380,6 +397,8 @@ def cmd_publish(a):
 
     listed = any(e["id"] == pid for plat, *_ in PLATFORMS for e in (pls[plat] or {}).get("entries") or [])
     meta = load_meta(a.src, pid, listed)
+    if meta["access"].get("events") and tuple(int(x) for x in meta["min_app_version"].split("-")[0].split(".")) < (1, 3, 1):
+        raise Fail("access.events needs min_app_version 1.3.1 or newer: older apps refuse the manifest")
     # The picture robot's copy of the logo, when it made one for this run.
     logo = f"images/{pid}/icon-256.webp"
     if not all(os.path.isfile(os.path.join(a.out, "images", pid, f"icon-{s}.webp")) for s in (128, 256)):
@@ -398,7 +417,9 @@ def cmd_publish(a):
             **{k: meta[k] for k in DETAIL_KEYS if meta.get(k)},
             "platforms": [p for p, *_ in PLATFORMS],
             "size": os.path.getsize(plugin),
-            "access": {k: meta["access"].get(k, []) for k in ("hosts", "folders", "actions")},
+            "access": {**{k: meta["access"].get(k, []) for k in ("hosts", "folders", "actions")},
+                       # Events only when listed: apps before 1.3.1 refuse the key.
+                       **({"events": meta["access"]["events"]} if meta["access"].get("events") else {})},
             "min_app_version": meta["min_app_version"],
             "sha256": sha(open(plugin, "rb").read()),
         }
@@ -422,14 +443,16 @@ def cmd_publish(a):
         bl["counter"] = 1
         files.append(sign(a, "blocklist", bl, 0))
         block_path = files[-1][1]
-    signed = sign_lists(a, pls, top_counter(pls) + 1, bl["counter"], add)
+    kind = "plugins_test" if a.test else "plugins"
+    base = tls if a.test else pls
+    signed = sign_lists(a, base, top_counter(base) + 1, bl["counter"], add, kind)
     files += signed
 
     # Last gate: the app's own install check on exactly these files.
     for (plat, *_), (_, list_path) in zip(PLATFORMS, signed):
         man_path, plugin = built[plat]
         log(plat + ": " + run([a.pluginkey, "check", "-pub", a.main_pub, "-list", list_path,
-                               "-blocklist", block_path, "-manifest", man_path, "-file", plugin]))
+                               "-blocklist", block_path, "-manifest", man_path, "-file", plugin, "-kind", kind]))
     if a.files_out:
         files_r2.append(source_archive(a, pid, ver))
         a.r2_files = files_r2
@@ -471,6 +494,9 @@ def cmd_block(a):
     # Every plugin list now demands this blocklist, so an install can never
     # be fed the older one that did not block this version.
     files += sign_lists(a, pls, top_counter(pls) + 1, new_bl["counter"])
+    tls = current_test_lists(a)
+    if any(tls.values()):
+        files += sign_lists(a, tls, top_counter(tls) + 1, new_bl["counter"], kind="plugins_test")
     reasons = os.path.join(a.work, "block-reasons.txt")
     prev = fetch(a.out, "block-reasons.txt") or b""
     with open(reasons, "wb") as f:
@@ -483,7 +509,7 @@ def cmd_block(a):
 
 def write_tree(a, files):
     """Only after every step passed: versioned files, then blocklist.json, then plugins.json."""
-    order = {"blocklist.json": 1, **{list_name(p): 2 for p, *_ in PLATFORMS}}
+    order = {"blocklist.json": 1, **{list_name(p): 2 for p, *_ in PLATFORMS}, **{test_list_name(p): 2 for p, *_ in PLATFORMS}}
     for rel, path in sorted(files, key=lambda f: order.get(f[0], 0)):
         dest = os.path.join(a.out, *rel.split("/"))
         os.makedirs(os.path.dirname(dest), exist_ok=True)
@@ -514,6 +540,8 @@ def main():
     ap.add_argument("--files-out", help="folder for the file host tree (plugin files and source archive)")
     ap.add_argument("--source", action="store_true",
                     help="publish: also write source/<id>/<version>.tar.xz into --out")
+    ap.add_argument("--test", action="store_true",
+                    help="publish: put the version on the test lists, for owners who asked for test versions")
     ap.add_argument("--pages-copy", action="store_true",
                     help="also keep the plugin file in the list tree, for apps before file_url (1.2.0)")
     a = ap.parse_args()

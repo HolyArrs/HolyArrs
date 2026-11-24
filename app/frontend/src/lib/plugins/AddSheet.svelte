@@ -5,8 +5,29 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import ClampText from './ClampText.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import Button from '#lib/ui/Button.svelte';
+	import { api } from '#lib/core/api.ts';
+	import { plainMessage as message } from '#lib/core/settings.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { AI_PROMPT, DEV_STEPS } from './ai-prompt.ts';
-	let { open = $bindable(false) }: { open?: boolean } = $props();
+	import type { PluginOverview } from './types.ts';
+	let { open = $bindable(false), ov = null, reload = async () => {} }: { open?: boolean; ov?: PluginOverview | null; reload?: () => Promise<void> } = $props();
+
+	// Developer mode: unsigned plugins from a folder on this server, in the same sandbox.
+	let devBusy = $state(false);
+	async function setDev(on: boolean) {
+		if (devBusy) return;
+		devBusy = true;
+		try {
+			await api.put('/plugins/dev-mode', { on });
+			toasts.push(t(on ? 'plugins.devTurnedOn' : 'plugins.devTurnedOff'), 'ok');
+		} catch (e) {
+			toasts.push(t('plugins.devFailed'), 'fail', { body: message(e) });
+		} finally {
+			await reload();
+			devBusy = false;
+		}
+	}
 
 	let pick = $state<'' | 'ai' | 'dev'>('');
 	// '' | 'ok' (copied) | 'fail' (the text is selected for a manual copy); per item key.
@@ -83,6 +104,14 @@
 					<a class="guide small" href={DEV_STEPS.guide} target="_blank" rel="noopener noreferrer" data-testid="plugins-add-guide"><Icon name="source" size={15} />{t('plugins.addGuide')}</a>
 					<a class="guide small" href={DEV_STEPS.template} target="_blank" rel="noopener noreferrer" data-testid="plugins-add-template"><Icon name="source" size={15} />{t('plugins.addTemplate')}</a>
 				</div>
+				{#if ov?.can_run}
+					<div class="devmode" data-testid="plugins-dev-mode">
+						<b class="small">{t('plugins.devTitle')}</b>
+						<p class="xs muted">{t('plugins.devBody')}</p>
+						{#if ov.dev_mode && ov.dev_dir}<p class="xs devdir" dir="ltr" data-testid="plugins-dev-dir">{t('plugins.devFolder', { dir: ov.dev_dir })}</p>{/if}
+						<div><Button variant={ov.dev_mode ? 'secondary' : 'primary'} busy={devBusy} disabled={devBusy} onclick={() => setDev(!ov?.dev_mode)} data-testid="plugins-dev-toggle">{t(ov.dev_mode ? 'plugins.devOff' : 'plugins.devOn')}</Button></div>
+					</div>
+				{/if}
 			</section>
 		{/if}
 	</div>
@@ -91,6 +120,8 @@
 <style>
 	.addsheet { display: grid; gap: 12px; min-width: 0; }
 	.addsheet p { margin: 0; }
+	.devmode { display: grid; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); min-width: 0; }
+	.devdir { overflow-wrap: anywhere; font-family: var(--mono, monospace); }
 	.choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 	@media (max-width: 520px) { .choices { grid-template-columns: minmax(0, 1fr); } }
 	.choice { display: flex; align-items: flex-start; gap: 10px; min-height: 64px; padding: 12px; border: 0; border-radius: 12px; background: var(--surface-2); box-shadow: 0 0 0 1px var(--line); color: var(--text); font: inherit; text-align: start; cursor: pointer; transition: background-color 150ms ease, box-shadow 150ms ease; }

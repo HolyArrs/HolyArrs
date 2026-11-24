@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "スタッフ向け: 手動、リスト、承認済みリクエストから映画や番組が追加されました。",
 	"requests.moment.delete.title": "削除",
 	"requests.moment.delete.body": "スタッフ向け: 映画、番組、またはシーズンやエピソードがライブラリから外れました。",
+	"requests.moment.artwork.title": "カバーアートが変わりました",
+	"requests.moment.artwork.body": "スタッフ向け: ライブラリのタイトルに新しいカバーアートが付きました。",
 	"requests.moment.health.title": "稼働状態",
 	"requests.moment.health.body": "スタッフ向け: 稼働状態のチェックで異常が出た、または復旧しました。",
 	"requests.moment.needs_decision.title": "判断待ち",

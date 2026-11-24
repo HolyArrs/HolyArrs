@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Є в {name}, одному зі стримінгових сервісів у налаштуваннях запитів, тому не завантажено. Схваліть знову, щоб усе одно завантажити.",
 	"server.migrate.path-must-be-a-full-folder": "шлях має бути повним шляхом до теки",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs не бачить цю теку",
-	"server.plugins.send-name": "надішли {\"name\": \"...\"}"
+	"server.plugins.send-name": "надішли {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Нова обкладинка",
+	"server.plugins.send-event-library-add": "надішли {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "надішли {\"on\": true} або {\"on\": false}"
 }

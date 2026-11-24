@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Na {name} je, jednoj od streaming usluga u postavkama zahtjeva, pa nije preuzeto. Odobri ponovno da ga ipak preuzmeš.",
 	"server.migrate.path-must-be-a-full-folder": "putanja mora biti puna putanja mape",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs ne vidi tu mapu",
-	"server.plugins.send-name": "pošalji {\"name\": \"...\"}"
+	"server.plugins.send-name": "pošalji {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Nova naslovnica",
+	"server.plugins.send-event-library-add": "pošalji {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "pošalji {\"on\": true} ili {\"on\": false}"
 }

@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Það er á {name}, einni af streymisveitunum í stillingum beiðna, svo það var ekki sótt. Samþykktu aftur til að sækja samt.",
 	"server.migrate.path-must-be-a-full-folder": "slóðin verður að vera full möppuslóð",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs sér ekki þessa möppu",
-	"server.plugins.send-name": "sendu {\"name\": \"...\"}"
+	"server.plugins.send-name": "sendu {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Ný forsíðumynd",
+	"server.plugins.send-event-library-add": "sendu {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "sendu {\"on\": true} eða {\"on\": false}"
 }

@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Nasa {name} ito, isa sa mga streaming service sa mga setting ng request, kaya hindi na-download. I-approve ulit para i-download pa rin.",
 	"server.migrate.path-must-be-a-full-folder": "ang path ay dapat buong path ng folder",
 	"server.migrate.that-folder-is-not-one-holyarrs": "hindi nakikita ng HolyArrs ang folder na iyon",
-	"server.plugins.send-name": "ipadala ang {\"name\": \"...\"}"
+	"server.plugins.send-name": "ipadala ang {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Bagong cover art",
+	"server.plugins.send-event-library-add": "ipadala {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "ipadala {\"on\": true} o {\"on\": false}"
 }

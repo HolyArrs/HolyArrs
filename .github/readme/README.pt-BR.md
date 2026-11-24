@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.0: mais de 150 correções e recursos de 101 pessoas.** Um sistema de plugins, um novo assistente de configuração e um modo sem intervenção que nunca mexe nos seus arquivos. [Veja as novidades](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: os plugins ouvem o que acontece no HolyArrs.** O modo desenvolvedor executa o plugin que você está criando, e as versões de teste deixam algumas pessoas experimentá-lo primeiro. [Veja as novidades](https://holyarrs.com/whats-new/)
 
 > Cada pôster, trailer e nota do seu HolyArrs vem de um servidor que eu mantenho e pago do meu bolso, para que continue grátis para todo mundo. Se o HolyArrs deixou sua noite de filme um pouco melhor, patrocinar mantém as luzes acesas para todos nós 💛
 >

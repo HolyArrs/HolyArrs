@@ -554,11 +554,13 @@ POST /api/v1/plugin-pages/{plugin}/call plugins
 POST /api/v1/plugin-pages/{plugin}/play plugins
 POST /api/v1/plugin-pages/{plugin}/{page}/open plugins
 POST /api/v1/plugins/{id}/approve admin
+POST /api/v1/plugins/{id}/dev-install admin
 POST /api/v1/plugins/{id}/install admin
 POST /api/v1/plugins/{id}/remote/name admin
 POST /api/v1/plugins/{id}/remote/signout admin
 POST /api/v1/plugins/{id}/start admin
 POST /api/v1/plugins/{id}/stop admin
+POST /api/v1/plugins/{id}/test-event admin
 POST /api/v1/releases/check control
 POST /api/v1/releases/check/{id}/pick control
 POST /api/v1/releases/name-check control
@@ -675,10 +677,12 @@ PUT /api/v1/pick-rules/{id} settings
 PUT /api/v1/plugin-hooks/home-widget add
 PUT /api/v1/plugin-hooks/pages add
 PUT /api/v1/plugin-hooks/tools add
+PUT /api/v1/plugins/dev-mode admin
 PUT /api/v1/plugins/file-lock admin
 PUT /api/v1/plugins/net-lock admin
 PUT /api/v1/plugins/{id}/owner-hosts admin
 PUT /api/v1/plugins/{id}/settings admin
+PUT /api/v1/plugins/{id}/test-versions admin
 PUT /api/v1/schedules/{kind} settings
 PUT /api/v1/settings/ai settings
 PUT /api/v1/settings/alerts settings

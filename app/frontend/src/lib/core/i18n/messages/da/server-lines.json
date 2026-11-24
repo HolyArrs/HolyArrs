@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Den er på {name}, en af streamingtjenesterne i anmodningsindstillingerne, så den blev ikke downloadet. Godkend igen for at downloade alligevel.",
 	"server.migrate.path-must-be-a-full-folder": "stien skal være en fuld mappesti",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs kan ikke se den mappe",
-	"server.plugins.send-name": "send {\"name\": \"...\"}"
+	"server.plugins.send-name": "send {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Nyt coverbillede",
+	"server.plugins.send-event-library-add": "send {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "send {\"on\": true} eller {\"on\": false}"
 }

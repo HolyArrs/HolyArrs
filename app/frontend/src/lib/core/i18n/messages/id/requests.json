@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Untuk staf: film atau serial yang ditambahkan manual, dari daftar, atau dari permintaan yang disetujui.",
 	"requests.moment.delete.title": "Dihapus",
 	"requests.moment.delete.body": "Untuk staf: sebuah film, serial, atau musim atau episode serial keluar dari Pustaka.",
+	"requests.moment.artwork.title": "Sampul berubah",
+	"requests.moment.artwork.body": "Untuk staf: sebuah judul di Pustaka mendapat sampul baru.",
 	"requests.moment.health.title": "Kesehatan",
 	"requests.moment.health.body": "Untuk staf: pemeriksaan kesehatan gagal, atau sudah pulih lagi.",
 	"requests.moment.needs_decision.title": "Perlu keputusan",

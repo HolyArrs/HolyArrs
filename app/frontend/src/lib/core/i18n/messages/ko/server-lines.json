@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "{name}에 있습니다. 요청 설정의 스트리밍 서비스 중 하나라서 다운로드하지 않았습니다. 그래도 다운로드하려면 다시 승인하세요.",
 	"server.migrate.path-must-be-a-full-folder": "경로는 폴더의 전체 경로여야 합니다",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs가 볼 수 없는 폴더입니다",
-	"server.plugins.send-name": "{\"name\": \"...\"}를 보내세요"
+	"server.plugins.send-name": "{\"name\": \"...\"}를 보내세요",
+	"server.library.new-cover-art": "새 커버 아트",
+	"server.plugins.send-event-library-add": "보내기: {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "보내기: {\"on\": true} 또는 {\"on\": false}"
 }

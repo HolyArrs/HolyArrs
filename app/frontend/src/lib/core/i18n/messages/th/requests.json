@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "ถึงทีมงาน: ภาพยนตร์หรือซีรีส์ที่เพิ่มด้วยมือ จากรายการ หรือจากคำขอที่อนุมัติ",
 	"requests.moment.delete.title": "ลบแล้ว",
 	"requests.moment.delete.body": "ถึงทีมงาน: ภาพยนตร์ ซีรีส์ หรือซีซันหรือตอนของซีรีส์ออกจากไลบรารี",
+	"requests.moment.artwork.title": "ภาพปกเปลี่ยนแล้ว",
+	"requests.moment.artwork.body": "ถึงทีมงาน: เรื่องหนึ่งในไลบรารีได้ภาพปกใหม่",
 	"requests.moment.health.title": "สถานะ",
 	"requests.moment.health.body": "ถึงทีมงาน: การตรวจสถานะล้มเหลว หรือกลับมาปกติแล้ว",
 	"requests.moment.needs_decision.title": "ต้องตัดสินใจ",

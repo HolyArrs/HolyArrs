@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Para sa mga staff: pelikula o show na idinagdag nang mano-mano, mula sa listahan o mula sa aprubadong request.",
 	"requests.moment.delete.title": "Na-delete",
 	"requests.moment.delete.body": "Para sa mga staff: umalis sa Library ang isang pelikula, show, o season o mga episode ng show.",
+	"requests.moment.artwork.title": "Nagbago ang cover art",
+	"requests.moment.artwork.body": "Para sa mga staff: may title sa Library na nakakuha ng bagong cover art.",
 	"requests.moment.health.title": "Health",
 	"requests.moment.health.body": "Para sa mga staff: nasira ang isang health check, o naayos ulit.",
 	"requests.moment.needs_decision.title": "Kailangan ng desisyon",

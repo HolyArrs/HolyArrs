@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Está no {name}, um dos serviços de streaming das definições de pedidos, por isso não foi transferido. Aprove de novo para transferir na mesma.",
 	"server.migrate.path-must-be-a-full-folder": "o caminho tem de ser o caminho completo de uma pasta",
 	"server.migrate.that-folder-is-not-one-holyarrs": "o HolyArrs não consegue ver essa pasta",
-	"server.plugins.send-name": "send {\"name\": \"...\"}"
+	"server.plugins.send-name": "send {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Nova capa",
+	"server.plugins.send-event-library-add": "envie {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "envie {\"on\": true} ou {\"on\": false}"
 }

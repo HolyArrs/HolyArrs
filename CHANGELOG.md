@@ -2,6 +2,13 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-11-24
+### Added
+- Plugins can be told when titles are added, downloaded or requested. ([#707](https://github.com/HolyArrs/HolyArrs/issues/707))
+- Developer mode runs the plugin you're building from a folder. ([#728](https://github.com/HolyArrs/HolyArrs/issues/728))
+- Test versions let you try a plugin's next version first. ([#729](https://github.com/HolyArrs/HolyArrs/issues/729))
+- A Cover art changed Alert, off until you turn it on. ([#730](https://github.com/HolyArrs/HolyArrs/issues/730))
+
 ## [1.3.0] - 2026-11-23
 ### Added
 - A plugin system: add features in a sandbox. Tailscale is first. ([#114](https://github.com/HolyArrs/HolyArrs/issues/114))

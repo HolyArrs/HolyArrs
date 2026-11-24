@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "Elérhető itt: {name}, ami a kérések beállításaiban megadott streamingszolgáltatások egyike, ezért nem töltődött le. Hagyd jóvá újra, ha mégis le akarod tölteni.",
 	"server.migrate.path-must-be-a-full-folder": "az elérési útnak teljes mappaútvonalnak kell lennie",
 	"server.migrate.that-folder-is-not-one-holyarrs": "ezt a mappát a HolyArrs nem látja",
-	"server.plugins.send-name": "küldje: {\"name\": \"...\"}"
+	"server.plugins.send-name": "küldje: {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Új borítókép",
+	"server.plugins.send-event-library-add": "küldd {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "küldd {\"on\": true} vagy {\"on\": false}"
 }

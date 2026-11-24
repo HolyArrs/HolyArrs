@@ -29,6 +29,10 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/plugins/{id}/stop", sessionOnly(h.stop))
 	m.HandleFunc("PUT /api/v1/plugins/file-lock", sessionOnly(h.fileLock))
 	m.HandleFunc("PUT /api/v1/plugins/net-lock", sessionOnly(h.netLock))
+	m.HandleFunc("PUT /api/v1/plugins/dev-mode", sessionOnly(h.devMode))
+	m.HandleFunc("POST /api/v1/plugins/{id}/dev-install", sessionOnly(h.devInstall))
+	m.HandleFunc("POST /api/v1/plugins/{id}/test-event", sessionOnly(h.testEvent))
+	m.HandleFunc("PUT /api/v1/plugins/{id}/test-versions", sessionOnly(h.testVersions))
 	m.HandleFunc("POST /api/v1/plugins/{id}/approve", sessionOnly(h.approve))
 	m.HandleFunc("PUT /api/v1/plugins/{id}/owner-hosts", sessionOnly(h.ownerHosts))
 	m.HandleFunc("DELETE /api/v1/plugins/{id}", sessionOnly(h.remove))
@@ -155,6 +159,84 @@ func (h *Handlers) netLock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"allow_without": *body.AllowWithout})
+}
+
+// devMode turns developer mode on or off: {"on": true|false}.
+func (h *Handlers) devMode(w http.ResponseWriter, r *http.Request) {
+	if !h.ready(w) {
+		return
+	}
+	var body struct {
+		On *bool `json:"on"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&body); err != nil || body.On == nil {
+		webserver.Fail(w, http.StatusBadRequest, `send {"on": true} or {"on": false}`)
+		return
+	}
+	if err := h.Engine.SetDevMode(*body.On); err != nil {
+		fail(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"on": *body.On})
+}
+
+// devInstall installs or reloads a plugin from the developer folder; the
+// optional body is install's.
+func (h *Handlers) devInstall(w http.ResponseWriter, r *http.Request) {
+	if !h.ready(w) {
+		return
+	}
+	var body ApproveInput
+	if r.ContentLength != 0 {
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10)).Decode(&body); err != nil {
+			webserver.Fail(w, http.StatusBadRequest, `send {"folders": {"folder_name": "/path"}} or {}`)
+			return
+		}
+	}
+	p, err := h.Engine.InstallDev(r.Context(), r.PathValue("id"), body)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"plugin": p})
+}
+
+// testEvent sends a developer plugin one made-up event: {"event": "library.add"}.
+func (h *Handlers) testEvent(w http.ResponseWriter, r *http.Request) {
+	if !h.ready(w) {
+		return
+	}
+	var body struct {
+		Event string `json:"event"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&body); err != nil || body.Event == "" {
+		webserver.Fail(w, http.StatusBadRequest, `send {"event": "library.add"}`)
+		return
+	}
+	if err := h.Engine.TestEvent(r.PathValue("id"), body.Event); err != nil {
+		fail(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"sent": true})
+}
+
+// testVersions sets whether a plugin gets test versions: {"on": true|false}.
+func (h *Handlers) testVersions(w http.ResponseWriter, r *http.Request) {
+	if !h.ready(w) {
+		return
+	}
+	var body struct {
+		On *bool `json:"on"`
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&body); err != nil || body.On == nil {
+		webserver.Fail(w, http.StatusBadRequest, `send {"on": true} or {"on": false}`)
+		return
+	}
+	if err := h.Engine.SetTestVersions(r.PathValue("id"), *body.On); err != nil {
+		fail(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"on": *body.On})
 }
 
 // approve records the owner's OK for what the installed version asks for:
@@ -328,7 +410,7 @@ func fail(w http.ResponseWriter, err error) {
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case errors.Is(err, ErrNotLinux):
 		webserver.Fail(w, http.StatusNotImplemented, err.Error())
-	case errors.Is(err, ErrNotInstalled), errors.Is(err, ErrNotListed):
+	case errors.Is(err, ErrNotInstalled), errors.Is(err, ErrNotListed), errors.Is(err, ErrDevMissing):
 		webserver.Fail(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, ErrFetch), errors.Is(err, ErrListSignature), errors.Is(err, ErrListFormat),
 		errors.Is(err, ErrListOlder), errors.Is(err, ErrListKind):
@@ -336,7 +418,7 @@ func fail(w http.ResponseWriter, err error) {
 	case errors.Is(err, ErrBlocked), errors.Is(err, ErrNotOnList), errors.Is(err, ErrHashMismatch), errors.Is(err, ErrManifestHash),
 		errors.Is(err, ErrManifest), errors.Is(err, ErrStaleBlock), errors.Is(err, ErrFileTooLarge),
 		errors.Is(err, ErrTampered), errors.Is(err, ErrDisabled), errors.Is(err, ErrSettings), errors.Is(err, ErrNeedsNewerApp), errors.Is(err, ErrCounterOlder), errors.Is(err, ErrNoLandlock),
-		errors.Is(err, ErrNoNetLock), errors.Is(err, ErrNeedsApproval), errors.Is(err, ErrResources), errors.Is(err, ErrFolderMoved), errors.Is(err, ErrFolderRefused):
+		errors.Is(err, ErrNoNetLock), errors.Is(err, ErrNeedsApproval), errors.Is(err, ErrResources), errors.Is(err, ErrFolderMoved), errors.Is(err, ErrFolderRefused), errors.Is(err, ErrDevOff), errors.Is(err, ErrDevSigned):
 		webserver.Fail(w, http.StatusUnprocessableEntity, err.Error())
 	default:
 		webserver.Internal(w, "plugins", err)

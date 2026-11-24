@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "{name} 上有，它是請求設定中的串流服務之一，因此未下載。再次核准即可照常下載。",
 	"server.migrate.path-must-be-a-full-folder": "路徑必須是完整的資料夾路徑",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs 無法看到該資料夾",
-	"server.plugins.send-name": "請傳送 {\"name\": \"...\"}"
+	"server.plugins.send-name": "請傳送 {\"name\": \"...\"}",
+	"server.library.new-cover-art": "新封面",
+	"server.plugins.send-event-library-add": "傳送 {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "傳送 {\"on\": true} 或 {\"on\": false}"
 }

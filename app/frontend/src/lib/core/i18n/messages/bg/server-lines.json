@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "В {name} е, една от стрийминг услугите в настройките на заявките, затова не е изтеглено. Одобри отново, за да го изтеглиш все пак.",
 	"server.migrate.path-must-be-a-full-folder": "пътят трябва да е пълен път до папка",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs не вижда тази папка",
-	"server.plugins.send-name": "изпратете {\"name\": \"...\"}"
+	"server.plugins.send-name": "изпратете {\"name\": \"...\"}",
+	"server.library.new-cover-art": "Нова обложка",
+	"server.plugins.send-event-library-add": "изпрати {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "изпрати {\"on\": true} или {\"on\": false}"
 }

@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "À l'équipe : un film ou une série ajouté à la main, depuis une liste ou une demande approuvée.",
 	"requests.moment.delete.title": "Supprimé",
 	"requests.moment.delete.body": "À l'équipe : un film, une série, ou une saison ou des épisodes d'une série ont quitté la Bibliothèque.",
+	"requests.moment.artwork.title": "Pochette modifiée",
+	"requests.moment.artwork.body": "À l'équipe : un titre de la Bibliothèque a une nouvelle pochette.",
 	"requests.moment.health.title": "État de santé",
 	"requests.moment.health.body": "À l'équipe : une vérification d'état est tombée en panne, ou est de nouveau réparée.",
 	"requests.moment.needs_decision.title": "Décision requise",

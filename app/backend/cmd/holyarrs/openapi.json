@@ -25980,6 +25980,36 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/plugins/dev-mode": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "on": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved; turning it off stops every developer plugin"
+          },
+          "400": {
+            "description": "Body is not {\"on\": true|false}"
+          }
+        },
+        "summary": "Turn developer mode on or off",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/plugins/file-lock": {
       "put": {
         "requestBody": {
@@ -26138,6 +26168,35 @@
           }
         },
         "summary": "Approve a plugin's access",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/dev-install": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Installed and started, or held for approval"
+          },
+          "404": {
+            "description": "No plugin with that id in the developer folder"
+          },
+          "422": {
+            "description": "Developer mode is off, a signed plugin has that id, or the manifest is refused"
+          }
+        },
+        "summary": "Install or reload a plugin from the developer folder",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
@@ -26421,6 +26480,89 @@
           }
         },
         "summary": "Stop a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/test-event": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "event": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The line was queued"
+          },
+          "404": {
+            "description": "Not running or not approved for that event"
+          },
+          "422": {
+            "description": "Not a developer plugin"
+          }
+        },
+        "summary": "Send a developer plugin one made-up event",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/test-versions": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "on": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved; takes effect at the next install or update"
+          },
+          "400": {
+            "description": "Body is not {\"on\": true|false}"
+          }
+        },
+        "summary": "Choose whether a plugin gets test versions",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"

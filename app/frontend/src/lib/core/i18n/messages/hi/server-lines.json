@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "यह {name} पर है, जो अनुरोध सेटिंग की स्ट्रीमिंग सेवाओं में से एक है, इसलिए डाउनलोड नहीं हुआ। फिर भी डाउनलोड करने के लिए दोबारा स्वीकृत करें।",
 	"server.migrate.path-must-be-a-full-folder": "पाथ फ़ोल्डर का पूरा पाथ होना चाहिए",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs यह फ़ोल्डर नहीं देख सकता",
-	"server.plugins.send-name": "भेजें {\"name\": \"...\"}"
+	"server.plugins.send-name": "भेजें {\"name\": \"...\"}",
+	"server.library.new-cover-art": "नया कवर आर्ट",
+	"server.plugins.send-event-library-add": "भेजें {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "भेजें {\"on\": true} या {\"on\": false}"
 }

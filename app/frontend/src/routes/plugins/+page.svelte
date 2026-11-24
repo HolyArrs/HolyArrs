@@ -18,9 +18,9 @@
 	import { to } from '#lib/core/paths.ts';
 	import '../(frame)/settings-content.css';
 	import { date } from '#lib/core/format.ts';
-	import { PluginInfo, PluginSettings, AddSheet, NoLockCard, NoNetLockCard, ApproveAccess, wheelSideways, fitChips, tagRoom, arrowKeys, tint, LanguagesSection, languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from '#lib/plugins/index.ts';
+	import { PluginInfo, PluginSettings, AddSheet, DevActions, NoLockCard, NoNetLockCard, ApproveAccess, wheelSideways, fitChips, tagRoom, arrowKeys, tint, LanguagesSection, languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from '#lib/plugins/index.ts';
 	import { listLanguages, packList } from '#lib/core/i18n/language-packs.svelte.ts';
-	import { abilities, newAbilities, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, forwards, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
+	import { abilities, newAbilities, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, forwards, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import { DlFind } from '#lib/downloads/index.ts';
 	import { barTools, barLead, pluginScope } from '#lib/core/search-field.svelte.ts';
@@ -300,12 +300,6 @@
 	// Forwarding plugins (network.forward) open Remote access.
 	const settingsPage = (p: Plugin) => (p.settings?.length ? '' : forwards(p) ? `/settings/remote-access?plugin=${encodeURIComponent(p.id)}` : '');
 
-	/** The tile's small badge: only for installed plugins, so the directory stays calm. */
-	function badge(p: Plugin): string {
-		if (!p.installed) return '';
-		if (hasUpdate(p)) return t('plugins.stateUpdate');
-		return pluginState(p) === 'off' ? t('plugins.stateOff') : stateLabel(p);
-	}
 </script>
 
 <svelte:window bind:innerWidth={vw} onhashchange={onHash} />
@@ -458,7 +452,9 @@
 {#snippet acts(sel: Plugin)}
 	{@const s = pluginState(sel)}
 	{@const name = shownName(sel)}
-	{#if s === 'not_installed'}
+	{#if sel.dev}
+		<DevActions {sel} {ov} {busy} {removing} {act} {askRemove} part="dev" />
+	{:else if s === 'not_installed'}
 		{#if sel.needs_app}<span class="xs muted need" data-testid="plugin-needs-app">{t('plugins.needsApp', { version: sel.needs_app })}</span>
 		{:else}<Button variant="primary" aria-label={t('plugins.installName', { name })} disabled={!canInstall || !!busy || !!sel.install_step} busy={busy === sel.id || !!sel.install_step} onclick={() => install(sel)} data-testid="plugin-main-install">{stepLabel(sel) || (sel.install_error ? t('plugins.retry') : t('plugins.install'))}</Button>{/if}
 		<span class="signed xs" title={t('plugins.signedHint')} data-testid="plugin-signed"><Icon name="shield" size={13} />{t('plugins.signed')}</span>
@@ -480,6 +476,7 @@
 		<Button aria-label={t('plugins.removeName', { name })} disabled={!!busy} busy={busy === sel.id && removing?.id === sel.id} onclick={() => askRemove(sel)}>{t('plugins.remove')}</Button>
 		{#if sel.needs_app && hasUpdate(sel)}<span class="xs muted need" data-testid="plugin-needs-app">{t('plugins.needsApp', { version: sel.needs_app })}</span>{/if}
 	{/if}
+	<DevActions {sel} {ov} {busy} {removing} {act} {askRemove} part="test" />
 	{#if sel.install_error && !sel.install_step && sel.installed}<p class="xs ierr dlg" data-testid="plugin-install-error"><Icon name="alert" size={13} /><span>{sel.install_error}</span></p>{/if}
 {/snippet}
 
@@ -498,6 +495,7 @@
 	{/each}
 
 	<div class="settings-content" bind:clientWidth={pageWidth}>
+		{#if ov?.dev_mode}<p class="notice warn devon" role="status" data-testid="plugins-dev-banner"><Icon name="info" size={18} /><span dir="auto">{t('plugins.devBanner', { dir: ov.dev_dir ?? '' })}</span><Button size="sm" onclick={() => (addOpen = true)} data-testid="plugins-dev-banner-open">{t('plugins.devTitle')}</Button></p>{/if}
 		{#if noLockCard}<NoLockCard {ov} reload={load} />{/if}
 		{#if noNetCard}<NoNetLockCard {ov} reload={load} />{/if}
 		{#if all.length > 0 || lang}
@@ -583,7 +581,7 @@
 	{#if updates.length}<span class="cap" data-testid="plugins-update-all">{#if phone}<IconButton icon="download" label={t('plugins.updateN', { n: updates.length })} disabled={!canInstall || !!busy} onclick={updateAll} />{:else}<Button icon="download" disabled={!canInstall || !!busy} onclick={updateAll}>{t('plugins.updateN', { n: updates.length })}</Button>{/if}</span>{/if}
 {/snippet}
 
-<AddSheet bind:open={addOpen} />
+<AddSheet bind:open={addOpen} {ov} reload={load} />
 
 <style>
 	/* The toolbar row: the same search well and glass capsule as the Library's toolbar. */

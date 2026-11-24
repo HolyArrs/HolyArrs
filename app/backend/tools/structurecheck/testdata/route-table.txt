@@ -554,11 +554,13 @@ POST /api/v1/plugin-pages/{plugin}/call auth=owner scope=admin assurance=false p
 POST /api/v1/plugin-pages/{plugin}/play auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugin-pages/{plugin}/{page}/open auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugins/{id}/approve auth=owner scope=admin assurance=false part=core
+POST /api/v1/plugins/{id}/dev-install auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugins/{id}/install auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugins/{id}/remote/name auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugins/{id}/remote/signout auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugins/{id}/start auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugins/{id}/stop auth=owner scope=admin assurance=false part=core
+POST /api/v1/plugins/{id}/test-event auth=owner scope=admin assurance=false part=core
 POST /api/v1/releases/check auth=manage_library scope=write assurance=false part=movies
 POST /api/v1/releases/check/{id}/pick auth=manage_library scope=write assurance=false part=movies
 POST /api/v1/releases/name-check auth=manage_library scope=write assurance=false part=media
@@ -675,10 +677,12 @@ PUT /api/v1/pick-rules/{id} auth=settings scope=write assurance=false part=media
 PUT /api/v1/plugin-hooks/home-widget auth=owner scope=admin assurance=false part=core
 PUT /api/v1/plugin-hooks/pages auth=owner scope=admin assurance=false part=core
 PUT /api/v1/plugin-hooks/tools auth=owner scope=admin assurance=false part=core
+PUT /api/v1/plugins/dev-mode auth=owner scope=admin assurance=false part=core
 PUT /api/v1/plugins/file-lock auth=owner scope=admin assurance=false part=core
 PUT /api/v1/plugins/net-lock auth=owner scope=admin assurance=false part=core
 PUT /api/v1/plugins/{id}/owner-hosts auth=owner scope=admin assurance=false part=core
 PUT /api/v1/plugins/{id}/settings auth=owner scope=admin assurance=false part=core
+PUT /api/v1/plugins/{id}/test-versions auth=owner scope=admin assurance=false part=core
 PUT /api/v1/schedules/{kind} auth=settings scope=write assurance=false part=core
 PUT /api/v1/settings/ai auth=owner scope=admin assurance=false part=core
 PUT /api/v1/settings/alerts auth=settings scope=write assurance=false part=core

@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "Aan de beheerders: een film of serie met de hand toegevoegd, vanuit een lijst of via een goedgekeurde aanvraag.",
 	"requests.moment.delete.title": "Verwijderd",
 	"requests.moment.delete.body": "Aan de beheerders: een film, een serie, of een seizoen of afleveringen van een serie hebben de Bibliotheek verlaten.",
+	"requests.moment.artwork.title": "Hoes gewijzigd",
+	"requests.moment.artwork.body": "Aan de beheerders: een titel in de Bibliotheek heeft een nieuwe hoes.",
 	"requests.moment.health.title": "Gezondheid",
 	"requests.moment.health.body": "Aan de beheerders: een gezondheidscontrole is gestoord, of weer hersteld.",
 	"requests.moment.needs_decision.title": "Beslissing nodig",

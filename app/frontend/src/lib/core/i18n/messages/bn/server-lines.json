@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "এটি {name}-এ আছে, যা অনুরোধ সেটিংসের স্ট্রিমিং সেবাগুলোর একটি, তাই ডাউনলোড হয়নি। তবুও ডাউনলোড করতে আবার অনুমোদন দিন।",
 	"server.migrate.path-must-be-a-full-folder": "পাথটি অবশ্যই ফোল্ডারের পুরো পাথ হতে হবে",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs এই ফোল্ডারটি দেখতে পায় না",
-	"server.plugins.send-name": "পাঠান {\"name\": \"...\"}"
+	"server.plugins.send-name": "পাঠান {\"name\": \"...\"}",
+	"server.library.new-cover-art": "নতুন কভার আর্ট",
+	"server.plugins.send-event-library-add": "পাঠান {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "পাঠান {\"on\": true} বা {\"on\": false}"
 }

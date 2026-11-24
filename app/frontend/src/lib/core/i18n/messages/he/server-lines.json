@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "זה ב-{name}, אחד משירותי הסטרימינג בהגדרות הבקשות, ולכן לא הורד. אשר שוב כדי להוריד בכל זאת.",
 	"server.migrate.path-must-be-a-full-folder": "הנתיב חייב להיות נתיב מלא לתיקייה",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs לא יכול לראות את התיקייה הזו",
-	"server.plugins.send-name": "שלח {\"name\": \"...\"}"
+	"server.plugins.send-name": "שלח {\"name\": \"...\"}",
+	"server.library.new-cover-art": "עטיפה חדשה",
+	"server.plugins.send-event-library-add": "שלח {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "שלח {\"on\": true} או {\"on\": false}"
 }

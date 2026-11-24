@@ -3,8 +3,6 @@ package plugins
 import (
 	"context"
 	"crypto/ed25519"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -79,6 +77,11 @@ type Engine struct {
 	HTTP *http.Client
 	// BlockEvery is the blocklist check interval; 0 means DefaultBlockEvery.
 	BlockEvery time.Duration
+	// Replay lists the history events of the given plugin event names with
+	// an id above after, oldest first, at most limit (catch-up after a
+	// stop); LastEventID is the newest history id. Either may be nil.
+	Replay      func(ctx context.Context, events []string, after int64, limit int) []Replayed
+	LastEventID func(ctx context.Context) (int64, error)
 	// Env gives the HOLYARRS_PLUGIN_* settings for a plugin's start; may be nil.
 	Env func(id string) []string
 	// Forwards says whether id hands visits in from outside; may be nil.
@@ -101,6 +104,9 @@ type Engine struct {
 	store     *Store
 	mu        sync.Mutex // guards procs and the cache files
 	procs     map[string]Process
+	// feeds are the running plugins' event streams (events.go).
+	feedMu sync.Mutex
+	feeds  map[string]*feed
 	// steps is each running install's current step (downloading, checking,
 	// starting); fails is the short reason of each plugin's last failed
 	// install, until the next try. Both guarded by mu.
@@ -176,6 +182,16 @@ type Plugin struct {
 	// owner's own.
 	Resources   *Resources `json:"resources,omitempty"`
 	OwnerLimits *Resources `json:"owner_limits,omitempty"`
+	// Dev is a plugin in the developer folder (installed from it, or
+	// ready to be); DevError says why its files can't be read.
+	Dev      bool   `json:"dev,omitempty"`
+	DevError string `json:"dev_error,omitempty"`
+	// Test is an installed test version. TestVersion is the newest test
+	// version, when newer than the newest normal one; TestOn is the
+	// owner's choice to get test versions of this plugin.
+	Test        bool   `json:"test,omitempty"`
+	TestVersion string `json:"test_version,omitempty"`
+	TestOn      bool   `json:"test_on,omitempty"`
 }
 
 // show copies a manifest's display fields and access onto the row.
@@ -210,7 +226,10 @@ type Overview struct {
 	// ListBad is true when the plugin list arrived but failed its signature
 	// check. A list that can't be reached (no address yet, 404) is not bad:
 	// the page just shows no plugins.
-	ListBad bool     `json:"list_bad"`
+	ListBad bool `json:"list_bad"`
+	// DevMode is on when the owner runs unsigned plugins from DevDir.
+	DevMode bool     `json:"dev_mode"`
+	DevDir  string   `json:"dev_dir,omitempty"`
 	Plugins []Plugin `json:"plugins"`
 }
 
@@ -232,6 +251,9 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 		}
 	}
 	ov.AllowNoFileLock, ov.NoFileLockAsked = st.AllowNoFileLock, st.NoFileLockAsked
+	if ov.DevMode = st.DevMode; ov.DevMode {
+		ov.DevDir = e.DevDir()
+	}
 	e.showNetLock(ov, st)
 	if !st.BlockCheckedAt.IsZero() {
 		at := st.BlockCheckedAt
@@ -262,7 +284,10 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 			}
 		}
 	}
+	e.showTestVersions(ctx, st, rows, newest)
 	for id, en := range newest {
+		rows[id].Version = en.Version
+		rows[id].TestOn = st.TestVersions[id]
 		if m := e.listedManifest(ctx, en); m != nil {
 			rows[id].show(m)
 			if e.tooOld(m.MinAppVersion) {
@@ -281,6 +306,10 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 			order = append(order, id)
 		}
 		p.Installed, p.InstalledVersion, p.Enabled, p.DisabledReason = true, in.Version, in.Enabled, in.DisabledReason
+		p.Dev, p.Test = in.Dev, in.Test
+		if in.Dev {
+			p.Version = in.Version
+		}
 		_, p.Running = e.procs[id]
 		im := e.readManifest(id)
 		e.showAccess(p, in, im)
@@ -293,6 +322,7 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 			}
 		}
 	}
+	order = e.showDev(st, rows, order)
 	for _, id := range order {
 		rows[id].InstallStep, rows[id].InstallError = e.steps[id], e.fails[id]
 		rows[id].ReachesApp = e.Forwards != nil && e.Forwards(id)
@@ -436,6 +466,18 @@ func (e *Engine) install(ctx context.Context, id string, ap *ApproveInput) (*Ins
 			entry = &l.Entries[i]
 		}
 	}
+	kind, checkRaw, lastCounter := KindPlugins, listRaw, st.ListCounter
+	if st.TestVersions[id] {
+		if testRaw := e.testList(ctx, st, true); testRaw != nil {
+			if tl, _, err := e.verify(testRaw, KindTest, st.TestCounter); err == nil {
+				for i, en := range tl.Entries {
+					if en.ID == id && (entry == nil || newerVersion(en.Version, entry.Version)) {
+						entry, kind, checkRaw, lastCounter = &tl.Entries[i], KindTest, testRaw, st.TestCounter
+					}
+				}
+			}
+		}
+	}
 	if entry == nil {
 		return nil, fmt.Errorf("%w: %s", ErrNotListed, id)
 	}
@@ -457,7 +499,7 @@ func (e *Engine) install(ctx context.Context, id string, ap *ApproveInput) (*Ins
 		return nil, err
 	}
 	defer file.Close()
-	acc, err := CheckInstall(InstallInput{PublicKey: key, List: listRaw, LastListCounter: st.ListCounter,
+	acc, err := CheckInstall(InstallInput{PublicKey: key, List: checkRaw, LastListCounter: lastCounter, Kind: kind,
 		Blocklist: blockRaw, LastBlockCounter: st.BlockCounter, Manifest: manRaw, TempDir: e.Dir,
 		File: &stepReader{r: file, onDone: func() { e.setStep(id, "checking") }}})
 	if err != nil {
@@ -475,7 +517,7 @@ func (e *Engine) install(ctx context.Context, id string, ap *ApproveInput) (*Ins
 	}
 	e.opMu.Lock()
 	defer e.opMu.Unlock()
-	if err := e.writeCache(listRaw, blockRaw, acc.ListCounter, acc.BlockCounter); err != nil {
+	if err := e.writeCache(listRaw, blockRaw, l.Counter, acc.BlockCounter); err != nil {
 		return nil, err
 	}
 	if held, err := e.holdUpdate(id, acc, manRaw); held {
@@ -538,10 +580,13 @@ func (e *Engine) start(id string) error {
 	if _, ok := e.procs[id]; ok {
 		return nil
 	}
-	in, err := e.startInput()
-	if err != nil {
-		_ = e.store.SetEnabled(id, false, err.Error())
-		return err
+	var in StartInput
+	if st, _ := e.store.Load(); st == nil || st.Plugins[id] == nil || !st.Plugins[id].Dev {
+		var err error
+		if in, err = e.startInput(); err != nil {
+			_ = e.store.SetEnabled(id, false, err.Error())
+			return err
+		}
 	}
 	e.backfillKey(id, in.PublicKey)
 	var env []string
@@ -556,11 +601,22 @@ func (e *Engine) start(id string) error {
 		_ = e.store.SetEnabled(id, false, err.Error())
 		return err
 	}
+	fd, after, err := e.prepareFeed(id, &acc)
+	if err != nil {
+		for _, f := range acc.Folders {
+			f.File.Close()
+		}
+		if acc.Proxy != nil {
+			acc.Proxy.Close()
+		}
+		return err
+	}
 	p, err := e.store.Start(context.Background(), e.Runner, id, in, nil, env, acc)
 	for _, f := range acc.Folders {
 		f.File.Close() // the plugin has its own copy
 	}
 	if err != nil {
+		e.abandonFeed(fd, acc)
 		if acc.Proxy != nil {
 			acc.Proxy.Close()
 		}
@@ -575,8 +631,10 @@ func (e *Engine) start(id string) error {
 		log.Printf("plugins: %s started WITHOUT the file lock (%s): the owner allowed it on the Plugins page; memory, process and CPU limits stay on", id, e.FileLockReason)
 	}
 	e.procs[id] = p
+	e.attachFeed(id, fd, after)
 	go func() {
 		werr := p.Wait()
+		e.dropFeed(id, fd)
 		if acc.Proxy != nil {
 			acc.Proxy.Close()
 		}
@@ -611,34 +669,6 @@ func (e *Engine) exited(id string, err error) {
 	if !again {
 		_ = e.store.SetEnabled(id, false, why)
 	}
-}
-
-// startInput reads the cached lists and picks the key they verify with.
-// Called with e.mu held.
-func (e *Engine) startInput() (StartInput, error) {
-	list, err1 := os.ReadFile(filepath.Join(e.Dir, e.cacheListName()))
-	block, err2 := os.ReadFile(filepath.Join(e.Dir, cacheBlocklist))
-	if err := errors.Join(err1, err2); err != nil {
-		return StartInput{}, fmt.Errorf("cached plugin lists: %w", err)
-	}
-	st, err := e.store.Load()
-	if err != nil {
-		return StartInput{}, err
-	}
-	if _, _, err := e.verify(block, KindBlocklist, st.BlockCounter); err != nil {
-		return StartInput{}, fmt.Errorf("cached blocklist: %w", err)
-	}
-	_, key, err := e.verify(list, KindPlugins, st.ListCounter)
-	if err != nil {
-		key = nil
-		if len(e.Keys) > 0 {
-			key = e.Keys[0] // CheckStart refuses and disables with the reason
-		}
-	}
-	if key == nil {
-		return StartInput{}, ErrNoKey
-	}
-	return StartInput{PublicKey: key, List: list, Blocklist: block}, nil
 }
 
 // Stop ends id and keeps it disabled until started again.
@@ -750,50 +780,4 @@ func (e *Engine) installed(id string) (*Installed, error) {
 		return nil, fmt.Errorf("%w: %s", ErrNotInstalled, id)
 	}
 	return p, nil
-}
-
-func (e *Engine) saveManifest(id string, raw []byte) {
-	dir := filepath.Join(e.Dir, manifestDir)
-	if err := os.MkdirAll(dir, 0o700); err == nil {
-		_ = writeFileSynced(filepath.Join(dir, id+".json"), raw)
-	}
-}
-
-// listedManifest is the manifest of a listed version, fetched once and
-// cached; it counts only when its bytes match the signed list's hash and id.
-func (e *Engine) listedManifest(ctx context.Context, en Entry) *Manifest {
-	path := filepath.Join(e.Dir, listManifestDir, en.ID+"-"+en.Version+"-"+e.platform()+".json")
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		if raw, err = e.fetch(ctx, FileBase(en.ID, en.Version, e.platform())+"manifest.json"); err != nil {
-			log.Printf("plugins: manifest fetch for %s %s failed: %v", en.ID, en.Version, err)
-			return nil
-		}
-	}
-	sum := sha256.Sum256(raw)
-	if hex.EncodeToString(sum[:]) != en.ManifestSHA256 {
-		log.Printf("plugins: manifest for %s %s does not match the list's hash", en.ID, en.Version)
-		return nil
-	}
-	m, err := ParseManifest(raw)
-	if err != nil || m.ID != en.ID || m.Version != en.Version {
-		log.Printf("plugins: manifest for %s %s is not valid or names another plugin (%v)", en.ID, en.Version, err)
-		return nil
-	}
-	if os.MkdirAll(filepath.Dir(path), 0o700) == nil {
-		_ = writeFileSynced(path, raw)
-	}
-	return m
-}
-
-func (e *Engine) readManifest(id string) *Manifest {
-	raw, err := os.ReadFile(filepath.Join(e.Dir, manifestDir, id+".json"))
-	if err != nil {
-		return nil
-	}
-	m, err := ParseManifest(raw)
-	if err != nil {
-		return nil
-	}
-	return m
 }

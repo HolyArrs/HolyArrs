@@ -16,6 +16,10 @@ const (
 	KindBlocklist = "blocklist"
 	// KindLanguages lists the signed language packs (text only, no program).
 	KindLanguages = "languages"
+	// KindTest is the list of test versions: signed like the plugin list,
+	// with its own counter, and only read for plugins whose owner asked
+	// for test versions. Older apps never fetch it.
+	KindTest = "plugins_test"
 )
 
 // List refusals.
@@ -97,11 +101,12 @@ func VerifyList(pub ed25519.PublicKey, data []byte, kind string, lastCounter uin
 	if l.Counter < lastCounter {
 		return nil, fmt.Errorf("%w: counter %d, last accepted %d", ErrListOlder, l.Counter, lastCounter)
 	}
-	if (kind == KindPlugins || kind == KindLanguages) && l.MinBlocklistCounter == nil {
+	listed := kind == KindPlugins || kind == KindTest
+	if (listed || kind == KindLanguages) && l.MinBlocklistCounter == nil {
 		return nil, fmt.Errorf("%w: missing min_blocklist_counter", ErrListFormat)
 	}
 	for i, e := range l.Entries {
-		if (kind == KindPlugins && (e.ID == "" || e.Version == "" || e.SHA256 == "" || e.ManifestSHA256 == "")) ||
+		if (listed && (e.ID == "" || e.Version == "" || e.SHA256 == "" || e.ManifestSHA256 == "")) ||
 			(kind == KindLanguages && (e.ID == "" || e.Version == "" || e.SHA256 == "")) {
 			return nil, fmt.Errorf("%w: entry %d is incomplete", ErrListFormat, i)
 		}

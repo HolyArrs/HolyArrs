@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "إلى فريق الإدارة: فيلم أو مسلسل أُضيف يدويًا أو من قائمة أو من طلب تمت الموافقة عليه.",
 	"requests.moment.delete.title": "حُذف",
 	"requests.moment.delete.body": "إلى فريق الإدارة: فيلم أو مسلسل أو موسم أو حلقات من مسلسل غادرت المكتبة.",
+	"requests.moment.artwork.title": "تغيّر الغلاف",
+	"requests.moment.artwork.body": "إلى فريق الإدارة: حصل عنوان في المكتبة على غلاف جديد.",
 	"requests.moment.health.title": "السلامة",
 	"requests.moment.health.body": "إلى فريق الإدارة: تعطل فحص سلامة، أو أُصلح من جديد.",
 	"requests.moment.needs_decision.title": "بحاجة إلى قرار",

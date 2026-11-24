@@ -2455,5 +2455,8 @@
 	"server.requests.it-s-on-one-of-the": "در {name} هست، یکی از سرویس‌های استریم در تنظیمات درخواست‌ها، پس دانلود نشد. برای دانلود به‌هرحال، دوباره تأیید کن.",
 	"server.migrate.path-must-be-a-full-folder": "مسیر باید مسیر کامل یک پوشه باشد",
 	"server.migrate.that-folder-is-not-one-holyarrs": "HolyArrs این پوشه را نمی‌بیند",
-	"server.plugins.send-name": "بفرست {\"name\": \"...\"}"
+	"server.plugins.send-name": "بفرست {\"name\": \"...\"}",
+	"server.library.new-cover-art": "تصویر جلد جدید",
+	"server.plugins.send-event-library-add": "بفرست {\"event\": \"library.add\"}",
+	"server.plugins.send-on-true-or-on-false": "بفرست {\"on\": true} یا {\"on\": false}"
 }

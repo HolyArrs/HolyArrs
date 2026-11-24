@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Henkilökunnalle: käsin, listalta tai hyväksytystä pyynnöstä lisätty elokuva tai sarja.",
 	"requests.moment.delete.title": "Poistettu",
 	"requests.moment.delete.body": "Henkilökunnalle: elokuva, sarja tai sarjan kausi tai jaksoja poistui Kirjastosta.",
+	"requests.moment.artwork.title": "Kansikuva vaihtui",
+	"requests.moment.artwork.body": "Henkilökunnalle: Kirjaston nimike sai uuden kansikuvan.",
 	"requests.moment.health.title": "Kunto",
 	"requests.moment.health.body": "Henkilökunnalle: kuntotarkistus meni rikki tai on taas kunnossa.",
 	"requests.moment.needs_decision.title": "Vaatii päätöksen",
