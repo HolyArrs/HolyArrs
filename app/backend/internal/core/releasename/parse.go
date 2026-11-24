@@ -680,6 +680,10 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 		for _, code := range h.MultiLanguages {
 			addLang(code)
 		}
+		// The Source's list says what this MULTi holds, so its languages are known, not open.
+		if len(h.MultiLanguages) > 0 {
+			flags["multi_known"] = true
+		}
 	}
 	// A name that shows no language carries what its Source says every
 	// release there has (before the original-language fallback).
