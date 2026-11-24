@@ -156,3 +156,19 @@ func TestTMDBSlowOrDownWords(t *testing.T) {
 		t.Fatal("unreached should tell slow from down")
 	}
 }
+
+// A client with its own timeout shorter than the attempt (Your own keys, 20 s
+// against 25 s) still reports slow, not down, and does not open the breaker.
+func TestTMDBClientTimeoutIsSlowNotDown(t *testing.T) {
+	outbound.Reset()
+	srv := slowTMDB(t, time.Second)
+	p := newTMDB(srv, fakeCred)
+	p.HTTP = &http.Client{Timeout: 50 * time.Millisecond}
+	p.Timeout = 5 * time.Second
+	for i := 0; i < 4; i++ {
+		_, err := p.Movie(context.Background(), "tmdb:5")
+		if !errors.Is(err, ErrServiceSlow) || !strings.Contains(err.Error(), Slow) || errors.Is(err, outbound.ErrSuppressed) {
+			t.Fatalf("call %d: %v", i, err)
+		}
+	}
+}
