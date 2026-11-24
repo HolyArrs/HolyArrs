@@ -311,3 +311,57 @@ func TestTitloviKindListed(t *testing.T) {
 		t.Errorf("kind: %+v %v", k, ok)
 	}
 }
+
+// A search by IMDb id that finds the film is not repeated by title: the title
+// search would list the same subtitles and only spend a request of the site's
+// hourly limit.
+func TestTitloviStopsAfterTheIDSearchFoundTheFilm(t *testing.T) {
+	other := tlPage(tlLi("701", "The Lantern", "2010", "", "WEB", "", "mk3.png")) // a language nobody asked for
+	var hits []string
+	s := titloviServer(t, map[string]string{
+		"1|tt0000101||":   other,
+		"1|The Lantern||": other,
+	}, nil, &hits)
+	got, err := s.Search(context.Background(), Query{Kind: "movie", Title: "The Lantern", IMDb: "tt0000101", Languages: []string{"hr"}})
+	if err != nil || len(got) != 0 {
+		t.Fatalf("nothing in Croatian: %+v %v", got, err)
+	}
+	if len(hits) != 1 || !strings.Contains(hits[0], "prijevod=tt0000101") {
+		t.Errorf("only the IMDb search: %v", hits)
+	}
+}
+
+// For an episode that is two requests at most (the exact episode, then the
+// season) when the id finds the show, not four.
+func TestTitloviEpisodeCostsTwoRequestsWhenTheIDFindsTheShow(t *testing.T) {
+	other := tlPage(tlLi("711", "The Show", "2020", "Sezona 2 Epizoda 5", "WEB", "", "mk3.png"))
+	var hits []string
+	s := titloviServer(t, map[string]string{
+		"2|tt0000202|2|5": other,
+		"2|tt0000202|2|":  other,
+	}, nil, &hits)
+	got, err := s.Search(context.Background(), Query{Kind: "episode", Title: "The Show", IMDb: "tt0000202", Season: 2, Episode: 5, Languages: []string{"hr"}})
+	if err != nil || len(got) != 0 {
+		t.Fatalf("%+v %v", got, err)
+	}
+	if len(hits) != 2 {
+		t.Fatalf("want 2 requests, got %v", hits)
+	}
+	for _, h := range hits {
+		if strings.Contains(h, "The+Show") {
+			t.Errorf("no search by title: %v", hits)
+		}
+	}
+}
+
+// When the id finds nothing at all, the title is tried.
+func TestTitloviTriesTheTitleWhenTheIDFindsNothing(t *testing.T) {
+	var hits []string
+	s := titloviServer(t, map[string]string{
+		"1|The Lantern||": tlPage(tlLi("721", "The Lantern", "2010", "", "WEB", "", "hr3.png")),
+	}, nil, &hits)
+	got, err := s.Search(context.Background(), Query{Kind: "movie", Title: "The Lantern", IMDb: "tt0000101", Languages: []string{"hr"}})
+	if err != nil || len(got) != 1 || got[0].Key != "721" || len(hits) != 2 {
+		t.Fatalf("%+v %v %v", got, err, hits)
+	}
+}

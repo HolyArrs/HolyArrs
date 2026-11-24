@@ -243,8 +243,15 @@ func (s *titlovi) Search(ctx context.Context, q Query) ([]Candidate, error) {
 				}
 				continue
 			}
-			if got := s.candidates(tlParse(b), q, langs, isEp, searchPack); len(got) > 0 {
+			items := tlParse(b)
+			if got := s.candidates(items, q, langs, isEp, searchPack); len(got) > 0 {
 				return got
+			}
+			if len(items) > 0 {
+				// The search found the film. A search by its title would list the same
+				// subtitles (or a mix with other films), so the next term would only
+				// spend a request of the site's hourly limit.
+				return nil
 			}
 		}
 		return nil
