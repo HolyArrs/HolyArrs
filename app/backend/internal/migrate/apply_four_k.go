@@ -92,6 +92,22 @@ func (r *run) folderRefused(lib string) bool {
 	return !takes(lib)
 }
 
+// firstComing is the first Library folder of kind this run adds, as the
+// real run adds them in order: usable, and not refused (folderRefused);
+// "" when there is none.
+func (r *run) firstComing(kind string) string {
+	if len(r.coming[kind]) == 0 {
+		return ""
+	}
+	paths, _ := library.DownloadPaths(r.ctx, r.m.Store.Read(), r.m.Library.SavePath)
+	for _, c := range r.coming[kind] {
+		if library.CheckUse(mediafiles.LibraryFolder{Path: c, Kind: kind}, paths).Usable() && !r.folderRefused(c) {
+			return c
+		}
+	}
+	return ""
+}
+
 // What took a folder in the dry run's claimed record.
 const (
 	claimMain  = "main"
@@ -162,7 +178,7 @@ func fourKAt(t *TitlePlan, lib, fallback string) *FourKPlan {
 // the main copy takes it, as a rescan links a movie folder's one video.
 func mainCopyFile(lib string, t *TitlePlan) string {
 	if rel := recordedFile(lib, t.Folder, recordedNames(t.File, t.Qualities)); rel != "" {
-		return path.Base(rel)
+		return strings.TrimPrefix(rel, t.Folder+"/")
 	}
 	if t.FourK == nil {
 		return ""
@@ -179,40 +195,63 @@ func mainCopyFile(lib string, t *TitlePlan) string {
 	isFourK := func(rel string) bool {
 		return slices.ContainsFunc(fourK, func(n string) bool { return sameFileName(fold, n, rel) })
 	}
-	// The listing is biggest first.
-	for _, v := range library.ListVideosN(lib, t.Folder, 5000) {
-		rel := strings.TrimPrefix(v.Path, t.Folder+"/")
-		if isFourK(rel) || strings.Contains(rel, "/") || extraName(rel) {
-			continue
+	// The listing is biggest first, and never an extra.
+	for _, v := range library.MovieFeatures(lib, t.Folder, 5000) {
+		if rel := strings.TrimPrefix(v.Path, t.Folder+"/"); !isFourK(rel) {
+			return rel
 		}
-		return rel
 	}
 	return ""
 }
 
 // recordQualities puts the quality the old app recorded on the title's
 // files, as SetRecordedQualities always has. For a merged movie each app's
-// goes on the copy it came from only: the main Version takes the main
-// app's, the 4K Version the 4K app's. A 1080p and a 4K copy often share a
-// file name, so a quality must never cross to the other copy. It says how
-// many changed.
+// goes on the copy it came from only (copyVersions): the main app's on the
+// main copy's Version, the 4K app's on the 4K copy's. A 1080p and a 4K
+// copy often share a file name, so a quality must never cross to the other
+// copy. It says how many changed.
 func (r *run) recordQualities(id int64, t *TitlePlan) int {
 	if t.FourK == nil {
 		n, _ := r.m.Library.SetRecordedQualities(r.ctx, id, t.Qualities, r.by)
 		return n
 	}
 	n := 0
-	if main := r.versionOf(id, false); main != 0 && len(t.Qualities) > 0 {
+	main, fourK := r.copyVersions(id, t)
+	if main != 0 && len(t.Qualities) > 0 {
 		m, _ := r.m.Library.SetVersionRecordedQualities(r.ctx, id, main, t.Qualities, r.by)
 		n += m
 	}
-	if len(t.FourK.Qualities) > 0 {
-		if v := r.versionOf(id, true); v != 0 {
-			m, _ := r.m.Library.SetVersionRecordedQualities(r.ctx, id, v, t.FourK.Qualities, r.by)
-			n += m
-		}
+	if fourK != 0 && len(t.FourK.Qualities) > 0 {
+		m, _ := r.m.Library.SetVersionRecordedQualities(r.ctx, id, fourK, t.FourK.Qualities, r.by)
+		n += m
 	}
 	return n
+}
+
+// copyVersions are the Versions here of a merged movie that hold its main
+// and its 4K copy (0: none). Each is the Version in that copy's folder, as
+// adding a Version compares folders; failing that, the 4K copy's is a 4K
+// Version, and the main copy's the main Version unless it is a 4K one (a
+// title made from its 4K copy alone). One Version is never both: the
+// folder it is in decides, and a folder both copies share is the main
+// copy's.
+func (r *run) copyVersions(id int64, t *TitlePlan) (main, fourK int64) {
+	byMain, byFourK := r.versionIn(id, t.Library, t.Folder), r.versionIn(id, t.FourK.Library, t.FourK.Folder)
+	main, fourK = byMain, byFourK
+	if fourK == 0 {
+		fourK = r.anyFourKVersion(id)
+	}
+	if main == 0 {
+		main = r.plainMainVersion(id)
+	}
+	if main != 0 && main == fourK {
+		if byMain == 0 {
+			main = 0
+		} else {
+			fourK = 0
+		}
+	}
+	return main, fourK
 }
 
 // addFourK brings a merged movie's 4K copy over as a 4K Version of the
@@ -280,21 +319,15 @@ func (r *run) addFourK(titleID int64, fk *FourKPlan) string {
 
 // fourKVideo picks the 4K copy's file in its folder: a file the 4K app
 // recorded (names, from recordedNames), or else the folder's only movie
-// video. Two candidate cuts and no recorded name link none, so an
-// alternate cut is never taken for the 4K copy.
+// video directly in it, never an extra (library.MovieFeatures). Two
+// candidate cuts and no recorded name link none, so an alternate cut is
+// never taken for the 4K copy.
 func fourKVideo(lib, folder string, names []string) string {
 	if rel := recordedFile(lib, folder, names); rel != "" {
 		return rel
 	}
-	var only []string
-	for _, v := range library.ListVideosN(lib, folder, 5000) {
-		rel := strings.TrimPrefix(v.Path, folder+"/")
-		if !strings.Contains(rel, "/") && !extraName(rel) {
-			only = append(only, v.Path)
-		}
-	}
-	if len(only) == 1 {
-		return only[0]
+	if only := library.MovieFeatures(lib, folder, 2); len(only) == 1 {
+		return only[0].Path
 	}
 	return ""
 }
@@ -321,22 +354,25 @@ func sameFileName(fold bool, a, b string) bool {
 // recordedNames are the files an old app recorded for a movie, in the
 // order they are tried: its recorded file (with or without a quality),
 // then the names it recorded a quality for, sorted so the pick is the same
-// on every run.
+// on every run. A recorded file in a subfolder is tried only there, never
+// by its base name directly in the folder: that is another file.
 func recordedNames(file string, qualities map[string]string) []string {
 	names := slices.Sorted(maps.Keys(qualities))
 	if file != "" {
+		names = slices.DeleteFunc(names, func(n string) bool { return n == path.Base(file) })
 		names = append([]string{file}, names...)
 	}
 	return names
 }
 
-// recordedFile is the first of names that is a movie video directly in the
-// folder, by the check adopting makes (library.NamedMovieVideo: a plain
-// file, or a followed link to one, and never a name with a separator), as
-// a path in the Library folder; "" when none is there.
+// recordedFile is the first of names that is a movie video in the folder,
+// by the check adopting makes (library.RecordedMovieVideo: a plain file,
+// or a followed link to one, directly in the folder or in a subfolder the
+// listing reaches, and never an extra), as a path in the Library folder;
+// "" when none is there.
 func recordedFile(lib, folder string, names []string) string {
 	for _, name := range names {
-		if v, ok := library.NamedMovieVideo(lib, folder, name); ok {
+		if v, ok := library.RecordedMovieVideo(lib, folder, name); ok {
 			return v.Path
 		}
 	}
@@ -356,13 +392,21 @@ func (r *run) finishMovedTitle(id int64, key string, t *TitlePlan) string {
 			d = "; the quality of " + strconv.Itoa(n) + " files was updated"
 		}
 	}
-	if t.FourK == nil || r.versionOf(id, true) != 0 {
+	if t.FourK == nil {
+		return d
+	}
+	if _, fourK := r.copyVersions(id, t); fourK != 0 {
 		return d
 	}
 	// This same move made the title and stopped before its 4K copy (a
 	// restart): the copy is added now, as the title's own step adds it.
 	if _, mine := r.madeThisMove(key); mine && !r.dry {
-		return d + r.addFourK(id, t.FourK) + r.keepForFourK(id, t, t.FourK, "")
+		d += r.addFourK(id, t.FourK)
+		note, kept := r.keepForFourK(id, t, t.FourK, "")
+		if kept {
+			note = fourKOnlyKept
+		}
+		return d + note
 	}
 	return d + "; add its 4K copy on the title page"
 }

@@ -3,6 +3,7 @@ package migrate
 import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"math"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -175,9 +176,15 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 		t := r.title(m, profileName, labels)
 		t.Files = files[num(m["id"])]
 		// A movie's file comes over even when its quality is unknown, so
-		// the move knows which file in the folder the old app kept.
-		if r.kind == Radarr && len(t.Files) == 0 && movieFiles[num(m["id"])] != "" {
-			t.Files = []TitleFile{{Name: movieFiles[num(m["id"])]}}
+		// the move knows which file in the folder the old app kept, and
+		// where: one in a subfolder is never taken for another of its name.
+		if rel := movieFiles[num(m["id"])]; r.kind == Radarr && rel != "" {
+			if len(t.Files) == 0 {
+				t.Files = []TitleFile{{Name: path.Base(rel)}}
+			}
+			if len(t.Files) == 1 && t.Files[0].Name == path.Base(rel) && strings.Contains(rel, "/") {
+				t.Files[0].Path = rel
+			}
 		}
 		t.History = past[num(m["id"])]
 		t.EpisodesOff = off[num(m["id"])]

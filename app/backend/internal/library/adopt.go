@@ -551,9 +551,10 @@ type AdoptChoice struct {
 	// SeasonsDiffer leaves every file of a show folder for the person to
 	// place: the old app numbers the show's seasons differently.
 	SeasonsDiffer bool `json:"-"`
-	// File names the movie's video directly in Folder, the file an old
-	// app recorded; it becomes the File instead of the biggest video when
-	// it is there. Only the move from other apps sets it.
+	// File names the movie's video in Folder that an old app recorded, by
+	// its path there with forward slashes (RecordedMovieVideo); it becomes
+	// the File instead of the biggest video when it is there. Only the move
+	// from other apps sets it.
 	File string `json:"-"`
 }
 
@@ -664,7 +665,7 @@ func (s *Service) adoptOne(ctx context.Context, lf mediafiles.LibraryFolder, c A
 	if v, ok := mainCandidateVideo(lf.Path, c.Folder, nil, false); ok {
 		a.File, a.Size = v.Path, v.Size
 	}
-	if v, ok := NamedMovieVideo(lf.Path, c.Folder, c.File); ok && !fileOnly {
+	if v, ok := RecordedMovieVideo(lf.Path, c.Folder, c.File); ok && !fileOnly {
 		a.File, a.Size = v.Path, v.Size
 	}
 	return s.adoptAs(ctx, lf, c, m, a, by)

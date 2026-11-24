@@ -34,6 +34,13 @@ func fourKLabNamed(t *testing.T, fourKFirst bool, mainName, fourKName string) (*
 // folder.
 func fourKLabIn(t *testing.T, fourKFirst bool, mainName, fourKName, fourKFolder string) (*moveLab, string, string) {
 	t.Helper()
+	return fourKLabWith(t, fourKFirst, mainName, fourKName, fourKFolder, nil, nil)
+}
+
+// fourKLabWith is fourKLabIn with editMain and editUHD, when set, changing
+// the 1080p and the 4K app's reads before they are saved.
+func fourKLabWith(t *testing.T, fourKFirst bool, mainName, fourKName, fourKFolder string, editMain, editUHD func(*Snapshot)) (*moveLab, string, string) {
+	t.Helper()
 	l := newMoveLabWith(t, func(radarr, _, _ *Snapshot) {
 		radarr.QualityProfiles = []Profile{{ID: 2, Name: "HD-1080p", Cutoff: "Bluray-1080p"}}
 		name := mainName
@@ -41,6 +48,9 @@ func fourKLabIn(t *testing.T, fourKFirst bool, mainName, fourKName, fourKFolder 
 			name = "The.Matrix.1999.1080p.mkv"
 		}
 		radarr.Titles[0].Files = []TitleFile{{Name: name, Quality: "Bluray-1080p"}}
+		if editMain != nil {
+			editMain(radarr)
+		}
 	})
 	if mainName != "" {
 		renamed := filepath.Join(filepath.Dir(l.file), mainName)
@@ -68,6 +78,9 @@ func fourKLabIn(t *testing.T, fourKFirst bool, mainName, fourKName, fourKFolder 
 		Titles: []Title{{SourceID: 1, Kind: "movie", Name: "The Matrix", Year: 1999, IDs: map[string]string{"tmdb": "603"},
 			Path: "/movies4k/" + fourKFolder, Monitored: true, ProfileID: 2,
 			Files: files}}}
+	if editUHD != nil {
+		editUHD(uhd)
+	}
 	uhd.finish()
 	saved, err := Save(context.Background(), l.st, 1, uhd)
 	if err != nil {

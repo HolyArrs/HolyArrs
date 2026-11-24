@@ -60,3 +60,30 @@ func NamedMovieVideo(root, folder, name string) (AdoptVideo, bool) {
 	}
 	return AdoptVideo{Path: rel, Size: fi.Size()}, true
 }
+
+// RecordedMovieVideo is NamedMovieVideo for the path an old app recorded
+// in a movie folder, with forward slashes, which may name a file in a
+// subfolder ("Disc1/Feature.mkv"), as Radarr scans them: only where
+// listing the folder reaches (no ".", "..", hidden, system or sample
+// folder, at most maxScanDepth folders down), inside the folder on disk,
+// and never an extra by its folders or its name. A backslash is refused.
+func RecordedMovieVideo(root, folder, rel string) (AdoptVideo, bool) {
+	dir, name := path.Split(rel)
+	if dir == "" {
+		return NamedMovieVideo(root, folder, rel)
+	}
+	if strings.Contains(rel, `\`) || path.Clean(rel) != rel || !filepath.IsLocal(filepath.FromSlash(rel)) || strings.Count(rel, "/") > maxScanDepth {
+		return AdoptVideo{}, false
+	}
+	dir = strings.TrimSuffix(dir, "/")
+	for _, d := range strings.Split(dir, "/") {
+		if strings.HasPrefix(d, ".") || NasSystemDir(d) || strings.EqualFold(d, "sample") || strings.EqualFold(d, "samples") {
+			return AdoptVideo{}, false
+		}
+	}
+	v, ok := NamedMovieVideo(root, path.Join(folder, dir), name)
+	if !ok || MovieExtra(rel) || !importer.InsideRealFile(filepath.Join(root, filepath.FromSlash(folder)), filepath.Join(root, filepath.FromSlash(v.Path))) {
+		return AdoptVideo{}, false
+	}
+	return v, true
+}

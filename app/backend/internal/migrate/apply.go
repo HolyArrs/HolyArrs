@@ -366,7 +366,7 @@ func (r *run) sourceOrMoveTime(source string) (time.Time, error) {
 }
 
 // folderGroup reads the Library folders group: whether it was left out,
-// and the folders on this server it adds.
+// and the folders on this server it adds (none whose part is off).
 func (r *run) folderGroup(p *Plan) {
 	r.coming, r.comingAll, r.left, r.unseen, r.movieFolders = map[string][]string{}, nil, map[string]bool{}, map[string]string{}, map[string]int{}
 	for _, g := range p.Groups {
@@ -386,7 +386,7 @@ func (r *run) folderGroup(p *Plan) {
 			if f := it.Folder; f != nil && f.Path != f.OldPath && !isDir(filepath.FromSlash(f.OldPath)) && !holdsTitles(p, f.OldPath, f.Path) {
 				r.unseen[filepath.Clean(filepath.FromSlash(f.Path))] = f.OldPath
 			}
-			if f := it.Folder; f != nil && !g.Skipped && !f.Left && isDir(filepath.FromSlash(f.Path)) {
+			if f := it.Folder; f != nil && !g.Skipped && !f.Left && r.m.partOn(partOf(it)) && isDir(filepath.FromSlash(f.Path)) {
 				r.coming[f.Kind] = append(r.coming[f.Kind], filepath.Clean(filepath.FromSlash(f.Path)))
 				r.comingAll = append(r.comingAll, filepath.Clean(filepath.FromSlash(f.Path)))
 			}

@@ -634,6 +634,9 @@ func (b *builder) titleList(s *Snapshot) {
 		tp.Qualities, tp.OldEpisodes = fileFacts(t.Files)
 		if kind == "movie" && len(t.Files) == 1 {
 			tp.File = t.Files[0].Name
+			if t.Files[0].Path != "" {
+				tp.File = t.Files[0].Path
+			}
 		}
 		tp.hasFiles = len(t.Files) > 0 || num(t.Extra["track_files"]) > 0
 		tp.History, tp.App = t.History, string(s.Kind)

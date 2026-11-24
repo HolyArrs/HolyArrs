@@ -96,3 +96,40 @@ func TestAdoptKeepsANamedLinkedFile(t *testing.T) {
 		}
 	}
 }
+
+// A path an old app recorded in a subfolder of a movie folder names that
+// file only where listing the folder reaches it, never an extra, a sample
+// or a path that leaves the folder; MovieFeatures lists only the cuts
+// directly in the folder, however many extras sit in subfolders.
+func TestRecordedMovieVideoInASubfolder(t *testing.T) {
+	root := t.TempDir()
+	const dir = "Heat (1995)"
+	for _, p := range []string{"Disc1/Heat.mkv", "Heat.mkv", "Featurettes/Heat.mkv", "Sample/Heat.mkv", ".hidden/Heat.mkv",
+		"a/b/c/d/Heat.mkv", "a/b/c/d/e/Heat.mkv", "Disc1/Heat.1995.trailer.mkv"} {
+		writeFile(t, filepath.Join(root, dir, filepath.FromSlash(p)), "x")
+	}
+	for rel, want := range map[string]string{
+		"Disc1/Heat.mkv":              dir + "/Disc1/Heat.mkv",
+		"Heat.mkv":                    dir + "/Heat.mkv",
+		"a/b/c/d/Heat.mkv":            dir + "/a/b/c/d/Heat.mkv",
+		"a/b/c/d/e/Heat.mkv":          "",
+		"Featurettes/Heat.mkv":        "",
+		"Sample/Heat.mkv":             "",
+		".hidden/Heat.mkv":            "",
+		"Disc1/Heat.1995.trailer.mkv": "",
+		"Disc1/../Heat.mkv":           "",
+		"../Heat (1995)/Heat.mkv":     "",
+		`Disc1\Heat.mkv`:              "",
+		"/Disc1/Heat.mkv":             "",
+	} {
+		v, ok := RecordedMovieVideo(root, dir, rel)
+		if ok != (want != "") || v.Path != want {
+			t.Errorf("%q: %q %v, want %q", rel, v.Path, ok, want)
+		}
+	}
+	writeFile(t, filepath.Join(root, dir, "Heat (1995)-trailer.mkv"), "x")
+	writeFile(t, filepath.Join(root, dir, "Heat.1995.trailer.mkv"), "x")
+	if got := MovieFeatures(root, dir, 5); len(got) != 1 || got[0].Path != dir+"/Heat.mkv" {
+		t.Fatalf("features %+v", got)
+	}
+}

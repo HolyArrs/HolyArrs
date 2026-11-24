@@ -297,8 +297,9 @@ type TitlePlan struct {
 	// FourK is a movie's 4K copy from a second Radarr read: it becomes a
 	// 4K Version of this same title, adopting its folder where it is.
 	FourK *FourKPlan `json:"four_k,omitempty"`
-	// File is the file the old app recorded for a movie, by its base name,
-	// with or without a quality: a merged movie's main copy adopts it.
+	// File is the file the old app recorded for a movie, by its path in
+	// the movie's folder with forward slashes (its base name when directly
+	// in it), with or without a quality: a merged movie's main copy adopts it.
 	File string `json:"file,omitempty"`
 }
 
@@ -313,8 +314,7 @@ type FourKPlan struct {
 	// Qualities is the quality the 4K app recorded for each file, by the
 	// file's base name.
 	Qualities map[string]string `json:"qualities,omitempty"`
-	// File is the file the 4K app recorded, by its base name, with or
-	// without a quality.
+	// File is the file the 4K app recorded, as TitlePlan.File names it.
 	File string `json:"file,omitempty"`
 	// Unresolved says why the folder could not be placed ("" when it can).
 	Unresolved string `json:"unresolved,omitempty"`
