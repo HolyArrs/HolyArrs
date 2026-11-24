@@ -109,7 +109,7 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver media
 		why, err := fakes.fakeFileOf(plan[i].SourceFile, false, minutes, u.relName)
 		if err != nil {
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
-			plan[i].Why = append(plan[i].Why, unreadable(err))
+			plan[i].Why = append(plan[i].Why, unreadable(plan[i].SourceFile, err))
 			continue
 		}
 		if why == "" {

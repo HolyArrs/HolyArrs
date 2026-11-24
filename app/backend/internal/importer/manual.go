@@ -260,7 +260,11 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 			}
 			return nil
 		}
-		if d.IsDir() || d.Type()&fs.ModeSymlink != 0 {
+		// Links are never walked into. With links followed, a link to a file
+		// is listed as that file (a streaming drive's download folder holds
+		// only links into its mount); any other link is left out.
+		linked, isLink := LinkedFile(p)
+		if d.IsDir() || d.Type()&fs.ModeSymlink != 0 && !isLink {
 			return nil
 		}
 		ext := strings.ToLower(filepath.Ext(p))
@@ -278,6 +282,9 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 			return filepath.SkipAll
 		}
 		fi, err := d.Info()
+		if isLink {
+			fi, err = linked, nil
+		}
 		if err != nil {
 			return nil
 		}
@@ -439,7 +446,7 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 	}
 	r.Path = src
 	sfi, err := os.Lstat(src)
-	if err != nil || !sfi.Mode().IsRegular() {
+	if _, isLink := LinkedFile(src); err != nil || !sfi.Mode().IsRegular() && !isLink {
 		return refuse("not a plain file")
 	}
 	ext := strings.ToLower(filepath.Ext(src))

@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "on jo Kirjastossa; {n} tiedoston laatu tai julkaisu päivitettiin",
 	"server.migrate.imported-before-2": "tuotu aiemmin{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "sen kansio {dir} kuuluu toiselle Kirjaston elokuvalle",
-	"server.library.emptied-from-in-the-holding-folder": "Tyhjennetty {removed} kohteesta {name} kansion {label} säilytyskansiossa"
+	"server.library.emptied-from-in-the-holding-folder": "Tyhjennetty {removed} kohteesta {name} kansion {label} säilytyskansiossa",
+	"server.importer.the-downloaded-file-is-a-link": "ladattu tiedosto on linkki tiedostoon, jota ei ole; tarkista, että asema, johon se osoittaa, on liitetty HolyArrsiin, ja tuo sitten uudelleen"
 }

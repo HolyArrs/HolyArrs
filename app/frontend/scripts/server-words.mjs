@@ -101,12 +101,13 @@ const handLines = { 'Because you have {name}': 'suggest',
 	"the first audio track is {a}, not the title's {b}": 'importer',
 	// importer refusedMedia: the file name and its refusal, put together at run time.
 	'HolyArrs refused {name}: the Downloader reported a file outside the download folder': 'importer',
-	// place_why.go: why a file was not placed (targetTakenWhy, noWriteWhy, noReadWhy, notThereWhy) and the lead for the system's own words.
+	// place_why.go: why a file was not placed (targetTakenWhy, noWriteWhy, noReadWhy, notThereWhy, deadLinkWhy) and the lead for the system's own words.
 	'a file with the same name that HolyArrs did not place is already in the folder; move it out of the folder, then import again': 'importer',
 	'HolyArrs may not write to the folder this file goes to in the Library; give the user HolyArrs runs as (PUID and PGID) write access to it, then import again': 'importer',
 	'the file could not be placed: {why}': 'importer',
 	'HolyArrs may not read the downloaded file; give the user HolyArrs runs as (PUID and PGID) read access to the file and the folder it is in, then import again': 'importer',
 	'the file could not be placed': 'importer',
+	'the downloaded file is a link to a file that is not there; check that the drive it points to is mounted in HolyArrs, then import again': 'importer',
 	// place_why.go: what follows that lead when the file was gone or could not be read to check (notInFolderWhy, unreadCheckWhy).
 	'the file is not in the download folder any more': 'importer', 'could not read the file to check it': 'importer',
 	// files_pending.go: a listed file that has not reached the local download folder yet.

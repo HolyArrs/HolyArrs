@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "υπάρχει ήδη στη Βιβλιοθήκη· η ποιότητα ή η έκδοση {n} αρχείων ενημερώθηκε",
 	"server.migrate.imported-before-2": "εισήχθη παλαιότερα{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "ο φάκελός του {dir} ανήκει σε άλλη ταινία στη Βιβλιοθήκη",
-	"server.library.emptied-from-in-the-holding-folder": "Αδειάστηκαν {removed} από το «{name}» στον φάκελο αναμονής του {label}"
+	"server.library.emptied-from-in-the-holding-folder": "Αδειάστηκαν {removed} από το «{name}» στον φάκελο αναμονής του {label}",
+	"server.importer.the-downloaded-file-is-a-link": "το ληφθέν αρχείο είναι σύνδεσμος σε αρχείο που δεν υπάρχει· ελέγξτε ότι ο δίσκος στον οποίο δείχνει είναι προσαρτημένος στο HolyArrs και κάντε ξανά εισαγωγή"
 }

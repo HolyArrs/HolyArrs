@@ -1,6 +1,8 @@
 package importer
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -15,10 +17,15 @@ import (
 // and downloads as links. Off by default; HOLYARRS_FOLLOW_LINKS=1 turns it on.
 var FollowLinks = os.Getenv("HOLYARRS_FOLLOW_LINKS") == "1"
 
+// LinksFollowed says whether symlinks to plain files count as those files:
+// HOLYARRS_FOLLOW_LINKS is on, or a Downloader has a path pair that places
+// links.
+func LinksFollowed() bool { return FollowLinks || linkPairsOn.Load() }
+
 // LinkedFile returns the target's info when p is a symlink to a plain file
 // and links are followed.
 func LinkedFile(p string) (os.FileInfo, bool) {
-	if !FollowLinks && !linkPairsOn.Load() {
+	if !LinksFollowed() {
 		return nil, false
 	}
 	if fi, err := os.Lstat(p); err != nil || fi.Mode()&os.ModeSymlink == 0 {
@@ -31,6 +38,19 @@ func LinkedFile(p string) (os.FileInfo, bool) {
 	return fi, true
 }
 
+// DeadLink says whether p is a symlink whose target is not there, while
+// links are followed: on a streaming drive, the mount it points into is down.
+func DeadLink(p string) bool {
+	if !LinksFollowed() {
+		return false
+	}
+	if fi, err := os.Lstat(p); err != nil || fi.Mode()&os.ModeSymlink == 0 {
+		return false
+	}
+	_, err := os.Stat(p)
+	return errors.Is(err, fs.ErrNotExist)
+}
+
 // InsideRealFile is InsideReal for a file: a followed link only needs its
 // folder inside root, since its target lives elsewhere by design.
 func InsideRealFile(root, p string) bool {
@@ -38,6 +58,20 @@ func InsideRealFile(root, p string) bool {
 		return insideReal(root, filepath.Dir(p))
 	}
 	return insideReal(root, p)
+}
+
+// sameLinkTarget says whether target is a link that resolves to the same
+// file as the link src: one placed by an earlier import of src.
+func sameLinkTarget(src, target string) bool {
+	if fi, err := os.Lstat(target); err != nil || fi.Mode()&os.ModeSymlink == 0 {
+		return false
+	}
+	a, err := filepath.EvalSymlinks(src)
+	if err != nil {
+		return false
+	}
+	b, err := filepath.EvalSymlinks(target)
+	return err == nil && a == b
 }
 
 // placeLink puts a new link at target pointing where src's link resolves.
@@ -91,6 +125,10 @@ func placeSymlink(s mediafiles.PlanStep) mediafiles.PlaceResult {
 	src, err := filepath.Abs(s.SourceFile)
 	if err == nil {
 		_, err = os.Stat(src)
+	}
+	if err != nil && DeadLink(src) {
+		r.Outcome, r.Error = "refused", deadLinkWhy
+		return r
 	}
 	if err != nil {
 		r.Outcome, r.Error = "failed", placeWhy(err, err.Error(), s.SourceFile)

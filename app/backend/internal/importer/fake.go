@@ -114,9 +114,14 @@ func (fr fakeRules) claimMismatch(claimed int64, cands []Candidate) string {
 	return fmt.Sprintf("the Release said %s but holds %s of video or audio; likely a fake", sizeText(claimed), sizeText(held))
 }
 
-func unreadable(err error) string {
+// unreadable is why a file that could not be read is refused. A link whose
+// target is not there says so: the file is in the download folder, the drive
+// it points into is not mounted.
+func unreadable(file string, err error) string {
 	why := unreadCheckWhy
-	if os.IsNotExist(err) {
+	if os.IsNotExist(err) && DeadLink(file) {
+		why = deadLinkWhy
+	} else if os.IsNotExist(err) {
 		why = notInFolderWhy
 	} else if os.IsPermission(err) {
 		why = noReadCheckWhy

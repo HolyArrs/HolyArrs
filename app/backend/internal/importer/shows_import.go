@@ -273,7 +273,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		why, err := fakes.fakeFileOf(plan[i].SourceFile, music, max(minutes, 0), relName)
 		if err != nil {
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
-			plan[i].Why = append(plan[i].Why, unreadable(err))
+			plan[i].Why = append(plan[i].Why, unreadable(plan[i].SourceFile, err))
 			continue
 		}
 		if why == "" {

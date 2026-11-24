@@ -560,8 +560,17 @@ func place(s mediafiles.PlanStep, ops Ops, resumeFrom time.Time) mediafiles.Plac
 		return r
 	}
 	_, isLink := LinkedFile(s.SourceFile)
+	if DeadLink(s.SourceFile) {
+		r.Outcome, r.Error = "refused", deadLinkWhy
+		return r
+	}
 	if !sfi.Mode().IsRegular() && !isLink {
 		r.Outcome, r.Error = "refused", "the source is not a plain file (a symlink or something else)"
+		return r
+	}
+	if isLink && sameLinkTarget(s.SourceFile, s.TargetPath) {
+		// Import again after the link was placed: it is there already.
+		r.Outcome, r.PlacedBy = "placed", "copy"
 		return r
 	}
 	if tfi, err := os.Lstat(s.TargetPath); err == nil {

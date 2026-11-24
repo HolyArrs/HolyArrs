@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "þegar í Safninu; gæði eða útgáfa {n} skráa var uppfærð",
 	"server.migrate.imported-before-2": "flutt inn áður{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "mappan {dir} tilheyrir annarri mynd í Safninu",
-	"server.library.emptied-from-in-the-holding-folder": "Tæmdi {removed} úr {name} í biðmöppu {label}"
+	"server.library.emptied-from-in-the-holding-folder": "Tæmdi {removed} úr {name} í biðmöppu {label}",
+	"server.importer.the-downloaded-file-is-a-link": "niðurhalaða skráin er tengill á skrá sem er ekki til; athugaðu að drifið sem hann vísar á sé tengt í HolyArrs og fluttu svo inn aftur"
 }

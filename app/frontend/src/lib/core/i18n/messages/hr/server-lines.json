@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "već je u Knjižnici; kvaliteta ili izdanje {n} datoteka je ažurirano",
 	"server.migrate.imported-before-2": "uvezeno ranije{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "njegova mapa {dir} pripada drugom filmu u Knjižnici",
-	"server.library.emptied-from-in-the-holding-folder": "Ispražnjeno: {removed} iz {name} u mapi za zadržavanje ({label})"
+	"server.library.emptied-from-in-the-holding-folder": "Ispražnjeno: {removed} iz {name} u mapi za zadržavanje ({label})",
+	"server.importer.the-downloaded-file-is-a-link": "preuzeta datoteka je poveznica na datoteku koje nema; provjerite je li disk na koji pokazuje montiran u HolyArrs, zatim ponovno uvezite"
 }

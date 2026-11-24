@@ -174,6 +174,15 @@ func (ps ByHandPlaces) Holds(p string) bool {
 	if _, err := os.Lstat(p); err != nil {
 		return true
 	}
+	// A followed link's target lives elsewhere by design (a streaming
+	// drive's mount): the link itself must sit inside, so its folder is the
+	// one checked.
+	if _, ok := LinkedFile(p); ok {
+		p = filepath.Dir(p)
+		if ps.within(p) == "" {
+			return false
+		}
+	}
 	bad := fs.ModeIrregular
 	if real, err := filepath.EvalSymlinks(p); err != nil {
 		bad |= fs.ModeSymlink

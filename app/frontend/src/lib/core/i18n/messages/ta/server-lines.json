@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "ஏற்கனவே நூலகத்தில் உள்ளது; {n} கோப்புகளின் தரம் அல்லது வெளியீடு புதுப்பிக்கப்பட்டது",
 	"server.migrate.imported-before-2": "முன்பே இறக்குமதி செய்யப்பட்டது{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "இதன் கோப்புறை {dir} நூலகத்தில் உள்ள வேறொரு திரைப்படத்துக்குச் சொந்தமானது",
-	"server.library.emptied-from-in-the-holding-folder": "{label} இன் ஒதுக்கீட்டுக் கோப்புறையில் {name} இலிருந்து {removed} காலி செய்யப்பட்டது"
+	"server.library.emptied-from-in-the-holding-folder": "{label} இன் ஒதுக்கீட்டுக் கோப்புறையில் {name} இலிருந்து {removed} காலி செய்யப்பட்டது",
+	"server.importer.the-downloaded-file-is-a-link": "பதிவிறக்கிய கோப்பு இல்லாத ஒரு கோப்பிற்கான இணைப்பு; அது சுட்டும் டிரைவ் HolyArrs இல் மவுண்ட் செய்யப்பட்டுள்ளதா எனச் சரிபார்த்து, மீண்டும் இறக்குமதி செய்யவும்"
 }

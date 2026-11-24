@@ -30,6 +30,11 @@ const (
 	unreadCheckWhy = "could not read the file to check it"
 )
 
+// deadLinkWhy is the reason for a downloaded file that is a link to nothing:
+// a streaming drive (InfiniDysk, AltMount) that is not mounted where the
+// link points. Mounting it and importing again is the fix.
+const deadLinkWhy = "the downloaded file is a link to a file that is not there; check that the drive it points to is mounted in HolyArrs, then import again"
+
 // fileTakenWhy is the reason for a file that is gone while its download folder is still there.
 const fileTakenWhy = "the file could not be placed: " + notInFolderWhy
 
@@ -43,7 +48,7 @@ const SlowReadWhy = "reading the download folder took too long; try again"
 // be imported again. So can one that matched no file: by hand finds nothing
 // in a download that holds only archives.
 func CanImportAgain(reason string) bool {
-	return reason == noMovieWhy || reason == noTrackWhy || reason == noEpisodeWhy || FilesPending(reason) || reason == noReadWhy || reason == noWriteWhy || reason == gaveUpWhy || reason == SlowReadWhy || strings.Contains(reason, "HOLYARRS_SAVE_PATH")
+	return reason == noMovieWhy || reason == deadLinkWhy || reason == noTrackWhy || reason == noEpisodeWhy || FilesPending(reason) || reason == noReadWhy || reason == noWriteWhy || reason == gaveUpWhy || reason == SlowReadWhy || strings.Contains(reason, "HOLYARRS_SAVE_PATH")
 }
 
 // goneWhy is the reason for a file that is not there: the path pair and the
@@ -64,7 +69,7 @@ func unreadOr(why string, facts map[string]any, file string) string {
 	}
 	f, err := os.Open(file)
 	if err != nil {
-		return unreadable(err)
+		return unreadable(file, err)
 	}
 	_ = f.Close()
 	return why
@@ -89,7 +94,7 @@ func placeWhy(err error, raw, src string) string {
 // couldNotPlace is the reason for a file that matched but was not placed. The
 // plain lines stand alone; the system's words follow a lead.
 func couldNotPlace(why string) string {
-	if why == targetTakenWhy || why == noWriteWhy || why == noReadWhy {
+	if why == targetTakenWhy || why == noWriteWhy || why == noReadWhy || why == deadLinkWhy {
 		return why
 	}
 	return "the file could not be placed: " + why
@@ -151,6 +156,8 @@ func episodeRefusedWhy(root, label string, why []string) string {
 		return CopyingWhy
 	case slices.Contains(why, noReadCheckWhy):
 		return noReadWhy
+	case slices.Contains(why, deadLinkWhy):
+		return deadLinkWhy
 	case slices.Contains(why, notInFolderWhy) && goneWhy(root) == notThereWhy:
 		return notThereWhy
 	case slices.Contains(why, notInFolderWhy):
@@ -183,6 +190,8 @@ func notPlacedWhy(root string, plan []mediafiles.PlanStep, res []mediafiles.Plac
 			return CopyingWhy
 		case slices.Contains(s.Why, noReadCheckWhy):
 			return noReadWhy
+		case slices.Contains(s.Why, deadLinkWhy):
+			return deadLinkWhy
 		case slices.Contains(s.Why, notInFolderWhy):
 			return goneWhy(root)
 		case slices.Contains(s.Why, unreadCheckWhy):

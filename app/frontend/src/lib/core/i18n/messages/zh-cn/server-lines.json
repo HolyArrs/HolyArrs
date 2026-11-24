@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "已在资料库中；已更新 {n} 个文件的质量或版本",
 	"server.migrate.imported-before-2": "之前已导入{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "它的文件夹 {dir} 属于资料库中的另一部电影",
-	"server.library.emptied-from-in-the-holding-folder": "已从 {label} 的暂存文件夹中的 {name} 清空 {removed}"
+	"server.library.emptied-from-in-the-holding-folder": "已从 {label} 的暂存文件夹中的 {name} 清空 {removed}",
+	"server.importer.the-downloaded-file-is-a-link": "下载的文件是指向一个不存在文件的链接;请检查它指向的磁盘是否已在 HolyArrs 中挂载,然后重新导入"
 }

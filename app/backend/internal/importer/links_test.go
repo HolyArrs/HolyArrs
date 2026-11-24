@@ -46,6 +46,10 @@ func TestPlaceFollowedLink(t *testing.T) {
 	if got, _ := filepath.EvalSymlinks(step.TargetPath); got != mustReal(t, target) {
 		t.Fatalf("link points to %q", got)
 	}
+	// Import again finds the link it placed and leaves it.
+	if again := place(step, Ops{}, time.Time{}); again.Outcome != "placed" {
+		t.Fatalf("second place: %+v", again)
+	}
 }
 
 func mustReal(t *testing.T, p string) string {

@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "už je v Knižnici; kvalita alebo vydanie {n} súborov bolo aktualizované",
 	"server.migrate.imported-before-2": "importované skôr{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "jeho priečinok {dir} patrí inému filmu v Knižnici",
-	"server.library.emptied-from-in-the-holding-folder": "Vyprázdnené: {removed} z {name} v priečinku na uchovanie ({label})"
+	"server.library.emptied-from-in-the-holding-folder": "Vyprázdnené: {removed} z {name} v priečinku na uchovanie ({label})",
+	"server.importer.the-downloaded-file-is-a-link": "stiahnutý súbor je odkaz na súbor, ktorý neexistuje; skontrolujte, či je disk, na ktorý ukazuje, pripojený v HolyArrs, a potom importujte znova"
 }
