@@ -83,6 +83,7 @@ func (l *Linker) WatchLinks(ctx context.Context, titleID int64) ([]WatchLink, er
 	if err != nil {
 		return nil, err
 	}
+	seen := map[string]bool{}
 	for _, m := range ms {
 		if m.Kind != "plex" {
 			m.WebURL = browserAddress(m)
@@ -99,7 +100,14 @@ func (l *Linker) WatchLinks(ctx context.Context, titleID int64) ([]WatchLink, er
 			continue
 		}
 		if item != "" {
-			out = append(out, WatchLink{Server: m.Name, Kind: m.Kind, URL: watchURL(m, item, sid)})
+			// Two rows for the same server give the same URL, and the
+			// title page keys its links by URL: keep the first only.
+			link := WatchLink{Server: m.Name, Kind: m.Kind, URL: watchURL(m, item, sid)}
+			if seen[link.URL] {
+				continue
+			}
+			seen[link.URL] = true
+			out = append(out, link)
 		}
 	}
 	return out, nil

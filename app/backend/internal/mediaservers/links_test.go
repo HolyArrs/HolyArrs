@@ -130,6 +130,30 @@ func TestWatchLinksNone(t *testing.T) {
 	}
 }
 
+// The same Jellyfin added twice gives one link, not two: the title page
+// keys its links by URL, and a duplicate key crashes it
+// (each_key_duplicate, #717).
+func TestWatchLinksDuplicateServer(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	var reads atomic.Int32
+	srv := itemServer(t, &reads)
+	setTitleIDs(t, w, w.title, map[string]string{"tmdb": "329865"})
+	for _, name := range []string{"Home", "Home again"} {
+		if _, err := Add(ctx, w.s, w.v, Input{Name: name, Kind: "jellyfin", URL: srv.URL, Token: tok, WebURL: "https://media.example.org/"}, domain.System); err != nil {
+			t.Fatal(err)
+		}
+	}
+	l := &Linker{Store: w.s, Vault: w.v}
+	got, err := l.WatchLinks(ctx, w.title)
+	if err != nil || len(got) != 1 {
+		t.Fatalf("duplicate server: %+v %v, want 1 link", got, err)
+	}
+	if want := "https://media.example.org/web/#/details?id=mv-9&serverId=srv-1"; got[0].URL != want {
+		t.Fatalf("duplicate server: %s, want %s", got[0].URL, want)
+	}
+}
+
 // A title the kept list lacks reads the list again once the retry wait is
 // over, so a title that just arrived gets its button soon.
 func TestWatchLinksRereadsForNewTitle(t *testing.T) {
