@@ -89,7 +89,11 @@ func (m *Manager) finishedFolder(ctx context.Context, content, relName string, d
 		return "", ""
 	}
 	local := filepath.Clean(mapLocal(content, dr.PathMap))
-	if fi, err := os.Lstat(local); err == nil && fi.Mode().IsRegular() {
+	// A single-file Usenet job is often reported by its video file path, and a
+	// move import already took that file into the Library. Step up to the job
+	// folder when the reported path is a file or is already gone under a file
+	// name, never when it already names the job folder itself.
+	if fi, err := os.Lstat(local); err == nil && fi.Mode().IsRegular() || errors.Is(err, os.ErrNotExist) && !sameJobName(filepath.Base(local), relName) {
 		local = filepath.Dir(local)
 	}
 	if !sameJobName(filepath.Base(local), relName) {
