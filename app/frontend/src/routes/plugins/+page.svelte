@@ -20,7 +20,7 @@
 	import { date } from '#lib/core/format.ts';
 	import { PluginInfo, PluginSettings, AddSheet, DevActions, NoLockCard, NoNetLockCard, ApproveAccess, wheelSideways, fitChips, tagRoom, arrowKeys, tint, LanguagesSection, languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from '#lib/plugins/index.ts';
 	import { listLanguages, packList } from '#lib/core/i18n/language-packs.svelte.ts';
-	import { abilities, newAbilities, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, forwards, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
+	import { abilities, newAbilities, noLockNotice, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, forwards, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import { DlFind } from '#lib/downloads/index.ts';
 	import { barTools, barLead, pluginScope } from '#lib/core/search-field.svelte.ts';
@@ -135,6 +135,7 @@
 	const noLockCard = $derived(!!ov && showsNoLockCard(ov));
 	const noNetCard = $derived(!!ov && showsNoNetLockCard(ov));
 	const noLockTag = $derived(!!ov && showsNoLockTag(ov));
+	const noLockWhy = $derived(ov ? `${noLockNotice(ov.file_lock_reason)} ${t('plugins.noLockRisk')}` : ''); // #698: the tag explains itself
 	const asking = $derived(noLockCard && (askLock || !ov?.no_file_lock_asked));
 
 	let linked = false;
@@ -178,7 +179,6 @@
 			pluginScope.term = '';
 		};
 	});
-
 	// From 768px the tools sit beside the top bar's search box; below that (bar hidden) beside the page's own box.
 	$effect(() => {
 		barTools.snippet = vw >= 768 ? pageTools : null;
@@ -326,7 +326,7 @@
 		<div class="ft" data-testid="plugin-card-foot">{@render footChips(p)}<span class="st">{@render cardAct(p, name)}</span></div>
 		{#if p.install_error && !p.install_step}<p class="xs ierr" data-testid="plugin-install-error"><Icon name="alert" size={13} /><span>{p.install_error}</span></p>{/if}
 		{#if p.installed && p.needs_app && hasUpdate(p)}<p class="xs need full" data-testid="plugin-update-needs-app">{t('plugins.needsApp', { version: p.needs_app })}</p>{/if}
-		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock" title={noLockWhy}><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
 	</li>
 {/snippet}
 
@@ -423,7 +423,7 @@
 			{#if hasUpdate(p) && p.installed}<span class="udot inl" role="img" aria-label={t('plugins.stateUpdate')} title={t('plugins.stateUpdate')} data-testid="plugin-update-dot"></span>{/if}
 			<span class="st">{@render cardAct(p, name)}</span>
 		</div>
-		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock" title={noLockWhy}><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
 	</li>
 {/snippet}
 
@@ -441,13 +441,13 @@
 		<span class="ver xs"><span class="mono">{shownVersion(p)}</span>{@render dls(p)}{#if hasUpdate(p) && p.installed}<span class="udot inl" role="img" aria-label={t('plugins.stateUpdate')} title={t('plugins.stateUpdate')} data-testid="plugin-update-dot"></span>{/if}</span>
 		<span class="stt xs">{p.installed ? badge(p) : stateLabel(p)}</span>
 		<span class="st">{@render cardAct(p, name)}</span>
-		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock" title={noLockWhy}><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
 	</li>
 {/snippet}
 
 {#snippet info(p: Plugin)}
 	{#if editing === p.id}<PluginSettings {p} onback={() => (editing = '')} />{:else}
-	<PluginInfo {p} badge={badge(p)} {noLockTag} onclose={close}>
+	<PluginInfo {p} badge={badge(p)} {noLockTag} noLockReason={ov?.file_lock_reason} onclose={close}>
 		{#snippet actions()}{@render acts(p)}{/snippet}
 		{#snippet extra()}<ApproveAccess {p} reload={load} />{/snippet}
 	</PluginInfo>{/if}
