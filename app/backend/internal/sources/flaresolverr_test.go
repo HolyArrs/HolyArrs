@@ -256,15 +256,60 @@ func TestSameSite(t *testing.T) {
 	}
 }
 
-// A Source that may go through FlareSolverr waits as long as FlareSolverr
-// may take over a bot check, even with a shorter limit of its own.
+// FlareSolverr may take longer over a bot check than the Source's own
+// timeout, which is for the calls to the site itself.
 func TestFlareSolverr_CallWaitsForTheCheck(t *testing.T) {
-	flare, _ := url.Parse("http://127.0.0.1:8191")
-	if c := New(Config{URL: "https://site.example", Timeout: 20 * time.Second, FlareSolverr: flare}); c.cfg.Timeout < flareWait {
-		t.Fatalf("timeout %v, FlareSolverr may take %v", c.cfg.Timeout, flareWait)
+	var direct, asked atomic.Int32
+	site := checkedSite(t, &direct)
+	c := New(Config{URL: site, AllowLocal: true, Format: "site", Timeout: 300 * time.Millisecond, FlareSolverr: fakeFlare(t, &asked, func(a flareAsk) any {
+		time.Sleep(900 * time.Millisecond)
+		return solved(a)
+	})})
+	body, err := c.send(context.Background(), http.MethodGet, site+"/one", nil, nil)
+	if err != nil || !strings.Contains(string(body), "solved /one") {
+		t.Fatalf("got %q, %v", body, err)
 	}
-	if c := New(Config{URL: "https://site.example", Timeout: 20 * time.Second}); c.cfg.Timeout != 20*time.Second {
-		t.Fatalf("without FlareSolverr: %v", c.cfg.Timeout)
+}
+
+// Two searches of one Source share a Client, so the cookie FlareSolverr got
+// and the Source's limits hold, whatever the Source's own timeout is.
+func TestFlareSolverr_SearcherKeepsTheClient(t *testing.T) {
+	for _, ms := range []int{0, 20000, 120000} {
+		var direct, asked atomic.Int32
+		site := serve(t, func(w http.ResponseWriter, r *http.Request) {
+			direct.Add(1)
+			if strings.Contains(r.Header.Get("Cookie"), "cf_clearance=ok") && r.Header.Get("User-Agent") == "Browser/1" {
+				_, _ = w.Write([]byte(`{"torrents":[]}`))
+				return
+			}
+			w.Header().Set("Server", "cloudflare")
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte("<html><head><title>Just a moment...</title></head></html>"))
+		})
+		flare := fakeFlare(t, &asked, func(a flareAsk) any {
+			out := solved(a).(map[string]any)
+			out["solution"].(map[string]any)["response"] = `<html><head></head><body><pre>{"torrents":[]}</pre></body></html>`
+			return out
+		})
+		st, _ := openStore(t)
+		sr := &Searcher{Store: st}
+		src := domain.Source{Meta: domain.Meta{ID: 1}, Name: "Lab", Protocol: "torrent", Format: "site", URL: site.URL, AllowLocal: true,
+			Extra: map[string]string{extraSiteKind: "torrentscsv"}, Limits: domain.SourceLimits{TimeoutMS: ms}, FlareSolverrURL: flare.String()}
+		var used []*Client
+		for i := range 2 {
+			c, err := sr.client(context.Background(), src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := c.Search(context.Background(), Query{Title: "Dune"}); err != nil {
+				t.Fatalf("timeout %d, search %d: %v", ms, i+1, err)
+			}
+			used = append(used, c)
+		}
+		if used[0] != used[1] || asked.Load() != 1 || direct.Load() != 2 {
+			t.Errorf("timeout %d: same Client %v, FlareSolverr asked %d, site asked %d", ms, used[0] == used[1], asked.Load(), direct.Load())
+		}
 	}
 }
 
