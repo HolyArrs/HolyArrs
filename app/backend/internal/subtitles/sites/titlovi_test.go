@@ -365,3 +365,27 @@ func TestTitloviTriesTheTitleWhenTheIDFindsNothing(t *testing.T) {
 		t.Fatalf("%+v %v %v", got, err, hits)
 	}
 }
+
+// A result of the IMDb id search is marked as found by the title's own id, so a
+// film the site names differently is not refused as a wrong title; a result of
+// the title search is not.
+func TestTitloviMarksResultsOfTheIDSearch(t *testing.T) {
+	byID := tlPage(tlLi("731", "The Lantern: The Movie", "2010", "", "WEB", "", "hr3.png"))
+	byName := tlPage(tlLi("732", "The Lantern", "2010", "", "WEB", "", "hr3.png"))
+	s := titloviServer(t, map[string]string{"1|tt0000101||": byID, "1|The Lantern||": byName}, nil, nil)
+	got, err := s.Search(context.Background(), Query{Kind: "movie", Title: "The Lantern", IMDb: "tt0000101", Languages: []string{"hr"}})
+	if err != nil || len(got) != 1 || got[0].Key != "731" || !got[0].MatchedByID {
+		t.Fatalf("a result of the id search is marked: %+v %v", got, err)
+	}
+	// Without an IMDb id only the title is searched, and nothing is marked.
+	got, err = s.Search(context.Background(), Query{Kind: "movie", Title: "The Lantern", Languages: []string{"hr"}})
+	if err != nil || len(got) != 1 || got[0].Key != "732" || got[0].MatchedByID {
+		t.Fatalf("a result of the title search is not: %+v %v", got, err)
+	}
+	// The same for an episode found by the show's IMDb id.
+	ep := titloviServer(t, map[string]string{"2|tt0000202|2|5": tlPage(tlLi("741", "The Show", "2020", "Sezona 2 Epizoda 5", "WEB", "", "hr3.png"))}, nil, nil)
+	got, err = ep.Search(context.Background(), Query{Kind: "episode", Title: "The Show", IMDb: "tt0000202", Season: 2, Episode: 5, Languages: []string{"hr"}})
+	if err != nil || len(got) != 1 || !got[0].MatchedByID {
+		t.Fatalf("%+v %v", got, err)
+	}
+}

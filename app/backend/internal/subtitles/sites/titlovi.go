@@ -244,7 +244,10 @@ func (s *titlovi) Search(ctx context.Context, q Query) ([]Candidate, error) {
 				continue
 			}
 			items := tlParse(b)
-			if got := s.candidates(items, q, langs, isEp, searchPack); len(got) > 0 {
+			// Titlovi lists only the film an IMDb id names, so a result of that search is the
+			// title's own, even when the site calls the film by another name (F1 is listed as
+			// "F1: The Movie"). A result of a title search is not known to be.
+			if got := s.candidates(items, q, langs, isEp, searchPack, imdbID.MatchString(term)); len(got) > 0 {
 				return got
 			}
 			if len(items) > 0 {
@@ -274,7 +277,7 @@ func (s *titlovi) Search(ctx context.Context, q Query) ([]Candidate, error) {
 }
 
 // candidates keeps the results that answer the query.
-func (s *titlovi) candidates(items []tlItem, q Query, langs []string, isEp, searchPack bool) []Candidate {
+func (s *titlovi) candidates(items []tlItem, q Query, langs []string, isEp, searchPack, byID bool) []Candidate {
 	var out []Candidate
 	for _, it := range items {
 		lang := tlLang(it.flag)
@@ -304,7 +307,7 @@ func (s *titlovi) candidates(items []tlItem, q Query, langs []string, isEp, sear
 			key += ":e" + strconv.Itoa(q.Episode)
 		}
 		c := Candidate{Site: s.c.cfg.Name, Key: key, Language: lang, Title: it.title, Year: it.year, FPS: it.fps, Format: "srt",
-			Link: "/download/?type=1&mediaid=" + it.id}
+			MatchedByID: byID, Link: "/download/?type=1&mediaid=" + it.id}
 		if c.Title == "" {
 			c.Title = q.Title
 		}
