@@ -278,3 +278,22 @@ func TestSameFileName(t *testing.T) {
 		t.Fatal("file names compared without the file system's case rule")
 	}
 }
+
+// TestPlanFileOnlyForMergedMovies: the recorded file name stays in the
+// plan only for a merged movie, so an ordinary movie's plan, and the hash
+// an approved import was checked against, are as before.
+func TestPlanFileOnlyForMergedMovies(t *testing.T) {
+	hd := radarrOneMovie("/movies", "Bluray-1080p", true)
+	hd.Titles[0].Files = []TitleFile{{Name: "The.Matrix.1999.1080p.mkv", Quality: "Bluray-1080p"}}
+	if it := item(t, BuildPlan([]Input{{1, hd}}, Choices{}), GroupTitles, "title:movie:tmdb:603"); it.Title.File != "" {
+		t.Fatalf("an ordinary movie's plan has its file %q", it.Title.File)
+	}
+	uhd := radarrOneMovie("/movies4k", "Remux-2160p", true)
+	uhd.Titles[0].Files = []TitleFile{{Name: "The.Matrix.1999.2160p.mkv", Quality: "Remux-2160p"}}
+	for _, in := range [][]Input{{{1, hd}, {2, uhd}}, {{1, uhd}, {2, hd}}} {
+		it := item(t, BuildPlan(in, Choices{}), GroupTitles, "title:movie:tmdb:603")
+		if it.Title.File != "The.Matrix.1999.1080p.mkv" || it.Title.FourK == nil || it.Title.FourK.File != "The.Matrix.1999.2160p.mkv" {
+			t.Fatalf("merged plan %+v", it.Title)
+		}
+	}
+}

@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"maps"
+	"os"
 	"path"
 	"path/filepath"
 	"slices"
@@ -55,8 +56,14 @@ func (r *run) fourKDryWords(fk *FourKPlan) string {
 			return "; its 4K copy will not be brought: its file " + video + " is not inside the Library folder " + fk.Library
 		}
 	}
+	// A folder not made yet must take a name every system can create, as
+	// adding the Version checks; only one already on disk keeps its name.
+	onDisk := isDir(filepath.Join(lib, fk.Folder))
+	if !onDisk && !library.NewVersionFolderOK(fk.Folder) {
+		return "; its 4K copy will not be brought: " + library.ErrVersionFolder.Error()
+	}
 	r.claim(lib, fk.Folder, claimFourK)
-	if !isDir(filepath.Join(lib, fk.Folder)) {
+	if !onDisk {
 		return "; its 4K copy becomes a 4K Version with no file yet; there is no folder at " + path.Join(fk.Library, fk.Folder)
 	}
 	return "; its 4K copy becomes a 4K Version using the folder " + path.Join(fk.Library, fk.Folder) + " where it is"
@@ -130,14 +137,17 @@ func (r *run) folderHeld(lfID int64, folder string) bool {
 // fourKAt is a merged movie's 4K copy as this run brings it, once the main
 // copy's place here is known: lib, or fallback (a Library folder here used
 // in place of one this server cannot see) when set. A main copy that lands
-// in the 4K copy's own folder leaves it no folder of its own, so the copy
-// is not brought. nil when the title has no 4K copy.
+// in the 4K copy's own folder (by name, or on disk: another path to the
+// same folder) leaves it no folder of its own, so the copy is not brought.
+// nil when the title has no 4K copy.
 func fourKAt(t *TitlePlan, lib, fallback string) *FourKPlan {
 	fk := t.FourK
 	if fk == nil || fk.Unresolved != "" {
 		return fk
 	}
-	if claimKey(mainHere(lib, fallback), t.Folder) != claimKey(filepath.FromSlash(fk.Library), fk.Folder) {
+	mainDir := filepath.Join(mainHere(lib, fallback), t.Folder)
+	if claimKey(mainHere(lib, fallback), t.Folder) != claimKey(filepath.FromSlash(fk.Library), fk.Folder) &&
+		!sameFolder(mainDir, filepath.Join(filepath.FromSlash(fk.Library), fk.Folder)) {
 		return fk
 	}
 	at := *fk
@@ -158,7 +168,9 @@ func mainCopyFile(lib string, t *TitlePlan) string {
 		return ""
 	}
 	fourK := recordedNames(t.FourK.File, t.FourK.Qualities)
-	if len(fourK) == 0 {
+	// Only a folder both apps share holds the 4K app's file; in a folder of
+	// its own the main copy is picked as adopting always picks.
+	if len(fourK) == 0 || !sameFolder(filepath.Join(lib, t.Folder), filepath.Join(filepath.FromSlash(t.FourK.Library), t.FourK.Folder)) {
 		return ""
 	}
 	// A file system that ignores case finds the 4K app's file under any
@@ -235,7 +247,7 @@ func (r *run) addFourK(titleID int64, fk *FourKPlan) string {
 	}
 	paths, _ := library.DownloadPaths(r.ctx, r.m.Store.Read(), r.m.Library.SavePath)
 	v, err := library.AddVersion(r.ctx, r.m.Store, titleID, library.VersionInput{Label: "4K", FourK: true,
-		LibraryFolderID: lfID, FolderName: fk.Folder, ExistingFolder: true, PickRulesID: pr, KeepUpToDate: &keep}, paths, r.m.now(), r.by)
+		LibraryFolderID: lfID, FolderName: fk.Folder, ExistingFolder: onDisk, PickRulesID: pr, KeepUpToDate: &keep}, paths, r.m.now(), r.by)
 	if err != nil {
 		return "; its 4K copy was not brought: " + err.Error()
 	}
@@ -287,6 +299,18 @@ func fourKVideo(lib, folder string, names []string) string {
 	return ""
 }
 
+// sameFolder says two folders on disk are one: the same path, or another
+// path to it (a link, or a name in another case where the file system
+// ignores case). A folder not on disk is never the same as another.
+func sameFolder(a, b string) bool {
+	ai, err := os.Stat(a)
+	if err != nil {
+		return false
+	}
+	bi, err := os.Stat(b)
+	return err == nil && os.SameFile(ai, bi)
+}
+
 // sameFileName says two file names in one folder name the same file: the
 // same text, or, where the file system ignores case (fold), the same text
 // in any case.
@@ -323,16 +347,22 @@ func recordedFile(lib, folder string, names []string) string {
 // quality each app recorded. A merged 4K copy that the earlier run did not
 // bring is added on the title page, as for a title that was already here,
 // so each run's undo takes back only what that run made; the dry run says
-// so too. It returns what to add to the line.
-func (r *run) finishMovedTitle(id int64, t *TitlePlan) string {
+// so too. When this same move made the title and stopped before the 4K
+// copy, the copy comes over now. It returns what to add to the line.
+func (r *run) finishMovedTitle(id int64, key string, t *TitlePlan) string {
 	d := ""
 	if !r.dry {
 		if n := r.recordQualities(id, t); n > 0 {
 			d = "; the quality of " + strconv.Itoa(n) + " files was updated"
 		}
 	}
-	if t.FourK != nil && r.versionOf(id, true) == 0 {
-		d += "; add its 4K copy on the title page"
+	if t.FourK == nil || r.versionOf(id, true) != 0 {
+		return d
 	}
-	return d
+	// This same move made the title and stopped before its 4K copy (a
+	// restart): the copy is added now, as the title's own step adds it.
+	if _, mine := r.madeThisMove(key); mine && !r.dry {
+		return d + r.addFourK(id, t.FourK) + r.keepForFourK(id, t, t.FourK, "")
+	}
+	return d + "; add its 4K copy on the title page"
 }

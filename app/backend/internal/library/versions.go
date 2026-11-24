@@ -502,6 +502,13 @@ func ExistingVersionFolderOK(folder string) bool {
 	return folder == strings.TrimSpace(folder) && (customFolderOK(folder) || validFolder(folder) && !strings.Contains(folder, "/"))
 }
 
+// NewVersionFolderOK says a folder not on disk yet can be a Version's
+// folder: a name every system can create, the check adding a Version
+// without ExistingFolder makes.
+func NewVersionFolderOK(folder string) bool {
+	return folder == strings.TrimSpace(folder) && customFolderOK(folder)
+}
+
 // customFolderOK says a Version's own folder name is safe: one folder, or
 // folders inside grouping folders written with forward slashes, each a
 // plain folder name.

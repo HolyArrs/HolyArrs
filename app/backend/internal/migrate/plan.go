@@ -215,6 +215,7 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 		b.snapshot(x.Snap)
 	}
 	b.fourKClashes()
+	b.dropUnmergedFiles()
 	b.waitItems()
 	b.pathMaps()
 	p.NeedsInput = noteList(p.NeedsInput)

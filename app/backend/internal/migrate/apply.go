@@ -753,7 +753,7 @@ func (r *run) one(group string, it Item) (string, string) {
 		// A title moved before still takes the quality the old app recorded
 		// for each file, so moving again after reading the old app updates it.
 		if it.Title != nil && it.Title.Music == nil && (!r.dry || it.Title.FourK != nil) {
-			return ResAlready, "imported before" + r.finishMovedTitle(id, it.Title)
+			return ResAlready, "imported before" + r.finishMovedTitle(id, it.Key, it.Title)
 		}
 		if it.Downloader != nil {
 			if added := r.downloaderAgain(it, id); added != "" {

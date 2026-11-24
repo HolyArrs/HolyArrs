@@ -235,6 +235,20 @@ func (b *builder) fourKClashes() {
 	}
 }
 
+// dropUnmergedFiles keeps a title's recorded file name in the plan only
+// for a merged movie, the one place the run uses it, so an ordinary
+// title's plan, and the hash an approved import was checked against, stay
+// as they were.
+func (b *builder) dropUnmergedFiles() {
+	if g := b.items[GroupTitles]; g != nil {
+		for i := range g.Items {
+			if t := g.Items[i].Title; t != nil && t.FourK == nil {
+				t.File = ""
+			}
+		}
+	}
+}
+
 // foldName lowers a folder name as SQLite's lower() does, letters A to Z
 // only: the way adding a Version compares folders, so the plan and the dry
 // run match the real run (on Linux "Ä" and "ä" are two folders).

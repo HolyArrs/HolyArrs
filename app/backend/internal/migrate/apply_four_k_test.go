@@ -26,6 +26,14 @@ func fourKLab(t *testing.T, fourKFirst bool) (*moveLab, string, string) {
 // name keeps the lab's own.
 func fourKLabNamed(t *testing.T, fourKFirst bool, mainName, fourKName string) (*moveLab, string, string) {
 	t.Helper()
+	return fourKLabIn(t, fourKFirst, mainName, fourKName, "The Matrix (1999)")
+}
+
+// fourKLabIn is fourKLabNamed with the 4K app's movie folder named too. An
+// empty 4K file name makes a 4K copy not downloaded yet: no file and no
+// folder.
+func fourKLabIn(t *testing.T, fourKFirst bool, mainName, fourKName, fourKFolder string) (*moveLab, string, string) {
+	t.Helper()
 	l := newMoveLabWith(t, func(radarr, _, _ *Snapshot) {
 		radarr.QualityProfiles = []Profile{{ID: 2, Name: "HD-1080p", Cutoff: "Bluray-1080p"}}
 		name := mainName
@@ -42,19 +50,24 @@ func fourKLabNamed(t *testing.T, fourKFirst bool, mainName, fourKName string) (*
 		l.file = renamed
 	}
 	fourKLib := filepath.Join(t.TempDir(), "4k")
-	fourKFile := filepath.Join(fourKLib, "The Matrix (1999)", fourKName)
-	if err := os.MkdirAll(filepath.Dir(fourKFile), 0o755); err != nil {
+	fourKFile := filepath.Join(fourKLib, fourKFolder, fourKName)
+	files := []TitleFile{{Name: fourKName, Quality: "Remux-2160p"}}
+	if fourKName == "" {
+		fourKFile, files = "", nil
+		if err := os.MkdirAll(fourKLib, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	} else if err := os.MkdirAll(filepath.Dir(fourKFile), 0o755); err != nil {
 		t.Fatal(err)
-	}
-	if err := os.WriteFile(fourKFile, []byte("the 4K copy, bigger"), 0o644); err != nil {
+	} else if err := os.WriteFile(fourKFile, []byte("the 4K copy, bigger"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	uhd := &Snapshot{Kind: Radarr, Via: ViaAPI,
 		Folders:         []Folder{{Path: "/movies4k"}},
 		QualityProfiles: []Profile{{ID: 2, Name: "Ultra-HD", Cutoff: "Remux-2160p"}},
 		Titles: []Title{{SourceID: 1, Kind: "movie", Name: "The Matrix", Year: 1999, IDs: map[string]string{"tmdb": "603"},
-			Path: "/movies4k/The Matrix (1999)", Monitored: true, ProfileID: 2,
-			Files: []TitleFile{{Name: fourKName, Quality: "Remux-2160p"}}}}}
+			Path: "/movies4k/" + fourKFolder, Monitored: true, ProfileID: 2,
+			Files: files}}}
 	uhd.finish()
 	saved, err := Save(context.Background(), l.st, 1, uhd)
 	if err != nil {
