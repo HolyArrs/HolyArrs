@@ -68,7 +68,8 @@ jobs:
       contents: write
     steps:
       - name: Check the version
-        run: case "$VERSION" in (*[!0-9.]*|'') echo "::error::not a version: $VERSION"; exit 1;; esac
+        run: |
+          case "$VERSION" in (*[!0-9.]*|'') echo "::error::not a version: $VERSION"; exit 1;; esac
 
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
