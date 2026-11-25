@@ -20,6 +20,9 @@ type Refusal struct {
 	Until time.Time
 }
 
+// spellGap joins refusals with the same reason into one logged spell.
+const spellGap = time.Minute
+
 var refusal struct {
 	mu sync.Mutex
 	r  Refusal
@@ -83,13 +86,17 @@ func noteRefusal(status int, retryAfter string, body []byte, now time.Time) time
 	}
 	refusal.mu.Lock()
 	running := now.Before(refusal.r.Until)
+	// A short hold the server renews again and again (service_busy every
+	// few seconds) is one busy spell: the same reason back within a minute
+	// of the last hold ending does not log again.
+	sameSpell := !running && code == refusal.r.Code && now.Sub(refusal.r.Until) < spellGap
 	if u := now.Add(d); !running || u.After(refusal.r.Until) {
 		refusal.r.Until = u
 		refusal.r.Code = code
 	}
 	until := refusal.r.Until
 	refusal.mu.Unlock()
-	if !running {
+	if !running && !sameSpell {
 		log.Printf("metadata: the server asked HolyArrs to wait (%s); background lookups pause until %s", code, until.Format(time.RFC3339))
 	}
 	return d

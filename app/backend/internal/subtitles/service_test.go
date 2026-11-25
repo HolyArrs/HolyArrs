@@ -433,6 +433,56 @@ func (f *fix) slotOf(t *testing.T, fileID int64) int64 {
 	return id
 }
 
+// Choosing by hand still lists results for a language a built-in track
+// already covers.
+func TestSearch_ShowListsCoveredLanguages(t *testing.T) {
+	f := newFix(t)
+	b, err := os.ReadFile(filepath.Join("container", "testdata", "lab-built-in.mkv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(f.abs(movieRel), b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, _ := svc(t, f, fakesite.Lab())
+	wishAll(t, f, Want{Language: "en"})
+	res, err := s.Search(context.Background(), f.movieFile, SearchOptions{Show: true}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Status.Missing) != 0 || len(res.Outcomes) != 1 || res.Outcomes[0].Want.Language != "en" || len(res.Outcomes[0].Choices) == 0 {
+		t.Fatalf("no choices for a covered language: %+v", res)
+	}
+	if c := res.Outcomes[0].Covered; len(c) == 0 || c[0].Place != "built_in" {
+		t.Fatalf("covered note missing: %+v", c)
+	}
+}
+
+// Two saved files meeting one want list its results once in Choose a subtitle.
+func TestSearch_ShowOneListPerWant(t *testing.T) {
+	f := newFix(t)
+	s, _ := svc(t, f, fakesite.Lab())
+	ctx := context.Background()
+	wishAll(t, f, Want{Language: "en"})
+	fc, _ := s.load(ctx, f.movieFile)
+	for _, hi := range []bool{false, true} {
+		row := fetchedRow(f.movieFile, "en")
+		row.HearingImpaired = hi
+		score := 80
+		row.Score = &score
+		if _, err := s.save(ctx, fc, row, fakesite.Cue("hello", 0), "srt", DefaultSettings(), nil, domain.System); err != nil {
+			t.Fatal(err)
+		}
+	}
+	res, err := s.Search(ctx, f.movieFile, SearchOptions{Show: true}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Outcomes) != 1 || len(res.Outcomes[0].Covered) != 2 {
+		t.Fatalf("want one list covered by two files: %+v", res.Outcomes)
+	}
+}
+
 // At most MaxCandidatesPerSite candidates from one site are scored.
 func TestService_SearchCapsCandidatesPerSite(t *testing.T) {
 	f := newFix(t)

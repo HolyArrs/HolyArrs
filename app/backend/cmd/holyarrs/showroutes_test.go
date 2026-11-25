@@ -126,7 +126,8 @@ func TestAddShowPerEpisodeOrder(t *testing.T) {
 // route: PUT /api/v1/settings/shows
 func TestShowSettingsAndEditAPI(t *testing.T) {
 	t.Parallel()
-	srv, _, _, _ := showSetup(t)
+	srv, st, _, _ := showSetup(t)
+	searchSource(t, st) // a search by hand needs a Source
 	u := srv.URL + "/api/v1"
 	var d library.ShowDefaults
 	_ = json.Unmarshal(do(t, "GET", u+"/settings/shows", "", 200), &d)

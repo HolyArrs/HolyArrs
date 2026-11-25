@@ -87,10 +87,18 @@ describe('the password check while importing', () => {
 	it('still asks an owner with no password and no media-server sign-in to set one', () => {
 		session.s.hasPassword = false;
 		session.s.via = 'session';
-		session.s.authMethod = 'oidc';
+		session.s.authMethod = 'forward_auth';
 		const { pw } = pageOf();
 		pw.needsFreshSignIn();
 		expect(pw.mustSetPw).toBe(true);
 		expect(pw.pwStale).toBe(false);
+	});
+	it('asks a single sign-on owner with no password to sign in again', () => {
+		session.s.hasPassword = false;
+		session.s.via = 'session';
+		session.s.authMethod = 'oidc';
+		const { pw } = pageOf();
+		pw.needsFreshSignIn();
+		expect(pw.pwStale).toBe(true);
 	});
 });

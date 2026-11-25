@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Nur diese dürfen sagen, woher ein Besuch kam.",
 	"settings.signIn.fixToSaveOne": "1 Zeile korrigieren zum Speichern",
 	"settings.signIn.fixToSaveOther": "{n} Zeilen korrigieren zum Speichern",
-	"settings.signIn.localSaved": "Lokales Netzwerk gespeichert"
+	"settings.signIn.localSaved": "Lokales Netzwerk gespeichert",
+	"settings.signIn.forgotTitle": "Passwort vergessen?",
+	"settings.signIn.forgotOn": "Passwort vergessen? auf der Anmeldeseite zeigen",
+	"settings.signIn.forgotNote": "Der Besitzer bekommt einen Einmalcode aus dem Server-Log. Schalte es aus, wenn sich alle per Single Sign-on anmelden. Der Befehl reset-owner funktioniert weiter.",
+	"settings.signIn.forgotShown": "Passwort vergessen? ist an",
+	"settings.signIn.forgotHidden": "Passwort vergessen? ist aus"
 }

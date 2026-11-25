@@ -14,7 +14,6 @@
 	"settings.health.none": "沒有結果。重新檢查即可執行。",
 	"settings.health.since": "起始時間",
 	"settings.health.settings": "健康檢查設定",
-	"settings.health.updateCheck": "檢查 HolyArrs 新版本",
 	"settings.health.onlyChecks": "只檢查，從不安裝。",
 	"settings.health.every": "檢查更新的間隔",
 	"settings.health.day": "天",

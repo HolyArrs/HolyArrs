@@ -395,8 +395,11 @@ func TestAnamorphicSize(t *testing.T) {
 }
 
 func TestReadTracksErrors(t *testing.T) {
-	if _, err := ReadTracks(bytes.NewReader([]byte("RIFF....AVI ")), 12); !errors.Is(err, ErrUnsupported) {
-		t.Errorf("avi: %v", err)
+	if _, err := ReadTracks(bytes.NewReader([]byte("RIFF....AVI ")), 12); !errors.Is(err, ErrMalformed) {
+		t.Errorf("avi with no header list: %v", err)
+	}
+	if _, err := ReadTracks(bytes.NewReader([]byte("RIFF....WAVE")), 12); !errors.Is(err, ErrUnsupported) {
+		t.Errorf("wave: %v", err)
 	}
 	none := mp4Box("ftyp", []byte("isom"))
 	if _, err := ReadTracks(bytes.NewReader(none), int64(len(none))); !errors.Is(err, ErrMalformed) {
@@ -415,7 +418,7 @@ type limitedReaderAt struct {
 }
 
 func (l limitedReaderAt) ReadAt(p []byte, off int64) (int, error) {
-	if len(p) > maxPrivate {
+	if len(p) > max(maxPrivate, maxAVIHeader, tsBlock) { // an AVI header list is the largest single read
 		l.t.Fatalf("read of %d bytes at %d", len(p), off)
 	}
 	return l.r.ReadAt(p, off)

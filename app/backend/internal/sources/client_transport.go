@@ -16,6 +16,9 @@ import (
 // Transport is the checked way out for fetching a Source's release files: it
 // uses the Source's proxy and asks its network rule about every address.
 func Transport(cfg Config) http.RoundTripper {
+	if id, ok := pluginSource(cfg.URL); ok {
+		return pluginTransport(id)
+	}
 	if cfg.AllowAddr == nil {
 		cfg.AllowAddr = outbound.PublicOnly
 		if cfg.AllowLocal {

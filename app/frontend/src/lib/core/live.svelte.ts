@@ -81,6 +81,14 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 	let tries = 0;
 	let retry: ReturnType<typeof setTimeout> | undefined;
 	const PAUSE_AFTER = 10_000;
+	// The server beats every 15 s; two missed beats plus slack mean it hung with the stream still open.
+	const STALL_AFTER = 35_000;
+	// Back from sleep, a frozen tab or a network switch with no beat for this long: the old stream is
+	// likely dead without the browser knowing, so open a fresh one at once, quietly.
+	const WAKE_GAP = 20_000;
+	let lastBeat = 0;
+	let lastRelay = 0;
+	let followTimer: ReturnType<typeof setTimeout> | undefined;
 	let paused = false;
 	let missed = false;
 	let hideTimer: ReturnType<typeof setTimeout> | undefined;
@@ -99,19 +107,67 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			}, PAUSE_AFTER);
 		} else if (paused) {
 			paused = false;
+			// The pause was our own choice, so failures from before it do not slow the first tries back.
+			tries = 0;
 			missed = !lastId;
 			if (!shared) return open(true);
 			if (!joined) return;
 			checkLast = true;
 			send({ t: 'hello' });
 			lead();
+		} else {
+			wake();
 		}
+	}
+
+	// A page coming back (shown, restored from the back/forward cache, resumed after a freeze, focused,
+	// back online) checks the clock rather than trusting timers, which never ran while it slept.
+	function wake() {
+		if (hidden() || paused || status.state === 'off') return;
+		if (shared && !status.leader) {
+			if (!joined) return;
+			if (status.state === 'live' && Date.now() - lastRelay > STALL_AFTER) follow();
+			send({ t: 'hello' });
+			return lead();
+		}
+		if (status.state === 'reconnecting' ? !src : status.state === 'live' && Date.now() - lastBeat > WAKE_GAP) reopen(status.state === 'live');
+	}
+
+	// Drops the stream and opens a new one now; fresh means the old one was not known to fail.
+	function reopen(fresh: boolean) {
+		clearTimeout(retry);
+		if (fresh) {
+			tries = 0;
+			if (!lastId) missed = true;
+		}
+		src?.close();
+		src = null;
+		open(true);
+	}
+
+	// A follower hears nothing while the leading tab is frozen; it refreshes its page data with plain
+	// requests instead of showing a pill for a server that is fine.
+	function follow() {
+		clearTimeout(followTimer);
+		followTimer = undefined;
+		if (!shared || status.leader || !joined) return;
+		if (status.state === 'live' && !hidden() && Date.now() - lastRelay >= STALL_AFTER) {
+			lastRelay = Date.now();
+			api.forget();
+			emit('resync', null);
+			send({ t: 'hello' });
+		}
+		followTimer = setTimeout(follow, STALL_AFTER);
 	}
 
 	function watch() {
 		if (!watching && typeof document !== 'undefined') {
 			watching = true;
 			document.addEventListener('visibilitychange', visibility);
+			document.addEventListener('resume', wake);
+			if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+				for (const ev of ['pageshow', 'focus', 'online']) window.addEventListener(ev, wake);
+			}
 			if (document.hidden) queueMicrotask(visibility);
 		}
 	}
@@ -133,8 +189,24 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 	function open(again = false) {
 		if (src) return;
 		if (!again) setState('connecting');
-		src = factory(to('/live') + (lastId ? '?last=' + encodeURIComponent(lastId) : ''));
+		const s = (src = factory(to('/live') + (lastId ? '?last=' + encodeURIComponent(lastId) : '')));
+		// The server beats every 15 s. Three missed beats mean it hung with the stream still open.
+		let stall: ReturnType<typeof setTimeout> | undefined;
+		const arm = () => {
+			clearTimeout(stall);
+			const at = Date.now();
+			stall = setTimeout(() => {
+				if (src !== s) return;
+				// Fired far too late: the page slept (laptop lid, frozen tab), so this is a wake, not a hang.
+				if (Date.now() - at > STALL_AFTER + 10_000) return reopen(status.state === 'live');
+				tries = Math.max(tries, 1);
+				s.onerror?.call(s, new Event('error'));
+			}, STALL_AFTER);
+		};
+		arm();
 		src.onopen = () => {
+			lastBeat = Date.now();
+			arm();
 			tries = 0;
 			setState('live');
 			if (missed) {
@@ -147,6 +219,7 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			if (!lastId && status.state === 'live') missed = true;
 			const quiet = status.state === 'live' && tries === 0;
 			if (!quiet) setState('reconnecting');
+			clearTimeout(stall);
 			src?.close();
 			src = null;
 			clearTimeout(retry);
@@ -156,6 +229,8 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			tries++;
 		};
 		src.onmessage = (e: MessageEvent) => {
+			lastBeat = Date.now();
+			arm();
 			const id = e.lastEventId ?? '';
 			if (shared) send({ t: 'ev', id, data: String(e.data) });
 			seen(id);
@@ -179,6 +254,10 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 	}
 	function onRelay(m: Relay) {
 		if (!m || typeof m !== 'object' || !joined) return;
+		if (!status.leader && (m.t === 'ev' || m.t === 'state')) {
+			lastRelay = Date.now();
+			if (!followTimer) followTimer = setTimeout(follow, STALL_AFTER);
+		}
 		if (m.t === 'ev' && !status.leader) {
 			seen(m.id);
 			dispatch(m.data);
@@ -206,6 +285,8 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			.request(LOCK, { signal: ctl.signal }, () => {
 				abort = null;
 				status.leader = true;
+				clearTimeout(followTimer);
+				followTimer = undefined;
 				checkLast = false;
 				open(status.state === 'live');
 				return new Promise<void>((done) => {
@@ -246,6 +327,8 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 	function stop() {
 		clearTimeout(retry);
 		clearTimeout(hideTimer);
+		clearTimeout(followTimer);
+		followTimer = undefined;
 		paused = false;
 		joined = false;
 		withdraw();

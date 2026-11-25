@@ -71,6 +71,9 @@ type Control struct {
 	active atomic.Bool     // any part off or held
 	ctx    context.Context
 	loops  []*entry
+	// handsOff: hands-off mode is on, so Subtitles is off whatever the
+	// part switches say (not saved as a switch).
+	handsOff bool
 }
 
 // entry is one stage this Control starts and stops.
@@ -111,6 +114,8 @@ func (c *Control) Load(ctx context.Context) error {
 		c.flag()
 		return nil
 	}
+	// Read first: an install with no saved part switches still keeps hands-off mode.
+	c.handsOff = HandsOff(ctx, c.Store.Read())
 	var raw string
 	err := c.Store.Read().QueryRowContext(ctx, "SELECT value FROM settings WHERE grp = ? AND key = ?", settingGroup, settingKey).Scan(&raw)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -133,7 +138,7 @@ func (c *Control) Load(ctx context.Context) error {
 	return nil
 }
 
-func (c *Control) flag() { c.active.Store(len(c.off) > 0 || len(c.hold) > 0) }
+func (c *Control) flag() { c.active.Store(len(c.off) > 0 || len(c.hold) > 0 || c.handsOff) }
 
 // Add registers a background loop of owner (from Loops) for Start. An
 // optional loop is not started in safe mode.
@@ -175,6 +180,9 @@ func (c *Control) ownerOnLocked(o Owner) bool {
 }
 
 func (c *Control) onLocked(p Part) bool {
+	if p == Subtitles && c.handsOff {
+		return false
+	}
 	_, off := c.off[p]
 	return !off && !c.hold[p]
 }
@@ -326,6 +334,10 @@ func (c *Control) Set(ctx context.Context, p Part, on bool, by domain.Actor) err
 	defer c.busy.Unlock()
 	c.mu.Lock()
 	c.init()
+	if p == Subtitles && on && c.handsOff {
+		c.mu.Unlock()
+		return ErrHandsOffSubtitles
+	}
 	state := map[Part]bool{}
 	for _, q := range All() {
 		state[q] = c.onLocked(q)
@@ -606,6 +618,9 @@ func (c *Control) Statuses() []jobs.Status {
 	var rows []row
 	for _, p := range All() {
 		r := row{p: p, off: c.off[p], hold: c.hold[p]}
+		if p == Subtitles && c.handsOff {
+			r.off = HandsOffSubtitlesReason
+		}
 		for _, e := range c.loops {
 			if e.owner == Of(p) {
 				r.stages = append(r.stages, e.l.Name)
@@ -647,6 +662,9 @@ func (c *Control) Active() bool { return c.active.Load() }
 
 // KindOff reports whether scheduled Jobs of kind are not to be queued.
 func (c *Control) KindOff(kind string) bool {
+	if HandsOffKinds[kind] && c.HandsOffOn() {
+		return true
+	}
 	o, ok := startup.OwnerOf(startup.JobOwners, kind)
 	if !ok || o == ByTitle {
 		return false
@@ -658,8 +676,9 @@ func (c *Control) KindOff(kind string) bool {
 // an owner that is off (title-decided kinds are not listed).
 func (c *Control) OffKinds() []string {
 	var out []string
+	hands := c.HandsOffOn()
 	for k, o := range startup.OwnersOf(startup.JobOwners) {
-		if o != ByTitle && !c.OwnerOn(o) {
+		if (o != ByTitle && !c.OwnerOn(o)) || (hands && HandsOffKinds[k]) {
 			out = append(out, k)
 		}
 	}
@@ -668,6 +687,9 @@ func (c *Control) OffKinds() []string {
 
 // Held reports whether a queued Job must wait because its part is off.
 func (c *Control) Held(ctx context.Context, db database.Querier, kind string, subject *domain.Subject) bool {
+	if HandsOffKinds[kind] && c.HandsOffOn() {
+		return true
+	}
 	return !c.OwnerOn(c.jobPart(ctx, db, kind, subject))
 }
 

@@ -7,7 +7,7 @@ export const START_S = 9; // First leg, once the page has settled.
 export const LEG_GAP_S = 16; // One leg starts every 16 s: about 11 s of quiet between legs.
 export const COUNT = 7; // Symbols per leg.
 export const SPACING_S = 0.24; // Between symbols leaving the hole.
-export const TRAVEL_S = 2.2; // One symbol, hole to hole.
+export const TRAVEL_S = 2.8; // One symbol, hole to hole: slow enough to be noticed.
 export const OPEN_S = 0.6;
 export const CLOSE_S = 0.6;
 

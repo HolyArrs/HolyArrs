@@ -62,6 +62,9 @@ type Options struct {
 	// WriteCap is the time cap for one write transaction (default
 	// DefaultWriteCap; below zero: none). Migrations have no cap.
 	WriteCap time.Duration
+	// MountType returns the mount type of dir ("fuse.shfs"...). Nil means
+	// files.MountType (mountinfo). Tests set it to act as an Unraid share.
+	MountType func(dir string) string
 	// OnUpdating, when set, is called before existing data is updated
 	// (pending migrations on a database that already held data).
 	OnUpdating func()
@@ -79,10 +82,17 @@ type Store struct {
 	hookMu  sync.RWMutex
 	hooks   []func(Event)
 	filesMu sync.Mutex
+	// rollback is true on an Unraid user share, where both files use a
+	// rollback journal (DELETE) with full sync instead of WAL.
+	rollback bool
 	// checked are the copies from before an update that this Open made or
 	// reused and whose update then passed its checks.
 	checked []string
 }
+
+// RollbackJournal reports whether the databases run with a rollback
+// journal because the config folder is an Unraid user share.
+func (s *Store) RollbackJournal() bool { return s.rollback }
 
 // CheckedUpdateCopies returns the copies from before an update that this
 // Open made or reused and whose update passed its checks.
@@ -124,8 +134,12 @@ func Open(dir string, opt Options) (*Store, error) {
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return nil, err
 	}
-	var err error
-	if err = checkFolder(dir, check, opt.NetworkShare == nil); err != nil {
+	mount := opt.MountType
+	if mount == nil {
+		mount = files.MountType
+	}
+	rollback, err := checkFolder(dir, check, mount, opt.NetworkShare == nil)
+	if err != nil {
 		return nil, err
 	}
 	cache := opt.CacheKiB
@@ -144,7 +158,7 @@ func Open(dir string, opt Options) (*Store, error) {
 		evMig, _ = fs.Sub(embedded, "migrations/events")
 	}
 
-	s := &Store{dir: dir}
+	s := &Store{dir: dir, rollback: rollback}
 	ok := false
 	defer func() {
 		if !ok {
@@ -158,17 +172,25 @@ func Open(dir string, opt Options) (*Store, error) {
 		limit = DefaultWriteCap
 	}
 	limit = max(limit, 0)
-	if s.main, err = newWriter(mainPath, cache, limit); err != nil {
+	// The writers open first: their journal_mode pragma switches a file
+	// that comes from elsewhere (WAL to DELETE on an Unraid share, back to
+	// WAL off it) while nothing else has it open. SQLite checkpoints the
+	// WAL into the file before it drops it, and a crash part way leaves a
+	// WAL file the next open recovers.
+	if s.main, err = newWriter(mainPath, cache, limit, rollback); err != nil {
 		return nil, err
 	}
-	if s.events, err = newWriter(evPath, cache, limit); err != nil {
+	if s.events, err = newWriter(evPath, cache, limit, rollback); err != nil {
 		return nil, err
 	}
 	s.main.owner, s.events.owner = s, s
-	if s.read, err = openPool(mainPath, readCache, true, 4); err != nil {
+	for _, w := range []*writer{s.main, s.events} {
+		checkJournal(w, rollback)
+	}
+	if s.read, err = openPool(mainPath, readCache, true, 4, rollback); err != nil {
 		return nil, err
 	}
-	if s.readEv, err = openPool(evPath, readCache, true, 2); err != nil {
+	if s.readEv, err = openPool(evPath, readCache, true, 2, rollback); err != nil {
 		return nil, err
 	}
 	ownerOnly(mainPath, evPath)
@@ -310,31 +332,34 @@ func testTemp(dir string) bool {
 
 // checkFolder refuses a config folder the database cannot use safely, before
 // any database file is made, then checks that it can be written. real is
-// false when a test hook does the share check.
-func checkFolder(dir string, check func(string) (bool, string, error), real bool) error {
+// false when a test hook does the share check. rollback is true on an
+// Unraid user share, which is used with a rollback journal.
+func checkFolder(dir string, check func(string) (bool, string, error), mount func(string) string, real bool) (rollback bool, _ error) {
 	share, kind, err := check(dir)
 	if err != nil {
-		return fmt.Errorf("checking config folder: %w", err)
+		return false, fmt.Errorf("checking config folder: %w", err)
 	}
 	switch {
 	case !share:
+	case files.UnraidUserShare(kind, mount(dir)):
+		rollback = true
+		log.Printf("holyarrs: warning: config folder %s is on an Unraid user share (fuse.shfs), so the database runs in a slower, safer mode (rollback journal, full sync); %s", dir, files.UnraidShareFix)
 	case files.InMemory(kind):
 		if files.ConfigInMemoryAllowed() {
 			log.Printf("holyarrs: warning: config folder %s is in memory (%s), kept there because %s is set; everything in it is lost at the next restart", dir, kind, files.EnvConfigInMemory)
 		} else if !real || !testTemp(dir) {
-			return fmt.Errorf("%w (%s): %s; put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set %s=yes to keep it in memory anyway", ErrInMemory, kind, dir, files.EnvConfigInMemory)
+			return false, fmt.Errorf("%w (%s): %s; put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists), or set %s=yes to keep it in memory anyway", ErrInMemory, kind, dir, files.EnvConfigInMemory)
 		}
 	case kind == "fakeowner" && files.DesktopFolderAllowed():
 		log.Printf("holyarrs: warning: config folder %s is a Docker Desktop folder share, used anyway because %s is set; file locks there may not work", dir, files.EnvAllowDesktopFolder)
+	case kind == "fuse" && files.FuseFolderAllowed():
+		log.Printf("holyarrs: warning: config folder %s is a FUSE folder (for example an Unraid user share), used anyway because %s is set; the database can be damaged there", dir, files.EnvAllowFuseFolder)
 	default:
 		msg := files.ShareFix(kind)
-		if kind == "fakeowner" {
-			msg += " If you have checked that file locks work in this folder, " + files.EnvAllowDesktopFolder + "=1 starts HolyArrs on it anyway."
-		}
 		if fs := files.MountType(dir); fs != "" && fs != kind {
 			msg = "mount type " + fs + "; " + msg
 		}
-		return fmt.Errorf("%w: %s; %s", &NetShareError{Kind: kind}, dir, msg)
+		return false, fmt.Errorf("%w: %s; %s", &NetShareError{Kind: kind}, dir, msg)
 	}
 	f, err := os.CreateTemp(dir, ".holyarrs-write-*")
 	if err != nil {
@@ -342,23 +367,36 @@ func checkFolder(dir string, check func(string) (bool, string, error), real bool
 		if why == "" {
 			why = "the write test failed"
 		}
-		return fmt.Errorf("%w: %s: %s (%w)", ErrNotWritable, dir, why, err)
+		return false, fmt.Errorf("%w: %s: %s (%w)", ErrNotWritable, dir, why, err)
 	}
 	_ = f.Close()
 	_ = os.Remove(f.Name())
-	return nil
+	return rollback, nil
 }
 
-func dsn(path string, cacheKiB int, readOnly bool) string {
-	q := url.Values{}
-	for _, p := range []string{
-		"journal_mode(WAL)",
-		"busy_timeout(5000)",
-		"synchronous(NORMAL)",
+// dsn is the connection string. Only the writer sets the journal mode
+// (WAL, or DELETE with rollback on an Unraid share): it is stored in the
+// file, and a reader that set it could switch a file under the writer.
+// busy_timeout comes first so a switch waits for a lock instead of failing.
+func dsn(path string, cacheKiB int, readOnly, rollback bool) string {
+	busy, journal, sync := 5000, "WAL", "NORMAL"
+	if rollback {
+		// Readers and the writer block each other with a rollback journal,
+		// and a full sync on a user share is slow: wait longer.
+		busy, journal, sync = 15000, "DELETE", "FULL"
+	}
+	ps := []string{fmt.Sprintf("busy_timeout(%d)", busy)}
+	if !readOnly {
+		ps = append(ps, "journal_mode("+journal+")")
+	}
+	ps = append(ps,
+		"synchronous("+sync+")",
 		fmt.Sprintf("cache_size(-%d)", cacheKiB),
 		"mmap_size(0)",
 		"foreign_keys(1)",
-	} {
+	)
+	q := url.Values{}
+	for _, p := range ps {
 		q.Add("_pragma", p)
 	}
 	if readOnly {
@@ -369,8 +407,8 @@ func dsn(path string, cacheKiB int, readOnly bool) string {
 	return fileURI(path) + "?" + q.Encode()
 }
 
-func openPool(path string, cacheKiB int, readOnly bool, conns int) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", dsn(path, cacheKiB, readOnly))
+func openPool(path string, cacheKiB int, readOnly bool, conns int, rollback bool) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", dsn(path, cacheKiB, readOnly, rollback))
 	if err != nil {
 		return nil, err
 	}
@@ -384,13 +422,32 @@ func openPool(path string, cacheKiB int, readOnly bool, conns int) (*sql.DB, err
 	return db, nil
 }
 
-// ownerOnly makes database files and their -wal/-shm files readable by
+// checkJournal logs when a writer's file did not take the journal mode
+// asked for (the switch needs the file to itself, so another program that
+// held it open stops it). The file is left as it is, and the next start
+// tries again.
+func checkJournal(w *writer, rollback bool) {
+	want := "wal"
+	if rollback {
+		want = "delete"
+	}
+	var got string
+	if err := w.db.QueryRow("PRAGMA journal_mode").Scan(&got); err != nil {
+		log.Printf("store: warning: cannot read the journal mode: %v", err)
+		return
+	}
+	if !strings.EqualFold(got, want) {
+		log.Printf("store: warning: database journal mode is %s, not %s (another program may have the database open); trying again at the next start", got, want)
+	}
+}
+
+// ownerOnly makes database files and their -wal/-shm/-journal files readable by
 // the owner only (they hold password and key hashes); SQLite creates them
 // with the process umask. A file that is not there or cannot be changed is
 // left as it is.
 func ownerOnly(paths ...string) {
 	for _, p := range paths {
-		for _, f := range []string{p, p + "-wal", p + "-shm"} {
+		for _, f := range []string{p, p + "-wal", p + "-shm", p + "-journal"} {
 			_ = os.Chmod(f, 0o600)
 		}
 	}

@@ -12,12 +12,15 @@ import (
 
 func (h *Handlers) moveRoutes(m *webserver.Router) {
 	m.Handle("POST /api/v1/migrate/plan", webserver.NeedUsers, http.HandlerFunc(h.movePlan))
+	m.Handle("POST /api/v1/migrate/downloaders", webserver.NeedUsers, http.HandlerFunc(h.bringDownloaders))
 	m.Handle("POST /api/v1/migrate/dry-run", webserver.NeedUsers, http.HandlerFunc(h.moveDryRun))
+	m.Handle("GET /api/v1/migrate/checks/{id}", webserver.NeedUsers, http.HandlerFunc(h.getCheck))
 	m.Handle("GET /api/v1/migrate/moves", webserver.NeedUsers, http.HandlerFunc(h.listMoves))
 	m.Handle("POST /api/v1/migrate/moves", webserver.NeedUsers, http.HandlerFunc(h.startMove))
 	m.Handle("GET /api/v1/migrate/moves/{id}", webserver.NeedUsers, http.HandlerFunc(h.getMove))
 	m.Handle("GET /api/v1/migrate/moves/{id}/report", webserver.NeedUsers, http.HandlerFunc(h.moveReport))
 	m.Handle("POST /api/v1/migrate/moves/{id}/undo", webserver.NeedUsers, http.HandlerFunc(h.undoMove))
+	m.Handle("DELETE /api/v1/migrate/moves/{id}", webserver.NeedUsers, http.HandlerFunc(h.removeMove))
 }
 
 // MoveInput picks the read apps (kept snapshots) and the owner's choices;
@@ -26,6 +29,9 @@ type MoveInput struct {
 	Snapshots []int64 `json:"snapshots"`
 	Choices
 	PlanHash string `json:"plan_hash,omitempty"`
+	// Quick skips the titles preview in the plan (setup's Folders step
+	// never shows it), so a folder pick answers at once.
+	Quick bool `json:"quick,omitempty"`
 }
 
 // moveInput reads the body; it answers and returns false on a bad one.
@@ -46,6 +52,10 @@ func moveInput(w http.ResponseWriter, r *http.Request) (MoveInput, bool) {
 			return in, false
 		}
 	}
+	if !validNames(in.Names) {
+		webserver.Fail(w, http.StatusBadRequest, "names: choose keep or rename")
+		return in, false
+	}
 	for _, s := range in.Skip {
 		if GroupLabels[s] == "" || s == GroupOther {
 			webserver.Fail(w, http.StatusBadRequest, fmt.Sprintf("unknown group %q", s))
@@ -56,20 +66,8 @@ func moveInput(w http.ResponseWriter, r *http.Request) (MoveInput, bool) {
 }
 
 func moveFail(w http.ResponseWriter, err error) {
-	switch {
-	case errors.Is(err, ErrNoSnapshot), errors.Is(err, ErrNoMove):
-		webserver.Fail(w, http.StatusNotFound, err.Error())
-	case errors.Is(err, ErrMoveBusy), errors.Is(err, ErrUndone), errors.Is(err, ErrPlanChanged):
-		webserver.Fail(w, http.StatusConflict, err.Error())
-	case errors.Is(err, ErrNoSnapshotPicked), errors.Is(err, ErrTooManySnaps):
-		webserver.Fail(w, http.StatusBadRequest, err.Error())
-	default:
-		if isRuleError(err) {
-			webserver.Fail(w, http.StatusBadRequest, err.Error())
-			return
-		}
-		webserver.Internal(w, "migrate", err)
-	}
+	code, msg := failStatus(err)
+	webserver.Fail(w, code, msg)
 }
 
 func isRuleError(err error) bool {
@@ -77,44 +75,12 @@ func isRuleError(err error) bool {
 	return errors.As(err, &re)
 }
 
-func (h *Handlers) loadPlan(w http.ResponseWriter, r *http.Request) (*Plan, MoveInput, bool) {
-	if !webserver.RequireStrong(w, r) {
-		return nil, MoveInput{}, false
-	}
-	in, ok := moveInput(w, r)
-	if !ok {
-		return nil, in, false
-	}
-	p, err := LoadPlan(r.Context(), h.Store, in.Snapshots, in.Choices)
-	if err != nil {
-		moveFail(w, err)
-		return nil, in, false
-	}
-	return p, in, true
-}
+// movePlan starts the plan in the background (a check): folder checks and
+// title previews never hold the request.
+func (h *Handlers) movePlan(w http.ResponseWriter, r *http.Request) { h.startCheck(w, r, "plan") }
 
-func (h *Handlers) movePlan(w http.ResponseWriter, r *http.Request) {
-	p, _, ok := h.loadPlan(w, r)
-	if !ok {
-		return
-	}
-	hash, rules, missing := PlanHash(p), SuggestRules(r.Context(), h.Store, p), missingTargets(p)
-	// The titles list says what the import will do, as the dry run would.
-	h.mover().PreviewTitles(r.Context(), p)
-	MarkUnseen(p)
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"plan": p, "counts": p.Counts(), "suggested_path_rules": rules,
-		"missing_paths": missing, "seen_folders": SeenFolders(), "plan_hash": hash})
-}
-
-func (h *Handlers) moveDryRun(w http.ResponseWriter, r *http.Request) {
-	p, _, ok := h.loadPlan(w, r)
-	if !ok {
-		return
-	}
-	rep := h.mover().Run(r.Context(), 0, p, true, actor(r), nil)
-	// The move must start from this very plan: it sends this hash back.
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"report": rep, "plan_hash": PlanHash(p)})
-}
+// moveDryRun starts the test run in the background (a check).
+func (h *Handlers) moveDryRun(w http.ResponseWriter, r *http.Request) { h.startCheck(w, r, "dry_run") }
 
 // refuseSafe answers 409 in safe mode: a move or an undo changes the
 // Library, which safe mode keeps still.
@@ -228,4 +194,37 @@ func (h *Handlers) undoMove(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"move": mv, "undo_job_id": mv.UndoJobID})
+}
+
+// removeMove drops an undone (or failed, empty) import from Earlier imports.
+func (h *Handlers) removeMove(w http.ResponseWriter, r *http.Request) {
+	mv, ok := h.oneMove(w, r)
+	if !ok {
+		return
+	}
+	if err := RemoveMove(r.Context(), h.Store, mv.ID); err != nil {
+		moveFail(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// bringDownloaders adds the read apps' Downloaders at once (the welcome
+// Downloader step then shows them connected).
+func (h *Handlers) bringDownloaders(w http.ResponseWriter, r *http.Request) {
+	if h.refuseSafe(w) {
+		return
+	}
+	var in struct {
+		Snapshots []int64 `json:"snapshots"`
+	}
+	if !webserver.Decode(w, r, &in, `send {"snapshots": [1, 2]}`) {
+		return
+	}
+	out, err := h.mover().BringDownloaders(r.Context(), in.Snapshots, actor(r))
+	if err != nil {
+		moveFail(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"downloaders": out})
 }

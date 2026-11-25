@@ -22,7 +22,7 @@ const LoginSeedMark = "<!--holyarrs-signin-seed-->"
 // policy is the Content-Security-Policy of every answer. script-src gets the
 // hashes of the page's own inline scripts (theme, app start).
 const policy = "default-src 'self'; img-src 'self' %s data: blob:; " +
-	"media-src 'self' https://*.googlevideo.com blob:; frame-src https://www.youtube-nocookie.com; " +
+	"media-src 'self' https://*.googlevideo.com blob:; frame-src 'self' https://www.youtube-nocookie.com; " +
 	"connect-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; worker-src 'self' blob:; " +
 	"object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 

@@ -335,7 +335,7 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 			return { line: was && now ? `${was} → ${now}` : '', long: false };
 		}
 		case 'title_removed': return { line: d.delete_files === true ? say('downloads.hp.filesDeleted') : say('downloads.hp.filesKept'), long: false };
-		case 'download_removed': return { line: removedLine(d), long: false };
+		case 'download_removed': return { line: d.moved_out === true ? say('downloads.hl.movedOut') : d.outside === true ? say('downloads.hl.removedOutside') : removedLine(d), long: false };
 		case 'ask_made':
 		case 'ai_ask_made': return { line: cap(str(d.albums) || str(d.seasons)), long: false };
 		case 'ask_approved':

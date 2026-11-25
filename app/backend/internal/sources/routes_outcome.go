@@ -30,6 +30,11 @@ func (h *Handlers) searchOutcome(w http.ResponseWriter, r *http.Request) {
 	e := es[0]
 	out["empty"] = true
 	out["at"] = e.At
+	// Releases were found but the Pick rules turned every one down: a plain
+	// reason everyone may see, with no Source names.
+	if n, _ := e.Data["found"].(float64); e.Kind == EventSearchDone && n > 0 {
+		out["refused"] = true
+	}
 	who, signed := webserver.From(r.Context())
 	if signed && who.Has(webserver.PermSettings) {
 		srcs := []any{}

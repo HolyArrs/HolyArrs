@@ -43,6 +43,9 @@ func SetWatchHistory(ctx context.Context, s *database.Store, on bool, by domain.
 		if _, err := tx.Exec("DELETE FROM watch_state"); err != nil {
 			return err
 		}
+		if _, err := tx.Exec("DELETE FROM trakt_watch_state"); err != nil {
+			return err
+		}
 		var read []string
 		if err := database.EachSetting(ctx, tx, watchGroup, func(k, _ string) {
 			if strings.HasPrefix(k, watchReadKey) {
@@ -139,7 +142,7 @@ type watchReader interface {
 func watchedRows(ctx context.Context, q watchReader) (WatchedSummary, error) {
 	out := WatchedSummary{Enabled: WatchHistoryOn(ctx, q), People: []WatchedPerson{}}
 	var readAt sql.NullString
-	if err := q.QueryRowContext(ctx, "SELECT max(read_at) FROM watch_state").Scan(&readAt); err != nil {
+	if err := q.QueryRowContext(ctx, "SELECT max(read_at) FROM (SELECT read_at FROM watch_state UNION ALL SELECT read_at FROM trakt_watch_state)").Scan(&readAt); err != nil {
 		return out, err
 	}
 	// The newest whole read of a server still here, rows or not.
@@ -147,7 +150,7 @@ func watchedRows(ctx context.Context, q watchReader) (WatchedSummary, error) {
 	if err != nil {
 		return out, err
 	}
-	here := map[string]bool{}
+	here := map[string]bool{traktReadKey: true}
 	for _, m := range ms {
 		here[watchReadKey+strconv.FormatInt(m.ID, 10)] = true
 	}
@@ -180,7 +183,12 @@ func watchedRows(ctx context.Context, q watchReader) (WatchedSummary, error) {
 		}
 		out.People = append(out.People, p)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return out, err
+	}
+	trakt, err := traktWatchedRows(ctx, q)
+	out.People = append(out.People, trakt...)
+	return out, err
 }
 
 // watchAccount is one account on one media server.
@@ -225,7 +233,7 @@ func WatchedByAnyone(ctx context.Context, q watchReader) (AnyoneWatched, error) 
 	if !out.Enabled {
 		return out, nil
 	}
-	rows, err := q.QueryContext(ctx, "SELECT DISTINCT title_id FROM watch_state ORDER BY title_id")
+	rows, err := q.QueryContext(ctx, "SELECT title_id FROM watch_state UNION SELECT title_id FROM trakt_watch_state ORDER BY title_id")
 	if err != nil {
 		return out, err
 	}

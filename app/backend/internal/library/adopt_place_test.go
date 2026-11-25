@@ -20,6 +20,7 @@ func TestPlanAdoptSaysWhereThePartSits(t *testing.T) {
 		writeFile(t, filepath.Join(lf.Path, fmt.Sprintf("Movie %02d (2001)", i), "m.mkv"), "m")
 	}
 	writeFile(t, filepath.Join(lf.Path, ".hidden", "m.mkv"), "m")
+	// A loose video at the top is a movie too: it counts.
 	writeFile(t, filepath.Join(lf.Path, "loose.mkv"), "m")
 	ns := mediafiles.NamingDefaults()
 	ns.AdoptScanLimit = 10
@@ -27,11 +28,11 @@ func TestPlanAdoptSaysWhereThePartSits(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, err := PlanAdoptFrom(context.Background(), s.Read(), adoptTMDB, lf.ID, "")
-	if err != nil || p.Total != 13 || p.Offset != 0 || len(p.Folders) != 10 {
+	if err != nil || p.Total != 14 || p.Offset != 0 || len(p.Folders) != 10 {
 		t.Fatalf("first part total %d offset %d folders %d %v", p.Total, p.Offset, len(p.Folders), err)
 	}
 	p, err = PlanAdoptFrom(context.Background(), s.Read(), adoptTMDB, lf.ID, p.Next)
-	if err != nil || p.Total != 13 || p.Offset != 10 || len(p.Folders) != 3 || p.More {
+	if err != nil || p.Total != 14 || p.Offset != 10 || len(p.Folders) != 4 || p.More {
 		t.Fatalf("second part total %d offset %d folders %d more %v %v", p.Total, p.Offset, len(p.Folders), p.More, err)
 	}
 }

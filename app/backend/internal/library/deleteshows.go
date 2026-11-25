@@ -213,6 +213,8 @@ func planRemoveEpisodes(ctx context.Context, db Reader, titleID int64, sc Remove
 		switch {
 		case !c.DeleteFiles:
 			rf.Why = "kept: files stay on disk unless you choose to delete them"
+		case lf.LookOnly:
+			rf.Why = "kept: the Library folder is look-only; HolyArrs never deletes files there"
 		case f.Origin != "imported" && f.Origin != "adopted":
 			rf.Why = "kept: found on disk, not imported or adopted; HolyArrs never deletes it"
 		case len(out) > 0:
@@ -332,6 +334,7 @@ func uniq(ids []int64) map[int64]bool {
 // imported and adopted files go to the holding folder, so their Slots look
 // for nothing until Keep up to date is turned on again. The show stays.
 func (s *Service) RemoveEpisodes(ctx context.Context, titleID int64, sc RemoveScope, c RemoveChoice, apply bool, by domain.Actor) (RemovePlan, error) {
+	c = handsOffChoice(ctx, s.Store.Read(), c)
 	unlock := s.Store.LockFiles()
 	defer unlock()
 	p, t, set, err := planRemoveEpisodes(ctx, s.Store.Read(), titleID, sc, c, s.now())

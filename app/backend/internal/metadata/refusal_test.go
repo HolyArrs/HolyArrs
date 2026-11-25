@@ -122,3 +122,33 @@ func TestShortRefusalKeepsLongerReason(t *testing.T) {
 		t.Fatalf("code = %q", r.Code)
 	}
 }
+
+// A busy spell made of many short holds logs once; a new reason or a long
+// quiet gap logs again.
+func TestRefusalLoggedOncePerBusySpell(t *testing.T) {
+	cases := []struct {
+		name  string
+		gaps  []time.Duration // after the previous hold ended
+		codes []string
+		lines int
+	}{
+		{"renewed every few seconds", []time.Duration{0, 2 * time.Second, 3 * time.Second, 5 * time.Second}, []string{"service_busy", "service_busy", "service_busy", "service_busy"}, 1},
+		{"quiet gap", []time.Duration{0, 2 * time.Minute}, []string{"service_busy", "service_busy"}, 2},
+		{"new reason", []time.Duration{0, time.Second}, []string{"service_busy", "client_limit"}, 2},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			buf := refusalLogs(t)
+			ResetRefusal()
+			now := time.Unix(20000, 0)
+			for i, code := range c.codes {
+				now = now.Add(c.gaps[i])
+				noteRefusal(503, "5", []byte(`{"error":{"code":"`+code+`"}}`), now)
+				now = now.Add(5 * time.Second) // the hold runs out
+			}
+			if n := strings.Count(buf.String(), "\n"); n != c.lines {
+				t.Fatalf("lines = %d, want %d:\n%s", n, c.lines, buf.String())
+			}
+		})
+	}
+}

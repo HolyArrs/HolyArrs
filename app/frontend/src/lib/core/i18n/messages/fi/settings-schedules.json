@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Peruuta",
 	"settings.schedules.stages": "Vaiheet",
 	"settings.schedules.stagesNote": "Keskeytä tai käynnistä ne uudelleen kohdassa <a>Osat</a>.",
-	"settings.schedules.allTime": "Koko ajan"
+	"settings.schedules.allTime": "Koko ajan",
+	"settings.schedules.skip.nothing": "Ei tehtävää",
+	"settings.schedules.skip.plexOff": "Pois päältä: kytke {setting} päälle kohdassa {page}",
+	"settings.schedules.skip.plexNobody": "Ei tehtävää: kukaan ei ole kytkenyt Plex-katselulistaansa päälle",
+	"settings.schedules.skip.settingOff": "Pois päältä: kytke se päälle sen asetuksista",
+	"settings.schedules.skip.starting": "Ohitettu: HolyArrs oli vielä käynnistymässä",
+	"settings.schedules.took": "Kesti {time}",
+	"settings.schedules.finished": "{label} valmis",
+	"settings.schedules.nothingToDo": "{label}: ei tehtävää",
+	"settings.schedules.runFailed": "{label} epäonnistui"
 }

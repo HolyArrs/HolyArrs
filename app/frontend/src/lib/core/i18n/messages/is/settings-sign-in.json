@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Aðeins þetta getur sagt hvaðan heimsókn kom.",
 	"settings.signIn.fixToSaveOne": "Lagaðu 1 línu til að vista",
 	"settings.signIn.fixToSaveOther": "Lagaðu {n} línur til að vista",
-	"settings.signIn.localSaved": "Staðarnet vistað"
+	"settings.signIn.localSaved": "Staðarnet vistað",
+	"settings.signIn.forgotTitle": "Gleymt lykilorð?",
+	"settings.signIn.forgotOn": "Sýna Gleymt lykilorð? á innskráningarsíðunni",
+	"settings.signIn.forgotNote": "Eigandinn fær einnota kóða úr annál þjónsins. Slökktu á því ef allir skrá sig inn með einni innskráningu. Skipunin reset-owner virkar áfram.",
+	"settings.signIn.forgotShown": "Gleymt lykilorð? er á",
+	"settings.signIn.forgotHidden": "Gleymt lykilorð? er af"
 }

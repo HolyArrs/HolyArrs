@@ -47,6 +47,7 @@ func readBody(key, url string) string {
 }
 
 // route: POST /api/v1/migrate/probe
+// route: POST /api/v1/migrate/preview
 // route: POST /api/v1/migrate/read
 // route: GET /api/v1/migrate/snapshots
 // route: GET /api/v1/migrate/snapshots/{id}
@@ -70,6 +71,23 @@ func TestMigrateRoutes(t *testing.T) {
 	arrDo(t, "POST", base+"probe", `{"kind":"radarr","path":"`+filepath.ToSlash(filepath.Join(t.TempDir(), "none.zip"))+`"}`, 422)
 	// Without the local switch the fake (on this machine) is not dialled.
 	arrDo(t, "POST", base+"probe", `{"kind":"radarr","url":"`+u+`","key":"`+key+`"}`, 502)
+
+	// The preview counts what would come over and keeps nothing.
+	b = arrDo(t, "POST", base+"preview", readBody(key, u), 200)
+	var pv struct {
+		Counts map[string]int `json:"counts"`
+	}
+	if _ = json.Unmarshal(b, &pv); pv.Counts["titles"] != 1 || strings.Contains(string(b), key) {
+		t.Fatalf("preview %s", b)
+	}
+	if _, has := pv.Counts["notifications"]; !has {
+		t.Fatalf("preview drops zeros %s", b)
+	}
+	arrDo(t, "POST", base+"preview", readBody("wrong", u), 422)
+	arrDo(t, "POST", base+"preview", `{"kind":"radarr","url":"`+u+`","key":"`+key+`"}`, 502)
+	if b := arrDo(t, "GET", base+"snapshots", "", 200); strings.Contains(string(b), `"kind":"radarr"`) {
+		t.Fatalf("preview kept a snapshot %s", b)
+	}
 
 	b = arrDo(t, "POST", base+"read", readBody(key, u), 201)
 	if strings.Contains(string(b), "SECRET_IN_RADARR") || strings.Contains(string(b), key) || !strings.Contains(string(b), `indexer \"Nyaa\": apiKey`) {
@@ -112,6 +130,7 @@ func TestMigratePermissions(t *testing.T) {
 	u := fakeRadarr(t, key)
 	routes := []struct{ method, path, body string }{
 		{"POST", "/api/v1/migrate/probe", readBody(key, u)},
+		{"POST", "/api/v1/migrate/preview", readBody(key, u)},
 		{"POST", "/api/v1/migrate/read", readBody(key, u)},
 		{"GET", "/api/v1/migrate/snapshots", ""},
 		{"GET", "/api/v1/migrate/snapshots/1", ""},
@@ -166,7 +185,7 @@ func TestMigratePermissions(t *testing.T) {
 	if st := withKey(adminKey, "GET", "/api/v1/migrate/snapshots", ""); st != 200 {
 		t.Fatalf("admin key list: %d", st)
 	}
-	for _, p := range []string{"POST /api/v1/migrate/probe", "POST /api/v1/migrate/read", "GET /api/v1/migrate/snapshots",
+	for _, p := range []string{"POST /api/v1/migrate/probe", "POST /api/v1/migrate/preview", "POST /api/v1/migrate/read", "GET /api/v1/migrate/snapshots",
 		"GET /api/v1/migrate/snapshots/{id}", "DELETE /api/v1/migrate/snapshots/{id}"} {
 		if accounts.RouteScope(p) != webserver.ScopeAdmin {
 			t.Errorf("%s scope %s", p, accounts.RouteScope(p))

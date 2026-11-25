@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Só estes podem dizer de onde veio uma visita.",
 	"settings.signIn.fixToSaveOne": "Corrija 1 linha para salvar",
 	"settings.signIn.fixToSaveOther": "Corrija {n} linhas para salvar",
-	"settings.signIn.localSaved": "Rede local salva"
+	"settings.signIn.localSaved": "Rede local salva",
+	"settings.signIn.forgotTitle": "Esqueceu a senha?",
+	"settings.signIn.forgotOn": "Mostrar Esqueceu a senha? na página de entrada",
+	"settings.signIn.forgotNote": "O dono recebe um código de uso único no log do servidor. Desligue se as pessoas entram por login único. O comando reset-owner continua funcionando.",
+	"settings.signIn.forgotShown": "Esqueceu a senha? está ligado",
+	"settings.signIn.forgotHidden": "Esqueceu a senha? está desligado"
 }

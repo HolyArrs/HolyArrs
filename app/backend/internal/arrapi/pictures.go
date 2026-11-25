@@ -38,13 +38,14 @@ func posterOf(t mediafiles.Title) string {
 // libraryImages lists a Library title's pictures, poster first and the
 // wide one second, because Bazarr reads them in that order. url points at
 // this side's covers route, as the old apps point at their own cover
-// cache. remoteUrl keeps the original address when one is known. A stored
-// poster has none, so it is empty there.
+// cache. remoteUrl keeps the original address when one is known (phone
+// apps such as Helmarr load pictures from it); a poster stored before its
+// address was kept has none until its next fetch.
 func (h *handler) libraryImages(ctx context.Context, t mediafiles.Title) []image {
 	out := []image{}
 	at := h.base(ctx) + "/MediaCover/" + itoa(t.ID) + "/"
 	if posterOf(t) != "" {
-		out = append(out, image{CoverType: "poster", URL: at + "poster.jpg"})
+		out = append(out, image{CoverType: "poster", URL: at + "poster.jpg", RemoteURL: t.PosterURL})
 	}
 	if t.Backdrop != "" {
 		out = append(out, image{CoverType: "fanart", URL: at + "fanart.jpg", RemoteURL: t.Backdrop})
@@ -88,37 +89,66 @@ type language struct {
 }
 
 // languagesOf names a file's language codes. Unknown codes are left out.
-func languagesOf(codes []string) []language {
+func languagesOf(side string, codes []string) []language {
 	out := []language{}
 	for _, c := range codes {
 		if n := subtitles.LanguageName(c); n != "" {
-			out = append(out, language{Name: n})
+			out = append(out, languageOf(side, n))
 		}
 	}
 	return out
 }
 
+// languageIDs are each side's language numbers, as Sonarr 4 and Radarr 6
+// list them under /language. A name not listed is 0 (Unknown).
+var languageIDs = map[string]map[string]int{
+	"sonarr": {"English": 1, "French": 2, "Spanish": 3, "German": 4, "Italian": 5, "Danish": 6, "Dutch": 7, "Japanese": 8, "Icelandic": 9, "Chinese": 10, "Russian": 11, "Polish": 12, "Vietnamese": 13, "Swedish": 14, "Norwegian": 15, "Finnish": 16, "Turkish": 17, "Portuguese": 18, "Flemish": 19, "Greek": 20, "Korean": 21, "Hungarian": 22, "Hebrew": 23, "Lithuanian": 24, "Czech": 25, "Arabic": 26, "Hindi": 27, "Bulgarian": 28, "Malayalam": 29, "Ukrainian": 30, "Slovak": 31, "Thai": 32, "Portuguese (Brazil)": 33, "Spanish (Latino)": 34, "Romanian": 35, "Latvian": 36, "Persian": 37, "Catalan": 38, "Croatian": 39, "Serbian": 40, "Bosnian": 41, "Estonian": 42, "Tamil": 43, "Indonesian": 44, "Macedonian": 45, "Slovenian": 46},
+	"radarr": {"English": 1, "French": 2, "Spanish": 3, "German": 4, "Italian": 5, "Danish": 6, "Dutch": 7, "Japanese": 8, "Icelandic": 9, "Chinese": 10, "Russian": 11, "Polish": 12, "Vietnamese": 13, "Swedish": 14, "Norwegian": 15, "Finnish": 16, "Turkish": 17, "Portuguese": 18, "Flemish": 19, "Greek": 20, "Korean": 21, "Hungarian": 22, "Hebrew": 23, "Lithuanian": 24, "Czech": 25, "Hindi": 26, "Romanian": 27, "Thai": 28, "Bulgarian": 29, "Portuguese (Brazil)": 30, "Arabic": 31, "Ukrainian": 32, "Persian": 33, "Bengali": 34, "Slovak": 35, "Latvian": 36, "Spanish (Latino)": 37, "Catalan": 38, "Croatian": 39, "Serbian": 40, "Bosnian": 41, "Estonian": 42, "Tamil": 43, "Indonesian": 44, "Telugu": 45, "Macedonian": 46, "Slovenian": 47, "Malayalam": 48, "Kannada": 49, "Albanian": 50, "Afrikaans": 51, "Marathi": 52, "Tagalog": 53, "Urdu": 54, "Romansh": 55, "Mongolian": 56, "Georgian": 57},
+}
+
+// languageOf is a language by name with this side's number.
+func languageOf(side, name string) language {
+	return language{ID: languageIDs[side][name], Name: name}
+}
+
 // originalLanguage returns a title's original language. It is "Unknown"
 // when the metadata gave none, so callers always find the field.
-func originalLanguage(code *string) language {
+func originalLanguage(side string, code *string) language {
 	if code != nil {
-		if n := subtitles.LanguageName(*code); n != "" {
-			return language{Name: n}
+		c := *code
+		// TMDB writes Cantonese as "cn"; the old apps call it Chinese.
+		if strings.EqualFold(c, "cn") || strings.EqualFold(c, "yue") {
+			c = "zh"
+		}
+		if n := subtitles.LanguageName(c); n != "" {
+			return languageOf(side, n)
 		}
 	}
 	return language{Name: "Unknown"}
 }
 
 // alternateTitle is one other name of a title.
+// alternateTitle carries the fields each side sends with one: Sonarr a
+// season number (-1: every season), Radarr where it came from and ids.
 type alternateTitle struct {
-	Title string `json:"title"`
+	Title           string `json:"title"`
+	SeasonNumber    *int   `json:"seasonNumber,omitempty"`
+	SourceType      string `json:"sourceType,omitempty"`
+	MovieMetadataID int64  `json:"movieMetadataId,omitempty"`
+	ID              int64  `json:"id,omitempty"`
 }
 
-func alternateTitles(names []string) []alternateTitle {
+func alternateTitles(side string, titleID int64, names []string) []alternateTitle {
 	out := []alternateTitle{}
 	for _, n := range names {
 		if n = strings.TrimSpace(n); n != "" {
-			out = append(out, alternateTitle{Title: n})
+			a := alternateTitle{Title: n}
+			if side == "sonarr" {
+				a.SeasonNumber = ptr(-1)
+			} else {
+				a.SourceType, a.MovieMetadataID, a.ID = "tmdb", titleID, titleID*1000+int64(len(out))+1
+			}
+			out = append(out, a)
 		}
 	}
 	return out

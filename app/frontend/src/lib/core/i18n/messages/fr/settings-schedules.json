@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Annuler",
 	"settings.schedules.stages": "Phases",
 	"settings.schedules.stagesNote": "Mettez-les en pause ou redémarrez-les dans <a>Modules</a>.",
-	"settings.schedules.allTime": "En continu"
+	"settings.schedules.allTime": "En continu",
+	"settings.schedules.skip.nothing": "Rien à faire",
+	"settings.schedules.skip.plexOff": "Désactivé : activez {setting} dans {page}",
+	"settings.schedules.skip.plexNobody": "Rien à faire : personne n'a activé sa liste de suivi Plex",
+	"settings.schedules.skip.settingOff": "Désactivé : activez-le dans ses réglages",
+	"settings.schedules.skip.starting": "Ignoré : HolyArrs démarrait encore",
+	"settings.schedules.took": "A pris {time}",
+	"settings.schedules.finished": "{label} terminé",
+	"settings.schedules.nothingToDo": "{label} : rien à faire",
+	"settings.schedules.runFailed": "{label} a échoué"
 }

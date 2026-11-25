@@ -2,7 +2,9 @@
   {
     "added": "string",
     "alternateTitles": [],
+    "cleanTitle": "string",
     "digitalRelease": "string",
+    "folderName": "string",
     "genres": [],
     "hasFile": "bool",
     "id": "number",
@@ -10,6 +12,7 @@
     "imdbId": "string",
     "inCinemas": "string",
     "isAvailable": "bool",
+    "keywords": [],
     "minimumAvailability": "string",
     "monitored": "bool",
     "movieFileId": "number",
@@ -17,22 +20,42 @@
       "id": "number",
       "name": "string"
     },
+    "originalTitle": "string",
     "path": "string",
+    "popularity": "number",
     "qualityProfileId": "number",
+    "ratings": {
+      "imdb": {
+        "type": "string",
+        "value": "number",
+        "votes": "number"
+      },
+      "tmdb": {
+        "type": "string",
+        "value": "number",
+        "votes": "number"
+      }
+    },
+    "releaseDate": "string",
     "rootFolderPath": "string",
     "runtime": "number",
+    "secondaryYearSourceId": "number",
     "sizeOnDisk": "number",
     "sortTitle": "string",
     "statistics": {
       "movieFileCount": "number",
+      "movieFileQualities": [],
       "releaseGroups": [],
       "sizeOnDisk": "number"
     },
     "status": "string",
+    "studio": "string",
     "tags": [],
     "title": "string",
     "titleSlug": "string",
     "tmdbId": "number",
-    "year": "number"
+    "website": "string",
+    "year": "number",
+    "youTubeTrailerId": "string"
   }
 ]

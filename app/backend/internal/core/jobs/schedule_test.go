@@ -20,7 +20,7 @@ func TestRunSchedules(t *testing.T) {
 	// This test follows the two day-long seeded schedules; the 15-minute
 	// Outside list check, the 12-hour show and artist refreshes, the search schedules and the subtitle schedules are left out so "not due yet" stays true.
 	if err := s.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE schedules SET enabled = 0 WHERE kind IN ('sync_outside_lists', 'feed_check', 'grab_held', 'search_missing', 'rescan_library', 'clean_holding', 'health_check', 'refresh_shows', 'refresh_artists', 'artist_pictures', 'subtitle_missing', 'subtitle_better', 'clean_history', 'sync_plex_watchlists', 'check_bridges')")
+		_, err := tx.Exec("UPDATE schedules SET enabled = 0 WHERE kind IN ('sync_outside_lists', 'feed_check', 'grab_held', 'search_missing', 'rescan_library', 'clean_holding', 'health_check', 'refresh_shows', 'refresh_artists', 'artist_pictures', 'subtitle_missing', 'subtitle_better', 'clean_history', 'clean_releases', 'sync_plex_watchlists', 'check_bridges')")
 		return err
 	}); err != nil {
 		t.Fatal(err)

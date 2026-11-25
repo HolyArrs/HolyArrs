@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Pasirinkite, ko prašyti toliau",
 	"home.newPopular": "Naujienos ir populiaru",
 	"home.whatSTrending": "Kas populiaru",
+	"home.gettingReady": "Ruošiama…",
 	"home.top10sAndComing": "Top 10 ir netrukus pasirodys",
 	"home.whatSNext": "Kas toliau",
 	"home.airDatesAndReleases": "Eterio datos ir išleidimai",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Šią savaitę pasirodantys epizodai ir filmai",
 	"home.popularThisWeek": "Šią savaitę pasirodantys populiarūs leidimai",
 	"home.peopleCheck": "Žmonių patikra",
-	"home.cantReadUsers": "nepavyksta perskaityti naudotojų sąrašo"
+	"home.cantReadUsers": "nepavyksta perskaityti naudotojų sąrašo",
+	"home.joined.title": "Sveiki, {name}",
+	"home.joined.find": "Raskite ką nors skiltyje {explore} arba {search}.",
+	"home.joined.ask": "Bakstelėkite {request} prie pavadinimo, kad jį gautumėte. Galite prašyti:",
+	"home.joined.track": "Sekite kiekvieną skiltyje {requests}.",
+	"home.joined.noLimit": "Savaitės limito nėra.",
+	"home.joined.gotIt": "Supratau",
+	"home.joined.explore": "Atidaryti {explore}"
 }

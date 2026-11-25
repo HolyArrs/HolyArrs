@@ -62,7 +62,7 @@ test('the owner finds a show and adds it with only the latest season kept', asyn
 	await axe(own, 'add show dialog');
 	await dialog.getByRole('button', { name: 'Add to Library' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(own.getByRole('status')).toContainText('Harbour Lights added');
+	await expect(own.getByRole('status').filter({ hasText: 'Harbour Lights added' })).toBeVisible();
 	await expect(own).toHaveURL(/\/library\/\d+/);
 
 	// The show page: seasons and their switches; Search now is there (3.2).
@@ -96,8 +96,8 @@ test('seasons and episodes turn on and off; each episode says its state and why'
 	await expect(eps).toHaveCount(2);
 	await expect(eps.nth(0)).toHaveAccessibleName('Episode 1: Return of the Fog');
 	await expect(s2.locator('.lib-ep-st')).toHaveText(['Missing', 'Not out yet']);
-	// An episode not out yet cannot be looked for yet.
-	await expect(s2.getByRole('button', { name: 'Look for episode 2' })).toBeDisabled();
+	// An episode not out yet can still be looked for.
+	await expect(s2.getByRole('button', { name: 'Look for episode 2' })).toBeEnabled();
 	await episodeAction(own, 'S02E01', 'Keep S02E01 up to date');
 	await expect.poll(() => episodeKept(own, 'S02E01')).toBe(false);
 	await own.reload();
@@ -172,7 +172,7 @@ test('a member asks for two seasons of a show from a phone', async ({ browser })
 	await axe(max, 'ask show dialog phone');
 	await dialog.getByRole('button', { name: 'Ask for seasons 1 and 2' }).click();
 	await expect(dialog).toBeHidden();
-	await expect(max.getByRole('status')).toContainText('requested');
+	await expect(max.getByRole('status').filter({ hasText: 'requested' })).toBeVisible();
 
 	// A show already in the Library opens as a Library title for a member (no Add, no tools):
 	// More holds only Report a problem.
@@ -226,7 +226,7 @@ test('the owner approves from a phone: the show is added with those seasons and 
 	await expect(lantern.filter({ hasText: 'Approved' }).filter({ hasText: 'luis' }).first()).toBeVisible();
 
 	// max reads the message; members see no switches on the show page.
-	expect(((await (await max.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text)).toContainEqual(expect.stringContaining('Lantern Street (2023), seasons 1 and 2 was approved by an admin'));
+	expect(((await (await max.request.get('/api/v1/messages')).json()) as { messages: { text: string }[] }).messages.map((m) => m.text)).toContainEqual(expect.stringContaining('Lantern Street (2023), seasons 1 and 2 was approved by luis'));
 	await max.goto('/requests');
 	await max.getByTestId('ask').filter({ hasText: 'Lantern Street' }).getByRole('link', { name: /Lantern Street/ }).click();
 	expect(await seasonCount(max)).toBe(3);

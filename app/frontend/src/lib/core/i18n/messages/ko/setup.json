@@ -8,10 +8,14 @@
 	"setup.fullPath": "{path}처럼 전체 폴더 경로를 입력하세요.",
 	"setup.folderUsed": "이미 사용 중인 폴더이거나, 사용 중인 폴더 안에 있습니다.",
 	"setup.folderMissing": "폴더가 없습니다. 경로를 확인하세요.",
-	"setup.addFolderOrOff": "폴더를 추가하거나 끄세요.",
+	"setup.addFolderOrOff": "폴더를 추가하거나 나중에을(를) 누르세요.",
 	"setup.notAnswering": "HolyArrs가 응답하지 않습니다. 잠시 후 다시 시도하세요.",
 	"setup.addUserPasswordHint": "사용자 이름과 비밀번호를 입력하세요.",
 	"setup.folders": "폴더",
 	"setup.downloader": "다운로더",
-	"setup.source": "소스"
+	"setup.source": "소스",
+	"setup.alertsNeedKeyOne": "알림: 1개에 키가 필요합니다",
+	"setup.alertsNeedKey": "알림: {n}개에 키가 필요합니다",
+	"setup.folderNoAccess": "HolyArrs가 이 폴더를 열 수 없습니다. 권한을 확인하세요.",
+	"setup.folderCantUse": "HolyArrs가 이 폴더를 사용할 수 없습니다. 경로를 확인하세요."
 }

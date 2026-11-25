@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Спершу краща копія; пакет сезону перемагає при рівності",
 	"settings.search.preferAlways": "Пакет сезону, щойно він відповідає набору якості",
 	"settings.search.multi": "Брати релізи з кількома сезонами",
-	"settings.search.multiHint": "Заповнює кожну відсутню серію в ньому",
+	"settings.search.multiHint": "Заповнює кожну відсутню серію в ньому. За однакової якості перемагає реліз із більшою кількістю потрібних серій",
 	"settings.search.music": "Музика",
 	"settings.search.albums": "Шукати й відсутні альбоми",
 	"settings.search.albumsHint": "Альбоми, що вийшли, по одному пошуку на кожен",

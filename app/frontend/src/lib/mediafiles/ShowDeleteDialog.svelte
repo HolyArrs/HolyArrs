@@ -6,6 +6,7 @@
 	import { api, ApiError, message } from '../core/api.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { session } from '../core/session.svelte.ts';
 
 	let {
 		titleId,
@@ -83,10 +84,11 @@
 <Sheet bind:open={isOpen} title={t('mediafiles.delete.title', { name: what })} size="md">
 	<div class="sd" data-testid="show-delete">
 		<div class="sd-rows">
-			<button type="button" class="sd-row" role="switch" aria-checked={files} onclick={() => flip('files')}>
+			<!-- Hands-off mode never deletes files, so the choice is not offered. -->
+			{#if session.s.handsOff}<p class="sd-note" data-testid="hands-off-kept">{t('mediafiles.delete.handsOffKept')}</p>{:else}<button type="button" class="sd-row" role="switch" aria-checked={files} onclick={() => flip('files')}>
 				<span><b>{t(whole ? 'mediafiles.showDelete.alsoIts' : 'mediafiles.showDelete.alsoTheir')}</b><small>{t('mediafiles.delete.alsoFilesHint')}</small></span>
 				<span class="sd-switch" class:on={files} aria-hidden="true"></span>
-			</button>
+			</button>{/if}
 			{#if whole}
 				<button type="button" class="sd-row" role="switch" aria-checked={never} onclick={() => flip('never')}>
 					<span><b>{t('mediafiles.delete.never')}</b><small>{t('mediafiles.delete.neverHint')}</small></span>
@@ -126,7 +128,8 @@
 	.sd { display: grid; gap: 14px; }
 	.sd-rows { display: grid; border-radius: var(--r-panel); background: var(--surface-2); overflow: hidden; }
 	.sd-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
-	.sd-row + .sd-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
+	.sd-note { margin: 0; padding: 14px 20px; color: var(--text-muted); font: 500 13px/1.35 var(--font-ui); }
+	.sd-row + .sd-row, .sd-note + .sd-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.sd-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
 	.sd-row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 	.sd-row span:first-child { display: grid; gap: 3px; }

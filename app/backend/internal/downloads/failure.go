@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -136,6 +137,8 @@ func (m *Manager) RemoveSaid(ctx context.Context, downloadID int64, c RemoveChoi
 	}
 	next := d
 	next.State, next.StateReason, next.Speed, next.UpSpeed, next.Seeds, next.Peers, next.ETA = "cleaned", &reason, 0, 0, 0, 0, nil
+	cleanNow := m.now()
+	next.CleanedAt = &cleanNow
 	search := c.TurnDown && c.SearchAgain
 	var moved []int64
 	rest := map[int64]mediafiles.SlotState{}
@@ -364,7 +367,9 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 	next.Speed, next.UpSpeed, next.Seeds, next.Peers, next.ETA = 0, 0, 0, 0, nil
 	// replace is false for a vanished download when the user chose not to replace those.
 	replace := next.State == "failed" || st.replaceVanished
+	stalled := next.State == "failed" && strings.HasPrefix(reason, StallPrefix)
 	var moved []int64
+	stalls := 0
 	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
 		var cur string
 		if err := tx.QueryRow("SELECT state FROM downloads WHERE id = ?", old.ID).Scan(&cur); err != nil {
@@ -376,10 +381,19 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 		if err := database.Update(tx, "downloads", &next, by); err != nil {
 			return err
 		}
-		if replace && next.ReleaseID != nil {
+		if stalled && next.ReleaseID != nil {
+			// The next send of this Release waits longer for each stall in a row.
+			var rel domain.Release
+			if err := database.Get(ctx, tx, "releases", *next.ReleaseID, &rel); err == nil {
+				if stalls, err = mediafiles.AddStallTx(tx, rel.Name, m.now()); err != nil {
+					return err
+				}
+			}
+		}
+		if replace && !stalled && next.ReleaseID != nil {
 			if _, err := tx.Exec(`UPDATE releases SET state = 'turned_down', hold_until = NULL,
 				verdict = json_set(COALESCE(verdict, '{}'), '$.turned_down_reason', ?), updated_at = ? WHERE id = ?`,
-				"the download failed: "+reason, database.FormatTime(m.now()), *next.ReleaseID); err != nil {
+				turnedDownWhy(next.State, reason), database.FormatTime(m.now()), *next.ReleaseID); err != nil {
 				return err
 			}
 		}
@@ -412,11 +426,27 @@ func (m *Manager) failed(ctx context.Context, dr domain.Downloader, old, next do
 	if next.State == "vanished" {
 		kind = "download_vanished"
 	}
-	m.event(ctx, &next, kind, "Download failed: "+reason)
+	summary := "Download failed: " + reason
+	if next.State == "vanished" {
+		// The person removed it in the Downloader: not worded as a failure.
+		summary = upperFirst(reason)
+	}
+	var extra map[string]any
+	if stalled {
+		summary = "Download stalled: " + reason + ". The Downloader or its VPN may be offline. Files kept; searching again, and this Release can be picked again"
+		if stalls > 1 {
+			days := int(mediafiles.StallWait(stalls) / (24 * time.Hour))
+			summary = fmt.Sprintf("Download stalled %d times in a row: %s. The Downloader or its VPN may be offline. Files kept; this Release waits %d days before it is sent again",
+				stalls, reason, days)
+			extra = map[string]any{"stall_count": stalls}
+		}
+	}
+	m.eventWith(ctx, &next, kind, summary, extra)
 	if next.State == "failed" && st.removeFailed {
 		if e, err := m.engine(ctx, dr); err == nil {
 			// Keep the files when the client itself reported the failure, so the user can look at them.
-			deleteFiles := !strings.HasPrefix(reason, clientSaysPrefix)
+			// A stall keeps them too: the download may only have paused.
+			deleteFiles := !strings.HasPrefix(reason, clientSaysPrefix) && !stalled
 			if err := e.Remove(ctx, next.ExternalID, deleteFiles); err != nil && !errors.Is(err, ErrNotFound) {
 				m.event(ctx, &next, "download_not_removed", fmt.Sprintf("Could not remove the failed download from %s: %v", dr.Name, firstLine(err.Error())))
 			}
@@ -577,12 +607,18 @@ func (m *Manager) retryRemovals(ctx context.Context) {
 			}
 			deleteFiles = kept == ""
 		}
-		if err := e.Remove(ctx, p.external, deleteFiles); err == nil || errors.Is(err, ErrNotFound) {
+		// A refusal (a read only Downloader) also ends once the Downloader no
+		// longer has the job, removed there by hand.
+		err = e.Remove(ctx, p.external, deleteFiles)
+		byHand := err != nil && !errors.Is(err, ErrNotFound) && goneFromClient(ctx, e, dr, p.external)
+		if err == nil || errors.Is(err, ErrNotFound) || byHand {
 			m.removalDone(ctx, p.id)
 			var d domain.Download
 			if database.Get(ctx, m.Store.Read(), "downloads", p.id, &d) == nil {
 				said, extra := "Removed from "+dr.Name+" on a later try", map[string]any{"delete_files": deleteFiles, "retried": true}
-				if kept != "" {
+				if byHand {
+					said, extra = "No longer in "+dr.Name+"; it was removed there", map[string]any{"retried": true}
+				} else if kept != "" {
 					said += "; its files were kept: " + kept
 					extra["kept"] = kept
 				}
@@ -590,4 +626,37 @@ func (m *Manager) retryRemovals(ctx context.Context) {
 			}
 		}
 	}
+}
+
+// goneFromClient reports whether the Downloader answered that it has no job
+// by this id at all.
+func goneFromClient(ctx context.Context, e Engine, dr domain.Downloader, id string) bool {
+	_, got := confirmGone(ctx, e, dr, SyncView{}, false, id)
+	return id != "" && got == goneRemoved
+}
+
+// VanishedReason is the reason a download removed in its Downloader itself
+// gets. History shows it as "Removed outside HolyArrs".
+func VanishedReason(downloader string) string {
+	if downloader == "" {
+		downloader = "the Downloader"
+	}
+	return "removed outside HolyArrs: " + downloader + " no longer has it"
+}
+
+// ForgotReason is the reason a download gets when its Downloader started again and
+// lost it: nothing was removed and its files stay where they are.
+func ForgotReason(downloader string) string {
+	if downloader == "" {
+		downloader = "the Downloader"
+	}
+	return downloader + " restarted and forgot the download; nothing was deleted, and its files are left where they are"
+}
+
+// turnedDownWhy is the turned-down reason a Release gets when its download ends.
+func turnedDownWhy(state, reason string) string {
+	if state == "vanished" {
+		return "the download was " + reason
+	}
+	return "the download failed: " + reason
 }

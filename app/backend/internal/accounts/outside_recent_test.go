@@ -201,8 +201,9 @@ func TestNoPasswordAdminMustEnrollRefused(t *testing.T) {
 	}
 }
 
-// A home visit mapped to a no-password owner, and an OIDC session of that
-// owner, never pass.
+// A home visit mapped to a no-password owner, a trusted-proxy session of that
+// owner, and an OIDC session without a checked new sign-in at the provider,
+// never pass.
 func TestNoPasswordOwnerOtherWaysRefused(t *testing.T) {
 	f := gated(t, Options{})
 	own, signIn, _ := jellyfinOwner(t, f)
@@ -217,7 +218,8 @@ func TestNoPasswordOwnerOtherWaysRefused(t *testing.T) {
 	if resp, out := v.do(t, f, http.MethodPost, "/api/v1/auth/password", `{"new":"`+pw+`"}`); resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("home visit set the first password: %d %s", resp.StatusCode, out)
 	}
-	// A fresh session whose way in is single sign-on, not Plex, Jellyfin or Emby.
+	// A fresh session whose way in is the proxy, or OIDC with no provider sign-in
+	// time on record; a checked OIDC sign-in counts (TestOIDCFreshSignInCountsForNoPasswordOwner).
 	for _, method := range []string{"oidc", "forward_auth"} {
 		p := signIn("boss")
 		setSessionAssurance(t, f, "UPDATE sessions SET auth_method = ? WHERE user_id = ? AND created_at = (SELECT max(created_at) FROM sessions)", method, ownerID(t, f))

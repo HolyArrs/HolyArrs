@@ -35,7 +35,7 @@ func TestMatchLinkOnlyNeverAdds(t *testing.T) {
 	x.dl.Match.AddShow = func(context.Context, string) (int64, error) { added++; return 0, nil }
 	var titles int
 	_ = x.s.Read().QueryRow("SELECT COUNT(*) FROM titles").Scan(&titles)
-	out, tid, err := x.dl.MatchLinkOnly(context.Background(), 1, "ABCDEF0000000000000000000000000000000000", "Some.Linux.ISO.x64", "linux")
+	out, tid, err := x.dl.MatchLinkOnly(context.Background(), 1, "ABCDEF0000000000000000000000000000000000", "Some.Linux.ISO.x64", "holyarrs")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func TestMatchLinkOnlyNeverAdds(t *testing.T) {
 	x.dl.Match.SearchMovies = func(context.Context, string, int) ([]metadata.Movie, error) {
 		return []metadata.Movie{{Name: "Arrival", Year: 2016, IDs: map[string]string{"tmdb": "329865"}}}, nil
 	}
-	out, tid, err = x.dl.MatchLinkOnly(context.Background(), 1, "bbbb000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	out, tid, err = x.dl.MatchLinkOnly(context.Background(), 1, "bbbb000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "holyarrs")
 	if err != nil || out != "suggested" || tid != 0 {
 		t.Fatalf("sure match not in the Library: %q %d %v", out, tid, err)
 	}
@@ -88,16 +88,16 @@ func TestMatchAutoAdd(t *testing.T) {
 	x.dl.Match.SearchMovies = func(context.Context, string, int) ([]metadata.Movie, error) {
 		return []metadata.Movie{{Name: "Arrival", Year: 2016, IDs: map[string]string{"tmdb": "329865"}}}, nil
 	}
-	if out, _, err := x.dl.MatchLinkOnly(ctx, 1, "cccc000000000000000000000000000000000000", "Some.Linux.ISO.x64", "linux"); err != nil || out != LinkNotMedia {
+	if out, _, err := x.dl.MatchLinkOnly(ctx, 1, "cccc000000000000000000000000000000000000", "Some.Linux.ISO.x64", "holyarrs"); err != nil || out != LinkNotMedia {
 		t.Fatalf("not media: %q %v", out, err)
 	}
-	if out, _, err := x.dl.MatchLinkOnly(ctx, 1, "dddd000000000000000000000000000000000000", "Arival.Two.2016.1080p", "movies"); err != nil || out != LinkUnsure {
+	if out, _, err := x.dl.MatchLinkOnly(ctx, 1, "dddd000000000000000000000000000000000000", "Arival.Two.2016.1080p", "holyarrs"); err != nil || out != LinkUnsure {
 		t.Fatalf("unsure: %q %v", out, err)
 	}
 	if adds != 0 {
 		t.Fatalf("adds %d before a sure match", adds)
 	}
-	out, tid, err := x.dl.MatchLinkOnly(ctx, 1, "bbbb000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	out, tid, err := x.dl.MatchLinkOnly(ctx, 1, "bbbb000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "holyarrs")
 	if err != nil || out != LinkLinked || tid == 0 || tid != newID || adds != 1 {
 		t.Fatalf("auto add: %q %d %v adds %d", out, tid, err, adds)
 	}
@@ -109,7 +109,7 @@ func TestMatchAutoAdd(t *testing.T) {
 	// A restart: the link row is gone (as if lost) but the title stays;
 	// matching again links the same title and adds nothing.
 	exec41(t, x.s, `DELETE FROM client_links`)
-	out, tid2, err := x.dl.MatchLinkOnly(ctx, 1, "bbbb000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	out, tid2, err := x.dl.MatchLinkOnly(ctx, 1, "bbbb000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "holyarrs")
 	if err != nil || out != LinkLinked || tid2 != tid || adds != 1 {
 		t.Fatalf("again: %q %d %v adds %d", out, tid2, err, adds)
 	}
@@ -117,7 +117,7 @@ func TestMatchAutoAdd(t *testing.T) {
 	exec41(t, x.s, `UPDATE settings SET value = 'false' WHERE key = 'downloads_auto_add'`)
 	exec41(t, x.s, `DELETE FROM client_links`)
 	exec41(t, x.s, `UPDATE titles SET source_ids = '{}'`)
-	out, _, err = x.dl.MatchLinkOnly(ctx, 1, "eeee000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	out, _, err = x.dl.MatchLinkOnly(ctx, 1, "eeee000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "holyarrs")
 	if err != nil || out != "suggested" || adds != 1 {
 		t.Fatalf("off: %q %v adds %d", out, err, adds)
 	}
@@ -125,11 +125,11 @@ func TestMatchAutoAdd(t *testing.T) {
 	// (any other how) stays as it is.
 	exec41(t, x.s, `INSERT INTO client_links (downloader_id, hash, name, state, slot_ids, covers, candidates, how, matched_at) VALUES (1, 'ffff000000000000000000000000000000000000', 'Arrival.2016.1080p', 'unsure', '[]', '', '[]', 'rejected', '')`)
 	exec41(t, x.s, `UPDATE settings SET value = 'true' WHERE key = 'downloads_auto_add'`)
-	out, tid, err = x.dl.MatchLinkOnly(ctx, 1, "eeee000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "movies")
+	out, tid, err = x.dl.MatchLinkOnly(ctx, 1, "eeee000000000000000000000000000000000000", "Arrival.2016.1080p.BluRay.x264-GRP", "holyarrs")
 	if err != nil || out != LinkLinked || tid != newID || adds != 2 {
 		t.Fatalf("upgrade: %q %d %v adds %d", out, tid, err, adds)
 	}
-	out, _, err = x.dl.MatchLinkOnly(ctx, 1, "ffff000000000000000000000000000000000000", "Arrival.2016.1080p", "movies")
+	out, _, err = x.dl.MatchLinkOnly(ctx, 1, "ffff000000000000000000000000000000000000", "Arrival.2016.1080p", "holyarrs")
 	if err != nil || out != LinkUnsure || adds != 2 {
 		t.Fatalf("person choice changed: %q %v adds %d", out, err, adds)
 	}
@@ -141,10 +141,10 @@ func TestMatchAutoAdd(t *testing.T) {
 	// A not-media call made by the name reading is looked at again; a
 	// person's not-media pick is not.
 	exec41(t, x.s, `INSERT INTO client_links (downloader_id, hash, name, state, slot_ids, covers, candidates, how, matched_at) VALUES (1, 'hhhh', 'Arrival_2016_Bluray-1080p', 'not_media', '[]', '', '[]', 'name', ''), (1, 'iiii', 'Arrival_2016_Bluray-1080p', 'not_media', '[]', '', '[]', 'by hand', '')`)
-	if out, _, err := x.dl.MatchLinkOnly(ctx, 1, "hhhh", "Arrival_2016_Bluray-1080p", "prowlarr"); err != nil || out != LinkLinked {
+	if out, _, err := x.dl.MatchLinkOnly(ctx, 1, "hhhh", "Arrival_2016_Bluray-1080p", "holyarrs"); err != nil || out != LinkLinked {
 		t.Fatalf("stale not media: %q %v", out, err)
 	}
-	if out, _, err := x.dl.MatchLinkOnly(ctx, 1, "iiii", "Arrival_2016_Bluray-1080p", "prowlarr"); err != nil || out != LinkNotMedia {
+	if out, _, err := x.dl.MatchLinkOnly(ctx, 1, "iiii", "Arrival_2016_Bluray-1080p", "holyarrs"); err != nil || out != LinkNotMedia {
 		t.Fatalf("person not media changed: %q %v", out, err)
 	}
 }

@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "रिक्वेस्ट",
 	"settings.appearance.colRate": "प्रति रो",
 	"settings.appearance.noRows": "अभी किसी एक्सप्लोर रो की गिनती नहीं हुई।",
+	"settings.appearance.rowStats": "एक्सप्लोर रो",
+	"settings.appearance.rowStatsDesc": "पिछले 30 दिनों में हर रो से खोले गए और रिक्वेस्ट, सबके मिलाकर। सिर्फ़ इसी सर्वर पर गिने जाते हैं।",
+	"settings.appearance.colRow": "रो",
+	"settings.appearance.row.because_have": "आपके टाइटल जैसे",
+	"settings.appearance.row.because_asked": "आपकी रिक्वेस्ट जैसे",
+	"settings.appearance.row.person": "किसी व्यक्ति से और",
+	"settings.appearance.row.genre": "आपके लिए जॉनर पसंद",
+	"settings.appearance.row.popular_genre": "जॉनर के हिसाब से लोकप्रिय",
+	"settings.appearance.row.popular_decade": "दशक के हिसाब से लोकप्रिय",
+	"settings.appearance.row.decade": "दशक के हिसाब से",
+	"settings.appearance.row.mood": "मूड के हिसाब से",
+	"settings.appearance.row.hero": "ऊपर का बैनर",
 	"settings.appearance.motion": "मोशन",
 	"settings.appearance.motionNote": "आपके डिवाइस की कम मोशन सेटिंग का पालन करता है"
 }

@@ -8,8 +8,8 @@ import (
 func TestOutsideName(t *testing.T) {
 	for in, want := range map[string]string{
 		"maria⁣12": "maria (deleted)",
-		"maria":         "maria",
-		"":              "",
+		"maria":    "maria",
+		"":         "",
 		"a⁣b":      "a⁣b",
 	} {
 		if got := OutsideName(in); got != want {

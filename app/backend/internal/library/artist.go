@@ -293,25 +293,11 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 	}
 	keep := opt.KeepUpToDate == nil || *opt.KeepUpToDate
 
-	var lf mediafiles.LibraryFolder
-	if opt.LibraryFolderID == 0 {
-		fs, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "kind = 'music' ORDER BY id LIMIT 1")
-		if err != nil {
-			return 0, 0, err
-		}
-		if len(fs) == 0 {
-			return 0, 0, ErrNoMusicFolder
-		}
-		lf = fs[0]
-	} else if err := database.Get(ctx, db, "library_folders", opt.LibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
-		return 0, 0, ErrNoMusicFolder
-	} else if err != nil {
+	lf, hands, err := TitleFolder(ctx, s.Store, opt.LibraryFolderID, "music", by)
+	if err != nil {
 		return 0, 0, err
 	}
-	if lf.Kind != "music" {
-		return 0, 0, ErrNotMusicFolder
-	}
-	if h := CheckFolder(lf.Path, s.DownloadFolders(ctx)); !h.Usable() {
+	if h := CheckUse(lf, s.DownloadFolders(ctx)); !hands && !h.Usable() {
 		return 0, 0, &FolderError{Health: h}
 	}
 	a, err := p.Artist(ctx, mbid)
@@ -355,6 +341,9 @@ func (s *Service) AddArtist(ctx context.Context, id string, opt ArtistAddOptions
 			}
 		}
 		choice := opt.Albums
+		if lf.LookOnly {
+			keep = false // look-only: never searched
+		}
 		t = mediafiles.Title{Kind: "artist", Aliases: []string{}, SourceIDs: map[string]string{}, MetadataSource: "musicbrainz", KeepUpToDate: keep,
 			NewPartsPolicy: policy, ReleaseGate: GateReleased, MusicTypes: opt.AlbumTypes, MusicSecondary: opt.SecondaryTypes,
 			MusicStatuses: opt.ReleaseStatuses, WhyAdded: opt.WhyAdded, Artwork: []string{}, State: "active", GateDriver: "none",

@@ -8,10 +8,14 @@
 	"setup.fullPath": "Use o caminho completo da pasta, como {path}.",
 	"setup.folderUsed": "Esta pasta já está em uso, ou fica dentro de uma que está.",
 	"setup.folderMissing": "Essa pasta não existe. Confira o caminho.",
-	"setup.addFolderOrOff": "Adicione uma pasta ou desative isto.",
+	"setup.addFolderOrOff": "Adicione uma pasta ou toque em \"Pular por enquanto\".",
 	"setup.notAnswering": "O HolyArrs não está respondendo. Tente de novo em instantes.",
 	"setup.addUserPasswordHint": "Informe o nome de usuário e a senha.",
 	"setup.folders": "Pastas",
 	"setup.downloader": "Gerenciador de downloads",
-	"setup.source": "Fonte"
+	"setup.source": "Fonte",
+	"setup.alertsNeedKeyOne": "Alertas: 1 precisa de uma chave",
+	"setup.alertsNeedKey": "Alertas: {n} precisam de uma chave",
+	"setup.folderNoAccess": "O HolyArrs não consegue abrir esta pasta. Confira as permissões dela.",
+	"setup.folderCantUse": "O HolyArrs não consegue usar esta pasta. Confira o caminho."
 }

@@ -102,6 +102,12 @@ func seed41(t *testing.T, slotState mediafiles.SlotState, dlState string) *dl41 
 		if _, err := tx.Exec("UPDATE slots SET active_download_id = ? WHERE id = ?", dl.ID, sl.ID); err != nil {
 			return err
 		}
+		if dlState == "cleaned" {
+			// Mark when it was removed, as the migration does for old rows.
+			if _, err := tx.Exec("UPDATE downloads SET cleaned_at = updated_at WHERE id = ?", dl.ID); err != nil {
+				return err
+			}
+		}
 		x.dlID, x.slotID, x.relID = dl.ID, sl.ID, rel.ID
 		return nil
 	})

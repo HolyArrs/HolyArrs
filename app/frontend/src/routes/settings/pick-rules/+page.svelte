@@ -10,6 +10,7 @@
 	import Menu from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { OwnTraits } from '#lib/downloads/index.ts';
+	import { NameCheck } from '#lib/mediafiles/index.ts';
 	import { kindChoices, usedWords } from '#lib/downloads/index.ts';
 	import type { PickRulesUse } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
@@ -122,6 +123,8 @@
 	</SettingsCard>
 
 	<OwnTraits {mayEdit} />
+
+	<NameCheck {rules} />
 
 	<SettingsCard id="pick-rules-where" title={t('settings.pickRules.where')}>
 		<ul class="where">

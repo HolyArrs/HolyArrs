@@ -41,4 +41,8 @@ type Schedule struct {
 	LastRun      *time.Time `db:"last_run"`
 	NextRun      *time.Time `db:"next_run"`
 	Enabled      bool       `db:"enabled"`
+	// LastChecked is the newest scheduled check that found nothing to do,
+	// and LastSkip says why (a SkipReason code). Neither moves last_run.
+	LastChecked *time.Time `db:"last_checked"`
+	LastSkip    *string    `db:"last_skip"`
 }

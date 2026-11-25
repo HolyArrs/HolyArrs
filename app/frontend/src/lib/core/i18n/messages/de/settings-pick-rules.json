@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Das lässt sich nicht rückgängig machen. Die Dateien bleiben.",
 	"settings.pickRules.removeUsed": "{used}. Wähl dort zuerst andere Regeln.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Abbrechen"
+	"settings.pickRules.cancel": "Abbrechen",
+	"settings.pickRules.check.title": "Release-Namen prüfen",
+	"settings.pickRules.check.desc": "Füge einen Release-Namen ein, um zu sehen, wie HolyArrs ihn liest und wie deine Qualitätssets ihn bewerten. Es wird nichts gesucht oder heruntergeladen.",
+	"settings.pickRules.check.name": "Release-Name",
+	"settings.pickRules.check.rules": "Bewerten mit",
+	"settings.pickRules.check.copies": "Die Kopien des passenden Titels",
+	"settings.pickRules.check.size": "Größe in GB (optional)",
+	"settings.pickRules.check.check": "Prüfen",
+	"settings.pickRules.check.failed": "Name konnte nicht geprüft werden",
+	"settings.pickRules.check.readAs": "Gelesen als",
+	"settings.pickRules.check.matches": "Passt zu {name}",
+	"settings.pickRules.check.noTitle": "Passt zu keinem Titel in deiner Bibliothek. Wähle oben ein Qualitätsset, um ihn trotzdem zu bewerten.",
+	"settings.pickRules.check.noAlbum": "Passt zu {name}, aber zu keinem seiner Alben.",
+	"settings.pickRules.check.noCopies": "Dieser Titel hat keine Kopien zum Bewerten.",
+	"settings.pickRules.check.hasFile": "Hat eine Datei"
 }

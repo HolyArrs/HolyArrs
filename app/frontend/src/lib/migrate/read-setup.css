@@ -1,0 +1,15 @@
+/* First-run setup's inline read form (ReadSheet inline): every rule sits under .setup-read, so nothing leaks. */
+.setup-read { display: flex; flex-direction: column; gap: var(--s-4); flex: 1 1 auto; min-height: 0; } .setup-read > :global(.ui-btn:last-child) { margin-top: auto; }
+.setup-read .server { display: grid; gap: var(--s-4); } .setup-read .field { min-width: 0; margin: 0; text-align: center; display: grid; gap: 6px; }
+.setup-read .field .input { text-align: start; width: 100%; box-sizing: border-box; } .setup-read .key-row { position: relative; }
+.setup-read .brings h2 { margin: 0 0 10px; font: 600 15px/20px var(--font-ui); text-align: start; } .setup-read .brings .hint { margin: 10px 0 0; text-align: start; }
+.setup-read .brings { display: none; } .setup-read .brings.busy { display: block; margin-top: var(--s-4); }
+.setup-read .ok-line { display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: var(--ok-text); } .setup-read .key-acts { position: absolute; inset-inline-end: 6px; top: 6px; bottom: 6px; display: flex; gap: 6px; }
+.setup-read .key-fetch { display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid var(--g-line, rgb(255 255 255 / 0.2)); border-radius: 10px; background: var(--g-bg, rgb(255 255 255 / 0.08)); color: inherit; font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
+.setup-read .key-fetch:disabled { opacity: 0.55; cursor: default; } .setup-read .key-fetch[aria-busy='true'] { opacity: 0.8; cursor: progress; }
+.setup-read .key-get { display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; border-radius: 10px; background: var(--accent); color: var(--on-accent, #fff); font: 600 13px/1 var(--font-ui); text-decoration: none; white-space: nowrap; }
+.setup-read .key-get:focus-visible, .setup-read .key-fetch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .setup-read .field > .hint { color: var(--text-muted); font: var(--t-footnote); }
+.setup-read .checkrow { display: flex; flex-direction: column; align-items: stretch; gap: 10px; } .setup-read .checkrow :global(.ui-btn) { width: 100%; min-height: var(--g-h, 44px); }
+.setup-read .cap, .setup-read .form-error { margin: 0; } .setup-read .also { justify-content: stretch; margin: 0; }
+.setup-read .addr-row .input { width: 100%; padding-inline-end: 52px; }
+.setup-read .addr-line .scheme { display: flex; align-items: center; width: 80px; min-width: 0; padding: 0; justify-content: center; text-align: center; font-weight: 400; cursor: pointer; }

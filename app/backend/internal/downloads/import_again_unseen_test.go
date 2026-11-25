@@ -103,12 +103,12 @@ func TestImportAgainOnAnUnseenJobThatIsThereNow(t *testing.T) {
 	}
 }
 
-// Import again wakes only a card whose reason is one the person can fix outside HolyArrs; any other card stays as it is.
+// Import again wakes only a card whose reason is one the person can fix outside HolyArrs, or one where no file matched; any other card stays as it is.
 func TestImportAgainLeavesOtherCardsAlone(t *testing.T) {
 	w, m := setup(t)
 	id := grabbed(t, w, m)
 	w.exec(t, "UPDATE downloads SET state = 'finished', progress = 1 WHERE id = ?", id)
-	for _, reason := range []string{"no other Release passed the Pick rules", "no file in the download matched this movie; match the files by hand", "edition is unknown; confirm the edition or choose an unconstrained Version"} {
+	for _, reason := range []string{"no other Release passed the Pick rules", "edition is unknown; confirm the edition or choose an unconstrained Version"} {
 		w.exec(t, "UPDATE slots SET state = 'needs_a_decision', last_reason = ? WHERE id = ?", reason, w.slotID)
 		if err := m.ImportAgain(context.Background(), id, luis); !errors.Is(err, ErrNotWaiting) {
 			t.Fatalf("%q: %v", reason, err)
@@ -121,6 +121,8 @@ func TestImportAgainLeavesOtherCardsAlone(t *testing.T) {
 		"HolyArrs may not read the downloaded file; give the user HolyArrs runs as (PUID and PGID) read access to the file and the folder it is in, then import again",
 		"HolyArrs may not write to the folder this file goes to in the Library; give the user HolyArrs runs as (PUID and PGID) write access to it, then import again",
 		"the file could not be placed: something went wrong; see the log",
+		// No file matched: by hand finds nothing in a download that holds only archives, so the import can be asked again.
+		"no file in the download matched this movie; match the files by hand",
 		"HolyArrs can't read this download's files: HOLYARRS_SAVE_PATH is not set and q has no path pair. Set HOLYARRS_SAVE_PATH if both apps see the same download folder, or add a path pair in Settings > Downloaders, then import again",
 	} {
 		w.exec(t, "UPDATE slots SET state = 'needs_a_decision', last_reason = ? WHERE id = ?", reason, w.slotID)

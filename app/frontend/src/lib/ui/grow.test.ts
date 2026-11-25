@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flipTransform, growPlacement, queue } from './grow.ts';
+import { clearOfArrows, flipTransform, growPlacement, nearArrow, queue, type Rect } from './grow.ts';
 
 const view = { width: 1440, height: 900 };
 const row = { left: 40, right: 1400 };
@@ -80,5 +80,33 @@ describe('the grown card at rest', () => {
 		expect(g.left + g.from.x).toBeCloseTo(art.left, 6);
 		expect(g.top + g.from.y).toBeCloseTo(art.top, 6);
 		expect(g.width * g.from.scale).toBeCloseTo(art.width, 6);
+	});
+});
+
+describe('nearArrow', () => {
+	const arrows: Rect[] = [{ left: 1388, top: 300, width: 36, height: 36 }];
+	const cases: [string, number, number, boolean, Rect[]][] = [
+		['on the arrow', 1400, 310, true, arrows],
+		['in the pad around it', 1380, 345, true, arrows],
+		['just past the pad', 1370, 310, false, arrows],
+		['far away on a card', 700, 310, false, arrows],
+		['no arrows shown', 1400, 310, false, []]
+	];
+	it.each(cases)('%s', (_n, x, y, want, list) => {
+		expect(nearArrow(x, y, list)).toBe(want);
+	});
+});
+
+describe('clearOfArrows', () => {
+	const right: Rect = { left: 1360, top: 300, width: 36, height: 36 };
+	const left: Rect = { left: 28, top: 300, width: 36, height: 36 };
+	it('stops the bounds short of each shown arrow', () => {
+		expect(clearOfArrows(row, [right])).toEqual({ left: 40, right: 1352 });
+		expect(clearOfArrows(row, [left, right])).toEqual({ left: 72, right: 1352 });
+		expect(clearOfArrows(row, [])).toEqual(row);
+	});
+	it('keeps a grown card at the row end clear of the right arrow', () => {
+		const g = growPlacement({ left: 1180, top: 300, width: 240, height: 135 }, 120, view, clearOfArrows(row, [right]), { min: 414, max: 414 });
+		expect(g.left + g.width).toBeLessThanOrEqual(right.left);
 	});
 });

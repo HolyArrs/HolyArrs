@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Hoàn tác lần nhập {id}?",
 	"settings.move.undoQuestion": "Hoàn tác lần nhập này?",
 	"settings.move.undoNote": "Xóa những gì lần nhập này đã thêm; thay đổi sau đó của bạn vẫn được giữ. Hãy tải báo cáo trước nếu bạn muốn.",
-	"settings.move.undoMove": "Hoàn tác lần nhập"
+	"settings.move.undoMove": "Hoàn tác lần nhập",
+	"settings.move.continueSetup": "Tiếp tục thiết lập",
+	"settings.move.backToChoose": "Quay lại Chọn"
 }

@@ -955,6 +955,7 @@ The Auth column is the permission a caller needs, as pinned in the snapshot. The
 | GET | `/oauth/authorize` | public |  |
 | POST | `/oauth/register` | public |  |
 | POST | `/oauth/token` | public |  |
+| GET | `/ping` | unlisted | says only that HolyArrs answers, without asking the database. |
 | GET | `/qualityprofile` | unlisted |  |
 | GET | `/queue` | unlisted |  |
 | GET | `/queue/details` | unlisted |  |

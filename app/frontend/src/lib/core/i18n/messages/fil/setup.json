@@ -8,10 +8,14 @@
 	"setup.fullPath": "Gamitin ang buong path ng folder, tulad ng {path}.",
 	"setup.folderUsed": "Ginagamit na ang folder na ito, o nasa loob ito ng isang ginagamit na.",
 	"setup.folderMissing": "Walang ganoong folder. Tingnan ang path.",
-	"setup.addFolderOrOff": "Magdagdag ng folder o i-off ito.",
+	"setup.addFolderOrOff": "Magdagdag ng folder, o pindutin ang Laktawan muna.",
 	"setup.notAnswering": "Hindi sumasagot ang HolyArrs. Subukan ulit sa ilang saglit.",
 	"setup.addUserPasswordHint": "Ilagay ang user name at password.",
 	"setup.folders": "Mga Folder",
 	"setup.downloader": "Downloader",
-	"setup.source": "Source"
+	"setup.source": "Source",
+	"setup.alertsNeedKeyOne": "Mga Alerto: 1 ang kailangan ng key",
+	"setup.alertsNeedKey": "Mga Alerto: {n} ang kailangan ng key",
+	"setup.folderNoAccess": "Hindi mabuksan ng HolyArrs ang folder na ito. Tingnan ang mga permiso nito.",
+	"setup.folderCantUse": "Hindi magamit ng HolyArrs ang folder na ito. Tingnan ang path."
 }

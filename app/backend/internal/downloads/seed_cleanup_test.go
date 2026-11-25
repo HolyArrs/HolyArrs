@@ -323,3 +323,19 @@ func TestSeedCleanupTransmissionTwinKeepsFiles(t *testing.T) {
 		t.Fatalf("removed %v, twin kept %v, files deleted %v", f.items[hash] == nil, f.items[twin] != nil, f.deleteFiles)
 	}
 }
+
+// A pause before the seeding goal is met is not the end of seeding.
+func TestSeedCleanupWaitsForGoalWhenPaused(t *testing.T) {
+	for _, st := range []string{"pausedUP", "stoppedUP"} {
+		_, m, _, eng := seededDownload(t, "qbittorrent", `{"minutes":4320}`, Job{Detail: st, Ratio: 0.1, SeedingTime: 600})
+		m.cleanSeeded(context.Background())
+		if len(eng.removed) != 0 {
+			t.Fatalf("%s: removed %v before the goal", st, eng.removed)
+		}
+	}
+	_, m, _, eng := seededDownload(t, "qbittorrent", `{"minutes":4320}`, Job{Detail: "pausedUP", SeedingTime: 4320 * 60})
+	m.cleanSeeded(context.Background())
+	if len(eng.removed) != 1 {
+		t.Fatalf("goal met but removed %v", eng.removed)
+	}
+}

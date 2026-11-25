@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Изгражда се {what}… опит {attempt}",
 	"core.testTag.connected": "Свързан",
 	"core.api.notAnswering": "HolyArrs не отговаря. Проверете дали работи.",
+	"core.api.tooSlow": "HolyArrs отговаря твърде бавно. Опитай пак след минута.",
 	"core.api.requestFailed": "Заявката не успя ({status})",
 	"core.api.wentWrong": "Нещо се обърка.",
 	"core.trailerMiss.trailer": "трейлър",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Одобрено автоматично",
 	"core.plain.approvedBy": "Одобрено от {who}",
 	"core.settings.cantReach": "Този адрес не може да се достигне. Проверете го и дали приложението работи.",
+	"core.settings.tryHttp": "Този адрес не отговаря по https. Опитай с http://.",
 	"core.settings.groupLibrary.label": "Библиотека",
 	"core.settings.groupLibrary.line": "Къде живеят заглавията",
 	"core.settings.groupLibrary.about": "Папки, части, настройки по подразбиране, субтитри, имена на файлове и импорт.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Две програми за изтегляне водят към едно и също приложение, затова изтеглянията може да се показват два пъти.",
 	"core.plain.peopleCheck": "Списъкът с потребители на медийния сървър не може да се прочете, затова премахнатите там не се изключват тук.",
 	"core.plain.deleted": "изтрит",
-	"core.plain.deletedName": "{name} (изтрит)"
+	"core.plain.deletedName": "{name} (изтрит)",
+	"core.api.handsOffFiles": "Режимът „без намеса“ е включен, затова HolyArrs не пипа изтеглените файлове. Изключете го в Настройки, за да внасяте, преименувате, местите или сканирате файлове.",
+	"core.api.handsOffSubtitles": "Режимът „без намеса“ е включен, затова HolyArrs никога не отваря изтеглените файлове. Изключете го в Настройки, за да ползвате субтитри."
 }

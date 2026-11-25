@@ -22,28 +22,35 @@ import (
 // per episode, so a pack of three episodes is three rows with the same
 // downloadId. The Radarr side has one row per download.
 type queueRow struct {
-	ID                      int64       `json:"id"`
-	SeriesID                int64       `json:"seriesId,omitempty"`
-	EpisodeID               int64       `json:"episodeId,omitempty"`
-	SeasonNumber            *int        `json:"seasonNumber,omitempty"`
-	Episode                 *episode    `json:"episode,omitempty"`
-	Series                  *series     `json:"series,omitempty"`
-	MovieID                 int64       `json:"movieId,omitempty"`
-	Size                    int64       `json:"size"`
-	Title                   string      `json:"title"`
-	Sizeleft                int64       `json:"sizeleft"`
-	Timeleft                string      `json:"timeleft,omitempty"`
-	EstimatedCompletionTime *utc        `json:"estimatedCompletionTime,omitempty"`
-	Added                   *utc        `json:"added,omitempty"`
-	Status                  string      `json:"status"`
-	TrackedDownloadStatus   string      `json:"trackedDownloadStatus,omitempty"`
-	TrackedDownloadState    string      `json:"trackedDownloadState,omitempty"`
-	StatusMessages          []statusMsg `json:"statusMessages"`
-	DownloadID              string      `json:"downloadId,omitempty"`
-	Protocol                string      `json:"protocol"`
-	DownloadClient          string      `json:"downloadClient,omitempty"`
-	Indexer                 string      `json:"indexer,omitempty"`
-	OutputPath              string      `json:"outputPath,omitempty"`
+	ID                      int64          `json:"id"`
+	SeriesID                int64          `json:"seriesId,omitempty"`
+	EpisodeID               int64          `json:"episodeId,omitempty"`
+	SeasonNumber            *int           `json:"seasonNumber,omitempty"`
+	Episode                 *episode       `json:"episode,omitempty"`
+	Series                  *series        `json:"series,omitempty"`
+	MovieID                 int64          `json:"movieId,omitempty"`
+	Movie                   *movie         `json:"movie,omitempty"`
+	Languages               []language     `json:"languages"`
+	Quality                 map[string]any `json:"quality"`
+	CustomFormats           []any          `json:"customFormats"`
+	CustomFormatScore       int            `json:"customFormatScore"`
+	EpisodeHasFile          *bool          `json:"episodeHasFile,omitempty"` // Sonarr
+	PostImportCategory      bool           `json:"downloadClientHasPostImportCategory"`
+	Size                    int64          `json:"size"`
+	Title                   string         `json:"title"`
+	Sizeleft                int64          `json:"sizeleft"`
+	Timeleft                string         `json:"timeleft,omitempty"`
+	EstimatedCompletionTime *utc           `json:"estimatedCompletionTime,omitempty"`
+	Added                   *utc           `json:"added,omitempty"`
+	Status                  string         `json:"status"`
+	TrackedDownloadStatus   string         `json:"trackedDownloadStatus,omitempty"`
+	TrackedDownloadState    string         `json:"trackedDownloadState,omitempty"`
+	StatusMessages          []statusMsg    `json:"statusMessages"`
+	DownloadID              string         `json:"downloadId,omitempty"`
+	Protocol                string         `json:"protocol"`
+	DownloadClient          string         `json:"downloadClient,omitempty"`
+	Indexer                 string         `json:"indexer,omitempty"`
+	OutputPath              string         `json:"outputPath,omitempty"`
 	progress                float64
 	eta                     *int64
 }
@@ -115,6 +122,7 @@ type queueSlot struct {
 	titleID  int64
 	itemKind string
 	season   *int
+	hasFile  bool
 }
 
 // queueDefaultSize is the page size when the caller sends none. The old
@@ -128,6 +136,9 @@ const queueDefaultSize = 1000
 func (h *handler) queue(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	rows, err := h.queueRows(ctx, queryBool(r, "includeEpisode"))
+	if err == nil {
+		err = h.queueInclude(ctx, r, rows)
+	}
 	if err != nil {
 		internalError(w, err)
 		return
@@ -236,7 +247,7 @@ func (h *handler) queueRows(ctx context.Context, withEpisode bool) ([]queueRow, 
 	}
 	var items []int64
 	for _, si := range slotItems {
-		slots[si.SlotID] = queueSlot{state: si.State, itemID: si.ItemID, titleID: si.TitleID, itemKind: si.ItemKind, season: si.Season}
+		slots[si.SlotID] = queueSlot{state: si.State, itemID: si.ItemID, titleID: si.TitleID, itemKind: si.ItemKind, season: si.Season, hasFile: si.HasFile}
 		items = append(items, si.ItemID)
 	}
 	eps := map[int64]episode{}
@@ -256,6 +267,7 @@ func (h *handler) queueRows(ctx context.Context, withEpisode bool) ([]queueRow, 
 			base.Protocol = "unknown"
 		}
 		base.Sizeleft = int64(float64(base.Size) * (1 - min(max(base.progress, 0), 1)))
+		base.Languages, base.CustomFormats, base.Quality = []language{}, []any{}, qualityOfRelease(h.side, base.Title)
 		base.StatusMessages = []statusMsg{}
 		blocked, importing := false, false
 		for _, id := range d.slots {
@@ -308,6 +320,7 @@ func (h *handler) queueRows(ctx context.Context, withEpisode bool) ([]queueRow, 
 				}
 				seen[q.itemID] = true
 				row.SeriesID, row.EpisodeID, row.SeasonNumber = q.titleID, q.itemID, q.season
+				row.EpisodeHasFile = ptr(q.hasFile)
 				if e, ok := eps[q.itemID]; ok {
 					row.Episode = &e
 				}

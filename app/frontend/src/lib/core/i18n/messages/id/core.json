@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Membangun {what}… percobaan {attempt}",
 	"core.testTag.connected": "Terhubung",
 	"core.api.notAnswering": "HolyArrs tidak menjawab. Pastikan aplikasinya berjalan.",
+	"core.api.tooSlow": "HolyArrs terlalu lama menjawab. Coba lagi sebentar lagi.",
 	"core.api.requestFailed": "Permintaan gagal ({status})",
 	"core.api.wentWrong": "Terjadi kesalahan.",
 	"core.trailerMiss.trailer": "trailer",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Disetujui otomatis",
 	"core.plain.approvedBy": "Disetujui oleh {who}",
 	"core.settings.cantReach": "Alamat itu tidak bisa dijangkau. Periksa alamatnya dan pastikan aplikasinya berjalan.",
+	"core.settings.tryHttp": "Alamat itu tidak menjawab lewat https. Coba http:// saja.",
 	"core.settings.groupLibrary.label": "Pustaka",
 	"core.settings.groupLibrary.line": "Tempat judul disimpan",
 	"core.settings.groupLibrary.about": "Folder, bagian, bawaan, subtitel, nama file, dan impor.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dua pengunduh terhubung ke aplikasi unduhan yang sama, jadi unduhan bisa muncul dua kali.",
 	"core.plain.peopleCheck": "Daftar pengguna server media tidak bisa dibaca, jadi orang yang dihapus di sana tidak dimatikan di sini.",
 	"core.plain.deleted": "dihapus",
-	"core.plain.deletedName": "{name} (dihapus)"
+	"core.plain.deletedName": "{name} (dihapus)",
+	"core.api.handsOffFiles": "Mode lepas tangan aktif, jadi HolyArrs tidak menyentuh file yang diunduh. Matikan di Pengaturan untuk mengimpor, mengganti nama, memindahkan, atau memindai file.",
+	"core.api.handsOffSubtitles": "Mode lepas tangan aktif, jadi HolyArrs tidak pernah membuka file yang diunduh. Matikan di Pengaturan untuk memakai subtitel."
 }

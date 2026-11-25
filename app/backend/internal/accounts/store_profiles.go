@@ -30,6 +30,30 @@ func putLanguage(ctx context.Context, q conn, userID int64, l string) error {
 	return err
 }
 
+// AccountLanguages are the languages people picked for their accounts,
+// besides English, each once.
+func AccountLanguages(ctx context.Context, q conn) []string {
+	rows, err := q.QueryContext(ctx, "SELECT DISTINCT language FROM user_profiles WHERE language NOT IN ('', 'en') ORDER BY language")
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var l string
+		if rows.Scan(&l) == nil {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+// HasOwner reports whether an owner account exists.
+func HasOwner(ctx context.Context, q conn) bool {
+	_, _, err := ownerIdentity(ctx, q)
+	return err == nil
+}
+
 // OwnerLanguage is the language the active owner picked, "" when none (or no
 // owner yet). Alerts use it for the words they send out.
 func OwnerLanguage(ctx context.Context, q conn) string {

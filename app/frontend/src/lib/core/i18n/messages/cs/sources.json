@@ -85,5 +85,21 @@
 	"sources.uses.auto": "hledá samo",
 	"sources.uses.feed": "seznam nejnovějších",
 	"sources.uses.hand": "ruční hledání",
-	"sources.uses.none": "nepoužívá se"
+	"sources.uses.none": "nepoužívá se",
+	"sources.bridge.removeTitle": "Odebrat {name}?",
+	"sources.bridge.find": "Najít {name} v mé síti",
+	"sources.bridge.noneFound": "Ve vaší síti neodpověděl žádný {name}.",
+	"sources.bridge.keyFound": "Klíč získán z {name}",
+	"sources.bridge.keyKept": "{name} klíč nevydal (má zapnuté přihlášení). Zkopírujte ho přes Získat klíč.",
+	"sources.bridge.keyKeptJackett": "Jackett klíč nevydal (má heslo správce). Zkopírujte ho přes Získat klíč.",
+	"sources.bridge.notReached": "{name} se nepodařilo zastihnout.",
+	"sources.bridge.brings.title": "Co se převezme",
+	"sources.bridge.brings.sites": "Jeho indexery, jako Zdroje",
+	"sources.bridge.brings.categories": "Jejich kategorie",
+	"sources.bridge.brings.search": "Hledání jde přes {name}",
+	"sources.bridge.brings.sync": "Změny v {name} se přenesou",
+	"sources.bridge.brings.stays": "Vaše indexery zůstanou nastavené v {name}.",
+	"sources.bridge.brings.had": "Indexerů už tady: {n}",
+	"sources.bridge.brings.hadFrom": "Importováno přes {apps}",
+	"sources.bridge.brings.keyKept": "Nechte klíč prázdný, aby se použil ten, který už mají."
 }

@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Hanya ini yang boleh menyatakan dari mana kunjungan berasal.",
 	"settings.signIn.fixToSaveOne": "Perbaiki 1 baris untuk menyimpan",
 	"settings.signIn.fixToSaveOther": "Perbaiki {n} baris untuk menyimpan",
-	"settings.signIn.localSaved": "Jaringan lokal disimpan"
+	"settings.signIn.localSaved": "Jaringan lokal disimpan",
+	"settings.signIn.forgotTitle": "Lupa kata sandi?",
+	"settings.signIn.forgotOn": "Tampilkan Lupa kata sandi? di halaman masuk",
+	"settings.signIn.forgotNote": "Pemilik mendapat kode sekali pakai dari log server. Matikan jika semua orang masuk lewat single sign-on. Perintah reset-owner tetap berfungsi.",
+	"settings.signIn.forgotShown": "Lupa kata sandi? aktif",
+	"settings.signIn.forgotHidden": "Lupa kata sandi? nonaktif"
 }

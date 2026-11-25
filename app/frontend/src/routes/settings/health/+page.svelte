@@ -162,22 +162,17 @@
 	{#if settings}
 		<form class="sc-form" id="health-form" onsubmit={saveSettings} aria-label={t('settings.health.settings')}>
 			<SettingsCard id="health-settings" title={t('settings.health.settings')}>
-				<label class="checkline" id="update-check-row"
-					><input id="update-check" type="checkbox" bind:checked={settings.update_check} /> {t('settings.health.updateCheck')}</label
-				>
 				<p class="hint">{t('settings.health.onlyChecks')}</p>
 				<p class="hint" data-testid="update-privacy">{updatePrivacy(update?.version ?? 'version')}</p>
-				{#if settings.update_check}
-					<Field id="hs-days" label={t('settings.health.every')}>
-						<select id="hs-days" class="input" bind:value={settings.update_check_every_days}>
-							<option value={1}>{t('settings.health.day')}</option>
-							<option value={3}>{t('settings.health.days', { n: 3 })}</option>
-							<option value={7}>{t('settings.health.days', { n: 7 })}</option>
-							<option value={14}>{t('settings.health.days', { n: 14 })}</option>
-							<option value={30}>{t('settings.health.days', { n: 30 })}</option>
-						</select>
-					</Field>
-				{/if}
+				<Field id="hs-days" label={t('settings.health.every')}>
+					<select id="hs-days" class="input" bind:value={settings.update_check_every_days}>
+						<option value={1}>{t('settings.health.day')}</option>
+						<option value={3}>{t('settings.health.days', { n: 3 })}</option>
+						<option value={7}>{t('settings.health.days', { n: 7 })}</option>
+						<option value={14}>{t('settings.health.days', { n: 14 })}</option>
+						<option value={30}>{t('settings.health.days', { n: 30 })}</option>
+					</select>
+				</Field>
 				<Field id="hs-low" label={t('settings.health.lowSpace')} hint={t('settings.health.lowSpaceHint')}>
 					<input id="hs-low" class="input" type="number" min="0" bind:value={settings.low_space_mb} />
 				</Field>

@@ -7,13 +7,15 @@
 		setupTiles?: ('password' | 'plex' | 'jellyfin' | 'emby')[];
 		tiles?: { way: Way; label: string }[];
 		setupName?: (w: 'password' | 'plex' | 'jellyfin' | 'emby') => string;
+		// First run: one plain line under each way's name.
+		setupDesc?: (w: 'password' | 'plex' | 'jellyfin' | 'emby') => string;
 		lastWay: Way | '';
 		failN: number;
 		busy: boolean;
 		onsetup?: (w: 'password' | 'plex' | 'jellyfin' | 'emby') => void;
 		onpress?: (w: Way) => void;
 	};
-	let { setup = false, setupTiles = [], tiles = [], setupName = (w) => w, lastWay, failN, busy, onsetup, onpress }: Props = $props();
+	let { setup = false, setupTiles = [], tiles = [], setupName = (w) => w, setupDesc, lastWay, failN, busy, onsetup, onpress }: Props = $props();
 </script>
 
 {#if setup}
@@ -30,6 +32,7 @@
 				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l9 5v10l-9 5-9-5V7z" fill="#52B54B" /><path d="M10 8.5v7l6-3.5z" fill="#fff" /></svg>
 			{/if}
 			<span>{setupName(w)}</span>
+			{#if setupDesc}<small class="desc">{setupDesc(w)}</small>{/if}
 		</button>
 	{/each}
 </div>
@@ -95,6 +98,7 @@
 		transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 	}
 	.prov svg { width: 26px; height: 26px; flex: none; }
+	.desc { display: block; max-width: 30ch; font: 400 12px/1.35 var(--font-ui); opacity: 0.72; text-wrap: pretty; }
 	/* "Single / sign-on", never "Single sign- / on". */
 	.prov span { text-wrap: balance; }
 	.provs[data-n='1'] .prov { flex-direction: row; justify-content: center; padding: 0 6px; min-height: 50px; gap: 10px; font-size: 16px; color: #fff; }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -91,7 +92,7 @@ func TestStaleSyncNeverUndoesMarkFailed(t *testing.T) {
 		t.Fatal(err)
 	}
 	dr := w.downloader(t, stale.DownloaderID)
-	if m.apply(ctx, dr, stale, Job{ID: hash, State: StateDownloading, Progress: 0.7, Speed: 10}, true, m.settings(ctx)) {
+	if m.apply(ctx, dr, stale, Job{ID: hash, State: StateDownloading, Progress: 0.7, Speed: 10}, true, m.settings(ctx), time.Time{}) {
 		t.Fatal("stale snapshot still counted as active")
 	}
 	if d := w.download(t, id); d.State != "failed" || d.Progress == 0.7 {

@@ -36,5 +36,7 @@
 	"settings.move.undoId": "ইমপোর্ট {id} আনডু করবেন?",
 	"settings.move.undoQuestion": "এই ইমপোর্ট আনডু করবেন?",
 	"settings.move.undoNote": "এই ইমপোর্ট যা যোগ করেছিল তা সরায়; আপনার পরের বদলগুলো থাকে। চাইলে আগে রিপোর্ট ডাউনলোড করুন।",
-	"settings.move.undoMove": "ইমপোর্ট আনডু করুন"
+	"settings.move.undoMove": "ইমপোর্ট আনডু করুন",
+	"settings.move.continueSetup": "সেটআপ চালিয়ে যান",
+	"settings.move.backToChoose": "বাছাইয়ে ফিরুন"
 }

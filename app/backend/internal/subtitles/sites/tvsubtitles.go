@@ -4,7 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"path"
 	"regexp"
@@ -16,18 +18,109 @@ import (
 // tvsubs reads a show subtitle site in three steps: the show search, the
 // season page with its episode ids, and the episode page with its subtitles.
 // Show and episode ids rarely change, so they are kept in memory. Shows only.
+//
+// The site has moved its search page more than once (search.php, search1.php,
+// search2.php) and has answered searches only after its home page set a
+// cookie. So the home page is read first: it sets the cookie and its search
+// form names the current search page.
 type tvsubs struct {
 	c *client
 
-	mu    sync.Mutex
-	shows map[string]int         // folded title and year -> show id
-	eps   map[string]map[int]int // show id and season -> episode -> episode id
+	mu     sync.Mutex
+	search string                 // the search page the home page names; "" until read
+	shows  map[string]int         // folded title and year -> show id
+	eps    map[string]map[int]int // show id and season -> episode -> episode id
 }
+
+// tvDefaultSearch is used when the home page names no search page.
+const tvDefaultSearch = "/search2.php"
 
 func newTVSubs(c *client) *tvsubs {
 	c.keyHeader = ""
 	c.userAgent = browserAgent
+	// The site sends HSTS, so its own host is always reached over https.
+	if h := strings.ToLower(c.base.Hostname()); c.base.Scheme == "http" && (h == "www.tvsubtitles.net" || h == "tvsubtitles.net") {
+		u := *c.base
+		u.Scheme = "https"
+		c.base = &u
+	}
+	jar, _ := cookiejar.New(nil)
+	c.http.Jar = jar
 	return &tvsubs{c: c, shows: map[string]int{}, eps: map[string]map[int]int{}}
+}
+
+var tvSearchAction = regexp.MustCompile(`^/?(search[0-9]{0,2}\.php)$`)
+
+// tvSearchForm finds the search page in the home page's form that sends the
+// qs field.
+func tvSearchForm(b []byte) string {
+	action, found := "", ""
+	tokens(b, func(t token) {
+		switch {
+		case found != "":
+		case t.tag == "form" && !t.end:
+			action = ""
+			if m := tvSearchAction.FindStringSubmatch(strings.TrimSpace(attr(t.attrs, "action"))); m != nil {
+				action = "/" + m[1]
+			}
+		case t.tag == "form" && t.end:
+			action = ""
+		case t.tag == "input" && !t.end && action != "" && t.name == "qs":
+			found = action
+		}
+	})
+	return found
+}
+
+// searchPage reads the home page, for its cookie and its search page, once.
+// fresh reads it again after a search was refused or not found.
+func (s *tvsubs) searchPage(ctx context.Context, fresh bool) (string, error) {
+	s.mu.Lock()
+	p := s.search
+	s.mu.Unlock()
+	if p != "" && !fresh {
+		return p, nil
+	}
+	b, err := s.c.getPage(ctx, "/", nil, false)
+	if err != nil {
+		return "", err
+	}
+	if p = tvSearchForm(b); p == "" {
+		p = tvDefaultSearch
+	}
+	s.mu.Lock()
+	s.search = p
+	s.mu.Unlock()
+	return p, nil
+}
+
+// findShow posts the show search. A missing or refused search page reads the
+// home page again once, in case the site moved it or the cookie ran out.
+func (s *tvsubs) findShow(ctx context.Context, title string) ([]byte, error) {
+	form := url.Values{"qs": {title}}
+	for try := 0; ; try++ {
+		p, err := s.searchPage(ctx, try > 0)
+		if err != nil {
+			return nil, err
+		}
+		raw, err := s.c.ref(p)
+		if err != nil {
+			return nil, err
+		}
+		b, err := s.c.do(ctx, http.MethodPost, raw, []byte(form.Encode()), map[string]string{"Content-Type": "application/x-www-form-urlencoded"},
+			"text/html, */*;q=0.5", addic7edMaxPage, true)
+		var se *Error
+		refused := errors.As(err, &se) && se.Kind == KindLoginRefused
+		if (b != nil || err != nil) && !refused {
+			return b, err
+		}
+		if try > 0 {
+			if refused {
+				return nil, &Error{Kind: KindBlocked, Msg: "the site refused the show search"}
+			}
+			return nil, &Error{Kind: KindUnreadable, Msg: "the site's show search page has moved"}
+		}
+	}
 }
 
 var (
@@ -164,13 +257,7 @@ func (s *tvsubs) show(ctx context.Context, q Query) (int, error) {
 	if ok {
 		return id, nil
 	}
-	raw, err := s.c.ref("/search1.php")
-	if err != nil {
-		return 0, err
-	}
-	form := url.Values{"qs": {q.Title}}
-	b, err := s.c.do(ctx, http.MethodPost, raw, []byte(form.Encode()), map[string]string{"Content-Type": "application/x-www-form-urlencoded"},
-		"text/html, */*;q=0.5", addic7edMaxPage, true)
+	b, err := s.findShow(ctx, q.Title)
 	if err != nil {
 		return 0, err
 	}

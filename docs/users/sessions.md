@@ -15,21 +15,34 @@ Both need a password sign-in, or an API key with the admin scope. The local netw
 
 ## Forgot your password
 
-**Members and admins:** ask the owner.
+**Members and admins:** ask the owner or an admin. They set a new password in **Settings > Users**.
 
-**The owner:** while HolyArrs runs, run this on its machine:
+**The owner, from the sign-in page:** press **Forgot password?**, then **Make a code**. HolyArrs writes a one-time code to its log and to `reset-owner-code.txt` in your config folder. Open the log (`docker logs holyarrs`, or the Logs button in Docker Desktop, Unraid, TrueNAS, Synology or Portainer), paste the code, then pick the owner name and a new password. The code works once, for 15 minutes, and five wrong tries end it. No shell is needed. You can turn the link off in **Settings > Sign-in**.
+
+If the page can't be reached, set `HOLYARRS_RESET_OWNER=1` and restart: a code shows in the log for 30 minutes and the sign-in page opens at the code step. Remove the variable once you are back in. `holyarrs reset-owner --code` prints a fresh code too.
+
+**The owner, from a terminal:** while HolyArrs runs, open a terminal on the machine that runs Docker and run:
 
 ```sh
-docker exec -i holyarrs /holyarrs reset-owner
+docker exec -it holyarrs /holyarrs reset-owner
 ```
 
-Type the name on one line and the new password on the next, then press Ctrl+D. Without Docker, run `holyarrs reset-owner`. You should be able to sign in with the new password.
+It asks for the name, then the new password twice; the password does not show while you type. You should see `Done. Sign in as "<name>" with the new password.` Without Docker, run `holyarrs reset-owner` as the user HolyArrs runs as.
 
 :::caution
-`reset-owner` turns off the owner's two-factor sign-in, signs out every device and removes every owner API key.
+Both ways turn off the owner's two-factor sign-in, sign out every device and remove every owner API key.
 :::
 
-The sign-in page shows the same steps under **Forgot the password?**.
+If it does not work:
+
+| You see | What to do |
+| --- | --- |
+| `OCI runtime exec failed` or `executable file not found` | The image has no shell. Keep `/holyarrs` in the command, and don't use the app's **Shell** or **Console** button in TrueNAS, Unraid, Synology or Portainer: those start a shell. Use the host's terminal: **System > Shell** on TrueNAS, the terminal icon at the top of Unraid, or SSH on Synology. |
+| `No such container` | Your container has another name. `docker ps` lists them; use that name in place of `holyarrs`, such as `ix-holyarrs-holyarrs-1` on TrueNAS. |
+| `nothing was typed in` | `-it` is missing. Run the command exactly as shown above. |
+| Nothing happens after `Name:` | Docker got `-t` without `-i`. Press Ctrl+C and run it with `-it`. |
+
+The sign-in page shows the same command under **Can't sign in?**. `holyarrs help` lists every command.
 
 ## Choices
 

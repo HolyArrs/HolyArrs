@@ -29,6 +29,11 @@ async function fresh(browser: Browser, width = 1280) {
 }
 
 const axe = (p: Page, where: string, include?: string) => scan(p, where, { include, waitAll: true });
+// Opens More options and every card's advanced part.
+async function openAll(p: Page) {
+	await p.getByTestId('more-options').evaluate((d) => ((d as HTMLDetailsElement).open = true));
+	await openAdvanced(p);
+}
 async function adopt(folderLabel: string, name: string, button: string, doneText: string) {
 	await page.goto('/library/import');
 	const lf = page.getByLabel('Library folder');
@@ -61,7 +66,7 @@ test('Settings > Subtitles: English and Spanish become the default languages; th
 	await page.getByRole('navigation', { name: 'Settings sections' }).getByRole('link', { name: 'Subtitles' }).click();
 	await expect(page.getByRole('heading', { level: 1, name: 'Subtitles' })).toBeVisible();
 	const editor = page.getByTestId('wish-editor').first();
-	await expect(editor).toContainText('No languages: no subtitles are looked for.');
+	await expect(editor).toContainText('No languages yet. Add one to get subtitles.');
 	await page.getByRole('button', { name: 'Add a language' }).click();
 	await page.getByRole('button', { name: 'Add a language' }).click();
 	await expect(editor.getByTestId('wish-row')).toHaveCount(2);
@@ -220,6 +225,34 @@ test('Movie page: its own languages, every result with score and reasons, Choose
 	await expect(page.getByRole('main')).toContainText(/Turned down .*\.fr\.srt from Lab subtitle site/);
 });
 
+test('Cleanup: English gets its own steps, the other languages keep theirs; Clean again on a subtitle and a title', async () => {
+	await page.goto('/settings/subtitles');
+	await openAll(page);
+	const card = page.locator('#clean-subs');
+	await expect(card.getByLabel('Steps for')).toHaveValue('*');
+	await expect(card.getByLabel('Remove ad and credit lines')).toBeChecked();
+	await expect(card.getByLabel('Remove hearing-impaired text')).not.toBeChecked();
+	await card.getByLabel('Steps for').selectOption('en');
+	await card.getByLabel('Remove hearing-impaired text').check();
+	await page.getByTestId('savebar').getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByText('Subtitle settings saved')).toBeVisible();
+	await page.reload();
+	await openAll(page);
+	await expect(card.getByLabel('Remove hearing-impaired text')).not.toBeChecked(); // every other language
+	await card.getByLabel('Steps for').selectOption('en');
+	await expect(card.getByLabel('Remove hearing-impaired text')).toBeChecked();
+	await axe(page, 'cleanup settings', '#clean-subs');
+
+	await page.goto('/library');
+	await page.getByRole('link', { name: /Quill Atlas/ }).first().click();
+	const subs = await openSubtitles(page);
+	await expect(subs.getByTestId('subtitle-clean').first()).toHaveAccessibleName(/^Clean the .+ subtitle$/);
+	await subs.getByTestId('subtitle-clean').first().click();
+	await expect(page.getByRole('status').filter({ hasText: /Subtitle cleaned|Nothing to clean/ })).toBeVisible();
+	await subs.getByTestId('subtitle-clean-all').click();
+	await expect(page.getByRole('status').filter({ hasText: /Subtitles cleaned|Nothing to clean/ }).first()).toBeVisible();
+});
+
 test('Show page: the show follows the default languages', async () => {
 	await page.goto('/library?kind=show');
 	await page.getByRole('link', { name: /Fennel Clock/ }).first().click();
@@ -259,6 +292,7 @@ test('the subtitle screens fit a phone and pass the accessibility scan', async (
 		await ph.goto(url);
 		await expect(ph.getByRole('heading', { level: 1 })).toBeVisible();
 		await ph.waitForLoadState('networkidle');
+		if (url === '/settings/subtitles') await openAll(ph); // the Cleanup card's steps and language picker
 		await noSidewaysScroll(ph);
 		await axe(ph, `phone ${url}`);
 	}

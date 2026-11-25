@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/discover"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -27,7 +28,24 @@ func (a *handlers) newTitlePages() *metadata.TitlePages {
 			p, _ := parts.ForTitleKind(kind)
 			return a.partIsOn(p)
 		},
+		Kept: a.keptScores,
 	}
+}
+
+// keptScores reads the OMDb scores and the Trakt rating kept for a Library
+// movie or show; none when it is not in the Library or the read fails.
+func (a *handlers) keptScores(ctx context.Context, kind, tmdbID string) metadata.KeptScores {
+	var k metadata.KeptScores
+	if a.s.Store == nil {
+		return k
+	}
+	if sc, ok, err := mediafiles.OMDbScoresByTMDB(ctx, a.s.Store.Read(), kind, tmdbID); err == nil && ok {
+		k = metadata.KeptScores{IMDbRating: sc.IMDbRating, IMDbVotes: sc.IMDbVotes, RottenTomatoes: sc.RottenTomatoes, Metacritic: sc.Metacritic}
+	}
+	if r, votes, ok, err := mediafiles.TraktRatingByTMDB(ctx, a.s.Store.Read(), kind, tmdbID); err == nil && ok {
+		k.TraktRating, k.TraktVotes = &r, votes
+	}
+	return k
 }
 
 // titleAges gives the title pages the asker's Kid limit and the Library's

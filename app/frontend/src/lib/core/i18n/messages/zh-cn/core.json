@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "正在生成{what}…第 {attempt} 次尝试",
 	"core.testTag.connected": "已连接",
 	"core.api.notAnswering": "HolyArrs 没有响应。请检查它是否在运行。",
+	"core.api.tooSlow": "HolyArrs 响应时间过长。请一分钟后再试。",
 	"core.api.requestFailed": "请求失败（{status}）",
 	"core.api.wentWrong": "出了点问题。",
 	"core.trailerMiss.trailer": "预告片",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "自动批准",
 	"core.plain.approvedBy": "{who} 已批准",
 	"core.settings.cantReach": "无法访问该地址。请检查地址，并确认应用正在运行。",
+	"core.settings.tryHttp": "该地址不响应 https。请改用 http://。",
 	"core.settings.groupLibrary.label": "媒体库",
 	"core.settings.groupLibrary.line": "条目存放的地方",
 	"core.settings.groupLibrary.about": "文件夹、功能模块、默认设置、字幕、文件命名和导入。",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "两个下载器连接到同一个下载应用，因此下载可能显示两次。",
 	"core.plain.peopleCheck": "无法读取媒体服务器的用户列表，因此在那里删除的人不会在这里被关闭。",
 	"core.plain.deleted": "已删除",
-	"core.plain.deletedName": "{name}（已删除）"
+	"core.plain.deletedName": "{name}（已删除）",
+	"core.api.handsOffFiles": "免操作模式已开启，所以 HolyArrs 不会动已下载的文件。要导入、重命名、移动或扫描文件，请在设置中关闭它。",
+	"core.api.handsOffSubtitles": "免操作模式已开启，所以 HolyArrs 从不打开已下载的文件。要使用字幕，请在设置中关闭它。"
 }

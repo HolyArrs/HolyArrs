@@ -88,7 +88,7 @@ type Engine struct {
 	// anywhere (nil: no update check).
 	UpdateState func(ctx context.Context) UpdateState
 	// UpdateCheck runs the update check when it is due; ran is false when
-	// the check is off or has nowhere to ask (nil: no update check).
+	// the check has nowhere to ask (nil: no update check).
 	UpdateCheck func(ctx context.Context) (latest string, newer, ran bool)
 	// FreeSpace reads free bytes (nil means importer.FreeSpace; -1 unknown).
 	FreeSpace func(dir string) int64
@@ -405,7 +405,7 @@ func mb(n int64) string { return strconv.FormatInt(n>>20, 10) + " MB" }
 // folders checks each movie Library folder: it must be there, and its disk
 // must have room.
 func (e *Engine) folders(ctx context.Context) ([]Result, error) {
-	lfs, err := database.Select[mediafiles.LibraryFolder](ctx, e.Store.Read(), "library_folders", "1=1 ORDER BY id")
+	lfs, err := database.Select[mediafiles.LibraryFolder](ctx, e.Store.Read(), "library_folders", "stand_in = 0 ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
@@ -427,13 +427,15 @@ func (e *Engine) folders(ctx context.Context) ([]Result, error) {
 			r.State, r.Message = Error, "Library folder "+name+" cannot be reached (is the disk or share mounted?)"
 		case !st.IsDir():
 			r.State, r.Message = Error, "Library folder "+name+" is not a folder"
+		case lf.LookOnly:
+			// look-only: nothing is written there, so writes, hardlinks and room do not matter
 		case lf.Health == "read_only":
 			r.State, r.Message = Error, "HolyArrs cannot write to the Library folder "+name
 		case lf.Health == "no_hardlink" && !lf.CopiesExpected:
 			r.State, r.Message = Warning, "Library folder "+name+" is on another disk or mount than the downloads, so imports are copied, not hardlinked (each file takes its space twice while it seeds); to hardlink, put the downloads and this folder on one disk and one mount"
 		}
 		out = append(out, r)
-		if err != nil {
+		if err != nil || lf.LookOnly {
 			continue
 		}
 		d := Result{Key: "disk_space:" + id, Kind: "disk_space", Subject: name, State: OK}
@@ -528,10 +530,21 @@ func (e *Engine) downloaders(ctx context.Context) ([]Result, error) {
 		if r.State != OK && why != "" {
 			r.Message += ": " + why
 		}
+		if r.State == OK && d.State != "disabled" {
+			// Answers, but every download on it stopped together (downloads.StuckReason).
+			var n int
+			_ = e.Store.Read().QueryRowContext(ctx, "SELECT count(*) FROM downloads WHERE downloader_id = ? AND state = 'stalled' AND state_reason = ?", d.ID, stuckReason).Scan(&n)
+			if n > 0 {
+				r.State, r.Message = Warning, "Downloader "+d.Name+" answers, but every download on it stopped at the same time. Check its internet connection (a VPN, for example). Their stall clocks wait until one moves"
+			}
+		}
 		out = append(out, r)
 	}
 	return out, nil
 }
+
+// stuckReason is downloads.StuckReason, copied so health does not import downloads.
+const stuckReason = "every download on this Downloader stopped at the same time; check its internet connection (a VPN, for example)"
 
 // waitingFor is how long downloads may wait for their files (a share not
 // mounted yet) before the check turns from a warning to an error.

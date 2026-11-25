@@ -55,8 +55,8 @@ describe('import files by hand', () => {
 		const picks = { [a.path]: startPick(a), [b.path]: startPick(b), [c.path]: null };
 		const items = itemsFor([a, b, c], picks, { [a.path]: true, [b.path]: true, [c.path]: true });
 		expect(items).toEqual([
-			{ path: a.path, title_id: 7, version_id: 3, season: 1, episode: 2 },
-			{ path: b.path, title_id: 9 }
+			{ path: a.path, title_id: 7, version_id: 3, season: 1, episode: 2, mode: 'copy' },
+			{ path: b.path, title_id: 9, mode: 'copy' }
 		]);
 	});
 
@@ -65,8 +65,8 @@ describe('import files by hand', () => {
 		const b = show({ path: '/dl/other.mkv', guess: { title_id: 8, title_name: 'Arrival', title_kind: 'movie', confidence: 1 } });
 		const picks = { [a.path]: { ...startPick(a)!, replace: true }, [b.path]: { ...startPick(b)!, replace: true } };
 		expect(itemsFor([a, b], picks, { [a.path]: true, [b.path]: true })).toEqual([
-			{ path: a.path, title_id: 9, replace: true },
-			{ path: b.path, title_id: 8 }
+			{ path: a.path, title_id: 9, replace: true, mode: 'copy' },
+			{ path: b.path, title_id: 8, mode: 'copy' }
 		]);
 		expect(itemsFor([a], { [a.path]: startPick(a) }, { [a.path]: true })).toEqual([]);
 	});
@@ -75,6 +75,15 @@ describe('import files by hand', () => {
 		expect(resultLine({ path: 'x', outcome: 'placed', placed_by: 'hardlink' })).toBe('Added to the Library (no extra space used)');
 		expect(resultLine({ path: 'x', outcome: 'placed', placed_by: 'copy' })).toBe('Copied to the Library (uses extra space)');
 		expect(resultLine({ path: 'x', outcome: 'refused', error: 'nope' })).toBe('Not imported: nope');
+		expect(resultLine({ path: 'x', outcome: 'placed', placed_by: 'move' })).toBe('Moved to the Library');
+	});
+
+	it('sends the chosen way to place each file', () => {
+		const a = show({ path: '/dl/movie.mkv', guess: { title_id: 9, title_name: 'Dune', title_kind: 'movie', confidence: 1 } });
+		const picks = { [a.path]: startPick(a) };
+		for (const [mode, want] of [[undefined, 'copy'], ['copy', 'copy'], ['move', 'move']] as const) {
+			expect(itemsFor([a], picks, { [a.path]: true }, mode)).toEqual([{ path: a.path, title_id: 9, mode: want }]);
+		}
 	});
 
 	const song = (over: Partial<ByHandFile> = {}): ByHandFile => ({
@@ -92,7 +101,7 @@ describe('import files by hand', () => {
 		expect(pickLine(p)).toBe("Brad Paisley · Part II (2001) · 03 I'm Gonna Miss Her");
 		expect(blocker(f, p)).toBe('');
 		expect(startTicked(f, p)).toBe(true);
-		expect(itemsFor([f], { [f.path]: p }, { [f.path]: true })).toEqual([{ path: f.path, title_id: 4, slot_id: 33 }]);
+		expect(itemsFor([f], { [f.path]: p }, { [f.path]: true })).toEqual([{ path: f.path, title_id: 4, slot_id: 33, mode: 'copy' }]);
 		const half = song({ guess: { title_id: 4, title_name: 'Brad Paisley', title_kind: 'artist', confidence: 0, reason: 'no_album', detail: 'Mud on the Tires' } });
 		expect(pickLine(startPick(half))).toBe('Brad Paisley · pick the album');
 		expect(blocker(half, startPick(half))).toBe('Brad Paisley has no album called Mud on the Tires in the Library. Pick the album.');
@@ -110,7 +119,7 @@ describe('import files by hand', () => {
 		expect(pickLine(startPick(track))).toBe('Brad Paisley · Part II (2001) · pick the track');
 		const filled = song({ guess: { ...song().guess, has_file: true } });
 		expect(blocker(filled, startPick(filled))).toMatch(/already has a file/);
-		expect(itemsFor([filled], { [filled.path]: { ...startPick(filled)!, replace: true } }, { [filled.path]: true })).toEqual([{ path: filled.path, title_id: 4, slot_id: 33, replace: true }]);
+		expect(itemsFor([filled], { [filled.path]: { ...startPick(filled)!, replace: true } }, { [filled.path]: true })).toEqual([{ path: filled.path, title_id: 4, slot_id: 33, replace: true, mode: 'copy' }]);
 	});
 	it('ticks only the best of two files guessed onto the same track', () => {
 		const mp3 = song({ path: '/in/a/03.mp3', size: 5, guess: { ...song().guess, confidence: 0.8 } });

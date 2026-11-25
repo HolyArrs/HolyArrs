@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { builtInDefaults, changedParts, defaultsLoader, foldersFor, rulesFor, startChoices, rememberSearch } from './title-defaults.ts';
 import type { LibraryFolder, PickRulesView } from '../core/types.ts';
 import type { TitleDefaults } from './types.ts';
@@ -92,6 +92,21 @@ describe('changedParts', () => {
 });
 
 describe('defaultsLoader', () => {
+	it('gives up on a load that never answers and asks again next time (#447)', async () => {
+		vi.useFakeTimers();
+		try {
+			let calls = 0;
+			const l = defaultsLoader(() => (calls++, new Promise<TitleDefaults>(() => {})));
+			const first = l.load();
+			await vi.advanceTimersByTimeAsync(10_000);
+			expect(await first).toBeNull();
+			void l.load();
+			expect(calls).toBe(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	const saved: TitleDefaults = { movie: { library_folder_id: 4, pick_rules_id: 2, keep_up_to_date: true, search_on_add: false }, show: { ...builtInDefaults.show } };
 
 	it('asks the server once per visit and shares the answer', async () => {

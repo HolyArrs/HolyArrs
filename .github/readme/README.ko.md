@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: 빨간 점이 확인할 것을 보여 주고, 연결 테스트가 정확한 문제를 알려 줍니다.** 요청 작품용 Plex 라벨, 내 언어로 된 이름, 30개가 넘는 수정. 직접 관리하는 키로 MCP를 통해 앱을 연결하세요. [새로운 기능](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: 플러그인이 HolyArrs에서 일어나는 일을 듣습니다.** 개발자 모드는 만들고 있는 플러그인을 실행하고, 테스트 버전은 몇몇 사람이 먼저 써 볼 수 있게 해 줍니다. [새로운 기능](https://holyarrs.com/whats-new/)
 
 > HolyArrs의 모든 포스터, 예고편, 평점은 제가 직접 운영하고 비용을 내는 서버에서 와요. 그래서 모두에게 무료로 유지돼요. HolyArrs 덕분에 영화 보는 밤이 조금 더 즐거워졌다면, 후원으로 우리 모두의 불을 계속 밝혀 주세요 💛
 >
@@ -374,7 +374,7 @@ docker compose up -d
 - 소유자 계정에 들어갈 수 없을 때:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - 버전 번호:

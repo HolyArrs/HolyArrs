@@ -47,6 +47,24 @@ Only the maintainer starts a release. Do not tag, publish or move an image tag o
 5. Run every check in [Testing](testing.md) on your machine. Tests run locally, not on GitHub.
 6. Hand the version to the maintainer. The maintainer pushes the version tag on main, and that starts the release.
 
+## Publish plugins
+
+Plugins ship apart from the app, from the `HolyArrs/HolyArrs-Plugins` repo. Publish a new plugin version after the app release whose tag holds its source.
+
+1. Try it first:
+
+   ```sh
+   gh workflow run publish.yml -R HolyArrs/HolyArrs-Plugins -f id=tailscale -f version=1.0.1 -f dry_run=true
+   gh run watch -R HolyArrs/HolyArrs-Plugins
+   ```
+
+   You should see the run pass `pluginkey check`. Nothing is committed.
+
+2. Run it again with `dry_run=false`. You should see the new version in `https://plugins.holyarrs.com/plugins.json`, and the run's last step verifies it.
+3. To block a version, run `block.yml` the same way with `id` and `version`.
+
+See [Plugins](plugins.md) for what the job does.
+
 ## Choices
 
 ### Version and tag names

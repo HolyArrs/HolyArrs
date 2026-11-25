@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { TitleView } from '../core/types.ts';
 import type { Column } from './table.ts';
-import { buildEntries, cell, drawRange, firstOnScreen, holdFocus, holder, placeKeeper, posterCols, posterRowGuess, posterRowKey, rowCell, tone } from './library-view.ts';
+import { buildEntries, cell, cellTitle, drawRange, firstOnScreen, holdFocus, holder, placeKeeper, posterCols, posterRowGuess, posterRowKey, rowCell, tone } from './library-view.ts';
 import { fakeWindow } from './fake-window.ts';
 
 const t = (id: number) => ({ id, kind: 'movie', slots: [] }) as unknown as TitleView;
@@ -15,7 +15,7 @@ describe('buildEntries', () => {
 		expect(e.map((x) => x.key)).toEqual(['h10', 'r2', 'h20', 'r1', 'h0', 'r3']);
 		expect(e[4]).toMatchObject({ name: 'Not in a series', count: 1 });
 		expect(new Set(e.map((x) => x.key)).size).toBe(e.length);
-		expect(buildEntries([t(1)], false, m, name)).toEqual([{ type: 'row', key: 'r1', t: t(1) }]);
+		expect(buildEntries([t(1)], false, m, name)).toEqual([{ type: 'row', key: 'r1', kind: 'movie', t: t(1) }]);
 		expect(buildEntries([t(1)], true, m, name).some((x) => x.key === 'h0')).toBe(false);
 	});
 });
@@ -36,6 +36,14 @@ describe('rowCell / cell', () => {
 		expect(cell({ ...m, score: 9.1, votes: 3 } as TitleView, col('score'), '')).toBe('');
 		expect(cell(m, col('score'), '')).toBe('');
 		expect(rowCell(m, col('episodes'), { have: 3, total: 10 }, '')).toBe('3/10');
+		// OMDb's scores show on hover over the score, the way the title page words them.
+		const omdb = { ...m, score: 7.4, votes: 900, imdb_rating: 8.1, imdb_votes: 412345, rotten_tomatoes: 91, metacritic: 77 } as TitleView;
+		expect(cellTitle(omdb, col('score'), '')).toBe('TMDB 7.4 · IMDb 8.1 · Rotten Tomatoes critics 91% · Metacritic 77');
+		expect(cellTitle({ ...m, metacritic: 64 } as TitleView, col('score'), '')).toBe('Metacritic 64');
+		expect(cellTitle({ ...m, score: 7.4, votes: 900, imdb_rating: 8.1, imdb_votes: 412345, trakt_rating: 8.3347, trakt_votes: 52731 } as TitleView, col('score'), '')).toBe('TMDB 7.4 · IMDb 8.1 · Trakt 83%');
+		expect(cellTitle({ ...m, score: 7.4, votes: 900 } as TitleView, col('score'), '')).toBeUndefined();
+		expect(cellTitle(omdb, col('year'), '')).toBeUndefined();
+		expect(cellTitle({ ...m, folder_path: '/m/A' } as TitleView, col('path'), '')).toBe('/m/A');
 		expect(rowCell(m, col('episodes'), { have: 0, total: 0 }, '')).toBe('');
 	});
 });

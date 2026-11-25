@@ -115,7 +115,7 @@ func TestEverythingNeedsSignIn(t *testing.T) {
 	if resp.StatusCode != 401 {
 		t.Fatalf("api: %d", resp.StatusCode)
 	}
-	for _, p := range []string{"/healthz", "/login"} {
+	for _, p := range []string{"/healthz", "/login", "/plex-done"} {
 		resp, _ = call(t, c, "GET", f.srv.URL+p, "", nil)
 		if resp.StatusCode != 200 {
 			t.Fatalf("%s should be open: %d", p, resp.StatusCode)
@@ -164,7 +164,7 @@ func TestLoginCookieFlagsAndLogout(t *testing.T) {
 		t.Fatalf("login: %d %s", resp.StatusCode, body)
 	}
 	ck := resp.Header.Get("Set-Cookie")
-	for _, want := range []string{CookieName + "=", "HttpOnly", "SameSite=Lax", "Path=/"} {
+	for _, want := range []string{CookieName + "_", "HttpOnly", "SameSite=Lax", "Path=/"} {
 		if !strings.Contains(ck, want) {
 			t.Fatalf("cookie %q lacks %q", ck, want)
 		}

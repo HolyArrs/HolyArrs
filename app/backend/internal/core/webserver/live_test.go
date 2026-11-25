@@ -231,3 +231,30 @@ func TestRingKeepsLast(t *testing.T) {
 		t.Fatalf("replay %+v", replay)
 	}
 }
+
+// On shutdown every open stream ends at once, so browsers retry right away.
+func TestCloseEndsStreams(t *testing.T) {
+	h := NewLiveHub(LiveOptions{})
+	a, _ := h.subscribe(LiveViewer{All: true}, "")
+	b, _ := h.subscribe(LiveViewer{All: true}, "")
+	h.Close()
+	h.Close()
+	for _, c := range []*liveClient{a, b} {
+		select {
+		case <-c.gone:
+		default:
+			t.Fatal("stream not ended on Close")
+		}
+	}
+}
+
+func TestStreamAfterCloseEndsAtOnce(t *testing.T) {
+	h := NewLiveHub(LiveOptions{})
+	h.Close()
+	c, _ := h.subscribe(LiveViewer{All: true}, "")
+	select {
+	case <-c.gone:
+	default:
+		t.Fatal("a stream opened during shutdown stayed open")
+	}
+}

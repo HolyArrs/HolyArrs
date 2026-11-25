@@ -61,7 +61,7 @@ func EpisodeSlotTx(ctx context.Context, tx *sql.Tx, versionID, itemID int64) (Ep
 	var es EpisodeSlot
 	var id int64
 	err := tx.QueryRowContext(ctx, `SELECT s.id, i.dropped_at IS NOT NULL FROM slots s JOIN items i ON i.id = s.item_id
-		WHERE s.version_id = ? AND s.item_id = ? AND i.kind = 'episode'`, versionID, itemID).Scan(&id, &es.Dropped)
+		WHERE s.version_id = ? AND s.item_id = ? AND i.kind IN ('episode', 'track')`, versionID, itemID).Scan(&id, &es.Dropped)
 	if errors.Is(err, sql.ErrNoRows) {
 		return es, ErrNotThisVersion
 	}

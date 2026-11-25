@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"context"
 	"crypto/subtle"
 	"net"
 	"net/http"
@@ -60,6 +61,32 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 				return
 			}
 			next.ServeHTTP(w, r)
+			return
+		}
+		if tok := pluginBearer(r); tok != "" {
+			// A running plugin's per-start token: no browser credential, so
+			// no host or origin check; the Gate holds it to its scopes.
+			who, tctx, ok := pluginCallerCtx(tok)
+			var err error
+			if ip := parseHostIP(r.RemoteAddr); ok && (ip == nil || !ip.IsLoopback() || a.trustedProxy(ip)) {
+				ok = false // a plugin token works only from inside the machine
+			}
+			if ok && (anyForwardHeader(r) || r.Header.Get(PluginProxyHeader) != "") {
+				ok = false // never through a proxy or a forwarding plugin
+			}
+			if !ok {
+				fail(w, http.StatusUnauthorized, "plugin token not accepted")
+				return
+			}
+			if who, err = a.pluginForUser(r.Context(), r, who); err != nil {
+				fail(w, http.StatusForbidden, err.Error())
+				return
+			}
+			ctx, cancel := context.WithCancel(r.Context())
+			stop := context.AfterFunc(tctx, cancel) // revoking the token ends the call
+			defer stop()
+			defer cancel()
+			next.ServeHTTP(w, r.WithContext(webserver.ContextWith(ctx, who)))
 			return
 		}
 		k := r.Header.Get(APIKeyHeader)
@@ -124,6 +151,11 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
+		if r.URL.Path == "/api/v1/health" {
+			// Probes and uptime monitors often land here first.
+			fail(w, http.StatusUnauthorized, "sign in first; for health probes use /healthz or /readyz (or /ping), which need no sign-in")
+			return
+		}
 		fail(w, http.StatusUnauthorized, "sign in first")
 	})
 }
@@ -131,7 +163,7 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 // public routes need no sign-in.
 func public(r *http.Request) bool {
 	switch r.Method + " " + r.URL.Path {
-	case "GET /healthz", "HEAD /healthz", "GET /readyz", "HEAD /readyz", "GET /login", "GET /api/v1/auth/state",
+	case "GET /healthz", "HEAD /healthz", "GET /readyz", "HEAD /readyz", "GET /ping", "HEAD /ping", "GET /login", "GET /plex-done", "GET /api/v1/auth/state",
 		"POST /api/v1/auth/login", "POST /api/v1/auth/setup", "POST /api/v1/auth/login/two-factor",
 		"POST /api/v1/auth/oidc/start", "GET /api/v1/auth/oidc/callback", "POST /api/v1/auth/oidc/finish",
 		"POST /api/v1/auth/forward/login", "GET /api/v1/public/signin-art",
@@ -139,7 +171,20 @@ func public(r *http.Request) bool {
 		"POST /api/v1/auth/media-server/jellyfin", "POST /api/v1/auth/media-server/emby",
 		"POST /api/v1/auth/setup/plex/start", "POST /api/v1/auth/setup/plex/finish",
 		"POST /api/v1/auth/setup/media-server/jellyfin", "POST /api/v1/auth/setup/media-server/emby",
-		"GET /api/v1/auth/setup/discover":
+		"GET /api/v1/auth/setup/discover", "GET /api/v1/public/languages",
+		"POST /api/v1/auth/owner-reset/code", "POST /api/v1/auth/owner-reset/check", "POST /api/v1/auth/owner-reset/finish":
+		return true
+	}
+	if rest, ok := strings.CutPrefix(r.URL.Path, "/api/v1/auth/setup/language/"); ok && (r.Method == http.MethodPost || r.Method == http.MethodDelete) && rest != "" && !strings.Contains(rest, "/") {
+		return true
+	}
+	// Language packs: the sign-in page shows in the picked language too.
+	if rest, ok := strings.CutPrefix(r.URL.Path, "/api/v1/languages/"); ok && r.Method == http.MethodGet && strings.Count(rest, "/") == 1 && strings.HasSuffix(rest, "/pack") {
+		return true
+	}
+	// Plugin page files: a random, short-lived token in the path is the only
+	// key, since a sandboxed page sends no cookies.
+	if rest, ok := strings.CutPrefix(r.URL.Path, "/api/v1/plugin-page-files/"); ok && r.Method == http.MethodGet && strings.Contains(rest, "/") {
 		return true
 	}
 	// The sign-in page's pictures (the handler serves only its own art).
@@ -212,6 +257,10 @@ func (a *Auth) strictLocal(r *http.Request) bool {
 		return false
 	}
 	ip := parseHostIP(r.RemoteAddr)
+	if ip != nil && ip.IsLoopback() && pluginsLive() {
+		// Plugins reach HolyArrs on loopback; they sign in with their token only.
+		return false
+	}
 	if anyForwardHeader(r) {
 		if ip == nil || !a.trustedProxy(ip) {
 			a.warnUntrustedProxy(ip)

@@ -145,11 +145,11 @@ func (l *Launcher) refuse(f folder, cur Installed) string {
 func (l *Launcher) revert(f folder, bad, why string) {
 	f.addSkip(bad)
 	_ = os.RemoveAll(f.path(bad))
-	to := "the image's " + l.ImageVersion
+	to, toVersion := "the image's "+l.ImageVersion, l.ImageVersion
 	var prev Installed
 	if f.read(previousFile, &prev) && prev.Version != "" && prev.Version != bad {
 		_ = f.write(currentFile, prev)
-		to = prev.Version
+		to, toVersion = prev.Version, prev.Version
 	} else {
 		f.remove(currentFile)
 	}
@@ -162,10 +162,18 @@ func (l *Launcher) revert(f folder, bad, why string) {
 		}
 	}
 	f.remove(pendingFile)
+	var g Installed
+	chosen := f.read(goBackFile, &g) && g.Version == bad
+	f.remove(goBackFile)
+	if chosen {
+		why = "the owner chose to go back"
+	}
 	now := l.now()
 	msg := fmt.Sprintf("%s -> %s: %s", bad, to, why)
 	log.Printf("updates: went back from %s", msg)
-	f.setStatus(func(s *LaunchStatus) { s.Rollback, s.RollbackAt = msg, &now })
+	f.setStatus(func(s *LaunchStatus) {
+		s.Rollback, s.RollbackAt, s.Chosen, s.Left, s.To = msg, &now, chosen, bad, toVersion
+	})
 }
 
 // RestoreCopy puts the database copy made before an update back in place
@@ -184,7 +192,7 @@ func RestoreCopy(configDir string) error {
 			continue
 		}
 		dst := filepath.Join(configDir, name)
-		for _, suffix := range []string{"", "-wal", "-shm"} {
+		for _, suffix := range []string{"", "-wal", "-shm", "-journal"} {
 			if _, err := os.Lstat(dst + suffix); err != nil {
 				continue
 			}

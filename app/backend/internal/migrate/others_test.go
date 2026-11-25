@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -291,7 +292,7 @@ func TestSABnzbd(t *testing.T) {
 	s := read(t, Source{Kind: SABnzbd, URL: srv.URL, Key: key, AllowLocal: true})
 	d := s.Downloader
 	u, _ := url.Parse(srv.URL)
-	if s.Version != "4.5.1" || d.Host != u.Hostname() || d.Port != 8080 || d.URLBase != "/sabnzbd" || d.SavePath != "/incomplete" || d.CompletePath != "/complete" ||
+	if s.Version != "4.5.1" || d.Host != u.Hostname() || u.Port() == "8080" || strconv.Itoa(d.Port) != u.Port() || d.URLBase != "" || d.SavePath != "/incomplete" || d.CompletePath != "/complete" ||
 		len(d.Categories) != 2 || d.Categories[1].Path != "tv" || len(d.Servers) != 1 || d.Servers[0].Name != "Example" || d.Servers[0].Settings["connections"] != int64(20) {
 		t.Fatalf("sab %+v", d)
 	}

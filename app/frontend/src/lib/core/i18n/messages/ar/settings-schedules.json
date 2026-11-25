@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "إلغاء",
 	"settings.schedules.stages": "المراحل",
 	"settings.schedules.stagesNote": "أوقفها مؤقتًا أو أعد تشغيلها في <a>الأقسام</a>.",
-	"settings.schedules.allTime": "طوال الوقت"
+	"settings.schedules.allTime": "طوال الوقت",
+	"settings.schedules.skip.nothing": "لا شيء للقيام به",
+	"settings.schedules.skip.plexOff": "متوقف: شغّل {setting} في {page}",
+	"settings.schedules.skip.plexNobody": "لا شيء للقيام به: لم يشغّل أحد قائمة مشاهدة Plex الخاصة به",
+	"settings.schedules.skip.settingOff": "متوقف: شغّله من إعداداته",
+	"settings.schedules.skip.starting": "تم التخطي: كان HolyArrs لا يزال يبدأ",
+	"settings.schedules.took": "استغرق {time}",
+	"settings.schedules.finished": "انتهى {label}",
+	"settings.schedules.nothingToDo": "{label}: لا شيء للقيام به",
+	"settings.schedules.runFailed": "فشل {label}"
 }

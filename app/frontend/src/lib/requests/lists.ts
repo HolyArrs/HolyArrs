@@ -29,7 +29,11 @@ export const listKinds: [string, string, string][] = [
 ];
 
 /** Where a list can be seen on its own site. */
-export function listLink(kind: string, ref: string): string {
+export function listLink(kind: string, ref: string, titleKind = 'movie'): string {
+	if (kind === 'trakt_list' && ref.startsWith('chart:')) {
+		const name = ref.slice(6).replace('-', '/');
+		return `https://trakt.tv/${titleKind === 'show' ? 'shows' : 'movies'}/${encodeURIComponent(name).replace('%2F', '/')}`;
+	}
 	if (kind === 'tmdb_list') return `https://www.themoviedb.org/list/${encodeURIComponent(ref)}`;
 	const [user, slug] = ref.split('/');
 	if (!user || !slug) return '';

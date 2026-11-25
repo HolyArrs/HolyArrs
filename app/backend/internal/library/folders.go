@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -33,6 +34,27 @@ type Health struct {
 // Usable reports whether files can be placed in the folder at all. A folder
 // without hardlinks still works: files are copied.
 func (h Health) Usable() bool { return h.State == "ok" || h.State == "no_hardlink" }
+
+// checkLookOnly looks at a look-only Library folder without writing to it:
+// it only has to be there.
+func checkLookOnly(path string) Health {
+	h := Health{State: "ok", FreeSpace: -1}
+	if st, err := os.Stat(path); err != nil || !st.IsDir() {
+		h.State, h.Reason = "missing", "the folder does not exist or is not a folder"
+		return h
+	}
+	h.FreeSpace = importer.FreeSpace(path)
+	return h
+}
+
+// CheckUse checks the Library folder lf before a title goes into it. A
+// look-only folder only has to be there: nothing is written to it.
+func CheckUse(lf mediafiles.LibraryFolder, downloadPaths []string) Health {
+	if lf.LookOnly {
+		return checkLookOnly(lf.Path)
+	}
+	return CheckFolder(lf.Path, downloadPaths)
+}
 
 // CheckFolder looks at a Library folder: it must exist, take writes, and
 // take hardlinks from each Downloader folder in downloadPaths. Free space
@@ -111,6 +133,93 @@ func DownloadPaths(ctx context.Context, db database.Lister, extra ...string) ([]
 	return out, nil
 }
 
+// RoutedPaths keeps the download folders that titles of a Library folder
+// with these new-title tags can come from. A path that only Downloaders the
+// tag routing never picks for those titles save into is left out, so a
+// Downloader on another disk does not mark the folder as copying. Every
+// other path (the save path, a path of a picked Downloader) stays, and all
+// stay when no Downloader would be picked or the list cannot be read.
+func RoutedPaths(ctx context.Context, db database.Lister, paths, tags []string) []string {
+	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "state != 'disabled' AND removed = 0")
+	if err != nil {
+		return paths
+	}
+	picked := mediafiles.Downloaders(dls, tags, func(d domain.Downloader) []string { return d.Tags })
+	if len(picked) == 0 {
+		return paths
+	}
+	keep, other := map[string]bool{}, map[string]bool{}
+	for _, d := range picked {
+		for _, m := range d.PathMap {
+			keep[m.Ours] = true
+		}
+	}
+	for _, d := range dls {
+		for _, m := range d.PathMap {
+			if !keep[m.Ours] {
+				other[m.Ours] = true
+			}
+		}
+	}
+	var out []string
+	for _, p := range paths {
+		if !other[p] {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// LinkPaths is RoutedPaths for the Library folder at path, with one more
+// step: when one Downloader saves into several folders (often one per kind
+// of title, each on its own disk), the Library folder only needs hardlinks
+// from one of them, so that Downloader's folders are left out once one of
+// them links. Each import still links from the folder it really used, and
+// copies when that fails, as Sonarr and Radarr do. A path map does not say
+// which kind of title each folder holds, so a folder of the other kind that
+// links is enough here too.
+func LinkPaths(ctx context.Context, db database.Lister, path string, paths, tags []string) []string {
+	paths = RoutedPaths(ctx, db, paths, tags)
+	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "state != 'disabled' AND removed = 0")
+	if err != nil {
+		return paths
+	}
+	in := map[string]bool{}
+	for _, p := range paths {
+		in[p] = true
+	}
+	drop, alone := map[string]bool{}, map[string]bool{}
+	for _, d := range dls {
+		var own []string
+		for _, m := range d.PathMap {
+			if in[m.Ours] {
+				own = append(own, m.Ours)
+			}
+		}
+		if len(own) < 2 {
+			for _, p := range own {
+				alone[p] = true
+			}
+			continue
+		}
+		for _, p := range own {
+			if ok, _ := canLink(p, path); ok {
+				for _, q := range own {
+					drop[q] = true
+				}
+				break
+			}
+		}
+	}
+	var out []string
+	for _, p := range paths {
+		if !drop[p] || alone[p] {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
 // Folder errors.
 var (
 	ErrFolderPath   = errors.New("the path must be an absolute folder path, not a whole drive and not inside or around the config folder")
@@ -134,6 +243,13 @@ type FolderInput struct {
 	NewTitleTags []string `json:"new_title_tags"`
 	// OnlyTaggedSources makes the titles in the folder ask only Sources that share one of these tags.
 	OnlyTaggedSources bool `json:"only_tagged_sources"`
+	// NewTitleAudio are the audio languages the main copy of each new movie
+	// or show added here needs (empty: any audio).
+	NewTitleAudio []string `json:"new_title_audio"`
+	// LookOnly: HolyArrs only reads the folder.
+	LookOnly bool `json:"look_only"`
+	// Flat: movies sit as files directly in the folder (movie folders only).
+	Flat bool `json:"flat"`
 }
 
 // FullPath reports whether p is a full folder path HolyArrs can use: a
@@ -179,9 +295,18 @@ func AddFolder(ctx context.Context, s *database.Store, in FolderInput, downloadP
 	if in.Kind != "movie" && in.Kind != "show" && in.Kind != "music" {
 		return lf, ErrFolderKind
 	}
-	h := CheckFolder(in.Path, downloadPaths)
+	var h Health
+	if in.LookOnly {
+		h = checkLookOnly(in.Path)
+	} else {
+		h = CheckFolder(in.Path, LinkPaths(ctx, s.Read(), in.Path, downloadPaths, mediafiles.CleanTags(in.NewTitleTags)))
+	}
 	if h.State == "missing" {
 		return lf, ErrFolderAbsent
+	}
+	audio, err := folderAudio(in.Kind, in.NewTitleAudio)
+	if err != nil {
+		return lf, err
 	}
 	if in.Label == "" {
 		in.Label = filepath.Base(in.Path)
@@ -190,8 +315,11 @@ func AddFolder(ctx context.Context, s *database.Store, in FolderInput, downloadP
 	lf = mediafiles.LibraryFolder{Path: in.Path, Kind: in.Kind, Label: in.Label, DefaultPickRules: in.DefaultPickRules,
 		FreeSpace: max(h.FreeSpace, 0), Health: h.State, HealthReason: h.Reason, HealthCheckedAt: &now, SameDiskAs: []int64{}, NewTitleTags: mediafiles.CleanTags(in.NewTitleTags)}
 	lf.OnlyTaggedSources = in.OnlyTaggedSources && len(lf.NewTitleTags) > 0
-	err := s.Write(ctx, func(tx *sql.Tx) error {
-		all, err := database.Select[mediafiles.LibraryFolder](ctx, tx, "library_folders", "")
+	lf.NewTitleAudio = audio
+	lf.LookOnly = in.LookOnly
+	lf.Flat = in.Flat && in.Kind == "movie"
+	err = s.Write(ctx, func(tx *sql.Tx) error {
+		all, err := database.Select[mediafiles.LibraryFolder](ctx, tx, "library_folders", "stand_in = 0")
 		if err != nil {
 			return err
 		}
@@ -241,6 +369,29 @@ func PickRulesFor(tx *sql.Tx, id *int64, titleKind string) error {
 }
 
 // folderTitleKind is the title kind a folder's Pick rules must fit.
+// folderAudio checks a folder's audio languages for new titles with the
+// rules a Version edit uses; music folders take none.
+func folderAudio(folderKind string, audio []string) ([]string, error) {
+	if len(audio) == 0 {
+		return []string{}, nil
+	}
+	_, out, err := copyChoices(folderTitleKind(folderKind), "", audio)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrCopyChoice, err)
+	}
+	return out, nil
+}
+
+// NewTitleAudio is the audio languages a new title's main copy needs in
+// the folder. A title adopted from files already there gets none: its copy
+// is what is on disk, and a bulk edit sets languages on such titles.
+func NewTitleAudio(lf *mediafiles.LibraryFolder, adopted bool) []string {
+	if lf == nil || adopted || len(lf.NewTitleAudio) == 0 {
+		return nil
+	}
+	return slices.Clone(lf.NewTitleAudio)
+}
+
 func folderTitleKind(folderKind string) string {
 	if folderKind == "music" {
 		return "artist"
@@ -270,6 +421,10 @@ type FolderChange struct {
 	CopiesExpected    *bool     `json:"copies_expected"`
 	NewTitleTags      *[]string `json:"new_title_tags"`
 	OnlyTaggedSources *bool     `json:"only_tagged_sources"`
+	NewTitleAudio     *[]string `json:"new_title_audio"`
+	LookOnly          *bool     `json:"look_only"`
+	// Flat changes only the setting: no file moves either way.
+	Flat *bool `json:"flat"`
 }
 
 // UpdateFolder changes a Library folder's label, default Pick rules (id 0
@@ -281,7 +436,7 @@ func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChan
 			return err
 		}
 		if c.Label != nil && *c.Label != "" && *c.Label != lf.Label {
-			all, err := database.Select[mediafiles.LibraryFolder](ctx, tx, "library_folders", "")
+			all, err := database.Select[mediafiles.LibraryFolder](ctx, tx, "library_folders", "stand_in = 0")
 			if err != nil {
 				return err
 			}
@@ -312,11 +467,35 @@ func UpdateFolder(ctx context.Context, s *database.Store, id int64, c FolderChan
 		if c.OnlyTaggedSources != nil {
 			lf.OnlyTaggedSources = *c.OnlyTaggedSources
 		}
+		if c.NewTitleAudio != nil {
+			audio, err := folderAudio(lf.Kind, *c.NewTitleAudio)
+			if err != nil {
+				return err
+			}
+			lf.NewTitleAudio = audio
+		} else if lf.NewTitleAudio == nil {
+			lf.NewTitleAudio = []string{}
+		}
+		if c.LookOnly != nil && *c.LookOnly != lf.LookOnly {
+			lf.LookOnly = *c.LookOnly
+			if lf.LookOnly {
+				// A folder that was found not writable is fine now: nothing is written there.
+				if lf.Health == "read_only" || lf.Health == "no_hardlink" {
+					lf.Health, lf.HealthReason = "ok", ""
+				}
+			}
+		}
+		if c.Flat != nil {
+			lf.Flat = *c.Flat && lf.Kind == "movie"
+		}
 		// Without tags there is nothing to keep to, and a tag typed later must not bring the switch back unasked.
 		if len(lf.NewTitleTags) == 0 {
 			lf.OnlyTaggedSources = false
 		}
-		return database.Update(tx, "library_folders", &lf, by)
+		if err := database.Update(tx, "library_folders", &lf, by); err != nil || !lf.LookOnly {
+			return err
+		}
+		return stopKeepingLookOnly(tx, id)
 	})
 	return lf, err
 }
@@ -386,7 +565,7 @@ func DeleteFolder(ctx context.Context, s *database.Store, id int64) error {
 		// Recently deleted; when the folder is gone from disk, none can.
 		prefix := importer.HoldingDir + "/"
 		rows, err := tx.Query(`SELECT f.relative_path FROM files f JOIN versions v ON v.id = f.version_id
-			WHERE v.library_folder_id = ? AND f.state = 'gone' AND substr(f.relative_path, 1, ?) = ?`, id, len(prefix), prefix)
+			WHERE v.library_folder_id = ? AND f.state IN ('gone', 'replaced') AND substr(f.relative_path, 1, ?) = ?`, id, len(prefix), prefix)
 		if err != nil {
 			return err
 		}
@@ -461,7 +640,7 @@ func RecheckFolder(ctx context.Context, s *database.Store, id int64, downloadPat
 	if err := database.Get(ctx, s.Read(), "library_folders", id, &lf); err != nil {
 		return lf, false, err
 	}
-	if quick && lf.HealthCheckedAt != nil && (lf.Health == "ok" || lf.Health == "no_hardlink") {
+	if quick && !lf.LookOnly && lf.HealthCheckedAt != nil && (lf.Health == "ok" || lf.Health == "no_hardlink") {
 		if st, serr := os.Stat(lf.Path); serr == nil && st.IsDir() {
 			free := importer.FreeSpace(lf.Path)
 			reason := freeSpaceReason(lf.HealthReason, free)
@@ -476,7 +655,12 @@ func RecheckFolder(ctx context.Context, s *database.Store, id int64, downloadPat
 			return lf, changed, err
 		}
 	}
-	h := CheckFolder(lf.Path, downloadPaths)
+	var h Health
+	if lf.LookOnly {
+		h = checkLookOnly(lf.Path)
+	} else {
+		h = CheckFolder(lf.Path, LinkPaths(ctx, s.Read(), lf.Path, downloadPaths, TagsFromFolder(lf)))
+	}
 	changed = h.State != lf.Health || h.Reason != lf.HealthReason
 	now := time.Now().UTC()
 	err = s.Write(ctx, func(tx *sql.Tx) error {
@@ -510,4 +694,16 @@ func freeSpaceReason(reason string, free int64) string {
 func ActorText(a domain.Actor) string {
 	b, _ := json.Marshal(a)
 	return string(b)
+}
+
+// stopKeepingLookOnly turns Keep up to date off for every copy in the
+// look-only Library folder id, and for each title whose copies all live in
+// look-only folders, so nothing there is searched or counted as missing.
+func stopKeepingLookOnly(tx *sql.Tx, id int64) error {
+	if _, err := tx.Exec("UPDATE versions SET keep_up_to_date = 0 WHERE library_folder_id = ?", id); err != nil {
+		return err
+	}
+	_, err := tx.Exec(`UPDATE titles SET keep_up_to_date = 0 WHERE id IN (SELECT title_id FROM versions WHERE library_folder_id = ?)
+		AND NOT EXISTS (SELECT 1 FROM versions v WHERE v.title_id = titles.id AND NOT `+mediafiles.LookOnlySQL+`)`, id)
+	return err
 }

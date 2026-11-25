@@ -30,12 +30,16 @@ const (
 	avatarMaxPixels = 25e6    // a 24 MP camera photo fits; bounds decode memory
 )
 
+// AvatarUploadPath is where a person sends their own picture. Its handler
+// sets its own, larger body limit than the app-wide one.
+const AvatarUploadPath = "/api/v1/account/avatar"
+
 var errAvatarImage = errors.New("send a JPEG, PNG or WebP picture")
 
 var avatarSlot = make(chan struct{}, 1)
 
 func (a *Auth) avatarRoutes(m *http.ServeMux) {
-	m.HandleFunc("PUT /api/v1/account/avatar", a.putAvatar)
+	m.HandleFunc("PUT /api/v1/account/avatar", a.putAvatar) // path is AvatarUploadPath; written out for the route checks
 	m.HandleFunc("DELETE /api/v1/account/avatar", a.deleteAvatar)
 	m.HandleFunc("GET /api/v1/users/{id}/avatar", a.getAvatar)
 }

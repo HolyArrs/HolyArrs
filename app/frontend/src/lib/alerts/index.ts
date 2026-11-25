@@ -13,3 +13,6 @@ export type { PinnedAlert } from './attention-alerts.ts';
 export { dotReasons } from './dot-reasons.ts';
 export type { DotReason } from './dot-reasons.ts';
 export type { CheckGroup } from './settings-status.svelte.ts';
+export { default as FinishAlerts } from './FinishAlerts.svelte';
+export { alertForm, alertMissing, missingWords } from './finish.ts';
+export type { Missing } from './finish.ts';

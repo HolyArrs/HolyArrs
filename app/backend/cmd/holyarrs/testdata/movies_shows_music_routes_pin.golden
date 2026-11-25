@@ -464,6 +464,7 @@
           "season": "number",
           "slots": [
             {
+              "good_enough": "bool",
               "id": "number",
               "reason": "string",
               "state": "string",

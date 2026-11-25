@@ -5,7 +5,7 @@ test.describe.configure({ mode: 'serial' });
 
 async function enterApp(page: import('@playwright/test').Page) {
 	await page.goto('/login');
-	const setup = page.getByRole('heading', { name: 'Set up HolyArrs' });
+	const setup = page.getByRole('heading', { name: 'Pick your languages' });
 	const login = page.getByRole('heading', { name: 'Sign in' });
 	await expect(setup.or(login)).toBeVisible();
 	if (await login.isVisible()) {

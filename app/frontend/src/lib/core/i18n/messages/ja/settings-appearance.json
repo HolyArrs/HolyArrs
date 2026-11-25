@@ -50,6 +50,18 @@
 "settings.appearance.colRequests": "リクエスト",
 "settings.appearance.colRate": "行あたり",
 "settings.appearance.noRows": "探索の行はまだ集計されていません。",
+	"settings.appearance.rowStats": "探索の行",
+	"settings.appearance.rowStatsDesc": "過去30日間の行ごとの開いた数とリクエスト数（全員の合計）。このサーバーでのみ数えます。",
+	"settings.appearance.colRow": "行",
+	"settings.appearance.row.because_have": "持っているタイトルに似たもの",
+	"settings.appearance.row.because_asked": "あなたのリクエストに似たもの",
+	"settings.appearance.row.person": "ある人物の作品",
+	"settings.appearance.row.genre": "あなたへのジャンル別おすすめ",
+	"settings.appearance.row.popular_genre": "ジャンル別の人気",
+	"settings.appearance.row.popular_decade": "年代別の人気",
+	"settings.appearance.row.decade": "年代別",
+	"settings.appearance.row.mood": "気分別",
+	"settings.appearance.row.hero": "上部バナー",
 "settings.appearance.motion": "動き",
 "settings.appearance.motionNote": "お使いのデバイスの「視覚効果を減らす」設定に従います"
 }

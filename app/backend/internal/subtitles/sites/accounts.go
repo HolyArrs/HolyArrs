@@ -127,6 +127,44 @@ func baseLang(code string) string {
 	return code
 }
 
+// osRegional are our codes OpenSubtitles.com files under its own codes. It
+// has no plain "zh", so a Chinese wish asks for each kind; a plain pt or es
+// wish asks for both kinds the site keeps apart.
+var osRegional = map[string][]string{
+	"zh": {"ze", "zh-ca", "zh-cn", "zh-tw"}, "zh-hans": {"ze", "zh-cn"}, "zh-hant": {"zh-tw"}, "zh-yue": {"zh-ca"},
+	"pt": {"pt-br", "pt-pt"}, "pt-pt": {"pt-pt"}, "es": {"ea", "es"}, "es-419": {"ea"}, "fr-ca": {"fr"},
+}
+
+// osBack reads the site's own codes back as ours. Its "ze" is Simplified
+// Chinese and English in one file, and "ea" is Latin American Spanish.
+var osBack = map[string]string{"ze": "zh-hans", "zh-cn": "zh-hans", "zh-tw": "zh-hant", "zh-ca": "zh-yue", "ea": "es-419", "pt-pt": "pt-pt", "pt-br": "pt-br"}
+
+// osLang turns a language code from the site into ours.
+func osLang(code string) string {
+	if c, ok := osBack[strings.ToLower(strings.TrimSpace(code))]; ok {
+		return c
+	}
+	return siteLang(code)
+}
+
+// osAskLangs is the languages value sent to OpenSubtitles.com.
+func osAskLangs(langs []string) []string {
+	out := make([]string, 0, len(langs))
+	for _, l := range langs {
+		r, ok := osRegional[l]
+		if !ok {
+			r = []string{l}
+		}
+		for _, c := range r {
+			if !slices.Contains(out, c) {
+				out = append(out, c)
+			}
+		}
+	}
+	slices.Sort(out) // the site wants its languages in order
+	return out
+}
+
 func (o *openSubtitles) Search(ctx context.Context, q Query) ([]Candidate, error) {
 	langs := make([]string, 0, len(q.Languages))
 	for _, l := range q.Languages {
@@ -139,7 +177,7 @@ func (o *openSubtitles) Search(ctx context.Context, q Query) ([]Candidate, error
 	}
 	slices.Sort(langs)
 	v := url.Values{}
-	v.Set("languages", strings.Join(langs, ","))
+	v.Set("languages", strings.Join(osAskLangs(langs), ","))
 	imdb, tmdb := idNumber(q.IMDb), idNumber(q.TMDB)
 	if q.Hash != "" {
 		v.Set("moviehash", strings.ToLower(q.Hash))
@@ -194,7 +232,7 @@ func (o *openSubtitles) Search(ctx context.Context, q Query) ([]Candidate, error
 		if len(a.Files) == 0 || a.Files[0].FileID <= 0 {
 			continue
 		}
-		lang := siteLang(a.Language)
+		lang := osLang(a.Language)
 		if !langWanted(langs, lang) {
 			continue // the site answered in another language
 		}
@@ -344,16 +382,21 @@ func (s *subdl) Search(ctx context.Context, q Query) ([]Candidate, error) {
 		if l = siteLang(l); l != "" && !slices.Contains(langs, l) {
 			langs = append(langs, l)
 		}
-		if b := baseLang(l); b != "" && !slices.Contains(codes, b) {
-			codes = append(codes, b)
+		for _, c := range sdAsk(l) {
+			if !slices.Contains(codes, c) {
+				codes = append(codes, c)
+			}
 		}
 	}
 	if len(langs) == 0 {
 		return nil, nil
 	}
+	if len(codes) == 0 {
+		return nil, nil
+	}
 	v := url.Values{}
 	v.Set("api_key", s.c.cfg.Key)
-	v.Set("languages", strings.ToUpper(strings.Join(codes, ",")))
+	v.Set("languages", strings.Join(codes, ","))
 	v.Set("subs_per_page", "30")
 	v.Set("hi", "1")
 	switch q.Kind {
@@ -417,7 +460,7 @@ func (s *subdl) Search(ctx context.Context, q Query) ([]Candidate, error) {
 		if !strings.HasPrefix(x.URL, "/") || strings.HasPrefix(x.URL, "//") || len(x.URL) > 300 || x.FullSeason {
 			continue
 		}
-		lang := siteLang(x.Language)
+		lang := sdLang(x.Language)
 		if !langWanted(langs, lang) {
 			continue
 		}
@@ -487,4 +530,34 @@ func FileHash(name string) (string, error) {
 		}
 	}
 	return fmt.Sprintf("%016x", sum), nil
+}
+
+// sdCodes are our codes subdl files under its own upper-case codes. It keeps
+// Brazilian Portuguese (BR_PT, so its PT is Portugal) and Big5 Traditional
+// Chinese (ZH_BG) apart; its plain ZH does not say which kind it is.
+var sdCodes = map[string][]string{"pt": {"BR_PT", "PT"}, "pt-br": {"BR_PT"}, "pt-pt": {"PT"}, "zh": {"ZH", "ZH_BG"}, "zh-hant": {"ZH_BG"}}
+
+// sdAsk is the subdl codes for one of our codes; nil for a kind the site does
+// not keep apart.
+func sdAsk(code string) []string {
+	if c, ok := sdCodes[code]; ok {
+		return c
+	}
+	if strings.Contains(code, "-") {
+		return nil
+	}
+	return []string{strings.ToUpper(code)}
+}
+
+// sdLang reads a subdl language code or name back as ours.
+func sdLang(code string) string {
+	switch strings.ToLower(strings.TrimSpace(code)) {
+	case "br_pt":
+		return "pt-br"
+	case "pt":
+		return "pt-pt"
+	case "zh_bg":
+		return "zh-hant"
+	}
+	return siteLang(code)
 }

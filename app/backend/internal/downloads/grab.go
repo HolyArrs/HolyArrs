@@ -39,7 +39,9 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 		// outside HolyArrs's category where HolyArrs may not take it. Trying again
 		// changes nothing until a person acts, so the Slot waits on a decision. A Slot
 		// that moved on meanwhile refuses the change; nothing is left to do then.
-		_ = mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, err.Error(), domain.Actor{Kind: "job", ID: r.Job.ID})
+		if mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, err.Error(), domain.Actor{Kind: "job", ID: r.Job.ID}) == nil {
+			m.publish("slot", map[string]any{"id": r.Job.Subject.ID, "state": mediafiles.SlotNeedsADecision, "reason": err.Error(), "not_sent": true})
+		}
 		r.SetResult(map[string]any{"not_sent": err.Error()})
 		return nil
 	}
@@ -65,7 +67,7 @@ func (m *Manager) HandleGrab(ctx context.Context, r *jobs.Run) error {
 		// person with the reason instead of being searched again unseen.
 		reason := "not sent: " + rr.msg
 		if mediafiles.MoveSlot(ctx, m.Store, r.Job.Subject.ID, mediafiles.SlotNeedsADecision, reason, domain.Actor{Kind: "job", ID: r.Job.ID}) == nil {
-			m.publish("slot", map[string]any{"id": r.Job.Subject.ID, "state": mediafiles.SlotNeedsADecision, "reason": reason})
+			m.publish("slot", map[string]any{"id": r.Job.Subject.ID, "state": mediafiles.SlotNeedsADecision, "reason": reason, "not_sent": true})
 			m.notSentEvent(ctx, r.Job.Subject.ID, int64(relID), rr.msg, domain.Actor{Kind: "job", ID: r.Job.ID})
 		}
 		r.SetResult(map[string]any{"not_sent": rr.msg})
@@ -181,6 +183,9 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	}
 	if sl.ChosenReleaseID == nil || *sl.ChosenReleaseID != releaseID {
 		return 0, staleGrab{"the Slot is no longer chosen for this Release"}
+	}
+	if mediafiles.SlotLookOnly(ctx, db, slotID) {
+		return 0, staleGrab{mediafiles.ErrLookOnly.Error()}
 	}
 	all, err := database.Select[domain.Downloader](ctx, db, "downloaders", "protocol = ? AND removed = 0 ORDER BY priority, id", rel.Protocol)
 	if err != nil {
@@ -461,6 +466,31 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 // never be sent, and searches the Slot again at once. A Slot that moved on
 // meanwhile is left as it is.
 func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason string, turnDown bool, by domain.Actor) {
+	m.giveUpOne(ctx, slotID, releaseID, reason, turnDown, by)
+	// A season pack is one grab for many Slots: the others chosen for the same
+	// Release would wait forever for a send that will not come.
+	rows, err := m.Store.Read().QueryContext(ctx, `SELECT id FROM slots WHERE state = 'chosen' AND chosen_release_id = ? AND id <> ?
+		AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.kind = 'grab' AND j.state IN ('queued', 'running')
+			AND json_extract(j.subject, '$.id') = slots.id AND json_extract(j.params, '$.release_id') = ?)
+		AND NOT EXISTS (SELECT 1 FROM downloader_attempts a WHERE a.state = 'pending' AND a.release_id = ?
+			AND EXISTS (SELECT 1 FROM json_each(a.slot_snapshots) x WHERE json_extract(x.value, '$.id') = slots.id))`, releaseID, slotID, releaseID, releaseID)
+	if err != nil {
+		return
+	}
+	var rest []int64
+	for rows.Next() {
+		var id int64
+		if rows.Scan(&id) == nil {
+			rest = append(rest, id)
+		}
+	}
+	rows.Close()
+	for _, id := range rest {
+		m.giveUpOne(ctx, id, releaseID, reason, false, by)
+	}
+}
+
+func (m *Manager) giveUpOne(ctx context.Context, slotID, releaseID int64, reason string, turnDown bool, by domain.Actor) {
 	freed := false
 	err := m.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(ctx, "UPDATE slots SET chosen_release_id = NULL WHERE id = ? AND state = 'chosen' AND chosen_release_id = ?", slotID, releaseID)
@@ -483,7 +513,7 @@ func (m *Manager) giveUp(ctx context.Context, slotID, releaseID int64, reason st
 	if err != nil || !freed {
 		return
 	}
-	m.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotWanted, "reason": reason})
+	m.publish("slot", map[string]any{"id": slotID, "state": mediafiles.SlotWanted, "reason": reason, "not_sent": true})
 	m.notSentEvent(ctx, slotID, releaseID, reason, by)
 	if turnDown && m.OnFailed != nil {
 		m.OnFailed(ctx, slotID)
@@ -682,7 +712,8 @@ func (m *Manager) settleLostChoices(ctx context.Context) {
 		log.Printf("downloads: could not close sends to removed Downloaders: %v", err)
 	}
 	rows, err := m.Store.Read().QueryContext(ctx, `SELECT s.id, s.chosen_release_id FROM slots s
-		WHERE s.state = 'chosen' AND s.chosen_release_id IS NOT NULL AND s.active_download_id IS NULL AND s.updated_at <= ?
+		WHERE s.state = 'chosen' AND s.chosen_release_id IS NOT NULL AND s.updated_at <= ?
+		AND NOT EXISTS (SELECT 1 FROM downloads d WHERE d.id = s.active_download_id AND d.state IN (`+activeStates+`))
 		AND NOT EXISTS (SELECT 1 FROM jobs j WHERE j.kind = 'grab' AND j.state IN ('queued', 'running')
 			AND json_extract(j.subject, '$.id') = s.id AND json_extract(j.params, '$.release_id') = s.chosen_release_id)
 		AND NOT EXISTS (SELECT 1 FROM downloader_attempts a WHERE a.state = 'pending' AND a.release_id = s.chosen_release_id

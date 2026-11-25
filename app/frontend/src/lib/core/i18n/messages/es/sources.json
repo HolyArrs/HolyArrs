@@ -85,5 +85,21 @@
 	"sources.uses.auto": "busca por su cuenta",
 	"sources.uses.feed": "lista de lo más reciente",
 	"sources.uses.hand": "búsqueda manual",
-	"sources.uses.none": "sin uso"
+	"sources.uses.none": "sin uso",
+	"sources.bridge.removeTitle": "¿Quitar {name}?",
+	"sources.bridge.find": "Buscar {name} en mi red",
+	"sources.bridge.noneFound": "Ningún {name} respondió en tu red.",
+	"sources.bridge.keyFound": "Clave obtenida de {name}",
+	"sources.bridge.keyKept": "{name} no entregó su clave (tiene el inicio de sesión activado). Usa Obtener clave para copiarla.",
+	"sources.bridge.keyKeptJackett": "Jackett no entregó su clave (tiene contraseña de administrador). Usa Obtener clave para copiarla.",
+	"sources.bridge.notReached": "No se pudo conectar con {name}.",
+	"sources.bridge.brings.title": "Qué se trae",
+	"sources.bridge.brings.sites": "Sus indexadores, como Fuentes",
+	"sources.bridge.brings.categories": "Sus categorías",
+	"sources.bridge.brings.search": "Las búsquedas pasan por {name}",
+	"sources.bridge.brings.sync": "Los cambios en {name} se trasladan",
+	"sources.bridge.brings.stays": "Tus indexadores siguen configurados en {name}.",
+	"sources.bridge.brings.had": "{n} indexadores ya aquí",
+	"sources.bridge.brings.hadFrom": "Importados mediante {apps}",
+	"sources.bridge.brings.keyKept": "Deja la clave vacía para usar la que ya tienen."
 }

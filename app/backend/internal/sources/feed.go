@@ -75,6 +75,7 @@ func (s *Searcher) Register(q *jobs.Queue) {
 	q.Handle(jobs.KindSearchMissing, s.HandleSearchMissing)
 	q.Handle(jobs.KindSearchSeason, s.HandleSeason)
 	q.Handle(jobs.KindSearchAlbum, s.HandleAlbum)
+	q.Handle(jobs.KindReleaseCheck, s.HandleCheck)
 }
 
 // HandleFeed reads the newest Releases of every feed Source, matches them to Titles whose Slots want one, judges them per Slot, and chooses or holds the best.
@@ -641,6 +642,7 @@ func (s *Searcher) storedFound(ctx context.Context, id int64) (found, bool) {
 	if rel.InfoHash != nil {
 		it.InfoHash = *rel.InfoHash
 	}
+	it.Languages = storedSourceLanguages(rel.Parsed)
 	return found{src: src, item: it, relID: rel.ID, byID: matchedByID(rel)}, true
 }
 

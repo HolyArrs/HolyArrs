@@ -56,22 +56,82 @@ func nameSearches(ti mediafiles.Title, hand bool) int {
 // about: how many, and shared, which says whether another Library show
 // carries a name too, and whether one of the same year does. shared reads the
 // Library on its first call, so it is called only when a Source is about to
-// be asked by words. A movie asks no other names: its search goes by its
-// name and year.
+// be asked by words. A movie asks its original and translated names, with
+// its year, only when its own name found nothing on that Source, as the
+// older movie app does.
 type nameAsk struct {
 	n      int
+	wanted int // how many of the asked names are in the Version's wanted languages
 	shared func(ctx context.Context, name string) (shared, sameYear bool)
+}
+
+// wantedNames are the title's kept names in the Version's wanted audio
+// languages and the title language set in naming, other than English, as
+// the older movie app adds the translations of a profile's wanted languages
+// to every search: a French copy is released under the French name.
+func wantedNames(ti mediafiles.Title, langs []string, titleLang string) []string {
+	tmdb := ti.SourceIDs["tmdb"]
+	if mediafiles.TitleNamer == nil || tmdb == "" || (ti.Kind != "movie" && ti.Kind != "show") {
+		return nil
+	}
+	var codes []string
+	for _, l := range append(append([]string{}, langs...), titleLang) {
+		switch l = strings.ToLower(strings.TrimSpace(l)); l {
+		case "", "en", "und":
+		case "pt":
+			codes = append(codes, "pt-br", "pt-pt")
+		case "zh":
+			codes = append(codes, "zh-cn", "zh-tw")
+		case "no":
+			codes = append(codes, "nb")
+		default:
+			codes = append(codes, l)
+		}
+	}
+	var out []string
+	seen := map[string]bool{strings.ToLower(ti.Name): true}
+	for _, c := range codes {
+		if n := strings.TrimSpace(mediafiles.TitleNamer(ti.Kind, tmdb, c)); n != "" && !seen[strings.ToLower(n)] {
+			seen[strings.ToLower(n)] = true
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+// titleLanguage is the title language set in naming ("" when unset or
+// unreadable).
+func (s *Searcher) titleLanguage(ctx context.Context) string {
+	if s.Store == nil {
+		return ""
+	}
+	ns, err := mediafiles.ReadNaming(ctx, s.Store.Read())
+	if err != nil {
+		return ""
+	}
+	return ns.TitleLanguage
+}
+
+// withWanted puts the wanted-language names first in q's other names and
+// makes sure each is asked, up to maxNameSearches.
+func withWanted(q *Query, wanted []string) {
+	if len(wanted) == 0 {
+		return
+	}
+	q.Aliases = append(append([]string{}, wanted...), q.Aliases...)
+	q.other.wanted = min(len(wanted), maxNameSearches)
+	q.other.n = max(q.other.n, q.other.wanted)
 }
 
 // nameAsk works out the other names to ask for a search of the title.
 func (s *Searcher) nameAsk(ctx context.Context, ti mediafiles.Title, hand bool) nameAsk {
+	if ti.Kind == "movie" {
+		return nameAsk{n: nameSearches(ti, hand)}
+	}
 	if ti.Kind != "show" {
 		return nameAsk{}
 	}
 	a := nameAsk{n: nameSearches(ti, hand)}
-	if a.n == 0 {
-		return a
-	}
 	var lib *sharedNames
 	a.shared = func(ctx context.Context, name string) (bool, bool) {
 		if lib == nil {
@@ -223,7 +283,7 @@ func (c *Client) searchNamed(ctx context.Context, q Query, max int) (items []Ite
 // found; when the Source asked to slow down or blocked the search, that error
 // is returned with the items so the caller can pause the Source.
 func searchOtherNames(ctx context.Context, c *Client, q Query, items []Item, max int) ([]Item, error) {
-	if max <= 0 || len(q.Aliases) == 0 || !q.TV || q.feed {
+	if max <= 0 || len(q.Aliases) == 0 || q.Music || q.feed || !q.TV && len(items) > 0 && q.other.wanted == 0 {
 		return items, nil
 	}
 	// A name another Library show of the same year carries is not asked:
@@ -351,7 +411,7 @@ var letterApostrophe = regexp.MustCompile("(^|[^\\pL\\pN])(\\pL)['’‘`]")
 // or is too long to be a name.
 func plainName(name string) string {
 	name = letterApostrophe.ReplaceAllString(name, "$1$2 ")
-	clean := releasename.CleanName(strings.NewReplacer("'", "", "’", "", "‘", "", "`", "").Replace(name))
+	clean := releasename.CleanName(strings.NewReplacer("'", "", "’", "", "‘", "", "`", "", "´", "", "＇", "").Replace(name))
 	if len(clean) > maxNameLen {
 		return ""
 	}

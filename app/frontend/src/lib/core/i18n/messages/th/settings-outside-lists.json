@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "เพิ่มในรายการห้ามเพิ่ม",
 	"settings.outsideLists.showDot": "ซีรีส์ ·",
 	"settings.outsideLists.takeOff": "เอา {name} ออก",
-	"settings.outsideLists.empty": "ยังไม่มีอะไรในรายการนี้"
+	"settings.outsideLists.empty": "ยังไม่มีอะไรในรายการนี้",
+	"settings.outsideLists.traktSignInTitle": "เข้าสู่ระบบ Trakt",
+	"settings.outsideLists.traktSignInInfo": "เข้าสู่ระบบเพื่ออ่านรายการส่วนตัวและวอทช์ลิสต์ใน Trakt ของคุณ และเพิ่มสิ่งที่คุณดูใน Trakt ลงในประวัติการรับชม",
+	"settings.outsideLists.traktSignedInAs": "เข้าสู่ระบบเป็น {name} แล้ว",
+	"settings.outsideLists.traktNotSignedIn": "ยังไม่ได้เข้าสู่ระบบ อ่านเฉพาะรายการสาธารณะ",
+	"settings.outsideLists.traktSignIn": "เข้าสู่ระบบด้วย Trakt",
+	"settings.outsideLists.traktDeviceSteps": "บนอุปกรณ์ใดก็ได้ เปิด <a>{url}</a> แล้วป้อน <code>{code}</code> หน้านี้จะรอจนกว่าคุณจะอนุมัติ",
+	"settings.outsideLists.traktDenied": "การเข้าสู่ระบบ Trakt ถูกปฏิเสธ",
+	"settings.outsideLists.traktExpired": "รหัสหมดอายุแล้ว เริ่มใหม่อีกครั้ง",
+	"settings.outsideLists.traktSignOut": "ออกจากระบบ Trakt",
+	"settings.outsideLists.traktSignedIn": "เข้าสู่ระบบ Trakt แล้ว",
+	"settings.outsideLists.traktSignedOut": "ออกจากระบบ Trakt แล้ว",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (จำเป็นสำหรับการลงชื่อเข้าใช้ด้วย Trakt)",
+	"settings.outsideLists.traktSecretFirst": "บันทึก client secret ของแอป Trakt ก่อน Trakt ต้องใช้เพื่อให้คุณยังลงชื่อเข้าใช้อยู่"
 }

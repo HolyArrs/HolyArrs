@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Nu se poate anula. Fișierele rămân.",
 	"settings.pickRules.removeUsed": "{used}. Alege mai întâi alte reguli acolo.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Anulează"
+	"settings.pickRules.cancel": "Anulează",
+	"settings.pickRules.check.title": "Verifică un nume de lansare",
+	"settings.pickRules.check.desc": "Lipește un nume de lansare ca să vezi cum îl citește HolyArrs și cum îl judecă seturile tale de calitate. Nu se caută și nu se descarcă nimic.",
+	"settings.pickRules.check.name": "Numele lansării",
+	"settings.pickRules.check.rules": "Judecă cu",
+	"settings.pickRules.check.copies": "Copiile titlului potrivit",
+	"settings.pickRules.check.size": "Mărime în GB (opțional)",
+	"settings.pickRules.check.check": "Verifică",
+	"settings.pickRules.check.failed": "Numele nu a putut fi verificat",
+	"settings.pickRules.check.readAs": "Citit ca",
+	"settings.pickRules.check.matches": "Se potrivește cu {name}",
+	"settings.pickRules.check.noTitle": "Nu se potrivește cu niciun titlu din Biblioteca ta. Alege mai sus un set de calitate ca să-l judeci oricum.",
+	"settings.pickRules.check.noAlbum": "Se potrivește cu {name}, dar cu niciunul dintre albumele sale.",
+	"settings.pickRules.check.noCopies": "Acest titlu nu are copii de judecat.",
+	"settings.pickRules.check.hasFile": "Are un fișier"
 }

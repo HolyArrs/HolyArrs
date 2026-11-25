@@ -189,3 +189,49 @@ func activePasswordHash(ctx context.Context, q conn, id int64) (string, error) {
 	err := q.QueryRowContext(ctx, "SELECT password_hash FROM users WHERE id = ? AND state = 'active'", id).Scan(&hash)
 	return hash, err
 }
+
+// userNameTakenByOther reports whether another user already has the name
+// (any case).
+func userNameTakenByOther(ctx context.Context, tx *sql.Tx, name string, id int64) (bool, error) {
+	var n int
+	err := tx.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE lower(name) = lower(?) AND id != ?", name, id).Scan(&n)
+	return n > 0, err
+}
+
+// setUserName renames a user.
+func setUserName(ctx context.Context, tx *sql.Tx, name, now string, id int64) error {
+	_, err := tx.ExecContext(ctx, "UPDATE users SET name = ?, updated_at = ? WHERE id = ?", name, now, id)
+	return err
+}
+
+// setGroupRole sets a person's role from their sign-in groups, with that
+// role's usual permissions. The owner row is never touched, and an admin
+// has no Kid limit. It reports whether the role changed.
+func setGroupRole(ctx context.Context, q conn, id int64, role, perms, now string) (bool, error) {
+	res, err := q.ExecContext(ctx, `UPDATE users SET role = ?, perms = ?,
+		max_rating = CASE WHEN ? = 'admin' THEN '' ELSE max_rating END, rating_country = CASE WHEN ? = 'admin' THEN '' ELSE rating_country END,
+		updated_at = ? WHERE id = ? AND role != 'owner' AND role != ? AND removed_at = ''`, role, perms, role, role, now, id, role)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
+}
+
+// personNames lists the active people by id and display name only.
+func personNames(ctx context.Context, q conn) ([]PersonName, error) {
+	rows, err := q.QueryContext(ctx, `SELECT id, name FROM users WHERE removed_at = '' AND state != 'disabled' ORDER BY name`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []PersonName{}
+	for rows.Next() {
+		var p PersonName
+		if err := rows.Scan(&p.ID, &p.Name); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}

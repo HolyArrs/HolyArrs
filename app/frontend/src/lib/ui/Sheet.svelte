@@ -15,6 +15,7 @@
 		size = 'md',
 		placement = 'auto',
 		hideTitle = false,
+		steady = false,
 		closeLabel = t('ui.sheet.close'),
 		children,
 		footer,
@@ -24,9 +25,11 @@
 		open?: boolean;
 		title: string;
 		description?: string;
-		size?: 'sm' | 'md' | 'lg';
+		size?: 'sm' | 'md' | 'lg' | 'xl';
 		placement?: 'auto' | 'center' | 'bottom' | 'top' | 'side' | 'right' | 'full' | 'drawer';
 		hideTitle?: boolean;
+		/** Keeps one height on desktop so filtering the content never moves the box. */
+		steady?: boolean;
 		closeLabel?: string;
 		children: Snippet;
 		footer?: Snippet;
@@ -117,6 +120,7 @@
 	bind:this={dialog}
 	class="ui-sheet {size} at-{placement}"
 	class:closing
+	class:steady
 	aria-labelledby="{id}-t"
 	aria-describedby={description ? `${id}-d` : undefined}
 	onclose={closed}
@@ -147,7 +151,9 @@
 	.sm { --w: 400px; }
 	.md { --w: 560px; }
 	.lg { --w: 820px; }
+	.xl { --w: 1180px; }
 	.inner { display: flex; flex-direction: column; max-height: inherit; }
+	@media (min-width: 768px) { .steady.at-auto, .steady.at-center { height: min(86dvh, 820px); } .steady .inner { height: 100%; } }
 	header { display: flex; align-items: flex-start; gap: 12px; padding: 18px 18px 8px 22px; }
 	header.sr { padding: 0; }
 	.titles { flex: 1; min-width: 0; padding-top: 4px; }

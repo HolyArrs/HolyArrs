@@ -7,6 +7,8 @@ describe('outside lists', () => {
 		expect(listLink('trakt_list', 'ana/favourites')).toBe('https://trakt.tv/users/ana/lists/favourites');
 		expect(listLink('trakt_list', 'ana/watchlist')).toBe('https://trakt.tv/users/ana/watchlist');
 		expect(listLink('trakt_list', 'broken')).toBe('');
+		expect(listLink('trakt_list', 'chart:trending')).toBe('https://trakt.tv/movies/trending');
+		expect(listLink('trakt_list', 'chart:watched-weekly', 'show')).toBe('https://trakt.tv/shows/watched/weekly');
 		expect(listLink('mdblist_list', 'lab/top-picks')).toBe('https://mdblist.com/lists/lab/top-picks');
 		expect(listLink('mdblist_list', 'bad')).toBe('');
 	});

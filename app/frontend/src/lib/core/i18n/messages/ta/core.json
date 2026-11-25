@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "{what} ஐக் கட்டமைக்கிறது… முயற்சி {attempt}",
 	"core.testTag.connected": "இணைக்கப்பட்டது",
 	"core.api.notAnswering": "HolyArrs பதிலளிக்கவில்லை. அது இயங்குகிறதா எனச் சோதியுங்கள்.",
+	"core.api.tooSlow": "HolyArrs பதிலளிக்க அதிக நேரம் எடுத்தது. ஒரு நிமிடம் கழித்து மீண்டும் முயலவும்.",
 	"core.api.requestFailed": "கோரிக்கை தோல்வி ({status})",
 	"core.api.wentWrong": "ஏதோ தவறு நடந்தது.",
 	"core.trailerMiss.trailer": "டிரெய்லர்",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "தானாக அங்கீகரிக்கப்பட்டது",
 	"core.plain.approvedBy": "{who} அங்கீகரித்தார்",
 	"core.settings.cantReach": "அந்த முகவரியை அடைய முடியவில்லை. அதையும், ஆப் இயங்குகிறதா என்பதையும் சோதியுங்கள்.",
+	"core.settings.tryHttp": "இந்த முகவரி https-இல் பதிலளிக்கவில்லை. அதற்குப் பதில் http:// முயற்சிக்கவும்.",
 	"core.settings.groupLibrary.label": "நூலகம்",
 	"core.settings.groupLibrary.line": "தலைப்புகள் இருக்கும் இடம்",
 	"core.settings.groupLibrary.about": "கோப்புறைகள், பகுதிகள், இயல்புநிலைகள், வசனங்கள், கோப்புப் பெயர்கள், இறக்குமதி.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "இரண்டு பதிவிறக்கிகள் அதே பதிவிறக்க செயலியை அடைகின்றன, எனவே பதிவிறக்கங்கள் இருமுறை தெரியலாம்.",
 	"core.plain.peopleCheck": "ஊடக சேவையகத்தின் பயனர் பட்டியலைப் படிக்க முடியவில்லை, எனவே அங்கு நீக்கப்பட்டவர்கள் இங்கே அணைக்கப்படுவதில்லை.",
 	"core.plain.deleted": "நீக்கப்பட்டது",
-	"core.plain.deletedName": "{name} (நீக்கப்பட்டது)"
+	"core.plain.deletedName": "{name} (நீக்கப்பட்டது)",
+	"core.api.handsOffFiles": "தலையிடா பயன்முறை இயக்கத்தில் உள்ளதால் HolyArrs பதிவிறக்கிய கோப்புகளைத் தொடாது. கோப்புகளை இறக்குமதி செய்ய, பெயர் மாற்ற, நகர்த்த அல்லது ஸ்கேன் செய்ய அமைப்புகளில் இதை அணைக்கவும்.",
+	"core.api.handsOffSubtitles": "தலையிடா பயன்முறை இயக்கத்தில் உள்ளதால் HolyArrs பதிவிறக்கிய கோப்புகளை ஒருபோதும் திறக்காது. வசனங்களைப் பயன்படுத்த அமைப்புகளில் இதை அணைக்கவும்."
 }

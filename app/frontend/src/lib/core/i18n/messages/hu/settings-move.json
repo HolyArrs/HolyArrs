@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Visszavonja a(z) {id}. importálást?",
 	"settings.move.undoQuestion": "Visszavonja ezt az importálást?",
 	"settings.move.undoNote": "Eltávolítja, amit ez az importálás hozzáadott; a későbbi módosításai megmaradnak. Ha kéri, előbb töltse le a jelentést.",
-	"settings.move.undoMove": "Importálás visszavonása"
+	"settings.move.undoMove": "Importálás visszavonása",
+	"settings.move.continueSetup": "Beállítás folytatása",
+	"settings.move.backToChoose": "Vissza a választáshoz"
 }

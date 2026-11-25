@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// TMDB's original, alternative and translated names all become OtherNames.
+// TMDB's original, translated and alternative names all become OtherNames, translations before other spellings so the 30-name cap keeps them.
 func TestTMDBOtherNames(t *testing.T) {
 	var m tmdbMovie
 	if err := json.Unmarshal([]byte(`{"id":194,"title":"Amelie","original_title":"Le Fabuleux Destin d'Amélie Poulain",
@@ -14,7 +14,7 @@ func TestTMDBOtherNames(t *testing.T) {
 		"translations":{"translations":[{"data":{"title":"Die fabelhafte Welt der Amelie"}}]}}`), &m); err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"Le Fabuleux Destin d'Amélie Poulain", "Amelie from Montmartre", "Die fabelhafte Welt der Amelie"}
+	want := []string{"Le Fabuleux Destin d'Amélie Poulain", "Die fabelhafte Welt der Amelie", "Amelie from Montmartre"}
 	if got := m.movie("").OtherNames; !slices.Equal(got, want) {
 		t.Errorf("movie names %q", got)
 	}
@@ -24,7 +24,7 @@ func TestTMDBOtherNames(t *testing.T) {
 		"translations":{"translations":[{"data":{"name":"Casa de Papel"}}]}}`), &s); err != nil {
 		t.Fatal(err)
 	}
-	want = []string{"La casa de papel", "Haus des Geldes", "Casa de Papel"}
+	want = []string{"La casa de papel", "Casa de Papel", "Haus des Geldes"}
 	if got := s.show("").OtherNames; !slices.Equal(got, want) {
 		t.Errorf("show names %q", got)
 	}

@@ -265,6 +265,28 @@ test("full flow: read, choose, move (with Before you move), done and undo", asyn
   expect(await dl.text()).toContain("Lodestone Ferry");
   await noSidewaysScroll(page);
 
+  // Finish your Alerts: the imported Telegram Alert came over off with its
+  // chat and old moments, and asks only for its bot token (never copied).
+  const finish = page.getByTestId("finish-alerts");
+  await expect(finish).toBeVisible();
+  const tele = finish.getByTestId("finish-alert").filter({ hasText: "Old Telegram" });
+  await expect(tele).toContainText("Still needs the bot token");
+  await expect(tele.getByLabel("Bot token")).toHaveValue("");
+  await tele.getByRole("button", { name: "Send a test" }).click();
+  await expect(tele.getByTestId("finish-result")).toHaveText("Type the token first");
+  await tele.getByRole("button", { name: "Turn on" }).click();
+  await expect(tele.getByTestId("finish-result")).toHaveText("Type the token first");
+  const made = (await (await page.request.get("/api/v1/alerts")).json()) as { alerts: { name: string; enabled: boolean; chat_id?: string; bot_token?: string; moments: string[] }[] };
+  const tg = made.alerts.find((a) => a.name === "Old Telegram");
+  expect(tg).toMatchObject({ enabled: false, chat_id: "@lodestone_news", moments: ["grab", "import"] });
+  expect(tg?.bot_token).toBeUndefined();
+  // What HolyArrs has no place for is one plain line under Not imported.
+  await page.getByRole("button", { name: "Show Not imported" }).click();
+  const notIn = page.getByRole("dialog", { name: "Not imported" });
+  await expect(notIn).toContainText("HolyArrs has no place for: the Telegram topic; sending silently");
+  await notIn.getByRole("button", { name: "Close", exact: true }).click();
+  await noSidewaysScroll(page);
+
   // The movie is in the Library, in its folder.
   const titles = (await (await page.request.get("/api/v1/titles")).json()) as { titles: { name: string }[] };
   expect(titles.titles.some((t) => t.name === "Lodestone Ferry")).toBe(true);

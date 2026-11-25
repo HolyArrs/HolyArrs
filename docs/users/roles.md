@@ -18,6 +18,23 @@ Give each person in your home their own account with only the rights they need. 
 
 The person opens the link, picks a unique name and a password that meets the [current minimum](sign-in.md#set-the-shortest-password). They are then signed in.
 
+### Share one link with several people
+
+A member link can take more than one person, and it can stay open with no end date. Use this for a link you pin in a group chat.
+
+1. Start a **Member** invite as above.
+2. Set **Days the link lasts** to 0 if the link should have no end date.
+3. Open **More options** and set **People who can join**: a number up to 1000, or 0 for no limit.
+4. Make the link and copy it now. You should see the full link once.
+
+The **Invite links** list shows how many people joined through the link and who they are. Everyone who joins gets the role and permissions the link was made with.
+
+Take the link back with **Revoke** when you no longer want it used. It stops working at once and stays in the list with the people who joined. An admin link always works once and has an end date.
+
+:::caution
+Anyone who has a shared link can make an account until you revoke it. Share it only where you trust everyone who can see it.
+:::
+
 For a child with an age limit, see [Kid accounts](kids.md).
 
 ## Roles and permissions
@@ -77,7 +94,7 @@ Anyone can set one in **My account > Profile picture**: JPEG, PNG or WebP, up to
 ## If it does not work
 
 **Symptom:** an invite link does not work.
-**Cause:** it was used, expired or taken back, or its maker is no longer an active owner or admin.
+**Cause:** it was used, expired or taken back, a shared link is full, or its maker is no longer an active owner or admin.
 **Fix:** make a new one. The **Invite links** list shows each link's state; the owner can take back any open link, an admin only their own.
 
 **Symptom:** an admin cannot tick a permission.

@@ -45,5 +45,14 @@
 "settings.schedules.cancel": "キャンセル",
 "settings.schedules.stages": "ステージ",
 "settings.schedules.stagesNote": "一時停止や再起動は<a>パート</a>で行います。",
-"settings.schedules.allTime": "常時"
+"settings.schedules.allTime": "常時",
+"settings.schedules.skip.nothing": "やることはありません",
+"settings.schedules.skip.plexOff": "オフ: {page} で {setting} をオンにしてください",
+"settings.schedules.skip.plexNobody": "やることはありません: Plex ウォッチリストをオンにした人がいません",
+"settings.schedules.skip.settingOff": "オフ: 設定でオンにしてください",
+"settings.schedules.skip.starting": "スキップ: HolyArrs はまだ起動中でした",
+"settings.schedules.took": "所要時間 {time}",
+"settings.schedules.finished": "{label} が完了しました",
+"settings.schedules.nothingToDo": "{label}: やることはありません",
+"settings.schedules.runFailed": "{label} に失敗しました"
 }

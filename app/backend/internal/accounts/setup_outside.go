@@ -19,7 +19,6 @@ import (
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -43,14 +42,8 @@ const (
 // setupWays are the ways the first-run screen offers to make the owner.
 var setupWays = []string{"password", ProviderPlex, ProviderJellyfin, ProviderEmby}
 
-// setupWaysNow is setupWays without Emby while Emby sign-in is held back: an
-// owner made through Emby then could never sign in again.
-func setupWaysNow() []string {
-	if startup.FeatureOn(startup.EmbySignIn) {
-		return setupWays
-	}
-	return slices.DeleteFunc(slices.Clone(setupWays), func(w string) bool { return w == ProviderEmby })
-}
+// setupWaysNow is the ways the first-run screen offers now.
+func setupWaysNow() []string { return setupWays }
 
 var kindWord = map[string]string{ProviderJellyfin: "Jellyfin", ProviderEmby: "Emby"}
 
@@ -60,16 +53,34 @@ func mediaOffLine(kind string) string {
 	return "Your account is turned off on the " + kindWord[kind] + " server. Ask the person who runs it to turn it back on."
 }
 
-// mediaOff says whether a 403 sign-in answer is the server itself refusing
-// a turned-off account, by the text it sends: Emby says so in words,
-// Jellyfin sends its plain error text. A 403 page from a proxy or firewall
-// in front of the server says neither.
+// mediaRefusedLine says the Jellyfin or Emby server refused the sign-in
+// without saying why. Jellyfin answers the same way for a turned-off account,
+// remote access that is off for this address, and a time it is not allowed in.
+func mediaRefusedLine(kind string) string {
+	return "The " + kindWord[kind] + " server refused the sign-in. Your account may be turned off there, or not allowed to connect from this address. Ask the person who runs it."
+}
+
+// mediaOff says whether a 403 sign-in answer says in words that the account
+// is turned off. Only Emby does; Jellyfin sends the same plain error text for
+// every refusal, so that text alone proves nothing.
 func mediaOff(code int, body []byte) bool {
+	return code == http.StatusForbidden && strings.Contains(strings.ToLower(string(body)), "account has been disabled")
+}
+
+// mediaRefused says whether a 403 sign-in answer is the server's own refusal,
+// by the plain texts Jellyfin and Emby send for it. Only those undo the try
+// against the name: any other 403 (empty, a proxy or firewall page, anything
+// a caller can make up) still counts, so it cannot get round the name limit.
+func mediaRefused(code int, body []byte) bool {
 	if code != http.StatusForbidden {
 		return false
 	}
-	b := strings.TrimSpace(string(body))
-	return b == "Error processing request." || strings.Contains(strings.ToLower(b), "account has been disabled")
+	b := strings.ToLower(strings.TrimSpace(string(body)))
+	switch b {
+	case "error processing request.", "forbidden.", "forbidden", "user is not allowed access at this time.":
+		return true
+	}
+	return strings.Contains(b, "account has been disabled")
 }
 
 // foundServer is a Jellyfin or Emby server that answered the network search.
@@ -270,12 +281,24 @@ func serverAddress(s string) (string, bool) {
 	if s == "" {
 		return "", false
 	}
-	if !strings.Contains(s, "://") {
+	typedScheme := strings.Contains(s, "://")
+	if !typedScheme {
 		s = "http://" + s
 	}
 	u, err := url.Parse(strings.TrimRight(s, "/"))
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
 		return "", false
+	}
+	// Just an IP or name typed: a home address is plain http on Jellyfin's and
+	// Emby's usual 8096; an outside one is https (a password goes there).
+	if !typedScheme {
+		if homeAddress(u.String()) {
+			if u.Port() == "" {
+				u.Host = net.JoinHostPort(u.Hostname(), "8096")
+			}
+		} else {
+			u.Scheme = "https"
+		}
 	}
 	out := strings.TrimRight(u.String(), "/")
 	if len(out) > 500 {
@@ -299,6 +322,60 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	addr, user, ok := a.setupServerSignIn(w, r, kind)
+	if !ok {
+		return
+	}
+	var id int64
+	var name string
+	var saved []string
+	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
+		var err error
+		if id, name, saved, err = a.makeOwnerTx(tx, kind, user.Name, newHost); err != nil {
+			return err
+		}
+		return a.linkSetupServerTx(ctx, tx, id, kind, addr, user)
+	})
+	if a.setupFailed(w, err, "this "+word+" account") {
+		return
+	}
+	a.ownerMade(w, r, kind, id, name, saved)
+}
+
+// serverUser is the Jellyfin or Emby account a first-run sign-in found.
+type serverUser struct{ ID, Name string }
+
+// linkSetupServerTx links the owner to the Jellyfin or Emby account and turns
+// that sign-in way on with the address, the keys Settings > Sign-in saves.
+// The owner's earlier link of that kind is replaced. errTaken: someone else
+// has that account.
+func (a *Auth) linkSetupServerTx(ctx context.Context, tx *sql.Tx, ownerID int64, kind, addr string, user serverUser) error {
+	switch other, err := linkOwner(ctx, tx, kind, user.ID); {
+	case err == nil && other != ownerID:
+		return errTaken
+	case err != nil && !errors.Is(err, sql.ErrNoRows):
+		return err
+	}
+	if _, err := deleteMediaLink(ctx, tx, ownerID, kind); err != nil {
+		return err
+	}
+	if err := insertUserLink(ctx, tx, ownerID, kind, user.ID, truncate(user.Name, 200), database.FormatTime(a.now())); err != nil {
+		return err
+	}
+	g := signInPrefix + kind
+	if err := database.PutSetting(tx, settingsGroup, g+"_url", addr, domain.System, a.now()); err != nil {
+		return err
+	}
+	return database.PutSetting(tx, settingsGroup, g+"_on", "true", domain.System, a.now())
+}
+
+// setupServerSignIn checks an admin's name and password on a Jellyfin or
+// Emby server typed during first-run setup, with the first-run try limit,
+// and keeps the API key that sign-in made for the Media server step. It
+// answers the request itself when it says false.
+func (a *Auth) setupServerSignIn(w http.ResponseWriter, r *http.Request, kind string) (string, serverUser, bool) {
+	ctx := r.Context()
+	word := kindWord[kind]
 	var body struct {
 		URL      string `json:"url"`
 		Name     string `json:"name"`
@@ -306,23 +383,29 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
 		fail(w, http.StatusBadRequest, `send {"url": "...", "name": "...", "password": "..."}`)
-		return
+		return "", serverUser{}, false
 	}
 	body.Name = strings.TrimSpace(body.Name)
 	addr, ok := serverAddress(body.URL)
 	if !ok {
 		fail(w, http.StatusBadRequest, "give the "+word+" address, like http://192.168.1.10:8096")
-		return
+		return "", serverUser{}, false
+	}
+	// The password goes to this address: plain http only on the home network,
+	// like Plex; an outside address needs https.
+	if strings.HasPrefix(addr, "http://") && !homeAddress(addr) {
+		fail(w, http.StatusBadRequest, "an outside "+word+" address needs https, like https://"+word+".example.com")
+		return "", serverUser{}, false
 	}
 	if body.Name == "" || len(body.Name) > 128 || len(body.Password) > MaxPassword {
 		fail(w, http.StatusBadRequest, "give your "+word+" name and password")
-		return
+		return "", serverUser{}, false
 	}
 	key := "media:" + a.clientKey(r)
 	if a.ownerSetupLimited(key) {
 		w.Header().Set("Retry-After", strconv.Itoa(int(setupWindow.Seconds())))
 		fail(w, http.StatusTooManyRequests, "too many tries; wait a minute and try again")
-		return
+		return "", serverUser{}, false
 	}
 	// Count the try before the call, so many tries at once cannot all pass
 	// the limit while the first calls are still out.
@@ -349,73 +432,68 @@ func (a *Auth) setupMediaServer(w http.ResponseWriter, r *http.Request) {
 	case err != nil && code == 0:
 		log.Printf("auth: setup %s at %s: %v", kind, addr, err)
 		fail(w, http.StatusBadGateway, "could not reach "+addr+"; check the address and that the server is on")
-		return
+		return "", serverUser{}, false
 	case mediaOff(code, refusal):
 		fail(w, http.StatusForbidden, mediaOffLine(kind))
-		return
+		return "", serverUser{}, false
+	case mediaRefused(code, refusal):
+		fail(w, http.StatusForbidden, mediaRefusedLine(kind))
+		return "", serverUser{}, false
 	case code == http.StatusNotFound || code == http.StatusMethodNotAllowed || code == http.StatusForbidden || code/100 == 3:
 		fail(w, http.StatusBadGateway, notServer)
-		return
+		return "", serverUser{}, false
 	case code/100 == 4:
 		log.Printf("auth: failed %s first-run sign-in from %s", kind, r.RemoteAddr)
 		fail(w, http.StatusUnauthorized, "wrong name or password")
-		return
+		return "", serverUser{}, false
 	case err != nil || code/100 != 2 || got.User.ID == "":
 		log.Printf("auth: setup %s at %s: status %d: %v", kind, addr, code, err)
 		fail(w, http.StatusBadGateway, notServer)
-		return
+		return "", serverUser{}, false
 	}
 	if got.AccessToken != "" {
-		// HolyArrs does not keep the server's token: end that session now.
+		// An admin's sign-in makes HolyArrs its own API key there, for the Connect step.
+		if got.User.Policy.IsAdministrator && !got.User.Policy.IsDisabled {
+			a.makeSetupKey(context.WithoutCancel(ctx), kind, addr, authz, got.AccessToken)
+		}
+		// HolyArrs does not keep the sign-in session itself: end it now.
 		lh := map[string]string{"Authorization": fmt.Sprintf("%s, Token=%q", authz, got.AccessToken), "X-Emby-Token": got.AccessToken}
 		_, _ = a.call(context.WithoutCancel(ctx), a.tester, http.MethodPost, addr+"/Sessions/Logout", lh, nil, nil)
 	}
 	if got.User.Policy.IsDisabled {
 		fail(w, http.StatusForbidden, mediaOffLine(kind))
-		return
+		return "", serverUser{}, false
 	}
 	if !got.User.Policy.IsAdministrator {
 		fail(w, http.StatusForbidden, "Use an admin account on that server.")
-		return
+		return "", serverUser{}, false
 	}
-	var id int64
-	var name string
-	var saved []string
-	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
-		var err error
-		if id, name, saved, err = a.makeOwnerTx(tx, kind, got.User.Name, newHost); err != nil {
-			return err
+	return addr, serverUser{got.User.ID, got.User.Name}, true
+}
+
+// SetupOpen reports whether the caller may use a first-run-only route, and
+// answers the request itself when not. Before an owner exists anyone on the
+// first-run screen may (from a home address); after, only the owner while
+// setup is still open.
+func (a *Auth) SetupOpen(w http.ResponseWriter, r *http.Request) bool {
+	if _, _, exists := a.owner(r.Context()); exists {
+		// These routes are public, so the caller is read from the session here.
+		who, ok := a.session(w, r)
+		if !ok || who.Role != webserver.RoleOwner ||
+			database.SettingOr(r.Context(), a.s.Read(), settingsGroup, settingFirstRunDone, "") == "1" {
+			fail(w, http.StatusNotFound, "not found")
+			return false
 		}
-		switch _, err := linkOwner(ctx, tx, kind, got.User.ID); {
-		case err == nil:
-			return errTaken
-		case !errors.Is(err, sql.ErrNoRows):
-			return err
-		}
-		if err := insertUserLink(ctx, tx, id, kind, got.User.ID, truncate(got.User.Name, 200), database.FormatTime(a.now())); err != nil {
-			return err
-		}
-		// The same keys Settings > Sign-in saves, so it shows this way on.
-		g := signInPrefix + kind
-		if err := database.PutSetting(tx, settingsGroup, g+"_url", addr, domain.System, a.now()); err != nil {
-			return err
-		}
-		return database.PutSetting(tx, settingsGroup, g+"_on", "true", domain.System, a.now())
-	})
-	if a.setupFailed(w, err, "this "+word+" account") {
-		return
+		return true
 	}
-	a.ownerMade(w, r, kind, id, name, saved)
+	_, ok := a.setupHost(w, r)
+	return ok
 }
 
 // setupDiscover looks for Jellyfin and Emby servers on the local network,
 // only while there is no owner. It never fails: no answer is an empty list.
 func (a *Auth) setupDiscover(w http.ResponseWriter, r *http.Request) {
-	if _, _, exists := a.owner(r.Context()); exists {
-		fail(w, http.StatusNotFound, "not found")
-		return
-	}
-	if _, ok := a.setupHost(w, r); !ok {
+	if !a.SetupOpen(w, r) {
 		return
 	}
 	out := []foundServer{}
@@ -428,7 +506,34 @@ func (a *Auth) setupDiscover(w http.ResponseWriter, r *http.Request) {
 	}
 	a.noteOwnerSetupFail(key)
 	if a.discovering.CompareAndSwap(false, true) {
+		// The broadcast and a direct look at the addresses next to the browser's
+		// own one run together (a container on a bridge network never hears
+		// the broadcast answers); the same address found twice counts once.
+		ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
+		near := make(chan []foundServer, 1)
+		// Only the network HolyArrs itself was reached on is searched: the
+		// server works it out from the address in the request, never from
+		// anything the page sends.
+		reached := r.Host
+		if h, _, err := net.SplitHostPort(r.Host); err == nil {
+			reached = h
+		}
+		go func() { near <- scanNear(ctx, reached) }()
 		out = a.discover()
+		seen := map[string]bool{}
+		for _, f := range out {
+			seen[strings.ToLower(f.Address)] = true
+		}
+		for _, f := range <-near {
+			if !seen[strings.ToLower(f.Address)] && len(out) < discoverMax {
+				seen[strings.ToLower(f.Address)] = true
+				out = append(out, f)
+			}
+		}
+		for i := range out {
+			out[i] = realCase(r.Context(), out[i])
+		}
+		cancel()
 		a.discovering.Store(false)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"servers": out})
@@ -545,4 +650,39 @@ func fromAnswer(advertised string, from net.IP) (string, bool) {
 	}
 	u.Host = net.JoinHostPort(from.String(), port)
 	return strings.TrimRight(u.String(), "/"), true
+}
+
+// homeAddress is true for an address on the home network: a private,
+// loopback or link-local IP, or a plain or home-style name (nas, tower.local).
+func homeAddress(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	h := strings.ToLower(u.Hostname())
+	if ip := net.ParseIP(h); ip != nil {
+		return ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast()
+	}
+	if !strings.Contains(h, ".") {
+		return true
+	}
+	for _, end := range []string{".local", ".lan", ".home", ".internal", ".home.arpa"} {
+		if strings.HasSuffix(h, end) {
+			return true
+		}
+	}
+	// A real name that points inside the home (jellyfin.mydomain.com ->
+	// 192.168.1.20) counts as home too; every address it gives must be home.
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	ips, err := net.DefaultResolver.LookupIPAddr(ctx, h)
+	if err != nil || len(ips) == 0 {
+		return false
+	}
+	for _, ip := range ips {
+		if !(ip.IP.IsPrivate() || ip.IP.IsLoopback() || ip.IP.IsLinkLocalUnicast()) {
+			return false
+		}
+	}
+	return true
 }

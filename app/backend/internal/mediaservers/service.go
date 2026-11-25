@@ -20,6 +20,7 @@ import (
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -41,7 +42,7 @@ const (
 var (
 	ErrName     = errors.New("a media server needs a name of at most 80 characters")
 	ErrNameUsed = errors.New("another media server has that name")
-	ErrKind     = errors.New("kind must be plex, jellyfin or emby")
+	ErrKind     = errors.New("kind must be plex, jellyfin, emby, subsonic or kodi")
 	ErrURL      = errors.New("the address must be an http or https link with a host, like http://192.168.1.10:32400")
 	ErrNoKey    = errors.New("paste the server's token (Plex) or API key (Jellyfin, Emby)")
 	ErrPathMap  = errors.New("give both sides of the path map, or neither")
@@ -52,7 +53,7 @@ var (
 
 // IsInputError says err is a refusal of what was sent.
 func IsInputError(err error) bool {
-	for _, e := range []error{ErrName, ErrKind, ErrURL, ErrNoKey, ErrPathMap, ErrWebURL, ErrKeyAgain} {
+	for _, e := range []error{ErrName, ErrNoUser, ErrNoKodiUser, ErrPlainHTTP, ErrKind, ErrURL, ErrNoKey, ErrPathMap, ErrWebURL, ErrKeyAgain} {
 		if errors.Is(err, e) {
 			return true
 		}
@@ -63,10 +64,13 @@ func IsInputError(err error) bool {
 // Input is what a person sets on a media server. An empty token keeps the
 // stored one.
 type Input struct {
-	Name       string `json:"name"`
-	Kind       string `json:"kind"`
-	URL        string `json:"url"`
-	Token      string `json:"token"`
+	Name  string `json:"name"`
+	Kind  string `json:"kind"`
+	URL   string `json:"url"`
+	Token string `json:"token"`
+	// Username is the sign-in name of a Subsonic-style music server; Token
+	// is then its password.
+	Username   string `json:"username"`
 	Enabled    *bool  `json:"enabled"`
 	OnImport   *bool  `json:"on_import"`
 	OnRename   *bool  `json:"on_rename"`
@@ -74,8 +78,13 @@ type Input struct {
 	PathFrom   string `json:"path_from"`
 	PathTo     string `json:"path_to"`
 	AllowLocal *bool  `json:"allow_local_network"`
+	// PlainPassword sends a Subsonic-style server the password itself
+	// (LDAP); only over https or to a local address.
+	PlainPassword *bool `json:"plain_password"`
 	// WebURL is where people's browsers open the server; empty clears it.
 	WebURL string `json:"web_url"`
+	// UsePlexSignIn takes the token from the owner's Plex sign-in.
+	UsePlexSignIn bool `json:"use_plex_sign_in"`
 }
 
 func orKeep(p *bool, keep bool) bool {
@@ -99,7 +108,7 @@ func fill(in Input, m *domain.MediaServer, isNew bool) error {
 		return ErrName
 	}
 	if isNew {
-		if in.Kind != "plex" && in.Kind != "jellyfin" && in.Kind != "emby" {
+		if in.Kind != "plex" && in.Kind != "jellyfin" && in.Kind != "emby" && in.Kind != "subsonic" && in.Kind != "kodi" {
 			return ErrKind
 		}
 		m.Kind = in.Kind
@@ -126,6 +135,10 @@ func fill(in Input, m *domain.MediaServer, isNew bool) error {
 	m.Enabled = orKeep(in.Enabled, m.Enabled)
 	m.OnImport, m.OnRename, m.OnDelete = orKeep(in.OnImport, m.OnImport), orKeep(in.OnRename, m.OnRename), orKeep(in.OnDelete, m.OnDelete)
 	m.AllowLocal = orKeep(in.AllowLocal, m.AllowLocal)
+	m.PlainPassword = orKeep(in.PlainPassword, m.PlainPassword) && m.Kind == "subsonic"
+	if m.PlainPassword && !plainSafe(m.URL) {
+		return ErrPlainHTTP
+	}
 	return nil
 }
 
@@ -135,11 +148,15 @@ func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by 
 	if err := fill(in, &m, true); err != nil {
 		return m, err
 	}
-	err := s.Write(ctx, func(tx *sql.Tx) error {
+	secret, err := secretOf(m.Kind, in)
+	if err != nil {
+		return m, err
+	}
+	err = s.Write(ctx, func(tx *sql.Tx) error {
 		if err := nameUsed(tx, m.Name, 0); err != nil {
 			return err
 		}
-		id, err := v.PutTx(tx, "media_server_token", strings.TrimSpace(in.Token), by)
+		id, err := v.PutTx(tx, "media_server_token", secret, by)
 		if err != nil {
 			return err
 		}
@@ -163,6 +180,13 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 	if in.Token == "" && originOf(m.URL) != originOf(old.URL) {
 		return old, ErrKeyAgain
 	}
+	if in.Token == "" && strings.TrimSpace(in.Username) != "" {
+		return old, ErrNoUser // a new name needs its password
+	}
+	secret, err := secretOf(m.Kind, in)
+	if in.Token != "" && err != nil {
+		return old, err
+	}
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		if err := nameUsed(tx, m.Name, m.ID); err != nil {
 			return err
@@ -173,7 +197,7 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 					return err
 				}
 			}
-			nid, err := v.PutTx(tx, "media_server_token", strings.TrimSpace(in.Token), by)
+			nid, err := v.PutTx(tx, "media_server_token", secret, by)
 			if err != nil {
 				return err
 			}
@@ -207,6 +231,21 @@ func Remove(ctx context.Context, s *database.Store, v *secrets.Vault, id int64) 
 		forgetPeopleCheck(ctx, s, kind)
 	}
 	return err
+}
+
+// RemoveKind deletes every media server of one kind with its token (first-run
+// setup: unlinking a server takes the server saved for it away too).
+func RemoveKind(ctx context.Context, s *database.Store, v *secrets.Vault, kind string) error {
+	ids, err := serverIDsOfKind(ctx, s.Read(), kind)
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		if err := Remove(ctx, s, v, id); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // forgetPeopleCheck starts the removed-people check's failed-read count
@@ -244,14 +283,26 @@ type Linker struct {
 	reading  sync.Mutex
 	stopRead context.CancelFunc
 
+	// formPost keeps whether each Subsonic-style server takes form POSTs.
+	formPost sync.Map
+
 	// watch keeps each server's movie and series lists for WatchLinks.
 	watch watchCache
 	// Asked lists asked-for titles for Plex labels (nil: no labels).
 	Asked AskedFunc
+	// Trakt, when someone signed in with Trakt, adds their Trakt watch
+	// history to the watch history read (nil: no Trakt).
+	Trakt *metadata.TraktAuth
 	// labelling lets one label pass run at a time; stopLabel ends a
 	// background one.
 	labelling sync.Mutex
 	stopLabel context.CancelFunc
+	// Langs reads language codes for default tracks.
+	Langs TrackLanguages
+	// tracking lets one default track pass run at a time; stopTracks ends
+	// a background one.
+	tracking   sync.Mutex
+	stopTracks context.CancelFunc
 
 	mu      sync.Mutex
 	pending map[string]string // folder -> change
@@ -274,6 +325,8 @@ func ChangeOf(e domain.Event) string {
 		return Created
 	case domain.EventRenamed:
 		return Modified
+	case "subtitle_saved", "subtitle_upgraded", "subtitle_synced", "subtitle_translated", "subtitle_cleaned":
+		return subtitleWritten
 	case domain.EventTitleRemoved, domain.EventEpisodesRemoved:
 		if del, _ := e.Data["delete_files"].(bool); del {
 			return Deleted
@@ -423,6 +476,9 @@ func (l *Linker) Stop() {
 	if l.stopLabel != nil {
 		l.stopLabel()
 	}
+	if l.stopTracks != nil {
+		l.stopTracks()
+	}
 	if l.timer == nil || !l.timer.Stop() {
 		return // nothing gathered, or the send already started
 	}
@@ -458,10 +514,13 @@ func (l *Linker) Flush(ctx context.Context) {
 		var send []Update
 		for _, f := range folders {
 			ch := batch[f]
-			if (ch == Created && !m.OnImport) || (ch == Modified && !m.OnRename) || (ch == Deleted && !m.OnDelete) {
+			if ((ch == Created || ch == subtitleWritten) && !m.OnImport) || (ch == Modified && !m.OnRename) || (ch == Deleted && !m.OnDelete) {
 				continue
 			}
-			send = append(send, Update{Path: MapPath(m, f), Change: ch, Kind: kinds[f]})
+			if isMusicOnly(m) && kinds[f] != "artist" {
+				continue // a music server never hears of films or shows
+			}
+			send = append(send, Update{Path: MapPath(m, f), Change: sentChange(ch), Kind: kinds[f]})
 		}
 		if len(send) == 0 {
 			continue
@@ -586,46 +645,6 @@ func (l *Linker) do(ctx context.Context, m domain.MediaServer, method, path stri
 	return b, nil
 }
 
-// plexSection is one Plex library and its folders.
-type plexSection struct {
-	Key       string `xml:"key,attr"`
-	Type      string `xml:"type,attr"`
-	Title     string `xml:"title,attr"`
-	Locations []struct {
-		Path string `xml:"path,attr"`
-	} `xml:"Location"`
-}
-
-func (l *Linker) plexSections(ctx context.Context, m domain.MediaServer) ([]plexSection, error) {
-	b, err := l.do(ctx, m, http.MethodGet, "/library/sections", nil)
-	if err != nil {
-		return nil, err
-	}
-	var mc struct {
-		XMLName     xml.Name
-		Directories []plexSection `xml:"Directory"`
-	}
-	// A page or list that is not Plex's means another app answers there.
-	if err := xml.Unmarshal(b, &mc); err != nil || mc.XMLName.Local != "MediaContainer" {
-		return nil, doctor.Mark(doctor.WrongApp, nil)
-	}
-	var out []plexSection
-	for _, d := range mc.Directories {
-		if d.Type == "movie" || d.Type == "show" || d.Type == "artist" {
-			out = append(out, d)
-		}
-	}
-	return out, nil
-}
-
-// plexType is the Plex library type for a title kind.
-func plexType(kind string) string {
-	if kind == "show" || kind == "artist" {
-		return kind
-	}
-	return "movie"
-}
-
 // Tell asks the server to look at each folder again. Plex scans the movie,
 // TV or music library that holds the folder, only that folder; with no
 // library holding it, every library of the title's type is scanned. Jellyfin and Emby get one media
@@ -635,6 +654,14 @@ func plexType(kind string) string {
 func (l *Linker) Tell(ctx context.Context, m domain.MediaServer, us []Update) error {
 	if len(us) == 0 {
 		return nil
+	}
+	if m.Kind == "kodi" {
+		return l.kodiTell(ctx, m, us)
+	}
+	if m.Kind == "subsonic" {
+		// No per-folder scan: one library scan for the whole batch.
+		_, err := l.subsonicCall(ctx, m, "startScan")
+		return err
 	}
 	if m.Kind == "plex" {
 		secs, err := l.plexSections(ctx, m)
@@ -699,7 +726,11 @@ func (h *held) Unwrap() []error { return []error{h.error, outbound.ErrSuppressed
 func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error) {
 	var res string
 	var err error
-	if m.Kind == "plex" {
+	if m.Kind == "subsonic" {
+		res, err = l.subsonicCall(ctx, m, "ping")
+	} else if m.Kind == "kodi" {
+		res, err = l.kodiTest(ctx, m)
+	} else if m.Kind == "plex" {
 		var secs []plexSection
 		secs, err = l.plexSections(ctx, m)
 		if err == nil && len(secs) == 0 {
@@ -711,6 +742,16 @@ func (l *Linker) Test(ctx context.Context, m domain.MediaServer) (string, error)
 				names = append(names, s.Title)
 			}
 			res = "Libraries: " + strings.Join(names, ", ")
+			// Name it like Jellyfin and Emby do: the server's own name and version.
+			if b, e := l.do(ctx, m, http.MethodGet, "/", nil); e == nil {
+				var root struct {
+					Name    string `xml:"friendlyName,attr"`
+					Version string `xml:"version,attr"`
+				}
+				if xml.Unmarshal(b, &root) == nil && root.Name != "" {
+					res = strings.TrimSpace(root.Name + " " + strings.SplitN(root.Version, "-", 2)[0])
+				}
+			}
 		}
 	} else {
 		var b []byte

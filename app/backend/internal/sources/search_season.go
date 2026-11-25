@@ -182,7 +182,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 			whole = false
 		}
 	}
-	result := map[string]any{"season": season, "version_id": ver.ID}
+	result := map[string]any{"season": season, "version_id": ver.ID, "pick_rules_id": ver.PickRulesID}
 	if len(looking) == 0 {
 		result["skipped"] = fmt.Sprintf("nothing in season %d is looking for a copy", season)
 		r.SetResult(result)
@@ -273,6 +273,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 
 	sq := showQuery(ti, season, nil)
 	sq.other = s.nameAsk(ctx, ti, hand)
+	withWanted(&sq, wantedNames(ti, ver.AudioLanguages, s.titleLanguage(ctx)))
 	found, failures, answered, skipped, note, err := s.askAll(ctx, r, sq, hand, true, ti, ver.ID, set.pr.Body.Tags)
 	if err != nil {
 		return err
@@ -383,7 +384,7 @@ func (s *Searcher) HandleSeason(ctx context.Context, r *jobs.Run) error {
 		result["episodes_queued"] = n
 	}
 	if chosen+held == 0 {
-		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchDone, fmt.Sprintf("Season %d: no Release passed the Pick rules (%d found, %d refused)", season, len(all), refused), noted(nil, note))
+		s.addEvent(ctx, by, &jobID, ti.ID, targets[0], EventSearchDone, fmt.Sprintf("Season %d: no Release passed the Pick rules (%d found, %d refused)", season, len(all), refused), noted(map[string]any{"found": len(all)}, note))
 	}
 	r.SetResult(result)
 	return nil

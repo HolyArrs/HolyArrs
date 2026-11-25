@@ -13,25 +13,28 @@
 		available: boolean;
 		mode: Mode;
 		mode_locked: boolean;
+		check_on: boolean;
 		source: 'image' | 'update';
 		previous?: string;
-		launch: { rollback?: string; exec_error?: string };
+		launch: { rollback?: string; exec_error?: string; chosen?: boolean; left?: string; to?: string };
 		progress: { phase: string; version?: string; message?: string };
 		ready?: string;
 		one_way?: boolean;
 		running: string;
 	};
 
-	let { canAct }: { canAct: boolean } = $props();
+	let { canAct, onchecked }: { canAct: boolean; /** Called after the check is turned on or off. */ onchecked?: () => void } = $props();
 
 	let view = $state<View | null>(null);
 	let busy = $state(false);
 	let mode = $state<Mode>('off');
+	let checkOn = $state(true);
 
 	async function load() {
 		try {
 			view = await api.get<View>('/app/update/install');
 			mode = view.mode;
+			checkOn = view.check_on;
 		} catch {
 			view = null;
 		}
@@ -68,6 +71,19 @@
 		}
 	}
 
+	// "Tell me about new versions": off means no update request at all, so
+	// Ask me and Automatic cannot work either.
+	async function setCheckOn() {
+		try {
+			view = await api.put<View>('/app/update/mode', { check_on: checkOn });
+			toasts.push(t('updates.inApp.saved'), 'ok');
+			onchecked?.();
+		} catch (e) {
+			checkOn = view?.check_on ?? true;
+			toasts.push(t('updates.inApp.saveFailed'), 'fail', { body: message(e) });
+		}
+	}
+
 	async function act(path: string, failed: string) {
 		busy = true;
 		try {
@@ -95,15 +111,17 @@
 	});
 </script>
 
-{#if view?.available && canAct}
+{#if view && canAct}
 	<section class="st-plate in-app" aria-labelledby="s-inapp" data-testid="in-app-updates">
 		<h2 id="s-inapp">{t('updates.inApp.title')}</h2>
+		<label class="checkline"><input type="checkbox" bind:checked={checkOn} onchange={setCheckOn} data-testid="update-check-on" /> {t('updates.inApp.checkOn')}</label>
+		{#if view.available}
 		<div class="row">
 			<SegmentedControl
 				options={[
 					{ value: 'off', label: t('updates.inApp.off') },
-					{ value: 'ask', label: t('updates.inApp.ask') },
-					{ value: 'auto', label: t('updates.inApp.auto') }
+					{ value: 'ask', label: t('updates.inApp.ask'), disabled: !view.check_on },
+					{ value: 'auto', label: t('updates.inApp.auto'), disabled: !view.check_on }
 				]}
 				bind:value={mode}
 				label={t('updates.inApp.mode')}
@@ -112,10 +130,12 @@
 			/>
 			{#if view.mode_locked}<span class="note">{t('updates.inApp.locked')}</span>{/if}
 		</div>
-		<p class="hint">{mode === 'auto' ? t('updates.inApp.autoHint') : mode === 'ask' ? t('updates.inApp.askHint') : t('updates.inApp.offHint')}</p>
+		{#if !view.check_on}<p class="hint" data-testid="in-app-check-off">{t('updates.inApp.checkOffHint')}</p>{/if}
+		{#if view.check_on || mode !== 'off'}<p class="hint">{mode === 'auto' ? t('updates.inApp.autoHint') : mode === 'ask' ? t('updates.inApp.askHint') : t('updates.inApp.offHint')}</p>{/if}
 		<p class="hint">{view.source === 'update' ? t('updates.inApp.fromUpdate') : t('updates.inApp.fromImage')}</p>
 
-		{#if view.launch.rollback}<p class="warn" data-testid="in-app-rollback">{t('updates.inApp.rolledBack', { text: view.launch.rollback })}</p>{/if}
+		{#if view.launch.chosen && view.launch.left}<p class="hint" data-testid="in-app-went-back">{t('updates.inApp.wentBack', { to: plainVersion(view.launch.to ?? ''), left: plainVersion(view.launch.left) })}</p>
+		{:else if view.launch.rollback}<p class="warn" data-testid="in-app-rollback">{t('updates.inApp.rolledBack', { text: view.launch.rollback })}</p>{/if}
 		{#if view.launch.exec_error}<p class="warn">{t('updates.inApp.execError', { message: view.launch.exec_error })}</p>{/if}
 		{#if phaseSays}<p class="phase" class:warn={view.progress.phase === 'failed'} aria-live="polite" data-testid="in-app-phase">{phaseSays}</p>{/if}
 
@@ -130,6 +150,7 @@
 			<div class="back">
 				<Button variant="plain" {busy} onclick={() => act('/app/update/go-back', t('updates.inApp.goBackFailed'))} data-testid="in-app-go-back">{t('updates.inApp.goBack', { version: plainVersion(view.previous) })}</Button>
 			</div>
+		{/if}
 		{/if}
 	</section>
 {/if}

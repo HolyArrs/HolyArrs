@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -233,7 +234,7 @@ func (d *TVDB) Show(ctx context.Context, id string) (Show, error) {
 	if n, err := strconv.ParseInt(v, 10, 64); err != nil || n <= 0 {
 		return Show{}, ErrShowNotFound
 	}
-	b, err := d.get(ctx, "/series/"+v+"/extended", url.Values{"short": {"true"}})
+	b, err := d.get(ctx, "/series/"+v+"/extended", url.Values{"short": {"true"}, "meta": {"translations"}})
 	if errors.Is(err, errTVDBNotFound) {
 		return Show{}, ErrShowNotFound
 	}
@@ -261,6 +262,12 @@ func (d *TVDB) Show(ctx context.Context, id string) (Show, error) {
 				ID         string `json:"id"`
 				SourceName string `json:"sourceName"`
 			} `json:"remoteIds"`
+			Translations []string    `json:"nameTranslations"`
+			Aliases      []tvdbAlias `json:"aliases"`
+			Texts        *struct {
+				Names     []tvdbText `json:"nameTranslations"`
+				Overviews []tvdbText `json:"overviewTranslations"`
+			} `json:"translations"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(b, &res); err != nil || res.Data.ID == 0 {
@@ -288,6 +295,11 @@ func (d *TVDB) Show(ctx context.Context, id string) (Show, error) {
 			out.IDs["tvmaze"] = r.ID
 		}
 	}
+	var names, overviews []tvdbText
+	if sd.Texts != nil {
+		names, overviews = sd.Texts.Names, sd.Texts.Overviews
+	}
+	d.names(ctx, &out, v, sd.Language, sd.Translations, names, overviews, sd.Aliases)
 	for page := 0; ; page++ {
 		if page == tvdbMaxPages {
 			// A cut-short list would make a refresh delete real episodes.
@@ -332,4 +344,99 @@ func (d *TVDB) Show(ctx context.Context, id string) (Show, error) {
 	}
 	out.finish()
 	return out, nil
+}
+
+type tvdbAlias struct {
+	Language string `json:"language"`
+	Name     string `json:"name"`
+}
+
+// tvdbText is one language's name (with its aliases) or synopsis.
+type tvdbText struct {
+	Language string   `json:"language"`
+	Name     string   `json:"name"`
+	Overview string   `json:"overview"`
+	Aliases  []string `json:"aliases"`
+}
+
+// names sets the show's name and other names. TVDB's main name is the
+// original-language one, so a Japanese show is named only in Japanese. Like
+// Sonarr, the show is named by its English name when TVDB has one (and gets
+// the English synopsis); the original name, the names in every other
+// language and TVDB's aliases become other names, so word-only sites and
+// local trackers find its releases, as TMDB shows and movies do. The texts
+// come with the show's details; when they are missing, the English name
+// costs one more request, and when that fails the aliases are still kept.
+func (d *TVDB) names(ctx context.Context, out *Show, id, original string, langs []string, texts, overviews []tvdbText, aliases []tvdbAlias) {
+	var eng *tvdbText
+	for i := range texts {
+		if texts[i].Language == "eng" {
+			eng = &texts[i]
+		}
+	}
+	if eng == nil && original != "eng" && slices.Contains(langs, "eng") {
+		if b, err := d.get(ctx, "/series/"+id+"/translations/eng", nil); err == nil {
+			var tr struct {
+				Data tvdbText `json:"data"`
+			}
+			if json.Unmarshal(b, &tr) == nil {
+				eng = &tr.Data
+			}
+		}
+	}
+	var more []string
+	if original != "eng" && eng != nil && strings.TrimSpace(eng.Name) != "" {
+		more = append(more, out.Name)
+		out.Name = strings.TrimSpace(eng.Name)
+		if o := strings.TrimSpace(eng.Overview); o != "" {
+			out.Overview = o
+		}
+		for _, x := range overviews {
+			if x.Language == "eng" && strings.TrimSpace(x.Overview) != "" {
+				out.Overview = strings.TrimSpace(x.Overview)
+			}
+		}
+	}
+	// The original language's other spellings (romaji for a Japanese show)
+	// come next: they are what fan release names use, and a word search
+	// asks only the first few names.
+	if original != "eng" {
+		for _, t := range texts {
+			if t.Language == original {
+				more = append(more, t.Aliases...)
+			}
+		}
+		for _, a := range aliases {
+			if a.Language == original {
+				more = append(more, a.Name)
+			}
+		}
+	}
+	if eng != nil {
+		more = append(more, eng.Aliases...)
+	}
+	// Other languages first: they are the names local trackers use, and the
+	// list is capped, so a long list of other spellings must not push them out.
+	for _, t := range texts {
+		if t.Language != "eng" {
+			more = append(more, t.Name)
+		}
+	}
+	for _, t := range texts {
+		if t.Language != "eng" {
+			more = append(more, t.Aliases...)
+		}
+	}
+	for _, a := range aliases {
+		more = append(more, a.Name)
+	}
+	seen := map[string]bool{strings.ToLower(out.Name): true}
+	var kept []string
+	for _, n := range more {
+		if n = strings.TrimSpace(n); n != "" && !seen[strings.ToLower(n)] {
+			seen[strings.ToLower(n)] = true
+			kept = append(kept, n)
+		}
+	}
+	out.OtherNames = kept
 }

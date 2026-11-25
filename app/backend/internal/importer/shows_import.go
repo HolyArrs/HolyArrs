@@ -84,6 +84,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if err := database.Get(ctx, db, "library_folders", ver.LibraryFolderID, &lf); err != nil {
 		return nil, err
 	}
+	if lf.LookOnly {
+		return nil, mediafiles.ErrLookOnly
+	}
 	var pr mediafiles.PickRules
 	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
 		return nil, err
@@ -132,10 +135,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if ti.EpisodeOrder != nil && *ti.EpisodeOrder != "" {
 		t.Order = *ti.EpisodeOrder
 	}
-	t.FolderName = safeName(ver.FolderName)
-	if t.FolderName == "" || t.FolderName == "." || t.FolderName == ".." {
-		t.FolderName = mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: ti.Name, Year: year})
-	}
+	t.FolderName = showFolder(ns, ver.FolderName, ti.Name, year, ti.SourceIDs)
 	for _, it := range items {
 		e := Episode{Ref: mediafiles.EpisodeRef{ItemID: it.ID}, SlotID: slotOf[it.ID]}
 		if it.Numbers.Season != nil {
@@ -316,6 +316,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 	}
 	im.markMoves(ctx, db, plan, dr, unpacked)
+	markLinks(plan, dr)
 	imp := &mediafiles.Import{DownloadID: &d.ID, FromPath: root, Kind: map[bool]string{false: "episodes", true: "tracks"}[music], Plan: plan, Result: []mediafiles.PlaceResult{}, Mode: "dry_run", State: "planned"}
 	if dryRun {
 		return imp, nil
@@ -381,14 +382,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			sweepStaleParts(filepath.Dir(st.TargetPath))
 		}
 	}
-	whole := func(f mediafiles.File) bool {
-		for _, id := range f.SlotIDs {
-			if !filled[id] {
-				return false
-			}
-		}
-		return true
-	}
+	whole := func(f mediafiles.File) bool { return allIn(f.SlotIDs, filled) }
 	abs := func(f mediafiles.File) string { return filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)) }
 	save := func() error {
 		return im.Store.Write(ctx, func(tx *sql.Tx) error { return database.Update(tx, "imports", imp, by) })
@@ -396,7 +390,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	heldFirst := map[int]string{}
 	for i, fs := range olds {
 		for _, f := range fs {
-			if !whole(f) || filepath.Clean(abs(f)) != filepath.Clean(plan[i].TargetPath) {
+			if !whole(f) || !covers(plan[i], f) || filepath.Clean(abs(f)) != filepath.Clean(plan[i].TargetPath) {
 				continue
 			}
 			if r := heldFrom(recorded, f.RelativePath); r != "" {
@@ -437,7 +431,10 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			return imp, err
 		}
 	}
+	placedSlot := placedSlots(plan, imp.Result)
+	wholePlaced := func(f mediafiles.File) bool { return allIn(f.SlotIDs, placedSlot) }
 	replacedTo := map[int64]string{}
+	oldRels := map[int64]string{} // where each replaced copy was, for a restore later
 	for i, fs := range olds {
 		placed := imp.Result[i].Outcome == "placed"
 		for _, f := range fs {
@@ -456,7 +453,13 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				}
 			case sameSpot:
 				replacedTo[f.ID] = heldFirst[i]
+			case placed && !wholePlaced(f): // it stays for the episodes whose step failed (keepOldCopies)
 			case placed:
+				if _, done := replacedTo[f.ID]; done {
+					// A copy that holds two episodes is listed under both
+					// steps. The first one set it aside; keep where it went.
+					break
+				}
 				to := heldFrom(recorded, f.RelativePath)
 				if _, err := os.Lstat(abs(f)); err == nil && to == "" {
 					var herr error
@@ -479,6 +482,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				replacedTo[f.ID] = to
 			}
 		}
+	}
+	if err := keepOldCopies(slotFiles(ctx, db, slots), recorded, wholePlaced, abs); err != nil {
+		return imp, err
 	}
 	if crashAt != nil && len(replacedTo) > 0 {
 		if err := crashAt("held_late"); err != nil {
@@ -547,13 +553,10 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				continue
 			}
 			for _, f := range fs {
-				if !whole(f) {
-					var rest []int64
-					for _, id := range f.SlotIDs {
-						if !filled[id] {
-							rest = append(rest, id)
-						}
-					}
+				// A copy that kept some of its episodes stays in place
+				// and holds just those.
+				if !wholePlaced(f) {
+					rest := notIn(f.SlotIDs, placedSlot)
 					if _, err := tx.Exec("UPDATE files SET slot_ids = ?, updated_at = ?, updated_by = ? WHERE id = ?",
 						jsonIDs(rest), database.FormatTime(now), actorText(by), f.ID); err != nil {
 						return err
@@ -561,6 +564,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 					continue
 				}
 				rel := f.RelativePath
+				oldRels[f.ID] = f.RelativePath
 				if to := replacedTo[f.ID]; to != "" {
 					if rp, err := filepath.Rel(lf.Path, to); err == nil {
 						rel = filepath.ToSlash(rp)
@@ -736,32 +740,13 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			}
 		}
 	}
-	var placedLabels []string
-	placedIDs := []int64{}
-	for _, id := range d.SlotIDs {
-		if slots[id].outcome == "placed" {
-			placedLabels = append(placedLabels, refLabel(slots[id].it))
-			placedIDs = append(placedIDs, id)
-		}
-	}
-	summary := fmt.Sprintf("Import %s: %d placed", imp.State, placed)
-	if len(placedLabels) > 0 {
-		summary += " (" + strings.Join(placedLabels, ", ") + ")"
-	}
-	if placed == 0 && imp.State == "failed" {
-		why := unpackWhy
-		for _, id := range d.SlotIDs {
-			if why == "" && slots[id].reason != "" {
-				why = slots[id].reason
-			}
-		}
-		if why != "" {
-			summary = "Import failed: " + why
-		}
-	}
+	summary, placedIDs := showImportSummary(imp.State, placed, unpackWhy, d.SlotIDs, slots)
 	e := &domain.Event{Actor: by, Kind: "import_" + imp.State, TitleID: &titleID, SlotID: &firstSlot, DownloadID: &dlID, Summary: summary,
 		Data: map[string]any{"import_id": imp.ID, "result": imp.Result, "from": imp.FromPath, "paths": planPaths(imp.Plan), "slot_ids": d.SlotIDs,
 			"placed_slot_ids": placedIDs}, GroupKey: group}
+	if imp.State == "partly_done" {
+		im.noteCleanupWait(ctx, d, slots, e)
+	}
 	if im.Store.AddEvent(ctx, e) == nil {
 		im.publish("event", e)
 	}
@@ -771,7 +756,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			continue
 		}
 		e := &domain.Event{Actor: by, Kind: "file_replaced", TitleID: &titleID, SlotID: &firstSlot, DownloadID: &dlID,
-			Summary: "Replaced " + fileName(f) + " with a better copy", Data: map[string]any{"old_file_id": oldID, "new_file_id": newID, "moved_to": replacedTo[oldID]},
+			Summary: "Replaced " + fileName(f) + " with a better copy", Data: map[string]any{"old_file_id": oldID, "new_file_id": newID, "moved_to": replacedTo[oldID], "from": oldRels[oldID]},
 			GroupKey: group}
 		im.upgradeFacts(ctx, e.Data, oldID, newID)
 		if im.Store.AddEvent(ctx, e) == nil {

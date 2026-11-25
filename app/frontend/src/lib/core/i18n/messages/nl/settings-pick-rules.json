@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Dit kan niet ongedaan worden gemaakt. Bestanden blijven.",
 	"settings.pickRules.removeUsed": "{used}. Kies daar eerst andere regels.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Annuleren"
+	"settings.pickRules.cancel": "Annuleren",
+	"settings.pickRules.check.title": "Een releasenaam controleren",
+	"settings.pickRules.check.desc": "Plak een releasenaam om te zien hoe HolyArrs hem leest en hoe je kwaliteitssets hem beoordelen. Er wordt niets gezocht of gedownload.",
+	"settings.pickRules.check.name": "Releasenaam",
+	"settings.pickRules.check.rules": "Beoordelen met",
+	"settings.pickRules.check.copies": "De kopieën van de passende titel",
+	"settings.pickRules.check.size": "Grootte in GB (optioneel)",
+	"settings.pickRules.check.check": "Controleren",
+	"settings.pickRules.check.failed": "Kon de naam niet controleren",
+	"settings.pickRules.check.readAs": "Gelezen als",
+	"settings.pickRules.check.matches": "Past bij {name}",
+	"settings.pickRules.check.noTitle": "Past bij geen titel in je Bibliotheek. Kies hierboven een kwaliteitsset om hem toch te beoordelen.",
+	"settings.pickRules.check.noAlbum": "Past bij {name}, maar bij geen van de albums.",
+	"settings.pickRules.check.noCopies": "Deze titel heeft geen kopieën om te beoordelen.",
+	"settings.pickRules.check.hasFile": "Heeft een bestand"
 }

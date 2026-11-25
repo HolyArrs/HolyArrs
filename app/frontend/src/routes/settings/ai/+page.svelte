@@ -161,9 +161,9 @@
 	}
 
 	const groupName = (g: McpGroup) =>
-		({ see: t('settings.ai.groupSee'), add: t('settings.ai.groupAdd'), control: t('settings.ai.groupControl'), settings: t('settings.ai.groupSettings'), delete: t('settings.ai.groupDelete'), admin: t('settings.ai.groupAdmin'), approve: t('settings.ai.groupApprove') })[g];
+		({ see: t('settings.ai.groupSee'), add: t('settings.ai.groupAdd'), control: t('settings.ai.groupControl'), settings: t('settings.ai.groupSettings'), delete: t('settings.ai.groupDelete'), admin: t('settings.ai.groupAdmin'), approve: t('settings.ai.groupApprove'), plugins: t('settings.ai.groupPlugins') })[g];
 	const shortName = (g: McpGroup) =>
-		({ see: t('settings.ai.shortSee'), add: t('settings.ai.shortAdd'), control: t('settings.ai.shortControl'), settings: t('settings.ai.shortSettings'), delete: t('settings.ai.shortDelete'), admin: t('settings.ai.shortAdmin'), approve: t('settings.ai.shortApprove') })[g];
+		({ see: t('settings.ai.shortSee'), add: t('settings.ai.shortAdd'), control: t('settings.ai.shortControl'), settings: t('settings.ai.shortSettings'), delete: t('settings.ai.shortDelete'), admin: t('settings.ai.shortAdmin'), approve: t('settings.ai.shortApprove'), plugins: t('settings.ai.shortPlugins') })[g];
 	const groupShort = (k: ApiKey) => MCP_GROUPS.filter((g) => k.mcp_groups?.includes(g)).map(shortName).join(' · ');
 </script>
 

@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Скасувати імпорт {id}?",
 	"settings.move.undoQuestion": "Скасувати цей імпорт?",
 	"settings.move.undoNote": "Прибирає те, що додав цей імпорт; твої пізніші зміни лишаються. Якщо звіт потрібен, спершу завантаж його.",
-	"settings.move.undoMove": "Скасувати імпорт"
+	"settings.move.undoMove": "Скасувати імпорт",
+	"settings.move.continueSetup": "Продовжити налаштування",
+	"settings.move.backToChoose": "Назад до вибору"
 }

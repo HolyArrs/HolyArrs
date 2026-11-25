@@ -22,10 +22,15 @@ type OutsideListHandlers struct {
 	Store   *database.Store
 	Queue   *jobs.Queue
 	Secrets *secrets.Vault
+	// TraktAuth keeps the Trakt sign-in (TraktSignInRoutes).
+	TraktAuth *metadata.TraktAuth
 	// Actor is the signed-in person (the owner without sign-in).
 	Actor func(r *http.Request) domain.Actor
 	// LibraryError answers the Library's refusals.
 	LibraryError func(w http.ResponseWriter, err error)
+	// TraktChanged runs after a Trakt sign-in or sign-out, so the watch
+	// history shows or drops the Trakt history now. Nil does nothing.
+	TraktChanged func()
 }
 
 // Routes registers the Outside list routes.

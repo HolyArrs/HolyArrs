@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Pyyntöjä",
 	"settings.appearance.colRate": "Riviä kohden",
 	"settings.appearance.noRows": "Selaa-rivejä ei ole vielä laskettu.",
+	"settings.appearance.rowStats": "Selaa-rivit",
+	"settings.appearance.rowStatsDesc": "Avaukset ja pyynnöt riveittäin viimeisten 30 päivän ajalta, kaikilta yhteensä. Lasketaan vain tällä palvelimella.",
+	"settings.appearance.colRow": "Rivi",
+	"settings.appearance.row.because_have": "Kuten nimikkeesi",
+	"settings.appearance.row.because_asked": "Kuten pyyntösi",
+	"settings.appearance.row.person": "Lisää henkilöltä",
+	"settings.appearance.row.genre": "Lajityyppivalinnat sinulle",
+	"settings.appearance.row.popular_genre": "Suositut lajityypeittäin",
+	"settings.appearance.row.popular_decade": "Suositut vuosikymmenittäin",
+	"settings.appearance.row.decade": "Vuosikymmenittäin",
+	"settings.appearance.row.mood": "Tunnelman mukaan",
+	"settings.appearance.row.hero": "Yläbanneri",
 	"settings.appearance.motion": "Liike",
 	"settings.appearance.motionNote": "Noudattaa laitteesi Vähennä liikettä -asetusta"
 }

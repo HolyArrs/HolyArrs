@@ -70,6 +70,15 @@ export function memberRow(choices: QualityChoice[], f: MemberRowFacts = {}): { p
 }
 
 /**
+ * With "pick more than one" on: the lines that can be asked for on top of the picked one, as their own asks. Only lines kept as
+ * their own copy (4K) can be added, never a second line on the main copy, and only ones that are free.
+ */
+export function alsoPills(pills: QualityPill[], selected: string, pickMany: boolean): QualityPill[] {
+	if (!pickMany || !selected) return [];
+	return pills.filter((p) => p.extra && !p.disabled && p.key !== selected);
+}
+
+/**
  * The row in the approver's request window: the main-copy lines, then the approver's other Pick rules (on the main copy), then the
  * lines kept as their own copy (4K). The line that was asked for is there even when it is hidden now, and it is the one picked.
  */

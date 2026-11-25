@@ -35,6 +35,7 @@ type builder struct {
 	app       Kind
 	snapID    int64
 	noFormats bool
+	rename    bool // the owner chose NamesRename
 	// label names the app's address after its rule names when more than
 	// one copy of that app is imported ("" otherwise).
 	label string
@@ -155,7 +156,7 @@ func (e *RuleError) Error() string { return e.Text }
 func BuildPlan(in []Input, ch Choices) *Plan {
 	p := &Plan{covered: map[string]bool{}, Snapshots: []int64{}, Apps: []string{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Paths: []string{}}
 	b := &builder{p: p, rules: ch.PathRules, skip: map[string]bool{}, items: map[string]*Group{}, keys: map[string]bool{},
-		presets: map[string]string{}, imported: map[string]bool{}, noFormats: ch.NoFormats, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
+		presets: map[string]string{}, imported: map[string]bool{}, noFormats: ch.NoFormats, rename: ch.Names == NamesRename, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
 		waits: map[string][]waitFrom{}, listNames: map[string]bool{}}
 	for _, s := range ch.Skip {
 		b.skip[s] = true
@@ -283,7 +284,9 @@ func (b *builder) snapshot(s *Snapshot) {
 	// line says so (leftBehind) instead of asking for it.
 	var needs []string
 	for _, n := range s.NeedsReentry {
-		if !strings.HasPrefix(n, `import list "`) {
+		// A notification's keys are asked for by its own Alert line in
+		// plain words, so the raw field names are not listed too.
+		if !strings.HasPrefix(n, `import list "`) && !strings.HasPrefix(n, `notification "`) {
 			needs = append(needs, n)
 		}
 	}
@@ -296,10 +299,12 @@ func (b *builder) snapshot(s *Snapshot) {
 	b.profiles(s)
 	b.titleList(s)
 	b.exclusions(s)
+	b.blocklist(s)
 	b.indexers(s)
 	b.downloaders(s)
 	b.pathMappings(s)
 	b.naming(s)
+	b.fileRules(s)
 	b.subtitles(s)
 	b.people(s)
 	b.asks(s)

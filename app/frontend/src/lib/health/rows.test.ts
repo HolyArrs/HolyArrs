@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { realTime, buildRows, groupRows, headline, jobTone, linkId, everyKind, needsAttention } from './rows.ts';
-import { nextRun, type ScheduleRow } from './schedules.ts';
+import { lastRan, nextRun, type ScheduleRow } from './schedules.ts';
 import type { StageState } from './types.ts';
 
 const link = (kind: StageState['kind'], id: number, state: StageState['state'], name = `${kind} ${id}`): StageState => ({
@@ -12,6 +12,15 @@ const job = (o: Partial<ScheduleRow>): ScheduleRow => ({
 const NOW = Date.parse('2026-11-02T10:00:00Z');
 
 describe('status rows', () => {
+	it('shows a Downloader warning check on its row (#443)', () => {
+		const msg = 'Downloader qBittorrent answers, but every download on it stopped at the same time.';
+		const rows = buildRows({ states: [link('downloader', 1, 'running')], checks: [{ key: 'downloader:1', kind: 'downloader', subject: 'qBittorrent', state: 'warning', message: msg } as never] });
+		const r = rows.find((x) => x.key === 'link:downloader:1');
+		expect(r?.tone).toBe('wait');
+		expect(r?.reason).toContain('stopped at the same time');
+		expect(needsAttention(rows).length).toBe(1);
+	});
+
 	it('reads ids from link keys', () => {
 		expect(linkId('link:source:3')).toBe(3);
 		expect(linkId('stage:x')).toBeNull();
@@ -36,10 +45,17 @@ describe('status rows', () => {
 	it('says job results plainly', () => {
 		expect(jobTone(job({ last_job: 'failed', last_job_error: 'timed out' }), NOW)).toMatchObject({ word: 'Failed', reason: 'timed out' });
 		expect(jobTone(job({}), NOW).word).toBe('Not run yet');
+		// A run by hand leaves last_run alone but ends a Job.
+		expect(jobTone(job({ last_job: 'done', last_job_ended: '2026-11-02T09:59:00Z' }), NOW).word).toBe('OK');
+		expect(buildRows({ schedules: [job({ last_job: 'done', last_job_ended: '2026-11-02T09:59:00Z' })] })[0].lastRun).toBe('2026-11-02T09:59:00Z');
+		expect(lastRan({ last_run: '2026-11-02T10:00:00Z', last_job_ended: '2026-11-02T09:00:00Z' })).toBe('2026-11-02T10:00:00Z');
 		expect(jobTone(job({ last_run: '2026-11-02T08:00:00Z', next_run: '2026-11-02T09:00:00Z' }), NOW).word).toBe('Late');
 		expect(jobTone(job({ enabled: false }), NOW)).toMatchObject({ tone: 'idle', word: 'Turned off' });
 		expect(jobTone(job({ state: 'part_off' }), NOW).word).toBe('Part is off');
 		expect(jobTone(job({ state: 'safe_mode' }), NOW).word).toBe('Safe mode');
+		// A check that found nothing to do counts as seen, with its reason.
+		expect(jobTone(job({ kind: 'sync_plex_watchlists', last_checked: '2026-11-02T09:59:00Z', last_skip: 'setting_off' }), NOW)).toMatchObject({ tone: 'ok', word: 'OK', reason: 'Off: turn on Request from Plex watchlists in Request rules' });
+		expect(buildRows({ schedules: [job({ last_checked: '2026-11-02T09:59:00Z', last_skip: 'nothing' })] })[0].lastRun).toBe('2026-11-02T09:59:00Z');
 	});
 
 	it('builds list and alert rows from their last error', () => {

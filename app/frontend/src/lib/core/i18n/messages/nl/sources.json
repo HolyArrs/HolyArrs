@@ -85,5 +85,21 @@
 	"sources.uses.auto": "zoekt zelf",
 	"sources.uses.feed": "lijst met het nieuwste",
 	"sources.uses.hand": "met de hand zoeken",
-	"sources.uses.none": "niet gebruikt"
+	"sources.uses.none": "niet gebruikt",
+	"sources.bridge.removeTitle": "{name} verwijderen?",
+	"sources.bridge.find": "{name} zoeken in mijn netwerk",
+	"sources.bridge.noneFound": "Geen {name} antwoordde in je netwerk.",
+	"sources.bridge.keyFound": "Sleutel ontvangen van {name}",
+	"sources.bridge.keyKept": "{name} gaf zijn sleutel niet (inloggen staat aan). Kopieer hem via Sleutel ophalen.",
+	"sources.bridge.keyKeptJackett": "Jackett gaf zijn sleutel niet (het heeft een beheerderswachtwoord). Kopieer hem via Sleutel ophalen.",
+	"sources.bridge.notReached": "Kon {name} niet bereiken.",
+	"sources.bridge.brings.title": "Wat er meekomt",
+	"sources.bridge.brings.sites": "Zijn indexers, als Bronnen",
+	"sources.bridge.brings.categories": "Hun categorieën",
+	"sources.bridge.brings.search": "Zoekopdrachten gaan via {name}",
+	"sources.bridge.brings.sync": "Wijzigingen in {name} komen mee",
+	"sources.bridge.brings.stays": "Je indexers blijven ingesteld in {name}.",
+	"sources.bridge.brings.had": "{n} indexers al hier",
+	"sources.bridge.brings.hadFrom": "Geïmporteerd via {apps}",
+	"sources.bridge.brings.keyKept": "Laat de sleutel leeg om de bestaande te gebruiken."
 }

@@ -80,6 +80,14 @@ func TestHTTPSToPlainPort(t *testing.T) {
 			t.Errorf("%q on a plain port: %q", msg, got)
 		}
 	}
+	// A TLS port that says so in plain text (nginx, Cloudflare): no guess.
+	tlsPort := hangUp(t, func(c net.Conn) {
+		_, _ = c.Read(make([]byte, 512))
+		_, _ = io.WriteString(c, "HTTP/1.1 400 Bad Request\r\nServer: cloudflare\r\nContent-Type: text/html\r\n\r\n<html><head><title>400 The plain HTTP request was sent to HTTPS port</title></head></html>")
+	})
+	if got := at(Unknown, "EOF", "https://"+tlsPort); got != Unknown {
+		t.Errorf("a TLS port's plain-text answer: %q", got)
+	}
 	// A plain port that says nothing and closes: no guess.
 	silent := hangUp(t, func(net.Conn) {})
 	if got := at(Unknown, "EOF", "https://"+silent); got != Unknown {

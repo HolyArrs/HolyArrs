@@ -147,7 +147,7 @@ func TestEpisodeNameStyles(t *testing.T) {
 		ColonRemove:         "Star Trail - S01E01 - Part One 1080p WEB.mkv",
 	} {
 		s := NamingDefaults()
-		s.Colon = colon
+		s.ShowColon = colon
 		f := EpisodeFacts{NameFacts: NameFacts{Title: "Star: Trail", Step: "1080p_web", Ext: ".mkv"}, Order: OrderAired, Season: 1, Episodes: []int{1}, Titles: []string{"Part: One"}}
 		if got := EpisodeFile(s, f); got != want {
 			t.Errorf("colon %s: got %q, want %q", colon, got, want)

@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Import {id} rückgängig machen?",
 	"settings.move.undoQuestion": "Diesen Import rückgängig machen?",
 	"settings.move.undoNote": "Entfernt, was dieser Import hinzugefügt hat; deine späteren Änderungen bleiben. Lade vorher den Bericht herunter, wenn du ihn willst.",
-	"settings.move.undoMove": "Import rückgängig machen"
+	"settings.move.undoMove": "Import rückgängig machen",
+	"settings.move.continueSetup": "Einrichtung fortsetzen",
+	"settings.move.backToChoose": "Zurück zur Auswahl"
 }

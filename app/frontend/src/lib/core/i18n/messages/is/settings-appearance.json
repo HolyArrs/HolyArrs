@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Beiðnir",
 	"settings.appearance.colRate": "Á hverja röð",
 	"settings.appearance.noRows": "Engar raðir í Kanna taldar enn.",
+	"settings.appearance.rowStats": "Raðir í Kanna",
+	"settings.appearance.rowStatsDesc": "Opnanir og beiðnir á hverja röð síðustu 30 daga, allir saman. Aðeins taldar á þessum þjóni.",
+	"settings.appearance.colRow": "Röð",
+	"settings.appearance.row.because_have": "Eins og titlar sem þú átt",
+	"settings.appearance.row.because_asked": "Eins og beiðnirnar þínar",
+	"settings.appearance.row.person": "Meira frá manneskju",
+	"settings.appearance.row.genre": "Tegundaval fyrir þig",
+	"settings.appearance.row.popular_genre": "Vinsælt eftir tegund",
+	"settings.appearance.row.popular_decade": "Vinsælt eftir áratug",
+	"settings.appearance.row.decade": "Eftir áratug",
+	"settings.appearance.row.mood": "Eftir stemningu",
+	"settings.appearance.row.hero": "Efsti borði",
 	"settings.appearance.motion": "Hreyfing",
 	"settings.appearance.motionNote": "Fylgir stillingunni Draga úr hreyfingu í tækinu þínu"
 }

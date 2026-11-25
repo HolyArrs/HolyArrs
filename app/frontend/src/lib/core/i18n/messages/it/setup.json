@@ -8,10 +8,14 @@
 	"setup.fullPath": "Usa il percorso completo della cartella, tipo {path}.",
 	"setup.folderUsed": "Questa cartella è già usata, oppure sta dentro una che lo è.",
 	"setup.folderMissing": "Quella cartella non esiste. Controlla il percorso.",
-	"setup.addFolderOrOff": "Aggiungi una cartella oppure disattiva questo.",
+	"setup.addFolderOrOff": "Aggiungi una cartella oppure premi «Salta per ora».",
 	"setup.notAnswering": "HolyArrs non risponde. Riprova tra un attimo.",
 	"setup.addUserPasswordHint": "Aggiungi il nome utente e la password.",
 	"setup.folders": "Cartelle",
 	"setup.downloader": "Downloader",
-	"setup.source": "Fonte"
+	"setup.source": "Fonte",
+	"setup.alertsNeedKeyOne": "Avvisi: 1 ha bisogno di una chiave",
+	"setup.alertsNeedKey": "Avvisi: {n} hanno bisogno di una chiave",
+	"setup.folderNoAccess": "HolyArrs non riesce ad aprire questa cartella. Controlla i suoi permessi.",
+	"setup.folderCantUse": "HolyArrs non può usare questa cartella. Controlla il percorso."
 }

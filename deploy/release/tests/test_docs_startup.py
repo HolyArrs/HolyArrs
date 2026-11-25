@@ -94,6 +94,7 @@ class Overrides(unittest.TestCase):
         for name in ("HOLYARRS_ALLOW_DESKTOP_FOLDER", "HOLYARRS_CONFIG_IN_MEMORY"):
             with self.subTest(name=name):
                 self.assertIn(name, text)
+        self.assertIn("HOLYARRS_ALLOW_FUSE_FOLDER", read(ROOT / "docs" / "run" / "platforms.md"))
 
 
 if __name__ == "__main__":

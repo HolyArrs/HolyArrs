@@ -106,7 +106,13 @@ func (o *OpenSubs) search(w http.ResponseWriter, r *http.Request) {
 	langs := strings.Split(q.Get("languages"), ",")
 	data := []any{}
 	for _, s := range o.Subs {
-		if s.Kind != q.Get("type") || !(contains(langs, s.Language) || contains(langs, strings.SplitN(s.Language, "-", 2)[0])) {
+		base := strings.SplitN(s.Language, "-", 2)[0]
+		// Like the real site, Chinese is filed only under zh-cn, zh-tw, zh-ca
+		// and ze: a plain zh finds nothing.
+		if base == "zh" || s.Language == "ze" {
+			base = ""
+		}
+		if s.Kind != q.Get("type") || !(contains(langs, strings.ToLower(s.Language)) || contains(langs, s.Language) || contains(langs, base)) {
 			continue
 		}
 		feature := map[string]any{"title": s.Title, "year": s.Year}

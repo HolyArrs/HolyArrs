@@ -309,6 +309,33 @@ type slotFilter struct {
 	id   int64
 }
 
+// latestSearchJobsSQL is the query of latestSearchJobs; slotFilterSQL narrows
+// the title's Slots.
+//
+// Each part starts from the releases or the jobs and checks the title's
+// Slots (ts) from there. Joined the other way round, SQLite reads every
+// Release again for each Slot of the title (matched_slot_ids is JSON, so no
+// index leads from a Slot to its Releases), which takes minutes for a long
+// show. The releases_job index holds every releases column read here.
+func latestSearchJobsSQL(slotFilterSQL string) string {
+	return `WITH ts AS MATERIALIZED (
+			SELECT s.id AS id, s.version_id AS version_id, i.part_id AS part_id FROM slots s JOIN items i ON i.id = s.item_id
+			WHERE i.title_id = ?` + slotFilterSQL + `)
+	SELECT max(job_id) FROM (
+		SELECT j.value AS slot, r.job_id AS job_id FROM releases r JOIN json_each(r.matched_slot_ids) j
+			WHERE r.job_id IS NOT NULL AND r.found_by != 'feed' AND j.value IN (SELECT id FROM ts)
+		UNION ALL
+		SELECT ts.id, jb.id FROM jobs jb JOIN ts ON ts.id = json_extract(jb.subject, '$.id')
+			WHERE jb.kind = ? AND json_extract(jb.subject, '$.type') = 'slot'
+			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
+		UNION ALL
+		SELECT ts.id, jb.id FROM jobs jb JOIN ts ON ts.part_id = json_extract(jb.subject, '$.id')
+			AND ts.version_id = json_extract(jb.params, '$.version_id')
+			WHERE jb.kind IN (?, ?) AND json_extract(jb.subject, '$.type') = 'part'
+			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
+	) GROUP BY slot`
+}
+
 // latestSearchJobs lists the newest search Job of each Slot of a Title: one
 // whose Releases matched the Slot, or a search of the Slot itself, so Releases
 // that matched no Title are listed too.
@@ -319,22 +346,8 @@ func latestSearchJobs(ctx context.Context, db *sql.DB, titleID int64, filters []
 		slotFilterSQL += f.cond
 		slotArg = append(slotArg, f.id)
 	}
-	args := append(append([]any{titleID}, slotArg...), append([]any{jobs.KindSearchSlot, titleID}, slotArg...)...)
-	args = append(args, append([]any{jobs.KindSearchSeason, jobs.KindSearchAlbum, titleID}, slotArg...)...)
-	rows, err := db.QueryContext(ctx, `SELECT max(job_id) FROM (
-		SELECT s.id AS slot, r.job_id AS job_id FROM releases r JOIN json_each(r.matched_slot_ids) j
-			JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id
-			WHERE i.title_id = ? AND r.job_id IS NOT NULL AND r.found_by != 'feed'`+slotFilterSQL+`
-		UNION ALL
-		SELECT s.id, jb.id FROM jobs jb JOIN slots s ON s.id = json_extract(jb.subject, '$.id') JOIN items i ON i.id = s.item_id
-			WHERE jb.kind = ? AND json_extract(jb.subject, '$.type') = 'slot' AND i.title_id = ?`+slotFilterSQL+`
-			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
-		UNION ALL
-		SELECT s.id, jb.id FROM jobs jb JOIN items i ON i.part_id = json_extract(jb.subject, '$.id')
-			JOIN slots s ON s.item_id = i.id AND s.version_id = json_extract(jb.params, '$.version_id')
-			WHERE jb.kind IN (?, ?) AND json_extract(jb.subject, '$.type') = 'part' AND i.title_id = ?`+slotFilterSQL+`
-			AND EXISTS (SELECT 1 FROM releases r WHERE r.job_id = jb.id)
-	) GROUP BY slot`, args...)
+	args := append(append([]any{titleID}, slotArg...), jobs.KindSearchSlot, jobs.KindSearchSeason, jobs.KindSearchAlbum)
+	rows, err := db.QueryContext(ctx, latestSearchJobsSQL(slotFilterSQL), args...)
 	if err != nil {
 		return nil, err
 	}
@@ -350,17 +363,50 @@ func latestSearchJobs(ctx context.Context, db *sql.DB, titleID int64, filters []
 	return jobIDs, nil
 }
 
+// filteredSlots lists the Title's Slots the filters keep.
+func filteredSlots(ctx context.Context, db *sql.DB, titleID int64, filters []slotFilter) ([]int64, error) {
+	q, args := "SELECT s.id FROM slots s JOIN items i ON i.id = s.item_id WHERE i.title_id = ?", []any{titleID}
+	for _, f := range filters {
+		q += f.cond
+		args = append(args, f.id)
+	}
+	rows, err := db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	ids := []int64{-1} // none kept still narrows the list
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
 // releasesOfJobs counts the Releases the Jobs found and returns one page of
-// them: winners first, then passed over, then refused.
-func releasesOfJobs(ctx context.Context, db *sql.DB, jobIDs []any, limit, offset int) ([]domain.Release, int, error) {
+// them: winners first, then passed over, then refused. With onlySlots (one
+// episode asked for), Releases matched only to other Slots are left out;
+// ones matched to none stay.
+func releasesOfJobs(ctx context.Context, db *sql.DB, jobIDs []any, onlySlots []int64, limit, offset int) ([]domain.Release, int, error) {
 	in := "job_id IN (" + strings.TrimSuffix(strings.Repeat("?,", len(jobIDs)), ",") + ")"
+	args := append([]any{}, jobIDs...)
+	if len(onlySlots) > 0 {
+		in += " AND (COALESCE(json_array_length(matched_slot_ids), 0) = 0 OR EXISTS (SELECT 1 FROM json_each(matched_slot_ids) WHERE value IN (" +
+			strings.TrimSuffix(strings.Repeat("?,", len(onlySlots)), ",") + ")))"
+		for _, id := range onlySlots {
+			args = append(args, id)
+		}
+	}
 	var total int
-	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM releases WHERE "+in, jobIDs...).Scan(&total); err != nil {
+	if err := db.QueryRowContext(ctx, "SELECT count(*) FROM releases WHERE "+in, args...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 	rels, err := database.Select[domain.Release](ctx, db, "releases", in+` ORDER BY CASE state WHEN 'chosen' THEN 0 WHEN 'held' THEN 1
 			WHEN 'judged' THEN 2 WHEN 'passed_over' THEN 3 WHEN 'turned_down' THEN 5 ELSE 4 END,
-			COALESCE(json_extract(verdict, '$.rank'), 9999), id LIMIT ? OFFSET ?`, append(jobIDs, limit, offset)...)
+			COALESCE(json_extract(verdict, '$.rank'), 9999), id LIMIT ? OFFSET ?`, append(args, limit, offset)...)
 	return rels, total, err
 }
 
@@ -462,4 +508,112 @@ func freeStuckChoiceTx(ctx context.Context, tx *sql.Tx, slotID int64, by domain.
 		return false, err
 	}
 	return true, nil
+}
+
+// LastSearch is the newest finished search of a Title (or of its filtered
+// Slots), so a screen with no Releases can tell "never searched" from
+// "searched and found nothing" and from "Sources sent only other titles".
+type LastSearch struct {
+	At        *time.Time `json:"at,omitempty"`
+	Failed    bool       `json:"failed"`
+	Found     int        `json:"found"`
+	Dropped   int        `json:"dropped"`
+	DroppedBy []string   `json:"dropped_sources,omitempty"`
+}
+
+// lastSearch reads the newest finished search Job of the Title's Slots or
+// parts; nil when there is none.
+func lastSearch(ctx context.Context, db *sql.DB, titleID int64, filters []slotFilter) *LastSearch {
+	slotFilterSQL := ""
+	var slotArg []any
+	for _, f := range filters {
+		slotFilterSQL += f.cond
+		slotArg = append(slotArg, f.id)
+	}
+	args := append(append([]any{titleID}, slotArg...), jobs.KindSearchSlot, jobs.KindSearchSeason, jobs.KindSearchAlbum)
+	js, err := database.Select[domain.Job](ctx, db, "jobs", `state IN ('done', 'failed') AND id = (
+		WITH ts AS MATERIALIZED (SELECT s.id AS id, i.part_id AS part_id FROM slots s JOIN items i ON i.id = s.item_id WHERE i.title_id = ?`+slotFilterSQL+`)
+		SELECT max(jb.id) FROM jobs jb WHERE jb.state IN ('done', 'failed') AND (
+			jb.kind = ? AND json_extract(jb.subject, '$.type') = 'slot' AND json_extract(jb.subject, '$.id') IN (SELECT id FROM ts)
+			OR jb.kind IN (?, ?) AND json_extract(jb.subject, '$.type') = 'part' AND json_extract(jb.subject, '$.id') IN (SELECT part_id FROM ts)))`, args...)
+	if err != nil || len(js) == 0 {
+		return nil
+	}
+	j := js[0]
+	if j.Result["skipped"] != nil {
+		return nil
+	}
+	out := &LastSearch{At: j.EndedAt, Failed: j.State == "failed"}
+	if n, ok := j.Result["releases"].(float64); ok {
+		out.Found = int(n)
+	}
+	if n, ok := j.Result["dropped"].(float64); ok {
+		out.Dropped = int(n)
+	}
+	if xs, ok := j.Result["dropped_sources"].([]any); ok {
+		for _, x := range xs {
+			if name, ok := x.(string); ok {
+				out.DroppedBy = append(out.DroppedBy, name)
+			}
+		}
+	}
+	return out
+}
+
+// rulesChangedSince says whether the Pick rules behind the listed searches
+// changed after the oldest of them: a rule set was saved since, or a Version
+// now uses other Pick rules than the one its search judged with. Other
+// Version edits (a grab, a folder move) do not count.
+func rulesChangedSince(ctx context.Context, db *sql.DB, titleID int64, jobIDs []any) bool {
+	in := strings.TrimSuffix(strings.Repeat("?,", len(jobIDs)), ",")
+	var changed bool
+	args := append(append(append([]any{}, jobIDs...), titleID), jobIDs...)
+	err := db.QueryRowContext(ctx, `WITH s AS (SELECT min(created_at) AS at FROM jobs WHERE id IN (`+in+`))
+		SELECT EXISTS (SELECT 1 FROM versions v JOIN pick_rules p ON p.id = v.pick_rules_id, s
+			WHERE v.title_id = ? AND p.updated_at > s.at)
+		OR EXISTS (SELECT 1 FROM jobs j JOIN versions v ON v.id = json_extract(j.result, '$.version_id')
+			WHERE j.id IN (`+in+`) AND json_extract(j.result, '$.pick_rules_id') IS NOT NULL
+			AND v.pick_rules_id != json_extract(j.result, '$.pick_rules_id'))`, args...).Scan(&changed)
+	return err == nil && changed
+}
+
+// ReleasesOfJobs lists up to 1000 Releases the Jobs found, best first, as
+// the app's hand search list orders them. Non-empty onlySlots leaves out
+// Releases matched only to other Slots.
+func ReleasesOfJobs(ctx context.Context, db *sql.DB, jobIDs, onlySlots []int64) ([]domain.Release, error) {
+	if len(jobIDs) == 0 {
+		return nil, nil
+	}
+	ids := make([]any, len(jobIDs))
+	for i, id := range jobIDs {
+		ids[i] = id
+	}
+	rels, _, err := releasesOfJobs(ctx, db, ids, onlySlots, 1000, 0)
+	return rels, err
+}
+
+// SourceNames maps each Source id to its name.
+func SourceNames(ctx context.Context, db *sql.DB, ids []int64) (map[int64]string, error) {
+	out := map[int64]string{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		args[i] = id
+	}
+	rows, err := db.QueryContext(ctx, "SELECT id, name FROM sources WHERE id IN ("+strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",")+")", args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, err
+		}
+		out[id] = name
+	}
+	return out, rows.Err()
 }

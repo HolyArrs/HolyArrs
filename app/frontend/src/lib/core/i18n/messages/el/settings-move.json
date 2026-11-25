@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Να αναιρεθεί η εισαγωγή {id};",
 	"settings.move.undoQuestion": "Να αναιρεθεί αυτή η εισαγωγή;",
 	"settings.move.undoNote": "Αφαιρεί ό,τι πρόσθεσε αυτή η εισαγωγή· οι μεταγενέστερες αλλαγές σας μένουν. Κάντε πρώτα λήψη της αναφοράς αν τη θέλετε.",
-	"settings.move.undoMove": "Αναίρεση εισαγωγής"
+	"settings.move.undoMove": "Αναίρεση εισαγωγής",
+	"settings.move.continueSetup": "Συνέχεια ρύθμισης",
+	"settings.move.backToChoose": "Πίσω στην επιλογή"
 }

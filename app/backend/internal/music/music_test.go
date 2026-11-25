@@ -141,8 +141,9 @@ func musicSetup(t *testing.T) (*httptest.Server, *database.Store, *library.Servi
 // route: PUT /api/v1/titles/{id}/artist
 func TestMusicAPI(t *testing.T) {
 	t.Parallel()
-	srv, _, lib, fa := musicSetup(t)
+	srv, st, lib, fa := musicSetup(t)
 	u := srv.URL + "/api/v1"
+	searchSource(t, st) // a search by hand needs a Source
 	ctx := context.Background()
 
 	do(t, "GET", u+"/artists/lookup", "", 400)

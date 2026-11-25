@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -70,7 +71,7 @@ func TestTelegramSendsPlainText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if a.PasswordSecretID == nil || a.ChatID != "-1001234567890" || len(a.Moments) != len(Moments) {
+	if a.PasswordSecretID == nil || a.ChatID != "-1001234567890" || len(a.Moments) != len(Moments)-1 || slices.Contains(a.Moments, MomentArtwork) {
 		t.Fatalf("alert %+v", a)
 	}
 	snd := &Sender{Store: s, Vault: v, Backoff: []time.Duration{}}

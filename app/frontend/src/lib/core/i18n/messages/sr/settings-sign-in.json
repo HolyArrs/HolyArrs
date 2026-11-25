@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Само ови могу да кажу одакле је посета дошла.",
 	"settings.signIn.fixToSaveOne": "Поправите 1 ред да бисте сачували",
 	"settings.signIn.fixToSaveOther": "Поправите редова: {n}, да бисте сачували",
-	"settings.signIn.localSaved": "Локална мрежа сачувана"
+	"settings.signIn.localSaved": "Локална мрежа сачувана",
+	"settings.signIn.forgotTitle": "Заборављена лозинка?",
+	"settings.signIn.forgotOn": "Прикажи Заборављена лозинка? на страници за пријаву",
+	"settings.signIn.forgotNote": "Власник добија једнократни код из дневника сервера. Искључи ако се сви пријављују јединственом пријавом. Наредба reset-owner и даље ради.",
+	"settings.signIn.forgotShown": "Заборављена лозинка? је укључено",
+	"settings.signIn.forgotHidden": "Заборављена лозинка? је искључено"
 }

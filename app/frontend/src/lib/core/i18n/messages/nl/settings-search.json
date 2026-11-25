@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Beste kopie eerst; een seizoenspakket wint bij gelijke stand",
 	"settings.search.preferAlways": "Een seizoenspakket zodra er een door de kwaliteitsset komt",
 	"settings.search.multi": "Releases met meerdere seizoenen nemen",
-	"settings.search.multiHint": "Vult elke ontbrekende aflevering erin",
+	"settings.search.multiHint": "Vult elke ontbrekende aflevering erin. Bij gelijke kwaliteit wint de release met meer gezochte afleveringen",
 	"settings.search.music": "Muziek",
 	"settings.search.albums": "Ook zoeken naar ontbrekende albums",
 	"settings.search.albumsHint": "Uitgebrachte albums, één zoekopdracht per album",

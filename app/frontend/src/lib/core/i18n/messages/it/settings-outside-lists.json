@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Aggiungi alla Lista dei mai aggiungere",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "Togli {name}",
-	"settings.outsideLists.empty": "Ancora niente in questo elenco"
+	"settings.outsideLists.empty": "Ancora niente in questo elenco",
+	"settings.outsideLists.traktSignInTitle": "Accesso a Trakt",
+	"settings.outsideLists.traktSignInInfo": "Accedi per leggere le tue liste private e la watchlist di Trakt, e per aggiungere alla cronologia di visione ciò che hai guardato su Trakt.",
+	"settings.outsideLists.traktSignedInAs": "Accesso eseguito come {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Accesso non eseguito. Si leggono solo le liste pubbliche.",
+	"settings.outsideLists.traktSignIn": "Accedi con Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Su qualsiasi dispositivo, apri <a>{url}</a> e inserisci <code>{code}</code>. Questa pagina aspetta finché non approvi.",
+	"settings.outsideLists.traktDenied": "L'accesso a Trakt è stato rifiutato.",
+	"settings.outsideLists.traktExpired": "Il codice è scaduto. Ricomincia.",
+	"settings.outsideLists.traktSignOut": "Esci da Trakt",
+	"settings.outsideLists.traktSignedIn": "Accesso a Trakt eseguito",
+	"settings.outsideLists.traktSignedOut": "Uscito da Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (serve per accedere con Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Salva prima il client secret della tua app Trakt; Trakt ne ha bisogno per mantenerti connesso."
 }

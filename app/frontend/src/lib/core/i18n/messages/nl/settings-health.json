@@ -14,7 +14,6 @@
 	"settings.health.none": "Geen resultaten. Controleer opnieuw om ze uit te voeren.",
 	"settings.health.since": "Sinds",
 	"settings.health.settings": "Instellingen voor gezondheidscontroles",
-	"settings.health.updateCheck": "Controleren op een nieuwere HolyArrs",
 	"settings.health.onlyChecks": "Controleert alleen. Installeert nooit.",
 	"settings.health.every": "Controleren op updates elke",
 	"settings.health.day": "dag",

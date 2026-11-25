@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Kuriama: {what}… bandymas {attempt}",
 	"core.testTag.connected": "Prijungta",
 	"core.api.notAnswering": "HolyArrs neatsako. Patikrinkite, ar jis veikia.",
+	"core.api.tooSlow": "HolyArrs per ilgai neatsakė. Bandyk dar kartą po minutės.",
 	"core.api.requestFailed": "Užklausa nepavyko ({status})",
 	"core.api.wentWrong": "Kažkas nepavyko.",
 	"core.trailerMiss.trailer": "anonsas",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Patvirtinta automatiškai",
 	"core.plain.approvedBy": "Patvirtino {who}",
 	"core.settings.cantReach": "Šio adreso pasiekti nepavyksta. Patikrinkite jį ir ar programa veikia.",
+	"core.settings.tryHttp": "Šis adresas neatsako per https. Pabandyk http://.",
 	"core.settings.groupLibrary.label": "Biblioteka",
 	"core.settings.groupLibrary.line": "Kur gyvena kūriniai",
 	"core.settings.groupLibrary.about": "Aplankai, dalys, numatytieji, subtitrai, failų pavadinimai ir importas.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Du atsisiuntėjai pasiekia tą pačią atsisiuntimo programą, todėl atsisiuntimai gali būti rodomi du kartus.",
 	"core.plain.peopleCheck": "Nepavyksta perskaityti medijos serverio naudotojų sąrašo, todėl ten pašalinti žmonės čia neišjungiami.",
 	"core.plain.deleted": "ištrintas",
-	"core.plain.deletedName": "{name} (ištrintas)"
+	"core.plain.deletedName": "{name} (ištrintas)",
+	"core.api.handsOffFiles": "Nesikišimo režimas įjungtas, todėl HolyArrs neliečia atsisiųstų failų. Išjunkite jį nustatymuose, kad galėtumėte importuoti, pervadinti, perkelti ar nuskaityti failus.",
+	"core.api.handsOffSubtitles": "Nesikišimo režimas įjungtas, todėl HolyArrs niekada neatidaro atsisiųstų failų. Išjunkite jį nustatymuose, kad galėtumėte naudoti subtitrus."
 }

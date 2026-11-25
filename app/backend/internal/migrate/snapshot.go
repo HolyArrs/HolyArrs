@@ -6,6 +6,9 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // Snapshot is what an old app holds, as plain data. It never holds a
@@ -30,6 +33,8 @@ type Snapshot struct {
 	// Rules.
 	QualityProfiles []Profile `json:"quality_profiles,omitempty"`
 	CustomFormats   []Named   `json:"custom_formats,omitempty"`
+	// QualitySizes is the app's size table, shared by all its profiles.
+	QualitySizes []library.OldQualitySize `json:"quality_sizes,omitempty"`
 	// ReleaseProfiles are release word rules: words a release must or must
 	// not hold, with their tag and indexer scope.
 	ReleaseProfiles  []Named          `json:"release_profiles,omitempty"`
@@ -59,6 +64,9 @@ type Snapshot struct {
 	// and the same folder as the app sees it.
 	RemotePathMappings []RemotePathMapping `json:"remote_path_mappings,omitempty"`
 
+	// Blocklist are the releases Sonarr or Radarr will never take again.
+	Blocklist []Blocked `json:"blocklist,omitempty"`
+
 	// Seerr and Overseerr.
 	Users    []User    `json:"users,omitempty"`
 	Requests []Request `json:"requests,omitempty"`
@@ -80,6 +88,18 @@ type RemotePathMapping struct {
 	LocalPath  string `json:"local_path"`
 }
 
+// Blocked is one release on Sonarr's or Radarr's blocklist.
+type Blocked struct {
+	TitleID  int64  `json:"title_id"` // the app's own movie or series id
+	Name     string `json:"name"`
+	InfoHash string `json:"info_hash,omitempty"`
+	Protocol string `json:"protocol"` // torrent, usenet
+	Indexer  string `json:"indexer,omitempty"`
+	Reason   string `json:"reason,omitempty"`
+	// Episodes are the exact episodes Sonarr turned it down for.
+	Episodes []sources.EpisodeNumber `json:"episodes,omitempty"`
+}
+
 // Title is one movie, show or artist.
 type Title struct {
 	SourceID int64             `json:"source_id"`
@@ -97,6 +117,9 @@ type Title struct {
 	Added     string   `json:"added,omitempty"`
 	Tags      []string `json:"tags,omitempty"`
 	Seasons   []Season `json:"seasons,omitempty"`
+	// EpisodesOff are single episodes switched off (Sonarr), even in a
+	// season that is on.
+	EpisodesOff []sources.EpisodeNumber `json:"episodes_off,omitempty"`
 	// MusicAlbums keeps per-album monitoring and the selected pressing for
 	// Lidarr artists. It contains public MusicBrainz identifiers only.
 	MusicAlbums []MusicAlbum `json:"music_albums,omitempty"`
@@ -105,6 +128,9 @@ type Title struct {
 	Extra map[string]any `json:"extra,omitempty"`
 	// Files are the title's files with the quality the old app recorded.
 	Files []TitleFile `json:"files,omitempty"`
+	// History is the old app's past downloads, imports and failed
+	// downloads of the title, newest first.
+	History []PastEvent `json:"history,omitempty"`
 }
 
 // MusicAlbum is one Lidarr album belonging to an artist.
@@ -156,6 +182,8 @@ type Profile struct {
 	// CutoffQualities the cutoff's (several when it is a group).
 	Qualities       []string `json:"qualities,omitempty"`
 	CutoffQualities []string `json:"cutoff_qualities,omitempty"`
+	// Groups are the allowed groups' qualities, one list per group.
+	Groups [][]string `json:"groups,omitempty"`
 	// Language is the profile's wanted language by name (Radarr).
 	Language string `json:"language,omitempty"`
 	// Scores maps custom format names to their score in this profile.
@@ -278,17 +306,19 @@ type User struct {
 
 // Request is one Seerr or Overseerr ask.
 type Request struct {
-	SourceID  int64             `json:"source_id"`
-	Kind      string            `json:"kind"` // movie, show
-	IDs       map[string]string `json:"ids"`  // tmdb, tvdb, imdb
-	State     string            `json:"state"`
-	Seasons   []int             `json:"seasons,omitempty"`
-	By        int64             `json:"by"` // User.SourceID
-	ByName    string            `json:"by_name,omitempty"`
-	DecidedBy int64             `json:"decided_by,omitempty"`
-	FourK     bool              `json:"four_k,omitempty"`
-	Created   string            `json:"created,omitempty"`
-	Updated   string            `json:"updated,omitempty"`
+	SourceID int64             `json:"source_id"`
+	Kind     string            `json:"kind"` // movie, show
+	IDs      map[string]string `json:"ids"`  // tmdb, tvdb, imdb
+	State    string            `json:"state"`
+	// Done: the old app already finished it (its title is there, whole or in part).
+	Done      bool   `json:"done,omitempty"`
+	Seasons   []int  `json:"seasons,omitempty"`
+	By        int64  `json:"by"` // User.SourceID
+	ByName    string `json:"by_name,omitempty"`
+	DecidedBy int64  `json:"decided_by,omitempty"`
+	FourK     bool   `json:"four_k,omitempty"`
+	Created   string `json:"created,omitempty"`
+	Updated   string `json:"updated,omitempty"`
 }
 
 // Counts sums the Snapshot for lists and screens.

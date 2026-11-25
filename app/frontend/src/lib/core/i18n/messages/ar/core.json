@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "جارٍ بناء {what}… المحاولة {attempt}",
 	"core.testTag.connected": "متصل",
 	"core.api.notAnswering": "HolyArrs لا يستجيب. تأكد من أنه يعمل.",
+	"core.api.tooSlow": "تأخر HolyArrs في الرد. حاول مرة أخرى بعد دقيقة.",
 	"core.api.requestFailed": "فشل الطلب ({status})",
 	"core.api.wentWrong": "حدث خطأ ما.",
 	"core.trailerMiss.trailer": "الإعلان التشويقي",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "موافقة تلقائية",
 	"core.plain.approvedBy": "وافق عليه {who}",
 	"core.settings.cantReach": "لا يمكن الوصول إلى هذا العنوان. تحقق منه ومن أن التطبيق يعمل.",
+	"core.settings.tryHttp": "هذا العنوان لا يستجيب عبر https. جرّب http:// بدلًا منه.",
 	"core.settings.groupLibrary.label": "المكتبة",
 	"core.settings.groupLibrary.line": "أين توجد الأعمال",
 	"core.settings.groupLibrary.about": "المجلدات والأقسام والإعدادات الافتراضية والترجمات وأسماء الملفات والاستيراد.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "إعدادان يصلان إلى برنامج التنزيل نفسه، لذا قد تظهر التنزيلات مرتين.",
 	"core.plain.peopleCheck": "تعذّرت قراءة قائمة مستخدمي خادم الوسائط، لذا لا يُوقف هنا من حُذفوا هناك.",
 	"core.plain.deleted": "محذوف",
-	"core.plain.deletedName": "{name} (محذوف)"
+	"core.plain.deletedName": "{name} (محذوف)",
+	"core.api.handsOffFiles": "وضع عدم التدخل مفعّل، لذا لا يلمس HolyArrs الملفات المنزّلة. أوقفه من الإعدادات لاستيراد الملفات أو إعادة تسميتها أو نقلها أو فحصها.",
+	"core.api.handsOffSubtitles": "وضع عدم التدخل مفعّل، لذا لا يفتح HolyArrs الملفات المنزّلة أبدًا. أوقفه من الإعدادات لاستخدام الترجمات."
 }

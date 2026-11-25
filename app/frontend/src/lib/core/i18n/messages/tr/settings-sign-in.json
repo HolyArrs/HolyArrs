@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Ziyaretin nereden geldiğini yalnızca bunlar söyleyebilir.",
 	"settings.signIn.fixToSaveOne": "Kaydetmek için 1 satırı düzeltin",
 	"settings.signIn.fixToSaveOther": "Kaydetmek için {n} satırı düzeltin",
-	"settings.signIn.localSaved": "Yerel ağ kaydedildi"
+	"settings.signIn.localSaved": "Yerel ağ kaydedildi",
+	"settings.signIn.forgotTitle": "Şifreni mi unuttun?",
+	"settings.signIn.forgotOn": "Giriş sayfasında Şifreni mi unuttun? göster",
+	"settings.signIn.forgotNote": "Sahip, sunucu günlüğünden tek kullanımlık bir kod alır. Herkes tek oturum açma ile giriyorsa kapat. reset-owner komutu yine çalışır.",
+	"settings.signIn.forgotShown": "Şifreni mi unuttun? açık",
+	"settings.signIn.forgotHidden": "Şifreni mi unuttun? kapalı"
 }

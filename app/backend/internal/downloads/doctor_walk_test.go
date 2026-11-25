@@ -1,6 +1,7 @@
 package downloads
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net"
@@ -39,11 +40,22 @@ func serveTCP(t *testing.T, h func(c net.Conn)) string {
 // returns the cause health shows afterwards.
 func checkCause(t *testing.T, rawURL string) (doctor.Cause, string) {
 	t.Helper()
+	c, last, _ := checkCauseTimed(t, rawURL)
+	return c, last
+}
+
+// checkCauseTimed is checkCause that also returns how long the check itself
+// took, leaving out the database setup, whose cost depends on the machine.
+func checkCauseTimed(t *testing.T, rawURL string) (doctor.Cause, string, time.Duration) {
+	t.Helper()
 	w, m := setup(t)
 	ctx := context.Background()
 	d := &domain.Downloader{Name: "Walk", Adapter: "qbittorrent", Protocol: "torrent", URL: rawURL, Priority: 2, AllowLocal: true}
 	w.addDownloader(t, d)
-	if _, err := m.Check(ctx, *d); err == nil {
+	began := time.Now()
+	_, err := m.Check(ctx, *d)
+	took := time.Since(began)
+	if err == nil {
 		t.Fatal("check passed")
 	}
 	var got domain.Downloader
@@ -51,7 +63,7 @@ func checkCause(t *testing.T, rawURL string) (doctor.Cause, string) {
 		t.Fatal(err)
 	}
 	hv := HealthOf(got, time.Now())
-	return doctor.Cause(hv.Cause), got.LastError
+	return doctor.Cause(hv.Cause), got.LastError, took
 }
 
 // An https:// address on qBittorrent's plain port, which waits on a TLS hello
@@ -70,14 +82,26 @@ func TestBackgroundCheckNamesHTTPOnASilentPort(t *testing.T) {
 			_, _ = io.Copy(io.Discard, c)
 			return
 		}
+		// Read the whole request head before answering, as a real server does.
+		// Closing with unread bytes makes Windows send a reset that can eat
+		// the answer before the second look reads it.
+		_ = c.SetDeadline(time.Now().Add(5 * time.Second))
+		head := []byte{b[0]}
+		for !bytes.HasSuffix(head, []byte("\r\n\r\n")) {
+			n, err := c.Read(b)
+			if err != nil {
+				return
+			}
+			head = append(head, b[:n]...)
+		}
 		_, _ = c.Write([]byte("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"))
 	})
-	start := time.Now()
-	c, last := checkCause(t, "https://"+addr)
+	c, last, took := checkCauseTimed(t, "https://"+addr)
 	if c != doctor.UseHTTP {
 		t.Fatalf("cause %q, last error %q", c, last)
 	}
-	if took := time.Since(start); took > 4*time.Second {
+	// The default wait is 5 s, so 4 s still shows tlsWait was used.
+	if took > 4*time.Second {
 		t.Fatalf("took %s", took)
 	}
 }

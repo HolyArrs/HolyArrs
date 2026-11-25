@@ -175,12 +175,12 @@ export function oneTickPerTrack(files: ByHandFile[], picks: Record<string, Pick 
 
 // Builds the import request from ticked files that have a valid pick.
 // No mode is sent: files are placed like automatic imports (a link when possible, else a real copy).
-export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>) {
-	const out: { path: string; title_id: number; slot_id?: number; version_id?: number; season?: number; episode?: number; replace?: boolean }[] = [];
+export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>, mode: ImportMode = 'copy') {
+	const out: { path: string; title_id: number; slot_id?: number; version_id?: number; season?: number; episode?: number; replace?: boolean; mode: ImportMode }[] = [];
 	for (const f of files) {
 		const p = picks[f.path] ?? null;
 		if (!ticked[f.path] || !p || blocker(f, p)) continue;
-		const item: (typeof out)[number] = { path: f.path, title_id: p.title_id };
+		const item: (typeof out)[number] = { path: f.path, title_id: p.title_id, mode };
 		if (p.title_kind === 'artist') item.slot_id = p.slot_id;
 		else if (p.version_id) item.version_id = p.version_id;
 		if (p.has_file && p.replace) item.replace = true;
@@ -196,8 +196,15 @@ export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>
 // Plain words for what happened to one file.
 export function resultLine(r: ByHandResult): string {
 	if (r.outcome === 'placed') {
-		const how = r.placed_by === 'copy' ? t('mediafiles.byHand.copied') : r.placed_by === 'hardlink' ? t('mediafiles.byHand.linked') : t('mediafiles.byHand.recorded');
+		const how = r.placed_by === 'move' ? t('mediafiles.byHand.moved') : r.placed_by === 'copy' ? t('mediafiles.byHand.copied') : r.placed_by === 'hardlink' ? t('mediafiles.byHand.linked') : t('mediafiles.byHand.recorded');
 		return r.error ? `${how}. ${serverWords(r.error)}` : how;
 	}
 	return t('mediafiles.byHand.outcome', { outcome: r.outcome === 'failed' ? t('mediafiles.byHand.failed') : t('mediafiles.byHand.notImported'), why: r.error ? serverWords(r.error) : t('mediafiles.byHand.noReason') });
 }
+
+// How Import places the files: copy keeps the original (a link when the
+// drive allows it), move removes it once the Library file is checked.
+export type ImportMode = 'copy' | 'move';
+
+// One step of the folder picker.
+export type FolderList = { path: string; parent: string; folders: { name: string; path: string }[]; files: number; more: boolean };

@@ -15,8 +15,8 @@ import (
 type MyWatched struct {
 	// Enabled says the owner keeps watch history on.
 	Enabled bool `json:"enabled"`
-	// Linked says the person has an account on a media server here; a
-	// person who signs in with a password only has none.
+	// Linked says the person has an account on a media server here, or
+	// Trakt history; a person who signs in with a password only has none.
 	Linked bool `json:"linked"`
 	// Movies are the ids of the movies watched.
 	Movies []int64 `json:"movies"`
@@ -25,7 +25,8 @@ type MyWatched struct {
 }
 
 // WatchedBy answers what the person watched, from the last watch history
-// read. An episode seen on two servers counts once.
+// read, and from their Trakt history when they signed in with Trakt. An
+// episode seen on two servers, or on a server and Trakt, counts once.
 func WatchedBy(ctx context.Context, q watchReader, userID int64) (MyWatched, error) {
 	out := MyWatched{Enabled: WatchHistoryOn(ctx, q), Movies: []int64{}, Shows: map[int64]map[int]int{}}
 	if !out.Enabled || userID == 0 {
@@ -41,23 +42,30 @@ func WatchedBy(ctx context.Context, q watchReader, userID int64) (MyWatched, err
 		season, episode int
 	}
 	got := map[ep]bool{}
+	add := func(title int64, season, episode int) {
+		k := ep{title, season, episode}
+		if got[k] {
+			return
+		}
+		got[k] = true
+		if season == 0 && episode == 0 {
+			out.Movies = append(out.Movies, title)
+			return
+		}
+		if out.Shows[title] == nil {
+			out.Shows[title] = map[int]int{}
+		}
+		out.Shows[title][season]++
+	}
+	// What the person watched on Trakt, when they signed in with Trakt.
+	if err := eachTraktWatchedBy(ctx, q, userID, func(title int64, season, episode int) {
+		out.Linked = true
+		add(title, season, episode)
+	}); err != nil {
+		return out, err
+	}
 	for _, a := range mine {
-		err := eachWatchedBy(ctx, q, a, func(title int64, season, episode int) {
-			k := ep{title, season, episode}
-			if got[k] {
-				return
-			}
-			got[k] = true
-			if season == 0 && episode == 0 {
-				out.Movies = append(out.Movies, title)
-				return
-			}
-			if out.Shows[title] == nil {
-				out.Shows[title] = map[int]int{}
-			}
-			out.Shows[title][season]++
-		})
-		if err != nil {
+		if err := eachWatchedBy(ctx, q, a, add); err != nil {
 			return out, err
 		}
 	}

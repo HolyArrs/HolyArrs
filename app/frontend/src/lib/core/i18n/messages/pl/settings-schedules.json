@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Anuluj",
 	"settings.schedules.stages": "Etapy",
 	"settings.schedules.stagesNote": "Wstrzymaj lub zrestartuj je w <a>Modułach</a>.",
-	"settings.schedules.allTime": "Cały czas"
+	"settings.schedules.allTime": "Cały czas",
+	"settings.schedules.skip.nothing": "Nic do zrobienia",
+	"settings.schedules.skip.plexOff": "Wyłączone: włącz {setting} w sekcji {page}",
+	"settings.schedules.skip.plexNobody": "Nic do zrobienia: nikt nie włączył swojej listy do obejrzenia w Plex",
+	"settings.schedules.skip.settingOff": "Wyłączone: włącz to w jego ustawieniach",
+	"settings.schedules.skip.starting": "Pominięto: HolyArrs jeszcze się uruchamiał",
+	"settings.schedules.took": "Trwało {time}",
+	"settings.schedules.finished": "{label} zakończone",
+	"settings.schedules.nothingToDo": "{label}: nic do zrobienia",
+	"settings.schedules.runFailed": "{label} nie powiodło się"
 }

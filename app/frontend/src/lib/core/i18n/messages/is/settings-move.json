@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Afturkalla innflutning {id}?",
 	"settings.move.undoQuestion": "Afturkalla þennan innflutning?",
 	"settings.move.undoNote": "Fjarlægir það sem þessi innflutningur bætti við; síðari breytingar þínar haldast. Sæktu skýrsluna fyrst ef þú vilt hana.",
-	"settings.move.undoMove": "Afturkalla innflutning"
+	"settings.move.undoMove": "Afturkalla innflutning",
+	"settings.move.continueSetup": "Halda uppsetningu áfram",
+	"settings.move.backToChoose": "Aftur í Velja"
 }

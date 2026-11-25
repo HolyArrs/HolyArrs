@@ -402,12 +402,12 @@ func isYes(s string) bool {
 
 // a7Langs maps the site's language names to our language codes.
 var a7Langs = map[string]string{
-	"english": "en", "french": "fr", "spanish": "es", "spanish (latin america)": "es", "spanish (spain)": "es", "german": "de",
-	"italian": "it", "portuguese": "pt", "portuguese (brazilian)": "pt-br", "dutch": "nl", "swedish": "sv", "polish": "pl",
+	"english": "en", "french": "fr", "spanish": "es", "spanish (latin america)": "es-419", "spanish (spain)": "es", "german": "de",
+	"italian": "it", "portuguese": "pt-pt", "portuguese (brazilian)": "pt-br", "dutch": "nl", "swedish": "sv", "polish": "pl",
 	"russian": "ru", "greek": "el", "hungarian": "hu", "romanian": "ro", "czech": "cs", "turkish": "tr", "arabic": "ar",
 	"hebrew": "he", "croatian": "hr", "serbian (latin)": "sr", "serbian (cyrillic)": "sr", "danish": "da", "finnish": "fi",
-	"norwegian": "no", "bulgarian": "bg", "catalan": "ca", "chinese (simplified)": "zh", "chinese (traditional)": "zh",
-	"japanese": "ja", "korean": "ko", "indonesian": "id", "vietnamese": "vi", "persian": "fa", "slovenian": "sl",
+	"norwegian": "no", "bulgarian": "bg", "catalan": "ca", "chinese (simplified)": "zh-hans", "chinese (traditional)": "zh-hant",
+	"french (canadian)": "fr-ca", "japanese": "ja", "korean": "ko", "indonesian": "id", "vietnamese": "vi", "persian": "fa", "slovenian": "sl",
 	"slovak": "sk", "ukrainian": "uk", "bosnian": "bs", "macedonian": "mk", "estonian": "et", "lithuanian": "lt",
 }
 
@@ -499,16 +499,27 @@ func tokens(b []byte, fn func(token)) {
 	}
 }
 
+// tagEnd finds the end of a tag. As in a browser, a quote starts a value only
+// right after "=": a stray quote, as in TVsubtitles' style="a;\ alt="x", must
+// not swallow the rest of the page.
 func tagEnd(b []byte) int {
 	var quote byte
+	afterEq := false
 	for i, c := range b {
 		switch {
-		case quote != 0 && c == quote:
-			quote = 0
-		case quote == 0 && (c == '\'' || c == '"'):
-			quote = c
-		case quote == 0 && c == '>':
+		case quote != 0:
+			if c == quote {
+				quote = 0
+			}
+			continue
+		case c == '>':
 			return i
+		case afterEq && (c == '\'' || c == '"'):
+			quote = c
+			continue
+		}
+		if !isSpace(c) {
+			afterEq = c == '='
 		}
 	}
 	return -1

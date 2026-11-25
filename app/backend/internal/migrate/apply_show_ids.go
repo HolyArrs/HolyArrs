@@ -51,6 +51,10 @@ func (r *run) withShowIDs(t *TitlePlan, add func(id, other string) error) error 
 			return err
 		}
 	}
+	// A dry run whose time ran out mid-search has not ruled the show out.
+	if r.dry && r.pastBudget() {
+		return errNotChecked
+	}
 	return errShowNotFound
 }
 
@@ -75,7 +79,14 @@ func (r *run) lookupShow(id string) (metadata.Show, error) {
 	if r.pastBudget() {
 		return metadata.Show{}, errNotChecked
 	}
-	sh, err := shows.New(r.m.Library).LookupShow(r.ctx, id, defs.Source)
+	// A lookup still running when the time is up is cut off there:
+	// a stuck metadata server must not hold the page past its budget.
+	ctx, cancel := r.lookupCtx()
+	defer cancel()
+	sh, err := shows.New(r.m.Library).LookupShow(ctx, id, defs.Source)
+	if err != nil && r.ctx.Err() == nil && ctx.Err() != nil {
+		return metadata.Show{}, errNotChecked
+	}
 	if err == nil || isNoSuchShow(err) {
 		r.m.dryMu.Lock()
 		if r.m.dryShows == nil {
@@ -95,6 +106,10 @@ var errNotChecked = errors.New("still being checked")
 // not checked in time are looked up after it answers (warm).
 var dryLookupBudget = 15 * time.Second
 
+// dryCallLimit cuts off one show lookup in a background check; that show
+// is then still being checked and is looked up again after the check.
+var dryCallLimit = 15 * time.Second
+
 // dryShowKeep is how long a dry run's answer about one show is reused.
 const dryShowKeep = time.Hour
 
@@ -102,6 +117,17 @@ type dryShow struct {
 	sh  metadata.Show
 	err error
 	at  time.Time
+}
+
+// lookupCtx ends at the dry run's lookup deadline, when it has one.
+func (r *run) lookupCtx() (context.Context, context.CancelFunc) {
+	if r.lookupBy.IsZero() {
+		if r.dry && r.watch != nil {
+			return context.WithTimeout(r.ctx, dryCallLimit)
+		}
+		return r.ctx, func() {}
+	}
+	return context.WithDeadline(r.ctx, r.lookupBy)
 }
 
 func (r *run) pastBudget() bool { return !r.lookupBy.IsZero() && time.Now().After(r.lookupBy) }
@@ -158,7 +184,9 @@ func sameName(sh metadata.Show, folder string, year int) bool {
 	if d := year - sh.Year; year != 0 && sh.Year != 0 && (d > 1 || d < -1) {
 		return false
 	}
-	bare := func(s string) string { return strings.TrimSpace(countryTag.ReplaceAllString(folderYear.ReplaceAllString(s, ""), "")) }
+	bare := func(s string) string {
+		return strings.TrimSpace(countryTag.ReplaceAllString(folderYear.ReplaceAllString(s, ""), ""))
+	}
 	return releasename.SameName(bare(sh.Name), releasename.CleanName(bare(folder)))
 }
 
@@ -229,11 +257,17 @@ func (r *run) otherShowIDs(t *TitlePlan) (out []string, last string) {
 	// By name last: only a result with the same name (and year, when both
 	// know one) counts.
 	for _, src := range []string{"tmdb", "tvmaze", "tvdb"} {
+		// A dry run's name search, like its lookups, stops when its time is up.
+		if r.dry && r.pastBudget() {
+			break
+		}
 		p, err := r.m.Library.Shows.Get(src)
 		if err != nil {
 			continue
 		}
-		list, err := p.SearchShows(r.ctx, strings.TrimSpace(folderYear.ReplaceAllString(t.Folder, "")))
+		ctx, cancel := r.lookupCtx()
+		list, err := p.SearchShows(ctx, strings.TrimSpace(folderYear.ReplaceAllString(t.Folder, "")))
+		cancel()
 		if err != nil {
 			continue
 		}

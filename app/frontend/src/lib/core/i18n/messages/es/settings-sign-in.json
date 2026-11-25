@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Solo estos pueden decir de dónde vino una visita.",
 	"settings.signIn.fixToSaveOne": "Arregla 1 línea para guardar",
 	"settings.signIn.fixToSaveOther": "Arregla {n} líneas para guardar",
-	"settings.signIn.localSaved": "Red local guardada"
+	"settings.signIn.localSaved": "Red local guardada",
+	"settings.signIn.forgotTitle": "¿Olvidaste la contraseña?",
+	"settings.signIn.forgotOn": "Mostrar ¿Olvidaste la contraseña? en la página de inicio de sesión",
+	"settings.signIn.forgotNote": "El propietario recibe un código de un solo uso del registro del servidor. Apágalo si se entra con inicio de sesión único. El comando reset-owner sigue funcionando.",
+	"settings.signIn.forgotShown": "¿Olvidaste la contraseña? está activado",
+	"settings.signIn.forgotHidden": "¿Olvidaste la contraseña? está desactivado"
 }

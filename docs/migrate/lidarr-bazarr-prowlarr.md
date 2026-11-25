@@ -10,7 +10,7 @@ Import your music, subtitle languages, Sources and Downloaders. The steps match 
 ## Import them
 
 1. Open **Settings > Import from other apps** and click **Add an app** for each app.
-2. Type the address and API key, or the backup path, and click **Check connection**. For qBittorrent, type the user name and password, or its API key on version 5.2 and later.
+2. Type the address and API key, and click **Check connection**. For qBittorrent, type the user name and password, or its API key on version 5.2 and later.
 3. Read each app, then go through **What to import** and **Import**. You should see each app's groups in **What to import**.
 
 ## Lidarr
@@ -31,7 +31,7 @@ Stays behind: metadata profiles, import lists for music, custom formats, release
 | From Bazarr | In HolyArrs |
 | --- | --- |
 | Default language profile | Default subtitle languages. |
-| Podnapisi and Gestdown | **Subtitle sites**, one of each kind. A kind already here is left alone. |
+| Sites that need no account: Podnapisi, Gestdown, YIFY Subtitles, TVsubtitles, BSPlayer and NapiProjekt (Napisy24 needs your own account, so it is added by hand) | **Subtitle sites**, one of each kind. A kind already here is left alone. |
 
 Stays behind: other subtitle sites and their accounts. HolyArrs reaches Addic7ed through Gestdown with no account, so add Gestdown under **Settings > Subtitles**. For a site with an account, type it there or use [Import keys from a file](import-secrets.md).
 

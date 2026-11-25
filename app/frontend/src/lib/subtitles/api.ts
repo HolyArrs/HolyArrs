@@ -32,6 +32,20 @@ export interface SubtitleSettings {
 	sync_from_fps: number;
 	sync_to_fps: number;
 	sync_step_ms: number;
+	// Cleanup steps per language; "*" is every other language.
+	clean: Record<string, CleanSteps>;
+}
+
+// The cleanup steps run on every subtitle HolyArrs saves.
+export interface CleanSteps {
+	ads: boolean;
+	hi: boolean;
+	tags: boolean;
+	emoji: boolean;
+	ocr: boolean;
+	caps: boolean;
+	spacing: boolean;
+	overlap: boolean;
 }
 
 export interface SiteLimits {
@@ -171,6 +185,7 @@ export interface Outcome {
 	site?: string;
 	reason?: string;
 	choices?: Candidate[];
+	covered?: { place: string; picture?: boolean }[];
 }
 
 export interface Choices {

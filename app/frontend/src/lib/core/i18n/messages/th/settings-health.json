@@ -14,7 +14,6 @@
 	"settings.health.none": "ยังไม่มีผลลัพธ์ ตรวจอีกครั้งเพื่อรัน",
 	"settings.health.since": "ตั้งแต่",
 	"settings.health.settings": "การตั้งค่าการตรวจสถานะ",
-	"settings.health.updateCheck": "ตรวจหา HolyArrs เวอร์ชันใหม่",
 	"settings.health.onlyChecks": "ตรวจเท่านั้น ไม่ติดตั้งให้",
 	"settings.health.every": "ตรวจหาอัปเดตทุก",
 	"settings.health.day": "วัน",

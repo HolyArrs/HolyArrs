@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "قابل بازگشت نیست. فایل‌ها می‌مانند.",
 	"settings.pickRules.removeUsed": "{used}. اول آنجا قوانین دیگری انتخاب کن.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "انصراف"
+	"settings.pickRules.cancel": "انصراف",
+	"settings.pickRules.check.title": "بررسی نام یک انتشار",
+	"settings.pickRules.check.desc": "نام یک انتشار را بچسبان تا ببینی HolyArrs آن را چطور می‌خواند و مجموعه‌های کیفیت تو چطور درباره‌اش داوری می‌کنند. چیزی جست‌وجو یا دانلود نمی‌شود.",
+	"settings.pickRules.check.name": "نام انتشار",
+	"settings.pickRules.check.rules": "داوری با",
+	"settings.pickRules.check.copies": "نسخه‌های عنوانِ مطابق",
+	"settings.pickRules.check.size": "حجم به گیگابایت (اختیاری)",
+	"settings.pickRules.check.check": "بررسی",
+	"settings.pickRules.check.failed": "بررسی نام ممکن نشد",
+	"settings.pickRules.check.readAs": "خوانده‌شده به‌صورت",
+	"settings.pickRules.check.matches": "با {name} مطابقت دارد",
+	"settings.pickRules.check.noTitle": "با هیچ عنوانی در کتابخانه‌ات مطابقت ندارد. برای داوری، یک مجموعهٔ کیفیت را در بالا انتخاب کن.",
+	"settings.pickRules.check.noAlbum": "با {name} مطابقت دارد، اما با هیچ‌یک از آلبوم‌هایش نه.",
+	"settings.pickRules.check.noCopies": "این عنوان نسخه‌ای برای داوری ندارد.",
+	"settings.pickRules.check.hasFile": "فایل دارد"
 }

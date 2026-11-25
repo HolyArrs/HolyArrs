@@ -28,7 +28,7 @@ func infoTMDB(t *testing.T) *httptest.Server {
 			_, _ = w.Write([]byte(`{"id":80,"name":"Eighty","original_name":"Eighty","status":"Returning Series","type":"Miniseries","episode_run_time":[55,60],"spoken_languages":[{"english_name":"English"},{"english_name":"Dothraki"}],
 				"first_air_date":"2011-04-17","last_air_date":"2026-10-20",
 				"next_episode_to_air":{"season_number":3,"episode_number":4,"name":" The Return ","air_date":"2026-11-02"},
-				"production_companies":[{"name":"HBO"}],"keywords":{"results":[{"name":"dragon"}]}}`))
+				"production_companies":[{"name":"HBO"}],"keywords":{"results":[{"name":"dragon"},{"name":"female nudity"},{"name":"animal cruelty"}]}}`))
 		case strings.HasSuffix(r.URL.Path, "/movie/71"):
 			_, _ = w.Write([]byte(`{"id":71,"title":"Elsewhere","release_dates":{"results":[{"iso_3166_1":"JP","release_dates":[{"release_date":"2020-05-05T00:00:00.000Z","type":3}]}]}}`))
 		default:
@@ -60,6 +60,9 @@ func TestTMDBDetailsInfo(t *testing.T) {
 	if !reflect.DeepEqual(m.Keywords, []string{"drummer", "music school"}) || m.NextEpisode != nil {
 		t.Fatalf("keywords %v next %v", m.Keywords, m.NextEpisode)
 	}
+	if m.ContentNotes != nil {
+		t.Fatalf("movie content notes %v, want none", m.ContentNotes)
+	}
 
 	s, err := p.Details(ctx, "show", "80")
 	if err != nil {
@@ -67,6 +70,9 @@ func TestTMDBDetailsInfo(t *testing.T) {
 	}
 	if s.Status != "Returning Series" || s.OriginalTitle != "" || !reflect.DeepEqual(s.Studios, []string{"HBO"}) {
 		t.Fatalf("show facts %+v", s)
+	}
+	if !reflect.DeepEqual(s.ContentNotes, []string{"nudity", "animal_death"}) {
+		t.Fatalf("show content notes %v", s.ContentNotes)
 	}
 	if s.ShowType != "Miniseries" || s.EpisodeRuntime != 55 || !reflect.DeepEqual(s.SpokenLanguages, []string{"English", "Dothraki"}) {
 		t.Fatalf("show kind %q runtime %d spoken %v", s.ShowType, s.EpisodeRuntime, s.SpokenLanguages)

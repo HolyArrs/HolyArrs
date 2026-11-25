@@ -1,7 +1,13 @@
 <script lang="ts">
+	import { FinishSetupCard } from '#lib/setup/index.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import HomeOverview from './HomeOverview.svelte';
+	import PluginCards from '#lib/ui/PluginCards.svelte';
+	import { homeCards, type PluginCard } from '#lib/ui/plugin-cards.ts';
+	import JoinedWelcome from './JoinedWelcome.svelte';
+	import { askKinds, showJoinedWelcome } from './joined-welcome.ts';
+	import { views } from '#lib/core/views.svelte.ts';
 	import { createHomeAttention } from './home-attention.svelte.ts';
 	import { createHomeOverview } from './home-overview.svelte.ts';
 	import { createHomeDownloads } from './home-downloads.svelte.ts';
@@ -18,7 +24,7 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { artGone, lightOnDark } from './art-check.ts';
-	import { arrivedHead, attention, setupBlocker, welcomeRows, downloadMoved, downloadingNow, fallbackRows, homeDownloadsURL, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
+	import { arrivedHead, attention, setupBlocker, tilesSettled, welcomeRows, downloadMoved, downloadingNow, fallbackRows, homeDownloadsURL, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
 	import { MetadataNotice, checkMetadata, detailPath, remember } from '#lib/metadata/index.ts';
 	import { headPath, newPath, ymd, type HeadAnswer, type NewAnswer } from '#lib/discover/index.ts';
 	import { cardTmdb, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
@@ -28,6 +34,7 @@
 	import { to } from '#lib/core/paths.ts';
 	import { partOff } from '#lib/mediafiles/index.ts';
 	import { api } from '#lib/core/api.ts';
+	import { profile } from '#lib/accounts/index.ts';
 	import { afterHandoff } from '#lib/core/loader.ts';
 	import { live } from '#lib/core/live.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
@@ -50,7 +57,8 @@
 	// Before setup: Explore's first picture rows (from the metadata server, no setup needed), read before Home shows.
 	let picks = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
 	// Art for the New & Popular and Calendar tiles, from New & Popular's first page (the same Kid-limited answer that page reads): its first new backdrop and the next releases' posters.
-	let tileArt = $state<{ pop: string[]; soon: string[]; week: { count: number; posters: string[] } }>({ pop: [], soon: [], week: { count: 0, posters: [] } });
+	// building: New & Popular's first list is still being fetched (true until the first answer says otherwise).
+	let tileArt = $state<{ pop: string[]; soon: string[]; week: { count: number; posters: string[] }; building: boolean }>({ pop: [], soon: [], week: { count: 0, posters: [] }, building: true });
 	let health = $state<Health | null>(null);
 	let checks = $state<HealthChecks | null>(null);
 	// The downloads or health read failed on the last load: Home could not check, so it does not say All good.
@@ -92,6 +100,9 @@
 	const mineDeclined = $derived(attentionView.mine.length - mineOpen);
 	const asksLine = $derived([mineOpen ? t('home.stillOpen', { n: n(mineOpen) }) : '', mineDeclined ? t('home.turnedDown', { n: n(mineDeclined) }) : ''].filter(Boolean).join(' · '));
 	const canAsk = $derived((session.can('ask') || approver) && !partOff('wishlist'));
+	// A person who joined sees how to find and ask until they close it; the owner has the setup steps instead.
+	const joinedOn = $derived(loaded && session.s.id !== undefined && showJoinedWelcome({ role: session.s.role, setupOpen: session.s.setupOpen, seen: views.get('welcome.seen') }));
+	const joinedKinds = $derived(askKinds(canAsk, (p) => partOff(p)));
 	const progress = $derived(home?.ask_progress ?? {});
 	// While one of this person's own asks is downloading, Home re-reads, so it sees the title arrive.
 	const busy = $derived(attentionView.mineShown.some((a) => !!a.title_id && !!progress[a.title_id]));
@@ -99,7 +110,7 @@
 	const fetchingAll = $derived(manager ? downloadingNow(downloads, Infinity) : []);
 	// The top of Home: a greeting that shows on the first frame, and a short note beside the switch once the data has answered.
 	const kid = $derived(home?.kid ?? session.kid);
-	const greeting = $derived(homeGreeting({ name: session.s.name, now }));
+	const greeting = $derived(homeGreeting({ name: session.s.name, displayName: profile.displayName, now }));
 	const news = $derived(settled ? homeNews({ now, kid, facts: homeFacts({ home, asks, downloads, approver, manager, kid, now }) }) : '');
 
 	// Bento: the Home grid (pictures and counts) and, for people who manage the Library, a System grid of the same size.
@@ -254,8 +265,10 @@
 				return { building: !!a.building, art: { pop, soon: [...new Set(soon)].slice(0, 6), week: { count: wk.length, posters } } };
 			}),
 			(a) => a.art.pop.length > 0 && a.art.soon.length > 0,
-			(a) => (tileArt = a.art)
-		);
+			(a) => (tileArt = { ...a.art, building: a.building })
+		).finally(() => {
+			if (!gone) tileArt = tilesSettled(tileArt);
+		});
 	}
 
 	const welcomeOn = $derived(rows.includes('welcome'));
@@ -336,6 +349,11 @@
 			offs.forEach((off) => off());
 		};
 	});
+	// Home cards from running plugins: plain data drawn here, none when no plugin adds one.
+	let pluginCards = $state<PluginCard[]>([]);
+	$effect(() => {
+		void homeCards().then((c) => (pluginCards = c));
+	});
 </script>
 
 <svelte:head><title>{t('home.home')} · HolyArrs</title></svelte:head>
@@ -358,6 +376,7 @@
 			</div>
 		</div>
 	</div>
+	<div class="finish-setup"><FinishSetupCard /></div>
 
 	{#if failed && !home && loaded}
 		<LoadError hasData={false} message={t('home.couldNotLoadHome')} onretry={retry} busy={retrying} />
@@ -449,8 +468,10 @@
 		{/snippet}
 
 		<PageLoader loading={!loaded} label={t('home.loadingHome')} onretry={retry}>
-		{#if welcomeOn}{@render welcomeCard()}{/if}
+		{#if joinedOn}<JoinedWelcome name={profile.displayName || session.s.name} kinds={joinedKinds} />{/if}
+		{#if welcomeOn && (owner || !joinedOn)}{@render welcomeCard()}{/if}
 		<HomeOverview {overview} {disk} {admin} {settled} {attentionView} {uncheckedParts} {retrying} {retry} {approver} {kid} {uncheckedAsks} {downloading} {mineOpen} {mineDeclined} {fetchingAll} {home} {uncheckedDl} {now} {uncheckedHealth} {health} {picTile} {tileArt} />
+		<PluginCards cards={pluginCards} testid="home-plugin-cards" />
 		{#if welcomeOn}{#each picks as r (r.id)}{@render pickRow(r)}{/each}{/if}
 		{#each rows as row (row)}
 			{#if row === 'arrived'}
@@ -483,6 +504,8 @@
 </div>
 
 <style>
+	.finish-setup:empty { display: none; }
+	.finish-setup { margin-bottom: var(--s-4); }
 	/* The same sizes as Explore: 279px wide cards at a 1536px window, 5px gaps on wide rows, one 32px rhythm between blocks. The sheet colours live here so the tiles and the Welcome card share them. */
 	.home {
 		container: home / inline-size; --title-item: max(200px, calc((100vw - 96px) / 5.16)); --poster-item: 168px; --home-gap: 32px; display: flex; flex-direction: column; gap: var(--home-gap); padding-bottom: 48px;

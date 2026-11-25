@@ -13,6 +13,7 @@ HolyArrs finds Releases through Sources and hands them to a Downloader. Set up b
 | Sources | Built-in sites, Torznab, Newznab and RSS feeds that HolyArrs searches, or Jackett and Prowlarr linked in one go | [Sources](sources/) |
 | Library search | Find a title you already added, from the Library page | [Library search](library-search/) |
 | History | What was grabbed, imported or failed | [History](history/) |
+| VPN | Keep torrent traffic inside a VPN by running qBittorrent in a gluetun container | [Send downloads through a VPN](vpn/) |
 
 New here? [Connect](../start/connect/) gets one of each working in a few minutes.
 

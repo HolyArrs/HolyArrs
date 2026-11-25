@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Nem vonható vissza. A fájlok megmaradnak.",
 	"settings.pickRules.removeUsed": "{used}. Előbb válasszon ott más szabályokat.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Mégse"
+	"settings.pickRules.cancel": "Mégse",
+	"settings.pickRules.check.title": "Kiadásnév ellenőrzése",
+	"settings.pickRules.check.desc": "Illesszen be egy kiadásnevet, és megnézheti, hogyan olvassa a HolyArrs, és hogyan értékelik a minőségi készletei. Semmit nem keres és nem tölt le.",
+	"settings.pickRules.check.name": "Kiadásnév",
+	"settings.pickRules.check.rules": "Értékelés ezzel",
+	"settings.pickRules.check.copies": "Az egyező cím példányai",
+	"settings.pickRules.check.size": "Méret GB-ban (nem kötelező)",
+	"settings.pickRules.check.check": "Ellenőrzés",
+	"settings.pickRules.check.failed": "Nem sikerült ellenőrizni a nevet",
+	"settings.pickRules.check.readAs": "Így olvasva",
+	"settings.pickRules.check.matches": "Egyezik: {name}",
+	"settings.pickRules.check.noTitle": "Nem egyezik egyetlen címmel sem a Könyvtárában. Válasszon fent egy minőségi készletet, hogy így is értékelje.",
+	"settings.pickRules.check.noAlbum": "Egyezik: {name}, de egyik albumával sem.",
+	"settings.pickRules.check.noCopies": "Ennek a címnek nincs értékelhető példánya.",
+	"settings.pickRules.check.hasFile": "Van fájlja"
 }

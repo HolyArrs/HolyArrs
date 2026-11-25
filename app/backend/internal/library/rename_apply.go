@@ -193,6 +193,12 @@ func (s *Service) applyRenameLocked(ctx context.Context, plan []RenameStep, jobI
 	}
 	for k := range emptied {
 		removeEmptiedFolders(k[0], k[1])
+		// A movie folder Group by genre moved away from, now empty.
+		if top, _, _ := strings.Cut(k[1], "/"); top != k[1] && path.Dir(k[1]) == top {
+			if d := filepath.Join(k[0], top); importer.InsideReal(k[0], d) && isPlainDir(d) {
+				_ = os.Remove(d) // only when empty
+			}
+		}
 	}
 	if failed > 0 {
 		return done, fmt.Errorf("%d of %d renames failed; the first: %w", failed, len(rows), firstErr)
@@ -334,6 +340,13 @@ func (s *Service) finishRename(ctx context.Context, stepID, fileID int64, from, 
 		if _, err := tx.Exec("UPDATE files SET relative_path = ?, updated_at = ?, updated_by = ? WHERE id = ?",
 			toRel, database.FormatTime(s.now()), ActorText(by), fileID); err != nil {
 			return err
+		}
+		// Group by genre moved the movie's whole folder: the Version's
+		// folder follows it.
+		if od, nd := path.Dir(f.RelativePath), path.Dir(toRel); od != nd && path.Base(od) == path.Base(nd) {
+			if _, err := tx.Exec("UPDATE versions SET folder_name = ? WHERE id = ? AND folder_name = ?", nd, f.VersionID, od); err != nil {
+				return err
+			}
 		}
 		_, err := tx.Exec("UPDATE rename_steps SET state = 'done', error = NULL WHERE id = ?", stepID)
 		return err
@@ -513,4 +526,10 @@ func nullID(id int64) any {
 		return nil
 	}
 	return id
+}
+
+// isPlainDir says d is a folder itself, not a link to one.
+func isPlainDir(d string) bool {
+	fi, err := os.Lstat(d)
+	return err == nil && fi.IsDir()
 }

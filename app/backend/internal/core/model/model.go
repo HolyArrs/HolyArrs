@@ -105,6 +105,13 @@ type Source struct {
 	PathSecretRef *int64 `db:"path_secret_ref"`
 	// Tags: with any, this Source serves only titles that share one of them.
 	Tags []string `db:"tags,json"`
+	// MultiLanguages are the languages a release named MULTi carries on this
+	// Source (ISO 639-1 codes); empty leaves the name's own languages.
+	MultiLanguages []string `db:"multi_languages,json"`
+	// NoLanguageLanguages are the audio languages a release carries on this
+	// Source when its name shows none; empty reads such a name as the
+	// title's original language.
+	NoLanguageLanguages []string `db:"no_language_languages,json"`
 	// DownloaderID sends every grab from this Source to that one Downloader;
 	// nil sends to any.
 	DownloaderID *int64 `db:"downloader_id"`
@@ -136,6 +143,9 @@ type Release struct {
 type PathMap struct {
 	Theirs string `json:"theirs"`
 	Ours   string `json:"ours"`
+	// Link places a symlink in the Library that points at the download
+	// instead of copying it: for downloads on a mounted streaming drive.
+	Link bool `json:"link,omitempty"`
 }
 
 // SeedGoal says when seeding is done.
@@ -186,6 +196,9 @@ type Downloader struct {
 	CategoryAfterImport string `db:"category_after_import"`
 	// OwnOnly shows and changes only items in this Downloader's categories.
 	OwnOnly bool `db:"own_only"`
+	// CategoriesImported are the categories an import set; a check makes a
+	// missing one in the client when the Downloader may be changed.
+	CategoriesImported []string `db:"categories_imported,json"`
 }
 
 // CategoryFor returns the category for a title kind (movie, show, artist).
@@ -259,6 +272,7 @@ type Download struct {
 	FinishedAt       *time.Time `db:"finished_at"`
 	StartedBy        Actor      `db:"started_by,json"`
 	ProgressAt       *time.Time `db:"progress_at"` // last time progress went up; the stall timers count from here
+	CleanedAt        *time.Time `db:"cleaned_at"`  // when the row was marked cleaned up (removed)
 	ConfirmedEdition string     `db:"confirmed_edition"`
 	// PackFiles is set (not nil) for a season pack fetched a few episodes at a
 	// time, in episode order; empty while its file list is not known yet.
@@ -362,6 +376,8 @@ type Ask struct {
 	QualityName    string `db:"quality_name"`
 	QualityRulesID int64  `db:"quality_rules_id"`
 	QualityExtra   bool   `db:"quality_extra"`
+	// ViaPlugin is the plugin that made the request for the person, nil for none.
+	ViaPlugin *string `db:"via_plugin"`
 }
 
 // Report states.
@@ -478,7 +494,8 @@ type MediaServer struct {
 	PathFrom      string     `db:"path_from"` // HolyArrs' start of a path ...
 	PathTo        string     `db:"path_to"`   // ... as the media server sees it
 	AllowLocal    bool       `db:"allow_local_network"`
-	WebURL        string     `db:"web_url"` // where browsers open it; empty: no Open in button
+	WebURL        string     `db:"web_url"`        // where browsers open it; empty: no Open in button
+	PlainPassword bool       `db:"plain_password"` // Subsonic: send the password itself (owner's choice, LDAP)
 	LastOKAt      *time.Time `db:"last_ok_at"`
 	LastError     string     `db:"last_error"`
 }

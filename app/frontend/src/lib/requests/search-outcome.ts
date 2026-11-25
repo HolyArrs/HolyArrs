@@ -13,6 +13,7 @@ export interface SearchOutcome {
 	at?: string;
 	sources?: SkippedSource[]; // Only for people who manage Settings.
 	note?: string; // What the search said about the Sources it asked; the same people only.
+	refused?: boolean; // Releases were found but the Pick rules turned every one down; shown to everyone.
 }
 
 export const MEMBER_LINE = 'No results yet';
@@ -31,6 +32,7 @@ export function whyWords(why: string): string {
 /** The text before the Source links, or '' when there is nothing to say. */
 export function outcomeLine(o: SearchOutcome | null | undefined): string {
 	if (!o?.empty) return '';
+	if (o.refused) return t('requests.outcome.refused');
 	return o.sources?.length ? t('requests.outcome.nothingFound') : t('requests.outcome.noResults');
 }
 

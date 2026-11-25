@@ -70,7 +70,7 @@ func newDiscoverTMDB(t *testing.T) *discoverTMDB {
 		case "/3/movie/11":
 			f.details.Add(1)
 			_, _ = w.Write([]byte(`{"id":11,"title":"M11","release_date":"2024-05-01","runtime":100,"genres":[{"name":"Drama"}],
-				"credits":{"cast":[{"name":"Ann","character":"Hero"}],"crew":[{"id":5,"name":"Dee","job":"Director"}]},"keywords":{"keywords":[{"name":"heist"}]},"belongs_to_collection":{"id":90,"name":"Set"},"recommendations":` + list(12, 13, 41) + `}`))
+				"credits":{"cast":[{"name":"Ann","character":"Hero"}],"crew":[{"id":5,"name":"Dee","job":"Director"}]},"keywords":{"keywords":[{"name":"heist"},{"name":"female nudity"}]},"belongs_to_collection":{"id":90,"name":"Set"},"recommendations":` + list(12, 13, 41) + `}`))
 		case "/3/tv/21/watch/providers":
 			_, _ = w.Write([]byte(`{"results":{"DE":{"flatrate":[{"provider_id":8,"provider_name":"Netflix"}]}}}`))
 		case "/3/collection/90":
@@ -284,7 +284,7 @@ func TestMetadataDetails(t *testing.T) {
 	srv, _ := discoverRig(t, f.provider())
 	b := string(do(t, "GET", srv.URL+"/api/v1/metadata/movie/11", "", 200))
 	for _, want := range []string{`"tmdb_id":"11"`, `"kind":"movie"`, `"runtime_minutes":100`, `"in_library":true`, `"title_id":1`,
-		`"character":"Hero"`, `"ask":null`, `"collection":{"id":"90","name":"The Set","parts":[{"tmdb_id":"11"`, `"streaming":[]`} {
+		`"character":"Hero"`, `"ask":null`, `"collection":{"id":"90","name":"The Set","parts":[{"tmdb_id":"11"`, `"streaming":[]`, `"content_notes":["nudity"]`} {
 		if !strings.Contains(b, want) {
 			t.Errorf("missing %s in %s", want, b)
 		}
@@ -450,7 +450,7 @@ func TestDetailsWithMissedCollectionAreKeptBriefly(t *testing.T) {
 	if got := discover.DetailsTTL(discover.Entry{Details: &metadata.Details{CollectionMissed: true}}); got != discover.CollectionRetry {
 		t.Fatalf("missed collection kept %v", got)
 	}
-	if got := discover.DetailsTTL(discover.Entry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discover.TTL["details"] {
+	if got := discover.DetailsTTL(discover.Entry{Details: &metadata.Details{LogosRead: true, Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discover.TTL["details"] {
 		t.Fatalf("details kept %v", got)
 	}
 }
@@ -462,11 +462,11 @@ func TestDetailsTTLRefreshesPeopleWithoutIDs(t *testing.T) {
 	if got := discover.DetailsTTL(old); got != 0 {
 		t.Fatalf("no ids: ttl %v, want 0", got)
 	}
-	fresh := discover.Entry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}, People: []metadata.DetailPerson{{Name: "Ann", Role: "actor", ID: "21"}}}}
+	fresh := discover.Entry{Details: &metadata.Details{LogosRead: true, Videos: []metadata.DetailVideo{{Key: "k"}}, People: []metadata.DetailPerson{{Name: "Ann", Role: "actor", ID: "21"}}}}
 	if got := discover.DetailsTTL(fresh); got != discover.TTL["details"] {
 		t.Fatalf("with ids: ttl %v", got)
 	}
-	if got := discover.DetailsTTL(discover.Entry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discover.TTL["details"] {
+	if got := discover.DetailsTTL(discover.Entry{Details: &metadata.Details{LogosRead: true, Videos: []metadata.DetailVideo{{Key: "k"}}}}); got != discover.TTL["details"] {
 		t.Fatalf("no people: ttl %v", got)
 	}
 }

@@ -27,6 +27,9 @@ export interface RequestOptions {
 	keepalive?: boolean;
 }
 
+/** How long a read may take before it counts as not answering. */
+export const READ_WAIT = 20000;
+
 type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
 type Follower<T> = { res?: (v: T) => void; rej?: (e: unknown) => void; signal?: AbortSignal; stop?: () => void };
@@ -121,25 +124,51 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 		if (method !== 'GET' && csrf) headers['X-CSRF-Token'] = csrf;
 		const url = to('/api/v1' + (fresh && method === 'GET' && BROWSING.test(path) ? `${path}${path.includes('?') ? '&' : '?'}fresh=${fresh}` : path));
 		const ahead = method === 'GET' && body === undefined ? takeEarly(url) : undefined;
-		const ask = () => fetchFn(url, { method, headers, body, signal: opts.signal, credentials: 'same-origin', ...(opts.keepalive ? { keepalive: true } : {}) });
+		// A read that never answers (a busy server, a full connection queue) ends after a while, so nothing waits on it
+		// forever and the shared copy is dropped, letting the next read ask again.
+		let late = false;
+		const stop = method === 'GET' ? new AbortController() : undefined;
+		const timer = stop ? setTimeout(() => ((late = true), stop.abort()), READ_WAIT) : undefined;
+		const quit = () => stop?.abort();
+		if (stop && opts.signal) opts.signal.aborted ? stop.abort() : opts.signal.addEventListener('abort', quit, { once: true });
+		const ask = () => fetchFn(url, { method, headers, body, signal: stop ? stop.signal : opts.signal, credentials: 'same-origin', ...(opts.keepalive ? { keepalive: true } : {}) });
 		let res: Response;
 		try {
-			res = ahead ? await ahead.catch(ask) : await ask();
+			const wait = ahead ? ahead.catch(ask) : ask();
+			res = stop ? await Promise.race([wait, new Promise<never>((_, no) => stop.signal.addEventListener('abort', () => no(new DOMException('Aborted', 'AbortError')), { once: true }))]) : await wait;
 		} catch (e) {
-			if (e instanceof DOMException && e.name === 'AbortError') throw e;
+			clearTimeout(timer);
+			opts.signal?.removeEventListener('abort', quit);
+			if (!late && e instanceof DOMException && e.name === 'AbortError') throw e;
 			throw new ApiError(t('core.api.notAnswering'), 0);
 		}
-		seen?.(res);
-		if (res.status === 204) return undefined as T;
+		let text: string;
+		try {
+			seen?.(res);
+			if (res.status === 204) return undefined as T;
+			// The body can stall after the headers came, so the same limit covers reading it.
+			const body = res.text();
+			text = stop ? await Promise.race([body, new Promise<never>((_, no) => stop.signal.addEventListener('abort', () => no(new DOMException('Aborted', 'AbortError')), { once: true }))]) : await body;
+		} catch (e) {
+			if (!late && e instanceof DOMException && e.name === 'AbortError') throw e;
+			if (late) throw new ApiError(t('core.api.notAnswering'), 0);
+			throw e;
+		} finally {
+			clearTimeout(timer);
+			opts.signal?.removeEventListener('abort', quit);
+		}
 		let data: Record<string, unknown> = {};
-		const text = await res.text();
+		// A proxy in front that gave up waiting answers with its own page (or none), not ours:
+		// 502-504, and Cloudflare's 522/524.
+		const proxyGaveUp = [502, 503, 504, 522, 524].includes(res.status);
 		if (text) {
 			try {
 				data = JSON.parse(text);
 			} catch {
+				if (proxyGaveUp) throw new ApiError(t('core.api.tooSlow'), res.status);
 				data = { error: text.trim() };
 			}
-		}
+		} else if (proxyGaveUp) throw new ApiError(t('core.api.tooSlow'), res.status);
 		if (!res.ok) {
 			if (res.status === 401) dropEarly();
 			if (res.status === 401 && !quiet401.some((p) => path.startsWith(p))) {
@@ -149,7 +178,9 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 			if (res.status === 403 && data.code === 'reauth' && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('holyarrs:reauth', { detail: { method, path } }));
 			const ra = Number(res.headers.get('Retry-After'));
 			// message is shown in the picked language; body.error keeps the server's English for matching.
-			const msg = typeof data.error === 'string' && data.error ? serverWords(data.error) : t('core.api.requestFailed', { status: res.status });
+			// A hands-off refusal: its friendlier line, in the picked language.
+			const msg = data.error === 'hands-off mode is on' ? t(data.part ? 'core.api.handsOffSubtitles' : 'core.api.handsOffFiles')
+				: typeof data.error === 'string' && data.error ? serverWords(data.error) : t('core.api.requestFailed', { status: res.status });
 			throw new ApiError(msg, res.status, data, Number.isFinite(ra) && ra > 0 ? ra : null);
 		}
 		// A lookup that is off on this install answers 200 with source_off: a calm note, not data.
@@ -190,7 +221,16 @@ export function createClient(fetchFn: FetchFn = (i, o) => fetch(i, o), early: ()
 	function change<T>(path: string, opts: RequestOptions): Promise<T> {
 		shared.clear();
 		dropEarly();
-		return request<T>(path, opts).finally(() => shared.clear());
+		return request<T>(path, opts)
+			.catch(async (err) => {
+				// Signed in again in another tab: this tab's write token is old. Take the current one and try once more.
+				if (!(err instanceof ApiError) || err.status !== 403 || !/csrf/i.test(String(err.body?.error ?? ''))) throw err;
+				const me = await request<{ csrf?: string }>('/auth/me').catch(() => null);
+				if (!me?.csrf || me.csrf === csrf) throw err;
+				csrf = me.csrf;
+				return request<T>(path, opts);
+			})
+			.finally(() => shared.clear());
 	}
 
 	return {

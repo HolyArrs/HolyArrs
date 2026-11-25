@@ -28,6 +28,7 @@ Do these in order.
 ## Maintainers
 
 - [Releasing](releasing.md): release notes, the update list, the image and taking a release back.
+- [Plugins](plugins.md): the plugin manifest, the sandbox and how plugins are published.
 
 ## Related
 

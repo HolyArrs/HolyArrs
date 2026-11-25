@@ -219,7 +219,10 @@ func TestDeleteTitleAPI(t *testing.T) {
 	if b := string(lbDo(t, "GET", url+"/api/v1/never-add", "", 200)); !strings.Contains(b, `"693134"`) {
 		t.Fatalf("never-add %s", b)
 	}
-	lbDo(t, "POST", path, `{}`, 409)
+	// A repeat delete succeeds with nothing left to do.
+	if b := string(lbDo(t, "POST", path, `{"apply":true}`, 200)); !strings.Contains(b, `"applied":true`) || !strings.Contains(b, `"held":[]`) {
+		t.Fatalf("again %s", b)
+	}
 	lbDo(t, "POST", url+"/api/v1/titles/999/delete", "", 404)
 	lbDo(t, "POST", path, `{"apply":"yes"}`, 400)
 }

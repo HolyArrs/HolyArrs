@@ -19,11 +19,11 @@ func ProtectedAt(ctx context.Context, q database.Querier, versionID int64, paths
 	return false, nil
 }
 
-// TakeNotesAtTx removes the found or unlinked notes of a Version at a path,
-// so an import can record the file it put there, and says whether one was
-// protected (the new file keeps that), as an import by hand does.
+// TakeNotesAtTx removes found, unlinked, or non-present file rows of a Version
+// at a path so an import can record the file it put there, and reports whether
+// any removed row was protected so the new file keeps that protection.
 func TakeNotesAtTx(ctx context.Context, tx *sql.Tx, versionID int64, path string) (bool, error) {
-	const notes = `version_id = ? AND relative_path = ? AND (slot_ids = '[]' OR origin = 'found')`
+	const notes = `version_id = ? AND relative_path = ? AND (slot_ids = '[]' OR origin = 'found' OR state != 'present')`
 	var n int
 	if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM files WHERE protected = 1 AND "+notes, versionID, path).Scan(&n); err != nil {
 		return false, err

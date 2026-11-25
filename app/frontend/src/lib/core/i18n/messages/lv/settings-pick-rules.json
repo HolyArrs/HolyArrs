@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "To nevar atsaukt. Faili paliek.",
 	"settings.pickRules.removeUsed": "{used}. Vispirms tur izvēlies citus noteikumus.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Atcelt"
+	"settings.pickRules.cancel": "Atcelt",
+	"settings.pickRules.check.title": "Pārbaudīt relīza nosaukumu",
+	"settings.pickRules.check.desc": "Ielīmē relīza nosaukumu, lai redzētu, kā HolyArrs to nolasa un kā tavas kvalitātes kopas to vērtē. Nekas netiek meklēts vai lejupielādēts.",
+	"settings.pickRules.check.name": "Relīza nosaukums",
+	"settings.pickRules.check.rules": "Vērtēt ar",
+	"settings.pickRules.check.copies": "Atbilstošā nosaukuma kopijas",
+	"settings.pickRules.check.size": "Izmērs GB (nav obligāts)",
+	"settings.pickRules.check.check": "Pārbaudīt",
+	"settings.pickRules.check.failed": "Nosaukumu neizdevās pārbaudīt",
+	"settings.pickRules.check.readAs": "Nolasīts kā",
+	"settings.pickRules.check.matches": "Atbilst: {name}",
+	"settings.pickRules.check.noTitle": "Neatbilst nevienam nosaukumam tavā Bibliotēkā. Izvēlies kvalitātes kopu augstāk, lai to tomēr novērtētu.",
+	"settings.pickRules.check.noAlbum": "Atbilst: {name}, bet nevienam tā albumam.",
+	"settings.pickRules.check.noCopies": "Šim nosaukumam nav kopiju, ko vērtēt.",
+	"settings.pickRules.check.hasFile": "Ir fails"
 }

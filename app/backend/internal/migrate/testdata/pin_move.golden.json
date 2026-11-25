@@ -22,7 +22,8 @@
     "no_formats": true,
     "leave_folders": [
       "s"
-    ]
+    ],
+    "names": "s"
   },
   "state": "s",
   "job_id": 7,

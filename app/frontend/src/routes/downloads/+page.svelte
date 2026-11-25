@@ -108,10 +108,33 @@
 			artwork: d.artwork
 		};
 	}
-	const allRows = $derived([
+	// Search again on a decision row of its own: the decision leaves the list while the search runs and comes back if nothing passes. Its row is held meanwhile (at most a minute) so the open details stay open.
+	let held = $state<DownloadRow | null>(null);
+	let heldTimer: ReturnType<typeof setTimeout> | undefined;
+	function holdSearch(slotID: number) {
+		const r = openId === -slotID ? decisions.items.find((d) => d.slot_id === slotID) : undefined;
+		if (!r) return;
+		held = decisionRow(r);
+		heldLeft = false;
+		clearTimeout(heldTimer);
+		heldTimer = setTimeout(() => (held = null), 60_000);
+	}
+	const baseRows = $derived([
 		...rows.map((r) => (decisionsByDownload.has(r.id) && !r.active && r.phase !== 'needs_a_decision' ? { ...r, phase: 'needs_a_decision', label: t('downloads.status.review') } : r)),
 		...decisions.items.filter((d) => !(d.download_id && rowIds.has(d.download_id))).map(decisionRow)
 	]);
+	const allRows = $derived(held && openId === held.id && !baseRows.some((r) => r.id === held!.id) ? [...baseRows, held] : baseRows);
+	// The decision left and came back, or the details closed: the held row is done.
+	let heldLeft = false;
+	$effect(() => {
+		if (!held) return;
+		const there = decisions.items.some((d) => d.slot_id === -held!.id);
+		if (!there) heldLeft = true;
+		if (openId !== held.id || (there && heldLeft)) {
+			held = null;
+			heldLeft = false;
+		}
+	});
 	function decisionsOf(r: DownloadRow): Decision[] {
 		if (r.client_item) return [];
 		return r.id < 0 ? decisions.items.filter((d) => d.slot_id === -r.id) : (decisionsByDownload.get(r.id) ?? []);
@@ -575,9 +598,9 @@
 	</div>
 {:else}
 	{#if error}<div class="pad"><LoadError hasData message={t('downloads.page.couldNotLoad')} onretry={load} /></div>{/if}
-	{#if notes.length}<ul class="notes" role="status" data-testid="dl-notes">{#each notes as n (n)}<li>{n}</li>{/each}</ul>{/if}
+	{#if notes.length}<ul class="notes" aria-live="polite" data-testid="dl-notes">{#each notes as n (n)}<li>{n}</li>{/each}</ul>{/if}
 	{#if !watch && loaded}<div class="matchpad"><ConfirmMatch refresh={reads} onchange={() => void load()} /></div>{/if}
-	<DlSections loading={!loaded} changeOutside={session.can('settings')} rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={(p) => batch(() => all(p))} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={(l, a) => batch(() => bulk(l, a))} onsteer={steer} onremovemany={askRemoveMany} onretry={(l) => batch(() => retryMany(l))} {batchBusy} {watch} {upTotal} {notes} outside={{ rest: outsideRest, canMore: moreOutside && outsideLimit < outsideMax, capMax: outsideMax, onmore: showMore }} />
+	<DlSections loading={!loaded} changeOutside={session.can('settings')} rows={allRows} {importOf} titles={titleById} {titlesReady} {busy} {torrent} {decisionsOf} onsearch={holdSearch} bind:openId onfail={markFailed} onremove={askRemove} ondone={() => void load()} onact={act} onall={(p) => batch(() => all(p))} onlimit={openLimit} onadd={torrentClients.length ? () => (addOpen = true) : undefined} onbulk={(l, a) => batch(() => bulk(l, a))} onsteer={steer} onremovemany={askRemoveMany} onretry={(l) => batch(() => retryMany(l))} {batchBusy} {watch} {upTotal} {notes} outside={{ rest: outsideRest, canMore: moreOutside && outsideLimit < outsideMax, capMax: outsideMax, onmore: showMore }} />
 {/if}
 
 <SteerSheet bind:open={steerOpen} mode={steerMode} rows={steerRows} ondone={() => void load()} />

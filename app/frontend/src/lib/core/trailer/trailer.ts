@@ -26,6 +26,7 @@ export type AutoplayPref = 'auto' | 'always' | 'never';
 const youTubeKey = /^[A-Za-z0-9_-]{6,20}$/;
 const AUTOPLAY_KEY = 'holyarrs.trailer.autoplay';
 const SOUND_KEY = 'holyarrs.trailer.sound';
+const PREVIEW_KEY = 'holyarrs.preview.hover';
 
 // Delays in ms before a hero or hover trailer starts.
 export const HERO_DELAY = 1500;
@@ -84,6 +85,33 @@ export function autoplayPref(): AutoplayPref {
 	} catch {
 		return 'auto';
 	}
+}
+
+// Per-device choice for the card that grows on hover: on (today's wait), slower, or off.
+export type PreviewPref = 'on' | 'slow' | 'off';
+export const SLOW_PREVIEW_DELAY = 1000;
+
+export function previewPref(): PreviewPref {
+	try {
+		const v = localStorage.getItem(PREVIEW_KEY);
+		return v === 'slow' || v === 'off' ? v : 'on';
+	} catch {
+		return 'on';
+	}
+}
+
+export function setPreviewPref(v: PreviewPref) {
+	try {
+		if (v === 'on') localStorage.removeItem(PREVIEW_KEY);
+		else localStorage.setItem(PREVIEW_KEY, v);
+	} catch {
+		// storage can be blocked; the choice then lasts this page only
+	}
+}
+
+// The hover wait for a choice; off never opens on hover (keyboard focus still does).
+export function previewDelay(base: number, pref: PreviewPref = previewPref()): number | null {
+	return pref === 'off' ? null : pref === 'slow' ? Math.max(base, SLOW_PREVIEW_DELAY) : base;
 }
 
 export function setAutoplayPref(v: AutoplayPref) {

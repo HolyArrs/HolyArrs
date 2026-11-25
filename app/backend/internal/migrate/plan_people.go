@@ -11,7 +11,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/outbound"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 )
 
@@ -181,6 +183,8 @@ func (b *builder) people(s *Snapshot) {
 	}
 	// Radarr's availability delay is a Release gate setting (titleList).
 	recognized["availability_delay"] = s.Kind == Radarr
+	// The "unmonitor deleted" switch is a file rule (fileRules).
+	recognized["unkeep_deleted"] = s.Kind == Radarr || s.Kind == Sonarr
 	keys := make([]string, 0, len(s.Settings))
 	for k := range s.Settings {
 		keys = append(keys, k)
@@ -243,7 +247,7 @@ func (b *builder) asks(s *Snapshot) {
 			name = requests.PlaceholderName(ref) // the real name is looked up when it is imported
 		}
 		byKey := b.personRefs[personKey(s.Kind, r.By)]
-		ap := &AskPlan{App: string(s.Kind), Kind: kind, Ref: ref, IDs: ids, Approved: r.State == "approved",
+		ap := &AskPlan{App: string(s.Kind), Kind: kind, Ref: ref, IDs: ids, Approved: r.State == "approved", Done: r.Done,
 			By: byKey, ByName: clip(r.ByName, 64), AskedAt: clip(r.Created, 40), DecidedAt: clip(r.Updated, 40)}
 		if ap.AskedAt != "" {
 			if asked, ok := sourceTime(ap.AskedAt); !ok {
@@ -289,6 +293,9 @@ func (b *builder) asks(s *Snapshot) {
 		if ap.Approved {
 			state = "approved"
 		}
+		if ap.Done {
+			state = "done"
+		}
 		by := ap.ByName
 		if by == "" {
 			by = "someone"
@@ -326,16 +333,132 @@ func (b *builder) alerts(s *Snapshot) {
 			}
 			ap = &AlertPlan{Kind: "email", SMTPHost: clip(setStr(n.Settings, "server", "host"), 200), SMTPPort: int(port), SMTPSecurity: sec,
 				SMTPFrom: clip(setStr(n.Settings, "from"), 200), SMTPUser: clip(setStr(n.Settings, "username", "user"), 200), StaffTo: clip(to, 200)}
+		case "telegram":
+			// The bot token is a secret and never comes over; the chat does
+			// when it is one HolyArrs can write to.
+			ap = &AlertPlan{Kind: "telegram"}
+			if chat := strings.TrimSpace(setStr(n.Settings, "chatId")); alerts.CheckTelegramChat(chat) == nil {
+				ap.ChatID = chat
+			}
+		case "ntfy":
+			// The topics are tokens in disguise, so the read drops them; the
+			// server comes as its scheme and host (linkSafe).
+			ap = &AlertPlan{Kind: "ntfy"}
+			ap.ServerURL, ap.AllowLocal = alertServer(n.Settings, "serverUrl")
+		case "gotify":
+			ap = &AlertPlan{Kind: "gotify"}
+			ap.ServerURL, ap.AllowLocal = alertServer(n.Settings, "server")
+		case "pushover":
+			ap = &AlertPlan{Kind: "pushover"}
 		}
 		if ap == nil {
-			b.not(GroupAlerts, from, n.Name, "HolyArrs Alerts go to Discord, a webhook or email only")
+			b.not(GroupAlerts, from, n.Name, "HolyArrs Alerts go to Discord, a webhook, email, Telegram, ntfy, Gotify or Pushover only")
 			continue
 		}
-		needs := map[string]string{"discord": "its Discord link", "webhook": "its address", "email": "the mail password"}[ap.Kind]
+		needs := map[string]string{"discord": "its Discord link", "webhook": "its address", "email": "the mail password",
+			"telegram": "its bot token", "ntfy": "its server and topic", "gotify": "its server and app token",
+			"pushover": "its user key and app token"}[ap.Kind]
+		switch {
+		case ap.Kind == "telegram" && ap.ChatID == "":
+			needs = "its bot token and chat"
+		case ap.Kind == "ntfy" && ap.ServerURL != "":
+			needs = "its topic"
+		case ap.Kind == "gotify" && ap.ServerURL != "":
+			needs = "its app token"
+		}
+		why := "Alerts speak for every moment at first; pick the moments again"
+		if ap.Moments = alertMoments(n.Settings); ap.Moments != nil {
+			why = "Alerts speak for the same moments as in the old app"
+		}
 		b.addTagged(s.Kind, GroupAlerts, Item{Key: "alert:" + strings.ToLower(clip(n.Name, 80)), Name: clip(n.Name, 80), From: from, Alert: ap,
-			Detail: ap.Kind + "; added off until you type " + needs, Needs: needs,
-			Why: "Alerts speak for every moment at first; pick the moments again"}, n.Tags)
+			Detail: ap.Kind + "; added off until you type " + needs, Needs: needs, Why: why}, n.Tags)
+		if left := alertLeft(ap.Kind, n.Settings); len(left) > 0 {
+			b.not(GroupAlerts, from, clip(n.Name, 80), fmt.Sprintf("HolyArrs has no place for: %s", strings.Join(left, "; ")))
+		}
 	}
+}
+
+// alertServer is the ntfy or Gotify server the read kept (scheme and host)
+// when HolyArrs may send to it, and whether it is on the local network.
+func alertServer(set map[string]any, key string) (string, bool) {
+	root, _ := serverRoot(setStr(set, key))
+	if root == "" || metadataHost(root) || alerts.CheckServerURL(root, true) != nil {
+		return "", false
+	}
+	return root, alerts.CheckServerURL(root, false) != nil
+}
+
+// alertMomentOf maps an old app's on-switch to a HolyArrs moment.
+var alertMomentOf = map[string]string{"onGrab": alerts.MomentGrab, "onDownload": alerts.MomentImport, "onUpgrade": alerts.MomentImport,
+	"onReleaseImport": alerts.MomentImport, "onRename": alerts.MomentRename, "onSeriesAdd": alerts.MomentAdd, "onMovieAdded": alerts.MomentAdd,
+	"onArtistAdd": alerts.MomentAdd, "onSeriesDelete": alerts.MomentDelete, "onMovieDelete": alerts.MomentDelete, "onArtistDelete": alerts.MomentDelete,
+	"onHealthIssue": alerts.MomentHealth, "onHealthRestored": alerts.MomentHealth, "onManualInteractionRequired": alerts.MomentDecision}
+
+// alertMoments are the moments the old app's on-switches turn on, in the
+// order screens show them; nil when the read has none of the switches or
+// all are off (the Alert then speaks for every moment, as before).
+func alertMoments(set map[string]any) []string {
+	on := map[string]bool{}
+	for k, m := range alertMomentOf {
+		if boolean(anyKey(set, "link."+k)) {
+			on[m] = true
+		}
+	}
+	var out []string
+	for _, m := range alerts.Moments {
+		if on[m] {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+// alertLeft names an old Alert's settings HolyArrs has no place for, only
+// those set to something other than their usual value.
+func alertLeft(kind string, set map[string]any) []string {
+	var out []string
+	other := func(key string, usual int64) bool {
+		n, ok := setNum(set, key)
+		return ok && n != usual
+	}
+	filled := func(key string) bool {
+		v := anyKey(set, key)
+		return len(list(v)) > 0 || list(v) == nil && strings.TrimSpace(str(v)) != "" && strings.TrimSpace(str(v)) != "[]"
+	}
+	switch kind {
+	case "telegram":
+		if other("topicId", 0) {
+			out = append(out, "the Telegram topic")
+		}
+		if boolean(anyKey(set, "sendSilently")) {
+			out = append(out, "sending silently")
+		}
+	case "ntfy":
+		if other("priority", 3) {
+			out = append(out, "the ntfy priority")
+		}
+		if filled("tags") {
+			out = append(out, "the ntfy tags")
+		}
+		if u := clip(strings.TrimSpace(setStr(set, "userName", "username")), 80); u != "" {
+			out = append(out, fmt.Sprintf("the user name %s (HolyArrs signs in to ntfy with an access token)", u))
+		}
+	case "gotify":
+		if other("priority", 5) {
+			out = append(out, "the Gotify priority")
+		}
+	case "pushover":
+		if filled("devices") {
+			out = append(out, "the Pushover devices")
+		}
+		if other("priority", 0) {
+			out = append(out, "the Pushover priority")
+		}
+		if filled("sound") {
+			out = append(out, "the Pushover sound")
+		}
+	}
+	return out
 }
 
 // leftBehind lists the parts of a Snapshot the move never brings.
@@ -345,14 +468,12 @@ func (b *builder) leftBehind(s *Snapshot) {
 		b.not(GroupOther, b.from("tags", i), t.Label, "HolyArrs has no tags")
 	}
 	for i, l := range s.ImportLists {
-		if s.Kind == Radarr && b.outsideList(i, l) {
+		if (s.Kind == Radarr || s.Kind == Sonarr) && b.outsideList(s.Kind, i, l) {
 			continue
 		}
 		kind := strings.ToLower(l.Kind)
 		var why string
 		switch {
-		case s.Kind == Sonarr:
-			why = "HolyArrs Outside lists add movies only for now; this show list stays in Sonarr"
 		case s.Kind == Lidarr:
 			why = "HolyArrs Outside lists add movies only for now; this music list stays in Lidarr"
 		// An MDBList list, by its own kind or a list link to mdblist.com, is
@@ -367,8 +488,10 @@ func (b *builder) leftBehind(s *Snapshot) {
 		case kind == "tmdblistimport" || (strings.Contains(kind, "trakt") && !strings.Contains(kind, "popular")):
 			why = "HolyArrs reads TMDB lists and public Trakt lists; add it again under Settings > Outside lists"
 			if strings.Contains(kind, "trakt") {
-				why += " (a private list needs to be made public first)"
+				why += " (a private list needs Sign in with Trakt there)"
 			}
+		case s.Kind == Sonarr:
+			why = "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Sonarr"
 		default:
 			why = "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Radarr"
 		}
@@ -406,15 +529,15 @@ func listSlug(name string) string {
 }
 
 // freeListName is name, or name with " (radarr)", " (radarr 2)" and so on
-// when taken says that one is in use.
-func freeListName(name string, taken func(string) bool) string {
+// (" (sonarr)" for a Sonarr list) when taken says that one is in use.
+func freeListName(name string, app Kind, taken func(string) bool) string {
 	if !taken(name) {
 		return name
 	}
 	for n := 1; n < 100; n++ {
-		end := " (radarr)"
+		end := " (" + string(app) + ")"
 		if n > 1 {
-			end = fmt.Sprintf(" (radarr %d)", n)
+			end = fmt.Sprintf(" (%s %d)", app, n)
 		}
 		if c := clip(name, 80-len(end)) + end; !taken(c) {
 			return c
@@ -448,16 +571,21 @@ func syncHours(v any) int {
 	return min(max(hours, 6), 168)
 }
 
-// outsideList plans one Radarr list as a paused Outside list: a TMDB list,
-// a Trakt list or a Trakt watchlist (requests.NormalListRef checks its reference).
+// outsideList plans one Radarr or Sonarr list as a paused Outside list: a
+// TMDB list (Radarr only), a Trakt list or a Trakt watchlist
+// (requests.NormalListRef checks its reference). A Sonarr list adds shows.
 // It says false for every other kind, which leftBehind lists.
-func (b *builder) outsideList(i int, l Provider) bool {
+func (b *builder) outsideList(app Kind, i int, l Provider) bool {
 	from := b.from("import_lists", i)
 	set := l.Settings
 	name := clip(l.Name, 80)
+	titleKind := libraryKind(app)
 	var kind, ref string
 	switch strings.ToLower(l.Kind) {
 	case "tmdblistimport":
+		if app != Radarr {
+			return false
+		}
 		kind, ref = requests.ListTMDB, str(anyKey(set, "listId"))
 	case "traktlistimport":
 		kind, ref = requests.ListTrakt, setStr(set, "username", "authUser")+"/"+listSlug(str(anyKey(set, "listname")))
@@ -466,7 +594,11 @@ func (b *builder) outsideList(i int, l Provider) bool {
 		case "0", "userWatchList", "":
 			kind, ref = requests.ListTrakt, setStr(set, "username", "authUser")+"/watchlist"
 		default:
-			b.not(GroupLists, from, l.Name, "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Radarr")
+			why := "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Radarr"
+			if app == Sonarr {
+				why = "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Sonarr"
+			}
+			b.not(GroupLists, from, l.Name, why)
 			return true
 		}
 	default:
@@ -484,7 +616,7 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	folder := oldPath(str(anyKey(set, "link.rootFolderPath")))
 	lib := ""
 	for _, f := range b.folders {
-		if f.Kind == "movie" && f.OldPath == folder && folder != "" {
+		if f.Kind == titleKind && f.OldPath == folder && folder != "" {
 			lib = f.Path
 		}
 	}
@@ -495,21 +627,28 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	if name == "" {
 		name = kind + " " + norm
 	}
-	name = freeListName(name, func(n string) bool { return b.listNames[strings.ToLower(n)] })
+	name = freeListName(name, app, func(n string) bool { return b.listNames[strings.ToLower(n)] })
 	b.listNames[strings.ToLower(name)] = true
-	op := &OutsideListPlan{Kind: kind, Ref: norm, Library: lib, KeepUpToDate: true, SearchOnAdd: boolean(anyKey(set, "link.searchOnAdd")),
-		Preset: b.presets[b.presetKey(Radarr, num(anyKey(set, "link.qualityProfileId")))], SyncEveryHours: syncHours(anyKey(set, "link.minRefreshInterval"))}
-	switch strings.ToLower(str(anyKey(set, "link.monitor"))) {
-	case "none", "2":
-		op.KeepUpToDate = false
-	case "movieandcollection", "1":
-		b.not(GroupLists, from+".monitor", l.Name+": its movie series", "lists add only the movies on the list, not the rest of their movie series; add those by hand")
-	}
-	if v := str(anyKey(set, "link.minimumAvailability")); v != "" {
-		op.ReleaseGate = releaseGates[strings.ToLower(v)]
+	op := &OutsideListPlan{Kind: kind, Ref: norm, Library: lib, KeepUpToDate: true,
+		SearchOnAdd:    boolean(anyKey(set, "link.searchOnAdd")) || boolean(anyKey(set, "link.searchForMissingEpisodes")),
+		Preset:         b.presets[b.presetKey(app, num(anyKey(set, "link.qualityProfileId")))],
+		SyncEveryHours: syncHours(anyKey(set, "link.minRefreshInterval"))}
+	if app == Sonarr {
+		op.TitleKind = "show"
+		b.showListSeasons(from, l, op)
+	} else {
+		switch strings.ToLower(str(anyKey(set, "link.monitor"))) {
+		case "none", "2":
+			op.KeepUpToDate = false
+		case "movieandcollection", "1":
+			b.not(GroupLists, from+".monitor", l.Name+": its movie series", "lists add only the movies on the list, not the rest of their movie series; add those by hand")
+		}
+		if v := str(anyKey(set, "link.minimumAvailability")); v != "" {
+			op.ReleaseGate = releaseGates[strings.ToLower(v)]
+		}
 	}
 	// Radarr reads a list only while it is on, and adds its movies only
-	// while its automatic add is on too.
+	// while its automatic add is on too. Sonarr has only the automatic add.
 	on := l.Enabled
 	if v := anyKey(set, "link.enabled"); v != nil {
 		on = boolean(v)
@@ -525,15 +664,63 @@ func (b *builder) outsideList(i int, l Provider) bool {
 	if op.ReleaseGate != "" {
 		detail += "; release gate: " + gateWords[op.ReleaseGate]
 	}
+	if op.TitleKind == "show" {
+		detail += "; seasons: " + op.Seasons + ", new seasons: " + op.NewSeasons
+	}
 	if !op.KeepUpToDate {
 		detail += "; Keep up to date off"
 	}
 	if kind == requests.ListTrakt {
-		detail += "; needs your Trakt key, and the list must be public"
+		// The old app read it signed in; here a private list needs Sign in
+		// with Trakt, a public one only the key.
+		detail += "; needs your Trakt key, and Sign in with Trakt if the list is private"
 	}
-	b.add(GroupLists, Item{Key: "outside_list:" + kind + ":" + strings.ToLower(norm), Name: name, From: from, Detail: detail,
+	key := "outside_list:" + kind + ":" + strings.ToLower(norm)
+	if op.TitleKind == "show" {
+		// The same Trakt watchlist can feed both apps: one list for its
+		// movies, one for its shows.
+		key = "outside_list:" + kind + ":show:" + strings.ToLower(norm)
+	}
+	b.add(GroupLists, Item{Key: key, Name: name, From: from, Detail: detail,
 		Why: "added paused, like Sources and Downloaders: check its folder and Pick rules, then turn it on", OutsideList: op})
 	return true
+}
+
+// sonarrMonitor maps Sonarr's list monitor choice (a word, or the backup's
+// number) to the Outside list seasons choice.
+var sonarrMonitor = map[string]string{
+	"all": library.SeasonsAll, "1": library.SeasonsAll, "missing": library.SeasonsAll, "3": library.SeasonsAll,
+	"existing": library.SeasonsAll, "4": library.SeasonsAll, "recent": library.SeasonsAll, "9": library.SeasonsAll,
+	"monitorspecials": library.SeasonsAll, "10": library.SeasonsAll, "unmonitorspecials": library.SeasonsAll, "11": library.SeasonsAll,
+	"future": library.SeasonsFuture, "2": library.SeasonsFuture,
+	"firstseason": requests.SeasonsFirst, "5": requests.SeasonsFirst, "pilot": requests.SeasonsFirst, "8": requests.SeasonsFirst,
+	"lastseason": library.SeasonsLatest, "6": library.SeasonsLatest, "latestseason": library.SeasonsLatest, "7": library.SeasonsLatest,
+	"none": library.SeasonsNone, "12": library.SeasonsNone, "skip": library.SeasonsNone, "13": library.SeasonsNone,
+}
+
+// showListSeasons sets a Sonarr list's seasons and new seasons on op. Every
+// Sonarr monitor choice has a match here but the pilot, which keeps the first
+// season. The series type is left to the show: HolyArrs tells anime itself.
+func (b *builder) showListSeasons(from string, l Provider, op *OutsideListPlan) {
+	set := l.Settings
+	mon := strings.ToLower(str(anyKey(set, "link.shouldMonitor")))
+	op.Seasons = sonarrMonitor[mon]
+	switch {
+	case op.Seasons == "":
+		op.Seasons = library.SeasonsAll
+	case mon == "pilot" || mon == "8":
+		b.not(GroupLists, from+".monitor", l.Name+": its seasons", "HolyArrs cannot keep only the first episode; the list keeps the first season")
+	case op.Seasons == library.SeasonsNone:
+		op.KeepUpToDate = false
+	}
+	op.NewSeasons = "all"
+	switch strings.ToLower(str(anyKey(set, "link.monitorNewItems"))) {
+	case "none", "1":
+		op.NewSeasons = "none"
+	}
+	if op.Seasons == library.SeasonsFuture {
+		op.NewSeasons = "all"
+	}
 }
 
 // metadataHost says an address names a cloud metadata address (the list

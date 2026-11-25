@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Ne može se poništiti. Datoteke ostaju.",
 	"settings.pickRules.removeUsed": "{used}. Prvo tamo odaberi druga pravila.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Odustani"
+	"settings.pickRules.cancel": "Odustani",
+	"settings.pickRules.check.title": "Provjeri naziv izdanja",
+	"settings.pickRules.check.desc": "Zalijepi naziv izdanja da vidiš kako ga HolyArrs čita i kako ga ocjenjuju tvoji skupovi kvalitete. Ništa se ne traži niti preuzima.",
+	"settings.pickRules.check.name": "Naziv izdanja",
+	"settings.pickRules.check.rules": "Ocijeni prema",
+	"settings.pickRules.check.copies": "Kopije odgovarajućeg naslova",
+	"settings.pickRules.check.size": "Veličina u GB (neobavezno)",
+	"settings.pickRules.check.check": "Provjeri",
+	"settings.pickRules.check.failed": "Naziv nije moguće provjeriti",
+	"settings.pickRules.check.readAs": "Pročitano kao",
+	"settings.pickRules.check.matches": "Odgovara: {name}",
+	"settings.pickRules.check.noTitle": "Ne odgovara nijednom naslovu u tvojoj Knjižnici. Odaberi gore skup kvalitete da ga ipak ocijeniš.",
+	"settings.pickRules.check.noAlbum": "Odgovara: {name}, ali nijednom njegovom albumu.",
+	"settings.pickRules.check.noCopies": "Ovaj naslov nema kopija za ocjenu.",
+	"settings.pickRules.check.hasFile": "Ima datoteku"
 }

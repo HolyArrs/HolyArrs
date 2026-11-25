@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Chỉ những mục này mới được nói lượt truy cập đến từ đâu.",
 	"settings.signIn.fixToSaveOne": "Sửa 1 dòng để lưu",
 	"settings.signIn.fixToSaveOther": "Sửa {n} dòng để lưu",
-	"settings.signIn.localSaved": "Đã lưu mạng nội bộ"
+	"settings.signIn.localSaved": "Đã lưu mạng nội bộ",
+	"settings.signIn.forgotTitle": "Quên mật khẩu?",
+	"settings.signIn.forgotOn": "Hiện Quên mật khẩu? trên trang đăng nhập",
+	"settings.signIn.forgotNote": "Chủ sở hữu nhận mã dùng một lần từ nhật ký máy chủ. Tắt nếu mọi người đăng nhập bằng đăng nhập một lần. Lệnh reset-owner vẫn hoạt động.",
+	"settings.signIn.forgotShown": "Quên mật khẩu? đang bật",
+	"settings.signIn.forgotHidden": "Quên mật khẩu? đang tắt"
 }

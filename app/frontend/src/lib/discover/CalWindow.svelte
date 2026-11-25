@@ -2,7 +2,10 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
-	import { entryArt, entryHref, itemDot } from './calendar.ts';
+	import { entryArt, entryHref, itemDot, canSearch, searchBody, type ItemDot } from './calendar.ts';
+	import { api, message } from '#lib/core/api.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { entryTitle, groupTag, type CalGroup } from './calendar-groups.ts';
 	import { cardLines, rowWords, type CaptionLook } from './calendar-captions.ts';
 	import { epText, movieText } from './episode-text.svelte.ts';
@@ -25,6 +28,25 @@
 	const extra = $derived(words.lines.filter((l) => l !== title && l !== e.name));
 	const page = $derived(to(entryHref(e)));
 	let failed = $state(false);
+	// Where each date stands, in words (the dots on the calendar say the same by colour).
+	const dotWord = $derived<Record<ItemDot, string>>({ have: t('discover.calWindow.inTheLibrary'), getting: t('discover.calWindow.downloading'), problem: t('discover.calWindow.needsAttention'), missing: t('discover.calWindow.missing'), upcoming: t('discover.calWindow.comingUp') });
+	const status = $derived(have ? 'have' : itemDot(e, today));
+	// A search right from the calendar, as on the title page: each date not yet in the Library.
+	const wanted = $derived(g.entries.filter((x) => canSearch(x, today)));
+	const canManage = $derived(session.can('manage_library') && !session.kid);
+	let searching = $state(false);
+	async function search() {
+		searching = true;
+		try {
+			let jobs = 0;
+			for (const x of wanted) jobs += (await api.post<{ job_ids: number[] }>(`/titles/${x.title_id}/search`, searchBody(x))).job_ids.length;
+			toasts.push(jobs ? t('discover.calWindow.searchingFor', { name: title }) : t('discover.calWindow.nothingToSearch'), jobs ? 'info' : 'ok');
+		} catch (err) {
+			toasts.push(t('discover.calWindow.couldntSearch'), 'fail', { body: message(err) });
+		} finally {
+			searching = false;
+		}
+	}
 </script>
 
 <Sheet bind:open {title} size="md">
@@ -38,8 +60,9 @@
 				{#each g.entries as x (x.item_id ?? x.episode)}
 					{@const text = epText(x.tmdb, x.season, x.episode)}
 					{@const named = !!x.episode_name && !/^Episode \d+$/.test(x.episode_name)}
+					{@const d = itemDot(x, today)}
 					<div class="ep-one">
-						<p class="ep-num">{t('discover.calWindow.seasonEpisode', { season: x.season ?? 0, episode: x.episode ?? 0 })}</p>
+						<p class="ep-num"><span class="sd {d}" aria-hidden="true"></span>{t('discover.calWindow.seasonEpisode', { season: x.season ?? 0, episode: x.episode ?? 0 })}{#if g.entries.length > 1} · {dotWord[d]}{/if}</p>
 						{#if named}<h3 class="ep-name">{x.episode_name}</h3>{/if}
 						{#if text}<p class="ep-text">{text}</p>{:else}<p class="ep-text none">{t('discover.calWindow.noDescriptionYet')}</p>{/if}
 					</div>
@@ -49,9 +72,10 @@
 				{#if e.kind !== 'album' && open}{@const story = movieText(e.tmdb)}{#if story}<p class="ep-text story">{story}</p>{/if}{/if}
 				{#if extra.length}<p class="ep-text">{extra.join(' · ')}</p>{/if}
 			{/if}
-			{#if have}<p class="ep-text have">{t('discover.calWindow.inTheLibrary')}</p>{/if}
+			<p class="ep-text st {status}" data-testid="cal-status"><span class="sd {status}" aria-hidden="true"></span>{dotWord[status]}</p>
 		</div>
 		{#snippet footer()}
+			{#if canManage && wanted.length}<Button icon="search" busy={searching} onclick={search} data-testid="cal-search">{t('discover.calWindow.searchNow')}</Button>{/if}
 			<Button variant="primary" href={page}>Go to {e.kind === 'album' ? 'album' : e.kind === 'episode' ? 'show' : 'movie'}</Button>
 			<Button onclick={() => (open = false)}>{t('discover.calWindow.close')}</Button>
 		{/snippet}
@@ -74,4 +98,10 @@
 	.ep-text.story { color: var(--text); }
 	.ep-text.none { opacity: .7; }
 	.ep-text.have { color: var(--ok-text, var(--ok)); }
+	.st { display: flex; align-items: center; color: var(--text); font-weight: 600; }
+	.sd { display: inline-block; flex: none; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; vertical-align: 1px; background: var(--info); }
+	.sd.have { background: var(--ok); }
+	.sd.missing { background: var(--fail); }
+	.sd.getting { background: var(--wait); }
+	.sd.problem { background: transparent; box-shadow: inset 0 0 0 1.5px var(--fail); }
 </style>

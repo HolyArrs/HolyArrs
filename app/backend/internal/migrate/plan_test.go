@@ -6,6 +6,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 )
 
 // fullSnapshots holds one Snapshot per app with every field filled, the
@@ -24,13 +26,14 @@ func fullSnapshots() []Input {
 		Tags:            []Tag{{ID: 1, Label: "kids"}},
 		Folders:         []Folder{{Path: "/movies", Extra: map[string]any{"name": "Films"}}},
 		QualityProfiles: []Profile{{ID: 1, Name: "HD-1080p", UpgradeAllowed: true, Cutoff: "Bluray-1080p", Allowed: []string{"WEBDL-1080p", "Bluray-1080p"}, Scores: map[string]int{"x265": 10}}, {ID: 2, Name: "Ultra-HD", Cutoff: "Remux-2160p"}},
+		QualitySizes:    []library.OldQualitySize{{Quality: "WEBDL-1080p", Min: 4, Max: 100}, {Quality: "Unknown", Min: 1}},
 		CustomFormats:   []Named{{ID: 1, Name: "x265"}},
 		ReleaseProfiles: []Named{{ID: 1, Name: "No HC", Settings: map[string]any{"enabled": true, "ignored": []any{"HC"}}}},
 		DelayProfiles:   []DelayProfile{{ID: 1, EnableTorrent: true, TorrentDelay: 60}},
 		Naming:          map[string]any{"renameMovies": true, "colonReplacementFormat": "dash", "standardMovieFormat": "{Movie Title} ({Release Year}) {Quality Full}", "movieFolderFormat": "{Movie Title} ({Release Year}) {Movie Collection}", "includeQuality": true},
 		Exclusions:      []Exclusion{{IDs: map[string]string{"tmdb": "999"}, Name: "Bad Movie", Year: 2001}},
 		Indexers: []Provider{
-			prov("Nyaa", "Torznab", map[string]any{"baseUrl": "http://prowlarr:9696/1/", "minimumSeeders": int64(2), "categories": []any{int64(2000)}, "link.enablerss": true}, "apiKey"),
+			prov("Nyaa", "Torznab", map[string]any{"baseUrl": "http://prowlarr:9696/1/", "minimumSeeders": int64(2), "multiLanguages": []any{int64(2), int64(4), int64(2), int64(0)}, "categories": []any{int64(2000)}, "link.enablerss": true}, "apiKey"),
 			prov("Site", "Cardigann", map[string]any{"baseUrl": "https://x.example/"}),
 		},
 		DownloadClients: []Provider{prov("qBit", "QBittorrent", map[string]any{"host": "qbit", "port": int64(8080), "username": "admin", "movieCategory": "radarr"}, "password"),
@@ -38,9 +41,10 @@ func fullSnapshots() []Input {
 		RemotePathMappings: []RemotePathMapping{{Host: "qbit", RemotePath: "/downloads/", LocalPath: "/data/downloads/"},
 			{Host: "elsewhere", RemotePath: "/dl", LocalPath: "/data/dl"}, {Host: "qbit", RemotePath: "relative", LocalPath: "/data/x"}},
 		ImportLists:   []Provider{prov("Trakt", "TraktListImport", nil, "accessToken")},
-		Notifications: []Provider{prov("Discord", "Discord", nil, "webHookUrl"), prov("Mail", "Email", map[string]any{"server": "smtp.example", "port": int64(465), "useEncryption": "1", "from": "a@example.org", "to": []any{"b@example.org"}}, "password"), prov("Push", "Pushover", nil)},
+		Notifications: []Provider{prov("Discord", "Discord", nil, "webHookUrl"), prov("Mail", "Email", map[string]any{"server": "smtp.example", "port": int64(465), "useEncryption": "1", "from": "a@example.org", "to": []any{"b@example.org"}}, "password"), prov("Chat", "Slack", nil, "webHookUrl")},
 		Metadata:      []Provider{prov("Kodi", "XbmcMetadata", nil)},
-		Settings:      map[string]any{"availability_delay": int64(7)},
+		Settings:      map[string]any{"availability_delay": int64(7), "unkeep_deleted": true},
+		Blocklist:     []Blocked{{TitleID: 1, Name: "The.Matrix.1999.720p", Protocol: "torrent"}, {TitleID: 2, Name: "No.id.720p", Protocol: "torrent"}},
 		NeedsReentry:  []string{`indexer "Nyaa": apiKey`, `import list "Trakt": accessToken`},
 		Notes:         []string{"a note"},
 	}
@@ -66,7 +70,8 @@ func fullSnapshots() []Input {
 	bazarr := &Snapshot{Kind: Bazarr, Subtitles: &SubtitleSetup{Languages: []string{"en", "es", "fr"},
 		Profiles: []SubtitleProfile{{ID: 1, Name: "Main", Languages: []SubtitleLanguage{{Language: "en"}, {Language: "es", HI: true}}}, {ID: 2, Name: "Anime"}},
 		Providers: []Provider{{Name: "podnapisi", Kind: "podnapisi"}, {Name: "opensubtitlescom", Kind: "opensubtitlescom", NeedsReentry: []string{"password"}}, {Name: "addic7ed", Kind: "addic7ed"},
-			{Name: "yifysubtitles", Kind: "yifysubtitles"}, {Name: "tvsubtitles", Kind: "tvsubtitles"}, {Name: "bsplayer", Kind: "bsplayer"}, {Name: "subf2m", Kind: "subf2m"}},
+			{Name: "yifysubtitles", Kind: "yifysubtitles"}, {Name: "tvsubtitles", Kind: "tvsubtitles"}, {Name: "bsplayer", Kind: "bsplayer"}, {Name: "subf2m", Kind: "subf2m"},
+			{Name: "napiprojekt", Kind: "napiprojekt"}, {Name: "napisy24", Kind: "napisy24"}},
 		Defaults: map[string]any{"movie_default_profile": int64(1), "use_embedded_subs": true}}}
 	qbit := &Snapshot{Kind: QBittorrent, Downloader: &Downloader{Host: "10.0.0.5", Port: 8080, Username: "admin", NeedsPassword: true, SavePath: "/downloads",
 		Categories: []Category{{Name: "radarr", Path: "/downloads/radarr"}}}}
@@ -293,6 +298,9 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	}
 	// Sources: Torznab with its seeders and categories, paused for its key.
 	src := item(t, p, GroupSources, "source:nyaa")
+	if !slices.Equal(src.Source.MultiLanguages, []string{"fr", "de"}) {
+		t.Fatalf("multi languages = %v, want [fr de]", src.Source.MultiLanguages)
+	}
 	if src.Source.Format != "torznab" || !src.Source.NeedsKey || *src.Source.MinSeeders != 2 || src.Needs != "your key" || src.Source.Categories["movie"][0] != 2000 {
 		t.Fatalf("source %+v", src.Source)
 	}
@@ -303,7 +311,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 		t.Fatal("a site definition must be listed as not moved")
 	}
 	// Downloaders: from Radarr's client list and from qBittorrent itself.
-	if d := item(t, p, GroupDownloaders, "downloader:http://qbit:8080").Downloader; d.Category != "radarr" || !d.NeedsInput {
+	if d := item(t, p, GroupDownloaders, "downloader:http://qbit:8080").Downloader; d.CategoryMovies != "radarr" || !d.NeedsInput {
 		t.Fatalf("downloader %+v", d)
 	}
 	item(t, p, GroupDownloaders, "downloader:http://10.0.0.5:8080")
@@ -312,8 +320,12 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	}
 	// Naming: the words with a match; a pattern with an unknown word stays.
 	nm := item(t, p, GroupNaming, "naming:radarr").Naming
-	if nm["file_pattern"] != "{title} ({year}) {quality}" || nm["colon"] != "dash" || nm["rename_on_import"] != "true" {
+	if nm["file_pattern"] != "{title} ({year}) {quality}" || nm["colon"] != "dash" || nm["rename_on_import"] != "" {
 		t.Fatalf("naming %+v", nm)
+	}
+	// Their rename setting is not copied: the owner's names choice (keep by default) is.
+	if nm := item(t, p, GroupNaming, "names:radarr").Naming; nm["rename_on_import"] != "false" {
+		t.Fatalf("names %+v", nm)
 	}
 	if n, ok := notMoved(p, "radarr naming.movieFolderFormat"); !ok || !strings.Contains(n.Why, "Movie Collection") {
 		t.Fatalf("folder format %+v", n)
@@ -330,13 +342,17 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if n, ok := notMoved(p, "bazarr subtitles.providers[2]"); !ok || !strings.Contains(n.Why, "Gestdown") {
 		t.Fatalf("addic7ed %+v", n)
 	}
-	for _, k := range []string{"yifysubtitles", "tvsubtitles", "bsplayer"} {
+	for _, k := range []string{"yifysubtitles", "tvsubtitles", "bsplayer", "napiprojekt"} {
 		if it := item(t, p, GroupSubtitles, "subtitle_site:"+k); it.Subtitles.SiteKind != k {
 			t.Fatalf("%s %+v", k, it)
 		}
 	}
 	if _, ok := notMoved(p, "bazarr subtitles.providers[6]"); !ok {
 		t.Fatal("subf2m should stay behind")
+	}
+	// Napisy24 needs the owner's own account, so it is added by hand.
+	if _, ok := notMoved(p, "bazarr subtitles.providers[8]"); !ok {
+		t.Fatal("napisy24 should stay behind")
 	}
 	// People: the owner maps to us; others are placeholders. Non-seven-day
 	// source windows stay explicit in NotMoved rather than widening access.
@@ -363,13 +379,13 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if sh := item(t, p, GroupRequests, "ask:seerr:8").Ask; !sh.Approved || sh.Ref != "tvdb:73739" || sh.Decider != "person:seerr:1" || !sh.FourK {
 		t.Fatalf("show ask %+v", sh)
 	}
-	// Alerts: Discord and email (off until their secret), others listed.
+	// Alerts: Discord and email (off until their secret), kinds HolyArrs has no Alert for listed.
 	if al := item(t, p, GroupAlerts, "alert:mail").Alert; al.SMTPHost != "smtp.example" || al.SMTPPort != 465 || al.SMTPSecurity != "tls" || al.StaffTo != "b@example.org" {
 		t.Fatalf("email %+v", al)
 	}
 	item(t, p, GroupAlerts, "alert:discord")
 	if _, ok := notMoved(p, "radarr notifications[2]"); !ok {
-		t.Fatal("pushover must be listed")
+		t.Fatal("slack must be listed")
 	}
 	// Never-add list.
 	if n := item(t, p, GroupNeverAdd, "never_add:movie:tmdb:999").NeverAdd; n.Kind != "movie" {
@@ -475,7 +491,7 @@ func TestPlanImportListLines(t *testing.T) {
 	// A Radarr TMDB or Trakt list without its list number or names cannot
 	// come over as an Outside list; it says what is missing.
 	for from, want := range map[string]NotMoved{
-		"sonarr import_lists[0]": {GroupOther, "", "", "HolyArrs Outside lists add movies only for now; this show list stays in Sonarr; its sign-in does not come over"},
+		"sonarr import_lists[0]": {GroupLists, "", "", "its Trakt user or list name did not come over; add it again under Settings > Outside lists"},
 		"radarr import_lists[0]": {GroupLists, "", "", "its TMDB list number did not come over; add it again under Settings > Outside lists"},
 		"radarr import_lists[1]": {GroupLists, "", "", "its Trakt user or list name did not come over; add it again under Settings > Outside lists"},
 		"radarr import_lists[2]": {GroupOther, "", "", "HolyArrs is one app; it does not copy from another instance; its sign-in does not come over"},
@@ -492,6 +508,45 @@ func TestPlanImportListLines(t *testing.T) {
 	for _, n := range p.NeedsInput {
 		if strings.Contains(n, "import list") {
 			t.Fatalf("an import list secret is asked for: %v", p.NeedsInput)
+		}
+	}
+}
+
+// Telegram, ntfy, Gotify and Pushover connections come over as Alerts, off
+// until their secrets are typed. A Telegram chat comes with them when HolyArrs
+// can write to it; the read already dropped every link and token.
+func TestPlanAlertAppKinds(t *testing.T) {
+	s := &Snapshot{Kind: Sonarr, Notifications: []Provider{
+		{Name: "Tele", Kind: "Telegram", Settings: map[string]any{"chatId": "-1001234567890", "sendSilently": false}, NeedsReentry: []string{"botToken"}},
+		{Name: "Tele bad", Kind: "Telegram", Settings: map[string]any{"chatId": "not a chat"}, NeedsReentry: []string{"botToken"}},
+		{Name: "Ntfy", Kind: "Ntfy", Settings: map[string]any{"priority": int64(3)}, NeedsReentry: []string{"serverUrl", "topics"}},
+		{Name: "Gotify", Kind: "Gotify", Settings: map[string]any{"priority": int64(5)}, NeedsReentry: []string{"appToken", "server"}},
+		{Name: "Push", Kind: "Pushover", Settings: map[string]any{"priority": int64(0)}, NeedsReentry: []string{"apiKey", "userKey"}},
+		{Name: "Box", Kind: "Apprise"},
+	}}
+	p := BuildPlan([]Input{{1, s}}, Choices{})
+	for _, c := range []struct{ key, kind, chat, needs string }{
+		{"alert:tele", "telegram", "-1001234567890", "its bot token"},
+		{"alert:tele bad", "telegram", "", "its bot token and chat"},
+		{"alert:ntfy", "ntfy", "", "its server and topic"},
+		{"alert:gotify", "gotify", "", "its server and app token"},
+		{"alert:push", "pushover", "", "its user key and app token"},
+	} {
+		it := item(t, p, GroupAlerts, c.key)
+		if it.Alert.Kind != c.kind || it.Alert.ChatID != c.chat || it.Needs != c.needs {
+			t.Errorf("%s: %+v needs %q", c.key, it.Alert, it.Needs)
+		}
+		if want := c.kind + "; added off until you type " + c.needs; it.Detail != want {
+			t.Errorf("%s detail %q, want %q", c.key, it.Detail, want)
+		}
+	}
+	n, ok := notMoved(p, "sonarr notifications[5]")
+	if !ok || n.Group != GroupAlerts || !strings.Contains(n.Why, "Telegram, ntfy, Gotify or Pushover") {
+		t.Errorf("apprise %+v", n)
+	}
+	for i := 0; i < 5; i++ {
+		if n, ok := notMoved(p, fmt.Sprintf("sonarr notifications[%d]", i)); ok {
+			t.Errorf("notifications[%d] listed as not moved: %+v", i, n)
 		}
 	}
 }
@@ -791,7 +846,7 @@ func TestPlanOutsideLists(t *testing.T) {
 	if *favs.OutsideList != (OutsideListPlan{Kind: "trakt_list", Ref: "Sean/my-favs", Library: "/data/movies", ReleaseGate: "released", SyncEveryHours: 12}) {
 		t.Fatalf("trakt list %+v", favs.OutsideList)
 	}
-	if !strings.Contains(favs.Detail, "(was off there)") || !strings.Contains(favs.Detail, "Keep up to date off") || !strings.HasSuffix(favs.Detail, "needs your Trakt key, and the list must be public") {
+	if !strings.Contains(favs.Detail, "(was off there)") || !strings.Contains(favs.Detail, "Keep up to date off") || !strings.HasSuffix(favs.Detail, "needs your Trakt key, and Sign in with Trakt if the list is private") {
 		t.Errorf("trakt detail %q", favs.Detail)
 	}
 	watch := item(t, p, GroupLists, "outside_list:trakt_list:luis/watchlist")
@@ -822,10 +877,76 @@ func TestPlanOutsideLists(t *testing.T) {
 			t.Fatalf("an import list secret is asked for: %v", p.NeedsInput)
 		}
 	}
-	// A Sonarr Trakt list stays report-only.
+	// A Sonarr Trakt list with no folder here is listed, not planned.
 	so := &Snapshot{Kind: Sonarr, ImportLists: []Provider{{Name: "Shows", Kind: "TraktListImport", Settings: map[string]any{"username": "sean", "listname": "tv"}}}}
 	if p := BuildPlan([]Input{{1, so}}, Choices{}); len(p.Group(GroupLists).Items) != 0 {
-		t.Fatalf("a show list was planned: %+v", p.Group(GroupLists).Items)
+		t.Fatalf("a show list without its folder was planned: %+v", p.Group(GroupLists).Items)
+	}
+}
+
+// TestPlanSonarrOutsideLists: Sonarr Trakt lists and watchlists become
+// paused show Outside lists with their show folder, Pick rules, seasons,
+// new seasons, search on add and refresh gap. The same watchlist in Radarr
+// and Sonarr gives two lists, one for movies and one for shows.
+func TestPlanSonarrOutsideLists(t *testing.T) {
+	so := &Snapshot{Kind: Sonarr, Folders: []Folder{{Path: "/data/tv"}},
+		QualityProfiles: []Profile{{ID: 7, Name: "HD", Cutoff: "WEBDL-1080p"}},
+		ImportLists: []Provider{
+			// As Sonarr's API gives a Trakt user watchlist.
+			{Name: "Pawel watchlist", Kind: "TraktUserImport", Enabled: true, Settings: map[string]any{"traktListType": int64(0), "authUser": "pawel",
+				"link.enableautomaticadd": true, "link.searchformissingepisodes": true, "link.shouldmonitor": "all", "link.monitornewitems": "all",
+				"link.rootfolderpath": "/data/tv", "link.qualityprofileid": int64(7), "link.seriestype": "standard", "link.minrefreshinterval": "12:00:00"},
+				NeedsReentry: []string{"accessToken", "refreshToken"}},
+			// As a backup row gives it: numbers for the choices.
+			{Name: "Anime starts", Kind: "TraktListImport", Settings: map[string]any{"username": "kim", "listname": "Anime 2026",
+				"link.shouldmonitor": int64(5), "link.monitornewitems": int64(1), "link.seriestype": int64(2), "link.rootfolderpath": "/data/tv"}},
+			{Name: "Pilots", Kind: "TraktListImport", Settings: map[string]any{"username": "kim", "listname": "pilots", "link.shouldmonitor": "pilot", "link.rootfolderpath": "/data/tv"}},
+			{Name: "Nothing yet", Kind: "TraktListImport", Settings: map[string]any{"username": "kim", "listname": "later", "link.shouldmonitor": "none", "link.rootfolderpath": "/data/tv"}},
+			{Name: "Watched", Kind: "TraktUserImport", Settings: map[string]any{"traktListType": int64(1), "authUser": "pawel", "link.rootfolderpath": "/data/tv"}},
+			{Name: "IMDb picks", Kind: "ImdbListImport"},
+			{Name: "TMDB odd", Kind: "TMDbListImport", Settings: map[string]any{"listId": "8136", "link.rootfolderpath": "/data/tv"}},
+		}}
+	ra := &Snapshot{Kind: Radarr, Folders: []Folder{{Path: "/data/movies"}},
+		ImportLists: []Provider{{Name: "Pawel watchlist", Kind: "TraktUserImport", Enabled: true, Settings: map[string]any{"traktListType": int64(0), "authUser": "pawel",
+			"link.enabled": true, "link.enableauto": true, "link.monitor": "movieOnly", "link.rootfolderpath": "/data/movies", "link.searchonadd": true, "link.minimumavailability": "released"}}}}
+	so.finish()
+	ra.finish()
+	p := BuildPlan([]Input{{1, ra}, {2, so}}, Choices{})
+	movies := item(t, p, GroupLists, "outside_list:trakt_list:pawel/watchlist")
+	if m := movies.OutsideList; m.TitleKind != "" || m.Library != "/data/movies" || movies.Name != "Pawel watchlist" {
+		t.Fatalf("movie watchlist %q %+v", movies.Name, m)
+	}
+	shows := item(t, p, GroupLists, "outside_list:trakt_list:show:pawel/watchlist")
+	if *shows.OutsideList != (OutsideListPlan{Kind: "trakt_list", Ref: "pawel/watchlist", TitleKind: "show", Seasons: "all", NewSeasons: "all", Library: "/data/tv",
+		Preset: "Standard", KeepUpToDate: true, SearchOnAdd: true, SyncEveryHours: 12}) || shows.Name != "Pawel watchlist (sonarr)" {
+		t.Fatalf("show watchlist %q %+v", shows.Name, shows.OutsideList)
+	}
+	if want := "Trakt list pawel/watchlist into /data/tv; added paused (was on there), every 12 hours; seasons: all, new seasons: all; needs your Trakt key, and Sign in with Trakt if the list is private"; shows.Detail != want {
+		t.Errorf("detail %q", shows.Detail)
+	}
+	if a := item(t, p, GroupLists, "outside_list:trakt_list:show:kim/anime-2026").OutsideList; a.Seasons != "first" || a.NewSeasons != "none" || !a.KeepUpToDate || a.SearchOnAdd {
+		t.Errorf("first season list %+v", a)
+	}
+	if a := item(t, p, GroupLists, "outside_list:trakt_list:show:kim/pilots").OutsideList; a.Seasons != "first" {
+		t.Errorf("pilot list %+v", a)
+	}
+	if a := item(t, p, GroupLists, "outside_list:trakt_list:show:kim/later").OutsideList; a.Seasons != "none" || a.KeepUpToDate {
+		t.Errorf("none list %+v", a)
+	}
+	for from, want := range map[string]NotMoved{
+		"sonarr import_lists[2].monitor": {GroupLists, "", "", "HolyArrs cannot keep only the first episode; the list keeps the first season"},
+		"sonarr import_lists[4]":         {GroupLists, "", "", "HolyArrs reads Trakt lists and watchlists; a watched or collection list stays in Sonarr"},
+		"sonarr import_lists[5]":         {GroupOther, "", "", "HolyArrs reads TMDB lists and public Trakt lists only; this list stays in Sonarr"},
+		"sonarr import_lists[6]":         {GroupOther, "", "", "HolyArrs reads TMDB lists and public Trakt lists; add it again under Settings > Outside lists"},
+	} {
+		if n, ok := notMoved(p, from); !ok || n.Group != want.Group || n.Why != want.Why {
+			t.Errorf("%s: %+v", from, n)
+		}
+	}
+	for _, n := range p.NeedsInput {
+		if strings.Contains(n, "import list") {
+			t.Fatalf("an import list secret is asked for: %v", p.NeedsInput)
+		}
 	}
 }
 
@@ -839,10 +960,10 @@ func TestSyncHours(t *testing.T) {
 		t.Errorf("slug %q", got)
 	}
 	taken := map[string]bool{"top": true, "top (radarr)": true}
-	if got := freeListName("top", func(n string) bool { return taken[n] }); got != "top (radarr 2)" {
+	if got := freeListName("top", Radarr, func(n string) bool { return taken[n] }); got != "top (radarr 2)" {
 		t.Errorf("second clash %q", got)
 	}
-	if got := freeListName("new", func(n string) bool { return taken[n] }); got != "new" {
+	if got := freeListName("new", Radarr, func(n string) bool { return taken[n] }); got != "new" {
 		t.Errorf("free name %q", got)
 	}
 }

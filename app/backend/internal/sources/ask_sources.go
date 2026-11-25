@@ -90,7 +90,10 @@ func (s *Searcher) askAll(ctx context.Context, r *jobs.Run, q Query, hand, tv bo
 		var items []Item
 		var slowed error
 		if err == nil {
+			own := &dropTally{}
+			qq.drops = own
 			items, slowed, err = cl.searchNamed(ctx, qq, qq.other.n)
+			q.drops.add(src.Name, own.take())
 		}
 		if err != nil {
 			if ctx.Err() != nil {

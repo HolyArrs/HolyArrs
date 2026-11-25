@@ -136,6 +136,11 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 	if err != nil {
 		return Choice{}, ErrNoSlot
 	}
+	if !canTakePick(c.sl.State) && !StuckChoice(c.sl, time.Now()) && s.settleGone(ctx, c.sl) {
+		if c, err = s.loadSlot(ctx, slotID); err != nil {
+			return Choice{}, ErrNoSlot
+		}
+	}
 	if !canTakePick(c.sl.State) && !StuckChoice(c.sl, time.Now()) {
 		return Choice{}, busyErr(c.sl.State)
 	}
@@ -434,6 +439,15 @@ func failReasons(rel domain.Release) []string {
 		out = []string{"it did not pass"}
 	}
 	return out
+}
+
+// settleGone asks the Downloads side to settle a Slot's download its
+// Downloader no longer has, so a pick by hand can go ahead at once.
+func (s *Searcher) settleGone(ctx context.Context, sl mediafiles.Slot) bool {
+	if s.SettleGone == nil || sl.State != mediafiles.SlotDownloading && sl.State != mediafiles.SlotStalled {
+		return false
+	}
+	return s.SettleGone(ctx, sl.ID)
 }
 
 // canTakePick reports whether a Slot in this state can be given a Release now.

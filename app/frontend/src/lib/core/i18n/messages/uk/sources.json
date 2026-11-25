@@ -85,5 +85,21 @@
 	"sources.uses.auto": "шукає саме",
 	"sources.uses.feed": "список найновішого",
 	"sources.uses.hand": "пошук вручну",
-	"sources.uses.none": "не використовується"
+	"sources.uses.none": "не використовується",
+	"sources.bridge.removeTitle": "Видалити {name}?",
+	"sources.bridge.find": "Знайти {name} у моїй мережі",
+	"sources.bridge.noneFound": "Жоден {name} не відповів у вашій мережі.",
+	"sources.bridge.keyFound": "Ключ отримано від {name}",
+	"sources.bridge.keyKept": "{name} не віддав ключ (увімкнено вхід). Скопіюйте його через «Отримати ключ».",
+	"sources.bridge.keyKeptJackett": "Jackett не віддав ключ (у нього є пароль адміністратора). Скопіюйте його через «Отримати ключ».",
+	"sources.bridge.notReached": "Не вдалося зв'язатися з {name}.",
+	"sources.bridge.brings.title": "Що переноситься",
+	"sources.bridge.brings.sites": "Його індексатори — як Джерела",
+	"sources.bridge.brings.categories": "Їхні категорії",
+	"sources.bridge.brings.search": "Пошук іде через {name}",
+	"sources.bridge.brings.sync": "Зміни в {name} переносяться",
+	"sources.bridge.brings.stays": "Ваші індексатори залишаються налаштованими в {name}.",
+	"sources.bridge.brings.had": "Індексаторів уже тут: {n}",
+	"sources.bridge.brings.hadFrom": "Імпортовано через {apps}",
+	"sources.bridge.brings.keyKept": "Залиште ключ порожнім, щоб використати вже наявний."
 }

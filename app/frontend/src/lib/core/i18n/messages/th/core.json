@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "กำลังสร้าง{what}… ครั้งที่ {attempt}",
 	"core.testTag.connected": "เชื่อมต่อแล้ว",
 	"core.api.notAnswering": "HolyArrs ไม่ตอบสนอง ตรวจสอบว่ายังทำงานอยู่",
+	"core.api.tooSlow": "HolyArrs ตอบช้าเกินไป ลองใหม่อีกครั้งในอีกหนึ่งนาที",
 	"core.api.requestFailed": "คำขอล้มเหลว ({status})",
 	"core.api.wentWrong": "เกิดข้อผิดพลาดบางอย่าง",
 	"core.trailerMiss.trailer": "ตัวอย่างหนัง",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "อนุมัติอัตโนมัติ",
 	"core.plain.approvedBy": "อนุมัติโดย {who}",
 	"core.settings.cantReach": "เข้าถึงที่อยู่นั้นไม่ได้ ตรวจสอบที่อยู่และดูว่าแอปยังทำงานอยู่",
+	"core.settings.tryHttp": "ที่อยู่นี้ไม่ตอบผ่าน https ลองใช้ http:// แทน",
 	"core.settings.groupLibrary.label": "ไลบรารี",
 	"core.settings.groupLibrary.line": "ที่ที่เรื่องต่าง ๆ อยู่",
 	"core.settings.groupLibrary.about": "โฟลเดอร์ ส่วนเสริม ค่าเริ่มต้น คำบรรยาย ชื่อไฟล์ และการนำเข้า",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "ตัวดาวน์โหลดสองตัวเชื่อมไปยังแอปดาวน์โหลดเดียวกัน การดาวน์โหลดจึงอาจแสดงซ้ำสองครั้ง",
 	"core.plain.peopleCheck": "อ่านรายชื่อผู้ใช้ของเซิร์ฟเวอร์สื่อไม่ได้ ผู้ที่ถูกลบที่นั่นจึงไม่ถูกปิดที่นี่",
 	"core.plain.deleted": "ถูกลบแล้ว",
-	"core.plain.deletedName": "{name} (ถูกลบแล้ว)"
+	"core.plain.deletedName": "{name} (ถูกลบแล้ว)",
+	"core.api.handsOffFiles": "เปิดโหมดไม่แตะต้องอยู่ HolyArrs จึงไม่แตะไฟล์ที่ดาวน์โหลด ปิดโหมดนี้ในการตั้งค่าเพื่อนำเข้า เปลี่ยนชื่อ ย้าย หรือสแกนไฟล์",
+	"core.api.handsOffSubtitles": "เปิดโหมดไม่แตะต้องอยู่ HolyArrs จึงไม่เปิดไฟล์ที่ดาวน์โหลดเลย ปิดโหมดนี้ในการตั้งค่าเพื่อใช้คำบรรยาย"
 }

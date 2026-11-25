@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { FromPlugin } from '#lib/plugins/index.ts';
+	import { editForm, withoutEditing } from '#lib/ui/edit-in-place.ts';
 	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
 	import Field from '#lib/ui/Field.svelte';
+	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import TagInput from '#lib/ui/TagInput.svelte';
 	import { forgetTags } from '#lib/ui/tags.ts';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
@@ -15,9 +18,10 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
-	import { AppTiles, emptyForm, samePathPair, formBody, formFrom, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { AppTiles, KindCategories, MissingCategory, emptyForm, samePathPair, formBody, formFrom, testBody, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
+	import { fetchSabKey } from '#lib/downloads/index.ts';
 	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { ago } from '#lib/core/format.ts';
@@ -37,7 +41,7 @@
 	let busy = $state(false);
 	let formError = $state('');
 	let testing = $state(0);
-	let results = $state<Record<number, { ok: boolean; text: string }>>({});
+	let results = $state<Record<number, { ok: boolean; text: string; category?: string; can_make?: boolean; make_off?: boolean }>>({});
 	let attempts = $state<Record<number, DownloaderAttempt[]>>({});
 	let attemptErrors = $state<Record<number, string>>({});
 	let abandoning = $state(0);
@@ -125,10 +129,8 @@
 		formError = '';
 		kindChosen = false;
 	}
-
 	// HOLYARRS_READONLY_DOWNLOADERS keeps a Downloader read only; its switch shows locked.
 	const writableLocked = $derived(!isNew && !!editing?.writable_locked);
-
 	function startChange(d: DownloaderView) {
 		isNew = false;
 		editing = d;
@@ -136,7 +138,6 @@
 		qbitWay = d.username ? 'login' : 'key';
 		formError = '';
 	}
-
 	// qBittorrent signs in with an API key (5.2 or newer) or a user name and password.
 	let qbitWay = $state<'key' | 'login'>('key');
 	function pickWay(w: 'key' | 'login') {
@@ -144,7 +145,6 @@
 		form.secret = '';
 		if (w === 'key') form.username = '';
 	}
-
 	const kindGroups = $derived([
 		{ id: 'torrents', title: t('settings.downloaders.torrentsHead'), tiles: [
 			{ value: 'qbittorrent' as const, name: 'qBittorrent', badge: 'qB', hue: 210, hint: t('settings.downloaders.mostUsed') },
@@ -199,8 +199,8 @@
 		return t('settings.downloaders.catQbit');
 	}
 
-	async function save(e: SubmitEvent) {
-		e.preventDefault();
+	async function save(e?: SubmitEvent) {
+		e?.preventDefault();
 		busy = true;
 		formError = '';
 		try {
@@ -218,11 +218,12 @@
 		}
 	}
 
-	async function test(d: DownloaderView) {
+	// typed: the Change form's values, tested without saving them.
+	async function test(d: DownloaderView, typed?: Record<string, unknown>) {
 		testing = d.id;
 		try {
-			const r = await api.post<{ ok: boolean; text: string; health: DownloaderHealth }>(`/downloaders/${d.id}/test`);
-			results[d.id] = { ok: r.ok, text: r.text };
+			const r = await api.post<{ ok: boolean; text: string; health: DownloaderHealth; category?: string; can_make?: boolean; make_off?: boolean }>(`/downloaders/${d.id}/test`, typed);
+			results[d.id] = { ok: r.ok, text: r.text, category: r.category, can_make: r.can_make, make_off: r.make_off };
 		} catch (err) {
 			results[d.id] = { ok: false, text: message(err) };
 		} finally {
@@ -307,6 +308,17 @@
 			return url;
 		}
 	}
+	// SABnzbd: Fetch key reads it from SABnzbd's General settings page (works when SABnzbd has no login).
+	let fetching = $state(false), keyNote = $state(''), sabPass = $state('');
+	let sabUser = $state<string | null>(null);
+	async function sabFetch() {
+		fetching = true;
+		const r = await fetchSabKey(form.url, form.allow_local_network, sabUser, sabPass);
+		if (r.key) (form.secret = r.key), (sabUser = null), (sabPass = '');
+		else if (r.needLogin) sabUser ??= '';
+		keyNote = { keyFetched: t('settings.downloaders.keyFetched'), keyNeedsLogin: t('settings.downloaders.keyNeedsLogin'), keyWrongLogin: t('settings.downloaders.keyWrongLogin'), keyNotFound: t('settings.downloaders.keyNotFound') }[r.note];
+		fetching = false;
+	}
 </script>
 
 <svelte:head><title>{t('settings.downloaders.title')} · HolyArrs</title></svelte:head>
@@ -320,6 +332,7 @@
 <p class="small muted lead" id="downloaders-card" tabindex="-1">
 	{t('settings.downloaders.lead')}
 </p>
+{#if !editing}<FromPlugin kind="downloader" taken={list.map((d) => d.url)} onadded={load} />{/if}
 
 {#snippet moreFields()}
 <div class="two">
@@ -331,17 +344,7 @@
 		<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 	</Field>
 </div>
-<div class="two three">
-	<Field id="dl-cat-movies" label={t('settings.downloaders.categoryMovies')} hint={t('settings.downloaders.categoryKindHint')}>
-		<input id="dl-cat-movies" class="input" bind:value={form.category_movies} maxlength="64" aria-describedby="dl-cat-movies-hint" />
-	</Field>
-	<Field id="dl-cat-shows" label={t('settings.downloaders.categoryShows')} hint={t('settings.downloaders.categoryKindHint')}>
-		<input id="dl-cat-shows" class="input" bind:value={form.category_shows} maxlength="64" aria-describedby="dl-cat-shows-hint" />
-	</Field>
-	<Field id="dl-cat-music" label={t('settings.downloaders.categoryMusic')} hint={t('settings.downloaders.categoryKindHint')}>
-		<input id="dl-cat-music" class="input" bind:value={form.category_music} maxlength="64" aria-describedby="dl-cat-music-hint" />
-	</Field>
-</div>
+<KindCategories id={isNew ? 0 : (editing?.id ?? 0)} main={form.category} bind:movies={form.category_movies} bind:shows={form.category_shows} bind:music={form.category_music} />
 <Field id="dl-tags" label={t('settings.downloaders.tags')} hint={t('settings.downloaders.tagsHint')}>
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
@@ -368,6 +371,10 @@
 				<input id="pm-ours-{i}" class="input mono" bind:value={p.ours} placeholder="/downloads" />
 			</Field>
 		</div>
+		<label class="checkline">
+			<input type="checkbox" bind:checked={p.link} data-testid="pm-link-{i}" />
+			<span><b>{t('settings.downloaders.linkPair')}</b><br /><span class="hint">{t('settings.downloaders.linkPairHint')}</span></span>
+		</label>
 		{#if samePathPair(p)}<p class="hint" data-testid="pm-same-{i}">{t('settings.downloaders.samePair')}</p>{/if}
 	{/each}
 	<Button variant="plain" type="button" style="margin-top: var(--s-3)" onclick={() => form.path_map.push({ theirs: '', ours: '' })}>{t('settings.downloaders.addPair')}</Button>
@@ -375,7 +382,7 @@
 {/snippet}
 
 {#if editing}
-	<form class="sc-form" onsubmit={save} aria-label={isNew ? t('settings.downloaders.add') : t('settings.downloaders.change', { name: editing.name })}>
+	<form class="sc-form" use:editForm={isNew ? null : editing.id} onsubmit={save} aria-label={isNew ? t('settings.downloaders.add') : t('settings.downloaders.change', { name: editing.name })}>
 		<SettingsCard title={isNew ? t('settings.downloaders.add') : t('settings.downloaders.change', { name: editing.name })}>
 			{#if isNew}
 				<fieldset class="group" style="margin-bottom: var(--s-4)">
@@ -391,13 +398,7 @@
 				<input id="dl-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required placeholder={addressPlaceholder(form.kind)} />
 			</Field>
 			{#if form.kind === 'qbittorrent'}
-				<fieldset class="group" data-testid="dl-qbit-way">
-					<legend class="label">{t('settings.downloaders.signInWith')}</legend>
-					<div class="row kinds">
-						<label class="checkline"><input type="radio" name="qbit-way" checked={qbitWay === 'key'} onchange={() => pickWay('key')} /><span>{t('settings.downloaders.apiKeyLabel')}</span></label>
-						<label class="checkline"><input type="radio" name="qbit-way" checked={qbitWay === 'login'} onchange={() => pickWay('login')} /><span>{t('settings.downloaders.userPass')}</span></label>
-					</div>
-				</fieldset>
+				<Field id="dl-qbit-way" label={t('settings.downloaders.signInWith')}><span data-testid="dl-qbit-way"><SegmentedControl label={t('settings.downloaders.signInWith')} value={qbitWay} onchange={(v: 'key' | 'login') => pickWay(v)} options={[{ value: 'key', label: t('settings.downloaders.apiKeyLabel') }, { value: 'login', label: t('settings.downloaders.userPass') }]} /></span></Field>
 			{/if}
 			{#if hasUsername(form.kind)}
 				{@const qbit = form.kind === 'qbittorrent'}
@@ -413,7 +414,7 @@
 			{:else}
 				{@const key = form.kind === 'sabnzbd' || form.kind === 'qbittorrent'}
 				<Field id="dl-secret" label={key ? t('settings.downloaders.apiKeyLabel') : form.kind === 'aria2' ? t('settings.downloaders.secretTokenLabel') : t('settings.downloaders.passwordLabel')}>
-					<input id="dl-secret" class="input" class:mono={key} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew && form.kind !== 'aria2'} data-testid="dl-secret" />
+					<span class="keybox"><input id="dl-secret" class="input" class:mono={key} type="password" bind:value={form.secret} autocomplete="new-password" spellcheck="false" required={isNew && form.kind !== 'aria2'} data-testid="dl-secret" />{#if form.kind === 'sabnzbd' && /^https?:\/\/[^/]/.test(form.url.trim())}<span class="key-acts"><button type="button" class="key-fetch" onclick={sabFetch} disabled={fetching} aria-busy={fetching} data-testid="dl-key-fetch">{t('welcome.link.fetchKey')}</button><a class="key-get" href={form.url.trim().replace(/\/+$/, '') + '/config/general/'} target="_blank" rel="noopener noreferrer" data-testid="dl-key-page">{t('welcome.link.getKey')}<Icon name="arrowUpRight" size={14} /></a></span>{/if}</span>{#if sabUser !== null}<span class="sablogin"><input class="input" bind:value={sabUser} placeholder={t('settings.downloaders.sabUser')} aria-label={t('settings.downloaders.sabUser')} autocomplete="off" data-testid="dl-sab-user" /><input class="input" type="password" bind:value={sabPass} placeholder={t('settings.downloaders.sabPass')} aria-label={t('settings.downloaders.sabPass')} autocomplete="off" data-testid="dl-sab-pass" /></span>{/if}{#if keyNote}<span class="hint" role="status">{keyNote}</span>{/if}
 					<span class="hint">{form.kind === 'sabnzbd' ? t('settings.downloaders.secretSab') : form.kind === 'qbittorrent' ? t('settings.downloaders.secretQbit') : form.kind === 'aria2' ? t('settings.downloaders.secretAria2') : t('settings.downloaders.secretDeluge')} {t('settings.downloaders.secretKept')}</span>
 				</Field>
 			{/if}
@@ -465,13 +466,21 @@
 						</div>
 					{/if}
 				</fieldset>
+			{:else}
+				<fieldset class="defaults" data-testid="dl-after-import">
+					<legend>{t('settings.downloaders.afterImport')}</legend>
+					<label class="checkline" class:off={!form.writable}>
+						<input type="checkbox" bind:checked={form.clear_finished} disabled={!form.writable} data-testid="dl-clear-finished" />
+						<span><b>{t('settings.downloaders.clearFinished')}</b><br /><span class="hint">{!form.writable ? t('settings.downloaders.seedNeedsWritable') : t('settings.downloaders.clearFinishedHint', { app: kindWords[form.kind] })}</span></span>
+					</label>
+				</fieldset>
 			{/if}
 			{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				{#if !isNew || kindChosen}<Button variant="primary" type="submit" disabled={busy || !form.name.trim() || !form.url.trim()} aria-busy={busy}>{t('settings.downloaders.save')}</Button>{/if}
 				<Button variant="secondary" type="button" onclick={() => (editing = null)}>{t('settings.downloaders.cancel')}</Button>
-				{#if !isNew && editing}{@const cur = editing}<Button variant="secondary" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur)} data-testid="dl-form-test">{t('settings.downloaders.test')}</Button>{/if}
+				{#if !isNew && editing}{@const cur = editing}<Button variant="secondary" type="button" disabled={testing === cur.id} aria-busy={testing === cur.id} onclick={() => test(cur, testBody(form, cur))} data-testid="dl-form-test">{t('settings.downloaders.test')}</Button>{/if}
 				{#if !isNew && editing && results[editing.id]}{@const r = results[editing.id]}<TestTag ok={r.ok} text={r.text} app={kindWords[editing.kind]} />{#if !r.ok}<span class="small bad-text">{r.text}</span>{/if}{/if}
 			</div>
 		</SettingsCard>
@@ -487,8 +496,8 @@
 {:else}
 	{#if error}<LoadError hasData={true} message={error} onretry={load} />{/if}
 	<ul class="fl">
-		{#each list as d (d.id)}
-			<li class="dl" data-testid="downloader">
+		{#each withoutEditing(list, editing?.id) as d (d.id)}
+			<li class="dl" data-testid="downloader" data-edit-row={d.id}>
 				<div class="main" title={t('settings.downloaders.rowTitle', { host: hostOf(d.url), priority: d.priority, category: d.category })}>
 					<span class="ic"><Icon name={d.protocol === 'usenet' ? 'usenet' : 'torrent'} size={20} /></span>
 					<div class="grow">
@@ -513,13 +522,14 @@
 						{:else}
 							<Button variant="secondary" size="sm" type="button" onclick={() => setPaused(d, true)}>{t('settings.downloaders.pause')}</Button>
 						{/if}
-						<Button variant="secondary" size="sm" type="button" onclick={() => startChange(d)}>{t('settings.downloaders.changeButton')}</Button>
+						<Button variant="secondary" size="sm" type="button" data-edit-change onclick={() => startChange(d)}>{t('settings.downloaders.changeButton')}</Button>
 						<Button variant="secondary" size="sm" type="button" onclick={() => remove(d)} aria-label={t('settings.downloaders.removeName', { name: d.name })}>{t('settings.downloaders.remove')}</Button>
 					</div>
 				</div>
 				{#if d.health.text && !(results[d.id] && !results[d.id].ok)}<p class="note" class:bad-text={d.health.state !== 'working' && d.health.state !== 'paused'} data-testid="downloader-text">{serverWords(d.health.text)}</p>{/if}
 				{#if results[d.id] && !results[d.id].ok}
 					<p class="note bad-text" role="status" data-testid="downloader-test">{serverWords(results[d.id].text)}<ConnectHelp text={results[d.id].text} /></p>
+					{#if results[d.id].category}<MissingCategory id={d.id} name={results[d.id].category!} app={kindWords[d.kind]} canMake={!!results[d.id].can_make} makeOff={!!results[d.id].make_off} onmade={() => test(d)} />{/if}
 				{/if}
 				{#if pendingAttempts(attempts[d.id]).length > 0}
 					<section class="notice bad attempt-review" aria-label={t('settings.downloaders.needsDecision')} data-testid="downloader-attempts">
@@ -717,9 +727,6 @@
 	.two :global(.field + .field) {
 		margin-top: 0;
 	}
-	.three {
-		grid-template-columns: 1fr 1fr 1fr;
-	}
 	.group {
 		border: 0;
 		padding: 0;
@@ -783,4 +790,11 @@
 		.main > .num { min-width: 0; }
 		/* Notes keep the name column indent, so they line up with the name and buttons. */
 	}
+	.keybox { position: relative; display: block; width: 100%; }
+	.keybox .input { width: 100%; box-sizing: border-box; }
+	.sablogin { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+	.keybox:has(.key-acts) .input { padding-inline-end: 200px; }
+	.key-acts { position: absolute; inset-inline-end: 6px; top: 5px; bottom: 5px; display: flex; gap: 6px; }
+	.key-fetch, .key-get { display: inline-flex; align-items: center; gap: 4px; padding: 0 12px; border-radius: 10px; font: 600 13px/1 var(--font-ui); white-space: nowrap; }
+	.key-fetch { border: 1px solid var(--line); background: var(--surface-2); color: inherit; cursor: pointer; } .key-get { background: var(--accent); color: var(--on-accent, #fff); text-decoration: none; }
 </style>

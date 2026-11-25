@@ -88,6 +88,8 @@ func TestLibraryStatsCountsFilesByFact(t *testing.T) {
 	// A crafted header: raw text must never come back.
 	statsFile(t, s, "movie", "Odd", Quality{}, map[string]any{"inspection_status": "complete", "container": "<script>x</script>", "video_codec": "evil", "resolution": "9999p", "hdr": "LOUD", "audio_codec": "zz", "audio_channels": "64.4"})
 	statsFile(t, s, "movie", "Broken", Quality{}, map[string]any{"inspection_status": "error"})
+	// an AVI or M2TS file is fine, only not a kind HolyArrs reads.
+	statsFile(t, s, "movie", "Avi", Quality{}, map[string]any{"inspection_status": "unsupported"})
 	statsFile(t, s, "show", "Severance", Quality{}, h264, h264, hevc4k)
 	statsFile(t, s, "artist", "Bjork", Quality{Source: "flac"}, map[string]any{}, map[string]any{})
 
@@ -96,7 +98,7 @@ func TestLibraryStatsCountsFilesByFact(t *testing.T) {
 		t.Fatal(err)
 	}
 	movies := kindOf(t, st, "movies")
-	if movies.Titles != 5 || movies.Files != 5 || movies.Bytes != 500 {
+	if movies.Titles != 6 || movies.Files != 6 || movies.Bytes != 600 {
 		t.Fatalf("movies %+v", movies)
 	}
 	if b := bucket(t, movies, "video_codec", "hevc"); b.Titles != 1 || b.Files != 1 || b.Bytes != 100 {
@@ -107,6 +109,9 @@ func TestLibraryStatsCountsFilesByFact(t *testing.T) {
 	}
 	if b := bucket(t, movies, "video_codec", "unknown"); b.Files != 1 {
 		t.Fatalf("unknown %+v", b)
+	}
+	if b := bucket(t, movies, "container", "unsupported"); b.Files != 1 {
+		t.Fatalf("unsupported %+v", b)
 	}
 	for _, fact := range []string{"video_codec", "resolution", "hdr", "container", "audio_codec", "audio_channels"} {
 		if b := bucket(t, movies, fact, "other"); b.Files != 1 {

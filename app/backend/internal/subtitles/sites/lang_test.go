@@ -9,7 +9,7 @@ import (
 )
 
 func TestSiteLang(t *testing.T) {
-	for in, want := range map[string]string{"pt-BR": "pt-br", "pt_br": "pt-br", "POB": "pt-br", "BR_PT": "pt-br", "pt-PT": "pt", "pt": "pt", "en-US": "en", "": ""} {
+	for in, want := range map[string]string{"pt-BR": "pt-br", "pt_br": "pt-br", "POB": "pt-br", "BR_PT": "pt-br", "pt-PT": "pt-pt", "pt": "pt", "en-US": "en", "": ""} {
 		if got := siteLang(in); got != want {
 			t.Errorf("%q: %q, want %q", in, got, want)
 		}

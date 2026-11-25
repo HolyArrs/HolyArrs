@@ -32,3 +32,27 @@ func TestSameDownloaderCheck(t *testing.T) {
 		t.Fatal("a removed twin still warns")
 	}
 }
+
+// Two Downloaders on one qBittorrent that each show only their own
+// categories, with none in common, are kept apart and get no line. Overlap
+// in any category (after-import included) or one without the fence warns.
+func TestSameDownloaderFencedCategories(t *testing.T) {
+	w := newWorld(t)
+	add := func(name, cat, after string, own bool) {
+		w.exec(t, `INSERT INTO downloaders (created_at, created_by, updated_at, updated_by, name, adapter, protocol, url, category, priority, path_map, after_import, state, last_error, category_after_import, own_only)
+			VALUES ('2026-10-01T00:00:00Z', '{}', '2026-10-01T00:00:00Z', '{}', ?, 'qbittorrent', 'torrent', 'http://qbit:8080', ?, 2, '[]', 'leave', 'ok', '', ?, ?)`, name, cat, after, own)
+	}
+	add("HDD", "holyarrs", "holyarrs-done", true)
+	add("USB", "holyarrs_usb", "holyarrs_usb-done", true)
+	if _, ok := w.run(t)["same_downloader:2"]; ok {
+		t.Fatal("fenced, disjoint categories still warn")
+	}
+	w.exec(t, `UPDATE downloaders SET category_after_import = 'HolyArrs' WHERE id = 2`)
+	if _, ok := w.run(t)["same_downloader:2"]; !ok {
+		t.Fatal("an after-import category shared with the other must warn")
+	}
+	w.exec(t, `UPDATE downloaders SET category_after_import = '', own_only = 0 WHERE id = 2`)
+	if _, ok := w.run(t)["same_downloader:2"]; !ok {
+		t.Fatal("a Downloader that sees every category must warn")
+	}
+}

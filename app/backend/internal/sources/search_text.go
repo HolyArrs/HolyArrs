@@ -14,7 +14,9 @@ func textQuery(q Query) string {
 	// and movie names: most sites find nothing when the term keeps them.
 	// Other punctuation, other dots and stars too, splits words (M*A*S*H ->
 	// M A S H, Jackass 2.5 -> Jackass 2 5, D.Gray-man -> D Gray man).
-	words := splitWords(releasename.JoinDottedLetters(q.Title))
+	// Accented letters go plain too (Pokémon -> Pokemon), as the older
+	// apps send them: many sites find nothing for the accented name.
+	words := splitWords(releasename.FoldAccents(releasename.JoinDottedLetters(q.Title)))
 	if q.Year > 0 {
 		words = append(words, strconv.Itoa(q.Year))
 	}
@@ -35,9 +37,10 @@ func splitWords(s string) []string {
 
 // nameWords are a title's or a release name's words for the id-answer
 // check, lower case, with one-letter words in a row joined, so "P.S. I Love
-// You" and "P.S.I.Love.You" read alike.
+// You" and "P.S.I.Love.You" read alike. Accents go plain, so "cœur
+// s'est arrêté" is found in "Coeur.S.Est.Arrete".
 func nameWords(s string) []string {
-	return strings.Fields(releasename.JoinLetters(strings.ToLower(strings.Join(splitWords(s), " "))))
+	return strings.Fields(releasename.JoinLetters(strings.ToLower(strings.Join(splitWords(releasename.FoldAccents(s)), " "))))
 }
 
 // namesAll says whether a release name holds every word of the title, read
@@ -49,7 +52,7 @@ func namesAll(release string, words []string) bool {
 	if len(words) > 1 {
 		// As written only for a title of several words: a one-letter title
 		// ("M") would be found in any letters written apart ("House.M.D").
-		lists = append(lists, strings.Fields(strings.ToLower(strings.Join(splitWords(release), " "))))
+		lists = append(lists, strings.Fields(strings.ToLower(strings.Join(splitWords(releasename.FoldAccents(release)), " "))))
 	}
 	for _, list := range lists {
 		got := map[string]bool{}

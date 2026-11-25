@@ -60,7 +60,7 @@ func TestMusicColonAndIllegal(t *testing.T) {
 	if got != "AC-DC/Live - At 'Home' (1992)/02 - What-s Next.mp3" {
 		t.Fatalf("got %q", got)
 	}
-	s.Colon, s.Illegal = ColonRemove, IllegalRemove
+	s.MusicColon, s.MusicIllegal = ColonRemove, IllegalRemove
 	if got := AlbumFolder(s, f); got != "Live At Home (1992)" {
 		t.Fatalf("remove: %q", got)
 	}

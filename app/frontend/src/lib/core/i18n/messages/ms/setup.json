@@ -8,10 +8,14 @@
 	"setup.fullPath": "Gunakan laluan folder penuh, seperti {path}.",
 	"setup.folderUsed": "Folder ini sudah digunakan, atau terletak di dalam folder yang digunakan.",
 	"setup.folderMissing": "Folder itu tidak wujud. Semak laluan.",
-	"setup.addFolderOrOff": "Tambah folder atau matikan ini.",
+	"setup.addFolderOrOff": "Tambah folder, atau tekan Langkau buat masa ini.",
 	"setup.notAnswering": "HolyArrs tidak menjawab. Cuba lagi sebentar nanti.",
 	"setup.addUserPasswordHint": "Tambah nama pengguna dan kata laluan.",
 	"setup.folders": "Folder",
 	"setup.downloader": "Pemuat turun",
-	"setup.source": "Sumber"
+	"setup.source": "Sumber",
+	"setup.alertsNeedKeyOne": "Makluman: 1 perlukan kunci",
+	"setup.alertsNeedKey": "Makluman: {n} perlukan kunci",
+	"setup.folderNoAccess": "HolyArrs tidak dapat membuka folder ini. Semak kebenarannya.",
+	"setup.folderCantUse": "HolyArrs tidak dapat menggunakan folder ini. Semak laluannya."
 }

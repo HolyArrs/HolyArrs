@@ -466,6 +466,10 @@ func TestMetadataServiceRevocationPreservesUsersAsksAndLibrary(t *testing.T) {
 }
 
 func TestMetadataServiceErrorsAreSafeForTheAPI(t *testing.T) {
+	// The busy line reads the process-wide refusal another test may have
+	// left behind; start from none so the plain busy message is expected.
+	metadata.ResetRefusal()
+	t.Cleanup(metadata.ResetRefusal)
 	secret := "installation-secret-must-not-escape"
 	for _, tc := range []struct {
 		name   string
@@ -795,4 +799,29 @@ func metadataStateCounts(t *testing.T, st *database.Store) metadataCounts {
 	}
 	copy(out.Data[:], h.Sum(nil))
 	return out
+}
+
+// A refusal the metadata server sent earlier changes the busy line and adds
+// Retry-After; without one the plain busy error is used.
+func TestMetadataBusyLineFollowsRefusal(t *testing.T) {
+	t.Cleanup(metadata.ResetRefusal)
+	for _, c := range []struct {
+		name  string
+		set   bool
+		want  string
+		retry bool
+	}{
+		{"no refusal", false, metadata.ErrServiceBusy.Error(), false},
+		{"server said busy", true, "busy right now", true},
+	} {
+		metadata.ResetRefusal()
+		if c.set {
+			metadata.SetRefusal(metadata.Refusal{Code: "upstream_busy", Until: time.Now().Add(time.Minute)})
+		}
+		w := httptest.NewRecorder()
+		library.ServiceError(w, metadata.ErrServiceBusy)
+		if !strings.Contains(w.Body.String(), c.want) || (w.Header().Get("Retry-After") != "") != c.retry {
+			t.Errorf("%s: %q retry %q", c.name, w.Body.String(), w.Header().Get("Retry-After"))
+		}
+	}
 }

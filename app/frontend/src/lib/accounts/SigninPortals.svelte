@@ -5,6 +5,8 @@
 	import { legAt, holeAt, symbolAt, easeInOutSine, clamp01, COUNT, pausesPortals } from './signin-portals.ts';
 	import { onMount } from 'svelte';
 
+	// symbols=false: the frame only, no travelling symbols (first-run setup steps, where they read as a glitch).
+	let { symbols = true }: { symbols?: boolean } = $props();
 	let canvas: HTMLCanvasElement | undefined = $state();
 	let edgeEl: HTMLDivElement | undefined = $state();
 	// Dev comparison toggles (query only): ?frame=glass|solid, ?panel=glass|blur.
@@ -290,7 +292,7 @@
 		// Phones skip the portals: the card is small and the run would crowd the fields.
 		const phone = () => window.innerWidth <= 600;
 		function start() {
-			if (raf || document.hidden || motion.matches || phone()) return;
+			if (!symbols || raf || document.hidden || motion.matches || phone()) return;
 			last = 0;
 			raf = requestAnimationFrame(loop);
 		}

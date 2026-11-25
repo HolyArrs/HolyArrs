@@ -39,7 +39,10 @@ const reworded = [
 	'settings.signIn.cgnat',
 	'settings.signIn.cgnatHint',
 	'settings.tmdb.ownNote',
-	'library.stats.noMatch'
+	'library.stats.noMatch',
+	'settings.tmdb.keyTvdbHint',
+	'settings.tmdb.keyTvdbPinHint',
+	'settings.tmdb.testPinRefused'
 ];
 
 // What de, fr, es and ar said before the English was reworded.
@@ -52,7 +55,9 @@ const before: Record<string, Words> = {
 		'settings.requests.plexFriendsRead': 'Gelesen {when}',
 		'settings.signIn.whoHint': 'Wähle das Kind-Profil, wenn Kinder dieses Netz nutzen. Wird die Person entfernt, melden sich wieder alle an.',
 		'settings.tmdb.ownNote': 'Mit eigenen Schlüsseln fragst du jede Quelle selbst. Musik-Charts, neue Musik-Reihen, Streaming-Top-10, Wikipedia-Fakten und Anime-Zuordnungen kommen nur vom HolyArrs-Server und sind daher aus.',
-		'library.stats.noMatch': 'Zuletzt gelesen {ago}. Nichts vom Gesehenen passt bisher zu deiner Bibliothek.'
+		'library.stats.noMatch': 'Zuletzt gelesen {ago}. Nichts vom Gesehenen passt bisher zu deiner Bibliothek.',
+		'settings.tmdb.keyTvdbHint': 'Optional.',
+		'settings.tmdb.keyTvdbPinHint': 'Aus deinem TheTVDB-Konto.'
 	},
 	fr: {
 		'health.check.clearWaiting': 'Téléchargements en attente de nettoyage',

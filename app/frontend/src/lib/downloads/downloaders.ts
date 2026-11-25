@@ -12,6 +12,8 @@ export interface DownloaderHealth {
 export interface PathMap {
 	theirs: string;
 	ours: string;
+	/** Place a symlink in the Library instead of copying (mounted streaming drives). */
+	link?: boolean;
 }
 
 // samePathPair says both sides of a path pair name the same folder (a
@@ -54,6 +56,8 @@ export interface DownloaderView {
 	after_seeding?: SeedingChoice;
 	/** qBittorrent only: a torrent moves to this category once imported; empty keeps it. */
 	category_after_import?: string;
+	/** Usenet only: an imported job and its files leave the Downloader. On by default. */
+	clear_finished?: boolean;
 	/** Shows and changes only items in this Downloader's own categories. */
 	own_only?: boolean;
 	health: DownloaderHealth;
@@ -127,6 +131,7 @@ export interface DownloaderForm {
 	seed_delete_files: boolean;
 	category_after_import: string;
 	own_only: boolean;
+	clear_finished: boolean;
 }
 
 export interface RemoveChoice {
@@ -228,7 +233,8 @@ export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): Downloa
 		seed_hours: '',
 		seed_delete_files: false,
 		category_after_import: '',
-		own_only: false
+		own_only: false,
+		clear_finished: true
 	};
 }
 
@@ -254,8 +260,19 @@ export function formFrom(d: DownloaderView): DownloaderForm {
 		seed_hours: d.after_seeding?.minutes ? Math.round((d.after_seeding.minutes / 60) * 100) / 100 : '',
 		seed_delete_files: !!d.after_seeding?.delete_files,
 		category_after_import: d.category_after_import ?? '',
-		own_only: !!d.own_only
+		own_only: !!d.own_only,
+		clear_finished: d.clear_finished !== false
 	};
+}
+
+/** Whether the form holds changes not saved to d yet. */
+export function formChanged(f: DownloaderForm, d: DownloaderView): boolean {
+	return JSON.stringify(formBody(f)) !== JSON.stringify(formBody(formFrom(d)));
+}
+
+/** What Test in the Change form sends: the typed values when they differ from d, tested without saving; nothing tests d as saved. */
+export function testBody(f: DownloaderForm, d: DownloaderView): Record<string, unknown> | undefined {
+	return formChanged(f, d) ? formBody(f) : undefined;
 }
 
 /** Turns the form into the API body; empty path map rows are dropped. */
@@ -271,12 +288,12 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		category_shows: f.category_shows.trim(),
 		category_music: f.category_music.trim(),
 		priority: Number(f.priority) || 1,
-		path_map: f.path_map.map((p) => ({ theirs: p.theirs.trim(), ours: p.ours.trim() })).filter((p) => p.theirs || p.ours),
+		path_map: f.path_map.map((p) => ({ theirs: p.theirs.trim(), ours: p.ours.trim(), ...(p.link ? { link: true } : {}) })).filter((p) => p.theirs || p.ours),
 		allow_local_network: f.allow_local_network,
 		writable: f.writable,
 		tags: f.tags,
 		...(f.kind === 'qbittorrent' ? { category_after_import: f.category_after_import.trim() } : {}),
-		...(f.kind === 'sabnzbd' || f.kind === 'nzbget' ? {} : { own_only: f.own_only }),
+		...(f.kind === 'sabnzbd' || f.kind === 'nzbget' ? { clear_finished: f.clear_finished } : { own_only: f.own_only }),
 		...(seedingFields(f.kind) === 'none' ? {} : { after_seeding: seedingBody(f) })
 	};
 }
@@ -346,7 +363,6 @@ export function phaseTone(phase: string): Tone {
 		case 'needs_a_decision':
 		case 'import_refused':
 			return 'fail';
-		case 'removed':
 		case 'paused':
 			return 'idle';
 	}

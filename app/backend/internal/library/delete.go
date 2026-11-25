@@ -186,6 +186,8 @@ func planRemove(ctx context.Context, db Reader, titleID int64, c RemoveChoice, n
 		switch {
 		case !c.DeleteFiles:
 			rf.Why = "kept: files stay on disk unless you choose to delete them"
+		case lf.LookOnly:
+			rf.Why = "kept: the Library folder is look-only; HolyArrs never deletes files there"
 		case f.Origin != "imported" && f.Origin != "adopted":
 			rf.Why = "kept: found on disk, not imported or adopted; HolyArrs never deletes it"
 		case f.State == "missing":
@@ -236,7 +238,11 @@ func (s *Service) Remove(ctx context.Context, titleID int64, c RemoveChoice, app
 // RemoveLocked is also used by a collection confirmation that already holds
 // placement coordination while validating its membership review.
 func (s *Service) RemoveLocked(ctx context.Context, titleID int64, c RemoveChoice, apply bool, by domain.Actor) (RemovePlan, error) {
+	c = handsOffChoice(ctx, s.Store.Read(), c)
 	p, t, err := planRemove(ctx, s.Store.Read(), titleID, c, s.now())
+	if errors.Is(err, ErrAlreadyRemoved) {
+		return s.removedAgain(ctx, t, c, apply)
+	}
 	if err != nil || !apply {
 		return p, err
 	}
@@ -264,6 +270,9 @@ func (s *Service) RemoveLocked(ctx context.Context, titleID int64, c RemoveChoic
 			return err
 		}
 		if _, err := tx.Exec("UPDATE versions SET keep_up_to_date = 0 WHERE title_id = ?", t.ID); err != nil {
+			return err
+		}
+		if err := s.unlinkDownloads(tx, t.ID); err != nil {
 			return err
 		}
 		if c.NeverAdd && t.Kind == "show" {
@@ -313,6 +322,29 @@ func (s *Service) RemoveLocked(ctx context.Context, titleID int64, c RemoveChoic
 		Data: map[string]any{"delete_files": c.DeleteFiles, "never_add": c.NeverAdd, "protection_acknowledged": c.AcknowledgeProtection, "held": len(p.Held), "kept": len(p.Kept)}, GroupKey: GroupKey(t.ID)})
 	s.Publish("title", map[string]any{"id": t.ID, "state": "removed"})
 	return p, nil
+}
+
+// removedAgain answers a delete of a title that is already deleted: there
+// is nothing left to do, so it succeeds with an empty plan. Applied, it
+// still lets go of Downloader links the title kept from before.
+func (s *Service) removedAgain(ctx context.Context, t mediafiles.Title, c RemoveChoice, apply bool) (RemovePlan, error) {
+	p := RemovePlan{TitleID: t.ID, Name: t.Name, Scope: "title", Choice: c, Held: []RemoveFile{}, Kept: []RemoveFile{}}
+	if !apply {
+		return p, nil
+	}
+	if err := s.Store.Write(ctx, func(tx *sql.Tx) error { return s.unlinkDownloads(tx, t.ID) }); err != nil {
+		return p, err
+	}
+	p.Applied = true
+	return p, nil
+}
+
+// unlinkDownloads runs the UnlinkDownloads hook when there is one.
+func (s *Service) unlinkDownloads(tx *sql.Tx, titleID int64) error {
+	if s.UnlinkDownloads == nil {
+		return nil
+	}
+	return s.UnlinkDownloads(tx, titleID)
 }
 
 // removeEmptyFolders removes the folders a delete with files left empty:

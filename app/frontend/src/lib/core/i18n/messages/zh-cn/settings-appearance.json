@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "请求数",
 	"settings.appearance.colRate": "每行",
 	"settings.appearance.noRows": "还没有统计到“探索”行。",
+	"settings.appearance.rowStats": "探索行",
+	"settings.appearance.rowStatsDesc": "过去 30 天每行的打开数和请求数，所有人合计。只在这台服务器上统计。",
+	"settings.appearance.colRow": "行",
+	"settings.appearance.row.because_have": "类似你已有的作品",
+	"settings.appearance.row.because_asked": "类似你的请求",
+	"settings.appearance.row.person": "某人的更多作品",
+	"settings.appearance.row.genre": "为你挑选的类型",
+	"settings.appearance.row.popular_genre": "按类型热门",
+	"settings.appearance.row.popular_decade": "按年代热门",
+	"settings.appearance.row.decade": "按年代",
+	"settings.appearance.row.mood": "按心情",
+	"settings.appearance.row.hero": "顶部横幅",
 	"settings.appearance.motion": "动态效果",
 	"settings.appearance.motionNote": "跟随你设备上的“减弱动态效果”设置"
 }

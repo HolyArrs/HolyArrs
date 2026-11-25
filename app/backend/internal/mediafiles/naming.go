@@ -8,21 +8,16 @@
 package mediafiles
 
 import (
-	"context"
-	"database/sql"
+	"cmp"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Default patterns (the same shape Radarr names movies by default).
@@ -70,9 +65,24 @@ var Words = map[string]string{
 	"hdr":         "the HDR kind, such as DolbyVision or HDR10+; empty for SDR",
 	"edition":     "such as Director's Cut, when the release name says so",
 	"group":       "the release group",
-	"tmdb":        "the TMDB id",
+	"tmdb":        "the TMDB id; {tmdb-{tmdb}} keeps the outer braces, as Plex reads them",
+	"tvdb":        "the TVDB id (shows)",
 	"imdb":        "the IMDb id",
 	"release":     "the original release name",
+	// Words that name things the way Radarr and Sonarr do, so their
+	// patterns (and the TRaSH guides') give the same names.
+	"title_year":      "the name with the year, such as Dune (2024)",
+	"quality_full":    "the quality as Radarr names it, with Proper or Repack, such as Bluray-1080p Proper",
+	"quality_title":   "the quality as Radarr names it, such as Bluray-1080p",
+	"proper":          "the word Proper or Repack when the release is a fixed one; empty otherwise",
+	"video_codec":     "the video codec, such as x265 or AV1",
+	"audio_channels":  "the audio channels, such as 5.1",
+	"bit_depth":       "the video bit depth when the release name says it, such as 10",
+	"hdr_type":        "the HDR kind as Radarr names it, such as DV HDR10; empty for SDR",
+	"audio_languages": "the audio languages, such as [JA+EN]; empty when English alone",
+	"three_d":         "3D when the release is 3D; empty otherwise",
+	"french_version":  "the French dub: VFF (France), VFQ (Québec), VFI (international) or VF2 (both), from the release name, its .nfo or the audio tracks; empty when none says. Next to {release} it is only added when the release name leaves it out",
+	"scored_tags":     "always empty: accepted so patterns with Custom Formats still save",
 	// Show words: only the season folder and episode patterns use them.
 	"season":        "the season number, such as 1",
 	"episode":       "season and episode, such as S01E02, or S01E02-E03 for a file holding several",
@@ -94,6 +104,25 @@ type NamingSettings struct {
 	// RenameOnImport names imported files by the file pattern; off keeps
 	// the release's own file name.
 	RenameOnImport bool `json:"rename_on_import"`
+	// GroupByGenre puts each movie folder in a folder of its first genre:
+	// Movies/Drama/Heat (1995)/. Off (the default) keeps one folder per
+	// movie at the top.
+	GroupByGenre bool `json:"group_by_genre"`
+	// GroupByLetter puts each movie folder in a folder of its first
+	// letter: Movies/H/Heat (1995)/. It wins over GroupByGenre.
+	GroupByLetter bool `json:"group_by_letter"`
+	// ShowGroupByLetter does the same for show folders: Shows/O/The Office/
+	// sits under O, as the sort title starts with Office.
+	ShowGroupByLetter bool `json:"show_group_by_letter"`
+	// Colon, Illegal and RenameOnImport above are for movies; shows and
+	// music keep their own, as Sonarr, Radarr and Lidarr each do.
+	// Use For to get the settings one part names files with.
+	ShowRenameOnImport  bool   `json:"show_rename_on_import"`
+	ShowColon           string `json:"show_colon"`
+	ShowIllegal         string `json:"show_illegal"`
+	MusicRenameOnImport bool   `json:"music_rename_on_import"`
+	MusicColon          string `json:"music_colon"`
+	MusicIllegal        string `json:"music_illegal"`
 	// Show patterns: the show folder (when a show is added), the season
 	// folder (SeasonFolders off puts episodes straight in the show folder),
 	// the folder for season 0, and the episode file for each episode order.
@@ -164,6 +193,7 @@ const DefaultMusicAdoptScanLimit = 50
 // NamingDefaults are the settings before anyone changes them.
 func NamingDefaults() NamingSettings {
 	s := NamingSettings{FilePattern: DefaultFilePattern, FolderPattern: DefaultFolderPattern, Colon: ColonSmart, Illegal: IllegalReplace, RenameOnImport: true,
+		ShowColon: ColonSmart, ShowIllegal: IllegalReplace, ShowRenameOnImport: true, MusicColon: ColonSmart, MusicIllegal: IllegalReplace, MusicRenameOnImport: true,
 		AdoptScanLimit: DefaultAdoptScanLimit, MusicAdoptScanLimit: DefaultMusicAdoptScanLimit, SeasonFolders: true, MusicReadTags: true}
 	s.fillShows()
 	return s
@@ -185,97 +215,46 @@ func (s *NamingSettings) fillShows() {
 	if s.AbsoluteDigits == 0 {
 		s.AbsoluteDigits = 3
 	}
+	// A part's colon and character rules left empty take the movie ones.
+	s.ShowColon, s.ShowIllegal = cmp.Or(s.ShowColon, s.Colon), cmp.Or(s.ShowIllegal, s.Illegal)
+	s.MusicColon, s.MusicIllegal = cmp.Or(s.MusicColon, s.Colon), cmp.Or(s.MusicIllegal, s.Illegal)
 	s.fillMusic()
 }
 
-// Validate says what is wrong with s, in plain words.
-func (s NamingSettings) Validate() error {
-	s.fillShows() // show patterns left empty take their default
-	if s.AdoptScanLimit != 0 && (s.AdoptScanLimit < 10 || s.AdoptScanLimit > 100000) {
-		return errors.New("the folders read per scan must be from 10 to 100000")
-	}
-	if s.MusicAdoptScanLimit != 0 && (s.MusicAdoptScanLimit < 10 || s.MusicAdoptScanLimit > 100000) {
-		return errors.New("the artist folders read per music scan must be from 10 to 100000")
-	}
-	for _, p := range []struct{ name, pat string }{{"file pattern", s.FilePattern}, {"folder pattern", s.FolderPattern},
-		{"show folder pattern", s.ShowFolderPattern}, {"season folder pattern", s.SeasonFolderPattern}, {"specials folder", s.SpecialsFolder},
-		{"episode pattern", s.EpisodePattern}, {"daily episode pattern", s.DailyPattern}, {"anime episode pattern", s.AnimePattern}} {
-		if strings.TrimSpace(p.pat) == "" {
-			return fmt.Errorf("the %s is empty", p.name)
-		}
-		if len(p.pat) > 200 {
-			return fmt.Errorf("the %s is too long (200 characters at most)", p.name)
-		}
-		if strings.ContainsAny(p.pat, `/\`) {
-			return fmt.Errorf("the %s holds a folder separator; it names one folder or one file", p.name)
-		}
-		words, err := wordsOf(p.pat)
-		if err != nil {
-			return fmt.Errorf("the %s: %w", p.name, err)
-		}
-		show := false
-		for w := range words {
-			show = show || showWords[w]
-			if musicWords[w] {
-				return fmt.Errorf("the %s cannot use music words such as {%s}", p.name, w)
+// Literal braces: "{tmdb-{tmdb}}" keeps its outer braces, as Sonarr's
+// "{tmdb-{TmdbId}}" does. They stand in as these bytes while a pattern renders.
+const litOpen, litShut = '', ''
+
+// literalBraces marks a { that opens text holding another {word} (and the }
+// that closes it) as literal.
+func literalBraces(pat string) string {
+	b := []byte(pat)
+	depth := 0
+	for i := 0; i < len(b); i++ {
+		switch b[i] {
+		case '{':
+			next, shut := strings.IndexByte(pat[i+1:], '{'), strings.IndexByte(pat[i+1:], '}')
+			if next >= 0 && (shut < 0 || next < shut) {
+				b[i] = litOpen
+				depth++
+			} else if shut >= 0 {
+				i += shut + 1
 			}
-		}
-		hasName := words["title"] || words["sort_title"] || (p.name != "folder pattern" && p.name != "show folder pattern" && words["release"])
-		switch p.name {
-		case "file pattern", "folder pattern", "show folder pattern":
-			if show {
-				return fmt.Errorf("the %s cannot use episode words such as {season}", p.name)
-			}
-			if !hasName {
-				return fmt.Errorf("the %s must hold {title} or {sort_title}", p.name)
-			}
-		case "season folder pattern":
-			if !words["season"] && !words["season_padded"] {
-				return errors.New("the season folder pattern must hold {season} or {season_padded}")
-			}
-		case "specials folder":
-			if len(words) > 0 {
-				return errors.New("the specials folder is a plain name, without words in braces")
-			}
-		default:
-			need := map[string]string{"episode pattern": "episode", "daily episode pattern": "air_date", "anime episode pattern": "absolute"}[p.name]
-			if !hasName {
-				return fmt.Errorf("the %s must hold {title} or {sort_title}", p.name)
-			}
-			if !words[need] && !words["episode"] && !words["release"] {
-				return fmt.Errorf("the %s must hold {%s} or {episode}", p.name, need)
+		case '}':
+			if depth > 0 {
+				b[i] = litShut
+				depth--
 			}
 		}
 	}
-	if err := s.validateMusic(); err != nil {
-		return err
-	}
-	switch s.MultiEpisodeStyle {
-	case MultiRange, MultiShortRange, MultiEach, MultiEachDash:
-	default:
-		return errors.New("multi_episode_style must be range, short_range, each or each_dash")
-	}
-	if s.AirDateStyle != AirDateDash && s.AirDateStyle != AirDateDot && s.AirDateStyle != AirDateSpace {
-		return errors.New("air_date_style must be dash, dot or space")
-	}
-	if s.AbsoluteDigits < 2 || s.AbsoluteDigits > 4 {
-		return errors.New("the running number must have 2 to 4 digits")
-	}
-	switch s.Colon {
-	case ColonSmart, ColonDash, ColonSpaceDash, ColonSpaceDashSpace, ColonRemove:
-	default:
-		return fmt.Errorf("colon must be smart, dash, space_dash, space_dash_space or remove")
-	}
-	if s.Illegal != IllegalReplace && s.Illegal != IllegalRemove {
-		return fmt.Errorf("illegal must be replace or remove")
-	}
-	if s.TitleLanguage != "" && !metadata.IsTextLanguage(s.TitleLanguage) {
-		return fmt.Errorf("unknown title language %q", s.TitleLanguage)
-	}
-	return nil
+	return string(b)
 }
 
 func wordsOf(pat string) (map[string]bool, error) {
+	pat = literalBraces(pat)
+	if strings.Count(pat, string(litOpen)) != strings.Count(pat, string(litShut)) {
+		return nil, errors.New("a { is unclosed")
+	}
 	out := map[string]bool{}
 	for rest := pat; ; {
 		open, close := strings.IndexByte(rest, '{'), strings.IndexByte(rest, '}')
@@ -289,11 +268,14 @@ func wordsOf(pat string) (map[string]bool, error) {
 		if end < 0 {
 			return nil, errors.New("a { is unclosed")
 		}
-		w := rest[open+1 : open+end]
-		if _, ok := Words[w]; !ok {
-			return nil, fmt.Errorf("unknown word {%s}", w)
+		t := parseTok(rest[open+1 : open+end])
+		if t.word == "" {
+			return nil, fmt.Errorf("unknown word {%s}: use a word from the list, such as {title}, {year} or {quality}", rest[open+1:open+end])
 		}
-		out[w] = true
+		if t.badFmt != "" {
+			return nil, fmt.Errorf("{%s}: use :00 to pad a number or :30 to cut a name", rest[open+1:open+end])
+		}
+		out[t.word] = true
 		rest = rest[open+end+1:]
 	}
 }
@@ -307,10 +289,26 @@ type NameFacts struct {
 	Audio   string // the audio codec, such as EAC3; "" when not known
 	HDR     string // the HDR kinds, such as DolbyVision; "" for SDR
 	Group   string
+	Genre   string // the first genre; only GroupByGenre uses it
 	TMDB    string
+	TVDB    string
 	IMDB    string
 	Release string // the release name, without extension
 	Ext     string // with the dot
+	// Facts the release name gives for the Radarr- and Sonarr-style words;
+	// "" (or nil) when it does not say.
+	Proper     string // Proper or Repack
+	VideoCodec string // x265, h264, AV1
+	Channels   string // 5.1
+	BitDepth   string // 10
+	ThreeD     string // 3D
+	WebRip     bool
+	Languages  []string // audio language codes, such as ja and en
+	// FrenchVersion is the French dub (VFF, VFQ, VFI, VF2) the release
+	// name tags, or else the one its .nfo or audio tracks show; "" when
+	// none says. FrenchInName says the release name tags it.
+	FrenchVersion string
+	FrenchInName  bool
 }
 
 // TitleNamer gives a title's kept TMDB name in an app language ("" when
@@ -328,6 +326,10 @@ func inLanguage(s NamingSettings, kind string, f NameFacts) NameFacts {
 	}
 	return f
 }
+
+// MaxPattern is the longest pattern: room for the TRaSH guides' longest
+// (about 330 characters); the name it gives is still cut to MaxComponent.
+const MaxPattern = 600
 
 // MaxComponent is the most bytes one rendered file or folder name may
 // take; most file systems stop at 255.
@@ -356,6 +358,50 @@ func Folder(s NamingSettings, f NameFacts) string {
 	return name
 }
 
+// MovieFolder is the folder of a movie inside its Library folder: Folder,
+// under a folder of its first letter or genre when that grouping is on.
+func MovieFolder(s NamingSettings, f NameFacts) string {
+	if g := MovieGroupFolder(s, f.Title, f.Genre); g != "" {
+		return g + "/" + Folder(s, f)
+	}
+	return Folder(s, f)
+}
+
+// MovieGroupFolder is the folder a movie sits in under its Library
+// folder: its first letter when GroupByLetter is on, else its genre when
+// GroupByGenre is on; "" when neither applies.
+func MovieGroupFolder(s NamingSettings, title, genre string) string {
+	if s.GroupByLetter {
+		return LetterFolder(title)
+	}
+	return GenreFolder(s, genre)
+}
+
+// LetterFolder is the folder a title sits in when grouped by first letter:
+// the first letter of its sort title without accents, 0-9 or #.
+func LetterFolder(title string) string {
+	return titleFirst(title)
+}
+
+// ShowFolderIn is a show's folder inside its Library folder: ShowFolder,
+// under the first letter when ShowGroupByLetter is on.
+func ShowFolderIn(s NamingSettings, f NameFacts) string {
+	if l := LetterFolder(f.Title); s.ShowGroupByLetter && l != "" {
+		return l + "/" + ShowFolder(s, f)
+	}
+	return ShowFolder(s, f)
+}
+
+// GenreFolder is the folder a movie of this genre sits in when
+// GroupByGenre is on; "" when it is off or there is no genre.
+func GenreFolder(s NamingSettings, genre string) string {
+	g := capName(clean(s, strings.TrimSpace(genre)), MaxComponent)
+	if !s.GroupByGenre || g == "" || g == "." || g == ".." {
+		return ""
+	}
+	return g
+}
+
 // capName cuts name to at most n bytes on a UTF-8 boundary and trims the
 // spaces and dashes the cut leaves at the end.
 func capName(name string, n int) string {
@@ -377,7 +423,22 @@ func CleanName(name string) string { return clean(NamingDefaults(), name) }
 // CleanWith makes one name safe with s's colon and character rules.
 func CleanWith(s NamingSettings, name string) string { return clean(s, name) }
 
-func render(s NamingSettings, pat string, f NameFacts) string { return renderVals(s, pat, values(f)) }
+func render(s NamingSettings, pat string, f NameFacts) string {
+	vals := values(f)
+	if f.FrenchInName && vals["french_version"] != "" {
+		// {release} already says it: the word adds only a missing tag.
+		if UsesWord(pat, "release") {
+			vals["french_version"] = ""
+		}
+	}
+	return renderVals(s, pat, vals)
+}
+
+// UsesWord says pattern p uses word w.
+func UsesWord(p, w string) bool {
+	words, err := wordsOf(p)
+	return err == nil && words[w]
+}
 
 func values(f NameFacts) map[string]string {
 	res, src := splitStep(f.Step)
@@ -386,14 +447,25 @@ func values(f NameFacts) map[string]string {
 	if f.Year > 0 {
 		year = fmt.Sprint(f.Year)
 	}
+	qt := ""
+	if f.Step != "" {
+		qt = qualityTitle(f.Step, f.WebRip)
+	}
+	titleYear := f.Title
+	if year != "" && f.Title != "" {
+		titleYear += " (" + year + ")"
+	}
 	return map[string]string{"title": f.Title, "sort_title": sortTitle(f.Title), "title_first": titleFirst(f.Title), "year": year, "quality": quality,
 		"resolution": res, "source": src, "audio": f.Audio, "hdr": f.HDR, "edition": f.Edition, "group": f.Group,
-		"tmdb": f.TMDB, "imdb": f.IMDB, "release": f.Release}
+		"tmdb": f.TMDB, "tvdb": f.TVDB, "imdb": f.IMDB, "release": f.Release,
+		"title_year": titleYear, "quality_title": qt, "quality_full": strings.TrimSpace(qt + " " + f.Proper),
+		"proper": f.Proper, "video_codec": f.VideoCodec, "audio_channels": f.Channels, "bit_depth": f.BitDepth, "hdr_type": hdrType(f.HDR),
+		"audio_languages": audioLanguages(f.Languages), "three_d": f.ThreeD, "french_version": f.FrenchVersion}
 }
 
 func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 	var b strings.Builder
-	for rest := dropEmptyGroups(pat, vals); rest != ""; {
+	for rest := dropEmptyGroups(literalBraces(pat), vals); rest != ""; {
 		open := strings.IndexByte(rest, '{')
 		end := -1
 		if open >= 0 {
@@ -403,9 +475,10 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 			b.WriteString(rest)
 			break
 		}
-		lit, v := rest[:open], vals[rest[open+1:open+end]]
+		t := parseTok(rest[open+1 : open+end])
+		lit, v := rest[:open], tokValue(t, vals)
 		rest = rest[open+end+1:]
-		if v == "" {
+		if v == "" && t.pre == "" && t.suf == "" {
 			// A word with no value takes one dot, dash or underscore the
 			// pattern wrote beside it, never a character of another word's
 			// value: "{audio}.{resolution}" without a codec gives "2160p".
@@ -418,13 +491,14 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 			}
 		}
 		b.WriteString(lit)
-		b.WriteString(v)
+		b.WriteString(strings.NewReplacer(string(litOpen), "", string(litShut), "").Replace(v))
 	}
 	out := b.String()
 	// Words with no value leave empty brackets and lone dashes behind.
 	for _, e := range []string{"()", "[]", "( )", "[ ]"} {
 		out = strings.ReplaceAll(out, e, "")
 	}
+	out = strings.NewReplacer(string(litOpen), "{", string(litShut), "}").Replace(out)
 	out = clean(s, out)
 	// An empty word between two dashes leaves "- -" behind.
 	for strings.Contains(out, "- -") {
@@ -446,14 +520,23 @@ func renderVals(s NamingSettings, pat string, vals map[string]string) string {
 func dropEmptyGroups(pat string, vals map[string]string) string {
 	for i := 0; i < len(pat); i++ {
 		c := pat[i]
-		if c != '[' && c != '(' {
+		if c == '{' {
+			// A bracket inside a word's braces ({[Quality Full]}) is the word's own.
+			if k := strings.IndexByte(pat[i:], '}'); k > 0 {
+				i += k
+			}
+			continue
+		}
+		if c != '[' && c != '(' && c != litOpen {
 			continue
 		}
 		shut := byte(']')
 		if c == '(' {
 			shut = ')'
+		} else if c == litOpen {
+			shut = litShut
 		}
-		j := strings.IndexAny(pat[i+1:], "[]()")
+		j := strings.IndexAny(pat[i+1:], "[]()")
 		if j < 0 || pat[i+1+j] != shut {
 			continue
 		}
@@ -467,6 +550,8 @@ func dropEmptyGroups(pat string, vals map[string]string) string {
 			start--
 		} else if end < len(pat) && pat[end] == ' ' {
 			end++
+		} else if start > 0 && end < len(pat) && pat[end] == pat[start-1] && strings.IndexByte("._-", pat[end]) >= 0 {
+			end++ // "{title}.{tvdb-{tvdb}}.{year}" keeps one dot
 		}
 		pat = pat[:start] + pat[end:]
 		i = start - 1
@@ -485,7 +570,7 @@ func allEmpty(text string, vals map[string]string) bool {
 		if end < 0 {
 			return true
 		}
-		if vals[text[open+1:open+end]] != "" {
+		if tokValue(parseTok(text[open+1:open+end]), vals) != "" {
 			return false
 		}
 		text = text[open+end+1:]
@@ -603,139 +688,28 @@ func reserved(n string) bool {
 	return len(n) == 4 && (strings.HasPrefix(n, "COM") || strings.HasPrefix(n, "LPT")) && n[3] >= '1' && n[3] <= '9'
 }
 
-const group = "where_files_go"
-
-// ReadNaming reads the naming settings; unset or broken ones keep their default.
-func ReadNaming(ctx context.Context, db database.Lister) (NamingSettings, error) {
-	s := NamingDefaults()
-	err := database.EachSetting(ctx, db, group, func(k, v string) {
-		switch k {
-		case "file_pattern":
-			s.FilePattern = v
-		case "folder_pattern":
-			s.FolderPattern = v
-		case "colon":
-			s.Colon = v
-		case "illegal":
-			s.Illegal = v
-		case "rename_on_import":
-			s.RenameOnImport = v != "false"
-		case "adopt_scan_limit":
-			if n, err := strconv.Atoi(v); err == nil {
-				s.AdoptScanLimit = n
-			}
-		case "music_adopt_scan_limit":
-			if n, err := strconv.Atoi(v); err == nil {
-				s.MusicAdoptScanLimit = n
-			}
-		case "show_folder_pattern":
-			s.ShowFolderPattern = v
-		case "season_folders":
-			s.SeasonFolders = v != "false"
-		case "season_folder_pattern":
-			s.SeasonFolderPattern = v
-		case "specials_folder":
-			s.SpecialsFolder = v
-		case "episode_pattern":
-			s.EpisodePattern = v
-		case "daily_pattern":
-			s.DailyPattern = v
-		case "anime_pattern":
-			s.AnimePattern = v
-		case "multi_episode_style":
-			s.MultiEpisodeStyle = v
-		case "air_date_style":
-			s.AirDateStyle = v
-		case "absolute_digits":
-			if n, err := strconv.Atoi(v); err == nil {
-				s.AbsoluteDigits = n
-			}
-		case "artist_folder_pattern":
-			s.ArtistFolderPattern = v
-		case "album_folder_pattern":
-			s.AlbumFolderPattern = v
-		case "track_pattern":
-			s.TrackPattern = v
-		case "multi_disc_track_pattern":
-			s.MultiDiscTrackPattern = v
-		case "disc_folders":
-			s.DiscFolders = v == "true"
-		case "disc_folder_pattern":
-			s.DiscFolderPattern = v
-		case "music_read_tags":
-			s.MusicReadTags = v != "false"
-		case "title_language":
-			s.TitleLanguage = v
-		}
-	})
-	if err != nil {
-		return s, err
-	}
-	s.fillShows()
-	if s.Validate() != nil {
-		d := NamingDefaults()
-		d.RenameOnImport = s.RenameOnImport
-		d.SeasonFolders = s.SeasonFolders
-		d.DiscFolders = s.DiscFolders
-		d.MusicReadTags = s.MusicReadTags
-		if metadata.IsTextLanguage(s.TitleLanguage) {
-			d.TitleLanguage = s.TitleLanguage
-		}
-		return d, nil
-	}
-	if s.AdoptScanLimit == 0 {
-		s.AdoptScanLimit = DefaultAdoptScanLimit
-	}
-	if s.MusicAdoptScanLimit == 0 {
-		s.MusicAdoptScanLimit = DefaultMusicAdoptScanLimit
-	}
-	return s, nil
-}
-
-// PutNamingSettings stores valid naming settings. then, when given, runs in the same
-// transaction (the move tool marks its change there).
-func PutNamingSettings(ctx context.Context, st *database.Store, s NamingSettings, by database.Actor, then ...func(tx *sql.Tx) error) error {
-	s.fillShows()
-	if err := s.Validate(); err != nil {
-		return err
-	}
-	if s.AdoptScanLimit == 0 {
-		s.AdoptScanLimit = DefaultAdoptScanLimit
-	}
-	if s.MusicAdoptScanLimit == 0 {
-		s.MusicAdoptScanLimit = DefaultMusicAdoptScanLimit
-	}
-	return st.Write(ctx, func(tx *sql.Tx) error {
-		now := time.Now()
-		for k, v := range map[string]string{"file_pattern": s.FilePattern, "folder_pattern": s.FolderPattern, "colon": s.Colon,
-			"illegal": s.Illegal, "rename_on_import": fmt.Sprint(s.RenameOnImport),
-			"adopt_scan_limit": strconv.Itoa(s.AdoptScanLimit), "music_adopt_scan_limit": strconv.Itoa(s.MusicAdoptScanLimit), "show_folder_pattern": s.ShowFolderPattern, "season_folders": fmt.Sprint(s.SeasonFolders),
-			"season_folder_pattern": s.SeasonFolderPattern, "specials_folder": s.SpecialsFolder, "episode_pattern": s.EpisodePattern,
-			"daily_pattern": s.DailyPattern, "anime_pattern": s.AnimePattern, "multi_episode_style": s.MultiEpisodeStyle,
-			"air_date_style": s.AirDateStyle, "absolute_digits": strconv.Itoa(s.AbsoluteDigits),
-			"artist_folder_pattern": s.ArtistFolderPattern, "album_folder_pattern": s.AlbumFolderPattern, "track_pattern": s.TrackPattern,
-			"multi_disc_track_pattern": s.MultiDiscTrackPattern, "disc_folders": fmt.Sprint(s.DiscFolders), "disc_folder_pattern": s.DiscFolderPattern,
-			"music_read_tags": fmt.Sprint(s.MusicReadTags), "title_language": s.TitleLanguage} {
-			if err := database.PutSetting(tx, group, k, v, by, now); err != nil {
-				return err
-			}
-		}
-		for _, f := range then {
-			if err := f(tx); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
 // FactsFrom builds NameFacts from a parsed release name: what an import knows.
 func FactsFrom(title string, year int, ids map[string]string, p releasename.Result, release, ext string) NameFacts {
 	f := NameFacts{Title: title, Year: year, Step: StepFor(p), Group: p.Group.Value, Release: release, Ext: ext,
 		Audio: AudioLabel(p.Audio.Format), HDR: HDRLabel(strings.Join(p.HDR.Value, " ")),
-		TMDB: ids["tmdb"], IMDB: ids["imdb"]}
+		TMDB: ids["tmdb"], TVDB: ids["tvdb"], IMDB: ids["imdb"]}
 	if len(p.Edition) > 0 {
 		f.Edition = strings.Join(p.Edition, " ")
 	}
+	releaseFacts(&f, p)
+	if v := releasename.FrenchVersion(release); v != "" {
+		f.FrenchVersion, f.FrenchInName = v, true
+	} else if v := releasename.FrenchVersion(p.Original); v != "" {
+		// {release} lacks it here, so the word still adds it.
+		f.FrenchVersion = v
+	}
 	return f
+}
+
+// AddFrenchVersion fills a French dub the release name leaves out (see
+// NameFacts.FrenchVersion).
+func (f *NameFacts) AddFrenchVersion(v string) {
+	if f.FrenchVersion == "" {
+		f.FrenchVersion = v
+	}
 }

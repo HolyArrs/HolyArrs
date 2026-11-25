@@ -71,7 +71,7 @@ var MovieCases = []Case{
 	{ID: "T07", Name: "Le.Jardin.des.Horloges.2017.FRENCH.1080p.BluRay.x264-LESQUAIS", Title: "Le Jardin des Horloges", Year: 2017, Resolution: 1080, Source: "bluray", Codec: "h264", Langs: []string{"fr"}, Group: "LESQUAIS"},
 	// The test set lists "de, fr": DL means the original language is kept too,
 	// which the parser reports as the "dual" flag; the judge adds the original.
-	{ID: "T08", Name: "The.Clock.Garden.2017.GERMAN.DL.1080p.BluRay.x264-NORDFILM", Title: "The Clock Garden", Year: 2017, Resolution: 1080, Source: "bluray", Codec: "h264", Langs: []string{"de"}, Group: "NORDFILM", Flags: []string{"dual"}},
+	{ID: "T08", Name: "The.Clock.Garden.2017.GERMAN.DL.1080p.BluRay.x264-NORDFILM", Title: "The Clock Garden", Year: 2017, Resolution: 1080, Source: "bluray", Codec: "h264", Langs: []string{"de"}, Group: "NORDFILM", Flags: []string{"dual", "original"}},
 	{ID: "T09", Name: "The.Clock.Garden.2017.iTALiAN.DUBBED.1080p.WEB-DL-TINCAN", Title: "The Clock Garden", Year: 2017, Resolution: 1080, Source: "web_dl", Langs: []string{"it"}, Group: "TINCAN", Flags: []string{"dubbed"}},
 	{ID: "T10", Name: "Kōri.no.Shiro.2020.1080p.WEB-DL.H.264-Kumomaru", Title: "Kori no Shiro", Year: 2020, Resolution: 1080, Source: "web_dl", Codec: "h264", Group: "Kumomaru"},
 	{ID: "T11", Name: "氷の城.2020.1080p.WEB-DL-Kumomaru", Title: "氷の城", Year: 2020, Resolution: 1080, Source: "web_dl", Group: "Kumomaru"},

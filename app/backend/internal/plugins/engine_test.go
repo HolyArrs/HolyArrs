@@ -35,6 +35,10 @@ type listServer struct {
 	file     []byte
 	version  string
 	redirect string // when set, plugins.json redirects here
+	// testList is plugins-test.json (nil: 404); extra serves other
+	// versions' manifest and file, by version.
+	testList []byte
+	extra    map[string][2][]byte
 }
 
 var pluginFile = []byte("plugin program bytes")
@@ -52,8 +56,14 @@ func newListServer(t *testing.T) (*listServer, ed25519.PublicKey) {
 	ls.block = ls.sign(plugins.List{Kind: plugins.KindBlocklist, Counter: 1, Entries: []plugins.Entry{}})
 	ls.manifest, _ = json.Marshal(map[string]any{
 		"id": "tailscale", "name": "Tailscale", "version": "1.0.0", "author": "HolyArrs",
-		"access":          map[string]any{"hosts": []string{"controlplane.tailscale.com"}, "folders": []string{}, "actions": []string{}},
-		"min_app_version": "1.0.0", "sha256": sha,
+		"access":          map[string]any{"hosts": []string{"controlplane.tailscale.com"}, "folders": []string{}, "actions": []string{"network.forward"}},
+		"min_app_version": "1.3.0", "sha256": sha,
+		"settings": []map[string]any{
+			{"key": "port", "label": "Listen port", "type": "number", "default": 8090},
+			{"key": "read_only", "label": "Read only", "type": "toggle", "default": true},
+			{"key": "mode", "label": "Mode", "type": "select", "options": []string{"fast", "safe"}, "default": "safe"},
+			{"key": "pin", "label": "PIN", "type": "secret"},
+		},
 	})
 	ls.list = ls.sign(plugins.List{Kind: plugins.KindPlugins, Counter: 1, MinBlocklistCounter: &zero,
 		Entries: []plugins.Entry{{ID: "tailscale", Version: "1.0.0", SHA256: sha, ManifestSHA256: hashOf(ls.manifest)}}})
@@ -61,7 +71,23 @@ func newListServer(t *testing.T) (*listServer, ed25519.PublicKey) {
 		ls.mu.Lock()
 		defer ls.mu.Unlock()
 		base := "/list/plugins/tailscale/" + ls.version
+		for v, mf := range ls.extra {
+			switch r.URL.Path {
+			case "/list/plugins/tailscale/" + v + "/manifest.json":
+				w.Write(mf[0])
+				return
+			case "/list/plugins/tailscale/" + v + "/plugin":
+				w.Write(mf[1])
+				return
+			}
+		}
 		switch r.URL.Path {
+		case "/list/plugins-test.json":
+			if ls.testList == nil {
+				http.NotFound(w, r)
+				return
+			}
+			w.Write(ls.testList)
 		case "/list/plugins.json":
 			if ls.redirect != "" {
 				http.Redirect(w, r, ls.redirect, http.StatusFound)
@@ -70,6 +96,8 @@ func newListServer(t *testing.T) (*listServer, ed25519.PublicKey) {
 			w.Write(ls.list)
 		case "/list/blocklist.json":
 			w.Write(ls.block)
+		case "/list/stats.json":
+			w.Write([]byte(`{"tailscale":{"downloads":1234,"week":40,"stars":9,"listed":"2026-11-01T05:18:53Z"}}`))
 		case base + "/manifest.json":
 			w.Write(ls.manifest)
 		case base + "/plugin":
@@ -159,12 +187,10 @@ func TestInstallStartStopRemove(t *testing.T) {
 		t.Fatalf("starts after start: %d", len(run.Starts))
 	}
 
-	call(t, m, "DELETE", "/api/v1/plugins/tailscale?keep=1", http.StatusOK)
-	p = row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
-	if p["installed"] != true || p["running"] != false || p["enabled"] != false {
-		t.Fatalf("after remove keep: %v", p)
-	}
-
+	// Remove always deletes the settings too: a file in the data folder is gone after.
+	data := filepath.Join(e.Dir, "tailscale", "data")
+	os.MkdirAll(data, 0o700)
+	os.WriteFile(filepath.Join(data, "login"), []byte("x"), 0o600)
 	call(t, m, "DELETE", "/api/v1/plugins/tailscale", http.StatusOK)
 	p = row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
 	if p["installed"] != false {
@@ -174,6 +200,59 @@ func TestInstallStartStopRemove(t *testing.T) {
 		t.Fatalf("plugin folder still there: %v", err)
 	}
 	call(t, m, "DELETE", "/api/v1/plugins/tailscale", http.StatusNotFound)
+
+	// Install works again after Remove and starts clean.
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	p = row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["installed"] != true || p["running"] != true || p["enabled"] != true {
+		t.Fatalf("after reinstall: %v", p)
+	}
+	if _, err := os.Stat(filepath.Join(data, "login")); !os.IsNotExist(err) {
+		t.Fatalf("old settings came back: %v", err)
+	}
+}
+
+// A plugin an earlier build removed but kept the data of shows as not
+// installed after a restart, and Install works again.
+func TestKeptRemoveLeftoverIsCleared(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	if _, err := e.Install(context.Background(), "tailscale"); err != nil {
+		t.Fatal(err)
+	}
+	e.StopAll()
+	statePath := filepath.Join(e.Dir, "state.json")
+	b, err := os.ReadFile(statePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var st map[string]any
+	if err := json.Unmarshal(b, &st); err != nil {
+		t.Fatal(err)
+	}
+	ts := st["plugins"].(map[string]any)["tailscale"].(map[string]any)
+	ts["enabled"], ts["disabled_reason"] = false, "removed, data kept"
+	b, _ = json.Marshal(st)
+	if err := os.WriteFile(statePath, b, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	run := &pluginstest.FakeRunner{}
+	e2 := &plugins.Engine{Dir: e.Dir, ListURL: e.ListURL, Keys: e.Keys, Runner: run, HTTP: e.HTTP}
+	defer e2.StopAll()
+	m := mux(e2)
+	p := row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["installed"] != false {
+		t.Fatalf("leftover still installed: %v", p)
+	}
+	if _, err := os.Stat(filepath.Join(e.Dir, "tailscale")); !os.IsNotExist(err) {
+		t.Fatalf("leftover folder still there: %v", err)
+	}
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	p = row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["installed"] != true || p["running"] != true {
+		t.Fatalf("after reinstall: %v", p)
+	}
 }
 
 func TestStartEnabledOnAppStart(t *testing.T) {
@@ -319,15 +398,24 @@ func TestBlocklistCheckStopsAndDisables(t *testing.T) {
 
 // publish serves a new signed version of tailscale with list counter n.
 func (ls *listServer) publish(version string, file []byte, n uint64) {
+	ls.publishWith(version, file, n, nil)
+}
+
+// publishWith is publish with the manifest changed by edit first.
+func (ls *listServer) publishWith(version string, file []byte, n uint64, edit func(map[string]any)) {
 	ls.mu.Lock()
 	defer ls.mu.Unlock()
 	sha := hashOf(file)
 	ls.version, ls.file = version, file
-	ls.manifest, _ = json.Marshal(map[string]any{
+	m := map[string]any{
 		"id": "tailscale", "name": "Tailscale", "version": version, "author": "HolyArrs",
-		"access":          map[string]any{"hosts": []string{}, "folders": []string{}, "actions": []string{}},
-		"min_app_version": "1.0.0", "sha256": sha,
-	})
+		"access":          map[string]any{"hosts": []string{}, "folders": []string{}, "actions": []string{"network.forward"}},
+		"min_app_version": "1.3.0", "sha256": sha,
+	}
+	if edit != nil {
+		edit(m)
+	}
+	ls.manifest, _ = json.Marshal(m)
 	zero := uint64(0)
 	ls.list = ls.sign(plugins.List{Kind: plugins.KindPlugins, Counter: n, MinBlocklistCounter: &zero,
 		Entries: []plugins.Entry{{ID: "tailscale", Version: version, SHA256: sha, ManifestSHA256: hashOf(ls.manifest)}}})
@@ -463,11 +551,11 @@ func TestTailscaleStatusAndSignOut(t *testing.T) {
 	e, run := newEngine(t, ls, pub)
 	m := mux(e)
 
-	call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusNotFound)
-	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusNotFound)
+	call(t, m, "GET", "/api/v1/plugins/tailscale/remote/status", http.StatusNotFound)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/remote/signout", http.StatusNotFound)
 
 	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
-	if st := call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK); st["state"] != "not_connected" {
+	if st := call(t, m, "GET", "/api/v1/plugins/tailscale/remote/status", http.StatusOK); st["state"] != "not_connected" {
 		t.Fatalf("status before the plugin wrote one: %v", st)
 	}
 	data := run.Starts[0].DataDir
@@ -475,21 +563,21 @@ func TestTailscaleStatusAndSignOut(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(data, "status.json"), []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	st := call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK)
+	st := call(t, m, "GET", "/api/v1/plugins/tailscale/remote/status", http.StatusOK)
 	if st["state"] != "waiting_for_sign_in" || st["login_url"] != "https://login.tailscale.com/a/x" || st["login_qr"] == nil {
 		t.Fatalf("status: %v", st)
 	}
 
 	// An API key never sees the sign-in link.
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/api/v1/plugins/tailscale/status", nil)
+	req := httptest.NewRequest("GET", "/api/v1/plugins/tailscale/remote/status", nil)
 	req = req.WithContext(webserver.ContextWith(req.Context(), webserver.Caller{KeyID: 7}))
 	m.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK || strings.Contains(rec.Body.String(), "login_") {
 		t.Fatalf("status through a key = %d %s", rec.Code, rec.Body)
 	}
 
-	if out := call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusOK); out["removed_remotely"] != true {
+	if out := call(t, m, "POST", "/api/v1/plugins/tailscale/remote/signout", http.StatusOK); out["removed_remotely"] != true {
 		t.Fatalf("sign-out answer: %v", out)
 	}
 	if len(run.Starts) != 2 || len(run.Starts[1].Args) != 1 || run.Starts[1].Args[0] != "--sign-out" {
@@ -513,12 +601,12 @@ func TestTailscaleSignOutLocalOnly(t *testing.T) {
 	m := mux(e)
 	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
 	run.OneShot = func(plugins.Spec) error { return exitErr(3) }
-	out := call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusOK)
+	out := call(t, m, "POST", "/api/v1/plugins/tailscale/remote/signout", http.StatusOK)
 	if out["signed_out"] != true || out["removed_remotely"] != false {
 		t.Fatalf("logout failed, state wiped: %v", out)
 	}
 	run.OneShot = func(plugins.Spec) error { return exitErr(1) }
-	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusInternalServerError)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/remote/signout", http.StatusInternalServerError)
 }
 
 func TestTailscaleSignOutKeepsSecurityReason(t *testing.T) {
@@ -534,14 +622,14 @@ func TestTailscaleSignOutKeepsSecurityReason(t *testing.T) {
 		}
 		return st.SetEnabled("tailscale", false, "on the blocklist")
 	}
-	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusOK)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/remote/signout", http.StatusOK)
 	p := row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
 	if p["enabled"] != false || p["disabled_reason"] != "on the blocklist" {
 		t.Fatalf("security reason overwritten: %v", p)
 	}
 	// A plugin already off for a security reason is not signed out at all.
 	run.OneShot = nil
-	call(t, m, "POST", "/api/v1/plugins/tailscale/signout", http.StatusUnprocessableEntity)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/remote/signout", http.StatusUnprocessableEntity)
 	p = row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
 	if p["disabled_reason"] != "on the blocklist" {
 		t.Fatalf("after refused sign-out: %v", p)
@@ -565,7 +653,7 @@ func TestTailscaleStatusSafeRead(t *testing.T) {
 
 	// Unknown fields are dropped; only the known ones come back.
 	write(`{"state":"connected","tsnet_name":"holyarrs","secret_thing":"x"}`)
-	st := call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK)
+	st := call(t, m, "GET", "/api/v1/plugins/tailscale/remote/status", http.StatusOK)
 	if st["state"] != "connected" || st["tsnet_name"] != "holyarrs" || st["secret_thing"] != nil {
 		t.Fatalf("status fields: %v", st)
 	}
@@ -573,7 +661,7 @@ func TestTailscaleStatusSafeRead(t *testing.T) {
 	// Sign-in links off Tailscale's host, or not https, are dropped with no QR.
 	for _, link := range []string{"http://login.tailscale.com/a/x", "https://evil.example/a/x", "javascript:alert(1)", "https://login.tailscale.com.evil.example/a"} {
 		write(`{"state":"waiting_for_sign_in","login_url":"` + link + `"}`)
-		st = call(t, m, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK)
+		st = call(t, m, "GET", "/api/v1/plugins/tailscale/remote/status", http.StatusOK)
 		if st["login_url"] != nil || st["login_qr"] != nil {
 			t.Fatalf("untrusted link %q kept: %v", link, st)
 		}
@@ -582,7 +670,7 @@ func TestTailscaleStatusSafeRead(t *testing.T) {
 	hm := http.NewServeMux()
 	(&plugins.Handlers{Engine: e, LoginServer: "https://hs.example.net"}).Routes(hm)
 	write(`{"state":"waiting_for_sign_in","login_url":"https://hs.example.net/register/x"}`)
-	if st = call(t, hm, "GET", "/api/v1/plugins/tailscale/status", http.StatusOK); st["login_url"] == nil || st["login_qr"] == nil {
+	if st = call(t, hm, "GET", "/api/v1/plugins/tailscale/remote/status", http.StatusOK); st["login_url"] == nil || st["login_qr"] == nil {
 		t.Fatalf("login server link dropped: %v", st)
 	}
 
@@ -592,7 +680,7 @@ func TestTailscaleStatusSafeRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	rec := httptest.NewRecorder()
-	m.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/plugins/tailscale/status", nil))
+	m.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/plugins/tailscale/remote/status", nil))
 	if rec.Code == http.StatusOK {
 		t.Fatalf("directory read as status: %s", rec.Body)
 	}
@@ -601,7 +689,7 @@ func TestTailscaleStatusSafeRead(t *testing.T) {
 	// Only the first 64 KiB is read: a huge file fails to decode.
 	write(`{"state":"connected","tsnet_name":"` + strings.Repeat("a", 70<<10) + `"}`)
 	rec = httptest.NewRecorder()
-	m.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/plugins/tailscale/status", nil))
+	m.ServeHTTP(rec, httptest.NewRequest("GET", "/api/v1/plugins/tailscale/remote/status", nil))
 	if rec.Code == http.StatusOK {
 		t.Fatalf("oversized status read: %d", rec.Body.Len())
 	}
@@ -623,5 +711,281 @@ func TestListMissingListIsCalm(t *testing.T) {
 	e2, _ := newEngine(t, ls2, other)
 	if out := call(t, mux(e2), "GET", "/api/v1/plugins", http.StatusOK); out["list_bad"] != true {
 		t.Fatalf("bad signature not flagged: %v", out)
+	}
+}
+
+func TestInstallPicksPlatformBuild(t *testing.T) {
+	ls, pub := newListServer(t)
+	armFile := []byte("arm64 plugin program bytes")
+	armMan, _ := json.Marshal(map[string]any{
+		"id": "tailscale", "name": "Tailscale", "version": "1.0.0", "author": "HolyArrs",
+		"access":          map[string]any{"hosts": []string{}, "folders": []string{}, "actions": []string{}},
+		"min_app_version": "1.0.0", "sha256": hashOf(armFile),
+	})
+	zero := uint64(0)
+	armList := ls.sign(plugins.List{Kind: plugins.KindPlugins, Counter: 1, MinBlocklistCounter: &zero,
+		Entries: []plugins.Entry{{ID: "tailscale", Version: "1.0.0", SHA256: hashOf(armFile), ManifestSHA256: hashOf(armMan)}}})
+	if got := plugins.ListName(plugins.PlatformARM64); got != "plugins-linux-arm64.json" {
+		t.Fatalf("list name %q", got)
+	}
+	if got := plugins.FileBase("tailscale", "1.0.0", plugins.PlatformAMD64); got != "plugins/tailscale/1.0.0/" {
+		t.Fatalf("amd64 base %q", got)
+	}
+	base := "/list/" + plugins.FileBase("tailscale", "1.0.0", plugins.PlatformARM64)
+	inner := ls.srv.Config.Handler
+	ls.srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/list/" + plugins.ListName(plugins.PlatformARM64):
+			w.Write(armList)
+		case base + "manifest.json":
+			w.Write(armMan)
+		case base + "plugin":
+			w.Write(armFile)
+		default:
+			inner.ServeHTTP(w, r)
+		}
+	})
+	e, _ := newEngine(t, ls, pub)
+	e.Platform = plugins.PlatformARM64
+	m := mux(e)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	found := false
+	_ = filepath.Walk(filepath.Join(e.Dir, "tailscale"), func(p string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() {
+			if b, _ := os.ReadFile(p); string(b) == string(armFile) {
+				found = true
+			}
+		}
+		return nil
+	})
+	if !found {
+		t.Fatal("the arm64 build was not installed")
+	}
+	if p := row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale"); p["installed"] != true {
+		t.Fatalf("row: %v", p)
+	}
+
+	// A platform with no list of its own installs nothing.
+	e2, _ := newEngine(t, ls, pub)
+	e2.Platform = plugins.PlatformARMv7
+	call(t, mux(e2), "POST", "/api/v1/plugins/tailscale/install", http.StatusBadGateway)
+}
+
+// On a kernel without Landlock the list says plugins run without the file
+// lock, so the page can say so; with no runner it never does.
+func TestListReportsNoFileLock(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	if ov := call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK); ov["no_file_lock"] != false {
+		t.Fatalf("no_file_lock = %v with the lock, want false", ov["no_file_lock"])
+	}
+	e.NoFileLock = true
+	if ov := call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK); ov["no_file_lock"] != true {
+		t.Fatalf("no_file_lock = %v without the lock, want true", ov["no_file_lock"])
+	}
+	e.Runner = nil
+	if ov := call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK); ov["no_file_lock"] != false {
+		t.Fatalf("no_file_lock = %v with no runner, want false", ov["no_file_lock"])
+	}
+}
+
+func callBody(t *testing.T, h http.Handler, method, path, body string, want int) map[string]any {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(method, path, strings.NewReader(body)))
+	if rec.Code != want {
+		t.Fatalf("%s %s %s = %d %s, want %d", method, path, body, rec.Code, rec.Body, want)
+	}
+	var out map[string]any
+	_ = json.Unmarshal(rec.Body.Bytes(), &out)
+	return out
+}
+
+// Without the file lock plugins stay stopped (fail closed) until the owner
+// allows it once for the whole install; the choice is stored, sent with each
+// start, kept over a reinstall, starts the plugins it turned off, and turning
+// it off stops them again.
+func TestFileLockOptInInstallWide(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	e.NoFileLock, e.FileLockReason = true, plugins.FileLockOldKernel
+	m := mux(e)
+
+	ov := call(t, m, "GET", "/api/v1/plugins", http.StatusOK)
+	if ov["allow_no_file_lock"] != false || ov["no_file_lock_asked"] != false {
+		t.Fatalf("before asking: %v", ov)
+	}
+	run.Err = plugins.ErrNoLandlock // what the real sandbox answers without the opt-in
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusUnprocessableEntity)
+	p := row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	if p["running"] != false || p["enabled"] != false || !strings.Contains(p["disabled_reason"].(string), "file lock") {
+		t.Fatalf("without the opt-in: %v", p)
+	}
+
+	run.Err = nil
+	callBody(t, m, "PUT", "/api/v1/plugins/file-lock", `{"allow_without": true}`, http.StatusOK)
+	if last := run.Starts[len(run.Starts)-1]; !last.AllowNoFileLock {
+		t.Fatalf("start after opt-in did not carry it: %+v", last)
+	}
+	ov = call(t, m, "GET", "/api/v1/plugins", http.StatusOK)
+	if p = row(t, ov, "tailscale"); p["running"] != true || ov["allow_no_file_lock"] != true || ov["no_file_lock_asked"] != true {
+		t.Fatalf("after opt-in: %v", ov)
+	}
+
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	if last := run.Starts[len(run.Starts)-1]; !last.AllowNoFileLock {
+		t.Fatal("reinstall dropped the opt-in")
+	}
+
+	callBody(t, m, "PUT", "/api/v1/plugins/file-lock", `{"allow_without": false}`, http.StatusOK)
+	ov = call(t, m, "GET", "/api/v1/plugins", http.StatusOK)
+	if p = row(t, ov, "tailscale"); p["running"] != false || p["enabled"] != false || ov["allow_no_file_lock"] != false || ov["no_file_lock_asked"] != true {
+		t.Fatalf("after turning the opt-in off: %v", ov)
+	}
+	run.Err = plugins.ErrNoLandlock
+	call(t, m, "POST", "/api/v1/plugins/tailscale/start", http.StatusUnprocessableEntity)
+}
+
+// With the file lock, turning the choice off never stops a running plugin,
+// and starts never carry the opt-in unless it was set.
+func TestFileLockOptOffKeepsLockedPluginRunning(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, run := newEngine(t, ls, pub)
+	m := mux(e)
+	call(t, m, "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	if run.Starts[0].AllowNoFileLock {
+		t.Fatal("start carried the opt-in without the owner setting it")
+	}
+	callBody(t, m, "PUT", "/api/v1/plugins/file-lock", `{"allow_without": false}`, http.StatusOK)
+	if p := row(t, call(t, m, "GET", "/api/v1/plugins", http.StatusOK), "tailscale"); p["running"] != true {
+		t.Fatalf("locked plugin stopped: %v", p)
+	}
+}
+
+// The opt-in route needs a clear body and a signed-in owner, never an API key.
+func TestFileLockRouteRefusals(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	m := mux(e)
+	callBody(t, m, "PUT", "/api/v1/plugins/file-lock", `{}`, http.StatusBadRequest)
+	callBody(t, m, "PUT", "/api/v1/plugins/file-lock", `nope`, http.StatusBadRequest)
+	req := httptest.NewRequest("PUT", "/api/v1/plugins/file-lock", strings.NewReader(`{"allow_without": true}`))
+	req = req.WithContext(webserver.ContextWith(req.Context(), webserver.Caller{KeyID: 7, Scopes: []string{webserver.ScopeAdmin}}))
+	rec := httptest.NewRecorder()
+	m.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("opt-in with an admin key = %d %s", rec.Code, rec.Body)
+	}
+	if ov := call(t, m, "GET", "/api/v1/plugins", http.StatusOK); ov["allow_no_file_lock"] != false || ov["no_file_lock_asked"] != false {
+		t.Fatalf("refused calls changed the choice: %v", ov)
+	}
+}
+
+// The list says why the file lock is missing, so the page can say what to fix.
+func TestListReportsFileLockReason(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	if ov := call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK); ov["file_lock_reason"] != nil {
+		t.Fatalf("reason with the lock: %v", ov["file_lock_reason"])
+	}
+	for _, r := range []string{plugins.FileLockOldKernel, plugins.FileLockBlocked, plugins.FileLockTurnedOff} {
+		e.NoFileLock, e.FileLockReason = true, r
+		if ov := call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK); ov["file_lock_reason"] != r {
+			t.Fatalf("reason = %v, want %s", ov["file_lock_reason"], r)
+		}
+	}
+}
+
+// A list entry with file_url downloads the plugin file from that address
+// (the file host) instead of below the list, and still checks its hash.
+func TestInstallUsesFileURL(t *testing.T) {
+	ls, pub := newListServer(t)
+	files := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/plugins/tailscale/1.0.0/plugin" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Write(pluginFile)
+	}))
+	t.Cleanup(files.Close)
+	zero := uint64(0)
+	ls.mu.Lock()
+	ls.file = []byte("old file that must not be used")
+	ls.list = ls.sign(plugins.List{Kind: plugins.KindPlugins, Counter: 1, MinBlocklistCounter: &zero,
+		Entries: []plugins.Entry{{ID: "tailscale", Version: "1.0.0", SHA256: hashOf(pluginFile),
+			ManifestSHA256: hashOf(ls.manifest), FileURL: files.URL + "/plugins/tailscale/1.0.0/plugin"}}})
+	ls.mu.Unlock()
+	e, run := newEngine(t, ls, pub)
+	call(t, mux(e), "POST", "/api/v1/plugins/tailscale/install", http.StatusOK)
+	if len(run.Starts) != 1 {
+		t.Fatalf("starts after install: %+v", run.Starts)
+	}
+}
+
+func TestListRefusesPlainHTTPFileURL(t *testing.T) {
+	pub, priv, _ := ed25519.GenerateKey(nil)
+	zero := uint64(0)
+	raw, err := plugins.SignList(priv, plugins.List{Kind: plugins.KindPlugins, Counter: 1, MinBlocklistCounter: &zero,
+		Entries: []plugins.Entry{{ID: "tailscale", Version: "1.0.0", SHA256: hashOf(pluginFile),
+			ManifestSHA256: hashOf(pluginFile), FileURL: "http://example.com/plugin"}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := plugins.VerifyList(pub, raw, plugins.KindPlugins, 0); err == nil {
+		t.Fatal("plain http file_url accepted")
+	}
+}
+
+// The list shows the public download numbers and the first-listed time; the
+// numbers come in the background, so the list never waits for them.
+func TestListShowsStats(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK)
+	var p map[string]any
+	for i := 0; i < 200; i++ {
+		p = row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+		if p["stats"] != nil {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	st, _ := p["stats"].(map[string]any)
+	if st == nil || st["downloads"] != float64(1234) || st["stars"] != float64(9) {
+		t.Fatalf("stats = %v", p["stats"])
+	}
+	if st["listed"] != "2026-11-01T05:18:53Z" {
+		t.Fatalf("listed = %v", st["listed"])
+	}
+}
+
+// A plugin disabled by the blocklist can be started again once the signed
+// blocklist no longer holds it; it is not started on its own.
+func TestStartWorksAfterBlocklistLifted(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	if _, err := e.Install(context.Background(), "tailscale"); err != nil {
+		t.Fatal(err)
+	}
+	ls.mu.Lock()
+	ls.block = ls.sign(plugins.List{Kind: plugins.KindBlocklist, Counter: 2, Entries: []plugins.Entry{{ID: "tailscale"}}})
+	ls.mu.Unlock()
+	if err := e.CheckBlocklist(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	call(t, mux(e), "POST", "/api/v1/plugins/tailscale/start", http.StatusUnprocessableEntity)
+	ls.mu.Lock()
+	ls.block = ls.sign(plugins.List{Kind: plugins.KindBlocklist, Counter: 3})
+	ls.mu.Unlock()
+	if err := e.CheckBlocklist(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	// Off the list, the row no longer carries the blocklist reason, so the page offers Start.
+	if p := row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "tailscale"); p["running"] != false || p["enabled"] != false || p["disabled_reason"] != "stopped by the owner" {
+		t.Fatalf("after the blocklist lifted: %v", p)
+	}
+	call(t, mux(e), "POST", "/api/v1/plugins/tailscale/start", http.StatusOK)
+	if p := row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "tailscale"); p["running"] != true {
+		t.Fatalf("not running after the blocklist lifted: %v", p)
 	}
 }

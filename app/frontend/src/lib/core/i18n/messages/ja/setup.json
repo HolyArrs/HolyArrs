@@ -8,10 +8,14 @@
 "setup.fullPath": "{path} のように、フォルダーのフルパスを入力してください。",
 "setup.folderUsed": "このフォルダーはすでに使われているか、使用中のフォルダーの中にあります。",
 "setup.folderMissing": "そのフォルダーが見つかりません。パスを確認してください。",
-"setup.addFolderOrOff": "フォルダーを追加するか、これをオフにしてください。",
+"setup.addFolderOrOff": "フォルダーを追加するか、「今はスキップ」を押してください。",
 "setup.notAnswering": "HolyArrs が応答していません。しばらくしてからもう一度お試しください。",
 "setup.addUserPasswordHint": "ユーザー名とパスワードを入力してください。",
 "setup.folders": "フォルダー",
 "setup.downloader": "ダウンローダー",
-"setup.source": "ソース"
+"setup.source": "ソース",
+	"setup.alertsNeedKeyOne": "通知: 1 件にキーが必要",
+	"setup.alertsNeedKey": "通知: {n} 件にキーが必要",
+	"setup.folderNoAccess": "HolyArrs はこのフォルダーを開けません。アクセス権を確認してください。",
+	"setup.folderCantUse": "HolyArrs はこのフォルダーを使えません。パスを確認してください。"
 }

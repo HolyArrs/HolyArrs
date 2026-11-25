@@ -17,6 +17,7 @@ StartedAt *time.Time db="started_at" json=""
 FinishedAt *time.Time db="finished_at" json=""
 StartedBy database.Actor db="started_by,json" json=""
 ProgressAt *time.Time db="progress_at" json=""
+CleanedAt *time.Time db="cleaned_at" json=""
 ConfirmedEdition string db="confirmed_edition" json=""
 PackFiles []model.PackFile db="pack_files,json" json=""
 --
@@ -47,6 +48,7 @@ ClearFinished bool db="clear_finished" json=""
 Tags []string db="tags,json" json=""
 CategoryAfterImport string db="category_after_import" json=""
 OwnOnly bool db="own_only" json=""
+CategoriesImported []string db="categories_imported,json" json=""
 --
 Name string db="" json="name"
 Size int64 db="" json="size"
@@ -55,6 +57,7 @@ Priority int db="" json="priority,omitempty"
 --
 Theirs string db="" json="theirs"
 Ours string db="" json="ours"
+Link bool db="" json="link,omitempty"
 --
 Ratio *float64 db="" json="ratio,omitempty"
 Minutes *int db="" json="minutes,omitempty"

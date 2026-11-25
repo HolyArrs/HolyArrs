@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -39,13 +40,19 @@ func InspectFacts(file string) map[string]any {
 	if err != nil {
 		i = mediafiles.Info{Status: "error", AudioUnknown: true}
 	}
-	if i.Status != "ok" && i.AudioTracks == 0 {
+	if i.AudioTracks == 0 {
 		i.AudioUnknown = true
 	}
 	if i.AudioLanguages == nil {
 		i.AudioLanguages = []string{}
 	}
 	facts := factsOf(i)
+	if len(i.AudioLanguages) == 0 || i.AudioUnknown {
+		// Untagged audio (all or some tracks): the name's language (ITA,
+		// GERMAN...) is the best guess, as the old apps read it.
+		// Audio proof stays unchanged.
+		facts["name_languages"] = NameLanguages(file)
+	}
 	if fi, err := os.Stat(file); err == nil {
 		facts["inspection_size"] = fi.Size()
 		facts["inspection_modified"] = strconv.FormatInt(fi.ModTime().UnixNano(), 10)
@@ -53,8 +60,10 @@ func InspectFacts(file string) map[string]any {
 	return facts
 }
 
-// FactsVersion is bumped when the stored fact keys change, so old facts get read again.
-const FactsVersion = 2
+// FactsVersion is bumped when the stored fact keys change or the reader
+// learns a new container (4: AVI and MPEG-TS/M2TS), so old facts get
+// read again.
+const FactsVersion = 4
 
 // HeaderFactKeys lists the fact keys that come from the file header.
 var HeaderFactKeys = []string{"resolution", "width", "height", "display_width", "runtime_seconds", "audio_channels", "audio_codec",
@@ -89,6 +98,15 @@ func factsOf(i mediafiles.Info) map[string]any {
 		}
 	}
 	facts["subtitle_languages"] = subs
+	var fv []string
+	for _, t := range i.Tracks {
+		if t.Kind == "audio" {
+			fv = append(fv, releasename.FrenchVersionOfTrack(t.Language, t.Name))
+		}
+	}
+	if v := releasename.FrenchVersionOfTracks(fv...); v != "" {
+		facts["french_version"] = v
+	}
 	if i.HDR != "" {
 		facts["hdr"] = i.HDR
 	}
@@ -223,10 +241,35 @@ func copyRefusal(v mediafiles.Version, fileName, releaseName, confirmed string, 
 	return ""
 }
 
-// InspectedLanguages lists the audio languages found in the facts.
+// NameLanguages reads the languages in a file's name, else its folder's.
+func NameLanguages(file string) []string {
+	base := filepath.Base(file)
+	langs := releasename.Parse(strings.TrimSuffix(base, filepath.Ext(base)), releasename.Hints{}).Languages
+	if len(langs) == 0 {
+		langs = releasename.Parse(filepath.Base(filepath.Dir(file)), releasename.Hints{}).Languages
+	}
+	if langs == nil {
+		return []string{}
+	}
+	return langs
+}
+
+// InspectedLanguages lists the audio languages found in the facts, plus
+// the languages in the name when a track had no language. Tagged tracks
+// come first; a name language already tagged is not repeated.
 func InspectedLanguages(facts map[string]any) []string {
+	out := stringList(facts["audio_languages"])
+	for _, l := range stringList(facts["name_languages"]) {
+		if !slices.Contains(out, l) {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+func stringList(value any) []string {
 	out := []string{}
-	switch langs := facts["audio_languages"].(type) {
+	switch langs := value.(type) {
 	case []string:
 		out = append(out, langs...)
 	case []any:

@@ -176,25 +176,11 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	// up to date: nothing is searched while its files wait to be placed.
 	keep := (opt.KeepUpToDate == nil || *opt.KeepUpToDate) && !opt.SeasonsDiffer
 
-	var lf mediafiles.LibraryFolder
-	if opt.LibraryFolderID == 0 {
-		fs, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "kind = 'show' ORDER BY id LIMIT 1")
-		if err != nil {
-			return 0, 0, err
-		}
-		if len(fs) == 0 {
-			return 0, 0, library.ErrNoShowFolder
-		}
-		lf = fs[0]
-	} else if err := database.Get(ctx, db, "library_folders", opt.LibraryFolderID, &lf); errors.Is(err, database.ErrNotFound) {
-		return 0, 0, library.ErrNoShowFolder
-	} else if err != nil {
+	lf, hands, err := library.TitleFolder(ctx, s.Store, opt.LibraryFolderID, "show", by)
+	if err != nil {
 		return 0, 0, err
 	}
-	if lf.Kind != "show" {
-		return 0, 0, library.ErrNotShowFolder
-	}
-	if h := library.CheckFolder(lf.Path, s.DownloadFolders(ctx)); !h.Usable() {
+	if h := library.CheckUse(lf, s.DownloadFolders(ctx)); !hands && !h.Usable() {
 		return 0, 0, &library.FolderError{Health: h}
 	}
 	if len(opt.MoreVersions) > 5 {
@@ -230,6 +216,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			}
 		}
 		opt.Adopt.SeasonsDiffer = opt.SeasonsDiffer
+		opt.Adopt.inspected = inspectAdoptFiles(opt.Adopt.LibraryPath, adoptFiles)
 	}
 	now := s.Clock()
 	var t mediafiles.Title
@@ -263,6 +250,9 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 			from = &f
 			opt.NewSeasons = "all" // new seasons air later: wanted
 		}
+		if lf.LookOnly {
+			keep = false // look-only: never searched
+		}
 		t = mediafiles.Title{Kind: "show", Aliases: aliases, MetadataSource: opt.Source, EpisodeOrder: &order, KeepUpToDate: keep,
 			NewPartsPolicy: opt.NewSeasons, ReleaseGate: library.GateReleased, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
 			State: "active", GateDriver: "none", SeasonChoice: &choice, FutureFrom: from, RefreshedAt: &now, Tags: library.TagsFromFolder(lf)}
@@ -279,25 +269,26 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		if t.Year != nil {
 			year = *t.Year
 		}
-		folder := mediafiles.ShowFolder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"]})
+		folder := mediafiles.ShowFolderIn(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], TVDB: t.SourceIDs["tvdb"], IMDB: t.SourceIDs["imdb"]})
 		if opt.Adopt != nil {
 			folder = opt.Adopt.FolderName
 		} else {
 			// A folder for this show already on disk under a slightly different
 			// name is used as is, so the scan after the add finds its files.
+			fold := library.FoldsCase(lf.Path)
 			taken := map[string]bool{}
 			if rows, err := tx.QueryContext(ctx, "SELECT folder_name FROM versions WHERE library_folder_id = ?", lf.ID); err == nil {
 				for rows.Next() {
 					var n string
 					if rows.Scan(&n) == nil {
-						taken[strings.ToLower(n)] = true
+						taken[library.FolderKey(n, fold)] = true
 					}
 				}
 				rows.Close()
 			}
-			folder = library.ExistingFolder(lf.Path, folder, t.Name, year, func(d string) bool { return taken[strings.ToLower(d)] })
+			folder = library.FindFolder(lf.Path, folder, library.TitleFacts(&t, year), func(d string) bool { return taken[library.FolderKey(d, fold)] })
 		}
-		v := &mediafiles.Version{TitleID: t.ID, Label: library.MainLabel(opt.MainFourK), PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true, FourK: opt.MainFourK}
+		v := &mediafiles.Version{TitleID: t.ID, Label: library.MainLabel(opt.MainFourK), PickRulesID: prID, LibraryFolderID: lf.ID, FolderName: folder, KeepUpToDate: keep, IsMain: true, FourK: opt.MainFourK, AudioLanguages: library.NewTitleAudio(&lf, opt.Adopt != nil)}
 		if _, err := database.Insert(tx, "versions", v, by); err != nil {
 			return err
 		}
@@ -558,20 +549,21 @@ func (s *Service) SetEpisode(ctx context.Context, itemID int64, keep bool, by do
 
 // SeasonSummary is one season of a show with its episode counts.
 type SeasonSummary struct {
-	Number       int        `json:"number"`
-	Name         string     `json:"name"`
-	KeepUpToDate bool       `json:"keep_up_to_date"`
-	Episodes     int        `json:"episodes"`
-	Aired        int        `json:"aired"`
-	InLibrary    int        `json:"in_library"`    // episodes with a file in the main Version
-	Missing      int        `json:"missing"`       // aired, kept up to date, no file yet
-	BetterWanted int        `json:"better_wanted"` // in the Library, a better copy is sought
-	NotOutYet    int        `json:"not_out_yet"`
-	Downloading  int        `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
-	Failed       int        `json:"failed"`      // the download failed or its import needs a decision
-	NextAirDate  *time.Time `json:"next_air_date,omitempty"`
-	NextAirDay   string     `json:"next_air_day,omitempty"` // the show's own air day of that episode
-	Dropped      bool       `json:"dropped,omitempty"`
+	Issues       []StatusIssue `json:"-"`
+	Number       int           `json:"number"`
+	Name         string        `json:"name"`
+	KeepUpToDate bool          `json:"keep_up_to_date"`
+	Episodes     int           `json:"episodes"`
+	Aired        int           `json:"aired"`
+	InLibrary    int           `json:"in_library"`    // episodes with a file in the main Version
+	Missing      int           `json:"missing"`       // aired, kept up to date, no file yet
+	BetterWanted int           `json:"better_wanted"` // in the Library, a better copy is sought
+	NotOutYet    int           `json:"not_out_yet"`
+	Downloading  int           `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
+	Failed       int           `json:"failed"`      // the download failed or its import needs a decision
+	NextAirDate  *time.Time    `json:"next_air_date,omitempty"`
+	NextAirDay   string        `json:"next_air_day,omitempty"` // the show's own air day of that episode
+	Dropped      bool          `json:"dropped,omitempty"`
 }
 
 // Seasons summarises a show's seasons from its episodes and the main
@@ -598,7 +590,7 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 	}
 	// One query for every season of the show instead of one per season. The
 	// main Version is looked up once (by the show's id), not once per episode.
-	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL FROM items i
+	rows, err := db.QueryContext(ctx, `SELECT i.part_id, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL, COALESCE(s.last_reason, '') FROM items i
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
 		WHERE i.part_id IN (SELECT id FROM parts WHERE title_id = ? AND kind = 'season')`, titleID, titleID)
 	if err != nil {
@@ -610,9 +602,9 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 		var air sql.NullString
 		var day string
 		var keep bool
-		var state string
+		var state, reason string
 		var hasFile bool
-		if err := rows.Scan(&part, &air, &day, &keep, &state, &hasFile); err != nil {
+		if err := rows.Scan(&part, &air, &day, &keep, &state, &hasFile, &reason); err != nil {
 			return nil, err
 		}
 		idx, ok := index[part]
@@ -620,6 +612,7 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 			continue
 		}
 		out[idx].tally(air, day, keep, state, hasFile, now)
+		out[idx].Issues = addStatusIssue(out[idx].Issues, state, reason)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

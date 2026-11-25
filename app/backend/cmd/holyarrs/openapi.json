@@ -2463,6 +2463,14 @@
           },
           "skip_free_space_check": {
             "type": "boolean"
+          },
+          "unkeep_deleted_episodes": {
+            "description": "Turn Keep up to date off for an episode whose file a rescan finds deleted from disk.",
+            "type": "boolean"
+          },
+          "unkeep_deleted_movies": {
+            "description": "Turn Keep up to date off for a movie whose file a rescan finds deleted from disk.",
+            "type": "boolean"
           }
         },
         "type": "object"
@@ -2987,6 +2995,10 @@
           "path_to": {
             "type": "string"
           },
+          "plain_password": {
+            "description": "Subsonic-style servers: the password itself is sent instead of the salted token (owner's choice, for LDAP).",
+            "type": "boolean"
+          },
           "token": {
             "description": "Masked.",
             "type": "string"
@@ -3015,7 +3027,8 @@
             "enum": [
               "plex",
               "jellyfin",
-              "emby"
+              "emby",
+              "subsonic"
             ],
             "type": "string"
           },
@@ -3040,12 +3053,20 @@
             "description": "... and the same folder as the media server sees it.",
             "type": "string"
           },
+          "plain_password": {
+            "description": "Subsonic-style servers only. Off by default: the salted token is sent. On sends the password itself (servers that check passwords with LDAP); refused unless the address is https or on the local network.",
+            "type": "boolean"
+          },
           "token": {
             "description": "Plex token or Jellyfin/Emby API key; kept encrypted. Empty or masked keeps the stored one, but must be sent again when the address moves to another host.",
             "type": "string"
           },
           "url": {
             "description": "The server's address, e.g. http://192.168.1.10:32400 (Plex) or http://192.168.1.10:8096 (Jellyfin, Emby).",
+            "type": "string"
+          },
+          "username": {
+            "description": "Subsonic-style servers: the sign-in name; token is then the password. Never returned.",
             "type": "string"
           },
           "web_url": {
@@ -3820,6 +3841,14 @@
           "folder_pattern": {
             "type": "string"
           },
+          "group_by_genre": {
+            "description": "Put each movie folder in a folder of its first genre: Movies/Drama/Heat (1995)/ (default off). New movies and renames follow it.",
+            "type": "boolean"
+          },
+          "group_by_letter": {
+            "description": "Put each movie folder in a folder of its first letter: Movies/H/Heat (1995)/ (default off). Wins over group_by_genre. New movies and renames follow it.",
+            "type": "boolean"
+          },
           "illegal": {
             "enum": [
               "replace",
@@ -3865,6 +3894,10 @@
           "show_folder_pattern": {
             "description": "Show folder, used when a show is added (default {title} ({year})).",
             "type": "string"
+          },
+          "show_group_by_letter": {
+            "description": "Put each new show folder in a folder of its first letter: Shows/O/The Office (2005)/ (default off).",
+            "type": "boolean"
           },
           "specials_folder": {
             "description": "Folder for season 0, a plain name (default Specials).",
@@ -5673,8 +5706,22 @@
             "nullable": true,
             "type": "integer"
           },
+          "multi_languages": {
+            "description": "Language codes a MULTi release carries on this Source; empty keeps the languages the name shows",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "name": {
             "type": "string"
+          },
+          "no_language_languages": {
+            "description": "Language codes a release carries on this Source when its name shows none; empty reads such a name as the title's original language",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "priority": {
             "type": "integer"
@@ -5883,8 +5930,22 @@
           "min_seeders": {
             "type": "integer"
           },
+          "multi_languages": {
+            "description": "Language codes a MULTi release carries on this Source; empty keeps the languages the name shows",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "name": {
             "type": "string"
+          },
+          "no_language_languages": {
+            "description": "Language codes a release carries on this Source when its name shows none; empty reads such a name as the title's original language",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "priority": {
             "maximum": 50,
@@ -6370,6 +6431,47 @@
             "minimum": 6,
             "type": "integer"
           },
+          "clean": {
+            "additionalProperties": {
+              "properties": {
+                "ads": {
+                  "description": "Ad and credit lines in the first and last six cues.",
+                  "type": "boolean"
+                },
+                "caps": {
+                  "description": "Sentence case, only for a file nearly all in capitals.",
+                  "type": "boolean"
+                },
+                "emoji": {
+                  "description": "Emoji.",
+                  "type": "boolean"
+                },
+                "hi": {
+                  "description": "Sound notes and speaker names; skipped for hearing-impaired and forced subtitles.",
+                  "type": "boolean"
+                },
+                "ocr": {
+                  "description": "l and I mix-ups.",
+                  "type": "boolean"
+                },
+                "overlap": {
+                  "description": "Ends each cue 84 ms before the next.",
+                  "type": "boolean"
+                },
+                "spacing": {
+                  "description": "Double spaces and spaces before punctuation.",
+                  "type": "boolean"
+                },
+                "tags": {
+                  "description": "Formatting tags.",
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            },
+            "description": "Cleanup steps run on each SRT subtitle HolyArrs saves, per lowercase language tag; \"*\" is every other language. A sent map replaces the saved one.",
+            "type": "object"
+          },
           "hi_suffix": {
             "enum": [
               "hi",
@@ -6516,7 +6618,10 @@
               "addic7ed",
               "yifysubtitles",
               "tvsubtitles",
-              "bsplayer"
+              "bsplayer",
+              "napiprojekt",
+              "napisy24",
+              "assrt"
             ],
             "type": "string"
           },
@@ -8208,7 +8313,7 @@
     },
     "/api/v1/app/update/mode": {
       "put": {
-        "description": "How the built-in updater acts: off, ask or auto. It is off by default.",
+        "description": "How the built-in updater acts: off, ask or auto (off by default). Send check_on false to turn off \"Tell me about new versions\": no update request at all.",
         "responses": {
           "200": {
             "content": {
@@ -11027,6 +11132,160 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/owner-reset/check": {
+      "post": {
+        "description": "Checks the code without using it and gives the owner name. A wrong code counts a try; five end it.",
+        "operationId": "ownerResetCheck",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The code is good."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad input."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Wrong or ended code."
+          }
+        },
+        "security": [],
+        "summary": "Check an owner reset code",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/owner-reset/code": {
+      "post": {
+        "description": "Writes a one-time owner reset code to the log and to reset-owner-code.txt in the config folder. Answers the same whether or not a code was made.",
+        "operationId": "ownerResetCode",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Asked."
+          }
+        },
+        "security": [],
+        "summary": "Make an owner reset code",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/owner-reset/finish": {
+      "post": {
+        "description": "Uses the code to set the owner name and password, like reset-owner: everyone is signed out, two-factor turns off, and API keys and outside sign-in links are removed.",
+        "operationId": "ownerResetFinish",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad input."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Wrong or ended code."
+          }
+        },
+        "security": [],
+        "summary": "Reset the owner with a code",
+        "tags": [
+          "Sign-in"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/password": {
       "post": {
         "description": "Needs the current password; other sessions end.",
@@ -11470,6 +11729,59 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/plex/servers": {
+      "get": {
+        "description": "The Plex servers the owner's linked Plex account owns, one entry per address, local ones first. The token is never sent.",
+        "operationId": "listPlexServers",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "servers": {
+                      "items": {
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "local": {
+                            "type": "boolean"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "port": {
+                            "type": "integer"
+                          },
+                          "secure": {
+                            "type": "boolean"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "List the owner's Plex servers",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/plex/start": {
       "post": {
         "description": "Starts a plex.tv PIN for signing in with Plex (when turned on).",
@@ -11795,6 +12107,86 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/auth/setup/account": {
+      "put": {
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad input."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Wrong name or password."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not allowed."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too many tries."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The server could not be reached."
+          }
+        },
+        "summary": "First run: change the owner's username, display name or password",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/auth/setup/discover": {
       "get": {
         "description": "Asks the local network for Jellyfin and Emby servers for about a second and a half; answers servers with kind, name and address (empty when none answer). Only while there is no owner.",
@@ -11844,6 +12236,188 @@
         "tags": [
           "Sign-in"
         ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/setup/language/{code}": {
+      "delete": {
+        "description": "Takes a language pack off again when it is unticked on the first-run language step. Only while setup is open.",
+        "operationId": "setupRemoveLanguage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not found."
+          }
+        },
+        "summary": "Remove a language during first run",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "public",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Installs a language pack from the first-run language step. Only while setup is open: before an owner exists (from a home address), or by the owner until setup is finished.",
+        "operationId": "setupInstallLanguage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not found, or no pack for this language."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The pack couldn't be downloaded."
+          }
+        },
+        "summary": "Install a language during first run",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "public",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/auth/setup/link/{kind}": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad input."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Wrong name or password."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not allowed."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Conflict."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Too many tries."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The server could not be reached."
+          }
+        },
+        "summary": "First run: link the owner's Jellyfin or Emby account as another way to sign in",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
@@ -14062,6 +14636,64 @@
         "summary": "Act on many torrents",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/downloaders/{id}/categories": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The categories (listed is false when the download app could not be read) and the pick for movies, shows and music."
+          },
+          "404": {
+            "description": "No such download app."
+          }
+        },
+        "summary": "List the download app's categories and the one that fits each kind",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/downloaders/{id}/category": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The category exists on the download app."
+          },
+          "400": {
+            "description": "The category name is not valid."
+          },
+          "409": {
+            "description": "The download app cannot make it."
+          },
+          "502": {
+            "description": "The download app did not answer."
+          }
+        },
+        "summary": "Make a missing download category on the download app",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
       }
     },
@@ -16942,6 +17574,20 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/explore/row-stats": {
+      "get": {
+        "description": "Owner and admins. For the last 30 days: how often each Explore row was shown, had a card opened and had a request started, summed over everyone, busiest first. Counts stay on this server and never say who did what.",
+        "responses": {
+          "200": {
+            "description": "days and rows [{row_type, title, shown, opens, asks}]; title only for rows with a fixed title."
+          }
+        },
+        "summary": "Explore row opens and requests",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/explore/service-top": {
       "get": {
         "description": "Every streaming service's top list for a region in one answer (from the metadata server, kept 12 hours): source streaming-availability (the service's own top today) or tmdb-popular (TMDB's most popular on it, Peacock only). Each list keeps the service's order, split by type, at most 10 titles, with fetched_at, age_seconds and stale (over 14 days); ranked is false for tmdb-popular. attribution must be shown with the lists.",
@@ -18107,6 +18753,146 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/languages": {
+      "get": {
+        "description": "Every language with its state: built_in, installed, installing, failed or available, with the pack size.",
+        "operationId": "listLanguages",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "{\"languages\": [...], \"auto_browser\": true|false}"
+          }
+        },
+        "summary": "List languages",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/languages/{code}": {
+      "delete": {
+        "description": "Deletes the language's pack; the app falls back to English.",
+        "operationId": "removeLanguage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "{\"languages\": [...]} after the removal."
+          }
+        },
+        "summary": "Remove a language",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Downloads the language's signed pack and keeps it.",
+        "operationId": "installLanguage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "{\"languages\": [...]} after the install."
+          },
+          "404": {
+            "description": "No pack for this language and app version."
+          },
+          "502": {
+            "description": "The pack couldn't be downloaded or failed its safety check."
+          }
+        },
+        "summary": "Install a language",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/languages/{code}/pack": {
+      "get": {
+        "description": "The installed pack's text, with an ETag. Needs no sign-in, so the sign-in page can use the language too.",
+        "operationId": "languagePack",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The language's text."
+          },
+          "304": {
+            "description": "Not changed since the ETag sent."
+          },
+          "404": {
+            "description": "This language is not installed."
+          }
+        },
+        "summary": "Get a language pack",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "public",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/library-folders": {
       "get": {
         "description": "Every Library folder with its health.",
@@ -18666,6 +19452,122 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/library-folders/{id}/tidy": {
+      "get": {
+        "description": "Lists where each loose movie file of a movie Library folder (several movies side by side in a genre folder or in the Library folder itself) would go: Title (Year)/Title (Year).ext, read from the file name, inside its genre folder when group_by_genre is on. Files named after the video (subtitles, .nfo, pictures) go with it. blocked lists movies that cannot move (a file is already at the new name, or the folder already holds a movie); unmatched lists videos with no year in the name. hash is sent back to tidy. undo_files is how many files the last tidy moved that undo puts back. Nothing is moved.",
+        "operationId": "previewTidy",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The preview."
+          },
+          "400": {
+            "description": "Not a movie Library folder."
+          },
+          "404": {
+            "description": "No such Library folder."
+          }
+        },
+        "summary": "Preview Tidy my folders",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Moves the files of the preview whose hash is sent, each with the Library's safe move (a hardlink, or a copy then remove across disks; an existing file is never replaced), and keeps what moved so undo can put it back. Answers moved and failed (each with from and why). 409 when the folder changed since the preview.",
+        "operationId": "applyTidy",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "hash": {
+                    "description": "The preview's hash.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "hash"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "What moved."
+          },
+          "404": {
+            "description": "No such Library folder."
+          },
+          "409": {
+            "description": "The folder changed since the preview."
+          }
+        },
+        "summary": "Tidy my folders",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/library-folders/{id}/tidy/undo": {
+      "post": {
+        "description": "Puts the files of the last tidy of this Library folder back where they were and removes the folders it made once empty. A file whose old place is taken again stays and is listed under failed; undo can be tried again for it. 409 when there is nothing to undo.",
+        "operationId": "undoTidy",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What moved back."
+          },
+          "404": {
+            "description": "No such Library folder."
+          },
+          "409": {
+            "description": "Nothing to undo."
+          }
+        },
+        "summary": "Undo Tidy my folders",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/library/copies": {
       "get": {
         "description": "Lists movie Files with their detected video codec and audio-track count for choosing copies that need another search.",
@@ -18842,6 +19744,20 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/library/unmatched-music": {
+      "get": {
+        "description": "How many found music files fit no track, with the count per artist. Needs Manage Library.",
+        "responses": {
+          "200": {
+            "description": "total and artists"
+          }
+        },
+        "summary": "Count unmatched music files",
+        "x-holyarrs-part": "music",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/library/watched-by-anyone": {
       "get": {
         "description": "The ids of every title any account watched on Plex, Jellyfin or Emby, from the last watch history read, whether or not the account is linked to a person here. Feeds the Library's Watched by anyone filter. Needs the owner or an admin. Empty while watch history is off.",
@@ -18851,6 +19767,20 @@
           }
         },
         "summary": "Titles anybody watched",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/library/watched-cleanup": {
+      "get": {
+        "description": "Movies and shows with files that every chosen account on Plex, Jellyfin or Emby finished at least days= days ago (default 30), biggest first, with the accounts to choose from. people= takes keys from that list, joined by commas; left out, everyone is waited for. A title somebody asked for stays off until each asker finished it, and a title with a protected copy never shows. Only lists: removing goes through the title's delete. Needs the owner or an admin. Empty while watch history is off.",
+        "responses": {
+          "200": {
+            "description": "Whether watch history is on, the days, the accounts and the titles found."
+          }
+        },
+        "summary": "Watched titles to clean up",
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "users",
         "x-holyarrs-scope": "admin"
@@ -19237,6 +20167,77 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/manual-import/folders": {
+      "post": {
+        "description": "Lists the folders inside one import place for the folder picker, sorted, up to 1000, with the number of video and music files in it and the folder one level up while that stays inside a place. An empty path lists the import places. Folders that are symlinks are never listed or followed, and nothing outside the places is read. Owner or admin, signed in with a password or an admin key.",
+        "operationId": "browseByHand",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "files": {
+                      "type": "integer"
+                    },
+                    "folders": {
+                      "items": {
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "more": {
+                      "type": "boolean"
+                    },
+                    "parent": {
+                      "type": "string"
+                    },
+                    "path": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The folders"
+          },
+          "400": {
+            "description": "Not a folder inside an import place"
+          },
+          "403": {
+            "description": "Not the owner or an admin signed in with a password"
+          }
+        },
+        "summary": "List folders for Import files by hand",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/manual-import/scan": {
       "post": {
         "description": "Lists the videos and tracks in a folder (or one file), up to 2000, each with a best guess of the movie or episode it is, the Slot of the main Version it would fill and whether that Slot already has a file. It only reads, and only inside a Library folder, a Downloader's folder or an extra import folder (GET /api/v1/settings/import-folders).",
@@ -19435,7 +20436,7 @@
     },
     "/api/v1/media-servers/watch-links": {
       "get": {
-        "description": "The switched-on Jellyfin and Emby servers with a browser address that have this Library movie or show, each with the link that opens it in the server's web app. A server that cannot be reached is left out.",
+        "description": "The switched-on Plex servers, and Jellyfin and Emby servers with a browser address, that have this Library movie or show, each with the link that opens it in the server's web app (Plex at app.plex.tv). A server that cannot be reached is left out.",
         "operationId": "getWatchLinks",
         "parameters": [
           {
@@ -19578,6 +20579,132 @@
         "tags": [
           "Media servers"
         ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/media-servers/{id}/libraries": {
+      "get": {
+        "description": "The movie, TV and music libraries on the server, each with its folders and whether the owner turned it on.",
+        "operationId": "listMediaServerLibraries",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "libraries": {
+                      "items": {
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "on": {
+                            "type": "boolean"
+                          },
+                          "paths": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "List a media server's libraries",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Saves which libraries are on; with scan, the server is asked to look through them now.",
+        "operationId": "pickMediaServerLibraries",
+        "parameters": [
+          {
+            "description": "The record id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "keys": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "scan": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "keys": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "scanning": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Pick a media server's libraries",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
@@ -20538,6 +21665,74 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/migrate/checks/{id}": {
+      "get": {
+        "description": "A plan or test run started in the background: its step, counts so far and, once done, its result. Checks live in memory; after a restart this answers 410 and the page starts again.",
+        "operationId": "getMigrateCheck",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The check."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not the owner or an admin, or not a password sign-in."
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The check is no longer kept; start it again."
+          }
+        },
+        "summary": "How far a plan or test run is",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/migrate/downloaders": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "The download apps that were added."
+          },
+          "400": {
+            "description": "The body is not valid."
+          }
+        },
+        "summary": "Add the download apps found in the read apps",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/migrate/dry-run": {
       "post": {
         "description": "Checks the plan against this server and says, item by item, what would be added, adopted in place, changed, left out, not found or already here, and what needs your input afterwards. Nothing is written. It answers the plan_hash a move must send to start from this very plan.",
@@ -20606,6 +21801,369 @@
         "summary": "Try a move without changing anything",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/migrate/find": {
+      "post": {
+        "description": "Owner only, on a click. Tries the apps' Docker names, this machine, the Docker host and the /24 of this server's address on each app's usual port, with a short wait each, and lists the apps that answered. No key is sent. One search at a time: one asked for while another runs, or within 2 seconds of the last, waits its turn (at most 4 wait, up to 20 seconds).",
+        "operationId": "findOldApps",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "found": {
+                      "items": {
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The apps that answered."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not the owner or not a password sign-in."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A search ran less than 10 seconds ago or is still running."
+          }
+        },
+        "summary": "Find old apps on the network",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/migrate/folders": {
+      "post": {
+        "description": "Owner only, with a strong sign-in. With an empty path it lists the starting folders (the mounted and Library folders not inside another); with a path inside them it lists the folders directly in it, at most 300. For each it counts how many of the given title folder names (at most 1000) are in it; a folder with more than 50 folders inside is not counted. Folders are only looked up, through the starting folders, so a link cannot lead outside them; no file is read.",
+        "operationId": "browseSetupFolders",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "names": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "checked": {
+                      "type": "integer"
+                    },
+                    "folders": {
+                      "items": {
+                        "properties": {
+                          "found": {
+                            "type": "integer"
+                          },
+                          "path": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "path": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The folders"
+          },
+          "400": {
+            "description": "The path is not a full folder path, or not one HolyArrs can see"
+          }
+        },
+        "summary": "List folders HolyArrs can see, with title counts",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/migrate/key-lookup": {
+      "post": {
+        "description": "Owner only. Asks a Radarr, Sonarr, Lidarr or Prowlarr for its startup file, or a Bazarr for its start page, which hold its API key, so setup can fill the key. When that app's sign-in is on, a username and password (or, for Seerr and Overseerr, an email and password or the owner's kept Plex sign-in with use_plex) sign in first; Seerr and Overseerr always need one and hand the key only to an admin. The sign-in is used for this one fetch and never kept, logged or sent back. need_login says the app refused and no sign-in was given; problem is wrong_login, not_admin or unreachable; plex_available says a Plex sign-in is kept for Seerr. A Seerr also signs in a Jellyfin or Emby account with use_media_server; media_server names which one it uses. Any other failure answers an empty key. The key is never logged.",
+        "operationId": "lookupOldAppKey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "allow_local_network": {
+                    "type": "boolean"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "use_media_server": {
+                    "type": "boolean"
+                  },
+                  "use_plex": {
+                    "type": "boolean"
+                  },
+                  "username": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "url"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "media_server": {
+                      "type": "string"
+                    },
+                    "need_login": {
+                      "type": "boolean"
+                    },
+                    "plex_available": {
+                      "type": "boolean"
+                    },
+                    "problem": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The key, or an empty key with why: need_login, problem, and plex_available for Seerr."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The body is not JSON with an app and an address."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not the owner or not a password sign-in."
+          }
+        },
+        "summary": "Find an old app's API key",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/migrate/linked": {
+      "post": {
+        "description": "Owner only. Lists the Sonarr and Radarr servers an Overseerr or Seerr is set up with, or the apps a Prowlarr syncs to (address only: Prowlarr hides their keys), and checks each one with a key from this server. Keys are never answered. With add, reads each named address with the key the old app holds and keeps that key in the vault.",
+        "operationId": "readLinkedApps",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MigrateSourceInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "apps": {
+                      "items": {
+                        "properties": {
+                          "address": {
+                            "type": "string"
+                          },
+                          "four_k": {
+                            "type": "boolean"
+                          },
+                          "has_key": {
+                            "type": "boolean"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "reachable": {
+                            "type": "boolean"
+                          },
+                          "version": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "failed": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "read": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The linked apps; with add, what was read and what failed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The body is not a known app with an address or a full backup path."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not the owner or not a password sign-in."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An answer, file or the snapshot is bigger than the move tool reads."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not the app picked, a refused key, no backup there, a backup that leaves its folder or unpacks too big, or a file that is not SQLite."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The app does not answer, sent us elsewhere, is on the local network without the switch, or answered something unreadable."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The read took too long."
+          }
+        },
+        "summary": "Apps an old app is set up with",
+        "tags": [
+          "Move"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
       }
     },
@@ -20728,6 +22286,59 @@
       }
     },
     "/api/v1/migrate/moves/{id}": {
+      "delete": {
+        "description": "Removes the move from Earlier imports, with its record of what it made. Only a move that was undone, or one that failed without adding anything, can be removed; undo a finished move first.",
+        "operationId": "removeMove",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not the owner or an admin, not a password sign-in, or a key without the admin scope."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such move."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The move still holds what it added: undo it first."
+          }
+        },
+        "summary": "Remove a move",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      },
       "get": {
         "description": "The move, its report once it ran (or was undone), and the progress (0 to 1) of its move Job, or of its undo Job while that runs.",
         "operationId": "getMove",
@@ -20999,6 +22610,109 @@
           }
         },
         "summary": "The plan for a move",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "users",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/migrate/preview": {
+      "post": {
+        "description": "Reads the old app and answers how many of each thing would come over (titles, folders, profiles, indexers and so on, zeros included). Nothing is saved and the key is not kept.",
+        "operationId": "previewOldApp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MigrateSourceInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "counts": {
+                      "additionalProperties": {
+                        "type": "integer"
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "How many of each thing the read found."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The body is not a known app with an address or a full backup path."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not the owner or an admin, not a password sign-in, or a key without the admin scope."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "An answer, file or the snapshot is bigger than the move tool reads."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not the app picked, a refused key, no backup there, a backup that leaves its folder or unpacks too big, or a file that is not SQLite."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The app does not answer, sent us elsewhere, is on the local network without the switch, or answered something unreadable."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The read took too long."
+          }
+        },
+        "summary": "Count what an old app would bring",
+        "tags": [
+          "Move"
+        ],
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "users",
         "x-holyarrs-scope": "admin"
@@ -22017,6 +23731,53 @@
         ],
         "x-holyarrs-part": "wishlist",
         "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/my/plugin-links": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Plugins I linked to my account"
+          }
+        },
+        "summary": "My plugin links",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "My plugin links after the code was used"
+          }
+        },
+        "summary": "Link a plugin to my account",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/my/plugin-links/{plugin}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plugin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "My plugin links after the plugin was removed"
+          }
+        },
+        "summary": "Unlink a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "self",
         "x-holyarrs-scope": "write"
       }
     },
@@ -23773,6 +25534,438 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/plugin-hooks/artwork": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Saved: the picture is checked and becomes the title's poster or backdrop"
+          }
+        },
+        "summary": "Set a title's picture from a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/downloader": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A job, or 204 when none came within 25 seconds"
+          }
+        },
+        "summary": "Next download-client job for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Answer taken"
+          }
+        },
+        "summary": "Answer a download-client job",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/events": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "An event the plugin may read, or 204"
+          }
+        },
+        "summary": "Next event for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/home-widget": {
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Card kept until the plugin stops"
+          }
+        },
+        "summary": "Set a plugin's Home card",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/link": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "A short code the person types in My account to link the plugin to themselves"
+          }
+        },
+        "summary": "Link code for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/metadata": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A job, or 204 when none came"
+          }
+        },
+        "summary": "Next ratings request for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Answer taken"
+          }
+        },
+        "summary": "Answer a ratings request",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/notify": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Sent through the Alerts that take plugin messages"
+          }
+        },
+        "summary": "Send a message from a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/pages": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A job, or 204 when none came"
+          }
+        },
+        "summary": "Next page-file request for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Answer taken"
+          }
+        },
+        "summary": "Answer a page-file request",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Pages kept until the plugin stops"
+          }
+        },
+        "summary": "Declare a plugin's pages",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/releases": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A job, or 204 when none came"
+          }
+        },
+        "summary": "Next search-source job for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Answer taken"
+          }
+        },
+        "summary": "Answer a search-source job",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/sections": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A job, or 204 when none came"
+          }
+        },
+        "summary": "Next title-section request for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Answer taken"
+          }
+        },
+        "summary": "Answer a title-section request",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/stream": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "A link that plays one file with seeking"
+          }
+        },
+        "summary": "Short-lived stream link for a media file",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/tools": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A job, or 204 when none came"
+          }
+        },
+        "summary": "Next assistant tool call for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Answer taken"
+          }
+        },
+        "summary": "Answer an assistant tool call",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Tools kept until the plugin stops"
+          }
+        },
+        "summary": "Declare a plugin's assistant tools",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/users": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Ids and display names only"
+          }
+        },
+        "summary": "People's ids and names for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-images/{path...}": {
+      "get": {
+        "description": "Owner only. Serves one WebP picture from the plugin list server, up to 256 KB.",
+        "operationId": "getPluginImage",
+        "responses": {
+          "200": {
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The picture."
+          },
+          "404": {
+            "description": "No such picture."
+          }
+        },
+        "summary": "Get a plugin picture",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-page-files/{token}/{path...}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file, sandboxed by its security policy"
+          }
+        },
+        "summary": "A plugin page file",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "public",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/plugin-pages": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Pages running plugins offer"
+          }
+        },
+        "summary": "Plugin pages",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-pages/{plugin}/call": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plugin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The route's answer; it needs the plugin's scope and the person's own permission"
+          }
+        },
+        "summary": "Run a call for a plugin page",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-pages/{plugin}/play": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plugin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A stream link for the app's own player, never for the plugin page"
+          }
+        },
+        "summary": "Ask for the player to play a file for a plugin page",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-pages/{plugin}/{page}/open": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plugin",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "page",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A short-lived address for the sandboxed page"
+          }
+        },
+        "summary": "Open a plugin page",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-stream/{token}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The media file, with range support"
+          }
+        },
+        "summary": "Play a plugin stream link",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/plugin-widgets": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Plain-data cards HolyArrs draws itself"
+          }
+        },
+        "summary": "Home cards from plugins",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/plugins": {
       "get": {
         "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",
@@ -23787,35 +25980,91 @@
         "x-holyarrs-scope": "admin"
       }
     },
-    "/api/v1/plugins/tailscale/signout": {
-      "post": {
-        "description": "Owner only, signed-in session only. Stops the Tailscale plugin, runs it once to log the device out and wipe its Tailscale state, and leaves it stopped. If the logout itself fails the state is still wiped; remove the device in Tailscale's admin page.",
-        "responses": {
-          "200": {
-            "description": "Signed out; the plugin stays stopped"
-          },
-          "404": {
-            "description": "The Tailscale plugin is not installed"
+    "/api/v1/plugins/dev-mode": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "on": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
           }
         },
-        "summary": "Sign the Tailscale plugin out",
+        "responses": {
+          "200": {
+            "description": "Saved; turning it off stops every developer plugin"
+          },
+          "400": {
+            "description": "Body is not {\"on\": true|false}"
+          }
+        },
+        "summary": "Turn developer mode on or off",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
       }
     },
-    "/api/v1/plugins/tailscale/status": {
-      "get": {
-        "description": "Owner only. The Tailscale plugin's own status file: state, device and ts.net name, Tailscale version, last update, login expiry and direct or relayed. The sign-in link is left out when the request uses an API key.",
-        "responses": {
-          "200": {
-            "description": "Status; state is not_connected until the plugin has written one"
-          },
-          "404": {
-            "description": "The Tailscale plugin is not installed"
+    "/api/v1/plugins/file-lock": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "allow_without": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
           }
         },
-        "summary": "Tailscale plugin status",
+        "responses": {
+          "200": {
+            "description": "Saved for the whole install; turning it on starts plugins stopped for the missing file lock, turning it off stops them"
+          },
+          "400": {
+            "description": "Body is not {\"allow_without\": true|false}"
+          }
+        },
+        "summary": "Let signed plugins run without the file lock",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/net-lock": {
+      "put": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "allow_without": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved for the whole install; turning it on starts plugins stopped for the missing network lock, turning it off stops the plugins that list websites"
+          },
+          "400": {
+            "description": "Body is not {\"allow_without\": true|false}"
+          }
+        },
+        "summary": "Let plugins that list websites run without the network lock",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
@@ -23832,28 +26081,122 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "in": "query",
-            "name": "keep",
-            "required": false,
-            "schema": {
-              "enum": [
-                "1"
-              ],
-              "type": "string"
-            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Stopped and removed; keep=1 keeps its program and data, disabled"
+            "description": "Stopped and removed with its settings and data"
           },
           "404": {
             "description": "Not installed"
           }
         },
         "summary": "Remove a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/activity": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Its recent calls to HolyArrs, newest first, and how many were refused or over its limits"
+          }
+        },
+        "summary": "A plugin's recent calls",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/approve": {
+      "post": {
+        "description": "Owner only, signed-in session only. Approves what the installed version asks for: its listed websites, and a real folder for each folder it asks for (an empty path skips an optional one). System folders and HolyArrs's own config are refused. A plugin held for approval starts.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "folders": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "owner_hosts": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Approved; a held plugin is started"
+          },
+          "400": {
+            "description": "Body is not JSON"
+          },
+          "422": {
+            "description": "A folder is refused, a required folder is missing or an owner host is not a name"
+          }
+        },
+        "summary": "Approve a plugin's access",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/dev-install": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Installed and started, or held for approval"
+          },
+          "404": {
+            "description": "No plugin with that id in the developer folder"
+          },
+          "422": {
+            "description": "Developer mode is off, a signed plugin has that id, or the manifest is refused"
+          }
+        },
+        "summary": "Install or reload a plugin from the developer folder",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
@@ -23893,6 +26236,190 @@
           }
         },
         "summary": "Install and start a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/owner-hosts": {
+      "put": {
+        "description": "Owner only, signed-in session only. Up to 100 hosts of the owner's own (a self-hosted Headscale), as name or name:port; they may reach LAN addresses. Addresses are refused. A running plugin restarts with them.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "hosts": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved"
+          },
+          "400": {
+            "description": "Body is not {\"hosts\": [...]}"
+          },
+          "422": {
+            "description": "More than 3, or one is an address or not a name"
+          }
+        },
+        "summary": "Set a plugin's own extra hosts",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/remote/name": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saved; the plugin restarts with the new name"
+          }
+        },
+        "summary": "Rename a forwarding plugin's device",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/remote/signout": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed out and stopped"
+          }
+        },
+        "summary": "Sign a forwarding plugin out",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/remote/status": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The plugin's own status: connected or not, its address and sign-in link"
+          }
+        },
+        "summary": "Remote access status of a forwarding plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/settings": {
+      "get": {
+        "description": "Owner only, signed-in session. The plugin's declared settings fields with saved or default values; secret fields show only whether they are set.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fields and values"
+          },
+          "404": {
+            "description": "Not installed"
+          }
+        },
+        "summary": "Read a plugin's settings",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Owner only, signed-in session. Body {values:{key:value}, clear:[secret keys]}. A secret left empty keeps its saved value; secrets are stored encrypted. A running plugin restarts with the new values.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Saved; the fields and values"
+          },
+          "400": {
+            "description": "Not a JSON object"
+          },
+          "404": {
+            "description": "Not installed"
+          },
+          "422": {
+            "description": "A value doesn't fit its field"
+          }
+        },
+        "summary": "Save a plugin's settings",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"
@@ -23955,6 +26482,111 @@
         "summary": "Stop a plugin",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/test-event": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "event": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The line was queued"
+          },
+          "404": {
+            "description": "Not running or not approved for that event"
+          },
+          "422": {
+            "description": "Not a developer plugin"
+          }
+        },
+        "summary": "Send a developer plugin one made-up event",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugins/{id}/test-versions": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "on": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved; takes effect at the next install or update"
+          },
+          "400": {
+            "description": "Body is not {\"on\": true|false}"
+          }
+        },
+        "summary": "Choose whether a plugin gets test versions",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/public/languages": {
+      "get": {
+        "description": "Lists the language codes this server can show (English and the installed packs), so the sign-in and first-run pickers offer only those. Needs no sign-in.",
+        "operationId": "publicLanguages",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Done."
+          }
+        },
+        "summary": "Installed languages",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "public",
         "x-holyarrs-scope": "admin"
       }
     },
@@ -24033,6 +26665,178 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "public",
         "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/releases/check": {
+      "post": {
+        "description": "Queues a release check: the Sources are asked for the movie (tmdb, name, optional imdb, year, original_language) and every result is judged with pick_rules_id. Nothing is stored and no Slot moves. Checks for the same movie and Pick rules share one Job while it runs.",
+        "responses": {
+          "202": {
+            "description": "The Job ids of the check."
+          }
+        },
+        "summary": "Check releases for a movie not in the Library",
+        "x-holyarrs-part": "movies",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/releases/check/{id}": {
+      "get": {
+        "description": "Answers like the title release list: the judged releases, running_job_ids while the check runs, and last_search when it found none. Results are kept for an hour.",
+        "parameters": [
+          {
+            "description": "The release check id (its Job id).",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The releases of the check."
+          }
+        },
+        "summary": "The releases a check found",
+        "x-holyarrs-part": "movies",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/releases/check/{id}/pick": {
+      "post": {
+        "description": "Body {release_id, title_id, force}. Once the movie is added, the release is judged again for its Slot, stored and chosen like a pick by hand. A failed one needs force. 410 when the check is no longer kept.",
+        "parameters": [
+          {
+            "description": "The release check id (its Job id).",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The choice, as for choosing a Release."
+          }
+        },
+        "summary": "Send a checked release for the added movie",
+        "x-holyarrs-part": "movies",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/releases/name-check": {
+      "post": {
+        "description": "Reads a Release name the way a search does, matches it to a Library title and judges it with each copy's Pick rules (or with pick_rules_id), taking any file on disk into account. Nothing is stored or sent to a downloader.",
+        "operationId": "nameCheck",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "name": {
+                    "maxLength": 1000,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "pick_rules_id": {
+                    "description": "Judge with these Pick rules instead of the title's copies.",
+                    "format": "int64",
+                    "type": "integer"
+                  },
+                  "size": {
+                    "description": "Size in bytes; size limits are judged only when given.",
+                    "format": "int64",
+                    "type": "integer"
+                  },
+                  "title_id": {
+                    "description": "Match only against this Library title.",
+                    "format": "int64",
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "copies": {
+                      "items": {
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "note": {
+                      "description": "no_title or no_album when nothing was judged.",
+                      "type": "string"
+                    },
+                    "parsed": {
+                      "description": "Everything the reader found, each with its confidence.",
+                      "type": "object"
+                    },
+                    "read": {
+                      "type": "object"
+                    },
+                    "title": {
+                      "nullable": true,
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The reading, the matched title and one verdict per copy."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No name, or a name over 1000 characters."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such title or Pick rules."
+          }
+        },
+        "summary": "Check a Release name",
+        "tags": [
+          "Search"
+        ],
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/releases/{id}/choose": {
@@ -25224,6 +28028,89 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/settings/asks/streaming-cleanup": {
+      "get": {
+        "description": "The latest Library check for movies and shows with files that stream on the owner's streaming services: progress and what was found, biggest first. Kept in memory only.",
+        "operationId": "getStreamingCleanup",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The latest check."
+          }
+        },
+        "summary": "Library check for titles on my streaming services",
+        "tags": [
+          "Requests"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "read"
+      },
+      "post": {
+        "description": "Starts the Library check in the background unless one runs. It only lists titles; nothing is removed.",
+        "operationId": "startStreamingCleanup",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The check, started or already running."
+          },
+          "400": {
+            "description": "My streaming services are not set."
+          }
+        },
+        "summary": "Start the Library check for titles on my streaming services",
+        "tags": [
+          "Requests"
+        ],
+        "x-holyarrs-part": "wishlist",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/default-tracks": {
+      "get": {
+        "description": "Whether HolyArrs picks the audio and subtitle track media servers start with, and the languages in order. Off by default.",
+        "responses": {
+          "200": {
+            "description": "{\"enabled\": bool, \"audio\": [code], \"subtitles\": [code or \"off\"]}."
+          }
+        },
+        "summary": "Default audio and subtitle settings",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Body {\"enabled\": bool, \"audio\": [code], \"subtitles\": [code or \"off\"]}; up to 5 languages each, a field left out keeps its value. Plex gets each Library file's tracks set for its account, once per list; on Jellyfin and Emby everyone who has not picked their own languages gets the first of each list. Saving it on starts a pass in the background. Needs a password sign-in or an API key.",
+        "responses": {
+          "200": {
+            "description": "Saved; the settings as stored."
+          },
+          "400": {
+            "description": "The body is not JSON, a language is unknown, sound is set to off, a list is longer than 5, or both lists are empty while on."
+          },
+          "403": {
+            "description": "Only the owner may change it, with a recent password check, the first-run setup session or an API key with the control scope; code reauth asks for the password again."
+          }
+        },
+        "summary": "Change the default audio and subtitle settings",
+        "x-holyarrs-part": "media",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/settings/downloaders": {
       "get": {
         "description": "Stall times, removing failed downloads, dangerous files, replacing downloads removed outside HolyArrs, grab spacing and trying the next Downloader.",
@@ -25358,6 +28245,38 @@
         "x-holyarrs-part": "media",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/settings/hands-off": {
+      "get": {
+        "description": "Whether hands-off mode is on. While it is on, HolyArrs sends releases to the Downloader and leaves the files alone: no Library folder is needed and nothing is imported, renamed, moved, scanned or deleted. Off by default.",
+        "responses": {
+          "200": {
+            "description": "{\"on\": true or false}."
+          }
+        },
+        "summary": "Hands-off mode",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Body {\"on\": true or false}. Turning it on turns Subtitles off and holds file work; turning it off brings normal behaviour back and moves nothing. Needs a recent password check (the first-run setup session counts until the wizard is done) or an API key with the control scope.",
+        "responses": {
+          "200": {
+            "description": "Saved."
+          },
+          "400": {
+            "description": "The body is not {\"on\": true or false}."
+          },
+          "403": {
+            "description": "Only the owner may change it, with a recent password check, the first-run setup session or an API key with the control scope; code reauth asks for the password again."
+          }
+        },
+        "summary": "Turn hands-off mode on or off",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "control"
       }
     },
     "/api/v1/settings/health": {
@@ -26160,7 +29079,7 @@
             "description": "The body is not JSON, or the label is empty or longer than 64 characters."
           },
           "403": {
-            "description": "Only the owner, signed in with a password or an API key, may change it."
+            "description": "Only the owner may change it, with a recent password check, the first-run setup session or an API key with the control scope; code reauth asks for the password again."
           }
         },
         "summary": "Change the Plex label settings",
@@ -27036,6 +29955,345 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/settings/trakt-secret": {
+      "put": {
+        "description": "New Trakt apps have none and need none; an empty secret removes it. Never sent back.",
+        "operationId": "putTraktSecret",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "secret": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "secret"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "client_id": {
+                      "type": "boolean"
+                    },
+                    "client_secret": {
+                      "type": "boolean"
+                    },
+                    "expires_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "person_id": {
+                      "type": "integer"
+                    },
+                    "problem": {
+                      "type": "string"
+                    },
+                    "signed_in": {
+                      "type": "boolean"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "waiting": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Saved; the sign-in status."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not a secret."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Owner only, signed in with a password."
+          }
+        },
+        "summary": "Store an older Trakt app's client secret",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/trakt-signin": {
+      "delete": {
+        "description": "Asks Trakt to forget the token too. Public lists still read.",
+        "operationId": "endTraktSignIn",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "client_id": {
+                      "type": "boolean"
+                    },
+                    "client_secret": {
+                      "type": "boolean"
+                    },
+                    "expires_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "person_id": {
+                      "type": "integer"
+                    },
+                    "problem": {
+                      "type": "string"
+                    },
+                    "signed_in": {
+                      "type": "boolean"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "waiting": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Signed out."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Owner only, signed in with a password."
+          }
+        },
+        "summary": "Sign out of Trakt",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "get": {
+        "description": "Never holds a token, the client id or the client secret.",
+        "operationId": "getTraktSignIn",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "client_id": {
+                      "type": "boolean"
+                    },
+                    "client_secret": {
+                      "type": "boolean"
+                    },
+                    "expires_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "person_id": {
+                      "type": "integer"
+                    },
+                    "problem": {
+                      "type": "string"
+                    },
+                    "signed_in": {
+                      "type": "boolean"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "waiting": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The sign-in status."
+          }
+        },
+        "summary": "Whether the Trakt app is set up and who is signed in",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "settings",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "description": "Answers a code to type at Trakt's address; ask /trakt-signin/check until it is approved.",
+        "operationId": "startTraktDeviceSignIn",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "expires_in": {
+                      "type": "integer"
+                    },
+                    "interval": {
+                      "type": "integer"
+                    },
+                    "user_code": {
+                      "type": "string"
+                    },
+                    "verification_url": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The code and where to type it."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Owner only, signed in with a password."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No Trakt key yet."
+          }
+        },
+        "summary": "Start a Trakt device sign-in",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/settings/trakt-signin/check": {
+      "post": {
+        "description": "state is waiting, signed_in, denied or expired. Trakt is asked no faster than its interval.",
+        "operationId": "checkTraktDeviceSignIn",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "state": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "properties": {
+                        "client_id": {
+                          "type": "boolean"
+                        },
+                        "client_secret": {
+                          "type": "boolean"
+                        },
+                        "expires_at": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "person_id": {
+                          "type": "integer"
+                        },
+                        "problem": {
+                          "type": "string"
+                        },
+                        "signed_in": {
+                          "type": "boolean"
+                        },
+                        "username": {
+                          "type": "string"
+                        },
+                        "waiting": {
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The state and the sign-in status."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Owner only, signed in with a password."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No device sign-in is waiting."
+          }
+        },
+        "summary": "Ask whether the Trakt device sign-in was approved",
+        "tags": [
+          "Settings"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/settings/trakt-token": {
       "get": {
         "description": "Never sent in full. Owner only.",
@@ -27330,7 +30588,7 @@
             "description": "The body is not {\"enabled\": true or false}."
           },
           "403": {
-            "description": "Only the owner, signed in with a password or an API key, may change it."
+            "description": "Only the owner may change it, with a recent password check, the first-run setup session or an API key with the control scope; code reauth asks for the password again."
           }
         },
         "summary": "Turn watch history on or off",
@@ -28460,6 +31718,33 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/subtitles/clean": {
+      "post": {
+        "description": "Queues a job that runs the cleanup on every SRT subtitle HolyArrs saved in the Library.",
+        "operationId": "cleanAllSubtitles",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "queued": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The job is queued."
+          }
+        },
+        "summary": "Clean every subtitle again",
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
     "/api/v1/subtitles/languages": {
       "get": {
         "description": "Two-letter codes and English names.",
@@ -28797,6 +32082,63 @@
         "tags": [
           "Subtitles"
         ],
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/subtitles/{id}/clean": {
+      "post": {
+        "description": "Runs the cleanup steps set for the subtitle's language on an SRT subtitle HolyArrs saved beside the video. The text before goes to the holding folder.",
+        "operationId": "cleanSubtitle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "changed": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "changed is false when there was nothing to clean."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such subtitle."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "The subtitle is not beside the video."
+          }
+        },
+        "summary": "Clean a subtitle again",
         "x-holyarrs-part": "subtitles",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "write"
@@ -30524,6 +33866,67 @@
         "x-holyarrs-scope": "read"
       }
     },
+    "/api/v1/titles/{id}/plugin-sections": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plain-data sections HolyArrs draws itself"
+          }
+        },
+        "summary": "Title page sections from plugins",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/titles/{id}/points": {
+      "get": {
+        "description": "How the Pick rules score the file a slot of the title holds (?slot=<id>), beside the good enough step and points.",
+        "operationId": "slotPoints",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The file's quality step, the traits that fit it with their points, the total, and the good enough step and points."
+          },
+          "400": {
+            "description": "No slot sent."
+          },
+          "404": {
+            "description": "The slot is not this title's or holds no file."
+          }
+        },
+        "summary": "Score the file a slot holds",
+        "x-holyarrs-part": "title",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/titles/{id}/refresh": {
       "post": {
         "description": "Reads names, dates and posters again.",
@@ -31371,6 +34774,53 @@
         "x-holyarrs-part": "subtitles",
         "x-holyarrs-permission": "manage_library",
         "x-holyarrs-scope": "read"
+      }
+    },
+    "/api/v1/titles/{id}/subtitles/clean": {
+      "post": {
+        "description": "Runs the cleanup on every SRT subtitle HolyArrs saved for the title, in every Version.",
+        "operationId": "cleanTitleSubtitles",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "changed": {
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "How many subtitles changed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "No such title."
+          }
+        },
+        "summary": "Clean a title's subtitles again",
+        "x-holyarrs-part": "subtitles",
+        "x-holyarrs-permission": "manage_library",
+        "x-holyarrs-scope": "write"
       }
     },
     "/api/v1/titles/{id}/versions": {

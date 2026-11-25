@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Byggi {what}… tilraun {attempt}",
 	"core.testTag.connected": "Tengt",
 	"core.api.notAnswering": "HolyArrs svarar ekki. Athugaðu hvort það er í gangi.",
+	"core.api.tooSlow": "HolyArrs var of lengi að svara. Reyndu aftur eftir mínútu.",
 	"core.api.requestFailed": "Beiðni mistókst ({status})",
 	"core.api.wentWrong": "Eitthvað fór úrskeiðis.",
 	"core.trailerMiss.trailer": "stikla",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Sjálfvirkt samþykkt",
 	"core.plain.approvedBy": "Samþykkt af {who}",
 	"core.settings.cantReach": "Næ ekki til þessa vistfangs. Athugaðu það og að forritið sé í gangi.",
+	"core.settings.tryHttp": "Þetta vistfang svarar ekki á https. Prófaðu http:// í staðinn.",
 	"core.settings.groupLibrary.label": "Safn",
 	"core.settings.groupLibrary.line": "Hvar titlar eru",
 	"core.settings.groupLibrary.about": "Möppur, hlutar, sjálfgefin gildi, skjátextar, skráarnöfn og innflutningur.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Tveir niðurhalarar ná í sama niðurhalsforrit, svo niðurhöl geta birst tvisvar.",
 	"core.plain.peopleCheck": "Ekki er hægt að lesa notendalista miðlaþjónsins, svo ekki er slökkt hér á þeim sem voru fjarlægðir þar.",
 	"core.plain.deleted": "eytt",
-	"core.plain.deletedName": "{name} (eytt)"
+	"core.plain.deletedName": "{name} (eytt)",
+	"core.api.handsOffFiles": "Afskiptalaus hamur er á, svo HolyArrs snertir ekki sóttar skrár. Slökktu á honum í Stillingum til að flytja inn, endurnefna, færa eða skanna skrár.",
+	"core.api.handsOffSubtitles": "Afskiptalaus hamur er á, svo HolyArrs opnar aldrei sóttar skrár. Slökktu á honum í Stillingum til að nota skjátexta."
 }

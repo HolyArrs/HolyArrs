@@ -20,7 +20,20 @@ const banned = ['Monitored', 'Activity', 'Wanted', 'Cutoff', 'Quality Profile', 
 const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 'key', 'movie', 'show', 'artist',
 	// The audio codec and HDR labels a file name carries (mediafiles/naming_media.go): names, not words to translate.
 	'AAC', 'AC3', 'EAC3', 'DTS', 'DTS-HD', 'TrueHD', 'FLAC', 'ALAC', 'MP3', 'Opus', 'Vorbis', 'PCM', 'DolbyVision', 'HDR10', 'HDR10+', 'HLG',
-	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'qBittorrent', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}',
+	// Device families in a Pick rules points line (mediafiles/device_play.go): product names.
+	'Apple TV', 'Fire TV', 'Roku', 'Chromecast',
+	// A release-name word quoted in a releasename comment, never sent.
+	'COMPLETE.BLURAY',
+	// Language names Gestdown is asked by (subtitles/sites/adapters.go langNames): sent to the site, never shown.
+	'Bulgarian', 'Catalan', 'Chinese (Simplified)', 'Chinese (Traditional)', 'Croatian', 'Euskera', 'Galego', 'Portuguese (Brazilian)', 'Romanian', 'Serbian', 'Slovenian',
+	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'napiprojekt', 'napisy24', 'assrt', 'qBittorrent', 'Jackett', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}',
+	// migrate past_history.go: the old app's column names, never shown.
+	'movieid', 'seriesid',
+	// Answers only a plugin program reads (its token, hook and bridge routes) and scope names: for plugin authors, never shown in the app.
+	"hands-off mode is on, so plugins can't change media files", "plugin token not accepted", "this acts for a person, and no one has linked this plugin to their account", "this plugin is calling too often; try again in a minute", "bad title id", "could not read the body", "could not read the people list", "downloads.read", "library.read", "method must be GET, POST, PUT or DELETE", "no such file", "no such plugin page", "not available", "only a running plugin calls this", "plugin pages are used from a signed-in session", "requests.read", "send {\"job\": \"...\", \"data\": ...} or {\"job\": \"...\", \"error\": \"...\"}", "send {\"method\": \"GET\", \"path\": \"/api/v1/...\"}", "system.health.read", "this link has ended", "this page has ended; open it again", "this plugin was not given the {scope} permission",
+	"a plugin acts for a person only on requests and follows", "only you can remove your plugin links", "only you can see your plugin links", "send {\"external\": \"<who this is in your service>\"}", "that person may not do this", "this acts for a person: send {pluginforuserheader} for someone who linked this plugin", "plugins may only use folders the owner gave them",
+	"this plugin has too many calls open; try again when one ends", "this plugin does not give remote access",
+	"send {\"subject\": \"...\", \"text\": \"...\"}: up to 100 and 1000 characters, no markup", "the message could not be sent", "this plugin sent too many messages this hour",
 	// migrate errNotChecked: a dry run's own marker, never shown (the page says how many shows are still being checked).
 	'still being checked']);
 // Lines the scan cannot put together: a control's Event starts with the person's name (setup ControlEvent)
@@ -47,6 +60,8 @@ const handLines = { 'Because you have {name}': 'suggest',
 	"No Source this search can use has this folder's tags, so Sources without tags were asked too.": 'sources', 'No Downloader has confirmed this Release yet. You can choose another one.': 'sources', 'Deleted by hand': 'downloads', 'Marked bad': 'downloads',
 	'{name} paused the stage {stage}': 'accounts', '{name} resumed the stage {stage}': 'accounts',
 	'{name} restarted the stage {stage}': 'accounts', 'Download removed': 'downloads', 'Download removed by {name}': 'downloads',
+	// metadata ErrTraktNoSecret: sent through traktFail as err.Error(), so the scan cannot see it.
+	"Add your Trakt app's client secret in Settings first; Trakt needs it to keep you signed in.": 'metadata',
 	// outbound.FakeIPMessage: a name that resolved to 198.18.x.x (Clash or Surge fake-IP mode).
 	'Your router or VPN is sending HolyArrs to a fake address (198.18.x.x). This usually comes from Clash or Surge. Add {host} to its direct list.': 'metadata',
 	// A finished download removed by hand: the files it kept, and why a remove is refused (downloads remove_done.go).
@@ -56,6 +71,11 @@ const handLines = { 'Because you have {name}': 'suggest',
 	'{name} did not say where they are': 'downloads', 'HolyArrs could not read its Library folders': 'downloads',
 	'HolyArrs could not check whether another torrent uses them': 'downloads', 'another torrent in {name} uses {path}': 'downloads',
 	'HolyArrs could not reach {name}': 'downloads',
+	// requests streaming.go: My streaming services, and an ask turned down because it streams on one of them.
+	'pick the country your streaming services are in': 'requests', 'pick up to 30 streaming services': 'requests',
+	'pick at least one streaming service under My streaming services, then save': 'requests',
+	"Not downloaded: it's on {name}. Approve it again to download it anyway.": 'requests',
+	"It's on {name}, one of the streaming services set in Requests settings, so it was not downloaded. Approve it again to download it anyway.": 'requests',
 	"HolyArrs is putting this download's files in the library; remove it once that is done": 'downloads',
 	'this Downloader is read-only: turn on "HolyArrs can change this Downloader" in its settings to remove it from here': 'downloads',
 	// migrate seasonsNote: a show found only by the old app's TMDB number, with and without files to place.
@@ -114,6 +134,19 @@ const handLines = { 'Because you have {name}': 'suggest',
 	'the Release said {claimed} but holds {held} of video or audio; likely a fake': 'importer',
 	// Two lines of a Release's reasons (mediafiles judge, sources search_shows), shown in the Release lists.
 	'holds {covered}, not what was searched for': 'sources', 'no Title in the library is called {value}': 'mediafiles',
+	// mediafiles judge.go: a release from a group blocked in the Pick rules.
+	'the group {group} is blocked in these Pick rules': 'mediafiles',
+	// mediafiles judge.go and judge_steps.go: a Release's step, points and good-enough reasons; a {step} gap holds a
+	// ladder step as the Pick rules page names it (StepWord), and server-words.ts shows it in the picked language.
+	'{step} is allowed': 'mediafiles', '{step} is not allowed in these Pick rules': 'mediafiles',
+	"{step} is lower than the current file's {step2}": 'mediafiles', 'reaches good enough, which starts at {step}': 'mediafiles',
+	'below good enough, which starts at {step}': 'mediafiles', 'below good enough, which needs {n} points': 'mediafiles',
+	'{n} points': 'mediafiles', '{n} points (needs at least {min})': 'mediafiles', '{n} points, needs at least {min}': 'mediafiles',
+	// mediafiles judge.go seedersLine: a torrent's seeders against the Pick rules' minimum, "seeder" for one.
+	'{n} seeder, at least {min}': 'mediafiles', '{n} seeders, at least {min}': 'mediafiles',
+	'{n} seeder, needs at least {min}': 'mediafiles', '{n} seeders, needs at least {min}': 'mediafiles',
+	// sources name_check.go reasonsOf and routes_search.go: a reason line with the points it gives or takes ("+10").
+	'{line} ({n} points)': 'mediafiles',
 	// mediafiles ShowYearMisfit: the year after a show's name is another show's.
 	'the name says {year}; this show began in {began}': 'mediafiles',
 	// requests: the Quality row's refusals and the approver's note (qualities.go, approve.go CopyKept).
@@ -435,6 +468,34 @@ for (const file of walk(root)) {
 }
 
 for (const [t, mod] of Object.entries(handLines)) if (!found.has(t)) found.set(t, mod);
+
+// The rotating row titles (suggest/titles/*.json, key|text|flags). A decade fills as "1990s", so the line keeps
+// its number gap ("{decade}s"); a genre gap is a lower-case genre word. server-words.ts reads these as shaped lines.
+for (const name of readdirSync(join(root, 'suggest', 'titles')).filter((n) => n.endsWith('.json')))
+	for (const line of JSON.parse(readFileSync(join(root, 'suggest', 'titles', name), 'utf8')).templates) {
+		const text = line.split('|')[1].replace(/\{decade\}/g, '{decade}s');
+		if (!found.has(text)) found.set(text, 'titles');
+	}
+// The music row titles (music/rowtpl catalog.go, the fifth argument of t() and the .vars() wordings). A style gap
+// ({genre}, {genre2}, {substyle}) holds a music style name, kept as written unless it is a known genre; a season
+// or holiday name is {holiday}, as {season} is a season number in other lines.
+{
+	const src = readFileSync(join(root, 'music', 'rowtpl', 'catalog.go'), 'utf8');
+	const lines = [...src.matchAll(/\bt\(\s*"[A-Z]\d+",\s*"\w+",\s*[\d.]+,\s*"\w*",\s*("(?:[^"\\]|\\.)*")/g)].map((m) => str(m[1], 0).text);
+	for (const m of src.matchAll(/\.vars\(([^)]*)\)/g)) for (const v of m[1].matchAll(/"(?:[^"\\]|\\.)*"/g)) lines.push(str(v[0], 0).text);
+	for (const l of lines) {
+		// A title that is only a gap ("{mix}") has no words to translate.
+		// A mood or season gap holds a name from the music data that no language knows yet, so those titles stay English.
+		if (/^\{\w+\}$/.test(l) || /\{(mood|season)\}/.test(l)) continue;
+		const text = l.replace(/\{genre\}/g, '{style}').replace(/\{genre2\}/g, '{style2}').replace(/\{substyle\}/g, '{style3}').replace(/\{name\}/g, '{style}').replace(/\{season\}/g, '{holiday}').replace(/\{decade\}/g, '{decade}s');
+		if (!found.has(text)) found.set(text, 'musictitles');
+	}
+	// What fills a music title's {place}, {area} and {for} gaps (page_text.go place, page.go areaName and forOf).
+	for (const l of ['worldwide', 'in {country}']) if (!found.has(l)) found.set(l, 'musictitles');
+	const page = readFileSync(join(root, 'music', 'rowtpl', 'page.go'), 'utf8');
+	for (const v of page.matchAll(/var (?:areaName|forOf) = map\[string\]string\{([^\n]*)\}/g))
+		for (const w of v[1].matchAll(/:\s*"([^"]+)"/g)) if (!found.has(w[1])) found.set(w[1], 'musictitles');
+}
 
 // Keep every line already in the file under its key; give new lines new keys.
 const words = existsSync(out) ? JSON.parse(readFileSync(out, 'utf8')) : {};

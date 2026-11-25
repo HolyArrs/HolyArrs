@@ -192,10 +192,14 @@ func TestByHandMusicAlbumTagTailNotSure(t *testing.T) {
 	}
 	flacFixture(t, filepath.Join(w.in, "x", "year.flac"), "ARTIST=Brad Paisley", "ALBUM=Part II (2001)", "TRACKNUMBER=3", "TITLE="+partTwo[2])
 	got := w.scan(t, w.in)
-	for _, al := range []string{"Part II (Live)", "Part II (Deluxe Edition)", "Part II [Acoustic]"} {
+	for _, al := range []string{"Part II (Live)", "Part II [Acoustic]"} {
 		if g := got["x/"+al+".flac"].Guess; g.Confidence >= 0.7 {
 			t.Errorf("%s: %+v", al, g)
 		}
+	}
+	// A deluxe pressing holds the same recordings, as another pressing of the album does in Lidarr.
+	if g := got["x/Part II (Deluxe Edition).flac"].Guess; g.AlbumID != w.album || g.Track != 3 || g.Confidence != 1 {
+		t.Errorf("deluxe: %+v", g)
 	}
 	if g := got["x/year.flac"].Guess; g.AlbumID != w.album || g.Track != 3 || g.Confidence != 1 {
 		t.Errorf("year tail: %+v", g)
@@ -203,17 +207,18 @@ func TestByHandMusicAlbumTagTailNotSure(t *testing.T) {
 }
 
 // The same holds for an untagged file whose album folder only matches once its
-// "(Live)" or "(Deluxe Edition)" is cut off; a year or format tail stays sure.
+// "(Live)" is cut off; a year, format or edition tail stays sure.
 func TestByHandMusicAlbumFolderTailNotSure(t *testing.T) {
 	w := musicSetup(t)
 	for _, al := range []string{"Part II (Live)", "Part II (Deluxe Edition)", "Part II (2001) [FLAC]"} {
 		mp3Fixture(t, filepath.Join(w.in, "Brad Paisley", al, "03 "+partTwo[2]+".mp3"))
 	}
 	got := w.scan(t, w.in)
-	for _, al := range []string{"Part II (Live)", "Part II (Deluxe Edition)"} {
-		if g := got["Brad Paisley/"+al+"/03 "+partTwo[2]+".mp3"].Guess; g.Confidence >= 0.7 {
-			t.Errorf("%s: %+v", al, g)
-		}
+	if g := got["Brad Paisley/Part II (Live)/03 "+partTwo[2]+".mp3"].Guess; g.Confidence >= 0.7 {
+		t.Errorf("live: %+v", g)
+	}
+	if g := got["Brad Paisley/Part II (Deluxe Edition)/03 "+partTwo[2]+".mp3"].Guess; g.AlbumID != w.album || g.Track != 3 || g.Confidence < 0.7 {
+		t.Errorf("deluxe: %+v", g)
 	}
 	if g := got["Brad Paisley/Part II (2001) [FLAC]/03 "+partTwo[2]+".mp3"].Guess; g.AlbumID != w.album || g.Track != 3 || g.Confidence < 0.7 {
 		t.Errorf("year tail: %+v", g)
@@ -245,11 +250,15 @@ func TestByHandMusicFolderNamesAndIDs(t *testing.T) {
 	if g := got["odd/y.flac"].Guess; g.Track != 4 || g.Confidence >= 0.7 {
 		t.Fatalf("number and title disagree: %+v", g)
 	}
-	for name, want := range map[string]string{"miss/Nobody Here/Album/01 Song.mp3": MusicNoArtist, "miss/b.mp3": MusicNoAlbum, "miss/c.mp3": MusicNoTrack, "track.mp3": MusicNoArtist} {
+	for name, want := range map[string]string{"miss/Nobody Here/Album/01 Song.mp3": MusicNoArtist, "miss/b.mp3": MusicNoAlbum, "miss/c.mp3": MusicNoTrack, "track.mp3": MusicNoFacts} {
 		f := got[name]
 		if f.Guess.Reason != want || f.Guess.SlotID != 0 || f.Guess.Confidence != 0 {
 			t.Errorf("%s: %+v, want %s", name, f.Guess, want)
 		}
+	}
+	// A file loose in the import folder takes no artist from the folders around it.
+	if d := got["track.mp3"].Guess.Detail; d != "" {
+		t.Errorf("loose file named an artist from the folder: %q", d)
 	}
 	if d := got["miss/b.mp3"].Guess.Detail; d != "Mud on the Tires" {
 		t.Errorf("album detail %q", d)
@@ -542,5 +551,74 @@ func TestByHandMusicReplace(t *testing.T) {
 	}
 	if !exists(better) || !exists(first) {
 		t.Fatal("a source file went missing")
+	}
+}
+
+// Titles that differ only by a featured artist or a remaster tail, a
+// deluxe pressing that numbers the tracks differently, and multi-disc files
+// with no disc tag or folder all find their track.
+func TestByHandMusicLooseTrackTitles(t *testing.T) {
+	w := musicSetup(t)
+	_, slots := w.addAlbum(t, w.artist, "Two Sides", 2005, "e0000000-0000-4000-8000-0000000000c4", "1:Alpha", "1:Beta", "2:Gamma", "2:Delta")
+	root := filepath.Join(w.in, "Brad Paisley")
+	cases := []struct {
+		file string
+		tags []string
+		slot int64
+		sure bool
+	}{
+		{"Part II/03.flac", []string{"TRACKNUMBER=3", "TITLE=" + partTwo[2] + " (feat. Alison Krauss)"}, w.slots[2], true},
+		{"Part II/03r.flac", []string{"TRACKNUMBER=3", "TITLE=" + partTwo[2] + " - 2011 Remastered"}, w.slots[2], true},
+		{"Part II/x.flac", []string{"TRACKNUMBER=14", "TITLE=" + partTwo[1]}, w.slots[1], true},
+		{"Part II/y.flac", []string{"TRACKNUMBER=3", "TITLE=Some Other Song"}, w.slots[2], false},
+		{"Two Sides/a.flac", []string{"TRACKNUMBER=3", "TITLE=Gamma", "ALBUM=Two Sides"}, slots[2], true},
+		{"Two Sides/b.flac", []string{"TRACKNUMBER=202", "ALBUM=Two Sides"}, slots[3], true},
+		{"Two Sides/c.flac", []string{"TRACKNUMBER=2", "TITLE=Beta", "ALBUM=Two Sides"}, slots[1], true},
+		// Numbered per disc with the disc only in the file name: the name wins over counting across the album.
+		{"Two Sides/2-01 Gamma.flac", []string{"TRACKNUMBER=1", "ALBUM=Two Sides"}, slots[2], true},
+		// Numbered per disc, no disc anywhere, a title that is not the counted track: not a sure match to disc 1.
+		{"Two Sides/d.flac", []string{"TRACKNUMBER=2", "TITLE=Delta", "ALBUM=Two Sides"}, slots[3], true},
+	}
+	for _, c := range cases {
+		al := "ALBUM=Part II"
+		if strings.HasPrefix(c.file, "Two") {
+			al = "ALBUM=Two Sides"
+		}
+		flacFixture(t, filepath.Join(root, filepath.FromSlash(c.file)), append([]string{"ARTIST=Brad Paisley", al}, c.tags...)...)
+	}
+	got := w.scan(t, w.in)
+	for _, c := range cases {
+		g := got["Brad Paisley/"+c.file].Guess
+		if g.SlotID != c.slot || (g.Confidence == 1) != c.sure {
+			t.Errorf("%s: %+v", c.file, g)
+		}
+	}
+}
+
+func TestSameSongAndEdition(t *testing.T) {
+	for _, c := range []struct {
+		a, b string
+		want bool
+	}{
+		{"Song (feat. X)", "Song", true}, {"Song ft. X", "Song", true}, {"Song [2009 Remaster]", "Song", true},
+		{"Song - Remastered 2011", "Song", true}, {"Song (Live)", "Song", false}, {"Song (Remix)", "Song", false}, {"Other", "Song", false},
+		{"Song (Live 2011 Remaster)", "Song", false}, {"Song - Live at Wembley / 2011 Remaster", "Song", false},
+		{"Song (Acoustic) [Remastered]", "Song", false}, {"Song (Demo) [2009 Remaster]", "Song", false},
+		{"Song (Monologue)", "Song", false}, {"Song (Stereophonic)", "Song", false},
+	} {
+		if got := sameSong(c.a, c.b); got != c.want {
+			t.Errorf("sameSong(%q,%q)=%v", c.a, c.b, got)
+		}
+	}
+	for _, c := range []struct {
+		a    string
+		want bool
+	}{
+		{"Album (Deluxe Edition)", true}, {"Album [2011 Remaster]", true}, {"Album (20th Anniversary Edition) [FLAC]", true},
+		{"Album (Live)", false}, {"Album (Deluxe Live Edition)", false}, {"Album (Remixes)", false}, {"Other (Deluxe)", false},
+	} {
+		if got := editionOf(c.a, "Album"); got != c.want {
+			t.Errorf("editionOf(%q)=%v", c.a, got)
+		}
 	}
 }

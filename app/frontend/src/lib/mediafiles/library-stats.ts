@@ -30,7 +30,7 @@ const names: Record<string, Record<string, string>> = {
 };
 
 export function valueLabel(fact: string, value: string, t: T): string {
-	if (value === 'other' || value === 'unchecked' || value === 'unknown') return t('library.stats.value.' + value);
+	if (value === 'other' || value === 'unchecked' || value === 'unknown' || value === 'unsupported') return t('library.stats.value.' + value);
 	return names[fact]?.[value] ?? value;
 }
 

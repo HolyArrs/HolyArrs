@@ -38,7 +38,8 @@ export interface PlanItem {
 	why?: string;
 	needs?: string;
 	person?: PersonPlan;
-	folder?: { old_path: string; path: string; kind: string; label: string; unseen?: boolean };
+	folder?: { old_path: string; path: string; kind: string; label: string; unseen?: boolean; checked?: number; found?: number; suggest?: string; missing?: boolean; read_only?: boolean };
+	title?: { kind: string; library: string; folder: string };
 	/** Set for a profile; body and traits only when it becomes its own Pick rules. */
 	rules?: { app: string; profile: string; preset: string; name?: string; body?: unknown; traits?: { name: string; points: number }[]; skipped?: { name: string; reason: string }[] };
 }
@@ -158,11 +159,14 @@ export interface Report {
 	checking?: number;
 }
 
+/** What happens to file names: keep them as they are (the default) or rename to HolyArrs naming. */
+export type Names = 'keep' | 'rename';
+
 export interface Move {
 	id: number;
 	created_at: string;
 	snapshots: number[];
-	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[]; no_formats?: boolean; leave_folders?: string[] };
+	choices?: { people?: Record<string, string>; skip?: string[]; path_rules?: PathRule[]; no_formats?: boolean; leave_folders?: string[]; names?: Names };
 	state: 'queued' | 'running' | 'done' | 'failed' | 'undone';
 	job_id?: number;
 	report?: Report;
@@ -197,6 +201,8 @@ export interface GateState {
 	openChoices?: number;
 	moving?: boolean;
 	safeMode?: boolean;
+	/** How far a running plan or test run is, when the server said. */
+	progress?: string;
 }
 
 export const apps = [
@@ -218,6 +224,7 @@ export function groupLabel(group: string): string | undefined {
 		pick_rules: t('migrate.pickRules'),
 		titles: t('migrate.titles'),
 		never_add: t('migrate.neverAddList'),
+		turned_down: t('migrate.turnedDown'),
 		outside_lists: t('migrate.outsideLists'),
 		sources: t('migrate.sources'),
 		downloaders: t('migrate.downloaders'),
@@ -231,7 +238,7 @@ export function groupLabel(group: string): string | undefined {
 	return labels[group];
 }
 
-export const groupOrder = ['folders', 'pick_rules', 'titles', 'never_add', 'outside_lists', 'sources', 'downloaders', 'naming', 'subtitles', 'people', 'wishlist', 'alerts'];
+export const groupOrder = ['folders', 'pick_rules', 'titles', 'never_add', 'outside_lists', 'sources', 'downloaders', 'turned_down', 'naming', 'subtitles', 'people', 'wishlist', 'alerts'];
 
 const words = (): Record<string, [string, string]> => ({
 	create: [t('migrate.willBeAdded'), t('migrate.added')],
@@ -412,8 +419,12 @@ export function needsLook(result: string): boolean {
 
 /** The server's "3 of 10 imported" line as "3 of 10", in the picked language. */
 export function progressWords(note: string): string {
-	const m = /^(\d+) of (\d+)\s+(?:imported|undone)\.?$/.exec(note);
-	return m ? t('migrate.doneOfTotal', { done: m[1], total: m[2] }) : note;
+	const m = /^(\d+) of (\d+)\s+(?:imported|undone)\.?(?: wait (\d+) (\d+))?$/.exec(note);
+	if (!m) return note;
+	const count = t('migrate.doneOfTotal', { done: m[1], total: m[2] });
+	// A title waiting on the metadata server says when it is tried again.
+	if (!m[4] || m[4] === '0') return count;
+	return `${count} ${t('library.import.waiting', { left: m[4], min: String(Math.max(1, Math.ceil(Number(m[3]) / 60))) })}`;
 }
 
 /** A note from a read app ("sonarr: the app has no tag list; skipped") in the picked language. */
@@ -599,7 +610,7 @@ export function stepGate(s: GateState): { ok: boolean; reason: string } {
 			return s.picked > 0 ? { ok: true, reason: '' } : { ok: false, reason: t('migrate.turnOnAtLeast') };
 		case 'choose':
 			if (s.picked === 0) return { ok: false, reason: t('migrate.turnOnAtLeast') };
-			if (s.planning || !s.planned) return { ok: false, reason: t('migrate.updating') };
+			if (s.planning || !s.planned) return { ok: false, reason: (s.planning && s.progress) || t('migrate.updating') };
 			if ((s.folderErrors ?? 0) > 0) return { ok: false, reason: t('migrate.fixTheFolderMarked') };
 			if ((s.ruleErrors ?? 0) > 0) return { ok: false, reason: t('migrate.fixThePathRule') };
 			if ((s.groupsWithItems ?? 0) === 0) return { ok: false, reason: t('migrate.nothingNewToMove') };
@@ -607,7 +618,7 @@ export function stepGate(s: GateState): { ok: boolean; reason: string } {
 			return { ok: true, reason: '' };
 		case 'move': {
 			if (s.moving) return { ok: false, reason: '' };
-			if (s.trying) return { ok: false, reason: s.tried ? t('migrate.updating') : t('migrate.tryingTheMove') };
+			if (s.trying) return { ok: false, reason: s.progress || (s.tried ? t('migrate.updating') : t('migrate.tryingTheMove')) };
 			if (s.failed) return { ok: false, reason: t('migrate.theTestRunFailed') };
 			if (s.stale || !s.tried) return { ok: false, reason: t('migrate.changedSinceTheTest') };
 			if (s.step === 'move' && s.safeMode) return { ok: false, reason: t('migrate.holyarrsStartedInSafe') };
@@ -626,4 +637,29 @@ export function plural(n: number, one: string, many = one + 's'): string {
 function order(result: string): number {
 	const i = resultOrder.indexOf(result);
 	return i < 0 ? resultOrder.length : i;
+}
+
+/** Network hits for apps this dialog can add; others would fill an address under the wrong app. */
+export function usableHits<T extends { kind: string }>(hits: readonly T[], kinds: readonly string[]): T[] {
+	return hits.filter((h) => kinds.includes(h.kind));
+}
+
+/** Search hits split by the app picked: the picked kind first, every other kind folded below. */
+export function splitHits<T extends { kind: string }>(hits: readonly T[], kind: string): { mine: T[]; others: T[] } {
+	return { mine: hits.filter((h) => h.kind === kind), others: hits.filter((h) => h.kind !== kind) };
+}
+
+/** Names joined the way the language does ("A, B, and C"). */
+export function listNames(names: readonly string[], locale?: string): string {
+	try {
+		return new Intl.ListFormat(locale, { type: 'conjunction' }).format(names);
+	} catch {
+		return names.join(', ');
+	}
+}
+
+// Whether a browser can open this host: an IP, localhost or a dotted name. A Docker name (radarr) only resolves inside Docker.
+export function browsable(host: string): boolean {
+	const h = host.trim().toLowerCase();
+	return h === 'localhost' || h.includes('.') || h.includes(':');
 }

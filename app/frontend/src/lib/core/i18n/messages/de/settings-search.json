@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Beste Kopie zuerst; bei Gleichstand gewinnt das Staffelpaket",
 	"settings.search.preferAlways": "Ein Staffelpaket, sobald eines das Qualitätsset erfüllt",
 	"settings.search.multi": "Releases mit mehreren Staffeln nehmen",
-	"settings.search.multiHint": "Füllt jede fehlende Folge darin",
+	"settings.search.multiHint": "Füllt jede fehlende Folge darin. Bei gleicher Qualität gewinnt das Release mit mehr gesuchten Folgen",
 	"settings.search.music": "Musik",
 	"settings.search.albums": "Auch nach fehlenden Alben suchen",
 	"settings.search.albumsHint": "Veröffentlichte Alben, je eine Suche",

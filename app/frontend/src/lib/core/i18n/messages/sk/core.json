@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Pripravuje sa {what}… pokus {attempt}",
 	"core.testTag.connected": "Pripojené",
 	"core.api.notAnswering": "HolyArrs neodpovedá. Skontrolujte, či beží.",
+	"core.api.tooSlow": "HolyArrs odpovedal príliš dlho. Skús to znova o minútu.",
 	"core.api.requestFailed": "Požiadavka zlyhala ({status})",
 	"core.api.wentWrong": "Niečo sa pokazilo.",
 	"core.trailerMiss.trailer": "ukážka",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Schválené automaticky",
 	"core.plain.approvedBy": "Schválil {who}",
 	"core.settings.cantReach": "K tejto adrese sa nedá dostať. Skontrolujte ju a či aplikácia beží.",
+	"core.settings.tryHttp": "Táto adresa neodpovedá cez https. Skús radšej http://.",
 	"core.settings.groupLibrary.label": "Knižnica",
 	"core.settings.groupLibrary.line": "Kde tituly sídlia",
 	"core.settings.groupLibrary.about": "Priečinky, Časti, predvolené, titulky, názvy súborov a import.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dva sťahovače vedú k rovnakej sťahovacej aplikácii, preto sa sťahovania môžu zobraziť dvakrát.",
 	"core.plain.peopleCheck": "Zoznam používateľov mediálneho servera sa nedá prečítať, preto sa tu nevypínajú ľudia, ktorí tam boli odstránení.",
 	"core.plain.deleted": "zmazaný",
-	"core.plain.deletedName": "{name} (zmazaný)"
+	"core.plain.deletedName": "{name} (zmazaný)",
+	"core.api.handsOffFiles": "Režim bez zásahu je zapnutý, takže HolyArrs stiahnuté súbory nechá na pokoji. Na import, premenovanie, presun alebo prehľadanie súborov ho vypnite v Nastaveniach.",
+	"core.api.handsOffSubtitles": "Režim bez zásahu je zapnutý, takže HolyArrs stiahnuté súbory nikdy neotvára. Na titulky ho vypnite v Nastaveniach."
 }

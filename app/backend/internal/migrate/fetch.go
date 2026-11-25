@@ -18,8 +18,11 @@ import (
 
 // Limits bound one read.
 type Limits struct {
-	// MaxAnswer is the largest API answer read (bytes).
+	// MaxAnswer is the largest API answer read whole (bytes).
 	MaxAnswer int64
+	// MaxList is the largest title list read entry by entry (bytes); it is
+	// never held whole.
+	MaxList int64
 	// MaxDepth is the deepest JSON nesting accepted.
 	MaxDepth int
 	// Timeout bounds each API call.
@@ -36,7 +39,8 @@ type Limits struct {
 
 // DefaultLimits are used for every zero field.
 var DefaultLimits = Limits{
-	MaxAnswer:  64 << 20,
+	MaxAnswer:  16 << 20,
+	MaxList:    1 << 30,
 	MaxDepth:   64,
 	Timeout:    60 * time.Second,
 	MaxFile:    1 << 30,
@@ -49,6 +53,9 @@ func (l Limits) orDefault() Limits {
 	d := DefaultLimits
 	if l.MaxAnswer > 0 {
 		d.MaxAnswer = l.MaxAnswer
+	}
+	if l.MaxList > 0 {
+		d.MaxList = l.MaxList
 	}
 	if l.MaxDepth > 0 {
 		d.MaxDepth = l.MaxDepth
@@ -95,8 +102,8 @@ func newAPIClient(src Source, header func(*http.Request)) (*apiClient, error) {
 	return &apiClient{base: u, h: h, lim: lim, header: header}, nil
 }
 
-// do calls method path (with query q) and returns the body, capped.
-func (c *apiClient) do(ctx context.Context, method, path string, q url.Values, form url.Values) ([]byte, http.Header, int, error) {
+// send calls method path (with query q) and returns the open answer.
+func (c *apiClient) send(ctx context.Context, method, path string, q url.Values, form url.Values) (*http.Response, error) {
 	u := *c.base
 	u.Path = strings.TrimRight(u.Path, "/") + path
 	if q != nil {
@@ -108,7 +115,7 @@ func (c *apiClient) do(ctx context.Context, method, path string, q url.Values, f
 	}
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
-		return nil, nil, 0, ErrBadSource
+		return nil, ErrBadSource
 	}
 	if form != nil {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -125,7 +132,20 @@ func (c *apiClient) do(ctx context.Context, method, path string, q url.Values, f
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
-		return nil, nil, 0, fmt.Errorf("%w: %s", ErrUnreachable, plainNetErr(err))
+		return nil, fmt.Errorf("%w: %s", ErrUnreachable, plainNetErr(err))
+	}
+	return resp, nil
+}
+
+// do calls method path (with query q) and returns the body, capped.
+func (c *apiClient) do(ctx context.Context, method, path string, q url.Values, form url.Values) ([]byte, http.Header, int, error) {
+	resp, err := c.send(ctx, method, path, q, form)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	if resp.ContentLength > c.lim.MaxAnswer {
+		resp.Body.Close()
+		return nil, nil, resp.StatusCode, ErrTooBig
 	}
 	defer resp.Body.Close()
 	b, err := io.ReadAll(io.LimitReader(resp.Body, c.lim.MaxAnswer+1))
@@ -159,6 +179,9 @@ func plainNetErr(err error) string {
 		return "it took too long"
 	case strings.Contains(s, "refused"):
 		return "the connection was refused"
+	case strings.Contains(s, "HTTP response to HTTPS client") || strings.Contains(s, "does not look like a TLS handshake"):
+		// https typed for an app that only speaks http.
+		return "it answers on http, not https"
 	}
 	return "the connection failed"
 }

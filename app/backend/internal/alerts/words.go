@@ -7,7 +7,8 @@ import "strings"
 // to English. {name} slots are filled by say.
 var words = map[string]map[string]string{
 	"en": {
-		MomentGrab: "Sent to download", MomentImport: "In the Library", MomentRename: "Renamed", MomentAdd: "Added",
+		"plugin_from": "From {plugin}",
+		MomentArtwork: "Cover art changed", MomentGrab: "Sent to download", MomentImport: "In the Library", MomentRename: "Renamed", MomentAdd: "Added",
 		MomentDelete: "Deleted", MomentDecision: "Needs a decision", MomentSubtitle: "Subtitle",
 		MomentDownloaded: "Downloaded", MomentDownloadFailed: "Download failed",
 		"health_fixed": "Health: fixed", "health_look": "Health: something needs a look",
@@ -18,7 +19,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} tracks",
 	},
 	"es": {
-		MomentGrab: "Enviado a descargar", MomentImport: "En la Biblioteca", MomentRename: "Renombrado", MomentAdd: "Añadido",
+		"plugin_from": "De {plugin}",
+		MomentArtwork: "Portada cambiada", MomentGrab: "Enviado a descargar", MomentImport: "En la Biblioteca", MomentRename: "Renombrado", MomentAdd: "Añadido",
 		MomentDelete: "Eliminado", MomentDecision: "Requiere una decisión", MomentSubtitle: "Subtítulo",
 		MomentDownloaded: "Descargado", MomentDownloadFailed: "Descarga fallida",
 		"health_fixed": "Estado: resuelto", "health_look": "Estado: algo necesita atención",
@@ -29,7 +31,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} pistas",
 	},
 	"pt-br": {
-		MomentGrab: "Enviado para download", MomentImport: "Na Biblioteca", MomentRename: "Renomeado", MomentAdd: "Adicionado",
+		"plugin_from": "De {plugin}",
+		MomentArtwork: "Capa alterada", MomentGrab: "Enviado para download", MomentImport: "Na Biblioteca", MomentRename: "Renomeado", MomentAdd: "Adicionado",
 		MomentDelete: "Excluído", MomentDecision: "Precisa de uma decisão", MomentSubtitle: "Legenda",
 		MomentDownloaded: "Baixado", MomentDownloadFailed: "Falha no download",
 		"health_fixed": "Saúde: resolvido", "health_look": "Saúde: algo precisa de atenção",
@@ -40,7 +43,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} faixas",
 	},
 	"fr": {
-		MomentGrab: "Envoyé au téléchargement", MomentImport: "Dans la bibliothèque", MomentRename: "Renommé", MomentAdd: "Ajouté",
+		"plugin_from": "De {plugin}",
+		MomentArtwork: "Pochette modifiée", MomentGrab: "Envoyé au téléchargement", MomentImport: "Dans la bibliothèque", MomentRename: "Renommé", MomentAdd: "Ajouté",
 		MomentDelete: "Supprimé", MomentDecision: "Décision requise", MomentSubtitle: "Sous-titre",
 		MomentDownloaded: "Téléchargé", MomentDownloadFailed: "Échec du téléchargement",
 		"health_fixed": "État : réglé", "health_look": "État : quelque chose demande votre attention",
@@ -51,7 +55,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} pistes",
 	},
 	"de": {
-		MomentGrab: "Zum Download gesendet", MomentImport: "In der Bibliothek", MomentRename: "Umbenannt", MomentAdd: "Hinzugefügt",
+		"plugin_from": "Von {plugin}",
+		MomentArtwork: "Cover geändert", MomentGrab: "Zum Download gesendet", MomentImport: "In der Bibliothek", MomentRename: "Umbenannt", MomentAdd: "Hinzugefügt",
 		MomentDelete: "Gelöscht", MomentDecision: "Entscheidung nötig", MomentSubtitle: "Untertitel",
 		MomentDownloaded: "Heruntergeladen", MomentDownloadFailed: "Download fehlgeschlagen",
 		"health_fixed": "Zustand: behoben", "health_look": "Zustand: etwas braucht einen Blick",
@@ -62,7 +67,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} Tracks",
 	},
 	"ru": {
-		MomentGrab: "Отправлено на загрузку", MomentImport: "В Медиатеке", MomentRename: "Переименовано", MomentAdd: "Добавлено",
+		"plugin_from": "От {plugin}",
+		MomentArtwork: "Обложка изменена", MomentGrab: "Отправлено на загрузку", MomentImport: "В Медиатеке", MomentRename: "Переименовано", MomentAdd: "Добавлено",
 		MomentDelete: "Удалено", MomentDecision: "Требует решения", MomentSubtitle: "Субтитры",
 		MomentDownloaded: "Загружено", MomentDownloadFailed: "Ошибка загрузки",
 		"health_fixed": "Состояние: исправлено", "health_look": "Состояние: нужно проверить",
@@ -73,7 +79,8 @@ var words = map[string]map[string]string{
 		"tracks":        "Треков: {n}",
 	},
 	"uk": {
-		MomentGrab: "Надіслано на завантаження", MomentImport: "У Медіатеці", MomentRename: "Перейменовано", MomentAdd: "Додано",
+		"plugin_from": "Від {plugin}",
+		MomentArtwork: "Обкладинку змінено", MomentGrab: "Надіслано на завантаження", MomentImport: "У Медіатеці", MomentRename: "Перейменовано", MomentAdd: "Додано",
 		MomentDelete: "Видалено", MomentDecision: "Потрібне рішення", MomentSubtitle: "Субтитри",
 		MomentDownloaded: "Завантажено", MomentDownloadFailed: "Помилка завантаження",
 		"health_fixed": "Стан: виправлено", "health_look": "Стан: треба перевірити",
@@ -84,7 +91,8 @@ var words = map[string]map[string]string{
 		"tracks":        "Треків: {n}",
 	},
 	"zh-cn": {
-		MomentGrab: "已发送下载", MomentImport: "已入媒体库", MomentRename: "已重命名", MomentAdd: "已添加",
+		"plugin_from": "来自 {plugin}",
+		MomentArtwork: "封面已更改", MomentGrab: "已发送下载", MomentImport: "已入媒体库", MomentRename: "已重命名", MomentAdd: "已添加",
 		MomentDelete: "已删除", MomentDecision: "待你决定", MomentSubtitle: "字幕",
 		MomentDownloaded: "下载完成", MomentDownloadFailed: "下载失败",
 		"health_fixed": "运行状况：已修复", "health_look": "运行状况：有问题需要查看",
@@ -95,7 +103,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} 首曲目",
 	},
 	"ja": {
-		MomentGrab: "ダウンロードに送信", MomentImport: "ライブラリに追加済み", MomentRename: "名前を変更", MomentAdd: "追加",
+		"plugin_from": "{plugin} から",
+		MomentArtwork: "カバーアートを変更", MomentGrab: "ダウンロードに送信", MomentImport: "ライブラリに追加済み", MomentRename: "名前を変更", MomentAdd: "追加",
 		MomentDelete: "削除", MomentDecision: "判断待ち", MomentSubtitle: "字幕",
 		MomentDownloaded: "ダウンロード完了", MomentDownloadFailed: "ダウンロード失敗",
 		"health_fixed": "状態：解決済み", "health_look": "状態：確認が必要です",
@@ -106,7 +115,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} 曲",
 	},
 	"ko": {
-		MomentGrab: "다운로드로 보냄", MomentImport: "라이브러리에 있음", MomentRename: "이름 바뀜", MomentAdd: "추가됨",
+		"plugin_from": "{plugin}에서",
+		MomentArtwork: "커버 아트 변경됨", MomentGrab: "다운로드로 보냄", MomentImport: "라이브러리에 있음", MomentRename: "이름 바뀜", MomentAdd: "추가됨",
 		MomentDelete: "삭제됨", MomentDecision: "결정 필요", MomentSubtitle: "자막",
 		MomentDownloaded: "다운로드 완료", MomentDownloadFailed: "다운로드 실패",
 		"health_fixed": "상태: 해결됨", "health_look": "상태: 확인이 필요해요",
@@ -117,7 +127,8 @@ var words = map[string]map[string]string{
 		"tracks":        "트랙 {n}개",
 	},
 	"hi": {
-		MomentGrab: "डाउनलोड के लिए भेजा", MomentImport: "लाइब्रेरी में", MomentRename: "नाम बदला", MomentAdd: "जोड़ा गया",
+		"plugin_from": "{plugin} से",
+		MomentArtwork: "कवर आर्ट बदला", MomentGrab: "डाउनलोड के लिए भेजा", MomentImport: "लाइब्रेरी में", MomentRename: "नाम बदला", MomentAdd: "जोड़ा गया",
 		MomentDelete: "हटाया गया", MomentDecision: "फ़ैसला चाहिए", MomentSubtitle: "सबटाइटल",
 		MomentDownloaded: "डाउनलोड हो गया", MomentDownloadFailed: "डाउनलोड विफल",
 		"health_fixed": "स्थिति: ठीक हो गया", "health_look": "स्थिति: कुछ देखना ज़रूरी है",
@@ -128,7 +139,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} ट्रैक",
 	},
 	"it": {
-		MomentGrab: "Inviato al download", MomentImport: "Nella Libreria", MomentRename: "Rinominato", MomentAdd: "Aggiunto",
+		"plugin_from": "Da {plugin}",
+		MomentArtwork: "Copertina cambiata", MomentGrab: "Inviato al download", MomentImport: "Nella Libreria", MomentRename: "Rinominato", MomentAdd: "Aggiunto",
 		MomentDelete: "Eliminato", MomentDecision: "Serve una decisione", MomentSubtitle: "Sottotitolo",
 		MomentDownloaded: "Scaricato", MomentDownloadFailed: "Download non riuscito",
 		"health_fixed": "Salute: risolto", "health_look": "Salute: qualcosa va controllato",
@@ -139,7 +151,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} tracce",
 	},
 	"nl": {
-		MomentGrab: "Verstuurd om te downloaden", MomentImport: "In de Bibliotheek", MomentRename: "Hernoemd", MomentAdd: "Toegevoegd",
+		"plugin_from": "Van {plugin}",
+		MomentArtwork: "Hoes gewijzigd", MomentGrab: "Verstuurd om te downloaden", MomentImport: "In de Bibliotheek", MomentRename: "Hernoemd", MomentAdd: "Toegevoegd",
 		MomentDelete: "Verwijderd", MomentDecision: "Beslissing nodig", MomentSubtitle: "Ondertitel",
 		MomentDownloaded: "Gedownload", MomentDownloadFailed: "Download mislukt",
 		"health_fixed": "Gezondheid: opgelost", "health_look": "Gezondheid: er moet iets bekeken worden",
@@ -150,7 +163,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} nummers",
 	},
 	"pl": {
-		MomentGrab: "Wysłano do pobrania", MomentImport: "W Bibliotece", MomentRename: "Zmieniono nazwę", MomentAdd: "Dodano",
+		"plugin_from": "Od {plugin}",
+		MomentArtwork: "Zmieniono okładkę", MomentGrab: "Wysłano do pobrania", MomentImport: "W Bibliotece", MomentRename: "Zmieniono nazwę", MomentAdd: "Dodano",
 		MomentDelete: "Usunięto", MomentDecision: "Potrzebna decyzja", MomentSubtitle: "Napisy",
 		MomentDownloaded: "Pobrano", MomentDownloadFailed: "Pobieranie nie powiodło się",
 		"health_fixed": "Kondycja: naprawione", "health_look": "Kondycja: coś wymaga uwagi",
@@ -161,7 +175,8 @@ var words = map[string]map[string]string{
 		"tracks":        "Utworów: {n}",
 	},
 	"tr": {
-		MomentGrab: "İndirmeye gönderildi", MomentImport: "Kütüphanede", MomentRename: "Yeniden adlandırıldı", MomentAdd: "Eklendi",
+		"plugin_from": "{plugin} kaynaklı",
+		MomentArtwork: "Kapak değişti", MomentGrab: "İndirmeye gönderildi", MomentImport: "Kütüphanede", MomentRename: "Yeniden adlandırıldı", MomentAdd: "Eklendi",
 		MomentDelete: "Silindi", MomentDecision: "Karar gerekiyor", MomentSubtitle: "Altyazı",
 		MomentDownloaded: "İndirildi", MomentDownloadFailed: "İndirme başarısız",
 		"health_fixed": "Sağlık: düzeldi", "health_look": "Sağlık: bir şeye bakılması gerekiyor",
@@ -172,7 +187,8 @@ var words = map[string]map[string]string{
 		"tracks":        "{n} parça",
 	},
 	"ar": {
-		MomentGrab: "أُرسل للتنزيل", MomentImport: "في المكتبة", MomentRename: "أُعيدت تسميته", MomentAdd: "أُضيف",
+		"plugin_from": "من {plugin}",
+		MomentArtwork: "تم تغيير الغلاف", MomentGrab: "أُرسل للتنزيل", MomentImport: "في المكتبة", MomentRename: "أُعيدت تسميته", MomentAdd: "أُضيف",
 		MomentDelete: "حُذف", MomentDecision: "بحاجة إلى قرار", MomentSubtitle: "ترجمة",
 		MomentDownloaded: "اكتمل التنزيل", MomentDownloadFailed: "فشل التنزيل",
 		"health_fixed": "الحالة: تم الإصلاح", "health_look": "الحالة: شيء ما يحتاج إلى نظرة",

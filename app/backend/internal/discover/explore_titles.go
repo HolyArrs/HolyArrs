@@ -126,3 +126,37 @@ func ExploreTitleStats(w http.ResponseWriter, r *http.Request, store *database.S
 	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"days": 30, "templates": len(engine.Templates), "layers": out})
 }
+
+// ExploreRowStats answers GET /api/v1/explore/row-stats (owner and admins):
+// for the last 30 days, how often each Explore row was shown, had a card
+// opened and had an ask started, summed over everyone, busiest first.
+// Counts stay on this server and never say who did what.
+func (h *Handlers) exploreRowStats(w http.ResponseWriter, r *http.Request) {
+	from := engine.Day(h.Explore.Now().AddDate(0, 0, -30))
+	got, err := accounts.RowTotals(r.Context(), h.Store.Read(), from)
+	if err != nil {
+		webserver.Internal(w, "discover", err)
+		return
+	}
+	type stat struct {
+		Row   string `json:"row_type"`
+		Title string `json:"title,omitempty"`
+		Shown int    `json:"shown"`
+		Opens int    `json:"opens"`
+		Asks  int    `json:"asks"`
+	}
+	out := []stat{}
+	for _, t := range got {
+		out = append(out, stat{Row: t.Row, Title: plainRowTitle(t.Row), Shown: t.Shown, Opens: t.Opens, Asks: t.Asks})
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"days": 30, "rows": out})
+}
+
+// plainRowTitle is a row type's fixed title, or "" for a row whose title
+// names a title, person, genre or decade (the page names those itself).
+func plainRowTitle(rowType string) string {
+	if t := engine.RowTitle(rowType, ""); t == engine.RowTitle(rowType, "x") && engine.MinItems(rowType) != 0 {
+		return t
+	}
+	return ""
+}

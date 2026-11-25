@@ -42,7 +42,7 @@ func TestLinksInSettingsAreSecret(t *testing.T) {
 		ix("Gotify", map[string]any{"server": "https://gotify.example/GOTSECRET1"}),
 	}, true)
 	b, _ := json.Marshal(append(indexers, notes...))
-	for _, s := range []string{"PWSECRET1", "QSECRET1", "QSECRET2", "APSECRET1", "0123456789abcdef", "9f8e7d6c5b4a", "WHSECRET", "TOPICSECRET1", "GOTSECRET1", "gotify.example", "hooks.example"} {
+	for _, s := range []string{"PWSECRET1", "QSECRET1", "QSECRET2", "APSECRET1", "0123456789abcdef", "9f8e7d6c5b4a", "WHSECRET", "TOPICSECRET1", "GOTSECRET1", "hooks.example"} {
 		if strings.Contains(string(b), s) {
 			t.Errorf("%s survived: %s", s, b)
 		}
@@ -63,10 +63,17 @@ func TestLinksInSettingsAreSecret(t *testing.T) {
 			}
 		}
 	}
-	for i, w := range []string{"url", "serverUrl", "server"} {
+	for i, w := range []string{"url", "", "server"} {
+		if w == "" {
+			continue
+		}
 		if !hasField(notes[i].NeedsReentry, w) {
 			t.Errorf("notification %d needs %v, want %s", i, notes[i].NeedsReentry, w)
 		}
+	}
+	// An ntfy or Gotify server keeps its scheme and host; a cut path is asked for.
+	if notes[1].Settings["serverUrl"] != "https://ntfy.sh" || notes[2].Settings["server"] != "https://gotify.example" {
+		t.Errorf("servers %v %v", notes[1].Settings["serverUrl"], notes[2].Settings["server"])
 	}
 	if !hasField(notes[1].NeedsReentry, "topics") {
 		t.Errorf("ntfy topics not listed: %v", notes[1].NeedsReentry)
@@ -163,7 +170,7 @@ func TestUndoKeepsLaterSettings(t *testing.T) {
 	mv := l.move(t, Choices{})
 	ctx := context.Background()
 	ns, _ := mediafiles.ReadNaming(ctx, l.st.Read())
-	ns.FilePattern = "{title} mine"
+	ns.FilePattern, ns.RenameOnImport = "{title} mine", true
 	if err := mediafiles.PutNamingSettings(ctx, l.st, ns, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +186,7 @@ func TestUndoKeepsLaterSettings(t *testing.T) {
 	if langs := subtitles.ReadSettings(ctx, l.st.Read()).Languages; len(langs) != 1 || langs[0].Language != "fr" {
 		t.Fatalf("undo put languages back over a later change: %+v", langs)
 	}
-	for _, k := range []string{"naming:radarr", "subtitles:languages"} {
+	for _, k := range []string{"names:radarr", "subtitles:languages"} {
 		if got := lineOf(t, u.Report, k); got.Result != ResKept || !strings.Contains(got.Detail, "changed it since") {
 			t.Errorf("%s: %+v", k, got)
 		}

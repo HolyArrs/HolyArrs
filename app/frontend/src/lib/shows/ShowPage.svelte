@@ -12,6 +12,7 @@
 	import ActionMenu from '#lib/ui/ActionMenu.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import StatusPill from '#lib/ui/StatusPill.svelte';
+	import Chip from '#lib/ui/Chip.svelte';
 	import Skeleton from '#lib/ui/Skeleton.svelte';
 	import TitleCast from '#lib/ui/TitleCast.svelte';
 	import TitleRows from '#lib/ui/TitleRows.svelte';
@@ -27,6 +28,7 @@
 	import ShowVersions from './ShowVersions.svelte';
 	import EpisodeList, { type EpisodeRow } from './EpisodeList.svelte';
 	import SeasonPicker from './SeasonPicker.svelte';
+	import { createNotSentWatch } from './not-sent.ts';
 	import {
 		detailsSources,
 		episodeLabel,
@@ -92,6 +94,9 @@
 	let scope = $state<ReleaseScope | null>(null);
 	let scopeJobs = $state<number[]>([]);
 	let searching = $state('');
+	const notSent = createNotSentWatch();
+	// Shows only episodes whose file is held but not good enough, so the search keeps going.
+	let belowOnly = $state(false);
 	// A season in the address bar wins until one is picked here.
 	const askedSeason = Number(page.url.searchParams.get('season'));
 	let picked = $state<number | null>(Number.isInteger(askedSeason) && askedSeason > 0 ? askedSeason : null);
@@ -149,7 +154,11 @@
 			clearTimeout(again);
 			again = setTimeout(() => void reload(), 400);
 		};
-		const offs = [live.on('slot', soon), live.on('download', soon)];
+		const told = (d: unknown) => {
+			const n = notSent.take(d);
+			if (n) toasts.push(t('shows.page.notSent', { name: n.name }), 'fail', n.reason ? { body: serverWords(n.reason) } : undefined);
+		};
+		const offs = [live.on('slot', soon), live.on('slot', told), live.on('download', soon)];
 		return () => {
 			clearTimeout(again);
 			offs.forEach((off) => off());
@@ -235,7 +244,7 @@
 		void loadHistory();
 	}
 
-	async function startSearch(key: string, body: Record<string, unknown>, done: string, list?: ReleaseScope) {
+	async function startSearch(key: string, body: Record<string, unknown>, done: string, list?: ReleaseScope, onStarted?: () => void) {
 		searching = key;
 		try {
 			if (list) body.choose = false;
@@ -247,6 +256,7 @@
 				await tick();
 				scrollToStart(document.querySelector('[data-testid="show-releases"]'));
 			}
+			if (r.job_ids.length) onStarted?.();
 			toasts.push(r.job_ids.length ? done : t('shows.page.nothingToSearch'), r.job_ids.length ? 'info' : 'ok');
 		} catch (e) {
 			toasts.push(t('shows.sheet.startSearchFailed'), 'fail', { body: message(e) });
@@ -279,7 +289,8 @@
 			// A release list is only for the main Version.
 			!list && ep.slots.length > 1 ? { item_id: ep.id } : { slot_id: sl.id },
 			t('shows.page.searchingNamed', { name: code }),
-			list ? { label: code, query: `item_id=${ep.id}`, slotId: sl.id, slotState: sl.state } : undefined
+			list ? { label: code, query: `item_id=${ep.id}`, slotId: sl.id, slotState: sl.state } : undefined,
+			list ? undefined : () => notSent.watch(ep.slots.length > 1 ? ep.slots.map((x) => x.id) : [sl.id], code)
 		);
 	}
 
@@ -307,7 +318,7 @@
 
 	async function loadSeason(n: number) {
 		try {
-			const r = await api.get<{ episodes: EpisodeView[] }>(`/titles/${title.id}/episodes?season=${n}`);
+			const r = await api.get<{ episodes: EpisodeView[] }>(`/titles/${title.id}/episodes?season=${n}${staff ? '&points=1' : ''}`);
 			episodes[n] = r.episodes;
 		} catch (e) {
 			loadErr = message(e);
@@ -427,8 +438,21 @@
 
 	const still = (ep: EpisodeView) => ep.still;
 	// Members only see a mark on episodes already in the Library.
+	// The saved flag, not a fresh score, so the filter matches what keeps searching.
+	const belowGoodEnough = (ep: EpisodeView) => ep.slots.some((x) => x.file_id && !x.good_enough);
+	const shownOf = (n: number): EpisodeView[] => {
+		const all = episodes[n] ?? [];
+		return belowOnly && all.some(belowGoodEnough) ? all.filter(belowGoodEnough) : all;
+	};
+	const pointsOf = (ep: EpisodeView): Pick<EpisodeRow, 'points' | 'pointsLabel'> => {
+		const sl = ep.slots.find((x) => x.points !== undefined);
+		if (!staff || !sl || sl.points === undefined) return {};
+		const need = sl.good_enough_points;
+		return need === undefined ? { points: String(sl.points) } : { points: `${sl.points}/${need}`, pointsLabel: t('shows.list.pointsOf', { n: sl.points, need }) };
+	};
 	const rowsOf = (n: number): EpisodeRow[] =>
-		(episodes[n] ?? []).map((ep) => ({
+		shownOf(n).map((ep) => ({
+			...pointsOf(ep),
 			key: ep.id,
 			number: order === 'aired' ? String(ep.episode) : episodeLabel(ep, order),
 			name: ep.name || t('shows.page.nameUnknown'),
@@ -506,7 +530,9 @@
 		<div class="season" data-testid="season">
 			<p class="xs muted" data-testid="season-line">{seasonLine(s)}{s.dropped ? ` · ${t('shows.page.noLongerListed')}` : ''}{#if staff && episodes[s.number] && seasonLooking(episodes[s.number])}{` · ${t('shows.page.looking', { n: seasonLooking(episodes[s.number]) })}`}{/if}{#if off}{` · ${off}`}{/if}</p>
 			{#if episodes[s.number]}
-				{@const eps = episodes[s.number]}
+				{@const eps = shownOf(s.number)}
+				{@const belowCount = staff ? episodes[s.number].filter(belowGoodEnough).length : 0}
+				{#if belowCount}<div class="ep-filter" data-testid="below-filter"><Chip label={t('shows.list.belowGoodEnough')} count={belowCount} selected={belowOnly} onclick={() => (belowOnly = !belowOnly)} /></div>{/if}
 				<EpisodeList rows={rowsOf(s.number)} fallback={title.backdrop ?? rich?.backdrop}>
 					{#snippet status(i: number)}
 						{@const main = mainSlot(eps[i])}
@@ -697,6 +723,7 @@
 	.tp-progress { color: var(--text-muted); }
 	.episodes { display: flex; flex-direction: column; gap: 12px; }
 	.ep-why { margin: 2px 0 0; }
+	.ep-filter { margin: var(--s-2) 0 0; }
 	/* Native dialog styled as a modal card. */
 	.modal { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: var(--s-6); border: 0; border-radius: var(--r-modal); background: var(--surface-1); color: var(--text); box-shadow: var(--shadow-modal); }
 	.modal.wide { width: min(640px, calc(100vw - 32px)); }

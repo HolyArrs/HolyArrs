@@ -8,10 +8,14 @@
 	"setup.fullPath": "Använd hela mappsökvägen, som {path}.",
 	"setup.folderUsed": "Den här mappen används redan, eller ligger inuti en som gör det.",
 	"setup.folderMissing": "Mappen finns inte. Kontrollera sökvägen.",
-	"setup.addFolderOrOff": "Lägg till en mapp eller stäng av det här.",
+	"setup.addFolderOrOff": "Lägg till en mapp, eller tryck på Hoppa över just nu.",
 	"setup.notAnswering": "HolyArrs svarar inte. Försök igen om en stund.",
 	"setup.addUserPasswordHint": "Lägg till användarnamn och lösenord.",
 	"setup.folders": "Mappar",
 	"setup.downloader": "Nedladdare",
-	"setup.source": "Källa"
+	"setup.source": "Källa",
+	"setup.alertsNeedKeyOne": "Aviseringar: 1 behöver en nyckel",
+	"setup.alertsNeedKey": "Aviseringar: {n} behöver en nyckel",
+	"setup.folderNoAccess": "HolyArrs kan inte öppna den här mappen. Kontrollera dess behörigheter.",
+	"setup.folderCantUse": "HolyArrs kan inte använda den här mappen. Kontrollera sökvägen."
 }

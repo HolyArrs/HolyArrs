@@ -8,10 +8,14 @@
 	"setup.fullPath": "ফোল্ডারের পুরো পাথ দিন, যেমন {path}।",
 	"setup.folderUsed": "এই ফোল্ডার আগেই ব্যবহার হচ্ছে, বা এমন একটির ভেতরে আছে যা ব্যবহার হচ্ছে।",
 	"setup.folderMissing": "ওই ফোল্ডার নেই। পাথটি দেখে নিন।",
-	"setup.addFolderOrOff": "একটি ফোল্ডার যোগ করুন বা এটি বন্ধ করুন।",
+	"setup.addFolderOrOff": "একটি ফোল্ডার যোগ করুন, অথবা এখন থাক চাপুন।",
 	"setup.notAnswering": "HolyArrs সাড়া দিচ্ছে না। একটু পরে আবার চেষ্টা করুন।",
 	"setup.addUserPasswordHint": "ইউজারনেম ও পাসওয়ার্ড দিন।",
 	"setup.folders": "ফোল্ডার",
 	"setup.downloader": "ডাউনলোডার",
-	"setup.source": "সোর্স"
+	"setup.source": "সোর্স",
+	"setup.alertsNeedKeyOne": "অ্যালার্ট: 1টির একটি কী দরকার",
+	"setup.alertsNeedKey": "অ্যালার্ট: {n}টির একটি কী দরকার",
+	"setup.folderNoAccess": "HolyArrs এই ফোল্ডারটি খুলতে পারছে না। এর অনুমতি দেখে নিন।",
+	"setup.folderCantUse": "HolyArrs এই ফোল্ডারটি ব্যবহার করতে পারছে না। পাথটি দেখে নিন।"
 }

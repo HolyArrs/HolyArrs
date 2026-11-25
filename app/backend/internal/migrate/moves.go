@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -187,6 +187,12 @@ func (m *Mover) Recover(ctx context.Context) error {
 	})
 }
 
+// MoveWaitNote is a move's progress note while a title waits on the
+// metadata server: "<done> of <total> imported wait <seconds> <left>".
+func MoveWaitNote(done, total int, next time.Duration, left int) string {
+	return fmt.Sprintf("%d of %d imported wait %d %d", done, total, int((next+time.Second-1)/time.Second), left)
+}
+
 func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 	if r.Job.Subject == nil || r.Job.Subject.Type != "move" {
 		return errors.New("a move Job needs a move subject")
@@ -214,8 +220,15 @@ func (m *Mover) handle(ctx context.Context, r *jobs.Run) error {
 		return err
 	}
 	by := r.Job.CreatedBy
-	rep := m.Run(ctx, mv.ID, p, false, by, func(done, total int) {
-		_ = r.Progress(ctx, float64(done)/float64(max(total, 1)), fmt.Sprintf("%d of %d imported", done, total))
+	var done, total int
+	// A title the metadata server keeps out waits and is tried again, as in
+	// a Library import; the page shows the wait.
+	wctx := library.WithAdoptWait(ctx, func(left int, next time.Duration) {
+		_ = r.Progress(ctx, float64(done)/float64(max(total, 1)), MoveWaitNote(done, total, next, left))
+	})
+	rep := m.Run(wctx, mv.ID, p, false, by, func(d, t int) {
+		done, total = d, t
+		_ = r.Progress(ctx, float64(d)/float64(max(t, 1)), fmt.Sprintf("%d of %d imported", d, t))
 	})
 	if r.Stopping() {
 		// The app is stopping (docker stop, an update): leave the move
@@ -438,6 +451,10 @@ func (m *Mover) undo(ctx context.Context, id int64, by domain.Actor, progress fu
 		}
 		return rep, errUndoIncomplete
 	}
+	// The past downloads the import added to History leave with it.
+	if err := m.undoPast(context.WithoutCancel(ctx), id); err != nil {
+		return rep, err
+	}
 	if err := m.setState(context.WithoutCancel(ctx), id, "undone", rep); err != nil {
 		return rep, err
 	}
@@ -523,10 +540,26 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		case "source":
 			return del(" AND secret_ref IS NULL", "you typed its key since, so it stays; remove it under Settings > Sources")
 		case "downloader":
-			return del(" AND secret_ref IS NULL AND NOT EXISTS (SELECT 1 FROM downloads WHERE downloader_id = downloaders.id)",
-				"it is set up or has downloads now, so it stays; remove it under Settings > Downloaders")
+			// A key the import carried over is its own; one typed later is not.
+			// The mark must match the stored key, not just its id (ids are reused).
+			carried, _ := strconv.ParseInt(strings.SplitN(x.after, ":", 2)[0], 10, 64)
+			var sealed string
+			if carried <= 0 || m.Store.Read().QueryRowContext(ctx, "SELECT value FROM secrets WHERE id = ?", carried).Scan(&sealed) != nil || carriedKeyMark(carried, sealed) != x.after {
+				carried = 0
+			}
+			res, why := del(" AND (secret_ref IS NULL OR secret_ref = ?) AND NOT EXISTS (SELECT 1 FROM downloads WHERE downloader_id = downloaders.id)",
+				"it is set up or has downloads now, so it stays; remove it under Settings > Downloaders", carried)
+			if res == ResRemoved && carried > 0 {
+				if _, err := exec("DELETE FROM secrets WHERE id = ? AND NOT EXISTS (SELECT 1 FROM downloaders WHERE secret_ref = ?)", carried, carried); err != nil {
+					return ResFailed, err.Error()
+				}
+			}
+			return res, why
 		case "never_add":
 			return del("", "already gone")
+		case "turned_down":
+			return del(" AND state = 'turned_down' AND NOT EXISTS (SELECT 1 FROM downloads WHERE release_id = releases.id)",
+				"it was downloaded or taken off the list since, so it stays")
 		case "outside_list":
 			return del(" AND enabled = 0", "you turned it on since, so it stays; remove it under Settings > Outside lists")
 		case "title":
@@ -575,6 +608,8 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		}
 	}
 	switch x.what {
+	case "downloader_maps":
+		return m.undoDownloaderMaps(ctx, x, by)
 	case "music_policy":
 		if x.fp == "" {
 			return ResKept, keptUnknown
@@ -656,26 +691,9 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		}
 		return ResRemoved, "the default weekly limits are back as they were"
 	case "naming":
-		var moved map[string]string
-		var old mediafiles.NamingSettings
-		if x.after == "" || json.Unmarshal([]byte(x.after), &moved) != nil || json.Unmarshal([]byte(x.before), &old) != nil {
-			return ResKept, keptUnknown
-		}
-		cur, err := mediafiles.ReadNaming(ctx, m.Store.Read())
-		if err != nil {
-			return ResFailed, err.Error()
-		}
-		same := cur
-		for k, v := range moved {
-			setNaming(&same, k, v)
-		}
-		if !reflect.DeepEqual(same, cur) {
-			return ResKept, keptChanged
-		}
-		if err := mediafiles.PutNamingSettings(ctx, m.Store, old, by); err != nil {
-			return ResFailed, err.Error()
-		}
-		return ResRemoved, "naming is back as it was"
+		return undoNaming(ctx, m.Store, x.before, x.after, by)
+	case "file_rules":
+		return undoFileRules(ctx, m.Store, x.before, x.after, by)
 	case "subtitle_languages":
 		var old []subtitles.Want
 		if x.after == "" || json.Unmarshal([]byte(x.before), &old) != nil {
@@ -726,4 +744,35 @@ func (m *Mover) undoOne(ctx context.Context, x madeRow, by domain.Actor) (string
 		return ResRemoved, "the wait on " + cur.Name + " is back as it was"
 	}
 	return ResKept, "nothing to undo for it"
+}
+
+// ErrMoveKept refuses to remove an import that still holds what it made.
+var ErrMoveKept = errors.New("undo this import before removing it")
+
+// RemoveMove drops an import from Earlier imports: one that was undone, or
+// one that failed without making anything. Its move_made rows go with it.
+func RemoveMove(ctx context.Context, st *database.Store, id int64) error {
+	return st.Write(ctx, func(tx *sql.Tx) error {
+		var state string
+		if err := tx.QueryRowContext(ctx, "SELECT state FROM moves WHERE id = ?", id).Scan(&state); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrNoMove
+			}
+			return err
+		}
+		if state != "undone" {
+			var made int
+			if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM move_made WHERE move_id = ?", id).Scan(&made); err != nil {
+				return err
+			}
+			if state != "failed" || made > 0 {
+				return ErrMoveKept
+			}
+		}
+		if _, err := tx.ExecContext(ctx, "DELETE FROM move_made WHERE move_id = ?", id); err != nil {
+			return err
+		}
+		_, err := tx.ExecContext(ctx, "DELETE FROM moves WHERE id = ?", id)
+		return err
+	})
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -32,6 +33,7 @@ type LeftoverView struct {
 	Reason        string         `json:"reason"`
 	DroppedSeason *int           `json:"dropped_season,omitempty"`
 	Guess         *LeftoverGuess `json:"guess,omitempty"`
+	Music         *MusicLeftover `json:"music,omitempty"`
 	Dismissed     bool           `json:"dismissed"`
 }
 
@@ -300,7 +302,26 @@ func (s *Service) matchEpisodesTx(ctx context.Context, tx *sql.Tx, f mediafiles.
 	if f.ReleaseName != nil && *f.ReleaseName != "" {
 		release = *f.ReleaseName
 	}
-	ge := mediafiles.OwnedReachesGoodEnough(release, f.MediaInfo, pr.Body)
+	ge := false
+	var kind string
+	if err := tx.QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ?", v.TitleID).Scan(&kind); err != nil {
+		return err
+	}
+	if kind == "artist" {
+		// A track file is named for its album folder and format, as a scan names it.
+		var root string
+		if err := tx.QueryRowContext(ctx, "SELECT path FROM library_folders WHERE id = ?", v.LibraryFolderID).Scan(&root); err != nil {
+			return err
+		}
+		abs := filepath.Join(root, filepath.FromSlash(f.RelativePath))
+		release = path.Base(path.Dir(f.RelativePath)) + " [" + adoptedFormat(abs, strings.ToLower(path.Ext(f.RelativePath))) + "]"
+		if err := mediafiles.SetReleaseNameTx(ctx, tx, f.ID, release); err != nil {
+			return err
+		}
+		ge = mediafiles.ReachesGoodEnough(release, pr.Body)
+	} else {
+		ge = mediafiles.OwnedReachesGoodEnough(release, f.MediaInfo, pr.Body)
+	}
 	state := mediafiles.SlotInLibrary
 	if !ge && v.KeepUpToDate {
 		state = mediafiles.SlotBetterWanted

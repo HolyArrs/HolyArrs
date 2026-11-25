@@ -91,7 +91,7 @@ test('Choose a release for a season: the season pack fills both episodes with on
 	await expect(pack.locator('.rs-rec')).toHaveText('Recommended');
 	const single = release(panel, '.S01E01.');
 	await expect(single.locator('.rs-rec')).toHaveCount(0);
-	await expect(verdict(single)).toHaveCount(0);
+	await expect(verdict(single)).toHaveText('Passed over');
 	await expect(single.locator('.rs-why').filter({ hasText: 'lost to Moss.Parade.S01.1080p.WEB-DL.H264-HOLYARRS on season pack' })).toBeVisible();
 	await axe(page, 'choose a release for a season');
 

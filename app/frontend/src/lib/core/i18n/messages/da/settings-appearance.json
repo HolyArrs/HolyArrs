@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Anmodninger",
 	"settings.appearance.colRate": "Pr. række",
 	"settings.appearance.noRows": "Ingen Udforsk-rækker talt endnu.",
+	"settings.appearance.rowStats": "Rækker i Udforsk",
+	"settings.appearance.rowStatsDesc": "Åbninger og anmodninger pr. række de sidste 30 dage, for alle samlet. Tælles kun på denne server.",
+	"settings.appearance.colRow": "Række",
+	"settings.appearance.row.because_have": "Ligesom titler du har",
+	"settings.appearance.row.because_asked": "Ligesom dine anmodninger",
+	"settings.appearance.row.person": "Mere fra en person",
+	"settings.appearance.row.genre": "Genrevalg til dig",
+	"settings.appearance.row.popular_genre": "Populære efter genre",
+	"settings.appearance.row.popular_decade": "Populære efter årti",
+	"settings.appearance.row.decade": "Efter årti",
+	"settings.appearance.row.mood": "Efter stemning",
+	"settings.appearance.row.hero": "Topbanner",
 	"settings.appearance.motion": "Bevægelse",
 	"settings.appearance.motionNote": "Følger din enheds indstilling Reducer bevægelse"
 }

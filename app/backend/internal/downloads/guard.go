@@ -110,6 +110,15 @@ func (g *guardedEngine) ListActive(ctx context.Context, ids []string) (jobs []Jo
 	return
 }
 
+func (g *guardedEngine) Session(ctx context.Context) (s string, err error) {
+	x, ok := g.Engine.(Sessioner)
+	if !ok {
+		return "", ErrNotSupported
+	}
+	err = g.run(ctx, func() error { var e error; s, e = x.Session(ctx); return e })
+	return
+}
+
 func protectEngine(e Engine, d domain.Downloader, instance string) Engine {
 	secret := ""
 	if d.SecretRef != nil {

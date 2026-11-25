@@ -193,3 +193,37 @@ func TestDoctorClientIgnoresProxyEnv(t *testing.T) {
 		t.Fatalf("the doctor must dial like the app: no proxy, policy dialer (%T)", metadataClient().Transport)
 	}
 }
+
+// A read-only look-only Library folder is fine at start-up: nothing is
+// written there, so no chown advice.
+func TestDoctorFoldersLookOnlyReadOnly(t *testing.T) {
+	s, err := database.Open(t.TempDir(), database.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	strm := t.TempDir()
+	if err := os.Chmod(strm, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chmod(strm, 0o755)
+	if f, err := os.CreateTemp(strm, "probe"); err == nil {
+		f.Close()
+		os.Remove(f.Name())
+		t.Skip("the folder still takes writes here (Windows or root)")
+	}
+	if err := writeFolder(s, strm); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	fs, err := CheckFolders(ctx, s.Read(), "", 10*time.Second)
+	if err != nil || len(fs) != 1 || fs[0].State != "read_only" {
+		t.Fatalf("plain folder %+v %v", fs, err)
+	}
+	if err := s.Write(ctx, func(tx *sql.Tx) error { _, err := tx.Exec("UPDATE library_folders SET look_only = 1"); return err }); err != nil {
+		t.Fatal(err)
+	}
+	if fs, err = CheckFolders(ctx, s.Read(), "", 10*time.Second); err != nil || fs[0].State != "ok" {
+		t.Fatalf("look-only folder %+v %v", fs, err)
+	}
+}

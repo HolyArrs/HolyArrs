@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Izvēlies, ko pieprasīt nākamo",
 	"home.newPopular": "Jaunumi un populārais",
 	"home.whatSTrending": "Kas ir aktuāls",
+	"home.gettingReady": "Gatavojam visu…",
 	"home.top10sAndComing": "Top 10 un drīzumā",
 	"home.whatSNext": "Kas notiks tālāk",
 	"home.airDatesAndReleases": "Pārraides datumi un izlaidumi",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Sērijas un filmas, kas iznāk šonedēļ",
 	"home.popularThisWeek": "Populāri izlaidumi, kas iznāk šonedēļ",
 	"home.peopleCheck": "Cilvēku pārbaude",
-	"home.cantReadUsers": "nevar nolasīt lietotāju sarakstu"
+	"home.cantReadUsers": "nevar nolasīt lietotāju sarakstu",
+	"home.joined.title": "Laipni lūdzam, {name}",
+	"home.joined.find": "Atrodi kaut ko sadaļā {explore} vai {search}.",
+	"home.joined.ask": "Pieskaries {request} pie nosaukuma, lai to saņemtu. Vari pieprasīt:",
+	"home.joined.track": "Seko katram sadaļā {requests}.",
+	"home.joined.noLimit": "Nav nedēļas limita.",
+	"home.joined.gotIt": "Skaidrs",
+	"home.joined.explore": "Atvērt {explore}"
 }

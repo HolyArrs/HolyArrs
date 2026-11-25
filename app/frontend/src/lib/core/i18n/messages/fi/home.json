@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Valitse, mitä pyydät seuraavaksi",
 	"home.newPopular": "Uutta ja suosittua",
 	"home.whatSTrending": "Mikä on nousussa",
+	"home.gettingReady": "Valmistellaan…",
 	"home.top10sAndComing": "Top 10 -listat ja tulossa pian",
 	"home.whatSNext": "Mitä seuraavaksi",
 	"home.airDatesAndReleases": "Esityspäivät ja julkaisut",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Tällä viikolla ilmestyvät jaksot ja elokuvat",
 	"home.popularThisWeek": "Tällä viikolla ilmestyvät suositut julkaisut",
 	"home.peopleCheck": "Henkilötarkistus",
-	"home.cantReadUsers": "käyttäjäluetteloa ei voi lukea"
+	"home.cantReadUsers": "käyttäjäluetteloa ei voi lukea",
+	"home.joined.title": "Tervetuloa, {name}",
+	"home.joined.find": "Löydä jotain kohdasta {explore} tai {search}.",
+	"home.joined.ask": "Napauta nimikkeessä {request}, niin saat sen. Voit pyytää:",
+	"home.joined.track": "Seuraa jokaista kohdassa {requests}.",
+	"home.joined.noLimit": "Ei viikkorajaa.",
+	"home.joined.gotIt": "Selvä",
+	"home.joined.explore": "Avaa {explore}"
 }
