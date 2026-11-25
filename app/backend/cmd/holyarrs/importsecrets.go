@@ -126,7 +126,7 @@ func importSecrets(args []string, stdout, stderr io.Writer) int {
 			// running app holds the config folder, so the keys can only be
 			// forgotten through its API, which needs an admin-scope API key, or
 			// offline once HolyArrs is stopped (the lockErr == nil branch).
-			warn("HolyArrs is running, so it holds the config folder. Stop HolyArrs and run this again, or pass -file <path> with holyarrs.address and holyarrs.owner_api_key (an API key with the admin scope from Settings > API > API keys). Removing a read under Settings > Import from other apps also forgets the key kept for that read")
+			warn("HolyArrs is running, so it holds the config folder. Stop HolyArrs and run this again, or pass -file <path> with holyarrs.address and holyarrs.owner_api_key (the owner's API key with the admin scope from Settings > API > API keys). Removing a read under Settings > Import from other apps also forgets the key kept for that read")
 			return 2
 		}
 		base, key, err := appTarget(f, *httpLAN, warn)
@@ -238,7 +238,7 @@ func readSecretsFile(path string, shared bool, warn func(string, ...any)) (*secr
 func appTarget(f *secretsfile.File, allowLAN bool, warn func(string, ...any)) (string, string, error) {
 	raw, key := strings.TrimRight(strings.TrimSpace(f.HolyArrs.Address), "/"), strings.TrimSpace(f.HolyArrs.OwnerAPIKey)
 	if raw == "" || key == "" {
-		return "", "", errors.New("fill in holyarrs.address and holyarrs.owner_api_key in the file (an API key with the admin scope from Settings > API > API keys)")
+		return "", "", errors.New("fill in holyarrs.address and holyarrs.owner_api_key in the file (the owner's API key with the admin scope from Settings > API > API keys)")
 	}
 	u, err := url.Parse(raw)
 	if err != nil || u.Host == "" || u.User != nil || u.RawQuery != "" || (u.Scheme != "http" && u.Scheme != "https") {
