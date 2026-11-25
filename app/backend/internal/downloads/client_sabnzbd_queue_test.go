@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 type sabPaged struct {
@@ -45,8 +46,99 @@ func TestSabQueueReadsEveryPage(t *testing.T) {
 	for _, j := range p.Jobs {
 		total += j.Speed
 	}
-	if total > 2048*1024 || total < 2048*1024-450 {
-		t.Fatalf("shared speed sums to %d", total)
+	if total != 2048*1024 || p.Jobs[0].Speed != total {
+		t.Fatalf("lead job speed %d, total %d", p.Jobs[0].Speed, total)
+	}
+}
+
+// SABnzbd reports every unpaused slot as Downloading and one speed for the
+// whole queue, so each job's share comes from how fast its bytes left go down:
+// the first job alone at first, then the next one too as the first finishes.
+func TestSabSpeedFollowsMeasuredProgress(t *testing.T) {
+	type slot struct {
+		id, cat, status string
+		left            float64 // MB
+	}
+	var mu sync.Mutex
+	queue := []slot{{"p", "tv", "Paused", 100}, {"a", "movies", "Downloading", 50}, {"b", "tv", "Downloading", 100}, {"c", "tv", "Downloading", 100}}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		q := r.URL.Query()
+		if q.Get("mode") == "history" {
+			_, _ = w.Write([]byte(`{"history":{"slots":[]}}`))
+			return
+		}
+		var out []string
+		for _, x := range queue {
+			if c := q.Get("category"); c != "" && c != x.cat {
+				continue
+			}
+			if id := q.Get("nzo_ids"); id != "" && id != x.id {
+				continue
+			}
+			out = append(out, fmt.Sprintf(`{"nzo_id":%q,"filename":%q,"cat":%q,"mb":"100","mbleft":"%.2f","status":%q,"timeleft":"0:01:00"}`, x.id, x.id, x.cat, x.left, x.status))
+		}
+		fmt.Fprintf(w, `{"queue":{"kbpersec":"10240","noofslots_total":%d,"slots":[%s]}}`, len(out), strings.Join(out, ","))
+	}))
+	t.Cleanup(srv.Close)
+	at := time.Unix(1700000000, 0)
+	s := NewSabnzbd(srv.URL, sabKey, nil)
+	s.now = func() time.Time { return at }
+	move := func(d time.Duration, moved map[string]float64) {
+		mu.Lock()
+		defer mu.Unlock()
+		at = at.Add(d)
+		for i := range queue {
+			queue[i].left -= moved[queue[i].id]
+		}
+	}
+	read := func() map[string]int64 {
+		t.Helper()
+		p, err := s.Queue(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		m := map[string]int64{}
+		for _, j := range p.Jobs {
+			m[j.ID] = j.Speed
+		}
+		return m
+	}
+	const full, mb = 10240 * 1024, 1024 * 1024
+	check := func(what string, got map[string]int64, want map[string]int64) {
+		t.Helper()
+		if fmt.Sprint(got) != fmt.Sprint(want) {
+			t.Fatalf("%s: speeds %v, want %v", what, got, want)
+		}
+	}
+	// Nothing measured yet: the first Downloading job in queue order.
+	check("first read", read(), map[string]int64{"p": 0, "a": full, "b": 0, "c": 0})
+	// Only a moved.
+	move(2*time.Second, map[string]float64{"a": 20})
+	check("a alone", read(), map[string]int64{"p": 0, "a": full, "b": 0, "c": 0})
+	// a is finishing and b has started: a quarter and three quarters.
+	move(2*time.Second, map[string]float64{"a": 5, "b": 15})
+	check("overlap", read(), map[string]int64{"p": 0, "a": full / 4, "b": full * 3 / 4, "c": 0})
+	// A read sooner than the gap keeps the last rates.
+	move(200*time.Millisecond, nil)
+	check("quick read", read(), map[string]int64{"p": 0, "a": full / 4, "b": full * 3 / 4, "c": 0})
+	// A filtered list gives each job its own measured rate, not a share of
+	// the total: b moves 4 MB in the 2 s since its last measure.
+	move(1800*time.Millisecond, map[string]float64{"b": 4})
+	jobs, err := s.List(context.Background(), "tv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, j := range jobs {
+		if want := map[string]int64{"b": 2 * mb}[j.ID]; j.Speed != want {
+			t.Fatalf("list tv: %s speed %d, want %d", j.ID, j.Speed, want)
+		}
+	}
+	// A filtered list with nothing measured shows no speed rather than guess.
+	fresh := NewSabnzbd(srv.URL, sabKey, nil)
+	if j, err := fresh.Get(context.Background(), "a"); err != nil || j.Speed != 0 {
+		t.Fatalf("fresh get a: %+v %v", j, err)
 	}
 }
 

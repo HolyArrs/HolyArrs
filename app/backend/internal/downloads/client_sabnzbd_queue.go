@@ -138,17 +138,7 @@ func (s *Sabnzbd) Queue(ctx context.Context) (QueuePage, error) {
 			break
 		}
 	}
-	moving := 0
-	for _, j := range raw {
-		if j.State == StateDownloading {
-			moving++
-		}
-	}
-	for i := range raw {
-		if raw[i].State == StateDownloading && moving > 0 {
-			raw[i].Speed = speed / int64(moving)
-		}
-	}
+	sabShare(raw, s.meter.rates(raw, s.clock()), speed, true)
 	p.Jobs = raw
 	return p, nil
 }
