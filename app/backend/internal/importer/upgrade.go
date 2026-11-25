@@ -35,7 +35,7 @@ type upgrade struct {
 
 func plainStep(s string) string { return strings.ReplaceAll(s, "_", " ") }
 
-func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver mediafiles.Version, d domain.Download, plan []mediafiles.PlanStep, cands []Candidate, fakes fakeRules, minutes int) (upgrade, error) {
+func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver mediafiles.Version, d domain.Download, root string, plan []mediafiles.PlanStep, cands []Candidate, fakes fakeRules, minutes int) (upgrade, error) {
 	u := upgrade{facts: map[string]map[string]any{}}
 	var pr mediafiles.PickRules
 	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
@@ -68,6 +68,16 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver media
 			u.copyWhy = "the copy in place is protected; choose another Version for an upgrade"
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
 			plan[i].Why = append(plan[i].Why, u.copyWhy)
+			continue
+		}
+		if sourceNotPresent(root, cands, plan[i].SourceFile) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, NotPresentYetWhy)
+			continue
+		}
+		if copyInProgress(cands, plan[i].SourceFile) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, CopyingWhy)
 			continue
 		}
 		facts := InspectFacts(plan[i].SourceFile)
