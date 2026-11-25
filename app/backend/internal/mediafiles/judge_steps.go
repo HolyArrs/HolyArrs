@@ -160,6 +160,13 @@ func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRe
 		langs = []string{t.OriginalLanguage}
 	}
 	if len(langs) == 0 {
+		// DUAL or MULTI with no language word may hold any language, so it
+		// never fails on the assumed original; the file's audio is checked
+		// at import.
+		if p.Has("dual") || p.Has("multi") {
+			v.add("hard", "language", "warn", "DUAL/MULTI, no language named; the file's audio is checked at import", 0)
+			return
+		}
 		// Read as the original language: turned away when only other languages are wanted.
 		if o := t.OriginalLanguage; o != "" && !rules.Language.OriginalOK && len(rules.Language.Wanted) > 0 && !slices.Contains(rules.Language.Wanted, o) {
 			v.add("hard", "language", "fail", "no language in the name; assumed the original language, "+LanguageName(o)+", not wanted", 0)
