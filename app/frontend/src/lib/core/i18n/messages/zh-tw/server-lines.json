@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "請傳送 {\"name\": \"...\"}",
 	"server.library.new-cover-art": "新封面",
 	"server.plugins.send-event-library-add": "傳送 {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "傳送 {\"on\": true} 或 {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "傳送 {\"on\": true} 或 {\"on\": false}",
+	"server.library.deleted-of": "已刪除 {name} 的 {relativepath}"
 }

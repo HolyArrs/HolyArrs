@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "{\"name\": \"...\"}를 보내세요",
 	"server.library.new-cover-art": "새 커버 아트",
 	"server.plugins.send-event-library-add": "보내기: {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "보내기: {\"on\": true} 또는 {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "보내기: {\"on\": true} 또는 {\"on\": false}",
+	"server.library.deleted-of": "{name}의 {relativepath}을(를) 삭제했습니다"
 }

@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "להפסיק לשמור את הגרסה {label} של הסרט הזה? הקבצים בדיסק לא ייגעו.",
 	"movies.versions.removeFailed": "לא ניתן להסיר את הגרסה",
+	"movies.versions.deleteFile": "מחיקת הקובץ",
+	"movies.versions.deleteFileConfirm": "למחוק את {name}? הקובץ יעבור אל נמחקו לאחרונה, ושם אפשר לשחזר אותו.",
+	"movies.versions.deleteFileFailed": "לא ניתן היה למחוק את הקובץ",
 	"movies.versions.title": "גרסאות",
 	"movies.versions.showLess": "הצג פחות",
 	"movies.versions.seeAll": "הצג את כל {count}",

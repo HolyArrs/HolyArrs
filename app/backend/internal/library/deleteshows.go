@@ -31,17 +31,19 @@ var (
 
 // RemoveScope is the part of a show or artist a delete takes: one season or
 // some episodes (episode ids) of a show, one album (part id) or some tracks
-// (track ids) of an artist. Empty means the whole title.
+// (track ids) of an artist, or one file of a movie. Empty means the whole
+// title.
 type RemoveScope struct {
 	Season     *int    `json:"season,omitempty"`
 	EpisodeIDs []int64 `json:"episode_ids,omitempty"`
 	AlbumID    *int64  `json:"album_id,omitempty"`
 	TrackIDs   []int64 `json:"track_ids,omitempty"`
+	FileID     *int64  `json:"file_id,omitempty"`
 }
 
 // Whole says the scope is the whole title.
 func (sc RemoveScope) Whole() bool {
-	return sc.Season == nil && len(sc.EpisodeIDs) == 0 && sc.AlbumID == nil && len(sc.TrackIDs) == 0
+	return sc.Season == nil && len(sc.EpisodeIDs) == 0 && sc.AlbumID == nil && len(sc.TrackIDs) == 0 && sc.FileID == nil
 }
 
 // music says the scope is part of an artist.
@@ -50,7 +52,7 @@ func (sc RemoveScope) music() bool { return sc.AlbumID != nil || len(sc.TrackIDs
 // Check says what is wrong with a scope: more than one part chosen.
 func (sc RemoveScope) Check() error {
 	n := 0
-	for _, set := range []bool{sc.Season != nil, len(sc.EpisodeIDs) > 0, sc.AlbumID != nil, len(sc.TrackIDs) > 0} {
+	for _, set := range []bool{sc.Season != nil, len(sc.EpisodeIDs) > 0, sc.AlbumID != nil, len(sc.TrackIDs) > 0, sc.FileID != nil} {
 		if set {
 			n++
 		}

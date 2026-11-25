@@ -74,7 +74,7 @@ export const historyTabs: HistoryTab[] = [
 			{ key: 'added', get label() { return say('downloads.ht.changes.added.label'); }, get hint() { return say('downloads.ht.changes.added.hint'); }, kinds: ['title_added', 'list_synced', 'version_changed', 'gate_opened'] },
 			{ key: 'downloads', get label() { return say('downloads.ht.changes.downloads.label'); }, get hint() { return say('downloads.ht.changes.downloads.hint'); }, kinds: download },
 			{ key: 'renamed', get label() { return say('downloads.ht.changes.renamed.label'); }, get hint() { return say('downloads.ht.changes.renamed.hint'); }, kinds: ['renamed', 'rename_planned'] },
-			{ key: 'deleted', get label() { return say('downloads.ht.changes.deleted.label'); }, get hint() { return say('downloads.ht.changes.deleted.hint'); }, kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
+			{ key: 'deleted', get label() { return say('downloads.ht.changes.deleted.label'); }, get hint() { return say('downloads.ht.changes.deleted.hint'); }, kinds: ['title_removed', 'episodes_removed', 'movie_file_removed', 'file_held', 'holding_cleaned'] },
 			{ key: 'subtitles', get label() { return say('downloads.ht.changes.subtitles.label'); }, get hint() { return say('downloads.ht.changes.subtitles.hint'); }, kinds: ['subtitle_*'] },
 			{ key: 'asks', get label() { return say('downloads.ht.changes.asks.label'); }, get hint() { return say('downloads.ht.changes.asks.hint'); }, kinds: ['ask_*', 'ai_ask_*'] },
 			{ key: 'reports', get label() { return say('downloads.ht.changes.reports.label'); }, get hint() { return say('downloads.ht.changes.reports.hint'); }, kinds: ['report_*'] },

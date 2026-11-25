@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Перестать держать вариант «{label}» этого фильма? Файлы на диске не затрагиваются.",
 	"movies.versions.removeFailed": "Не удалось удалить вариант",
+	"movies.versions.deleteFile": "Удалить файл",
+	"movies.versions.deleteFileConfirm": "Удалить {name}? Файл попадёт в «Недавно удалённые», откуда его можно восстановить.",
+	"movies.versions.deleteFileFailed": "Не удалось удалить файл",
 	"movies.versions.title": "Варианты",
 	"movies.versions.showLess": "Свернуть",
 	"movies.versions.seeAll": "Показать все ({count})",

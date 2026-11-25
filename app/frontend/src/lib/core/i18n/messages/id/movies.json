@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Berhenti menyimpan Versi {label} dari film ini? File di disk tidak disentuh.",
 	"movies.versions.removeFailed": "Tidak bisa menghapus Versi",
+	"movies.versions.deleteFile": "Hapus file",
+	"movies.versions.deleteFileConfirm": "Hapus {name}? File akan masuk ke Baru dihapus, tempat Anda dapat memulihkannya.",
+	"movies.versions.deleteFileFailed": "File tidak dapat dihapus",
 	"movies.versions.title": "Versi",
 	"movies.versions.showLess": "Tampilkan lebih sedikit",
 	"movies.versions.seeAll": "Lihat semua {count}",
