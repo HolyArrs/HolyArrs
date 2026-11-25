@@ -186,7 +186,9 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 			kind = "movie"
 		}
 		if strings.HasPrefix(name, "Rescan") {
-			word = library.KindScanTitle
+			// A rescan looks at the folder again: gone files go missing and
+			// new files are picked up. scan_title only looks and reports.
+			word = library.KindRescanTitle
 		}
 		targets := append(slices.Clone(in.MovieIDs), in.SeriesIDs...)
 		for _, id := range []int64{in.SeriesID, in.MovieID} {
@@ -194,21 +196,25 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 				targets = append(targets, id)
 			}
 		}
-		// A refresh with no title refreshes them all, as in the old apps;
-		// Helmarr sends one with an empty seriesIds list.
-		if len(targets) == 0 && word == library.KindRefreshTitle {
-			all := library.KindRefreshTitles
-			if kind == "show" {
-				all = shows.KindRefreshShows
+		// With no title, a refresh refreshes them all and a rescan rescans
+		// the whole library, as in the old apps; Helmarr sends a refresh
+		// with an empty seriesIds list.
+		if len(targets) == 0 {
+			if word == library.KindRefreshTitle {
+				all := library.KindRefreshTitles
+				if kind == "show" {
+					all = shows.KindRefreshShows
+				}
+				return ids, enqueue(all, nil, map[string]any{"by_hand": true}, all)
 			}
-			return ids, enqueue(all, nil, map[string]any{"by_hand": true}, all)
+			return ids, enqueue(library.KindRescan, nil, nil, library.KindRescan)
 		}
 		for _, id := range targets {
 			if _, err := h.title(ctx, id, kind); err != nil {
 				return nil, err
 			}
 			params := map[string]any{"by_hand": true}
-			if word == library.KindScanTitle {
+			if word == library.KindRescanTitle {
 				params = nil
 			}
 			if err := enqueue(word, &domain.Subject{Type: "title", ID: id}, params, word+":"+itoa(id)); err != nil {
