@@ -703,6 +703,7 @@
   "PUT /api/v1/settings/watch-history",
   "PUT /api/v1/sources/{id}",
   "PUT /api/v1/subtitle-sites/{id}",
+  "PUT /api/v1/users/new-people",
   "PUT /api/v1/users/{id}",
   "PUT /api/v1/users/{id}/media-link",
   "PUT /lidarr/",

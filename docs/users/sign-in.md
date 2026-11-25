@@ -64,7 +64,7 @@ Keep a working owner password. If the provider is down, password sign-in still w
 
 ### Let new people join through single sign-on
 
-Off by default. On, anyone the provider signs in gets an account, so HolyArrs asks you to confirm. Newcomers join as members who can only ask, unless roles from groups say admin. Single sign-on never makes an owner.
+Off by default. On, anyone the provider signs in gets an account, so HolyArrs asks you to confirm. Newcomers join as members with [what new people start with](roles.md#choose-what-new-people-start-with) (only asking, unless you change it), unless roles from groups say admin. Single sign-on never makes an owner.
 
 ### Roles from groups
 

@@ -68,6 +68,7 @@ var riskyRoutes = map[string]bool{
 	"PUT /api/v1/users/{id}":          true,
 	"DELETE /api/v1/users/{id}":       true,
 	"POST /api/v1/users/invites":      true,
+	"PUT /api/v1/users/new-people":    true,
 	"POST /api/v1/auth/import/{kind}": true,
 	"POST /api/v1/migrate/moves":      true,
 	// Backups: the file holds the whole database.

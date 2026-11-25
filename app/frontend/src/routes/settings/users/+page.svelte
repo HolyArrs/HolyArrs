@@ -13,7 +13,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
-	import { choosePreset, presetOf, presetOptions, type Mix, Sessions, UserMediaLink, DeletePersonAsk, focusAfterAsk, InviteLinks, type Invite, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
+	import { choosePreset, presetOf, presetOptions, type Mix, Sessions, UserMediaLink, DeletePersonAsk, focusAfterAsk, InviteLinks, NewPeopleCard, type NewPeople, type Invite, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
 	import type { AskSettings, LimitKind, PersonLimit, PersonQualities, QualityLine } from '#lib/requests/index.ts';
 	import { QualityPicker, kindAsks } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
@@ -57,6 +57,9 @@
 		admin: ['ask', 'auto_approve', 'approve', 'manage_library'],
 		member: ['ask']
 	};
+	// What new people start with, set in the New people card; the invite form opens with it.
+	let newPeople = $state<NewPeople>({ perms: [...defaults.member], options: ['ask', 'auto_approve', 'auto_approve_four_k'] });
+	const memberDefaults = $derived(newPeople.perms.filter((p) => session.can(p)));
 	const roleWord = $derived<Record<string, string>>({ owner: t('settings.users.owner'), admin: t('settings.users.admin'), member: t('settings.users.member') });
 	const providerWord: Record<string, string> = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
 
@@ -141,9 +144,14 @@
 
 	async function load() {
 		try {
-			const [u, i] = await Promise.all([api.get<{ users: User[]; perms: Perm[] }>('/users'), api.get<{ invites: Invite[] }>('/users/invites')]);
+			const [u, i] = await Promise.all([api.get<{ users: User[]; perms: Perm[]; new_people?: NewPeople }>('/users'), api.get<{ invites: Invite[] }>('/users/invites')]);
 			users = u.users;
 			allPerms = u.perms;
+			if (u.new_people) {
+				newPeople = u.new_people;
+				// A member invite not yet touched opens with the new defaults.
+				if (role === 'member' && !inviteOpen && !link) perms = [...memberDefaults];
+			}
 			invites = i.invites;
 			loadLimits();
 			hasData = true;
@@ -206,11 +214,16 @@
 		}
 		mixes['invite-preset'] = null;
 		maxRating = '';
-		perms = defaults[r].filter((p) => session.can(p));
+		perms = (r === 'member' ? memberDefaults : defaults[r].filter((p) => session.can(p))).slice();
 	}
 
 	function toggle(list: Perm[], p: Perm, on: boolean): Perm[] {
 		return on ? [...new Set([...list, p])] : list.filter((x) => x !== p);
+	}
+
+	function savedNewPeople(next: NewPeople) {
+		newPeople = next;
+		if (role === 'member' && !inviteOpen && !link) perms = [...memberDefaults];
 	}
 
 	// The invite form opens as a sheet from the header; People come first.
@@ -494,6 +507,8 @@
 			{/each}
 		</ul>
 	</SettingsCard>
+
+	<NewPeopleCard people={newPeople} {permWord} {isOwner} onsaved={savedNewPeople} />
 
 	{#if hasData}<HiddenCard people={names} />{/if}
 

@@ -35810,6 +35810,86 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/users/new-people": {
+      "put": {
+        "description": "Owner only. The request permissions every new member starts with: people who sign in with Plex, Jellyfin, Emby, single sign-on or a trusted proxy, people imported from a media server, and invites that pick none. Kids stay ask-only. Only ask, auto_approve and auto_approve_four_k are accepted.",
+        "operationId": "setNewPeoplePerms",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "perms": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "perms"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "options": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "perms": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "A permission is unknown, not allowed for new people, or 4K is ticked without auto-approve."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Only the owner, with a recent password sign-in."
+          }
+        },
+        "summary": "Choose what new people start with",
+        "tags": [
+          "People"
+        ],
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/users/{id}": {
       "delete": {
         "description": "Signs the person out and removes their keys, links and two-factor; what they asked for stays. Nobody removes the owner or themself, and only the owner removes an admin.",
