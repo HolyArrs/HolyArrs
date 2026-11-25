@@ -36,9 +36,10 @@ export function fromServer(a: ServerStatus | null): StatusAnswer {
 }
 
 // Pages are summed by href, so the menu can be regrouped without the server.
+// Only warnings and errors flag attention; an info item is a calm line on the page, not a problem.
 export function groupState(a: StatusAnswer, hrefs: string[]): { state: GroupState; count: number } {
 	const mine = new Set(hrefs);
-	const count = a.items.filter((i) => mine.has(i.href)).length;
+	const count = a.items.filter((i) => mine.has(i.href) && i.severity !== 'info').length;
 	if (count) return { state: 'attention', count };
 	if (Object.values(a.unset).some((hs) => hs?.some((h) => mine.has(h)))) return { state: 'unset', count: 0 };
 	if (hrefs.some((h) => a.known.has(h))) return { state: 'ok', count: 0 };
@@ -46,7 +47,7 @@ export function groupState(a: StatusAnswer, hrefs: string[]): { state: GroupStat
 }
 
 export function pageState(a: StatusAnswer, href: string): { state: GroupState; count: number } {
-	const count = a.items.filter((i) => i.href === href).length;
+	const count = a.items.filter((i) => i.href === href && i.severity !== 'info').length;
 	if (count) return { state: 'attention', count };
 	if (Object.values(a.unset).some((hs) => hs?.includes(href))) return { state: 'unset', count: 0 };
 	if (a.known.has(href)) return { state: 'ok', count: 0 };
@@ -61,5 +62,5 @@ export function stateWords(s: { state: GroupState; count: number }): string {
 }
 
 export function needsAttention(a: StatusAnswer | null): boolean {
-	return !!a && a.items.length > 0;
+	return !!a && a.items.some((i) => i.severity !== 'info');
 }

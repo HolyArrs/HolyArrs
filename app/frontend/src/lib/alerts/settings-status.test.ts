@@ -59,6 +59,32 @@ describe('groupState and pageState', () => {
 		expect(stateWords(groupState(a, ['/settings/backups']))).toBe('1 needs attention');
 	});
 
+	it('an info item alone does not flag attention', () => {
+		const a = fromServer(
+			answer({
+				items: [{ group: 'library', page: '/settings/tmdb', text: 'Details come from your own keys; some rows are off on this install', severity: 'info' }],
+				known: ['/settings/tmdb']
+			})
+		);
+		expect(groupState(a, ['/settings/tmdb'])).toEqual({ state: 'ok', count: 0 });
+		expect(pageState(a, '/settings/tmdb')).toEqual({ state: 'ok', count: 0 });
+		expect(stateWords(groupState(a, ['/settings/tmdb']))).toBe('All set');
+	});
+
+	it('counts only warnings and errors beside an info item', () => {
+		const a = fromServer(
+			answer({
+				items: [
+					{ group: 'library', page: '/settings/tmdb', text: 'Details come from your own keys; some rows are off on this install', severity: 'info' },
+					{ group: 'copies', page: '/settings/downloaders', text: 'qBit is not answering', severity: 'error' }
+				],
+				known: ['/settings/tmdb']
+			})
+		);
+		expect(groupState(a, ['/settings/tmdb', '/settings/downloaders'])).toEqual({ state: 'attention', count: 1 });
+		expect(stateWords(pageState(a, '/settings/tmdb'))).toBe('All set');
+	});
+
 	it('says Not set up for pages the server lists as unset', () => {
 		const a = fromServer(answer({ unset: { library: ['/settings/library-folders'], copies: ['/settings/sources', '/settings/downloaders'] } }));
 		expect(stateWords(groupState(a, ['/settings/library-folders']))).toBe('Not set up');
@@ -158,5 +184,6 @@ describe('needsAttention', () => {
 		expect(needsAttention(fromServer(null))).toBe(false);
 		expect(needsAttention(fromServer({ items: [], unset: { copies: ['/settings/sources'] }, known: [], metadata_up: true }))).toBe(false);
 		expect(needsAttention(fromServer({ items: [{ group: 'copies', page: '/settings/sources', text: 'The Source A is close to its search limit (8 of 10)', severity: 'warning' }], unset: {}, known: [], metadata_up: true }))).toBe(true);
+		expect(needsAttention(fromServer({ items: [{ group: 'library', page: '/settings/tmdb', text: 'Details come from your own keys; some rows are off on this install', severity: 'info' }], unset: {}, known: [], metadata_up: true }))).toBe(false);
 	});
 });
