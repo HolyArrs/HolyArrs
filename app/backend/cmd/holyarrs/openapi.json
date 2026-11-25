@@ -5739,6 +5739,17 @@
             "description": "masked when set",
             "type": "string"
           },
+          "site": {
+            "description": "Built-in site for format site: knaben, torrentscsv, subsplease, yts or iptorrents. YTS searches movies from yts.pw through its JSON API.",
+            "enum": [
+              "knaben",
+              "torrentscsv",
+              "subsplease",
+              "yts",
+              "iptorrents"
+            ],
+            "type": "string"
+          },
           "state": {
             "enum": [
               "enabled",
@@ -5887,7 +5898,8 @@
             "enum": [
               "torznab",
               "newznab",
-              "rss"
+              "rss",
+              "site"
             ],
             "type": "string"
           },
@@ -5967,6 +5979,17 @@
             "type": "boolean"
           },
           "proxy_password": {
+            "type": "string"
+          },
+          "site": {
+            "description": "Built-in site for format site: knaben, torrentscsv, subsplease, yts or iptorrents. YTS searches movies from yts.pw through its JSON API.",
+            "enum": [
+              "knaben",
+              "torrentscsv",
+              "subsplease",
+              "yts",
+              "iptorrents"
+            ],
             "type": "string"
           },
           "tags": {

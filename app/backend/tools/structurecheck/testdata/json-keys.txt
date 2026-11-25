@@ -236,6 +236,7 @@ attention
 attributes
 attribution
 audio
+audio_channels
 audio_languages
 audio_tracks
 audio_unknown
@@ -471,6 +472,7 @@ data
 data_compat
 date
 dateAdded
+date_uploaded_unix
 dates
 day
 day_down
@@ -884,6 +886,7 @@ imdb
 imdbId
 imdbRating
 imdbVotes
+imdb_code
 imdb_id
 imdb_rating
 imdb_votes
@@ -2242,6 +2245,7 @@ versions
 via
 via_plugin
 videoDetails
+video_codec
 videoname
 videos
 view
