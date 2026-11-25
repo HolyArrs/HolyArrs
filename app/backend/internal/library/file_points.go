@@ -48,8 +48,12 @@ func (s *Service) SlotPoints(ctx context.Context, titleID, slotID int64) (SlotPo
 	if err := database.Get(ctx, db, "pick_rules", v.PickRulesID, &pr); err != nil {
 		return SlotPoints{}, err
 	}
+	var t mediafiles.Title
+	if err := database.Get(ctx, db, "titles", titleID, &t); err != nil {
+		return SlotPoints{}, err
+	}
 	out := SlotPoints{
-		FilePoints:   ScoreSlotFile(f, v, pr.Body),
+		FilePoints:   ScoreSlotFile(f, v, t, pr.Body),
 		GoodEnough:   sl.GoodEnough,
 		MeetsVersion: fileMeetsVersionChoices(v, f),
 		Names:        map[string]string{},
@@ -65,13 +69,13 @@ func (s *Service) SlotPoints(ctx context.Context, titleID, slotID int64) (SlotPo
 	return out, nil
 }
 
-// ScoreSlotFile scores a file in a Version the way a search scores the
-// copy it holds.
-func ScoreSlotFile(f mediafiles.File, v mediafiles.Version, rules mediafiles.PickRulesBody) mediafiles.FilePoints {
+// ScoreSlotFile scores a file in a Version of Title t the way a search
+// scores the copy it holds.
+func ScoreSlotFile(f mediafiles.File, v mediafiles.Version, t mediafiles.Title, rules mediafiles.PickRulesBody) mediafiles.FilePoints {
 	name := strings.TrimSuffix(path.Base(f.RelativePath), path.Ext(f.RelativePath))
 	if f.ReleaseName != nil && *f.ReleaseName != "" {
 		name = *f.ReleaseName
 	}
 	audio := mediafiles.FileLanguages(f.MediaInfo, v.AudioLanguages)
-	return mediafiles.ScoreFile(mediafiles.JudgeName(name, f.MediaInfo), f.Size, audio, rules)
+	return mediafiles.ScoreTitleFile(mediafiles.JudgeName(name, f.MediaInfo), f.Size, audio, t, rules)
 }
