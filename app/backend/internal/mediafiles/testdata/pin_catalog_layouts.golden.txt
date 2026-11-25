@@ -150,6 +150,7 @@ ChosenReleaseID *int64 `db:"chosen_release_id"`
 ActiveDownloadID *int64 `db:"active_download_id"`
 LastReason *string `db:"last_reason"`
 NextTryAt *time.Time `db:"next_try_at"`
+KeepUpToDate *bool `db:"keep_up_to_date"`
 == PickRules
 Meta Meta ``
 Name string `db:"name"`

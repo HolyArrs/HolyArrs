@@ -25,6 +25,9 @@ type EpisodeSlot struct {
 	FileID     *int64 `json:"file_id,omitempty"`
 	// GoodEnough is the saved flag that stops the search for a better copy.
 	GoodEnough bool `json:"good_enough"`
+	// KeepUpToDate is this Version's own choice for the episode, absent
+	// when the Slot follows the episode and the Version.
+	KeepUpToDate *bool `json:"keep_up_to_date,omitempty"`
 	// Points and GoodEnoughPoints score the file, asked for with points=1.
 	Points           *int `json:"points,omitempty"`
 	GoodEnoughPoints *int `json:"good_enough_points,omitempty"`
@@ -179,7 +182,7 @@ func (h *EpisodeHandlers) listEpisodes(w http.ResponseWriter, r *http.Request) {
 	byItem := map[int64][]EpisodeSlot{}
 	now := time.Now()
 	for _, s := range slots {
-		es := EpisodeSlot{ID: s.ID, Version: label[s.VersionID], VersionID: s.VersionID, State: string(s.State), StateLabel: h.StateLabels[s.State], FileID: s.FileID, GoodEnough: s.GoodEnough}
+		es := EpisodeSlot{ID: s.ID, Version: label[s.VersionID], VersionID: s.VersionID, State: string(s.State), StateLabel: h.StateLabels[s.State], FileID: s.FileID, GoodEnough: s.GoodEnough, KeepUpToDate: s.KeepUpToDate}
 		if s.FileID != nil {
 			f := files[*s.FileID]
 			if wantPoints && f != nil && listed[s.ItemID] {
@@ -219,16 +222,29 @@ func (h *EpisodeHandlers) setEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		KeepUpToDate *bool `json:"keep_up_to_date"`
+		KeepUpToDate *bool  `json:"keep_up_to_date"`
+		VersionID    *int64 `json:"version_id"`
 	}
-	if !webserver.Decode(w, r, &body, KeepHelp) {
+	sent, ok := webserver.DecodeKeys(w, r, &body, EpisodeKeepHelp)
+	if !ok {
 		return
 	}
-	if body.KeepUpToDate == nil {
-		webserver.Fail(w, http.StatusBadRequest, KeepHelp)
+	if _, has := sent["keep_up_to_date"]; !has || body.KeepUpToDate == nil && body.VersionID == nil {
+		webserver.Fail(w, http.StatusBadRequest, EpisodeKeepHelp)
 		return
 	}
-	it, err := New(h.Lib).SetEpisode(r.Context(), id, *body.KeepUpToDate, actor(r))
+	var it mediafiles.Item
+	var sl *mediafiles.Slot
+	var ver mediafiles.Version
+	if body.VersionID != nil {
+		// With a Version, the choice is that Version's alone; null follows
+		// the episode and the Version again.
+		var one mediafiles.Slot
+		it, one, ver, err = New(h.Lib).SetEpisodeInVersion(r.Context(), id, *body.VersionID, body.KeepUpToDate, actor(r))
+		sl = &one
+	} else {
+		it, err = New(h.Lib).SetEpisode(r.Context(), id, *body.KeepUpToDate, actor(r))
+	}
 	if errors.Is(err, database.ErrNotFound) {
 		webserver.Fail(w, http.StatusNotFound, "no such episode")
 		return
@@ -237,7 +253,12 @@ func (h *EpisodeHandlers) setEpisode(w http.ResponseWriter, r *http.Request) {
 		h.Fail(w, err)
 		return
 	}
-	webserver.WriteJSON(w, http.StatusOK, EpisodeViewOf(it))
+	v := EpisodeViewOf(it)
+	if sl != nil {
+		v.Slots = append(v.Slots, EpisodeSlot{ID: sl.ID, Version: ver.Label, VersionID: sl.VersionID, State: string(sl.State), StateLabel: h.StateLabels[sl.State], FileID: sl.FileID,
+			GoodEnough: sl.GoodEnough, KeepUpToDate: sl.KeepUpToDate})
+	}
+	webserver.WriteJSON(w, http.StatusOK, v)
 }
 
 // slotScorer scores a file in one of title t's Versions, reading each

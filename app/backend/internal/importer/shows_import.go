@@ -544,7 +544,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if gone {
 		markGone(imp.Result)
 	}
-	kept := func(ss *showSlot) bool { return ver.KeepUpToDate && ss.it.KeepUpToDate && ti.KeepUpToDate }
+	kept := func(ss *showSlot) bool {
+		return ti.KeepUpToDate && mediafiles.SlotKept(ss.sl, ss.it.KeepUpToDate, ver.KeepUpToDate)
+	}
 	placed, failed := 0, 0
 	for _, r := range imp.Result {
 		switch r.Outcome {

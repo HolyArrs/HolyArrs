@@ -58,7 +58,7 @@ func RecheckPickRules(ctx context.Context, st *database.Store, pickRulesID int64
 				if err := database.Get(ctx, tx, "titles", v.TitleID, &t); err != nil {
 					continue
 				}
-				ch, err := goodEnoughTx(ctx, tx, v, t.KeepUpToDate && v.KeepUpToDate, by)
+				ch, err := goodEnoughTx(ctx, tx, v, t.KeepUpToDate, by)
 				if err != nil {
 					return err
 				}

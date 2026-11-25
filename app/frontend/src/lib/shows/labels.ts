@@ -1,5 +1,5 @@
 // Labels, choices and status text for shows, seasons and episodes.
-import type { EpisodeView, SeasonSummary, ShowInfo } from '../core/types.ts';
+import type { EpisodeSlot, EpisodeView, SeasonSummary, ShowInfo, VersionView } from '../core/types.ts';
 import { date } from '../core/format.ts';
 import { t } from '../core/i18n/i18n.svelte.ts';
 import { episodeCode } from '../core/episodes.ts';
@@ -89,6 +89,12 @@ export function episodeWhy(e: EpisodeView, seasonKept: boolean, showKept: boolea
 	// Notes like "aired ..." repeat the date already shown beside the episode; the card's reason is not shown while its import runs again.
 	if (s?.reason && !/^airs? |^aired /.test(s.reason) && !staleWhileImporting(s)) return s.reason;
 	return '';
+}
+
+// Whether one Version wants the episode: its own choice when it made one, else the episode's and the Version's switches (SlotKept on the server).
+export function slotKept(e: EpisodeView, s: EpisodeSlot, versions: VersionView[]): boolean {
+	if (s.keep_up_to_date !== undefined) return s.keep_up_to_date;
+	return e.keep_up_to_date && (versions.find((v) => v.id === s.version_id)?.keep_up_to_date ?? true);
 }
 
 export function searchWord(state: string | undefined): string {

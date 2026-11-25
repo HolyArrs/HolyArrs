@@ -607,14 +607,14 @@ func savePackFiles(ctx context.Context, s *database.Store, id int64, files []dom
 
 // packSlotsWanted says every Slot of a pack file is wanted and its episode
 
-// and season are kept up to date.
+// and season are kept up to date, or the Slot itself wants it.
 func packSlotsWanted(ctx context.Context, db *sql.DB, slotIDs []int64) (bool, error) {
 	if len(slotIDs) == 0 {
 		return false, nil
 	}
 	var n int
 	err := db.QueryRowContext(ctx, `SELECT COUNT(*) FROM slots s JOIN items i ON i.id = s.item_id LEFT JOIN parts p ON p.id = i.part_id
-		WHERE s.id IN (SELECT value FROM json_each(?)) AND s.state = 'wanted' AND i.keep_up_to_date = 1 AND (p.id IS NULL OR p.keep_up_to_date = 1)`, jsonIDs(slotIDs)).Scan(&n)
+		WHERE s.id IN (SELECT value FROM json_each(?)) AND s.state = 'wanted' AND COALESCE(s.keep_up_to_date, i.keep_up_to_date = 1 AND (p.id IS NULL OR p.keep_up_to_date = 1)) = 1`, jsonIDs(slotIDs)).Scan(&n)
 	return n == len(slotIDs), err
 }
 

@@ -11,7 +11,7 @@ import (
 // and are still wanted: what a partly done import leaves waiting.
 const waitingSlotsSQL = `SELECT s.id FROM slots s JOIN items it ON it.id = s.item_id LEFT JOIN parts p ON p.id = it.part_id
 	WHERE s.id IN (SELECT value FROM json_each(?2))
-	AND s.file_id IS NULL AND it.keep_up_to_date = 1 AND (p.id IS NULL OR p.keep_up_to_date = 1)
+	AND s.file_id IS NULL AND COALESCE(s.keep_up_to_date, it.keep_up_to_date = 1 AND (p.id IS NULL OR p.keep_up_to_date = 1)) = 1
 	AND s.state NOT IN ('in_library', 'removed', 'rejected')
 	ORDER BY s.id`
 

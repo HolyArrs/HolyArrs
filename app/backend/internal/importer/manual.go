@@ -663,7 +663,7 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 		ge = mediafiles.ReachesGoodEnoughFor(release, ti, pr.Body)
 	}
 	state, why := mediafiles.SlotInLibrary, "imported by hand"
-	if !ge && ver.KeepUpToDate && item.KeepUpToDate {
+	if !ge && mediafiles.SlotKept(sl, item.KeepUpToDate, ver.KeepUpToDate) {
 		state, why = mediafiles.SlotBetterWanted, "imported by hand below good enough, so a better copy is sought"
 	}
 	step := mediafiles.PlanStep{SourceFile: src, TargetSlotIDs: []int64{sl.ID}, TargetPath: target, Method: "hardlink", Confidence: 1, Why: []string{"chosen by hand"}}

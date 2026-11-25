@@ -148,7 +148,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		im.lowSpace(ctx, lowSpace, sl.ID, ti.ID, d.ID, by)
 	}
 	if up.lie != "" && !hasMain(plan) && !gone {
-		slotTo, err := im.reject(ctx, imp, sl, d, up.lie, by, up.old != nil, ver.KeepUpToDate && it.KeepUpToDate)
+		slotTo, err := im.reject(ctx, imp, sl, d, up.lie, by, up.old != nil, mediafiles.SlotKept(sl, it.KeepUpToDate, ver.KeepUpToDate))
 		if err != nil {
 			return imp, err
 		}
@@ -451,7 +451,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		if err := mediafiles.MoveSlotTx(tx, sl.ID, slotTo, reason, by); err != nil {
 			return err
 		}
-		if slotTo == mediafiles.SlotInLibrary && !ge && ver.KeepUpToDate && it.KeepUpToDate {
+		if slotTo == mediafiles.SlotInLibrary && !ge && mediafiles.SlotKept(sl, it.KeepUpToDate, ver.KeepUpToDate) {
 			slotTo = mediafiles.SlotBetterWanted
 			return mediafiles.MoveSlotTx(tx, sl.ID, slotTo, reason+"; below good enough, so a better copy is sought", by)
 		}
