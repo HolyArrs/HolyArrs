@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Pridėti atsisiuntėją",
 	"downloads.hl.noUsenetDl": "nenustatytas joks Usenet atsisiuntėjas",
 	"downloads.hl.noTorrentDl": "nenustatytas joks torrentų atsisiuntėjas",
+	"downloads.problem.waitingForFiles": "Laukiama failų",
 	"downloads.problem.importBlocked": "Importavimas užblokuotas",
 	"downloads.problem.missingArticles": "Trūksta straipsnių",
 	"downloads.problem.noFullCopy": "Nėra pilnos kopijos",

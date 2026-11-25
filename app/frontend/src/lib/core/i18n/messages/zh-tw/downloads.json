@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "新增下載器",
 	"downloads.hl.noUsenetDl": "尚未設定 Usenet 下載器",
 	"downloads.hl.noTorrentDl": "尚未設定種子下載器",
+	"downloads.problem.waitingForFiles": "等待檔案",
 	"downloads.problem.importBlocked": "匯入遭封鎖",
 	"downloads.problem.missingArticles": "缺少文章",
 	"downloads.problem.noFullCopy": "沒有完整副本",

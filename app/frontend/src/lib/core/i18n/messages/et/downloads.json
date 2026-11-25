@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Lisa allalaadija",
 	"downloads.hl.noUsenetDl": "ühtegi Useneti allalaadijat pole seadistatud",
 	"downloads.hl.noTorrentDl": "ühtegi torrentite allalaadijat pole seadistatud",
+	"downloads.problem.waitingForFiles": "Failide ootel",
 	"downloads.problem.importBlocked": "Import blokeeritud",
 	"downloads.problem.missingArticles": "Puuduvad artiklid",
 	"downloads.problem.noFullCopy": "Täielikku koopiat pole",

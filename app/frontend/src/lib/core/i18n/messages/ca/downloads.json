@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Afegeix un gestor de baixades",
 	"downloads.hl.noUsenetDl": "no hi ha cap gestor de baixades Usenet configurat",
 	"downloads.hl.noTorrentDl": "no hi ha cap gestor de baixades de torrents configurat",
+	"downloads.problem.waitingForFiles": "Esperant fitxers",
 	"downloads.problem.importBlocked": "Importació bloquejada",
 	"downloads.problem.missingArticles": "Falten articles",
 	"downloads.problem.noFullCopy": "Cap còpia completa",
