@@ -187,9 +187,10 @@
 	.row:hover { background: color-mix(in srgb, var(--surface-2) 85%, var(--text) 6%); }
 	.row.fresh { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info, #0071e3) 35%, transparent); }
 	.tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-	.t { font: var(--t-subhead); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* Title and second line wrap: an alert is read here in full, and the list scrolls. */
+	.t { font: var(--t-subhead); font-weight: 600; overflow-wrap: anywhere; }
 	.fresh .t::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--info, #0071e3); vertical-align: middle; }
-	.b { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.b { font: var(--t-footnote); color: var(--text-muted); overflow-wrap: anywhere; }
 	.row :global(.ui-alert-sym) { margin-top: 1px; --sym: var(--info); }
 	.row :global(.ui-alert-sym.ok) { --sym: var(--ok); }
 	.row :global(.ui-alert-sym.fail) { --sym: var(--fail); }
