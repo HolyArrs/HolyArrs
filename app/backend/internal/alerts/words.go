@@ -17,6 +17,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "{n} more tracks of this album download are in the Library:",
 		"episode_range": "{from} to {to} ({n} episodes)",
 		"tracks":        "{n} tracks",
+		"upgraded":      "Upgraded",
 	},
 	"es": {
 		"plugin_from": "De {plugin}",
@@ -29,6 +30,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "{n} pistas más de esta descarga de álbum están en la Biblioteca:",
 		"episode_range": "{from} a {to} ({n} episodios)",
 		"tracks":        "{n} pistas",
+		"upgraded":      "Mejorado",
 	},
 	"pt-br": {
 		"plugin_from": "De {plugin}",
@@ -41,6 +43,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "Mais {n} faixas deste download de álbum estão na Biblioteca:",
 		"episode_range": "{from} a {to} ({n} episódios)",
 		"tracks":        "{n} faixas",
+		"upgraded":      "Melhorado",
 	},
 	"fr": {
 		"plugin_from": "De {plugin}",
@@ -53,6 +56,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "{n} pistes de plus de ce téléchargement d'album sont dans la bibliothèque :",
 		"episode_range": "{from} à {to} ({n} épisodes)",
 		"tracks":        "{n} pistes",
+		"upgraded":      "Amélioré",
 	},
 	"de": {
 		"plugin_from": "Von {plugin}",
@@ -65,6 +69,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "{n} weitere Tracks dieses Album-Downloads sind in der Bibliothek:",
 		"episode_range": "{from} bis {to} ({n} Folgen)",
 		"tracks":        "{n} Tracks",
+		"upgraded":      "Verbessert",
 	},
 	"ru": {
 		"plugin_from": "От {plugin}",
@@ -77,6 +82,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "Ещё треков из этой загрузки альбома в Медиатеке: {n}",
 		"episode_range": "{from} – {to} (серий: {n})",
 		"tracks":        "Треков: {n}",
+		"upgraded":      "Улучшено",
 	},
 	"uk": {
 		"plugin_from": "Від {plugin}",
@@ -89,6 +95,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "Ще треків із цього завантаження альбому в Медіатеці: {n}",
 		"episode_range": "{from} – {to} (серій: {n})",
 		"tracks":        "Треків: {n}",
+		"upgraded":      "Покращено",
 	},
 	"zh-cn": {
 		"plugin_from": "来自 {plugin}",
@@ -101,6 +108,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "此专辑下载另有 {n} 首曲目已在媒体库中：",
 		"episode_range": "{from} 至 {to}（{n} 集）",
 		"tracks":        "{n} 首曲目",
+		"upgraded":      "已升级",
 	},
 	"ja": {
 		"plugin_from": "{plugin} から",
@@ -113,6 +121,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "このアルバムダウンロードのほか {n} 曲がライブラリにあります：",
 		"episode_range": "{from}〜{to}（{n} 話）",
 		"tracks":        "{n} 曲",
+		"upgraded":      "アップグレード済み",
 	},
 	"ko": {
 		"plugin_from": "{plugin}에서",
@@ -125,6 +134,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "이 앨범 다운로드의 트랙 {n}개가 더 라이브러리에 있어요:",
 		"episode_range": "{from}~{to} (에피소드 {n}개)",
 		"tracks":        "트랙 {n}개",
+		"upgraded":      "업그레이드됨",
 	},
 	"hi": {
 		"plugin_from": "{plugin} से",
@@ -137,6 +147,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "इस एल्बम डाउनलोड के {n} और ट्रैक लाइब्रेरी में हैं:",
 		"episode_range": "{from} से {to} ({n} एपिसोड)",
 		"tracks":        "{n} ट्रैक",
+		"upgraded":      "अपग्रेड किया गया",
 	},
 	"it": {
 		"plugin_from": "Da {plugin}",
@@ -149,6 +160,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "Altre {n} tracce di questo download dell'album sono nella Libreria:",
 		"episode_range": "da {from} a {to} ({n} episodi)",
 		"tracks":        "{n} tracce",
+		"upgraded":      "Migliorato",
 	},
 	"nl": {
 		"plugin_from": "Van {plugin}",
@@ -161,6 +173,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "Nog {n} nummers van deze albumdownload staan in de Bibliotheek:",
 		"episode_range": "{from} tot {to} ({n} afleveringen)",
 		"tracks":        "{n} nummers",
+		"upgraded":      "Verbeterd",
 	},
 	"pl": {
 		"plugin_from": "Od {plugin}",
@@ -173,6 +186,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "Kolejne utwory z pobranego albumu są w Bibliotece ({n}):",
 		"episode_range": "{from}–{to} (odcinków: {n})",
 		"tracks":        "Utworów: {n}",
+		"upgraded":      "Ulepszono",
 	},
 	"tr": {
 		"plugin_from": "{plugin} kaynaklı",
@@ -185,6 +199,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "Bu albüm indirmesinden {n} parça daha Kütüphanede:",
 		"episode_range": "{from} - {to} ({n} bölüm)",
 		"tracks":        "{n} parça",
+		"upgraded":      "Yükseltildi",
 	},
 	"ar": {
 		"plugin_from": "من {plugin}",
@@ -197,6 +212,7 @@ var words = map[string]map[string]string{
 		"more_tracks":   "{n} مقاطع أخرى من تنزيل هذا الألبوم في المكتبة:",
 		"episode_range": "{from} إلى {to} ({n} حلقات)",
 		"tracks":        "{n} مقاطع",
+		"upgraded":      "تمت الترقية",
 	},
 }
 

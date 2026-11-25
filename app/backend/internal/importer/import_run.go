@@ -471,6 +471,9 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	slotID, dlID, titleID := sl.ID, d.ID, ti.ID
 	e := &domain.Event{Actor: by, Kind: "import_" + imp.State, TitleID: &titleID, SlotID: &slotID, DownloadID: &dlID, Summary: summary,
 		Data: map[string]any{"import_id": imp.ID, "result": imp.Result, "from": imp.FromPath, "paths": planPaths(imp.Plan)}, GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}
+	if up.old != nil && fileID > 0 {
+		im.markUpgrade(ctx, e.Data, map[int64]int64{up.old.ID: fileID})
+	}
 	if im.Store.AddEvent(ctx, e) == nil {
 		im.publish("event", e)
 	}

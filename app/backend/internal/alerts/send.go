@@ -102,6 +102,12 @@ type Message struct {
 	Tracks []Track
 	// Report is the problem report it is about, when there is one.
 	Report *Report
+	// Poster is the public https address of the title's picture (a movie
+	// or show poster, an album cover), shown by Discord; "" has none.
+	Poster string
+	// head is the word a Library moment's subject starts with ("" is the
+	// moment's own word; an import that replaced a file says Upgraded).
+	head string
 }
 
 // Report names the problem report a message is about.
@@ -209,6 +215,9 @@ type Sender struct {
 	// Lang is the owner's app language for the fixed words of a message
 	// (nil or "" means English).
 	Lang func(context.Context) string
+	// Pictures is the metadata server's public picture address
+	// ({server}/v1/img) for album covers and artist photos; "" sends none.
+	Pictures string
 
 	wg sync.WaitGroup
 }
@@ -425,23 +434,7 @@ func (s *Sender) discord(ctx context.Context, a domain.Alert, m Message) error {
 	if CheckDiscordURL(link, a.AllowLocal) != nil {
 		return ErrURL
 	}
-	var mentions, ids []string
-	if forPeople(m.Moment) {
-		for _, p := range m.People {
-			if validDiscordID(p.DiscordID) {
-				mentions = append(mentions, "<@"+p.DiscordID+">")
-				ids = append(ids, p.DiscordID)
-			}
-		}
-	}
-	content := "**" + m.Subject + "**\n" + m.Text
-	if len(mentions) > 0 {
-		content = strings.Join(mentions, " ") + " " + content
-	}
-	content = cutRunes(content, discordMax)
-	body, _ := json.Marshal(map[string]any{"username": "HolyArrs", "content": content,
-		"allowed_mentions": map[string]any{"parse": []string{}, "users": append([]string{}, ids...)}})
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, link, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, link, bytes.NewReader(discordBody(m)))
 	if err != nil {
 		return ErrURL
 	}
@@ -472,6 +465,78 @@ func (s *Sender) discord(ctx context.Context, a domain.Alert, m Message) error {
 		return statusFailure("Discord", resp.StatusCode)
 	}
 	return nil
+}
+
+// Embed colours by moment.
+const (
+	colorImport  = 0x2e9e5b // in the Library, ready
+	colorUpgrade = 0x7b5cd6 // an import that replaced a file
+	colorGrab    = 0x3b82c4 // sent to download, downloaded, approved
+	colorProblem = 0xd64545 // failed, broken, turned down, a report
+	colorOther   = 0x7a8591
+)
+
+func embedColor(m Message) int {
+	if m.head == "upgraded" {
+		return colorUpgrade
+	}
+	switch m.Moment {
+	case MomentImport, MomentReady, MomentNewEpisodes, MomentNewAlbums, MomentFixed:
+		return colorImport
+	case MomentGrab, MomentDownloaded, MomentApproved, MomentWaiting:
+		return colorGrab
+	case MomentDownloadFailed, MomentTurnedDown, MomentReported, MomentDecision:
+		return colorProblem
+	case MomentHealth:
+		if m.Event != nil && m.Event.Kind == domain.EventHealthBroken {
+			return colorProblem
+		}
+		return colorImport
+	}
+	return colorOther
+}
+
+// Discord's embed limits: a title of 256 letters, a description of 4096.
+const (
+	embedTitleMax = 256
+	embedTextMax  = 4096
+)
+
+// discordBody is the webhook body for m: one embed (subject as title,
+// text as description, a colour, the poster as thumbnail when it is a
+// public https picture). Mentions of the people who asked stay in
+// content, because Discord only pings from there.
+func discordBody(m Message) []byte {
+	var mentions, ids []string
+	if forPeople(m.Moment) {
+		for _, p := range m.People {
+			if validDiscordID(p.DiscordID) && !slices.Contains(ids, p.DiscordID) {
+				mentions = append(mentions, "<@"+p.DiscordID+">")
+				ids = append(ids, p.DiscordID)
+			}
+		}
+	}
+	embed := map[string]any{"title": cutRunes(clean(m.Subject), embedTitleMax), "color": embedColor(m)}
+	if strings.TrimSpace(m.Text) != "" {
+		embed["description"] = cutRunes(m.Text, embedTextMax) // Discord refuses an empty one
+	}
+	if publicPicture(m.Poster) {
+		embed["thumbnail"] = map[string]any{"url": m.Poster}
+	}
+	body := map[string]any{"username": "HolyArrs", "embeds": []any{embed},
+		"allowed_mentions": map[string]any{"parse": []string{}, "users": append([]string{}, ids...)}}
+	if len(mentions) > 0 {
+		body["content"] = cutRunes(strings.Join(mentions, " "), discordMax)
+	}
+	b, _ := json.Marshal(body)
+	return b
+}
+
+// publicPicture says u is an https address with a host, which Discord
+// fetches itself (never a local /api link or a plain http one).
+func publicPicture(u string) bool {
+	p, err := url.Parse(u)
+	return err == nil && p.Scheme == "https" && p.Host != "" && p.User == nil && len(u) <= 2000
 }
 
 func validDiscordID(id string) bool {
