@@ -1,8 +1,9 @@
 // Server event stream with reconnect, resync and one stream shared across tabs.
 
 import { to } from './paths.ts';
-import { api } from './api.ts';
+import { api, ApiError } from './api.ts';
 import { backoff } from './loader.ts';
+import { session } from './session.svelte.ts';
 
 export type LiveState = 'off' | 'connecting' | 'live' | 'reconnecting';
 export type Listener = (data: unknown, topic: string) => void;
@@ -186,6 +187,24 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		if (!hidden()) lead();
 	}
 
+	// A dead stream may be an ended session, not a lost connection. Ask once whether the session
+	// is still good; a 401 ends the reconnect loop and signs the person out, so the page goes to
+	// sign-in instead of showing Reconnecting. Any other answer keeps the current backoff.
+	async function probeSession() {
+		api.forget();
+		try {
+			await api.get('/auth/me');
+		} catch (e) {
+			if (e instanceof ApiError && e.status === 401) {
+				clearTimeout(retry);
+				src?.close();
+				src = null;
+				setState('off');
+				session.lost();
+			}
+		}
+	}
+
 	function open(again = false) {
 		if (src) return;
 		if (!again) setState('connecting');
@@ -226,6 +245,9 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			retry = setTimeout(() => {
 				if ((quiet ? status.state === 'live' : status.state === 'reconnecting') && (!shared || status.leader)) open(true);
 			}, quiet ? 0 : backoff(tries));
+			// The first error of a reconnect cycle may be an ended session, not a lost connection:
+			// EventSource never shows the status, so a 401 looks like a network drop. Probe once.
+			if (tries === 0) void probeSession();
 			tries++;
 		};
 		src.onmessage = (e: MessageEvent) => {
