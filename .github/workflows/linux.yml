@@ -76,6 +76,15 @@ jobs:
       - name: Build the archives
         run: python3 deploy/release/linux_package.py --version "$VERSION" --output dist --prebuilt-web --bare
 
+      - name: Keep the files for the attest job
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: linux-downloads-${{ env.VERSION }}
+          path: |
+            dist/holyarrs_${{ env.VERSION }}_linux_*
+            dist/SHA256SUMS
+          retention-days: 7
+
       - name: Add the files to the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -83,3 +92,60 @@ jobs:
         run: |
           gh release view "$VERSION" >/dev/null || { echo "::error::no GitHub release named $VERSION"; exit 1; }
           gh release upload "$VERSION" dist/holyarrs_"$VERSION"_linux_* dist/SHA256SUMS --clobber
+
+  # Its own job, so the build above (which runs npm) never holds a token that
+  # can make attestations.
+  provenance:
+    name: Attest the Linux downloads
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # the SBOM goes on the release
+      id-token: write
+      attestations: write
+    steps:
+      # The files the build job made, not whatever the release holds now.
+      - name: Get the built files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: linux-downloads-${{ env.VERSION }}
+          path: dist
+
+      - name: Check the release holds exactly these files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          (cd dist && sha256sum -c --strict SHA256SUMS)
+          mkdir released
+          gh release download "$VERSION" --dir released --pattern "holyarrs_${VERSION}_linux_*" --pattern SHA256SUMS
+          cmp dist/SHA256SUMS released/SHA256SUMS
+          (cd released && sha256sum -c --strict SHA256SUMS)
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: dist/SHA256SUMS
+
+      - name: Make the SBOM of the programs
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: dist
+          format: spdx-json
+          output-file: holyarrs-${{ env.VERSION }}-linux.sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Attest the SBOM
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-checksums: dist/SHA256SUMS
+          sbom-path: holyarrs-${{ env.VERSION }}-linux.sbom.spdx.json
+
+      - name: Add the SBOM to the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$VERSION" "holyarrs-$VERSION-linux.sbom.spdx.json" --clobber

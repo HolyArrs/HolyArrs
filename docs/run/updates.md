@@ -152,6 +152,14 @@ gh attestation verify oci://docker.io/holyarrs/holyarrs:<version> --repo HolyArr
 
 The same files are on each [GitHub release](https://github.com/HolyArrs/HolyArrs/releases): `.sigstore.json` (signature), `.intoto.jsonl` (build record) and `.sbom.spdx.json` (contents).
 
+From 1.3.2 on, the Linux downloads have the same build record and contents list. Check a downloaded file:
+
+```bash
+gh attestation verify holyarrs_<version>_linux_amd64 --repo HolyArrs/HolyArrs
+```
+
+Its contents list is on the release as `holyarrs-<version>-linux.sbom.spdx.json`.
+
 </details>
 
 ## Related

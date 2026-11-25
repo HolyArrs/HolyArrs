@@ -17,6 +17,10 @@ run-name: ${{ inputs.version || github.event.workflow_run.head_branch }}
 #   var     UPDATES_BUCKET (the R2 bucket behind updates.holyarrs.com)
 # The key is written to the runner's temp folder, used and shredded, even
 # when a step fails. It is never printed.
+#
+# Two jobs: "sign" holds the signing key and runs only repo code and Go (no
+# npm). "upload" holds only the Cloudflare token, gets the signed list as an
+# artifact and runs wrangler from the pinned .github/deploy lockfile.
 
 on:
   workflow_run:
@@ -56,8 +60,8 @@ env:
   VERSION: ${{ inputs.version || github.event.workflow_run.head_branch }}
 
 jobs:
-  publish:
-    name: Sign the programs and publish the update list
+  sign:
+    name: Sign the programs and the update list
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
@@ -68,10 +72,13 @@ jobs:
       contents: write
     steps:
       - name: Check the version
-        run: case "$VERSION" in (*[!0-9.]*|'') echo "::error::not a version: $VERSION"; exit 1;; esac
+        run: |
+          case "$VERSION" in (*[!0-9.]*|'') echo "::error::not a version: $VERSION"; exit 1;; esac
 
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -124,6 +131,37 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: gh release upload "$VERSION" dist/holyarrs_"$VERSION"_linux_*.minisig --clobber
 
+      - name: Keep the signed list
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: update-list-${{ env.VERSION }}
+          path: site/
+          retention-days: 30
+
+  upload:
+    name: Upload the update list
+    needs: sign
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: update-signing
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/deploy
+
+      - name: Get the signed list
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: update-list-${{ env.VERSION }}
+          path: site/
+
+      - name: Install wrangler from the lockfile
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix .github/deploy
+
       - name: Upload the list
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -134,7 +172,7 @@ jobs:
           # The signature first: an app that reads the new list mid-upload
           # fails the check and keeps its last good answer.
           for f in manifest.json.minisig manifest.json; do
-            npx --yes wrangler@4.20.0 r2 object put "$BUCKET/v1/$f" --file "site/v1/$f" \
+            .github/deploy/node_modules/.bin/wrangler r2 object put "$BUCKET/v1/$f" --file "site/v1/$f" \
               --content-type "$( [ "$f" = manifest.json ] && echo application/json || echo text/plain )" \
               --cache-control "public, max-age=300" --remote
           done
