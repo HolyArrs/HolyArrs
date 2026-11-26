@@ -513,6 +513,43 @@ test('plugins: settings save, restart failure and own fields', async ({ browser 
 	await page.context().close();
 });
 
+// A developer plugin that declares settings gets the same Settings button once it is installed (#834);
+// before Install from folder there is nothing to set yet, so the button stays away.
+for (const width of [1366, 390]) {
+	test(`plugins: developer plugin settings at ${width}`, async ({ browser }) => {
+		const page = await (await browser.newContext({ viewport: { width, height: width > 500 ? 768 : 844 } })).newPage();
+		await signIn(page, owner());
+		const ov = structuredClone(fake) as typeof fake & { dev_mode?: boolean; plugins: Record<string, unknown>[] };
+		ov.dev_mode = true;
+		const fields = [{ key: 'greeting', label: 'Greeting', type: 'text', default: 'hi' }];
+		ov.plugins.push({ id: 'my-dev', version: '0.0.1', dev: true, installed: true, running: true, enabled: true, name: 'My dev plugin', access: { hosts: [], folders: [], actions: [] }, settings: fields });
+		ov.plugins.push({ id: 'new-dev', version: '0.0.1', dev: true, installed: false, running: false, enabled: false, name: 'New dev plugin', access: { hosts: [], folders: [], actions: [] }, settings: fields });
+		const puts: string[] = [];
+		await page.route('**/api/v1/plugins**', async (route) => {
+			const r = route.request();
+			if (r.url().endsWith('/my-dev/settings')) {
+				if (r.method() === 'PUT') puts.push(r.postData() ?? '');
+				return route.fulfill({ json: { fields, values: { greeting: 'hi' }, secrets_set: {} } });
+			}
+			return route.fulfill({ json: ov });
+		});
+		await page.goto('/plugins#new-dev');
+		await expect(page.getByTestId('plugin-dev-install')).toBeVisible();
+		await expect(page.getByTestId('plugin-detail').getByTestId('plugin-settings')).toHaveCount(0);
+		await page.goto('/plugins#my-dev');
+		const panel = page.getByTestId('plugin-detail');
+		await expect(panel.getByTestId('plugin-dev-install')).toBeVisible();
+		await panel.getByTestId('plugin-settings').click();
+		const form = page.getByTestId('plugin-settings-form');
+		await form.getByLabel('Greeting').fill('hello');
+		await form.getByTestId('plugin-settings-save').click();
+		await expect.poll(() => puts.length).toBe(1);
+		expect(JSON.parse(puts[0]).values).toEqual({ greeting: 'hello' });
+		await noSidewaysScroll(page);
+		await page.context().close();
+	});
+}
+
 // A link to /plugins#<id> opens that plugin; Esc closes it, clears the address and puts focus back on its tile.
 // Update all updates every plugin with an update, after the same access question.
 test('plugins: logos and developer pictures never load from github.com', async ({ browser }) => {
