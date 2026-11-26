@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Saját kulcsaid",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart kulcs api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Címek a tűzfaladhoz",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tűzfal gazdák külső címek engedélyezési lista"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tűzfal gazdák külső címek engedélyezési lista",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Az új emberek ezzel kezdenek",
+	"settings.index.users.new-people-card.new-people-start-with.words": "alapértelmezett jogosultságok automatikus jóváhagyás új felhasználók csatlakozás első bejelentkezés"
 }

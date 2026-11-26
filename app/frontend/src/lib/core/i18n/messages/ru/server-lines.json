@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "он длиннее, чем может быть шаблон HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "уже в Библиотеке; качество или релиз {n} файлов обновлены",
 	"server.migrate.imported-before-2": "импортировано ранее{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "его папка {dir} принадлежит другому фильму в Библиотеке"
+	"server.migrate.its-folder-belongs-to-another-movie": "его папка {dir} принадлежит другому фильму в Библиотеке",
+	"server.accounts.new-people-can-start-only-with": "Новые люди могут начинать только с правами участника; «Менять настройки» выдавайте каждому отдельно.",
+	"server.migrate.what-new-people-start-with-is": "с чем начинают новые люди, не импортируется; выберите это в Настройки > Пользователи и роли"
 }

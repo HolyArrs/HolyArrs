@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Не можа да се изтрие",
 	"settings.users.confirmDeleteKeys": "Ключовете за Seerr, които е създал, спират да работят за всички, докато не се създаде нов.",
 	"settings.users.qualities": "Качества",
-	"settings.users.qualitiesHint": "Могат да избират само включените. Когато всички са включени, се предлагат и новите."
+	"settings.users.qualitiesHint": "Могат да избират само включените. Когато всички са включени, се предлагат и новите.",
+	"settings.users.newPeople": "Новите хора започват с",
+	"settings.users.newPeopleHint": "За всеки, който се присъедини отсега нататък: покани, Plex, Jellyfin, Emby и единен вход. Хората, които вече са тук, запазват своите.",
+	"settings.users.newPeopleSaved": "Запазено за новите хора"
 }

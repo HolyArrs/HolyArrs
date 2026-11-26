@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "lebih panjang dari batas pola HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "sudah ada di Pustaka; kualitas atau rilis {n} file diperbarui",
 	"server.migrate.imported-before-2": "sudah diimpor sebelumnya{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik film lain di Pustaka"
+	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik film lain di Pustaka",
+	"server.accounts.new-people-can-start-only-with": "Orang baru hanya bisa mulai dengan izin anggota; berikan \"Mengubah pengaturan\" satu per satu.",
+	"server.migrate.what-new-people-start-with-is": "apa yang dimiliki orang baru saat mulai tidak diimpor; pilih di Pengaturan > Pengguna dan peran"
 }

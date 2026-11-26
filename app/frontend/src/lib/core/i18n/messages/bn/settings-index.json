@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "আপনার নিজের কী",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb টোকেন tvdb পিন mdblist fanart কী api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "আপনার ফায়ারওয়ালের জন্য ঠিকানা",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ফায়ারওয়াল হোস্ট বাইরের ঠিকানা অনুমতি তালিকা"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ফায়ারওয়াল হোস্ট বাইরের ঠিকানা অনুমতি তালিকা",
+	"settings.index.users.new-people-card.new-people-start-with.label": "নতুন মানুষ যা নিয়ে শুরু করেন",
+	"settings.index.users.new-people-card.new-people-start-with.words": "ডিফল্ট অনুমতি অটো-অনুমোদন নতুন ইউজার যোগ দেওয়া প্রথম সাইন-ইন"
 }

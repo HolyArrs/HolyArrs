@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Ang sarili mong mga key",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart key api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Mga address para sa iyong firewall",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall mga host panlabas na address allow list"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall mga host panlabas na address allow list",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Nagsisimula ang mga bagong tao sa",
+	"settings.index.users.new-people-card.new-people-start-with.words": "default na pahintulot auto-approve bagong user sumali unang sign-in"
 }

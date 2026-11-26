@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Silinemedi",
 	"settings.users.confirmDeleteKeys": "Oluşturduğu Seerr anahtarları, yenisi oluşturulana kadar herkes için çalışmaz.",
 	"settings.users.qualities": "Kaliteler",
-	"settings.users.qualitiesHint": "Yalnızca açık olanları seçebilirler. Hepsi açıksa yeniler de sunulur."
+	"settings.users.qualitiesHint": "Yalnızca açık olanları seçebilirler. Hepsi açıksa yeniler de sunulur.",
+	"settings.users.newPeople": "Yeni kişiler şununla başlar",
+	"settings.users.newPeopleHint": "Bundan sonra katılan herkes için: davetler, Plex, Jellyfin, Emby ve tek oturum açma. Zaten burada olanlar kendininkini korur.",
+	"settings.users.newPeopleSaved": "Yeni kişiler için kaydedildi"
 }

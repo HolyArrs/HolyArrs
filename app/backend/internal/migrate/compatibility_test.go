@@ -55,8 +55,8 @@ func TestCompatibilityPlanKeepsLeastPrivilegeStableIdentityAndPerKindLimits(t *t
 	if defaults.AskSettings == nil || defaults.AskSettings.MoviesPerWeek == nil || *defaults.AskSettings.MoviesPerWeek != 3 || defaults.AskSettings.ShowsPerWeek != nil {
 		t.Fatalf("supported defaults not mapped: %+v", defaults)
 	}
-	if _, ok := notMoved(p, "seerr settings.default_permissions"); !ok {
-		t.Fatal("scoped default permissions were not retained as unsupported")
+	if n, ok := notMoved(p, "seerr settings.default_permissions"); !ok || !strings.Contains(n.Why, "Settings > Users and roles") {
+		t.Fatalf("default permissions not listed with where to pick them: %+v", n)
 	}
 }
 

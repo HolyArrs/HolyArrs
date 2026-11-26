@@ -121,7 +121,7 @@ func (a *Auth) ssoIdentityWith(ctx context.Context, kind, issuer, subject, displ
 			if groupRole == webserver.RoleAdmin {
 				role = webserver.RoleAdmin
 			}
-			id, err = insertUserTx(tx, &domain.User{Name: name, Role: role, State: "active", Perms: permsJSON(webserver.DefaultPerms(role))}, domain.System)
+			id, err = insertUserTx(tx, &domain.User{Name: name, Role: role, State: "active", Perms: permsJSON(startPerms(ctx, tx, role, false))}, domain.System)
 			if err != nil {
 				return err
 			}

@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Tókst ekki að eyða",
 	"settings.users.confirmDeleteKeys": "Seerr-lyklar sem viðkomandi bjó til hætta að virka fyrir alla þar til nýr er búinn til.",
 	"settings.users.qualities": "Gæði",
-	"settings.users.qualitiesHint": "Þau geta aðeins valið það sem er kveikt á. Ef kveikt er á öllu bjóðast ný líka."
+	"settings.users.qualitiesHint": "Þau geta aðeins valið það sem er kveikt á. Ef kveikt er á öllu bjóðast ný líka.",
+	"settings.users.newPeople": "Nýtt fólk byrjar með",
+	"settings.users.newPeopleHint": "Fyrir alla sem bætast við héðan í frá: boð, Plex, Jellyfin, Emby og einskráning. Þau sem eru hér nú halda sínu.",
+	"settings.users.newPeopleSaved": "Vistað fyrir nýtt fólk"
 }

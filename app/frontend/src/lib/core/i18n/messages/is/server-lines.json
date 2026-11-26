@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "það er lengra en HolyArrs-mynstur má vera",
 	"server.migrate.already-in-the-library-the-quality": "þegar í Safninu; gæði eða útgáfa {n} skráa var uppfærð",
 	"server.migrate.imported-before-2": "flutt inn áður{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "mappan {dir} tilheyrir annarri mynd í Safninu"
+	"server.migrate.its-folder-belongs-to-another-movie": "mappan {dir} tilheyrir annarri mynd í Safninu",
+	"server.accounts.new-people-can-start-only-with": "Nýtt fólk getur aðeins byrjað með heimildir meðlims; veittu „Breyta stillingum“ hverjum fyrir sig.",
+	"server.migrate.what-new-people-start-with-is": "það sem nýtt fólk byrjar með er ekki flutt inn; veldu það undir Stillingar > Notendur og hlutverk"
 }

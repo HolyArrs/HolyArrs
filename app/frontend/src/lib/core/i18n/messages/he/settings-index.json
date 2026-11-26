@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "המפתחות שלכם",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart מפתח api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "כתובות לחומת האש שלכם",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "חומת אש מארחים כתובות חיצוניות רשימת היתרים"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "חומת אש מארחים כתובות חיצוניות רשימת היתרים",
+	"settings.index.users.new-people-card.new-people-start-with.label": "אנשים חדשים מתחילים עם",
+	"settings.index.users.new-people-card.new-people-start-with.words": "הרשאות ברירת מחדל אישור אוטומטי משתמשים חדשים הצטרפות כניסה ראשונה"
 }

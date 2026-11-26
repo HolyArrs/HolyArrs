@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "无法删除",
 	"settings.users.confirmDeleteKeys": "此人创建的 Seerr 密钥会对所有人失效，直到创建新的密钥。",
 	"settings.users.qualities": "画质",
-	"settings.users.qualitiesHint": "只能选择已开启的。全部开启时，新加的也会提供。"
+	"settings.users.qualitiesHint": "只能选择已开启的。全部开启时，新加的也会提供。",
+	"settings.users.newPeople": "新成员的初始权限",
+	"settings.users.newPeopleHint": "适用于从现在起加入的所有人：邀请、Plex、Jellyfin、Emby 和单点登录。已有的人保持不变。",
+	"settings.users.newPeopleSaved": "已为新成员保存"
 }

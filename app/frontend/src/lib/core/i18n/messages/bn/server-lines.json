@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "এটি একটি HolyArrs প্যাটার্নের সর্বোচ্চ দৈর্ঘ্যের চেয়ে লম্বা",
 	"server.migrate.already-in-the-library-the-quality": "ইতিমধ্যে লাইব্রেরিতে আছে; {n}টি ফাইলের মান বা রিলিজ হালনাগাদ করা হয়েছে",
 	"server.migrate.imported-before-2": "আগেই ইমপোর্ট করা হয়েছে{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "এর ফোল্ডার {dir} লাইব্রেরির অন্য একটি মুভির"
+	"server.migrate.its-folder-belongs-to-another-movie": "এর ফোল্ডার {dir} লাইব্রেরির অন্য একটি মুভির",
+	"server.accounts.new-people-can-start-only-with": "নতুন মানুষ শুধু একজন সদস্যের অনুমতি নিয়েই শুরু করতে পারেন; «সেটিংস বদলানো» প্রত্যেককে আলাদা করে দিন।",
+	"server.migrate.what-new-people-start-with-is": "নতুন মানুষ কী নিয়ে শুরু করেন তা ইমপোর্ট হয় না; সেটিংস > ইউজার ও ভূমিকা থেকে বেছে নিন"
 }

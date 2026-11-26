@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "মুছতে পারা যায়নি",
 	"settings.users.confirmDeleteKeys": "তার তৈরি করা Seerr কী সবার জন্য কাজ করা বন্ধ করবে, যতক্ষণ না নতুন একটি তৈরি হয়।",
 	"settings.users.qualities": "কোয়ালিটি",
-	"settings.users.qualitiesHint": "শুধু চালু থাকাগুলো বেছে নিতে পারবেন। সব চালু থাকলে নতুনগুলোও দেখানো হয়।"
+	"settings.users.qualitiesHint": "শুধু চালু থাকাগুলো বেছে নিতে পারবেন। সব চালু থাকলে নতুনগুলোও দেখানো হয়।",
+	"settings.users.newPeople": "নতুন মানুষ যা নিয়ে শুরু করেন",
+	"settings.users.newPeopleHint": "এখন থেকে যারা যোগ দেবেন সবার জন্য: আমন্ত্রণ, Plex, Jellyfin, Emby ও সিঙ্গল সাইন-অন। যারা এখন আছেন তারা নিজেদেরটা রাখবেন।",
+	"settings.users.newPeopleSaved": "নতুন মানুষের জন্য সেভ হয়েছে"
 }

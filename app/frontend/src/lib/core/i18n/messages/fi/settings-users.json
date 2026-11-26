@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Poistaminen epäonnistui",
 	"settings.users.confirmDeleteKeys": "Hänen tekemänsä Seerr-avaimet lakkaavat toimimasta kaikilta, kunnes uusi tehdään.",
 	"settings.users.qualities": "Laadut",
-	"settings.users.qualitiesHint": "He voivat valita vain päällä olevat. Kun kaikki ovat päällä, myös uudet tarjotaan."
+	"settings.users.qualitiesHint": "He voivat valita vain päällä olevat. Kun kaikki ovat päällä, myös uudet tarjotaan.",
+	"settings.users.newPeople": "Uudet ihmiset aloittavat näillä",
+	"settings.users.newPeopleHint": "Kaikille, jotka liittyvät tästä eteenpäin: kutsut, Plex, Jellyfin, Emby ja kertakirjautuminen. Jo täällä olevat pitävät omansa.",
+	"settings.users.newPeopleSaved": "Tallennettu uusille ihmisille"
 }

@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Kustutamine ebaõnnestus",
 	"settings.users.confirmDeleteKeys": "Tema loodud Seerri võtmed lakkavad kõigi jaoks töötamast, kuni luuakse uus.",
 	"settings.users.qualities": "Kvaliteedid",
-	"settings.users.qualitiesHint": "Nad saavad valida ainult sisselülitatuid. Kui kõik on sees, pakutakse ka uusi."
+	"settings.users.qualitiesHint": "Nad saavad valida ainult sisselülitatuid. Kui kõik on sees, pakutakse ka uusi.",
+	"settings.users.newPeople": "Uued inimesed alustavad sellega",
+	"settings.users.newPeopleHint": "Kõigile, kes liituvad nüüdsest: kutsed, Plex, Jellyfin, Emby ja ühtne sisselogimine. Need, kes on juba siin, jäävad oma juurde.",
+	"settings.users.newPeopleSaved": "Uutele inimestele salvestatud"
 }

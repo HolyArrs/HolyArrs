@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "ia lebih panjang daripada had corak HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "sudah ada dalam Pustaka; kualiti atau keluaran {n} fail telah dikemas kini",
 	"server.migrate.imported-before-2": "sudah diimport sebelum ini{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik filem lain dalam Pustaka"
+	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik filem lain dalam Pustaka",
+	"server.accounts.new-people-can-start-only-with": "Orang baharu hanya boleh bermula dengan kebenaran ahli; beri \"Ubah tetapan\" seorang demi seorang.",
+	"server.migrate.what-new-people-start-with-is": "apa yang orang baharu mulakan tidak diimport; pilihnya di Tetapan > Pengguna dan peranan"
 }

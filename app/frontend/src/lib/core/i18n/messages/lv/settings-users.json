@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Neizdevās izdzēst",
 	"settings.users.confirmDeleteKeys": "Viņa izveidotās Seerr atslēgas pārstāj darboties visiem, līdz tiek izveidota jauna.",
 	"settings.users.qualities": "Kvalitātes",
-	"settings.users.qualitiesHint": "Var izvēlēties tikai ieslēgtās. Ja ieslēgtas visas, tiek piedāvātas arī jaunās."
+	"settings.users.qualitiesHint": "Var izvēlēties tikai ieslēgtās. Ja ieslēgtas visas, tiek piedāvātas arī jaunās.",
+	"settings.users.newPeople": "Jauni cilvēki sāk ar",
+	"settings.users.newPeopleHint": "Visiem, kas pievienosies no šī brīža: ielūgumi, Plex, Jellyfin, Emby un vienotā pieteikšanās. Tie, kas jau ir šeit, patur savas.",
+	"settings.users.newPeopleSaved": "Saglabāts jauniem cilvēkiem"
 }

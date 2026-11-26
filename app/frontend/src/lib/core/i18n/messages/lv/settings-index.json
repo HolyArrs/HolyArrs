@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Jūsu paša atslēgas",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb pilnvara tvdb pin mdblist fanart atslēga api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adreses jūsu ugunsmūrim",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ugunsmūris resursdatori ārējas adreses atļauto saraksts"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ugunsmūris resursdatori ārējas adreses atļauto saraksts",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Jauni cilvēki sāk ar",
+	"settings.index.users.new-people-card.new-people-start-with.words": "noklusējuma atļaujas automātiska apstiprināšana jauni lietotāji pievienoties pirmā pieteikšanās"
 }

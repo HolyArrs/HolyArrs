@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Sinu enda võtmed",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart võti api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Aadressid sinu tulemüürile",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tulemüür hostid välised aadressid lubatud nimekiri"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tulemüür hostid välised aadressid lubatud nimekiri",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Uued inimesed alustavad sellega",
+	"settings.index.users.new-people-card.new-people-start-with.words": "vaikeõigused automaatne kinnitamine uued kasutajad liitumine esimene sisselogimine"
 }

@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Kunde inte ta bort",
 	"settings.users.confirmDeleteKeys": "Seerr-nycklar som personen skapat slutar fungera för alla tills en ny skapas.",
 	"settings.users.qualities": "Kvaliteter",
-	"settings.users.qualitiesHint": "De kan bara välja de som är på. Är alla på erbjuds nya också."
+	"settings.users.qualitiesHint": "De kan bara välja de som är på. Är alla på erbjuds nya också.",
+	"settings.users.newPeople": "Nya personer börjar med",
+	"settings.users.newPeopleHint": "För alla som går med från och med nu: inbjudningar, Plex, Jellyfin, Emby och enkel inloggning. De som redan finns här behåller sina.",
+	"settings.users.newPeopleSaved": "Sparat för nya personer"
 }

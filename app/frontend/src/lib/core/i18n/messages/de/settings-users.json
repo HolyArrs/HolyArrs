@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Löschen fehlgeschlagen",
 	"settings.users.confirmDeleteKeys": "Seerr-Schlüssel, die die Person erstellt hat, funktionieren für niemanden mehr, bis ein neuer erstellt wird.",
 	"settings.users.qualities": "Qualitäten",
-	"settings.users.qualitiesHint": "Sie können nur die eingeschalteten wählen. Sind alle an, werden neue auch angeboten."
+	"settings.users.qualitiesHint": "Sie können nur die eingeschalteten wählen. Sind alle an, werden neue auch angeboten.",
+	"settings.users.newPeople": "Neue Personen starten mit",
+	"settings.users.newPeopleHint": "Für alle, die ab jetzt dazukommen: Einladungen, Plex, Jellyfin, Emby und Single Sign-on. Wer schon da ist, behält seine.",
+	"settings.users.newPeopleSaved": "Für neue Personen gespeichert"
 }

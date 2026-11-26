@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Τα δικά σας κλειδιά",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart κλειδί api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Διευθύνσεις για το τείχος προστασίας σας",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "τείχος προστασίας hosts εξωτερικές διευθύνσεις λίστα επιτρεπόμενων"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "τείχος προστασίας hosts εξωτερικές διευθύνσεις λίστα επιτρεπόμενων",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Τα νέα άτομα ξεκινούν με",
+	"settings.index.users.new-people-card.new-people-start-with.words": "προεπιλεγμένα δικαιώματα αυτόματη έγκριση νέοι χρήστες συμμετοχή πρώτη σύνδεση"
 }

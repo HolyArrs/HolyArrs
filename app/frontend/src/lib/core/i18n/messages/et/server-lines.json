@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "see on pikem, kui HolyArrsi muster olla võib",
 	"server.migrate.already-in-the-library-the-quality": "juba Kogus; {n} faili kvaliteet või väljalase uuendati",
 	"server.migrate.imported-before-2": "varem imporditud{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "selle kaust {dir} kuulub Kogus teisele filmile"
+	"server.migrate.its-folder-belongs-to-another-movie": "selle kaust {dir} kuulub Kogus teisele filmile",
+	"server.accounts.new-people-can-start-only-with": "Uued inimesed saavad alustada ainult liikme õigustega; „Muuta seadeid“ andke igaühele eraldi.",
+	"server.migrate.what-new-people-start-with-is": "millega uued inimesed alustavad, ei impordita; valige see jaotises Seaded > Kasutajad ja rollid"
 }

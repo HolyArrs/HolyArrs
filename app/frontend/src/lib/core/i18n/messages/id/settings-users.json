@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Tidak bisa menghapus",
 	"settings.users.confirmDeleteKeys": "Kunci Seerr yang dia buat berhenti berfungsi untuk semua orang sampai kunci baru dibuat.",
 	"settings.users.qualities": "Kualitas",
-	"settings.users.qualitiesHint": "Mereka hanya bisa memilih yang aktif. Jika semua aktif, yang baru juga ditawarkan."
+	"settings.users.qualitiesHint": "Mereka hanya bisa memilih yang aktif. Jika semua aktif, yang baru juga ditawarkan.",
+	"settings.users.newPeople": "Orang baru mulai dengan",
+	"settings.users.newPeopleHint": "Untuk semua yang bergabung mulai sekarang: undangan, Plex, Jellyfin, Emby, dan single sign-on. Yang sudah ada tetap dengan miliknya.",
+	"settings.users.newPeopleSaved": "Disimpan untuk orang baru"
 }

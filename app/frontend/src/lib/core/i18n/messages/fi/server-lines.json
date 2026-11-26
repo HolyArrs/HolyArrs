@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "se on pidempi kuin HolyArrs-kaava voi olla",
 	"server.migrate.already-in-the-library-the-quality": "on jo Kirjastossa; {n} tiedoston laatu tai julkaisu päivitettiin",
 	"server.migrate.imported-before-2": "tuotu aiemmin{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "sen kansio {dir} kuuluu toiselle Kirjaston elokuvalle"
+	"server.migrate.its-folder-belongs-to-another-movie": "sen kansio {dir} kuuluu toiselle Kirjaston elokuvalle",
+	"server.accounts.new-people-can-start-only-with": "Uudet ihmiset voivat aloittaa vain jäsenen oikeuksilla; anna ”Muuttaa asetuksia” jokaiselle erikseen.",
+	"server.migrate.what-new-people-start-with-is": "sitä, millä uudet ihmiset aloittavat, ei tuoda; valitse se kohdassa Asetukset > Käyttäjät ja roolit"
 }

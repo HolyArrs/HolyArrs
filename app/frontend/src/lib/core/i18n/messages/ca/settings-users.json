@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "No s’ha pogut suprimir",
 	"settings.users.confirmDeleteKeys": "Les claus de Seerr que hagi creat deixen de funcionar per a tothom fins que se'n creï una de nova.",
 	"settings.users.qualities": "Qualitats",
-	"settings.users.qualitiesHint": "Només poden triar les activades. Amb totes activades, també s'ofereixen les noves."
+	"settings.users.qualitiesHint": "Només poden triar les activades. Amb totes activades, també s'ofereixen les noves.",
+	"settings.users.newPeople": "La gent nova comença amb",
+	"settings.users.newPeopleHint": "Per a tothom qui s'uneixi a partir d'ara: invitacions, Plex, Jellyfin, Emby i inici de sessió únic. Qui ja hi és conserva el que té.",
+	"settings.users.newPeopleSaved": "Desat per a la gent nova"
 }

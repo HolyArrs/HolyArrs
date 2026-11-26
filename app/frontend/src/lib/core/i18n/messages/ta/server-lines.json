@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "இது ஒரு HolyArrs வடிவத்தின் அதிகபட்ச நீளத்தை விட நீளமானது",
 	"server.migrate.already-in-the-library-the-quality": "ஏற்கனவே நூலகத்தில் உள்ளது; {n} கோப்புகளின் தரம் அல்லது வெளியீடு புதுப்பிக்கப்பட்டது",
 	"server.migrate.imported-before-2": "முன்பே இறக்குமதி செய்யப்பட்டது{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "இதன் கோப்புறை {dir} நூலகத்தில் உள்ள வேறொரு திரைப்படத்துக்குச் சொந்தமானது"
+	"server.migrate.its-folder-belongs-to-another-movie": "இதன் கோப்புறை {dir} நூலகத்தில் உள்ள வேறொரு திரைப்படத்துக்குச் சொந்தமானது",
+	"server.accounts.new-people-can-start-only-with": "புதியவர்கள் ஒரு உறுப்பினரின் அனுமதிகளுடன் மட்டுமே தொடங்க முடியும்; \"அமைப்புகளை மாற்று\" என்பதை ஒவ்வொருவருக்கும் தனியாகக் கொடுங்கள்.",
+	"server.migrate.what-new-people-start-with-is": "புதியவர்கள் எதனுடன் தொடங்குகிறார்கள் என்பது இறக்கப்படாது; அமைப்புகள் > பயனர்களும் பாத்திரங்களும் என்பதில் தேர்ந்தெடுங்கள்"
 }

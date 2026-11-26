@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "삭제하지 못했습니다",
 	"settings.users.confirmDeleteKeys": "이 사람이 만든 Seerr 키는 새 키를 만들 때까지 모두에게 작동하지 않습니다.",
 	"settings.users.qualities": "화질",
-	"settings.users.qualitiesHint": "켜진 항목만 고를 수 있어요. 모두 켜져 있으면 새 항목도 보여요."
+	"settings.users.qualitiesHint": "켜진 항목만 고를 수 있어요. 모두 켜져 있으면 새 항목도 보여요.",
+	"settings.users.newPeople": "새 사람의 시작 권한",
+	"settings.users.newPeopleHint": "지금부터 들어오는 모든 사람에게 적용됩니다: 초대, Plex, Jellyfin, Emby, 싱글 사인온. 이미 있는 사람은 그대로입니다.",
+	"settings.users.newPeopleSaved": "새 사람용으로 저장했습니다"
 }

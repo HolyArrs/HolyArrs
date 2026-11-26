@@ -36,13 +36,13 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		// The outside account's name (from the server) goes with the refusal.
 		return 0, strings.TrimSpace(extName), errNotAllowed
 	}
-	u := domain.User{Role: webserver.RoleMember, State: "active", Perms: permsJSON(webserver.DefaultPerms(webserver.RoleMember))}
+	u := domain.User{Role: webserver.RoleMember, State: "active", Perms: permsJSON(startPerms(ctx, a.s.Read(), webserver.RoleMember, kid))}
 	if kid {
 		if a.skipBlocksKids(ctx) {
 			// A Kid could not be told apart from the person local visitors become.
 			return 0, "", errKidSkipLocal
 		}
-		u.Perms, u.MaxRating = permsJSON([]webserver.Perm{webserver.PermAsk}), "PG"
+		u.MaxRating = "PG"
 	}
 	base := outsideBase(provider, extName)
 	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {

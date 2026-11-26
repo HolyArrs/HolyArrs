@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Kunci anda sendiri",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart kunci api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Alamat untuk tembok api anda",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tembok api hos luar alamat senarai dibenarkan"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tembok api hos luar alamat senarai dibenarkan",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Orang baharu bermula dengan",
+	"settings.index.users.new-people-card.new-people-start-with.words": "kebenaran lalai lulus automatik pengguna baharu sertai log masuk pertama"
 }

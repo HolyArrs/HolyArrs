@@ -338,5 +338,7 @@
   "settings.index.tmdb.metadata-keys.your-own-keys.label": "Dine egne nøkler",
   "settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart nøkkel api",
   "settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresser for brannmuren din",
-  "settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "brannmur verter utenfor adresser tillatelsesliste"
+  "settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "brannmur verter utenfor adresser tillatelsesliste",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Nye personer starter med",
+	"settings.index.users.new-people-card.new-people-start-with.words": "standardtillatelser automatisk godkjenning nye brukere bli med første pålogging"
 }

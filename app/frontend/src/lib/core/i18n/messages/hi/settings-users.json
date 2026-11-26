@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "हटाया नहीं जा सका",
 	"settings.users.confirmDeleteKeys": "उनकी बनाई Seerr कुंजियाँ सभी के लिए काम करना बंद कर देंगी, जब तक नई न बनाई जाए।",
 	"settings.users.qualities": "क्वालिटी",
-	"settings.users.qualitiesHint": "वे सिर्फ़ चालू वाले चुन सकते हैं। सब चालू हों तो नए भी दिखाए जाते हैं।"
+	"settings.users.qualitiesHint": "वे सिर्फ़ चालू वाले चुन सकते हैं। सब चालू हों तो नए भी दिखाए जाते हैं।",
+	"settings.users.newPeople": "नए लोग इससे शुरू करते हैं",
+	"settings.users.newPeopleHint": "अब से जुड़ने वाले सभी के लिए: न्योते, Plex, Jellyfin, Emby और सिंगल साइन-ऑन। जो अभी हैं वे अपना रखते हैं।",
+	"settings.users.newPeopleSaved": "नए लोगों के लिए सेव हो गया"
 }

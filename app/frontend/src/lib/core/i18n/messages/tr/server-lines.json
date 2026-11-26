@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "bir HolyArrs deseninin olabileceğinden daha uzun",
 	"server.migrate.already-in-the-library-the-quality": "zaten Kitaplıkta; {n} dosyanın kalitesi veya sürümü güncellendi",
 	"server.migrate.imported-before-2": "daha önce içe aktarıldı{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "klasörü {dir}, Kitaplıktaki başka bir filme ait"
+	"server.migrate.its-folder-belongs-to-another-movie": "klasörü {dir}, Kitaplıktaki başka bir filme ait",
+	"server.accounts.new-people-can-start-only-with": "Yeni kişiler yalnızca bir üyenin izinleriyle başlayabilir; \"Ayarları değiştir\" iznini kişi kişi verin.",
+	"server.migrate.what-new-people-start-with-is": "yeni kişilerin neyle başlayacağı içe aktarılmaz; bunu Ayarlar > Kullanıcılar ve roller altında seçin"
 }

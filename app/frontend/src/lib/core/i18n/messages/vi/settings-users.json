@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Không xóa được",
 	"settings.users.confirmDeleteKeys": "Các khóa Seerr người này tạo sẽ ngừng hoạt động với mọi người cho đến khi tạo khóa mới.",
 	"settings.users.qualities": "Chất lượng",
-	"settings.users.qualitiesHint": "Họ chỉ chọn được mục đang bật. Khi bật tất cả, mục mới cũng được đưa ra."
+	"settings.users.qualitiesHint": "Họ chỉ chọn được mục đang bật. Khi bật tất cả, mục mới cũng được đưa ra.",
+	"settings.users.newPeople": "Người mới bắt đầu với",
+	"settings.users.newPeopleHint": "Cho mọi người tham gia từ giờ: lời mời, Plex, Jellyfin, Emby và đăng nhập một lần. Người đã có ở đây giữ nguyên quyền của mình.",
+	"settings.users.newPeopleSaved": "Đã lưu cho người mới"
 }

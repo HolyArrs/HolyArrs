@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "کلیدهای خودتان",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb توکن tvdb pin mdblist fanart کلید api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "آدرس‌ها برای فایروال شما",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "فایروال میزبان‌ها بیرونی آدرس‌ها فهرست مجاز"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "فایروال میزبان‌ها بیرونی آدرس‌ها فهرست مجاز",
+	"settings.index.users.new-people-card.new-people-start-with.label": "افراد تازه با این شروع می‌کنند",
+	"settings.index.users.new-people-card.new-people-start-with.words": "مجوزهای پیش‌فرض تأیید خودکار کاربران تازه پیوستن اولین ورود"
 }

@@ -499,7 +499,8 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	kidPerms := permsJSON([]webserver.Perm{webserver.PermAsk})
+	memberPerms := permsJSON(startPerms(ctx, a.s.Read(), webserver.RoleMember, false))
+	kidPerms := permsJSON(startPerms(ctx, a.s.Read(), webserver.RoleMember, true))
 	made, skipped := []string{}, 0
 	blockKids := a.skipBlocksKids(ctx)
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
@@ -529,7 +530,7 @@ func (a *Auth) importPeople(w http.ResponseWriter, r *http.Request) {
 				}
 				name = fmt.Sprintf("%s-%d", base, i)
 			}
-			u := &domain.User{Name: name, Role: webserver.RoleMember, State: "active", Perms: permsJSON(webserver.DefaultPerms(webserver.RoleMember))}
+			u := &domain.User{Name: name, Role: webserver.RoleMember, State: "active", Perms: memberPerms}
 			kid := p.Kid
 			if pick.Kid != nil {
 				kid = *pick.Kid // clearing a restricted flag was confirmed above

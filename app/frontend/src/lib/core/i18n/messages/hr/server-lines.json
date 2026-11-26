@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "dulji je nego što HolyArrs uzorak smije biti",
 	"server.migrate.already-in-the-library-the-quality": "već je u Knjižnici; kvaliteta ili izdanje {n} datoteka je ažurirano",
 	"server.migrate.imported-before-2": "uvezeno ranije{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "njegova mapa {dir} pripada drugom filmu u Knjižnici"
+	"server.migrate.its-folder-belongs-to-another-movie": "njegova mapa {dir} pripada drugom filmu u Knjižnici",
+	"server.accounts.new-people-can-start-only-with": "Novi ljudi mogu početi samo s dozvolama člana; „Mijenjanje postavki” dajte svakome zasebno.",
+	"server.migrate.what-new-people-start-with-is": "s čime novi ljudi počinju ne uvozi se; odaberite to u Postavke > Korisnici i uloge"
 }

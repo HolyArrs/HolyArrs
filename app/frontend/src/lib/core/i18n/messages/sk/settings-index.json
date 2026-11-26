@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Vaše vlastné kľúče",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart kľúč api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresy pre váš firewall",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hostitelia vonkajšie adresy povolený zoznam"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hostitelia vonkajšie adresy povolený zoznam",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Noví ľudia začínajú s",
+	"settings.index.users.new-people-card.new-people-start-with.words": "predvolené oprávnenia automatické schválenie noví používatelia pridanie prvé prihlásenie"
 }

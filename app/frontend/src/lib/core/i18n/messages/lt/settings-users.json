@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Nepavyko ištrinti",
 	"settings.users.confirmDeleteKeys": "Jo sukurti Seerr raktai nustoja veikti visiems, kol bus sukurtas naujas.",
 	"settings.users.qualities": "Kokybės",
-	"settings.users.qualitiesHint": "Gali rinktis tik įjungtas. Kai įjungtos visos, siūlomos ir naujos."
+	"settings.users.qualitiesHint": "Gali rinktis tik įjungtas. Kai įjungtos visos, siūlomos ir naujos.",
+	"settings.users.newPeople": "Nauji žmonės pradeda su",
+	"settings.users.newPeopleHint": "Visiems, kas prisijungs nuo šiol: kvietimai, Plex, Jellyfin, Emby ir vienkartinis prisijungimas. Jau esantys pasilieka savo.",
+	"settings.users.newPeopleSaved": "Išsaugota naujiems žmonėms"
 }

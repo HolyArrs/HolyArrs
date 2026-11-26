@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Couldn't delete",
 	"settings.users.confirmDeleteKeys": "Any Seerr keys they made stop working for everyone until a new one is made.",
 	"settings.users.qualities": "Qualities",
-	"settings.users.qualitiesHint": "They can pick only the ones on. With all on, new ones are offered too."
+	"settings.users.qualitiesHint": "They can pick only the ones on. With all on, new ones are offered too.",
+	"settings.users.newPeople": "New people start with",
+	"settings.users.newPeopleHint": "For everyone who joins from now on: invites, Plex, Jellyfin, Emby and single sign-on. People already here keep theirs.",
+	"settings.users.newPeopleSaved": "Saved for new people"
 }

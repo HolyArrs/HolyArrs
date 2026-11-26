@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Kunne ikke slette",
 	"settings.users.confirmDeleteKeys": "Seerr-nøkler personen har laget slutter å virke for alle til en ny lages.",
 	"settings.users.qualities": "Kvaliteter",
-	"settings.users.qualitiesHint": "De kan bare velge de som er på. Er alle på, tilbys nye også."
+	"settings.users.qualitiesHint": "De kan bare velge de som er på. Er alle på, tilbys nye også.",
+	"settings.users.newPeople": "Nye personer starter med",
+	"settings.users.newPeopleHint": "For alle som blir med fra nå av: invitasjoner, Plex, Jellyfin, Emby og enkel pålogging. De som allerede er her, beholder sine.",
+	"settings.users.newPeopleSaved": "Lagret for nye personer"
 }

@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "המחיקה נכשלה",
 	"settings.users.confirmDeleteKeys": "מפתחות Seerr שיצר יפסיקו לעבוד לכולם עד שייווצר מפתח חדש.",
 	"settings.users.qualities": "איכויות",
-	"settings.users.qualitiesHint": "אפשר לבחור רק את המופעלות. כשכולן מופעלות, גם חדשות מוצעות."
+	"settings.users.qualitiesHint": "אפשר לבחור רק את המופעלות. כשכולן מופעלות, גם חדשות מוצעות.",
+	"settings.users.newPeople": "אנשים חדשים מתחילים עם",
+	"settings.users.newPeopleHint": "לכל מי שמצטרף מעכשיו: הזמנות, Plex, Jellyfin, Emby וכניסה יחידה. מי שכבר כאן שומר על שלו.",
+	"settings.users.newPeopleSaved": "נשמר לאנשים חדשים"
 }
