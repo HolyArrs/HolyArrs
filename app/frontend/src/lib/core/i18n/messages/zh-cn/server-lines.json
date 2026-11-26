@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "文件还不在；HolyArrs 会再次尝试导入",
 	"server.migrate.the-same-as-a-source-that": "与 {name} 相同，这里已有此来源",
 	"server.accounts.name-the-person-by-their-user": "请用用户 ID 指定此人",
-	"server.migrate.it-is-longer-than-a-holyarrs": "长度超过了 HolyArrs 模式的上限"
+	"server.migrate.it-is-longer-than-a-holyarrs": "长度超过了 HolyArrs 模式的上限",
+	"server.migrate.already-in-the-library-the-quality": "已在资料库中；已更新 {n} 个文件的质量或版本",
+	"server.migrate.imported-before-2": "之前已导入{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "它的文件夹 {dir} 属于资料库中的另一部电影"
 }

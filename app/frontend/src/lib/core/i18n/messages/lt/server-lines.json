@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "failo dar nėra; HolyArrs bandys jį importuoti dar kartą",
 	"server.migrate.the-same-as-a-source-that": "tas pats kaip {name}, Šaltinis, kuris jau yra",
 	"server.accounts.name-the-person-by-their-user": "nurodyk asmenį pagal jo naudotojo ID",
-	"server.migrate.it-is-longer-than-a-holyarrs": "jis ilgesnis, nei gali būti HolyArrs šablonas"
+	"server.migrate.it-is-longer-than-a-holyarrs": "jis ilgesnis, nei gali būti HolyArrs šablonas",
+	"server.migrate.already-in-the-library-the-quality": "jau yra Bibliotekoje; atnaujinta {n} failų kokybė arba leidimas",
+	"server.migrate.imported-before-2": "importuota anksčiau{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "jo aplankas {dir} priklauso kitam Bibliotekos filmui"
 }

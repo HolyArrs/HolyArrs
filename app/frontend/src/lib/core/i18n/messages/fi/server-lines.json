@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "tiedostoa ei ole vielä; HolyArrs yrittää tuoda sen uudelleen",
 	"server.migrate.the-same-as-a-source-that": "sama kuin {name}, lähde joka on jo täällä",
 	"server.accounts.name-the-person-by-their-user": "nimeä henkilö hänen käyttäjätunnuksellaan",
-	"server.migrate.it-is-longer-than-a-holyarrs": "se on pidempi kuin HolyArrs-kaava voi olla"
+	"server.migrate.it-is-longer-than-a-holyarrs": "se on pidempi kuin HolyArrs-kaava voi olla",
+	"server.migrate.already-in-the-library-the-quality": "on jo Kirjastossa; {n} tiedoston laatu tai julkaisu päivitettiin",
+	"server.migrate.imported-before-2": "tuotu aiemmin{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "sen kansio {dir} kuuluu toiselle Kirjaston elokuvalle"
 }

@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "file belum ada; HolyArrs akan mencoba mengimpornya lagi",
 	"server.migrate.the-same-as-a-source-that": "sama dengan {name}, Sumber yang sudah ada",
 	"server.accounts.name-the-person-by-their-user": "sebutkan orangnya dengan ID penggunanya",
-	"server.migrate.it-is-longer-than-a-holyarrs": "lebih panjang dari batas pola HolyArrs"
+	"server.migrate.it-is-longer-than-a-holyarrs": "lebih panjang dari batas pola HolyArrs",
+	"server.migrate.already-in-the-library-the-quality": "sudah ada di Pustaka; kualitas atau rilis {n} file diperbarui",
+	"server.migrate.imported-before-2": "sudah diimpor sebelumnya{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik film lain di Pustaka"
 }

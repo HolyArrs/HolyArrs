@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "το αρχείο δεν υπάρχει ακόμα· το HolyArrs θα προσπαθήσει ξανά να το εισαγάγει",
 	"server.migrate.the-same-as-a-source-that": "το ίδιο με {name}, μια Πηγή που υπάρχει ήδη εδώ",
 	"server.accounts.name-the-person-by-their-user": "όρισε το άτομο με το αναγνωριστικό χρήστη του",
-	"server.migrate.it-is-longer-than-a-holyarrs": "είναι μεγαλύτερο από όσο μπορεί να είναι ένα μοτίβο του HolyArrs"
+	"server.migrate.it-is-longer-than-a-holyarrs": "είναι μεγαλύτερο από όσο μπορεί να είναι ένα μοτίβο του HolyArrs",
+	"server.migrate.already-in-the-library-the-quality": "υπάρχει ήδη στη Βιβλιοθήκη· η ποιότητα ή η έκδοση {n} αρχείων ενημερώθηκε",
+	"server.migrate.imported-before-2": "εισήχθη παλαιότερα{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "ο φάκελός του {dir} ανήκει σε άλλη ταινία στη Βιβλιοθήκη"
 }

@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "கோப்பு இன்னும் வரவில்லை; HolyArrs மீண்டும் இறக்க முயற்சிக்கும்",
 	"server.migrate.the-same-as-a-source-that": "{name} போன்றதே, ஏற்கனவே உள்ள ஒரு மூலம்",
 	"server.accounts.name-the-person-by-their-user": "பயனர் ஐடி மூலம் நபரைக் குறிப்பிடுங்கள்",
-	"server.migrate.it-is-longer-than-a-holyarrs": "இது ஒரு HolyArrs வடிவத்தின் அதிகபட்ச நீளத்தை விட நீளமானது"
+	"server.migrate.it-is-longer-than-a-holyarrs": "இது ஒரு HolyArrs வடிவத்தின் அதிகபட்ச நீளத்தை விட நீளமானது",
+	"server.migrate.already-in-the-library-the-quality": "ஏற்கனவே நூலகத்தில் உள்ளது; {n} கோப்புகளின் தரம் அல்லது வெளியீடு புதுப்பிக்கப்பட்டது",
+	"server.migrate.imported-before-2": "முன்பே இறக்குமதி செய்யப்பட்டது{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "இதன் கோப்புறை {dir} நூலகத்தில் உள்ள வேறொரு திரைப்படத்துக்குச் சொந்தமானது"
 }

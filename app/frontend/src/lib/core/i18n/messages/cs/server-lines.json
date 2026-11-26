@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "soubor tu ještě není; HolyArrs ho zkusí importovat znovu",
 	"server.migrate.the-same-as-a-source-that": "totéž co {name}, Zdroj, který tu už je",
 	"server.accounts.name-the-person-by-their-user": "označ osobu jejím ID uživatele",
-	"server.migrate.it-is-longer-than-a-holyarrs": "je delší, než může být vzor HolyArrs"
+	"server.migrate.it-is-longer-than-a-holyarrs": "je delší, než může být vzor HolyArrs",
+	"server.migrate.already-in-the-library-the-quality": "už je v Knihovně; kvalita nebo vydání {n} souborů bylo aktualizováno",
+	"server.migrate.imported-before-2": "importováno dříve{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "jeho složka {dir} patří jinému filmu v Knihovně"
 }

@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "फ़ाइल अभी मौजूद नहीं है; HolyArrs इसे फिर से इम्पोर्ट करने की कोशिश करेगा",
 	"server.migrate.the-same-as-a-source-that": "{name} जैसा ही, एक सोर्स जो यहां है",
 	"server.accounts.name-the-person-by-their-user": "व्यक्ति को उसकी यूज़र आईडी से बताएँ",
-	"server.migrate.it-is-longer-than-a-holyarrs": "यह HolyArrs पैटर्न की अधिकतम लंबाई से लंबा है"
+	"server.migrate.it-is-longer-than-a-holyarrs": "यह HolyArrs पैटर्न की अधिकतम लंबाई से लंबा है",
+	"server.migrate.already-in-the-library-the-quality": "पहले से लाइब्रेरी में है; {n} फ़ाइलों की क्वालिटी या रिलीज़ अपडेट की गई",
+	"server.migrate.imported-before-2": "पहले इम्पोर्ट किया गया{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "इसका फ़ोल्डर {dir} लाइब्रेरी की किसी दूसरी मूवी का है"
 }
