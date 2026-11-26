@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Přidat stahovač",
 	"downloads.hl.noUsenetDl": "není nastavený žádný stahovač pro Usenet",
 	"downloads.hl.noTorrentDl": "není nastavený žádný stahovač torrentů",
+	"downloads.problem.waitingForFiles": "Čekání na soubory",
 	"downloads.problem.importBlocked": "Import zablokován",
 	"downloads.problem.missingArticles": "Chybějící články",
 	"downloads.problem.noFullCopy": "Žádná úplná kopie",

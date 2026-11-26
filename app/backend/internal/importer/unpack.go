@@ -76,6 +76,20 @@ func unpackRars(ctx context.Context, downloadID int64, root string, cands []Cand
 			others = append(others, c.Path)
 		}
 	}
+	// A completed remote download may still be syncing its archive parts.
+	// Do not mistake a known missing or shorter part for a damaged archive.
+	for _, c := range cands {
+		k, _ := archive.Of(c.Path)
+		if c.Size > 0 && (k != "" || unrar.IsVolume(c.Path)) {
+			_, err := os.Stat(c.Path)
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil, noop, NotPresentYetWhy
+			}
+			if copyInProgress([]Candidate{c}, c.Path) {
+				return nil, noop, CopyingWhy
+			}
+		}
+	}
 	if len(firsts) == 0 {
 		if len(others) == 0 {
 			return nil, noop, ""

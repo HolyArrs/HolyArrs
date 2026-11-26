@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "הוספת מוריד",
 	"downloads.hl.noUsenetDl": "לא הוגדר מוריד Usenet",
 	"downloads.hl.noTorrentDl": "לא הוגדר מוריד טורנטים",
+	"downloads.problem.waitingForFiles": "ממתין לקבצים",
 	"downloads.problem.importBlocked": "הייבוא נחסם",
 	"downloads.problem.missingArticles": "מאמרים חסרים",
 	"downloads.problem.noFullCopy": "אין עותק מלא",
