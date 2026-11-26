@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd-brukernavn",
 	"settings.downloaders.sabPass": "SABnzbd-passord",
 	"settings.downloaders.keyWrongLogin": "SABnzbd godtok ikke det brukernavnet og passordet.",
-	"settings.downloaders.keyNotFound": "Kunne ikke lese nøkkelen. Bruk Hent nøkkel og kopier den derfra."
+	"settings.downloaders.keyNotFound": "Kunne ikke lese nøkkelen. Bruk Hent nøkkel og kopier den derfra.",
+	"settings.downloaders.pluginKind": "Utvidelse"
 }

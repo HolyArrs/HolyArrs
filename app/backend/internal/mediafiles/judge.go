@@ -17,7 +17,7 @@ type ReleaseFacts struct {
 	Name           string
 	Parse          releasename.Result
 	Size           int64
-	Protocol       string // torrent, usenet
+	Protocol       string // torrent, usenet or a plugin's own download type
 	Seeders        *int
 	PublishedAt    time.Time
 	InfoHash       string
@@ -652,7 +652,7 @@ func Judge(rel ReleaseFacts, set SlotSet, rules PickRulesBody) Verdict {
 
 	// 7. Protocol wait.
 	wait := rules.Protocol.WaitMinutesTorrent
-	if rel.Protocol == "usenet" {
+	if rel.Protocol != "torrent" { // a plugin's own download type waits like usenet
 		wait = rules.Protocol.WaitMinutesUsenet
 	}
 	until := rel.PublishedAt.Add(time.Duration(wait) * time.Minute)

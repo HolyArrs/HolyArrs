@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd kasutajanimi",
 	"settings.downloaders.sabPass": "SABnzbd parool",
 	"settings.downloaders.keyWrongLogin": "SABnzbd ei aktsepteerinud seda kasutajanime ja parooli.",
-	"settings.downloaders.keyNotFound": "Võtit ei õnnestunud lugeda. Kasuta Too võti ja kopeeri see sealt."
+	"settings.downloaders.keyNotFound": "Võtit ei õnnestunud lugeda. Kasuta Too võti ja kopeeri see sealt.",
+	"settings.downloaders.pluginKind": "Plugin"
 }

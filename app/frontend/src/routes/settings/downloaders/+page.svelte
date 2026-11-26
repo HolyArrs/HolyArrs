@@ -336,15 +336,15 @@
 
 {#snippet moreFields()}
 <div class="two">
-	<Field id="dl-cat" label={t('settings.downloaders.category')}>
+	{#if form.kind !== 'plugin'}<Field id="dl-cat" label={t('settings.downloaders.category')}>
 		<input id="dl-cat" class="input" bind:value={form.category} maxlength="64" required />
 		<span class="hint">{categoryHint(form.kind)} {t('settings.downloaders.onlyFollows')}</span>
-	</Field>
+	</Field>{/if}
 	<Field id="dl-prio" label={t('settings.downloaders.priority')} hint={t('settings.downloaders.priorityHint')}>
 		<input id="dl-prio" class="input" type="number" min="1" max="50" bind:value={form.priority} />
 	</Field>
 </div>
-<KindCategories id={isNew ? 0 : (editing?.id ?? 0)} main={form.category} bind:movies={form.category_movies} bind:shows={form.category_shows} bind:music={form.category_music} />
+{#if form.kind !== 'plugin'}<KindCategories id={isNew ? 0 : (editing?.id ?? 0)} main={form.category} bind:movies={form.category_movies} bind:shows={form.category_shows} bind:music={form.category_music} />{/if}
 <Field id="dl-tags" label={t('settings.downloaders.tags')} hint={t('settings.downloaders.tagsHint')}>
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
@@ -499,13 +499,13 @@
 		{#each withoutEditing(list, editing?.id) as d (d.id)}
 			<li class="dl" data-testid="downloader" data-edit-row={d.id}>
 				<div class="main" title={t('settings.downloaders.rowTitle', { host: hostOf(d.url), priority: d.priority, category: d.category })}>
-					<span class="ic"><Icon name={d.protocol === 'usenet' ? 'usenet' : 'torrent'} size={20} /></span>
+					<span class="ic"><Icon name={d.protocol === 'usenet' ? 'usenet' : d.protocol === 'torrent' ? 'torrent' : 'plug'} size={20} /></span>
 					<div class="grow">
 						<div class="top">
 							<span class="name">{d.name}</span>
 							{#if results[d.id]}<TestTag ok={results[d.id].ok} text={results[d.id].text} app={kindWords[d.kind]} testid="downloader-version" />{/if}
 						</div>
-						<div class="sub">{kindWords[d.kind]} · {d.protocol === 'usenet' ? t('settings.downloaders.usenetWord') : t('settings.downloaders.torrentsWord')}</div>
+						<div class="sub">{kindWords[d.kind]} · {d.protocol === 'usenet' ? t('settings.downloaders.usenetWord') : d.protocol === 'torrent' ? t('settings.downloaders.torrentsWord') : d.protocol}</div>
 						<div class="sr-only">{hostOf(d.url)} · 
 							{t('settings.downloaders.priorityCategory', { priority: d.priority, category: d.category })}
 							{#if d.tags?.length} · <span data-testid="downloader-tags">{t('settings.downloaders.tagsList', { tags: d.tags.join(', ') })}</span>{/if}

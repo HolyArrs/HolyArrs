@@ -16,6 +16,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/secrets"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 var (
@@ -66,6 +67,9 @@ type Input struct {
 	CategoryAfterImport *string `json:"category_after_import"`
 	// OwnOnly: show and change only HolyArrs's own items.
 	OwnOnly *bool `json:"own_only"`
+	// Protocol is the download type of a "plugin" Downloader, one its
+	// plugin declares; other kinds ignore it.
+	Protocol string `json:"protocol"`
 }
 
 // HealthView is the stored health of a Downloader as shown to users.
@@ -285,6 +289,12 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 			d.Protocol = "usenet"
 		case "plugin-torrent":
 			d.Protocol = "torrent"
+		case "plugin":
+			if isNew {
+				d.Protocol = in.Protocol
+			} else if in.Protocol != "" && in.Protocol != d.Protocol {
+				return ErrAdapter
+			}
 		default:
 			return ErrAdapter
 		}
@@ -298,6 +308,9 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 			return ErrURL
 		}
 		d.URL = raw
+		if id, _ := PluginID(d.URL); d.Adapter == "plugin" && !sources.PluginTypeOK(id, d.Protocol) {
+			return ErrAdapter
+		}
 	} else if raw != "" || isNew {
 		u, err := url.Parse(raw)
 		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.RawQuery != "" {
