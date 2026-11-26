@@ -132,6 +132,8 @@ export interface PluginOverview {
 	/** The owner runs unsigned plugins from dev_dir. */
 	dev_mode?: boolean;
 	dev_dir?: string;
+	/** The language packs' download numbers; that card is not a listed plugin. */
+	language_packs?: Plugin['stats'];
 	plugins: Plugin[];
 }
 
