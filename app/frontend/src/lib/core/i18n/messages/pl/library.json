@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Niektóre foldery nie przeszły. Skanuj ponownie, aby je przejąć; foldery, które już są w Bibliotece, zostają bez zmian.",
 	"library.import.scanAgain": "Skanuj ponownie",
 	"library.import.keepOpen": "Zostaw tę stronę otwartą, dopóki się nie skończy.",
+	"library.import.closeOk": "Działa na serwerze, więc możesz zamknąć tę stronę.",
 	"library.import.waiting": "Serwer metadanych jest zajęty. HolyArrs ponowi ostatnie {left} za {min} min.",
 	"library.import.leaveAsk": "Trwa import. Jeśli opuścisz tę stronę, foldery, które nie zostały jeszcze wysłane, nie zostaną przejęte. Mimo to wyjść?",
 	"library.import.interrupted": "Import zatrzymał się na {done} z {total} folderów, gdy jego strona została zamknięta. Skanuj ponownie, aby przejąć resztę; foldery już przejęte zostają bez zmian.",

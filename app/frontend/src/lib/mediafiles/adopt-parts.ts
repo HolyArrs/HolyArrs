@@ -141,43 +141,72 @@ export function scanEnd(e: unknown, back: boolean, plain: string): { error: stri
 }
 
 /**
- * Sends the picks part by part. A part the server refused marks its folders
- * with the real reason and the next part still goes; a part whose outcome is
- * not known says so. When the server stops answering or the person is signed
- * out, the rest is not sent and says why. progress hears how many folders
- * are through and the size of the part being sent; gone stops the sending.
+ * Hands every part to the server first, each as its own job, then waits for them in turn (#712).
+ * The server runs the jobs one after another on its own, so once every part is handed over a page
+ * that is closed or a device that sleeps stops nothing. start sends a part and gives back how to wait
+ * for it. A part the server refused keeps its real reason; no answer, a proxy's own page or a sign-in
+ * that ended stops the sending, and the rest is not sent. A part whose outcome could not be read is
+ * not known: it may well be adopted, and so may every part handed over after it. handed is told
+ * once the sending ends with at least one part on the server.
  */
 export async function adoptInParts<T extends { folder: string }>(
 	picks: T[],
-	send: (part: T[]) => Promise<AdoptResult[]>,
+	start: (part: T[]) => Promise<() => Promise<AdoptResult[]>>,
 	words: { unknown: string; notSent: string },
 	progress: (done: number, total: number, part: number) => void = () => {},
-	gone: () => boolean = () => false
+	gone: () => boolean = () => false,
+	handed: () => void = () => {}
 ): Promise<PartResult[]> {
-	const out: PartResult[] = [];
 	const parts = adoptParts(picks);
-	let done = 0;
+	const out: PartResult[][] = parts.map(() => []);
+	const waits: ((() => Promise<AdoptResult[]>) | null)[] = parts.map(() => null);
+	// A proxy's own page in place of HolyArrs's answer is no reason a person can read: plain words instead.
+	const proxy = (e: unknown) => noAnswer(e) && (e as ApiError).status !== 0;
+	const failed = (part: T[], e: unknown): PartResult[] => {
+		const notKnown = e instanceof ResultUnknown;
+		return part.map((p) => ({ folder: p.folder, error: notKnown ? words.unknown : proxy(e) ? words.notSent : message(e), left: true, notKnown }));
+	};
+	const mark = (part: T[], error: string, notKnown = false): PartResult[] => part.map((p) => ({ folder: p.folder, error, left: true, ...(notKnown ? { notKnown } : {}) }));
 	progress(0, picks.length, parts[0]?.length ?? 0);
-	for (let i = 0; i < parts.length && !gone(); i++) {
-		const part = parts[i];
+	let sent = 0;
+	for (; sent < parts.length && !gone(); sent++) {
 		try {
-			out.push(...(await send(part)));
+			waits[sent] = await start(parts[sent]);
 		} catch (e) {
-			const notKnown = e instanceof ResultUnknown;
-			// A proxy's own page in place of HolyArrs's answer is no reason a person can read: plain words instead.
-			const proxy = noAnswer(e) && (e as ApiError).status !== 0;
-			out.push(...part.map((p) => ({ folder: p.folder, error: notKnown ? words.unknown : proxy ? words.notSent : message(e), left: true, notKnown })));
+			out[sent] = failed(parts[sent], e);
 			if (stops(e)) {
-				const why = notKnown || proxy ? words.notSent : message(e);
-				for (const rest of parts.slice(i + 1)) out.push(...rest.map((p) => ({ folder: p.folder, error: why, left: true })));
-				progress(picks.length, picks.length, 0);
+				const why = e instanceof ResultUnknown || proxy(e) ? words.notSent : message(e);
+				for (let r = sent + 1; r < parts.length; r++) out[r] = mark(parts[r], why);
+				sent = parts.length;
 				break;
 			}
 		}
-		done += part.length;
+	}
+	// A page gone part way through the sending: the parts it never sent say so.
+	for (let r = sent; r < parts.length; r++) if (!waits[r] && !out[r].length) out[r] = mark(parts[r], words.notSent);
+	if (waits.some(Boolean)) handed();
+	let done = 0;
+	for (let i = 0; i < parts.length && !gone(); i++) {
+		const wait = waits[i];
+		if (wait) {
+			try {
+				out[i] = await wait();
+			} catch (e) {
+				out[i] = failed(parts[i], e);
+				if (stops(e)) {
+					// Every part handed over after it is on the server too: it may well go through.
+					for (let r = i + 1; r < parts.length; r++) if (waits[r]) out[r] = mark(parts[r], words.unknown, true);
+					progress(picks.length, picks.length, 0);
+					break;
+				}
+			}
+		}
+		done += parts[i].length;
 		progress(done, picks.length, parts[i + 1]?.length ?? 0);
 	}
-	return out;
+	// A page gone while waiting: the parts on the server it no longer follows are not known.
+	for (let r = 0; r < parts.length; r++) if (waits[r] && !out[r].length) out[r] = mark(parts[r], words.unknown, true);
+	return out.flat();
 }
 
 /**

@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Algumas pastas não passaram. Varra de novo para as trazer; as pastas que já estão na Biblioteca ficam como estão.",
 	"library.import.scanAgain": "Varrer de novo",
 	"library.import.keepOpen": "Deixe esta página aberta até terminar.",
+	"library.import.closeOk": "Corre no servidor, por isso podes fechar esta página.",
 	"library.import.waiting": "O servidor de metadados está ocupado. O HolyArrs volta a tentar os últimos {left} dentro de {min} min.",
 	"library.import.leaveAsk": "Há uma importação em curso. Se sair desta página, as pastas que ainda não foram enviadas não serão adotadas. Sair mesmo assim?",
 	"library.import.interrupted": "Uma importação parou em {done} de {total} pastas quando a página dela foi fechada. Varra de novo para adotar o resto; as pastas já adotadas ficam como estão.",

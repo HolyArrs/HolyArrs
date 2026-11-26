@@ -510,7 +510,7 @@ func (h *Handlers) titlePeople(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if (title.Kind != "movie" && title.Kind != "show") || title.SourceIDs["tmdb"] == "" {
+	if (title.Kind != "movie" && title.Kind != "show") || title.TrustedTMDB() == "" {
 		webserver.Fail(w, http.StatusConflict, "this title has no id to look it up by")
 		return
 	}
@@ -522,7 +522,7 @@ func (h *Handlers) titlePeople(w http.ResponseWriter, r *http.Request) {
 			webserver.Fail(w, http.StatusServiceUnavailable, "people results are unavailable for this show metadata provider")
 			return
 		}
-		people, err = sp.ShowPeople(r.Context(), "tmdb:"+title.SourceIDs["tmdb"])
+		people, err = sp.ShowPeople(r.Context(), "tmdb:"+title.TrustedTMDB())
 	} else {
 		p, ok := h.peopleProvider(r, w)
 		if !ok {
