@@ -130,7 +130,7 @@ func TestWatchLinksNone(t *testing.T) {
 	}
 }
 
-// Two rows for one server (#717) give the same link; it shows once, since the
+// Two rows for one server give the same link; it shows once, since the
 // title page keys its buttons by link.
 func TestWatchLinksSameServerTwice(t *testing.T) {
 	w := newWorld(t)

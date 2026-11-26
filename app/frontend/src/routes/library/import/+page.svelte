@@ -47,7 +47,7 @@
 	let results = $state<PartResult[] | null>(null);
 	// A large selection goes in parts: how many folders are through so far.
 	let sent = $state<{ done: number; total: number } | null>(null);
-	// Every part is with the server (#712): it goes on with this page closed, so leaving stops nothing.
+	// Every part is with the server: it goes on with this page closed, so leaving stops nothing.
 	let handed = $state(false);
 	// A large folder scanned in parts: where the next scan starts, kept after adopting.
 	let restFrom = $state('');
@@ -254,7 +254,7 @@
 			// A part the server no longer knows: how far it got cannot be told, so the note goes.
 			// A part not answered this time: the note stays as it is for the next visit, and this tab never clears it.
 			const note = cutFromJobs(was, jobs);
-			// Parts still with the server go on without this page (#712): the page follows them again.
+			// Parts still with the server go on without this page: the page follows them again.
 			if (note !== undefined && jobs.some((j) => j && !finished(j))) void watchHanded(was, jobs);
 			else if (note === undefined) wasKey = '';
 			else if (!note) noteCut(null);

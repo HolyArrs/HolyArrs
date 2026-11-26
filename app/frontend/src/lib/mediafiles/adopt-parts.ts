@@ -141,7 +141,7 @@ export function scanEnd(e: unknown, back: boolean, plain: string): { error: stri
 }
 
 /**
- * Hands every part to the server first, each as its own job, then waits for them in turn (#712).
+ * Hands every part to the server first, each as its own job, then waits for them in turn.
  * The server runs the jobs one after another on its own, so once every part is handed over a page
  * that is closed or a device that sleeps stops nothing. start sends a part and gives back how to wait
  * for it. A part the server refused keeps its real reason; no answer, a proxy's own page or a sign-in
