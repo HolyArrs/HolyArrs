@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "คำขอ 4K ที่อนุมัติแล้วไปอยู่ที่ไหนและเลือกอย่างไร",
 	"settings.requests.fourKSameFolder": "เหมือนคำขออื่น",
 	"settings.requests.fourKNamedRules": "คุณภาพที่ชื่อ 4K",
+	"settings.requests.anime": "อนิเมะ",
+	"settings.requests.animeDesc": "คำขออนิเมะที่อนุมัติแล้วไปอยู่ที่ไหน",
 	"settings.requests.choices": "สิ่งที่ผู้คนขอได้",
 	"settings.requests.choicesDesc": "ปุ่มคุณภาพในหน้าคำขอ เรียงตามลำดับนี้ เปลี่ยนชื่อหรือซ่อนได้ที่นี่ บัญชีเด็กจะได้ปุ่มแรกที่แสดง",
 	"settings.requests.choiceShown": "แสดงให้ผู้คนเห็น",

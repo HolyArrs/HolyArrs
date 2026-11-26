@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Add a Downloader",
 	"downloads.hl.noUsenetDl": "no Usenet Downloader is set up",
 	"downloads.hl.noTorrentDl": "no torrent Downloader is set up",
+	"downloads.problem.waitingForFiles": "Waiting for files",
 	"downloads.problem.importBlocked": "Import blocked",
 	"downloads.problem.missingArticles": "Missing articles",
 	"downloads.problem.noFullCopy": "No full copy",

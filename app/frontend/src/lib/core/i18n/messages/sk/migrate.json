@@ -415,5 +415,7 @@
 	"migrate.nFound": "nájdených {found}",
 	"migrate.readOnly": "Len na čítanie",
 	"migrate.folderReadOnly": "HolyArrs nemôže do tohto priečinka zapisovať, takže doň nemožno nič importovať. Povoľte zápis do zväzku (odstráňte :ro) v nastavení Dockera pre HolyArrs a potom znovu vytvorte kontajner.",
-	"migrate.someFound": "Nájdené: {n}"
+	"migrate.someFound": "Nájdené: {n}",
+	"migrate.sameSource": "to isté ako {list}: jeden Zdroj",
+	"migrate.nameInApps": "{name} v {apps}"
 }

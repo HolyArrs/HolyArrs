@@ -479,7 +479,8 @@ func startOIDC(t *testing.T, f *fixture, c *http.Client, path, csrf string) (str
 	if csrf != "" {
 		headers[CSRFHeader] = csrf
 	}
-	resp, body := call(t, c, http.MethodPost, f.srv.URL+path, "", headers)
+	// At the redirect URL's address, as a browser there would be.
+	resp, body := oidcCall(t, c, http.MethodPost, f.srv.URL+path, "127.0.0.1:18745", "", headers)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("OIDC start: %d %s", resp.StatusCode, body)
 	}

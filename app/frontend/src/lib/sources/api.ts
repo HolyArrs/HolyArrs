@@ -147,6 +147,7 @@ export const builtInSites = [
 	{ id: 'knaben', user: false, name: 'Knaben', url: 'https://api.knaben.org', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
 	{ id: 'torrentscsv', user: false, name: 'TorrentsCSV', url: 'https://torrents-csv.com', key: false, kinds: ['movie', 'tv', 'music'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
 	{ id: 'subsplease', user: false, name: 'SubsPlease', url: 'https://subsplease.org', key: false, kinds: ['tv'], gap_ms: 2000, per_hour: 100, timeout_s: 20 },
+	{ id: 'yts', user: false, name: 'YTS', url: 'https://movies-api.accel.li', key: false, kinds: ['movie'], gap_ms: 2500, per_hour: 100, timeout_s: 20 },
 	{ id: 'iptorrents', user: true, name: 'IPTorrents', url: 'https://iptorrents.com', key: true, kinds: ['movie', 'tv', 'music'], gap_ms: 3000, per_hour: 60, timeout_s: 30 }
 ] as const;
 

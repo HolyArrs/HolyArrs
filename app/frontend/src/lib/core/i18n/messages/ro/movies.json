@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Nu mai păstrezi Versiunea {label} a acestui film? Fișierele de pe disc nu sunt atinse.",
 	"movies.versions.removeFailed": "Nu s-a putut elimina Versiunea",
+	"movies.versions.deleteFile": "Șterge fișierul",
+	"movies.versions.deleteFileConfirm": "Ștergi {name}? Ajunge în Șterse recent, de unde îl poți restaura.",
+	"movies.versions.deleteFileFailed": "Fișierul nu a putut fi șters",
 	"movies.versions.title": "Versiuni",
 	"movies.versions.showLess": "Arată mai puțin",
 	"movies.versions.seeAll": "Vezi toate cele {count}",

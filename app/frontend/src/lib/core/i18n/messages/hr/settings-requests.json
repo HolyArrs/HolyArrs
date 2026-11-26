@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Kamo idu odobreni 4K zahtjevi i kako se biraju",
 	"settings.requests.fourKSameFolder": "Kao i ostali zahtjevi",
 	"settings.requests.fourKNamedRules": "Kvaliteta naziva 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Kamo idu odobreni zahtjevi za anime",
 	"settings.requests.choices": "Što ljudi mogu zatražiti",
 	"settings.requests.choicesDesc": "Gumbi kvalitete na listovima zahtjeva, ovim redom. Ovdje ih preimenuj ili sakrij; djeca dobivaju prvi prikazani.",
 	"settings.requests.choiceShown": "Prikaži ljudima",

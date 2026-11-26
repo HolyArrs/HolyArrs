@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "درخواست‌های 4K تأییدشده کجا می‌روند و چطور انتخاب می‌شوند",
 	"settings.requests.fourKSameFolder": "مثل بقیه درخواست‌ها",
 	"settings.requests.fourKNamedRules": "کیفیتی به نام 4K",
+	"settings.requests.anime": "انیمه",
+	"settings.requests.animeDesc": "درخواست‌های انیمه تأییدشده کجا می‌روند",
 	"settings.requests.choices": "آنچه افراد می‌توانند درخواست کنند",
 	"settings.requests.choicesDesc": "دکمه‌های کیفیت در برگه‌های درخواست، به همین ترتیب. اینجا نامشان را عوض کن یا پنهانشان کن؛ کودکان اولین دکمهٔ نمایان را می‌گیرند.",
 	"settings.requests.choiceShown": "نمایش به افراد",

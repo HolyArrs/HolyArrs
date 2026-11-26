@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} fundust",
 	"migrate.readOnly": "Aðeins lestur",
 	"migrate.folderReadOnly": "HolyArrs getur ekki skrifað í þessa möppu, svo ekkert er hægt að flytja inn í hana. Gerðu gagnamagnið skrifanlegt (fjarlægðu :ro) í Docker-uppsetningu HolyArrs og búðu svo gáminn til aftur.",
-	"migrate.someFound": "{n} fundust"
+	"migrate.someFound": "{n} fundust",
+	"migrate.sameSource": "það sama og {list}: ein heimild",
+	"migrate.nameInApps": "{name} í {apps}"
 }

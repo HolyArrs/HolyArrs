@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Ke mana permintaan 4K yang disetujui disimpan dan bagaimana dipilih",
 	"settings.requests.fourKSameFolder": "Sama seperti permintaan lain",
 	"settings.requests.fourKNamedRules": "Kualitas bernama 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Ke mana permintaan anime yang disetujui disimpan",
 	"settings.requests.choices": "Yang bisa diminta orang",
 	"settings.requests.choicesDesc": "Tombol Kualitas di lembar permintaan, dengan urutan ini. Ganti nama atau sembunyikan di sini; anak-anak mendapat yang pertama tampil.",
 	"settings.requests.choiceShown": "Tampilkan ke orang",

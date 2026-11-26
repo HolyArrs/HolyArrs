@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Να σταματήσει η διατήρηση της παραλλαγής {label} αυτής της ταινίας; Τα αρχεία στον δίσκο δεν θίγονται.",
 	"movies.versions.removeFailed": "Δεν ήταν δυνατή η αφαίρεση της παραλλαγής",
+	"movies.versions.deleteFile": "Διαγραφή αρχείου",
+	"movies.versions.deleteFileConfirm": "Διαγραφή του {name}; Θα μεταφερθεί στα Πρόσφατα διαγραμμένα, από όπου μπορείτε να το επαναφέρετε.",
+	"movies.versions.deleteFileFailed": "Δεν ήταν δυνατή η διαγραφή του αρχείου",
 	"movies.versions.title": "Παραλλαγές",
 	"movies.versions.showLess": "Λιγότερα",
 	"movies.versions.seeAll": "Εμφάνιση και των {count}",

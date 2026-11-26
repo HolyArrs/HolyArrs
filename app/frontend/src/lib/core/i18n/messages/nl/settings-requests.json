@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Waar goedgekeurde 4K-aanvragen heen gaan en hoe ze worden gekozen",
 	"settings.requests.fourKSameFolder": "Zoals andere aanvragen",
 	"settings.requests.fourKNamedRules": "De kwaliteit met de naam 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Waar goedgekeurde anime-aanvragen heen gaan",
 	"settings.requests.choices": "Wat mensen kunnen aanvragen",
 	"settings.requests.choicesDesc": "De kwaliteitsknoppen op de aanvraagvensters, in deze volgorde. Hernoem of verberg ze hier; kinderen krijgen de eerste zichtbare.",
 	"settings.requests.choiceShown": "Tonen aan mensen",

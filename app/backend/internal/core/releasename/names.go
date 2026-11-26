@@ -18,12 +18,37 @@ func SameName(libName, want string) bool {
 	if slices.Contains(NameForms(libName), want) {
 		return true
 	}
+	if w := AmpReading(want); w != "" && slices.Contains(NameForms(libName), w) {
+		return true
+	}
 	return want != "" && strings.ToUpper(libName) == libName && strings.ToLower(libName) != libName && CleanName(libName) == JoinLetters(want)
 }
 
+// AmpReading reads each "amp" between words of a clean release name as "and",
+// which is what an HTML "&amp;" leaves behind. "amp" can also be a real word
+// ("Guitar Amp Hero"), so callers try both the name and this reading. It
+// returns "" when there is no such "amp"; a first or last "amp" stays a word.
+func AmpReading(want string) string {
+	if !strings.Contains(want, " amp ") {
+		return ""
+	}
+	words := strings.Fields(want)
+	found := false
+	for i, w := range words {
+		if w == "amp" && i > 0 && i < len(words)-1 {
+			words[i] = "and"
+			found = true
+		}
+	}
+	if !found {
+		return ""
+	}
+	return strings.Join(words, " ")
+}
+
 // NameForms are the clean forms a library name can show in release names:
-// as written, with apostrophes dropped, and with letters written apart by
-// dots or stars joined ("S.W.A.T." as "swat", "M*A*S*H" as "mash"). A
+// as written, with apostrophes dropped, with "&" dropped, and with letters
+// written apart by dots or stars joined ("S.W.A.T." as "swat", "M*A*S*H" as "mash"). A
 // joined name of only one or two letters ("I.T.", "E.R.") is too short to
 // tell apart from a word and is left out.
 //
@@ -63,6 +88,12 @@ func nameForms(libName string) []string {
 	// ʼ counts as a letter, so cleaning keeps it; releases write it as a gap too.
 	if strings.Contains(libName, "ʼ") {
 		forms = append(forms, CleanName(strings.ReplaceAll(libName, "ʼ", " ")))
+	}
+	// Indexers drop an "&" ("Law Order"): the name without it is a form too.
+	if strings.Contains(libName, "&") {
+		if c := CleanName(strings.ReplaceAll(libName, "&", " ")); c != forms[0] {
+			forms = append(forms, c)
+		}
 	}
 	if j := JoinLettersApart(libName, 2); j != libName {
 		if c := CleanName(reApostrophe.Replace(j)); strings.Contains(c, " ") || len([]rune(c)) > 2 {

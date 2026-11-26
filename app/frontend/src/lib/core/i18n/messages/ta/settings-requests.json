@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "அங்கீகரிக்கப்பட்ட 4K கோரிக்கைகள் எங்கே சேரும், எப்படித் தேர்வாகும்",
 	"settings.requests.fourKSameFolder": "மற்ற கோரிக்கைகளைப் போலவே",
 	"settings.requests.fourKNamedRules": "4K என்ற பெயருள்ள தரம்",
+	"settings.requests.anime": "அனிமே",
+	"settings.requests.animeDesc": "அங்கீகரிக்கப்பட்ட அனிமே கோரிக்கைகள் எங்கே சேரும்",
 	"settings.requests.choices": "மக்கள் கோரக்கூடியவை",
 	"settings.requests.choicesDesc": "கோரிக்கைத் தாள்களில் உள்ள தரப் பொத்தான்கள், இந்த வரிசையில். இங்கே அவற்றின் பெயரை மாற்றலாம் அல்லது மறைக்கலாம்; சிறுவர்களுக்கு முதலில் தெரியும் பொத்தான் கிடைக்கும்.",
 	"settings.requests.choiceShown": "மக்களுக்குக் காட்டு",

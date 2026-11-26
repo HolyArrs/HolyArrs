@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Przestać śledzić Odmianę {label} tego filmu? Pliki na dysku zostaną nietknięte.",
 	"movies.versions.removeFailed": "Nie udało się usunąć Odmiany",
+	"movies.versions.deleteFile": "Usuń plik",
+	"movies.versions.deleteFileConfirm": "Usunąć {name}? Plik trafi do Ostatnio usuniętych, skąd możesz go przywrócić.",
+	"movies.versions.deleteFileFailed": "Nie udało się usunąć pliku",
 	"movies.versions.title": "Odmiany",
 	"movies.versions.showLess": "Pokaż mniej",
 	"movies.versions.seeAll": "Zobacz wszystkie ({count})",

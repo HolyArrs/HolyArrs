@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Dove vanno le richieste 4K approvate e come vengono scelte",
 	"settings.requests.fourKSameFolder": "Come le altre richieste",
 	"settings.requests.fourKNamedRules": "La qualità chiamata 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Dove vanno le richieste di anime approvate",
 	"settings.requests.choices": "Cosa possono richiedere le persone",
 	"settings.requests.choicesDesc": "I pulsanti della qualità nelle schede di richiesta, in quest'ordine. Rinominali o nascondili qui; i bambini ricevono il primo visibile.",
 	"settings.requests.choiceShown": "Mostra alle persone",

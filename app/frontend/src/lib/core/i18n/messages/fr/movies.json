@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Arrêter de tenir à jour la version {label} de ce film ? Les fichiers sur le disque ne sont pas touchés.",
 	"movies.versions.removeFailed": "Impossible de retirer la version",
+	"movies.versions.deleteFile": "Supprimer le fichier",
+	"movies.versions.deleteFileConfirm": "Supprimer {name} ? Il va dans Supprimés récemment, d'où vous pouvez le restaurer.",
+	"movies.versions.deleteFileFailed": "Impossible de supprimer le fichier",
 	"movies.versions.title": "Versions",
 	"movies.versions.showLess": "Afficher moins",
 	"movies.versions.seeAll": "Voir les {count}",

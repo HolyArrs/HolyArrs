@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Kur nonāk apstiprinātie 4K pieprasījumi un kā tie tiek izvēlēti",
 	"settings.requests.fourKSameFolder": "Tāpat kā citi pieprasījumi",
 	"settings.requests.fourKNamedRules": "Kvalitāte ar nosaukumu 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Kur nonāk apstiprinātie anime pieprasījumi",
 	"settings.requests.choices": "Ko cilvēki var pieprasīt",
 	"settings.requests.choicesDesc": "Kvalitātes pogas pieprasījumu logos, šādā secībā. Šeit tās pārdēvē vai paslēp; bērni saņem pirmo redzamo.",
 	"settings.requests.choiceShown": "Rādīt cilvēkiem",

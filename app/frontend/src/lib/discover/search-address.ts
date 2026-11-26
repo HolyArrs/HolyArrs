@@ -27,7 +27,7 @@ export function scopeAddress(current: Pick<URL, 'href'>, scope: SearchScope, ter
 	return url;
 }
 
-/** The address Search reads its words and scope from: the shallow one the kit keeps, else the browser's own while it is on the same page (after Back the kit can mount on bare /search while the address bar still has ?q=). */
+/** The address a discover page reads its query parameters from: the shallow one the kit keeps, else the browser's own while it is on the same page (after Back the kit can mount on the bare path while the address bar still has shallow parameters). */
 export function searchAddress<U extends { pathname: string }>(url: U, shallow: U | null | undefined, browser: string | undefined): U | URL {
 	if (shallow) return shallow;
 	if (!browser) return url;

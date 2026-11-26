@@ -266,14 +266,17 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		return finish(await client.post<SignInAnswer>(`/auth/media-server/${kind}`, { name, password }));
 	}
 
-	async function oidcStart(fresh = false): Promise<{ auth_url: string }> {
+	// continue_at: this is not the address the provider answers at, so the sign-in goes on there (its /login?sso=start).
+	async function oidcStart(fresh = false): Promise<{ auth_url?: string; continue_at?: string }> {
 		return client.post('/auth/oidc/start', fresh ? { fresh: true } : undefined);
 	}
 
 	// Proof for someone with no password: single sign-on goes straight to the provider, which must ask again, and comes back to `back`; Plex, Jellyfin and Emby sign out and sign in again on the sign-in page.
 	async function signInAgain(back: string, goto: (url: string) => unknown, to: (path: string) => string): Promise<void> {
 		if (s.authMethod === 'oidc') {
-			const { auth_url } = await oidcStart(true);
+			const { auth_url, continue_at } = await oidcStart(true);
+			// Another address's sign-in is no proof here: ask there, and go on there with the page it was asked on.
+			if (!auth_url) return window.location.assign(`${continue_at}&next=${encodeURIComponent(back)}`);
 			try {
 				sessionStorage.setItem('holyarrs-sso-next', back);
 			} catch {
@@ -298,7 +301,8 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		return finish(await client.post<SignInAnswer>('/auth/reauth', { password, ...(code ? { code } : {}) }));
 	}
 
-	async function oidcLink(): Promise<{ auth_url: string }> {
+	// link_at: linking only works at that address of this server (where the provider answers), not this one.
+	async function oidcLink(): Promise<{ auth_url?: string; link_at?: string }> {
 		return client.post('/auth/oidc/link');
 	}
 
