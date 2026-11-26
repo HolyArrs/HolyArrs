@@ -193,7 +193,10 @@ func ownAddrs() []netip.Addr {
 	return out
 }
 
-// ParseOwnerHost checks one owner-added host, "name" or "name:port".
+// ParseOwnerHost checks one owner-added host, "name" or "name:port". A name
+// without a dot (a Docker container such as "flaresolverr:8191") needs its
+// port; "localhost" is never taken. Where any name may lead is checked again
+// at each connection (safeAddr), so none reaches loopback or metadata.
 func ParseOwnerHost(s string) (host string, port int, ok bool) {
 	s = strings.TrimSpace(s)
 	h, p := s, ""
@@ -207,7 +210,7 @@ func ParseOwnerHost(s string) (host string, port int, ok bool) {
 		return "", 0, false
 	}
 	n := normalizeHost(h)
-	if n == "" || !strings.Contains(n, ".") {
+	if n == "" || n == "localhost" || strings.HasSuffix(n, ".localhost") || !strings.Contains(n, ".") && p == "" {
 		return "", 0, false
 	}
 	if p != "" {

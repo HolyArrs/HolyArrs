@@ -432,6 +432,7 @@ content_path
 content_ratings
 content_urls
 controls
+cookies
 copies
 copies_expected
 copy
@@ -2224,6 +2225,7 @@ used_at
 used_by
 usenet_delay
 user
+user_agent
 user_code
 user_fingerprint
 user_id

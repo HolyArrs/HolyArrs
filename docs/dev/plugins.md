@@ -87,6 +87,43 @@ A plugin that lists `access.events` is told each one as it happens: one line of 
 | `system.folder_unreachable` | A Library folder can't be reached |
 | `system.disk_low` | An import was refused because the disk is too full |
 
+## Bot-check solver hook
+
+A plugin can open the bot check (Cloudflare, DDoS-Guard) that some sites put in front of their feed, for example by asking a FlareSolverr or Byparr the owner runs. HolyArrs runs no browser itself; with no such plugin, a Source behind a bot check stays **Blocked** as before.
+
+The plugin asks for the `sources.botcheck` action. The Plugins page shows it with the "Sees everything sent through it" warning, because it is handed the Source's page address, key included.
+
+The plugin polls for work with its token and answers each job:
+
+- `GET /api/v1/plugin-hooks/botcheck` waits up to 25 seconds and answers `200` with a job, or `204` when none came. Ask again.
+- `POST /api/v1/plugin-hooks/botcheck` with `{"job": "<id>", "data": <answer>}`, or `{"job": "<id>", "error": "<why>"}` when it could not pass the check. HolyArrs waits up to 75 seconds for the answer.
+
+A job has `op` `"open"` and this payload:
+
+```json
+{"url": "https://site.example/api?t=search&q=dune&apikey=...", "proxy": {"url": "socks5://vpn:1080", "username": "me", "password": "..."}}
+```
+
+`proxy` is the Source's own proxy, when it has one, so the page comes from the same address as every other call to that Source. Open `url` with a plain GET. The answer:
+
+```json
+{"url": "https://site.example/api?t=search&q=dune&apikey=...", "status": 200, "body": "<html>...</html>", "cookies": [{"name": "cf_clearance", "value": "..."}], "user_agent": "Mozilla/5.0 ..."}
+```
+
+`url` is where the browser ended, `body` the page as text (up to 16 MB). HolyArrs takes the feed back out of a browser page itself: JSON or text in a `<pre>`, and XML shown by Chrome's XML viewer.
+
+What HolyArrs checks, so a plugin can't widen what a Source reaches:
+
+- Only a plain GET that meets a bot check is handed over. A POST, a call with its own headers (a site sign-in cookie) and a plugin Source never are.
+- The page must be on the Source's own site, and the Source's address rule (local network or not, never cloud metadata addresses) is checked before the plugin is asked and again on `url`. Another site (`www.` aside), or a name that now leads somewhere the Source may not go, is refused and nothing is kept.
+- The cookies and User-Agent are kept per host and sent straight to the site on later calls, until the site checks again. Cookies that could break the header are left out.
+- A Source with a key, passkey or proxy password is only handed to the plugin it was saved with. Its pin is the plugin id plus the hosts it may reach, so installing another solver, or adding a host to it, needs the key typed again on the Source. A Source with no key needs nothing.
+- With more than one solver, the first by id serves.
+
+### A FlareSolverr plugin
+
+A FlareSolverr plugin needs one setting, the FlareSolverr address (such as `http://flaresolverr.home.arpa:8191`), and that host added by the owner on the Plugins page, since only hosts the owner adds may reach the LAN. For each job it sends FlareSolverr `POST /v1` with `{"cmd": "request.get", "url": <url>, "maxTimeout": 60000, "proxy": <proxy>}` and maps the answer's `solution` (`url`, `status`, `response`, `cookies`, `userAgent`) to the answer above. When FlareSolverr's `status` is not `"ok"`, it answers with `error` set to its `message`.
+
 ## The sandbox
 
 Plugins run only when HolyArrs runs on Linux, which includes the Docker image. Each running plugin gets:

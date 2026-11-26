@@ -215,6 +215,7 @@ GET /api/v1/people/shelves/{id} see
 GET /api/v1/people/{id} see
 GET /api/v1/pick-rules see
 GET /api/v1/pick-rules/{id} see
+GET /api/v1/plugin-hooks/botcheck see
 GET /api/v1/plugin-hooks/downloader see
 GET /api/v1/plugin-hooks/events see
 GET /api/v1/plugin-hooks/links see
@@ -543,6 +544,7 @@ POST /api/v1/people/{id}/movies/review add
 POST /api/v1/pick-rules settings
 POST /api/v1/pick-rules/{id}/trash delete
 POST /api/v1/plugin-hooks/artwork add
+POST /api/v1/plugin-hooks/botcheck add
 POST /api/v1/plugin-hooks/downloader add
 POST /api/v1/plugin-hooks/link add
 POST /api/v1/plugin-hooks/metadata add

@@ -196,6 +196,7 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 		src.ProxyURL != "" && src.ProxyURL != old.ProxyURL {
 		return old, ErrKeyAgainProxy
 	}
+	pinBotCheck(&src, (src.SecretRef == nil || key != "" || in.ClearKey) && (src.PathSecretRef == nil || urlSent && !pathKept) && (src.ProxySecretRef == nil || pass != "" || src.ProxyURL == ""))
 	err = s.Write(ctx, func(tx *sql.Tx) error {
 		if err := nameUsed(tx, src.Name, src.ID); err != nil {
 			return err
@@ -305,7 +306,7 @@ func SetPaused(ctx context.Context, s *database.Store, id int64, paused bool, by
 
 // ConfigFor builds the Client settings for a Source and opens its key, passkey and proxy password.
 func ConfigFor(ctx context.Context, src domain.Source, sec SecretReader) (Config, error) {
-	cfg := Config{Site: src.Extra[extraSiteKind], SiteUser: src.Extra[extraSiteUser], SiteLogin: src.Extra[extraSiteLogin], SiteAgent: src.Extra[extraSiteAgent], URL: src.URL, AllowLocal: src.AllowLocal, Protocol: src.Protocol, Format: src.Format,
+	cfg := Config{Site: src.Extra[extraSiteKind], SiteUser: src.Extra[extraSiteUser], SiteLogin: src.Extra[extraSiteLogin], SiteAgent: src.Extra[extraSiteAgent], BotCheckPin: src.Extra[extraBotCheckPin], URL: src.URL, AllowLocal: src.AllowLocal, Protocol: src.Protocol, Format: src.Format,
 		GapMS: src.Limits.GapMS, PerWindow: src.Limits.SearchesPerWindow, ProxyAllowLocal: src.ProxyAllowLocal,
 		Window: time.Duration(src.Limits.WindowSeconds) * time.Second, Timeout: time.Duration(src.Limits.TimeoutMS) * time.Millisecond}
 	open := func(ref *int64) (string, error) {
@@ -735,7 +736,7 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 	}
 	if isNew {
 		src.State = "enabled"
-		src.Extra = map[string]string{}
+		src.Extra = newSourceExtra()
 	}
 	if site.ID != "" {
 		if src.Extra == nil {

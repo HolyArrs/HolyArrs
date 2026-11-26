@@ -20,7 +20,8 @@ type ScopeGroup struct {
 // they seem to, or "".
 func scopeWarning(scope string) string {
 	switch {
-	case scope == "network.forward" || strings.HasPrefix(scope, "network."):
+	case scope == "network.forward" || strings.HasPrefix(scope, "network.") || scope == "sources.botcheck":
+		// A bot-check solver opens the Source's own page address, key and all.
 		return "forward"
 	case strings.HasPrefix(scope, "sources.downloader"):
 		return "downloader"
