@@ -98,6 +98,9 @@ func (s *Service) CleanAgain(ctx context.Context, id int64, by domain.Actor) (bo
 	if err != nil {
 		return false, err
 	}
+	if row.Origin == "found" {
+		return false, ErrNotOurs
+	}
 	rel := *row.RelativePath
 	if path.Ext(rel) != "."+subtext.SRT {
 		return false, nil

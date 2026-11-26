@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "僅配音，沒有原聲",
 	"downloads.pr.traits.dv": "杜比視界",
 	"downloads.pr.traits.dv_no_fallback": "沒有 HDR10 備援的 Dolby Vision",
+	"downloads.pr.traits.sdr_4k": "無 HDR 的 4K（SDR）",
 	"downloads.pr.traits.executable": "含有程式",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264(幾乎到處都能播放)",

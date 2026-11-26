@@ -1018,6 +1018,7 @@
 	"downloads.pr.traits.dubbed_only": "吹き替えのみ(原音なし)",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "HDR10 の予備がない Dolby Vision",
+	"downloads.pr.traits.sdr_4k": "HDRなしの4K（SDR）",
 	"downloads.pr.traits.executable": "プログラムを含む",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264(ほぼどこでも再生可能)",

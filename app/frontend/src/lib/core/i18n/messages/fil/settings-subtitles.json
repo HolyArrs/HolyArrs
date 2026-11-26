@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Nililinis ang lahat ng subtitle sa Library",
 	"settings.subtitles.cleanAllFailed": "Hindi masimulan ang paglilinis",
 	"settings.subtitles.cleanRow": "Mga hakbang para sa",
-	"settings.subtitles.cleanEvery": "Bawat ibang wika",
+	"settings.subtitles.cleanEvery": "Lahat ng wika",
+	"settings.subtitles.cleanEveryHint": "Ginagamit sa anumang wikang walang sariling hakbang.",
 	"settings.subtitles.cleanAddLang": "Magdagdag ng wika",
 	"settings.subtitles.cleanRemoveLang": "Alisin ang wikang ito"
 }

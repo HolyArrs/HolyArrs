@@ -79,6 +79,7 @@ export { firstOfLetter } from './library.ts';
 export { flipFrom } from './poster.ts';
 export { foldersFor } from './title-defaults.ts';
 export { followJob } from './organise.ts';
+export { finished } from './organise.ts';
 export { scanCount, waitOf } from './organise.ts';
 export { gateChoices } from './title-defaults.ts';
 export { groupPlan } from './organise.ts';

@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Hreinsa alla skjátexta í safninu",
 	"settings.subtitles.cleanAllFailed": "Ekki tókst að hefja hreinsun",
 	"settings.subtitles.cleanRow": "Skref fyrir",
-	"settings.subtitles.cleanEvery": "Öll önnur tungumál",
+	"settings.subtitles.cleanEvery": "Öll tungumál",
+	"settings.subtitles.cleanEveryHint": "Gildir um öll tungumál sem hafa ekki eigin skref.",
 	"settings.subtitles.cleanAddLang": "Bæta við tungumáli",
 	"settings.subtitles.cleanRemoveLang": "Fjarlægja þetta tungumál"
 }

@@ -166,6 +166,7 @@
 	"library.import.leftHint": "有些文件夹没有成功。请重新扫描以接管它们；已在媒体库中的文件夹保持原样。",
 	"library.import.scanAgain": "重新扫描",
 	"library.import.keepOpen": "完成之前请保持此页面打开。",
+	"library.import.closeOk": "它在服务器上运行，所以你可以关闭此页面。",
 	"library.import.waiting": "元数据服务器繁忙。HolyArrs 将在 {min} 分钟后重试剩下的 {left} 项。",
 	"library.import.leaveAsk": "有一项导入正在进行。如果你离开此页面，尚未发送的文件夹不会被接管。仍要离开吗？",
 	"library.import.interrupted": "页面关闭时，一项导入停在了 {total} 个文件夹中的第 {done} 个。请重新扫描以接管剩余部分；已接管的文件夹保持原样。",

@@ -186,7 +186,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 			kind = "movie"
 		}
 		if strings.HasPrefix(name, "Rescan") {
-			word = library.KindScanTitle
+			word = library.KindRescanTitle
 		}
 		targets := append(slices.Clone(in.MovieIDs), in.SeriesIDs...)
 		for _, id := range []int64{in.SeriesID, in.MovieID} {
@@ -203,12 +203,16 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 			}
 			return ids, enqueue(all, nil, map[string]any{"by_hand": true}, all)
 		}
+		// A rescan with no title rescans the whole Library (#808).
+		if len(targets) == 0 {
+			return ids, enqueue(library.KindRescan, nil, nil, library.KindRescan)
+		}
 		for _, id := range targets {
 			if _, err := h.title(ctx, id, kind); err != nil {
 				return nil, err
 			}
 			params := map[string]any{"by_hand": true}
-			if word == library.KindScanTitle {
+			if word == library.KindRescanTitle {
 				params = nil
 			}
 			if err := enqueue(word, &domain.Subject{Type: "title", ID: id}, params, word+":"+itoa(id)); err != nil {
@@ -364,7 +368,7 @@ func jobCommandName(kind, side string) string {
 			return "RefreshMovie"
 		}
 		return "RefreshSeries"
-	case library.KindScanTitle:
+	case library.KindScanTitle, library.KindRescanTitle, library.KindRescan:
 		if side == "radarr" {
 			return "RescanMovie"
 		}

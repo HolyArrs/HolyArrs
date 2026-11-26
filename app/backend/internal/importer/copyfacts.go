@@ -112,6 +112,25 @@ func factsOf(i mediafiles.Info) map[string]any {
 		}
 	}
 	facts["subtitle_languages"] = subs
+	// The first audio track is what players start with; an untagged one names no language.
+	videos, firstAudio, seenAudio := 0, "", false
+	for _, t := range i.Tracks {
+		switch {
+		case t.Kind == "video":
+			videos++
+		case t.Kind == "audio" && !seenAudio:
+			seenAudio = true
+			if l, ok := mediafiles.NormalizeLanguage(t.Language); ok && !t.Untagged {
+				firstAudio = l
+			}
+		}
+	}
+	if len(i.Tracks) > 0 {
+		facts["video_tracks"] = videos
+	}
+	if firstAudio != "" {
+		facts["first_audio_language"] = firstAudio
+	}
 	var fv []string
 	for _, t := range i.Tracks {
 		if t.Kind == "audio" {
