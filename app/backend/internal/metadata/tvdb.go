@@ -342,8 +342,53 @@ func (d *TVDB) Show(ctx context.Context, id string) (Show, error) {
 			break
 		}
 	}
+	if sd.Language != "eng" {
+		d.englishEpisodeNames(ctx, v, out.Episodes)
+	}
 	out.finish()
 	return out, nil
+}
+
+// englishEpisodeNames swaps each episode's name for its English one. TVDB's
+// default list names episodes in the show's original language, so a Japanese
+// show's files were renamed in Japanese while the show itself is named in
+// English (#769). An episode with no English name keeps its own, and when the
+// English list fails every episode keeps its name.
+func (d *TVDB) englishEpisodeNames(ctx context.Context, id string, eps []Episode) {
+	eng := map[string]string{}
+	for page := 0; page < tvdbMaxPages; page++ {
+		b, err := d.get(ctx, "/series/"+id+"/episodes/default/eng", url.Values{"page": {strconv.Itoa(page)}})
+		if err != nil {
+			return
+		}
+		var r struct {
+			Data struct {
+				Episodes []struct {
+					ID   int64  `json:"id"`
+					Name string `json:"name"`
+				} `json:"episodes"`
+			} `json:"data"`
+			Links struct {
+				Next *string `json:"next"`
+			} `json:"links"`
+		}
+		if json.Unmarshal(b, &r) != nil {
+			return
+		}
+		for _, e := range r.Data.Episodes {
+			if n := strings.TrimSpace(e.Name); n != "" {
+				eng[strconv.FormatInt(e.ID, 10)] = n
+			}
+		}
+		if r.Links.Next == nil || *r.Links.Next == "" {
+			break
+		}
+	}
+	for i := range eps {
+		if n, ok := eng[eps[i].ID]; ok {
+			eps[i].Name = n
+		}
+	}
 }
 
 type tvdbAlias struct {
