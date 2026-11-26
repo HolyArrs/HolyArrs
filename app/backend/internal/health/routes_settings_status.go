@@ -53,7 +53,10 @@ type StatusInput struct {
 	Sources  []NamedState
 	// SourcesNear are the words for Sources close to a search or pick limit.
 	SourcesNear []string
-	Downloaders []NamedState
+	// SourcesStranded is the line for titles no Source would search for
+	// because of tags (sources.Stranded), "" when there are none.
+	SourcesStranded string
+	Downloaders     []NamedState
 	// NewestBackup is the newest backup's time (RFC 3339), "" for none.
 	NewestBackup *string
 	// BackupsOff says the owner turned scheduled backups off: no backup
@@ -172,6 +175,9 @@ func SettingsStatus(in StatusInput) StatusAnswer {
 		}
 		for _, text := range in.SourcesNear {
 			add(StatusItem{"copies", "/settings/sources", text, "warning"}, "source-near:"+text)
+		}
+		if in.SourcesStranded != "" {
+			add(StatusItem{"copies", "/settings/sources", in.SourcesStranded, "warning"}, "source-stranded")
 		}
 	}
 	if in.Downloaders != nil {
@@ -404,9 +410,13 @@ func (a *StatusHandlers) statusInput(ctx context.Context, now time.Time) (Status
 			}
 		}
 	}
+	// A failed count says nothing rather than failing the whole status.
+	if _, text, err := sources.Stranded(ctx, a.Store); err == nil {
+		in.SourcesStranded = text
+	}
 	if a.Engine.SourcesOn != nil && !a.Engine.SourcesOn() {
 		// The Sources part is off: no Source needs a fix, and none is missing.
-		in.Sources, in.SourcesNear = nil, nil
+		in.Sources, in.SourcesNear, in.SourcesStranded = nil, nil, ""
 	}
 	dls, err := database.Select[domain.Downloader](ctx, db, "downloaders", "removed = 0 ORDER BY priority, name")
 	if err != nil {
