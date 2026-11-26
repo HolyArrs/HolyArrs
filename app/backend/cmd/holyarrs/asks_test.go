@@ -256,7 +256,15 @@ func TestAlertsPerMomentOverHTTP(t *testing.T) {
 		var m map[string]any
 		_ = json.NewDecoder(req.Body).Decode(&m)
 		mu.Lock()
-		posts = append(posts, m["content"].(string))
+		// The message as one line: the mentions, then the embed's title and text.
+		c, _ := m["content"].(string)
+		if es, _ := m["embeds"].([]any); len(es) > 0 {
+			e, _ := es[0].(map[string]any)
+			title, _ := e["title"].(string)
+			text, _ := e["description"].(string)
+			c = strings.TrimSpace(c+" **"+title+"**") + "\n" + text
+		}
+		posts = append(posts, c)
 		mu.Unlock()
 		w.WriteHeader(204)
 	}))

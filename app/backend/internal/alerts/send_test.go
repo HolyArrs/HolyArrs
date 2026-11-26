@@ -152,8 +152,9 @@ func TestDiscordNamesThePeopleWhoAsked(t *testing.T) {
 		t.Fatalf("posts %v", g)
 	}
 	c, _ := g[0]["content"].(string)
-	if !strings.HasPrefix(c, "<@123456789012> **Dune is ready**") || !strings.Contains(c, "Watch it now.") {
-		t.Fatalf("content %q", c)
+	es, _ := g[0]["embeds"].([]any)
+	if c != "<@123456789012>" || len(es) != 1 || es[0].(map[string]any)["title"] != "Dune is ready" || es[0].(map[string]any)["description"] != "Watch it now." {
+		t.Fatalf("post %v", g[0])
 	}
 	// The staff moment names nobody.
 	_ = snd.Send(ctx, Message{Moment: MomentWaiting, Subject: "ana asked for Dune", Text: "x", People: []Person{{DiscordID: "123456789012"}}})

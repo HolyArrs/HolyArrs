@@ -623,7 +623,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}()
 		return nil
 	}
-	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) }}
+	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) },
+		Pictures: hosted.Service.Base() + "/v1/img"}
 	var pluginEvents atomic.Pointer[plugins.Engine] // set once the plugins start below
 	sender.Tap = func(m alerts.Message) { tellPlugins(pluginEvents.Load(), m) }
 	sender.Watch(ctx)

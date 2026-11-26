@@ -57,12 +57,21 @@ func (r *run) title(it Item) (string, string) {
 		if t.Music == nil {
 			// Moving again after reading the old app brings the quality it
 			// recorded for each file to titles moved before.
-			if !r.dry && (len(t.Qualities) > 0 || len(t.Releases) > 0) {
-				if n, err := r.m.Library.SetRecordedFiles(r.ctx, id, t.Qualities, t.Releases, r.by); err == nil && n > 0 {
-					return ResAlready, "already in the Library; the quality or release of " + strconv.Itoa(n) + " files was updated"
+			d := "already in the Library"
+			if !r.dry {
+				if n := r.recordQualities(id, t); n > 0 {
+					d = "already in the Library; the quality or release of " + strconv.Itoa(n) + " files was updated"
 				}
 			}
-			return ResAlready, "already in the Library"
+			if t.FourK != nil {
+				// Undo stays simple: a title that was already here keeps
+				// only what it had; its 4K copy, when it has none, is added
+				// by hand.
+				if _, fourK := r.copyVersions(id, t); fourK == 0 {
+					d += "; add its 4K copy on the title page"
+				}
+			}
+			return ResAlready, d
 		}
 		if r.dry {
 			return ResChange, "keeps its imported artist and album choices"
@@ -134,9 +143,14 @@ func (r *run) title(it Item) (string, string) {
 	}
 	if lfID == 0 {
 		var here string
-		_ = r.m.Store.Read().QueryRowContext(r.ctx, "SELECT id, path FROM library_folders WHERE kind = ? ORDER BY look_only, id LIMIT 1", t.Kind).Scan(&lfID, &here)
-		if lfID == 0 && r.dry && len(r.coming[t.Kind]) > 0 {
-			lfID, here = -1, r.coming[t.Kind][0] // added earlier in this same run
+		var lookOnly bool
+		_ = r.m.Store.Read().QueryRowContext(r.ctx, "SELECT id, path, look_only FROM library_folders WHERE kind = ? ORDER BY look_only, id LIMIT 1", t.Kind).Scan(&lfID, &here, &lookOnly)
+		// The dry run counts a folder this same run adds before its titles,
+		// as the real run then finds it: writable, so ahead of a look-only one.
+		if r.dry && (lfID == 0 || lookOnly) {
+			if c := r.firstComing(t.Kind); c != "" {
+				lfID, here = -1, c
+			}
 		}
 		if lfID == 0 {
 			r.missing = t.Library
@@ -179,7 +193,13 @@ func (r *run) title(it Item) (string, string) {
 			r.attn = AttnSeasons
 		}
 	}
+	// A merged movie's 4K copy as this run brings it: not at all when the
+	// main copy lands in the 4K copy's own folder.
+	fk := fourKAt(t, lib, fallback)
 	if r.dry {
+		// The folder this title takes here, so a merged movie's 4K copy
+		// later in this import is not promised it.
+		r.claim(mainHere(lib, fallback), t.Folder, claimMain)
 		res, d := ResAdopt, "uses the folder "+filepath.ToSlash(dir)+" where it is; no file is moved or renamed"
 		if fallback != "" {
 			res, d = ResCreate, "will be added to "+fallback+" as wanted with no files; needs attention: its old folder "+filepath.ToSlash(dir)+" is not on this server; fix its folder or add a path rule"
@@ -188,6 +208,9 @@ func (r *run) title(it Item) (string, string) {
 		}
 		if other != "" {
 			r.here, d = other, seasonsNote(d, other, res == ResAdopt)
+		}
+		if fk != nil {
+			d += r.fourKDryWords(fk)
 		}
 		return res, d
 	}
@@ -208,6 +231,11 @@ func (r *run) title(it Item) (string, string) {
 		c := library.AdoptChoice{Folder: t.Folder, ID: t.ID}
 		if t.Kind == "movie" {
 			c = library.AdoptChoice{Folder: t.Folder, TMDB: strings.TrimPrefix(t.ID, "tmdb:"), ReleaseGate: t.ReleaseGate, GateDelayDays: t.GateDelayDays}
+			// A merged movie's main copy keeps the file its own app
+			// recorded: the folder may hold the 4K app's bigger file too.
+			if t.FourK != nil {
+				c.File = mainCopyFile(lib, t)
+			}
 		}
 		err = r.withShowIDs(t, func(sid, o string) error {
 			if t.Kind != "movie" {
@@ -243,6 +271,13 @@ func (r *run) title(it Item) (string, string) {
 		return ResFailed, err.Error()
 	}
 	id := res[0].TitleID
+	// Adopting a folder another movie already owns answers that movie. It
+	// is not this one, so it gets no undo mark and no 4K copy.
+	if t.Kind == "movie" && !noFiles {
+		if mine, _ := library.TitleByTMDB(r.ctx, r.m.Store.Read(), strings.TrimPrefix(t.ID, "tmdb:")); mine != id {
+			return ResFailed, "its folder " + filepath.ToSlash(dir) + " belongs to another movie in the Library"
+		}
+	}
 	// Adopting runs its own steps; when the mark cannot be kept the title
 	// leaves the Library again, so nothing stays that undo cannot find.
 	if mk := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error { return r.markTx(tx, it.Key, "title", id, "", "") }); mk != nil {
@@ -255,11 +290,9 @@ func (r *run) title(it Item) (string, string) {
 		}
 		return ResFailed, "adopted, but its mark was not kept, so it was taken out again: " + mk.Error()
 	}
-	if len(t.Qualities) > 0 || len(t.Releases) > 0 {
-		// The quality and release the old app recorded; a file it cannot
-		// match keeps what was read from its name and the file.
-		_, _ = r.m.Library.SetRecordedFiles(r.ctx, id, t.Qualities, t.Releases, r.by)
-	}
+	// The quality and release the old app recorded; a file it cannot match
+	// keeps what was read from its name and the file.
+	_ = r.recordQualities(id, t)
 	pr := r.presetID(t.Preset, t.Kind)
 	err = r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
 		// A show whose seasons differ stays not kept up to date until the
@@ -290,6 +323,16 @@ func (r *run) title(it Item) (string, string) {
 			return ResFailed, "adopted, but its choices were not kept; cleanup removed it, but its stale mark could not be deleted and will be ignored on retry: " + err.Error() + "; " + markErr.Error()
 		}
 		return ResFailed, "adopted, but its choices were not kept: " + err.Error()
+	}
+	// The 4K copy of a merged movie joins the title this run just made, so
+	// undoing the title takes its 4K Version too. A failure here never
+	// fails or removes the main title; it only notes the line.
+	fourKNote, fourKKept := "", false
+	if fk != nil {
+		fourKNote = r.addFourK(id, fk)
+		var note string
+		note, fourKKept = r.keepForFourK(id, t, fk, other)
+		fourKNote += note
 	}
 	placed := 0
 	if other != "" && !noFiles && fallback == "" {
@@ -323,7 +366,9 @@ func (r *run) title(it Item) (string, string) {
 	if res[0].File != "" {
 		d += ", with " + res[0].File
 	}
-	if !t.KeepUpToDate && other == "" {
+	if fourKKept {
+		d += fourKOnlyKept
+	} else if !t.KeepUpToDate && other == "" {
 		d += "; Keep up to date off"
 	}
 	if other != "" {
@@ -336,6 +381,7 @@ func (r *run) title(it Item) (string, string) {
 			d = fmt.Sprintf("%s. %d of its files were placed, since their air day and name match an episode here", d, placed)
 		}
 	}
+	d += fourKNote
 	if noFiles {
 		return ResCreated, d
 	}
@@ -394,21 +440,59 @@ func (r *run) movieFolderHere(lfID int64, here, folder string) bool {
 			return false
 		}
 	}
-	for _, v := range library.ListVideosN(lib, folder, 50) {
-		rel := strings.TrimPrefix(v.Path, folder+"/")
-		if strings.Contains(rel, "/") {
-			continue
-		}
-		base := strings.ToLower(strings.TrimSuffix(rel, path.Ext(rel)))
-		extra := false
-		for _, s := range []string{"-trailer", "-featurette", "-behindthescenes", "-deleted", "-interview", "-scene", "-short", "-other", "-extra"} {
-			extra = extra || strings.HasSuffix(base, s)
-		}
-		if !extra && base != "trailer" {
-			return true
-		}
+	// A movie video directly in the folder, never an extra, as the fallback
+	// adopts it.
+	return len(library.MovieFeatures(lib, folder, 1)) > 0
+}
+
+// folderAt is the id of the Library folder at path here (0: none).
+func (r *run) folderAt(lib string) int64 {
+	return r.id("SELECT id FROM library_folders WHERE path = ?", lib)
+}
+
+// versionOf is the id of a title's main Version, or with fourK of its 4K
+// Version beside the main one (0: none).
+func (r *run) versionOf(titleID int64, fourK bool) int64 {
+	if fourK {
+		return r.id("SELECT id FROM versions WHERE title_id = ? AND four_k = 1 AND is_main = 0", titleID)
 	}
-	return false
+	return r.id("SELECT id FROM versions WHERE title_id = ? AND is_main = 1", titleID)
+}
+
+// anyFourKVersion is the id of a title's 4K Version, one beside the main
+// Version first, else a main Version that is a 4K one (0: none).
+func (r *run) anyFourKVersion(titleID int64) int64 {
+	return r.id("SELECT id FROM versions WHERE title_id = ? AND four_k = 1 ORDER BY is_main, id LIMIT 1", titleID)
+}
+
+// plainMainVersion is the id of a title's main Version when it is not a
+// 4K one (0: none).
+func (r *run) plainMainVersion(titleID int64) int64 {
+	return r.id("SELECT id FROM versions WHERE title_id = ? AND is_main = 1 AND four_k = 0", titleID)
+}
+
+// versionPlace is the path of Version vID's Library folder here and its
+// folder in it ("" when there is none).
+func (r *run) versionPlace(vID int64) (lib, folder string) {
+	_ = r.m.Store.Read().QueryRowContext(r.ctx, "SELECT lf.path, v.folder_name FROM versions v JOIN library_folders lf ON lf.id = v.library_folder_id WHERE v.id = ?", vID).Scan(&lib, &folder)
+	return lib, folder
+}
+
+// versionHasFile says Version vID has a file on disk.
+func (r *run) versionHasFile(vID int64) bool {
+	return r.id("SELECT count(*) FROM files WHERE version_id = ? AND state = 'present'", vID) > 0
+}
+
+// versionIn is the id of a title's Version in folder of the Library folder
+// at lib here, letters A to Z in either case, as adding a Version compares
+// folders (0: none).
+func (r *run) versionIn(titleID int64, lib, folder string) int64 {
+	if folder == "" {
+		return 0
+	}
+	return r.id(`SELECT v.id FROM versions v JOIN library_folders lf ON lf.id = v.library_folder_id
+		WHERE v.title_id = ? AND lf.path = ? AND lower(v.folder_name) = lower(?) ORDER BY v.is_main DESC, v.id LIMIT 1`,
+		titleID, filepath.Clean(filepath.FromSlash(lib)), folder)
 }
 
 type musicPartState struct {
@@ -666,4 +750,44 @@ func (r *run) applyMusicPolicyTx(tx *sql.Tx, titleID int64, p *MusicPolicyPlan) 
 		}
 	}
 	return nil
+}
+
+// fourKOnlyKept says on a title's line that keepForFourK kept it up to
+// date for its 4K copy alone.
+const fourKOnlyKept = "; Keep up to date on for its 4K copy only"
+
+// keepForFourK keeps a merged movie's 4K copy searchable when the 4K app
+// kept it up to date: a search looks only at items kept up to date, and
+// the movie's one item, shared by both copies, is off beside a look-only
+// main copy, so it is turned on. When the 1080p app did not keep the movie
+// up to date, the title is kept up to date too, with its main copy
+// switched off, so the 4K copy can still be upgraded. Only a 4K Version
+// that came over and was saved kept up to date counts; otherwise the
+// title stays as the 1080p app had it. Running it again changes nothing.
+// The run that makes the title calls it, so undoing that run takes the
+// change back with the title. It returns what to add to the line, and
+// whether it kept the title up to date for its 4K copy alone.
+func (r *run) keepForFourK(id int64, t *TitlePlan, fk *FourKPlan, other string) (string, bool) {
+	if fk == nil || !fk.KeepUpToDate || other != "" {
+		return "", false
+	}
+	// The 4K Version as saved: a look-only Library folder keeps it switched off.
+	if r.id("SELECT count(*) FROM versions WHERE title_id = ? AND four_k = 1 AND is_main = 0 AND keep_up_to_date = 1", id) == 0 {
+		return "", false
+	}
+	alone := !t.KeepUpToDate
+	err := r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {
+		if _, err := tx.Exec("UPDATE items SET keep_up_to_date = 1 WHERE title_id = ?", id); err != nil || !alone {
+			return err
+		}
+		if err := SetKeepUpToDateTx(tx, id, true); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE versions SET keep_up_to_date = 0 WHERE title_id = ? AND is_main = 1", id)
+		return err
+	})
+	if err != nil {
+		return "; its 4K copy is not kept up to date: " + err.Error(), false
+	}
+	return "", alone
 }

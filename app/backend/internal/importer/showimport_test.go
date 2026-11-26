@@ -321,6 +321,10 @@ func TestEpisodeBetterCopyReplacesOld(t *testing.T) {
 	if sl := w.slot(t, 1); sl.FileID == nil || *sl.FileID == oldID {
 		t.Fatalf("slot %+v", sl)
 	}
+	es, _, _ := w.s.Events(ctx, database.EventFilter{Kinds: []string{"import_done"}})
+	if len(es) != 1 || es[0].Data["upgraded"] != true || es[0].Data["old_release"] != old || es[0].Data["old_size"] == nil {
+		t.Fatalf("import event %v", es)
+	}
 }
 
 func TestShowImportResumesAfterCrash(t *testing.T) {
