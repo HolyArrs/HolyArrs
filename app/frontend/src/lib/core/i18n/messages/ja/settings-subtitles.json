@@ -124,7 +124,8 @@
 "settings.subtitles.cleanAllQueued": "ライブラリのすべての字幕をクリーンアップしています",
 "settings.subtitles.cleanAllFailed": "クリーンアップを開始できませんでした",
 "settings.subtitles.cleanRow": "対象の言語",
-"settings.subtitles.cleanEvery": "その他すべての言語",
+"settings.subtitles.cleanEvery": "すべての言語",
+	"settings.subtitles.cleanEveryHint": "専用の手順がない言語すべてに使われます。",
 "settings.subtitles.cleanAddLang": "言語を追加",
 "settings.subtitles.cleanRemoveLang": "この言語を外す"
 }

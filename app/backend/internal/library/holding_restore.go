@@ -98,8 +98,8 @@ func (s *Service) heldFiles(ctx context.Context, id, titleID int64) ([]heldRow, 
 			h.DeletedAt = d
 		}
 		if rules.HoldingDays > 0 {
-			// CleanHolding empties a day once it is older than the setting.
-			e := d.AddDate(0, 0, rules.HoldingDays+1)
+			// CleanHolding removes it once its deleted time is that old.
+			e := h.DeletedAt.AddDate(0, 0, rules.HoldingDays)
 			h.ExpiresAt = &e
 		}
 		_ = json.Unmarshal([]byte(slots), &h.slots)

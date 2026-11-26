@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Синхронизовано, без изворног звука",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision bez rezervnog HDR10",
+	"downloads.pr.traits.sdr_4k": "4K без HDR-а (SDR)",
 	"downloads.pr.traits.executable": "Садржи програм",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (radi skoro svuda)",

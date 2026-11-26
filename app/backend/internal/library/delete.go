@@ -3,6 +3,7 @@ package library
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -548,9 +549,10 @@ func (s *Service) holdFiles(ctx context.Context, p *RemovePlan, titleID int64, b
 	return nil
 }
 
-// CleanHolding empties holding folder days older than the holding setting
-// (0 keeps everything). Only folders named as a day (2 January 2006) directly
-// in a Library folder's holding folder are removed; it returns how many.
+// CleanHolding empties the holding folders (0 days keeps everything). A held
+// File goes once its own deleted time is HoldingDays old (#802). Anything else in a day folder (2 January
+// 2006) goes once the whole day is that old, and an emptied day folder goes
+// too. It returns how many Files and day folders it removed.
 func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error) {
 	unlock := s.Store.LockFiles()
 	defer unlock()
@@ -559,8 +561,9 @@ func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error
 	if err != nil || rules.HoldingDays == 0 {
 		return 0, err
 	}
-	today := s.now().Truncate(24 * time.Hour)
-	cutoff := today.AddDate(0, 0, -rules.HoldingDays)
+	now := s.now()
+	cutoff := now.AddDate(0, 0, -rules.HoldingDays)
+	dayCutoff := now.Truncate(24*time.Hour).AddDate(0, 0, -rules.HoldingDays)
 	lfs, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "1=1 ORDER BY id")
 	if err != nil {
 		return 0, err
@@ -578,7 +581,7 @@ func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error
 		for _, e := range ents {
 			day, err := time.Parse("2006-01-02", e.Name())
 			if err != nil || !e.IsDir() || e.Type()&os.ModeSymlink != 0 || !day.Before(cutoff) {
-				continue
+				continue // nothing in it can be old enough yet
 			}
 			prefix := importer.HoldingDir + "/" + e.Name() + "/"
 			var protected int
@@ -589,24 +592,130 @@ func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error
 			if protected > 0 {
 				continue
 			}
-			if err := os.RemoveAll(filepath.Join(hold, e.Name())); err != nil {
+			if day.Before(dayCutoff) {
+				// The whole day is old enough: empty it as before.
+				if err := os.RemoveAll(filepath.Join(hold, e.Name())); err != nil {
+					return n, err
+				}
+				n++
+				if err := s.markHeldGone(ctx, by, lf.ID, prefix, ""); err != nil {
+					return n, err
+				}
+				s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventHoldingCleaned,
+					Summary: fmt.Sprintf("Emptied %s from the holding folder of %s", e.Name(), lf.Label),
+					Data:    map[string]any{"library_folder_id": lf.ID, "day": e.Name(), "kept_days": rules.HoldingDays}})
+				continue
+			}
+			// Part of the day may be old enough: each File by its own time.
+			removed, err := s.cleanHeldFiles(ctx, by, lf, prefix, day, cutoff)
+			n += removed
+			if err != nil {
 				return n, err
 			}
-			n++
-			if err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-				_, err := tx.Exec(`UPDATE files SET state = 'gone', updated_at = ?, updated_by = ? WHERE state IN ('replaced', 'gone')
-					AND substr(relative_path, 1, ?) = ? AND version_id IN (SELECT id FROM versions WHERE library_folder_id = ?)`,
-					database.FormatTime(s.now()), ActorText(by), len(prefix), prefix, lf.ID)
-				return err
-			}); err != nil {
-				return n, err
+			if removed > 0 {
+				s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventHoldingCleaned,
+					Summary: fmt.Sprintf("Emptied %d from %s in the holding folder of %s", removed, e.Name(), lf.Label),
+					Data:    map[string]any{"library_folder_id": lf.ID, "day": e.Name(), "files": removed, "kept_days": rules.HoldingDays}})
 			}
-			s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventHoldingCleaned,
-				Summary: fmt.Sprintf("Emptied %s from the holding folder of %s", e.Name(), lf.Label),
-				Data:    map[string]any{"library_folder_id": lf.ID, "day": e.Name(), "kept_days": rules.HoldingDays}})
 		}
 	}
 	return n, nil
+}
+
+// cleanHeldFiles removes the held Files under prefix deleted before cutoff
+// (a row with no readable time counts as deleted at the start of day), with
+// the subtitles held beside them, then the folders that leaves empty.
+func (s *Service) cleanHeldFiles(ctx context.Context, by domain.Actor, lf mediafiles.LibraryFolder, prefix string, day, cutoff time.Time) (int, error) {
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT id, relative_path, updated_at FROM files WHERE state IN ('replaced', 'gone')
+		AND substr(relative_path, 1, ?) = ? AND version_id IN (SELECT id FROM versions WHERE library_folder_id = ?)`, len(prefix), prefix, lf.ID)
+	if err != nil {
+		return 0, err
+	}
+	type heldOne struct {
+		id  int64
+		rel string
+	}
+	var old []heldOne
+	for rows.Next() {
+		var h heldOne
+		var at string
+		if err := rows.Scan(&h.id, &h.rel, &at); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		t, err := time.Parse(database.TimeLayout, at)
+		if err != nil || t.IsZero() {
+			t = day
+		}
+		if t.Before(cutoff) {
+			old = append(old, h)
+		}
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
+	n := 0
+	stop := filepath.Join(lf.Path, filepath.FromSlash(strings.TrimSuffix(prefix, "/")))
+	for _, h := range old {
+		rel := h.rel
+		full := filepath.Join(lf.Path, filepath.FromSlash(rel))
+		if fi, err := os.Lstat(full); err != nil || !fi.Mode().IsRegular() {
+			continue // emptied already
+		}
+		dir := filepath.Dir(full)
+		if !importer.InsideReal(stop, dir) {
+			continue // a path or link leading out of the day folder
+		}
+		if err := os.Remove(full); err != nil {
+			return n, err
+		}
+		n++
+		// The subtitles held with it (its file_held event names them) go too.
+		var raw sql.NullString
+		_ = s.Store.ReadEvents().QueryRowContext(ctx, `SELECT json_extract(data, '$.subtitles') FROM events
+			WHERE kind = ? AND json_extract(data, '$.file_id') = ? AND json_extract(data, '$.to') = ? ORDER BY id DESC LIMIT 1`,
+			domain.EventFileHeld, h.id, rel).Scan(&raw)
+		var subs []string
+		if raw.Valid {
+			_ = json.Unmarshal([]byte(raw.String), &subs)
+		}
+		for _, sub := range subs {
+			sp := filepath.Join(lf.Path, filepath.FromSlash(sub))
+			if !strings.HasPrefix(sub, prefix) || !filepath.IsLocal(filepath.FromSlash(sub)) || !importer.InsideReal(stop, filepath.Dir(sp)) {
+				continue
+			}
+			if fi, err := os.Lstat(sp); err == nil && fi.Mode().IsRegular() {
+				_ = os.Remove(sp)
+			}
+		}
+		if err := s.markHeldGone(ctx, by, lf.ID, rel, rel); err != nil {
+			return n, err
+		}
+		// Remove the folders this left empty, up to the day folder.
+		for d := dir; ; d = filepath.Dir(d) {
+			if os.Remove(d) != nil || d == stop || len(d) <= len(stop) {
+				break
+			}
+		}
+	}
+	return n, nil
+}
+
+// markHeldGone marks the held rows under prefix (or the one row at exact)
+// gone once their file left the disk.
+func (s *Service) markHeldGone(ctx context.Context, by domain.Actor, lfID int64, prefix, exact string) error {
+	return s.Store.Write(ctx, func(tx *sql.Tx) error {
+		q := `UPDATE files SET state = 'gone', updated_at = ?, updated_by = ? WHERE state IN ('replaced', 'gone')
+			AND substr(relative_path, 1, ?) = ? AND version_id IN (SELECT id FROM versions WHERE library_folder_id = ?)`
+		args := []any{database.FormatTime(s.now()), ActorText(by), len(prefix), prefix, lfID}
+		if exact != "" {
+			q += " AND relative_path = ?"
+			args = append(args, exact)
+		}
+		_, err := tx.Exec(q, args...)
+		return err
+	})
 }
 
 func (s *Service) handleCleanHolding(ctx context.Context, r *jobs.Run) error {

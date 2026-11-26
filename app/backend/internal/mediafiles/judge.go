@@ -346,6 +346,9 @@ func traitMatches(trait string, p releasename.Result) (bool, string) {
 		return strings.HasPrefix(p.Audio.Format, "dts"), "audio is DTS"
 	case "truehd_audio":
 		return p.Audio.Format == "truehd", "audio is TrueHD"
+	case "sdr_4k":
+		// 2160p with no HDR word in the name: often worse than a good 1080p.
+		return p.Resolution.Value >= 2160 && len(p.HDR.Value) == 0, "is 4K without HDR (SDR)"
 	case "dv_no_fallback":
 		// Dolby Vision with no HDR10 layer named: players without Dolby
 		// Vision show wrong colours.

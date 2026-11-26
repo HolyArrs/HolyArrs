@@ -138,7 +138,7 @@
 	}
 
 	async function setProtection(file: SlotFile, on: boolean, label: string) {
-		if (!on && !confirm(t('movies.versions.unprotectConfirm', { label }))) return;
+		if (!on && !(await ask(t('movies.versions.unprotectConfirm', { label }), { yes: t('mediafiles.copy.removeProtection'), danger: true }))) return;
 		try {
 			await putChoice(file, on ? { protected: true } : { protected: false, acknowledge_protection: true });
 		} catch (e) {
