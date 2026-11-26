@@ -64,3 +64,10 @@ export const searchQueued = (res: unknown) => {
 	const ids = (res as { job_ids?: unknown } | null | undefined)?.job_ids;
 	return ids === undefined || (Array.isArray(ids) && ids.length > 0);
 };
+
+// Up to six language codes from a file's media info (a list or a slash-separated string).
+export const fileLangs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
+// The day a file was added: month and day this year, else with its year.
+export const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
+// The last two parts of a folder path, to tell same-named library folders apart.
+export const pathEnd = (p: string) => p.split(/[\\/]+/).filter(Boolean).slice(-2).join('/');

@@ -1,5 +1,5 @@
 export type * from './types.ts';
-export { forwards } from './view.ts';
+export { forwards, settingsPage } from './view.ts';
 export { connectionLabel, abilities, newAbilities, moveIndex, hasUpdate, pluginAbout, notices, noLockNotice, netLockNotice, showsNoNetLockCard, folderLabel, needLabel, showsNoLockCard, showsNoLockTag, pluginName, pluginState, pluginBadge, reaches, remoteStateLabel, shownVersion, signOutNotice, stateLabel, foldersMissing, findPlugins, sortPlugins, shownName, categoryOf, categoryLabel, categories, inTab, developers, platformLabel, safeLink, isNew, freshUpdate, trendingIds, shortCount, shortDate, numDate, pluginIcon, devPicture, isProject, brokenPics, type PluginTab, type PluginSort, type PluginView } from './view.ts';
 export { default as RemoteAccess } from './RemoteAccess.svelte';
 export { default as PluginInfo } from './PluginInfo.svelte';

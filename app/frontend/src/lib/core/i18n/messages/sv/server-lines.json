@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "skicka {\"on\": true} eller {\"on\": false}",
 	"server.library.deleted-of": "Raderade {relativepath} från {name}",
 	"server.importer.the-file-is-not-present-yet": "filen finns inte här än; HolyArrs försöker importera den igen",
-	"server.migrate.the-same-as-a-source-that": "samma som {name}, en källa som finns här"
+	"server.migrate.the-same-as-a-source-that": "samma som {name}, en källa som finns här",
+	"server.accounts.name-the-person-by-their-user": "ange personen med deras användar-id",
+	"server.migrate.it-is-longer-than-a-holyarrs": "det är längre än ett HolyArrs-mönster får vara"
 }
