@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "hosszabb, mint amilyen egy HolyArrs-minta lehet",
 	"server.migrate.already-in-the-library-the-quality": "már a Könyvtárban van; {n} fájl minősége vagy kiadása frissült",
 	"server.migrate.imported-before-2": "korábban importálva{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "a mappája ({dir}) egy másik filmhez tartozik a Könyvtárban"
+	"server.migrate.its-folder-belongs-to-another-movie": "a mappája ({dir}) egy másik filmhez tartozik a Könyvtárban",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} kiürítve a(z) {name} mappából a(z) {label} megőrzési mappájában"
 }

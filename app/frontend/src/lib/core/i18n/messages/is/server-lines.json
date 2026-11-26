@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "það er lengra en HolyArrs-mynstur má vera",
 	"server.migrate.already-in-the-library-the-quality": "þegar í Safninu; gæði eða útgáfa {n} skráa var uppfærð",
 	"server.migrate.imported-before-2": "flutt inn áður{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "mappan {dir} tilheyrir annarri mynd í Safninu"
+	"server.migrate.its-folder-belongs-to-another-movie": "mappan {dir} tilheyrir annarri mynd í Safninu",
+	"server.library.emptied-from-in-the-holding-folder": "Tæmdi {removed} úr {name} í biðmöppu {label}"
 }

@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "se on pidempi kuin HolyArrs-kaava voi olla",
 	"server.migrate.already-in-the-library-the-quality": "on jo Kirjastossa; {n} tiedoston laatu tai julkaisu päivitettiin",
 	"server.migrate.imported-before-2": "tuotu aiemmin{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "sen kansio {dir} kuuluu toiselle Kirjaston elokuvalle"
+	"server.migrate.its-folder-belongs-to-another-movie": "sen kansio {dir} kuuluu toiselle Kirjaston elokuvalle",
+	"server.library.emptied-from-in-the-holding-folder": "Tyhjennetty {removed} kohteesta {name} kansion {label} säilytyskansiossa"
 }

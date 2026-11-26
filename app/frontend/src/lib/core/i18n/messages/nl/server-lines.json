@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "het is langer dan een HolyArrs-patroon mag zijn",
 	"server.migrate.already-in-the-library-the-quality": "staat al in de Bibliotheek; de kwaliteit of release van {n} bestanden is bijgewerkt",
 	"server.migrate.imported-before-2": "eerder geïmporteerd{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "de map {dir} hoort bij een andere film in de Bibliotheek"
+	"server.migrate.its-folder-belongs-to-another-movie": "de map {dir} hoort bij een andere film in de Bibliotheek",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} geleegd uit {name} in de map voor vastgehouden bestanden van {label}"
 }

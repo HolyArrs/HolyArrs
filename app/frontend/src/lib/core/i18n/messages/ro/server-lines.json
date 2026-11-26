@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "este mai lung decât poate fi un tipar HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "este deja în Bibliotecă; calitatea sau versiunea a {n} fișiere a fost actualizată",
 	"server.migrate.imported-before-2": "importat anterior{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "folderul său {dir} aparține altui film din Bibliotecă"
+	"server.migrate.its-folder-belongs-to-another-movie": "folderul său {dir} aparține altui film din Bibliotecă",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} golite din {name} în dosarul de păstrare al {label}"
 }

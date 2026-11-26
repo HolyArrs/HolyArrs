@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "see on pikem, kui HolyArrsi muster olla võib",
 	"server.migrate.already-in-the-library-the-quality": "juba Kogus; {n} faili kvaliteet või väljalase uuendati",
 	"server.migrate.imported-before-2": "varem imporditud{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "selle kaust {dir} kuulub Kogus teisele filmile"
+	"server.migrate.its-folder-belongs-to-another-movie": "selle kaust {dir} kuulub Kogus teisele filmile",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} tühjendati kaustast {name} kausta {label} ooteruumis"
 }

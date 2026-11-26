@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "nó dài hơn mức một mẫu HolyArrs cho phép",
 	"server.migrate.already-in-the-library-the-quality": "đã có trong Thư viện; đã cập nhật chất lượng hoặc bản phát hành của {n} tệp",
 	"server.migrate.imported-before-2": "đã nhập trước đây{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "thư mục {dir} của nó thuộc về một phim khác trong Thư viện"
+	"server.migrate.its-folder-belongs-to-another-movie": "thư mục {dir} của nó thuộc về một phim khác trong Thư viện",
+	"server.library.emptied-from-in-the-holding-folder": "Đã dọn {removed} khỏi {name} trong thư mục lưu giữ của {label}"
 }

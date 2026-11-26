@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "از حداکثر طول یک الگوی HolyArrs بلندتر است",
 	"server.migrate.already-in-the-library-the-quality": "از قبل در کتابخانه است؛ کیفیت یا نسخهٔ {n} فایل به‌روز شد",
 	"server.migrate.imported-before-2": "قبلاً وارد شده{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "پوشهٔ آن {dir} متعلق به فیلم دیگری در کتابخانه است"
+	"server.migrate.its-folder-belongs-to-another-movie": "پوشهٔ آن {dir} متعلق به فیلم دیگری در کتابخانه است",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} از {name} در پوشه نگه‌داری {label} خالی شد"
 }

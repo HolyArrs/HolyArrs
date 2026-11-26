@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "je delší, než může být vzor HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "už je v Knihovně; kvalita nebo vydání {n} souborů bylo aktualizováno",
 	"server.migrate.imported-before-2": "importováno dříve{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "jeho složka {dir} patří jinému filmu v Knihovně"
+	"server.migrate.its-folder-belongs-to-another-movie": "jeho složka {dir} patří jinému filmu v Knihovně",
+	"server.library.emptied-from-in-the-holding-folder": "Vyprázdněno: {removed} z {name} v odkládací složce {label}"
 }
