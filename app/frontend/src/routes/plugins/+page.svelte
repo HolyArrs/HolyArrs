@@ -20,7 +20,7 @@
 	import { date } from '#lib/core/format.ts';
 	import { PluginInfo, PluginSettings, AddSheet, DevActions, NoLockCard, NoNetLockCard, ApproveAccess, wheelSideways, fitChips, tagRoom, arrowKeys, tint, LanguagesSection, languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from '#lib/plugins/index.ts';
 	import { listLanguages, packList } from '#lib/core/i18n/language-packs.svelte.ts';
-	import { abilities, newAbilities, noLockNotice, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, forwards, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
+	import { abilities, newAbilities, noLockNotice, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, settingsPage, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import { DlFind } from '#lib/downloads/index.ts';
 	import { barTools, barLead, pluginScope } from '#lib/core/search-field.svelte.ts';
@@ -135,7 +135,7 @@
 	const noLockCard = $derived(!!ov && showsNoLockCard(ov));
 	const noNetCard = $derived(!!ov && showsNoNetLockCard(ov));
 	const noLockTag = $derived(!!ov && showsNoLockTag(ov));
-	const noLockWhy = $derived(ov ? `${noLockNotice(ov.file_lock_reason)} ${t('plugins.noLockRisk')}` : ''); // #698: the tag explains itself
+	const noLockWhy = $derived(ov ? `${noLockNotice(ov.file_lock_reason)} ${t('plugins.noLockRisk')}` : ''); // the tag explains itself
 	const asking = $derived(noLockCard && (askLock || !ov?.no_file_lock_asked));
 
 	let linked = false;
@@ -296,14 +296,10 @@
 		if (p) void act(p, () => api.del(path(p)), 'plugins.removed', 'plugins.removeFailed');
 	}
 
-	// A plugin whose settings live on an app page is listed here; its manifest's own fields, when it declares any, open in the dialog instead.
-	// Forwarding plugins (network.forward) open Remote access.
-	const settingsPage = (p: Plugin) => (p.settings?.length ? '' : forwards(p) ? `/settings/remote-access?plugin=${encodeURIComponent(p.id)}` : '');
-
 </script>
 
 <svelte:window bind:innerWidth={vw} onhashchange={onHash} />
-<svelte:head><title>{t('plugins.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('plugins.title')} Ã‚Â· HolyArrs</title></svelte:head>
 
 <h1 class="sr-only">{t('plugins.title')}</h1>
 
@@ -794,7 +790,7 @@
 	.tag.new { background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); color: var(--text); }
 	.tag.hot { background: color-mix(in srgb, var(--wait) 18%, var(--surface-2)); color: var(--text); }
 	.dls { color: var(--text-muted); white-space: nowrap; }
-	.ver .dls::before { content: '·'; margin: 0 5px; }
+	.ver .dls::before { content: 'Ã‚Â·'; margin: 0 5px; }
 	.chip.fresh { background: color-mix(in srgb, var(--ok) 18%, var(--surface-2)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 40%, var(--line)); }
 	.lrow .get { background: var(--surface-1); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); white-space: nowrap; }
 	.get { white-space: nowrap; }
