@@ -98,6 +98,25 @@ func TestShowImportFileGoneWhilePlacing(t *testing.T) {
 	}
 }
 
+// A listed episode file that has not reached the local download folder yet
+// remains pending with the same plain explanation as a movie.
+func TestShowImportSaysFileIsNotPresentYet(t *testing.T) {
+	w := showSetup(t, []int{1}, ep(1))
+	src := filepath.Join(w.dl, packName, ep(1))
+	if err := os.Remove(src); err != nil {
+		t.Fatal(err)
+	}
+	if err := execSQL(w.s, "UPDATE slots SET active_download_id = ? WHERE id = ?", w.dlID, w.slots[1]); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if sl := w.slot(t, 1); sl.State != mediafiles.SlotNeedsADecision || ptrText(sl.LastReason) != NotPresentYetWhy {
+		t.Fatalf("slot %s reason %q, want %q", sl.State, ptrText(sl.LastReason), NotPresentYetWhy)
+	}
+}
+
 // A file whose name matches nothing in a download folder that is there keeps the no-match line.
 func TestMovieImportNoMatchInAFolderThatIsThere(t *testing.T) {
 	w := setup(t)

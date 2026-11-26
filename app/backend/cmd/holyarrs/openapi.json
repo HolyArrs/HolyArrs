@@ -5739,6 +5739,17 @@
             "description": "masked when set",
             "type": "string"
           },
+          "site": {
+            "description": "Built-in site for format site: knaben, torrentscsv, subsplease, yts or iptorrents. YTS searches movies from yts.pw through its JSON API.",
+            "enum": [
+              "knaben",
+              "torrentscsv",
+              "subsplease",
+              "yts",
+              "iptorrents"
+            ],
+            "type": "string"
+          },
           "state": {
             "enum": [
               "enabled",
@@ -5887,7 +5898,8 @@
             "enum": [
               "torznab",
               "newznab",
-              "rss"
+              "rss",
+              "site"
             ],
             "type": "string"
           },
@@ -5967,6 +5979,17 @@
             "type": "boolean"
           },
           "proxy_password": {
+            "type": "string"
+          },
+          "site": {
+            "description": "Built-in site for format site: knaben, torrentscsv, subsplease, yts or iptorrents. YTS searches movies from yts.pw through its JSON API.",
+            "enum": [
+              "knaben",
+              "torrentscsv",
+              "subsplease",
+              "yts",
+              "iptorrents"
+            ],
             "type": "string"
           },
           "tags": {
@@ -6613,6 +6636,7 @@
             "enum": [
               "opensubtitles",
               "subdl",
+              "titlovi",
               "podnapisi",
               "gestdown",
               "addic7ed",
@@ -11104,7 +11128,7 @@
     },
     "/api/v1/auth/oidc/start": {
       "post": {
-        "description": "Starts one bounded browser-bound authorization-code flow with state, nonce and PKCE S256. Returns the fixed provider authorization URL.",
+        "description": "Starts one bounded browser-bound authorization-code flow with state, nonce and PKCE S256. Returns the fixed provider authorization URL. At another address than the redirect URL's it starts nothing and returns continue_at, the sign-in page to go on at.",
         "responses": {
           "200": {
             "description": "Accepted."

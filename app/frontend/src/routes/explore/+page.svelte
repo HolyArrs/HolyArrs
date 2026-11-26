@@ -29,7 +29,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import { artistSheets } from '#lib/requests/index.ts';
 	import { libraryTitles, ownedLibrary, partOff, partOn } from '#lib/mediafiles/index.ts';
-	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, TopServicesRow, ExploreHero, heroFallback, CategoryStrip, GenreBanner, leaveOut, newHref, newServicesPath, type NewServicesAnswer, whyShown } from '#lib/discover/index.ts';
+	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, filterRows, parseType, searchAddress, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, TopServicesRow, ExploreHero, heroFallback, CategoryStrip, GenreBanner, leaveOut, newHref, newServicesPath, type NewServicesAnswer, whyShown } from '#lib/discover/index.ts';
 	import { detailPath, remember, MetadataNotice } from '#lib/metadata/index.ts';
 	import { QuickAsk } from '#lib/requests/index.ts';
 	import { MusicTrendingRows, musicCardHref, MusicGenreTiles } from '#lib/music/index.ts';
@@ -81,7 +81,9 @@
 	// The tab waits for the parts answer; a saved Music pick is kept until Music is known off.
 	const musicOn = $derived(partOn('music'));
 	const musicKept = $derived(!partOff('music'));
-	let type = $state<ExploreType>(parseType(page.url.searchParams.get('type')));
+	// Back can restore a shallow address with the tab or genre picked after Explore opened.
+	const here = () => searchAddress(page.url, page.shallow?.url, typeof location === 'undefined' ? undefined : location.href);
+	let type = $state<ExploreType>(parseType(here().searchParams.get('type')));
 	const typeOptions = $derived(
 		([
 			{ value: 'all', label: t('discover.explore.all'), icon: 'grid' },
@@ -102,7 +104,7 @@
 		} catch {
 			/* The choice is a convenience. */
 		}
-		const url = new URL((page.shallow?.url ?? page.url).href);
+		const url = new URL(here().href);
 		if (t === 'all') url.searchParams.delete('type');
 		else url.searchParams.set('type', t);
 		url.searchParams.delete('genre');
@@ -481,7 +483,8 @@
 	const servicesView = createExploreServices(servicesViewCtx);
 	const gone = new AbortController();
 	onMount(() => {
-		if (!page.url.searchParams.has('type')) {
+		const current = here();
+		if (!current.searchParams.has('type') && !current.searchParams.has('genre')) {
 			try {
 				const saved = parseType(localStorage.getItem(TYPE_KEY), musicKept);
 				if (saved !== 'all') setType(saved);

@@ -660,7 +660,7 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 	var pr mediafiles.PickRules
 	ge := false
 	if database.Get(ctx, im.Store.Read(), "pick_rules", ver.PickRulesID, &pr) == nil {
-		ge = mediafiles.ReachesGoodEnough(release, pr.Body)
+		ge = mediafiles.ReachesGoodEnoughFor(release, ti, pr.Body)
 	}
 	state, why := mediafiles.SlotInLibrary, "imported by hand"
 	if !ge && ver.KeepUpToDate && item.KeepUpToDate {

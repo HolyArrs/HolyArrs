@@ -141,7 +141,7 @@
 
 	function added(title: TitleView) {
 		if (current) askedHere = new Map([...askedHere, [current.key, { titleId: title.id }]]);
-		toasts.push(t('requests.quick.added', { name: title.name }), 'ok');
+		toasts.push(t('requests.quick.added', { name: title.name }), 'ok', { href: `/library/${title.id}` });
 		onadded?.(title);
 	}
 

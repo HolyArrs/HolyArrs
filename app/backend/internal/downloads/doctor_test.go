@@ -122,7 +122,9 @@ func TestDownloaderTestNamesEachCause(t *testing.T) {
 		quick bool
 		want  doctor.Cause
 	}{
-		{"name not found", "http://nas.invalid:8080", true, false, doctor.DNS},
+		// The trailing dot makes the name absolute: a DNS search domain with a
+		// wildcard record would otherwise turn the name into one that resolves.
+		{"name not found", "http://nas.invalid.:8080", true, false, doctor.DNS},
 		{"refused", s.closed, true, false, doctor.Refused},
 		{"timeout", s.slow.URL, true, true, doctor.Timeout},
 		{"self-signed certificate", s.secure.URL, true, false, doctor.TLS},

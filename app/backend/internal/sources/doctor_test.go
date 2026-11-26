@@ -54,7 +54,9 @@ func TestSourceTestNamesEachCause(t *testing.T) {
 		local bool
 		want  doctor.Cause
 	}{
-		{"name not found", "http://nas.invalid:9117/api", true, doctor.DNS},
+		// The trailing dot makes the name absolute: a DNS search domain with a
+		// wildcard record would otherwise turn nas.invalid into a name that resolves.
+		{"name not found", "http://nas.invalid.:9117/api", true, doctor.DNS},
 		{"refused", closed + "/api", true, doctor.Refused},
 		{"timeout", slow.URL + "/api", true, doctor.Timeout},
 		{"self-signed certificate", secure.URL + "/api", true, doctor.TLS},

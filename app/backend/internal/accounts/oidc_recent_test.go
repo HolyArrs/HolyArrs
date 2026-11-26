@@ -28,7 +28,7 @@ func oidcIn(t *testing.T, f *fixture, provider *fakeOIDC, fresh bool, authTime *
 	if fresh {
 		body = `{"fresh":true}`
 	}
-	resp, out := call(t, c, http.MethodPost, f.srv.URL+"/api/v1/auth/oidc/start", body, nil)
+	resp, out := oidcCall(t, c, http.MethodPost, f.srv.URL+"/api/v1/auth/oidc/start", "127.0.0.1:18745", body, nil)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("start: %d %s", resp.StatusCode, out)
 	}

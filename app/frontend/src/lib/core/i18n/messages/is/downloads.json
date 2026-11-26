@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Bæta við niðurhalara",
 	"downloads.hl.noUsenetDl": "enginn Usenet-niðurhalari er uppsettur",
 	"downloads.hl.noTorrentDl": "enginn torrent-niðurhalari er uppsettur",
+	"downloads.problem.waitingForFiles": "Bíður eftir skrám",
 	"downloads.problem.importBlocked": "Innflutningur lokaður",
 	"downloads.problem.missingArticles": "Greinar vantar",
 	"downloads.problem.noFullCopy": "Engin heil afrit",

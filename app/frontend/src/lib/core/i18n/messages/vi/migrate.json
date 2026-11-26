@@ -415,5 +415,7 @@
 	"migrate.nFound": "đã tìm thấy {found}",
 	"migrate.readOnly": "Chỉ đọc",
 	"migrate.folderReadOnly": "HolyArrs không ghi được vào thư mục này, nên không thể nhập gì vào đó. Hãy cho phép ghi volume (bỏ :ro) trong thiết lập Docker của HolyArrs, rồi tạo lại container.",
-	"migrate.someFound": "Đã tìm thấy {n}"
+	"migrate.someFound": "Đã tìm thấy {n}",
+	"migrate.sameSource": "giống {list}: một Nguồn",
+	"migrate.nameInApps": "{name} trong {apps}"
 }
