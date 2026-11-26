@@ -408,10 +408,12 @@
 		term = f.parsed_name + (f.parsed_year ? ` ${f.parsed_year}` : '');
 		found = [];
 		lookError = '';
+		// The folder name is already in the box: search it straight away.
+		void lookup();
 	}
 
-	async function lookup(e: SubmitEvent) {
-		e.preventDefault();
+	async function lookup(e?: SubmitEvent) {
+		e?.preventDefault();
 		if (!term.trim()) return;
 		looking = true;
 		lookError = '';

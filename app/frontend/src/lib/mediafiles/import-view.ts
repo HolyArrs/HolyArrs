@@ -92,7 +92,7 @@ export function matchOptions(f: AdoptCandidate, id: string | undefined, named: R
 		if (!m) continue;
 		const value = matchKey(m);
 		if (!value || out.some((o) => o.value === value)) continue;
-		out.push({ value, label: `${m.name}${m.year ? ` (${m.year})` : ''} · ${score(m.score)}` });
+		out.push({ value, label: `${m.name}${m.year ? ` (${m.year})` : ''}${m.disambiguation ? ` (${m.disambiguation})` : ''} · ${score(m.score)}` });
 	}
 	if (id && !out.some((o) => o.value === id)) {
 		const n = named[id];
