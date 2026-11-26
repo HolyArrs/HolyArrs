@@ -320,7 +320,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	}
 	// Naming: the words with a match; a pattern with an unknown word stays.
 	nm := item(t, p, GroupNaming, "naming:radarr").Naming
-	if nm["file_pattern"] != "{title} ({year}) {quality}" || nm["colon"] != "dash" || nm["rename_on_import"] != "" {
+	if nm["file_pattern"] != "{title} ({year}) {quality_full}" || nm["colon"] != "dash" || nm["rename_on_import"] != "" {
 		t.Fatalf("naming %+v", nm)
 	}
 	// Their rename setting is not copied: the owner's names choice (keep by default) is.
