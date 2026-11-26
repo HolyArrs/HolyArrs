@@ -7,9 +7,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
-// TestEpisodeTitleLanguageDropped: a language word that is only part of
-// the matched episode's name ("The German Job") is not read as the
-// Release's language, so the name reads no language, like Sonarr.
 // TestDualMultiNoLanguage: a DUAL or MULTI name with no language word may
 // hold any language, so it warns that the file's audio is checked at import
 // instead of assuming the original language (and never fails on it).
@@ -47,6 +44,9 @@ func TestDualMultiNoLanguage(t *testing.T) {
 	}
 }
 
+// TestEpisodeTitleLanguageDropped: a language word that is only part of
+// the matched episode's name ("The German Job") is not read as the
+// Release's language, so the name reads no language, like Sonarr.
 func TestEpisodeTitleLanguageDropped(t *testing.T) {
 	b := GoodEveryday()
 	b.Language = LanguageRule{Wanted: []string{"de"}}
