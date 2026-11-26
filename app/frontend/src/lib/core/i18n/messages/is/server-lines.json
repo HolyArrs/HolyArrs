@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "sendu {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Ný forsíðumynd",
 	"server.plugins.send-event-library-add": "sendu {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "sendu {\"on\": true} eða {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "sendu {\"on\": true} eða {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "skráin er ekki komin enn; HolyArrs reynir að flytja hana inn aftur"
 }

@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "다운로더 추가",
 	"downloads.hl.noUsenetDl": "설정된 Usenet 다운로더가 없습니다",
 	"downloads.hl.noTorrentDl": "설정된 토렌트 다운로더가 없습니다",
+	"downloads.problem.waitingForFiles": "파일 대기 중",
 	"downloads.problem.importBlocked": "가져오기 차단됨",
 	"downloads.problem.missingArticles": "누락된 아티클",
 	"downloads.problem.noFullCopy": "완전한 사본 없음",

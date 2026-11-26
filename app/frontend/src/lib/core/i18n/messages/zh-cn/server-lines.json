@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "请发送 {\"name\": \"...\"}",
 	"server.library.new-cover-art": "新封面",
 	"server.plugins.send-event-library-add": "发送 {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "发送 {\"on\": true} 或 {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "发送 {\"on\": true} 或 {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "文件还不在；HolyArrs 会再次尝试导入"
 }

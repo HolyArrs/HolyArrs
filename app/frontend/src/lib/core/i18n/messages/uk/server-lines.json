@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "надішли {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Нова обкладинка",
 	"server.plugins.send-event-library-add": "надішли {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "надішли {\"on\": true} або {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "надішли {\"on\": true} або {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "файлу ще немає; HolyArrs спробує імпортувати його знову"
 }

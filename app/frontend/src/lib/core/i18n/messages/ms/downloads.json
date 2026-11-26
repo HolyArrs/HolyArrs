@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Tambah pemuat turun",
 	"downloads.hl.noUsenetDl": "tiada pemuat turun Usenet disediakan",
 	"downloads.hl.noTorrentDl": "tiada pemuat turun torrent disediakan",
+	"downloads.problem.waitingForFiles": "Menunggu fail",
 	"downloads.problem.importBlocked": "Import disekat",
 	"downloads.problem.missingArticles": "Artikel hilang",
 	"downloads.problem.noFullCopy": "Tiada salinan penuh",

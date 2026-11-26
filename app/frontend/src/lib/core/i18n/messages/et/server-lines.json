@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "saada {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Uus kaanepilt",
 	"server.plugins.send-event-library-add": "saada {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "saada {\"on\": true} või {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "saada {\"on\": true} või {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "faili pole veel; HolyArrs proovib seda uuesti importida"
 }

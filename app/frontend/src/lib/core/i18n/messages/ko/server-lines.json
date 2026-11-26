@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "{\"name\": \"...\"}를 보내세요",
 	"server.library.new-cover-art": "새 커버 아트",
 	"server.plugins.send-event-library-add": "보내기: {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "보내기: {\"on\": true} 또는 {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "보내기: {\"on\": true} 또는 {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "파일이 아직 없습니다. HolyArrs가 다시 가져오기를 시도합니다"
 }

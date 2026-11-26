@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "gửi {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Ảnh bìa mới",
 	"server.plugins.send-event-library-add": "gửi {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "gửi {\"on\": true} hoặc {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "gửi {\"on\": true} hoặc {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "tệp chưa có; HolyArrs sẽ thử nhập lại"
 }
