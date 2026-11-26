@@ -326,6 +326,12 @@ func TestService_SyncAndTurnDown(t *testing.T) {
 	if after, _ := os.ReadFile(f.abs(rel)); string(after) != string(before) {
 		t.Fatal("found subtitle was changed")
 	}
+	if _, err := s.CleanAgain(ctx, nr.ID, domain.System); err != ErrNotOurs {
+		t.Fatalf("clean found subtitle: %v", err)
+	}
+	if after, _ := os.ReadFile(f.abs(rel)); string(after) != string(before) {
+		t.Fatal("found subtitle was cleaned")
+	}
 	if err := f.st.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, "UPDATE subtitles SET origin = 'fetched' WHERE id = ?", nr.ID)
 		return err
