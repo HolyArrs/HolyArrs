@@ -299,7 +299,7 @@
 </script>
 
 <svelte:window bind:innerWidth={vw} onhashchange={onHash} />
-<svelte:head><title>{t('plugins.title')} Ã‚Â· HolyArrs</title></svelte:head>
+<svelte:head><title>{t('plugins.title')} · HolyArrs</title></svelte:head>
 
 <h1 class="sr-only">{t('plugins.title')}</h1>
 
@@ -790,7 +790,7 @@
 	.tag.new { background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); color: var(--text); }
 	.tag.hot { background: color-mix(in srgb, var(--wait) 18%, var(--surface-2)); color: var(--text); }
 	.dls { color: var(--text-muted); white-space: nowrap; }
-	.ver .dls::before { content: 'Ã‚Â·'; margin: 0 5px; }
+	.ver .dls::before { content: '·'; margin: 0 5px; }
 	.chip.fresh { background: color-mix(in srgb, var(--ok) 18%, var(--surface-2)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 40%, var(--line)); }
 	.lrow .get { background: var(--surface-1); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); white-space: nowrap; }
 	.get { white-space: nowrap; }

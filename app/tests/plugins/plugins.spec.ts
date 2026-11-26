@@ -371,7 +371,7 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 }
 
 // Every state a plugin can be in, in Cards, Large and List and in its dialog: the one right action,
-// with nothing hidden and no "Downloadingâ€¦" on Stop or Start. The list answer is dressed per state.
+// with nothing hidden and no "Downloading…" on Stop or Start. The list answer is dressed per state.
 for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 	test(`plugins: every state shows the right action and why at ${width}`, async ({ browser }) => {
 		test.setTimeout(180_000);
@@ -405,7 +405,7 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 		const row = (id: string) => page.locator(`[data-testid="plugin-row"][data-id="${id}"]`);
 		for (const v of ['Cards', 'Large', 'List']) {
 			await pick(page, v);
-			await expect(row('checking').getByTestId('plugin-step')).toHaveText('Checkingâ€¦');
+			await expect(row('checking').getByTestId('plugin-step')).toHaveText('Checking…');
 			await expect(row('failed-install').getByTestId('plugin-card-retry')).toBeEnabled();
 			await expect(row('needs-newer').getByTestId('plugin-card-update')).toHaveCount(0);
 			await expect(row('needs-newer').getByTestId('plugin-card-stop')).toBeVisible();
@@ -436,12 +436,12 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 		await expect(row('failed-update').getByTestId('plugin-install-error')).toContainText('checked file changed');
 		await expect(row('needs-newer').getByTestId('plugin-update-needs-app')).toHaveText('Needs HolyArrs 9.9.0 or newer');
 
-		// Start on a card shows a spinner on Start, never "Downloadingâ€¦".
+		// Start on a card shows a spinner on Start, never "Downloading…".
 		await row('stopped').getByTestId('plugin-card-start').click();
 		await expect.poll(() => !!hold).toBe(true);
 		await expect(row('stopped').getByTestId('plugin-card-start')).toBeDisabled();
 		await expect(row('stopped').getByTestId('plugin-step')).toHaveCount(0);
-		await expect(page.getByText('Downloadingâ€¦')).toHaveCount(0);
+		await expect(page.getByText('Downloading…')).toHaveCount(0);
 		hold!();
 		await expect(row('stopped').getByTestId('plugin-card-stop')).toBeVisible();
 
@@ -508,7 +508,7 @@ test('plugins: settings save, restart failure and own fields', async ({ browser 
 	await expect.poll(() => puts.length).toBe(1);
 	expect(JSON.parse(puts[0]).values).toEqual({ exit: 'false' });
 	await expect(page.getByText('Tailscale settings saved')).toBeVisible();
-	await expect(page.getByText('Couldnâ€™t start Tailscale').or(page.getByText("Couldn't start Tailscale"))).toBeVisible();
+	await expect(page.getByText('Couldn’t start Tailscale').or(page.getByText("Couldn't start Tailscale"))).toBeVisible();
 	await expect(page.getByText("Couldn't save the settings")).toHaveCount(0);
 	await page.context().close();
 });
@@ -725,7 +725,7 @@ for (const width of [1280, 375]) {
 			return route.fulfill({ json: { id: 2, key: 'hak_e2e_fake_key_value', label: body.label } });
 		});
 		await page.goto('/settings/ai');
-		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See Â· Add Â· Downloads Â· Settings Â· Delete Â· Admin']);
+		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See · Add · Downloads · Settings · Delete · Admin']);
 		await page.getByText('Make a key by hand').click();
 		const form = page.getByTestId('ai-key-groups-form');
 		for (const name of ['See library and activity', 'Add and request', 'Control downloads', 'Change settings']) await expect(form.getByRole('checkbox', { name })).toBeChecked();
@@ -741,7 +741,7 @@ for (const width of [1280, 375]) {
 		await page.getByLabel('Key name').fill('Claude Desktop');
 		await page.getByRole('button', { name: 'Make an AI key' }).click();
 		await expect.poll(() => sent).toEqual([{ label: 'Claude Desktop', scopes: ['mcp'], mcp_groups: ['see', 'add', 'control', 'delete'] }]);
-		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See Â· Add Â· Downloads Â· Settings Â· Delete Â· Admin', 'Can: See Â· Add Â· Downloads Â· Delete']);
+		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See · Add · Downloads · Settings · Delete · Admin', 'Can: See · Add · Downloads · Delete']);
 		// The boxes go back to the defaults for the next key.
 		await expect(form.getByRole('checkbox', { name: 'Change settings' })).toBeChecked();
 		await expect(form.getByRole('checkbox', { name: 'Delete' })).not.toBeChecked();
@@ -755,7 +755,7 @@ for (const width of [1280, 375]) {
 		await page.screenshot({ path: test.info().outputPath(`ai-key-edit-${width}.png`), fullPage: true });
 		await page.getByRole('button', { name: 'Save' }).click();
 		await expect.poll(() => edits).toEqual([{ mcp_groups: ['see', 'add', 'control', 'settings', 'delete', 'approve'] }]);
-		await expect(page.getByTestId('ai-key-groups').first()).toHaveText('Can: See Â· Add Â· Downloads Â· Settings Â· Delete Â· Approve');
+		await expect(page.getByTestId('ai-key-groups').first()).toHaveText('Can: See · Add · Downloads · Settings · Delete · Approve');
 		await page.context().close();
 	});
 }
