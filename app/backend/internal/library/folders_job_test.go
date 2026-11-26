@@ -126,6 +126,20 @@ func TestCachePosterStoresPictureAndKeepsOldOnFailure(t *testing.T) {
 	if len(a) != 1 || !strings.HasPrefix(a[0], "poster:") {
 		t.Fatalf("artwork after a fetch: %v", a)
 	}
+	// A plain http address is never kept as the public poster.
+	var public string
+	if err := s.Read().QueryRowContext(ctx, "SELECT poster_url FROM titles WHERE id = ?", id).Scan(&public); err != nil || public != "" {
+		t.Fatalf("poster_url %q %v", public, err)
+	}
+	// An https address is kept, at the size that was cached.
+	secure := httptest.NewTLSServer(pics.Config.Handler)
+	t.Cleanup(secure.Close)
+	svc.Artwork = &ArtworkCache{Dir: filepath.Join(t.TempDir(), "art2"), Allowed: []string{secure.URL + "/"}, HTTP: secure.Client()}
+	svc.CachePoster(ctx, id, secure.URL+"/w500/p.jpg", domain.System)
+	if err := s.Read().QueryRowContext(ctx, "SELECT poster_url FROM titles WHERE id = ?", id).Scan(&public); err != nil || public != secure.URL+"/w342/p.jpg" {
+		t.Fatalf("https poster_url %q %v", public, err)
+	}
+	a = artworkOf(t, s, id)
 	svc.CachePoster(ctx, id, pics.URL+"/missing.jpg", domain.System)
 	if b := artworkOf(t, s, id); !slices.Equal(a, b) {
 		t.Fatalf("a failed fetch changed the artwork: %v -> %v", a, b)
