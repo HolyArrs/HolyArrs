@@ -208,12 +208,23 @@ func TestHoldingCleanUpByDeletedTime(t *testing.T) {
 		}
 		writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(row[0])), "x")
 	}
+	// Each held its subtitle with it.
+	earlySub := strings.TrimSuffix(early, ".mkv") + ".en.srt"
+	lateSub := strings.TrimSuffix(late, ".mkv") + ".en.srt"
+	for id, p := range map[int64][2]string{fs[1].ID: {early, earlySub}, fs[2].ID: {late, lateSub}} {
+		writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(p[1])), "x")
+		svc.Emit(ctx, &domain.Event{Actor: domain.System, Kind: domain.EventFileHeld, Summary: "held",
+			Data: map[string]any{"file_id": id, "to": p[0], "subtitles": []string{p[1]}}})
+	}
 	n, err := svc.CleanHolding(ctx, domain.System)
 	if err != nil || n != 1 {
 		t.Fatalf("cleaned %d %v", n, err)
 	}
 	if onDisk(lf, early) || !onDisk(lf, late) {
 		t.Fatalf("early there=%v late there=%v", onDisk(lf, early), onDisk(lf, late))
+	}
+	if onDisk(lf, earlySub) || !onDisk(lf, lateSub) {
+		t.Fatalf("early subtitle there=%v late subtitle there=%v", onDisk(lf, earlySub), onDisk(lf, lateSub))
 	}
 	if _, err := os.Stat(filepath.Join(lf.Path, importer.HoldingDir, day.Format("2006-01-02"), "Dune - Part Two (2024)")); err == nil {
 		t.Fatal("emptied folder left behind")

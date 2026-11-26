@@ -3,6 +3,7 @@ package library
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -622,18 +623,23 @@ func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error
 }
 
 // cleanHeldFiles removes the held Files under prefix deleted before cutoff
-// (a row with no readable time counts as deleted at the start of day), then
-// the folders that leaves empty.
+// (a row with no readable time counts as deleted at the start of day), with
+// the subtitles held beside them, then the folders that leaves empty.
 func (s *Service) cleanHeldFiles(ctx context.Context, by domain.Actor, lf mediafiles.LibraryFolder, prefix string, day, cutoff time.Time) (int, error) {
-	rows, err := s.Store.Read().QueryContext(ctx, `SELECT relative_path, updated_at FROM files WHERE state IN ('replaced', 'gone')
+	rows, err := s.Store.Read().QueryContext(ctx, `SELECT id, relative_path, updated_at FROM files WHERE state IN ('replaced', 'gone')
 		AND substr(relative_path, 1, ?) = ? AND version_id IN (SELECT id FROM versions WHERE library_folder_id = ?)`, len(prefix), prefix, lf.ID)
 	if err != nil {
 		return 0, err
 	}
-	var old []string
+	type heldOne struct {
+		id  int64
+		rel string
+	}
+	var old []heldOne
 	for rows.Next() {
-		var rel, at string
-		if err := rows.Scan(&rel, &at); err != nil {
+		var h heldOne
+		var at string
+		if err := rows.Scan(&h.id, &h.rel, &at); err != nil {
 			rows.Close()
 			return 0, err
 		}
@@ -642,7 +648,7 @@ func (s *Service) cleanHeldFiles(ctx context.Context, by domain.Actor, lf mediaf
 			t = day
 		}
 		if t.Before(cutoff) {
-			old = append(old, rel)
+			old = append(old, h)
 		}
 	}
 	rows.Close()
@@ -651,7 +657,8 @@ func (s *Service) cleanHeldFiles(ctx context.Context, by domain.Actor, lf mediaf
 	}
 	n := 0
 	stop := filepath.Join(lf.Path, filepath.FromSlash(strings.TrimSuffix(prefix, "/")))
-	for _, rel := range old {
+	for _, h := range old {
+		rel := h.rel
 		full := filepath.Join(lf.Path, filepath.FromSlash(rel))
 		if fi, err := os.Lstat(full); err != nil || !fi.Mode().IsRegular() {
 			continue // emptied already
@@ -664,6 +671,24 @@ func (s *Service) cleanHeldFiles(ctx context.Context, by domain.Actor, lf mediaf
 			return n, err
 		}
 		n++
+		// The subtitles held with it (its file_held event names them) go too.
+		var raw sql.NullString
+		_ = s.Store.ReadEvents().QueryRowContext(ctx, `SELECT json_extract(data, '$.subtitles') FROM events
+			WHERE kind = ? AND json_extract(data, '$.file_id') = ? AND json_extract(data, '$.to') = ? ORDER BY id DESC LIMIT 1`,
+			domain.EventFileHeld, h.id, rel).Scan(&raw)
+		var subs []string
+		if raw.Valid {
+			_ = json.Unmarshal([]byte(raw.String), &subs)
+		}
+		for _, sub := range subs {
+			sp := filepath.Join(lf.Path, filepath.FromSlash(sub))
+			if !strings.HasPrefix(sub, prefix) || !filepath.IsLocal(filepath.FromSlash(sub)) || !importer.InsideReal(stop, filepath.Dir(sp)) {
+				continue
+			}
+			if fi, err := os.Lstat(sp); err == nil && fi.Mode().IsRegular() {
+				_ = os.Remove(sp)
+			}
+		}
 		if err := s.markHeldGone(ctx, by, lf.ID, rel, rel); err != nil {
 			return n, err
 		}
