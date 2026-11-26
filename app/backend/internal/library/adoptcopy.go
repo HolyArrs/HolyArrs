@@ -125,7 +125,10 @@ func (s *Service) adoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 		if slot.FileID != nil || slot.ActiveDownloadID != nil || slot.State == mediafiles.SlotRemoved {
 			return fmt.Errorf("%w: this Version already has a copy or download", ErrCopyChoice)
 		}
-		existing, err := database.Select[mediafiles.File](ctx, tx, "files", `version_id IN (SELECT id FROM versions WHERE library_folder_id = ?) AND lower(relative_path) = lower(?) AND state IN ('present','missing')`, lf.ID, filepath.ToSlash(rel))
+		// A removed title's files no longer hold their paths, as an undone
+		// import leaves them, so the file can be adopted again.
+		existing, err := database.Select[mediafiles.File](ctx, tx, "files", `version_id IN (SELECT v.id FROM versions v JOIN titles t ON t.id = v.title_id
+			WHERE v.library_folder_id = ? AND t.state != 'removed') AND lower(relative_path) = lower(?) AND state IN ('present','missing')`, lf.ID, filepath.ToSlash(rel))
 		if err != nil {
 			return err
 		}

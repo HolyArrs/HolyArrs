@@ -34,6 +34,8 @@ export interface Plugin {
 	author?: string;
 	description?: string;
 	icon?: string;
+	/** Download types the plugin brings itself, such as soulseek. */
+	download_types?: string[];
 	/** The robot's copy of the logo on the plugin site: images/<id>/icon-256.webp. Wins over icon. */
 	icon_url?: string;
 	access: PluginAccess | null;

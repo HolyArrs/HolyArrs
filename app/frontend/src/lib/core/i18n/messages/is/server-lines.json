@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "sendu {\"on\": true} eða {\"on\": false}",
 	"server.library.deleted-of": "Eyddi {relativepath} úr {name}",
 	"server.importer.the-file-is-not-present-yet": "skráin er ekki komin enn; HolyArrs reynir að flytja hana inn aftur",
-	"server.migrate.the-same-as-a-source-that": "það sama og {name}, heimild sem er hér"
+	"server.migrate.the-same-as-a-source-that": "það sama og {name}, heimild sem er hér",
+	"server.accounts.name-the-person-by-their-user": "tilgreindu manneskjuna með notandaauðkenni hennar",
+	"server.migrate.it-is-longer-than-a-holyarrs": "það er lengra en HolyArrs-mynstur má vera"
 }

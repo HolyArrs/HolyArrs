@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Ondertekende plugins draaien hier zonder bestandsvergrendeling. De andere veiligheidslimieten blijven aan.",
 	"plugins.noLockOffNow": "Plugins blijven gestopt tot dit systeem de bestandsvergrendeling heeft.",
 	"plugins.noLockChange": "Wijzigen",
+	"plugins.noLockLearn": "Hoe de bestandsvergrendeling voor plugins werkt",
 	"plugins.noLockTag": "Geen bestandsvergrendeling op dit systeem",
 	"plugins.noLockKeptOff": "Plugins blijven gestopt zonder bestandsvergrendeling",
 	"plugins.secAccess": "Heeft toegang tot",

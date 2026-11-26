@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Signerade plugins körs här utan fillås. De andra säkerhetsgränserna är kvar.",
 	"plugins.noLockOffNow": "Plugins förblir stoppade tills systemet har fillåset.",
 	"plugins.noLockChange": "Ändra",
+	"plugins.noLockLearn": "Så fungerar fillåset för plugins",
 	"plugins.noLockTag": "Inget fillås på det här systemet",
 	"plugins.noLockKeptOff": "Plugins förblir stoppade utan fillås",
 	"plugins.secAccess": "Har åtkomst till",

@@ -28,8 +28,15 @@ const (
 	maxIcon        = 48 << 10
 )
 
+// A plugin brings at most maxDownloadTypes download types, each shaped like
+// sources.PluginTypeName (the Engine does not import sources).
+var (
+	maxDownloadTypes = 4
+	downloadTypeRe   = regexp.MustCompile(`^[a-z][a-z0-9-]{1,30}$`)
+)
+
 // detailKeys are the optional manifest keys.
-var detailKeys = []string{"description", "icon", "icon_url", "long_description", "how_it_works", "whats_new", "developers", "updated", "licence", "repo", "category", "platforms", "support_email", "support_url", "size", "settings", "resources"}
+var detailKeys = []string{"description", "icon", "icon_url", "long_description", "how_it_works", "whats_new", "developers", "updated", "licence", "repo", "category", "platforms", "support_email", "support_url", "size", "settings", "resources", "download_types"}
 
 // Limits for the optional page fields.
 const (
@@ -65,9 +72,12 @@ type Manifest struct {
 	Details
 	Access Access `json:"access"`
 	// Resources asks for caps above the defaults; the owner approves them.
-	Resources     *Resources `json:"resources,omitempty"`
-	MinAppVersion string     `json:"min_app_version"`
-	SHA256        string     `json:"sha256"`
+	Resources *Resources `json:"resources,omitempty"`
+	// DownloadTypes are download types the plugin brings itself, such as
+	// "soulseek", for its Sources and Downloaders; optional.
+	DownloadTypes []string `json:"download_types,omitempty"`
+	MinAppVersion string   `json:"min_app_version"`
+	SHA256        string   `json:"sha256"`
 }
 
 // Details are optional plain-text fields for the plugin's page in the app.
@@ -214,6 +224,14 @@ func ParseManifest(data []byte) (*Manifest, error) {
 	}
 	if err := m.Access.check(); err != nil {
 		return nil, err
+	}
+	if len(m.DownloadTypes) > maxDownloadTypes {
+		return nil, fmt.Errorf("%w: more than %d download types", ErrManifest, maxDownloadTypes)
+	}
+	for i, t := range m.DownloadTypes {
+		if t == "torrent" || t == "usenet" || !downloadTypeRe.MatchString(t) || slices.Contains(m.DownloadTypes[:i], t) {
+			return nil, fmt.Errorf("%w: download type %q must be 2 to 31 lowercase letters, digits and dashes, not torrent or usenet, and not repeated", ErrManifest, t)
+		}
 	}
 	if m.Resources != nil && newerVersion(resourcesSince, m.MinAppVersion) {
 		return nil, fmt.Errorf("%w: \"resources\" needs min_app_version %s or newer", ErrManifest, resourcesSince)

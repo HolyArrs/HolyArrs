@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Όνομα χρήστη SABnzbd",
 	"settings.downloaders.sabPass": "Κωδικός SABnzbd",
 	"settings.downloaders.keyWrongLogin": "Το SABnzbd δεν δέχτηκε αυτό το όνομα χρήστη και κωδικό.",
-	"settings.downloaders.keyNotFound": "Δεν ήταν δυνατή η ανάγνωση του κλειδιού. Χρησιμοποιήστε «Λήψη κλειδιού» και αντιγράψτε το από εκεί."
+	"settings.downloaders.keyNotFound": "Δεν ήταν δυνατή η ανάγνωση του κλειδιού. Χρησιμοποιήστε «Λήψη κλειδιού» και αντιγράψτε το από εκεί.",
+	"settings.downloaders.pluginKind": "Πρόσθετο"
 }

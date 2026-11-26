@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Az aláírt bővítmények itt fájlzár nélkül futnak. A többi biztonsági korlát bekapcsolva marad.",
 	"plugins.noLockOffNow": "A bővítmények leállítva maradnak, amíg a rendszeren nincs fájlzár.",
 	"plugins.noLockChange": "Módosítás",
+	"plugins.noLockLearn": "Hogyan működik a bővítmények fájlzára",
 	"plugins.noLockTag": "Nincs fájlzár ezen a rendszeren",
 	"plugins.noLockKeptOff": "A bővítmények fájlzár nélkül leállítva maradnak",
 	"plugins.secAccess": "Hozzáfér ehhez",

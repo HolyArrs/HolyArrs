@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Allekirjoitetut liitännäiset toimivat täällä ilman tiedostolukkoa. Muut suojarajat pysyvät päällä.",
 	"plugins.noLockOffNow": "Liitännäiset pysyvät pysäytettyinä, kunnes järjestelmässä on tiedostolukko.",
 	"plugins.noLockChange": "Muuta",
+	"plugins.noLockLearn": "Miten liitännäisten tiedostolukko toimii",
 	"plugins.noLockTag": "Ei tiedostolukkoa tässä järjestelmässä",
 	"plugins.noLockKeptOff": "Liitännäiset pysyvät pysäytettyinä ilman tiedostolukkoa",
 	"plugins.secAccess": "Pääsee käsiksi",

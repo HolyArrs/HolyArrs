@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd பயனர்பெயர்",
 	"settings.downloaders.sabPass": "SABnzbd கடவுச்சொல்",
 	"settings.downloaders.keyWrongLogin": "SABnzbd அந்தப் பயனர்பெயரையும் கடவுச்சொல்லையும் ஏற்கவில்லை.",
-	"settings.downloaders.keyNotFound": "விசையைப் படிக்க முடியவில்லை. விசையைப் பெறு பயன்படுத்தி அங்கிருந்து நகலெடுங்கள்."
+	"settings.downloaders.keyNotFound": "விசையைப் படிக்க முடியவில்லை. விசையைப் பெறு பயன்படுத்தி அங்கிருந்து நகலெடுங்கள்.",
+	"settings.downloaders.pluginKind": "செருகுநிரல்"
 }

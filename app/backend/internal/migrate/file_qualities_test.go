@@ -60,3 +60,32 @@ func TestFileFactsSkipsRepeatedBaseNames(t *testing.T) {
 		t.Fatalf("eps = %v", eps)
 	}
 }
+
+// A Radarr movie's file comes over by name even when its quality cannot be
+// read, so a merged movie's main copy knows which file its app kept; a
+// merged movie's plan names it. A movie with a readable quality keeps it
+// as before.
+func TestRadarrMovieFileWithoutQuality(t *testing.T) {
+	u, key := radarrAPIWith(t, map[string]any{"/api/v3/movie": []any{
+		map[string]any{"id": 1, "tmdbId": 603, "title": "The Matrix", "year": 1999, "path": "/movies/The Matrix (1999)",
+			"monitored": true, "qualityProfileId": 1, "movieFile": map[string]any{"relativePath": "The.Matrix.1999.1080p.mkv", "quality": map[string]any{}}},
+		map[string]any{"id": 2, "tmdbId": 604, "title": "Unwatched", "year": 2003, "path": "/movies/Unwatched (2003)",
+			"monitored": true, "qualityProfileId": 1, "movieFile": map[string]any{"relativePath": "Unwatched.2003.mkv",
+				"quality": map[string]any{"quality": map[string]any{"name": "WEBDL-1080p"}}}},
+	}})
+	s := read(t, api(Radarr, u, key))
+	if f := findTitle(t, s, "The Matrix").Files; len(f) != 1 || f[0].Name != "The.Matrix.1999.1080p.mkv" || f[0].Quality != "" {
+		t.Fatalf("files without a quality %+v", f)
+	}
+	if f := findTitle(t, s, "Unwatched").Files; len(f) != 1 || f[0].Name != "Unwatched.2003.mkv" || f[0].Quality != "WEBDL-1080p" {
+		t.Fatalf("files with a quality %+v", f)
+	}
+	uhd := radarrOneMovie("/movies4k", "Remux-2160p", true)
+	tp := item(t, BuildPlan([]Input{{1, s}, {2, uhd}}, Choices{}), GroupTitles, "title:movie:tmdb:603").Title
+	if tp.FourK == nil || tp.File != "The.Matrix.1999.1080p.mkv" || len(tp.Qualities) != 0 {
+		t.Fatalf("merged %v, plan file %q qualities %v", tp.FourK != nil, tp.File, tp.Qualities)
+	}
+	if got := movieFileNames([]map[string]any{{"titleid": int64(5), "relativepath": "a.mkv"}, {"titleid": int64(5), "relativepath": "b.mkv"}}); got[5] != "" {
+		t.Fatalf("two files for one title named %q", got[5])
+	}
+}

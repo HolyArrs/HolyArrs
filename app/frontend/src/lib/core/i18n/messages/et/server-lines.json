@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "saada {\"on\": true} või {\"on\": false}",
 	"server.library.deleted-of": "Kustutati {relativepath} ({name})",
 	"server.importer.the-file-is-not-present-yet": "faili pole veel; HolyArrs proovib seda uuesti importida",
-	"server.migrate.the-same-as-a-source-that": "sama mis {name}, allikas, mis on siin olemas"
+	"server.migrate.the-same-as-a-source-that": "sama mis {name}, allikas, mis on siin olemas",
+	"server.accounts.name-the-person-by-their-user": "määra inimene tema kasutaja ID järgi",
+	"server.migrate.it-is-longer-than-a-holyarrs": "see on pikem, kui HolyArrsi muster olla võib"
 }

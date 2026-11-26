@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd यूज़रनेम",
 	"settings.downloaders.sabPass": "SABnzbd पासवर्ड",
 	"settings.downloaders.keyWrongLogin": "SABnzbd ने वह यूज़रनेम और पासवर्ड स्वीकार नहीं किया।",
-	"settings.downloaders.keyNotFound": "कुंजी पढ़ी नहीं जा सकी। कुंजी पाएँ का उपयोग करें और वहाँ से कॉपी करें।"
+	"settings.downloaders.keyNotFound": "कुंजी पढ़ी नहीं जा सकी। कुंजी पाएँ का उपयोग करें और वहाँ से कॉपी करें।",
+	"settings.downloaders.pluginKind": "प्लगइन"
 }

@@ -91,6 +91,8 @@ type Config struct {
 	SiteLogin string
 	// SiteAgent is the browser user agent sent with a cookie sign-in.
 	SiteAgent string
+	// BotCheckPin is the bot-check solver this Source's key was typed for (see bot_check_solver.go).
+	BotCheckPin string
 }
 
 // Client is a Torznab/Newznab client for one Source. It is safe for
@@ -103,6 +105,8 @@ type Client struct {
 	last time.Time
 	hits []time.Time
 	caps *Caps
+	// pass is, per host, what a bot-check solver's browser got past the check with.
+	pass map[string]*clearance
 }
 
 // New makes a Client from cfg, filling in the defaults.
@@ -274,6 +278,7 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 			req.Header.Add(k, v)
 		}
 	}
+	pass := c.useClearance(req)
 	if req.Header.Get("User-Agent") == "" {
 		req.Header.Set("User-Agent", UserAgent)
 	}
@@ -308,6 +313,14 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 		return nil, &Error{Kind: KindDown, Msg: "reading the answer failed"}
 	}
 	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
+	if s := c.solver(botCheck(resp, body), method, head); s != nil {
+		c.forget(req.URL.Host, pass)
+		body, err := c.solve(ctx, s, raw)
+		if err == nil {
+			outcome = outbound.HTTPOutcome(http.StatusOK, nil, ctx)
+		}
+		return body, err
+	}
 	out, err := c.judge(req, resp, body)
 	app := ""
 	if !siteFeedPath(req.URL.Path) {
