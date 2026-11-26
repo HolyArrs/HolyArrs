@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "در حال پاک‌سازی همهٔ زیرنویس‌های کتابخانه",
 	"settings.subtitles.cleanAllFailed": "پاک‌سازی شروع نشد",
 	"settings.subtitles.cleanRow": "مراحل برای",
-	"settings.subtitles.cleanEvery": "هر زبان دیگر",
+	"settings.subtitles.cleanEvery": "همه زبان‌ها",
+	"settings.subtitles.cleanEveryHint": "برای هر زبانی که مراحل جداگانه ندارد به کار می‌رود.",
 	"settings.subtitles.cleanAddLang": "افزودن زبان",
 	"settings.subtitles.cleanRemoveLang": "حذف این زبان"
 }

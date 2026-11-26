@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "लाइब्रेरी के सभी सबटाइटल साफ़ हो रहे हैं",
 	"settings.subtitles.cleanAllFailed": "सफ़ाई शुरू नहीं हो सकी",
 	"settings.subtitles.cleanRow": "इसके लिए चरण",
-	"settings.subtitles.cleanEvery": "हर दूसरी भाषा",
+	"settings.subtitles.cleanEvery": "सभी भाषाएँ",
+	"settings.subtitles.cleanEveryHint": "जिस भाषा के अपने चरण नहीं हैं, उस पर यही लागू होते हैं।",
 	"settings.subtitles.cleanAddLang": "भाषा जोड़ें",
 	"settings.subtitles.cleanRemoveLang": "यह भाषा हटाएँ"
 }

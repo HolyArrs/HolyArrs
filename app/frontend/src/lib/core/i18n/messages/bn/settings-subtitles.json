@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "লাইব্রেরির সব সাবটাইটেল পরিষ্কার হচ্ছে",
 	"settings.subtitles.cleanAllFailed": "পরিষ্কার শুরু করা গেল না",
 	"settings.subtitles.cleanRow": "যার জন্য ধাপ",
-	"settings.subtitles.cleanEvery": "অন্য সব ভাষা",
+	"settings.subtitles.cleanEvery": "সব ভাষা",
+	"settings.subtitles.cleanEveryHint": "যে ভাষার নিজস্ব ধাপ নেই, তার জন্য এটি ব্যবহার হয়।",
 	"settings.subtitles.cleanAddLang": "একটি ভাষা যোগ করুন",
 	"settings.subtitles.cleanRemoveLang": "এই ভাষা সরান"
 }

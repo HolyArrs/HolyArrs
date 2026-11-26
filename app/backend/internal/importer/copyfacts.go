@@ -43,6 +43,19 @@ func InspectFacts(file string) map[string]any {
 	if i.AudioTracks == 0 {
 		i.AudioUnknown = true
 	}
+	if i.AudioUntagged != "" {
+		// A track with no language tag: the container default (eng for
+		// Matroska) counts, unless the name says another language (ITA,
+		// GERMAN...); then the track stays unknown and the name is used.
+		if names := NameLanguages(file); len(names) == 0 || slices.Contains(names, i.AudioUntagged) {
+			i.AudioLanguages = slices.Compact(slices.Sorted(slices.Values(append(i.AudioLanguages, i.AudioUntagged))))
+		} else {
+			i.AudioUnknown = true
+			if i.Status == "complete" {
+				i.Status = "partial"
+			}
+		}
+	}
 	if i.AudioLanguages == nil {
 		i.AudioLanguages = []string{}
 	}
@@ -61,9 +74,10 @@ func InspectFacts(file string) map[string]any {
 }
 
 // FactsVersion is bumped when the stored fact keys change or the reader
-// learns a new container (4: AVI and MPEG-TS/M2TS), so old facts get
+// learns a new container (4: AVI and MPEG-TS/M2TS; 5: untagged Matroska
+// tracks read as eng), so old facts get
 // read again.
-const FactsVersion = 4
+const FactsVersion = 5
 
 // HeaderFactKeys lists the fact keys that come from the file header.
 var HeaderFactKeys = []string{"resolution", "width", "height", "display_width", "runtime_seconds", "audio_channels", "audio_codec",
@@ -98,6 +112,25 @@ func factsOf(i mediafiles.Info) map[string]any {
 		}
 	}
 	facts["subtitle_languages"] = subs
+	// The first audio track is what players start with; an untagged one names no language.
+	videos, firstAudio, seenAudio := 0, "", false
+	for _, t := range i.Tracks {
+		switch {
+		case t.Kind == "video":
+			videos++
+		case t.Kind == "audio" && !seenAudio:
+			seenAudio = true
+			if l, ok := mediafiles.NormalizeLanguage(t.Language); ok && !t.Untagged {
+				firstAudio = l
+			}
+		}
+	}
+	if len(i.Tracks) > 0 {
+		facts["video_tracks"] = videos
+	}
+	if firstAudio != "" {
+		facts["first_audio_language"] = firstAudio
+	}
 	var fv []string
 	for _, t := range i.Tracks {
 		if t.Kind == "audio" {

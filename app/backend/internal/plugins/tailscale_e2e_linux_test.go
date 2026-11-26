@@ -18,7 +18,7 @@ import (
 // tailscaleHosts is the Tailscale plugin's manifest host list.
 func tailscaleHosts(t *testing.T) []string {
 	t.Helper()
-	file := "../../../plugins/tailscale/holyarrs-plugin.json"
+	file := "testdata/tailscale-plugin.json"
 	if f := os.Getenv("HOLYARRS_TS_MANIFEST"); f != "" {
 		file = f
 	}
@@ -98,8 +98,13 @@ func TestTailscalePluginStartsLocked(t *testing.T) {
 			t.Fatalf("copy prebuilt plugin: %v", err)
 		}
 	} else {
+		// The source lives in HolyArrs/HolyArrs-Plugins (plugins/tailscale).
+		src := os.Getenv("HOLYARRS_TS_SRC")
+		if src == "" {
+			t.Skip("set HOLYARRS_TS_SRC to a HolyArrs-Plugins plugins/tailscale folder, or HOLYARRS_TS_BIN to a built plugin")
+		}
 		build := exec.Command("go", "build", "-o", bin, ".")
-		build.Dir = "../../../plugins/tailscale"
+		build.Dir = src
 		build.Env = append(os.Environ(), "CGO_ENABLED=0")
 		if out, err := build.CombinedOutput(); err != nil {
 			t.Fatalf("build tailscale plugin: %v\n%s", err, out)

@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Kaikkia kirjaston tekstityksiä siivotaan",
 	"settings.subtitles.cleanAllFailed": "Siivousta ei voitu aloittaa",
 	"settings.subtitles.cleanRow": "Vaiheet kielelle",
-	"settings.subtitles.cleanEvery": "Mikä tahansa muu kieli",
+	"settings.subtitles.cleanEvery": "Kaikki kielet",
+	"settings.subtitles.cleanEveryHint": "Käytetään jokaiselle kielelle, jolla ei ole omia vaiheita.",
 	"settings.subtitles.cleanAddLang": "Lisää kieli",
 	"settings.subtitles.cleanRemoveLang": "Poista tämä kieli"
 }

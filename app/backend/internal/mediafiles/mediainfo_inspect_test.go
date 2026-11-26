@@ -45,11 +45,11 @@ func TestInspectReaderAtMatroskaDefaultLanguage(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertInfo(t, got, Info{
-		Container:      "matroska",
-		VideoCodec:     "av1",
-		Status:         "complete",
-		AudioLanguages: []string{"en"},
-		AudioTracks:    1,
+		Container:     "matroska",
+		VideoCodec:    "av1",
+		Status:        "complete",
+		AudioUntagged: "en",
+		AudioTracks:   1,
 	})
 }
 
@@ -317,7 +317,7 @@ func TestInspectReaderAtEnforcesElementBudget(t *testing.T) {
 func assertInfo(t *testing.T, got, want Info) {
 	t.Helper()
 	if got.Container != want.Container || got.VideoCodec != want.VideoCodec || got.Status != want.Status ||
-		got.AudioTracks != want.AudioTracks || got.AudioUnknown != want.AudioUnknown ||
+		got.AudioTracks != want.AudioTracks || got.AudioUnknown != want.AudioUnknown || got.AudioUntagged != want.AudioUntagged ||
 		strings.Join(got.AudioLanguages, ",") != strings.Join(want.AudioLanguages, ",") {
 		t.Fatalf("Info = %#v, want %#v", got, want)
 	}

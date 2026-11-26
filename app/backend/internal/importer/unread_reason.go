@@ -3,6 +3,7 @@ package importer
 import (
 	"path/filepath"
 	"strings"
+	"time"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -80,4 +81,23 @@ func refusedMedia(plan []mediafiles.PlanStep) string {
 		}
 	}
 	return ""
+}
+
+// filesWait is how long after a download finished an empty folder read is
+// taken as files still on their way rather than an empty download.
+const filesWait = 10 * time.Minute
+
+// waitForFiles turns a no-match reason into a wait when the folder read found
+// no file at all and the download finished a short while ago: on a network
+// share the job's folder can show up a moment after the Downloader is done
+// (#861). The wait tries again on its own and reads the folder again; after
+// filesWait an empty read is the plain no-match decision again.
+func waitForFiles(d domain.Download, reason string, now time.Time) string {
+	if len(d.FilesSeen) > 0 || d.FinishedAt == nil || now.Sub(*d.FinishedAt) >= filesWait {
+		return reason
+	}
+	if reason == noMovieWhy || reason == noEpisodeWhy || reason == noTrackWhy {
+		return NotPresentYetWhy
+	}
+	return reason
 }
