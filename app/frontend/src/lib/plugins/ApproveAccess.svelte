@@ -109,10 +109,17 @@
 	.lab { font-size: 12px; overflow-wrap: anywhere; }
 	.why { overflow-wrap: anywhere; }
 	.row .input { width: 100%; min-width: 0; height: 36px; min-height: 36px; box-sizing: border-box; font-size: 13px; }
-	/* Approve sits at the end of the Limits row. */
-	.acts { grid-column: -2 / -1; display: flex; align-items: flex-end; justify-content: flex-end; min-width: 0; }
-	.boxes:has(.acts) { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
-	@media (max-width: 600px) { .boxes:has(.acts) { grid-template-columns: repeat(2, minmax(0, 1fr)); } .acts { grid-column: 1 / -1; } }
+	/* Limits: each label on one line above its box (never broken mid-word), all four boxes on one line with Save; 2x2 when the card is narrow. */
+	.approve { container-type: inline-size; }
+	.limits { grid-template-columns: repeat(4, minmax(min-content, 1fr)); align-items: end; }
+	.limits:has(.acts) { grid-template-columns: repeat(4, minmax(min-content, 1fr)) auto; }
+	.lim .lab { overflow-wrap: normal; white-space: nowrap; }
+	.acts { display: flex; align-items: flex-end; justify-content: flex-end; min-width: 0; }
+	@container (max-width: 460px) {
+		.limits, .limits:has(.acts) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+		.lim .lab { white-space: normal; overflow-wrap: normal; word-break: normal; hyphens: auto; }
+		.acts { grid-column: 1 / -1; }
+	}
 	.nchip { list-style: none; }
 	.nchip :global(svg) { flex: none; }
 	/* Requested access is never cut short: a long host wraps instead of ending in an ellipsis. */
@@ -122,6 +129,8 @@
 		.approve { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; }
 		.approve > :not(.boxes):not(.limits) { grid-column: 1 / -1; }
 		.approve > .boxes:empty { display: none; }
+		/* No folders to choose: the limits take the whole card. */
+		.approve > .boxes:empty + .limits { grid-column: 1 / -1; }
 	}
 	/* The heading, the notice and the new access share one line while they fit, then wrap. */
 	.head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
