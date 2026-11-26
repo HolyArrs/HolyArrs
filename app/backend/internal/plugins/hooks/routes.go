@@ -78,6 +78,8 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/plugin-hooks/notify", h.notify)
 	m.HandleFunc("GET /api/v1/plugin-hooks/metadata", h.next(Metadata))
 	m.HandleFunc("POST /api/v1/plugin-hooks/metadata", h.answer(Metadata))
+	m.HandleFunc("GET /api/v1/plugin-hooks/botcheck", h.next(Botcheck))
+	m.HandleFunc("POST /api/v1/plugin-hooks/botcheck", h.answer(Botcheck))
 	// App side.
 	m.HandleFunc("GET /api/v1/plugin-widgets", h.widgets)
 	m.HandleFunc("GET /api/v1/titles/{id}/plugin-sections", h.sections)

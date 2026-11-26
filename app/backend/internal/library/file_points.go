@@ -77,5 +77,5 @@ func ScoreSlotFile(f mediafiles.File, v mediafiles.Version, t mediafiles.Title, 
 		name = *f.ReleaseName
 	}
 	audio := mediafiles.FileLanguages(f.MediaInfo, v.AudioLanguages)
-	return mediafiles.ScoreTitleFile(mediafiles.JudgeName(name, f.MediaInfo), f.Size, audio, t, rules)
+	return mediafiles.ScoreOwnedFile(f, name, audio, t, rules)
 }

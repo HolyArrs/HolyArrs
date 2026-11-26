@@ -121,6 +121,12 @@ func TestParseOwnerHost(t *testing.T) {
 		"[::1]:80":                 false,
 		"localhost":                false,
 		"hs.example.com:":          false,
+		"flaresolverr:8191":        true,
+		"slskd:5030":               true,
+		"flaresolverr":             false,
+		"localhost:8191":           false,
+		"app.localhost:80":         false,
+		"metadata:80":              true, // a name; the dial refuses 169.254.* (TestOwnerContainerNameDial)
 	} {
 		if _, _, ok := ParseOwnerHost(s); ok != want {
 			t.Errorf("ParseOwnerHost(%q) ok = %v, want %v", s, ok, want)
@@ -133,6 +139,14 @@ func TestSafeAddrRefusesOldIPv6Forms(t *testing.T) {
 		ip := netip.MustParseAddr(s)
 		if safeAddr(ip, false, nil) || safeAddr(ip, true, nil) {
 			t.Errorf("%s was accepted", s)
+		}
+	}
+}
+
+func TestOwnerContainerNameDial(t *testing.T) {
+	for ip, want := range map[string]bool{"172.18.0.5": true, "10.10.25.9": true, "127.0.0.1": false, "169.254.169.254": false, "::1": false, "fe80::1": false, "::ffff:127.0.0.1": false} {
+		if got := safeAddr(netip.MustParseAddr(ip), true, nil); got != want {
+			t.Errorf("owner name resolving to %s: allowed = %v, want %v", ip, got, want)
 		}
 	}
 }

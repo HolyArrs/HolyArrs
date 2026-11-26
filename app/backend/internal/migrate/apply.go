@@ -748,9 +748,9 @@ func (r *run) one(group string, it Item) (string, string) {
 		}
 		// A title moved before still takes the quality the old app recorded
 		// for each file, so moving again after reading the old app updates it.
-		if it.Title != nil && it.Title.Music == nil && len(it.Title.Qualities) > 0 && !r.dry {
-			if n, err := r.m.Library.SetRecordedQualities(r.ctx, id, it.Title.Qualities, r.by); err == nil && n > 0 {
-				return ResAlready, "imported before; the quality of " + strconv.Itoa(n) + " files was updated"
+		if it.Title != nil && it.Title.Music == nil && (len(it.Title.Qualities) > 0 || len(it.Title.Releases) > 0) && !r.dry {
+			if n, err := r.m.Library.SetRecordedFiles(r.ctx, id, it.Title.Qualities, it.Title.Releases, r.by); err == nil && n > 0 {
+				return ResAlready, "imported before; the quality or release of " + strconv.Itoa(n) + " files was updated"
 			}
 		}
 		if it.Downloader != nil {

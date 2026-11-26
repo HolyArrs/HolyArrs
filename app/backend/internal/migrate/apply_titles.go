@@ -57,9 +57,9 @@ func (r *run) title(it Item) (string, string) {
 		if t.Music == nil {
 			// Moving again after reading the old app brings the quality it
 			// recorded for each file to titles moved before.
-			if !r.dry && len(t.Qualities) > 0 {
-				if n, err := r.m.Library.SetRecordedQualities(r.ctx, id, t.Qualities, r.by); err == nil && n > 0 {
-					return ResAlready, "already in the Library; the quality of " + strconv.Itoa(n) + " files was updated"
+			if !r.dry && (len(t.Qualities) > 0 || len(t.Releases) > 0) {
+				if n, err := r.m.Library.SetRecordedFiles(r.ctx, id, t.Qualities, t.Releases, r.by); err == nil && n > 0 {
+					return ResAlready, "already in the Library; the quality or release of " + strconv.Itoa(n) + " files was updated"
 				}
 			}
 			return ResAlready, "already in the Library"
@@ -255,10 +255,10 @@ func (r *run) title(it Item) (string, string) {
 		}
 		return ResFailed, "adopted, but its mark was not kept, so it was taken out again: " + mk.Error()
 	}
-	if len(t.Qualities) > 0 {
-		// The quality the old app recorded; a file it cannot match keeps the
-		// quality read from its name and the file.
-		_, _ = r.m.Library.SetRecordedQualities(r.ctx, id, t.Qualities, r.by)
+	if len(t.Qualities) > 0 || len(t.Releases) > 0 {
+		// The quality and release the old app recorded; a file it cannot
+		// match keeps what was read from its name and the file.
+		_, _ = r.m.Library.SetRecordedFiles(r.ctx, id, t.Qualities, t.Releases, r.by)
 	}
 	pr := r.presetID(t.Preset, t.Kind)
 	err = r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {

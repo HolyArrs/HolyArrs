@@ -170,6 +170,11 @@ func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRe
 		return
 	}
 	keepsOriginal := p.Has("dual") || p.Has("multi") || p.Has("original")
+	if p.Has("original") && rules.Synced.OldApp() && t.OriginalLanguage != "" && !slices.Contains(langs, t.OriginalLanguage) {
+		// As the old apps: a name that keeps the original language (German
+		// DL) is in that language too.
+		langs = append(slices.Clip(langs), t.OriginalLanguage)
+	}
 	for _, l := range langs {
 		if slices.Contains(rules.Language.Wanted, l) {
 			v.add("hard", "language", "pass", LanguageName(l)+" is wanted", 0)
