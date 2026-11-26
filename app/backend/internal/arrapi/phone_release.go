@@ -327,10 +327,7 @@ func (h *handler) releaseRow(x domain.Release, indexer string, now time.Time) re
 	p := releasename.Parse(x.Name, releasename.Hints{})
 	row := releaseRow{GUID: guidPrefix + itoa(x.ID), Quality: qualityOfRelease(h.side, x.Name), Size: x.Size, IndexerID: x.SourceID, Indexer: indexer,
 		ReleaseGroup: p.Group.Value, Title: x.Name, Languages: []language{}, Rejections: []string{}, CustomFormats: []any{},
-		Protocol: x.Protocol, Seeders: x.Seeders, Leechers: x.Peers, DownloadAllowed: true}
-	if row.Protocol != "usenet" && row.Protocol != "torrent" {
-		row.Protocol = "unknown"
-	}
+		Protocol: arrProtocol(x.Protocol), Seeders: x.Seeders, Leechers: x.Peers, DownloadAllowed: true}
 	if x.InfoHash != nil {
 		row.InfoHash = *x.InfoHash
 	}
@@ -489,4 +486,13 @@ func (h *handler) releaseTitle(ctx context.Context, rel domain.Release) int64 {
 		}
 	}
 	return 0
+}
+
+// arrProtocol is a protocol the old apps know: a plugin's own download type
+// shows as "unknown", so their clients do not break on it.
+func arrProtocol(p string) string {
+	if p != "usenet" && p != "torrent" {
+		return "unknown"
+	}
+	return p
 }

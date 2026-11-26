@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Usuari de SABnzbd",
 	"settings.downloaders.sabPass": "Contrasenya de SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd no ha acceptat aquest usuari i contrasenya.",
-	"settings.downloaders.keyNotFound": "No s'ha pogut llegir la clau. Fes servir Obtén la clau i copia-la d'allà."
+	"settings.downloaders.keyNotFound": "No s'ha pogut llegir la clau. Fes servir Obtén la clau i copia-la d'allà.",
+	"settings.downloaders.pluginKind": "Connector"
 }

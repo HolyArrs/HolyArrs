@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "файла ещё нет; HolyArrs попробует импортировать его снова",
 	"server.migrate.the-same-as-a-source-that": "то же, что {name}, источник, который уже есть",
 	"server.accounts.name-the-person-by-their-user": "укажите человека по его ID пользователя",
-	"server.migrate.it-is-longer-than-a-holyarrs": "он длиннее, чем может быть шаблон HolyArrs"
+	"server.migrate.it-is-longer-than-a-holyarrs": "он длиннее, чем может быть шаблон HolyArrs",
+	"server.migrate.already-in-the-library-the-quality": "уже в Библиотеке; качество или релиз {n} файлов обновлены",
+	"server.migrate.imported-before-2": "импортировано ранее{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "его папка {dir} принадлежит другому фильму в Библиотеке"
 }

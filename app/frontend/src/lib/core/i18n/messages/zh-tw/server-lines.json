@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "檔案還不在；HolyArrs 會再次嘗試匯入",
 	"server.migrate.the-same-as-a-source-that": "與 {name} 相同，這裡已有此來源",
 	"server.accounts.name-the-person-by-their-user": "請用使用者 ID 指定此人",
-	"server.migrate.it-is-longer-than-a-holyarrs": "長度超過了 HolyArrs 模式的上限"
+	"server.migrate.it-is-longer-than-a-holyarrs": "長度超過了 HolyArrs 模式的上限",
+	"server.migrate.already-in-the-library-the-quality": "已在媒體庫中；已更新 {n} 個檔案的品質或版本",
+	"server.migrate.imported-before-2": "之前已匯入{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "它的資料夾 {dir} 屬於媒體庫中的另一部電影"
 }

@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "ファイルはまだありません。HolyArrs がもう一度取り込みを試みます",
 	"server.migrate.the-same-as-a-source-that": "{name} と同じで、すでにあるソースです",
 	"server.accounts.name-the-person-by-their-user": "ユーザーIDで相手を指定してください",
-	"server.migrate.it-is-longer-than-a-holyarrs": "HolyArrs のパターンの上限より長すぎます"
+	"server.migrate.it-is-longer-than-a-holyarrs": "HolyArrs のパターンの上限より長すぎます",
+	"server.migrate.already-in-the-library-the-quality": "すでにライブラリにあります。{n} 個のファイルの品質またはリリースを更新しました",
+	"server.migrate.imported-before-2": "以前にインポート済み{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "フォルダー {dir} はライブラリ内の別の映画のものです"
 }

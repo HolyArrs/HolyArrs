@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "wala pa ang file; susubukan ulit ng HolyArrs na i-import ito",
 	"server.migrate.the-same-as-a-source-that": "kapareho ng {name}, isang Source na nandito na",
 	"server.accounts.name-the-person-by-their-user": "tukuyin ang tao gamit ang kanyang user id",
-	"server.migrate.it-is-longer-than-a-holyarrs": "mas mahaba ito kaysa sa puwedeng haba ng isang HolyArrs pattern"
+	"server.migrate.it-is-longer-than-a-holyarrs": "mas mahaba ito kaysa sa puwedeng haba ng isang HolyArrs pattern",
+	"server.migrate.already-in-the-library-the-quality": "nasa Library na; na-update ang kalidad o release ng {n} file",
+	"server.migrate.imported-before-2": "na-import na dati{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "ang folder nitong {dir} ay pag-aari ng ibang pelikula sa Library"
 }

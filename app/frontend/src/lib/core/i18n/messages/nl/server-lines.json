@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "het bestand is er nog niet; HolyArrs probeert het opnieuw te importeren",
 	"server.migrate.the-same-as-a-source-that": "hetzelfde als {name}, een Bron die hier al staat",
 	"server.accounts.name-the-person-by-their-user": "geef de persoon aan met hun gebruikers-id",
-	"server.migrate.it-is-longer-than-a-holyarrs": "het is langer dan een HolyArrs-patroon mag zijn"
+	"server.migrate.it-is-longer-than-a-holyarrs": "het is langer dan een HolyArrs-patroon mag zijn",
+	"server.migrate.already-in-the-library-the-quality": "staat al in de Bibliotheek; de kwaliteit of release van {n} bestanden is bijgewerkt",
+	"server.migrate.imported-before-2": "eerder geïmporteerd{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "de map {dir} hoort bij een andere film in de Bibliotheek"
 }

@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd-käyttäjänimi",
 	"settings.downloaders.sabPass": "SABnzbd-salasana",
 	"settings.downloaders.keyWrongLogin": "SABnzbd ei hyväksynyt tätä käyttäjänimeä ja salasanaa.",
-	"settings.downloaders.keyNotFound": "Avainta ei voitu lukea. Käytä Hae avain ja kopioi se sieltä."
+	"settings.downloaders.keyNotFound": "Avainta ei voitu lukea. Käytä Hae avain ja kopioi se sieltä.",
+	"settings.downloaders.pluginKind": "Liitännäinen"
 }

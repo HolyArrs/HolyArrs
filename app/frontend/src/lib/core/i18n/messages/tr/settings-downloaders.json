@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd kullanıcı adı",
 	"settings.downloaders.sabPass": "SABnzbd parolası",
 	"settings.downloaders.keyWrongLogin": "SABnzbd bu kullanıcı adını ve parolayı kabul etmedi.",
-	"settings.downloaders.keyNotFound": "Anahtar okunamadı. Anahtarı al ile oradan kopyala."
+	"settings.downloaders.keyNotFound": "Anahtar okunamadı. Anahtarı al ile oradan kopyala.",
+	"settings.downloaders.pluginKind": "Eklenti"
 }

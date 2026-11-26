@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/backups"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
@@ -96,6 +97,7 @@ func keyHeldHandler(err error, configDir string) http.Handler {
 func publicReason(err error) string {
 	var nd *database.NewerDataError
 	var ns *database.NetShareError
+	var es *accounts.EnvSetupError
 	switch {
 	case errors.As(err, &nd):
 		return "this data is from a newer HolyArrs. Run that version again, or restore a backup." + goBack
@@ -125,6 +127,8 @@ func publicReason(err error) string {
 		return "the master key file cannot be read by HolyArrs: its owner or mode is wrong. On the host, give it to your PUID and PGID and make it private: chown PUID:PGID " + secrets.KeyFile + " and chmod 600 " + secrets.KeyFile + " (use your own numbers and the file's real path), then restart. Nothing was changed."
 	case errors.Is(err, secrets.ErrKeyUnreadable):
 		return "the master key file cannot be read: it does not hold a key. Put back a good copy of " + secrets.KeyFile + " (or your key kit renamed to " + secrets.KeyFile + "), then restart. Nothing was changed."
+	case errors.As(err, &es):
+		return "the owner or API key from the environment could not be set up: " + es.Public + ". Fix it, then restart. Nothing was changed."
 	case errors.Is(err, database.ErrCheckFailed):
 		return "the data check after updating failed. You can run the version you had before again (change the image tag back); its page offers to put back the data from before the update." + goBack
 	}

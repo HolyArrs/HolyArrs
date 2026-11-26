@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "faili pole veel; HolyArrs proovib seda uuesti importida",
 	"server.migrate.the-same-as-a-source-that": "sama mis {name}, allikas, mis on siin olemas",
 	"server.accounts.name-the-person-by-their-user": "määra inimene tema kasutaja ID järgi",
-	"server.migrate.it-is-longer-than-a-holyarrs": "see on pikem, kui HolyArrsi muster olla võib"
+	"server.migrate.it-is-longer-than-a-holyarrs": "see on pikem, kui HolyArrsi muster olla võib",
+	"server.migrate.already-in-the-library-the-quality": "juba Kogus; {n} faili kvaliteet või väljalase uuendati",
+	"server.migrate.imported-before-2": "varem imporditud{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "selle kaust {dir} kuulub Kogus teisele filmile"
 }

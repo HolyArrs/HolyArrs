@@ -23,7 +23,7 @@
 	async function add(p: Plugin) {
 		busy = p.id;
 		try {
-			await api.post(kind === 'downloader' ? '/downloaders' : '/sources', fromPluginBody({ id: p.id, name: p.name ?? p.id }, kind));
+			await api.post(kind === 'downloader' ? '/downloaders' : '/sources', fromPluginBody({ id: p.id, name: p.name ?? p.id, download_types: p.download_types }, kind));
 			onadded();
 		} catch (e) {
 			toasts.push(t('plugins.fromPluginFailed'), 'fail', { body: message(e) });

@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "datoteka još nije tu; HolyArrs će je ponovno pokušati uvesti",
 	"server.migrate.the-same-as-a-source-that": "isto kao {name}, izvor koji već postoji",
 	"server.accounts.name-the-person-by-their-user": "navedi osobu po njezinom korisničkom ID-u",
-	"server.migrate.it-is-longer-than-a-holyarrs": "dulji je nego što HolyArrs uzorak smije biti"
+	"server.migrate.it-is-longer-than-a-holyarrs": "dulji je nego što HolyArrs uzorak smije biti",
+	"server.migrate.already-in-the-library-the-quality": "već je u Knjižnici; kvaliteta ili izdanje {n} datoteka je ažurirano",
+	"server.migrate.imported-before-2": "uvezeno ranije{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "njegova mapa {dir} pripada drugom filmu u Knjižnici"
 }

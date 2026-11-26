@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd 使用者名稱",
 	"settings.downloaders.sabPass": "SABnzbd 密碼",
 	"settings.downloaders.keyWrongLogin": "SABnzbd 不接受這組使用者名稱和密碼。",
-	"settings.downloaders.keyNotFound": "無法讀取金鑰。請用「取得金鑰」並從那裡複製。"
+	"settings.downloaders.keyNotFound": "無法讀取金鑰。請用「取得金鑰」並從那裡複製。",
+	"settings.downloaders.pluginKind": "外掛程式"
 }

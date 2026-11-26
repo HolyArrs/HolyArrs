@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Notandanafn SABnzbd",
 	"settings.downloaders.sabPass": "Lykilorð SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd samþykkti ekki þetta notandanafn og lykilorð.",
-	"settings.downloaders.keyNotFound": "Ekki tókst að lesa lykilinn. Notaðu Sækja lykil og afritaðu hann þaðan."
+	"settings.downloaders.keyNotFound": "Ekki tókst að lesa lykilinn. Notaðu Sækja lykil og afritaðu hann þaðan.",
+	"settings.downloaders.pluginKind": "Viðbót"
 }

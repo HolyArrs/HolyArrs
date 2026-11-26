@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "filen er her ikke endnu; HolyArrs prøver at importere den igen",
 	"server.migrate.the-same-as-a-source-that": "det samme som {name}, en Kilde der findes her",
 	"server.accounts.name-the-person-by-their-user": "angiv personen med deres bruger-id",
-	"server.migrate.it-is-longer-than-a-holyarrs": "den er længere, end et HolyArrs-mønster kan være"
+	"server.migrate.it-is-longer-than-a-holyarrs": "den er længere, end et HolyArrs-mønster kan være",
+	"server.migrate.already-in-the-library-the-quality": "allerede i Biblioteket; kvaliteten eller udgivelsen af {n} filer blev opdateret",
+	"server.migrate.imported-before-2": "importeret før{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "dens mappe {dir} tilhører en anden film i Biblioteket"
 }

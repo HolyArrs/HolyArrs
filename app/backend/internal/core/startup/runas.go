@@ -83,17 +83,21 @@ func LoadFileEnv(environ []string, readFile func(string) ([]byte, error), setenv
 		if err != nil {
 			return fmt.Errorf("%s: cannot read the file %q: %w", key, path, unwrapPath(err))
 		}
-		v := string(b)
-		if strings.HasSuffix(v, "\r\n") {
-			v = v[:len(v)-2]
-		} else {
-			v = strings.TrimSuffix(v, "\n")
-		}
-		if err := setenv(name, v); err != nil {
+		if err := setenv(name, FileValue(b)); err != nil {
 			return fmt.Errorf("%s: cannot set %s: %w", key, name, err)
 		}
 	}
 	return nil
+}
+
+// FileValue is a value read from a file, with one trailing newline (or CR LF)
+// removed: editors and echo add one, and a secret must not carry it.
+func FileValue(b []byte) string {
+	v := string(b)
+	if strings.HasSuffix(v, "\r\n") {
+		return v[:len(v)-2]
+	}
+	return strings.TrimSuffix(v, "\n")
 }
 
 // ParseUmask reads UMASK as an octal number such as "022" or "0002".

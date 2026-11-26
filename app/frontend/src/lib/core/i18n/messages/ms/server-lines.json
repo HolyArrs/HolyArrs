@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "fail belum ada; HolyArrs akan cuba mengimportnya semula",
 	"server.migrate.the-same-as-a-source-that": "sama seperti {name}, Sumber yang ada di sini",
 	"server.accounts.name-the-person-by-their-user": "namakan orang itu dengan ID penggunanya",
-	"server.migrate.it-is-longer-than-a-holyarrs": "ia lebih panjang daripada had corak HolyArrs"
+	"server.migrate.it-is-longer-than-a-holyarrs": "ia lebih panjang daripada had corak HolyArrs",
+	"server.migrate.already-in-the-library-the-quality": "sudah ada dalam Pustaka; kualiti atau keluaran {n} fail telah dikemas kini",
+	"server.migrate.imported-before-2": "sudah diimport sebelum ini{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik filem lain dalam Pustaka"
 }

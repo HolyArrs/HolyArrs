@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "fișierul nu este încă acolo; HolyArrs va încerca din nou să-l importe",
 	"server.migrate.the-same-as-a-source-that": "la fel ca {name}, o Sursă care e aici",
 	"server.accounts.name-the-person-by-their-user": "indică persoana după ID-ul ei de utilizator",
-	"server.migrate.it-is-longer-than-a-holyarrs": "este mai lung decât poate fi un tipar HolyArrs"
+	"server.migrate.it-is-longer-than-a-holyarrs": "este mai lung decât poate fi un tipar HolyArrs",
+	"server.migrate.already-in-the-library-the-quality": "este deja în Bibliotecă; calitatea sau versiunea a {n} fișiere a fost actualizată",
+	"server.migrate.imported-before-2": "importat anterior{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "folderul său {dir} aparține altui film din Bibliotecă"
 }

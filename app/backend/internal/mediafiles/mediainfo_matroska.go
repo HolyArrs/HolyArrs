@@ -245,7 +245,7 @@ func (p *matroskaParser) readTracks(start, end int64, depth int) ([]Track, error
 func (p *matroskaParser) readTrack(start, end int64, depth int) (Track, error) {
 	track := Track{Default: true} // FlagDefault is 1 when not written
 	var kind uint64
-	language := "eng" // Language is eng when not written
+	var language string
 	var languageBCP string
 	var private []byte
 	var frameNanos uint64
@@ -300,6 +300,10 @@ func (p *matroskaParser) readTrack(start, end int64, depth int) (Track, error) {
 		return Track{}, err
 	}
 	track.Language = language
+	track.Untagged = language == "" && languageBCP == ""
+	if track.Untagged {
+		track.Language = "eng" // Language is eng when not written
+	}
 	if languageBCP != "" {
 		track.Language = languageBCP // BCP 47 wins over the old field
 	}

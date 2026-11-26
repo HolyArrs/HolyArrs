@@ -6924,6 +6924,16 @@
           "release_gate": {
             "type": "string"
           },
+          "season_choice": {
+            "description": "Shows only.",
+            "enum": [
+              "all",
+              "future",
+              "latest",
+              "none"
+            ],
+            "type": "string"
+          },
           "tags": {
             "description": "Routes the title's grabs and searches to the Downloaders and Sources that share one. Lowercase labels (#108); spaces become '-', at most 20 of 40 characters. Not sent: kept; an empty list clears them.",
             "items": {

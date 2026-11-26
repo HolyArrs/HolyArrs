@@ -2463,5 +2463,8 @@
 	"server.importer.the-file-is-not-present-yet": "tệp chưa có; HolyArrs sẽ thử nhập lại",
 	"server.migrate.the-same-as-a-source-that": "giống {name}, một Nguồn đã có ở đây",
 	"server.accounts.name-the-person-by-their-user": "chỉ định người đó bằng ID người dùng của họ",
-	"server.migrate.it-is-longer-than-a-holyarrs": "nó dài hơn mức một mẫu HolyArrs cho phép"
+	"server.migrate.it-is-longer-than-a-holyarrs": "nó dài hơn mức một mẫu HolyArrs cho phép",
+	"server.migrate.already-in-the-library-the-quality": "đã có trong Thư viện; đã cập nhật chất lượng hoặc bản phát hành của {n} tệp",
+	"server.migrate.imported-before-2": "đã nhập trước đây{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "thư mục {dir} của nó thuộc về một phim khác trong Thư viện"
 }

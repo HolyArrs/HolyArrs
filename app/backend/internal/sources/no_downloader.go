@@ -12,7 +12,7 @@ func NoDownloader(protocol string) string {
 	if protocol == "usenet" {
 		return "no Usenet Downloader is set up"
 	}
-	return "no torrent Downloader is set up"
+	return "no " + protocol + " Downloader is set up"
 }
 
 // noDownloader passes over a Release no Downloader could take, so it is never
