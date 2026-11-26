@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -264,7 +265,7 @@ func TestShowImportSaysTheFolderWentAwayWhilePlacing(t *testing.T) {
 // A download with no save folder and no file list keeps the no-match line.
 func TestMovieImportWithNoSaveFolderKeepsTheNoMatchLine(t *testing.T) {
 	w := setup(t)
-	if err := execSQL(w.s, "UPDATE downloads SET files_seen = '[]', save_path = '' WHERE id = ?", w.dlID); err != nil {
+	if err := execSQL(w.s, "UPDATE downloads SET files_seen = '[]', save_path = '', finished_at = ? WHERE id = ?", time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano), w.dlID); err != nil {
 		t.Fatal(err)
 	}
 	if err := execSQL(w.s, "UPDATE slots SET active_download_id = ? WHERE id = ?", w.dlID, w.slotID); err != nil {

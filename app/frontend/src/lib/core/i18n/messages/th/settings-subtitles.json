@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "กำลังล้างคำบรรยายทั้งหมดในคลัง",
 	"settings.subtitles.cleanAllFailed": "เริ่มการล้างไม่ได้",
 	"settings.subtitles.cleanRow": "ขั้นตอนสำหรับ",
-	"settings.subtitles.cleanEvery": "ภาษาอื่นทั้งหมด",
+	"settings.subtitles.cleanEvery": "ทุกภาษา",
+	"settings.subtitles.cleanEveryHint": "ใช้กับทุกภาษาที่ไม่มีขั้นตอนของตัวเอง",
 	"settings.subtitles.cleanAddLang": "เพิ่มภาษา",
 	"settings.subtitles.cleanRemoveLang": "เอาภาษานี้ออก"
 }

@@ -46,6 +46,9 @@ func (s *Service) Sync(ctx context.Context, id int64, fix subtext.Fix, by domain
 	if err != nil {
 		return row, err
 	}
+	if row.Origin == "found" {
+		return row, ErrNotOurs
+	}
 	rel := *row.RelativePath
 	full := filepath.Join(fc.lib, filepath.FromSlash(rel))
 	if !importer.InsideReal(fc.lib, full) {

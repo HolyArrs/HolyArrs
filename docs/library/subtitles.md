@@ -77,7 +77,7 @@ Portuguese (Brazil) has its own files, `Movie (2020).pt-BR.srt`. Older `.pt` fil
 
 ### Cleanup
 
-In **Settings > Subtitles > Cleanup**, pick what HolyArrs takes out of each SRT subtitle it saves. **Steps for** picks the language: **Every other language** covers each language without its own steps, and picking a language gives it its own. A Brazilian Portuguese subtitle uses Portuguese's steps when it has none of its own.
+In **Settings > Subtitles > Cleanup**, pick what HolyArrs takes out of each SRT subtitle it saves. **Steps for** picks the language: **All languages** covers each language without its own steps, and picking a language gives it its own. A Brazilian Portuguese subtitle uses Portuguese's steps when it has none of its own.
 
 | Step | What it does |
 |---|---|

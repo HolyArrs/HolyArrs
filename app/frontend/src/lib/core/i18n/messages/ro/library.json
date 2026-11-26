@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Unele foldere nu au trecut. Scanează din nou ca să le preiei; folderele care sunt deja în Bibliotecă rămân cum sunt.",
 	"library.import.scanAgain": "Scanează din nou",
 	"library.import.keepOpen": "Ține această pagină deschisă până se termină.",
+	"library.import.closeOk": "Rulează pe server, așa că poți închide această pagină.",
 	"library.import.waiting": "Serverul de metadate este ocupat. HolyArrs reîncearcă ultimele {left} peste {min} min.",
 	"library.import.leaveAsk": "Un import rulează. Dacă părăsești această pagină, folderele netrimise încă nu vor fi preluate. Pleci oricum?",
 	"library.import.interrupted": "Un import s-a oprit la {done} din {total} foldere când pagina lui a fost închisă. Scanează din nou ca să preiei restul; folderele deja preluate rămân cum sunt.",

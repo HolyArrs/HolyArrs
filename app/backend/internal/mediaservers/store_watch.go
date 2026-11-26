@@ -108,6 +108,8 @@ func replaceWatchState(ctx context.Context, s *database.Store, serverID int64, r
 
 // WatchedPerson is what one account on one media server watched.
 type WatchedPerson struct {
+	// Key is unique per row (server id and account id): names can repeat.
+	Key        string `json:"key"`
 	Server     string `json:"server"`
 	ServerKind string `json:"server_kind"`
 	// Name is the account's name on the media server.
@@ -164,7 +166,7 @@ func watchedRows(ctx context.Context, q watchReader) (WatchedSummary, error) {
 	if readAt.Valid {
 		out.ReadAt = &readAt.String
 	}
-	rows, err := q.QueryContext(ctx, `SELECT ms.name, ms.kind, ws.account_key, max(ws.account_name),
+	rows, err := q.QueryContext(ctx, `SELECT ws.media_server_id, ms.name, ms.kind, ws.account_key, max(ws.account_name),
 		sum(ws.kind = 'movie'), count(DISTINCT CASE WHEN ws.kind = 'episode' THEN ws.title_id END), sum(ws.kind = 'episode'), sum(ws.plays), max(ws.last_watched_at)
 		FROM watch_state ws JOIN media_servers ms ON ms.id = ws.media_server_id
 		GROUP BY ws.media_server_id, ws.account_key ORDER BY 8 DESC, 4`)
@@ -175,9 +177,11 @@ func watchedRows(ctx context.Context, q watchReader) (WatchedSummary, error) {
 	for rows.Next() {
 		var p WatchedPerson
 		var last sql.NullString
-		if err := rows.Scan(&p.Server, &p.ServerKind, &p.account, &p.Name, &p.Movies, &p.Shows, &p.Episodes, &p.Plays, &last); err != nil {
+		var server int64
+		if err := rows.Scan(&server, &p.Server, &p.ServerKind, &p.account, &p.Name, &p.Movies, &p.Shows, &p.Episodes, &p.Plays, &last); err != nil {
 			return out, err
 		}
+		p.Key = strconv.FormatInt(server, 10) + "/" + p.account
 		if last.Valid {
 			p.LastWatchedAt = &last.String
 		}

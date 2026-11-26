@@ -36,10 +36,10 @@
 			<button type="button" class="rg-show" onclick={() => onshow(g.label, g.lines, lineRow)} aria-label={t('migrate.show4', { label: g.label })}>{t('migrate.show2')}</button>
 		</li>
 	{/each}
-	{#if report.not_moved.length > 0}
+	{#if (report.not_moved ?? []).length > 0}
 		<li class="rg-row">
-			<span class="rg-txt"><b>{t('migrate.notMoved')}</b><span class="rg-sub">{report.not_moved.length === 1 ? t('migrate.setting', { n: report.not_moved.length }) : t('migrate.settings', { n: report.not_moved.length })}</span></span>
-			<button type="button" class="rg-show" onclick={() => onshow(t('migrate.notMoved'), report.not_moved, (n, i) => ({ key: n.from + i, name: serverWords(n.what), hint: `${groupLabel(n.group) ?? t('migrate.otherSettings')} · ${serverWords(n.why)}` }))} aria-label={t('migrate.showNotMoved')}>{t('migrate.show2')}</button>
+			<span class="rg-txt"><b>{t('migrate.notMoved')}</b><span class="rg-sub">{(report.not_moved ?? []).length === 1 ? t('migrate.setting', { n: (report.not_moved ?? []).length }) : t('migrate.settings', { n: (report.not_moved ?? []).length })}</span></span>
+			<button type="button" class="rg-show" onclick={() => onshow(t('migrate.notMoved'), report.not_moved ?? [], (n, i) => ({ key: n.from + i, name: serverWords(n.what), hint: `${groupLabel(n.group) ?? t('migrate.otherSettings')} · ${serverWords(n.why)}` }))} aria-label={t('migrate.showNotMoved')}>{t('migrate.show2')}</button>
 		</li>
 	{/if}
 	{#if needs.length > 0}

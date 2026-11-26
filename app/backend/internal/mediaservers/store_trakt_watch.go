@@ -78,6 +78,7 @@ func traktWatchedRows(ctx context.Context, q database.Lister) ([]WatchedPerson, 
 			return nil, err
 		}
 		p.UserID, p.account = &id, strconv.FormatInt(id, 10)
+		p.Key = "trakt/" + p.account
 		if last.Valid {
 			p.LastWatchedAt = &last.String
 		}

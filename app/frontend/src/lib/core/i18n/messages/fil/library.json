@@ -166,6 +166,7 @@
 	"library.import.leftHint": "May mga folder na hindi natuloy. Mag-scan ulit para maisama ang mga ito; ang mga folder na nasa Library na ay mananatiling gaya ng dati.",
 	"library.import.scanAgain": "Mag-scan ulit",
 	"library.import.keepOpen": "Panatilihing bukas ang pahinang ito hanggang matapos.",
+	"library.import.closeOk": "Tumatakbo ito sa server, kaya puwede mong isara ang pahinang ito.",
 	"library.import.waiting": "Abala ang metadata server. Susubukan muli ng HolyArrs ang huling {left} sa loob ng {min} min.",
 	"library.import.leaveAsk": "May tumatakbong import. Kapag umalis ka sa pahinang ito, hindi maisasama ang mga folder na hindi pa naipapadala. Aalis pa rin?",
 	"library.import.interrupted": "Huminto ang isang import sa {done} sa {total} na folder nang isara ang pahina nito. Mag-scan ulit para maisama ang iba; ang mga folder na naisama na ay mananatiling gaya ng dati.",

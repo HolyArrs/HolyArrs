@@ -28,7 +28,7 @@ func TestRestoreHeldBringsTheMovieBack(t *testing.T) {
 		t.Fatalf("held %+v %v", held, err)
 	}
 	h := held[0]
-	if !h.TitleDeleted || h.TitleID != id || h.ExpiresAt == nil || h.ExpiresAt.Format("2006-01-02") != "2026-10-21" {
+	if !h.TitleDeleted || h.TitleID != id || h.ExpiresAt == nil || h.ExpiresAt.Format("2006-01-02") != "2026-10-20" {
 		t.Fatalf("held %+v", h)
 	}
 	// A taken place is never overwritten.

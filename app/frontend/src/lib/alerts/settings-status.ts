@@ -60,6 +60,7 @@ export function stateWords(s: { state: GroupState; count: number }): string {
 	return '';
 }
 
+// Info items are only notes; the menu dot lights for warnings and errors.
 export function needsAttention(a: StatusAnswer | null): boolean {
-	return !!a && a.items.length > 0;
+	return !!a && a.items.some((i) => i.severity !== 'info');
 }

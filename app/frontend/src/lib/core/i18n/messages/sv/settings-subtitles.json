@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Rensar alla undertexter i biblioteket",
 	"settings.subtitles.cleanAllFailed": "Rensningen kunde inte starta",
 	"settings.subtitles.cleanRow": "Steg för",
-	"settings.subtitles.cleanEvery": "Alla andra språk",
+	"settings.subtitles.cleanEvery": "Alla språk",
+	"settings.subtitles.cleanEveryHint": "Används för alla språk utan egna steg.",
 	"settings.subtitles.cleanAddLang": "Lägg till ett språk",
 	"settings.subtitles.cleanRemoveLang": "Ta bort det här språket"
 }
