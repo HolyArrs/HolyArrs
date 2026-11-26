@@ -48,7 +48,11 @@ func NamedMovieVideo(root, folder, name string) (AdoptVideo, bool) {
 	if name == "" || strings.ContainsAny(name, `/\`) || path.Base(rel) != name || path.Dir(rel) != path.Clean(folder) {
 		return AdoptVideo{}, false
 	}
-	p := filepath.Join(root, filepath.FromSlash(rel))
+	local := filepath.FromSlash(rel)
+	if !filepath.IsLocal(local) {
+		return AdoptVideo{}, false
+	}
+	p := filepath.Join(root, local)
 	fi, err := os.Lstat(p)
 	if err == nil && !fi.Mode().IsRegular() {
 		if linked, ok := importer.LinkedFile(p); ok {
@@ -76,11 +80,24 @@ func RecordedMovieVideo(root, folder, rel string) (AdoptVideo, bool) {
 	if strings.Contains(rel, `\`) || path.Clean(rel) != rel || !filepath.IsLocal(filepath.FromSlash(rel)) || strings.Count(rel, "/") > maxScanDepth {
 		return AdoptVideo{}, false
 	}
-	dir = strings.TrimSuffix(dir, "/")
+	// The whole path below root is checked once more, so neither the
+	// folder nor any part of rel can leave root.
+	full := filepath.FromSlash(path.Join(folder, rel))
+	if !filepath.IsLocal(full) {
+		return AdoptVideo{}, false
+	}
+	parts := strings.Split(filepath.ToSlash(full), "/")
+	depth := strings.Count(path.Clean(folder), "/") + 1
+	if path.Clean(folder) == "." {
+		depth = 0
+	}
 	// Listing the folder never follows a linked folder, so neither does this.
-	at := filepath.Join(root, filepath.FromSlash(folder))
-	for _, d := range strings.Split(dir, "/") {
+	at := root
+	for i, d := range parts[:len(parts)-1] {
 		at = filepath.Join(at, d)
+		if i < depth {
+			continue
+		}
 		if strings.HasPrefix(d, ".") || NasSystemDir(d) || strings.EqualFold(d, "sample") || strings.EqualFold(d, "samples") {
 			return AdoptVideo{}, false
 		}
@@ -88,6 +105,7 @@ func RecordedMovieVideo(root, folder, rel string) (AdoptVideo, bool) {
 			return AdoptVideo{}, false
 		}
 	}
+	dir = strings.TrimSuffix(dir, "/")
 	v, ok := NamedMovieVideo(root, path.Join(folder, dir), name)
 	if !ok || MovieExtra(rel) || !importer.InsideRealFile(filepath.Join(root, filepath.FromSlash(folder)), filepath.Join(root, filepath.FromSlash(v.Path))) {
 		return AdoptVideo{}, false
