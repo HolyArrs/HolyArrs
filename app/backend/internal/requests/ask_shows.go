@@ -473,6 +473,9 @@ func (s *Service) addShowForAsk(ctx context.Context, a domain.Ask, set Settings,
 	if err != nil {
 		return 0, false, err
 	}
+	if set, err = s.animePlace(ctx, a, set, opt, tid != 0); err != nil {
+		return 0, false, err
+	}
 	if err := askedRules(ctx, s.Store.Read(), a, &opt, set.ShowFourKLibraryFolderID, set.ShowFourKPickRulesID, set.ShowLibraryFolderID); err != nil {
 		return 0, false, err
 	}

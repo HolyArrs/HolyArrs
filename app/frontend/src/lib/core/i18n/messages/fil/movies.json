@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Ihinto ang pagpapanatili ng Bersyong {label} ng pelikulang ito? Hindi gagalawin ang mga file sa disk.",
 	"movies.versions.removeFailed": "Hindi naalis ang Bersyon",
+	"movies.versions.deleteFile": "Burahin ang file",
+	"movies.versions.deleteFileConfirm": "Burahin ang {name}? Mapupunta ito sa Kamakailang binura, kung saan maibabalik mo ito.",
+	"movies.versions.deleteFileFailed": "Hindi mabura ang file",
 	"movies.versions.title": "Mga Bersyon",
 	"movies.versions.showLess": "Ipakita nang mas kaunti",
 	"movies.versions.seeAll": "Tingnan ang lahat ng {count}",

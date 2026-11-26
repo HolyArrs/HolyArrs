@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Stop keeping the {label} Version of this movie? Files on disk are not touched.",
 	"movies.versions.removeFailed": "Couldn't remove Version",
+	"movies.versions.deleteFile": "Delete file",
+	"movies.versions.deleteFileConfirm": "Delete {name}? It goes to Recently deleted, where you can restore it.",
+	"movies.versions.deleteFileFailed": "Couldn't delete the file",
 	"movies.versions.title": "Versions",
 	"movies.versions.showLess": "Show less",
 	"movies.versions.seeAll": "See all {count}",

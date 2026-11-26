@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "इस फ़िल्म का {label} वर्ज़न रखना बंद करें? डिस्क की फ़ाइलों को छुआ नहीं जाएगा।",
 	"movies.versions.removeFailed": "वर्ज़न हटाया नहीं जा सका",
+	"movies.versions.deleteFile": "फ़ाइल हटाएँ",
+	"movies.versions.deleteFileConfirm": "{name} हटाएँ? यह हाल ही में हटाए गए में जाएगी, जहाँ से आप इसे वापस ला सकते हैं।",
+	"movies.versions.deleteFileFailed": "फ़ाइल हटाई नहीं जा सकी",
 	"movies.versions.title": "वर्ज़न",
 	"movies.versions.showLess": "कम दिखाएं",
 	"movies.versions.seeAll": "सभी {count} देखें",

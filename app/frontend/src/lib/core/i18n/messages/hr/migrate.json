@@ -415,5 +415,7 @@
 	"migrate.nFound": "pronađeno {found}",
 	"migrate.readOnly": "Samo za čitanje",
 	"migrate.folderReadOnly": "HolyArrs ne može pisati u ovu mapu, pa se u nju ništa ne može uvesti. Omogućite pisanje u volumen (uklonite :ro) u Docker postavkama za HolyArrs, zatim ponovno stvorite spremnik.",
-	"migrate.someFound": "Pronađeno: {n}"
+	"migrate.someFound": "Pronađeno: {n}",
+	"migrate.sameSource": "isto kao {list}: jedan izvor",
+	"migrate.nameInApps": "{name} u {apps}"
 }

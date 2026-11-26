@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found}개 찾음",
 	"migrate.readOnly": "읽기 전용",
 	"migrate.folderReadOnly": "HolyArrs가 이 폴더에 쓸 수 없어서 아무것도 가져올 수 없어요. HolyArrs의 Docker 설정에서 볼륨을 쓰기 가능하게 바꾼 뒤(:ro 제거) 컨테이너를 다시 만드세요.",
-	"migrate.someFound": "{n}개 찾음"
+	"migrate.someFound": "{n}개 찾음",
+	"migrate.sameSource": "{list}와 같음: 소스 하나",
+	"migrate.nameInApps": "{apps}의 {name}"
 }

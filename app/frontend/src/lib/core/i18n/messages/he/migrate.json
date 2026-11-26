@@ -415,5 +415,7 @@
 	"migrate.nFound": "נמצאו {found}",
 	"migrate.readOnly": "לקריאה בלבד",
 	"migrate.folderReadOnly": "HolyArrs לא יכול לכתוב לתיקייה הזו, ולכן אי אפשר לייבא אליה דבר. הפכו את אמצעי האחסון לניתן לכתיבה (הסירו את :ro) בהגדרת ה-Docker של HolyArrs, ואז צרו מחדש את המכולה.",
-	"migrate.someFound": "נמצאו: {n}"
+	"migrate.someFound": "נמצאו: {n}",
+	"migrate.sameSource": "זהה ל-{list}: מקור אחד",
+	"migrate.nameInApps": "{name} ב-{apps}"
 }

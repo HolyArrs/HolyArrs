@@ -601,3 +601,37 @@ func TestApprovedShowAskSearchesAtOnce(t *testing.T) {
 		t.Fatalf("Search on approve off still queued %d", n)
 	}
 }
+
+// A show the anime ID lists know goes to the anime show folder, whatever
+// its genres say. Each anime folder must be a folder of its own kind.
+func TestAnimeShowAskGoesToTheAnimeFolder(t *testing.T) {
+	r := showRig(t)
+	ctx := context.Background()
+	movies, anime := animeFolder(t, r, "movie"), animeFolder(t, r, "show")
+	r.svc.AnimeMap = (&mapCounter{known: map[string]bool{"tmdb_tv:100": true}}).read
+	res, err := r.svc.AskShow(ctx, r.ana, "tmdb:100", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f := copies(t, r, *got.TitleID)[0].folder; f != anime {
+		t.Fatalf("mapped show in folder %d, want the anime folder %d", f, anime)
+	}
+	set, err := ReadSettings(ctx, r.st.Read())
+	if err != nil || set.AnimeLibraryFolderID != movies || set.ShowAnimeLibraryFolderID != anime {
+		t.Fatalf("read back %+v %v", set, err)
+	}
+	bad := set
+	bad.AnimeLibraryFolderID = anime
+	if err := SaveSettings(ctx, r.st, bad, domain.System); !errors.Is(err, library.ErrNotMovieFolder) {
+		t.Fatalf("a show folder for anime movies: %v", err)
+	}
+	bad = set
+	bad.ShowAnimeLibraryFolderID = movies
+	if err := SaveSettings(ctx, r.st, bad, domain.System); !errors.Is(err, library.ErrNotShowFolder) {
+		t.Fatalf("a movie folder for anime shows: %v", err)
+	}
+}

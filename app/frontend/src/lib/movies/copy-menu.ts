@@ -1,11 +1,17 @@
 // Which actions a movie copy's menu offers.
 
-export type CopyAction = 'edition' | 'protect' | 'unprotect' | 'keepAdd' | 'remove';
+export type CopyAction = 'edition' | 'protect' | 'unprotect' | 'keepAdd' | 'deleteFile' | 'remove';
 
-export function copyActions(version: { main: boolean }, file?: { Protected?: boolean } | null): CopyAction[] {
+export function copyActions(version: { main: boolean; look_only?: boolean }, file?: { Protected?: boolean; Origin?: string; State?: string } | null): CopyAction[] {
 	const out: CopyAction[] = file ? ['edition', file.Protected ? 'unprotect' : 'protect', 'keepAdd'] : [];
+	if (file && canDeleteFile(version, file)) out.push('deleteFile');
 	if (!version.main) out.push('remove');
 	return out;
+}
+
+// True when HolyArrs may delete this copy's file: not in a look-only Library folder, not protected, imported or adopted (never a file only found on disk), and on disk.
+export function canDeleteFile(version: { look_only?: boolean }, file: { Protected?: boolean; Origin?: string; State?: string }): boolean {
+	return !version.look_only && !file.Protected && file.Origin !== 'found' && file.State !== 'missing';
 }
 
 // The badges on a copy's card, each shown once.

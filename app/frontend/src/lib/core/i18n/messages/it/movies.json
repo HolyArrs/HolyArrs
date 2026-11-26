@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Smettere di tenere la Versione {label} di questo film? I file su disco non vengono toccati.",
 	"movies.versions.removeFailed": "Non sono riuscito a rimuovere la Versione",
+	"movies.versions.deleteFile": "Elimina file",
+	"movies.versions.deleteFileConfirm": "Eliminare {name}? Finirà in Eliminati di recente, da dove puoi ripristinarlo.",
+	"movies.versions.deleteFileFailed": "Impossibile eliminare il file",
 	"movies.versions.title": "Versioni",
 	"movies.versions.showLess": "Mostra meno",
 	"movies.versions.seeAll": "Vedi tutte le {count}",

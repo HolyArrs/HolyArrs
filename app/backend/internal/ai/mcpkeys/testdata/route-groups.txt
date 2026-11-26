@@ -29,6 +29,7 @@ DELETE /api/v1/never-add/{id} delete
 DELETE /api/v1/outside-lists/{id} delete
 DELETE /api/v1/own-traits/{id} delete
 DELETE /api/v1/pick-rules/{id} delete
+DELETE /api/v1/plugin-hooks/links/{user} delete
 DELETE /api/v1/plugins/{id} admin
 DELETE /api/v1/settings/old-app-api/keys/{side} admin
 DELETE /api/v1/settings/trakt-signin delete
@@ -216,6 +217,7 @@ GET /api/v1/pick-rules see
 GET /api/v1/pick-rules/{id} see
 GET /api/v1/plugin-hooks/downloader see
 GET /api/v1/plugin-hooks/events see
+GET /api/v1/plugin-hooks/links see
 GET /api/v1/plugin-hooks/metadata see
 GET /api/v1/plugin-hooks/pages see
 GET /api/v1/plugin-hooks/releases see

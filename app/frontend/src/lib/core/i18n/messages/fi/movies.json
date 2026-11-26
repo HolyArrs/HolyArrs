@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Lopetetaanko tämän elokuvan {label}-version ylläpito? Levyllä olevia tiedostoja ei kosketa.",
 	"movies.versions.removeFailed": "Versiota ei voitu poistaa",
+	"movies.versions.deleteFile": "Poista tiedosto",
+	"movies.versions.deleteFileConfirm": "Poistetaanko {name}? Se siirtyy kohtaan Äskettäin poistetut, josta voit palauttaa sen.",
+	"movies.versions.deleteFileFailed": "Tiedostoa ei voitu poistaa",
 	"movies.versions.title": "Versiot",
 	"movies.versions.showLess": "Näytä vähemmän",
 	"movies.versions.seeAll": "Näytä kaikki {count}",

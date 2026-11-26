@@ -54,6 +54,11 @@ type Settings struct {
 	FourKPickRulesID         int64 `json:"four_k_pick_rules_id"`
 	ShowFourKLibraryFolderID int64 `json:"show_four_k_library_folder_id"`
 	ShowFourKPickRulesID     int64 `json:"show_four_k_pick_rules_id"`
+	// AnimeLibraryFolderID is where an approved ask for an anime movie
+	// goes, in place of LibraryFolderID; ShowAnime... the same for shows.
+	// 0: anime goes where every other ask of its kind goes.
+	AnimeLibraryFolderID     int64 `json:"anime_library_folder_id"`
+	ShowAnimeLibraryFolderID int64 `json:"show_anime_library_folder_id"`
 	// PlexWatchlists lets people have their Plex watchlist asked for as
 	// them (each turns it on for themselves; off by default).
 	PlexWatchlists bool `json:"plex_watchlists"`
@@ -97,7 +102,8 @@ func (s Settings) PerWeekOf(kind string) int {
 var settingKeys = []string{"ask_movies_per_week", "ask_library_folder_id", "ask_pick_rules_id", "ask_search_on_approve",
 	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_plex_watchlists", "ask_plex_watchlists_everyone", "ask_plex_friends",
 	"ask_four_k_library_folder_id", "ask_four_k_pick_rules_id", "ask_show_four_k_library_folder_id", "ask_show_four_k_pick_rules_id", "ask_qualities", "ask_owner_auto_approve", "ask_pick_many",
-	"ask_streaming_region", "ask_streaming_services", "ask_skip_on_services"}
+	"ask_streaming_region", "ask_streaming_services", "ask_skip_on_services",
+	"ask_anime_library_folder_id", "ask_show_anime_library_folder_id"}
 
 // ReadSettings reads the Request settings (10 a week of each kind, search
 // on approve).
@@ -151,6 +157,10 @@ func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
 			s.ShowFourKLibraryFolderID = n
 		case "ask_show_four_k_pick_rules_id":
 			s.ShowFourKPickRulesID = n
+		case "ask_anime_library_folder_id":
+			s.AnimeLibraryFolderID = n
+		case "ask_show_anime_library_folder_id":
+			s.ShowAnimeLibraryFolderID = n
 		case "ask_qualities":
 			s.Qualities = parseQualities(v)
 		case "ask_owner_auto_approve":
@@ -216,7 +226,8 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 		id   int64
 		kind string
 		bad  error
-	}{{s.FourKLibraryFolderID, "movie", library.ErrNotMovieFolder}, {s.ShowFourKLibraryFolderID, "show", library.ErrNotShowFolder}} {
+	}{{s.FourKLibraryFolderID, "movie", library.ErrNotMovieFolder}, {s.ShowFourKLibraryFolderID, "show", library.ErrNotShowFolder},
+		{s.AnimeLibraryFolderID, "movie", library.ErrNotMovieFolder}, {s.ShowAnimeLibraryFolderID, "show", library.ErrNotShowFolder}} {
 		if f.id == 0 {
 			continue
 		}
@@ -266,7 +277,8 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), strconv.FormatBool(s.PlexWatchlists), strconv.FormatBool(s.PlexWatchlistsEveryone),
 			strconv.FormatBool(s.PlexFriends), strconv.FormatInt(s.FourKLibraryFolderID, 10), strconv.FormatInt(s.FourKPickRulesID, 10),
 			strconv.FormatInt(s.ShowFourKLibraryFolderID, 10), strconv.FormatInt(s.ShowFourKPickRulesID, 10), storeQualities(q), strconv.FormatBool(s.OwnerAutoApprove), strconv.FormatBool(s.PickMany),
-			s.StreamingRegion, storeServices(s.StreamingServices), strconv.FormatBool(s.SkipOnServices)}
+			s.StreamingRegion, storeServices(s.StreamingServices), strconv.FormatBool(s.SkipOnServices),
+			strconv.FormatInt(s.AnimeLibraryFolderID, 10), strconv.FormatInt(s.ShowAnimeLibraryFolderID, 10)}
 		for i, k := range settingKeys {
 			_, err := tx.Exec(saveSettingsSQL2,
 				k, vals[i], now, string(who), now, string(who))

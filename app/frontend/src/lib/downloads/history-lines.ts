@@ -197,6 +197,7 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 		case 'list_synced': return t(TAG.added, say('downloads.hl.addedList'));
 		case 'title_removed': return t(TAG.removed, join(say('downloads.hl.removedLib'), d.delete_files === true ? say('downloads.hl.filesDeleted') : say('downloads.hl.filesKept')));
 		case 'episodes_removed': return t(TAG.removed, withoutTitle(e.Summary, name) || say('downloads.hl.episodesRemoved'));
+		case 'movie_file_removed': return t(TAG.removed, withoutTitle(e.Summary, name) || say('downloads.hl.filesDeleted'));
 		case 'folder_scanned': {
 			const v = Array.isArray(d.versions) ? (d.versions as Record<string, unknown>[]) : [];
 			const none = v.length > 0 && v.every((x) => x.exists === false);

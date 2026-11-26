@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "On van les sol·licituds 4K aprovades i com es trien",
 	"settings.requests.fourKSameFolder": "Igual que les altres sol·licituds",
 	"settings.requests.fourKNamedRules": "La qualitat anomenada 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "On van les sol·licituds d'anime aprovades",
 	"settings.requests.choices": "Què pot demanar la gent",
 	"settings.requests.choicesDesc": "Els botons de qualitat de les fitxes de sol·licitud, en aquest ordre. Canvia'ls el nom o amaga'ls aquí; els nens reben el primer visible.",
 	"settings.requests.choiceShown": "Mostra a la gent",

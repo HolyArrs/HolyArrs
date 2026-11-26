@@ -304,7 +304,7 @@ func TestSiteSourceAdd(t *testing.T) {
 		Sites []Site `json:"sites"`
 	}
 	_ = json.Unmarshal(do(t, "GET", srv.URL+"/api/v1/sources/sites", "", 200), &sites)
-	if len(sites.Sites) != 4 {
+	if len(sites.Sites) != 5 {
 		t.Fatalf("sites %+v", sites)
 	}
 	var x SourceView
@@ -320,6 +320,10 @@ func TestSiteSourceAdd(t *testing.T) {
 	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"TCSV","format":"site","site":"torrentscsv"}`, 201), &x)
 	if x.UseFor.Feed || !x.UseFor.AutoSearch || !x.UseFor.HandSearch {
 		t.Fatalf("torrentscsv use_for %+v", x.UseFor)
+	}
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"YTS","format":"site","site":"yts"}`, 201), &x)
+	if x.Site != "yts" || x.URL != "https://movies-api.accel.li" || len(x.Kinds) != 1 || x.Kinds[0] != "movie" || x.Limits.GapMS != 2500 || !x.UseFor.Feed || !x.UseFor.AutoSearch || !x.UseFor.HandSearch {
+		t.Fatalf("yts defaults %+v", x)
 	}
 	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"site","site":"other"}`, 400)
 	do(t, "POST", srv.URL+"/api/v1/sources", `{"name":"Nope","format":"site","site":"knaben","protocol":"usenet"}`, 400)

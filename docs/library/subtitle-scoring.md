@@ -122,6 +122,7 @@ A better subtitle must score higher than the one it replaces.
 | OpenSubtitles.com | movies and shows | API key, user name and password | Searches use the key; downloads sign in. Matches by file hash, then IMDb or TMDB id, then name. Machine translations are left out. |
 | subdl | movies and shows | API key | Searches by TMDB id, IMDb id or name. The download count resets at midnight UTC. |
 | Gestdown | shows | none | Show subtitles from Addic7ed. |
+| Titlovi | movies and shows | none | Croatian, Serbian, Bosnian, Slovenian and Macedonian subtitles. Reads the public search page. Titlovi often blocks data-centre addresses, so HolyArrs has to run on a home connection. Serbian in Cyrillic is left out. A season pack is cut down to the episode you asked for. |
 | Podnapisi | movies and shows | none | Starts turned off because the site does not answer now. Turn it on when it does. |
 | NapiProjekt | movies and shows, Polish only | none | Matched by the video file's own hash, so it needs the file on disk. Only the hash is sent, over https. |
 | Napisy24 | movies and shows, Polish only | your user name and password | Matched by the video file's hash and size, so it needs the file on disk. |
