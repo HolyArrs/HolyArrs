@@ -312,10 +312,8 @@ func HTTPConnect(ctx context.Context, conn net.Conn, addr, user, pass string) er
 	if err != nil {
 		return err
 	}
-	// A 2xx answer has no body, whatever its headers say (RFC 9110 9.3.6);
-	// closing resp.Body would wait on a chunked or sized body that never comes.
+	resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
 		return errors.New("the proxy could not connect: " + resp.Status)
 	}
 	if br.Buffered() > 0 {
