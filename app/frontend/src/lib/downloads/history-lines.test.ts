@@ -68,6 +68,17 @@ describe('line 2', () => {
 		expect(eventText(ev('needs_decision', { Data: { reason: 'nothing could be placed; look at the import plan' } }), ctx).line).toBe('Nothing could be placed');
 		expect(eventText(ev('needs_decision', { Data: { reason: 'no file in the download matched an episode; match the files by hand' } }), ctx).line).toBe('No file in the download matched an episode');
 	});
+	it('says why a search failed when only the Summary has the reason', () => {
+		// The server writes the reason into the Summary and lists the Sources in Data.
+		const sources = [{ id: 1, name: 'Toloka', why: 'its tags (toloka) are not on this title' }];
+		const failed = ev('search_failed', { Summary: "no Source takes this title's tags: Toloka: its tags (toloka) are not on this title", Data: { sources } });
+		const line = eventText(failed, ctx).line;
+		expect(line).toMatch(/^Search failed · /);
+		expect(line).toContain('Toloka');
+		expect(line).toContain('toloka');
+		// A reason in Data still wins over the Summary.
+		expect(eventText(ev('search_failed', { Summary: 'something else', Data: { reason: 'no Source answered: A: not reachable' } }), ctx).line).not.toContain('something else');
+	});
 	it('says when a search passed over the folder tags', () => {
 		const note = "No Source this search can use has this folder's tags, so Sources without tags were asked too.";
 		expect(eventText(ev('search_done', { Summary: 'no Release passed the Pick rules (2 found, 2 refused)', Data: { sources_note: note } }), ctx).line).toContain(note);

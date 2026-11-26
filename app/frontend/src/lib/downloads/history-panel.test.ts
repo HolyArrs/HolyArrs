@@ -197,6 +197,18 @@ describe('a removal waiting on a Downloader that is down', () => {
 	});
 });
 
+describe('a failed search', () => {
+	it('shows why in the details, Source by Source', () => {
+		const summary = "no Source takes this title's tags: Mazepa: its tags (mazepa) are not on this title; Toloka: its tags (toloka) are not on this title";
+		const sources = [{ id: 2, name: 'Mazepa', why: 'its tags (mazepa) are not on this title' }, { id: 5, name: 'Toloka', why: 'its tags (toloka) are not on this title' }];
+		const v = panelView(one(ev('search_failed', { TitleID: 2, title_name: 'The Grinch', Summary: summary, Data: { sources } })), ctx);
+		expect(v.line).toBe('Search failed');
+		const why = v.facts.find((f) => f.label === 'Why')?.value ?? '';
+		expect(why).toContain('Mazepa');
+		expect(why).toContain('Toloka');
+	});
+});
+
 describe('a pick that passed over the folder tags', () => {
 	it('says so in the details', () => {
 		const note = "No Source this search can use has this folder's tags, so Sources without tags were asked too.";
