@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { pinned } from './attention-alerts.ts';
+import { pinned, pinnedSettings } from './attention-alerts.ts';
+import type { Attention } from './settings-status.ts';
 
 const pages = [{ href: '/settings/backups', label: 'Backups' }, { href: '/settings/library-folders', label: 'Library folders' }];
+
+const updateItem: Attention = { text: 'A newer HolyArrs is out', href: '/health', group: 'system', severity: 'warning' };
+const otherItem: Attention = { text: "Backups: Download your key kit: Backups don't include the master key", href: '/settings/backups', group: 'system', severity: 'warning' };
+
+describe('pinnedSettings', () => {
+	it('drops the update warning when the Update row says it', () => {
+		expect(pinnedSettings([updateItem, otherItem], true)).toEqual([otherItem]);
+	});
+
+	it('drops the versioned wording too ("HolyArrs 1.2 is out")', () => {
+		const versioned = { ...updateItem, text: 'HolyArrs 1.2 is out' };
+		expect(pinnedSettings([versioned, otherItem], true)).toEqual([otherItem]);
+	});
+
+	it('keeps the update warning when no Update row is shown', () => {
+		expect(pinnedSettings([updateItem, otherItem], false)).toEqual([updateItem, otherItem]);
+	});
+});
 
 describe('pinned', () => {
 	it('drops the page prefix and splits title from the next step', () => {

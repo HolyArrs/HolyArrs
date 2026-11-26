@@ -25,7 +25,7 @@
 	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
-	import { settingsNow, refreshSettingsStatus, needsAttention, dotReasons, DotList } from '#lib/alerts/index.ts';
+	import { settingsNow, refreshSettingsStatus, needsAttention, dotReasons, DotList, pinnedSettings } from '#lib/alerts/index.ts';
 	import { navigateWithTransition } from '#lib/core/motion.ts';
 	import { installPersonPrefetch, installHeroAhead, checkHero, installScrollBar, showBar, arrived, leaving } from '#lib/discover/index.ts';
 	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen, installArtistVideoPrefetch } from '#lib/music/index.ts';
@@ -323,8 +323,10 @@
 	const roleWord = $derived(({ owner: t('frame.layout.owner'), admin: t('frame.layout.admin'), member: t('frame.layout.member') } as Record<string, string>)[session.s.role] ?? t('frame.layout.member'));
 	// The display name from My account when set; else an id-like account name (preview-..., e2e-...) reads as "You".
 	const shownName = $derived(profile.displayName.trim() || personName(session.s.name, t('frame.layout.you')));
-	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
-	const openFixes = $derived((settingsAttention ? (settingsNow.answer?.items.length ?? 0) : 0) + (allowed('manage_library') ? decisionPins().length : 0) + (feedPins.update ? 1 : 0));
+	// The bell counts new alerts plus the pinned rows the panel shows: the Settings warnings
+	// still open (with the update warning dropped when the Update row says it), the downloads
+	// waiting for a decision, the Update row and the Clear now row.
+	const openFixes = $derived((settingsAttention ? pinnedSettings(settingsNow.answer?.items ?? [], !!feedPins.update).length : 0) + (allowed('manage_library') ? decisionPins().length : 0) + (feedPins.update ? 1 : 0) + (feedPins.clear ? 1 : 0));
 	// Request updates, failed downloads and a new version reach the bell from any page.
 	$effect(() => {
 		if (session.s.state !== 'signed_in') return;

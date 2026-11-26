@@ -10,6 +10,7 @@ export { stateWords } from './settings-status.ts';
 export { switchKind } from './kind.ts';
 export type { GroupState } from './settings-status.ts';
 export type { PinnedAlert } from './attention-alerts.ts';
+export { pinnedSettings } from './attention-alerts.ts';
 export { dotReasons } from './dot-reasons.ts';
 export type { DotReason } from './dot-reasons.ts';
 export type { CheckGroup } from './settings-status.svelte.ts';

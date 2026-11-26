@@ -12,6 +12,13 @@ export interface PinnedAlert {
 	run?: { label: string; go: () => Promise<void> };
 }
 
+// The Settings items the panel pins. The server's "A newer HolyArrs is out" says the same
+// as the pinned Update row, so it is dropped when that row is shown — the panel and the
+// bell both count from here, so they never disagree about how many pinned rows there are.
+export function pinnedSettings(items: Attention[], hasUpdateRow: boolean): Attention[] {
+	return items.filter((i) => !(hasUpdateRow && /newer holyarrs|holyarrs \S+ is out/i.test(i.text)));
+}
+
 // Server text looks like "Page: Title: next step". The page prefix is dropped because the button names it.
 export function pinned(items: Attention[], pages: { href: string; label: string }[]): PinnedAlert[] {
 	return items.map((i) => {

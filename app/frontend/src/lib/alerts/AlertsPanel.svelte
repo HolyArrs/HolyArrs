@@ -5,7 +5,7 @@
 	import AlertSymbol from './AlertSymbol.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { alertsPanel, toasts } from '../core/toasts.svelte.ts';
-	import { pinned, type PinnedAlert } from './attention-alerts.ts';
+	import { pinned, pinnedSettings, type PinnedAlert } from './attention-alerts.ts';
 	import { sections } from '../core/settings.ts';
 	import { settingsNow } from './settings-status.svelte.ts';
 	import { session } from '../core/session.svelte.ts';
@@ -22,8 +22,7 @@
 
 	const fixes = $derived([
 		...before,
-		// The server's "A newer HolyArrs is out" and "HolyArrs 1.2 is out" say the same as the Update row; show it once.
-		...(session.can('settings') ? pinned((settingsNow.answer?.items ?? []).filter((i) => !(before.some((b) => b.key === 'update') && /newer holyarrs|holyarrs \S+ is out/i.test(i.text))), sections) : []),
+		...(session.can('settings') ? pinned(pinnedSettings(settingsNow.answer?.items ?? [], before.some((b) => b.key === 'update')), sections) : []),
 		...after
 	]);
 
