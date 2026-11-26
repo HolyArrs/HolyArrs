@@ -489,6 +489,30 @@ describe('session', () => {
 		expect(c.csrf()).toBe('oidc-csrf');
 	});
 
+	it('asks for proof at the address the provider answers at, and comes back to the page it was asked on there', async () => {
+		const assign = vi.fn();
+		vi.stubGlobal('window', { location: { assign } });
+		vi.stubGlobal('sessionStorage', { setItem: vi.fn() });
+		try {
+			const answers = [{ 'POST /auth/oidc/start': json(200, { continue_at: 'https://media.example.test/login?sso=start&fresh=1' }) }, { 'POST /auth/oidc/start': json(200, { auth_url: 'https://id.example.test/authorize' }) }];
+			const me = { 'GET /auth/me': json(200, { name: 'ana', via: 'session', csrf: 'c', auth_method: 'oidc' }) };
+			const goto = vi.fn();
+			let s = createSession(server({ ...me, ...answers[0] }));
+			await s.load();
+			await s.signInAgain('/settings/users?x=1', goto, (p) => p);
+			expect(assign).toHaveBeenLastCalledWith('https://media.example.test/login?sso=start&fresh=1&next=%2Fsettings%2Fusers%3Fx%3D1');
+			expect(sessionStorage.setItem).not.toHaveBeenCalled();
+			s = createSession(server({ ...me, ...answers[1] }));
+			await s.load();
+			await s.signInAgain('/settings/users', goto, (p) => p);
+			expect(assign).toHaveBeenLastCalledWith('https://id.example.test/authorize');
+			expect(sessionStorage.setItem).toHaveBeenCalledWith('holyarrs-sso-next', '/settings/users');
+			expect(goto).not.toHaveBeenCalled();
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
 	it('does not let a stale initial load overwrite a finished OIDC sign-in', async () => {
 		let answerInitial!: (response: Response) => void;
 		const initialMe = new Promise<Response>((resolve) => (answerInitial = resolve));

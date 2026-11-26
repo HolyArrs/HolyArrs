@@ -2,6 +2,7 @@
 import { tick } from 'svelte';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 import { session } from '#lib/core/session.svelte.ts';
+import { safeNext } from './next.ts';
 import { plexSignIn } from './signin-plex.ts';
 import type { Way } from './signin-art.ts';
 
@@ -20,6 +21,19 @@ export function createSigninWays(ctx: any) {
 			ctx.failed(err);
 		} finally {
 			ssoFinishing = false;
+		}
+	}
+
+	// What single sign-on sent this page here for (?sso=).
+	function arrive(sso: string | null) {
+		if (sso === 'finish') return void finishOIDC();
+		if (sso === 'start') {
+			ctx.lastWay = 'oidc';
+			continueOIDC();
+		} else if (sso === 'failed' || sso === 'elsewhere') {
+			// 'elsewhere': the browser that came back is not the one that started (a home-screen app, an in-app browser), or it took too long.
+			ctx.lastWay = 'oidc';
+			ctx.error = t(sso === 'elsewhere' ? 'accounts.login.ssoElsewhere' : 'accounts.login.ssoFailed');
 		}
 	}
 
@@ -47,16 +61,36 @@ export function createSigninWays(ctx: any) {
 		plexRun = plexSignIn({ setup, waiting: (on) => (plexWaiting = on), done: ctx.took, failed: ctx.failed, timedOut: () => (ctx.error = t('accounts.security.plexTimeout')) });
 	}
 
-	async function oidc() {
+	// sent: this page was opened by the address the sign-in was pressed at (?sso=start), with fresh when it is a proof.
+	async function oidc(sent = false, fresh = false) {
 		ctx.error = '';
 		ctx.busy = true;
 		try {
-			const { auth_url } = await session.oidcStart();
-			window.location.assign(auth_url);
+			const { auth_url, continue_at } = await session.oidcStart(fresh);
+			if (auth_url) return window.location.assign(auth_url);
+			// The provider answers at another address of this server, and only a browser there can finish: go on there. Sent here already and still not there: stop, no loop.
+			if (!continue_at || sent) throw new Error(t('accounts.login.ssoFailed'));
+			window.location.assign(continue_at);
 		} catch (err) {
 			ctx.failed(err);
 			ctx.busy = false;
 		}
+	}
+
+	// Goes on with a single sign-on pressed at another address of this server, once.
+	function continueOIDC() {
+		const here = new URL(window.location.href);
+		const fresh = here.searchParams.get('fresh') === '1';
+		const next = here.searchParams.get('next');
+		try {
+			if (next) sessionStorage.setItem('holyarrs-sso-next', safeNext(next));
+		} catch {
+			// No storage: Home instead.
+		}
+		// Out of the address first, so Back from the provider or a reload does not start again.
+		for (const k of ['sso', 'fresh']) here.searchParams.delete(k);
+		history.replaceState(history.state, '', here.pathname + here.search);
+		void oidc(true, fresh);
 	}
 
 	async function forwardAuth() {
@@ -75,7 +109,7 @@ export function createSigninWays(ctx: any) {
 		get plexWaiting() { return plexWaiting; },
 		get ssoFinishing() { return ssoFinishing; },
 		stop: () => plexRun?.stop(),
-		finishOIDC,
+		arrive,
 		press,
 		cancelPlex,
 		plex,
