@@ -127,7 +127,7 @@
 	.meta { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--s-2); row-gap: var(--s-1); }
 	.signed { display: inline-flex; align-items: center; gap: var(--s-1); }
 	.acts { display: flex; flex-wrap: wrap; gap: var(--s-2); }
-	/* #698: the tag opens to say why there is no lock here, what that means, and where to read more. */
+	/* The tag opens to say why there is no lock here, what that means, and where to read more. */
 	.nolock { margin: 0; color: var(--wait); }
 	.nolock summary { display: inline-flex; align-items: center; gap: var(--s-1); cursor: pointer; min-height: 32px; }
 	.nolock p { margin: 4px 0; color: var(--text); }
