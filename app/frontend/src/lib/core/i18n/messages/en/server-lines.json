@@ -2466,5 +2466,8 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "it is longer than a HolyArrs pattern can be",
 	"server.migrate.already-in-the-library-the-quality": "already in the Library; the quality or release of {n} files was updated",
 	"server.migrate.imported-before-2": "imported before{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "its folder {dir} belongs to another movie in the Library"
+	"server.migrate.its-folder-belongs-to-another-movie": "its folder {dir} belongs to another movie in the Library",
+	"server.importer.it-plays-min-but-the-title": "it plays {n} min but the title runs {m} min; check it is the right one",
+	"server.importer.the-file-holds-no-video-track": "the file holds no video track",
+	"server.importer.the-first-audio-track-is-not": "the first audio track is {a}, not the title's {b}"
 }
