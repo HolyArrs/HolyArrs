@@ -174,6 +174,7 @@ anidb
 anidb_season
 anilist
 anime
+anime_library_folder_id
 anime_pattern
 answered
 apiKey
@@ -236,6 +237,7 @@ attention
 attributes
 attribution
 audio
+audio_channels
 audio_languages
 audio_tracks
 audio_unknown
@@ -471,6 +473,7 @@ data
 data_compat
 date
 dateAdded
+date_uploaded_unix
 dates
 day
 day_down
@@ -884,6 +887,7 @@ imdb
 imdbId
 imdbRating
 imdbVotes
+imdb_code
 imdb_id
 imdb_rating
 imdb_votes
@@ -1826,6 +1830,7 @@ share_limit_action
 share_ratio
 shelf
 show
+show_anime_library_folder_id
 show_colon
 show_days
 show_folder_pattern
@@ -2244,6 +2249,7 @@ versions
 via
 via_plugin
 videoDetails
+video_codec
 videoname
 videos
 view

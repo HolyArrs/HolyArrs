@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "অনুমোদিত 4K রিকোয়েস্ট কোথায় যায় আর কীভাবে বাছা হয়",
 	"settings.requests.fourKSameFolder": "অন্য রিকোয়েস্টের মতোই",
 	"settings.requests.fourKNamedRules": "4K নামের কোয়ালিটি",
+	"settings.requests.anime": "অ্যানিমে",
+	"settings.requests.animeDesc": "অনুমোদিত অ্যানিমে রিকোয়েস্ট কোথায় যায়",
 	"settings.requests.choices": "মানুষ কী রিকোয়েস্ট করতে পারে",
 	"settings.requests.choicesDesc": "রিকোয়েস্ট শিটে কোয়ালিটি বোতাম, এই ক্রমে। এখানে নাম বদলান বা লুকান; কিডরা প্রথম দেখানো বোতামটি পায়।",
 	"settings.requests.choiceShown": "মানুষকে দেখান",

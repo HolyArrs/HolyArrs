@@ -24,6 +24,8 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/plugin-page-files/{token}/{path...}":   webserver.NeedPublic, // a random short-lived token is the key
 	"GET /api/v1/plugin-stream/{token}":                 webserver.NeedSignedIn,
 	"POST /api/v1/plugin-hooks/link":                    webserver.NeedOwner, // a plugin token only; the handler refuses people
+	"GET /api/v1/plugin-hooks/links":                    webserver.NeedOwner, // a plugin token only; the handler refuses people
+	"DELETE /api/v1/plugin-hooks/links/{user}":          webserver.NeedOwner, // a plugin token only; the handler refuses people
 	"GET /api/v1/my/plugin-links":                       webserver.NeedSelf,
 	"POST /api/v1/my/plugin-links":                      webserver.NeedSelf,
 	"DELETE /api/v1/my/plugin-links/{plugin}":           webserver.NeedSelf,

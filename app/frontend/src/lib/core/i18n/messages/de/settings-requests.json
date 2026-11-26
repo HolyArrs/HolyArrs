@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Wohin genehmigte 4K-Anfragen gehen und wie sie gewählt werden",
 	"settings.requests.fourKSameFolder": "Wie andere Anfragen",
 	"settings.requests.fourKNamedRules": "Die Qualität namens 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Wohin genehmigte Anime-Anfragen gehen",
 	"settings.requests.choices": "Was angefragt werden kann",
 	"settings.requests.choicesDesc": "Die Qualitäts-Schaltflächen in den Anfragefenstern, in dieser Reihenfolge. Hier umbenennen oder ausblenden; Kinder bekommen die erste sichtbare.",
 	"settings.requests.choiceShown": "Allen zeigen",

@@ -653,7 +653,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	optional(jobs.Loop{Name: "plex_labels", Label: "Plex labels", Every: 15 * time.Minute, Run: media.LabelPass})        // only while the owner keeps it on
 	optional(jobs.Loop{Name: "default_tracks", Label: "Default tracks", Every: 15 * time.Minute, Run: media.TracksPass}) // only while the owner keeps it on
 	defer sender.Wait()
-	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
+	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub, AnimeMap: hosted.Service.AnimeMap}
 	readyCheck.Store(requestsSvc)
 	optional(jobs.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
 		requestsSvc.FillAskDetailsLater() // imported asks' names, until found
