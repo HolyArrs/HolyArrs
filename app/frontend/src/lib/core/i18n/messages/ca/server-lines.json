@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "envia {\"on\": true} o {\"on\": false}",
 	"server.library.deleted-of": "S'ha suprimit {relativepath} de {name}",
 	"server.importer.the-file-is-not-present-yet": "el fitxer encara no hi és; HolyArrs provarà d'importar-lo de nou",
-	"server.migrate.the-same-as-a-source-that": "el mateix que {name}, una Font que ja hi és"
+	"server.migrate.the-same-as-a-source-that": "el mateix que {name}, una Font que ja hi és",
+	"server.accounts.name-the-person-by-their-user": "identifica la persona pel seu identificador d'usuari",
+	"server.migrate.it-is-longer-than-a-holyarrs": "és més llarg del que pot ser un patró de HolyArrs"
 }

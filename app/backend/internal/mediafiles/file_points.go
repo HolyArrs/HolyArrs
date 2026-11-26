@@ -30,7 +30,11 @@ func ScoreFile(judge string, size int64, audio []string, rules PickRulesBody) Fi
 // ScoreTitleFile is ScoreFile for a file of Title t: language and year
 // tests read t's original language and year (CurrentOfTitleFile).
 func ScoreTitleFile(judge string, size int64, audio []string, t Title, rules PickRulesBody) FilePoints {
-	cur := CurrentOfTitleFile(judge, size, time.Time{}, audio, t, rules)
+	return filePoints(CurrentOfTitleFile(judge, size, time.Time{}, audio, t, rules), rules)
+}
+
+// filePoints lists the step, points and fitting traits of a file's Current.
+func filePoints(cur Current, rules PickRulesBody) FilePoints {
 	out := FilePoints{Step: cur.Step, GoodEnoughAt: rules.GoodEnoughAt, Points: cur.Points, GoodEnoughPoints: rules.GoodEnoughPoints, Traits: []TraitScore{}}
 	idx := stepIndex(rules, cur.Step)
 	out.StepReached = idx >= 0 && idx >= stepIndex(rules, rules.GoodEnoughAt)

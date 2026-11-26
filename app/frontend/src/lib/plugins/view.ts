@@ -380,6 +380,10 @@ export function forwards(p: { access?: { actions?: string[] | null } | null }): 
 	return !!p.access?.actions?.includes('network.forward');
 }
 
+// A plugin whose settings live on an app page is listed here; its manifest's own fields, when it declares any, open in the dialog instead.
+// Forwarding plugins (network.forward) open Remote access.
+export const settingsPage = (p: Plugin): string => (p.settings?.length ? '' : forwards(p) ? `/settings/remote-access?plugin=${encodeURIComponent(p.id)}` : '');
+
 /** The tile's small badge: only for installed plugins (and developer ones), so the directory stays calm. */
 export function pluginBadge(p: Plugin): string {
 	if (p.dev) return t('plugins.devBadge');

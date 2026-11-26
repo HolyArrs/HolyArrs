@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -94,13 +95,22 @@ func rejudgeVersionTx(ctx context.Context, tx *sql.Tx, versionID int64, by domai
 	return len(ch), err
 }
 
-// SetRecordedQualities stores the quality the old app recorded for each of
-// a title's present files (by file base name), reads each file's quality
-// again and lets the title's Slots swap to match. It returns how many
-// files it updated. A move calls it for titles it adopts and for titles
-// already here, so moving again after reading the old app updates them.
-func (s *Service) SetRecordedQualities(ctx context.Context, titleID int64, qualities map[string]string, by domain.Actor) (int, error) {
-	if len(qualities) == 0 {
+// OldRelease is what the old app recorded of the release one of its files
+// came from: the name it was downloaded as (Sonarr's and Radarr's scene
+// name) and its release group.
+type OldRelease struct {
+	Name  string `json:"name,omitempty"`
+	Group string `json:"group,omitempty"`
+}
+
+// SetRecordedFiles stores what the old app recorded for each of a title's
+// present files (by file base name): the quality, and for an adopted file
+// the release it came from. It reads each file's quality again and lets
+// the title's Slots swap to match. It returns how many files it updated. A
+// move calls it for titles it adopts and for titles already here, so
+// moving again after reading the old app updates them.
+func (s *Service) SetRecordedFiles(ctx context.Context, titleID int64, qualities map[string]string, releases map[string]OldRelease, by domain.Actor) (int, error) {
+	if len(qualities) == 0 && len(releases) == 0 {
 		return 0, nil
 	}
 	updated := 0
@@ -115,17 +125,22 @@ func (s *Service) SetRecordedQualities(ctx context.Context, titleID int64, quali
 				return err
 			}
 			for _, f := range files {
-				q := qualities[path.Base(f.RelativePath)]
-				if f.State != "present" || q == "" {
+				if f.State != "present" {
 					continue
 				}
-				if old, _ := f.MediaInfo[mediafiles.RecordedQualityKey].(string); old == q {
+				changed := takeOldRelease(&f, releases[path.Base(f.RelativePath)])
+				if q := qualities[path.Base(f.RelativePath)]; q != "" {
+					if old, _ := f.MediaInfo[mediafiles.RecordedQualityKey].(string); old != q {
+						if f.MediaInfo == nil {
+							f.MediaInfo = map[string]any{}
+						}
+						f.MediaInfo[mediafiles.RecordedQualityKey] = q
+						changed = true
+					}
+				}
+				if !changed {
 					continue
 				}
-				if f.MediaInfo == nil {
-					f.MediaInfo = map[string]any{}
-				}
-				f.MediaInfo[mediafiles.RecordedQualityKey] = q
 				if err := database.Update(tx, "files", &f, by); err != nil {
 					return err
 				}
@@ -138,4 +153,34 @@ func (s *Service) SetRecordedQualities(ctx context.Context, titleID int64, quali
 		return nil
 	})
 	return updated, err
+}
+
+// takeOldRelease gives an adopted File the release the old app recorded
+// for it, and says whether it changed anything. The old app's scene name
+// becomes the release name only while the File's release name is its own
+// file name (as adoption sets it) or empty: a name HolyArrs took from a
+// Release it downloaded is kept. The group is set only when the File has
+// none: the old app's, else the one its new release name names.
+func takeOldRelease(f *mediafiles.File, r OldRelease) bool {
+	if f.Origin != "adopted" || r == (OldRelease{}) {
+		return false
+	}
+	changed := false
+	base := strings.TrimSuffix(path.Base(f.RelativePath), path.Ext(f.RelativePath))
+	if r.Name != "" && (f.ReleaseName == nil || *f.ReleaseName == "" || *f.ReleaseName == base) && r.Name != base {
+		name := r.Name
+		f.ReleaseName = &name
+		changed = true
+	}
+	if f.Group == nil || *f.Group == "" {
+		g := r.Group
+		if g == "" && f.ReleaseName != nil {
+			g = releasename.Parse(*f.ReleaseName, releasename.Hints{}).Group.Value
+		}
+		if g != "" {
+			f.Group = &g
+			changed = true
+		}
+	}
+	return changed
 }
