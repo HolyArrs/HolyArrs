@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "开",
 	"accounts.account.previewsSlow": "较慢",
 	"accounts.account.previewsOff": "关",
+	"accounts.account.opensOn": "打开时显示",
+	"accounts.account.opensOnHint": "打开 HolyArrs 时看到的第一个页面",
 	"accounts.account.reco": "推荐",
 	"accounts.account.recoTip": "“探索”会根据你打开的内容学习，数据只留在这台服务器上。",
 	"accounts.account.recoHint": "“探索”会根据你打开的内容学习。",

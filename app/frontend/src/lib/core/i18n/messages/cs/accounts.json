@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Zapnuto",
 	"accounts.account.previewsSlow": "Pomaleji",
 	"accounts.account.previewsOff": "Vypnuto",
+	"accounts.account.opensOn": "Otevírá se na",
+	"accounts.account.opensOnHint": "První stránka, kterou uvidíte po otevření HolyArrs",
 	"accounts.account.reco": "Doporučení",
 	"accounts.account.recoTip": "Prozkoumat se učí z toho, co otevřete. Zůstává na tomto serveru.",
 	"accounts.account.recoHint": "Prozkoumat se učí z toho, co otevřete.",

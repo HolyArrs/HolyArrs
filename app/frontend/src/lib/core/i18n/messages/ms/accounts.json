@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Hidup",
 	"accounts.account.previewsSlow": "Lebih perlahan",
 	"accounts.account.previewsOff": "Mati",
+	"accounts.account.opensOn": "Dibuka pada",
+	"accounts.account.opensOnHint": "Halaman pertama yang anda lihat semasa membuka HolyArrs",
 	"accounts.account.reco": "Cadangan",
 	"accounts.account.recoTip": "Teroka belajar daripada apa yang anda buka. Kekal pada pelayan ini.",
 	"accounts.account.recoHint": "Teroka belajar daripada apa yang anda buka.",

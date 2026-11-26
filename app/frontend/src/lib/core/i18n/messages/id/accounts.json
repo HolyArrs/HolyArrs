@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Aktif",
 	"accounts.account.previewsSlow": "Lebih lambat",
 	"accounts.account.previewsOff": "Nonaktif",
+	"accounts.account.opensOn": "Terbuka di",
+	"accounts.account.opensOnHint": "Halaman pertama yang kamu lihat saat membuka HolyArrs",
 	"accounts.account.reco": "Rekomendasi",
 	"accounts.account.recoTip": "Jelajahi belajar dari yang kamu buka. Tetap di server ini.",
 	"accounts.account.recoHint": "Jelajahi belajar dari yang kamu buka.",

@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Bật",
 	"accounts.account.previewsSlow": "Chậm hơn",
 	"accounts.account.previewsOff": "Tắt",
+	"accounts.account.opensOn": "Mở tại",
+	"accounts.account.opensOnHint": "Trang đầu tiên bạn thấy khi mở HolyArrs",
 	"accounts.account.reco": "Gợi ý",
 	"accounts.account.recoTip": "Khám phá học từ những gì bạn mở. Dữ liệu ở lại trên máy chủ này.",
 	"accounts.account.recoHint": "Khám phá học từ những gì bạn mở.",

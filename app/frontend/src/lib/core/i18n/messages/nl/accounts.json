@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Aan",
 	"accounts.account.previewsSlow": "Trager",
 	"accounts.account.previewsOff": "Uit",
+	"accounts.account.opensOn": "Opent op",
+	"accounts.account.opensOnHint": "De eerste pagina die je ziet als je HolyArrs opent",
 	"accounts.account.reco": "Aanbevelingen",
 	"accounts.account.recoTip": "Ontdekken leert van wat je opent. Blijft op deze server.",
 	"accounts.account.recoHint": "Ontdekken leert van wat je opent.",

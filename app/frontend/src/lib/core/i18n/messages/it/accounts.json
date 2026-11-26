@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Attive",
 	"accounts.account.previewsSlow": "Più lente",
 	"accounts.account.previewsOff": "Disattivate",
+	"accounts.account.opensOn": "Si apre su",
+	"accounts.account.opensOnHint": "La prima pagina che vedi quando apri HolyArrs",
 	"accounts.account.reco": "Consigli",
 	"accounts.account.recoTip": "Esplora impara da quello che apri. Resta su questo server.",
 	"accounts.account.recoHint": "Esplora impara da quello che apri.",

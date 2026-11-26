@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Päällä",
 	"accounts.account.previewsSlow": "Hitaammin",
 	"accounts.account.previewsOff": "Pois",
+	"accounts.account.opensOn": "Avautuu sivulle",
+	"accounts.account.opensOnHint": "Ensimmäinen sivu, jonka näet avatessasi HolyArrsin",
 	"accounts.account.reco": "Suositukset",
 	"accounts.account.recoTip": "Tutki oppii siitä, mitä avaat. Pysyy tällä palvelimella.",
 	"accounts.account.recoHint": "Tutki oppii siitä, mitä avaat.",

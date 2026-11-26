@@ -300,6 +300,8 @@
   "accounts.account.previewsOn": "Kveikt",
   "accounts.account.previewsSlow": "Hægar",
   "accounts.account.previewsOff": "Slökkt",
+  "accounts.account.opensOn": "Opnast á",
+  "accounts.account.opensOnHint": "Fyrsta síðan sem þú sérð þegar þú opnar HolyArrs",
   "accounts.account.reco": "Tillögur",
   "accounts.account.recoTip": "Kanna lærir af því sem þú opnar. Helst á þessum þjóni.",
   "accounts.account.recoHint": "Kanna lærir af því sem þú opnar.",

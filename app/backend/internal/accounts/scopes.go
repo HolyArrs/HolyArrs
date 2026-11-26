@@ -283,6 +283,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/my/profile":                 webserver.NeedSignedIn,
 	"PUT /api/v1/my/profile":                 webserver.NeedSignedIn,
 	"PUT /api/v1/my/language":                webserver.NeedSignedIn,
+	"PUT /api/v1/my/opens-on":                webserver.NeedSignedIn,
 	// Language packs: anyone signed in may add one (signed text only); only the owner removes one.
 	"GET /api/v1/languages":                          webserver.NeedSignedIn,
 	"POST /api/v1/languages/{code}":                  webserver.NeedSignedIn,

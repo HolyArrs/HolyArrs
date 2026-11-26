@@ -303,7 +303,7 @@ func (a *Auth) me(w http.ResponseWriter, r *http.Request) {
 		"perms": who.Effective(), "two_factor": who.TwoFactor, "must_two_factor": who.MustTwoFactor, "auth_method": who.AuthMethod,
 		"local_recent": who.LocalRecent, "outside_recent": who.OutsideRecent, "setup_recent": who.SetupRecent, "recent_proof": RecentLocal(r), "setup_open": setupOpen, "setup_skipped": setupSkipped, "has_password": hasPw,
 		"avatar": a.avatarOf(r.Context(), who.UserID), "safe_mode": a.safeMode, "held": startup.FeaturesOff(), "max_rating": who.MaxRating, "rating_country": countryOr(who.RatingCountry),
-		"views": a.viewsOf(r.Context(), who.UserID), "hands_off": parts.HandsOff(r.Context(), a.s.Read())})
+		"views": a.viewsOf(r.Context(), who.UserID), "opens_on": a.opensOnOf(r.Context(), who.UserID), "hands_off": parts.HandsOff(r.Context(), a.s.Read())})
 }
 
 type outsideProofKey struct{}

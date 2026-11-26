@@ -658,6 +658,7 @@
   "PUT /api/v1/media-servers/{id}",
   "PUT /api/v1/my/alerts",
   "PUT /api/v1/my/language",
+  "PUT /api/v1/my/opens-on",
   "PUT /api/v1/my/plex-watchlist",
   "PUT /api/v1/my/profile",
   "PUT /api/v1/my/views",

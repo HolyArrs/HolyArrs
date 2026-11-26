@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Açık",
 	"accounts.account.previewsSlow": "Daha yavaş",
 	"accounts.account.previewsOff": "Kapalı",
+	"accounts.account.opensOn": "Açılış sayfası",
+	"accounts.account.opensOnHint": "HolyArrs'ı açtığında gördüğün ilk sayfa",
 	"accounts.account.reco": "Öneriler",
 	"accounts.account.recoTip": "Keşfet açtıklarından öğrenir. Bu sunucuda kalır.",
 	"accounts.account.recoHint": "Keşfet açtıklarından öğrenir.",

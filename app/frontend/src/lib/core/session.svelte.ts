@@ -16,6 +16,7 @@ export type Role = 'owner' | 'admin' | 'member';
 export type Perm = 'ask' | 'auto_approve' | 'auto_approve_four_k' | 'approve' | 'manage_library' | 'settings';
 export type Way = 'password' | 'plex' | 'jellyfin' | 'emby' | 'oidc' | 'forward_auth';
 export type AuthMethod = string;
+export type OpensOn = 'home' | 'explore';
 
 export interface Me {
 	id?: number;
@@ -40,6 +41,7 @@ export interface Me {
 	rating_country?: string;
 	held?: string[];
 	views?: Record<string, unknown>;
+	opens_on?: string;
 	// Hands-off mode: HolyArrs only sends to the Downloader and needs no Library folder.
 	hands_off?: boolean;
 }
@@ -94,6 +96,8 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		setupOpen: boolean;
 		/** The owner skipped the rest of first-run setup; a Finish setup card offers it again. */
 		setupSkipped: boolean;
+		/** The page the app opens on, picked in My account. */
+		opensOn: OpensOn;
 		avatar: string | null;
 		maxRating: string;
 		ways: Way[];
@@ -122,6 +126,7 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		hasPassword: true,
 		setupOpen: false,
 		setupSkipped: false,
+		opensOn: 'home',
 		avatar: null,
 		maxRating: '',
 		ways: ['password'],
@@ -186,6 +191,7 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		s.hasPassword = me.has_password ?? true;
 		s.setupOpen = !!me.setup_open;
 		s.setupSkipped = !!me.setup_skipped;
+		s.opensOn = me.opens_on === 'explore' ? 'explore' : 'home';
 		s.avatar = me.avatar ?? null;
 		s.maxRating = me.max_rating ?? '';
 		s.safeMode = !!me.safe_mode;
@@ -213,6 +219,7 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		s.hasPassword = true;
 		s.setupOpen = false;
 		s.setupSkipped = false;
+		s.opensOn = 'home';
 		s.avatar = null;
 		s.maxRating = '';
 		s.handsOff = false;
@@ -437,6 +444,10 @@ export function createSession(client: Client = defaultClient, views: Pick<typeof
 		},
 		setAvatar(url: string | null) {
 			s.avatar = url;
+		},
+		// My account saved a new opening page.
+		setOpensOn(p: OpensOn) {
+			s.opensOn = p;
 		}
 	};
 }

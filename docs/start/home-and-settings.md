@@ -33,6 +33,17 @@ After setup, Home shows:
 
 Home updates by itself. If a card says **Could not read**, press **Try again**.
 
+## Open on Explore instead
+
+Each person picks the page HolyArrs opens on. Open **My account**, find **Preferences** and set **Opens on** to **Home** or **Explore**. It starts on **Home** and follows you to every device.
+
+With **Explore** picked, opening HolyArrs or signing in goes to Explore. A link to another page still opens that page, and **Home** in the menu still opens Home.
+
+HolyArrs still opens on Home while something waits for you there:
+
+- the welcome for someone who just joined, until they close it
+- the owner's setup steps, until setup is finished
+
 ## The menu
 
 | Group | Pages |

@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Sees",
 	"accounts.account.previewsSlow": "Aeglasemalt",
 	"accounts.account.previewsOff": "Väljas",
+	"accounts.account.opensOn": "Avaneb lehel",
+	"accounts.account.opensOnHint": "Esimene leht, mida HolyArrsi avades näed",
 	"accounts.account.reco": "Soovitused",
 	"accounts.account.recoTip": "Avasta õpib sellest, mida avad. Jääb sellesse serverisse.",
 	"accounts.account.recoHint": "Avasta õpib sellest, mida avad.",

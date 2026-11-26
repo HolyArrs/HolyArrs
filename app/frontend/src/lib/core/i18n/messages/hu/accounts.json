@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Be",
 	"accounts.account.previewsSlow": "Lassabban",
 	"accounts.account.previewsOff": "Ki",
+	"accounts.account.opensOn": "Ezen nyílik meg",
+	"accounts.account.opensOnHint": "Az első oldal, amelyet a HolyArrs megnyitásakor lát",
 	"accounts.account.reco": "Ajánlások",
 	"accounts.account.recoTip": "A Felfedezés abból tanul, amit megnyit. Ezen a szerveren marad.",
 	"accounts.account.recoHint": "A Felfedezés abból tanul, amit megnyit.",

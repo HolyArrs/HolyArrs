@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "চালু",
 	"accounts.account.previewsSlow": "ধীরে",
 	"accounts.account.previewsOff": "বন্ধ",
+	"accounts.account.opensOn": "যেখানে খোলে",
+	"accounts.account.opensOnHint": "HolyArrs খুললে প্রথম যে পাতাটি দেখেন",
 	"accounts.account.reco": "সুপারিশ",
 	"accounts.account.recoTip": "এক্সপ্লোর আপনি যা খোলেন তা থেকে শেখে। এই সার্ভারেই থাকে।",
 	"accounts.account.recoHint": "এক্সপ্লোর আপনি যা খোলেন তা থেকে শেখে।",

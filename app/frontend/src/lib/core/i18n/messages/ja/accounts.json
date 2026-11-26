@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "オン",
 	"accounts.account.previewsSlow": "遅め",
 	"accounts.account.previewsOff": "オフ",
+	"accounts.account.opensOn": "開くページ",
+	"accounts.account.opensOnHint": "HolyArrs を開いたときに最初に表示されるページ",
 	"accounts.account.reco": "おすすめ",
 	"accounts.account.recoTip": "探索は、あなたが開いたものから学習します。このサーバー内にとどまります。",
 	"accounts.account.recoHint": "探索は、あなたが開いたものから学習します。",

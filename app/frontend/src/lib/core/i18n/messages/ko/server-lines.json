@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "HolyArrs 패턴이 가질 수 있는 길이보다 깁니다",
 	"server.migrate.already-in-the-library-the-quality": "이미 라이브러리에 있습니다. 파일 {n}개의 품질 또는 릴리스를 업데이트했습니다",
 	"server.migrate.imported-before-2": "이전에 가져옴{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "폴더 {dir}은(는) 라이브러리의 다른 영화에 속해 있습니다"
+	"server.migrate.its-folder-belongs-to-another-movie": "폴더 {dir}은(는) 라이브러리의 다른 영화에 속해 있습니다",
+	"server.accounts.pick-home-or-explore": "홈 또는 둘러보기를 선택하세요"
 }

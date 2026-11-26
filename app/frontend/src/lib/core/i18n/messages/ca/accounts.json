@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Activades",
 	"accounts.account.previewsSlow": "Més lentes",
 	"accounts.account.previewsOff": "Desactivades",
+	"accounts.account.opensOn": "S'obre a",
+	"accounts.account.opensOnHint": "La primera pàgina que veus quan obres HolyArrs",
 	"accounts.account.reco": "Recomanacions",
 	"accounts.account.recoTip": "Explora aprèn del que obres. Es queda en aquest servidor.",
 	"accounts.account.recoHint": "Explora aprèn del que obres.",

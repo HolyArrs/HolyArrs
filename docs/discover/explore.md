@@ -6,7 +6,7 @@ level: Start
 
 Find titles to ask for or add, in rows built from your own Library and asks.
 
-Open **Explore** in the menu (`http://your-server:6262/explore`).
+Open **Explore** in the menu (`http://your-server:6262/explore`). To have HolyArrs open on Explore, set **My account > Opens on** to **Explore**. See [Home and Settings](../start/home-and-settings.md#open-on-explore-instead).
 
 ## Find something to ask for
 
