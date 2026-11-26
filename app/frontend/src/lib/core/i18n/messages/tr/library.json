@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Bazı klasörler geçmedi. Onları sahiplenmek için yeniden tara; Kütüphanede zaten olan klasörler olduğu gibi kalır.",
 	"library.import.scanAgain": "Yeniden tara",
 	"library.import.keepOpen": "Bitene kadar bu sayfayı açık tut.",
+	"library.import.closeOk": "Sunucuda çalışır, bu yüzden bu sayfayı kapatabilirsin.",
 	"library.import.waiting": "Meta veri sunucusu meşgul. HolyArrs kalan son {left} öğeyi {min} dk sonra yeniden dener.",
 	"library.import.leaveAsk": "Bir içe aktarma çalışıyor. Bu sayfadan ayrılırsan henüz gönderilmemiş klasörler sahiplenilmez. Yine de ayrılmak istiyor musun?",
 	"library.import.interrupted": "Bir içe aktarma, sayfası kapandığında {total} klasörün {done} tanesinde durdu. Kalanı sahiplenmek için yeniden tara; zaten sahiplenilmiş klasörler olduğu gibi kalır.",
