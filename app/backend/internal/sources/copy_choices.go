@@ -80,7 +80,8 @@ func audioChoiceVerdict(need []string, original string, p releasename.Result, v 
 	}
 	have := slices.Clone(p.Languages)
 	unclear := p.Has("multi") && !p.Has("multi_known") || p.Has("dual") && len(have) == 0
-	if (len(have) == 0 || p.Has("dual")) && original != "" {
+	// A MULTi the Source describes still carries the original audio next to its listed languages.
+	if (len(have) == 0 || p.Has("dual") || p.Has("multi_known")) && original != "" {
 		have = append(have, original)
 	}
 	// A language names never show (the reader does not know it) cannot be clearly missing.
