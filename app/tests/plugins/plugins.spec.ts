@@ -993,7 +993,7 @@ for (const [width, height] of [[1280, 800], [390, 844]]) {
 	test(`plugins: card Install on a developer plugin uses dev-install at ${width}`, async ({ browser }) => {
 		const page = await (await browser.newContext({ viewport: { width, height } })).newPage();
 		await signIn(page, owner());
-		const ov = { ...fake, blocklist_stale: false, dev_mode: true, dev_dir: '/config/plugins/_dev', plugins: [{ id: 'subtitle-log', version: '0.1.0', installed: false, running: false, enabled: false, dev: true, access: { hosts: [], folders: [], actions: [] } }] };
+		const ov = { ...fake, blocklist_stale: false, dev_mode: true, dev_dir: '/config/plugins/_dev', plugins: [{ id: 'subtitle-log', version: '0.1.0', installed: false, running: false, enabled: false, dev: true, access: { hosts: [], folders: [], actions: [] } }, { id: 'broken-dev', version: '0.1.0', installed: false, running: false, enabled: false, dev: true, dev_error: 'plugin.json is missing', access: { hosts: [], folders: [], actions: [] } }] };
 		const calls: string[] = [];
 		await page.route('**/api/v1/plugins**', async (route) => {
 			const r = route.request();
@@ -1005,6 +1005,8 @@ for (const [width, height] of [[1280, 800], [390, 844]]) {
 		await page.locator('[data-testid="plugin-row"][data-id="subtitle-log"]').getByTestId('plugin-card-install').click();
 		await expect.poll(() => calls).toContain('POST /api/v1/plugins/subtitle-log/dev-install');
 		expect(calls).not.toContain('POST /api/v1/plugins/subtitle-log/install');
+		// One whose files can't be read can't be installed from the card either.
+		await expect(page.locator('[data-testid="plugin-row"][data-id="broken-dev"]').getByTestId('plugin-card-install')).toBeDisabled();
 		await noSidewaysScroll(page);
 		await page.context().close();
 	});
