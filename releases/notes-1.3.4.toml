@@ -5,7 +5,9 @@ images = [
 ]
 docs_url = ""
 known_issues = []
-security = []
+security = [
+  "Thanks to Andreas Døhl for reporting the signing-key gap fixed in 1.3.2. (#839)",
+]
 credits = [
   {github = "ArChAnG3LsFuRy", link = "https://github.com/HolyArrs/HolyArrs/issues/874", issues = [874]},
   {github = "kusogejp", link = "https://github.com/HolyArrs/HolyArrs/issues/769", issues = [769]},

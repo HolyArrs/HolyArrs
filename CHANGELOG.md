@@ -14,6 +14,8 @@ All notable changes to HolyArrs are listed here. The format follows [Keep a Chan
 - Removing an artist stops its running refresh. ([#805](https://github.com/HolyArrs/HolyArrs/issues/805))
 - Sync fix only retimes subtitles HolyArrs saved. ([#837](https://github.com/HolyArrs/HolyArrs/issues/837))
 - Who watched what opens when two accounts share a name. ([#734](https://github.com/HolyArrs/HolyArrs/issues/734))
+### Security
+- Thanks to Andreas Døhl for reporting the signing-key gap fixed in 1.3.2. ([#839](https://github.com/HolyArrs/HolyArrs/pull/839))
 
 ## [1.3.3] - 2026-11-26
 ### Fixed
