@@ -15,6 +15,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 )
 
 // defaultPluginListURL serves the signed plugin list, blocklist and files.
@@ -24,6 +25,7 @@ const defaultPluginListURL = "https://plugins.holyarrs.com/"
 // enabled plugins and the blocklist check; they stop when ctx ends.
 func startPlugins(ctx context.Context, c config, key []byte, appVersion string, reg *hooks.Registry, sender *alerts.Sender) *plugins.Engine {
 	pe := newPluginEngine(c)
+	sources.PluginDownloadTypes = pe.DownloadTypes
 	if sender != nil {
 		// A plugin that was stopped catches up on what it missed.
 		pe.Replay = func(ctx context.Context, events []string, after int64, limit int) []plugins.Replayed {

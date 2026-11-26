@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd 用户名",
 	"settings.downloaders.sabPass": "SABnzbd 密码",
 	"settings.downloaders.keyWrongLogin": "SABnzbd 不接受这个用户名和密码。",
-	"settings.downloaders.keyNotFound": "无法读取密钥。请用“获取密钥”并从那里复制。"
+	"settings.downloaders.keyNotFound": "无法读取密钥。请用“获取密钥”并从那里复制。",
+	"settings.downloaders.pluginKind": "插件"
 }

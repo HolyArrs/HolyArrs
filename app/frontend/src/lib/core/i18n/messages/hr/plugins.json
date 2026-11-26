@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Potpisani dodaci ovdje rade bez zaključavanja datoteka. Ostala sigurnosna ograničenja ostaju uključena.",
 	"plugins.noLockOffNow": "Dodaci ostaju zaustavljeni dok sustav nema zaključavanje datoteka.",
 	"plugins.noLockChange": "Promijeni",
+	"plugins.noLockLearn": "Kako radi zaključavanje datoteka dodataka",
 	"plugins.noLockTag": "Nema zaključavanja datoteka na ovom sustavu",
 	"plugins.noLockKeptOff": "Dodaci ostaju zaustavljeni bez zaključavanja datoteka",
 	"plugins.secAccess": "Ima pristup",

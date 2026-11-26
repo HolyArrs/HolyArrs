@@ -207,6 +207,12 @@ func (s *Service) CachePoster(ctx context.Context, titleID int64, poster string,
 		return
 	}
 	art := `["poster:` + name + `"]`
+	// The public address goes to outside services (a Discord thumbnail);
+	// only an https one is kept.
+	public := ""
+	if strings.HasPrefix(src, "https://") {
+		public = src
+	}
 	changed := false
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
 		// A title that had a poster and gets another one changed its cover
@@ -216,7 +222,7 @@ func (s *Service) CachePoster(ctx context.Context, titleID int64, poster string,
 			return err
 		}
 		res, err := tx.Exec("UPDATE titles SET artwork = ?, poster_url = ?, updated_at = ?, updated_by = ? WHERE id = ? AND (artwork != ? OR poster_url != ?)",
-			art, src, database.FormatTime(s.now()), ActorText(by), titleID, art, src)
+			art, public, database.FormatTime(s.now()), ActorText(by), titleID, art, public)
 		if err != nil {
 			return err
 		}

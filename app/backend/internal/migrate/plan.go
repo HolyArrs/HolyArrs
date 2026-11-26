@@ -20,6 +20,13 @@ type builder struct {
 	folders  []FolderPlan      // every folder planned (for title placement)
 	presets  map[string]string // app + profile id -> preset
 	imported map[string]bool   // Pick rules names made from a profile, not ready-made
+	// fourK says, per app profile, whether its cutoff aims for 2160p;
+	// titleSrc keeps the read each planned title's copy came from, so a
+	// second Radarr's 4K copy of a movie merges into one title.
+	fourK    map[string]bool
+	titleSrc map[string]titleCopy
+	// unplaced keeps a movie copy that could not be placed, by title key.
+	unplaced map[string]unplacedCopy
 	// snapRules are the Pick rules made from the current Snapshot's
 	// profiles; its default wait goes into them.
 	snapRules  []*RulesPlan
@@ -34,6 +41,7 @@ type builder struct {
 	listNames map[string]bool // Outside list names planned (lower case)
 	app       Kind
 	snapID    int64
+	addr      string // the current read's app address
 	noFormats bool
 	rename    bool // the owner chose NamesRename
 	// label names the app's address after its rule names when more than
@@ -158,7 +166,7 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 	p := &Plan{covered: map[string]bool{}, Snapshots: []int64{}, Apps: []string{}, NotMoved: []NotMoved{}, NeedsInput: []string{}, Paths: []string{}}
 	b := &builder{p: p, rules: ch.PathRules, skip: map[string]bool{}, items: map[string]*Group{}, keys: map[string]bool{},
 		presets: map[string]string{}, imported: map[string]bool{}, noFormats: ch.NoFormats, rename: ch.Names == NamesRename, titles: map[string]string{}, planned: map[string]bool{}, personRefs: map[string]string{}, choices: ch.People,
-		waits: map[string][]waitFrom{}, listNames: map[string]bool{}}
+		waits: map[string][]waitFrom{}, listNames: map[string]bool{}, fourK: map[string]bool{}, titleSrc: map[string]titleCopy{}, unplaced: map[string]unplacedCopy{}}
 	for _, s := range ch.Skip {
 		b.skip[s] = true
 	}
@@ -199,7 +207,7 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 		if x.Snap == nil {
 			continue
 		}
-		b.app, b.snapID, b.label = x.Snap.Kind, x.ID, ""
+		b.app, b.snapID, b.label, b.addr = x.Snap.Kind, x.ID, "", strings.ToLower(strings.TrimRight(x.Snap.Address, "/"))
 		if len(copies[x.Snap.Kind]) > 1 {
 			b.label = instanceLabel(x.Snap.Address)
 		}
@@ -207,6 +215,8 @@ func BuildPlan(in []Input, ch Choices) *Plan {
 		p.Apps = append(p.Apps, string(x.Snap.Kind))
 		b.snapshot(x.Snap)
 	}
+	b.fourKClashes()
+	b.dropUnmergedFiles()
 	b.waitItems()
 	b.pathMaps()
 	p.NeedsInput = noteList(p.NeedsInput)

@@ -226,16 +226,17 @@ func (s *slimSeasons) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// slimFile is a movie's file: its name and recorded quality.
+// slimFile is a movie's file: its name, recorded quality and the release
+// it came from (scene name and group).
 type slimFile struct {
-	ID, RelativePath, Quality any
-	ok                        bool
+	ID, RelativePath, Quality, SceneName, ReleaseGroup any
+	ok                                                 bool
 }
 
 func (f *slimFile) UnmarshalJSON(b []byte) error {
-	var v struct{ ID, RelativePath, Quality any }
+	var v struct{ ID, RelativePath, Quality, SceneName, ReleaseGroup any }
 	if decodeNumbers(b, &v) == nil {
-		f.ID, f.RelativePath, f.Quality, f.ok = v.ID, v.RelativePath, v.Quality, true
+		f.ID, f.RelativePath, f.Quality, f.SceneName, f.ReleaseGroup, f.ok = v.ID, v.RelativePath, v.Quality, v.SceneName, v.ReleaseGroup, true
 	}
 	return nil
 }
@@ -264,7 +265,14 @@ func (t *slimTitle) row() map[string]any {
 		m["seasons"] = ss
 	}
 	if t.MovieFile != nil && t.MovieFile.ok {
-		m["moviefile"] = map[string]any{"id": t.MovieFile.ID, "relativepath": t.MovieFile.RelativePath, "quality": t.MovieFile.Quality}
+		f := map[string]any{"id": t.MovieFile.ID, "relativepath": t.MovieFile.RelativePath, "quality": t.MovieFile.Quality}
+		if t.MovieFile.SceneName != nil {
+			f["scenename"] = t.MovieFile.SceneName
+		}
+		if t.MovieFile.ReleaseGroup != nil {
+			f["releasegroup"] = t.MovieFile.ReleaseGroup
+		}
+		m["moviefile"] = f
 	}
 	return m
 }
@@ -305,7 +313,7 @@ func decodeNumbers(b []byte, v any) error {
 // file and episode lists; an episode is kept when it has a file or is
 // switched off.
 func keepEpisodeFile(m map[string]any) map[string]any {
-	return pick(m, []string{"id", "relativepath", "quality"})
+	return pick(m, []string{"id", "relativepath", "quality", "scenename", "releasegroup"})
 }
 
 func keepEpisode(m map[string]any) map[string]any {

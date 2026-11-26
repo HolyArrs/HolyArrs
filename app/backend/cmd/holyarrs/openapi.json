@@ -6924,6 +6924,16 @@
           "release_gate": {
             "type": "string"
           },
+          "season_choice": {
+            "description": "Shows only.",
+            "enum": [
+              "all",
+              "future",
+              "latest",
+              "none"
+            ],
+            "type": "string"
+          },
           "tags": {
             "description": "Routes the title's grabs and searches to the Downloaders and Sources that share one. Lowercase labels (#108); spaces become '-', at most 20 of 40 characters. Not sent: kept; an empty list clears them.",
             "items": {
@@ -25566,6 +25576,30 @@
           }
         },
         "summary": "Set a title's picture from a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/botcheck": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A job, or 204 when none came"
+          }
+        },
+        "summary": "Next bot-check page for a plugin to open",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Answer taken"
+          }
+        },
+        "summary": "Answer a bot-check page",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"

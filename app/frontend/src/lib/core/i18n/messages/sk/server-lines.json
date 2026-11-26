@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "pošli {\"on\": true} alebo {\"on\": false}",
 	"server.library.deleted-of": "Odstránený {relativepath} z {name}",
 	"server.importer.the-file-is-not-present-yet": "súbor tu ešte nie je; HolyArrs ho skúsi importovať znova",
-	"server.migrate.the-same-as-a-source-that": "to isté ako {name}, Zdroj, ktorý tu už je"
+	"server.migrate.the-same-as-a-source-that": "to isté ako {name}, Zdroj, ktorý tu už je",
+	"server.accounts.name-the-person-by-their-user": "označ osobu jej ID používateľa",
+	"server.migrate.it-is-longer-than-a-holyarrs": "je dlhší, než môže byť vzor HolyArrs"
 }

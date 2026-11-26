@@ -157,6 +157,8 @@ type Plugin struct {
 	IconURL     string `json:"icon_url,omitempty"`
 	Details
 	Access *Access `json:"access"`
+	// DownloadTypes are the download types the plugin brings itself.
+	DownloadTypes []string `json:"download_types,omitempty"`
 	// ReachesApp is true when the plugin is handed this server's own address.
 	ReachesApp bool `json:"reaches_app"`
 	// InstallStep is the step of an install under way: downloading,
@@ -200,7 +202,7 @@ type Plugin struct {
 func (p *Plugin) show(m *Manifest) {
 	p.Name, p.Author, p.Description, p.Icon, p.IconURL, p.Details = m.Name, m.Author, m.Description, m.Icon, m.IconURL, m.Details
 	a := m.Access
-	p.Access = &a
+	p.Access, p.DownloadTypes = &a, m.DownloadTypes
 }
 
 // Overview is the answer of the plugin list route.
@@ -230,8 +232,8 @@ type Overview struct {
 	// the page just shows no plugins.
 	ListBad bool `json:"list_bad"`
 	// DevMode is on when the owner runs unsigned plugins from DevDir.
-	DevMode bool     `json:"dev_mode"`
-	DevDir  string   `json:"dev_dir,omitempty"`
+	DevMode bool   `json:"dev_mode"`
+	DevDir  string `json:"dev_dir,omitempty"`
 	// LanguagePacks are the language packs' download numbers, when known;
 	// that card is not a listed plugin.
 	LanguagePacks *Stat    `json:"language_packs,omitempty"`
@@ -303,7 +305,13 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 	stats := e.stats()
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	// Scopes an installed plugin was granted outside its manifest (the 1.3.0 upgrade's network.forward for an old
+	// Tailscale): they count for the install groups and their red warnings too.
+	kept := map[string][]string{}
 	for id, in := range st.Plugins {
+		if in.Approval != nil {
+			kept[id] = in.Approval.Kept
+		}
 		p, ok := rows[id]
 		if !ok {
 			p = &Plugin{ID: id, Version: in.Version}
@@ -334,7 +342,7 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 	for _, id := range order {
 		rows[id].InstallStep, rows[id].InstallError = e.steps[id], e.fails[id]
 		rows[id].ReachesApp = e.Forwards != nil && e.Forwards(id)
-		rows[id].ScopeGroups = scopeGroups(rows[id].Access)
+		rows[id].ScopeGroups = scopeGroups(withKept(rows[id].Access, kept[id]))
 		if s, ok := stats[id]; ok {
 			s := s
 			rows[id].Stats = &s

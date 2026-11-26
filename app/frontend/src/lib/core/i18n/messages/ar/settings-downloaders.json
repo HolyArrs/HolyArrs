@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "اسم مستخدم SABnzbd",
 	"settings.downloaders.sabPass": "كلمة مرور SABnzbd",
 	"settings.downloaders.keyWrongLogin": "لم يقبل SABnzbd اسم المستخدم وكلمة المرور هذين.",
-	"settings.downloaders.keyNotFound": "تعذّرت قراءة المفتاح. استخدم احصل على المفتاح وانسخه من هناك."
+	"settings.downloaders.keyNotFound": "تعذّرت قراءة المفتاح. استخدم احصل على المفتاح وانسخه من هناك.",
+	"settings.downloaders.pluginKind": "إضافة"
 }

@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "送信: {\"on\": true} または {\"on\": false}",
 	"server.library.deleted-of": "{name} の {relativepath} を削除しました",
 	"server.importer.the-file-is-not-present-yet": "ファイルはまだありません。HolyArrs がもう一度取り込みを試みます",
-	"server.migrate.the-same-as-a-source-that": "{name} と同じで、すでにあるソースです"
+	"server.migrate.the-same-as-a-source-that": "{name} と同じで、すでにあるソースです",
+	"server.accounts.name-the-person-by-their-user": "ユーザーIDで相手を指定してください",
+	"server.migrate.it-is-longer-than-a-holyarrs": "HolyArrs のパターンの上限より長すぎます"
 }

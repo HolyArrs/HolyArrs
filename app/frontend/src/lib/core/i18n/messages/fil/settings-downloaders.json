@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Username ng SABnzbd",
 	"settings.downloaders.sabPass": "Password ng SABnzbd",
 	"settings.downloaders.keyWrongLogin": "Hindi tinanggap ng SABnzbd ang username at password na iyon.",
-	"settings.downloaders.keyNotFound": "Hindi mabasa ang key. Gamitin ang Kunin ang key at kopyahin ito mula roon."
+	"settings.downloaders.keyNotFound": "Hindi mabasa ang key. Gamitin ang Kunin ang key at kopyahin ito mula roon.",
+	"settings.downloaders.pluginKind": "Plugin"
 }

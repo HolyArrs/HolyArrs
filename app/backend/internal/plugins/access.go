@@ -568,6 +568,20 @@ func (e *Engine) GrantedScopes(id string) []string {
 	return out
 }
 
+// DownloadTypes are the download types the installed version of id brings; none
+// when it is not installed.
+func (e *Engine) DownloadTypes(id string) []string {
+	if e.init() != nil {
+		return nil
+	}
+	p, err := e.installed(id)
+	m := e.readManifest(id)
+	if err != nil || m == nil || m.Version != p.Version {
+		return nil
+	}
+	return m.DownloadTypes
+}
+
 // GrantedFolders are the real folders the owner gave id, when its current
 // approval covers what it asks for; none otherwise.
 func (e *Engine) GrantedFolders(id string) []string {

@@ -750,6 +750,9 @@ func (im *Importer) recordByHand(ctx context.Context, r *ByHandResult, src, targ
 	e := &domain.Event{Actor: by, Kind: "import_done", TitleID: &titleID, SlotID: &slotID, Summary: "Imported by hand: " + filepath.Base(target),
 		Data:     map[string]any{"import_id": imp.ID, "by_hand": true, "from": src, "slot_ids": []int64{slotID}, "placed_by": r.PlacedBy, "fell_back": r.FellBack, "paths": planPaths(imp.Plan)},
 		GroupKey: "slot:" + strconv.FormatInt(slotID, 10)}
+	if rec.old != nil {
+		im.markUpgrade(ctx, e.Data, map[int64]int64{rec.old.ID: r.FileID})
+	}
 	if im.Store.AddEvent(ctx, e) == nil {
 		im.publish("event", e)
 	}

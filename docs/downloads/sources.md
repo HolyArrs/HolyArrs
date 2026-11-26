@@ -93,7 +93,7 @@ A failing Source is retried by itself: after 1 minute at first, then at double t
 | HolyArrs could not reach the Source | Check that Jackett, Prowlarr or the site is running and the address and port are right |
 | The answer is not a feed HolyArrs can read | The address is not a Torznab or Newznab feed. Copy it again |
 | The Source asked HolyArrs to slow down | Wait, or raise **Least time between calls** under **Limits** |
-| The site has a bot check | Add the site to Jackett or Prowlarr and link it |
+| The site has a bot check | Add the site to Jackett or Prowlarr and link it, or install a bot-check plugin. A Source with a key needs its key typed again after the plugin is installed or changed |
 | Prowlarr will not link | Set a HolyArrs password first. Check Prowlarr can reach the address on the card |
 | Another app stopped working after linking Prowlarr | You replaced a key. Give that app the new key |
 

@@ -20,7 +20,8 @@ type ScopeGroup struct {
 // they seem to, or "".
 func scopeWarning(scope string) string {
 	switch {
-	case scope == "network.forward" || strings.HasPrefix(scope, "network."):
+	case scope == "network.forward" || strings.HasPrefix(scope, "network.") || scope == "sources.botcheck":
+		// A bot-check solver opens the Source's own page address, key and all.
 		return "forward"
 	case strings.HasPrefix(scope, "sources.downloader"):
 		return "downloader"
@@ -68,4 +69,20 @@ func scopeGroups(a *Access) []ScopeGroup {
 		}
 	}
 	return out
+}
+
+// withKept is a's scopes plus the kept ones it lacks (granted at an upgrade,
+// not in the manifest), as a copy; a is never changed.
+func withKept(a *Access, kept []string) *Access {
+	if a == nil || len(kept) == 0 {
+		return a
+	}
+	c := *a
+	c.Actions = slices.Clone(a.Actions)
+	for _, k := range kept {
+		if !slices.Contains(c.Actions, k) {
+			c.Actions = append(c.Actions, k)
+		}
+	}
+	return &c
 }

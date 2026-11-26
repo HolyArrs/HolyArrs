@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "siųsk {\"on\": true} arba {\"on\": false}",
 	"server.library.deleted-of": "Ištrintas {relativepath} iš {name}",
 	"server.importer.the-file-is-not-present-yet": "failo dar nėra; HolyArrs bandys jį importuoti dar kartą",
-	"server.migrate.the-same-as-a-source-that": "tas pats kaip {name}, Šaltinis, kuris jau yra"
+	"server.migrate.the-same-as-a-source-that": "tas pats kaip {name}, Šaltinis, kuris jau yra",
+	"server.accounts.name-the-person-by-their-user": "nurodyk asmenį pagal jo naudotojo ID",
+	"server.migrate.it-is-longer-than-a-holyarrs": "jis ilgesnis, nei gali būti HolyArrs šablonas"
 }

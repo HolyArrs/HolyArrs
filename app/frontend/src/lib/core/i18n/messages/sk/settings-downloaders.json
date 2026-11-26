@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Používateľské meno SABnzbd",
 	"settings.downloaders.sabPass": "Heslo SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd neprijal toto používateľské meno a heslo.",
-	"settings.downloaders.keyNotFound": "Kľúč sa nepodarilo prečítať. Použite Získať kľúč a skopírujte ho odtiaľ."
+	"settings.downloaders.keyNotFound": "Kľúč sa nepodarilo prečítať. Použite Získať kľúč a skopírujte ho odtiaľ.",
+	"settings.downloaders.pluginKind": "Doplnok"
 }
