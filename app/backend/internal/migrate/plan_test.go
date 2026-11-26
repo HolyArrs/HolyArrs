@@ -71,7 +71,7 @@ func fullSnapshots() []Input {
 		Profiles: []SubtitleProfile{{ID: 1, Name: "Main", Languages: []SubtitleLanguage{{Language: "en"}, {Language: "es", HI: true}}}, {ID: 2, Name: "Anime"}},
 		Providers: []Provider{{Name: "podnapisi", Kind: "podnapisi"}, {Name: "opensubtitlescom", Kind: "opensubtitlescom", NeedsReentry: []string{"password"}}, {Name: "addic7ed", Kind: "addic7ed"},
 			{Name: "yifysubtitles", Kind: "yifysubtitles"}, {Name: "tvsubtitles", Kind: "tvsubtitles"}, {Name: "bsplayer", Kind: "bsplayer"}, {Name: "subf2m", Kind: "subf2m"},
-			{Name: "napiprojekt", Kind: "napiprojekt"}, {Name: "napisy24", Kind: "napisy24"}},
+			{Name: "napiprojekt", Kind: "napiprojekt"}, {Name: "napisy24", Kind: "napisy24"}, {Name: "titlovi", Kind: "titlovi"}},
 		Defaults: map[string]any{"movie_default_profile": int64(1), "use_embedded_subs": true}}}
 	qbit := &Snapshot{Kind: QBittorrent, Downloader: &Downloader{Host: "10.0.0.5", Port: 8080, Username: "admin", NeedsPassword: true, SavePath: "/downloads",
 		Categories: []Category{{Name: "radarr", Path: "/downloads/radarr"}}}}
@@ -342,7 +342,7 @@ func TestPlanMapsEachGroup(t *testing.T) {
 	if n, ok := notMoved(p, "bazarr subtitles.providers[2]"); !ok || !strings.Contains(n.Why, "Gestdown") {
 		t.Fatalf("addic7ed %+v", n)
 	}
-	for _, k := range []string{"yifysubtitles", "tvsubtitles", "bsplayer", "napiprojekt"} {
+	for _, k := range []string{"yifysubtitles", "tvsubtitles", "bsplayer", "napiprojekt", "titlovi"} {
 		if it := item(t, p, GroupSubtitles, "subtitle_site:"+k); it.Subtitles.SiteKind != k {
 			t.Fatalf("%s %+v", k, it)
 		}
@@ -574,9 +574,9 @@ func TestPlanTagScope(t *testing.T) {
 		if !strings.Contains(it.Detail, "only for titles tagged ") || !strings.Contains(it.Detail, " there; here it serves every movie title") {
 			t.Errorf("%s detail %q", c.key, it.Detail)
 		}
-		want := "HolyArrs has no tags; check it before you resume it"
+		want := "the import does not bring tags over; check it before you resume it"
 		if c.group == GroupAlerts {
-			want = "HolyArrs has no tags; check it before you turn it on"
+			want = "the import does not bring tags over; check it before you turn it on"
 		}
 		if n, ok := notMoved(p, c.from+".tags"); !ok || n.Group != c.group || n.Why != want {
 			t.Errorf("%s tag line %+v", c.key, n)
@@ -598,7 +598,7 @@ func TestPlanTagScope(t *testing.T) {
 		}
 	}
 	if n, _ := notMoved(p, "radarr delay_profiles[0]"); n.What != "wait before grabbing (tags: kids)" ||
-		n.Why != "applied only to titles tagged kids; HolyArrs has no tags, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not imported; set them on a copy of the Pick rules if those titles need them" {
+		n.Why != "applied only to titles tagged kids; the import does not bring tags over, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not imported; set them on a copy of the Pick rules if those titles need them" {
 		t.Errorf("tagged delay %+v", n)
 	}
 	// With no quality profile read, the default rule has no Pick rules to go to.
@@ -736,7 +736,7 @@ func TestPlanDefaultWait(t *testing.T) {
 	if it.Detail != "from the default wait rule of radarr: prefer usenet, Usenet 0 min, torrent 120 min" {
 		t.Errorf("detail %q", it.Detail)
 	}
-	if n, ok := notMoved(p, "radarr delay_profiles[0]"); !ok || !strings.HasPrefix(n.Why, "applied only to titles tagged anime; HolyArrs has no tags, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not imported") {
+	if n, ok := notMoved(p, "radarr delay_profiles[0]"); !ok || !strings.HasPrefix(n.Why, "applied only to titles tagged anime; the import does not bring tags over, so its waits (prefer torrent, Usenet 30 min, torrent 0 min) were not imported") {
 		t.Errorf("tagged rule %+v", n)
 	}
 
@@ -1013,5 +1013,18 @@ func TestPlanEveryDownloaderKind(t *testing.T) {
 	}
 	if n, ok := notMoved(p, "sonarr download_clients[5]"); !ok || n.Why != "HolyArrs talks to qBittorrent, Transmission, Deluge, rTorrent, aria2, SABnzbd and NZBGet only" {
 		t.Fatalf("vuze: %+v", n)
+	}
+}
+
+// HolyArrs has tags (titles, Downloaders, Sources); what the import leaves
+// behind is the old app's tags, and the reason says so.
+func TestPlanTagsLeftBehindReason(t *testing.T) {
+	s := &Snapshot{Kind: Radarr, Tags: []Tag{{ID: 1, Label: "kids"}}, Folders: []Folder{{Path: "/movies"}},
+		Titles: []Title{{Kind: "movie", Name: "The Matrix", Year: 1999, IDs: map[string]string{"tmdb": "603"}, Path: "/movies/The Matrix (1999)", Folder: "/movies", Tags: []string{"kids"}}}}
+	p := BuildPlan([]Input{{ID: 1, Snap: s}}, Choices{})
+	for _, from := range []string{"radarr tags[0]", "radarr titles.tags"} {
+		if n, ok := notMoved(p, from); !ok || n.Why != "the import does not bring tags over" {
+			t.Errorf("%s: %+v %v", from, n, ok)
+		}
 	}
 }

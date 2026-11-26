@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "افزودن دانلودر",
 	"downloads.hl.noUsenetDl": "هیچ دانلودر Usenet تنظیم نشده است",
 	"downloads.hl.noTorrentDl": "هیچ دانلودر تورنت تنظیم نشده است",
+	"downloads.problem.waitingForFiles": "در انتظار فایل‌ها",
 	"downloads.problem.importBlocked": "وارد کردن مسدود شد",
 	"downloads.problem.missingArticles": "مقاله‌های گم‌شده",
 	"downloads.problem.noFullCopy": "نسخه کامل وجود ندارد",

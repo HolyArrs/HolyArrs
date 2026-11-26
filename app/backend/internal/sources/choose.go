@@ -104,14 +104,14 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 			if ids, album := s.albumSearchSlots(ctx, rel); len(ids) > 0 {
 				return s.chooseMany(ctx, rel, ids, nil, true, force, []string{"its name did not match " + album + "; it was found searching for it"}, by)
 			}
-			// Picked from a season's Choose a release although its year did not match the show: it goes to the episodes it names, with force.
+			// Picked from a season's Choose a release although its year did not match the show, or its name is the show's plus a site's lead word, a release tag or its group: it goes to the episodes it names, with force.
 			// Nothing is sent when it holds another season or no episode would gain, even with force.
-			ids, skipped, show, wider := s.showSearchSlots(ctx, rel)
+			ids, skipped, why, wider := s.showSearchSlots(ctx, rel)
 			switch {
 			case wider:
 				return Choice{}, &NeedsForceError{Reasons: []string{"it holds more than this season; pick it from a search of the whole show or leave it"}}
 			case len(ids) > 0:
-				return s.chooseMany(ctx, rel, ids, skipped, false, force, []string{"its year did not match " + show + "; it was found searching for it"}, by)
+				return s.chooseMany(ctx, rel, ids, skipped, false, force, why, by)
 			case len(skipped) > 0:
 				return Choice{}, &NeedsForceError{Reasons: []string{"nothing would gain: " + strings.Join(skipped, "; ")}}
 			}

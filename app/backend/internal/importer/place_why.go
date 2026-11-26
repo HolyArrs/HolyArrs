@@ -43,7 +43,7 @@ const SlowReadWhy = "reading the download folder took too long; try again"
 // be imported again. So can one that matched no file: by hand finds nothing
 // in a download that holds only archives.
 func CanImportAgain(reason string) bool {
-	return reason == noMovieWhy || reason == noTrackWhy || reason == noEpisodeWhy || reason == notThereWhy || reason == noReadWhy || reason == noWriteWhy || reason == gaveUpWhy || reason == SlowReadWhy || strings.Contains(reason, "HOLYARRS_SAVE_PATH")
+	return reason == noMovieWhy || reason == noTrackWhy || reason == noEpisodeWhy || FilesPending(reason) || reason == noReadWhy || reason == noWriteWhy || reason == gaveUpWhy || reason == SlowReadWhy || strings.Contains(reason, "HOLYARRS_SAVE_PATH")
 }
 
 // goneWhy is the reason for a file that is not there: the path pair and the
@@ -145,6 +145,10 @@ func episodeNotPlacedWhy(root string, s mediafiles.PlanStep, r mediafiles.PlaceR
 func episodeRefusedWhy(root, label string, why []string) string {
 	lead := "the file for " + label + " could not be placed: "
 	switch {
+	case slices.Contains(why, NotPresentYetWhy):
+		return NotPresentYetWhy
+	case slices.Contains(why, CopyingWhy):
+		return CopyingWhy
 	case slices.Contains(why, noReadCheckWhy):
 		return noReadWhy
 	case slices.Contains(why, notInFolderWhy) && goneWhy(root) == notThereWhy:
@@ -173,6 +177,10 @@ func notPlacedWhy(root string, plan []mediafiles.PlanStep, res []mediafiles.Plac
 	}
 	for _, s := range plan {
 		switch {
+		case slices.Contains(s.Why, NotPresentYetWhy):
+			return NotPresentYetWhy
+		case slices.Contains(s.Why, CopyingWhy):
+			return CopyingWhy
 		case slices.Contains(s.Why, noReadCheckWhy):
 			return noReadWhy
 		case slices.Contains(s.Why, notInFolderWhy):
@@ -191,6 +199,9 @@ func notPlacedWhy(root string, plan []mediafiles.PlanStep, res []mediafiles.Plac
 // up on a passing fault. A permission, a setting or a match by hand waits
 // for a person.
 func RetriesOnItsOwn(reason string) bool {
+	if FilesPending(reason) {
+		return true
+	}
 	switch reason {
 	case notThereWhy, gaveUpWhy, SlowReadWhy:
 		return true

@@ -21,9 +21,13 @@ func TestSourceMultiLanguages(t *testing.T) {
 		{"Movie.Title.2019.1080p.BluRay.x264-GRP", fr, nil},
 		{"Movie.Title.2019.German.1080p.BluRay.x264-GRP", fr, []string{"de"}},
 	} {
-		got := Parse(c.name, Hints{MultiLanguages: c.multi}).Languages
-		if !slices.Equal(got, c.want) {
-			t.Errorf("%s with %v: languages %v, want %v", c.name, c.multi, got, c.want)
+		r := Parse(c.name, Hints{MultiLanguages: c.multi})
+		if !slices.Equal(r.Languages, c.want) {
+			t.Errorf("%s with %v: languages %v, want %v", c.name, c.multi, r.Languages, c.want)
+		}
+		// Only a MULTi name read with the Source's list has known languages.
+		if known := r.Has("multi") && len(c.multi) > 0; r.Has("multi_known") != known {
+			t.Errorf("%s with %v: multi_known %v, want %v", c.name, c.multi, r.Has("multi_known"), known)
 		}
 	}
 }
