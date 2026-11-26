@@ -138,11 +138,16 @@ func LookingSlotsOfTitle(ctx context.Context, q database.Lister, titleID int64, 
 // TitlesLooking lists the active Titles that have a Slot in one of three
 // states, by sort name.
 func TitlesLooking(ctx context.Context, q database.Lister, states [3]string) ([]Title, error) {
-	return database.Select[Title](ctx, q, "titles", `state = 'active' AND EXISTS (
-		SELECT 1 FROM items i JOIN slots sl ON sl.item_id = i.id
-		JOIN versions v ON v.id = sl.version_id
-		WHERE i.title_id = titles.id AND sl.state IN (?, ?, ?) AND NOT `+LookOnlySQL+`) ORDER BY sort_name, id`, states[0], states[1], states[2])
+	return database.Select[Title](ctx, q, "titles", titlesLookingWhere, states[0], states[1], states[2])
 }
+
+// titlesLookingWhere reads the looking Slots once, as a list of Title ids.
+// A subquery tied to each Title made SQLite walk every wanted Slot once per
+// Title, which took half a minute on a large library.
+const titlesLookingWhere = `state = 'active' AND id IN (
+		SELECT i.title_id FROM slots sl JOIN items i ON i.id = sl.item_id
+		JOIN versions v ON v.id = sl.version_id
+		WHERE sl.state IN (?, ?, ?) AND NOT ` + LookOnlySQL + `) ORDER BY sort_name, id`
 
 // LookingRuleTags maps each Title with a Slot in one of these states to the
 // tags of the Pick rules those Slots use.
