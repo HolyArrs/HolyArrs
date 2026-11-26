@@ -7,7 +7,7 @@
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
-	import { airWords, epFile, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
+	import { addedOn, airWords, epFile, fileLangs as langs, pathEnd, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
 	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, chosenWhy, type SheetEpisode } from '#lib/shows/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone, FilePoints } from '#lib/downloads/index.ts';
 	import { leftInDownloader, qualityBadges, ShowDeleteDialog, standInFolder, splitSteps, TitleHeldCopies, type RenameStep } from '#lib/mediafiles/index.ts';
@@ -193,8 +193,6 @@
 		}
 	}
 
-	const pathEnd = (p: string) => p.split(/[\\/]+/).filter(Boolean).slice(-2).join('/');
-
 	const folderName = (f: LibraryFolder) => (kindFolders.filter((x) => x.label === f.label).length > 1 ? pathEnd(f.path) : f.label);
 
 	const folderMenu = $derived<MenuItem[]>(kindFolders.map((f) => ({ label: folderName(f), checked: f.id === owned?.library_folder_id, onselect: () => { if (f.id !== owned?.library_folder_id) moveTo = f; } })));
@@ -313,9 +311,7 @@
 	const libFiles = $derived((owned?.kind === 'show' ? ownFiles : (owned?.slots ?? [])).map((x) => {
 		const f = x.file as Record<string, any>;
 		const m = (f?.MediaInfo ?? {}) as Record<string, any>;
-		const langs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 'string' && v ? v.split(/[\/,]/) : []).map((s) => String(s).trim().toUpperCase()).filter(Boolean).slice(0, 6);
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
-		const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
 		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, left: leftInDownloader(x), state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: copyBadges(qualityBadges([f]), m.edition ? String(m.edition) : '', f?.Protected ? t('mediafiles.copy.protectedBadge') : ''), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 

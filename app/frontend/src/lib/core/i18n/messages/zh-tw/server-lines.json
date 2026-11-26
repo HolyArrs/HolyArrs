@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "傳送 {\"on\": true} 或 {\"on\": false}",
 	"server.library.deleted-of": "已刪除 {name} 的 {relativepath}",
 	"server.importer.the-file-is-not-present-yet": "檔案還不在；HolyArrs 會再次嘗試匯入",
-	"server.migrate.the-same-as-a-source-that": "與 {name} 相同，這裡已有此來源"
+	"server.migrate.the-same-as-a-source-that": "與 {name} 相同，這裡已有此來源",
+	"server.accounts.name-the-person-by-their-user": "請用使用者 ID 指定此人",
+	"server.migrate.it-is-longer-than-a-holyarrs": "長度超過了 HolyArrs 模式的上限"
 }
