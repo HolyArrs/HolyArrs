@@ -242,6 +242,7 @@
 	"requests.add.folder": "Carpeta de la Biblioteca",
 	"requests.add.rules": "Reglas de elección",
 	"requests.add.rulesHint": "Qué lanzamientos cuentan y cuál es el mejor.",
+	"requests.add.tags": "Etiquetas",
 	"requests.add.keep": "Mantener al día",
 	"requests.add.search": "Buscar al añadir",
 	"requests.add.more": "Mantener también una segunda Versión",

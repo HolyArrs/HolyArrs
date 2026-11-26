@@ -238,6 +238,7 @@
 	"requests.add.folder": "Priečinok Knižnice",
 	"requests.add.rules": "Pravidlá výberu",
 	"requests.add.rulesHint": "Ktoré Vydania sa počítajú a ktoré je najlepšie.",
+	"requests.add.tags": "Štítky",
 	"requests.add.keep": "Udržiavať aktuálne",
 	"requests.add.search": "Hľadať po pridaní",
 	"requests.add.more": "Udržiavať aj druhú Verziu",

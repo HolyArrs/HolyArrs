@@ -242,6 +242,7 @@
 	"requests.add.folder": "مجلد المكتبة",
 	"requests.add.rules": "قواعد الاختيار",
 	"requests.add.rulesHint": "أي الإصدارات تُحتسب، وأيها الأفضل.",
+	"requests.add.tags": "الوسوم",
 	"requests.add.keep": "مواكبة الجديد",
 	"requests.add.search": "ابحث عند الإضافة",
 	"requests.add.more": "أبقِ أيضًا نسخة ثانية",

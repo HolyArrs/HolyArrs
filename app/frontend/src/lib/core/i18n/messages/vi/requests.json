@@ -238,6 +238,7 @@
 	"requests.add.folder": "Thư mục thư viện",
 	"requests.add.rules": "Quy tắc chọn",
 	"requests.add.rulesHint": "Những Bản phát hành nào được tính, và cái nào tốt nhất.",
+	"requests.add.tags": "Thẻ",
 	"requests.add.keep": "Luôn cập nhật",
 	"requests.add.search": "Tìm khi được thêm",
 	"requests.add.more": "Cũng giữ một Phiên bản thứ hai",

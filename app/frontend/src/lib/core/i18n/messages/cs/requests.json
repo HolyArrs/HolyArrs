@@ -238,6 +238,7 @@
 	"requests.add.folder": "Složka knihovny",
 	"requests.add.rules": "Pravidla výběru",
 	"requests.add.rulesHint": "Která release se počítají a které je nejlepší.",
+	"requests.add.tags": "Štítky",
 	"requests.add.keep": "Udržovat aktuální",
 	"requests.add.search": "Hledat při přidání",
 	"requests.add.more": "Udržovat i druhou Verzi",

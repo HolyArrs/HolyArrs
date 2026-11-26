@@ -238,6 +238,7 @@
 	"requests.add.folder": "Фасцикла библиотеке",
 	"requests.add.rules": "Правила избора",
 	"requests.add.rulesHint": "Која Издања се рачунају и које је најбоље.",
+	"requests.add.tags": "Ознаке",
 	"requests.add.keep": "Одржавај ажурним",
 	"requests.add.search": "Тражи кад је додато",
 	"requests.add.more": "Одржавај и другу Верзију",

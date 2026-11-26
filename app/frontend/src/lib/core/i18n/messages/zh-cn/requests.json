@@ -242,6 +242,7 @@
 	"requests.add.folder": "媒体库文件夹",
 	"requests.add.rules": "挑选规则",
 	"requests.add.rulesHint": "哪些资源可以接受，以及哪个最好。",
+	"requests.add.tags": "标签",
 	"requests.add.keep": "持续追踪",
 	"requests.add.search": "添加时搜索",
 	"requests.add.more": "再保留第二个版本",

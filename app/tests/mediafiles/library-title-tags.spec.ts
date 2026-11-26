@@ -52,3 +52,15 @@ test('Tags typed on a movie’s Library tab are saved on the title, and a tag ta
 	await page.getByTestId('tags-row').getByRole('button', { name: 'Remove toloka' }).click();
 	await expect.poll(() => tagsOf(call, id)).toEqual(['ua-dub']);
 });
+
+test('Tags sent when a movie is added are put on it', async ({ page }) => {
+	await signIn(page, owner());
+	const call = await api(page);
+	const id = await freshMovie(call);
+	const gone = await call('POST', `/titles/${id}/delete`, { delete_files: true, never_add: false, apply: true });
+	expect(gone.ok(), await gone.text()).toBe(true);
+	const added = await call('POST', '/titles', { id: `tmdb:${tmdb}`, search_on_add: false, keep_up_to_date: false, follow: false, tags: ['Toloka', 'UA Dub'] });
+	expect(added.status(), await added.text()).toBe(201);
+	const again = ((await added.json()) as { title: { id: number } }).title.id;
+	expect(await tagsOf(call, again)).toEqual(['toloka', 'ua-dub']);
+});

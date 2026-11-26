@@ -66,6 +66,8 @@ type AddOptions struct {
 	Aliases []string `json:"-"`
 	// MoreVersions are extra wanted copies (for example 4K) next to the main one.
 	MoreVersions []VersionInput `json:"more_versions"`
+	// Tags go onto the movie next to its Library folder's tags for new titles.
+	Tags []string `json:"tags"`
 	// MainFourK adds the main copy as the 4K copy, labelled 4K (a 4K ask).
 	MainFourK bool `json:"-"`
 	// WhyAdded records why the movie was added (by_hand when empty).
@@ -288,7 +290,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 		}
 		t := &mediafiles.Title{Kind: "movie", Aliases: aliases, MetadataSource: "tmdb", KeepUpToDate: keep, NewPartsPolicy: "all",
 			ReleaseGate: gate, GateDelayDays: delay, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
-			State: "active", GateDriver: driver, GateOpensAt: opens, Tags: TagsFromFolder(lf)}
+			State: "active", GateDriver: driver, GateOpensAt: opens, Tags: TitleTags(lf, opt.Tags)}
 		applyMovie(t, m, now)
 		if _, err := database.Insert(tx, "titles", t, by); err != nil {
 			return err

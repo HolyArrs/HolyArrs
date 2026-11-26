@@ -238,6 +238,7 @@
 	"requests.add.folder": "Папка на библиотеката",
 	"requests.add.rules": "Правила за избор",
 	"requests.add.rulesHint": "Кои релийзи се броят и кой е най-добрият.",
+	"requests.add.tags": "Тагове",
 	"requests.add.keep": "Поддържане актуално",
 	"requests.add.search": "Търсене при добавяне",
 	"requests.add.more": "Поддържане и на втори вариант",

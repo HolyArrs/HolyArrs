@@ -238,6 +238,7 @@
 	"requests.add.folder": "Carpeta de la Biblioteca",
 	"requests.add.rules": "Regles d'elecció",
 	"requests.add.rulesHint": "Quins Llançaments compten i quin és el millor.",
+	"requests.add.tags": "Etiquetes",
 	"requests.add.keep": "Mantén al dia",
 	"requests.add.search": "Cerca en afegir",
 	"requests.add.more": "Mantén també una segona Versió",

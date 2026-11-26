@@ -242,6 +242,7 @@
 	"requests.add.folder": "Kütüphane klasörü",
 	"requests.add.rules": "Seçim kuralları",
 	"requests.add.rulesHint": "Hangi sürüm adayları sayılır ve hangisi en iyisi.",
+	"requests.add.tags": "Etiketler",
 	"requests.add.keep": "Güncel tut",
 	"requests.add.search": "Eklenince ara",
 	"requests.add.more": "İkinci bir versiyonu da tut",

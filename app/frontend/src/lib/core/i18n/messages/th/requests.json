@@ -238,6 +238,7 @@
 	"requests.add.folder": "โฟลเดอร์ไลบรารี",
 	"requests.add.rules": "กฎการเลือก",
 	"requests.add.rulesHint": "รีลีสไหนนับ และรีลีสไหนดีที่สุด",
+	"requests.add.tags": "แท็ก",
 	"requests.add.keep": "อัปเดตให้ทันสมัย",
 	"requests.add.search": "ค้นหาเมื่อเพิ่ม",
 	"requests.add.more": "เก็บเวอร์ชันที่สองด้วย",

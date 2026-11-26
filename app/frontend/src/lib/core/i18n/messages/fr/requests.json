@@ -242,6 +242,7 @@
 	"requests.add.folder": "Dossier de bibliothèque",
 	"requests.add.rules": "Règles de sélection",
 	"requests.add.rulesHint": "Quelles releases comptent, et laquelle est la meilleure.",
+	"requests.add.tags": "Étiquettes",
 	"requests.add.keep": "Tenir à jour",
 	"requests.add.search": "Chercher à l'ajout",
 	"requests.add.more": "Tenir aussi une deuxième version",

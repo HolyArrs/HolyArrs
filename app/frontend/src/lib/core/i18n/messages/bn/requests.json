@@ -238,6 +238,7 @@
 	"requests.add.folder": "লাইব্রেরি ফোল্ডার",
 	"requests.add.rules": "বাছাইয়ের নিয়ম",
 	"requests.add.rulesHint": "কোন রিলিজ গণ্য হবে, আর কোনটি সেরা।",
+	"requests.add.tags": "ট্যাগ",
 	"requests.add.keep": "আপ-টু-ডেট রাখুন",
 	"requests.add.search": "যোগ হলে খুঁজুন",
 	"requests.add.more": "দ্বিতীয় একটি ভার্সনও রাখুন",

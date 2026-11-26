@@ -242,6 +242,7 @@
 	"requests.add.folder": "Тека бібліотеки",
 	"requests.add.rules": "Правила вибору",
 	"requests.add.rulesHint": "Які релізи враховувати й який найкращий.",
+	"requests.add.tags": "Теги",
 	"requests.add.keep": "Стежити за оновленнями",
 	"requests.add.search": "Шукати після додавання",
 	"requests.add.more": "Також тримати другий Варіант",

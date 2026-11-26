@@ -238,6 +238,7 @@
 	"requests.add.folder": "תיקיית ספרייה",
 	"requests.add.rules": "כללי בחירה",
 	"requests.add.rulesHint": "אילו ריליזים נחשבים, ואיזה הכי טוב.",
+	"requests.add.tags": "תגיות",
 	"requests.add.keep": "לשמור מעודכן",
 	"requests.add.search": "חיפוש כשנוסף",
 	"requests.add.more": "לשמור גם גרסה שנייה",

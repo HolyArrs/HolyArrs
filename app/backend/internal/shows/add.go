@@ -34,6 +34,8 @@ type ShowAddOptions struct {
 	SearchOnAdd bool `json:"search_on_add"`
 	// MoreVersions are extra wanted copies (for example 4K) next to the main one.
 	MoreVersions []library.VersionInput `json:"more_versions"`
+	// Tags go onto the show next to its Library folder's tags for new titles.
+	Tags []string `json:"tags"`
 	// MainFourK adds the main copy as the 4K copy, labelled 4K (a 4K ask).
 	MainFourK bool `json:"-"`
 	// WhyAdded records why the show was added (by_hand when empty).
@@ -293,7 +295,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 		}
 		t = mediafiles.Title{Kind: "show", Aliases: aliases, MetadataSource: opt.Source, EpisodeOrder: &order, KeepUpToDate: keep,
 			NewPartsPolicy: opt.NewSeasons, ReleaseGate: library.GateReleased, MusicTypes: []string{}, WhyAdded: opt.WhyAdded, Artwork: []string{},
-			State: "active", GateDriver: "none", SeasonChoice: &choice, FutureFrom: from, RefreshedAt: &now, Tags: library.TagsFromFolder(lf)}
+			State: "active", GateDriver: "none", SeasonChoice: &choice, FutureFrom: from, RefreshedAt: &now, Tags: library.TitleTags(lf, opt.Tags)}
 		applyShow(&t, sh)
 		if _, err := database.Insert(tx, "titles", &t, by); err != nil {
 			return err

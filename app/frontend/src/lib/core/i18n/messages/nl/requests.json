@@ -242,6 +242,7 @@
 	"requests.add.folder": "Bibliotheekmap",
 	"requests.add.rules": "Keuzeregels",
 	"requests.add.rulesHint": "Welke releases meetellen en welke de beste is.",
+	"requests.add.tags": "Tags",
 	"requests.add.keep": "Actueel houden",
 	"requests.add.search": "Zoeken bij toevoegen",
 	"requests.add.more": "Ook een tweede variant bijhouden",

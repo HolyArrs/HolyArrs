@@ -242,6 +242,7 @@
 	"requests.add.folder": "Library folder",
 	"requests.add.rules": "Pick rules",
 	"requests.add.rulesHint": "Which Releases count, and which one is best.",
+	"requests.add.tags": "Tags",
 	"requests.add.keep": "Keep up to date",
 	"requests.add.search": "Search when added",
 	"requests.add.more": "Also keep a second Version",
