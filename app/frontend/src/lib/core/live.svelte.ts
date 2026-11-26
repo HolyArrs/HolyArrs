@@ -1,7 +1,8 @@
 // Server event stream with reconnect, resync and one stream shared across tabs.
 
 import { to } from './paths.ts';
-import { api } from './api.ts';
+import { api, ApiError } from './api.ts';
+import { session } from './session.svelte.ts';
 import { backoff } from './loader.ts';
 
 export type LiveState = 'off' | 'connecting' | 'live' | 'reconnecting';
@@ -186,6 +187,27 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 		if (!hidden()) lead();
 	}
 
+	// EventSource hides the status, so an ended session looks like a dropped line. On each
+	// error ask the server who we are (one ask at a time); a 401 stops retrying and signs out.
+	let checking = false;
+	async function checkSession() {
+		if (checking) return;
+		checking = true;
+		try {
+			await api.get('/auth/me');
+		} catch (e) {
+			if (e instanceof ApiError && e.status === 401) {
+				clearTimeout(retry);
+				src?.close();
+				src = null;
+				setState('off');
+				session.lost();
+			}
+		} finally {
+			checking = false;
+		}
+	}
+
 	function open(again = false) {
 		if (src) return;
 		if (!again) setState('connecting');
@@ -226,6 +248,7 @@ export function createLive(factory: SourceFactory = (u) => new EventSource(u) as
 			retry = setTimeout(() => {
 				if ((quiet ? status.state === 'live' : status.state === 'reconnecting') && (!shared || status.leader)) open(true);
 			}, quiet ? 0 : backoff(tries));
+			void checkSession();
 			tries++;
 		};
 		src.onmessage = (e: MessageEvent) => {
