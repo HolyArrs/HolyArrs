@@ -296,3 +296,9 @@ describe('The Ukrainian import wording', () => {
 		expect(srv['server.library.the-server-holyarrs-gets-details-from-2']).toContain('щоб прийняти цю теку');
 	});
 });
+
+describe('Import files by hand from the Library (#692)', () => {
+	it('sits in the Library + menu next to Import from a folder, for people who manage the library', () => {
+		expect(library).toMatch(/canManage \? \(\[\{ label: tr\('library\.page\.importFromFolder'\)[^\n]*\{ label: tr\('library\.byHand\.title'\), icon: 'folderMove', href: to\('\/library\/import-files'\) \}/);
+	});
+});
