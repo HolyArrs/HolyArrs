@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Nebelaikyti šio filmo versijos „{label}“? Diske esantys failai nelieičiami.",
 	"movies.versions.removeFailed": "Nepavyko pašalinti Versijos",
+	"movies.versions.deleteFile": "Ištrinti failą",
+	"movies.versions.deleteFileConfirm": "Ištrinti {name}? Failas bus perkeltas į Neseniai ištrintus, iš kur galėsite jį atkurti.",
+	"movies.versions.deleteFileFailed": "Nepavyko ištrinti failo",
 	"movies.versions.title": "Versijos",
 	"movies.versions.showLess": "Rodyti mažiau",
 	"movies.versions.seeAll": "Rodyti visas ({count})",

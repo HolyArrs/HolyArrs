@@ -118,11 +118,11 @@ func (h *OrganiseHandlers) deleteTitle(w http.ResponseWriter, r *http.Request) {
 		RemoveScope
 		Apply bool `json:"apply"`
 	}
-	if r.ContentLength != 0 && !webserver.Decode(w, r, &body, `send {"delete_files": false, "never_add": false, "apply": false} to see the plan, then "apply": true; for part of a show add "season": <n> or "episode_ids": [<id>, ...]; for part of an artist "album_id": <id> or "track_ids": [<id>, ...]`) {
+	if r.ContentLength != 0 && !webserver.Decode(w, r, &body, `send {"delete_files": false, "never_add": false, "apply": false} to see the plan, then "apply": true; for part of a show add "season": <n> or "episode_ids": [<id>, ...]; for part of an artist "album_id": <id> or "track_ids": [<id>, ...]; for one file of a movie "file_id": <id>`) {
 		return
 	}
 	if err := body.RemoveScope.Check(); err != nil {
-		webserver.Fail(w, http.StatusBadRequest, "send one of season, episode_ids, album_id or track_ids, not several")
+		webserver.Fail(w, http.StatusBadRequest, "send one of season, episode_ids, album_id, track_ids or file_id, not several")
 		return
 	}
 	if len(body.EpisodeIDs) > 5000 || len(body.TrackIDs) > 5000 {
@@ -131,16 +131,25 @@ func (h *OrganiseHandlers) deleteTitle(w http.ResponseWriter, r *http.Request) {
 	}
 	var p RemovePlan
 	var err error
-	if body.RemoveScope.Whole() {
+	switch {
+	case body.RemoveScope.FileID != nil:
+		// Never-add is for a whole movie; deleting one file ignores it.
+		body.NeverAdd = false
+		p, err = h.Lib.RemoveFileOf(r.Context(), t.ID, *body.RemoveScope.FileID, body.RemoveChoice, body.Apply, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
+	case body.RemoveScope.Whole():
 		p, err = h.Lib.Remove(r.Context(), t.ID, body.RemoveChoice, body.Apply, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
-	} else {
+	default:
 		p, err = h.Lib.RemoveEpisodes(r.Context(), t.ID, body.RemoveScope, body.RemoveChoice, body.Apply, webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1}))
 	}
+	var kept ErrFileKept
 	switch {
 	case errors.Is(err, ErrNotShow), errors.Is(err, ErrNeverAddWholeShow), errors.Is(err, ErrNoEpisodesChosen),
 		errors.Is(err, ErrNoSuchEpisode), errors.Is(err, ErrNoSuchSeason), errors.Is(err, ErrNotArtist),
-		errors.Is(err, ErrNeverAddWholeArt), errors.Is(err, ErrNoSuchAlbumHere), errors.Is(err, ErrNoSuchTrack):
+		errors.Is(err, ErrNeverAddWholeArt), errors.Is(err, ErrNoSuchAlbumHere), errors.Is(err, ErrNoSuchTrack),
+		errors.Is(err, ErrNotMovieFile), errors.Is(err, ErrNoSuchFile):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
+	case errors.As(err, &kept):
+		webserver.WriteJSON(w, http.StatusConflict, map[string]any{"error": err.Error(), "plan": p})
 	case errors.Is(err, ErrAlreadyRemoved):
 		webserver.Fail(w, http.StatusConflict, err.Error())
 	case err != nil && p.TitleID != 0:

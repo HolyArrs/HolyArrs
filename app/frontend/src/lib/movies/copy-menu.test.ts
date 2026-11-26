@@ -1,22 +1,40 @@
 import { describe, expect, it } from 'vitest';
-import { copyActions, copyBadges, editionDevice, editionProblem, editionRefused, saveThenReload, showSaved } from './copy-menu.ts';
+import { canDeleteFile, copyActions, copyBadges, editionDevice, editionProblem, editionRefused, saveThenReload, showSaved } from './copy-menu.ts';
 
 describe('movie copy menu', () => {
 	it('offers nothing for a Version that has no file and cannot be removed', () => {
 		expect(copyActions({ main: true }, undefined)).toEqual([]);
 	});
 
-	it('offers edition, protection and keep-and-add for a copy that exists', () => {
-		expect(copyActions({ main: true }, { Protected: false })).toEqual(['edition', 'protect', 'keepAdd']);
+	it('offers edition, protection, keep-and-add and delete for a copy that exists', () => {
+		expect(copyActions({ main: true }, { Protected: false })).toEqual(['edition', 'protect', 'keepAdd', 'deleteFile']);
 	});
 
-	it('offers to remove protection once a copy is protected', () => {
+	it('offers to remove protection once a copy is protected, and no delete', () => {
 		expect(copyActions({ main: true }, { Protected: true })).toEqual(['edition', 'unprotect', 'keepAdd']);
 	});
 
 	it('keeps removing a second Version, with or without a file', () => {
-		expect(copyActions({ main: false }, { Protected: false })).toEqual(['edition', 'protect', 'keepAdd', 'remove']);
+		expect(copyActions({ main: false }, { Protected: false })).toEqual(['edition', 'protect', 'keepAdd', 'deleteFile', 'remove']);
 		expect(copyActions({ main: false }, undefined)).toEqual(['remove']);
+	});
+
+	it('never offers to delete a file in a look-only Library folder', () => {
+		expect(copyActions({ main: true, look_only: true }, { Protected: false, Origin: 'imported' })).toEqual(['edition', 'protect', 'keepAdd']);
+	});
+});
+
+describe('deleting a file', () => {
+	it('is allowed for an imported or adopted file on disk in a folder HolyArrs may change', () => {
+		expect(canDeleteFile({}, { Origin: 'imported', State: 'present' })).toBe(true);
+		expect(canDeleteFile({ look_only: false }, { Origin: 'adopted' })).toBe(true);
+	});
+
+	it('is refused for a look-only folder, a protected copy, a found file or a missing one', () => {
+		expect(canDeleteFile({ look_only: true }, { Origin: 'imported' })).toBe(false);
+		expect(canDeleteFile({}, { Origin: 'imported', Protected: true })).toBe(false);
+		expect(canDeleteFile({}, { Origin: 'found' })).toBe(false);
+		expect(canDeleteFile({}, { Origin: 'imported', State: 'missing' })).toBe(false);
 	});
 });
 

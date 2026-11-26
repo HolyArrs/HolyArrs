@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Vols deixar de mantenir la Versió {label} d'aquesta pel·lícula? Els fitxers del disc no es toquen.",
 	"movies.versions.removeFailed": "No s'ha pogut eliminar la Versió",
+	"movies.versions.deleteFile": "Suprimeix el fitxer",
+	"movies.versions.deleteFileConfirm": "Vols suprimir {name}? Anirà a Suprimits recentment, on el pots restaurar.",
+	"movies.versions.deleteFileFailed": "No s'ha pogut suprimir el fitxer",
 	"movies.versions.title": "Versions",
 	"movies.versions.showLess": "Mostra'n menys",
 	"movies.versions.seeAll": "Mostra-les totes ({count})",
