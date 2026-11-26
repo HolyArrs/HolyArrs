@@ -34,7 +34,9 @@ type soulseekClient struct {
 	done bool
 }
 
-func (c *soulseekClient) Health(context.Context) (Health, error) { return Health{Version: "slskd"}, nil }
+func (c *soulseekClient) Health(context.Context) (Health, error) {
+	return Health{Version: "slskd"}, nil
+}
 func (c *soulseekClient) Add(_ context.Context, r AddRequest) (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -167,6 +169,25 @@ func TestSoulseekSearchGrabDownloadImport(t *testing.T) {
 	}
 	if len(w.finshed) != 1 || w.finshed[0] != id {
 		t.Fatalf("Import not started: %v", w.finshed)
+	}
+}
+
+// TestPluginTypeStaysWithItsPlugin: two plugins both bring soulseek; a
+// Release from one plugin's Source goes only to that plugin's Downloader.
+func TestPluginTypeStaysWithItsPlugin(t *testing.T) {
+	sources.PluginDownloadTypes = func(string) []string { return []string{"soulseek"} }
+	t.Cleanup(func() { sources.PluginDownloadTypes = nil })
+	w, m := setup(t)
+	w.exec(t, "UPDATE sources SET protocol = 'soulseek', url = 'plugin://slskd', allow_local_network = 0")
+	w.exec(t, "UPDATE releases SET protocol = 'soulseek', link_ref = 'plugin://slskd/get?id=1', info_hash = NULL WHERE id = ?", w.relID)
+	w.exec(t, "UPDATE downloaders SET adapter = 'plugin', protocol = 'soulseek', url = 'plugin://other'")
+	asked := []string{}
+	m.PluginEngine = func(id string) Engine { asked = append(asked, id); return &soulseekClient{} }
+	if _, err := m.Grab(context.Background(), w.slotID, w.relID, domain.System); !errors.As(err, new(*NoDownloaderError)) {
+		t.Fatalf("soulseek Release with only another plugin's Downloader: %v", err)
+	}
+	if len(asked) != 0 {
+		t.Fatalf("sent across plugins: %v", asked)
 	}
 }
 

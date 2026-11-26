@@ -6,6 +6,9 @@ import (
 	"net/url"
 	"regexp"
 	"slices"
+	"strings"
+
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
 var pluginHostRe = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
@@ -65,4 +68,13 @@ func PluginTypeOK(id, t string) bool {
 func pluginTypeFits(raw, t string) bool {
 	id, ok := pluginSource(raw)
 	return ok && PluginTypeOK(id, t)
+}
+
+// addressProto is the stored protocol when an edit gives a new address, so a
+// plugin type is checked again against it; "" otherwise.
+func addressProto(in Input, src *domain.Source) string {
+	if strings.TrimSpace(in.URL) == "" {
+		return ""
+	}
+	return src.Protocol
 }

@@ -87,6 +87,12 @@ func TestPluginSourceDownloadType(t *testing.T) {
 	if _, _, err := fill(Input{Name: "Soulseek", Protocol: "soulseek"}, &src, false); err != nil {
 		t.Errorf("edit kept on its stored address: %v", err)
 	}
+	for _, raw := range []string{"https://example.org/rss", "plugin://other"} {
+		moved := src
+		if _, _, err := fill(Input{Name: "Soulseek", URL: raw}, &moved, false); err == nil {
+			t.Errorf("address moved to %s kept protocol soulseek", raw)
+		}
+	}
 	if got := NoDownloader("soulseek"); got != "no soulseek Downloader is set up" {
 		t.Errorf("no Downloader line %q", got)
 	}

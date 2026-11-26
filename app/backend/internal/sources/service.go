@@ -608,7 +608,7 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 			in.Kinds = site.Kinds
 		}
 	}
-	proto := in.Protocol
+	proto := cmp.Or(in.Protocol, addressProto(in, src))
 	if proto == "" && isNew {
 		proto = "torrent"
 		if src.Format == "newznab" {
