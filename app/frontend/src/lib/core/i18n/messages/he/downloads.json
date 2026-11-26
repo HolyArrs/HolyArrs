@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "מדובב, בלי הסאונד המקורי",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision בלי גיבוי HDR10",
+	"downloads.pr.traits.sdr_4k": "4K בלי HDR (SDR)",
 	"downloads.pr.traits.executable": "מכיל תוכנה",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (מתנגן כמעט בכל מקום)",

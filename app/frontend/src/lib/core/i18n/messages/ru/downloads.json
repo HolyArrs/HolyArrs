@@ -1018,6 +1018,7 @@
 	"downloads.pr.traits.dubbed_only": "Дубляж без оригинального звука",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision без запасного HDR10",
+	"downloads.pr.traits.sdr_4k": "4K без HDR (SDR)",
 	"downloads.pr.traits.executable": "Содержит программу",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (воспроизводится почти везде)",

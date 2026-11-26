@@ -72,7 +72,7 @@ var tagWords = setOf(
 	"directors", "extended", "theatrical", "remastered", "imax", "unrated", "anniversary",
 	"3d", "sbs", "hsbs", "ou", "hou",
 	"proper", "repack", "rerip", "real", "internal", "sample", "featurette", "featurettes", "extras", "trailer",
-	"upscaled", "upscale", "dubbed", "hc", "hardsub", "hardcoded", "korsub", "passworded", "password",
+	"upscaled", "upscale", "aius", "uprez", "upsuhd", "upscaleduhd", "regrade", "regraded", "re-graded", "ai-enhanced", "ai-upscaled", "dubbed", "hc", "hardsub", "hardcoded", "korsub", "passworded", "password",
 	"multi", "dl", "dual",
 	// Source, size, codec and audio words that are never title words.
 	"uhdbd", "uhd-bd", "uhdbdrip", "bdlight", "hddvd", "hd-dvd", "hddvdrip", "bdmux", "brdisk", "bd25", "bd50", "bd66", "bd100",
@@ -747,7 +747,18 @@ func readTags(r *Result, tags []string, flags map[string]bool, h Hints) {
 	set("sample", "sample")
 	set("password_hint", "passworded", "password")
 	set("extras", "featurette", "featurettes", "extras", "trailer")
-	set("upscaled", "upscaled", "upscale")
+	set("upscaled", "upscaled", "upscale", "aius", "uprez", "upsuhd", "upscaleduhd", "regrade", "regraded", "re-graded",
+		"aienhanced", "aienhance", "aiupscaled", "aiupscale", "ai-enhanced", "ai-enhance", "ai-upscaled", "ai-upscale", "theupscaler")
+	// Two-word tags, and a bare "AI" after the title on an HEVC encode:
+	// AI upscalers tag their 4K work that way.
+	for _, w := range []string{" ai enhanced ", " ai enhance ", " ai upscaled ", " ai upscale ", " the upscaler "} {
+		if strings.Contains(line, w) {
+			flags["upscaled"] = true
+		}
+	}
+	if has("ai") && has("hevc", "x265", "h265") {
+		flags["upscaled"] = true
+	}
 	set("dubbed", "dubbed")
 	set("internal", "internal")
 	set("hybrid", "hybrid")

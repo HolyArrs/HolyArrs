@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Sesetengah folder tidak berjaya. Imbas semula untuk mengambil alihnya; folder yang sudah ada dalam Pustaka dibiarkan seperti sedia ada.",
 	"library.import.scanAgain": "Imbas semula",
 	"library.import.keepOpen": "Biarkan halaman ini terbuka sehingga selesai.",
+	"library.import.closeOk": "Ia berjalan pada pelayan, jadi anda boleh menutup halaman ini.",
 	"library.import.waiting": "Pelayan metadata sedang sibuk. HolyArrs mencuba semula {left} terakhir dalam {min} min.",
 	"library.import.leaveAsk": "Satu import sedang berjalan. Jika anda meninggalkan halaman ini, folder yang belum dihantar tidak akan diambil alih. Tinggalkan juga?",
 	"library.import.interrupted": "Satu import berhenti pada {done} daripada {total} folder apabila halamannya ditutup. Imbas semula untuk mengambil alih yang selebihnya; folder yang sudah diambil alih dibiarkan seperti sedia ada.",

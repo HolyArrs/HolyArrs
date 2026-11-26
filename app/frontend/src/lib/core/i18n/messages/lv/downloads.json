@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Dublēts, bez oriģinālās skaņas",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision bez HDR10 rezerves",
+	"downloads.pr.traits.sdr_4k": "4K bez HDR (SDR)",
 	"downloads.pr.traits.executable": "Satur programmu",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (atskaņojas gandrīz visur)",

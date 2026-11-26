@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Some folders did not go through. Scan again to bring them in; folders already in the Library are left as they are.",
 	"library.import.scanAgain": "Scan again",
 	"library.import.keepOpen": "Keep this page open until it is done.",
+	"library.import.closeOk": "It runs on the server, so you can close this page.",
 	"library.import.waiting": "The metadata server is busy. HolyArrs tries the last {left} again in {min} min.",
 	"library.import.leaveAsk": "An import is running. If you leave this page, the folders not sent yet are not adopted. Leave anyway?",
 	"library.import.interrupted": "An import stopped at {done} of {total} folders when its page was closed. Scan again to bring in the rest; folders already adopted are left as they are.",
