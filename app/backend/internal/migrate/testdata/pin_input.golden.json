@@ -51,6 +51,7 @@
           {
             "name": "s",
             "quality": "s",
+            "path": "s",
             "episodes": [
               {
                 "season": 7,

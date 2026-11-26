@@ -100,12 +100,24 @@ func rejudgeVersionTx(ctx context.Context, tx *sql.Tx, versionID int64, by domai
 // files it updated. A move calls it for titles it adopts and for titles
 // already here, so moving again after reading the old app updates them.
 func (s *Service) SetRecordedQualities(ctx context.Context, titleID int64, qualities map[string]string, by domain.Actor) (int, error) {
+	return s.setRecordedQualities(ctx, titleID, 0, qualities, by)
+}
+
+// SetVersionRecordedQualities is SetRecordedQualities for one Version of
+// the title. A 1080p and a 4K copy often share a file name, so the quality
+// one old app recorded must reach only the copy it came from.
+func (s *Service) SetVersionRecordedQualities(ctx context.Context, titleID, versionID int64, qualities map[string]string, by domain.Actor) (int, error) {
+	return s.setRecordedQualities(ctx, titleID, versionID, qualities, by)
+}
+
+// setRecordedQualities does both; versionID 0 means every Version.
+func (s *Service) setRecordedQualities(ctx context.Context, titleID, versionID int64, qualities map[string]string, by domain.Actor) (int, error) {
 	if len(qualities) == 0 {
 		return 0, nil
 	}
 	updated := 0
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		versions, err := database.Select[mediafiles.Version](ctx, tx, "versions", "title_id = ?", titleID)
+		versions, err := database.Select[mediafiles.Version](ctx, tx, "versions", "title_id = ? AND (? = 0 OR id = ?)", titleID, versionID, versionID)
 		if err != nil {
 			return err
 		}

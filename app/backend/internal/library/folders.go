@@ -272,6 +272,25 @@ func FullPath(p string) bool {
 // path; the doctor warns about rows saved before this check.
 func UnsafeFolder(p, dataDir string) bool { return importer.UnsafeFolder(p, dataDir) }
 
+// FoldersOverlap says two Library folder paths overlap (the same folder,
+// or one inside the other), as adding a Library folder checks.
+func FoldersOverlap(a, b string) bool { return overlaps(a, b) }
+
+// FolderOverlapsKept says path overlaps a Library folder already kept, so
+// adding it as a Library folder would be refused.
+func FolderOverlapsKept(ctx context.Context, db database.Lister, path string) (bool, error) {
+	all, err := database.Select[mediafiles.LibraryFolder](ctx, db, "library_folders", "stand_in = 0")
+	if err != nil {
+		return false, err
+	}
+	for _, o := range all {
+		if overlaps(o.Path, path) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func overlaps(a, b string) bool {
 	a, b = filepath.Clean(a), filepath.Clean(b)
 	if a == b {

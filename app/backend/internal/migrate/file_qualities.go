@@ -17,6 +17,10 @@ import (
 type TitleFile struct {
 	Name    string `json:"name"` // the file's base name
 	Quality string `json:"quality"`
+	// Path is a movie file's path in its folder, with forward slashes,
+	// when it lies in a subfolder there ("Disc1/Feature.mkv"): Radarr
+	// scans those too. "" when it is directly in the folder.
+	Path string `json:"path,omitempty"`
 	// Episodes are the old app's episodes the file holds (Sonarr).
 	Episodes []OldEpisode `json:"episodes,omitempty"`
 }
@@ -153,6 +157,29 @@ func filesByTitle(rows []map[string]any) map[int64][]TitleFile {
 		}
 		base := path.Base(strings.ReplaceAll(p, `\`, "/"))
 		out[num(m["titleid"])] = append(out[num(m["titleid"])], TitleFile{Name: base, Quality: q, Episodes: eps})
+	}
+	return out
+}
+
+// movieFileNames is each title's recorded file, whatever its quality, by
+// its path in the movie's folder with forward slashes (a base name when it
+// is directly in it): Radarr keeps one file per movie. A title with two
+// rows keeps none, so a file is never guessed.
+func movieFileNames(rows []map[string]any) map[int64]string {
+	out, seen := map[int64]string{}, map[int64]int{}
+	for _, m := range rows {
+		p := str(m["relativepath"])
+		if p == "" {
+			continue
+		}
+		id := num(m["titleid"])
+		seen[id]++
+		out[id] = path.Clean(strings.ReplaceAll(p, `\`, "/"))
+	}
+	for id, n := range seen {
+		if n > 1 {
+			delete(out, id)
+		}
 	}
 	return out
 }

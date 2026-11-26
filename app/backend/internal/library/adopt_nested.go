@@ -83,6 +83,17 @@ func mainMovieVideo(lib, folder string) (AdoptVideo, bool) {
 	return vids[0], true
 }
 
+// MovieFeatures lists the videos directly in a movie folder that are not
+// extras, as adopting reads them (a trailer or a featurette by its name,
+// and the like), biggest first, reading at most limit of them. Videos in
+// subfolders and extras do not count toward limit, so however many there
+// are, they never hide a second cut.
+func MovieFeatures(lib, folder string, limit int) []AdoptVideo {
+	return listVideosWhere(lib, folder, limit, func(rel string) bool {
+		return !strings.Contains(rel, "/") && !movieExtraIn(folder, rel)
+	})
+}
+
 // movieFolders lists movie folders and individual collection videos as
 // relative paths, sorted. Grouping folders are replaced by their contents.
 func movieFolders(root string, ents []os.DirEntry) []string {
