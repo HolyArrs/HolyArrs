@@ -695,10 +695,10 @@
 	.atv-h3 { margin: 22px 0 13px; color: var(--text); font: 700 17px/21px var(--font-ui); }
 	/* Links out sit under the facts line as small chips; the whole chip is the link, 44px tall on touch phones. */
 	.d-left .out-links { margin-top: -8px; }
-	.out-links li { padding: 0; min-height: 28px; color: var(--text-muted); font-size: 12px; }
+	.tagchips.out-links li { padding: 0; min-height: 28px; color: var(--text-muted); font-size: 12px; }
 	.out-links a { display: inline-flex; align-items: center; min-height: inherit; padding: 0 12px; color: inherit; text-decoration: none; }
-	.out-links li:hover { color: var(--text); border-color: var(--text-faint); }
-	@media (max-width: 767px) and (pointer: coarse) { .out-links li { min-height: 44px; } }
+	.tagchips.out-links li:hover { color: var(--text); border-color: var(--text-faint); }
+	@media (max-width: 767px) and (pointer: coarse) { .tagchips.out-links li { min-height: 44px; } }
 	@media (max-width: 899px) { .atv-cards { grid-template-columns: minmax(0, 1fr); } .atv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; } }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	.fb { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1.5px solid currentColor; font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; }
