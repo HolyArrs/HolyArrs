@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} löytyi",
 	"migrate.readOnly": "Vain luku",
 	"migrate.folderReadOnly": "HolyArrs ei voi kirjoittaa tähän kansioon, joten siihen ei voi tuoda mitään. Tee taltiosta kirjoitettava (poista :ro) HolyArrsin Docker-asetuksissa ja luo sitten kontti uudelleen.",
-	"migrate.someFound": "{n} löytyi"
+	"migrate.someFound": "{n} löytyi",
+	"migrate.sameSource": "sama kuin {list}: yksi lähde",
+	"migrate.nameInApps": "{name} sovelluksessa {apps}"
 }

@@ -234,11 +234,7 @@
 		window.addEventListener(SIGNIN_GL_EVENT, go, { once: true });
 		const cap = setTimeout(go, GL_WAIT_CAP_MS);
 		const clock = setInterval(() => (now = Date.now()), 1000);
-		if (page.url.searchParams.get('sso') === 'finish') void ways.finishOIDC();
-		else if (page.url.searchParams.get('sso') === 'failed') {
-			lastWay = 'oidc';
-			error = t('accounts.login.ssoFailed');
-		}
+		ways.arrive(page.url.searchParams.get('sso'));
 		const unlift = liftAboveKeyboard(() => panelEl);
 		return () => {
 			unlift();

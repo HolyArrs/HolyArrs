@@ -24,7 +24,13 @@ type FilePoints struct {
 // (CurrentOfFile): judge is JudgeName of its release name, size its bytes
 // and audio its audio languages (FileLanguages).
 func ScoreFile(judge string, size int64, audio []string, rules PickRulesBody) FilePoints {
-	cur := CurrentOfFile(judge, size, time.Time{}, audio, rules)
+	return ScoreTitleFile(judge, size, audio, Title{}, rules)
+}
+
+// ScoreTitleFile is ScoreFile for a file of Title t: language and year
+// tests read t's original language and year (CurrentOfTitleFile).
+func ScoreTitleFile(judge string, size int64, audio []string, t Title, rules PickRulesBody) FilePoints {
+	cur := CurrentOfTitleFile(judge, size, time.Time{}, audio, t, rules)
 	out := FilePoints{Step: cur.Step, GoodEnoughAt: rules.GoodEnoughAt, Points: cur.Points, GoodEnoughPoints: rules.GoodEnoughPoints, Traits: []TraitScore{}}
 	idx := stepIndex(rules, cur.Step)
 	out.StepReached = idx >= 0 && idx >= stepIndex(rules, rules.GoodEnoughAt)

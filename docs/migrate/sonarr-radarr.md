@@ -46,6 +46,16 @@ Old apps often run in other containers and see folders under other names. A rule
 
 An indexer is a site that lists releases; in HolyArrs it is a **Source**.
 
+### The same indexer in more than one app
+
+Each site comes over once, however many apps had it:
+
+- The same Torznab, Newznab or RSS address in Sonarr and Radarr is one Source for shows and movies, with each app's categories. Letter case, the default port and a trailing `/` do not matter.
+- An indexer that Prowlarr put in Sonarr or Radarr (its address is Prowlarr's, like `http://prowlarr:9696/5/api`, and its name ends in "(Prowlarr)") is the same Source as that indexer in Prowlarr, when you import Prowlarr too and the indexer there is a Torznab, Newznab or RSS one. The Source is the one from Prowlarr, at the feed's own address. It is still the same when Sonarr or Radarr reach Prowlarr under another host name, as long as the number and name match.
+- Prowlarr can be imported in the same import, before or after. A Source already here at the same address, or named like the indexer with or without "(Prowlarr)", is listed as already here. Nothing is added twice.
+
+The **Import** step shows it on the Source: "the same as Nyaa.si (Prowlarr) in Sonarr and Radarr: one Source".
+
 ## Choices
 
 ### Folders

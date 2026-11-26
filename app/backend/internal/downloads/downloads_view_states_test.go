@@ -59,6 +59,18 @@ func TestDownloadsViewImportDoneAfterARefusalIsDone(t *testing.T) {
 	}
 }
 
+// Missing or still-copying files read as automatic work, not as a failed
+// import that needs a person to review it.
+func TestDownloadsViewWaitingForFiles(t *testing.T) {
+	t.Parallel()
+	x := seed41(t, mediafiles.SlotNeedsADecision, "finished")
+	exec41(t, x.s, "UPDATE slots SET last_reason = ? WHERE id = ?", "the file could not be placed: the file is not in the download folder any more", x.slotID)
+	r := ownRow(t, x)
+	if r.Phase != "waiting_to_import" || r.Label != "Waiting to import" || r.CanImport || r.Text != "Waiting for the files to arrive; HolyArrs will check again automatically." {
+		t.Fatalf("phase %q label %q can_import %v text %q", r.Phase, r.Label, r.CanImport, r.Text)
+	}
+}
+
 // A download whose Release is gone (its Source was deleted) is named
 // by what the Downloader held, else by its Title, never by a bare hash.
 func TestDownloadsViewNamesADownloadWhoseReleaseIsGone(t *testing.T) {

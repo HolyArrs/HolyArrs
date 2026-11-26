@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "ダウンローダーを追加",
 	"downloads.hl.noUsenetDl": "Usenet ダウンローダーが設定されていません",
 	"downloads.hl.noTorrentDl": "トレント ダウンローダーが設定されていません",
+	"downloads.problem.waitingForFiles": "ファイルを待機中",
 	"downloads.problem.importBlocked": "インポートがブロックされています",
 	"downloads.problem.missingArticles": "記事が欠落しています",
 	"downloads.problem.noFullCopy": "完全なコピーがありません",

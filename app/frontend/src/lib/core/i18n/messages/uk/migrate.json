@@ -415,5 +415,7 @@
 	"migrate.nFound": "знайдено {found}",
 	"migrate.readOnly": "Лише читання",
 	"migrate.folderReadOnly": "HolyArrs не може записувати в цю теку, тому в неї нічого не можна імпортувати. Дозвольте запис у том (приберіть :ro) у налаштуваннях Docker для HolyArrs, а потім створіть контейнер заново.",
-	"migrate.someFound": "Знайдено: {n}"
+	"migrate.someFound": "Знайдено: {n}",
+	"migrate.sameSource": "те саме, що {list}: одне джерело",
+	"migrate.nameInApps": "{name} у {apps}"
 }

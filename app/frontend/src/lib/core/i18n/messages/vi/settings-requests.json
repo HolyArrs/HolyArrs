@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Yêu cầu 4K đã duyệt được lưu ở đâu và chọn thế nào",
 	"settings.requests.fourKSameFolder": "Giống các yêu cầu khác",
 	"settings.requests.fourKNamedRules": "Chất lượng tên 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Yêu cầu anime đã duyệt được lưu ở đâu",
 	"settings.requests.choices": "Những gì mọi người có thể yêu cầu",
 	"settings.requests.choicesDesc": "Các nút Chất lượng trên trang yêu cầu, theo thứ tự này. Đổi tên hoặc ẩn chúng ở đây; tài khoản trẻ em nhận nút hiển thị đầu tiên.",
 	"settings.requests.choiceShown": "Hiện cho mọi người",

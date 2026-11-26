@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} hittade",
 	"migrate.readOnly": "Skrivskyddad",
 	"migrate.folderReadOnly": "HolyArrs kan inte skriva till den här mappen, så inget kan importeras till den. Gör volymen skrivbar (ta bort :ro) i HolyArrs Docker-konfiguration och skapa sedan om containern.",
-	"migrate.someFound": "{n} hittade"
+	"migrate.someFound": "{n} hittade",
+	"migrate.sameSource": "samma som {list}: en källa",
+	"migrate.nameInApps": "{name} i {apps}"
 }

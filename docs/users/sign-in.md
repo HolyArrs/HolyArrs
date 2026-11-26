@@ -54,6 +54,8 @@ One OpenID Connect provider can sign people in. It shows as a button on the sign
 
 Then link your own account: sign in with your password, open **My account**, under **Linked sign-ins** select **Link**, confirm your password, then select **Single sign-on**.
 
+Single sign-on finishes at the callback address. If you open HolyArrs at another of its addresses, the button takes you to that address to sign in. Linking has to be started there.
+
 :::tip
 Keep a working owner password. If the provider is down, password sign-in still works.
 :::

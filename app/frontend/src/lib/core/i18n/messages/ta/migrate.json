@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} கண்டறியப்பட்டன",
 	"migrate.readOnly": "படிக்க மட்டும்",
 	"migrate.folderReadOnly": "HolyArrs-ஆல் இந்தக் கோப்புறையில் எழுத முடியவில்லை, அதனால் இதில் எதையும் இறக்குமதி செய்ய முடியாது. HolyArrs-இன் Docker அமைப்பில் வால்யூமை எழுதக்கூடியதாக மாற்றி (:ro-ஐ நீக்கி), பின்னர் கொள்கலனை மீண்டும் உருவாக்குங்கள்.",
-	"migrate.someFound": "{n} கிடைத்தன"
+	"migrate.someFound": "{n} கிடைத்தன",
+	"migrate.sameSource": "{list} போன்றதே: ஒரே மூலம்",
+	"migrate.nameInApps": "{apps} இல் {name}"
 }

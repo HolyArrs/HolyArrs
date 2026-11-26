@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Куда попадают одобренные запросы в 4K и как они выбираются",
 	"settings.requests.fourKSameFolder": "Как для других запросов",
 	"settings.requests.fourKNamedRules": "Качество с названием 4K",
+	"settings.requests.anime": "Аниме",
+	"settings.requests.animeDesc": "Куда попадают одобренные запросы на аниме",
 	"settings.requests.choices": "Что можно запросить",
 	"settings.requests.choicesDesc": "Кнопки качества в окнах запроса, в этом порядке. Здесь их можно переименовать или скрыть; дети получают первую видимую.",
 	"settings.requests.choiceShown": "Показывать людям",

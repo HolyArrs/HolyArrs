@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Gdzie trafiają zatwierdzone prośby o 4K i jak są wybierane",
 	"settings.requests.fourKSameFolder": "Tak jak inne prośby",
 	"settings.requests.fourKNamedRules": "Jakość o nazwie 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Gdzie trafiają zatwierdzone prośby o anime",
 	"settings.requests.choices": "O co mogą prosić użytkownicy",
 	"settings.requests.choicesDesc": "Przyciski jakości w oknach próśb, w tej kolejności. Tu zmień ich nazwy lub je ukryj; dzieci dostają pierwszy widoczny.",
 	"settings.requests.choiceShown": "Pokaż użytkownikom",

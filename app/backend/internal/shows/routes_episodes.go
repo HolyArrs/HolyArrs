@@ -171,7 +171,7 @@ func (h *EpisodeHandlers) listEpisodes(w http.ResponseWriter, r *http.Request) {
 			files[fs[i].ID] = &fs[i]
 		}
 	}
-	score := slotScorer(r.Context(), db, vs)
+	score := slotScorer(r.Context(), db, t, vs)
 	listed := map[int64]bool{}
 	for _, it := range its {
 		listed[it.ID] = true
@@ -240,9 +240,9 @@ func (h *EpisodeHandlers) setEpisode(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, EpisodeViewOf(it))
 }
 
-// slotScorer scores a file in one of the title's Versions, reading each
+// slotScorer scores a file in one of title t's Versions, reading each
 // Version's Pick rules once. A Version whose rules cannot be read scores nil.
-func slotScorer(ctx context.Context, db database.Querier, vs []mediafiles.Version) func(f mediafiles.File, versionID int64) (*int, *int) {
+func slotScorer(ctx context.Context, db database.Querier, t mediafiles.Title, vs []mediafiles.Version) func(f mediafiles.File, versionID int64) (*int, *int) {
 	ver := map[int64]mediafiles.Version{}
 	for _, v := range vs {
 		ver[v.ID] = v
@@ -264,7 +264,7 @@ func slotScorer(ctx context.Context, db database.Querier, vs []mediafiles.Versio
 		if body == nil {
 			return nil, nil
 		}
-		fp := library.ScoreSlotFile(f, v, *body)
+		fp := library.ScoreSlotFile(f, v, t, *body)
 		return &fp.Points, fp.GoodEnoughPoints
 	}
 }

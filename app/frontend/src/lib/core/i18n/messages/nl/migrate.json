@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} gevonden",
 	"migrate.readOnly": "Alleen-lezen",
 	"migrate.folderReadOnly": "HolyArrs kan niet naar deze map schrijven, dus er kan niets in worden geïmporteerd. Maak het volume schrijfbaar (verwijder :ro) in de Docker-instellingen van HolyArrs en maak daarna de container opnieuw aan.",
-	"migrate.someFound": "{n} gevonden"
+	"migrate.someFound": "{n} gevonden",
+	"migrate.sameSource": "hetzelfde als {list}: één Bron",
+	"migrate.nameInApps": "{name} in {apps}"
 }
