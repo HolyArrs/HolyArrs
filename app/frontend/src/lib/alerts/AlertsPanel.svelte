@@ -156,7 +156,8 @@
 			<strong>{t('alerts.panel.title')}</strong>
 			{#if toasts.past.length}<button type="button" class="clear" onclick={() => toasts.forgetAll()}>{t('alerts.panel.clearAll')}</button>{/if}
 		</div>
-		{@render rows()}
+		<!-- One scroll area for Needs attention and Recent: many pinned rows would otherwise push the panel past its height and be cut off. -->
+		<div class="scroll">{@render rows()}</div>
 	</div>
 {/if}
 
@@ -184,7 +185,8 @@
 	.head { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 10px; font: var(--t-callout); font-weight: 600; }
 	.clear { font: var(--t-footnote); font-weight: 600; color: var(--text-muted); padding: 4px 8px; border-radius: 999px; }
 	.clear:hover { color: var(--text); background: var(--surface-2); }
-	.rows { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; overscroll-behavior: contain; }
+	.rows { display: flex; flex-direction: column; gap: 6px; padding: 2px; }
+	.scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 	/* flex: none: in a long, scrolling list a row keeps its full height (with its Open or Undo button) instead of being squeezed. */
 	.row { flex: none; display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px 10px 12px; border-radius: 16px; background: var(--surface-2); box-shadow: inset 0 0 0 0.5px var(--line); transition: background var(--dur-fast, 0.15s) var(--ease-out, ease); }
 	.row:hover { background: color-mix(in srgb, var(--surface-2) 85%, var(--text) 6%); }
