@@ -1,0 +1,8 @@
+{
+  "name": "holyarrs-deploy-tools",
+  "private": true,
+  "description": "Pinned tools for the release workflows. Installed with npm ci --ignore-scripts.",
+  "devDependencies": {
+    "wrangler": "4.153.0"
+  }
+}
