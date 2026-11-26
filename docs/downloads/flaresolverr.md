@@ -10,7 +10,7 @@ Some sites put a bot check, such as Cloudflare's "Just a moment...", in front of
 ## Before you start
 
 - Only the owner sets this up.
-- Plugins run only on Linux, which includes the Docker image. See [Plugins](../run/plugins.md).
+- You need HolyArrs 1.3.2 or newer. The plugin installs from the Plugins page like any other, signed by HolyArrs. Plugins run only on Linux, which includes the Docker image. See [Plugins](../run/plugins.md).
 - You need FlareSolverr running where HolyArrs can reach it by name, such as a container named `flaresolverr` on the same Docker network. An address like `192.168.1.5` can't be used; use a name.
 
 ```yaml

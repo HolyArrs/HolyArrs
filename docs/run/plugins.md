@@ -54,7 +54,7 @@ To install Tailscale, follow these steps and pick **Tailscale**, then finish its
 
 ### Your own server (Tailscale with Headscale, FlareSolverr)
 
-Tailscale reaches only Tailscale's own servers. For a self-hosted Headscale, add its name under **Also allow your own server**, for example `headscale.example.com:8080`. The FlareSolverr plugin reaches only what you add there, such as `flaresolverr:8191`. Up to 3; names only, not addresses. These may reach devices on your network.
+Tailscale reaches only Tailscale's own servers. For a self-hosted Headscale, add its name under **Also allow your own server**, for example `headscale.example.com:8080`. The FlareSolverr plugin reaches only what you add there, such as `flaresolverr:8191`. Up to 100; names only, not addresses. These may reach devices on your network.
 
 ### Test versions
 
