@@ -387,6 +387,11 @@ func StepFor(p releasename.Result) string {
 		if band == "720p" || band == "1080p" {
 			return band + "_tv"
 		}
+		if band == "2160p" {
+			// The ladder has no 2160p TV step; a 2160p TV copy (Sonarr's
+			// "HDTV-2160p") is the lowest 2160p step, not SD (#874).
+			return "2160p_web"
+		}
 		return "sd_tv"
 	case "web_dl", "web_rip":
 		if band == "" {

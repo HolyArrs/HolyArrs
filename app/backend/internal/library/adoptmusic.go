@@ -420,7 +420,7 @@ func planMusicAdopt(ctx context.Context, db Reader, artists metadata.ArtistProvi
 		}
 		var ms []AdoptMatch
 		for _, a := range found {
-			ms = append(ms, AdoptMatch{ID: "mbid:" + a.MBID, Name: a.Name, Score: artistScore(e.Name(), a)})
+			ms = append(ms, AdoptMatch{ID: "mbid:" + a.MBID, Name: a.Name, Score: artistScore(e.Name(), a), Disambiguation: a.Disambiguation})
 		}
 		sort.SliceStable(ms, func(i, j int) bool { return ms[i].Score > ms[j].Score })
 		if len(ms) > 4 {

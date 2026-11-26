@@ -300,7 +300,7 @@
 </script>
 
 <svelte:window bind:innerWidth={vw} onhashchange={onHash} />
-<svelte:head><title>{t('plugins.title')} Ã‚Â· HolyArrs</title></svelte:head>
+<svelte:head><title>{t('plugins.title')} · HolyArrs</title></svelte:head>
 
 <h1 class="sr-only">{t('plugins.title')}</h1>
 
@@ -450,11 +450,17 @@
 	</PluginInfo>{/if}
 {/snippet}
 
+{#snippet settingsBtn(sel: Plugin)}
+	{@const name = shownName(sel)}
+	{#if settingsPage(sel)}<Button href={to(settingsPage(sel))} icon="sliders" aria-label={t('plugins.settingsName', { name })} data-testid="plugin-settings">{t('plugins.settings')}</Button>
+	{:else if sel.settings?.length}<Button icon="sliders" aria-label={t('plugins.settingsName', { name })} onclick={() => (editing = sel.id)} data-testid="plugin-settings">{t('plugins.settings')}</Button>{/if}
+{/snippet}
+
 {#snippet acts(sel: Plugin)}
 	{@const s = pluginState(sel)}
 	{@const name = shownName(sel)}
 	{#if sel.dev}
-		<DevActions {sel} {ov} {busy} {removing} {act} {askRemove} part="dev" />
+		<DevActions {sel} {ov} {busy} {removing} {act} {askRemove} part="dev">{#snippet settings()}{#if sel.installed}{@render settingsBtn(sel)}{/if}{/snippet}</DevActions>
 	{:else if s === 'not_installed'}
 		{#if sel.needs_app}<span class="xs muted need" data-testid="plugin-needs-app">{t('plugins.needsApp', { version: sel.needs_app })}</span>
 		{:else}<Button variant="primary" aria-label={t('plugins.installName', { name })} disabled={!canInstall || !!busy || !!sel.install_step} busy={busy === sel.id || !!sel.install_step} onclick={() => install(sel)} data-testid="plugin-main-install">{stepLabel(sel) || (sel.install_error ? t('plugins.retry') : t('plugins.install'))}</Button>{/if}
@@ -467,8 +473,7 @@
 		{:else}
 			<Button variant="primary" aria-label={t('plugins.startName', { name })} title={foldersMissing(sel) ? t('plugins.chooseFolders') : s === 'off' && !startable(sel) ? stateLabel(sel) : undefined} disabled={!ov?.can_run || !!busy || foldersMissing(sel) || (s === 'off' && !startable(sel))} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path(sel)}/start`), 'plugins.started', 'plugins.startFailed')} data-testid="plugin-main-start">{t('plugins.start')}</Button>
 		{/if}
-		{#if settingsPage(sel)}<Button href={to(settingsPage(sel))} icon="sliders" aria-label={t('plugins.settingsName', { name })} data-testid="plugin-settings">{t('plugins.settings')}</Button>
-		{:else if sel.settings?.length}<Button icon="sliders" aria-label={t('plugins.settingsName', { name })} onclick={() => (editing = sel.id)} data-testid="plugin-settings">{t('plugins.settings')}</Button>{/if}
+		{@render settingsBtn(sel)}
 		{#if hasUpdate(sel) && !sel.needs_app && s === 'running'}
 			<Button aria-label={t('plugins.stopName', { name })} disabled={!!busy} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path(sel)}/stop`), 'plugins.stopped', 'plugins.stopFailed')} data-testid="plugin-stop">{t('plugins.stop')}</Button>
 		{:else if hasUpdate(sel) && !sel.needs_app}
@@ -791,7 +796,7 @@
 	.tag.new { background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); color: var(--text); }
 	.tag.hot { background: color-mix(in srgb, var(--wait) 18%, var(--surface-2)); color: var(--text); }
 	.dls { color: var(--text-muted); white-space: nowrap; }
-	.ver .dls::before { content: 'Ã‚Â·'; margin: 0 5px; }
+	.ver .dls::before { content: '·'; margin: 0 5px; }
 	.chip.fresh { background: color-mix(in srgb, var(--ok) 18%, var(--surface-2)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 40%, var(--line)); }
 	.lrow .get { background: var(--surface-1); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); white-space: nowrap; }
 	.get { white-space: nowrap; }

@@ -1,6 +1,7 @@
 package migrate
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -100,4 +101,29 @@ func (r *Report) Markdown() string {
 	}
 	b.WriteString("\nThe import never changes, moves, renames or deletes a media file, and never writes to the old apps.\n")
 	return b.String()
+}
+
+// MarshalJSON sends every list as [] rather than null, so a report saved
+// without some of them (a downloader-only import has no apps) still opens.
+func (r Report) MarshalJSON() ([]byte, error) {
+	type plain Report
+	if r.Apps == nil {
+		r.Apps = []string{}
+	}
+	if r.Lines == nil {
+		r.Lines = []Line{}
+	}
+	if r.Counts == nil {
+		r.Counts = map[string]int{}
+	}
+	if r.NotMoved == nil {
+		r.NotMoved = []NotMoved{}
+	}
+	if r.NeedsInput == nil {
+		r.NeedsInput = []string{}
+	}
+	if r.Next == nil {
+		r.Next = []string{}
+	}
+	return json.Marshal(plain(r))
 }

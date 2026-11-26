@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-// #683: the key's shaft must start at the ring's edge, not run through it.
+// The key's shaft must start at the ring's edge, not run through it.
 const src = readFileSync(new URL('./Icon.svelte', import.meta.url), 'utf8');
 const key = src.match(/key: '([^']+)'/)?.[1] ?? '';
 

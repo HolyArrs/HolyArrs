@@ -240,6 +240,13 @@ for (const viewport of viewports) {
 			// Cast and crew loads by itself on the new title page.
 			// The side facts and the Cast row both link the director.
 			await expect(page.getByRole('link', { name: /^Alex Kim/ }).first()).toHaveAttribute('href', '/people/202');
+			// Links out sit near the top as chips, above the story and the Information facts (#745).
+			const links = page.getByTestId('title-links');
+			await expect(links.getByRole('link', { name: /^TMDB/ })).toHaveAttribute('href', 'https://www.themoviedb.org/movie/601');
+			await expect(links.getByRole('link', { name: /^Letterboxd/ })).toBeVisible();
+			const linksTop = (await links.boundingBox())!.y;
+			expect(linksTop).toBeLessThan((await page.getByRole('heading', { name: 'Information' }).boundingBox())!.y);
+			expect((await links.getByRole('link').first().boundingBox())!.height).toBeGreaterThanOrEqual(28);
 			await verifyPage(page, testInfo, `${viewport.name}-people-and-credits`);
 		});
 

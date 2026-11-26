@@ -127,6 +127,19 @@ describe('panelView', () => {
 		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['By', 'agent-check']]);
 		expect(v.actions.map((a) => a.label)).toEqual(['Title page', 'Problems']);
 	});
+	it('a saved subtitle: language and score, the site as Source, the file (#823)', () => {
+		const v = panelView(one(ev('subtitle_saved', { TitleID: 2, title_name: 'The Matrix', Actor: { kind: 'job', id: 1 }, Data: { file_id: 4, language: 'en', path: 'The Matrix (1999)/The Matrix (1999).en.srt', score: 87, site: 'OpenSubtitles.com' } })), ctx);
+		expect(v.line).toBe('en · Score 87');
+		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['Source', 'OpenSubtitles.com'], ['File', 'The Matrix (1999)/The Matrix (1999).en.srt']]);
+	});
+	it('a cleaned subtitle: what was removed, which steps ran and which were skipped (#823)', () => {
+		const v = panelView(one(ev('subtitle_cleaned', { TitleID: 2, title_name: 'The Matrix', Actor: { kind: 'job', id: 1 }, Data: { language: 'en', path: 'The Matrix (1999)/The Matrix (1999).en.srt', ads: 2, changed: 14, removed: ['Subtitles by x', 'www.site.com'], steps: ['ads', 'tags', 'caps'], skipped: ['capitals: the file is not in capitals'] } })), ctx);
+		expect(v.line).toBe('en · 2 ad lines removed, 14 lines tidied · Steps: Remove ad and credit lines, Remove formatting tags, Fix files written in all capitals · Skipped: capitals: the file is not in capitals');
+		expect([v.long, v.full]).toEqual([true, true]);
+		expect(facts(v)).toEqual([['When', 'Today, 10:00 PM'], ['File', 'The Matrix (1999)/The Matrix (1999).en.srt']]);
+		const bare = panelView(one(ev('subtitle_cleaned', { TitleID: 2, title_name: 'The Matrix', Data: { language: 'en' } })), ctx);
+		expect(bare.line).toBe('en');
+	});
 	it('a missing file: File missing, the file', () => {
 		const v = panelView(one(ev('file_missing', { TitleID: 1, title_name: "Grey's Anatomy", episode: 'S23E04 Love on the Brain', Actor: { kind: 'job', id: 1 }, Data: { path: "Grey's Anatomy/Season 23/x.mkv" } })), ctx);
 		expect([v.verb.word, v.line]).toEqual(['Failed', 'x · Missing']);

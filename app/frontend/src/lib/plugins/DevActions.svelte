@@ -7,9 +7,10 @@
 	import { api } from '#lib/core/api.ts';
 	import { pluginState, shownName } from './view.ts';
 	import type { Plugin, PluginOverview } from './types.ts';
+	import type { Snippet } from 'svelte';
 
 	type Act = (p: Plugin, run: () => Promise<unknown>, done: string, fail: string) => unknown;
-	let { sel, ov, busy, removing, act, askRemove, part }: { sel: Plugin; ov: PluginOverview | null; busy: string; removing: Plugin | null; act: Act; askRemove: (p: Plugin) => void; part: 'dev' | 'test' } = $props();
+	let { sel, ov, busy, removing, act, askRemove, part, settings }: { sel: Plugin; ov: PluginOverview | null; busy: string; removing: Plugin | null; act: Act; askRemove: (p: Plugin) => void; part: 'dev' | 'test'; settings?: Snippet } = $props();
 	const path = $derived(`/plugins/${encodeURIComponent(sel.id)}`);
 	const running = $derived(pluginState(sel) === 'running');
 	const name = $derived(shownName(sel));
@@ -17,6 +18,7 @@
 
 {#if part === 'dev'}
 	<Button variant="primary" aria-label="{sel.installed ? t('plugins.devReload') : t('plugins.devInstall')}: {name}" disabled={!ov?.can_run || !ov?.dev_mode || !!busy || !!sel.dev_error} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path}/dev-install`), 'plugins.devReloaded', 'plugins.devReloadFailed')} data-testid="plugin-dev-install">{t(sel.installed ? 'plugins.devReload' : 'plugins.devInstall')}</Button>
+	{@render settings?.()}
 	{#if sel.installed && running}<Button aria-label={t('plugins.stopName', { name })} disabled={!!busy} onclick={() => act(sel, () => api.post(`${path}/stop`), 'plugins.stopped', 'plugins.stopFailed')} data-testid="plugin-stop">{t('plugins.stop')}</Button>{/if}
 	{#if sel.installed && running && sel.access?.events?.length}<Button disabled={!!busy} onclick={() => act(sel, () => api.post(`${path}/test-event`, { event: sel.access?.events?.[0] }), 'plugins.devTestSent', 'plugins.devTestFailed')} data-testid="plugin-dev-test-event">{t('plugins.devTestEvent')}</Button>{/if}
 	{#if sel.installed}<Button aria-label={t('plugins.removeName', { name })} disabled={!!busy} busy={busy === sel.id && removing?.id === sel.id} onclick={() => askRemove(sel)}>{t('plugins.remove')}</Button>{/if}

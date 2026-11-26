@@ -119,7 +119,7 @@ func TestAskStepsAreTheAsksOwn(t *testing.T) {
 }
 
 // a future-only show ask with no next episode listed waits for one: the
-// card says Upcoming, never a Processing that spins for months (#716).
+// card says Upcoming, never a Processing that spins for months.
 func TestAskStepFutureOnlyNothingListed(t *testing.T) {
 	r := showRig(t)
 	ctx := context.Background()

@@ -62,6 +62,9 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 	if t.Kind != "artist" {
 		return out, ErrNotArtist
 	}
+	if t.State == "removed" {
+		return out, nil // removed while queued: nothing left to refresh (#805)
+	}
 	p, err := s.artists()
 	if err != nil {
 		return out, err
@@ -126,6 +129,11 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 	for i, al := range albums {
 		if ctx.Err() != nil {
 			return out, ctx.Err()
+		}
+		// Removed mid-run: stop asking for Pressings (#805). Checked every
+		// few albums so a big artist is not one read per album.
+		if i%removedCheckEvery == removedCheckEvery-1 && s.titleRemoved(ctx, titleID) {
+			return out, nil
 		}
 		if refusedInRow >= refusedAlbumsStop {
 			// The server turned down several albums in a row: the rest would
@@ -795,4 +803,15 @@ func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs 
 	_, _, err = s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID}, params,
 		fmt.Sprintf("refresh_title:%d", t.ID), by)
 	return err
+}
+
+// removedCheckEvery is how many albums a refresh reads between checks that
+// the artist is still in the library.
+const removedCheckEvery = 5
+
+// titleRemoved says whether the title was removed since the job started.
+func (s *Service) titleRemoved(ctx context.Context, titleID int64) bool {
+	var state string
+	err := s.Store.Read().QueryRowContext(ctx, "SELECT state FROM titles WHERE id = ?", titleID).Scan(&state)
+	return err == nil && state == "removed"
 }

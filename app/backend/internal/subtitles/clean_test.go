@@ -53,6 +53,9 @@ func TestService_CleanOnSaveAndAgain(t *testing.T) {
 	if len(es) != 1 || !strings.Contains(es[0].Summary, "1 ad lines removed") || es[0].Data["original"] == nil {
 		t.Fatalf("%+v", es)
 	}
+	if es[0].Data["path"] != rel { // History shows the file (#823)
+		t.Fatalf("path %v, want %q", es[0].Data["path"], rel)
+	}
 	if heldWith(t, f, "Subtitles by Someone") != 1 {
 		t.Fatal("original not held")
 	}

@@ -534,6 +534,9 @@
 				{#if topScores.length || topTmdb}<span class="sep" aria-hidden="true">·</span><a class="top-scores" href="#ratings" title={t('discover.titlePage.allRatings')}><TitleScores scores={topScores} tmdb={topTmdb} variant="mono" /></a>{/if}
 			</div>
 		{/snippet}
+		{#snippet linkLine()}
+			{#if outLinks.length}<ul class="tagchips out-links" data-testid="title-links">{#each outLinks as l (l.name)}<li><a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a></li>{/each}</ul>{/if}
+		{/snippet}
 		{#snippet tagLine()}
 			{#if tags.length}<ul class="tagchips quiet" data-testid="title-tags">{#each tags.slice(0, 5) as t (t)}<li>{t}</li>{/each}</ul>{/if}
 		{/snippet}
@@ -557,7 +560,7 @@
 		{/if}
 		{#if !(owned && ownTab !== 'overview')}
 		<div class="side" data-testid="title-side">
-			<div class="d-left">{@render factsLine()}{@render story()}{@render tagLine()}</div>
+			<div class="d-left">{@render factsLine()}{@render linkLine()}{@render story()}{@render tagLine()}</div>
 			<dl class="side-credits">
 				{#if makers.length}<div><dt>{madeBy}</dt><dd>{@render names(makers, 2)}</dd></div>{/if}
 				{#if stars.length}<div><dt>{t('discover.titlePage.starring')}</dt><dd>{@render names(stars, 3)}</dd></div>{/if}
@@ -611,7 +614,6 @@
 				</div>
 				<h3 class="atv-h3">{t('discover.titlePage.information')}</h3>
 				<dl class="atv-grid">{#each atvCols.flatMap((c) => c.rows) as r (r.label)}<div><dt>{r.label}</dt><dd>{r.value}</dd></div>{/each}</dl>
-				<p class="atv-links">{#each outLinks as l, i (l.name)}{#if i}<span class="sep" aria-hidden="true">·</span>{/if}<a href={l.href} target="_blank" rel="noopener noreferrer">{l.name} ↗</a>{/each}</p>
 			</section>
 
 		{/if}
@@ -691,12 +693,12 @@
 	.atv-grid dt { color: var(--text); font: 400 12px/16px var(--font-ui); }
 	.atv-grid dd { margin: 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); overflow-wrap: anywhere; }
 	.atv-h3 { margin: 22px 0 13px; color: var(--text); font: 700 17px/21px var(--font-ui); }
-	.atv-links { display: flex; flex-wrap: wrap; align-items: center; margin: 20px 0 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); }
-	.atv-links .sep { margin: 0 8px; color: var(--text-faint); }
-	.atv-links a { color: var(--text-muted); text-decoration: none; }
-	/* A 44px-tall hit area over the 16px link line on touch phones. */
-	@media (max-width: 767px) and (pointer: coarse) { .atv-links a { position: relative; } .atv-links a::after { content: ''; position: absolute; inset: -14px 0; } }
-	.atv-links a:hover { color: var(--text); }
+	/* Links out sit under the facts line as small chips (#745); the whole chip is the link, 44px tall on touch phones. */
+	.d-left .out-links { margin-top: -8px; }
+	.out-links li { padding: 0; min-height: 28px; color: var(--text-muted); font-size: 12px; }
+	.out-links a { display: inline-flex; align-items: center; min-height: inherit; padding: 0 12px; color: inherit; text-decoration: none; }
+	.out-links li:hover { color: var(--text); border-color: var(--text-faint); }
+	@media (max-width: 767px) and (pointer: coarse) { .out-links li { min-height: 44px; } }
 	@media (max-width: 899px) { .atv-cards { grid-template-columns: minmax(0, 1fr); } .atv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; } }
 	.tagchips.quiet li { background: none; border: 1px solid var(--line); color: var(--text-muted); font-size: 12px; }
 	.fb { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 7px; border-radius: 5px; border: 1.5px solid currentColor; font: 700 11.5px/1 var(--font-ui); letter-spacing: .03em; white-space: nowrap; }

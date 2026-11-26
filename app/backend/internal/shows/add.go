@@ -89,18 +89,51 @@ func (s *Service) LookupShow(ctx context.Context, id, source string) (metadata.S
 		return metadata.Show{}, err
 	}
 	ids := map[string]string{kind: v}
-	if kind != source {
-		if other, err := s.showSource(kind); err == nil {
-			if sh, err := other.Show(ctx, id); err == nil {
-				for k, x := range sh.IDs {
+	// Ask the id's own source, then TVMaze (no key needed) for a TVDB or
+	// IMDb id, for the show's other ids. The first show found this way is
+	// kept: when the chosen source has no link for the id, that show is
+	// used instead of finding nothing (#732, as Sonarr does).
+	var found metadata.Show
+	var helperErr error
+	helpers := []string{kind}
+	if kind == "tvdb" || kind == "imdb" {
+		helpers = append(helpers, "tvmaze")
+	}
+	for _, h := range helpers {
+		if h == source {
+			continue
+		}
+		other, err := s.showSource(h)
+		if err != nil || other == nil {
+			continue
+		}
+		sh, err := other.Show(ctx, id)
+		switch {
+		case err == nil:
+			for k, x := range sh.IDs {
+				if ids[k] == "" {
 					ids[k] = x
 				}
-			} else if !errors.Is(err, metadata.ErrShowNotFound) && !errors.Is(err, metadata.ErrNoTVDBKey) {
-				return metadata.Show{}, err
+			}
+			if found.Source == "" {
+				found = sh
+			}
+		case errors.Is(err, metadata.ErrShowNotFound), errors.Is(err, metadata.ErrNoTVDBKey):
+		default:
+			if helperErr == nil {
+				helperErr = err
 			}
 		}
 	}
 	sh, err := lookupShow(ctx, p, source, ids)
+	if errors.Is(err, metadata.ErrShowNotFound) {
+		switch {
+		case found.Source != "":
+			sh, err = found, nil
+		case helperErr != nil:
+			return metadata.Show{}, helperErr
+		}
+	}
 	if err != nil {
 		return sh, err
 	}
@@ -199,6 +232,11 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	sh, err := s.LookupShow(ctx, id, opt.Source)
 	if err != nil {
 		return 0, 0, err
+	}
+	if sh.Source != "" && sh.Source != opt.Source && metadata.ValidShowSource(sh.Source) {
+		// The chosen source has no link for this id: the show comes from
+		// the source that knows it, and stays with it on refresh (#732).
+		opt.Source = sh.Source
 	}
 	s.addAirTimes(ctx, &sh)
 	s.fixCopiedTMDB(ctx, &sh)

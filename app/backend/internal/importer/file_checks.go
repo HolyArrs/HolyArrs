@@ -7,7 +7,7 @@ import (
 )
 
 // How far a movie's play length may fall short of the Title's runtime before
-// it is held for Review (#611): 15%, or 12 minutes for short ones. Longer is
+// it is held for Review: 15%, or 12 minutes for short ones. Longer is
 // looser (50%, at least 30 minutes): extended and director's cuts run long,
 // while a far longer file is often a Title matched to the wrong TMDB entry.
 const (
