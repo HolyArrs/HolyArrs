@@ -1647,6 +1647,7 @@ releaseWeight
 release_date
 release_dates
 release_gate
+release_group
 release_group_count
 release_group_id
 release_groups
@@ -1738,6 +1739,7 @@ saved_at
 scan
 scene
 sceneName
+scene_name
 schedule
 schema
 schema_events
