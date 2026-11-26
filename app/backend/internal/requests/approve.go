@@ -14,6 +14,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
@@ -350,6 +351,9 @@ func (s *Service) addForAsk(ctx context.Context, a domain.Ask, set Settings, opt
 	if err != nil {
 		return 0, false, err
 	}
+	if set, err = s.animePlace(ctx, a, set, opt, tid != 0); err != nil {
+		return 0, false, err
+	}
 	if err := askedRules(ctx, db, a, &opt, set.FourKLibraryFolderID, set.FourKPickRulesID, set.LibraryFolderID); err != nil {
 		return 0, false, err
 	}
@@ -376,6 +380,76 @@ func (s *Service) addForAsk(ctx context.Context, a domain.Ask, set Settings, opt
 		return dup.TitleID, kept, err
 	}
 	return tid, false, err
+}
+
+// animePlace answers the Request settings an ask is approved with. For an
+// anime title the anime folder of its kind, when one is set, stands in for
+// the request folder: a new title lands there, and so does a copy with no
+// folder of its own (a 4K copy while no 4K folder is set). A folder the
+// approver picked wins, and with no anime folder nothing is looked up.
+//
+// A lookup that fails stops the approval, like any failed lookup of a new
+// title. For a title already in the Library (inLibrary) it is only logged
+// and the plain request folder is kept, so those approvals never start to
+// depend on the metadata server.
+func (s *Service) animePlace(ctx context.Context, a domain.Ask, set Settings, opt ApproveOptions, inLibrary bool) (Settings, error) {
+	folder := set.AnimeLibraryFolderID
+	if a.Kind == "show" {
+		folder = set.ShowAnimeLibraryFolderID
+	}
+	if folder == 0 || opt.LibraryFolderID != 0 {
+		return set, nil
+	}
+	anime, err := s.isAnime(ctx, a)
+	if err != nil && inLibrary {
+		log.Printf("asks: anime check of ask %d: %v", a.ID, err)
+		return set, nil
+	}
+	if err != nil || !anime {
+		return set, err
+	}
+	if a.Kind == "show" {
+		set.ShowLibraryFolderID = folder
+	} else {
+		set.LibraryFolderID = folder
+	}
+	return set, nil
+}
+
+// isAnime says whether the asked-for movie or show is anime, the way its
+// title page says it: the anime ID lists know it, or it is Animation whose
+// original language is Japanese. A mapping lookup that fails falls back to
+// the second rule.
+func (s *Service) isAnime(ctx context.Context, a domain.Ask) (bool, error) {
+	tmdb := a.TMDBID
+	if tmdb == "" {
+		tmdb = a.SourceIDs["tmdb"]
+	}
+	if s.AnimeMap != nil && tmdb != "" {
+		by := "tmdb_movie"
+		if a.Kind == "show" {
+			by = "tmdb_tv"
+		}
+		if m, err := s.AnimeMap(ctx, by, tmdb); err == nil && len(m.Entries) > 0 {
+			return true, nil
+		}
+	}
+	if a.Kind == "show" {
+		defs, err := library.ReadShowDefaults(ctx, s.Store.Read())
+		if err != nil {
+			return false, err
+		}
+		sh, err := shows.New(s.Library).LookupShow(ctx, a.Ref, defs.Source)
+		if err != nil {
+			return false, err
+		}
+		return metadata.LooksAnime(sh.Genres, nil, sh.OriginalLanguage), nil
+	}
+	m, err := s.Metadata.Movie(ctx, "tmdb:"+tmdb)
+	if err != nil {
+		return false, err
+	}
+	return metadata.LooksAnime(m.Genres, nil, m.OriginalLanguage), nil
 }
 
 // askedRules puts what the ask's line asked for on opt: the Pick rules it

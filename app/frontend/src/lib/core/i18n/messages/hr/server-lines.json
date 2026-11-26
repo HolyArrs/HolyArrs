@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "Nova naslovnica",
 	"server.plugins.send-event-library-add": "pošalji {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "pošalji {\"on\": true} ili {\"on\": false}",
+	"server.library.deleted-of": "Izbrisano {relativepath} iz {name}",
 	"server.importer.the-file-is-not-present-yet": "datoteka još nije tu; HolyArrs će je ponovno pokušati uvesti",
 	"server.migrate.the-same-as-a-source-that": "isto kao {name}, izvor koji već postoji"
 }

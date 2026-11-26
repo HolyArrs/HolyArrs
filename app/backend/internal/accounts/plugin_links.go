@@ -105,6 +105,8 @@ func takeLinkCode(code string, now time.Time) (linkCode, bool) {
 
 func (a *Auth) pluginLinkRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/plugin-hooks/link", a.pluginLinkCode)
+	m.HandleFunc("GET /api/v1/plugin-hooks/links", a.pluginOwnLinks)
+	m.HandleFunc("DELETE /api/v1/plugin-hooks/links/{user}", a.removePluginOwnLink)
 	m.HandleFunc("GET /api/v1/my/plugin-links", a.myPluginLinks)
 	m.HandleFunc("POST /api/v1/my/plugin-links", a.addMyPluginLink)
 	m.HandleFunc("DELETE /api/v1/my/plugin-links/{plugin}", a.removeMyPluginLink)
@@ -131,6 +133,47 @@ func (a *Auth) pluginLinkCode(w http.ResponseWriter, r *http.Request) {
 	}
 	code := newLinkCode(who.PluginID, ext, a.now())
 	writeJSON(w, http.StatusOK, map[string]any{"code": code, "expires": a.now().Add(linkLife).UTC()})
+}
+
+// pluginOwnLinks: a plugin reads who linked it, with the outside account it
+// named when it asked for each code. Without this it never learns who typed
+// a code, so it cannot name anyone in PluginForUserHeader.
+func (a *Auth) pluginOwnLinks(w http.ResponseWriter, r *http.Request) {
+	who, ok := webserver.From(r.Context())
+	if !ok || who.Via != "plugin" || who.UserID != 0 {
+		fail(w, http.StatusForbidden, "only a running plugin calls this")
+		return
+	}
+	ls, err := pluginLinksFor(r.Context(), a.s.Read(), who.PluginID)
+	if err != nil {
+		webserver.Internal(w, "accounts", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"links": ls})
+}
+
+// removePluginOwnLink: a plugin drops its own link to one person (they
+// unlinked in the outside service); it can then no longer act for them.
+func (a *Auth) removePluginOwnLink(w http.ResponseWriter, r *http.Request) {
+	who, ok := webserver.From(r.Context())
+	if !ok || who.Via != "plugin" || who.UserID != 0 {
+		fail(w, http.StatusForbidden, "only a running plugin calls this")
+		return
+	}
+	user, err := strconv.ParseInt(r.PathValue("user"), 10, 64)
+	if err != nil || user <= 0 {
+		fail(w, http.StatusBadRequest, "name the person by their user id")
+		return
+	}
+	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		return removePluginLink(r.Context(), tx, who.PluginID, user)
+	})
+	if err != nil {
+		webserver.Internal(w, "accounts", err)
+		return
+	}
+	log.Printf("accounts: plugin %s removed its link to user %d", who.PluginID, user)
+	a.pluginOwnLinks(w, r)
 }
 
 func (a *Auth) myPluginLinks(w http.ResponseWriter, r *http.Request) {

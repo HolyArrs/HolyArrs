@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Hvert samþykktar 4K-beiðnir fara og hvernig þær eru valdar",
 	"settings.requests.fourKSameFolder": "Eins og aðrar beiðnir",
 	"settings.requests.fourKNamedRules": "Gæðin sem heita 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Hvert samþykktar anime-beiðnir fara",
 	"settings.requests.choices": "Hvað fólk getur beðið um",
 	"settings.requests.choicesDesc": "Gæðahnapparnir á beiðnablöðunum, í þessari röð. Endurnefndu þá eða feldu hér; börn fá þann fyrsta sem sést.",
 	"settings.requests.choiceShown": "Sýna fólki",

@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Nem tartja tovább a film {label} Változatát? A lemezen lévő fájlokhoz nem nyúl.",
 	"movies.versions.removeFailed": "A Változatot nem sikerült eltávolítani",
+	"movies.versions.deleteFile": "Fájl törlése",
+	"movies.versions.deleteFileConfirm": "Törlöd ezt: {name}? A Nemrég törölt elemek közé kerül, ahonnan visszaállíthatod.",
+	"movies.versions.deleteFileFailed": "Nem sikerült törölni a fájlt",
 	"movies.versions.title": "Változatok",
 	"movies.versions.showLess": "Kevesebb megjelenítése",
 	"movies.versions.seeAll": "Mind a(z) {count} megtekintése",

@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Kuhu heakskiidetud 4K taotlused lähevad ja kuidas need valitakse",
 	"settings.requests.fourKSameFolder": "Nagu teised taotlused",
 	"settings.requests.fourKNamedRules": "Kvaliteet nimega 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Kuhu heakskiidetud anime taotlused lähevad",
 	"settings.requests.choices": "Mida inimesed saavad taotleda",
 	"settings.requests.choicesDesc": "Kvaliteedinupud taotlusakendes, selles järjekorras. Nimeta need siin ümber või peida; lapsed saavad esimese nähtava.",
 	"settings.requests.choiceShown": "Näita inimestele",

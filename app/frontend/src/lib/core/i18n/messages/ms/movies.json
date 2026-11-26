@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Berhenti mengekalkan Versi {label} bagi filem ini? Fail pada cakera tidak disentuh.",
 	"movies.versions.removeFailed": "Tidak dapat membuang Versi",
+	"movies.versions.deleteFile": "Padam fail",
+	"movies.versions.deleteFileConfirm": "Padam {name}? Fail ini akan ke Dipadam baru-baru ini, di mana anda boleh memulihkannya.",
+	"movies.versions.deleteFileFailed": "Fail tidak dapat dipadam",
 	"movies.versions.title": "Versi",
 	"movies.versions.showLess": "Tunjuk kurang",
 	"movies.versions.seeAll": "Lihat semua {count}",

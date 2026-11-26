@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "Ảnh bìa mới",
 	"server.plugins.send-event-library-add": "gửi {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "gửi {\"on\": true} hoặc {\"on\": false}",
+	"server.library.deleted-of": "Đã xóa {relativepath} của {name}",
 	"server.importer.the-file-is-not-present-yet": "tệp chưa có; HolyArrs sẽ thử nhập lại",
 	"server.migrate.the-same-as-a-source-that": "giống {name}, một Nguồn đã có ở đây"
 }

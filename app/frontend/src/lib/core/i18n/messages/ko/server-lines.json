@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "새 커버 아트",
 	"server.plugins.send-event-library-add": "보내기: {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "보내기: {\"on\": true} 또는 {\"on\": false}",
+	"server.library.deleted-of": "{name}의 {relativepath}을(를) 삭제했습니다",
 	"server.importer.the-file-is-not-present-yet": "파일이 아직 없습니다. HolyArrs가 다시 가져오기를 시도합니다",
 	"server.migrate.the-same-as-a-source-that": "{name}와 같으며, 이미 있는 소스입니다"
 }

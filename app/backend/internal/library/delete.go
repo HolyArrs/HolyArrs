@@ -160,57 +160,9 @@ func planRemove(ctx context.Context, db Reader, titleID int64, c RemoveChoice, n
 		return p, t, err
 	}
 	for _, f := range files {
-		var v mediafiles.Version
-		var lf mediafiles.LibraryFolder
-		if err := database.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
+		if err := planFile(ctx, db, &p, t, f, c, rules.HoldingDays, now); err != nil {
 			return p, t, err
 		}
-		if err := database.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
-			return p, t, err
-		}
-		rf := RemoveFile{FileID: f.ID, LibraryFolderID: lf.ID, Origin: f.Origin, Path: f.RelativePath, Protected: f.Protected, root: lf.Path}
-		if f.Protected {
-			p.Protected = append(p.Protected, rf)
-			if !c.AcknowledgeProtection || !c.DeleteFiles || f.Origin != "imported" && f.Origin != "adopted" {
-				p.Skipped = true
-			}
-		}
-		for _, sid := range f.SlotIDs {
-			switch t.Kind {
-			case "show":
-				rf.Episodes = append(rf.Episodes, EpisodeLabel(ctx, db, sid))
-			case "artist":
-				rf.Episodes = append(rf.Episodes, trackLabelOf(ctx, db, sid))
-			}
-		}
-		switch {
-		case !c.DeleteFiles:
-			rf.Why = "kept: files stay on disk unless you choose to delete them"
-		case lf.LookOnly:
-			rf.Why = "kept: the Library folder is look-only; HolyArrs never deletes files there"
-		case f.Origin != "imported" && f.Origin != "adopted":
-			rf.Why = "kept: found on disk, not imported or adopted; HolyArrs never deletes it"
-		case f.State == "missing":
-			rf.Why = "kept: the file is not on disk"
-		default:
-			to, err := importer.HoldPath(lf.Path, f.RelativePath, now)
-			if err != nil {
-				rf.Why = "kept: " + err.Error()
-				break
-			}
-			rel, _ := filepath.Rel(lf.Path, to)
-			rf.To = filepath.ToSlash(rel)
-			rf.Why = fmt.Sprintf("goes to the holding folder for %d days", rules.HoldingDays)
-			if rules.HoldingDays == 0 {
-				rf.Why = "goes to the holding folder until you empty it"
-			}
-			if t.Kind != "artist" {
-				rf.Subtitles = holdSubtitles(lf.Path, f.RelativePath, now)
-			}
-			p.Held = append(p.Held, rf)
-			continue
-		}
-		p.Kept = append(p.Kept, rf)
 	}
 	if p.Skipped {
 		for _, h := range p.Held {
@@ -223,6 +175,63 @@ func planRemove(ctx context.Context, db Reader, titleID int64, c RemoveChoice, n
 	_ = db.QueryRowContext(ctx, `SELECT count(*) FROM downloads WHERE state IN ('sent', 'queued', 'downloading', 'stalled', 'paused')
 		AND EXISTS (SELECT 1 FROM json_each(downloads.slot_ids) j JOIN slots s ON s.id = j.value JOIN items i ON i.id = s.item_id WHERE i.title_id = ?)`, t.ID).Scan(&p.ActiveDownloads)
 	return p, t, nil
+}
+
+// planFile adds one File of t to a delete plan: held when it may go to the
+// holding folder, otherwise kept with the reason. Nothing changes.
+func planFile(ctx context.Context, db Reader, p *RemovePlan, t mediafiles.Title, f mediafiles.File, c RemoveChoice, holdingDays int, now time.Time) error {
+	var v mediafiles.Version
+	var lf mediafiles.LibraryFolder
+	if err := database.Get(ctx, db, "versions", f.VersionID, &v); err != nil {
+		return err
+	}
+	if err := database.Get(ctx, db, "library_folders", v.LibraryFolderID, &lf); err != nil {
+		return err
+	}
+	rf := RemoveFile{FileID: f.ID, LibraryFolderID: lf.ID, Origin: f.Origin, Path: f.RelativePath, Protected: f.Protected, root: lf.Path}
+	if f.Protected {
+		p.Protected = append(p.Protected, rf)
+		if !c.AcknowledgeProtection || !c.DeleteFiles || f.Origin != "imported" && f.Origin != "adopted" {
+			p.Skipped = true
+		}
+	}
+	for _, sid := range f.SlotIDs {
+		switch t.Kind {
+		case "show":
+			rf.Episodes = append(rf.Episodes, EpisodeLabel(ctx, db, sid))
+		case "artist":
+			rf.Episodes = append(rf.Episodes, trackLabelOf(ctx, db, sid))
+		}
+	}
+	switch {
+	case !c.DeleteFiles:
+		rf.Why = "kept: files stay on disk unless you choose to delete them"
+	case lf.LookOnly:
+		rf.Why = "kept: the Library folder is look-only; HolyArrs never deletes files there"
+	case f.Origin != "imported" && f.Origin != "adopted":
+		rf.Why = "kept: found on disk, not imported or adopted; HolyArrs never deletes it"
+	case f.State == "missing":
+		rf.Why = "kept: the file is not on disk"
+	default:
+		to, err := importer.HoldPath(lf.Path, f.RelativePath, now)
+		if err != nil {
+			rf.Why = "kept: " + err.Error()
+			break
+		}
+		rel, _ := filepath.Rel(lf.Path, to)
+		rf.To = filepath.ToSlash(rel)
+		rf.Why = fmt.Sprintf("goes to the holding folder for %d days", holdingDays)
+		if holdingDays == 0 {
+			rf.Why = "goes to the holding folder until you empty it"
+		}
+		if t.Kind != "artist" {
+			rf.Subtitles = holdSubtitles(lf.Path, f.RelativePath, now)
+		}
+		p.Held = append(p.Held, rf)
+		return nil
+	}
+	p.Kept = append(p.Kept, rf)
+	return nil
 }
 
 // Remove deletes a movie from the Library (apply false: only the plan).

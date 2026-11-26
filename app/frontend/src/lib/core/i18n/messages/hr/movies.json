@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Prestati držati verziju {label} ovog filma? Datoteke na disku ostaju netaknute.",
 	"movies.versions.removeFailed": "Verzija se nije mogla ukloniti",
+	"movies.versions.deleteFile": "Izbriši datoteku",
+	"movies.versions.deleteFileConfirm": "Izbrisati {name}? Ide u Nedavno izbrisano, odakle je možete vratiti.",
+	"movies.versions.deleteFileFailed": "Datoteku nije moguće izbrisati",
 	"movies.versions.title": "Verzije",
 	"movies.versions.showLess": "Prikaži manje",
 	"movies.versions.seeAll": "Prikaži svih {count}",

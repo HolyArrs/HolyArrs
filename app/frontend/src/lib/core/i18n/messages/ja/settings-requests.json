@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "承認された 4K リクエストの保存先と選び方",
 	"settings.requests.fourKSameFolder": "他のリクエストと同じ",
 	"settings.requests.fourKNamedRules": "4K という名前の品質",
+	"settings.requests.anime": "アニメ",
+	"settings.requests.animeDesc": "承認されたアニメのリクエストの保存先",
 	"settings.requests.choices": "リクエストできるもの",
 	"settings.requests.choicesDesc": "リクエスト画面の品質ボタンです。この順に表示されます。ここで名前を変えたり非表示にしたりできます。キッズには最初に表示されるものが使われます。",
 	"settings.requests.choiceShown": "表示する",

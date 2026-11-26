@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Stoppen met het bijhouden van de variant {label} van deze film? Bestanden op schijf blijven staan.",
 	"movies.versions.removeFailed": "Variant verwijderen mislukt",
+	"movies.versions.deleteFile": "Bestand verwijderen",
+	"movies.versions.deleteFileConfirm": "{name} verwijderen? Het gaat naar Recent verwijderd, waar je het kunt terugzetten.",
+	"movies.versions.deleteFileFailed": "Kan het bestand niet verwijderen",
 	"movies.versions.title": "Varianten",
 	"movies.versions.showLess": "Minder tonen",
 	"movies.versions.seeAll": "Alle {count} bekijken",

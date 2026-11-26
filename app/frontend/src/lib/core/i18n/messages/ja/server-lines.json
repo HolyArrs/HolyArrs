@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "新しいカバーアート",
 	"server.plugins.send-event-library-add": "送信: {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "送信: {\"on\": true} または {\"on\": false}",
+	"server.library.deleted-of": "{name} の {relativepath} を削除しました",
 	"server.importer.the-file-is-not-present-yet": "ファイルはまだありません。HolyArrs がもう一度取り込みを試みます",
 	"server.migrate.the-same-as-a-source-that": "{name} と同じで、すでにあるソースです"
 }

@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "Nuova copertina",
 	"server.plugins.send-event-library-add": "invia {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "invia {\"on\": true} o {\"on\": false}",
+	"server.library.deleted-of": "Eliminato {relativepath} di {name}",
 	"server.importer.the-file-is-not-present-yet": "il file non c'è ancora; HolyArrs riproverà a importarlo",
 	"server.migrate.the-same-as-a-source-that": "la stessa di {name}, una Fonte già presente"
 }

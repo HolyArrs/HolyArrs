@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Přestat u tohoto filmu udržovat Verzi {label}? Soubory na disku se nezmění.",
 	"movies.versions.removeFailed": "Verzi se nepodařilo odebrat",
+	"movies.versions.deleteFile": "Smazat soubor",
+	"movies.versions.deleteFileConfirm": "Smazat {name}? Přesune se do Nedávno smazaných, odkud ho můžete obnovit.",
+	"movies.versions.deleteFileFailed": "Soubor se nepodařilo smazat",
 	"movies.versions.title": "Verze",
 	"movies.versions.showLess": "Zobrazit méně",
 	"movies.versions.seeAll": "Zobrazit všech {count}",
