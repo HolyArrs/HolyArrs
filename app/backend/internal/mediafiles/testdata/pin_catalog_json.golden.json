@@ -87,7 +87,8 @@
   "ChosenReleaseID": null,
   "ActiveDownloadID": null,
   "LastReason": null,
-  "NextTryAt": null
+  "NextTryAt": null,
+  "KeepUpToDate": null
 }
 {
   "ID": 4,

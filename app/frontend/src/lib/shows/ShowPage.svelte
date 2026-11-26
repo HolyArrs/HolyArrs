@@ -47,6 +47,7 @@
 		seasonWords,
 		searchWord,
 		showProgress,
+		slotKept,
 		packWindowValue,
 	} from './labels.ts';
 	import type { AskShowSheet } from './types.ts';
@@ -344,6 +345,12 @@
 		if (ep.slots.some((x) => x.file_id)) items.push({ label: t('shows.sheet.subtitles'), icon: 'subtitle', onselect: () => openSubtitles(ep) });
 		items.push({ label: t('shows.tools.history'), icon: 'clock', href: to(`/downloads/history?title=${title.id}&episode=${ep.id}`) });
 		items.push({ label: t('shows.page.keepNamed', { name: code }), checked: ep.keep_up_to_date, disabled: busy === `e${ep.id}`, onselect: () => setEpisode(ep, !ep.keep_up_to_date) });
+		// With more than one Version, each one may want the episode or not on its own (a dubbed Version kept only for some episodes).
+		if (title.versions.length > 1)
+			for (const sl of ep.slots) {
+				const on = slotKept(ep, sl, title.versions);
+				items.push({ label: t('shows.page.keepNamed', { name: `${code} (${sl.version})` }), checked: on, disabled: busy === `e${ep.id}`, onselect: () => setEpisodeIn(ep, sl.version_id, !on) });
+			}
 		items.push({ kind: 'separator' }, { label: t('shows.tools.delete', { season: code }), icon: 'trash', destructive: true, onselect: () => deleter?.open({ episodeIds: [ep.id], label: code }) });
 		return items;
 	}
@@ -361,6 +368,21 @@
 			await reload();
 		} catch (e) {
 			toasts.push(t('shows.page.updateSeasonFailed'), 'fail', { body: message(e) });
+		} finally {
+			busy = '';
+		}
+	}
+
+	async function setEpisodeIn(ep: EpisodeView, versionId: number, keep: boolean) {
+		busy = `e${ep.id}`;
+		try {
+			const r = await api.put<EpisodeView>(`/episodes/${ep.id}`, { keep_up_to_date: keep, version_id: versionId });
+			const list = episodes[ep.season];
+			const i = list?.findIndex((x) => x.id === ep.id) ?? -1;
+			const got = r.slots.find((x) => x.version_id === versionId);
+			if (list && i >= 0) list[i] = { ...list[i], slots: list[i].slots.map((x) => (x.version_id === versionId ? { ...x, keep_up_to_date: got?.keep_up_to_date } : x)) };
+		} catch (e) {
+			toasts.push(t('shows.sheet.updateFailed'), 'fail', { body: message(e) });
 		} finally {
 			busy = '';
 		}

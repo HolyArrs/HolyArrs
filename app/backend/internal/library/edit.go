@@ -287,7 +287,8 @@ func (s *Service) Edit(ctx context.Context, titleID int64, c TitleChange, dryRun
 }
 
 // goodEnoughTx works out the Good enough flag of each of the Version's Slots
-// with a File, and swaps in_library and better_wanted to match.
+// with a File, and swaps in_library and better_wanted to match. keep says
+// the title is kept up to date; each Slot then follows mediafiles.SlotKept.
 func goodEnoughTx(ctx context.Context, tx *sql.Tx, v mediafiles.Version, keep bool, by domain.Actor) ([]SlotChange, error) {
 	var pr mediafiles.PickRules
 	if err := database.Get(ctx, tx, "pick_rules", v.PickRulesID, &pr); err != nil {
@@ -315,11 +316,12 @@ func goodEnoughTx(ctx context.Context, tx *sql.Tx, v mediafiles.Version, keep bo
 		if ge && pr.Body.ReplaceUnderMin {
 			ge = !underMinTx(ctx, tx, v, sl, name, f, pr.Body)
 		}
+		kept := keep && mediafiles.SlotKept(sl, true, v.KeepUpToDate)
 		to := sl.State
 		switch {
-		case sl.State == mediafiles.SlotInLibrary && !ge && keep && v.KeepUpToDate:
+		case sl.State == mediafiles.SlotInLibrary && !ge && kept:
 			to = mediafiles.SlotBetterWanted
-		case sl.State == mediafiles.SlotBetterWanted && (ge || !keep):
+		case sl.State == mediafiles.SlotBetterWanted && (ge || !kept):
 			to = mediafiles.SlotInLibrary
 		}
 		if to == sl.State && ge == sl.GoodEnough {

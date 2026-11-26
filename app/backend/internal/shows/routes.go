@@ -129,6 +129,9 @@ func (h *SeasonHandlers) Routes(m *http.ServeMux) {
 // KeepHelp is the help text for a keep_up_to_date change.
 const KeepHelp = `send {"keep_up_to_date": true or false}`
 
+// EpisodeKeepHelp is the body of PUT /episodes/{id}.
+const EpisodeKeepHelp = `send {"keep_up_to_date": true or false}, with optional "version_id" to choose for that Version alone ("keep_up_to_date": null follows the episode again)`
+
 // ShowID reads the {id} Title through titleID and answers 404 when it is not a show.
 func ShowID(titleID func(http.ResponseWriter, *http.Request) (mediafiles.Title, bool), w http.ResponseWriter, r *http.Request) (mediafiles.Title, bool) {
 	t, ok := titleID(w, r)

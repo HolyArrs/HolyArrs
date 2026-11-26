@@ -48,7 +48,7 @@ type epSlot struct {
 	// sl is nil when the episode has no Slot in this Version.
 	sl  *mediafiles.Slot
 	cur *mediafiles.Current
-	// kept means the episode, its season, the Version and the show are all kept up to date.
+	// kept means the show is kept up to date and the Slot is wanted (mediafiles.SlotKept).
 	kept bool
 	// soon means aired, or airing within a day, when season packs may be taken.
 	soon bool
@@ -169,9 +169,10 @@ func (s *Searcher) loadShow(ctx context.Context, ti mediafiles.Title, ver mediaf
 	if err != nil {
 		return set, err
 	}
-	partKept := map[int64]bool{}
+	partKept, partLive := map[int64]bool{}, map[int64]bool{}
 	for _, p := range parts {
 		partKept[p.ID] = p.KeepUpToDate && p.DroppedAt == nil
+		partLive[p.ID] = p.DroppedAt == nil
 	}
 	its, err := mediafiles.EpisodesOfTitle(ctx, db, ti.ID)
 	if err != nil {
@@ -208,7 +209,11 @@ func (s *Searcher) loadShow(ctx context.Context, ti mediafiles.Title, ver mediaf
 			e.runtime = *it.Runtime
 		}
 		e.soon = it.AirDate != nil && !it.AirDate.After(soon)
-		e.kept = it.KeepUpToDate && ver.KeepUpToDate && ti.KeepUpToDate && (it.PartID == nil || partKept[*it.PartID])
+		itemKept := it.KeepUpToDate && (it.PartID == nil || partKept[*it.PartID])
+		e.kept = ti.KeepUpToDate && itemKept && ver.KeepUpToDate
+		if e.sl != nil {
+			e.kept = ti.KeepUpToDate && (it.PartID == nil || partLive[*it.PartID]) && mediafiles.SlotKept(*e.sl, itemKept, ver.KeepUpToDate)
+		}
 		if e.sl != nil {
 			e.cur = currentOf(ctx, db, ti, *e.sl, set.pr)
 		}

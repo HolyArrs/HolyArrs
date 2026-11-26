@@ -226,6 +226,9 @@ type Slot struct {
 	ActiveDownloadID *int64     `db:"active_download_id"`
 	LastReason       *string    `db:"last_reason"`
 	NextTryAt        *time.Time `db:"next_try_at"`
+	// KeepUpToDate is this Version's own choice for the Item: nil follows
+	// the Item and the Version (see SlotKept).
+	KeepUpToDate *bool `db:"keep_up_to_date"`
 }
 
 // PickRules is one named rule set. The rule body is a JSON column.

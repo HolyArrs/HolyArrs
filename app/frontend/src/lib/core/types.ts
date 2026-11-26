@@ -177,6 +177,8 @@ export interface EpisodeSlot {
 	reason?: string;
 	file_id?: number;
 	good_enough?: boolean;
+	// This Version's own choice for the episode; absent when it follows the episode and the Version.
+	keep_up_to_date?: boolean;
 	// Set when the list is asked for with points=1.
 	points?: number;
 	good_enough_points?: number;

@@ -352,7 +352,7 @@ func EditVersion(ctx context.Context, s *database.Store, titleID, versionID int6
 		if err := database.Update(tx, "versions", &v, by); err != nil {
 			return err
 		}
-		_, err = goodEnoughTx(ctx, tx, v, t.KeepUpToDate && v.KeepUpToDate, by)
+		_, err = goodEnoughTx(ctx, tx, v, t.KeepUpToDate, by)
 		return err
 	})
 	return v, err

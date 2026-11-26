@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { keepOffNote, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, chosenWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress } from './labels.ts';
+import { keepOffNote, slotKept, newSeason, newestSeason, episodeCode, searchWord, seasonLooking, episodeLabel, episodeWhy, chosenWhy, label, seasonChoices, seasonLine, seasonName, seasonWords, showProgress } from './labels.ts';
 import { counts, matches, ofKind } from '../mediafiles/library.ts';
 import { airedEpisodes, progressOf } from '../mediafiles/table.ts';
 import type { EpisodeView, SeasonSummary, ShowInfo, TitleView } from '../core/types.ts';
@@ -146,5 +146,23 @@ describe('chosenWhy', () => {
 		expect(chosenWhy({ state: 'chosen' })).toBe('');
 		expect(chosenWhy({ state: 'wanted', reason: 'x' })).toBe('');
 		expect(chosenWhy(undefined)).toBe('');
+	});
+});
+
+describe('slotKept', () => {
+	const versions = [
+		{ id: 1, label: 'Main', main: true, pick_rules_id: 1, pick_rules_name: 'Standard', library_folder_id: 1, folder_path: '/tv/A', keep_up_to_date: true },
+		{ id: 2, label: 'es', main: false, pick_rules_id: 1, pick_rules_name: 'Standard', library_folder_id: 1, folder_path: '/tv/A [es]', keep_up_to_date: false },
+	];
+	const slot = (version_id: number, keep?: boolean) => ({ id: version_id, version: version_id === 1 ? 'Main' : 'es', version_id, state: 'wanted', state_label: '', keep_up_to_date: keep });
+	const ep = (keep: boolean) => ({ id: 1, season: 1, episode: 2, keep_up_to_date: keep, ids: {}, slots: [] }) as EpisodeView;
+	it('follows the episode and the Version when the Slot made no choice', () => {
+		expect(slotKept(ep(true), slot(1), versions)).toBe(true);
+		expect(slotKept(ep(true), slot(2), versions)).toBe(false);
+		expect(slotKept(ep(false), slot(1), versions)).toBe(false);
+	});
+	it("takes the Slot's own choice first", () => {
+		expect(slotKept(ep(false), slot(2, true), versions)).toBe(true);
+		expect(slotKept(ep(true), slot(1, false), versions)).toBe(false);
 	});
 });

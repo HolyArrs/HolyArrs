@@ -398,11 +398,12 @@ type SeasonVersion struct{ PartID, VersionID int64 }
 
 // ShowSeasonsToSearch lists, for a whole-show search, every season with an
 // episode kept up to date that is looking for a copy, in a show and
-// Version kept up to date.
+// Version kept up to date, or with a Slot that wants its episode itself.
 func ShowSeasonsToSearch(ctx context.Context, db database.Lister, titleID int64) ([]SeasonVersion, error) {
 	rows, err := db.QueryContext(ctx, `SELECT DISTINCT p.id, s.version_id FROM parts p JOIN items i ON i.part_id = p.id JOIN slots s ON s.item_id = i.id
 		JOIN titles t ON t.id = p.title_id JOIN versions v ON v.id = s.version_id
-		WHERE p.title_id = ? AND t.keep_up_to_date = 1 AND v.keep_up_to_date = 1 AND p.keep_up_to_date = 1 AND i.keep_up_to_date = 1 AND i.dropped_at IS NULL
+		WHERE p.title_id = ? AND t.keep_up_to_date = 1 AND COALESCE(s.keep_up_to_date, v.keep_up_to_date = 1 AND p.keep_up_to_date = 1 AND i.keep_up_to_date = 1) = 1
+		AND i.dropped_at IS NULL
 		AND s.state IN ('wanted', 'better_wanted', 'failed', 'rejected', 'stalled') ORDER BY p.number, s.version_id`, titleID)
 	if err != nil {
 		return nil, err
@@ -583,6 +584,50 @@ func (s *Service) SetEpisode(ctx context.Context, itemID int64, keep bool, by do
 		Summary: fmt.Sprintf("%s %s: Keep up to date %s", name, label, word), Data: map[string]any{"item_id": it.ID, "keep_up_to_date": keep},
 		GroupKey: library.GroupKey(it.TitleID)})
 	return it, nil
+}
+
+// SetEpisodeInVersion makes one Version's own choice for an episode: keep
+// true wants it in that Version whatever the episode and the Version say,
+// false leaves it out there, nil follows them again. The other Versions
+// are not changed, so a dubbed Version that is not kept up to date can
+// want only the episodes asked for in it.
+func (s *Service) SetEpisodeInVersion(ctx context.Context, itemID, versionID int64, keep *bool, by domain.Actor) (mediafiles.Item, mediafiles.Slot, mediafiles.Version, error) {
+	var it mediafiles.Item
+	var sl mediafiles.Slot
+	var v mediafiles.Version
+	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
+		if err := database.Get(ctx, tx, "items", itemID, &it); err != nil {
+			return err
+		}
+		if it.Kind != "episode" {
+			return database.ErrNotFound
+		}
+		if err := database.Get(ctx, tx, "versions", versionID, &v); err != nil {
+			return err
+		}
+		slots, err := database.Select[mediafiles.Slot](ctx, tx, "slots", "item_id = ? AND version_id = ?", itemID, versionID)
+		if err != nil {
+			return err
+		}
+		if len(slots) == 0 {
+			return database.ErrNotFound
+		}
+		sl = slots[0]
+		sl.KeepUpToDate = keep
+		return database.Update(tx, "slots", &sl, by)
+	})
+	if err != nil {
+		return it, sl, v, err
+	}
+	var name string
+	_ = s.Store.Read().QueryRowContext(ctx, "SELECT name FROM titles WHERE id = ?", it.TitleID).Scan(&name)
+	// The episode line of SetEpisode, with the Version beside the episode and what the Slot now does.
+	label := fmt.Sprintf("S%02dE%02d (%s)", library.Deref(it.Numbers.Season), library.Deref(it.Numbers.Episode), v.Label)
+	word := map[bool]string{true: "on", false: "off"}[mediafiles.SlotKept(sl, it.KeepUpToDate, v.KeepUpToDate)]
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventSeasonChanged, TitleID: &it.TitleID,
+		Summary: fmt.Sprintf("%s %s: Keep up to date %s", name, label, word), Data: map[string]any{"item_id": it.ID, "version_id": v.ID, "keep_up_to_date": keep},
+		GroupKey: library.GroupKey(it.TitleID)})
+	return it, sl, v, nil
 }
 
 // SeasonSummary is one season of a show with its episode counts.
