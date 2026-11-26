@@ -11,6 +11,7 @@
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, FilePoints } from '#lib/downloads/index.ts';
 	import { goto } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
+	import { episodeWords } from '#lib/core/episodes.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
@@ -141,7 +142,10 @@
 		busy = 'look';
 		try {
 			await api.post(`/titles/${titleId}/search`, { slot_id: slot.id });
-			toasts.push(t('shows.sheet.searchingEpisode', { n: ep?.episode ?? '' }), 'info');
+			// Named with the show and the episode, and opens the show on its season: the toast is often read later, in the alerts list.
+			const href = `/library/${titleId}${ep?.season != null ? `?season=${ep.season}` : ''}`;
+			if (show && ep) toasts.push(t('shows.page.searchingNamed', { name: show.name }), 'info', { body: episodeWords(ep.season, ep.episode, ep.name), href });
+			else toasts.push(t('shows.sheet.searchingEpisode', { n: ep?.episode ?? '' }), 'info', { href });
 		} catch (e) {
 			toasts.push(t('shows.sheet.startSearchFailed'), 'fail', { body: message(e) });
 		} finally {
