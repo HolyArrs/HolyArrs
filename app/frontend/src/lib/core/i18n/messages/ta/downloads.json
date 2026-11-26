@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "பதிவிறக்கியைச் சேர்",
 	"downloads.hl.noUsenetDl": "Usenet பதிவிறக்கி எதுவும் அமைக்கப்படவில்லை",
 	"downloads.hl.noTorrentDl": "டொரன்ட் பதிவிறக்கி எதுவும் அமைக்கப்படவில்லை",
+	"downloads.problem.waitingForFiles": "கோப்புகளுக்காகக் காத்திருக்கிறது",
 	"downloads.problem.importBlocked": "இறக்குமதி தடுக்கப்பட்டது",
 	"downloads.problem.missingArticles": "கட்டுரைகள் இல்லை",
 	"downloads.problem.noFullCopy": "முழு நகல் இல்லை",

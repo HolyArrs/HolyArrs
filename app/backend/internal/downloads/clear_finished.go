@@ -62,13 +62,17 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 		relName = rel.Name
 	}
 	said := "Cleared the imported download from " + dr.Name
-	if root, rel := m.finishedFolder(ctx, folder, relName, dr); rel != "" {
+	if root, rel, emptyOnly := m.finishedFolder(ctx, folder, relName, dr); rel != "" {
 		rerr := func() error {
 			rt, err := os.OpenRoot(root)
 			if err != nil {
 				return err
 			}
 			defer rt.Close()
+			if emptyOnly {
+				// Remove, not RemoveAll: it refuses a folder that still holds anything.
+				return rt.Remove(rel)
+			}
 			return rt.RemoveAll(rel)
 		}()
 		if rerr != nil {
@@ -84,25 +88,33 @@ func (m *Manager) ClearFinished(ctx context.Context, downloadID int64) {
 	m.event(ctx, &d, "download_removed", said)
 }
 
-func (m *Manager) finishedFolder(ctx context.Context, content, relName string, dr domain.Downloader) (root, rel string) {
+func (m *Manager) finishedFolder(ctx context.Context, content, relName string, dr domain.Downloader) (root, rel string, emptyOnly bool) {
 	if content == "" || relName == "" {
-		return "", ""
+		return "", "", false
 	}
 	local := filepath.Clean(mapLocal(content, dr.PathMap))
+	// A single-file Usenet job is often reported by its video file path, and a
+	// move import already took that file into the Library. Step up to the job
+	// folder when the reported path is a file or is already gone under a file
+	// name, never when it already names the job folder itself.
+	// When the reported file is gone, the job folder is deleted only if it is
+	// empty, so nothing left beside the moved file can go with it.
 	if fi, err := os.Lstat(local); err == nil && fi.Mode().IsRegular() {
 		local = filepath.Dir(local)
+	} else if errors.Is(err, os.ErrNotExist) && !sameJobName(filepath.Base(local), relName) {
+		local, emptyOnly = filepath.Dir(local), true
 	}
 	if !sameJobName(filepath.Base(local), relName) {
-		return "", ""
+		return "", "", false
 	}
 	fi, err := os.Lstat(local)
 	if err != nil || !fi.IsDir() || fi.Mode()&(os.ModeSymlink|os.ModeIrregular) != 0 {
-		return "", ""
+		return "", "", false
 	}
 	// As for a torrent's files: never in or around a Library folder, and
 	// nothing when the Library folders cannot be read.
 	if keep, err := m.libraryFolders(ctx); err != nil || nearLibrary(local, keep) {
-		return "", ""
+		return "", "", false
 	}
 	var roots []string
 	if m.SavePath != "" {
@@ -116,10 +128,10 @@ func (m *Manager) finishedFolder(ctx context.Context, content, relName string, d
 			continue
 		}
 		if p, err := filepath.Rel(r, local); err == nil && p != "." && !filepath.IsAbs(p) {
-			return r, p
+			return r, p, emptyOnly
 		}
 	}
-	return "", ""
+	return "", "", false
 }
 
 func sameJobName(folder, relName string) bool {

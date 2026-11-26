@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Προσθήκη προγράμματος λήψης",
 	"downloads.hl.noUsenetDl": "δεν έχει ρυθμιστεί πρόγραμμα λήψης Usenet",
 	"downloads.hl.noTorrentDl": "δεν έχει ρυθμιστεί πρόγραμμα λήψης torrent",
+	"downloads.problem.waitingForFiles": "Αναμονή αρχείων",
 	"downloads.problem.importBlocked": "Η εισαγωγή αποκλείστηκε",
 	"downloads.problem.missingArticles": "Λείπουν άρθρα",
 	"downloads.problem.noFullCopy": "Κανένα πλήρες αντίγραφο",

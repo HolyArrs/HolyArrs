@@ -11,6 +11,7 @@
 	import { epText, movieText } from './episode-text.svelte.ts';
 	import type { CalendarEntry } from '#lib/core/types.ts';
 	import { to } from '#lib/core/paths.ts';
+	import { episodeWords } from '#lib/core/episodes.ts';
 	import { sized } from '#lib/core/tmdb-image.ts';
 
 	// Details window of a calendar card or row (an episode's description, a movie's or album's facts, a way to the page). Shared by Cards and List.
@@ -35,12 +36,22 @@
 	const wanted = $derived(g.entries.filter((x) => canSearch(x, today)));
 	const canManage = $derived(session.can('manage_library') && !session.kid);
 	let searching = $state(false);
+	// The episodes a search asked for, under the show's name: one with its name, several as a span.
+	function searchedWords(): string | undefined {
+		const eps = wanted.filter((x) => x.kind === 'episode' && x.episode != null);
+		if (!eps.length) return undefined;
+		const first = eps[0];
+		if (eps.length === 1) return episodeWords(first.season, first.episode!, first.episode_name);
+		const last = eps[eps.length - 1];
+		return `${episodeWords(first.season, first.episode!)} – ${episodeWords(last.season, last.episode!)}`;
+	}
 	async function search() {
 		searching = true;
 		try {
 			let jobs = 0;
 			for (const x of wanted) jobs += (await api.post<{ job_ids: number[] }>(`/titles/${x.title_id}/search`, searchBody(x))).job_ids.length;
-			toasts.push(jobs ? t('discover.calWindow.searchingFor', { name: title }) : t('discover.calWindow.nothingToSearch'), jobs ? 'info' : 'ok');
+			if (jobs) toasts.push(t('discover.calWindow.searchingFor', { name: title }), 'info', { body: searchedWords(), href: isEp && e.season != null ? `${entryHref(e)}?season=${e.season}` : entryHref(e) });
+			else toasts.push(t('discover.calWindow.nothingToSearch'), 'ok');
 		} catch (err) {
 			toasts.push(t('discover.calWindow.couldntSearch'), 'fail', { body: message(err) });
 		} finally {

@@ -21,10 +21,12 @@ func TestSourceTestShowsWhatTheNameTurnedInto(t *testing.T) {
 	cases := []struct {
 		url, proxy, want string
 	}{
-		{"http://holyarrs-nameshow-test.home.arpa:9117/api", "", "holyarrs-nameshow-test.home.arpa → not found. HolyArrs can't find this name. Use the IP instead."},
+		// Absolute names (trailing dot), so a DNS search domain with a wildcard
+		// record cannot make them resolve.
+		{"http://holyarrs-nameshow-test.home.arpa.:9117/api", "", "holyarrs-nameshow-test.home.arpa. → not found. HolyArrs can't find this name. Use the IP instead."},
 		{"http://localhost:" + port + "/api", "", "→ refused on port " + port + ". The name works, but nothing answers on that port. Check the port."},
 		// Through a proxy the name is the proxy's to look up: no name step.
-		{"http://holyarrs-nameshow-test.home.arpa:9117/api", "http://127.0.0.1:1", ""},
+		{"http://holyarrs-nameshow-test.home.arpa.:9117/api", "http://127.0.0.1:1", ""},
 	}
 	for _, tc := range cases {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

@@ -106,6 +106,8 @@ const handLines = { 'Because you have {name}': 'suggest',
 	'the file could not be placed': 'importer',
 	// place_why.go: what follows that lead when the file was gone or could not be read to check (notInFolderWhy, unreadCheckWhy).
 	'the file is not in the download folder any more': 'importer', 'could not read the file to check it': 'importer',
+	// files_pending.go: a listed file that has not reached the local download folder yet.
+	'the file is not present yet; HolyArrs will try importing it again': 'importer',
 	// importer.go place: what else follows that lead; a slot holds the system's own words. shows_import.go: the same lead naming the episode or track.
 	'the source is not a plain file (a symlink or something else)': 'importer', 'a file appeared at the target': 'importer',
 	'hardlink failed ({a}), copy failed ({b})': 'importer', 'hardlink not possible: {why}': 'importer',

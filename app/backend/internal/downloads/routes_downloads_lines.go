@@ -39,16 +39,17 @@ func inChunks(ids []int64, f func(part []any, marks string)) {
 // slotInfo is what the Downloads screen shows about one Slot: its episode
 // line, and its Title, Version and (for tracks) album.
 type slotInfo struct {
-	line      EpisodeLine
-	titleID   int64
-	title     string
-	year      sql.NullInt64
-	kind      string
-	version   string
-	full      bool // the Slot has its Version (the Title line is shown)
-	album     sql.NullString
-	albumYear sql.NullString
-	active    sql.NullInt64 // the download the Slot waits on now
+	line       EpisodeLine
+	titleID    int64
+	title      string
+	year       sql.NullInt64
+	kind       string
+	version    string
+	full       bool // the Slot has its Version (the Title line is shown)
+	album      sql.NullString
+	albumYear  sql.NullString
+	active     sql.NullInt64 // the download the Slot waits on now
+	lastReason string
 }
 
 // linesOf is the episode lines of a download's Slots, in order. A Slot that
