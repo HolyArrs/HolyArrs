@@ -371,7 +371,7 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 }
 
 // Every state a plugin can be in, in Cards, Large and List and in its dialog: the one right action,
-// with nothing hidden and no "Downloading…" on Stop or Start. The list answer is dressed per state.
+// with nothing hidden and no "Downloadingâ€¦" on Stop or Start. The list answer is dressed per state.
 for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 	test(`plugins: every state shows the right action and why at ${width}`, async ({ browser }) => {
 		test.setTimeout(180_000);
@@ -405,7 +405,7 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 		const row = (id: string) => page.locator(`[data-testid="plugin-row"][data-id="${id}"]`);
 		for (const v of ['Cards', 'Large', 'List']) {
 			await pick(page, v);
-			await expect(row('checking').getByTestId('plugin-step')).toHaveText('Checking…');
+			await expect(row('checking').getByTestId('plugin-step')).toHaveText('Checkingâ€¦');
 			await expect(row('failed-install').getByTestId('plugin-card-retry')).toBeEnabled();
 			await expect(row('needs-newer').getByTestId('plugin-card-update')).toHaveCount(0);
 			await expect(row('needs-newer').getByTestId('plugin-card-stop')).toBeVisible();
@@ -436,12 +436,12 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 		await expect(row('failed-update').getByTestId('plugin-install-error')).toContainText('checked file changed');
 		await expect(row('needs-newer').getByTestId('plugin-update-needs-app')).toHaveText('Needs HolyArrs 9.9.0 or newer');
 
-		// Start on a card shows a spinner on Start, never "Downloading…".
+		// Start on a card shows a spinner on Start, never "Downloadingâ€¦".
 		await row('stopped').getByTestId('plugin-card-start').click();
 		await expect.poll(() => !!hold).toBe(true);
 		await expect(row('stopped').getByTestId('plugin-card-start')).toBeDisabled();
 		await expect(row('stopped').getByTestId('plugin-step')).toHaveCount(0);
-		await expect(page.getByText('Downloading…')).toHaveCount(0);
+		await expect(page.getByText('Downloadingâ€¦')).toHaveCount(0);
 		hold!();
 		await expect(row('stopped').getByTestId('plugin-card-stop')).toBeVisible();
 
@@ -508,7 +508,7 @@ test('plugins: settings save, restart failure and own fields', async ({ browser 
 	await expect.poll(() => puts.length).toBe(1);
 	expect(JSON.parse(puts[0]).values).toEqual({ exit: 'false' });
 	await expect(page.getByText('Tailscale settings saved')).toBeVisible();
-	await expect(page.getByText('Couldn’t start Tailscale').or(page.getByText("Couldn't start Tailscale"))).toBeVisible();
+	await expect(page.getByText('Couldnâ€™t start Tailscale').or(page.getByText("Couldn't start Tailscale"))).toBeVisible();
 	await expect(page.getByText("Couldn't save the settings")).toHaveCount(0);
 	await page.context().close();
 });
@@ -716,7 +716,7 @@ for (const width of [1280, 375]) {
 			return route.fulfill({ json: { id: 2, key: 'hak_e2e_fake_key_value', label: body.label } });
 		});
 		await page.goto('/settings/ai');
-		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See · Add · Downloads · Settings · Delete · Admin']);
+		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See Â· Add Â· Downloads Â· Settings Â· Delete Â· Admin']);
 		await page.getByText('Make a key by hand').click();
 		const form = page.getByTestId('ai-key-groups-form');
 		for (const name of ['See library and activity', 'Add and request', 'Control downloads', 'Change settings']) await expect(form.getByRole('checkbox', { name })).toBeChecked();
@@ -732,7 +732,7 @@ for (const width of [1280, 375]) {
 		await page.getByLabel('Key name').fill('Claude Desktop');
 		await page.getByRole('button', { name: 'Make an AI key' }).click();
 		await expect.poll(() => sent).toEqual([{ label: 'Claude Desktop', scopes: ['mcp'], mcp_groups: ['see', 'add', 'control', 'delete'] }]);
-		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See · Add · Downloads · Settings · Delete · Admin', 'Can: See · Add · Downloads · Delete']);
+		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See Â· Add Â· Downloads Â· Settings Â· Delete Â· Admin', 'Can: See Â· Add Â· Downloads Â· Delete']);
 		// The boxes go back to the defaults for the next key.
 		await expect(form.getByRole('checkbox', { name: 'Change settings' })).toBeChecked();
 		await expect(form.getByRole('checkbox', { name: 'Delete' })).not.toBeChecked();
@@ -746,7 +746,7 @@ for (const width of [1280, 375]) {
 		await page.screenshot({ path: test.info().outputPath(`ai-key-edit-${width}.png`), fullPage: true });
 		await page.getByRole('button', { name: 'Save' }).click();
 		await expect.poll(() => edits).toEqual([{ mcp_groups: ['see', 'add', 'control', 'settings', 'delete', 'approve'] }]);
-		await expect(page.getByTestId('ai-key-groups').first()).toHaveText('Can: See · Add · Downloads · Settings · Delete · Approve');
+		await expect(page.getByTestId('ai-key-groups').first()).toHaveText('Can: See Â· Add Â· Downloads Â· Settings Â· Delete Â· Approve');
 		await page.context().close();
 	});
 }
@@ -761,7 +761,7 @@ const stress = (() => {
 		{ ...base, id: 'ok', version: '1.0.0', name: 'Ok', author: 'HolyArrs', description: 'Tiny.', access: null },
 		{ ...base, id: 'host', version: '2.3.1', name: 'Long Host Relay', author: 'CoderLuii', description: 'Sends events to one very long web address.', access: { hosts: ['relay-endpoint.a-really-long-subdomain-name.example-hosting-provider-cloud.net'], folders: [], actions: [] }, stats: { downloads: 7 } },
 		{ ...base, id: 'de', version: '0.9.0', name: 'Untertitel-Synchronisierungswerkzeug', author: 'CoderLuii', description: 'Synchronisiert Untertitel automatisch mit der Tonspur und korrigiert Zeitverschiebungen.', access: { hosts: ['untertitel-datenbank.beispiel.de'], folders: ['untertitel'], actions: ['library.read'] }, stats: { downloads: 4321, stars: 3 } },
-		{ ...base, id: 'ar', version: '1.1.0', name: 'مزامنة المكتبة', author: 'CoderLuii', description: 'يحافظ على مكتبتك متزامنة مع خدمة المشاهدة عبر الإنترنت ويضيف الطلبات الجديدة تلقائيًا.', access: { hosts: [], folders: [], actions: ['library.read', 'requests.create'] }, stats: { downloads: 640, stars: 41 } }
+		{ ...base, id: 'ar', version: '1.1.0', name: 'Ù…Ø²Ø§Ù…Ù†Ø© Ø§Ù„Ù…ÙƒØªØ¨Ø©', author: 'CoderLuii', description: 'ÙŠØ­Ø§ÙØ¸ Ø¹Ù„Ù‰ Ù…ÙƒØªØ¨ØªÙƒ Ù…ØªØ²Ø§Ù…Ù†Ø© Ù…Ø¹ Ø®Ø¯Ù…Ø© Ø§Ù„Ù…Ø´Ø§Ù‡Ø¯Ø© Ø¹Ø¨Ø± Ø§Ù„Ø¥Ù†ØªØ±Ù†Øª ÙˆÙŠØ¶ÙŠÙ Ø§Ù„Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ø¬Ø¯ÙŠØ¯Ø© ØªÙ„Ù‚Ø§Ø¦ÙŠÙ‹Ø§.', access: { hosts: [], folders: [], actions: ['library.read', 'requests.create'] }, stats: { downloads: 640, stars: 41 } }
 	];
 })();
 for (const [width, height, scheme] of [[1920, 1080, 'light'], [1530, 860, 'dark'], [1366, 768, 'light'], [1280, 800, 'dark'], [1024, 768, 'light'], [768, 1024, 'dark'], [390, 844, 'light']] as const) {
@@ -904,6 +904,7 @@ const heavy = {
 		actions: ['library.read', 'library.write', 'downloads.read', 'downloads.control', 'requests.read', 'requests.create', 'requests.approve', 'activity.read', 'watched.write', 'settings.read', 'schedules.run', 'subtitles.write']
 	},
 	installed_access: { hosts: [], folders: [], actions: [] },
+	scope_groups: [{ id: 'network', scopes: ['network.forward'], change: true, warnings: ['forward'] }],
 	settings: Array.from({ length: 16 }, (_, i) => ({ key: `opt${i}`, label: `Option number ${i + 1} with a longer label`, type: ['text', 'number', 'toggle', 'select', 'secret'][i % 5], options: ['One', 'Two', 'Three'], help: i % 3 ? undefined : 'A short line of help that explains what this option changes.', group: i < 8 ? 'Main' : 'Extra' }))
 };
 async function sameHeight(page: Page) {
@@ -938,6 +939,8 @@ for (const [width, height] of [[1440, 900], [1280, 800], [390, 844]] as const) {
 		await expect(page.getByTestId('plugin-detail')).toBeVisible();
 		await page.waitForTimeout(400);
 		await shot('info');
+		// The red forwarding warning shows where the access is approved, with its icon.
+		await expect(page.getByTestId('approve-warning')).toContainText('Sees everything sent through it');
 		if (desk) await noScrollIn(page, 'plugin window');
 		if (desk) await sameHeight(page);
 		// Its settings.

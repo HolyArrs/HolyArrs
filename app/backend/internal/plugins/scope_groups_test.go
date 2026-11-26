@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -29,5 +30,24 @@ func TestScopeGroups(t *testing.T) {
 		if got := scopeGroups(&Access{Actions: c.actions}); !reflect.DeepEqual(got, c.want) {
 			t.Errorf("%s: %+v", c.name, got)
 		}
+	}
+}
+
+// An old Tailscale granted network.forward at the 1.3.0 upgrade (kept, not in
+// its manifest) still shows the forwarding group and its red warning.
+func TestScopeGroupsWithKeptForward(t *testing.T) {
+	a := &Access{Actions: []string{"library.read"}}
+	gs := scopeGroups(withKept(a, []string{"network.forward"}))
+	found := false
+	for _, g := range gs {
+		if slices.Contains(g.Scopes, "network.forward") && len(g.Warnings) > 0 {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("no warned group for a kept network.forward: %+v", gs)
+	}
+	if len(a.Actions) != 1 {
+		t.Fatalf("withKept changed the manifest's access: %v", a.Actions)
 	}
 }
