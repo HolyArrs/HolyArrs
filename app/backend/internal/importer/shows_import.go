@@ -530,7 +530,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 				}
 			}
 		default:
-			ss.outcome, ss.reason = "stuck", im.nothingMatchedIn(dr, files, music, root, rootOK, plan, len(cands) == 0)
+			ss.outcome, ss.reason = "stuck", waitForFiles(d, im.nothingMatchedIn(dr, files, music, root, rootOK, plan, len(cands) == 0), time.Now())
 			if unpackWhy != "" {
 				ss.reason = unpackWhy
 			}

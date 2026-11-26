@@ -336,7 +336,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 			}
 		}
 	}
-	slotTo, reason := mediafiles.SlotNeedsADecision, im.nothingPlaced(dr, d.FilesSeen, plan)
+	slotTo, reason := mediafiles.SlotNeedsADecision, waitForFiles(d, im.nothingPlaced(dr, d.FilesSeen, plan), time.Now())
 	if why := notPlacedWhy(root, plan, imp.Result); why != "" {
 		reason = why
 	} else if why := im.unseenWhy(dr, d.FilesSeen, root, rootOK, plan, len(cands) == 0); why != "" {
