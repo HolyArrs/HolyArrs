@@ -513,6 +513,25 @@ test('plugins: settings save, restart failure and own fields', async ({ browser 
 	await page.context().close();
 });
 
+// A developer plugin gets the same settings form: without it a plugin that needs a key can't be tried.
+test('plugins: a developer plugin with settings shows Settings', async ({ browser }) => {
+	const page = await (await browser.newContext({ viewport: { width: 1366, height: 768 } })).newPage();
+	await signIn(page, owner());
+	const ov = structuredClone(fake) as typeof fake & { dev_mode?: boolean; plugins: Record<string, unknown>[] };
+	ov.dev_mode = true;
+	Object.assign(ov.plugins[0], { dev: true, installed: true, installed_version: '1.2.0', running: true, enabled: true, settings: [{ key: 'exit', label: 'Exit node', type: 'toggle' }] });
+	await page.route('**/api/v1/plugins**', async (route) => {
+		if (route.request().url().endsWith('/settings')) return route.fulfill({ json: { fields: [{ key: 'exit', label: 'Exit node', type: 'toggle' }], values: { exit: 'false' }, secrets_set: {} } });
+		return route.fulfill({ json: ov });
+	});
+	await page.goto('/plugins#tailscale');
+	const panel = page.getByTestId('plugin-detail');
+	await expect(panel.getByTestId('plugin-dev-install')).toBeVisible();
+	await panel.getByTestId('plugin-settings').click();
+	await expect(page.getByTestId('plugin-settings-form').getByLabel('Exit node')).toBeVisible();
+	await page.close();
+});
+
 // A link to /plugins#<id> opens that plugin; Esc closes it, clears the address and puts focus back on its tile.
 // Update all updates every plugin with an update, after the same access question.
 test('plugins: logos and developer pictures never load from github.com', async ({ browser }) => {

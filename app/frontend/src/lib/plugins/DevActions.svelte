@@ -1,5 +1,5 @@
 <script lang="ts">
-	// The panel actions of a developer plugin (Install from folder or Reload, Stop, Send a test event, Remove)
+	// The panel actions of a developer plugin (Install from folder or Reload, Stop, Send a test event, Settings, Remove)
 	// and, for a listed plugin, the Get test versions choice.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
@@ -9,7 +9,7 @@
 	import type { Plugin, PluginOverview } from './types.ts';
 
 	type Act = (p: Plugin, run: () => Promise<unknown>, done: string, fail: string) => unknown;
-	let { sel, ov, busy, removing, act, askRemove, part }: { sel: Plugin; ov: PluginOverview | null; busy: string; removing: Plugin | null; act: Act; askRemove: (p: Plugin) => void; part: 'dev' | 'test' } = $props();
+	let { sel, ov, busy, removing, act, askRemove, part, onsettings }: { sel: Plugin; ov: PluginOverview | null; busy: string; removing: Plugin | null; act: Act; askRemove: (p: Plugin) => void; part: 'dev' | 'test'; onsettings?: () => void } = $props();
 	const path = $derived(`/plugins/${encodeURIComponent(sel.id)}`);
 	const running = $derived(pluginState(sel) === 'running');
 	const name = $derived(shownName(sel));
@@ -19,6 +19,7 @@
 	<Button variant="primary" aria-label="{sel.installed ? t('plugins.devReload') : t('plugins.devInstall')}: {name}" disabled={!ov?.can_run || !ov?.dev_mode || !!busy || !!sel.dev_error} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path}/dev-install`), 'plugins.devReloaded', 'plugins.devReloadFailed')} data-testid="plugin-dev-install">{t(sel.installed ? 'plugins.devReload' : 'plugins.devInstall')}</Button>
 	{#if sel.installed && running}<Button aria-label={t('plugins.stopName', { name })} disabled={!!busy} onclick={() => act(sel, () => api.post(`${path}/stop`), 'plugins.stopped', 'plugins.stopFailed')} data-testid="plugin-stop">{t('plugins.stop')}</Button>{/if}
 	{#if sel.installed && running && sel.access?.events?.length}<Button disabled={!!busy} onclick={() => act(sel, () => api.post(`${path}/test-event`, { event: sel.access?.events?.[0] }), 'plugins.devTestSent', 'plugins.devTestFailed')} data-testid="plugin-dev-test-event">{t('plugins.devTestEvent')}</Button>{/if}
+	{#if sel.installed && sel.settings?.length && onsettings}<Button icon="sliders" aria-label={t('plugins.settingsName', { name })} onclick={onsettings} data-testid="plugin-settings">{t('plugins.settings')}</Button>{/if}
 	{#if sel.installed}<Button aria-label={t('plugins.removeName', { name })} disabled={!!busy} busy={busy === sel.id && removing?.id === sel.id} onclick={() => askRemove(sel)}>{t('plugins.remove')}</Button>{/if}
 	<span class="unsigned xs" title={t('plugins.devUnsignedHint')} data-testid="plugin-unsigned"><Icon name="alert" size={13} />{t('plugins.devUnsigned')}</span>
 	{#if sel.dev_error}<p class="xs err" data-testid="plugin-dev-error"><Icon name="alert" size={13} /><span>{sel.dev_error}</span></p>{/if}

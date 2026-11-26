@@ -150,7 +150,8 @@ Developer mode lets you run a plugin you're building on your own server, without
    Copy real files; links are refused.
 4. The plugin shows on the Plugins page with an **Unsigned** tag. Select **Install from folder**, then approve what it asks for, as for any plugin.
 5. After each new build, copy the file again and select **Reload**. Nothing needs a restart or a new version number.
-6. A plugin that lists `access.events` gets a **Send a test event** button while it runs. It sends one line for the first event it asks for, with `"test": true` in the payload and a made-up movie.
+6. A plugin that lists `settings` gets a **Settings** button once it is installed, the same form a published plugin has. Saving restarts it when it runs.
+7. A plugin that lists `access.events` gets a **Send a test event** button while it runs. It sends one line for the first event it asks for, with `"test": true` in the payload and a made-up movie.
 
 What stays the same: the plugin runs in the same sandbox, reaches only the websites, folders and events you approved, and is checked against the program's hash at each start. What changes: it is not on the signed list, it never updates on its own, and it starts only while developer mode is on. Turning developer mode off stops every developer plugin.
 

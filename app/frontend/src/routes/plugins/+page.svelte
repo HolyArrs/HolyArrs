@@ -457,7 +457,7 @@
 	{@const s = pluginState(sel)}
 	{@const name = shownName(sel)}
 	{#if sel.dev}
-		<DevActions {sel} {ov} {busy} {removing} {act} {askRemove} part="dev" />
+		<DevActions {sel} {ov} {busy} {removing} {act} {askRemove} part="dev" onsettings={() => (editing = sel.id)} />
 	{:else if s === 'not_installed'}
 		{#if sel.needs_app}<span class="xs muted need" data-testid="plugin-needs-app">{t('plugins.needsApp', { version: sel.needs_app })}</span>
 		{:else}<Button variant="primary" aria-label={t('plugins.installName', { name })} disabled={!canInstall || !!busy || !!sel.install_step} busy={busy === sel.id || !!sel.install_step} onclick={() => install(sel)} data-testid="plugin-main-install">{stepLabel(sel) || (sel.install_error ? t('plugins.retry') : t('plugins.install'))}</Button>{/if}
