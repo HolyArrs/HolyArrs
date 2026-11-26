@@ -10,7 +10,7 @@ security = [
 ]
 credits = [
   {github = "dhruv1220", link = "https://github.com/HolyArrs/HolyArrs/pull/812", issues = [717, 797, 808, 786, 793]},
-  {github = "diblaze", link = "https://github.com/HolyArrs/HolyArrs/pull/673", issues = [678, 672, 747, 676]},
+  {github = "diblaze", link = "https://github.com/HolyArrs/HolyArrs/pull/673", issues = [672, 747, 676]},
   {github = "NotCavnfox", link = "https://github.com/HolyArrs/HolyArrs/pull/854", issues = [854, 855, 852, 845, 846]},
   {github = "wlatic", link = "https://github.com/HolyArrs/HolyArrs/issues/783", issues = [783, 858, 857]},
   {github = "lancewilhelm", link = "https://github.com/HolyArrs/HolyArrs/pull/840", issues = [724, 838, 753]},
@@ -27,7 +27,7 @@ credits = [
   {name = "xrandallx", link = "https://community.holyarrs.com/t/398", issues = [808]},
   {name = "chesh1r3k", discord = true, issues = [692]},
   {name = "Harybo", discord = true, issues = [692]},
-  {github = "prantzos", link = "https://github.com/HolyArrs/HolyArrs/pull/723", issues = [721]},
+  {github = "prantzos", link = "https://github.com/HolyArrs/HolyArrs/pull/723", issues = [721, 720]},
   {github = "sunboyy", link = "https://github.com/HolyArrs/HolyArrs/issues/683", issues = [683]},
   {github = "aguanitallc", link = "https://github.com/HolyArrs/HolyArrs/pull/850", issues = [850]},
   {github = "bobberb", link = "https://github.com/HolyArrs/HolyArrs/pull/660", issues = [660]},
@@ -57,9 +57,9 @@ Library = [
   "Delete a single movie file from the Library tab. (#821)",
   "Import a library keeps going with the page closed. (#712)",
   "Fixed: Rescan commands rescan the title, or the whole Library. (#808)",
-  "Fixed: shows with many episodes import inside the write time limit. (#682)",
+  "Fixed: shows with hundreds of episodes on a network share now import. (#682)",
   "Fixed: a show no longer takes another show's picture or episodes. (#342)",
-  "Fixed: big libraries no longer time out on the schedules pass. (#747)",
+  "Fixed: feed checks no longer time out on big libraries. (#747)",
 ]
 Downloads = [
   "Pick rules get an SDR 4K trait and catch more AI upscales. (#610)",
@@ -67,10 +67,10 @@ Downloads = [
   "Fixed: SABnzbd speed goes only to jobs that are downloading. (#838)",
   "Fixed: empty Usenet job folders are deleted after a move import. (#724)",
   "Fixed: imports retry when files from a remote downloader arrive late. (#829)",
-  "Fixed: qBittorrent calls ask for a plain answer. (#846)",
-  "Fixed: DUAL or MULTi with no language word isn't read as original. (#797)",
+  "Fixed: qBittorrent works behind proxies that compress answers, like qui. (#846)",
+  "Fixed: DUAL or MULTi names now say audio is checked at import. (#797)",
   "Fixed: German DL keeps the original language in imported Pick rules. (#858)",
-  "Fixed: a MULTi whose Source says what it means is read right. (#750)",
+  "Fixed: MULTi releases without your language are skipped before download. (#750)",
   "Fixed: \"amp\" in a release name matches \"&\". (#762)",
   "Fixed: anime names with alt-titles or [Group][Title][Episode] read right. (#763)",
   "Fixed: MKV audio with no language tag is read as English. (#850)",
@@ -117,16 +117,16 @@ Movies = [
   "Removing a copy's protection asks in the app's own dialog. (#150)",
 ]
 Shows = [
-  "Show settings get a Future seasons only option. (#721)",
+  "Show settings get a Future seasons only option. (#720) (#721)",
 ]
 Polish = [
   "Fixed: Who watched what no longer breaks on two same-name accounts. (#734)",
-  "Fixed: old import reports open, and plugin screens show clean dots. (#925)",
+  "Fixed: old import reports open, and plugin screens drop garbled symbols. (#925)",
   "Changed: the key icon's bar starts at the ring's edge. (#683)",
   "Changed: plain permission names, full-width own-server box, one-line TV shows button. (#945)",
 ]
 
 [stats]
-issues_done = 55
+issues_done = 54
 still_building = 0
 people_credited = 26

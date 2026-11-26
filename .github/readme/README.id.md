@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: plugin mendengar apa yang terjadi di HolyArrs.** Mode pengembang menjalankan plugin yang sedang kamu buat, dan versi uji coba memungkinkan beberapa orang mencobanya lebih dulu. [Lihat yang baru](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: impor file secara manual dari Pustaka.** File film dicek durasi, video, dan audionya sebelum diimpor, plus banyak perbaikan. [Lihat yang baru](https://holyarrs.com/whats-new/)
 
 > Setiap poster, trailer, dan skor di HolyArrs kamu berasal dari server yang saya jalankan dan bayar sendiri, supaya tetap gratis untuk semua orang. Kalau HolyArrs membuat malam nonton kamu sedikit lebih menyenangkan, sponsor membantu menjaga semuanya tetap menyala untuk kita semua 💛
 >
