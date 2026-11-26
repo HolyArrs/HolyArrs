@@ -9,7 +9,7 @@ A plugin is one Linux program that HolyArrs downloads, checks and runs in a lock
 
 ## Where plugin code lives
 
-Each plugin has a folder in `app/plugins/<id>/` with its Go source and a `holyarrs-plugin.json` file. The release tools turn that folder into a published version.
+Plugins live in the [HolyArrs-Plugins](https://github.com/HolyArrs/HolyArrs-Plugins) repo, not in this one. Ours sit in its `plugins/<id>/` folders (Tailscale is `plugins/tailscale`); community plugins live in their authors' own repos and are listed in its `catalog/`. Each plugin folder holds its Go source and a `holyarrs-plugin.json` file. The release tools turn that folder into a published version.
 
 ## The manifest
 
@@ -193,7 +193,7 @@ Each list has a counter that goes up with every change; all the plugin lists of 
 The `publish.yml` workflow in `HolyArrs/HolyArrs-Plugins`:
 
 1. Checks out the app repo at a tag.
-2. Builds `app/plugins/<id>` for linux/amd64, linux/arm64 and linux/arm/v7 (`publish.py build --src <dir> --out <dir>` does only this step, with nothing signed).
+2. Builds the plugin folder named in its catalog entry for linux/amd64, linux/arm64 and linux/arm/v7 (`publish.py build --src <dir> --out <dir>` does only this step, with nothing signed).
 3. Runs `deploy/release/plugins/publish.py`, which writes the manifest, adds the version to the list and raises the counter. It starts from the live lists, and refuses when the version already exists.
 4. Signs the lists with the signing key from the `plugin-signing` environment (it has no passphrase, so the run needs nobody), then runs `pluginkey check`, the same install check the app runs.
 5. Uploads the new files to R2, the version files first and the lists last. A file already on R2 is never overwritten.
