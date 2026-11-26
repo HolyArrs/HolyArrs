@@ -124,8 +124,7 @@
 	"settings.subtitles.cleanAllQueued": "Limpiando todos los subtítulos de la biblioteca",
 	"settings.subtitles.cleanAllFailed": "No se pudo iniciar la limpieza",
 	"settings.subtitles.cleanRow": "Pasos para",
-	"settings.subtitles.cleanEvery": "Todos los idiomas",
-	"settings.subtitles.cleanEveryHint": "Se usa para cualquier idioma sin pasos propios.",
+	"settings.subtitles.cleanEvery": "Cualquier otro idioma",
 	"settings.subtitles.cleanAddLang": "Añadir un idioma",
 	"settings.subtitles.cleanRemoveLang": "Quitar este idioma"
 }

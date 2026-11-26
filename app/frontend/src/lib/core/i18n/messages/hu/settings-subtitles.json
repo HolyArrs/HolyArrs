@@ -124,8 +124,7 @@
 	"settings.subtitles.cleanAllQueued": "A könyvtár összes feliratának tisztítása folyamatban",
 	"settings.subtitles.cleanAllFailed": "A tisztítás nem indult el",
 	"settings.subtitles.cleanRow": "Lépések ehhez:",
-	"settings.subtitles.cleanEvery": "Minden nyelv",
-	"settings.subtitles.cleanEveryHint": "Minden olyan nyelvre érvényes, amelynek nincsenek saját lépései.",
+	"settings.subtitles.cleanEvery": "Minden más nyelv",
 	"settings.subtitles.cleanAddLang": "Nyelv hozzáadása",
 	"settings.subtitles.cleanRemoveLang": "Nyelv eltávolítása"
 }

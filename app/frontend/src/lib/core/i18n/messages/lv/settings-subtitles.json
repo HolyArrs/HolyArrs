@@ -124,8 +124,7 @@
 	"settings.subtitles.cleanAllQueued": "Tiek tīrīti visi bibliotēkas subtitri",
 	"settings.subtitles.cleanAllFailed": "Tīrīšanu neizdevās sākt",
 	"settings.subtitles.cleanRow": "Soļi valodai",
-	"settings.subtitles.cleanEvery": "Visas valodas",
-	"settings.subtitles.cleanEveryHint": "Attiecas uz katru valodu, kurai nav savu soļu.",
+	"settings.subtitles.cleanEvery": "Jebkura cita valoda",
 	"settings.subtitles.cleanAddLang": "Pievienot valodu",
 	"settings.subtitles.cleanRemoveLang": "Noņemt šo valodu"
 }

@@ -124,8 +124,7 @@
 	"settings.subtitles.cleanAllQueued": "Очищення всіх субтитрів у бібліотеці",
 	"settings.subtitles.cleanAllFailed": "Не вдалося почати очищення",
 	"settings.subtitles.cleanRow": "Кроки для",
-	"settings.subtitles.cleanEvery": "Усі мови",
-	"settings.subtitles.cleanEveryHint": "Діє для будь-якої мови без власних кроків.",
+	"settings.subtitles.cleanEvery": "Будь-яка інша мова",
 	"settings.subtitles.cleanAddLang": "Додати мову",
 	"settings.subtitles.cleanRemoveLang": "Прибрати цю мову"
 }

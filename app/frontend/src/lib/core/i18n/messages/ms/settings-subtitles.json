@@ -124,8 +124,7 @@
 	"settings.subtitles.cleanAllQueued": "Membersihkan semua sari kata dalam Pustaka",
 	"settings.subtitles.cleanAllFailed": "Pembersihan tidak dapat dimulakan",
 	"settings.subtitles.cleanRow": "Langkah untuk",
-	"settings.subtitles.cleanEvery": "Semua bahasa",
-	"settings.subtitles.cleanEveryHint": "Digunakan untuk mana-mana bahasa tanpa langkah sendiri.",
+	"settings.subtitles.cleanEvery": "Setiap bahasa lain",
 	"settings.subtitles.cleanAddLang": "Tambah bahasa",
 	"settings.subtitles.cleanRemoveLang": "Buang bahasa ini"
 }

@@ -124,8 +124,7 @@
 	"settings.subtitles.cleanAllQueued": "جارٍ تنظيف كل الترجمات في المكتبة",
 	"settings.subtitles.cleanAllFailed": "تعذّر بدء التنظيف",
 	"settings.subtitles.cleanRow": "الخطوات لـ",
-	"settings.subtitles.cleanEvery": "كل اللغات",
-	"settings.subtitles.cleanEveryHint": "تُستخدم لأي لغة ليست لها خطوات خاصة بها.",
+	"settings.subtitles.cleanEvery": "كل لغة أخرى",
 	"settings.subtitles.cleanAddLang": "إضافة لغة",
 	"settings.subtitles.cleanRemoveLang": "إزالة هذه اللغة"
 }

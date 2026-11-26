@@ -554,7 +554,7 @@
 			</SettingsCard>
 			<SettingsCard id="clean-subs" title={t('settings.subtitles.clean')} description={t('settings.subtitles.cleanDesc')}>
 				<div class="clean-for">
-					<Field id="clean-lang" label={t('settings.subtitles.cleanRow')} hint={cleanLang === '*' ? t('settings.subtitles.cleanEveryHint') : ''}>
+					<Field id="clean-lang" label={t('settings.subtitles.cleanRow')}>
 						<select id="clean-lang" class="input narrow" value={cleanLang} onchange={(e) => pickCleanLang(e.currentTarget.value)} data-testid="clean-lang">
 							{#each cleanRows as code (code)}<option value={code}>{cleanRowName(code)}</option>{/each}
 							<optgroup label={t('settings.subtitles.cleanAddLang')}>
