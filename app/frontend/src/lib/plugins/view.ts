@@ -80,7 +80,7 @@ export function needLabel(need: string, p: Plugin): string {
 	if (kind === 'host') return t('plugins.canHosts', { hosts: name });
 	if (kind === 'scope') {
 		const g = p.scope_groups?.find((x) => x.scopes.includes(name));
-		return g ? `${scopeLine(name, g.id)} (${name})` : t('plugins.needScope', { scope: name });
+		return g ? scopeLine(name, g.id) : t('plugins.needScope', { scope: name });
 	}
 	if (kind === 'resources') return t('plugins.needResources');
 	if (kind === 'event') return t('plugins.canEvents', { events: eventLabel(name) });
