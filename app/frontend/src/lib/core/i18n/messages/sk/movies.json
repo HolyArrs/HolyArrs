@@ -1,6 +1,9 @@
 {
 "movies.versions.stopConfirm": "Prestať udržiavať Verziu {label} tohto filmu? Súbory na disku sa nezmenia.",
 "movies.versions.removeFailed": "Verziu sa nepodarilo odstrániť",
+	"movies.versions.deleteFile": "Odstrániť súbor",
+	"movies.versions.deleteFileConfirm": "Odstrániť {name}? Presunie sa do Nedávno odstránených, odkiaľ ho môžete obnoviť.",
+	"movies.versions.deleteFileFailed": "Súbor sa nepodarilo odstrániť",
 "movies.versions.title": "Verzie",
 "movies.versions.showLess": "Zobraziť menej",
 "movies.versions.seeAll": "Zobraziť všetky ({count})",

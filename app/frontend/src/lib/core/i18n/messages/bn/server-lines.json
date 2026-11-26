@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "নতুন কভার আর্ট",
 	"server.plugins.send-event-library-add": "পাঠান {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "পাঠান {\"on\": true} বা {\"on\": false}",
+	"server.library.deleted-of": "{name}-এর {relativepath} মোছা হয়েছে",
 	"server.importer.the-file-is-not-present-yet": "ফাইলটি এখনও আসেনি; HolyArrs আবার এটি ইমপোর্ট করার চেষ্টা করবে",
 	"server.migrate.the-same-as-a-source-that": "{name}-এর মতোই, একটি সোর্স যা এখানে আছে"
 }

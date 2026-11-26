@@ -127,6 +127,14 @@ describe('a built-in site that asks for a user id', async () => {
 		expect(formBody(f)).not.toHaveProperty('site_user');
 		expect(builtInSites.filter((s) => s.user).map((s) => s.id)).toEqual(['iptorrents']);
 	});
+	it('offers YTS as a public movie source with its current API address', () => {
+		const f = emptyForm();
+		f.format = 'site';
+		pickSite(f, 'yts');
+		expect(f).toMatchObject({ name: 'YTS', site: 'yts', url: 'https://movies-api.accel.li', kinds: ['movie'], gap_ms: 2500, searches_per_window: 100 });
+		expect(formBody(f)).toMatchObject({ format: 'site', site: 'yts', protocol: 'torrent' });
+		expect(builtInSites.find((s) => s.id === 'yts')?.key).toBe(false);
+	});
 	it('shows the stored user id when a Source is edited', () => {
 		const view = { name: 'IPT', format: 'site', site: 'iptorrents', site_user: '2134', protocol: 'torrent', url: 'https://iptorrents.com', api_key: 'kept', priority: 25 } as unknown as SourceView;
 		expect(formFrom(view).site_user).toBe('2134');

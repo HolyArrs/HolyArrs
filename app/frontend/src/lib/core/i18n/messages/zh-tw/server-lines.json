@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "新封面",
 	"server.plugins.send-event-library-add": "傳送 {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "傳送 {\"on\": true} 或 {\"on\": false}",
+	"server.library.deleted-of": "已刪除 {name} 的 {relativepath}",
 	"server.importer.the-file-is-not-present-yet": "檔案還不在；HolyArrs 會再次嘗試匯入",
 	"server.migrate.the-same-as-a-source-that": "與 {name} 相同，這裡已有此來源"
 }

@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Hová kerülnek a jóváhagyott 4K kérések, és hogyan választódnak",
 	"settings.requests.fourKSameFolder": "Mint a többi kérés",
 	"settings.requests.fourKNamedRules": "A 4K nevű minőség",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Hová kerülnek a jóváhagyott animekérések",
 	"settings.requests.choices": "Mit kérhetnek az emberek",
 	"settings.requests.choicesDesc": "A minőséggombok a kérésablakokban, ebben a sorrendben. Itt nevezheti át vagy rejtheti el őket; a gyerekek az első láthatót kapják.",
 	"settings.requests.choiceShown": "Megjelenítés az embereknek",

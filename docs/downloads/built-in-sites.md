@@ -1,11 +1,11 @@
 ---
 title: Built-in sites
-description: "Add Knaben, TorrentsCSV, SubsPlease or IPTorrents as a Source, with no Jackett or Prowlarr in between."
+description: "Add Knaben, TorrentsCSV, SubsPlease, YTS or IPTorrents as a Source, with no Jackett or Prowlarr in between."
 level: Setup
 sidebar: { order: 4 }
 ---
 
-HolyArrs can read 4 torrent sites itself. You do not need Jackett or Prowlarr for them.
+HolyArrs can read 5 torrent sites itself. You do not need Jackett or Prowlarr for them.
 
 Each one becomes an ordinary Source. Priority, use and limits work as on any other Source. See [Sources](sources.md).
 
@@ -16,9 +16,10 @@ Each one becomes an ordinary Source. Priority, use and limits work as on any oth
 | Knaben | Movies, shows, music | Nothing | Yes |
 | TorrentsCSV | Movies, shows, music | Nothing | No, search only |
 | SubsPlease | Shows (anime) | Nothing | Yes |
+| YTS | Movies | Nothing | Yes |
 | IPTorrents | Movies, shows, music | Your own user ID and passkey | Yes |
 
-All 4 hand out torrents, so you need a torrent Downloader. See [Downloaders](downloaders.md).
+All 5 hand out torrents, so you need a torrent Downloader. See [Downloaders](downloaders.md).
 
 ## Add a built-in site
 
@@ -45,6 +46,8 @@ After saving, you cannot change the site of a Source. To switch, add a new one.
 **TorrentsCSV** only searches. It has no newest list, so turning on **Newest list** for it finds nothing.
 
 **SubsPlease** searches by the show's title alone, because it numbers episodes its own way. Its newest list shows the latest episodes.
+
+**YTS** searches the movies on `yts.pw`, by IMDb ID when available or by title. Each encode is a separate Release with its quality, codec, size and seeders. Its newest list shows recent uploads. YTS moved its JSON API to `https://movies-api.accel.li`, which is the default Address; no API key or account is needed.
 
 **IPTorrents** is a private site. It searches with your own account, through the site's own RSS. A search gives the 100 newest matches, with their seeders.
 
@@ -76,9 +79,9 @@ A Source you added earlier with a cookie keeps working. To switch it, open it, f
 <details class="ha-more">
 <summary>For experts</summary>
 
-Each site starts with polite limits: one call at a time with a gap, and a cap per hour. Knaben, TorrentsCSV and SubsPlease wait 2 seconds between calls and allow 100 searches an hour. IPTorrents waits 3 seconds and allows 60 an hour. Change them under the Source's limits like any other Source.
+Each site starts with polite limits: one call at a time with a gap, and a cap per hour. Knaben, TorrentsCSV and SubsPlease wait 2 seconds between calls and allow 100 searches an hour. YTS waits 2.5 seconds and allows 100 an hour. IPTorrents waits 3 seconds and allows 60 an hour. Change them under the Source's limits like any other Source.
 
-Searches use the title plus `S01E02` or `S01` for shows, the year for movies, and artist and album for music.
+Searches use the title plus `S01E02` or `S01` for shows, the year for movies (except YTS, which uses IMDb ID or title), and artist and album for music.
 
 </details>
 
