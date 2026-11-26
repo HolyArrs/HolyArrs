@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "Jauns vāka attēls",
 	"server.plugins.send-event-library-add": "sūti {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "sūti {\"on\": true} vai {\"on\": false}",
+	"server.library.deleted-of": "Izdzēsts {relativepath} no {name}",
 	"server.importer.the-file-is-not-present-yet": "faila vēl nav; HolyArrs mēģinās to importēt vēlreiz",
 	"server.migrate.the-same-as-a-source-that": "tas pats, kas {name}, Avots, kas jau ir šeit"
 }

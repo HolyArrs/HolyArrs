@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Sluta hålla versionen {label} av den här filmen uppdaterad? Filer på disken rörs inte.",
 	"movies.versions.removeFailed": "Det gick inte att ta bort versionen",
+	"movies.versions.deleteFile": "Radera fil",
+	"movies.versions.deleteFileConfirm": "Radera {name}? Den hamnar i Nyligen raderade, där du kan återställa den.",
+	"movies.versions.deleteFileFailed": "Det gick inte att radera filen",
 	"movies.versions.title": "Versioner",
 	"movies.versions.showLess": "Visa färre",
 	"movies.versions.seeAll": "Visa alla {count}",

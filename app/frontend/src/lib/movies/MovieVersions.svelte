@@ -87,6 +87,27 @@
 		}
 	}
 
+	type DeletePlan = { held: unknown[]; kept: { why: string }[] };
+
+	// Deletes one copy's file: the server plans it first, then, once confirmed, moves it to Recently deleted.
+	async function deleteFile(file: SlotFile) {
+		if (!file.ID) return;
+		const name = file.RelativePath.split('/').pop() ?? file.RelativePath;
+		const body = { file_id: file.ID, delete_files: true };
+		try {
+			const plan = await api.post<DeletePlan>(`/titles/${title.id}/delete`, { ...body, apply: false });
+			if (!plan.held.length) {
+				toasts.push(t('movies.versions.deleteFileFailed'), 'fail', { body: plan.kept[0]?.why ?? '' });
+				return;
+			}
+			if (!(await ask(t('movies.versions.deleteFileConfirm', { name }), { yes: t('movies.versions.deleteFile'), danger: true }))) return;
+			await api.post(`/titles/${title.id}/delete`, { ...body, apply: true });
+			await onchange();
+		} catch (e) {
+			toasts.push(t('movies.versions.deleteFileFailed'), 'fail', { body: message(e) });
+		}
+	}
+
 	// Why an edition can't be saved, or nothing when it can.
 	function editionError(edition: string): string {
 		const device = editionDevice(edition);
@@ -132,6 +153,7 @@
 			protect: { label: t('mediafiles.copy.protect'), icon: 'shield', onselect: () => file && void setProtection(file, true, v.label) },
 			unprotect: { label: t('mediafiles.copy.removeProtection'), icon: 'shield', onselect: () => file && void setProtection(file, false, v.main ? t('discover.titleLibrary.mainCopy') : v.label) },
 			keepAdd: { label: t('mediafiles.copy.keepAdd'), icon: 'plus', onselect: () => void openAdd(file?.ID ?? 0) },
+			deleteFile: { label: t('movies.versions.deleteFile'), icon: 'trash', destructive: true, onselect: () => file && void deleteFile(file) },
 			remove: { label: t('movies.versions.remove', { label: v.label }), icon: 'trash', destructive: true, onselect: () => remove(v) }
 		};
 		return copyActions(v, file).map((a) => items[a]);

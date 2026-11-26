@@ -34,6 +34,25 @@ func TestInspectReaderAtMatroskaTracks(t *testing.T) {
 	assertInfo(t, got, want)
 }
 
+func TestInspectReaderAtMatroskaDefaultLanguage(t *testing.T) {
+	data := matroskaFixture("matroska",
+		mkvEntry(1, 1, "V_AV1"),
+		mkvEntry(2, 2, "A_AAC"),
+	)
+
+	got, err := InspectReaderAt(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertInfo(t, got, Info{
+		Container:      "matroska",
+		VideoCodec:     "av1",
+		Status:         "complete",
+		AudioLanguages: []string{"en"},
+		AudioTracks:    1,
+	})
+}
+
 func TestInspectReaderAtWebMUsesBCP47AndVP9(t *testing.T) {
 	data := matroskaFixture("webm",
 		mkvTrack(1, "V_VP9", "", "", nil),

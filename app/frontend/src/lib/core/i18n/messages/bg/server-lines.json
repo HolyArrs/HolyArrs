@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "Нова обложка",
 	"server.plugins.send-event-library-add": "изпрати {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "изпрати {\"on\": true} или {\"on\": false}",
+	"server.library.deleted-of": "Изтрит {relativepath} от {name}",
 	"server.importer.the-file-is-not-present-yet": "файлът още го няма; HolyArrs ще опита да го внесе отново",
 	"server.migrate.the-same-as-a-source-that": "същият като {name}, източник, който вече е тук"
 }

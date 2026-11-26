@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Kas lõpetada selle filmi versiooni {label} hoidmine? Kettal olevaid faile ei puudutata.",
 	"movies.versions.removeFailed": "Versiooni eemaldamine ebaõnnestus",
+	"movies.versions.deleteFile": "Kustuta fail",
+	"movies.versions.deleteFileConfirm": "Kas kustutada {name}? See läheb hiljuti kustutatute hulka, kust saad selle taastada.",
+	"movies.versions.deleteFileFailed": "Faili ei õnnestunud kustutada",
 	"movies.versions.title": "Versioonid",
 	"movies.versions.showLess": "Näita vähem",
 	"movies.versions.seeAll": "Vaata kõiki {count}",

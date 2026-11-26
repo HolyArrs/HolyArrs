@@ -2459,6 +2459,7 @@
 	"server.library.new-cover-art": "Νέο εξώφυλλο",
 	"server.plugins.send-event-library-add": "στείλε {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "στείλε {\"on\": true} ή {\"on\": false}",
+	"server.library.deleted-of": "Διαγράφηκε το {relativepath} από {name}",
 	"server.importer.the-file-is-not-present-yet": "το αρχείο δεν υπάρχει ακόμα· το HolyArrs θα προσπαθήσει ξανά να το εισαγάγει",
 	"server.migrate.the-same-as-a-source-that": "το ίδιο με {name}, μια Πηγή που υπάρχει ήδη εδώ"
 }

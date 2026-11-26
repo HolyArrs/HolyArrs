@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Pārtraukt turēt šīs filmas versiju „{label}”? Faili diskā netiek aiztikti.",
 	"movies.versions.removeFailed": "Neizdevās noņemt Versiju",
+	"movies.versions.deleteFile": "Dzēst failu",
+	"movies.versions.deleteFileConfirm": "Dzēst {name}? Tas tiks pārvietots uz Nesen dzēstie, no kurienes to var atjaunot.",
+	"movies.versions.deleteFileFailed": "Neizdevās izdzēst failu",
 	"movies.versions.title": "Versijas",
 	"movies.versions.showLess": "Rādīt mazāk",
 	"movies.versions.seeAll": "Skatīt visas: {count}",

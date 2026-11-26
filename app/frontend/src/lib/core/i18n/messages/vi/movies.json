@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Ngừng giữ Phiên bản {label} của phim này? Các tệp trên ổ đĩa không bị động tới.",
 	"movies.versions.removeFailed": "Không thể xóa Phiên bản",
+	"movies.versions.deleteFile": "Xóa tệp",
+	"movies.versions.deleteFileConfirm": "Xóa {name}? Tệp sẽ chuyển vào Đã xóa gần đây, nơi bạn có thể khôi phục.",
+	"movies.versions.deleteFileFailed": "Không thể xóa tệp",
 	"movies.versions.title": "Các Phiên bản",
 	"movies.versions.showLess": "Thu gọn",
 	"movies.versions.seeAll": "Xem tất cả {count}",
