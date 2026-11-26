@@ -172,7 +172,7 @@ func fourKBeside(fk *FourKPlan, mainLib, folder string) *FourKPlan {
 		return fk
 	}
 	at := *fk
-	at.Unresolved = "the main copy comes over in its folder " + path.Join(fk.Library, fk.Folder) + ", and a 4K Version needs a folder of its own"
+	at.Unresolved = "the main copy comes over in its folder " + path.Join(fk.Library, fk.Folder) + ", and a 4K Version needs a folder of its own; put its 4K file in a folder of its own, then add it as a 4K Version on the title page"
 	return &at
 }
 

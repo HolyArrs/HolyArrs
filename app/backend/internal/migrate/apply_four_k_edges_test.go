@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -71,7 +73,9 @@ func TestMoveWantedFourKCopyFolderEverySystemMakes(t *testing.T) {
 	l, _, _ := fourKLabIn(t, false, "", "", "The Matrix: 4K (1999)")
 	by := domain.Actor{Kind: "user", ID: 1}
 	dry := l.mv.Run(context.Background(), 0, l.plan(t), true, by, nil)
-	if dl := lineOf(t, dry, "title:movie:tmdb:603"); !strings.Contains(dl.Detail, "its 4K copy will not be brought: "+library.ErrVersionFolder.Error()) {
+	// Windows refuses the colon folder one step earlier, at planning.
+	windowsLine := "its 4K copy is not placed: its folder name " + strconv.Quote("The Matrix: 4K (1999)") + " cannot be a Version's folder"
+	if dl := lineOf(t, dry, "title:movie:tmdb:603"); !strings.Contains(dl.Detail, "its 4K copy will not be brought: "+library.ErrVersionFolder.Error()) && !(runtime.GOOS == "windows" && strings.Contains(dl.Detail, windowsLine)) {
 		t.Fatalf("dry run %+v", dl)
 	}
 	mv := l.move(t, Choices{})

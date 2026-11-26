@@ -111,7 +111,7 @@ func fourKPlanOf(main, tp *TitlePlan, from string) *FourKPlan {
 	switch {
 	case fk.Unresolved != "":
 	case main.Unresolved == "" && main.Folder != "" && main.Library == fk.Library && foldName(main.Folder) == foldName(fk.Folder):
-		fk.Unresolved = "it shares the folder " + path.Join(main.Library, main.Folder) + " with the main copy, and a 4K Version needs a folder of its own"
+		fk.Unresolved = "it shares the folder " + path.Join(main.Library, main.Folder) + " with the main copy, and a 4K Version needs a folder of its own; put its 4K file in a folder of its own, then add it as a 4K Version on the title page"
 	case !library.ExistingVersionFolderOK(fk.Folder):
 		fk.Unresolved = "its folder name " + strconv.Quote(fk.Folder) + " cannot be a Version's folder"
 	}
