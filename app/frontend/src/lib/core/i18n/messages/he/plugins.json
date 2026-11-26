@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "תוספים חתומים רצים כאן בלי נעילת קבצים. שאר מגבלות הבטיחות נשארות פעילות.",
 	"plugins.noLockOffNow": "התוספים נשארים עצורים עד שתהיה למערכת נעילת קבצים.",
 	"plugins.noLockChange": "שינוי",
+	"plugins.noLockLearn": "איך עובדת נעילת הקבצים של התוספים",
 	"plugins.noLockTag": "אין נעילת קבצים במערכת הזו",
 	"plugins.noLockKeptOff": "התוספים נשארים עצורים בלי נעילת קבצים",
 	"plugins.secAccess": "יכול לגשת אל",

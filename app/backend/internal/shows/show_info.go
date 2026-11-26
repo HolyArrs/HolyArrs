@@ -50,10 +50,10 @@ type EpisodeGroupRef struct {
 // NameEpisodeGroup fills in the name and type of the show's chosen
 // episode order from TMDB's list; best effort.
 func NameEpisodeGroup(ctx context.Context, src metadata.EpisodeGroupSource, t mediafiles.Title, si *Info) {
-	if si == nil || si.EpisodeGroup == nil || src == nil || t.SourceIDs["tmdb"] == "" {
+	if si == nil || si.EpisodeGroup == nil || src == nil || t.TrustedTMDB() == "" {
 		return
 	}
-	gs, err := src.EpisodeGroups(ctx, t.SourceIDs["tmdb"])
+	gs, err := src.EpisodeGroups(ctx, t.TrustedTMDB())
 	if err != nil {
 		return
 	}

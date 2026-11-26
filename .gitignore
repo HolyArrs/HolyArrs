@@ -21,8 +21,6 @@ bin/
 releases/out/
 
 # built plugin binaries
-app/plugins/*/*.exe
-app/plugins/*/tailscale
 
 # Python caches
 __pycache__/

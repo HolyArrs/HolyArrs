@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Podpisane wtyczki działają tu bez blokady plików. Pozostałe limity bezpieczeństwa są włączone.",
 	"plugins.noLockOffNow": "Wtyczki pozostają zatrzymane, dopóki system nie będzie miał blokady plików.",
 	"plugins.noLockChange": "Zmień",
+	"plugins.noLockLearn": "Jak działa blokada plików wtyczek",
 	"plugins.noLockTag": "Brak blokady plików w tym systemie",
 	"plugins.noLockKeptOff": "Wtyczki pozostają zatrzymane bez blokady plików",
 	"plugins.secAccess": "Ma dostęp do",

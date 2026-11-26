@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Niektoré priečinky neprešli. Skenujte znova a prevezmite ich; priečinky, ktoré už sú v Knižnici, zostanú, ako sú.",
 	"library.import.scanAgain": "Skenovať znova",
 	"library.import.keepOpen": "Nechajte túto stránku otvorenú, kým to neskončí.",
+	"library.import.closeOk": "Beží na serveri, takže túto stránku môžeš zavrieť.",
 	"library.import.waiting": "Server metadát je zaneprázdnený. HolyArrs skúsi posledných {left} znova o {min} min.",
 	"library.import.leaveAsk": "Prebieha import. Ak túto stránku opustíte, priečinky, ktoré ešte neboli odoslané, sa neprevezmú. Napriek tomu odísť?",
 	"library.import.interrupted": "Import sa zastavil na {done} z {total} priečinkov, keď sa zatvorila jeho stránka. Skenujte znova a prevezmite zvyšok; už prevzaté priečinky zostanú, ako sú.",

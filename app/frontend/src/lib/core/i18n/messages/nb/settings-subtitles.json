@@ -124,7 +124,8 @@
   "settings.subtitles.cleanAllQueued": "Rydder alle undertekster i biblioteket",
   "settings.subtitles.cleanAllFailed": "Oppryddingen kunne ikke starte",
   "settings.subtitles.cleanRow": "Trinn for",
-  "settings.subtitles.cleanEvery": "Alle andre språk",
+  "settings.subtitles.cleanEvery": "Alle språk",
+	"settings.subtitles.cleanEveryHint": "Brukes for alle språk uten egne trinn.",
   "settings.subtitles.cleanAddLang": "Legg til et språk",
   "settings.subtitles.cleanRemoveLang": "Fjern dette språket"
 }

@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Undirritaðar viðbætur keyra hér án skráaláss. Hin öryggistakmörkin haldast virk.",
 	"plugins.noLockOffNow": "Viðbætur haldast stöðvaðar þar til kerfið hefur skráalás.",
 	"plugins.noLockChange": "Breyta",
+	"plugins.noLockLearn": "Hvernig skráalás viðbóta virkar",
 	"plugins.noLockTag": "Enginn skráalás á þessu kerfi",
 	"plugins.noLockKeptOff": "Viðbætur haldast stöðvaðar án skráaláss",
 	"plugins.secAccess": "Hefur aðgang að",

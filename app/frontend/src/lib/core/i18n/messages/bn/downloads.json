@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "ডাব করা, মূল সাউন্ড ছাড়া",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "HDR10 ব্যাকআপ ছাড়া Dolby Vision",
+	"downloads.pr.traits.sdr_4k": "HDR ছাড়া 4K (SDR)",
 	"downloads.pr.traits.executable": "একটি প্রোগ্রাম আছে",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (প্রায় সব জায়গায় চলে)",

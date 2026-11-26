@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd korisničko ime",
 	"settings.downloaders.sabPass": "SABnzbd lozinka",
 	"settings.downloaders.keyWrongLogin": "SABnzbd nije prihvatio to korisničko ime i lozinku.",
-	"settings.downloaders.keyNotFound": "Ključ nije moguće pročitati. Koristite Preuzmi ključ i kopirajte ga odatle."
+	"settings.downloaders.keyNotFound": "Ključ nije moguće pročitati. Koristite Preuzmi ključ i kopirajte ga odatle.",
+	"settings.downloaders.pluginKind": "Додатак"
 }

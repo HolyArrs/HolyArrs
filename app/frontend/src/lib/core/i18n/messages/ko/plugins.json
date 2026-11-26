@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "서명된 플러그인이 여기서 파일 잠금 없이 실행됩니다. 다른 안전 제한은 그대로 켜져 있습니다.",
 	"plugins.noLockOffNow": "이 시스템에 파일 잠금이 생길 때까지 플러그인은 멈춘 상태로 있습니다.",
 	"plugins.noLockChange": "변경",
+	"plugins.noLockLearn": "플러그인 파일 잠금 작동 방식",
 	"plugins.noLockTag": "이 시스템에는 파일 잠금이 없음",
 	"plugins.noLockKeptOff": "파일 잠금이 없어 플러그인이 멈춘 상태로 있습니다",
 	"plugins.secAccess": "접근 가능 항목",

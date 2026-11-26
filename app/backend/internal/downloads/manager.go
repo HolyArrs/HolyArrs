@@ -85,7 +85,7 @@ type Manager struct {
 	// qBittorrent or SABnzbd.
 	SourceTransport func(ctx context.Context, src domain.Source) (http.RoundTripper, error)
 	// PluginEngine is the download client a plugin serves (adapters
-	// plugin-torrent and plugin-usenet, URL plugin://<id>); nil means none.
+	// plugin-torrent, plugin-usenet and plugin, URL plugin://<id>); nil means none.
 	PluginEngine func(id string) Engine
 	// SourceHeader gives headers a Source's own site needs to hand out a
 	// Release file, such as a sign-in cookie; nil or empty needs none. With
@@ -276,7 +276,7 @@ func (m *Manager) engineWith(d domain.Downloader, secret string) (Engine, error)
 		e.PathMap, e.SaveRoot = d.PathMap, m.SavePath
 		e.Keep = m.libraryFolders
 		return e, nil
-	case "plugin-torrent", "plugin-usenet":
+	case "plugin-torrent", "plugin-usenet", "plugin":
 		id, ok := PluginID(d.URL)
 		if !ok || m.PluginEngine == nil {
 			return nil, errors.New("plugin download clients are not available")

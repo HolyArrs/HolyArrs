@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Některé složky neprošly. Prohledejte znovu a převezměte je; složky, které už v knihovně jsou, zůstanou, jak jsou.",
 	"library.import.scanAgain": "Prohledat znovu",
 	"library.import.keepOpen": "Nechte tuto stránku otevřenou, dokud to neskončí.",
+	"library.import.closeOk": "Běží na serveru, takže tuto stránku můžeš zavřít.",
 	"library.import.waiting": "Server metadat je zaneprázdněn. HolyArrs zkusí posledních {left} znovu za {min} min.",
 	"library.import.leaveAsk": "Probíhá import. Pokud tuto stránku opustíte, složky, které ještě nebyly odeslány, se nepřevezmou. Přesto odejít?",
 	"library.import.interrupted": "Import se zastavil na {done} z {total} složek, když se zavřela jeho stránka. Prohledejte znovu a převezměte zbytek; už převzaté složky zůstanou, jak jsou.",

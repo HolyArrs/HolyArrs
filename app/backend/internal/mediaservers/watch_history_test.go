@@ -508,3 +508,36 @@ func TestStopEndsABackgroundRead(t *testing.T) {
 		t.Fatalf("Stop waited %s", time.Since(begin))
 	}
 }
+
+// #734: two accounts with the same name (Plex home users, blank names)
+// still get their own row and a different key.
+func TestWatchedSameNameKeepsKeysApart(t *testing.T) {
+	smallPages(t)
+	w := newWorld(t)
+	ctx := context.Background()
+	watchTitles(t, w)
+	srv := plexHistoryServer(t, nil, nil)
+	if _, err := Add(ctx, w.s, w.v, Input{Name: "Plex", Kind: "plex", URL: srv.URL, Token: tok}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	watchOn(t, w, true)
+	if err := (&Linker{Store: w.s, Vault: w.v}).ReadWatchHistory(ctx); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"luis", ""} {
+		if err := w.s.Write(ctx, func(tx *sql.Tx) error {
+			_, err := tx.Exec(`UPDATE watch_state SET account_name = ?`, name)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		sum, err := Watched(ctx, w.s.Read())
+		if err != nil || len(sum.People) != 2 {
+			t.Fatalf("summary %+v %v", sum, err)
+		}
+		a, b := sum.People[0], sum.People[1]
+		if a.Name != b.Name || a.Key == "" || a.Key == b.Key {
+			t.Fatalf("name %q: keys %q %q", name, a.Key, b.Key)
+		}
+	}
+}

@@ -453,6 +453,9 @@ func (h *handler) indexerOf(src domain.Source) map[string]any {
 		name = sentName
 	}
 	impl, contract, proto := implOf(src.Format)
+	if src.Protocol != "torrent" && src.Protocol != "usenet" {
+		proto = "unknown" // a plugin's own download type
+	}
 	m["id"], m["name"], m["implementation"], m["implementationName"], m["configContract"], m["protocol"] = src.ID, name, impl, impl, contract, proto
 	m["priority"], m["enableRss"], m["enableAutomaticSearch"], m["enableInteractiveSearch"] = src.Priority, src.UseFor.Feed, src.UseFor.AutoSearch, src.UseFor.HandSearch
 	m["supportsRss"], m["supportsSearch"] = true, true

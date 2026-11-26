@@ -561,6 +561,7 @@ download_dir
 download_id
 download_path
 download_payload_rate
+download_types
 downloaded
 downloader
 downloader_folders

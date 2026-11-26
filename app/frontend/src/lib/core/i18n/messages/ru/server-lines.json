@@ -1442,6 +1442,9 @@
 	"server.importer.no-file-in-the-download-matched-2": "ни один файл в загрузке не подошёл к эпизоду; сопоставьте файлы вручную",
 	"server.importer.no-file-in-the-download-matched-3": "ни один файл в загрузке не подошёл к этому фильму; сопоставьте файлы вручную",
 	"server.importer.the-file-is-empty-likely-a": "файл пустой; скорее всего, подделка",
+	"server.importer.the-file-holds-no-video-track": "в файле нет видеодорожки",
+	"server.importer.it-plays-min-but-the-title": "длится {n} мин, а у названия {m} мин; проверьте, тот ли это файл",
+	"server.importer.the-first-audio-track-is-not": "первая аудиодорожка {a}, а не {b}, как у названия",
 	"server.importer.the-file-is-kb-too-small": "файл весит {n} KB, слишком мало для трека; скорее всего, подделка",
 	"server.importer.the-file-is-too-small-to": "файл весит {size}, слишком мало для всего видео; скорее всего, подделка",
 	"server.importer.a-file-where-the-release-said": "файл {ext}, хотя в релизе указано {p}p; скорее всего, подделка",
@@ -2463,5 +2466,8 @@
 	"server.importer.the-file-is-not-present-yet": "файла ещё нет; HolyArrs попробует импортировать его снова",
 	"server.migrate.the-same-as-a-source-that": "то же, что {name}, источник, который уже есть",
 	"server.accounts.name-the-person-by-their-user": "укажите человека по его ID пользователя",
-	"server.migrate.it-is-longer-than-a-holyarrs": "он длиннее, чем может быть шаблон HolyArrs"
+	"server.migrate.it-is-longer-than-a-holyarrs": "он длиннее, чем может быть шаблон HolyArrs",
+	"server.migrate.already-in-the-library-the-quality": "уже в Библиотеке; качество или релиз {n} файлов обновлены",
+	"server.migrate.imported-before-2": "импортировано ранее{title}",
+	"server.migrate.its-folder-belongs-to-another-movie": "его папка {dir} принадлежит другому фильму в Библиотеке"
 }

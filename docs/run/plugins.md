@@ -5,7 +5,7 @@ level: Setup
 sidebar: { order: 12 }
 ---
 
-Plugins add extra features to HolyArrs, such as [remote access with Tailscale](remote-access.md).
+Plugins add extra features to HolyArrs, such as [remote access with Tailscale](remote-access.md) or [getting Sources past bot checks with FlareSolverr](../downloads/flaresolverr.md).
 
 ## Before you start
 
@@ -34,6 +34,7 @@ The memory, processor and process caps need cgroups v2 on the host; without them
 | Plugin | What it does |
 |---|---|
 | Tailscale | Reach HolyArrs from your own devices anywhere. See [Remote access](remote-access.md). |
+| FlareSolverr | Gets Sources past a site's bot check with the FlareSolverr you run. See [Get past bot checks with FlareSolverr](../downloads/flaresolverr.md). |
 
 ## Install a plugin
 
@@ -51,9 +52,9 @@ To install Tailscale, follow these steps and pick **Tailscale**, then finish its
 - An update that asks for more (a new website or folder, or writing where it could only read) is installed but stays stopped. Open the plugin, check the list, and select **Approve new access**.
 - If a chosen folder is removed or replaced, the plugin stops with "a folder this plugin uses moved or changed". Choose the folder again.
 
-### Your own server (Tailscale with Headscale)
+### Your own server (Tailscale with Headscale, FlareSolverr)
 
-Tailscale reaches only Tailscale's own servers. For a self-hosted Headscale, add its name under **Also allow your own server**, for example `headscale.example.com:8080`. Up to 3; names only, not addresses. These may reach devices on your network.
+Tailscale reaches only Tailscale's own servers. For a self-hosted Headscale, add its name under **Also allow your own server**, for example `headscale.example.com:8080`. The FlareSolverr plugin reaches only what you add there, such as `flaresolverr:8191`. Up to 100; names only, not addresses. These may reach devices on your network.
 
 ### Test versions
 

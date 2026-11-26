@@ -1,5 +1,6 @@
 <script lang="ts">
 	// Check releases for a movie not in the Library yet: searches only when asked, judged by the Pick rules picked here.
+	import { untrack } from 'svelte';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { api } from '#lib/core/api.ts';
 	import { ReleaseSheet, savedDefaults, startChoices, type ReleaseCheck } from '#lib/mediafiles/index.ts';
@@ -11,14 +12,19 @@
 	let rulesId = $state(0);
 	let checkId = $state(0);
 	// Each open starts from the saved Pick rules and no results, so nothing searches until asked.
+	// Only opening (or the offered rules changing) resets: it must not re-run when Pick rules are picked here (#714).
 	$effect(() => {
 		if (!open) return;
-		checkId = 0;
-		// Until the saved defaults answer (or if they fail), the first offered Pick rules stand, so a check never goes out without one.
-		if (!movieRules.some((r) => r.id === rulesId)) rulesId = movieRules[0]?.id ?? 0;
-		void savedDefaults.load().then((d) => {
-			if (!checkId) rulesId = startChoices(d, folders, rules, 'movie').rulesId || rulesId;
-		}).catch(() => {});
+		const offered = movieRules;
+		untrack(() => {
+			checkId = 0;
+			// Until the saved defaults answer (or if they fail), the first offered Pick rules stand, so a check never goes out without one.
+			if (!offered.some((r) => r.id === rulesId)) rulesId = offered[0]?.id ?? 0;
+			const opened = sheetKey;
+			void savedDefaults.load().then((d) => {
+				if (!checkId && sheetKey === opened) rulesId = startChoices(d, folders, rules, 'movie').rulesId || rulesId;
+			}).catch(() => {});
+		});
 	});
 	// Other Pick rules judge differently: the old results go and the sheet asks again.
 	let sheetKey = $state(0);

@@ -76,7 +76,7 @@ func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst boo
 			}
 			return 1, "on fix number"
 		}
-		if pref := rules.Protocol.Prefer; pref != "either" && rels[a].Protocol != rels[b].Protocol {
+		if pref := rules.Protocol.Prefer; pref != "either" && rels[a].Protocol != rels[b].Protocol && (rels[a].Protocol == pref || rels[b].Protocol == pref) {
 			if rels[a].Protocol == pref {
 				return -1, "on preferred protocol"
 			}

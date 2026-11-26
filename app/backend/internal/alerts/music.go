@@ -27,6 +27,8 @@ type Track struct {
 	Number int    `json:"number"`
 	Name   string `json:"name,omitempty"`
 	Discs  int    `json:"-"`
+	// albumMBID is the album's MusicBrainz id, for its cover.
+	albumMBID string
 }
 
 // Label is "track 03", or "disc 2 track 01" on an album of more than one
@@ -53,16 +55,17 @@ func tracksOf(ctx context.Context, db database.Querier, slotIDs []int64) []Track
 	for _, id := range slotIDs {
 		var itemID int64
 		var disc, num, maxDisc sql.NullInt64
-		var name, album, released sql.NullString
-		err := db.QueryRowContext(ctx, `SELECT i.id, json_extract(i.numbers, '$.disc'), json_extract(i.numbers, '$.track'), i.name, p.name, p.release_date,
+		var name, album, released, albumID sql.NullString
+		err := db.QueryRowContext(ctx, `SELECT i.id, json_extract(i.numbers, '$.disc'), json_extract(i.numbers, '$.track'), i.name, p.name, p.release_date, json_extract(p.source_ids, '$.musicbrainz'),
 			(SELECT max(json_extract(o.numbers, '$.disc')) FROM items o WHERE o.part_id = i.part_id AND o.kind = 'track' AND o.dropped_at IS NULL)
 			FROM slots s JOIN items i ON i.id = s.item_id LEFT JOIN parts p ON p.id = i.part_id WHERE s.id = ? AND i.kind = 'track'`, id).
-			Scan(&itemID, &disc, &num, &name, &album, &released, &maxDisc)
+			Scan(&itemID, &disc, &num, &name, &album, &released, &albumID, &maxDisc)
 		if err != nil || seen[itemID] {
 			continue
 		}
 		seen[itemID] = true
-		t := Track{Album: album.String, Disc: max(1, int(disc.Int64)), Number: int(num.Int64), Name: name.String, Discs: max(1, int(maxDisc.Int64))}
+		t := Track{Album: album.String, Disc: max(1, int(disc.Int64)), Number: int(num.Int64), Name: name.String, Discs: max(1, int(maxDisc.Int64)),
+			albumMBID: strings.ToLower(albumID.String)}
 		if d, err := time.Parse(time.RFC3339Nano, released.String); err == nil {
 			t.Year = d.Year()
 		} else if len(released.String) >= 4 {

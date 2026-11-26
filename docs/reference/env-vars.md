@@ -34,6 +34,17 @@ environment:
 
 HolyArrs drops one newline at the end of the file. If the file is missing, HolyArrs stops and the log names the variable and file, never the value.
 
+## Owner and API key at start
+
+For installs made by a tool, with nobody to open the wizard. HolyArrs reads these before it answers any request. A bad value stops the start: the page says why, and the log names the variable and file, never the value. The `PUID` user must be able to read the files. Steps are in [First run](../start/first-run.md#start-without-the-wizard).
+
+| Variable | What it does | Default | Example |
+| --- | --- | --- | --- |
+| `HOLYARRS_OWNER_NAME` | Name of the owner to make when there is none yet. Needs `HOLYARRS_OWNER_PASSWORD_FILE`. Once an owner exists, it changes nothing. | none | `admin` |
+| `HOLYARRS_OWNER_PASSWORD_FILE` | File holding that owner's password, at most 4096 bytes. One newline at the end is dropped. Read only while there is no owner. | none | `/run/secrets/holyarrs_owner` |
+| `HOLYARRS_API_KEY_FILE` | File holding an API key for the owner, made like HolyArrs makes one: `hak_` and 43 random characters. HolyArrs keeps one key from it and replaces that key when the file changes. A key that was deleted, or removed by a password change, stops the start until the file holds a new one. Needs an owner. | none | `/run/secrets/holyarrs_api_key` |
+| `HOLYARRS_API_KEY_SCOPES` | Scopes of that key, comma separated, as for a key made in **Settings > API > API keys**. | `all` | `read,write` |
+
 ## Recovery and troubleshooting
 
 | Variable | What it does | Default | Example |

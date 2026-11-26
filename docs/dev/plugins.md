@@ -9,7 +9,7 @@ A plugin is one Linux program that HolyArrs downloads, checks and runs in a lock
 
 ## Where plugin code lives
 
-Each plugin has a folder in `app/plugins/<id>/` with its Go source and a `holyarrs-plugin.json` file. The release tools turn that folder into a published version.
+Plugins live in the [HolyArrs-Plugins](https://github.com/HolyArrs/HolyArrs-Plugins) repo, not in this one. Ours sit in its `plugins/<id>/` folders (Tailscale is `plugins/tailscale`); community plugins live in their authors' own repos and are listed in its `catalog/`. Each plugin folder holds its Go source and a `holyarrs-plugin.json` file. The release tools turn that folder into a published version.
 
 ## The manifest
 
@@ -31,6 +31,7 @@ Each published version has a `manifest.json`. The release tools build it from `h
 | `icon` | Optional. A PNG or SVG data URL under 48 KB. In `holyarrs-plugin.json`, set `icon_file` to a `.png` or `.svg` next to it instead |
 | `support_email`, `support_url` | How people reach the author for help. A listed plugin needs at least one; the URL must be https. The Plugins page shows them under Contact |
 | `size` | Size of the plugin file in bytes for that CPU type. Added by the release tools |
+| `download_types` | Optional. Download types the plugin brings itself, beyond torrent and usenet, such as `["soulseek"]`. Up to 4, each 2 to 31 lowercase letters, digits and dashes, starting with a letter. See [Own download types](#own-download-types) |
 
 The Plugins page shows these lists to the owner before install. Installing approves the websites and events; each folder gets a real folder only once the owner picks one. An update that asks for more (a new website, event or folder, or `read_write` where `read` was approved) is installed but held until the owner approves it. An update that asks for less starts at once.
 
@@ -39,6 +40,18 @@ The Plugins page shows these lists to the owner before install. Installing appro
 - `HTTPS_PROXY`, `HTTP_PROXY` and `ALL_PROXY` point at the plugin's own proxy in HolyArrs. Use your HTTP library's standard proxy support. A connect that ignores them still ends at the proxy, which then reads the TLS server name.
 - `HOLYARRS_PLUGIN_FOLDER_<NAME>` for each approved folder (the name in capitals, other characters as `_`), and `HOLYARRS_PLUGIN_FOLDERS` as a JSON map of name to path.
 - `HOLYARRS_PLUGIN_NO_UDP=1`: UDP is not available. Only TCP to the listed websites on ports 443 and 80 works.
+
+### Own download types
+
+A plugin that serves a Source (`plugin://<id>`) and a Downloader can bring a download type of its own, for downloads that are neither torrent nor usenet:
+
+- List it in `download_types`, for example `["soulseek"]`.
+- The owner adds the plugin's Source with that type as its protocol, and a Downloader of kind `plugin` (address `plugin://<id>`) with the same type. HolyArrs refuses a type the plugin did not list.
+- Every result from that Source carries the type. A Release of that type only ever goes to a Downloader of the same type, never to a torrent or usenet client, and torrent or usenet Releases never go to it.
+- Releases of the type wait like usenet ones in the pick rules. When a protocol is preferred, two Releases that are both not on it tie on that step.
+- Sonarr- and Radarr-style API clients see the protocol as `unknown`.
+
+The `plugin-torrent` and `plugin-usenet` Downloader kinds keep working as before.
 
 ## Events
 
@@ -122,7 +135,7 @@ What HolyArrs checks, so a plugin can't widen what a Source reaches:
 
 ### A FlareSolverr plugin
 
-A FlareSolverr plugin needs one setting, the FlareSolverr address (such as `http://flaresolverr.home.arpa:8191`), and that host added by the owner on the Plugins page, since only hosts the owner adds may reach the LAN. For each job it sends FlareSolverr `POST /v1` with `{"cmd": "request.get", "url": <url>, "maxTimeout": 60000, "proxy": <proxy>}` and maps the answer's `solution` (`url`, `status`, `response`, `cookies`, `userAgent`) to the answer above. When FlareSolverr's `status` is not `"ok"`, it answers with `error` set to its `message`.
+The FlareSolverr plugin ([holyarrs-flaresolverr](https://github.com/wozniakpawel/holyarrs-flaresolverr), listed in [HolyArrs-Plugins](https://github.com/HolyArrs/HolyArrs-Plugins)) does this; see [Get past bot checks with FlareSolverr](../downloads/flaresolverr.md). It needs one setting, the FlareSolverr address (such as `http://flaresolverr.home.arpa:8191`), and that host added by the owner on the Plugins page, since only hosts the owner adds may reach the LAN. For each job it sends FlareSolverr `POST /v1` with `{"cmd": "request.get", "url": <url>, "maxTimeout": 60000, "proxy": <proxy>}` and maps the answer's `solution` (`url`, `status`, `response`, `cookies`, `userAgent`) to the answer above. When FlareSolverr's `status` is not `"ok"`, it answers with `error` set to its `message`, any address taken out. It also answers with `error` when FlareSolverr does not answer (it then leaves FlareSolverr alone for 10 seconds, doubling up to 2 minutes), takes over 68 seconds, or ends on the check page still. It opens up to 3 pages at once, and when HolyArrs does not answer the poll it waits 1 second, doubling up to a minute.
 
 ## The sandbox
 
@@ -180,7 +193,7 @@ Each list has a counter that goes up with every change; all the plugin lists of 
 The `publish.yml` workflow in `HolyArrs/HolyArrs-Plugins`:
 
 1. Checks out the app repo at a tag.
-2. Builds `app/plugins/<id>` for linux/amd64, linux/arm64 and linux/arm/v7 (`publish.py build --src <dir> --out <dir>` does only this step, with nothing signed).
+2. Builds the plugin folder named in its catalog entry for linux/amd64, linux/arm64 and linux/arm/v7 (`publish.py build --src <dir> --out <dir>` does only this step, with nothing signed).
 3. Runs `deploy/release/plugins/publish.py`, which writes the manifest, adds the version to the list and raises the counter. It starts from the live lists, and refuses when the version already exists.
 4. Signs the lists with the signing key from the `plugin-signing` environment (it has no passphrase, so the run needs nobody), then runs `pluginkey check`, the same install check the app runs.
 5. Uploads the new files to R2, the version files first and the lists last. A file already on R2 is never overwritten.

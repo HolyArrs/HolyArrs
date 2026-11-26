@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "שם משתמש ב-SABnzbd",
 	"settings.downloaders.sabPass": "סיסמה ל-SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd לא קיבל את שם המשתמש והסיסמה האלה.",
-	"settings.downloaders.keyNotFound": "לא ניתן לקרוא את המפתח. השתמשו בקבלת מפתח והעתיקו אותו משם."
+	"settings.downloaders.keyNotFound": "לא ניתן לקרוא את המפתח. השתמשו בקבלת מפתח והעתיקו אותו משם.",
+	"settings.downloaders.pluginKind": "תוסף"
 }

@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "正在清理媒體庫中的所有字幕",
 	"settings.subtitles.cleanAllFailed": "無法開始清理",
 	"settings.subtitles.cleanRow": "適用語言",
-	"settings.subtitles.cleanEvery": "其他所有語言",
+	"settings.subtitles.cleanEvery": "所有語言",
+	"settings.subtitles.cleanEveryHint": "適用於沒有單獨步驟的任何語言。",
 	"settings.subtitles.cleanAddLang": "新增語言",
 	"settings.subtitles.cleanRemoveLang": "移除此語言"
 }
