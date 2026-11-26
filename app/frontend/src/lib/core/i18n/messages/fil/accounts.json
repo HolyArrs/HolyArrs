@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Naka-on",
 	"accounts.account.previewsSlow": "Mas mabagal",
 	"accounts.account.previewsOff": "Naka-off",
+	"accounts.account.opensOn": "Nagbubukas sa",
+	"accounts.account.opensOnHint": "Ang unang pahinang makikita mo pagbukas ng HolyArrs",
 	"accounts.account.reco": "Mga rekomendasyon",
 	"accounts.account.recoTip": "Natututo ang Explore sa binubuksan mo. Nananatili sa server na ito.",
 	"accounts.account.recoHint": "Natututo ang Explore sa binubuksan mo.",

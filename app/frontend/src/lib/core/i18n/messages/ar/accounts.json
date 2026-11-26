@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "تشغيل",
 	"accounts.account.previewsSlow": "أبطأ",
 	"accounts.account.previewsOff": "إيقاف",
+	"accounts.account.opensOn": "يفتح على",
+	"accounts.account.opensOnHint": "أول صفحة تراها عند فتح HolyArrs",
 	"accounts.account.reco": "التوصيات",
 	"accounts.account.recoTip": "يتعلم الاستكشاف مما تفتحه. يبقى على هذا الخادم.",
 	"accounts.account.recoHint": "يتعلم الاستكشاف مما تفتحه.",

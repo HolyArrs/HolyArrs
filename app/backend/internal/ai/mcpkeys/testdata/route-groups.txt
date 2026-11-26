@@ -672,6 +672,7 @@ PUT /api/v1/metadata/movie/{tmdb_id}/follow add
 PUT /api/v1/metadata/show/{tmdb_id}/follow add
 PUT /api/v1/my/alerts settings
 PUT /api/v1/my/language settings
+PUT /api/v1/my/opens-on settings
 PUT /api/v1/my/plex-watchlist settings
 PUT /api/v1/my/profile settings
 PUT /api/v1/my/views settings

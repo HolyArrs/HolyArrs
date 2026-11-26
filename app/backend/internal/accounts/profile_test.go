@@ -72,3 +72,42 @@ func TestMyLanguage(t *testing.T) {
 		t.Fatalf("name change lost language: %s", out)
 	}
 }
+
+// The page the app opens on: Home until a person picks Explore, kept on
+// their own row only, and sent with the session so the first page knows it.
+func TestMyOpensOn(t *testing.T) {
+	f := gated(t, Options{})
+	own := ownerOf(t, f)
+	ana := join(t, f, invite(t, f, own, `{}`), "ana")
+	for _, p := range []person{own, ana} {
+		if _, out := p.do(t, f, "GET", "/api/v1/my/profile", ""); !strings.Contains(out, `"opens_on":"home"`) {
+			t.Fatalf("fresh profile: %s", out)
+		}
+		if _, out := p.do(t, f, "GET", "/api/v1/auth/me", ""); !strings.Contains(out, `"opens_on":"home"`) {
+			t.Fatalf("fresh session: %s", out)
+		}
+	}
+	if resp, out := ana.do(t, f, "PUT", "/api/v1/my/opens-on", `{"opens_on":"explore","user_id":1}`); resp.StatusCode != 200 || !strings.Contains(out, `"opens_on":"explore"`) {
+		t.Fatalf("put: %d %s", resp.StatusCode, out)
+	}
+	if _, out := ana.do(t, f, "GET", "/api/v1/auth/me", ""); !strings.Contains(out, `"opens_on":"explore"`) {
+		t.Fatalf("session after the pick: %s", out)
+	}
+	if _, out := own.do(t, f, "GET", "/api/v1/auth/me", ""); !strings.Contains(out, `"opens_on":"home"`) {
+		t.Fatalf("another person's pick changed the owner's: %s", out)
+	}
+	for _, bad := range []string{`{"opens_on":"downloads"}`, `{"opens_on":""}`, `{"opens_on":"/explore"}`, `{}`} {
+		if resp, _ := ana.do(t, f, "PUT", "/api/v1/my/opens-on", bad); resp.StatusCode != 400 {
+			t.Fatalf("bad pick %s took %d", bad, resp.StatusCode)
+		}
+	}
+	// The name and the language keep the pick, and the pick keeps them.
+	ana.do(t, f, "PUT", "/api/v1/my/profile", `{"display_name":"Ana"}`)
+	ana.do(t, f, "PUT", "/api/v1/my/language", `{"language":"de"}`)
+	if _, out := ana.do(t, f, "GET", "/api/v1/my/profile", ""); !strings.Contains(out, `"opens_on":"explore"`) {
+		t.Fatalf("name or language change lost the pick: %s", out)
+	}
+	if _, out := ana.do(t, f, "PUT", "/api/v1/my/opens-on", `{"opens_on":"Home"}`); !strings.Contains(out, `"opens_on":"home"`) || !strings.Contains(out, `"display_name":"Ana"`) || !strings.Contains(out, `"language":"de"`) {
+		t.Fatalf("back to Home: %s", out)
+	}
+}

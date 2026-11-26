@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Ενεργή",
 	"accounts.account.previewsSlow": "Πιο αργά",
 	"accounts.account.previewsOff": "Ανενεργή",
+	"accounts.account.opensOn": "Ανοίγει σε",
+	"accounts.account.opensOnHint": "Η πρώτη σελίδα που βλέπετε όταν ανοίγετε το HolyArrs",
 	"accounts.account.reco": "Προτάσεις",
 	"accounts.account.recoTip": "Η Εξερεύνηση μαθαίνει από όσα ανοίγετε. Μένει σε αυτόν τον διακομιστή.",
 	"accounts.account.recoHint": "Η Εξερεύνηση μαθαίνει από όσα ανοίγετε.",

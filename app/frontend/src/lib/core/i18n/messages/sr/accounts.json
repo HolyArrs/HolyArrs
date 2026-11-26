@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Укључено",
 	"accounts.account.previewsSlow": "Спорије",
 	"accounts.account.previewsOff": "Искључено",
+	"accounts.account.opensOn": "Отвара се на",
+	"accounts.account.opensOnHint": "Прва страница коју видиш кад отвориш HolyArrs",
 	"accounts.account.reco": "Препоруке",
 	"accounts.account.recoTip": "Истражи учи из онога што отвориш. Остаје на овом серверу.",
 	"accounts.account.recoHint": "Истражи учи из онога што отвориш.",

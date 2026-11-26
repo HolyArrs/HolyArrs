@@ -13,7 +13,7 @@
 	import LanguageRetry from './LanguageRetry.svelte';
 	import AccountSecurity from './AccountSecurity.svelte';
 	import { strong } from './strong-error.ts';
-	import { profile, loadProfile, saveDisplayName } from './profile.svelte.ts';
+	import { profile, loadProfile, saveDisplayName, saveOpensOn } from './profile.svelte.ts';
 	import { displayNameError, roleWord, shownName } from './profile.ts';
 	import { showWatchlistCard, watchlistStateWord, type PlexWatchlist } from './watchlist.ts';
 	import { detailPath } from '../metadata/index.ts';
@@ -24,7 +24,7 @@
 	import { outsideWay } from '#lib/ui/sensitive.ts';
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
-	import { session } from '../core/session.svelte.ts';
+	import { session, type OpensOn } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { to } from '../core/paths.ts';
 	import { autoplayPref, previewPref, setAutoplayPref, setPreviewPref, type AutoplayPref, type PreviewPref } from '../core/trailer/trailer.ts';
@@ -54,6 +54,17 @@
 			nameError = message(err);
 		} finally {
 			nameBusy = false;
+		}
+	}
+
+	// The page the app opens on; a failed save puts the old pick back.
+	let opensOn = $state<OpensOn>(session.s.opensOn);
+	async function pickOpensOn(p: OpensOn) {
+		try {
+			session.setOpensOn(await saveOpensOn(p));
+		} catch (err) {
+			opensOn = session.s.opensOn;
+			toasts.push(t('accounts.account.saveFailed'), 'fail', { body: message(err) });
 		}
 	}
 
@@ -382,6 +393,10 @@
 		<div class="txt"><span class="label" id="language-me-label">{t('accounts.language.label')}</span><span class="hint">{t('accounts.language.hint')}</span></div>
 		<div class="ctl"><LanguagePicker id="language-me" align="end" /></div>
 		<LanguageRetry />
+	</div>
+	<div class="srow" id="opens-on-me">
+		<div class="txt"><span class="label">{t('accounts.account.opensOn')}</span><span class="hint" title={t('accounts.account.opensOnHint')}>{t('accounts.account.opensOnHint')}</span></div>
+		<div class="ctl"><SegmentedControl size="sm" label={t('accounts.account.opensOn')} options={[{ value: 'home', label: t('frame.nav.home') }, { value: 'explore', label: t('frame.nav.explore') }] as { value: OpensOn; label: string }[]} bind:value={opensOn} onchange={(v) => void pickOpensOn(v)} /></div>
 	</div>
 	<div class="srow">
 		<div class="txt"><span class="label">{t('accounts.account.trailers')}</span>{#if minimalLook()}<span class="hint">{t('accounts.account.trailersMinimal')}</span>{:else}<span class="hint" title={t('accounts.account.trailersHint')}>{t('accounts.account.trailersHint')}</span>{/if}</div>

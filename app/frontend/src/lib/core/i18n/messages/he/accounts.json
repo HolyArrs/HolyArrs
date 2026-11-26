@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "פועל",
 	"accounts.account.previewsSlow": "לאט יותר",
 	"accounts.account.previewsOff": "כבוי",
+	"accounts.account.opensOn": "נפתח ב",
+	"accounts.account.opensOnHint": "הדף הראשון שאתה רואה כשאתה פותח את HolyArrs",
 	"accounts.account.reco": "המלצות",
 	"accounts.account.recoTip": "גילוי לומד ממה שאתה פותח. נשאר בשרת הזה.",
 	"accounts.account.recoHint": "גילוי לומד ממה שאתה פותח.",

@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Įjungta",
 	"accounts.account.previewsSlow": "Lėčiau",
 	"accounts.account.previewsOff": "Išjungta",
+	"accounts.account.opensOn": "Atidaroma",
+	"accounts.account.opensOnHint": "Pirmas puslapis, kurį matote atidarę HolyArrs",
 	"accounts.account.reco": "Rekomendacijos",
 	"accounts.account.recoTip": "Naršymas mokosi iš to, ką atidarote. Lieka šiame serveryje.",
 	"accounts.account.recoHint": "Naršymas mokosi iš to, ką atidarote.",

@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "இயக்கு",
 	"accounts.account.previewsSlow": "மெதுவாக",
 	"accounts.account.previewsOff": "அணை",
+	"accounts.account.opensOn": "திறக்கும் பக்கம்",
+	"accounts.account.opensOnHint": "HolyArrs-ஐத் திறக்கும்போது முதலில் தெரியும் பக்கம்",
 	"accounts.account.reco": "பரிந்துரைகள்",
 	"accounts.account.recoTip": "நீங்கள் திறப்பவற்றிலிருந்து ஆராய் கற்றுக்கொள்ளும். இந்தச் சேவையகத்திலேயே இருக்கும்.",
 	"accounts.account.recoHint": "நீங்கள் திறப்பவற்றிலிருந்து ஆராய் கற்றுக்கொள்ளும்.",

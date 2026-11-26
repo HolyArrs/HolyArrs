@@ -48,6 +48,7 @@
 	import { trackInputModality } from './(frame)/focus.ts';
 	import { focusField, pluginScope, rememberReturn, searchField } from '#lib/core/search-field.svelte.ts';
 	import AskHost from './(frame)/AskHost.svelte';
+	import { openedAtRoot, openingHere } from './(frame)/opening.ts';
 	import {
 		buildNav,
 		currentHref,
@@ -398,6 +399,15 @@
 		else live.stop();
 	});
 
+	// The app opened at its bare root: once it is known who this is, go on to the page they open on (see opening.ts), drawing nothing in between. Only the first page counts: Home from the menu or the logo stays Home.
+	let openingAtRoot = $state(openedAtRoot(page.url));
+	const toOpening = $derived(openingAtRoot && ready && path === '/' && openingHere() !== '/');
+	$effect(() => {
+		if (!openingAtRoot || !ready) return;
+		if (!toOpening) openingAtRoot = false;
+		else void goto(to(openingHere()), { replace: true }).finally(() => (openingAtRoot = false));
+	});
+
 	// Which parts are on: asked on page changes and every minute.
 	$effect(() => {
 		void path;
@@ -528,6 +538,8 @@
 	<main id="main">{@render children()}</main>
 {:else if session.s.setupOpen && path !== '/login'}
 	<!-- On the way to the first-run setup: draw nothing, so no app page shows before it. -->
+{:else if toOpening}
+	<!-- On the way to the page this person opens on: Home never shows first. -->
 {:else}
 	<a class="skip" href="#main">{t('frame.layout.skip')}</a>
 	<!-- Background behind every page: plain by default, or this Library's posters (Settings > Appearance). Settings home draws its own. -->

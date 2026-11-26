@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Til",
 	"accounts.account.previewsSlow": "Langsommere",
 	"accounts.account.previewsOff": "Fra",
+	"accounts.account.opensOn": "Åbner på",
+	"accounts.account.opensOnHint": "Den første side, du ser, når du åbner HolyArrs",
 	"accounts.account.reco": "Anbefalinger",
 	"accounts.account.recoTip": "Udforsk lærer af det, du åbner. Bliver på denne server.",
 	"accounts.account.recoHint": "Udforsk lærer af det, du åbner.",

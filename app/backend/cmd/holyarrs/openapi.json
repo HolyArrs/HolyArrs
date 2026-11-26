@@ -3752,6 +3752,14 @@
           "display_name": {
             "type": "string"
           },
+          "opens_on": {
+            "description": "The page the app opens on: home or explore.",
+            "enum": [
+              "home",
+              "explore"
+            ],
+            "type": "string"
+          },
           "username": {
             "type": "string"
           }
@@ -7340,6 +7348,14 @@
             "type": "string"
           },
           "name": {
+            "type": "string"
+          },
+          "opens_on": {
+            "description": "The page the app opens on: home or explore.",
+            "enum": [
+              "home",
+              "explore"
+            ],
             "type": "string"
           },
           "rating_country": {
@@ -23645,6 +23661,61 @@
           }
         },
         "summary": "Set my app language",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "signed_in",
+        "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/my/opens-on": {
+      "put": {
+        "description": "Saves the page the app opens on for me: home or explore. A link to another page still opens that page.",
+        "operationId": "putMyOpensOn",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "opens_on": {
+                    "enum": [
+                      "home",
+                      "explore"
+                    ],
+                    "example": "explore",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "opens_on"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyProfile"
+                }
+              }
+            },
+            "description": "Saved."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Not home or explore."
+          }
+        },
+        "summary": "Set the page the app opens on",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "signed_in",
         "x-holyarrs-scope": "write"

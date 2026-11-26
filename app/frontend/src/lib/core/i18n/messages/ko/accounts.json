@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "켜기",
 	"accounts.account.previewsSlow": "느리게",
 	"accounts.account.previewsOff": "끄기",
+	"accounts.account.opensOn": "시작 페이지",
+	"accounts.account.opensOnHint": "HolyArrs를 열면 처음 보이는 페이지",
 	"accounts.account.reco": "추천",
 	"accounts.account.recoTip": "둘러보기는 내가 연 작품을 학습합니다. 이 서버에만 저장됩니다.",
 	"accounts.account.recoHint": "둘러보기는 내가 연 작품을 학습합니다.",

@@ -315,6 +315,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/my/profile":                   Core,
 	"PUT /api/v1/my/profile":                   Core,
 	"PUT /api/v1/my/language":                  Core,
+	"PUT /api/v1/my/opens-on":                  Core,
 	"GET /api/v1/my/views":                     Core,
 	"PUT /api/v1/my/views":                     Core,
 	"GET /api/v1/media-servers":                Core,

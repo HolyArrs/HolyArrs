@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "เปิด",
 	"accounts.account.previewsSlow": "ช้าลง",
 	"accounts.account.previewsOff": "ปิด",
+	"accounts.account.opensOn": "เปิดที่หน้า",
+	"accounts.account.opensOnHint": "หน้าแรกที่คุณเห็นเมื่อเปิด HolyArrs",
 	"accounts.account.reco": "คำแนะนำ",
 	"accounts.account.recoTip": "สำรวจเรียนรู้จากสิ่งที่คุณเปิด และอยู่บนเซิร์ฟเวอร์นี้",
 	"accounts.account.recoHint": "สำรวจเรียนรู้จากสิ่งที่คุณเปิด",

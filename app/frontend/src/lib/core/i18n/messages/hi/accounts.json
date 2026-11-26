@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "चालू",
 	"accounts.account.previewsSlow": "धीमा",
 	"accounts.account.previewsOff": "बंद",
+	"accounts.account.opensOn": "किस पेज पर खुले",
+	"accounts.account.opensOnHint": "HolyArrs खोलने पर आपको दिखने वाला पहला पेज",
 	"accounts.account.reco": "सुझाव",
 	"accounts.account.recoTip": "एक्सप्लोर आपके खोले हुए से सीखता है। यह इसी सर्वर पर रहता है।",
 	"accounts.account.recoHint": "एक्सप्लोर आपके खोले हुए से सीखता है।",

@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"context"
 	"database/sql"
 	"net/http"
 	"strings"
@@ -16,7 +17,11 @@ type myProfile struct {
 	DisplayName string `json:"display_name"`
 	Username    string `json:"username"`
 	Language    string `json:"language"`
+	OpensOn     string `json:"opens_on"`
 }
+
+// opensOnPages are the pages a person may have the app open on.
+var opensOnPages = map[string]bool{"home": true, "explore": true}
 
 // languages the app has words for; "" follows the browser.
 var languages = map[string]bool{"": true, "en": true, "es": true, "pt-br": true, "fr": true, "de": true, "ru": true, "uk": true, "zh-cn": true, "ja": true, "ko": true, "hi": true, "ar": true, "it": true, "nl": true, "pl": true, "tr": true,
@@ -30,6 +35,7 @@ func (a *Auth) profileRoutes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/my/profile", a.getProfile)
 	m.HandleFunc("PUT /api/v1/my/profile", a.putProfile)
 	m.HandleFunc("PUT /api/v1/my/language", a.putLanguage)
+	m.HandleFunc("PUT /api/v1/my/opens-on", a.putOpensOn)
 }
 
 // cleanDisplayName trims the name and refuses control and hidden format
@@ -58,6 +64,12 @@ func (a *Auth) getProfile(w http.ResponseWriter, r *http.Request) {
 	p.DisplayName, err = displayName(r.Context(), a.s.Read(), who.UserID)
 	if err == nil {
 		p.Language, err = language(r.Context(), a.s.Read(), who.UserID)
+	}
+	if err == nil {
+		p.OpensOn, err = opensOn(r.Context(), a.s.Read(), who.UserID)
+	}
+	if p.OpensOn == "" {
+		p.OpensOn = "home"
 	}
 	if err != nil && err != sql.ErrNoRows {
 		webserver.Internal(w, "accounts", err)
@@ -104,6 +116,37 @@ func (a *Auth) putLanguage(w http.ResponseWriter, r *http.Request) {
 	me, _ := webserver.From(r.Context())
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		return putLanguage(r.Context(), tx, me.UserID, l)
+	})
+	if err != nil {
+		webserver.Internal(w, "accounts", err)
+		return
+	}
+	a.getProfile(w, r)
+}
+
+// opensOnOf is the page a person's app opens on, for the session answer:
+// "home" when it cannot be read, so the session never fails over it.
+func (a *Auth) opensOnOf(ctx context.Context, userID int64) string {
+	p, _ := opensOn(ctx, a.s.Read(), userID)
+	return p
+}
+
+// putOpensOn saves the page the app opens on for the person signed in.
+func (a *Auth) putOpensOn(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		OpensOn string `json:"opens_on"`
+	}
+	if !webserver.Decode(w, r, &in, `send {"opens_on": "explore"}`) {
+		return
+	}
+	p := strings.ToLower(strings.TrimSpace(in.OpensOn))
+	if !opensOnPages[p] {
+		fail(w, http.StatusBadRequest, "pick home or explore")
+		return
+	}
+	me, _ := webserver.From(r.Context())
+	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
+		return putOpensOn(r.Context(), tx, me.UserID, p)
 	})
 	if err != nil {
 		webserver.Internal(w, "accounts", err)

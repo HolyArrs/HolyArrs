@@ -64,3 +64,22 @@ func OwnerLanguage(ctx context.Context, q conn) string {
 	l, _ := language(ctx, q, id)
 	return l
 }
+
+// opensOn is the page a person's app opens on: "home" (the default, also
+// when they have no profile row yet) or "explore".
+func opensOn(ctx context.Context, q conn, userID int64) (string, error) {
+	var p string
+	err := q.QueryRowContext(ctx, "SELECT opens_on FROM user_profiles WHERE user_id = ?", userID).Scan(&p)
+	if err != nil {
+		return "home", err
+	}
+	return p, nil
+}
+
+// putOpensOn sets the page a person's app opens on and keeps the rest of
+// their profile.
+func putOpensOn(ctx context.Context, q conn, userID int64, p string) error {
+	_, err := q.ExecContext(ctx, `INSERT INTO user_profiles (user_id, display_name, opens_on) VALUES (?, '', ?)
+			ON CONFLICT (user_id) DO UPDATE SET opens_on = excluded.opens_on`, userID, p)
+	return err
+}

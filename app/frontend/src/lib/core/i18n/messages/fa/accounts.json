@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "روشن",
 	"accounts.account.previewsSlow": "کندتر",
 	"accounts.account.previewsOff": "خاموش",
+	"accounts.account.opensOn": "باز می‌شود در",
+	"accounts.account.opensOnHint": "نخستین صفحه‌ای که هنگام باز کردن HolyArrs می‌بینی",
 	"accounts.account.reco": "توصیه‌ها",
 	"accounts.account.recoTip": "کاوش از چیزهایی که باز می‌کنی یاد می‌گیرد. روی همین سرور می‌ماند.",
 	"accounts.account.recoHint": "کاوش از چیزهایی که باز می‌کنی یاد می‌گیرد.",

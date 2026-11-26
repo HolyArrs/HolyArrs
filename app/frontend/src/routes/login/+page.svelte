@@ -8,6 +8,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { to } from '#lib/core/paths.ts';
+	import { openingAfterSignIn } from '../(frame)/opening.ts';
 	import { loaderReady, playHandoff, playSignIn, SIGNIN_HOLD_MS, VEIL_MS } from '#lib/core/loader.ts';
 	import { ApiError, api, message } from '#lib/core/api.ts';
 	import { session, type SignInResult } from '#lib/core/session.svelte.ts';
@@ -269,7 +270,7 @@
 		// Success, one continuous move: the Orbit grows out of the Sign in button and glides to the centre while the panel and the art dissolve under a veil in the app colour; the app opens under the same Orbit, which then leaves as the page appears.
 		// Setup not finished yet: go on at its first unfinished step (the wizard picks it).
 		const nx = signInNext(page.url.searchParams); // first run: back to the setup step it was on, else setup's start
-		const target = to(firstRun || session.s.setupOpen ? (nx.startsWith('/welcome?') ? nx : '/welcome?first=1') : nx);
+		const target = to(firstRun || session.s.setupOpen ? (nx.startsWith('/welcome?') ? nx : '/welcome?first=1') : openingAfterSignIn(nx));
 		// Setup goes on in the same card: no sign-in animation, no app reveal in between.
 		if (firstRun || session.s.setupOpen) {
 			void goto(target, { replace: true }).finally(loaderReady);

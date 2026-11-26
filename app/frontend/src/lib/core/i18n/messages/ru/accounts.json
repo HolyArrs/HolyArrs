@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Вкл.",
 	"accounts.account.previewsSlow": "Медленнее",
 	"accounts.account.previewsOff": "Выкл.",
+	"accounts.account.opensOn": "Открывается на",
+	"accounts.account.opensOnHint": "Первая страница, которую вы видите, открыв HolyArrs",
 	"accounts.account.reco": "Рекомендации",
 	"accounts.account.recoTip": "«Обзор» учится на том, что вы открываете. Данные остаются на этом сервере.",
 	"accounts.account.recoHint": "«Обзор» учится на том, что вы открываете.",

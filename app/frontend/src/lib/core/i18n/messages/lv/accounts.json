@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Ieslēgts",
 	"accounts.account.previewsSlow": "Lēnāk",
 	"accounts.account.previewsOff": "Izslēgts",
+	"accounts.account.opensOn": "Atveras",
+	"accounts.account.opensOnHint": "Pirmā lapa, ko redzi, atverot HolyArrs",
 	"accounts.account.reco": "Ieteikumi",
 	"accounts.account.recoTip": "Izpētīt mācās no tā, ko atver. Paliek šajā serverī.",
 	"accounts.account.recoHint": "Izpētīt mācās no tā, ko atver.",

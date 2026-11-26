@@ -300,6 +300,8 @@
 	"accounts.account.previewsOn": "Pornit",
 	"accounts.account.previewsSlow": "Mai încet",
 	"accounts.account.previewsOff": "Oprit",
+	"accounts.account.opensOn": "Se deschide pe",
+	"accounts.account.opensOnHint": "Prima pagină pe care o vezi când deschizi HolyArrs",
 	"accounts.account.reco": "Recomandări",
 	"accounts.account.recoTip": "Explorează învață din ce deschizi. Rămâne pe acest server.",
 	"accounts.account.recoHint": "Explorează învață din ce deschizi.",

@@ -1,6 +1,7 @@
 import { cleanDisplayName, shownName } from './profile.ts';
 import { api } from '#lib/core/api.ts';
 import { isLocaleChoice, lang, setLang, type LocaleChoice } from '#lib/core/i18n/i18n.svelte.ts';
+import type { OpensOn } from '#lib/core/session.svelte.ts';
 
 // My display name, shared by the settings side menu and the Profile card. Loaded once per visit; saving updates both at once.
 export const profile = $state<{ displayName: string; loaded: boolean }>({ displayName: '', loaded: false });
@@ -33,6 +34,12 @@ export async function saveDisplayName(typed: string): Promise<string> {
 export async function saveLanguage(choice: LocaleChoice): Promise<void> {
 	await showIn(choice);
 	await api.put('/my/language', { language: choice === 'auto' ? '' : choice });
+}
+
+/** Keeps the page the app opens on, on the account, so every device opens there; answers the saved page. */
+export async function saveOpensOn(p: OpensOn): Promise<OpensOn> {
+	const r = await api.put<{ opens_on?: string }>('/my/opens-on', { opens_on: p });
+	return r.opens_on === 'explore' ? 'explore' : 'home';
 }
 
 // Answers kept from before carry titles and synopses in the old language, so they are dropped.
