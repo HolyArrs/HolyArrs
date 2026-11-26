@@ -166,6 +166,7 @@
 	"library.import.leftHint": "一部のフォルダーが完了しませんでした。もう一度スキャンして追加してください。すでにライブラリにあるフォルダーはそのまま残ります。",
 	"library.import.scanAgain": "もう一度スキャン",
 	"library.import.keepOpen": "完了するまで、このページを開いたままにしてください。",
+	"library.import.closeOk": "サーバーで実行されるので、このページを閉じてもかまいません。",
 	"library.import.waiting": "メタデータサーバーが混み合っています。HolyArrs は残りの {left} 件を {min} 分後にもう一度試します。",
 	"library.import.leaveAsk": "インポートを実行中です。このページを離れると、まだ送信されていないフォルダーは管理対象に追加されません。それでも離れますか?",
 	"library.import.interrupted": "ページが閉じられたため、インポートが {total} 個中 {done} 個のフォルダーで止まりました。もう一度スキャンして残りを追加してください。追加済みのフォルダーはそのまま残ります。",

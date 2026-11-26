@@ -46,44 +46,100 @@ describe('adoptParts', () => {
 const words = { unknown: 'sent, result not known', notSent: 'not sent: the server stopped answering' };
 const ok = async (part: { folder: string }[]) => part.map((p, i) => ({ folder: p.folder, title_id: i + 1 }));
 
+// A part handed over at once whose wait gives back what f does.
+const now = (f: (part: { folder: string }[]) => Promise<{ folder: string; title_id?: number }[]>) => async (part: { folder: string }[]) => () => f(part);
+
 describe('adoptInParts', () => {
-	it('sends the parts in turn, tells progress and goes on past a refused part with its real reason', async () => {
+	it('hands every part to the server before waiting on the first, so a page closed while waiting stops nothing (#712)', async () => {
+		const log: string[] = [];
+		let n = 0;
+		let gone = false;
+		await adoptInParts(
+			movies(600),
+			async (part) => {
+				const k = n++;
+				log.push(`sent ${k}:${part.length}`);
+				return async () => {
+					log.push(`wait ${k}`);
+					gone = true; // the page closes while the first part runs
+					return ok(part);
+				};
+			},
+			words,
+			() => {},
+			() => gone
+		);
+		expect(log).toEqual(['sent 0:250', 'sent 1:250', 'sent 2:100', 'wait 0']);
+	});
+
+	it('says it handed over only when a part reached the server, and shows progress from the start', async () => {
+		let handed = 0;
+		const seen: number[] = [];
+		await adoptInParts(movies(600), async () => {
+			throw new ApiError('signed out', 401);
+		}, words, (done) => seen.push(done), () => false, () => handed++);
+		expect(handed).toBe(0);
+		expect(seen[0]).toBe(0);
+		await adoptInParts(movies(600), async (part) => async () => ok(part), words, () => {}, () => false, () => handed++);
+		expect(handed).toBe(1);
+	});
+
+	it('gives every folder a line when the page goes part way through the sending', async () => {
+		let n = 0;
+		const out = await adoptInParts(movies(600), async (part) => {
+			n++;
+			return async () => ok(part);
+		}, words, () => {}, () => n >= 1);
+		expect(out).toHaveLength(600);
+		expect(out.slice(0, 250).every((r) => r.notKnown)).toBe(true);
+		expect(out.slice(250).every((r) => r.error === words.notSent && r.left)).toBe(true);
+	});
+
+	it('waits on the parts in turn, tells progress and goes on past a refused part with its real reason', async () => {
 		const picks = movies(600);
-		const sent: number[] = [];
 		const seen: [number, number, number][] = [];
 		let n = 0;
 		const out = await adoptInParts(
 			picks,
-			async (part) => {
-				sent.push(part.length);
+			now(async (part) => {
 				if (n++ === 1) throw new ApiError('That folder name is not allowed.', 400);
 				return ok(part);
-			},
+			}),
 			words,
 			(done, total, part) => seen.push([done, total, part])
 		);
-		expect(sent).toEqual([250, 250, 100]);
 		expect(seen).toEqual([[0, 600, 250], [250, 600, 250], [500, 600, 100], [600, 600, 0]]);
 		expect(out.filter((r) => r.title_id)).toHaveLength(350);
 		const bad = out.filter((r) => r.error);
 		expect(bad).toHaveLength(250);
 		expect(bad.every((r) => r.error === 'That folder name is not allowed.' && r.left && !r.notKnown)).toBe(true);
+		expect(out.map((r) => r.folder)).toEqual(picks.map((p) => p.folder));
 	});
 
-	it('says a part the server took but could not report on is not known, not failed, and sends no more', async () => {
-		const picks = movies(600);
+	it('goes on handing over past a part the server refused, with its real reason', async () => {
 		let n = 0;
-		const out = await adoptInParts(picks, async (part) => {
+		const out = await adoptInParts(movies(600), async (part) => {
+			if (n++ === 0) throw new ApiError('That folder name is not allowed.', 400);
+			return async () => ok(part);
+		}, words);
+		expect(n).toBe(3);
+		expect(out.slice(0, 250).every((r) => r.error === 'That folder name is not allowed.' && r.left)).toBe(true);
+		expect(out.filter((r) => r.title_id)).toHaveLength(350);
+	});
+
+	it('says every part handed over is not known, not failed, once a part could not be reported on', async () => {
+		let n = 0;
+		const out = await adoptInParts(movies(600), now(async (part) => {
 			if (n++ === 1) throw new ResultUnknown('HolyArrs is not answering.');
 			return ok(part);
-		}, words);
+		}), words);
 		expect(n).toBe(2);
 		expect(out).toHaveLength(600);
-		expect(out.slice(250, 500).every((r) => r.notKnown && r.left && r.error === words.unknown)).toBe(true);
-		expect(out.slice(500).every((r) => !r.notKnown && r.left && r.error === words.notSent)).toBe(true);
+		expect(out.slice(0, 250).every((r) => r.title_id)).toBe(true);
+		expect(out.slice(250).every((r) => r.notKnown && r.left && r.error === words.unknown)).toBe(true);
 	});
 
-	it('stops at once when the person is signed out or no answer came at all, with the real reason', async () => {
+	it('stops handing over at once when the person is signed out or no answer came at all, with the real reason', async () => {
 		for (const status of [401, 0]) {
 			let n = 0;
 			const out = await adoptInParts(movies(600), async () => {
@@ -96,7 +152,7 @@ describe('adoptInParts', () => {
 		}
 	});
 
-	it("stops at once on a proxy's own page while HolyArrs is down, and says in plain words that the rest was not sent, never the proxy's text", async () => {
+	it("stops handing over at once on a proxy's own page while HolyArrs is down, and says in plain words that the rest was not sent, never the proxy's text", async () => {
 		const pages = [
 			new ApiError('404 page not found', 404, { error: '404 page not found' }),
 			new ApiError('<html><head><title>502 Bad Gateway</title></head></html>', 502, { error: '<html><head><title>502 Bad Gateway</title></head></html>' }),
@@ -115,25 +171,33 @@ describe('adoptInParts', () => {
 		}
 	});
 
-	it('still sends the rest after a part HolyArrs itself refused with a 404 of its own', async () => {
+	it('keeps what was handed over before the sending stopped', async () => {
 		let n = 0;
 		const out = await adoptInParts(movies(600), async (part) => {
+			if (n++ === 1) throw new ApiError('gone', 0);
+			return async () => ok(part);
+		}, words);
+		expect(out.slice(0, 250).every((r) => r.title_id)).toBe(true);
+		expect(out.slice(250).every((r) => r.left && r.error === 'gone')).toBe(true);
+	});
+
+	it('still waits on the rest after a part HolyArrs itself refused with a 404 of its own', async () => {
+		let n = 0;
+		const out = await adoptInParts(movies(600), now(async (part) => {
 			if (n++ === 0) throw new ApiError('no such job', 404, { error: 'no such job' });
 			return ok(part);
-		}, words);
+		}), words);
 		expect(n).toBe(3);
 		expect(out.filter((r) => r.title_id)).toHaveLength(350);
 	});
 
-	it('sends nothing more once the page is gone', async () => {
+	it('hands nothing over once the page is gone', async () => {
 		let n = 0;
-		let gone = false;
 		await adoptInParts(movies(600), async (part) => {
 			n++;
-			gone = true;
-			return ok(part);
-		}, words, () => {}, () => gone);
-		expect(n).toBe(1);
+			return async () => ok(part);
+		}, words, () => {}, () => true);
+		expect(n).toBe(0);
 	});
 });
 
