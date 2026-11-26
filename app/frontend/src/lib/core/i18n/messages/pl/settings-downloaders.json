@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Nazwa użytkownika SABnzbd",
 	"settings.downloaders.sabPass": "Hasło SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd nie przyjął tej nazwy użytkownika i hasła.",
-	"settings.downloaders.keyNotFound": "Nie udało się odczytać klucza. Użyj „Pobierz klucz” i skopiuj go stamtąd."
+	"settings.downloaders.keyNotFound": "Nie udało się odczytać klucza. Użyj „Pobierz klucz” i skopiuj go stamtąd.",
+	"settings.downloaders.pluginKind": "Wtyczka"
 }

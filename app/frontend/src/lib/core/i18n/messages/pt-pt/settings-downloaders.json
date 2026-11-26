@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Utilizador do SABnzbd",
 	"settings.downloaders.sabPass": "Palavra-passe do SABnzbd",
 	"settings.downloaders.keyWrongLogin": "O SABnzbd não aceitou esse utilizador e palavra-passe.",
-	"settings.downloaders.keyNotFound": "Não foi possível ler a chave. Use Obter chave e copie-a a partir daí."
+	"settings.downloaders.keyNotFound": "Não foi possível ler a chave. Use Obter chave e copie-a a partir daí.",
+	"settings.downloaders.pluginKind": "Plugin"
 }

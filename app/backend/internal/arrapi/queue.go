@@ -263,9 +263,7 @@ func (h *handler) queueRows(ctx context.Context, withEpisode bool) ([]queueRow, 
 	now := h.now()
 	for _, d := range dls {
 		base := d.row
-		if base.Protocol != "usenet" && base.Protocol != "torrent" {
-			base.Protocol = "unknown"
-		}
+		base.Protocol = arrProtocol(base.Protocol)
 		base.Sizeleft = int64(float64(base.Size) * (1 - min(max(base.progress, 0), 1)))
 		base.Languages, base.CustomFormats, base.Quality = []language{}, []any{}, qualityOfRelease(h.side, base.Title)
 		base.StatusMessages = []statusMsg{}

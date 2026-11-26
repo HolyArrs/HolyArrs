@@ -190,7 +190,7 @@ func (h *handler) blockRows(ctx context.Context) ([]blockRow, error) {
 		}
 		why, _ := x.Verdict["turned_down_reason"].(string)
 		row := blockRow{ID: x.ID, SourceTitle: x.Name, Languages: []language{}, Quality: qualityOfRelease(h.side, x.Name), CustomFormats: []any{},
-			Date: utc(x.UpdatedAt), Protocol: x.Protocol, Indexer: x.SourceName, Message: why}
+			Date: utc(x.UpdatedAt), Protocol: arrProtocol(x.Protocol), Indexer: x.SourceName, Message: why}
 		if kind == "show" {
 			row.SeriesID = x.TitleID
 			for _, sl := range x.MatchedSlotIDs {

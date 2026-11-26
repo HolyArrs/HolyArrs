@@ -31,6 +31,7 @@ Each published version has a `manifest.json`. The release tools build it from `h
 | `icon` | Optional. A PNG or SVG data URL under 48 KB. In `holyarrs-plugin.json`, set `icon_file` to a `.png` or `.svg` next to it instead |
 | `support_email`, `support_url` | How people reach the author for help. A listed plugin needs at least one; the URL must be https. The Plugins page shows them under Contact |
 | `size` | Size of the plugin file in bytes for that CPU type. Added by the release tools |
+| `download_types` | Optional. Download types the plugin brings itself, beyond torrent and usenet, such as `["soulseek"]`. Up to 4, each 2 to 31 lowercase letters, digits and dashes, starting with a letter. See [Own download types](#own-download-types) |
 
 The Plugins page shows these lists to the owner before install. Installing approves the websites and events; each folder gets a real folder only once the owner picks one. An update that asks for more (a new website, event or folder, or `read_write` where `read` was approved) is installed but held until the owner approves it. An update that asks for less starts at once.
 
@@ -39,6 +40,18 @@ The Plugins page shows these lists to the owner before install. Installing appro
 - `HTTPS_PROXY`, `HTTP_PROXY` and `ALL_PROXY` point at the plugin's own proxy in HolyArrs. Use your HTTP library's standard proxy support. A connect that ignores them still ends at the proxy, which then reads the TLS server name.
 - `HOLYARRS_PLUGIN_FOLDER_<NAME>` for each approved folder (the name in capitals, other characters as `_`), and `HOLYARRS_PLUGIN_FOLDERS` as a JSON map of name to path.
 - `HOLYARRS_PLUGIN_NO_UDP=1`: UDP is not available. Only TCP to the listed websites on ports 443 and 80 works.
+
+### Own download types
+
+A plugin that serves a Source (`plugin://<id>`) and a Downloader can bring a download type of its own, for downloads that are neither torrent nor usenet:
+
+- List it in `download_types`, for example `["soulseek"]`.
+- The owner adds the plugin's Source with that type as its protocol, and a Downloader of kind `plugin` (address `plugin://<id>`) with the same type. HolyArrs refuses a type the plugin did not list.
+- Every result from that Source carries the type. A Release of that type only ever goes to a Downloader of the same type, never to a torrent or usenet client, and torrent or usenet Releases never go to it.
+- Releases of the type wait like usenet ones in the pick rules. When a protocol is preferred, two Releases that are both not on it tie on that step.
+- Sonarr- and Radarr-style API clients see the protocol as `unknown`.
+
+The `plugin-torrent` and `plugin-usenet` Downloader kinds keep working as before.
 
 ## Events
 

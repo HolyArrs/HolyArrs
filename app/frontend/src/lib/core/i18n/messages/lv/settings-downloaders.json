@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd lietotājvārds",
 	"settings.downloaders.sabPass": "SABnzbd parole",
 	"settings.downloaders.keyWrongLogin": "SABnzbd nepieņēma šo lietotājvārdu un paroli.",
-	"settings.downloaders.keyNotFound": "Neizdevās nolasīt atslēgu. Izmantojiet “Iegūt atslēgu” un nokopējiet to no turienes."
+	"settings.downloaders.keyNotFound": "Neizdevās nolasīt atslēgu. Izmantojiet “Iegūt atslēgu” un nokopējiet to no turienes.",
+	"settings.downloaders.pluginKind": "Spraudnis"
 }

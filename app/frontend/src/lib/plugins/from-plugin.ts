@@ -10,8 +10,10 @@ export function servesAs(p: Pick<Plugin, 'installed' | 'access'>, kind: FromPlug
 	return !!p.installed && !!p.access?.actions?.includes(scopeOf[kind]);
 }
 
-/** The body that adds p: its own address plugin://<id>, nothing else to fill in. */
-export function fromPluginBody(p: Pick<Plugin, 'id' | 'name'>, kind: FromPluginKind): Record<string, unknown> {
+/** The body that adds p: its own address plugin://<id>, and the first download type it brings, if any. */
+export function fromPluginBody(p: Pick<Plugin, 'id' | 'name' | 'download_types'>, kind: FromPluginKind): Record<string, unknown> {
 	const url = `plugin://${p.id}`;
-	return kind === 'downloader' ? { name: p.name, adapter: 'plugin-torrent', url } : { name: p.name, format: 'torznab', url };
+	const own = p.download_types?.[0];
+	if (kind === 'source') return own ? { name: p.name, format: 'torznab', protocol: own, url } : { name: p.name, format: 'torznab', url };
+	return own ? { name: p.name, kind: 'plugin', protocol: own, url } : { name: p.name, kind: 'plugin-torrent', url };
 }
