@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "Hiányzik",
 	"shows.sheet.lookForIt": "Keresés",
 	"shows.sheet.file": "Fájl",
+	"shows.sheet.saveToDevice": "Mentés az eszközre",
+	"shows.page.saveToDevice": "Mentés az eszközre",
 	"shows.sheet.quality": "Minőség",
 	"shows.sheet.size": "Méret",
 	"shows.sheet.added": "Hozzáadva",

@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Kérések jóváhagyása vagy elvetése",
 	"settings.users.permLibrary": "A Médiatár kezelése",
 	"settings.users.permSettings": "Beállítások módosítása",
+	"settings.users.permSaveFiles": "Fájlok mentése a saját eszközére",
 	"settings.users.owner": "Tulajdonos",
 	"settings.users.admin": "Admin",
 	"settings.users.member": "Tag",

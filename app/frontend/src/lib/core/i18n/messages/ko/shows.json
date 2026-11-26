@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "없음",
 	"shows.sheet.lookForIt": "찾기",
 	"shows.sheet.file": "파일",
+	"shows.sheet.saveToDevice": "기기에 저장",
+	"shows.page.saveToDevice": "기기에 저장",
 	"shows.sheet.quality": "품질",
 	"shows.sheet.size": "크기",
 	"shows.sheet.added": "추가됨",

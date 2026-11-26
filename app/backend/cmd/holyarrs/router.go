@@ -93,6 +93,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	a.mf.Routes(m)
 	a.dl.Routes(m)
 	(&library.OrganiseHandlers{OrganiseDeps: library.OrganiseDeps{Store: a.s.Store, Lib: a.s.Library, Queue: a.s.Queue, TitleID: a.titleID, Fail: library.WriteError}}).Routes(m)
+	(&library.FileSaveHandlers{Store: a.s.Store}).Routes(m)
 	a.byHandRoutes(m)
 	a.holding().Routes(m)
 	a.healthHandlers().Routes(m)

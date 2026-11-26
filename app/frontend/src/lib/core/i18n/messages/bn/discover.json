@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "এপিসোড {episode} খোঁজা হচ্ছে",
 	"discover.titleLibrary.versions": "ভার্সন",
 	"discover.titleLibrary.file": "ফাইল",
+	"discover.titleLibrary.saveToDevice": "ডিভাইসে সংরক্ষণ করুন",
 	"discover.titleLibrary.removeLabel": "{label} সরান",
 	"discover.titleLibrary.showLess": "কম দেখান",
 	"discover.titleLibrary.showAll": "সব {n}টি দেখান",

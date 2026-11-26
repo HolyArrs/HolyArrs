@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "正在搜索第 {episode} 集",
 	"discover.titleLibrary.versions": "版本",
 	"discover.titleLibrary.file": "文件",
+	"discover.titleLibrary.saveToDevice": "保存到设备",
 	"discover.titleLibrary.removeLabel": "移除 {label}",
 	"discover.titleLibrary.showLess": "收起",
 	"discover.titleLibrary.showAll": "显示全部 {n} 个",

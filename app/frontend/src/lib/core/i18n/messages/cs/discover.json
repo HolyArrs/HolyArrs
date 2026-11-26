@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Hledá se epizoda {episode}",
 	"discover.titleLibrary.versions": "Verze",
 	"discover.titleLibrary.file": "Soubor",
+	"discover.titleLibrary.saveToDevice": "Uložit do zařízení",
 	"discover.titleLibrary.removeLabel": "Odebrat {label}",
 	"discover.titleLibrary.showLess": "Zobrazit méně",
 	"discover.titleLibrary.showAll": "Zobrazit vše ({n})",

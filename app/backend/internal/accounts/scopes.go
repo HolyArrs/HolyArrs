@@ -86,6 +86,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/titles/{id}/people":                    webserver.NeedSignedIn,
 	"PUT /api/v1/titles/{id}/files/{fid}/choices":       webserver.PermManageLibrary,
 	"POST /api/v1/titles/{id}/files/{fid}/keep-and-add": webserver.PermManageLibrary,
+	"GET /api/v1/titles/{id}/files/{fid}/save":          webserver.PermSaveFiles, // the file itself, to the person's device
 	"PUT /api/v1/downloads/{id}/edition":                webserver.PermManageLibrary,
 	"GET /api/v1/collections":                           webserver.NeedSignedIn,
 	"GET /api/v1/collections/{id}":                      webserver.NeedSignedIn,

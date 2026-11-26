@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Схвалювати або відхиляти запити",
 	"settings.users.permLibrary": "Керувати бібліотекою",
 	"settings.users.permSettings": "Змінювати налаштування",
+	"settings.users.permSaveFiles": "Зберігати файли на свій пристрій",
 	"settings.users.owner": "Власник",
 	"settings.users.admin": "Адмін",
 	"settings.users.member": "Учасник",

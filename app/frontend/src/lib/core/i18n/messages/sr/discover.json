@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Тражим епизоду {episode}",
 	"discover.titleLibrary.versions": "Верзије",
 	"discover.titleLibrary.file": "Датотека",
+	"discover.titleLibrary.saveToDevice": "Сачувај на уређај",
 	"discover.titleLibrary.removeLabel": "Уклони {label}",
 	"discover.titleLibrary.showLess": "Прикажи мање",
 	"discover.titleLibrary.showAll": "Прикажи свих {n}",

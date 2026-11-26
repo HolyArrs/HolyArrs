@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Patvirtinti ar atmesti užsakymus",
 	"settings.users.permLibrary": "Valdyti Biblioteką",
 	"settings.users.permSettings": "Keisti nustatymus",
+	"settings.users.permSaveFiles": "Išsaugoti failus savo įrenginyje",
 	"settings.users.owner": "Savininkas",
 	"settings.users.admin": "Administratorius",
 	"settings.users.member": "Narys",

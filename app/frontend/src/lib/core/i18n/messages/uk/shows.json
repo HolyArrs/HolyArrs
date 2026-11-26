@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "Бракує",
 	"shows.sheet.lookForIt": "Шукати",
 	"shows.sheet.file": "Файл",
+	"shows.sheet.saveToDevice": "Зберегти на пристрій",
+	"shows.page.saveToDevice": "Зберегти на пристрій",
 	"shows.sheet.quality": "Якість",
 	"shows.sheet.size": "Розмір",
 	"shows.sheet.added": "Додано",

@@ -294,6 +294,7 @@ GET /api/v1/titles/{id}/albums see
 GET /api/v1/titles/{id}/copies see
 GET /api/v1/titles/{id}/episode-groups see
 GET /api/v1/titles/{id}/episodes see
+GET /api/v1/titles/{id}/files/{fid}/save see
 GET /api/v1/titles/{id}/follow see
 GET /api/v1/titles/{id}/leftovers see
 GET /api/v1/titles/{id}/people see

@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Leita að þætti {episode}",
 	"discover.titleLibrary.versions": "Afbrigði",
 	"discover.titleLibrary.file": "Skrá",
+	"discover.titleLibrary.saveToDevice": "Vista í tæki",
 	"discover.titleLibrary.removeLabel": "Fjarlægja {label}",
 	"discover.titleLibrary.showLess": "Sýna minna",
 	"discover.titleLibrary.showAll": "Sýna öll {n}",

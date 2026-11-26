@@ -234,6 +234,8 @@ func routeScopeOK(who webserver.Caller, pattern string) bool {
 func init() {
 	for _, r := range []string{
 		"GET /api/v1/titles/{id}/copies",
+		// Saving a file reads it; the person still needs save_files.
+		"GET /api/v1/titles/{id}/files/{fid}/save",
 		"GET /api/v1/plugin-widgets",
 		"GET /api/v1/plugin-page-files/{token}/{path...}",
 		"GET /api/v1/plugin-stream/{token}",

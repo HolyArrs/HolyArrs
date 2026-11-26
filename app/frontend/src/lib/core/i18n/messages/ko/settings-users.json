@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "요청 승인 또는 거부",
 	"settings.users.permLibrary": "라이브러리 운영",
 	"settings.users.permSettings": "설정 변경",
+	"settings.users.permSaveFiles": "자신의 기기에 파일 저장",
 	"settings.users.owner": "소유자",
 	"settings.users.admin": "관리자",
 	"settings.users.member": "멤버",

@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Approve or turn down requests",
 	"settings.users.permLibrary": "Run the Library",
 	"settings.users.permSettings": "Change settings",
+	"settings.users.permSaveFiles": "Save files to their device",
 	"settings.users.owner": "Owner",
 	"settings.users.admin": "Admin",
 	"settings.users.member": "Member",

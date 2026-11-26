@@ -43,7 +43,8 @@ var RoutineEventKinds = []string{
 // without end. setting_changed is the older kind that held the values sent;
 // rows of it already saved stay hidden from History readers too.
 // secrets_imported is the owner's import of a secrets file (credentials).
-var AuditEventKinds = []string{"signed_in", "sign_in_failed", "signed_out", "api_key_created", "api_key_deleted", "settings_changed", "setting_changed", "secrets_imported", "account_changed", "backup_used", "control_used"}
+// file_saved is a Library file someone saved to their own device.
+var AuditEventKinds = []string{"signed_in", "sign_in_failed", "signed_out", "api_key_created", "api_key_deleted", "settings_changed", "setting_changed", "secrets_imported", "account_changed", "backup_used", "control_used", "file_saved"}
 
 // DefaultHistoryKeep: routine work for 30 days, everything else forever.
 var DefaultHistoryKeep = HistoryKeep{RoutineDays: 30}

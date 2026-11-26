@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Zatwierdzać lub odrzucać prośby",
 	"settings.users.permLibrary": "Prowadzić Bibliotekę",
 	"settings.users.permSettings": "Zmieniać ustawienia",
+	"settings.users.permSaveFiles": "Zapisywanie plików na swoim urządzeniu",
 	"settings.users.owner": "Właściciel",
 	"settings.users.admin": "Administrator",
 	"settings.users.member": "Członek",

@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Aprovar ou recusar pedidos",
 	"settings.users.permLibrary": "Cuidar da Biblioteca",
 	"settings.users.permSettings": "Mudar definições",
+	"settings.users.permSaveFiles": "Guardar ficheiros no próprio dispositivo",
 	"settings.users.owner": "Proprietário",
 	"settings.users.admin": "Administrador",
 	"settings.users.member": "Membro",

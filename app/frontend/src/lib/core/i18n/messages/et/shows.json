@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "Puudub",
 	"shows.sheet.lookForIt": "Otsi seda",
 	"shows.sheet.file": "Fail",
+	"shows.sheet.saveToDevice": "Salvesta seadmesse",
+	"shows.page.saveToDevice": "Salvesta seadmesse",
 	"shows.sheet.quality": "Kvaliteet",
 	"shows.sheet.size": "Suurus",
 	"shows.sheet.added": "Lisatud",

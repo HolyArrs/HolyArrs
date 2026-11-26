@@ -6,6 +6,7 @@ export { airedEpisodes } from './table.ts';
 export { adoptInParts, adoptParts, askThrough, cutFromJobs, cutKeyOf, cutNote, cutsGone, findCut, findKept, foldersThenNotes, heldLocks, importKey, itemsAreFiles, holdWhile, jobForgotten, keepAsking, notesThenLocks, partEnd, quiet, scanEnd, scansGone, scanFromFirstLeft, staleCuts, throughJobs, throughNow, type Cut, type PartResult } from './adopt-parts.ts';
 export { lookFail } from './import-view.ts';
 export { leftInDownloader, needsFolder, standInFolder } from './hands-off.ts';
+export { saveHref } from './save-to-device.ts';
 export { airDateChoices } from './organise.ts';
 export { albumFolderLine } from './organise.ts';
 export { artName } from './title-page.ts';

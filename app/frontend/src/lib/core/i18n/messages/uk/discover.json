@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Шукаємо серію {episode}",
 	"discover.titleLibrary.versions": "Варіанти",
 	"discover.titleLibrary.file": "Файл",
+	"discover.titleLibrary.saveToDevice": "Зберегти на пристрій",
 	"discover.titleLibrary.removeLabel": "Видалити {label}",
 	"discover.titleLibrary.showLess": "Показати менше",
 	"discover.titleLibrary.showAll": "Показати всі ({n})",

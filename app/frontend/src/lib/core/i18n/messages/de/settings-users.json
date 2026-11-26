@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Anfragen genehmigen oder ablehnen",
 	"settings.users.permLibrary": "Die Bibliothek verwalten",
 	"settings.users.permSettings": "Einstellungen ändern",
+	"settings.users.permSaveFiles": "Dateien auf dem eigenen Gerät speichern",
 	"settings.users.owner": "Besitzer",
 	"settings.users.admin": "Admin",
 	"settings.users.member": "Mitglied",

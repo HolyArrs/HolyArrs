@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Etsitään jaksoa {episode}",
 	"discover.titleLibrary.versions": "Versiot",
 	"discover.titleLibrary.file": "Tiedosto",
+	"discover.titleLibrary.saveToDevice": "Tallenna laitteelle",
 	"discover.titleLibrary.removeLabel": "Poista {label}",
 	"discover.titleLibrary.showLess": "Näytä vähemmän",
 	"discover.titleLibrary.showAll": "Näytä kaikki {n}",

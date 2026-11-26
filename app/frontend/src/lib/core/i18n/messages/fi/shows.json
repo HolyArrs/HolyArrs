@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "Puuttuu",
 	"shows.sheet.lookForIt": "Etsi se",
 	"shows.sheet.file": "Tiedosto",
+	"shows.sheet.saveToDevice": "Tallenna laitteelle",
+	"shows.page.saveToDevice": "Tallenna laitteelle",
 	"shows.sheet.quality": "Laatu",
 	"shows.sheet.size": "Koko",
 	"shows.sheet.added": "Lisätty",

@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "எபிசோட் {episode} ஐத் தேடுகிறது",
 	"discover.titleLibrary.versions": "பதிப்புகள்",
 	"discover.titleLibrary.file": "கோப்பு",
+	"discover.titleLibrary.saveToDevice": "சாதனத்தில் சேமி",
 	"discover.titleLibrary.removeLabel": "{label} ஐ நீக்கு",
 	"discover.titleLibrary.showLess": "குறைவாகக் காட்டு",
 	"discover.titleLibrary.showAll": "{n} அனைத்தையும் காட்டு",

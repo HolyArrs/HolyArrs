@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "リクエストを承認または不採用にする",
 	"settings.users.permLibrary": "ライブラリを運用する",
 	"settings.users.permSettings": "設定を変更する",
+	"settings.users.permSaveFiles": "自分のデバイスにファイルを保存する",
 	"settings.users.owner": "オーナー",
 	"settings.users.admin": "管理者",
 	"settings.users.member": "メンバー",

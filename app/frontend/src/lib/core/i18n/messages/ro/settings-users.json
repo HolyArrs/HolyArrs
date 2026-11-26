@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Aprobă sau respinge cereri",
 	"settings.users.permLibrary": "Administrează Biblioteca",
 	"settings.users.permSettings": "Schimbă setări",
+	"settings.users.permSaveFiles": "Salvarea fișierelor pe dispozitivul propriu",
 	"settings.users.owner": "Proprietar",
 	"settings.users.admin": "Administrator",
 	"settings.users.member": "Membru",

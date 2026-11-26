@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Поиск серии {episode}",
 	"discover.titleLibrary.versions": "Варианты",
 	"discover.titleLibrary.file": "Файл",
+	"discover.titleLibrary.saveToDevice": "Сохранить на устройство",
 	"discover.titleLibrary.removeLabel": "Удалить: {label}",
 	"discover.titleLibrary.showLess": "Свернуть",
 	"discover.titleLibrary.showAll": "Показать все ({n})",

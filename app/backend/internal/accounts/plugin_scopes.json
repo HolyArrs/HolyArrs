@@ -484,6 +484,7 @@
   "GET /api/v1/settings/watch-history",
   "GET /api/v1/support/bundle",
   "GET /api/v1/titles/{id}/plugin-sections",
+  "GET /api/v1/titles/{id}/files/{fid}/save",
   "GET /api/v1/users",
   "GET /api/v1/users/invites",
   "GET /api/v1/users/media-accounts",

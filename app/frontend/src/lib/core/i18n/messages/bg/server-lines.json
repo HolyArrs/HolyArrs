@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "по-дълъг е, отколкото може да бъде шаблон на HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "вече е в Библиотеката; качеството или изданието на {n} файла е обновено",
 	"server.migrate.imported-before-2": "внесено преди{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "папката му {dir} принадлежи на друг филм в Библиотеката"
+	"server.migrate.its-folder-belongs-to-another-movie": "папката му {dir} принадлежи на друг филм в Библиотеката",
+	"server.library.a-library-file-was-saved-to": "Файл от библиотеката е запазен на устройство"
 }

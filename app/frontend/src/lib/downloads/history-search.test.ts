@@ -34,7 +34,7 @@ describe('history filters', () => {
 		expect(all).not.toContain('search_done');
 		expect(all).not.toContain('library_scanned');
 		expect(all.length).toBeLessThanOrEqual(64);
-		for (const k of ['account_changed', 'secrets_imported', 'backup_used']) expect(stepKinds(['system'])).toContain(k);
+		for (const k of ['account_changed', 'secrets_imported', 'backup_used', 'file_saved']) expect(stepKinds(['system'])).toContain(k);
 	});
 
 	it('reads the search look and builds a chip per filter', () => {

@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "缺失",
 	"shows.sheet.lookForIt": "去找",
 	"shows.sheet.file": "文件",
+	"shows.sheet.saveToDevice": "保存到设备",
+	"shows.page.saveToDevice": "保存到设备",
 	"shows.sheet.quality": "画质",
 	"shows.sheet.size": "大小",
 	"shows.sheet.added": "添加时间",

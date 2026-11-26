@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "கோரிக்கைகளை அங்கீகரி அல்லது நிராகரி",
 	"settings.users.permLibrary": "நூலகத்தை நடத்து",
 	"settings.users.permSettings": "அமைப்புகளை மாற்று",
+	"settings.users.permSaveFiles": "தங்கள் சாதனத்தில் கோப்புகளைச் சேமித்தல்",
 	"settings.users.owner": "உரிமையாளர்",
 	"settings.users.admin": "நிர்வாகி",
 	"settings.users.member": "உறுப்பினர்",

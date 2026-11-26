@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Odobravanje ili odbijanje zahtjeva",
 	"settings.users.permLibrary": "Upravljanje bibliotekom",
 	"settings.users.permSettings": "Mijenjanje postavki",
+	"settings.users.permSaveFiles": "Spremanje datoteka na svoj uređaj",
 	"settings.users.owner": "Vlasnik",
 	"settings.users.admin": "Administrator",
 	"settings.users.member": "Član",

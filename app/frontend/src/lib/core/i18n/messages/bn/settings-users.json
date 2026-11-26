@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "রিকোয়েস্ট অনুমোদন বা বাতিল করা",
 	"settings.users.permLibrary": "লাইব্রেরি চালানো",
 	"settings.users.permSettings": "সেটিংস বদলানো",
+	"settings.users.permSaveFiles": "নিজের ডিভাইসে ফাইল সংরক্ষণ করা",
 	"settings.users.owner": "ওনার",
 	"settings.users.admin": "অ্যাডমিন",
 	"settings.users.member": "মেম্বার",

@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "Falta",
 	"shows.sheet.lookForIt": "Buscarlo",
 	"shows.sheet.file": "Archivo",
+	"shows.sheet.saveToDevice": "Guardar en el dispositivo",
+	"shows.page.saveToDevice": "Guardar en el dispositivo",
 	"shows.sheet.quality": "Calidad",
 	"shows.sheet.size": "Tamaño",
 	"shows.sheet.added": "Añadido",

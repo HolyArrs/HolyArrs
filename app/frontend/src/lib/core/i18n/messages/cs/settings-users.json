@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Schvalovat nebo zamítat žádosti",
 	"settings.users.permLibrary": "Spravovat Knihovnu",
 	"settings.users.permSettings": "Měnit nastavení",
+	"settings.users.permSaveFiles": "Ukládat soubory do svého zařízení",
 	"settings.users.owner": "Vlastník",
 	"settings.users.admin": "Správce",
 	"settings.users.member": "Člen",

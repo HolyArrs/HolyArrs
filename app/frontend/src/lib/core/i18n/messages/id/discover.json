@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Mencari episode {episode}",
 	"discover.titleLibrary.versions": "Versi",
 	"discover.titleLibrary.file": "File",
+	"discover.titleLibrary.saveToDevice": "Simpan ke perangkat",
 	"discover.titleLibrary.removeLabel": "Hapus {label}",
 	"discover.titleLibrary.showLess": "Tampilkan lebih sedikit",
 	"discover.titleLibrary.showAll": "Tampilkan semua {n}",

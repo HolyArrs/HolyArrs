@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Αναζήτηση του επεισοδίου {episode}",
 	"discover.titleLibrary.versions": "Παραλλαγές",
 	"discover.titleLibrary.file": "Αρχείο",
+	"discover.titleLibrary.saveToDevice": "Αποθήκευση στη συσκευή",
 	"discover.titleLibrary.removeLabel": "Αφαίρεση: {label}",
 	"discover.titleLibrary.showLess": "Λιγότερα",
 	"discover.titleLibrary.showAll": "Εμφάνιση και των {n}",

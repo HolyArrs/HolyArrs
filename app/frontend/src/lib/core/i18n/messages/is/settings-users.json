@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Samþykkja eða hafna beiðnum",
 	"settings.users.permLibrary": "Stjórna safninu",
 	"settings.users.permSettings": "Breyta stillingum",
+	"settings.users.permSaveFiles": "Vista skrár á eigið tæki",
 	"settings.users.owner": "Eigandi",
 	"settings.users.admin": "Stjórnandi",
 	"settings.users.member": "Meðlimur",
