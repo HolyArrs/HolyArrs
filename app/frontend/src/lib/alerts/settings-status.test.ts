@@ -160,3 +160,14 @@ describe('needsAttention', () => {
 		expect(needsAttention(fromServer({ items: [{ group: 'copies', page: '/settings/sources', text: 'The Source A is close to its search limit (8 of 10)', severity: 'warning' }], unset: {}, known: [], metadata_up: true }))).toBe(true);
 	});
 });
+
+describe('needsAttention (#786)', () => {
+	const item = (severity: 'info' | 'warning' | 'error') => ({ group: 'copies', page: '/settings/downloaders', text: 'x', severity });
+	it('an info item alone does not light the dot', () => {
+		expect(needsAttention(fromServer(answer({ items: [item('info')] })))).toBe(false);
+	});
+	it('a warning or an error lights it', () => {
+		expect(needsAttention(fromServer(answer({ items: [item('info'), item('warning')] })))).toBe(true);
+		expect(needsAttention(fromServer(answer({ items: [item('error')] })))).toBe(true);
+	});
+});
