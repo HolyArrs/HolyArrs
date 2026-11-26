@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "Nytt coverbilde",
 	"server.plugins.send-event-library-add": "send {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "send {\"on\": true} eller {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "filen er ikke her ennå; HolyArrs prøver å importere den igjen"
+	"server.importer.the-file-is-not-present-yet": "filen er ikke her ennå; HolyArrs prøver å importere den igjen",
+	"server.mediaservers.invalid-playback-history-date-range": "ugyldig datointervall for avspillingshistorikken",
+	"server.mediaservers.sign-in-as-the-owner-to": "logg inn som eier for å administrere Plex-avspilling"
 }

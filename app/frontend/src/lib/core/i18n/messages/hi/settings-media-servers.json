@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "उपयोग का पता",
 	"settings.mediaServers.plexRelay": "रिले, धीमा",
 	"settings.mediaServers.plexNotLinked": "अपने सर्वरों में से चुनने के लिए सेटिंग्स > साइन-इन में अपना Plex खाता जोड़ें।",
-	"settings.mediaServers.plexUsesSignIn": "आपके Plex साइन-इन का उपयोग करता है, इसलिए टोकन की ज़रूरत नहीं।"
+	"settings.mediaServers.plexUsesSignIn": "आपके Plex साइन-इन का उपयोग करता है, इसलिए टोकन की ज़रूरत नहीं।",
+	"settings.mediaServers.playback.title": "प्लेबैक",
+	"settings.mediaServers.playback.monitor": "प्लेबैक की निगरानी करें",
+	"settings.mediaServers.playback.monitorHint": "निगरानी बंद करने पर सहेजा गया इतिहास बना रहता है।",
+	"settings.mediaServers.playback.now": "अभी चल रहा है",
+	"settings.mediaServers.playback.history": "प्लेबैक इतिहास",
+	"settings.mediaServers.playback.stale": "Plex उपलब्ध नहीं है। पिछली ज्ञात स्ट्रीम दिखाई जा रही हैं।",
+	"settings.mediaServers.playback.idle": "कुछ भी नहीं चल रहा है।",
+	"settings.mediaServers.playback.clear": "प्लेबैक इतिहास मिटाएँ",
+	"settings.mediaServers.playback.clearConfirm": "इस सर्वर का प्लेबैक इतिहास मिटाएँ?",
+	"settings.mediaServers.playback.gap": "प्लेबैक रिकॉर्ड में अंतराल",
+	"settings.mediaServers.playback.state.playing": "चल रहा है",
+	"settings.mediaServers.playback.state.buffering": "बफ़र हो रहा है",
+	"settings.mediaServers.playback.method.direct_play": "सीधा प्लेबैक",
+	"settings.mediaServers.playback.method.direct_stream": "सीधी स्ट्रीम",
+	"settings.mediaServers.playback.method.transcode": "ट्रांसकोड",
+	"settings.mediaServers.playback.watchTime": "दर्ज किया गया देखने का समय"
 }

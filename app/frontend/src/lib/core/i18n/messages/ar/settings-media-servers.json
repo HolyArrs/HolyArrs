@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "العنوان المستخدم",
 	"settings.mediaServers.plexRelay": "ترحيل، بطيء",
 	"settings.mediaServers.plexNotLinked": "اربط حساب Plex في الإعدادات > تسجيل الدخول لتختار من خوادمك.",
-	"settings.mediaServers.plexUsesSignIn": "يستخدم تسجيل دخولك إلى Plex، فلا حاجة إلى رمز."
+	"settings.mediaServers.plexUsesSignIn": "يستخدم تسجيل دخولك إلى Plex، فلا حاجة إلى رمز.",
+	"settings.mediaServers.playback.title": "التشغيل",
+	"settings.mediaServers.playback.monitor": "مراقبة التشغيل",
+	"settings.mediaServers.playback.monitorHint": "إيقاف المراقبة يُبقي السجل المحفوظ.",
+	"settings.mediaServers.playback.now": "قيد التشغيل الآن",
+	"settings.mediaServers.playback.history": "سجل التشغيل",
+	"settings.mediaServers.playback.stale": "Plex غير متاح. تُعرض آخر عمليات البث المعروفة.",
+	"settings.mediaServers.playback.idle": "لا يوجد شيء قيد التشغيل.",
+	"settings.mediaServers.playback.clear": "مسح سجل التشغيل",
+	"settings.mediaServers.playback.clearConfirm": "هل تريد مسح سجل التشغيل لهذا الخادم؟",
+	"settings.mediaServers.playback.gap": "فجوة في سجل التشغيل",
+	"settings.mediaServers.playback.state.playing": "قيد التشغيل",
+	"settings.mediaServers.playback.state.buffering": "جارٍ التخزين المؤقت",
+	"settings.mediaServers.playback.method.direct_play": "تشغيل مباشر",
+	"settings.mediaServers.playback.method.direct_stream": "بث مباشر",
+	"settings.mediaServers.playback.method.transcode": "تحويل الترميز",
+	"settings.mediaServers.playback.watchTime": "مدة المشاهدة المرصودة"
 }

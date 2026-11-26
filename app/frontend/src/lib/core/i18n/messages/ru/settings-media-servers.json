@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Используемый адрес",
 	"settings.mediaServers.plexRelay": "ретранслятор, медленно",
 	"settings.mediaServers.plexNotLinked": "Привяжите аккаунт Plex в разделе Настройки > Вход, чтобы выбрать из своих серверов.",
-	"settings.mediaServers.plexUsesSignIn": "Использует ваш вход в Plex, поэтому токен не нужен."
+	"settings.mediaServers.plexUsesSignIn": "Использует ваш вход в Plex, поэтому токен не нужен.",
+	"settings.mediaServers.playback.title": "Воспроизведение",
+	"settings.mediaServers.playback.monitor": "Отслеживать воспроизведение",
+	"settings.mediaServers.playback.monitorHint": "При отключении отслеживания сохранённая история остаётся.",
+	"settings.mediaServers.playback.now": "Сейчас воспроизводится",
+	"settings.mediaServers.playback.history": "История воспроизведения",
+	"settings.mediaServers.playback.stale": "Plex недоступен. Показаны последние известные потоки.",
+	"settings.mediaServers.playback.idle": "Ничего не воспроизводится.",
+	"settings.mediaServers.playback.clear": "Очистить историю воспроизведения",
+	"settings.mediaServers.playback.clearConfirm": "Очистить историю воспроизведения этого сервера?",
+	"settings.mediaServers.playback.gap": "Пропуск в записи",
+	"settings.mediaServers.playback.state.playing": "Воспроизводится",
+	"settings.mediaServers.playback.state.buffering": "Буферизация",
+	"settings.mediaServers.playback.method.direct_play": "Прямое воспроизведение",
+	"settings.mediaServers.playback.method.direct_stream": "Прямая трансляция",
+	"settings.mediaServers.playback.method.transcode": "Перекодирование",
+	"settings.mediaServers.playback.watchTime": "Зафиксированное время просмотра"
 }

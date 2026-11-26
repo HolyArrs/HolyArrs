@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "Sampul baru",
 	"server.plugins.send-event-library-add": "kirim {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "kirim {\"on\": true} atau {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "file belum ada; HolyArrs akan mencoba mengimpornya lagi"
+	"server.importer.the-file-is-not-present-yet": "file belum ada; HolyArrs akan mencoba mengimpornya lagi",
+	"server.mediaservers.invalid-playback-history-date-range": "rentang tanggal riwayat pemutaran tidak valid",
+	"server.mediaservers.sign-in-as-the-owner-to": "masuk sebagai pemilik untuk mengelola pemutaran Plex"
 }

@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Address to use",
 	"settings.mediaServers.plexRelay": "relay, slow",
 	"settings.mediaServers.plexNotLinked": "Link your Plex account in Settings > Sign-in to pick from your servers.",
-	"settings.mediaServers.plexUsesSignIn": "Uses your Plex sign-in, so no token is needed."
+	"settings.mediaServers.plexUsesSignIn": "Uses your Plex sign-in, so no token is needed.",
+	"settings.mediaServers.playback.title": "Playback",
+	"settings.mediaServers.playback.monitor": "Monitor playback",
+	"settings.mediaServers.playback.monitorHint": "Turning monitoring off keeps the saved history.",
+	"settings.mediaServers.playback.now": "Now playing",
+	"settings.mediaServers.playback.history": "Playback history",
+	"settings.mediaServers.playback.stale": "Plex is unavailable. Showing the last known streams.",
+	"settings.mediaServers.playback.idle": "Nothing is playing.",
+	"settings.mediaServers.playback.clear": "Clear playback history",
+	"settings.mediaServers.playback.clearConfirm": "Clear this server's playback history?",
+	"settings.mediaServers.playback.gap": "Playback gap",
+	"settings.mediaServers.playback.state.playing": "Playing",
+	"settings.mediaServers.playback.state.buffering": "Buffering",
+	"settings.mediaServers.playback.method.direct_play": "Direct play",
+	"settings.mediaServers.playback.method.direct_stream": "Direct stream",
+	"settings.mediaServers.playback.method.transcode": "Transcode",
+	"settings.mediaServers.playback.watchTime": "Observed watch time"
 }

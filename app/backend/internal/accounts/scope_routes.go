@@ -94,6 +94,10 @@ var RouteScopes = map[string]string{
 	"POST /api/v1/settings/old-app-api/keys/{side}":              webserver.ScopeAdmin,
 	"DELETE /api/v1/settings/old-app-api/keys/{side}":            webserver.ScopeAdmin,
 
+	// Plex playback asks for an owner browser session in the handler.
+	"GET /api/v1/media-servers/{id}/playback":    webserver.ScopeAdmin,
+	"DELETE /api/v1/media-servers/{id}/playback": webserver.ScopeAdmin,
+
 	// My account's sign-in and the keys themselves.
 	"GET /api/v1/auth/keys":                     webserver.ScopeAdmin,
 	"POST /api/v1/auth/keys":                    webserver.ScopeAdmin,

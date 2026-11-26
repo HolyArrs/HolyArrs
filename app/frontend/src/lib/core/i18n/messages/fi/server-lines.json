@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "Uusi kansikuva",
 	"server.plugins.send-event-library-add": "lähetä {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "lähetä {\"on\": true} tai {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "tiedostoa ei ole vielä; HolyArrs yrittää tuoda sen uudelleen"
+	"server.importer.the-file-is-not-present-yet": "tiedostoa ei ole vielä; HolyArrs yrittää tuoda sen uudelleen",
+	"server.mediaservers.invalid-playback-history-date-range": "virheellinen toistohistorian päivämääräväli",
+	"server.mediaservers.sign-in-as-the-owner-to": "kirjaudu omistajana hallitaksesi Plex-toistoa"
 }

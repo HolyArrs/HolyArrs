@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "Nový obal",
 	"server.plugins.send-event-library-add": "pošli {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "pošli {\"on\": true} nebo {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "soubor tu ještě není; HolyArrs ho zkusí importovat znovu"
+	"server.importer.the-file-is-not-present-yet": "soubor tu ještě není; HolyArrs ho zkusí importovat znovu",
+	"server.mediaservers.invalid-playback-history-date-range": "neplatný rozsah dat v historii přehrávání",
+	"server.mediaservers.sign-in-as-the-owner-to": "pro správu přehrávání Plex se přihlaste jako vlastník"
 }

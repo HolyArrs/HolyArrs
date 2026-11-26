@@ -85,5 +85,21 @@
 "settings.mediaServers.plexAddress": "使用するアドレス",
 "settings.mediaServers.plexRelay": "リレー（低速）",
 "settings.mediaServers.plexNotLinked": "設定 > サインイン で Plex アカウントを連携すると、自分のサーバーから選べます。",
-"settings.mediaServers.plexUsesSignIn": "Plex のサインインを使うため、トークンは不要です。"
+"settings.mediaServers.plexUsesSignIn": "Plex のサインインを使うため、トークンは不要です。",
+	"settings.mediaServers.playback.title": "再生",
+	"settings.mediaServers.playback.monitor": "再生を監視",
+	"settings.mediaServers.playback.monitorHint": "監視をオフにしても、保存済みの履歴は残ります。",
+	"settings.mediaServers.playback.now": "現在の再生",
+	"settings.mediaServers.playback.history": "再生履歴",
+	"settings.mediaServers.playback.stale": "Plex に接続できません。最後に確認したストリームを表示しています。",
+	"settings.mediaServers.playback.idle": "現在再生中の項目はありません。",
+	"settings.mediaServers.playback.clear": "再生履歴を消去",
+	"settings.mediaServers.playback.clearConfirm": "このサーバーの再生履歴を消去しますか？",
+	"settings.mediaServers.playback.gap": "記録の欠落",
+	"settings.mediaServers.playback.state.playing": "再生中",
+	"settings.mediaServers.playback.state.buffering": "バッファリング中",
+	"settings.mediaServers.playback.method.direct_play": "直接再生",
+	"settings.mediaServers.playback.method.direct_stream": "ダイレクトストリーム",
+	"settings.mediaServers.playback.method.transcode": "トランスコード",
+	"settings.mediaServers.playback.watchTime": "記録された視聴時間"
 }

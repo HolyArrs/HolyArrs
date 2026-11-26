@@ -85,5 +85,21 @@
   "settings.mediaServers.plexAddress": "Adresse som brukes",
   "settings.mediaServers.plexRelay": "relé, tregt",
   "settings.mediaServers.plexNotLinked": "Koble Plex-kontoen din under Innstillinger > Pålogging for å velge blant serverne dine.",
-  "settings.mediaServers.plexUsesSignIn": "Bruker Plex-påloggingen din, så du trenger ingen token."
+  "settings.mediaServers.plexUsesSignIn": "Bruker Plex-påloggingen din, så du trenger ingen token.",
+	"settings.mediaServers.playback.title": "Avspilling",
+	"settings.mediaServers.playback.monitor": "Overvåk avspilling",
+	"settings.mediaServers.playback.monitorHint": "Den lagrede historikken beholdes når overvåking slås av.",
+	"settings.mediaServers.playback.now": "Spilles nå",
+	"settings.mediaServers.playback.history": "Avspillingshistorikk",
+	"settings.mediaServers.playback.stale": "Plex er utilgjengelig. De sist kjente strømmene vises.",
+	"settings.mediaServers.playback.idle": "Ingenting spilles av.",
+	"settings.mediaServers.playback.clear": "Tøm avspillingshistorikken",
+	"settings.mediaServers.playback.clearConfirm": "Vil du tømme avspillingshistorikken for denne serveren?",
+	"settings.mediaServers.playback.gap": "Hull i registreringen",
+	"settings.mediaServers.playback.state.playing": "Spiller av",
+	"settings.mediaServers.playback.state.buffering": "Bufrer",
+	"settings.mediaServers.playback.method.direct_play": "Direkteavspilling",
+	"settings.mediaServers.playback.method.direct_stream": "Direktestrømming",
+	"settings.mediaServers.playback.method.transcode": "Omkoding",
+	"settings.mediaServers.playback.watchTime": "Registrert seertid"
 }

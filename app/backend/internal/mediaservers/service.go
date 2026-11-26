@@ -61,32 +61,6 @@ func IsInputError(err error) bool {
 	return false
 }
 
-// Input is what a person sets on a media server. An empty token keeps the
-// stored one.
-type Input struct {
-	Name  string `json:"name"`
-	Kind  string `json:"kind"`
-	URL   string `json:"url"`
-	Token string `json:"token"`
-	// Username is the sign-in name of a Subsonic-style music server; Token
-	// is then its password.
-	Username   string `json:"username"`
-	Enabled    *bool  `json:"enabled"`
-	OnImport   *bool  `json:"on_import"`
-	OnRename   *bool  `json:"on_rename"`
-	OnDelete   *bool  `json:"on_delete"`
-	PathFrom   string `json:"path_from"`
-	PathTo     string `json:"path_to"`
-	AllowLocal *bool  `json:"allow_local_network"`
-	// PlainPassword sends a Subsonic-style server the password itself
-	// (LDAP); only over https or to a local address.
-	PlainPassword *bool `json:"plain_password"`
-	// WebURL is where people's browsers open the server; empty clears it.
-	WebURL string `json:"web_url"`
-	// UsePlexSignIn takes the token from the owner's Plex sign-in.
-	UsePlexSignIn bool `json:"use_plex_sign_in"`
-}
-
 func orKeep(p *bool, keep bool) bool {
 	if p == nil {
 		return keep
@@ -133,6 +107,7 @@ func fill(in Input, m *domain.MediaServer, isNew bool) error {
 	}
 	m.Name, m.PathFrom, m.PathTo, m.WebURL = name, from, to, web
 	m.Enabled = orKeep(in.Enabled, m.Enabled)
+	m.MonitorPlayback = m.Kind == "plex" && orKeep(in.MonitorPlayback, m.MonitorPlayback)
 	m.OnImport, m.OnRename, m.OnDelete = orKeep(in.OnImport, m.OnImport), orKeep(in.OnRename, m.OnRename), orKeep(in.OnDelete, m.OnDelete)
 	m.AllowLocal = orKeep(in.AllowLocal, m.AllowLocal)
 	m.PlainPassword = orKeep(in.PlainPassword, m.PlainPassword) && m.Kind == "subsonic"
@@ -161,7 +136,13 @@ func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by 
 			return err
 		}
 		m.TokenSecretID = &id
-		return insertServer(tx, &m, by)
+		if err := insertServer(tx, &m, by); err != nil {
+			return err
+		}
+		if m.MonitorPlayback {
+			return resetPlayback(ctx, tx, m.ID, false)
+		}
+		return nil
 	})
 	return m, err
 }
@@ -169,25 +150,27 @@ func Add(ctx context.Context, s *database.Store, v *secrets.Vault, in Input, by 
 // Change saves a media server; an empty token keeps the stored one, unless
 // the address moved to another host or scheme.
 func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, in Input, by domain.Actor) (domain.MediaServer, error) {
-	m, err := getServer(ctx, s.Read(), id)
-	if err != nil {
-		return m, err
-	}
-	old := m
-	if err := fill(in, &m, false); err != nil {
-		return old, err
-	}
-	if in.Token == "" && originOf(m.URL) != originOf(old.URL) {
-		return old, ErrKeyAgain
-	}
-	if in.Token == "" && strings.TrimSpace(in.Username) != "" {
-		return old, ErrNoUser // a new name needs its password
-	}
-	secret, err := secretOf(m.Kind, in)
-	if in.Token != "" && err != nil {
-		return old, err
-	}
-	err = s.Write(ctx, func(tx *sql.Tx) error {
+	var m, old domain.MediaServer
+	err := s.Write(ctx, func(tx *sql.Tx) error {
+		var err error
+		old, err = getServer(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+		m = old
+		if err := fill(in, &m, false); err != nil {
+			return err
+		}
+		if in.Token == "" && originOf(m.URL) != originOf(old.URL) {
+			return ErrKeyAgain
+		}
+		if in.Token == "" && strings.TrimSpace(in.Username) != "" {
+			return ErrNoUser // a new name needs its password
+		}
+		secret, err := secretOf(m.Kind, in)
+		if in.Token != "" && err != nil {
+			return err
+		}
 		if err := nameUsed(tx, m.Name, m.ID); err != nil {
 			return err
 		}
@@ -203,12 +186,21 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 			}
 			m.TokenSecretID = &nid
 		}
-		return updateServer(tx, &m, by)
+		if err := updateServer(tx, &m, by); err != nil {
+			return err
+		}
+		if old.MonitorPlayback != m.MonitorPlayback || (old.MonitorPlayback && (m.URL != old.URL || m.AllowLocal != old.AllowLocal || in.Token != "")) {
+			return resetPlayback(ctx, tx, id, false)
+		}
+		return nil
 	})
-	if err == nil && m.URL != old.URL {
+	if err != nil {
+		return old, err
+	}
+	if m.URL != old.URL {
 		forgetPeopleCheck(ctx, s, m.Kind)
 	}
-	return m, err
+	return m, nil
 }
 
 // Remove deletes a media server and its token.
@@ -282,6 +274,8 @@ type Linker struct {
 	// background one.
 	reading  sync.Mutex
 	stopRead context.CancelFunc
+	// A first snapshot after startup cannot count time while HolyArrs was stopped.
+	playbackSeen sync.Map
 
 	// formPost keeps whether each Subsonic-style server takes form POSTs.
 	formPost sync.Map

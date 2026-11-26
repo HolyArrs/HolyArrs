@@ -88,6 +88,8 @@ var overrides = map[string]Group{
 	"POST /api/v1/downloaders/{id}/test":             Settings,
 	"POST /api/v1/downloaders/{id}/category":         Settings,
 	"GET /api/v1/downloaders/{id}/categories":        Settings,
+	"GET /api/v1/media-servers/{id}/playback":        Admin,
+	"DELETE /api/v1/media-servers/{id}/playback":     Admin,
 }
 
 // wildOverrides are the override patterns with a {wildcard}, sorted so the

@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Vistfang sem er notað",
 	"settings.mediaServers.plexRelay": "endurvarp, hægt",
 	"settings.mediaServers.plexNotLinked": "Tengdu Plex-aðganginn þinn í Stillingar > Innskráning til að velja úr þjónunum þínum.",
-	"settings.mediaServers.plexUsesSignIn": "Notar Plex-innskráninguna þína, svo ekki þarf tóka."
+	"settings.mediaServers.plexUsesSignIn": "Notar Plex-innskráninguna þína, svo ekki þarf tóka.",
+	"settings.mediaServers.playback.title": "Afspilun",
+	"settings.mediaServers.playback.monitor": "Fylgjast með afspilun",
+	"settings.mediaServers.playback.monitorHint": "Vistuð ferilskrá helst þegar slökkt er á vöktun.",
+	"settings.mediaServers.playback.now": "Í spilun núna",
+	"settings.mediaServers.playback.history": "Afspilunarferill",
+	"settings.mediaServers.playback.stale": "Plex er óaðgengilegt. Síðustu þekktu straumar eru sýndir.",
+	"settings.mediaServers.playback.idle": "Ekkert er í spilun.",
+	"settings.mediaServers.playback.clear": "Hreinsa afspilunarferil",
+	"settings.mediaServers.playback.clearConfirm": "Hreinsa afspilunarferil þessa netþjóns?",
+	"settings.mediaServers.playback.gap": "Eyða í afspilunarskrá",
+	"settings.mediaServers.playback.state.playing": "Í spilun",
+	"settings.mediaServers.playback.state.buffering": "Hleður í biðminni",
+	"settings.mediaServers.playback.method.direct_play": "Bein afspilun",
+	"settings.mediaServers.playback.method.direct_stream": "Beinn straumur",
+	"settings.mediaServers.playback.method.transcode": "Umkóðun",
+	"settings.mediaServers.playback.watchTime": "Skráður áhorfstími"
 }

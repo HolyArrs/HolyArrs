@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "नया कवर आर्ट",
 	"server.plugins.send-event-library-add": "भेजें {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "भेजें {\"on\": true} या {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "फ़ाइल अभी मौजूद नहीं है; HolyArrs इसे फिर से इम्पोर्ट करने की कोशिश करेगा"
+	"server.importer.the-file-is-not-present-yet": "फ़ाइल अभी मौजूद नहीं है; HolyArrs इसे फिर से इम्पोर्ट करने की कोशिश करेगा",
+	"server.mediaservers.invalid-playback-history-date-range": "प्लेबैक इतिहास की तारीखों की सीमा अमान्य है",
+	"server.mediaservers.sign-in-as-the-owner-to": "Plex प्लेबैक प्रबंधित करने के लिए मालिक के रूप में साइन इन करें"
 }

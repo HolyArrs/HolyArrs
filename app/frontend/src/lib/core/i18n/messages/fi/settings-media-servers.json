@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Käytettävä osoite",
 	"settings.mediaServers.plexRelay": "välitys, hidas",
 	"settings.mediaServers.plexNotLinked": "Yhdistä Plex-tilisi kohdassa Asetukset > Kirjautuminen valitaksesi palvelimistasi.",
-	"settings.mediaServers.plexUsesSignIn": "Käyttää Plex-kirjautumistasi, joten tunnusta ei tarvita."
+	"settings.mediaServers.plexUsesSignIn": "Käyttää Plex-kirjautumistasi, joten tunnusta ei tarvita.",
+	"settings.mediaServers.playback.title": "Toisto",
+	"settings.mediaServers.playback.monitor": "Seuraa toistoa",
+	"settings.mediaServers.playback.monitorHint": "Seurannan poistaminen käytöstä säilyttää tallennetun historian.",
+	"settings.mediaServers.playback.now": "Toistetaan nyt",
+	"settings.mediaServers.playback.history": "Toistohistoria",
+	"settings.mediaServers.playback.stale": "Plex ei ole käytettävissä. Näytetään viimeksi tunnetut suoratoistot.",
+	"settings.mediaServers.playback.idle": "Mitään ei toisteta.",
+	"settings.mediaServers.playback.clear": "Tyhjennä toistohistoria",
+	"settings.mediaServers.playback.clearConfirm": "Tyhjennetäänkö tämän palvelimen toistohistoria?",
+	"settings.mediaServers.playback.gap": "Katkos seurannassa",
+	"settings.mediaServers.playback.state.playing": "Toistetaan",
+	"settings.mediaServers.playback.state.buffering": "Puskuroidaan",
+	"settings.mediaServers.playback.method.direct_play": "Suoratoisto",
+	"settings.mediaServers.playback.method.direct_stream": "Suora lähetys",
+	"settings.mediaServers.playback.method.transcode": "Uudelleenkoodaus",
+	"settings.mediaServers.playback.watchTime": "Havaittu katseluaika"
 }

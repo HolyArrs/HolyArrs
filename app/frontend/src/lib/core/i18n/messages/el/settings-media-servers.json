@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Διεύθυνση προς χρήση",
 	"settings.mediaServers.plexRelay": "αναμετάδοση, αργή",
 	"settings.mediaServers.plexNotLinked": "Συνδέστε τον λογαριασμό Plex στις Ρυθμίσεις > Σύνδεση για να επιλέξετε από τους διακομιστές σας.",
-	"settings.mediaServers.plexUsesSignIn": "Χρησιμοποιεί τη σύνδεσή σας στο Plex, οπότε δεν χρειάζεται token."
+	"settings.mediaServers.plexUsesSignIn": "Χρησιμοποιεί τη σύνδεσή σας στο Plex, οπότε δεν χρειάζεται token.",
+	"settings.mediaServers.playback.title": "Αναπαραγωγή",
+	"settings.mediaServers.playback.monitor": "Παρακολούθηση αναπαραγωγής",
+	"settings.mediaServers.playback.monitorHint": "Η απενεργοποίηση της παρακολούθησης διατηρεί το αποθηκευμένο ιστορικό.",
+	"settings.mediaServers.playback.now": "Παίζει τώρα",
+	"settings.mediaServers.playback.history": "Ιστορικό αναπαραγωγής",
+	"settings.mediaServers.playback.stale": "Το Plex δεν είναι διαθέσιμο. Εμφανίζονται οι τελευταίες γνωστές ροές.",
+	"settings.mediaServers.playback.idle": "Δεν παίζει τίποτα.",
+	"settings.mediaServers.playback.clear": "Εκκαθάριση ιστορικού αναπαραγωγής",
+	"settings.mediaServers.playback.clearConfirm": "Να διαγραφεί το ιστορικό αναπαραγωγής αυτού του διακομιστή;",
+	"settings.mediaServers.playback.gap": "Κενό στην καταγραφή",
+	"settings.mediaServers.playback.state.playing": "Αναπαράγεται",
+	"settings.mediaServers.playback.state.buffering": "Προσωρινή αποθήκευση",
+	"settings.mediaServers.playback.method.direct_play": "Άμεση αναπαραγωγή",
+	"settings.mediaServers.playback.method.direct_stream": "Άμεση ροή",
+	"settings.mediaServers.playback.method.transcode": "Διακωδικοποίηση",
+	"settings.mediaServers.playback.watchTime": "Καταγεγραμμένος χρόνος θέασης"
 }

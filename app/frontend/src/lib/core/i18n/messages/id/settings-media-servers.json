@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Alamat yang dipakai",
 	"settings.mediaServers.plexRelay": "relay, lambat",
 	"settings.mediaServers.plexNotLinked": "Tautkan akun Plex kamu di Setelan > Masuk untuk memilih dari server kamu.",
-	"settings.mediaServers.plexUsesSignIn": "Memakai login Plex kamu, jadi tidak perlu token."
+	"settings.mediaServers.plexUsesSignIn": "Memakai login Plex kamu, jadi tidak perlu token.",
+	"settings.mediaServers.playback.title": "Pemutaran",
+	"settings.mediaServers.playback.monitor": "Pantau pemutaran",
+	"settings.mediaServers.playback.monitorHint": "Riwayat yang tersimpan tetap ada saat pemantauan dimatikan.",
+	"settings.mediaServers.playback.now": "Sedang diputar",
+	"settings.mediaServers.playback.history": "Riwayat pemutaran",
+	"settings.mediaServers.playback.stale": "Plex tidak tersedia. Menampilkan stream terakhir yang diketahui.",
+	"settings.mediaServers.playback.idle": "Tidak ada yang diputar.",
+	"settings.mediaServers.playback.clear": "Hapus riwayat pemutaran",
+	"settings.mediaServers.playback.clearConfirm": "Hapus riwayat pemutaran server ini?",
+	"settings.mediaServers.playback.gap": "Jeda dalam pencatatan",
+	"settings.mediaServers.playback.state.playing": "Sedang diputar",
+	"settings.mediaServers.playback.state.buffering": "Penyanggaan",
+	"settings.mediaServers.playback.method.direct_play": "Putar langsung",
+	"settings.mediaServers.playback.method.direct_stream": "Streaming langsung",
+	"settings.mediaServers.playback.method.transcode": "Transkode",
+	"settings.mediaServers.playback.watchTime": "Waktu menonton yang tercatat"
 }

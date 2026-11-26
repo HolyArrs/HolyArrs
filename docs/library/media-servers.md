@@ -52,6 +52,14 @@ Plex only. Turn on **Label requested titles** and HolyArrs adds a label to every
 
 Labels already on a title in Plex stay.
 
+### Plex playback
+
+To see activity on a Plex server, sign in as the HolyArrs owner. In **Settings > Media servers**, select **Change** on that server. Turn on **Monitor playback**, save, and select **Playback** on the server card.
+
+**Now playing** shows the last streams that the server reported. **Playback history** lists recorded movie and episode plays. Filter the list by title, person, or UTC start date. The watch time comes from the intervals that HolyArrs observed while Plex reported the stream as playing. A short stream can start and end between checks. Missing intervals appear as gaps in history.
+
+Monitoring starts off for each connection. Turning it off stops collection and keeps the saved history. Use **Clear playback history** to erase that server's recorded plays. A stream that is still active can appear again when monitoring is on.
+
 ### Reach the local network
 
 On by default, since media servers are almost always at home. Turn it off for a server on the internet. HolyArrs never calls cloud metadata addresses, whatever this says.

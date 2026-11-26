@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Adresse à utiliser",
 	"settings.mediaServers.plexRelay": "relais, lent",
 	"settings.mediaServers.plexNotLinked": "Relie ton compte Plex dans Réglages > Connexion pour choisir parmi tes serveurs.",
-	"settings.mediaServers.plexUsesSignIn": "Utilise ta connexion Plex, aucun jeton n'est donc nécessaire."
+	"settings.mediaServers.plexUsesSignIn": "Utilise ta connexion Plex, aucun jeton n'est donc nécessaire.",
+	"settings.mediaServers.playback.title": "Lecture",
+	"settings.mediaServers.playback.monitor": "Suivre la lecture",
+	"settings.mediaServers.playback.monitorHint": "La désactivation du suivi conserve l’historique enregistré.",
+	"settings.mediaServers.playback.now": "En cours de lecture",
+	"settings.mediaServers.playback.history": "Historique de lecture",
+	"settings.mediaServers.playback.stale": "Plex est indisponible. Les derniers flux connus sont affichés.",
+	"settings.mediaServers.playback.idle": "Aucune lecture en cours.",
+	"settings.mediaServers.playback.clear": "Effacer l’historique de lecture",
+	"settings.mediaServers.playback.clearConfirm": "Effacer l’historique de lecture de ce serveur ?",
+	"settings.mediaServers.playback.gap": "Interruption du suivi",
+	"settings.mediaServers.playback.state.playing": "En lecture",
+	"settings.mediaServers.playback.state.buffering": "Mise en mémoire tampon",
+	"settings.mediaServers.playback.method.direct_play": "Lecture directe",
+	"settings.mediaServers.playback.method.direct_stream": "Diffusion directe",
+	"settings.mediaServers.playback.method.transcode": "Transcodage",
+	"settings.mediaServers.playback.watchTime": "Temps de visionnage observé"
 }

@@ -14,7 +14,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
-	import { PlexServerPick, type MediaServerView } from '#lib/mediaservers/index.ts';
+	import { PlexPlayback, PlexServerPick, type MediaServerView } from '#lib/mediaservers/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
@@ -32,6 +32,7 @@
 	let hasData = $state(false);
 	let error = $state('');
 	let editing = $state<MediaServerView | null>(null);
+	let playbackID = $state<number | null>(null);
 	let isNew = $state(false);
 	const blank = () => ({
 		name: '',
@@ -40,6 +41,7 @@
 		token: '',
 		username: '',
 		enabled: true,
+		monitor_playback: false,
 		on_import: true,
 		on_rename: true,
 		on_delete: true,
@@ -217,7 +219,7 @@
 	function startChange(m: MediaServerView) {
 		isNew = false;
 		editing = m;
-		form = { ...m, token: '', username: '', use_plex_sign_in: false }; // Empty keeps the stored token.
+		form = { ...m, monitor_playback: m.monitor_playback ?? false, token: '', username: '', use_plex_sign_in: false }; // Empty keeps the stored token.
 		formError = '';
 	}
 
@@ -226,10 +228,13 @@
 		busy = true;
 		formError = '';
 		try {
+			const monitor_playback = !isNew && isOwner && form.kind === 'plex' && form.monitor_playback !== (editing?.monitor_playback ?? false)
+				? form.monitor_playback : undefined;
+			const input = { ...form, monitor_playback };
 			// The Plex sign-in stands in for the token only for a picked Plex server.
-			if (isNew) await api.post('/media-servers', { ...form, use_plex_sign_in: form.kind === 'plex' && form.use_plex_sign_in });
+			if (isNew) await api.post('/media-servers', { ...input, use_plex_sign_in: form.kind === 'plex' && form.use_plex_sign_in });
 			else {
-				await api.put(`/media-servers/${editing!.id}`, form);
+				await api.put(`/media-servers/${editing!.id}`, input);
 				const id = editing!.id;
 				results = Object.fromEntries(Object.entries(results).filter(([k]) => Number(k) !== id));
 			}
@@ -369,6 +374,12 @@
 				<input type="checkbox" bind:checked={form.enabled} />
 				<span><b>{t('settings.mediaServers.send')}</b></span>
 			</label>
+			{#if !isNew && isOwner && form.kind === 'plex'}
+				<label class="checkline">
+					<input type="checkbox" bind:checked={form.monitor_playback} />
+					<span><b>{t('settings.mediaServers.playback.monitor')}</b><br /><span class="hint">{t('settings.mediaServers.playback.monitorHint')}</span></span>
+				</label>
+			{/if}
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={busy || !form.name.trim()} aria-busy={busy}>{t('settings.mediaServers.save')}</Button>
@@ -407,9 +418,15 @@
 				{/if}
 				<div class="row actions">
 					<Button type="button" disabled={testing === m.id} aria-busy={testing === m.id} onclick={() => test(m)}>{t('settings.mediaServers.test')}</Button>
+					{#if isOwner && m.kind === 'plex'}
+						<Button type="button" aria-expanded={playbackID === m.id} onclick={() => (playbackID = playbackID === m.id ? null : m.id)}>{t('settings.mediaServers.playback.title')}</Button>
+					{/if}
 					<Button variant="secondary" type="button" data-edit-change onclick={() => startChange(m)}>{t('settings.mediaServers.changeButton')}</Button>
 					<Button variant="secondary" type="button" onclick={() => remove(m)} aria-label={t('settings.mediaServers.removeName', { name: m.name })}>{t('settings.mediaServers.remove')}</Button>
 				</div>
+				{#if isOwner && m.kind === 'plex' && playbackID === m.id}
+					<PlexPlayback server={m.id} />
+				{/if}
 			</li>
 		{/each}
 	</ul>

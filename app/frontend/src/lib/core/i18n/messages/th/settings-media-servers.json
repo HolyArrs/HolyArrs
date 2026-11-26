@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "ที่อยู่ที่จะใช้",
 	"settings.mediaServers.plexRelay": "รีเลย์ ช้า",
 	"settings.mediaServers.plexNotLinked": "เชื่อมบัญชี Plex ใน การตั้งค่า > ลงชื่อเข้าใช้ เพื่อเลือกจากเซิร์ฟเวอร์ของคุณ",
-	"settings.mediaServers.plexUsesSignIn": "ใช้การลงชื่อเข้าใช้ Plex ของคุณ จึงไม่ต้องใช้โทเค็น"
+	"settings.mediaServers.plexUsesSignIn": "ใช้การลงชื่อเข้าใช้ Plex ของคุณ จึงไม่ต้องใช้โทเค็น",
+	"settings.mediaServers.playback.title": "การเล่น",
+	"settings.mediaServers.playback.monitor": "ติดตามการเล่น",
+	"settings.mediaServers.playback.monitorHint": "การปิดการติดตามจะเก็บประวัติที่บันทึกไว้",
+	"settings.mediaServers.playback.now": "กำลังเล่นอยู่",
+	"settings.mediaServers.playback.history": "ประวัติการเล่น",
+	"settings.mediaServers.playback.stale": "ไม่สามารถเข้าถึง Plex ได้ กำลังแสดงสตรีมล่าสุดที่ทราบ",
+	"settings.mediaServers.playback.idle": "ไม่มีรายการกำลังเล่น",
+	"settings.mediaServers.playback.clear": "ล้างประวัติการเล่น",
+	"settings.mediaServers.playback.clearConfirm": "ล้างประวัติการเล่นของเซิร์ฟเวอร์นี้หรือไม่",
+	"settings.mediaServers.playback.gap": "ช่วงที่ไม่ได้บันทึก",
+	"settings.mediaServers.playback.state.playing": "กำลังเล่น",
+	"settings.mediaServers.playback.state.buffering": "กำลังบัฟเฟอร์",
+	"settings.mediaServers.playback.method.direct_play": "เล่นโดยตรง",
+	"settings.mediaServers.playback.method.direct_stream": "สตรีมโดยตรง",
+	"settings.mediaServers.playback.method.transcode": "แปลงรหัส",
+	"settings.mediaServers.playback.watchTime": "เวลารับชมที่บันทึกได้"
 }

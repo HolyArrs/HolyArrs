@@ -18,6 +18,7 @@ DELETE /api/v1/hidden/{id} delete
 DELETE /api/v1/languages/{code} delete
 DELETE /api/v1/library-folders/{id} delete
 DELETE /api/v1/media-servers/{id} delete
+DELETE /api/v1/media-servers/{id}/playback admin
 DELETE /api/v1/metadata/album/{mbid}/follow delete
 DELETE /api/v1/metadata/movie/{tmdb_id}/follow delete
 DELETE /api/v1/metadata/show/{tmdb_id}/follow delete
@@ -168,6 +169,7 @@ GET /api/v1/mcp see
 GET /api/v1/media-servers see
 GET /api/v1/media-servers/watch-links see
 GET /api/v1/media-servers/{id}/libraries see
+GET /api/v1/media-servers/{id}/playback admin
 GET /api/v1/messages see
 GET /api/v1/metadata/album/{mbid}/follow see
 GET /api/v1/metadata/health see

@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "ব্যবহারের ঠিকানা",
 	"settings.mediaServers.plexRelay": "রিলে, ধীর",
 	"settings.mediaServers.plexNotLinked": "আপনার সার্ভার থেকে বেছে নিতে সেটিংস > সাইন-ইন এ আপনার Plex অ্যাকাউন্ট যুক্ত করুন।",
-	"settings.mediaServers.plexUsesSignIn": "আপনার Plex সাইন-ইন ব্যবহার করে, তাই টোকেন লাগে না।"
+	"settings.mediaServers.plexUsesSignIn": "আপনার Plex সাইন-ইন ব্যবহার করে, তাই টোকেন লাগে না।",
+	"settings.mediaServers.playback.title": "প্লেব্যাক",
+	"settings.mediaServers.playback.monitor": "প্লেব্যাক পর্যবেক্ষণ",
+	"settings.mediaServers.playback.monitorHint": "পর্যবেক্ষণ বন্ধ করলেও সংরক্ষিত ইতিহাস থাকবে।",
+	"settings.mediaServers.playback.now": "এখন চলছে",
+	"settings.mediaServers.playback.history": "প্লেব্যাকের ইতিহাস",
+	"settings.mediaServers.playback.stale": "Plex উপলভ্য নয়। সর্বশেষ জানা স্ট্রিম দেখানো হচ্ছে।",
+	"settings.mediaServers.playback.idle": "কিছুই চলছে না।",
+	"settings.mediaServers.playback.clear": "প্লেব্যাকের ইতিহাস মুছুন",
+	"settings.mediaServers.playback.clearConfirm": "এই সার্ভারের প্লেব্যাকের ইতিহাস মুছবেন?",
+	"settings.mediaServers.playback.gap": "প্লেব্যাকের রেকর্ডে ফাঁক",
+	"settings.mediaServers.playback.state.playing": "চলছে",
+	"settings.mediaServers.playback.state.buffering": "বাফার হচ্ছে",
+	"settings.mediaServers.playback.method.direct_play": "সরাসরি চালানো",
+	"settings.mediaServers.playback.method.direct_stream": "সরাসরি স্ট্রিম",
+	"settings.mediaServers.playback.method.transcode": "ট্রান্সকোড",
+	"settings.mediaServers.playback.watchTime": "পর্যবেক্ষণ করা দেখার সময়"
 }

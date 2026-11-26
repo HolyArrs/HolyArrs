@@ -2977,6 +2977,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "monitor_playback": {
+            "description": "Whether the owner has enabled live Plex playback monitoring for this connection.",
+            "type": "boolean"
+          },
           "name": {
             "type": "string"
           },
@@ -3031,6 +3035,10 @@
               "subsonic"
             ],
             "type": "string"
+          },
+          "monitor_playback": {
+            "description": "Owner browser session only. Enables live playback monitoring for this Plex connection. Defaults to off for a new connection; omitting it on edit keeps the current setting.",
+            "type": "boolean"
           },
           "name": {
             "type": "string"
@@ -20708,6 +20716,110 @@
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "settings",
         "x-holyarrs-scope": "write"
+      }
+    },
+    "/api/v1/media-servers/{id}/playback": {
+      "delete": {
+        "description": "Owner browser session only. Clears the recorded plays for the connection. A live session can be recorded again if monitoring is on.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "History cleared."
+          },
+          "403": {
+            "description": "Owner browser session required."
+          },
+          "404": {
+            "description": "Plex connection not found."
+          }
+        },
+        "summary": "Clear Plex playback history",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "get": {
+        "description": "Owner browser session only. Returns the latest active streams and up to 50 stopped plays, with counts and observed watch time for the selected history filters.",
+        "parameters": [
+          {
+            "description": "Plex account ID to include in the history.",
+            "in": "query",
+            "name": "account",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive title text to search for.",
+            "in": "query",
+            "name": "title",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "First UTC start date to include.",
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last UTC start date to include.",
+            "in": "query",
+            "name": "through",
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of history entries to skip.",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Playback state and history."
+          },
+          "400": {
+            "description": "Invalid history filter."
+          },
+          "403": {
+            "description": "Owner browser session required."
+          },
+          "404": {
+            "description": "Plex connection not found."
+          }
+        },
+        "summary": "Read Plex playback",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
       }
     },
     "/api/v1/media-servers/{id}/test": {

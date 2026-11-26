@@ -650,6 +650,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}})
 	// People removed on the server are turned off; history only while it is on.
 	optional(jobs.Loop{Name: "watch_history", Label: "Watch history read", Every: 30 * time.Minute, Run: media.CheckPeopleAndHistory})
+	optional(jobs.Loop{Name: "plex_playback", Label: "Plex playback", Every: mediaservers.PlaybackPollInterval, Deadline: 20 * time.Second, Run: media.PollPlayback})
 	optional(jobs.Loop{Name: "plex_labels", Label: "Plex labels", Every: 15 * time.Minute, Run: media.LabelPass})        // only while the owner keeps it on
 	optional(jobs.Loop{Name: "default_tracks", Label: "Default tracks", Every: 15 * time.Minute, Run: media.TracksPass}) // only while the owner keeps it on
 	defer sender.Wait()

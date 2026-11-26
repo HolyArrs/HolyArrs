@@ -377,6 +377,9 @@ func TestNoOldPageAddresses(t *testing.T) {
 			t.Fatal(err)
 		}
 		for i, line := range strings.Split(string(b), "\n") {
+			if strings.Contains(line, "// External API path") {
+				continue
+			}
 			for _, loc := range reLiteral.FindAllStringIndex(line, -1) {
 				lit := line[loc[0]:loc[1]]
 				// A line marked "// API path" builds a server path, not a page link.

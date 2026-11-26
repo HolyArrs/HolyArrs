@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Адреса для використання",
 	"settings.mediaServers.plexRelay": "ретранслятор, повільно",
 	"settings.mediaServers.plexNotLinked": "Пов'яжіть обліковий запис Plex у Налаштування > Вхід, щоб вибрати зі своїх серверів.",
-	"settings.mediaServers.plexUsesSignIn": "Використовує ваш вхід у Plex, тож токен не потрібен."
+	"settings.mediaServers.plexUsesSignIn": "Використовує ваш вхід у Plex, тож токен не потрібен.",
+	"settings.mediaServers.playback.title": "Відтворення",
+	"settings.mediaServers.playback.monitor": "Відстежувати відтворення",
+	"settings.mediaServers.playback.monitorHint": "Якщо вимкнути відстеження, збережена історія залишиться.",
+	"settings.mediaServers.playback.now": "Зараз відтворюється",
+	"settings.mediaServers.playback.history": "Історія відтворення",
+	"settings.mediaServers.playback.stale": "Plex недоступний. Показано останні відомі потоки.",
+	"settings.mediaServers.playback.idle": "Нічого не відтворюється.",
+	"settings.mediaServers.playback.clear": "Очистити історію відтворення",
+	"settings.mediaServers.playback.clearConfirm": "Очистити історію відтворення цього сервера?",
+	"settings.mediaServers.playback.gap": "Пропуск у записі",
+	"settings.mediaServers.playback.state.playing": "Відтворюється",
+	"settings.mediaServers.playback.state.buffering": "Буферизація",
+	"settings.mediaServers.playback.method.direct_play": "Пряме відтворення",
+	"settings.mediaServers.playback.method.direct_stream": "Прямий потік",
+	"settings.mediaServers.playback.method.transcode": "Перекодування",
+	"settings.mediaServers.playback.watchTime": "Зафіксований час перегляду"
 }

@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Адреса за коришћење",
 	"settings.mediaServers.plexRelay": "релеј, споро",
 	"settings.mediaServers.plexNotLinked": "Повежите Plex налог у Подешавања > Пријава да бисте бирали међу својим серверима.",
-	"settings.mediaServers.plexUsesSignIn": "Користи вашу Plex пријаву, па токен није потребан."
+	"settings.mediaServers.plexUsesSignIn": "Користи вашу Plex пријаву, па токен није потребан.",
+	"settings.mediaServers.playback.title": "Репродукција",
+	"settings.mediaServers.playback.monitor": "Прати репродукцију",
+	"settings.mediaServers.playback.monitorHint": "Искључивање праћења задржава сачувану историју.",
+	"settings.mediaServers.playback.now": "Тренутно се репродукује",
+	"settings.mediaServers.playback.history": "Историја репродукције",
+	"settings.mediaServers.playback.stale": "Plex није доступан. Приказују се последњи познати токови.",
+	"settings.mediaServers.playback.idle": "Ништа се не репродукује.",
+	"settings.mediaServers.playback.clear": "Обриши историју репродукције",
+	"settings.mediaServers.playback.clearConfirm": "Обрисати историју репродукције овог сервера?",
+	"settings.mediaServers.playback.gap": "Прекид у бележењу",
+	"settings.mediaServers.playback.state.playing": "Репродукује се",
+	"settings.mediaServers.playback.state.buffering": "Баферовање",
+	"settings.mediaServers.playback.method.direct_play": "Директна репродукција",
+	"settings.mediaServers.playback.method.direct_stream": "Директни ток",
+	"settings.mediaServers.playback.method.transcode": "Транскодирање",
+	"settings.mediaServers.playback.watchTime": "Забележено време гледања"
 }

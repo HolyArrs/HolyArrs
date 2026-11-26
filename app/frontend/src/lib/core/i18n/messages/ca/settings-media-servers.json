@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Adreça que s'usarà",
 	"settings.mediaServers.plexRelay": "relé, lent",
 	"settings.mediaServers.plexNotLinked": "Enllaça el teu compte de Plex a Configuració > Inici de sessió per triar entre els teus servidors.",
-	"settings.mediaServers.plexUsesSignIn": "Fa servir el teu inici de sessió de Plex, així que no cal cap token."
+	"settings.mediaServers.plexUsesSignIn": "Fa servir el teu inici de sessió de Plex, així que no cal cap token.",
+	"settings.mediaServers.playback.title": "Reproducció",
+	"settings.mediaServers.playback.monitor": "Monitoritza la reproducció",
+	"settings.mediaServers.playback.monitorHint": "En desactivar el seguiment es conserva l'historial desat.",
+	"settings.mediaServers.playback.now": "En reproducció",
+	"settings.mediaServers.playback.history": "Historial de reproducció",
+	"settings.mediaServers.playback.stale": "Plex no està disponible. Es mostren les últimes transmissions conegudes.",
+	"settings.mediaServers.playback.idle": "No s'està reproduint res.",
+	"settings.mediaServers.playback.clear": "Esborra l'historial de reproducció",
+	"settings.mediaServers.playback.clearConfirm": "Vols esborrar l'historial de reproducció d'aquest servidor?",
+	"settings.mediaServers.playback.gap": "Buit en el seguiment",
+	"settings.mediaServers.playback.state.playing": "Reproduint",
+	"settings.mediaServers.playback.state.buffering": "Carregant la memòria intermèdia",
+	"settings.mediaServers.playback.method.direct_play": "Reproducció directa",
+	"settings.mediaServers.playback.method.direct_stream": "Transmissió directa",
+	"settings.mediaServers.playback.method.transcode": "Transcodificació",
+	"settings.mediaServers.playback.watchTime": "Temps de visionament observat"
 }

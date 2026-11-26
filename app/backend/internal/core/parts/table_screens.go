@@ -107,6 +107,7 @@ var loopOwners = map[string]Owner{
 	"watch_folders":    Media,
 	"pack_watched":     Media,
 	"watch_history":    Media,
+	"plex_playback":    Media,
 	"plex_labels":      Media,
 	"default_tracks":   Media,
 	"gates":            movies,

@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "要使用的位址",
 	"settings.mediaServers.plexRelay": "中繼，較慢",
 	"settings.mediaServers.plexNotLinked": "在 設定 > 登入 中連結你的 Plex 帳號，即可從你的伺服器中選擇。",
-	"settings.mediaServers.plexUsesSignIn": "使用你的 Plex 登入，不需要權杖。"
+	"settings.mediaServers.plexUsesSignIn": "使用你的 Plex 登入，不需要權杖。",
+	"settings.mediaServers.playback.title": "播放",
+	"settings.mediaServers.playback.monitor": "監控播放",
+	"settings.mediaServers.playback.monitorHint": "關閉監控後會保留已儲存的歷史記錄。",
+	"settings.mediaServers.playback.now": "正在播放",
+	"settings.mediaServers.playback.history": "播放歷史",
+	"settings.mediaServers.playback.stale": "無法連線至 Plex。正在顯示上次偵測到的串流。",
+	"settings.mediaServers.playback.idle": "目前沒有播放中的內容。",
+	"settings.mediaServers.playback.clear": "清除播放歷史",
+	"settings.mediaServers.playback.clearConfirm": "要清除此伺服器的播放歷史嗎？",
+	"settings.mediaServers.playback.gap": "播放記錄有缺漏",
+	"settings.mediaServers.playback.state.playing": "播放中",
+	"settings.mediaServers.playback.state.buffering": "緩衝中",
+	"settings.mediaServers.playback.method.direct_play": "直接播放",
+	"settings.mediaServers.playback.method.direct_stream": "直接串流",
+	"settings.mediaServers.playback.method.transcode": "轉碼",
+	"settings.mediaServers.playback.watchTime": "記錄到的觀看時間"
 }

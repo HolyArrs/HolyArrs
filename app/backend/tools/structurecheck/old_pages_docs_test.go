@@ -35,7 +35,7 @@ func TestNoOldPagesInTestsOrDocs(t *testing.T) {
 			}
 			b, _ := os.ReadFile(p)
 			for i, line := range strings.Split(string(b), "\n") {
-				if strings.Contains(line, "/api/") || strings.Contains(line, `\/api\/`) || strings.Contains(line, "/v1/") {
+				if strings.Contains(line, "/api/") || strings.Contains(line, `\/api\/`) || strings.Contains(line, "/v1/") || strings.Contains(line, "// External API path") {
 					continue
 				}
 				if m := reOldPageMention.FindString(line); m != "" {

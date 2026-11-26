@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Địa chỉ sẽ dùng",
 	"settings.mediaServers.plexRelay": "chuyển tiếp, chậm",
 	"settings.mediaServers.plexNotLinked": "Liên kết tài khoản Plex trong Cài đặt > Đăng nhập để chọn từ các máy chủ của bạn.",
-	"settings.mediaServers.plexUsesSignIn": "Dùng thông tin đăng nhập Plex của bạn nên không cần token."
+	"settings.mediaServers.plexUsesSignIn": "Dùng thông tin đăng nhập Plex của bạn nên không cần token.",
+	"settings.mediaServers.playback.title": "Phát nội dung",
+	"settings.mediaServers.playback.monitor": "Theo dõi phát nội dung",
+	"settings.mediaServers.playback.monitorHint": "Tắt theo dõi vẫn giữ lịch sử đã lưu.",
+	"settings.mediaServers.playback.now": "Đang phát",
+	"settings.mediaServers.playback.history": "Lịch sử phát",
+	"settings.mediaServers.playback.stale": "Plex không khả dụng. Đang hiển thị các luồng gần nhất đã ghi nhận.",
+	"settings.mediaServers.playback.idle": "Không có nội dung đang phát.",
+	"settings.mediaServers.playback.clear": "Xóa lịch sử phát",
+	"settings.mediaServers.playback.clearConfirm": "Xóa lịch sử phát của máy chủ này?",
+	"settings.mediaServers.playback.gap": "Khoảng trống trong bản ghi",
+	"settings.mediaServers.playback.state.playing": "Đang phát",
+	"settings.mediaServers.playback.state.buffering": "Đang tải vào bộ đệm",
+	"settings.mediaServers.playback.method.direct_play": "Phát trực tiếp",
+	"settings.mediaServers.playback.method.direct_stream": "Truyền trực tiếp",
+	"settings.mediaServers.playback.method.transcode": "Chuyển mã",
+	"settings.mediaServers.playback.watchTime": "Thời gian xem ghi nhận được"
 }

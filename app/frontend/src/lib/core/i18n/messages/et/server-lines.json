@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "Uus kaanepilt",
 	"server.plugins.send-event-library-add": "saada {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "saada {\"on\": true} või {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "faili pole veel; HolyArrs proovib seda uuesti importida"
+	"server.importer.the-file-is-not-present-yet": "faili pole veel; HolyArrs proovib seda uuesti importida",
+	"server.mediaservers.invalid-playback-history-date-range": "esituse ajaloo kuupäevavahemik ei kehti",
+	"server.mediaservers.sign-in-as-the-owner-to": "Plexi esituse haldamiseks logi sisse omanikuna"
 }

@@ -498,4 +498,6 @@ type MediaServer struct {
 	PlainPassword bool       `db:"plain_password"` // Subsonic: send the password itself (owner's choice, LDAP)
 	LastOKAt      *time.Time `db:"last_ok_at"`
 	LastError     string     `db:"last_error"`
+
+	MonitorPlayback bool `db:"monitor_playback"`
 }

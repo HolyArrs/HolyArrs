@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Naudojamas adresas",
 	"settings.mediaServers.plexRelay": "retransliacija, lėta",
 	"settings.mediaServers.plexNotLinked": "Susiekite Plex paskyrą skiltyje Nustatymai > Prisijungimas, kad galėtumėte rinktis iš savo serverių.",
-	"settings.mediaServers.plexUsesSignIn": "Naudoja jūsų Plex prisijungimą, todėl žetono nereikia."
+	"settings.mediaServers.plexUsesSignIn": "Naudoja jūsų Plex prisijungimą, todėl žetono nereikia.",
+	"settings.mediaServers.playback.title": "Atkūrimas",
+	"settings.mediaServers.playback.monitor": "Stebėti atkūrimą",
+	"settings.mediaServers.playback.monitorHint": "Išjungus stebėjimą, išsaugota istorija išlieka.",
+	"settings.mediaServers.playback.now": "Dabar atkuriama",
+	"settings.mediaServers.playback.history": "Atkūrimo istorija",
+	"settings.mediaServers.playback.stale": "„Plex“ nepasiekiamas. Rodomi paskutiniai žinomi srautai.",
+	"settings.mediaServers.playback.idle": "Nieko neatkuriama.",
+	"settings.mediaServers.playback.clear": "Išvalyti atkūrimo istoriją",
+	"settings.mediaServers.playback.clearConfirm": "Išvalyti šio serverio atkūrimo istoriją?",
+	"settings.mediaServers.playback.gap": "Įrašo spraga",
+	"settings.mediaServers.playback.state.playing": "Atkuriama",
+	"settings.mediaServers.playback.state.buffering": "Kaupiama buferyje",
+	"settings.mediaServers.playback.method.direct_play": "Tiesioginis atkūrimas",
+	"settings.mediaServers.playback.method.direct_stream": "Tiesioginis srautas",
+	"settings.mediaServers.playback.method.transcode": "Perkodavimas",
+	"settings.mediaServers.playback.watchTime": "Užfiksuotas žiūrėjimo laikas"
 }

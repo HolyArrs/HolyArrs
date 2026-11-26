@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Adresa folosită",
 	"settings.mediaServers.plexRelay": "releu, lent",
 	"settings.mediaServers.plexNotLinked": "Conectează contul Plex în Setări > Autentificare ca să alegi dintre serverele tale.",
-	"settings.mediaServers.plexUsesSignIn": "Folosește autentificarea ta Plex, deci nu e nevoie de token."
+	"settings.mediaServers.plexUsesSignIn": "Folosește autentificarea ta Plex, deci nu e nevoie de token.",
+	"settings.mediaServers.playback.title": "Redare",
+	"settings.mediaServers.playback.monitor": "Monitorizează redarea",
+	"settings.mediaServers.playback.monitorHint": "Dezactivarea monitorizării păstrează istoricul salvat.",
+	"settings.mediaServers.playback.now": "În redare acum",
+	"settings.mediaServers.playback.history": "Istoric de redare",
+	"settings.mediaServers.playback.stale": "Plex nu este disponibil. Sunt afișate ultimele fluxuri cunoscute.",
+	"settings.mediaServers.playback.idle": "Nu se redă nimic.",
+	"settings.mediaServers.playback.clear": "Șterge istoricul de redare",
+	"settings.mediaServers.playback.clearConfirm": "Ștergi istoricul de redare al acestui server?",
+	"settings.mediaServers.playback.gap": "Pauză în înregistrare",
+	"settings.mediaServers.playback.state.playing": "În redare",
+	"settings.mediaServers.playback.state.buffering": "Se încarcă în memoria tampon",
+	"settings.mediaServers.playback.method.direct_play": "Redare directă",
+	"settings.mediaServers.playback.method.direct_stream": "Flux direct",
+	"settings.mediaServers.playback.method.transcode": "Transcodare",
+	"settings.mediaServers.playback.watchTime": "Timp de vizionare înregistrat"
 }

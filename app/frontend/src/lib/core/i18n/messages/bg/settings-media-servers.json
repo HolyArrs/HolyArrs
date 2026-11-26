@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Адрес за използване",
 	"settings.mediaServers.plexRelay": "препредаване, бавно",
 	"settings.mediaServers.plexNotLinked": "Свържете своя Plex акаунт в Настройки > Вход, за да избирате от сървърите си.",
-	"settings.mediaServers.plexUsesSignIn": "Използва вашия вход в Plex, затова не е нужен токен."
+	"settings.mediaServers.plexUsesSignIn": "Използва вашия вход в Plex, затова не е нужен токен.",
+	"settings.mediaServers.playback.title": "Възпроизвеждане",
+	"settings.mediaServers.playback.monitor": "Следене на възпроизвеждането",
+	"settings.mediaServers.playback.monitorHint": "Спирането на следенето запазва историята.",
+	"settings.mediaServers.playback.now": "В момента",
+	"settings.mediaServers.playback.history": "История на възпроизвеждането",
+	"settings.mediaServers.playback.stale": "Plex е недостъпен. Показват се последните известни потоци.",
+	"settings.mediaServers.playback.idle": "Нищо не се възпроизвежда.",
+	"settings.mediaServers.playback.clear": "Изчистване на историята",
+	"settings.mediaServers.playback.clearConfirm": "Да се изчисти ли историята на възпроизвеждането на този сървър?",
+	"settings.mediaServers.playback.gap": "Пропуск в записа",
+	"settings.mediaServers.playback.state.playing": "Възпроизвеждане",
+	"settings.mediaServers.playback.state.buffering": "Буфериране",
+	"settings.mediaServers.playback.method.direct_play": "Директно възпроизвеждане",
+	"settings.mediaServers.playback.method.direct_stream": "Директен поток",
+	"settings.mediaServers.playback.method.transcode": "Транскодиране",
+	"settings.mediaServers.playback.watchTime": "Отчетено време на гледане"
 }

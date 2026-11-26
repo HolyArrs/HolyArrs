@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "نشانی مورد استفاده",
 	"settings.mediaServers.plexRelay": "رله، کند",
 	"settings.mediaServers.plexNotLinked": "حساب Plex خود را در تنظیمات > ورود پیوند دهید تا از میان سرورهایتان انتخاب کنید.",
-	"settings.mediaServers.plexUsesSignIn": "از ورود Plex شما استفاده می‌کند، پس توکن لازم نیست."
+	"settings.mediaServers.plexUsesSignIn": "از ورود Plex شما استفاده می‌کند، پس توکن لازم نیست.",
+	"settings.mediaServers.playback.title": "پخش",
+	"settings.mediaServers.playback.monitor": "پایش پخش",
+	"settings.mediaServers.playback.monitorHint": "با خاموش کردن پایش، سابقهٔ ذخیره‌شده باقی می‌ماند.",
+	"settings.mediaServers.playback.now": "در حال پخش",
+	"settings.mediaServers.playback.history": "سابقهٔ پخش",
+	"settings.mediaServers.playback.stale": "Plex در دسترس نیست. آخرین پخش‌های شناخته‌شده نمایش داده می‌شوند.",
+	"settings.mediaServers.playback.idle": "چیزی در حال پخش نیست.",
+	"settings.mediaServers.playback.clear": "پاک کردن سابقهٔ پخش",
+	"settings.mediaServers.playback.clearConfirm": "سابقهٔ پخش این سرور پاک شود؟",
+	"settings.mediaServers.playback.gap": "وقفه در ثبت پخش",
+	"settings.mediaServers.playback.state.playing": "در حال پخش",
+	"settings.mediaServers.playback.state.buffering": "در حال بافر کردن",
+	"settings.mediaServers.playback.method.direct_play": "پخش مستقیم",
+	"settings.mediaServers.playback.method.direct_stream": "پخش جریانی مستقیم",
+	"settings.mediaServers.playback.method.transcode": "تبدیل کدگذاری",
+	"settings.mediaServers.playback.watchTime": "زمان تماشای ثبت‌شده"
 }

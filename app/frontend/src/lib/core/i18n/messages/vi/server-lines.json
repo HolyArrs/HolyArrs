@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "Ảnh bìa mới",
 	"server.plugins.send-event-library-add": "gửi {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "gửi {\"on\": true} hoặc {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "tệp chưa có; HolyArrs sẽ thử nhập lại"
+	"server.importer.the-file-is-not-present-yet": "tệp chưa có; HolyArrs sẽ thử nhập lại",
+	"server.mediaservers.invalid-playback-history-date-range": "khoảng ngày của lịch sử phát không hợp lệ",
+	"server.mediaservers.sign-in-as-the-owner-to": "đăng nhập với tư cách chủ sở hữu để quản lý phát nội dung trên Plex"
 }

@@ -581,6 +581,7 @@ dry
 dry_run
 duplicates
 duration
+duration_ms
 each_limit
 early_release_grace_hours
 echoed
@@ -1175,6 +1176,7 @@ moment
 moments
 monitor
 monitorNewItems
+monitor_playback
 monitored
 monitoringOptions
 month
@@ -1502,6 +1504,7 @@ pop
 popularity
 port
 position
+position_ms
 posted_at
 poster
 poster_path
@@ -2264,6 +2267,7 @@ was_admin
 was_owner
 wasted
 watch_folders
+watch_ms
 watched_edition
 watching
 watchlist

@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Kullanılacak adres",
 	"settings.mediaServers.plexRelay": "aktarma, yavaş",
 	"settings.mediaServers.plexNotLinked": "Sunucuların arasından seçmek için Plex hesabını Ayarlar > Oturum açma bölümünden bağla.",
-	"settings.mediaServers.plexUsesSignIn": "Plex oturumunu kullanır, bu yüzden token gerekmez."
+	"settings.mediaServers.plexUsesSignIn": "Plex oturumunu kullanır, bu yüzden token gerekmez.",
+	"settings.mediaServers.playback.title": "Oynatma",
+	"settings.mediaServers.playback.monitor": "Oynatmayı izle",
+	"settings.mediaServers.playback.monitorHint": "İzlemeyi kapatmak kayıtlı geçmişi korur.",
+	"settings.mediaServers.playback.now": "Şu anda oynatılıyor",
+	"settings.mediaServers.playback.history": "Oynatma geçmişi",
+	"settings.mediaServers.playback.stale": "Plex'e ulaşılamıyor. Bilinen son akışlar gösteriliyor.",
+	"settings.mediaServers.playback.idle": "Oynatılan bir şey yok.",
+	"settings.mediaServers.playback.clear": "Oynatma geçmişini temizle",
+	"settings.mediaServers.playback.clearConfirm": "Bu sunucunun oynatma geçmişi temizlensin mi?",
+	"settings.mediaServers.playback.gap": "Oynatma kaydında boşluk",
+	"settings.mediaServers.playback.state.playing": "Oynatılıyor",
+	"settings.mediaServers.playback.state.buffering": "Arabelleğe alınıyor",
+	"settings.mediaServers.playback.method.direct_play": "Doğrudan oynatma",
+	"settings.mediaServers.playback.method.direct_stream": "Doğrudan akış",
+	"settings.mediaServers.playback.method.transcode": "Kod dönüştürme",
+	"settings.mediaServers.playback.watchTime": "Kaydedilen izleme süresi"
 }

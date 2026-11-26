@@ -47,6 +47,8 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("PUT /api/v1/media-servers/{id}", h.edit)
 	m.HandleFunc("DELETE /api/v1/media-servers/{id}", h.remove)
 	m.HandleFunc("POST /api/v1/media-servers/{id}/test", h.Test)
+	m.HandleFunc("GET /api/v1/media-servers/{id}/playback", h.playback)
+	m.HandleFunc("DELETE /api/v1/media-servers/{id}/playback", h.clearPlayback)
 	m.HandleFunc("GET /api/v1/media-servers/{id}/libraries", h.libraries)
 	m.HandleFunc("PUT /api/v1/media-servers/{id}/libraries", h.pickLibraries)
 	m.HandleFunc("GET /api/v1/settings/watch-history", h.getWatchHistory)
@@ -85,6 +87,9 @@ func (h *Handlers) add(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if in.MonitorPlayback != nil && !requirePlaybackOwner(w, r) {
+		return
+	}
 	h.plexSignInToken(r, &in, "")
 	m, err := Add(r.Context(), h.Store, h.Vault, in, actorOf(r))
 	if errors.Is(err, ErrNameUsed) {
@@ -118,6 +123,9 @@ func (h *Handlers) edit(w http.ResponseWriter, r *http.Request) {
 	}
 	in, ok := readInput(w, r)
 	if !ok {
+		return
+	}
+	if in.MonitorPlayback != nil && !requirePlaybackOwner(w, r) {
 		return
 	}
 	keep := ""
@@ -201,7 +209,7 @@ func setupTwin(ctx context.Context, s *database.Store, in Input) (int64, bool) {
 	return id, err == nil
 }
 
-const inputHelp = `send name, kind (plex, jellyfin, emby or subsonic), url, token (for subsonic the password, with username), and optionally plain_password (subsonic, LDAP; https or local only), enabled, on_import, on_rename, on_delete, path_from and path_to, allow_local_network, web_url`
+const inputHelp = `send name, kind (plex, jellyfin, emby or subsonic), url, token (for subsonic the password, with username), and optionally plain_password (subsonic, LDAP; https or local only), enabled, monitor_playback (Plex, owner only), on_import, on_rename, on_delete, path_from and path_to, allow_local_network, web_url`
 
 func readInput(w http.ResponseWriter, r *http.Request) (Input, bool) {
 	var in Input

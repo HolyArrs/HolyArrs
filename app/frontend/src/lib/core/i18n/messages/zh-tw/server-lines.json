@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "新封面",
 	"server.plugins.send-event-library-add": "傳送 {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "傳送 {\"on\": true} 或 {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "檔案還不在；HolyArrs 會再次嘗試匯入"
+	"server.importer.the-file-is-not-present-yet": "檔案還不在；HolyArrs 會再次嘗試匯入",
+	"server.mediaservers.invalid-playback-history-date-range": "播放歷史的日期範圍無效",
+	"server.mediaservers.sign-in-as-the-owner-to": "請以擁有者身分登入以管理 Plex 播放"
 }

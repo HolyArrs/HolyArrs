@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Alamat untuk digunakan",
 	"settings.mediaServers.plexRelay": "geganti, perlahan",
 	"settings.mediaServers.plexNotLinked": "Pautkan akaun Plex anda dalam Tetapan > Log masuk untuk memilih daripada pelayan anda.",
-	"settings.mediaServers.plexUsesSignIn": "Menggunakan log masuk Plex anda, jadi token tidak diperlukan."
+	"settings.mediaServers.plexUsesSignIn": "Menggunakan log masuk Plex anda, jadi token tidak diperlukan.",
+	"settings.mediaServers.playback.title": "Main balik",
+	"settings.mediaServers.playback.monitor": "Pantau main balik",
+	"settings.mediaServers.playback.monitorHint": "Sejarah yang disimpan kekal apabila pemantauan dimatikan.",
+	"settings.mediaServers.playback.now": "Sedang dimainkan",
+	"settings.mediaServers.playback.history": "Sejarah main balik",
+	"settings.mediaServers.playback.stale": "Plex tidak tersedia. Strim terakhir yang diketahui dipaparkan.",
+	"settings.mediaServers.playback.idle": "Tiada apa yang dimainkan.",
+	"settings.mediaServers.playback.clear": "Kosongkan sejarah main balik",
+	"settings.mediaServers.playback.clearConfirm": "Kosongkan sejarah main balik pelayan ini?",
+	"settings.mediaServers.playback.gap": "Jurang dalam rekod",
+	"settings.mediaServers.playback.state.playing": "Sedang dimainkan",
+	"settings.mediaServers.playback.state.buffering": "Sedang menimbal",
+	"settings.mediaServers.playback.method.direct_play": "Main terus",
+	"settings.mediaServers.playback.method.direct_stream": "Strim terus",
+	"settings.mediaServers.playback.method.transcode": "Transkod",
+	"settings.mediaServers.playback.watchTime": "Masa tontonan yang dicatat"
 }

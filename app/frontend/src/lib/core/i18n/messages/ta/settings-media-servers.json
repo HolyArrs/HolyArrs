@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "பயன்படுத்தும் முகவரி",
 	"settings.mediaServers.plexRelay": "ரிலே, மெதுவானது",
 	"settings.mediaServers.plexNotLinked": "உங்கள் சர்வர்களில் இருந்து தேர்வு செய்ய அமைப்புகள் > உள்நுழைவு பகுதியில் Plex கணக்கை இணைக்கவும்.",
-	"settings.mediaServers.plexUsesSignIn": "உங்கள் Plex உள்நுழைவைப் பயன்படுத்துகிறது, எனவே டோக்கன் தேவையில்லை."
+	"settings.mediaServers.plexUsesSignIn": "உங்கள் Plex உள்நுழைவைப் பயன்படுத்துகிறது, எனவே டோக்கன் தேவையில்லை.",
+	"settings.mediaServers.playback.title": "இயக்கம்",
+	"settings.mediaServers.playback.monitor": "இயக்கத்தைக் கண்காணி",
+	"settings.mediaServers.playback.monitorHint": "கண்காணிப்பை முடக்கினாலும் சேமித்த வரலாறு இருக்கும்.",
+	"settings.mediaServers.playback.now": "இப்போது இயங்குகிறது",
+	"settings.mediaServers.playback.history": "இயக்க வரலாறு",
+	"settings.mediaServers.playback.stale": "Plex கிடைக்கவில்லை. கடைசியாக அறிந்த ஸ்ட்ரீம்கள் காட்டப்படுகின்றன.",
+	"settings.mediaServers.playback.idle": "எதுவும் இயங்கவில்லை.",
+	"settings.mediaServers.playback.clear": "இயக்க வரலாற்றை அழி",
+	"settings.mediaServers.playback.clearConfirm": "இந்தச் சேவையகத்தின் இயக்க வரலாற்றை அழிக்கவா?",
+	"settings.mediaServers.playback.gap": "பதிவில் இடைவெளி",
+	"settings.mediaServers.playback.state.playing": "இயங்குகிறது",
+	"settings.mediaServers.playback.state.buffering": "இடையகத்தில் ஏற்றுகிறது",
+	"settings.mediaServers.playback.method.direct_play": "நேரடி இயக்கம்",
+	"settings.mediaServers.playback.method.direct_stream": "நேரடி ஸ்ட்ரீம்",
+	"settings.mediaServers.playback.method.transcode": "மறுகுறியாக்கம்",
+	"settings.mediaServers.playback.watchTime": "பதிவான பார்வை நேரம்"
 }

@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Adress som används",
 	"settings.mediaServers.plexRelay": "relä, långsamt",
 	"settings.mediaServers.plexNotLinked": "Koppla ditt Plex-konto under Inställningar > Inloggning för att välja bland dina servrar.",
-	"settings.mediaServers.plexUsesSignIn": "Använder din Plex-inloggning, så ingen token behövs."
+	"settings.mediaServers.plexUsesSignIn": "Använder din Plex-inloggning, så ingen token behövs.",
+	"settings.mediaServers.playback.title": "Uppspelning",
+	"settings.mediaServers.playback.monitor": "Övervaka uppspelning",
+	"settings.mediaServers.playback.monitorHint": "Den sparade historiken finns kvar när övervakningen stängs av.",
+	"settings.mediaServers.playback.now": "Spelas nu",
+	"settings.mediaServers.playback.history": "Uppspelningshistorik",
+	"settings.mediaServers.playback.stale": "Plex är inte tillgängligt. De senast kända strömmarna visas.",
+	"settings.mediaServers.playback.idle": "Inget spelas upp.",
+	"settings.mediaServers.playback.clear": "Rensa uppspelningshistoriken",
+	"settings.mediaServers.playback.clearConfirm": "Rensa uppspelningshistoriken för den här servern?",
+	"settings.mediaServers.playback.gap": "Lucka i registreringen",
+	"settings.mediaServers.playback.state.playing": "Spelas upp",
+	"settings.mediaServers.playback.state.buffering": "Buffrar",
+	"settings.mediaServers.playback.method.direct_play": "Direktuppspelning",
+	"settings.mediaServers.playback.method.direct_stream": "Direktströmning",
+	"settings.mediaServers.playback.method.transcode": "Omkodning",
+	"settings.mediaServers.playback.watchTime": "Registrerad visningstid"
 }

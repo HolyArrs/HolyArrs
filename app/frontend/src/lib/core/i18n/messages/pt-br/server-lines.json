@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "Nova capa",
 	"server.plugins.send-event-library-add": "envie {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "envie {\"on\": true} ou {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "o arquivo ainda não está lá; o HolyArrs vai tentar importá-lo de novo"
+	"server.importer.the-file-is-not-present-yet": "o arquivo ainda não está lá; o HolyArrs vai tentar importá-lo de novo",
+	"server.mediaservers.invalid-playback-history-date-range": "intervalo de datas inválido para o histórico de reprodução",
+	"server.mediaservers.sign-in-as-the-owner-to": "entre como proprietário para gerenciar a reprodução do Plex"
 }

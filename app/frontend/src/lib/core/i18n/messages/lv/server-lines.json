@@ -2459,5 +2459,7 @@
 	"server.library.new-cover-art": "Jauns vāka attēls",
 	"server.plugins.send-event-library-add": "sūti {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "sūti {\"on\": true} vai {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "faila vēl nav; HolyArrs mēģinās to importēt vēlreiz"
+	"server.importer.the-file-is-not-present-yet": "faila vēl nav; HolyArrs mēģinās to importēt vēlreiz",
+	"server.mediaservers.invalid-playback-history-date-range": "nederīgs atskaņošanas vēstures datumu diapazons",
+	"server.mediaservers.sign-in-as-the-owner-to": "pierakstieties kā īpašnieks, lai pārvaldītu Plex atskaņošanu"
 }

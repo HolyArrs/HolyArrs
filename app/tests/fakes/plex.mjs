@@ -17,10 +17,19 @@ export function startPlexFake() {
 	/** @type {Map<string, unknown[]>} */
 	const plexWatchlists = new Map();
 	let plexMovieRoot = '';
+	let plexSessions = '<MediaContainer size="0"/>';
 	/** @type {{ section: string, path: string }[]} */
 	const plexScans = [];
 	const plex = createServer(async (req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');
+		if (req.method === 'PUT' && url.pathname === '/lab/sessions') {
+			plexSessions = await body(req);
+			return send(res, 204, '');
+		}
+		if (req.method === 'GET' && url.pathname === '/status/sessions') { // External API path
+			if (req.headers['x-plex-token'] !== plexServerToken) return send(res, 401, '', 'text/plain');
+			return send(res, 200, plexSessions, 'application/xml');
+		}
 		if (req.method === 'POST' && url.pathname === '/api/v2/pins') {
 			++nextPin;
 			if (nextPlexUser) plexUsers.set(`ptok${nextPin}`, nextPlexUser);

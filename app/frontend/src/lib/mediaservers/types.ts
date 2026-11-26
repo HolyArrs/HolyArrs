@@ -7,6 +7,7 @@ export interface MediaServerView {
 	// Sign-in name of a Subsonic-style music server or Kodi; only sent, never shown.
 	username?: string;
 	enabled: boolean;
+	monitor_playback?: boolean;
 	on_import: boolean;
 	on_rename: boolean;
 	on_delete: boolean;

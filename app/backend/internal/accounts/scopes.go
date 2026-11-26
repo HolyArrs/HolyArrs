@@ -338,6 +338,8 @@ var RoutePerms = map[string]webserver.Perm{
 	"PUT /api/v1/media-servers/{id}":                 webserver.PermSettings,
 	"DELETE /api/v1/media-servers/{id}":              webserver.PermSettings,
 	"POST /api/v1/media-servers/{id}/test":           webserver.PermSettings,
+	"GET /api/v1/media-servers/{id}/playback":        webserver.NeedOwner,
+	"DELETE /api/v1/media-servers/{id}/playback":     webserver.NeedOwner,
 	"GET /api/v1/media-servers/{id}/libraries":       webserver.PermSettings,
 	"PUT /api/v1/media-servers/{id}/libraries":       webserver.PermSettings,
 

@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Izmantojamā adrese",
 	"settings.mediaServers.plexRelay": "retranslācija, lēna",
 	"settings.mediaServers.plexNotLinked": "Sasaistiet Plex kontu sadaļā Iestatījumi > Pierakstīšanās, lai izvēlētos no saviem serveriem.",
-	"settings.mediaServers.plexUsesSignIn": "Izmanto jūsu Plex pierakstīšanos, tāpēc marķieris nav vajadzīgs."
+	"settings.mediaServers.plexUsesSignIn": "Izmanto jūsu Plex pierakstīšanos, tāpēc marķieris nav vajadzīgs.",
+	"settings.mediaServers.playback.title": "Atskaņošana",
+	"settings.mediaServers.playback.monitor": "Uzraudzīt atskaņošanu",
+	"settings.mediaServers.playback.monitorHint": "Izslēdzot uzraudzību, saglabātā vēsture paliek.",
+	"settings.mediaServers.playback.now": "Pašlaik atskaņo",
+	"settings.mediaServers.playback.history": "Atskaņošanas vēsture",
+	"settings.mediaServers.playback.stale": "Plex nav pieejams. Tiek rādītas pēdējās zināmās straumes.",
+	"settings.mediaServers.playback.idle": "Nekas netiek atskaņots.",
+	"settings.mediaServers.playback.clear": "Notīrīt atskaņošanas vēsturi",
+	"settings.mediaServers.playback.clearConfirm": "Notīrīt šī servera atskaņošanas vēsturi?",
+	"settings.mediaServers.playback.gap": "Pārrāvums ierakstā",
+	"settings.mediaServers.playback.state.playing": "Atskaņo",
+	"settings.mediaServers.playback.state.buffering": "Veido buferi",
+	"settings.mediaServers.playback.method.direct_play": "Tieša atskaņošana",
+	"settings.mediaServers.playback.method.direct_stream": "Tieša straumēšana",
+	"settings.mediaServers.playback.method.transcode": "Pārkodēšana",
+	"settings.mediaServers.playback.watchTime": "Reģistrētais skatīšanās laiks"
 }

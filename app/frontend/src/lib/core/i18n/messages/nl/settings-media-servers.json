@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Te gebruiken adres",
 	"settings.mediaServers.plexRelay": "relay, traag",
 	"settings.mediaServers.plexNotLinked": "Koppel je Plex-account bij Instellingen > Inloggen om uit je servers te kiezen.",
-	"settings.mediaServers.plexUsesSignIn": "Gebruikt je Plex-aanmelding, dus er is geen token nodig."
+	"settings.mediaServers.plexUsesSignIn": "Gebruikt je Plex-aanmelding, dus er is geen token nodig.",
+	"settings.mediaServers.playback.title": "Afspelen",
+	"settings.mediaServers.playback.monitor": "Afspelen volgen",
+	"settings.mediaServers.playback.monitorHint": "Als je het volgen uitzet, blijft de opgeslagen geschiedenis behouden.",
+	"settings.mediaServers.playback.now": "Speelt nu",
+	"settings.mediaServers.playback.history": "Afspeelgeschiedenis",
+	"settings.mediaServers.playback.stale": "Plex is onbereikbaar. De laatst bekende streams worden getoond.",
+	"settings.mediaServers.playback.idle": "Er wordt niets afgespeeld.",
+	"settings.mediaServers.playback.clear": "Afspeelgeschiedenis wissen",
+	"settings.mediaServers.playback.clearConfirm": "De afspeelgeschiedenis van deze server wissen?",
+	"settings.mediaServers.playback.gap": "Onderbreking in de registratie",
+	"settings.mediaServers.playback.state.playing": "Wordt afgespeeld",
+	"settings.mediaServers.playback.state.buffering": "Bufferen",
+	"settings.mediaServers.playback.method.direct_play": "Direct afspelen",
+	"settings.mediaServers.playback.method.direct_stream": "Direct streamen",
+	"settings.mediaServers.playback.method.transcode": "Transcoderen",
+	"settings.mediaServers.playback.watchTime": "Geregistreerde kijktijd"
 }

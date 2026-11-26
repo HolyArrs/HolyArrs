@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Endereço a usar",
 	"settings.mediaServers.plexRelay": "relay, lento",
 	"settings.mediaServers.plexNotLinked": "Associa a tua conta Plex em Definições > Início de sessão para escolheres entre os teus servidores.",
-	"settings.mediaServers.plexUsesSignIn": "Usa o teu início de sessão do Plex, por isso não é preciso token."
+	"settings.mediaServers.plexUsesSignIn": "Usa o teu início de sessão do Plex, por isso não é preciso token.",
+	"settings.mediaServers.playback.title": "Reprodução",
+	"settings.mediaServers.playback.monitor": "Monitorizar a reprodução",
+	"settings.mediaServers.playback.monitorHint": "Desativar a monitorização mantém o histórico guardado.",
+	"settings.mediaServers.playback.now": "Em reprodução",
+	"settings.mediaServers.playback.history": "Histórico de reprodução",
+	"settings.mediaServers.playback.stale": "O Plex está indisponível. São apresentadas as últimas transmissões conhecidas.",
+	"settings.mediaServers.playback.idle": "Não há nada em reprodução.",
+	"settings.mediaServers.playback.clear": "Limpar o histórico de reprodução",
+	"settings.mediaServers.playback.clearConfirm": "Limpar o histórico de reprodução deste servidor?",
+	"settings.mediaServers.playback.gap": "Falha no registo",
+	"settings.mediaServers.playback.state.playing": "A reproduzir",
+	"settings.mediaServers.playback.state.buffering": "A carregar para a memória intermédia",
+	"settings.mediaServers.playback.method.direct_play": "Reprodução direta",
+	"settings.mediaServers.playback.method.direct_stream": "Transmissão direta",
+	"settings.mediaServers.playback.method.transcode": "Transcodificação",
+	"settings.mediaServers.playback.watchTime": "Tempo de visualização registado"
 }

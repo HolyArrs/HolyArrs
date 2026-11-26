@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Adresa na použitie",
 	"settings.mediaServers.plexRelay": "relay, pomalé",
 	"settings.mediaServers.plexNotLinked": "Prepojte účet Plex v Nastavenia > Prihlásenie a vyberte zo svojich serverov.",
-	"settings.mediaServers.plexUsesSignIn": "Používa vaše prihlásenie do Plexu, takže token netreba."
+	"settings.mediaServers.plexUsesSignIn": "Používa vaše prihlásenie do Plexu, takže token netreba.",
+	"settings.mediaServers.playback.title": "Prehrávanie",
+	"settings.mediaServers.playback.monitor": "Sledovať prehrávanie",
+	"settings.mediaServers.playback.monitorHint": "Po vypnutí sledovania zostane uložená história zachovaná.",
+	"settings.mediaServers.playback.now": "Práve sa prehráva",
+	"settings.mediaServers.playback.history": "História prehrávania",
+	"settings.mediaServers.playback.stale": "Plex je nedostupný. Zobrazujú sa posledné známe streamy.",
+	"settings.mediaServers.playback.idle": "Nič sa neprehráva.",
+	"settings.mediaServers.playback.clear": "Vymazať históriu prehrávania",
+	"settings.mediaServers.playback.clearConfirm": "Vymazať históriu prehrávania tohto servera?",
+	"settings.mediaServers.playback.gap": "Medzera v zázname",
+	"settings.mediaServers.playback.state.playing": "Prehráva sa",
+	"settings.mediaServers.playback.state.buffering": "Načítava sa do vyrovnávacej pamäte",
+	"settings.mediaServers.playback.method.direct_play": "Priame prehrávanie",
+	"settings.mediaServers.playback.method.direct_stream": "Priamy stream",
+	"settings.mediaServers.playback.method.transcode": "Prekódovanie",
+	"settings.mediaServers.playback.watchTime": "Zaznamenaný čas sledovania"
 }

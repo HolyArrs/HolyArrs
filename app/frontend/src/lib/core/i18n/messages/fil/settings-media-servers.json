@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Address na gagamitin",
 	"settings.mediaServers.plexRelay": "relay, mabagal",
 	"settings.mediaServers.plexNotLinked": "I-link ang Plex account mo sa Settings > Sign-in para pumili mula sa mga server mo.",
-	"settings.mediaServers.plexUsesSignIn": "Ginagamit ang Plex sign-in mo, kaya hindi kailangan ng token."
+	"settings.mediaServers.plexUsesSignIn": "Ginagamit ang Plex sign-in mo, kaya hindi kailangan ng token.",
+	"settings.mediaServers.playback.title": "Playback",
+	"settings.mediaServers.playback.monitor": "Subaybayan ang playback",
+	"settings.mediaServers.playback.monitorHint": "Mananatili ang naka-save na kasaysayan kapag pinatay ang pagsubaybay.",
+	"settings.mediaServers.playback.now": "Kasalukuyang nagpe-play",
+	"settings.mediaServers.playback.history": "Kasaysayan ng playback",
+	"settings.mediaServers.playback.stale": "Hindi maaabot ang Plex. Ipinapakita ang mga huling natukoy na stream.",
+	"settings.mediaServers.playback.idle": "Walang nagpe-play.",
+	"settings.mediaServers.playback.clear": "Burahin ang kasaysayan ng playback",
+	"settings.mediaServers.playback.clearConfirm": "Burahin ang kasaysayan ng playback ng server na ito?",
+	"settings.mediaServers.playback.gap": "Puwang sa tala ng playback",
+	"settings.mediaServers.playback.state.playing": "Nagpe-play",
+	"settings.mediaServers.playback.state.buffering": "Nagba-buffer",
+	"settings.mediaServers.playback.method.direct_play": "Direktang pag-play",
+	"settings.mediaServers.playback.method.direct_stream": "Direktang stream",
+	"settings.mediaServers.playback.method.transcode": "Pag-transcode",
+	"settings.mediaServers.playback.watchTime": "Naitalang oras ng panonood"
 }

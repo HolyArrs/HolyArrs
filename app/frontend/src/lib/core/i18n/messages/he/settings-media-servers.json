@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "כתובת לשימוש",
 	"settings.mediaServers.plexRelay": "ממסר, איטי",
 	"settings.mediaServers.plexNotLinked": "קשרו את חשבון ה-Plex בהגדרות > התחברות כדי לבחור מבין השרתים שלכם.",
-	"settings.mediaServers.plexUsesSignIn": "משתמש בהתחברות שלך ל-Plex, כך שאין צורך באסימון."
+	"settings.mediaServers.plexUsesSignIn": "משתמש בהתחברות שלך ל-Plex, כך שאין צורך באסימון.",
+	"settings.mediaServers.playback.title": "ניגון",
+	"settings.mediaServers.playback.monitor": "מעקב אחר ניגון",
+	"settings.mediaServers.playback.monitorHint": "כיבוי המעקב שומר את ההיסטוריה שכבר נרשמה.",
+	"settings.mediaServers.playback.now": "מתנגן עכשיו",
+	"settings.mediaServers.playback.history": "היסטוריית ניגון",
+	"settings.mediaServers.playback.stale": "Plex אינו זמין. מוצגים השידורים האחרונים שנצפו.",
+	"settings.mediaServers.playback.idle": "אין ניגון פעיל.",
+	"settings.mediaServers.playback.clear": "ניקוי היסטוריית ניגון",
+	"settings.mediaServers.playback.clearConfirm": "לנקות את היסטוריית הניגון של שרת זה?",
+	"settings.mediaServers.playback.gap": "פער בתיעוד הניגון",
+	"settings.mediaServers.playback.state.playing": "מתנגן",
+	"settings.mediaServers.playback.state.buffering": "ממתין לטעינה",
+	"settings.mediaServers.playback.method.direct_play": "ניגון ישיר",
+	"settings.mediaServers.playback.method.direct_stream": "הזרמה ישירה",
+	"settings.mediaServers.playback.method.transcode": "המרת קידוד",
+	"settings.mediaServers.playback.watchTime": "זמן צפייה שנמדד"
 }

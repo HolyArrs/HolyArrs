@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Adres do użycia",
 	"settings.mediaServers.plexRelay": "przekaźnik, wolny",
 	"settings.mediaServers.plexNotLinked": "Połącz konto Plex w Ustawienia > Logowanie, aby wybrać spośród swoich serwerów.",
-	"settings.mediaServers.plexUsesSignIn": "Używa Twojego logowania do Plex, więc token nie jest potrzebny."
+	"settings.mediaServers.plexUsesSignIn": "Używa Twojego logowania do Plex, więc token nie jest potrzebny.",
+	"settings.mediaServers.playback.title": "Odtwarzanie",
+	"settings.mediaServers.playback.monitor": "Monitoruj odtwarzanie",
+	"settings.mediaServers.playback.monitorHint": "Po wyłączeniu monitorowania zapisana historia pozostaje.",
+	"settings.mediaServers.playback.now": "Teraz odtwarzane",
+	"settings.mediaServers.playback.history": "Historia odtwarzania",
+	"settings.mediaServers.playback.stale": "Plex jest niedostępny. Wyświetlane są ostatnie znane strumienie.",
+	"settings.mediaServers.playback.idle": "Nic nie jest odtwarzane.",
+	"settings.mediaServers.playback.clear": "Wyczyść historię odtwarzania",
+	"settings.mediaServers.playback.clearConfirm": "Wyczyścić historię odtwarzania tego serwera?",
+	"settings.mediaServers.playback.gap": "Przerwa w rejestrowaniu",
+	"settings.mediaServers.playback.state.playing": "Odtwarzanie",
+	"settings.mediaServers.playback.state.buffering": "Buforowanie",
+	"settings.mediaServers.playback.method.direct_play": "Odtwarzanie bezpośrednie",
+	"settings.mediaServers.playback.method.direct_stream": "Strumień bezpośredni",
+	"settings.mediaServers.playback.method.transcode": "Transkodowanie",
+	"settings.mediaServers.playback.watchTime": "Zarejestrowany czas oglądania"
 }

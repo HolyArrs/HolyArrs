@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Kasutatav aadress",
 	"settings.mediaServers.plexRelay": "relee, aeglane",
 	"settings.mediaServers.plexNotLinked": "Seo oma Plexi konto menüüs Seaded > Sisselogimine, et oma serverite seast valida.",
-	"settings.mediaServers.plexUsesSignIn": "Kasutab sinu Plexi sisselogimist, seega tokenit pole vaja."
+	"settings.mediaServers.plexUsesSignIn": "Kasutab sinu Plexi sisselogimist, seega tokenit pole vaja.",
+	"settings.mediaServers.playback.title": "Esitus",
+	"settings.mediaServers.playback.monitor": "Jälgi esitust",
+	"settings.mediaServers.playback.monitorHint": "Jälgimise väljalülitamisel jääb salvestatud ajalugu alles.",
+	"settings.mediaServers.playback.now": "Praegu esitatakse",
+	"settings.mediaServers.playback.history": "Esituse ajalugu",
+	"settings.mediaServers.playback.stale": "Plex pole saadaval. Kuvatakse viimased teadaolevad vood.",
+	"settings.mediaServers.playback.idle": "Midagi ei esitata.",
+	"settings.mediaServers.playback.clear": "Kustuta esituse ajalugu",
+	"settings.mediaServers.playback.clearConfirm": "Kas kustutada selle serveri esituse ajalugu?",
+	"settings.mediaServers.playback.gap": "Lünk salvestuses",
+	"settings.mediaServers.playback.state.playing": "Esitamisel",
+	"settings.mediaServers.playback.state.buffering": "Puhverdamine",
+	"settings.mediaServers.playback.method.direct_play": "Otseesitus",
+	"settings.mediaServers.playback.method.direct_stream": "Otsevoog",
+	"settings.mediaServers.playback.method.transcode": "Ümberkodeerimine",
+	"settings.mediaServers.playback.watchTime": "Salvestatud vaatamisaeg"
 }

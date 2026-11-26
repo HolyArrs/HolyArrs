@@ -85,5 +85,21 @@
 	"settings.mediaServers.plexAddress": "Használt cím",
 	"settings.mediaServers.plexRelay": "relé, lassú",
 	"settings.mediaServers.plexNotLinked": "Kapcsold össze a Plex-fiókodat a Beállítások > Bejelentkezés alatt, hogy a szervereid közül választhass.",
-	"settings.mediaServers.plexUsesSignIn": "A Plex-bejelentkezésedet használja, így nem kell token."
+	"settings.mediaServers.plexUsesSignIn": "A Plex-bejelentkezésedet használja, így nem kell token.",
+	"settings.mediaServers.playback.title": "Lejátszás",
+	"settings.mediaServers.playback.monitor": "Lejátszás figyelése",
+	"settings.mediaServers.playback.monitorHint": "A figyelés kikapcsolásakor a mentett előzmények megmaradnak.",
+	"settings.mediaServers.playback.now": "Most játszott",
+	"settings.mediaServers.playback.history": "Lejátszási előzmények",
+	"settings.mediaServers.playback.stale": "A Plex nem érhető el. Az utoljára ismert streamek láthatók.",
+	"settings.mediaServers.playback.idle": "Jelenleg nincs lejátszás.",
+	"settings.mediaServers.playback.clear": "Lejátszási előzmények törlése",
+	"settings.mediaServers.playback.clearConfirm": "Törli a szerver lejátszási előzményeit?",
+	"settings.mediaServers.playback.gap": "Hiány a lejátszás rögzítésében",
+	"settings.mediaServers.playback.state.playing": "Lejátszás folyamatban",
+	"settings.mediaServers.playback.state.buffering": "Pufferelés",
+	"settings.mediaServers.playback.method.direct_play": "Közvetlen lejátszás",
+	"settings.mediaServers.playback.method.direct_stream": "Közvetlen stream",
+	"settings.mediaServers.playback.method.transcode": "Átkódolás",
+	"settings.mediaServers.playback.watchTime": "Rögzített megtekintési idő"
 }
