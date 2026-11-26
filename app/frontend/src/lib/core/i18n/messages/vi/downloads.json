@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Lồng tiếng, không có âm thanh gốc",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision không có HDR10 dự phòng",
+	"downloads.pr.traits.sdr_4k": "4K không có HDR (SDR)",
 	"downloads.pr.traits.executable": "Chứa một chương trình",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (phát được gần như mọi nơi)",

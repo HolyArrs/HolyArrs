@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Sommige mappen zijn niet doorgekomen. Scan opnieuw om ze over te nemen; mappen die al in de Bibliotheek staan, blijven zoals ze zijn.",
 	"library.import.scanAgain": "Opnieuw scannen",
 	"library.import.keepOpen": "Laat deze pagina open tot het klaar is.",
+	"library.import.closeOk": "Het draait op de server, dus je kunt deze pagina sluiten.",
 	"library.import.waiting": "De metadataserver is druk. HolyArrs probeert de laatste {left} over {min} min opnieuw.",
 	"library.import.leaveAsk": "Er loopt een import. Als je deze pagina verlaat, worden de nog niet verstuurde mappen niet overgenomen. Toch verlaten?",
 	"library.import.interrupted": "Een import stopte bij {done} van {total} mappen toen de pagina werd gesloten. Scan opnieuw om de rest over te nemen; mappen die al zijn overgenomen, blijven zoals ze zijn.",

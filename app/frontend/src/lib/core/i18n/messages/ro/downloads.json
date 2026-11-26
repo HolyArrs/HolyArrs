@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Dublat, fără sunetul original",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision fără rezervă HDR10",
+	"downloads.pr.traits.sdr_4k": "4K fără HDR (SDR)",
 	"downloads.pr.traits.executable": "Conține un program",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (rulează aproape oriunde)",

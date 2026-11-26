@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "டப் செய்யப்பட்டது, மூல ஒலி இல்லாமல்",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "HDR10 மாற்று இல்லாத Dolby Vision",
+	"downloads.pr.traits.sdr_4k": "HDR இல்லாத 4K (SDR)",
 	"downloads.pr.traits.executable": "ஒரு நிரலைக் கொண்டுள்ளது",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (கிட்டத்தட்ட எல்லா இடத்திலும் இயங்கும்)",

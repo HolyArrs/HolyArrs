@@ -40,7 +40,7 @@ const (
 
 var (
 	videoTraits = traitSet("hevc", "ddp_audio", "web_dl", "upscaled", "dubbed_only", "hardcoded_subs", "3d", "cam", "telesync", "remux", "av1", "dv", "hdr10", "hdr10plus", "atmos",
-		"h264", "dts_audio", "truehd_audio", "dv_no_fallback")
+		"h264", "dts_audio", "truehd_audio", "dv_no_fallback", "sdr_4k")
 	musicTraits       = traitSet("cd_source", "web_source", "vinyl_source", "log_cue", "hires", "mp3", "aac", "opus", "vorbis", "flac", "alac", "single_image", "lossy_transcode", "deluxe")
 	checkSafetyTraits = traitSet("sample", "executable", "password_protected", "disc_image")
 	pickLangs         = traitSet("en", "fr", "de", "it", "es", "ru", "ja", "ko",
