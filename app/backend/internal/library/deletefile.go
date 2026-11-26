@@ -47,6 +47,11 @@ func planRemoveFile(ctx context.Context, db Reader, titleID, fileID int64, c Rem
 	if !ok {
 		return RemovePlan{}, t, f, ErrNoSuchFile
 	}
+	// A protected copy is never deleted from its row, acknowledged or not:
+	// the owner removes its protection first.
+	if f.Protected {
+		return RemovePlan{}, t, f, ErrProtectedFile
+	}
 	rules, err := importer.ReadFileRules(ctx, db)
 	if err != nil {
 		return RemovePlan{}, t, f, err
