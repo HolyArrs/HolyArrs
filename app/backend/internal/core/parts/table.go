@@ -281,8 +281,10 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/auth/invites/{token}/media-server/{kind}": Core,
 
 	// Plex playback follows the settings for the media server connection.
-	"GET /api/v1/media-servers/{id}/playback":    Core,
-	"DELETE /api/v1/media-servers/{id}/playback": Core,
+	"GET /api/v1/media-servers/{id}/playback":               Core,
+	"GET /api/v1/media-servers/{id}/playback/{play}/poster": Core,
+	"PUT /api/v1/media-servers/{id}/playback":               Core,
+	"DELETE /api/v1/media-servers/{id}/playback":            Core,
 
 	// Backups, health, Alerts, media servers, history and Jobs.
 	"GET /api/v1/backups":                      Core,

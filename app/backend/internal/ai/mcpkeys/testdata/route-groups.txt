@@ -170,6 +170,7 @@ GET /api/v1/media-servers see
 GET /api/v1/media-servers/watch-links see
 GET /api/v1/media-servers/{id}/libraries see
 GET /api/v1/media-servers/{id}/playback admin
+GET /api/v1/media-servers/{id}/playback/{play}/poster admin
 GET /api/v1/messages see
 GET /api/v1/metadata/album/{mbid}/follow see
 GET /api/v1/metadata/health see
@@ -665,6 +666,7 @@ PUT /api/v1/library-folders/{id} settings
 PUT /api/v1/library-folders/{id}/path settings
 PUT /api/v1/media-servers/{id} settings
 PUT /api/v1/media-servers/{id}/libraries settings
+PUT /api/v1/media-servers/{id}/playback admin
 PUT /api/v1/metadata/album/{mbid}/follow add
 PUT /api/v1/metadata/movie/{tmdb_id}/follow add
 PUT /api/v1/metadata/show/{tmdb_id}/follow add

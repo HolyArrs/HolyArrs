@@ -2,8 +2,10 @@ import { createServer } from 'node:http';
 import { plexPort, plexServerToken } from './ports.mjs';
 import { body, send } from './http.mjs';
 
-/** Starts the fake Plex (plex.tv sign-in, discover and the media server). */
-export function startPlexFake() {
+const samplePoster = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGNk+M/AwMDAxMDAwMDAAAAZ5wEEtUNqgwAAAABJRU5ErkJggg==', 'base64');
+
+/** Starts the fake Plex. @param {(key: string) => { bytes: Buffer; type: string }} poster */
+export function startPlexFake(poster = () => ({ bytes: samplePoster, type: 'image/png' })) {
 	let nextPin = 100;
 	const confirmed = new Set();
 	// PUT /lab/plex-user names who the next pin signs in as (default plexkid),
@@ -29,6 +31,13 @@ export function startPlexFake() {
 		if (req.method === 'GET' && url.pathname === '/status/sessions') { // External API path
 			if (req.headers['x-plex-token'] !== plexServerToken) return send(res, 401, '', 'text/plain');
 			return send(res, 200, plexSessions, 'application/xml');
+		}
+		const thumb = url.pathname.match(/^\/library\/metadata\/(\d+)\/thumb(?:\/\d+)?$/);
+		if (req.method === 'GET' && thumb) {
+			if (req.headers['x-plex-token'] !== plexServerToken) return send(res, 401, '', 'text/plain');
+			const { bytes, type } = poster(thumb[1]);
+			res.writeHead(200, { 'Content-Type': type });
+			return res.end(bytes);
 		}
 		if (req.method === 'POST' && url.pathname === '/api/v2/pins') {
 			++nextPin;

@@ -144,6 +144,9 @@ func TestPlaybackHistorySurvivesResumeAndRestart(t *testing.T) {
 	if view.Plays != 1 || view.WatchMS != 15000 || len(view.History) != 1 || len(view.Active) != 0 || !view.History[0].Incomplete {
 		t.Fatalf("resume or restart inflated or split the play: %+v", view)
 	}
+	if view.Viewers != 1 || len(view.Methods) != 1 || view.Methods[0] != (playbackMethod{Method: "direct_play", Plays: 1}) {
+		t.Fatalf("wrong filtered history stats: %+v", view)
+	}
 	if got := readPlaybackForTest(t, w, m, playbackFilter{account: "2"}, started.Add(40*time.Second)); got.Plays != 0 {
 		t.Fatalf("a different account got the play: %+v", got)
 	}
@@ -205,6 +208,7 @@ func TestPlaybackRequiresOwnerSession(t *testing.T) {
 		body   string
 	}{
 		{"GET", "/playback", ""},
+		{"PUT", "/playback", `{"enabled":true}`},
 		{"DELETE", "/playback", ""},
 		{"PUT", "", `{"name":"Plex","monitor_playback":true}`},
 	} {

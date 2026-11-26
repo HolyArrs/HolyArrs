@@ -236,6 +236,7 @@ attention
 attributes
 attribution
 audio
+audio_decision
 audio_languages
 audio_tracks
 audio_unknown
@@ -268,6 +269,7 @@ backgrounds
 bad
 badge
 badges
+bandwidth_kbps
 banner
 barcode
 batch
@@ -303,6 +305,8 @@ born
 bot_token
 both
 budget
+buffer_events
+buffer_ms
 built
 built_at
 built_in_auto
@@ -812,6 +816,7 @@ guess
 guid
 h
 hand_search
+hardware
 hasFile
 has_4k
 has_account
@@ -1140,6 +1145,7 @@ metadata_profiles
 metadata_up
 metas
 method
+methods
 migrates
 migration
 mimeType
@@ -1376,6 +1382,9 @@ ours
 outcome
 outcomes
 outputPath
+output_audio
+output_height
+output_video
 outside
 outside_list
 outside_lists
@@ -1911,10 +1920,13 @@ source
 sourceName
 sourceTitle
 sourceType
+source_audio
 source_data
 source_file
 source_id
 source_name
+source_resolution
+source_video
 sources
 spacing
 spec
@@ -1977,6 +1989,7 @@ subs
 subsonic-response
 subtitle
 subtitleId
+subtitle_decision
 subtitles
 success_count
 suggest
@@ -2072,6 +2085,8 @@ token_endpoint_auth_method
 took
 tool
 top
+top_titles
+top_viewers
 topic
 torrent
 torrent_added
@@ -2245,9 +2260,11 @@ versions
 via
 via_plugin
 videoDetails
+video_decision
 videoname
 videos
 view
+viewers
 vip
 vote
 vote_average

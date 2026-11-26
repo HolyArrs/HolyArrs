@@ -41,6 +41,7 @@ export interface NavInput {
 	kid?: boolean;
 	/** Something in Settings needs a fix (only known to people who change settings). */
 	settingsAttention?: boolean;
+	playbackEnabled?: boolean;
 	/** Pages running plugins add (owner only, like the Plugins page). */
 	pluginPages?: { plugin: string; name: string; id: string; title: string }[];
 }
@@ -103,7 +104,8 @@ export function buildNav(input: NavInput): NavSection[] {
 			items: input.allowed('manage') || input.allowed('staff')
 				? [
 						{ href: '/downloads', label: t('frame.nav.downloads'), icon: 'download', need: 'manage_library', also: ['/downloads/decide'], ...downloadsBadge(input) },
-						{ href: '/downloads/history', label: t('frame.nav.history'), icon: 'clock', need: 'manage_library' }
+						{ href: '/downloads/history', label: t('frame.nav.history'), icon: 'clock', need: 'manage_library' },
+						...(input.playbackEnabled ? [{ href: '/activity/playback', label: t('settings.mediaServers.playback.title'), icon: 'play', need: 'owner' } as const] : [])
 					]
 				: []
 		},

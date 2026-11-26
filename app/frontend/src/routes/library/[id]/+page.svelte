@@ -99,6 +99,7 @@
 	const editFlow = createTitleEdit(editFlowCtx);
 	// Versions are one row; See all lays every Version out.
 	let allVersions = $state(false);
+	const playbackVersion = $derived(Number(page.url.searchParams.get('version')));
 	const leadVersion = (vs: VersionView[]) => (vs.find((v) => v.main) ?? vs[0])?.id;
 	const gates = $derived<[string, string][]>([
 		['announced', tr('mediafiles.gate.announced')],
@@ -403,7 +404,7 @@
 						{#each title.versions as v (v.id)}
 							{@const s = versionsFlow.slotOf(v)}
 							{@const f = s?.file}
-							<li class="tp-row" data-testid="version" hidden={!allVersions && v.id !== leadVersion(title.versions)}>
+							<li class="tp-row" id={`version-${v.id}`} data-testid="version" hidden={!allVersions && v.id !== leadVersion(title.versions) && v.id !== playbackVersion}>
 								<div class="tp-row-main">
 									<b>{v.label}{v.main ? ` (${tr('shows.versions.mainShort')})` : ''}</b>
 									<span class="xs muted">{tr('library.title.editionAudio', { edition: v.edition || tr('library.title.notSpecified'), languages: v.audio_languages?.join(', ') || tr('shows.versions.any') })}</span>

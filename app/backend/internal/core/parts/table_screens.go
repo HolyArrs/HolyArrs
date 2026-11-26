@@ -25,6 +25,7 @@ var screenOwners = map[string]Owner{
 	"/invite/[token]":                Core,
 	"/downloads":                     Core,
 	"/downloads/history":             Core,
+	"/activity/playback":             Media,
 	"/health":                        Core,
 	"/downloads/decide":              Media,
 	"/downloads/turned-down":         Core,

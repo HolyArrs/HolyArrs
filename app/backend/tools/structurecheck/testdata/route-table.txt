@@ -170,6 +170,7 @@ GET /api/v1/media-servers auth=settings scope=read assurance=false part=core
 GET /api/v1/media-servers/watch-links auth=manage_library scope=read assurance=false part=media
 GET /api/v1/media-servers/{id}/libraries auth=settings scope=admin assurance=false part=core
 GET /api/v1/media-servers/{id}/playback auth=owner scope=admin assurance=false part=core
+GET /api/v1/media-servers/{id}/playback/{play}/poster auth=owner scope=admin assurance=false part=core
 GET /api/v1/messages auth=signed_in scope=read assurance=false part=wishlist
 GET /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=read assurance=false part=music
 GET /api/v1/metadata/health auth=signed_in scope=read assurance=false part=core
@@ -665,6 +666,7 @@ PUT /api/v1/library-folders/{id} auth=settings scope=write assurance=false part=
 PUT /api/v1/library-folders/{id}/path auth=settings scope=write assurance=false part=core
 PUT /api/v1/media-servers/{id} auth=settings scope=write assurance=false part=core
 PUT /api/v1/media-servers/{id}/libraries auth=settings scope=write assurance=false part=core
+PUT /api/v1/media-servers/{id}/playback auth=owner scope=admin assurance=false part=core
 PUT /api/v1/metadata/album/{mbid}/follow auth=signed_in scope=write assurance=false part=music
 PUT /api/v1/metadata/movie/{tmdb_id}/follow auth=signed_in scope=write assurance=false part=wishlist
 PUT /api/v1/metadata/show/{tmdb_id}/follow auth=signed_in scope=write assurance=false part=wishlist

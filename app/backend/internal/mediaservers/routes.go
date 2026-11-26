@@ -48,6 +48,8 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("DELETE /api/v1/media-servers/{id}", h.remove)
 	m.HandleFunc("POST /api/v1/media-servers/{id}/test", h.Test)
 	m.HandleFunc("GET /api/v1/media-servers/{id}/playback", h.playback)
+	m.HandleFunc("GET /api/v1/media-servers/{id}/playback/{play}/poster", h.playbackPoster)
+	m.HandleFunc("PUT /api/v1/media-servers/{id}/playback", h.setPlaybackMonitoring)
 	m.HandleFunc("DELETE /api/v1/media-servers/{id}/playback", h.clearPlayback)
 	m.HandleFunc("GET /api/v1/media-servers/{id}/libraries", h.libraries)
 	m.HandleFunc("PUT /api/v1/media-servers/{id}/libraries", h.pickLibraries)

@@ -20748,7 +20748,7 @@
         "x-holyarrs-scope": "admin"
       },
       "get": {
-        "description": "Owner browser session only. Returns the latest active streams and up to 50 stopped plays, with counts and observed watch time for the selected history filters.",
+        "description": "Owner browser session only. Returns the latest active streams and up to 50 stopped plays, with plays, viewers, observed watch time, and playback method counts for the selected history filters. Includes stream details when recorded and top titles and viewers for the requested filters.",
         "parameters": [
           {
             "description": "Plex account ID to include in the history.",
@@ -20817,6 +20817,93 @@
           }
         },
         "summary": "Read Plex playback",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "put": {
+        "description": "Owner browser session only. Turns collection on or off for the Plex connection. Turning it off preserves saved history.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "enabled"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Monitoring setting saved."
+          },
+          "400": {
+            "description": "Missing or invalid setting."
+          },
+          "403": {
+            "description": "Owner browser session required."
+          },
+          "404": {
+            "description": "Plex connection not found."
+          }
+        },
+        "summary": "Set Plex playback monitoring",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/media-servers/{id}/playback/{play}/poster": {
+      "get": {
+        "description": "Owner browser session only. Serves the cover Plex reported for the recorded play.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "play",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Poster image."
+          },
+          "403": {
+            "description": "Owner browser session required."
+          },
+          "404": {
+            "description": "Poster unavailable."
+          }
+        },
+        "summary": "Read a recorded Plex poster",
         "x-holyarrs-part": "core",
         "x-holyarrs-permission": "owner",
         "x-holyarrs-scope": "admin"

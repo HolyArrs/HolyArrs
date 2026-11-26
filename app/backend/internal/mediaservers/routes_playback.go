@@ -2,6 +2,7 @@ package mediaservers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -39,6 +40,36 @@ func (h *Handlers) playbackServer(w http.ResponseWriter, r *http.Request) (domai
 	return m, true
 }
 
+// setPlaybackMonitoring turns collection on or off for a Plex connection.
+func (h *Handlers) setPlaybackMonitoring(w http.ResponseWriter, r *http.Request) {
+	m, ok := h.playbackServer(w, r)
+	if !ok {
+		return
+	}
+	var in watchSetting
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&in); err != nil || in.Enabled == nil {
+		webserver.Fail(w, http.StatusBadRequest, `send {"enabled": true} or {"enabled": false}`)
+		return
+	}
+	ctx := r.Context()
+	err := h.Store.Write(ctx, func(tx *sql.Tx) error {
+		current, err := getServer(ctx, tx, m.ID)
+		if err != nil || current.MonitorPlayback == *in.Enabled {
+			return err
+		}
+		current.MonitorPlayback = *in.Enabled
+		if err := updateServer(tx, &current, actorOf(r)); err != nil {
+			return err
+		}
+		return resetPlayback(ctx, tx, m.ID, false)
+	})
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, in)
+}
+
 // playback returns the owner view of a Plex connection, with the latest
 // active streams and a page of stopped plays matching the history filters.
 func (h *Handlers) playback(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +104,13 @@ func (h *Handlers) playback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	out, err := readPlayback(r.Context(), h.Store.Read(), m, filter, time.Now())
+	tx, err := h.Store.Read().BeginTx(r.Context(), &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	defer tx.Rollback()
+	out, err := readPlayback(r.Context(), tx, m, filter, time.Now())
 	if err != nil {
 		internalError(w, err)
 		return

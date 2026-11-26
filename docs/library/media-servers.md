@@ -54,11 +54,15 @@ Labels already on a title in Plex stay.
 
 ### Plex playback
 
-To see activity on a Plex server, sign in as the HolyArrs owner. In **Settings > Media servers**, select **Change** on that server. Turn on **Monitor playback**, save, and select **Playback** on the server card.
+To see activity on a Plex server, sign in as the HolyArrs owner. In **Settings > Media servers**, find **Monitor playback** and switch on the Plex server that you want to track. Open **Activity > Playback** in the side menu or select **Playback** on the server card. Use the server picker if you monitor more than one server.
 
-**Now playing** shows the last streams that the server reported. **Playback history** lists recorded movie and episode plays. Filter the list by title, person, or UTC start date. The watch time comes from the intervals that HolyArrs observed while Plex reported the stream as playing. A short stream can start and end between checks. Missing intervals appear as gaps in history.
+**Now playing** shows the last streams that the server reported. **Playback history** lists recorded movie and episode plays. Filter the list by title, person, or UTC start date. The totals and playback method breakdown follow those filters. The watch time comes from the intervals that HolyArrs observed while Plex reported the stream as playing. A short stream can start and end between checks. Missing intervals appear as gaps in history.
 
 Monitoring starts off for each connection. Turning it off stops collection and keeps the saved history. Use **Clear playback history** to erase that server's recorded plays. A stream that is still active can appear again when monitoring is on.
+
+Open **Details** on a live card or a recorded play to see video, audio, and subtitle decisions and connection details when Plex reports them. The bandwidth is Plex's estimate. HolyArrs counts observed transitions into buffering and estimates the duration between consecutive buffering samples. Brief interruptions can happen between checks.
+
+When the selected Plex file matches a present Library file, HolyArrs shows its version. Use the connection's path map if Plex and HolyArrs see the same files under different paths. A title match still links to the Library when a file match is unavailable.
 
 ### Reach the local network
 

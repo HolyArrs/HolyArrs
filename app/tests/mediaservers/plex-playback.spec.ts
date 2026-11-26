@@ -3,7 +3,7 @@ import { plexPort, plexServerToken } from '../fakes/index.mjs';
 import { noSidewaysScroll, owner, signIn } from '../helpers/helpers.ts';
 
 test('Plex playback is opt-in and a resumed play appears once in history', async ({ page }) => {
-	test.setTimeout(60_000);
+	test.setTimeout(75_000);
 	await signIn(page, owner());
 	const me = await page.request.get('/api/v1/auth/me');
 	const { csrf } = await me.json();
@@ -14,11 +14,11 @@ test('Plex playback is opt-in and a resumed play appears once in history', async
 	});
 	expect(added.status()).toBe(201);
 	const { id } = await added.json();
-	const setState = async (state: 'playing' | 'paused' | 'stopped') => {
+	const setState = async (state: 'playing' | 'paused' | 'buffering' | 'stopped') => {
 		const data = state === 'stopped' ? '<MediaContainer size="0"/>' : `<MediaContainer size="1">
-			<Video type="movie" ratingKey="100" title="Moonlit Station" viewOffset="5000" duration="60000">
-				<User id="12" title="Demo Viewer"/><Player title="Demo TV" state="${state}"/><Session id="test-session"/>
-				<Media><Part decision="directplay"/></Media>
+			<Video type="movie" ratingKey="100" title="Moonlit Station" viewOffset="5000" duration="60000" thumb="/library/metadata/100/thumb/1">
+				<User id="12" title="Demo Viewer"/><Player title="Demo TV" state="${state}"/><Session id="test-session" bandwidth="6200" location="lan"/>
+				<Media videoCodec="hevc"><Part decision="directplay"/></Media>
 			</Video></MediaContainer>`;
 		expect((await page.request.put(`${plex}/lab/sessions`, { data })).status()).toBe(204);
 	};
@@ -26,31 +26,43 @@ test('Plex playback is opt-in and a resumed play appears once in history', async
 	try {
 		await setState('playing');
 		await page.goto('/settings/media-servers');
-		const card = page.getByTestId('media-server').filter({ hasText: 'Playback Lab Plex' });
-		await card.getByRole('button', { name: 'Playback', exact: true }).click();
-		await expect(card.getByText('Monitor playback · Off', { exact: true })).toBeVisible();
-		await card.getByRole('button', { name: 'Change', exact: true }).click();
-		const toggle = page.getByRole('checkbox', { name: /Monitor playback/ });
+		const nav = page.locator('#sidebar').getByRole('link', { name: 'Playback', exact: true });
+		const toggle = page.getByTestId('playback-monitoring').getByRole('checkbox', { name: 'Playback Lab Plex' });
 		await expect(toggle).not.toBeChecked();
+		await expect(nav).toHaveCount(0);
 		await toggle.check();
-		await page.getByRole('button', { name: 'Save', exact: true }).first().click();
+		await nav.click();
+		await expect(page.getByRole('heading', { name: 'Playback', exact: true })).toBeVisible();
 
-		const panel = card.getByRole('region', { name: 'Playback', exact: true });
+		const panel = page.getByRole('region', { name: 'Playback', exact: true });
 		await expect(panel.getByText('Moonlit Station')).toBeVisible({ timeout: 15_000 });
-		await expect(panel.getByText('Demo Viewer · Demo TV · Direct play')).toBeVisible();
+		await expect(panel.getByText('Demo Viewer · Demo TV')).toBeVisible();
+		await expect(panel.getByText('Direct play')).toBeVisible();
+		await expect.poll(() => panel.locator('.streams img').evaluate((img) => img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0)).toBe(true);
+		await setState('buffering');
+		await expect(panel.locator('.stream-heading').getByText('Buffering', { exact: true })).toBeVisible({ timeout: 15_000 });
+		await panel.getByText('Details', { exact: true }).click();
+		await expect(panel.getByText('LAN · ≈ 6.2 Mb/s')).toBeVisible();
+		await expect(panel.getByTestId('buffering-observed')).toContainText('1×');
+		await panel.getByText('Details', { exact: true }).click();
 		await setState('paused');
 		await expect(panel.getByText('Paused', { exact: true })).toBeVisible({ timeout: 15_000 });
 		await setState('playing');
 		await expect(panel.getByText('Playing', { exact: true })).toBeVisible({ timeout: 15_000 });
 		await setState('stopped');
-		await expect(panel.getByText('1 play · Observed watch time', { exact: false })).toBeVisible({ timeout: 15_000 });
-		await expect(panel.getByText('Moonlit Station')).toHaveCount(1);
+		await expect(panel.getByTestId('playback-metrics').getByText('1 play', { exact: true })).toBeVisible({ timeout: 15_000 });
+		await expect(panel.locator('.history').getByText('Moonlit Station')).toHaveCount(1);
 
 		await page.setViewportSize({ width: 390, height: 844 });
 		await noSidewaysScroll(page);
 		await panel.getByRole('searchbox', { name: 'Title' }).fill('Unplayed title');
 		await panel.getByRole('button', { name: 'Filter', exact: true }).click();
 		await expect(panel.getByText('Nothing matches.')).toBeVisible();
+		await page.setViewportSize({ width: 1280, height: 800 });
+		await page.getByRole('link', { name: 'Media servers', exact: true }).click();
+		await toggle.uncheck();
+		await expect(nav).toHaveCount(0);
+		expect((await (await page.request.get(`/api/v1/media-servers/${id}/playback`)).json()).plays).toBe(1);
 	} finally {
 		await setState('stopped');
 		await page.request.delete(`/api/v1/media-servers/${id}`, { headers: { 'X-CSRF-Token': csrf } });

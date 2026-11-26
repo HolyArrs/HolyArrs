@@ -7,11 +7,18 @@
 	import { plainMessage } from '#lib/core/settings.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Field from '#lib/ui/Field.svelte';
-	import { ask } from '#lib/ui/ask.svelte.ts';
+	import Icon from '#lib/ui/Icon.svelte';
+	import Poster from '#lib/ui/Poster.svelte';
+	import StreamDetails from './StreamDetails.svelte';
+	import type { ComponentProps } from 'svelte';
 
 	type Play = {
 		id: number;
 		title_id?: number;
+		version_id?: number;
+		version?: string;
+		poster?: string;
+		details?: ComponentProps<typeof StreamDetails>['details'];
 		title: string;
 		person: string;
 		device: string;
@@ -23,6 +30,7 @@
 		started_at: string;
 		incomplete: boolean;
 	};
+	type Rank = { key: string; name: string; plays: number; watch_ms: number };
 	type Playback = {
 		enabled: boolean;
 		stale: boolean;
@@ -32,6 +40,10 @@
 		people: { account: string; name: string }[] | null;
 		plays: number;
 		watch_ms: number;
+		viewers: number;
+		methods: { method: Play['method']; plays: number }[] | null;
+		top_titles: Rank[] | null;
+		top_viewers: Rank[] | null;
 	};
 
 	let { server }: { server: number } = $props();
@@ -40,7 +52,6 @@
 	const endpoint = $derived(`/media-servers/${server}/playback`);
 	let view = $state<Playback | null>(null);
 	let error = $state('');
-	let clearing = $state(false);
 	let offset = $state(0);
 	let fields = $state({ title: '', account: '', from: '', through: '' });
 	let filters = $state({ ...fields });
@@ -67,32 +78,46 @@
 		void refresh();
 	}
 
+	function setDays(days: number) {
+		const now = new Date();
+		fields.through = now.toISOString().slice(0, 10);
+		now.setUTCDate(now.getUTCDate() - days + 1);
+		fields.from = now.toISOString().slice(0, 10);
+		filters = { ...fields };
+		offset = 0;
+		void refresh();
+	}
+
+	function filterRank(key: 'title' | 'account', value: string) {
+		fields[key] = value;
+		filters = { ...fields };
+		offset = 0;
+		void refresh();
+	}
+
 	function movePage(direction: number) {
 		offset += direction * pageSize;
 		void refresh();
 	}
 
-	async function clear() {
-		const confirmed = await ask(t('settings.mediaServers.playback.clearConfirm'), {
-			yes: t('settings.mediaServers.playback.clear'), danger: true
-		});
-		if (!confirmed) return;
-		clearing = true;
-		try {
-			await api.del(endpoint);
-			offset = 0;
-			await refresh();
-		} catch (err) {
-			error = plainMessage(err);
-		} finally {
-			clearing = false;
-		}
+	function methodLabel(method: Play['method']): string {
+		return method === 'unknown' ? t('mediafiles.copies.unknown') : t('settings.mediaServers.playback.method.' + method);
 	}
+
+	function streamSummary(play: Play): string {
+		const source = play.details?.source_resolution?.toUpperCase() ?? '';
+		const output = play.details?.output_height ? play.details.output_height + 'p' : '';
+		const quality = [source, output].filter(Boolean).join(' → ');
+		return [methodLabel(play.method), quality, play.details?.hardware ? 'HW' : ''].filter(Boolean).join(' · ');
+	}
+
+	const number = (n: number) => n.toLocaleString(lang.value);
+	const playCount = (n: number) => t(n === 1 ? 'library.stats.unit.play.one' : 'library.stats.unit.play.other', { n: number(n) });
 
 	onMount(() => {
 		void refresh();
 		const timer = window.setInterval(() => {
-			if (view?.enabled && !clearing) void refresh();
+			if (!view || view.enabled) void refresh();
 		}, 5000);
 		return () => window.clearInterval(timer);
 	});
@@ -106,8 +131,28 @@
 	{/if}
 {/snippet}
 
+{#snippet playedVersion(play: Play)}
+	{#if play.title_id && play.version_id && play.version}
+		<a class="version-link" href={to(`/library/${play.title_id}?version=${play.version_id}#version-${play.version_id}`)}>{t('requests.report.version', { name: play.version })}</a>
+	{/if}
+{/snippet}
+
+{#snippet ranking(title: string, rows: Rank[], kind: 'title' | 'account')}
+	<section class="ranking tp-sheet">
+		<h3>{title}</h3>
+		<ul>
+			{#each rows as row (row.key)}
+				<li>
+					<button type="button" onclick={() => filterRank(kind, kind === 'title' ? row.name : row.key)}>{row.name || t('mediafiles.copies.unknown')}</button>
+					<span>{duration(row.watch_ms / 1000)} · {playCount(row.plays)}</span>
+				</li>
+			{/each}
+		</ul>
+	</section>
+{/snippet}
+
 <section class="playback" aria-label={t('settings.mediaServers.playback.title')}>
-	<h3>{t('settings.mediaServers.playback.now')}</h3>
+	<h2>{t('settings.mediaServers.playback.now')}</h2>
 	{#if error}<p class="bad-text" role="alert">{error}</p>{/if}
 	{#if !view}
 		{#if error}<Button size="sm" type="button" onclick={refresh}>{t('ui.loadError.tryAgain')}</Button>
@@ -126,24 +171,35 @@
 		{#if view.active?.length && view.enabled}
 			<ul class="streams" aria-label={t('settings.mediaServers.playback.now')}>
 				{#each view.active as play (play.id)}
-					<li class="stream">
-						<div class="stream-heading">
-							<strong>{@render playTitle(play)}</strong>
-							<span class="state">{play.state === 'paused' ? t('downloads.status.paused') : play.state === 'unknown' ? t('mediafiles.copies.unknown') : t('settings.mediaServers.playback.state.' + play.state)}</span>
+					<li class="stream tp-sheet">
+						<div class="stream-cover"><Poster src={play.poster} name={play.title} /></div>
+						<div class="stream-body">
+							<div class="stream-heading">
+								<span class="state">{play.state === 'paused' ? t('downloads.status.paused') : play.state === 'unknown' ? t('mediafiles.copies.unknown') : t('settings.mediaServers.playback.state.' + play.state)}</span>
+							</div>
+							<h3>{@render playTitle(play)}</h3>
+							<p class="muted">{[play.person || t('mediafiles.copies.unknown'), play.device].filter(Boolean).join(' · ')}</p>
+							{@render playedVersion(play)}
+							{#if play.duration_ms > 0}
+								<progress aria-label={t('downloads.col.progress')} max="100" value={percent(play.position_ms / play.duration_ms)}></progress>
+							{/if}
+							<div class="stream-meta">
+								<span>{streamSummary(play)}</span>
+								{#if play.duration_ms > 0}<span class="muted">{duration(play.position_ms / 1000)} / {duration(play.duration_ms / 1000)}</span>{/if}
+							</div>
 						</div>
-						<p class="muted">{[play.person || t('mediafiles.copies.unknown'), play.device, play.method === 'unknown' ? t('mediafiles.copies.unknown') : t('settings.mediaServers.playback.method.' + play.method)].filter(Boolean).join(' · ')}</p>
-						{#if play.duration_ms > 0}
-							<progress aria-label={t('downloads.col.progress')} max="100" value={percent(play.position_ms / play.duration_ms)}></progress>
-							<p class="muted">{duration(play.position_ms / 1000)} / {duration(play.duration_ms / 1000)}</p>
-						{/if}
+						{#if play.details}<div class="stream-details"><StreamDetails details={play.details} /></div>{/if}
 					</li>
 				{/each}
 			</ul>
 		{/if}
 
-		<div class="history-heading">
-			<h3>{t('settings.mediaServers.playback.history')}</h3>
-			<Button size="sm" type="button" variant="destructive" busy={clearing} onclick={clear}>{t('settings.mediaServers.playback.clear')}</Button>
+		<div class="history-title">
+			<h2>{t('settings.mediaServers.playback.history')}</h2>
+			<div class="pagination">
+				<Button size="sm" variant="secondary" type="button" onclick={() => setDays(7)}>{t('downloads.hs.days', { n: 7 })}</Button>
+				<Button size="sm" variant="secondary" type="button" onclick={() => setDays(30)}>{t('settings.appearance.last30')}</Button>
+			</div>
 		</div>
 		<form class="filters" onsubmit={filter}>
 			<Field id={uid + '-title'} label={t('mediafiles.list.title')}>
@@ -166,21 +222,44 @@
 			<Button size="sm" type="submit">{t('mediafiles.sortFilter.filter')}</Button>
 		</form>
 
-		<p class="muted">{t(view.plays === 1 ? 'library.stats.unit.play.one' : 'library.stats.unit.play.other', { n: view.plays.toLocaleString(lang.value) })} · {t('settings.mediaServers.playback.watchTime')} {duration(view.watch_ms / 1000)}</p>
+		<div class="metrics" data-testid="playback-metrics">
+			<div class="tp-sheet metric"><Icon name="play" size={18} /><b>{playCount(view.plays)}</b></div>
+			<div class="tp-sheet metric"><span>{t('settings.mediaServers.playback.watchTime')}</span><b>{duration(view.watch_ms / 1000)}</b></div>
+			<div class="tp-sheet metric"><span>{t('discover.search.people')}</span><b>{number(view.viewers)}</b></div>
+		</div>
+		{#if view.methods?.length}
+			<ul class="methods tp-sheet">
+				{#each view.methods as bucket (bucket.method)}
+					<li>
+						<span>{methodLabel(bucket.method)}</span>
+						<meter min="0" max={view.plays} value={bucket.plays} aria-label={methodLabel(bucket.method)}></meter>
+						<strong>{playCount(bucket.plays)}</strong>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		{#if view.top_titles?.length && view.top_viewers?.length}
+			<div class="rankings">
+				{@render ranking(t('library.stats.titles'), view.top_titles, 'title')}
+				{@render ranking(t('discover.search.people'), view.top_viewers, 'account')}
+			</div>
+		{/if}
 		{#if !view.history?.length}
 			<p class="muted">{t('library.copies.nothingMatches')}</p>
 		{:else}
-			<ul class="history">
+			<ul class="history tp-sheet">
 				{#each view.history as play (play.id)}
 					<li class="history-row">
 						<div>
 							<strong>{@render playTitle(play)}</strong>
-							<p class="muted">{[play.person || t('mediafiles.copies.unknown'), play.device, play.method === 'unknown' ? t('mediafiles.copies.unknown') : t('settings.mediaServers.playback.method.' + play.method)].filter(Boolean).join(' · ')}</p>
+							{@render playedVersion(play)}
+							<p class="muted">{[play.person || t('mediafiles.copies.unknown'), play.device, methodLabel(play.method)].filter(Boolean).join(' · ')}</p>
 						</div>
 						<div class="details">
 							<time datetime={play.started_at}>{dateTime(play.started_at)}</time>
 							<span>{duration(play.watch_ms / 1000)}{play.incomplete ? ` · ${t('settings.mediaServers.playback.gap')}` : ''}</span>
 						</div>
+						{#if play.details}<div class="row-details"><StreamDetails details={play.details} /></div>{/if}
 					</li>
 				{/each}
 			</ul>
@@ -195,18 +274,38 @@
 </section>
 
 <style>
-	.playback { border-top: 1px solid var(--line); margin-top: var(--s-4); padding-top: var(--s-4); display: grid; gap: var(--s-3); min-width: 0; }
-	h3 { font: var(--t-headline); }
-	.streams, .history { list-style: none; padding: 0; margin: 0; }
-	.streams { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--s-3); }
-	.stream { background: var(--surface-2); border-radius: var(--r-panel); padding: var(--s-3); min-width: 0; }
-	.stream-heading, .history-heading, .history-row { display: flex; justify-content: space-between; gap: var(--s-3); align-items: baseline; }
-	.stream-heading, .history-row { overflow-wrap: anywhere; }
-	.history-heading { margin-top: var(--s-3); flex-wrap: wrap; align-items: center; }
-	.state { color: var(--accent-text); font: var(--t-footnote); }
-	progress { width: 100%; height: 8px; margin-top: var(--s-3); accent-color: var(--accent-fill); }
+	.playback { display: grid; gap: var(--s-4); min-width: 0; }
+	h2, h3 { font: var(--t-headline); }
+	.streams, .history, .methods { list-style: none; padding: 0; margin: 0; }
+	.streams, .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: var(--s-3); }
+	.stream, .metric, .methods, .history, .ranking { padding: var(--s-4); min-width: 0; background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-panel); }
+	.stream, .metric { display: grid; gap: var(--s-2); overflow-wrap: anywhere; }
+	.stream-heading, .stream-meta, .history-row { display: flex; justify-content: space-between; gap: var(--s-3); align-items: baseline; }
+	.stream-heading { align-items: center; margin-bottom: var(--s-1); }
+	.stream { grid-template-columns: minmax(65px, 24%) minmax(0, 1fr); column-gap: var(--s-4); align-content: start; }
+	.stream-cover { --poster-ratio: 2 / 3; }
+	.stream-body { display: grid; gap: var(--s-1); min-width: 0; min-height: 0; align-content: center; }
+	.stream-details { grid-column: 1 / -1; }
+	.version-link { color: var(--accent-text); font: var(--t-footnote); margin-inline-start: var(--s-1); }
+	.stream-body .version-link { margin-inline-start: 0; }
+	.state { color: var(--accent-text); background: var(--surface-2); border-radius: var(--r-panel); padding: var(--s-1) var(--s-2); }
+	.state, .stream-meta, .metric span { font: var(--t-footnote); }
+	.metric b { font: var(--t-title2); }
+	.history-title { margin-top: var(--s-4); display: flex; gap: var(--s-2); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+	.rankings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: var(--s-3); }
+	.ranking ul { list-style: none; margin: var(--s-2) 0 0; padding: 0; }
+	.ranking li { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); padding-block: var(--s-1); }
+	.ranking li > span { color: var(--text-muted); font: var(--t-footnote); flex: 0 0 auto; }
+	.ranking button { padding: var(--s-1) 0; text-align: start; text-decoration: underline; text-underline-offset: .2em; cursor: pointer; overflow-wrap: anywhere; }
+	.row-details { width: 100%; }
+
+	.methods { display: grid; gap: var(--s-2); }
+	.methods li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; align-items: center; gap: var(--s-3); }
+	progress, meter { width: 100%; height: 10px; accent-color: var(--accent-fill); }
+	progress { margin-top: var(--s-2); }
 	.filters { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, minmax(0, 140px)) auto; gap: var(--s-3); align-items: end; }
-	.history-row { padding-block: var(--s-3); border-bottom: 1px solid var(--line); }
+	.history-row { flex-wrap: wrap; padding-block: var(--s-3); overflow-wrap: anywhere; }
+	.history-row + .history-row { border-top: 1px solid var(--line); }
 	.details { text-align: end; color: var(--text-muted); font: var(--t-footnote); display: grid; flex: none; }
 	.pagination { display: flex; gap: var(--s-2); }
 	@media (max-width: 940px) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

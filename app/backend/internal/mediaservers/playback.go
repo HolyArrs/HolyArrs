@@ -26,6 +26,8 @@ type playbackSample struct {
 	position, duration    int64
 	kind                  string
 	guids                 []string
+	details               streamDetails
+	thumb, file           string
 }
 
 type plexPlayback struct {
@@ -34,6 +36,8 @@ type plexPlayback struct {
 	SessionKey string `xml:"sessionKey,attr"`
 	Title      string `xml:"title,attr"`
 	Show       string `xml:"grandparentTitle,attr"`
+	Thumb      string `xml:"thumb,attr"`
+	ShowThumb  string `xml:"grandparentThumb,attr"`
 	ShowGUID   string `xml:"grandparentGuid,attr"`
 	GUID       string `xml:"guid,attr"`
 	Guids      []struct {
@@ -46,46 +50,36 @@ type plexPlayback struct {
 		Name string `xml:"title,attr"`
 	} `xml:"User"`
 	Player struct {
-		Name  string `xml:"title,attr"`
-		State string `xml:"state,attr"`
+		Name    string `xml:"title,attr"`
+		State   string `xml:"state,attr"`
+		Relayed string `xml:"relayed,attr"`
 	} `xml:"Player"`
 	Session struct {
-		ID string `xml:"id,attr"`
+		ID        string `xml:"id,attr"`
+		Location  string `xml:"location,attr"`
+		Bandwidth int    `xml:"bandwidth,attr"`
 	} `xml:"Session"`
 	Transcode struct {
-		Video string `xml:"videoDecision,attr"`
-		Audio string `xml:"audioDecision,attr"`
+		Video      string `xml:"videoDecision,attr"`
+		Audio      string `xml:"audioDecision,attr"`
+		Subtitle   string `xml:"subtitleDecision,attr"`
+		VideoCodec string `xml:"videoCodec,attr"`
+		AudioCodec string `xml:"audioCodec,attr"`
+		Height     int    `xml:"height,attr"`
+		Hardware   string `xml:"transcodeHwEncoding,attr"`
 	} `xml:"TranscodeSession"`
-	Media []struct {
-		Selected bool `xml:"selected,attr"`
-		Parts    []struct {
-			Selected bool   `xml:"selected,attr"`
-			Decision string `xml:"decision,attr"`
-		} `xml:"Part"`
-	} `xml:"Media"`
+	Media []plexPlaybackMedia `xml:"Media"`
 }
 
-func (p plexPlayback) method() string {
-	if p.Transcode.Video == "transcode" || p.Transcode.Audio == "transcode" {
+func (p plexPlayback) method(part plexPlaybackPart) string {
+	if p.Transcode.Video == "transcode" || p.Transcode.Audio == "transcode" || strings.EqualFold(part.Decision, "transcode") {
 		return "transcode"
 	}
-	for _, media := range p.Media {
-		if len(p.Media) > 1 && !media.Selected {
-			continue
-		}
-		for _, part := range media.Parts {
-			if len(media.Parts) > 1 && !part.Selected {
-				continue
-			}
-			switch strings.ToLower(part.Decision) {
-			case "directplay":
-				return "direct_play"
-			case "copy", "directstream":
-				return "direct_stream"
-			case "transcode":
-				return "transcode"
-			}
-		}
+	switch strings.ToLower(part.Decision) {
+	case "directplay":
+		return "direct_play"
+	case "copy", "directstream":
+		return "direct_stream"
 	}
 	if p.Transcode.Video == "copy" || p.Transcode.Audio == "copy" {
 		return "direct_stream"
@@ -114,8 +108,19 @@ func parsePlayback(body []byte) (map[playbackKey]playbackSample, error) {
 		if key.Session == "" || key.Account == "" || key.Item == "" || len(key.Session) > 160 || len(key.Account) > 160 || len(key.Item) > 160 {
 			return nil, errors.New("a Plex session did not identify the play")
 		}
-		sample := playbackSample{key: key, title: p.Title, person: p.User.Name, device: p.Player.Name, method: p.method(),
+		media := chosenPlex(p.Media, func(m plexPlaybackMedia) bool { return m.Selected })
+		part := chosenPlex(media.Parts, func(p plexPlaybackPart) bool { return p.Selected })
+		sample := playbackSample{key: key, title: p.Title, person: p.User.Name, device: p.Player.Name, method: p.method(part), details: p.details(media, part),
 			state: playbackPlayerState(p.Player.State), position: max(0, p.Position), duration: max(0, p.Duration), kind: "movie", guids: []string{p.GUID}}
+		if len(part.File) <= 4096 {
+			sample.file = part.File
+		}
+		if plexThumbPath.MatchString(p.Thumb) {
+			sample.thumb = p.Thumb
+		}
+		if p.Type == "episode" && plexThumbPath.MatchString(p.ShowThumb) {
+			sample.thumb = p.ShowThumb
+		}
 		for _, g := range p.Guids {
 			sample.guids = append(sample.guids, g.ID)
 		}

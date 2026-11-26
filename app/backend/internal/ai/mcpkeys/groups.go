@@ -77,19 +77,21 @@ var overrides = map[string]Group{
 	"GET /ping":                See,
 	"HEAD /ping":               See,
 	"GET /api/v1/plugin-pages": Plugins,
-	"POST /api/v1/plugin-pages/{plugin}/{page}/open": Plugins,
-	"POST /api/v1/plugin-pages/{plugin}/call":        Plugins,
-	"POST /api/v1/plugin-pages/{plugin}/play":        Plugins,
-	"POST /api/v1/asks/{id}/approve":                 Approve,
-	"POST /api/v1/asks/{id}/turn-down":               Approve,
-	"POST /api/v1/downloaders":                       Settings, // adding a download app is setup
-	"POST /api/v1/manual-import/folders":             Admin,    // lists folders on the server's disks
-	"PUT /api/v1/downloaders/{id}":                   Settings,
-	"POST /api/v1/downloaders/{id}/test":             Settings,
-	"POST /api/v1/downloaders/{id}/category":         Settings,
-	"GET /api/v1/downloaders/{id}/categories":        Settings,
-	"GET /api/v1/media-servers/{id}/playback":        Admin,
-	"DELETE /api/v1/media-servers/{id}/playback":     Admin,
+	"POST /api/v1/plugin-pages/{plugin}/{page}/open":        Plugins,
+	"POST /api/v1/plugin-pages/{plugin}/call":               Plugins,
+	"POST /api/v1/plugin-pages/{plugin}/play":               Plugins,
+	"POST /api/v1/asks/{id}/approve":                        Approve,
+	"POST /api/v1/asks/{id}/turn-down":                      Approve,
+	"POST /api/v1/downloaders":                              Settings, // adding a download app is setup
+	"POST /api/v1/manual-import/folders":                    Admin,    // lists folders on the server's disks
+	"PUT /api/v1/downloaders/{id}":                          Settings,
+	"POST /api/v1/downloaders/{id}/test":                    Settings,
+	"POST /api/v1/downloaders/{id}/category":                Settings,
+	"GET /api/v1/downloaders/{id}/categories":               Settings,
+	"GET /api/v1/media-servers/{id}/playback":               Admin,
+	"GET /api/v1/media-servers/{id}/playback/{play}/poster": Admin,
+	"PUT /api/v1/media-servers/{id}/playback":               Admin,
+	"DELETE /api/v1/media-servers/{id}/playback":            Admin,
 }
 
 // wildOverrides are the override patterns with a {wildcard}, sorted so the

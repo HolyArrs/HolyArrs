@@ -25,6 +25,7 @@
 	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
+	import { playbackSources, forgetPlaybackSources, refreshPlaybackSources } from '#lib/mediaservers/index.ts';
 	import { settingsNow, refreshSettingsStatus, needsAttention, dotReasons, DotList } from '#lib/alerts/index.ts';
 	import { navigateWithTransition } from '#lib/core/motion.ts';
 	import { installPersonPrefetch, installHeroAhead, checkHero, installScrollBar, showBar, arrived, leaving } from '#lib/discover/index.ts';
@@ -107,6 +108,15 @@
 	// Pages running plugins add, listed under Plugins for the owner (the only one who may open them).
 	let pluginPages = $state<SidebarPluginPage[]>([]);
 	$effect(() => {
+		if (session.s.state !== 'signed_in' || !allowed('owner')) {
+			forgetPlaybackSources();
+			return;
+		}
+		void refreshPlaybackSources();
+		window.addEventListener('focus', refreshPlaybackSources);
+		return () => window.removeEventListener('focus', refreshPlaybackSources);
+	});
+	$effect(() => {
 		if (session.s.role !== 'owner') {
 			pluginPages = [];
 			return;
@@ -124,6 +134,7 @@
 			unread: inbox.unread,
 			kid: session.kid,
 			settingsAttention,
+			playbackEnabled: playbackSources.servers.length > 0,
 			pluginPages
 		})
 	);
