@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// 0161 rebuilds sources, releases and downloaders to allow a plugin's own
+// 0160 rebuilds sources, releases and downloaders to allow a plugin's own
 // download type and keeps every row, id, column, index, trigger and the rows
 // that point at them.
 func TestPluginDownloadTypesMigrationKeepsRows(t *testing.T) {
@@ -50,7 +50,7 @@ func TestPluginDownloadTypesMigrationKeepsRows(t *testing.T) {
 	}
 	_ = old.Close()
 
-	s, err := Open(dir, Options{MainMigrations: upTo(t, 161)})
+	s, err := Open(dir, Options{MainMigrations: upTo(t, 160)})
 	if err != nil {
 		t.Fatal(err)
 	}

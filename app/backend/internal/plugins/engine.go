@@ -232,8 +232,8 @@ type Overview struct {
 	// the page just shows no plugins.
 	ListBad bool `json:"list_bad"`
 	// DevMode is on when the owner runs unsigned plugins from DevDir.
-	DevMode bool     `json:"dev_mode"`
-	DevDir  string   `json:"dev_dir,omitempty"`
+	DevMode bool   `json:"dev_mode"`
+	DevDir  string `json:"dev_dir,omitempty"`
 	// LanguagePacks are the language packs' download numbers, when known;
 	// that card is not a listed plugin.
 	LanguagePacks *Stat    `json:"language_packs,omitempty"`
