@@ -175,6 +175,10 @@ func MatchTitle(p releasename.Result, lib []TitleRef) Match {
 			}
 		}
 	}
+	// The title with its kana spelled out is a second name to try.
+	if p.KanaTitle != "" {
+		sides = append(sides, releasename.CleanName(p.KanaTitle))
+	}
 	var cands []*TitleRef
 	for i := range lib {
 		t := &lib[i]

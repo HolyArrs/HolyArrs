@@ -212,3 +212,19 @@ func TestImportSecretsThroughAPI(t *testing.T) {
 		t.Fatalf("no key %d %s", code, out)
 	}
 }
+
+// While HolyArrs runs, forgetting the Move keys needs an admin-scope API key,
+// which only the secrets file carries. Without -file the command says the
+// other ways: stop HolyArrs, pass the file, or remove the reads in Settings.
+func TestImportSecretsForgetWhileRunning(t *testing.T) {
+	dir := configDir(t)
+	unlock, err := files.LockDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer unlock()
+	code, out := runImport(t, "-forget-move-credentials", "-config", dir)
+	if code != 2 || !strings.Contains(out, "Stop HolyArrs") || !strings.Contains(out, "admin scope") || !strings.Contains(out, "Import from other apps") {
+		t.Fatalf("forget while running %d %s", code, out)
+	}
+}

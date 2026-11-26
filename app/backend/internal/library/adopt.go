@@ -172,7 +172,9 @@ func ListVideosN(lib, folder string, limit int) []AdoptVideo {
 // kept videos count toward limit.
 func listVideosWhere(lib, folder string, limit int, keep func(rel string) bool) []AdoptVideo {
 	root := filepath.Join(lib, folder)
-	var out []AdoptVideo
+	// Never nil: the list goes to the page as JSON, and a folder with no
+	// video must read as an empty list there, not as null.
+	out := []AdoptVideo{}
 	_ = filepath.WalkDir(root, func(p string, e fs.DirEntry, err error) error {
 		if err != nil {
 			return nil

@@ -217,6 +217,16 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if plan[i].Method != "hardlink" {
 			continue
 		}
+		if sourceNotPresent(root, cands, plan[i].SourceFile) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, NotPresentYetWhy)
+			continue
+		}
+		if copyInProgress(cands, plan[i].SourceFile) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, CopyingWhy)
+			continue
+		}
 		seen := map[int64]bool{}
 		for _, id := range plan[i].TargetSlotIDs {
 			ss := slots[id]

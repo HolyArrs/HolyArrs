@@ -14,7 +14,8 @@ import (
 // being copied in, a fault that passed) is tried again until it works or the
 // download is gone, as Sonarr and Radarr look at a blocked download again on
 // each pass. Each try reads the folder and asks the Downloader, so the waits
-// grow: retryWaits by try, then the last one for every try after.
+// grow for passing faults: retryWaits by try, then the last one. Missing
+// or partly copied files are checked every minute until they arrive.
 var retryWaits = []time.Duration{5 * time.Minute, 15 * time.Minute, time.Hour}
 
 // retryWait is how long the next try waits after the tries already made.
@@ -37,12 +38,14 @@ type retryMark struct {
 // to the downloads still waiting, so a download that settled starts afresh.
 func retryPlan(waiting []mediafiles.WaitingImport, marks map[int64]retryMark) map[int64]time.Time {
 	newest := map[int64]time.Time{}
+	files := map[int64]bool{}
 	listed := map[int64]bool{}
 	for _, w := range waiting {
 		listed[w.DownloadID] = true
 		if !importer.RetriesOnItsOwn(w.Reason) {
 			continue
 		}
+		files[w.DownloadID] = files[w.DownloadID] || importer.FilesPending(w.Reason)
 		if t, ok := newest[w.DownloadID]; !ok || w.Since.After(t) {
 			newest[w.DownloadID] = w.Since
 		}
@@ -59,7 +62,11 @@ func retryPlan(waiting []mediafiles.WaitingImport, marks map[int64]retryMark) ma
 		if mk.last.After(from) {
 			from = mk.last
 		}
-		plan[id] = from.Add(retryWait(mk.tries))
+		wait := retryWait(mk.tries)
+		if files[id] && mk.tries < 60 {
+			wait = time.Minute
+		}
+		plan[id] = from.Add(wait)
 	}
 	return plan
 }

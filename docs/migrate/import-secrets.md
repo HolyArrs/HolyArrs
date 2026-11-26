@@ -133,7 +133,7 @@ On SSDs and copy-on-write file systems, old blocks may stay on disk. The keys th
 | `-dry-run` | Only say what would be set. | off |
 | `-config <folder>` | The config folder. | `/config` |
 | `-delete` | After a run with no failures, overwrite the file with zeros and delete it. | off |
-| `-forget-move-credentials` | Delete every saved old-app key, then stop. | off |
+| `-forget-move-credentials` | Delete every saved old-app key, then stop. While HolyArrs runs, stop it first, or pass `-file` with `holyarrs.address` and `holyarrs.owner_api_key` so it goes through the API. Removing a read under **Settings > Import from other apps** forgets the key kept for that read. | off |
 | `-allow-http-lan` | Allow plain `http://` to a home-network address. Prints a warning. | off |
 | `-allow-readable-file` | Accept a file other users may read. Docker Desktop on Windows shows every file as readable. | off |
 
