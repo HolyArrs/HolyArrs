@@ -300,6 +300,10 @@ func (p *matroskaParser) readTrack(start, end int64, depth int) (Track, error) {
 		return Track{}, err
 	}
 	track.Language = language
+	track.Untagged = language == "" && languageBCP == ""
+	if track.Untagged {
+		track.Language = "eng" // Language is eng when not written
+	}
 	if languageBCP != "" {
 		track.Language = languageBCP // BCP 47 wins over the old field
 	}
