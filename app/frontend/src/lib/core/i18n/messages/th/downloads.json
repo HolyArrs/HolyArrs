@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "เพิ่มตัวดาวน์โหลด",
 	"downloads.hl.noUsenetDl": "ยังไม่ได้ตั้งค่าตัวดาวน์โหลด Usenet",
 	"downloads.hl.noTorrentDl": "ยังไม่ได้ตั้งค่าตัวดาวน์โหลดทอร์เรนต์",
+	"downloads.problem.waitingForFiles": "กำลังรอไฟล์",
 	"downloads.problem.importBlocked": "การนำเข้าถูกบล็อก",
 	"downloads.problem.missingArticles": "บทความขาดหาย",
 	"downloads.problem.noFullCopy": "ไม่มีสำเนาเต็ม",

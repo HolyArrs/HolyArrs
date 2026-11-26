@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Додати завантажувач",
 	"downloads.hl.noUsenetDl": "не налаштовано жодного завантажувача Usenet",
 	"downloads.hl.noTorrentDl": "не налаштовано жодного торент-завантажувача",
+	"downloads.problem.waitingForFiles": "Очікування файлів",
 	"downloads.problem.importBlocked": "Імпорт заблоковано",
 	"downloads.problem.missingArticles": "Бракує статей",
 	"downloads.problem.noFullCopy": "Немає повної копії",
