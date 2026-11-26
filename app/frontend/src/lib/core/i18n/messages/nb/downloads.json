@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Legg til en nedlaster",
 	"downloads.hl.noUsenetDl": "ingen Usenet-nedlaster er satt opp",
 	"downloads.hl.noTorrentDl": "ingen torrent-nedlaster er satt opp",
+	"downloads.problem.waitingForFiles": "Venter på filer",
 	"downloads.problem.importBlocked": "Import blokkert",
 	"downloads.problem.missingArticles": "Manglende artikler",
 	"downloads.problem.noFullCopy": "Ingen full kopi",

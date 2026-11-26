@@ -121,7 +121,7 @@ func TestMoveRoutes(t *testing.T) {
 		Counts map[string]int `json:"plan_counts"`
 	}
 	lbDecodeJSON(t, b, &plan)
-	if plan.Counts["titles"] != 1 || plan.Counts["sources"] != 1 || plan.Counts["not_moved"] == 0 || !strings.Contains(string(b), "HolyArrs has no tags") {
+	if plan.Counts["titles"] != 1 || plan.Counts["sources"] != 1 || plan.Counts["not_moved"] == 0 || !strings.Contains(string(b), "the import does not bring tags over") {
 		t.Fatalf("plan %s", b)
 	}
 	lbDo(t, "POST", base+"plan", `{"snapshots":[`+lbItoa(snap)+`],"skip":["nothing"]}`, 400)

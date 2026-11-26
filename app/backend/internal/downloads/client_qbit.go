@@ -2,6 +2,7 @@ package downloads
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -409,6 +410,11 @@ func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.V
 	} else {
 		req.Header.Set("Referer", q.base)
 	}
+	// Ask for a plain answer. Left unset, Go adds "Accept-Encoding: gzip" by
+	// itself; a proxy in front of qBittorrent that also reads the answer
+	// (qui's client proxy) then gets gzip it does not unpack, and logs a
+	// parse error on every call.
+	req.Header.Set("Accept-Encoding", "identity")
 	resp, err := q.http.Do(req)
 	// A closed idle connection fails one GET with EOF; a GET is safe to send again.
 	// A timeout is not retried, so a hung client is not waited on twice.
@@ -429,7 +435,21 @@ func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.V
 	if path == "sync/maindata" || path == "torrents/info" {
 		limit = 64 << 20
 	}
-	b, _ := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+	// With Accept-Encoding set by hand Go no longer unpacks gzip by itself.
+	// A server that packs the answer anyway is still read, and the cap keeps
+	// counting unpacked bytes. An empty answer marked gzip stays empty.
+	var src io.Reader = resp.Body
+	if strings.EqualFold(resp.Header.Get("Content-Encoding"), "gzip") {
+		gz, err := gzip.NewReader(resp.Body)
+		switch {
+		case err == nil:
+			defer gz.Close()
+			src = gz
+		case !errors.Is(err, io.EOF):
+			return 0, nil, fmt.Errorf("qbittorrent %s: %w", path, err)
+		}
+	}
+	b, _ := io.ReadAll(io.LimitReader(src, limit+1))
 	if int64(len(b)) > limit {
 		return 0, nil, fmt.Errorf("qbittorrent %s: %w", path, ErrTooLarge)
 	}

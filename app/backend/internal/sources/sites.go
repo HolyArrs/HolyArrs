@@ -570,6 +570,9 @@ func cellText(s string) string {
 
 // parseSize reads "1.4 GB" style sizes.
 func parseSize(s string) int64 {
+	// HTML sizes can separate the value and unit with &nbsp; (or a narrow
+	// nonbreaking space), which regexp's ASCII-only \s does not match.
+	s = strings.Join(strings.Fields(cellText(s)), " ")
 	m := iptSizeRe.FindStringSubmatch(s)
 	if m == nil {
 		return 0

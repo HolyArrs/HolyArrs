@@ -208,7 +208,7 @@ func TestImportUnreadableFileIsNotFake(t *testing.T) {
 	if sl := slotOf(t, w); sl.State != mediafiles.SlotNeedsADecision {
 		t.Fatalf("slot %s", sl.State)
 	}
-	if !strings.Contains(strings.Join(imp.Plan[0].Why, ";"), "not in the download folder") {
+	if !strings.Contains(strings.Join(imp.Plan[0].Why, ";"), "not present yet") {
 		t.Fatalf("plan %+v", imp.Plan)
 	}
 }

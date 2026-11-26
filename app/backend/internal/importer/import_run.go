@@ -133,7 +133,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if it.Runtime != nil {
 		minutes = *it.Runtime
 	}
-	up, err := checkUpgrade(ctx, db, sl, ver, d, plan, cands, im.refuseFakes(ctx, db), minutes)
+	up, err := checkUpgrade(ctx, db, sl, ver, d, root, plan, cands, im.refuseFakes(ctx, db), minutes)
 	if err != nil {
 		return nil, err
 	}

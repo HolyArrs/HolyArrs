@@ -124,6 +124,19 @@ func TestAudioChoiceVerdict_LanguageNamesDoNotShow(t *testing.T) {
 	if v := audioChoiceVerdict([]string{"sw", "fr"}, "en", de, mediafiles.Verdict{Passed: true}); v.Passed || !verdictHas(v, "French audio") {
 		t.Fatalf("Swahili and French Version: %+v", v)
 	}
+	// A MULTI from a Source that says what MULTi means there holds those languages only: a Spanish Version refuses it before any download.
+	known := releasename.Parse("Quiet.Harbour.2019.MULTi.1080p.BluRay.x265-GROUP", releasename.Hints{MultiLanguages: []string{"fr", "en"}})
+	if v := audioChoiceVerdict([]string{"es"}, "en", known, mediafiles.Verdict{Passed: true}); v.Passed || !verdictHas(v, "Spanish audio") {
+		t.Fatalf("Spanish Version, MULTi known as French and English: %+v", v)
+	}
+	if v := audioChoiceVerdict([]string{"fr"}, "en", known, mediafiles.Verdict{Passed: true}); !v.Passed || verdictHas(v, "inspected media decides") {
+		t.Fatalf("French Version, MULTi known as French and English: %+v", v)
+	}
+	// Without the Source's list, the same MULTI may hold Spanish, so it only warns.
+	open := releasename.Parse("Quiet.Harbour.2019.MULTi.1080p.BluRay.x265-GROUP", releasename.Hints{})
+	if v := audioChoiceVerdict([]string{"es"}, "en", open, mediafiles.Verdict{Passed: true}); !v.Passed || !verdictHas(v, "MULTI or DUAL may hold Spanish") {
+		t.Fatalf("Spanish Version, MULTi with no Source list: %+v", v)
+	}
 	// An untagged dotted WEB.DL name is the original language, not a dual-language one.
 	web := releasename.Parse("Quiet.Harbour.2019.1080p.WEB.DL.DD5.1.H264-GROUP", releasename.Hints{})
 	if v := audioChoiceVerdict([]string{"fr"}, "en", web, mediafiles.Verdict{Passed: true}); v.Passed || !verdictHas(v, "French audio") {

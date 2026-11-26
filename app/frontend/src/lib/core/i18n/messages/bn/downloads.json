@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "একটি ডাউনলোডার যোগ করুন",
 	"downloads.hl.noUsenetDl": "কোনো Usenet ডাউনলোডার সেট আপ করা নেই",
 	"downloads.hl.noTorrentDl": "কোনো টরেন্ট ডাউনলোডার সেট আপ করা নেই",
+	"downloads.problem.waitingForFiles": "ফাইলের অপেক্ষায়",
 	"downloads.problem.importBlocked": "ইমপোর্ট আটকে আছে",
 	"downloads.problem.missingArticles": "আর্টিকেল অনুপস্থিত",
 	"downloads.problem.noFullCopy": "পূর্ণ কপি নেই",

@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Magdagdag ng Downloader",
 	"downloads.hl.noUsenetDl": "walang naka-set up na Usenet Downloader",
 	"downloads.hl.noTorrentDl": "walang naka-set up na torrent Downloader",
+	"downloads.problem.waitingForFiles": "Naghihintay ng mga file",
 	"downloads.problem.importBlocked": "Naka-block ang import",
 	"downloads.problem.missingArticles": "Kulang na mga article",
 	"downloads.problem.noFullCopy": "Walang buong kopya",
