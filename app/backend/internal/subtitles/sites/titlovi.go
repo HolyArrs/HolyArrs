@@ -344,6 +344,12 @@ func tlKey(key string) (id string, episode int, ok bool) {
 
 const tlMaxEntry = 10 << 20
 
+// A rar repack stops past this many subtitle files or this many bytes in all.
+const (
+	tlMaxFiles = 200
+	tlMaxTotal = 20 << 20
+)
+
 var tlSubExt = map[string]bool{".srt": true, ".sub": true, ".ssa": true, ".ass": true, ".smi": true, ".vtt": true}
 
 func (s *titlovi) Download(ctx context.Context, c Candidate) ([]byte, error) {
@@ -382,7 +388,7 @@ func tlAsZip(b []byte) ([]byte, error) {
 		}
 		var buf bytes.Buffer
 		zw := zip.NewWriter(&buf)
-		files := 0
+		files, total := 0, 0
 		for {
 			h, err := rr.Next()
 			if err == io.EOF {
@@ -399,6 +405,14 @@ func tlAsZip(b []byte) ([]byte, error) {
 			if err != nil || len(data) > tlMaxEntry {
 				return nil, &Error{Kind: KindUnreadable, Msg: "the site's rar holds a file that is too big"}
 			}
+			files++
+			total += len(data)
+			if files > tlMaxFiles {
+				return nil, &Error{Kind: KindUnreadable, Msg: "the site's rar holds too many files"}
+			}
+			if total > tlMaxTotal {
+				return nil, &Error{Kind: KindUnreadable, Msg: "the site's rar is too big in all"}
+			}
 			w, err := zw.Create(name)
 			if err != nil {
 				return nil, &Error{Kind: KindUnreadable, Msg: "the site's rar could not be read"}
@@ -406,7 +420,6 @@ func tlAsZip(b []byte) ([]byte, error) {
 			if _, err := w.Write(data); err != nil {
 				return nil, &Error{Kind: KindUnreadable, Msg: "the site's rar could not be read"}
 			}
-			files++
 		}
 		if files == 0 || zw.Close() != nil {
 			return nil, &Error{Kind: KindUnreadable, Msg: "the site's rar holds no subtitle"}
