@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Alih suara, tanpa bunyi asal",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision tanpa sandaran HDR10",
+	"downloads.pr.traits.sdr_4k": "4K tanpa HDR (SDR)",
 	"downloads.pr.traits.executable": "Mengandungi program",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (boleh dimainkan hampir di mana-mana)",

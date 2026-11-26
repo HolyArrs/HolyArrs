@@ -320,6 +320,9 @@ func roundRate(fps float64) float64 {
 	return math.Round(fps*1000) / 1000
 }
 
+// NormalizeLanguage reads a track's language tag as a base code ("en"); false when it names none.
+func NormalizeLanguage(value string) (string, bool) { return normalizeLanguage(value) }
+
 func normalizeLanguage(value string) (string, bool) {
 	value = strings.TrimSpace(value)
 	if value == "" || strings.EqualFold(value, "und") || strings.HasPrefix(strings.ToLower(value), "und-") {

@@ -61,6 +61,7 @@ describe('traits', () => {
 		expect(traitLabel('hevc')).toBe('HEVC (smaller files)');
 		expect(traitLabel('hardcoded_subs')).toBe('Subtitles burned into the picture');
 		expect(traitLabel('dv_no_fallback')).toBe('Dolby Vision without an HDR10 backup');
+		expect(traitLabel('sdr_4k')).toBe('4K without HDR (SDR)');
 		expect(traitLabel('plays_on')).toBe('Needs converting on your devices');
 		expect(traitLabel('cd_source')).toBe('Ripped from a CD');
 		expect(traitLabel('sample')).toBe('Only a short sample');

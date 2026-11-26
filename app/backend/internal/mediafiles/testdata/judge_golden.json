@@ -8192,7 +8192,7 @@
   "name": "Show.Name.S02E05.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos-FGT",
   "outcome": "refused",
   "passed": false,
-  "points": 15,
+  "points": -85,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -8212,7 +8212,7 @@
   "name": "Show.Name.S03.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos-FGT",
   "outcome": "refused",
   "passed": false,
-  "points": 15,
+  "points": -85,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -8229,10 +8229,10 @@
  {
   "preset": "best",
   "name": "Another.Film.1999.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos-FGT",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 15,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -85,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -8245,18 +8245,17 @@
    "step|allowed|pass|4K remux (2160p) is allowed",
    "points|trait:atmos|add|has Atmos",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|15 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K Blu-ray (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-85 points, needs at least 0"
   ]
  },
  {
   "preset": "best",
   "name": "Movie.Title.2021.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos-FGT",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 15,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -85,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -8269,9 +8268,8 @@
    "step|allowed|pass|4K remux (2160p) is allowed",
    "points|trait:atmos|add|has Atmos",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|15 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K Blu-ray (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-85 points, needs at least 0"
   ]
  },
  {
@@ -8659,7 +8657,7 @@
   "name": "Another.Film.1999.2160p.UPSCALED.WEB-DL.H265-XX",
   "outcome": "refused",
   "passed": false,
-  "points": -95,
+  "points": -195,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -8673,7 +8671,8 @@
    "step|allowed|pass|4K web (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
    "points|trait:upscaled|subtract|marked as upscaled",
-   "points|below_min|fail|-95 points, needs at least 0"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-195 points, needs at least 0"
   ]
  },
  {
@@ -8681,7 +8680,7 @@
   "name": "Movie.Title.2021.2160p.UPSCALED.WEB-DL.H265-XX",
   "outcome": "refused",
   "passed": false,
-  "points": -95,
+  "points": -195,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -8695,7 +8694,8 @@
    "step|allowed|pass|4K web (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
    "points|trait:upscaled|subtract|marked as upscaled",
-   "points|below_min|fail|-95 points, needs at least 0"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-195 points, needs at least 0"
   ]
  },
  {
@@ -8703,7 +8703,7 @@
   "name": "Show.Name.S02E05.2160p.UPSCALED.WEB-DL.H265-XX",
   "outcome": "refused",
   "passed": false,
-  "points": -95,
+  "points": -195,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -8717,7 +8717,8 @@
    "step|allowed|pass|4K web (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
    "points|trait:upscaled|subtract|marked as upscaled",
-   "points|below_min|fail|-95 points, needs at least 0"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-195 points, needs at least 0"
   ]
  },
  {
@@ -8725,7 +8726,7 @@
   "name": "Show.Name.S03.2160p.UPSCALED.WEB-DL.H265-XX",
   "outcome": "refused",
   "passed": false,
-  "points": -95,
+  "points": -195,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -8739,7 +8740,8 @@
    "step|allowed|pass|4K web (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
    "points|trait:upscaled|subtract|marked as upscaled",
-   "points|below_min|fail|-95 points, needs at least 0"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-195 points, needs at least 0"
   ]
  },
  {
@@ -10917,10 +10919,10 @@
  {
   "preset": "best",
   "name": "Another.Film.1999.2160p.UHD.BluRay.x265-TERMINAL",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 5,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -95,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -10932,18 +10934,17 @@
    "hard|turned_down|pass|not turned down before",
    "step|allowed|pass|4K Blu-ray (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|5 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K Blu-ray (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-95 points, needs at least 0"
   ]
  },
  {
   "preset": "best",
   "name": "Movie.Title.2021.2160p.UHD.BluRay.x265-TERMINAL",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 5,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -95,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -10955,18 +10956,17 @@
    "hard|turned_down|pass|not turned down before",
    "step|allowed|pass|4K Blu-ray (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|5 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K Blu-ray (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-95 points, needs at least 0"
   ]
  },
  {
   "preset": "best",
   "name": "Show.Name.S02E05.2160p.UHD.BluRay.x265-TERMINAL",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 5,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -95,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -10978,18 +10978,17 @@
    "hard|turned_down|pass|not turned down before",
    "step|allowed|pass|4K Blu-ray (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|5 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K Blu-ray (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-95 points, needs at least 0"
   ]
  },
  {
   "preset": "best",
   "name": "Show.Name.S03.2160p.UHD.BluRay.x265-TERMINAL",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 5,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -95,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -11001,9 +11000,8 @@
    "hard|turned_down|pass|not turned down before",
    "step|allowed|pass|4K Blu-ray (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|5 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K Blu-ray (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-95 points, needs at least 0"
   ]
  },
  {
@@ -12184,7 +12182,7 @@
   "name": "Show.Name.S02E05.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos-FGT",
   "outcome": "refused",
   "passed": false,
-  "points": 15,
+  "points": -85,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -12204,7 +12202,7 @@
   "name": "Show.Name.S03.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos-FGT",
   "outcome": "refused",
   "passed": false,
-  "points": 15,
+  "points": -85,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -12221,10 +12219,10 @@
  {
   "preset": "4k",
   "name": "Another.Film.1999.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos-FGT",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 15,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -85,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -12237,18 +12235,17 @@
    "step|allowed|pass|4K remux (2160p) is allowed",
    "points|trait:atmos|add|has Atmos",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|15 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K web (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-85 points, needs at least 0"
   ]
  },
  {
   "preset": "4k",
   "name": "Movie.Title.2021.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos-FGT",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 15,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -85,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -12261,9 +12258,8 @@
    "step|allowed|pass|4K remux (2160p) is allowed",
    "points|trait:atmos|add|has Atmos",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|15 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K web (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-85 points, needs at least 0"
   ]
  },
  {
@@ -12651,7 +12647,7 @@
   "name": "Another.Film.1999.2160p.UPSCALED.WEB-DL.H265-XX",
   "outcome": "refused",
   "passed": false,
-  "points": -95,
+  "points": -195,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -12665,7 +12661,8 @@
    "step|allowed|pass|4K web (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
    "points|trait:upscaled|subtract|marked as upscaled",
-   "points|below_min|fail|-95 points, needs at least 0"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-195 points, needs at least 0"
   ]
  },
  {
@@ -12673,7 +12670,7 @@
   "name": "Movie.Title.2021.2160p.UPSCALED.WEB-DL.H265-XX",
   "outcome": "refused",
   "passed": false,
-  "points": -95,
+  "points": -195,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -12687,7 +12684,8 @@
    "step|allowed|pass|4K web (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
    "points|trait:upscaled|subtract|marked as upscaled",
-   "points|below_min|fail|-95 points, needs at least 0"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-195 points, needs at least 0"
   ]
  },
  {
@@ -12695,7 +12693,7 @@
   "name": "Show.Name.S02E05.2160p.UPSCALED.WEB-DL.H265-XX",
   "outcome": "refused",
   "passed": false,
-  "points": -95,
+  "points": -195,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -12709,7 +12707,8 @@
    "step|allowed|pass|4K web (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
    "points|trait:upscaled|subtract|marked as upscaled",
-   "points|below_min|fail|-95 points, needs at least 0"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-195 points, needs at least 0"
   ]
  },
  {
@@ -12717,7 +12716,7 @@
   "name": "Show.Name.S03.2160p.UPSCALED.WEB-DL.H265-XX",
   "outcome": "refused",
   "passed": false,
-  "points": -95,
+  "points": -195,
   "good_enough": false,
   "reasons": [
    "match|title|pass|",
@@ -12731,7 +12730,8 @@
    "step|allowed|pass|4K web (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
    "points|trait:upscaled|subtract|marked as upscaled",
-   "points|below_min|fail|-95 points, needs at least 0"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-195 points, needs at least 0"
   ]
  },
  {
@@ -14853,10 +14853,10 @@
  {
   "preset": "4k",
   "name": "Another.Film.1999.2160p.UHD.BluRay.x265-TERMINAL",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 5,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -95,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -14868,18 +14868,17 @@
    "hard|turned_down|pass|not turned down before",
    "step|allowed|pass|4K Blu-ray (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|5 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K web (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-95 points, needs at least 0"
   ]
  },
  {
   "preset": "4k",
   "name": "Movie.Title.2021.2160p.UHD.BluRay.x265-TERMINAL",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 5,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -95,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -14891,18 +14890,17 @@
    "hard|turned_down|pass|not turned down before",
    "step|allowed|pass|4K Blu-ray (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|5 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K web (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-95 points, needs at least 0"
   ]
  },
  {
   "preset": "4k",
   "name": "Show.Name.S02E05.2160p.UHD.BluRay.x265-TERMINAL",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 5,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -95,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -14914,18 +14912,17 @@
    "hard|turned_down|pass|not turned down before",
    "step|allowed|pass|4K Blu-ray (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|5 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K web (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-95 points, needs at least 0"
   ]
  },
  {
   "preset": "4k",
   "name": "Show.Name.S03.2160p.UHD.BluRay.x265-TERMINAL",
-  "outcome": "chosen",
-  "passed": true,
-  "points": 5,
-  "good_enough": true,
+  "outcome": "refused",
+  "passed": false,
+  "points": -95,
+  "good_enough": false,
   "reasons": [
    "match|title|pass|",
    "hard|never|pass|nothing from the never list",
@@ -14937,9 +14934,8 @@
    "hard|turned_down|pass|not turned down before",
    "step|allowed|pass|4K Blu-ray (2160p) is allowed",
    "points|trait:hevc|add|video is HEVC",
-   "points|total|pass|5 points",
-   "good_enough|reached|pass|reaches good enough, which starts at 4K web (2160p)",
-   "wait|none|pass|no wait for torrent"
+   "points|trait:sdr_4k|subtract|is 4K without HDR (SDR)",
+   "points|below_min|fail|-95 points, needs at least 0"
   ]
  },
  {

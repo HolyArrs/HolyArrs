@@ -1018,6 +1018,7 @@
 	"downloads.pr.traits.dubbed_only": "Dublado, sem o som original",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision sem reserva HDR10",
+	"downloads.pr.traits.sdr_4k": "4K sem HDR (SDR)",
 	"downloads.pr.traits.executable": "Contém um programa",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (toca em quase tudo)",
