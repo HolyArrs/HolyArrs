@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Jotkin kansiot eivät menneet läpi. Skannaa uudelleen, niin ne tulevat mukaan; Kirjastossa jo olevat kansiot jäävät ennalleen.",
 	"library.import.scanAgain": "Skannaa uudelleen",
 	"library.import.keepOpen": "Pidä tämä sivu auki, kunnes se on valmis.",
+	"library.import.closeOk": "Se toimii palvelimella, joten voit sulkea tämän sivun.",
 	"library.import.waiting": "Metatietopalvelin on kiireinen. HolyArrs yrittää viimeisiä {left} uudelleen {min} min kuluttua.",
 	"library.import.leaveAsk": "Tuonti on käynnissä. Jos poistut tältä sivulta, kansioita, joita ei ole vielä lähetetty, ei oteta haltuun. Poistutaanko silti?",
 	"library.import.interrupted": "Tuonti pysähtyi kohtaan {done}/{total} kansiota, kun sen sivu suljettiin. Skannaa uudelleen ja ota loput haltuun; jo haltuun otetut kansiot jäävät ennalleen.",

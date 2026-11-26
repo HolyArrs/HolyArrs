@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Một số thư mục chưa vào được. Hãy quét lại để tiếp nhận chúng; các thư mục đã có trong Thư viện được giữ nguyên.",
 	"library.import.scanAgain": "Quét lại",
 	"library.import.keepOpen": "Hãy để trang này mở cho đến khi xong.",
+	"library.import.closeOk": "Việc này chạy trên máy chủ, nên bạn có thể đóng trang này.",
 	"library.import.waiting": "Máy chủ siêu dữ liệu đang bận. HolyArrs sẽ thử lại {left} mục cuối sau {min} phút.",
 	"library.import.leaveAsk": "Một lượt nhập đang chạy. Nếu bạn rời trang này, các thư mục chưa gửi sẽ không được tiếp nhận. Vẫn rời đi?",
 	"library.import.interrupted": "Một lượt nhập đã dừng ở {done} trên {total} thư mục khi trang của nó bị đóng. Hãy quét lại để tiếp nhận phần còn lại; các thư mục đã tiếp nhận được giữ nguyên.",

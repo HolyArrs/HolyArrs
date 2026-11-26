@@ -7,10 +7,16 @@ const byHand = read('../../routes/library/import-files/+page.svelte');
 const library = read('../../routes/library/+page.svelte');
 
 describe('Import a library while the parts are being sent', () => {
-	it('asks before the tab closes or the person moves to another page, and says to keep it open', () => {
-		expect(page).toMatch(/<svelte:window onbeforeunload=\{\(e\) => \{ if \(adopting\) e\.preventDefault\(\); \}\}[^\n]*\/>/);
-		expect(page).toMatch(/beforeNavigate\(\(nav\) => \{[\s\S]*?confirm\(t\(importKey\('leaveAsk', flat\)\)\)[\s\S]*?nav\.cancel\(\)/);
-		expect(page).toContain("t('library.import.keepOpen')");
+	it('asks before the tab closes or the person moves to another page only while parts are still being handed over, and then says it may close (#712)', () => {
+		expect(page).toMatch(/<svelte:window onbeforeunload=\{\(e\) => \{ if \(adopting && !handed\) e\.preventDefault\(\); \}\}[^\n]*\/>/);
+		expect(page).toMatch(/beforeNavigate\(\(nav\) => \{\n\t\tif \(!adopting \|\| handed \|\| nav\.willUnload\) return;[\s\S]*?confirm\(t\(importKey\('leaveAsk', flat\)\)\)[\s\S]*?nav\.cancel\(\)/);
+		expect(page).toContain("t(handed ? 'library.import.closeOk' : 'library.import.keepOpen')");
+		// Told once the sending ends with a part on the server.
+		expect(page).toContain('() => (handed = true)');
+	});
+	it('follows an import the server is still running when the page opens again (#712)', () => {
+		expect(page).toContain('if (note !== undefined && jobs.some((j) => j && !finished(j))) void watchHanded(was, jobs);');
+		expect(page).toMatch(/async function watchHanded[\s\S]*?while \(!gone && jobs\.some\(\(j\) => j && !finished\(j\)\)\)/);
 	});
 	it('notes an import cut short and says where it stopped on the way back', () => {
 		expect(page).toContain("noteCut({ lf, total: picks.length, jobs: [], why: 'closed' })");
@@ -143,7 +149,7 @@ describe('An import in two tabs, and a sign-in that ends in another tab', () => 
 		expect(page).toContain('onpagehide={() => { if (adopting && track) noteCut(track, false); }}');
 	});
 	it('names the ended sign-in as the cause when the page goes away with it', () => {
-		expect(page).toMatch(/onDestroy\(\(\) => \{\n\t\tgone = true;\n[^\n]*\n\t\tif \(adopting && session\.s\.state !== 'signed_in'\) signedOut\(\);/);
+		expect(page).toMatch(/onDestroy\(\(\) => \{\n\t\tgone = true;\n[^\n]*\n\t\tif \(adopting && !handed && session\.s\.state !== 'signed_in'\) signedOut\(\);/);
 	});
 });
 
@@ -273,7 +279,7 @@ describe('A scan that is being watched', () => {
 
 describe('A part whose Follow step failed after its folders went in', () => {
 	it('keeps its results and still shows what went wrong as the page error', () => {
-		expect(page).toMatch(/const \{ res, fail \} = partEnd\(end, \(m\) => serverWords\(m\) \|\| t\('library\.import\.adoptUnfinished'\)\);\n\t\t\t\t\tif \(fail && !partFail\) partFail = fail;\n\t\t\t\t\treturn res;/);
+		expect(page).toMatch(/const \{ res, fail \} = partEnd\(end, \(m\) => serverWords\(m\) \|\| t\('library\.import\.adoptUnfinished'\)\);\n\t\t\t\t\t\tif \(fail && !partFail\) partFail = fail;\n\t\t\t\t\t\treturn res;/);
 		expect(page).not.toContain("if (end.State !== 'done' && !res) throw");
 		expect(page).toMatch(/results = \[\.\.\.all\][^\n]*\n\t\t\terror = partFail;/);
 	});
