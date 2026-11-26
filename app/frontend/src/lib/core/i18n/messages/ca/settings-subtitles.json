@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Netejant tots els subtítols de la biblioteca",
 	"settings.subtitles.cleanAllFailed": "No s'ha pogut iniciar la neteja",
 	"settings.subtitles.cleanRow": "Passos per a",
-	"settings.subtitles.cleanEvery": "Qualsevol altre idioma",
+	"settings.subtitles.cleanEvery": "Tots els idiomes",
+	"settings.subtitles.cleanEveryHint": "S'aplica a qualsevol idioma sense passos propis.",
 	"settings.subtitles.cleanAddLang": "Afegeix un idioma",
 	"settings.subtitles.cleanRemoveLang": "Treu aquest idioma"
 }

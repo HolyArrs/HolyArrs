@@ -380,3 +380,26 @@ func TestSetProxyClosesOpenConnections(t *testing.T) {
 		t.Fatalf("a connection from before the change stayed open: %v", err)
 	}
 }
+
+// A proxy that answers CONNECT with "200 OK" and "Transfer-Encoding: chunked"
+// (Gluetun 3.41.3 does) must still open the tunnel at once: RFC 9110 9.3.6 says
+// the client ignores those headers on a successful CONNECT (#768, #718).
+func TestHTTPConnectIgnoresChunkedOnSuccess(t *testing.T) {
+	for _, hdr := range []string{"Transfer-Encoding: chunked\r\n", "Content-Length: 50\r\n"} {
+		client, server := net.Pipe()
+		go func() {
+			_, _ = http.ReadRequest(bufio.NewReader(server))
+			_, _ = io.WriteString(server, "HTTP/1.1 200 OK\r\nDate: Thu, 26 Nov 2026 00:00:00 GMT\r\n"+hdr+"\r\n")
+			// The proxy now waits for the client's TLS hello and never sends a body.
+		}()
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		start := time.Now()
+		err := HTTPConnect(ctx, client, "93.184.216.34:443", "u", "p")
+		cancel()
+		if err != nil || time.Since(start) > time.Second {
+			t.Fatalf("%q: err = %v after %v", hdr, err, time.Since(start))
+		}
+		client.Close()
+		server.Close()
+	}
+}

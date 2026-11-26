@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "라이브러리의 모든 자막을 정리하는 중",
 	"settings.subtitles.cleanAllFailed": "정리를 시작할 수 없음",
 	"settings.subtitles.cleanRow": "대상 언어",
-	"settings.subtitles.cleanEvery": "그 밖의 모든 언어",
+	"settings.subtitles.cleanEvery": "모든 언어",
+	"settings.subtitles.cleanEveryHint": "자체 단계가 없는 모든 언어에 사용됩니다.",
 	"settings.subtitles.cleanAddLang": "언어 추가",
 	"settings.subtitles.cleanRemoveLang": "이 언어 빼기"
 }

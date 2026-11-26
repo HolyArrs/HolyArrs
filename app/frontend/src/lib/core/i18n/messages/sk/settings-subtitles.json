@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Čistia sa všetky titulky v knižnici",
 	"settings.subtitles.cleanAllFailed": "Čistenie sa nepodarilo spustiť",
 	"settings.subtitles.cleanRow": "Kroky pre",
-	"settings.subtitles.cleanEvery": "Každý iný jazyk",
+	"settings.subtitles.cleanEvery": "Všetky jazyky",
+	"settings.subtitles.cleanEveryHint": "Platí pre každý jazyk bez vlastných krokov.",
 	"settings.subtitles.cleanAddLang": "Pridať jazyk",
 	"settings.subtitles.cleanRemoveLang": "Odobrať tento jazyk"
 }

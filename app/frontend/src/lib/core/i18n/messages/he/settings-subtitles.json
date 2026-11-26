@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "מנקה את כל הכתוביות בספרייה",
 	"settings.subtitles.cleanAllFailed": "לא ניתן להתחיל את הניקוי",
 	"settings.subtitles.cleanRow": "שלבים עבור",
-	"settings.subtitles.cleanEvery": "כל שפה אחרת",
+	"settings.subtitles.cleanEvery": "כל השפות",
+	"settings.subtitles.cleanEveryHint": "חל על כל שפה שאין לה שלבים משלה.",
 	"settings.subtitles.cleanAddLang": "הוספת שפה",
 	"settings.subtitles.cleanRemoveLang": "הסרת השפה הזו"
 }

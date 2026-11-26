@@ -244,7 +244,25 @@ func (c *Client) siteCall(ctx context.Context, base, text string, q Query) ([]It
 func knabenCategories(q Query) []int {
 	switch {
 	case q.feed:
-		return nil
+		// A feed read asks only for the kinds it wants (#806); with no
+		// categories Knaben's 100 newest are mostly games and music.
+		var out []int
+		add := func(c int) {
+			if !slices.Contains(out, c) {
+				out = append(out, c)
+			}
+		}
+		for _, n := range q.Categories {
+			switch n / 1000 {
+			case 2:
+				add(3000000)
+			case 5:
+				add(2000000)
+			case 3:
+				add(1000000)
+			}
+		}
+		return out
 	case q.Music:
 		return []int{1000000}
 	case q.TV:

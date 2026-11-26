@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Kõiki teegi subtiitreid puhastatakse",
 	"settings.subtitles.cleanAllFailed": "Puhastust ei saanud alustada",
 	"settings.subtitles.cleanRow": "Sammud keelele",
-	"settings.subtitles.cleanEvery": "Iga muu keel",
+	"settings.subtitles.cleanEvery": "Kõik keeled",
+	"settings.subtitles.cleanEveryHint": "Kehtib igale keelele, millel pole oma samme.",
 	"settings.subtitles.cleanAddLang": "Lisa keel",
 	"settings.subtitles.cleanRemoveLang": "Eemalda see keel"
 }

@@ -376,3 +376,28 @@ func TestFileHeaderIPTorrentsCookie(t *testing.T) {
 		t.Fatalf("knaben: %v", h)
 	}
 }
+
+// A feed read asks Knaben only for the kinds the feed wants (#806), so its
+// 100 newest items are not mostly games and music.
+func TestKnabenFeedCategories(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		q    Query
+		want []int
+	}{
+		{Query{feed: true, Categories: []int{2000}}, []int{3000000}},
+		{Query{feed: true, Categories: []int{2000, 2040, 5000, 5040}}, []int{3000000, 2000000}},
+		{Query{feed: true, Categories: []int{2000, 5000, 3000, 3040}}, []int{3000000, 2000000, 1000000}},
+		{Query{feed: true, Categories: []int{3000}}, []int{1000000}},
+		{Query{feed: true}, nil},
+		{Query{feed: true, Categories: []int{7000}}, nil},
+		{Query{TV: true}, []int{2000000}},
+		{Query{Music: true}, []int{1000000}},
+		{Query{}, []int{3000000}},
+	}
+	for _, c := range cases {
+		if got := knabenCategories(c.q); !slices.Equal(got, c.want) {
+			t.Errorf("%+v: got %v want %v", c.q, got, c.want)
+		}
+	}
+}
