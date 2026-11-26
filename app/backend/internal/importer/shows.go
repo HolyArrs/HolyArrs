@@ -37,6 +37,8 @@ type ShowTarget struct {
 	Naming      *mediafiles.NamingSettings
 	// ByOrder names files by the show's chosen episode order.
 	ByOrder bool
+	// oneVideo says the download holds a single video (episodeName).
+	oneVideo bool
 }
 
 func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episode) string {
@@ -46,7 +48,8 @@ func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episo
 	}
 	ns = ns.For(mediafiles.PartShows)
 	ext := filepath.Ext(source)
-	release := strings.TrimSuffix(filepath.Base(source), ext)
+	base := strings.TrimSuffix(filepath.Base(source), ext)
+	release, p := t.episodeName(source, p)
 	if t.ByOrder {
 		eps = NamedEpisodes(eps)
 	}
@@ -57,7 +60,7 @@ func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episo
 	}
 	season := ExistingSeasonFolder(filepath.Join(t.LibraryPath, filepath.FromSlash(t.FolderName)), f.Season, mediafiles.SeasonFolder(ns, f.Season))
 	if !ns.RenameOnImport {
-		return path.Join(t.FolderName, season, mediafiles.CleanWith(ns, release)+strings.ToLower(ext))
+		return path.Join(t.FolderName, season, mediafiles.CleanWith(ns, base)+strings.ToLower(ext))
 	}
 	return path.Join(t.FolderName, season, mediafiles.EpisodeFile(ns, f))
 }
@@ -224,12 +227,8 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 		refs[i] = e.Ref
 		byItem[e.Ref.ItemID] = e
 	}
-	videos := 0
-	for _, c := range cands {
-		if videoExt[strings.ToLower(filepath.Ext(c.Path))] && !isSample(c.Path, releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true})) {
-			videos++
-		}
-	}
+	videos := videoFiles(cands)
+	t.oneVideo = videos == 1
 	var steps []mediafiles.PlanStep
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
