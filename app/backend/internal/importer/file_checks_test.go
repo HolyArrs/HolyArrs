@@ -2,7 +2,7 @@ package importer
 
 import "testing"
 
-// Files held for Review before import (#611): play length, video track, first audio.
+// Files held for Review before import: play length, video track, first audio.
 func TestHeldWhy(t *testing.T) {
 	f := func(kv ...any) map[string]any {
 		m := map[string]any{"container": "matroska", "video_tracks": 1}

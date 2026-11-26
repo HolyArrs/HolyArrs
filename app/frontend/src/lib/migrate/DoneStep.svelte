@@ -42,7 +42,7 @@
 	const undoFailed = $derived(move.undo_state === 'failed' && !undone);
 	const lines = $derived(rep?.lines ?? []);
 	const detail = $derived(progressWords(note));
-	const plainNext = $derived(!rep || !!rep.undo || rep.lines.length === 0);
+	const plainNext = $derived(!rep || !!rep.undo || (rep.lines ?? []).length === 0);
 	const noFolder = $derived(noFolderCount(lines));
 	const seasons = $derived(seasonsShows(lines));
 	const look = $derived(doneLook(counts.failed ?? 0, seasons.length));
@@ -78,7 +78,7 @@
 	{#if plainNext || renameNext || noFolder > 0 || openChoices > 0 || (counts.failed ?? 0) > 0 || seasons.length > 0}
 	<SettingsCard id="move-todo" title={t('migrate.needsYou')}>
 		{#if plainNext}
-			{#each rep.next as n (n)}
+			{#each rep.next ?? [] as n (n)}
 				<div class="srow"><p class="txt">{serverWords(n)}</p></div>
 			{/each}
 		{:else}

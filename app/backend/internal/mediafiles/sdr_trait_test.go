@@ -6,7 +6,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 )
 
-// sdr_4k matches a 2160p name with no HDR word, and nothing else (#610).
+// sdr_4k matches a 2160p name with no HDR word, and nothing else.
 func TestSDR4KTrait(t *testing.T) {
 	cases := map[string]bool{
 		"The.Lantern.Keepers.2021.2160p.WEB-DL.DDP5.1.H.265-QUILL":    true,

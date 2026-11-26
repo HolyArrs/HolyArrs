@@ -268,7 +268,7 @@ func TestRealUpgrade(t *testing.T) {
 	}
 }
 
-// #836: every owner host name and port pair is allowed, not only the last.
+// Every owner host name and port pair is allowed, not only the last.
 func TestOwnerHostsKeepEveryPort(t *testing.T) {
 	r := newProxyRig(t, nil, []string{"whisper.example.lan:9000", "whisper.example.lan:9001", "Other.lan", "bad host:x"})
 	cases := []struct {

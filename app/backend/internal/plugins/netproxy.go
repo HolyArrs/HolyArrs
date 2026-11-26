@@ -65,7 +65,7 @@ type ProxyHandle struct {
 	p      *Proxy
 	id     string
 	hosts  []string
-	owner  map[string]map[int]bool // owner-added host -> its extra ports (#836: every pair kept)
+	owner  map[string]map[int]bool // owner-added host -> its extra ports (every pair kept)
 	token  string
 	ln     net.Listener
 	closed atomic.Bool

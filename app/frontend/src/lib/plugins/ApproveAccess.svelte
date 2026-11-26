@@ -74,7 +74,7 @@
 		{/each}
 		{#if ownHosts}
 			<label class="row">
-				<span class="small lab">{t('plugins.ownerHosts')}<span class="xs muted"> Â· {t('plugins.ownerHostsHelp')}</span></span>
+				<span class="small lab">{t('plugins.ownerHosts')}<span class="xs muted"> · {t('plugins.ownerHostsHelp')}</span></span>
 				<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder={p.id === 'tailscale' ? 'headscale.example.com:8080' : 'flaresolverr:8191'} bind:value={hosts} data-testid="plugin-owner-hosts" />
 			</label>
 		{/if}

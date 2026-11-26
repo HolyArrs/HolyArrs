@@ -757,7 +757,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if imp.State == "partly_done" {
 		im.noteCleanupWait(ctx, d, slots, e)
 	}
-	im.markShowUpgrade(ctx, e.Data, newFiles, len(placedIDs)) // #733
+	im.markShowUpgrade(ctx, e.Data, newFiles, len(placedIDs))
 	if im.Store.AddEvent(ctx, e) == nil {
 		im.publish("event", e)
 	}
