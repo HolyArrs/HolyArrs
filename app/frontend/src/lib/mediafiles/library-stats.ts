@@ -3,6 +3,7 @@
 export type Bucket = { value: string; titles: number; files: number; bytes: number };
 export type KindStats = { kind: string; titles: number; files: number; bytes: number; facts: Record<string, Bucket[]> };
 export type WatchedPerson = {
+	key: string;
 	server: string;
 	server_kind: string;
 	name: string;

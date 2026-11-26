@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1：插件能听到 HolyArrs 里发生的事。**开发者模式会运行你正在构建的插件，测试版则让少数人先试用。 [查看新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2：从媒体库手动导入文件。**电影文件在导入前会检查时长、视频和音频，另有大量修复。 [查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 里每一张海报、每一段预告片和每一个评分，都来自我自己运营、自己付费的服务器，所以它对所有人都免费。如果 HolyArrs 让你的电影之夜更好了一点，赞助一下，就能为我们所有人留着这盏灯 💛
 >

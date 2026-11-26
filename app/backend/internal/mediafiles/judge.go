@@ -346,6 +346,9 @@ func traitMatches(trait string, p releasename.Result) (bool, string) {
 		return strings.HasPrefix(p.Audio.Format, "dts"), "audio is DTS"
 	case "truehd_audio":
 		return p.Audio.Format == "truehd", "audio is TrueHD"
+	case "sdr_4k":
+		// 2160p with no HDR word in the name: often worse than a good 1080p.
+		return p.Resolution.Value >= 2160 && len(p.HDR.Value) == 0, "is 4K without HDR (SDR)"
 	case "dv_no_fallback":
 		// Dolby Vision with no HDR10 layer named: players without Dolby
 		// Vision show wrong colours.
@@ -383,6 +386,11 @@ func StepFor(p releasename.Result) string {
 	case "tv":
 		if band == "720p" || band == "1080p" {
 			return band + "_tv"
+		}
+		if band == "2160p" {
+			// The ladder has no 2160p TV step; a 2160p TV copy (Sonarr's
+			// "HDTV-2160p") is the lowest 2160p step, not SD.
+			return "2160p_web"
 		}
 		return "sd_tv"
 	case "web_dl", "web_rip":

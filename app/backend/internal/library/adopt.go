@@ -51,6 +51,8 @@ type AdoptMatch struct {
 	Score float64 `json:"score"`
 	// Poster is the art the lookup already returned; no extra call.
 	Poster string `json:"poster,omitempty"`
+	// Disambiguation is MusicBrainz's note that tells same-name artists apart ("UK punk band").
+	Disambiguation string `json:"disambiguation,omitempty"`
 }
 
 // AdoptVideo is a video file found in a movie folder.

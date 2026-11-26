@@ -152,6 +152,8 @@ jobs:
       id-token: write
       attestations: write
     uses: ./.github/workflows/sign.yml
-    # sign.yml reads the Docker Hub secrets from the release environment.
+    # sign.yml reads the Docker Hub secrets from the release environment;
+    # a called workflow only sees them when the caller passes them on.
+    secrets: inherit
     with:
       version: ${{ github.ref_name }}

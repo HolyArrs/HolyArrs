@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Alle ondertitels in de bibliotheek worden opgeschoond",
 	"settings.subtitles.cleanAllFailed": "Opschonen kon niet starten",
 	"settings.subtitles.cleanRow": "Stappen voor",
-	"settings.subtitles.cleanEvery": "Elke andere taal",
+	"settings.subtitles.cleanEvery": "Alle talen",
+	"settings.subtitles.cleanEveryHint": "Geldt voor elke taal zonder eigen stappen.",
 	"settings.subtitles.cleanAddLang": "Taal toevoegen",
 	"settings.subtitles.cleanRemoveLang": "Deze taal verwijderen"
 }

@@ -113,6 +113,10 @@ func rankStep(rules PickRulesBody, idx int) int {
 	return top
 }
 
+// RankStep is rankStep for other packages, so every step comparison
+// treats EqualSteps the same way.
+func RankStep(rules PickRulesBody, idx int) int { return rankStep(rules, idx) }
+
 // SyncedProfile is a TRaSH Guides profile applied to Pick rules, or an
 // old app's profile imported or sent through the arr API.
 type SyncedProfile struct {
@@ -223,6 +227,7 @@ func FourK() PickRulesBody {
 			{Trait: "atmos", Points: 10},
 			{Trait: "hevc", Points: 5},
 			{Trait: "upscaled", Points: -100},
+			{Trait: "sdr_4k", Points: -100},
 		},
 		MustHave: []string{},
 		Never: []string{"sample", "executable", "password_protected", "disc_image",

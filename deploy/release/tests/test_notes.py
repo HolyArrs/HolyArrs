@@ -155,6 +155,13 @@ class Credits(unittest.TestCase):
         self.assertEqual(len(load()["credits"]), 48)
 
 
+    def test_place_labels(self):
+        line = lambda c: notes.credit_line(c, {})
+        self.assertEqual(line({"name": "Nippo", "forum": True, "link": "https://x/t/1"}), "[Nippo (forum)](https://x/t/1)")
+        self.assertEqual(line({"name": "Epic", "discord": True}), "Epic (Discord)")
+        self.assertEqual(line({"name": "u/someone"}), "u/someone")
+
+
 class Discord(unittest.TestCase):
     def test_long_dm_drops_theme_first_keeps_link(self):
         n = load()

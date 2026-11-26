@@ -203,7 +203,7 @@ func (h *handler) runCommand(ctx context.Context, name string, in commandIn, by 
 			}
 			return ids, enqueue(all, nil, map[string]any{"by_hand": true}, all)
 		}
-		// A rescan with no title rescans the whole Library (#808).
+		// A rescan with no title rescans the whole Library.
 		if len(targets) == 0 {
 			return ids, enqueue(library.KindRescan, nil, nil, library.KindRescan)
 		}

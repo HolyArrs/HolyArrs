@@ -49,7 +49,7 @@ Only the maintainer starts a release. Do not tag, publish or move an image tag o
 
 ## Publish plugins
 
-Plugins ship apart from the app, from the `HolyArrs/HolyArrs-Plugins` repo. Publish a new plugin version after the app release whose tag holds its source.
+Plugins ship apart from the app, from the `HolyArrs/HolyArrs-Plugins` repo, which also holds their source (Tailscale is `plugins/tailscale`). To publish a new version, tag that repo's commit `<id>-v<version>` (for example `tailscale-v1.0.1`), point `catalog/active/<id>.json` at that tag and commit, then:
 
 1. Try it first:
 

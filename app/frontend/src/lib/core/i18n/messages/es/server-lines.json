@@ -1442,6 +1442,9 @@
 	"server.importer.no-file-in-the-download-matched-2": "ningún archivo de la descarga coincide con un episodio; empareja los archivos a mano",
 	"server.importer.no-file-in-the-download-matched-3": "ningún archivo de la descarga coincide con esta película; empareja los archivos a mano",
 	"server.importer.the-file-is-empty-likely-a": "el archivo está vacío; probablemente es falso",
+	"server.importer.the-file-holds-no-video-track": "el archivo no tiene pista de vídeo",
+	"server.importer.it-plays-min-but-the-title": "dura {n} min pero el título dura {m} min; comprueba que sea el correcto",
+	"server.importer.the-first-audio-track-is-not": "la primera pista de audio es {a}, no el {b} del título",
 	"server.importer.the-file-is-kb-too-small": "el archivo pesa {n} KB, demasiado poco para ser una pista; probablemente es falso",
 	"server.importer.the-file-is-too-small-to": "el archivo pesa {size}, demasiado poco para ser el vídeo completo; probablemente es falso",
 	"server.importer.a-file-where-the-release-said": "un archivo {ext} cuando el lanzamiento decía {p}p; probablemente es falso",
@@ -2466,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "es más largo de lo que puede ser un patrón de HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "ya está en la Biblioteca; se actualizó la calidad o la versión de {n} archivos",
 	"server.migrate.imported-before-2": "importado antes{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "su carpeta {dir} pertenece a otra película de la Biblioteca"
+	"server.migrate.its-folder-belongs-to-another-movie": "su carpeta {dir} pertenece a otra película de la Biblioteca",
+	"server.library.emptied-from-in-the-holding-folder": "Vaciados {removed} de {name} en la carpeta de espera de {label}"
 }

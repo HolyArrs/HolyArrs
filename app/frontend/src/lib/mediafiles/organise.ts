@@ -43,6 +43,8 @@ export interface AdoptMatch {
 	year: number;
 	score: number;
 	poster?: string;
+	/** MusicBrainz's note that tells same-name artists apart. */
+	disambiguation?: string;
 }
 
 // not_looked_up: the metadata server did not answer for this folder, so it is not known whether it matches.

@@ -1442,6 +1442,9 @@
 	"server.importer.no-file-in-the-download-matched-2": "هیچ فایلی در دانلود با قسمتی جور نشد؛ فایل‌ها را دستی جور کن",
 	"server.importer.no-file-in-the-download-matched-3": "هیچ فایلی در دانلود با این فیلم جور نشد؛ فایل‌ها را دستی جور کن",
 	"server.importer.the-file-is-empty-likely-a": "فایل خالی است؛ احتمالاً جعلی است",
+	"server.importer.the-file-holds-no-video-track": "فایل هیچ ترک ویدیویی ندارد",
+	"server.importer.it-plays-min-but-the-title": "{n} دقیقه پخش می‌شود ولی عنوان {m} دقیقه است؛ بررسی کنید درست باشد",
+	"server.importer.the-first-audio-track-is-not": "اولین ترک صدا {a} است، نه {b} عنوان",
 	"server.importer.the-file-is-kb-too-small": "فایل {n} KB است، برای یک ترک خیلی کوچک است؛ احتمالاً جعلی است",
 	"server.importer.the-file-is-too-small-to": "فایل {size} است، برای کل ویدیو خیلی کوچک است؛ احتمالاً جعلی است",
 	"server.importer.a-file-where-the-release-said": "یک فایل {ext} در حالی که ریلیز {p}p گفته بود؛ احتمالاً جعلی است",
@@ -2466,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "از حداکثر طول یک الگوی HolyArrs بلندتر است",
 	"server.migrate.already-in-the-library-the-quality": "از قبل در کتابخانه است؛ کیفیت یا نسخهٔ {n} فایل به‌روز شد",
 	"server.migrate.imported-before-2": "قبلاً وارد شده{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "پوشهٔ آن {dir} متعلق به فیلم دیگری در کتابخانه است"
+	"server.migrate.its-folder-belongs-to-another-movie": "پوشهٔ آن {dir} متعلق به فیلم دیگری در کتابخانه است",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} از {name} در پوشه نگه‌داری {label} خالی شد"
 }

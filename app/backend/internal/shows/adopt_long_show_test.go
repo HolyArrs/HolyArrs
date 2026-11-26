@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// #682: a show with hundreds of episode files adopts in one go under a
+// A show with hundreds of episode files adopts in one go under a
 // short write cap. Every header is read before the write, so the write
 // only records rows and stays well inside its cap.
 func TestAdoptLongShowStaysInsideWriteCap(t *testing.T) {

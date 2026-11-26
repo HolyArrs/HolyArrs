@@ -1442,6 +1442,9 @@
 	"server.importer.no-file-in-the-download-matched-2": "பதிவிறக்கத்தில் எந்தக் கோப்பும் ஓர் எபிசோடுடன் பொருந்தவில்லை; கோப்புகளைக் கைமுறையாகப் பொருத்துங்கள்",
 	"server.importer.no-file-in-the-download-matched-3": "பதிவிறக்கத்தில் எந்தக் கோப்பும் இந்தப் படத்துடன் பொருந்தவில்லை; கோப்புகளைக் கைமுறையாகப் பொருத்துங்கள்",
 	"server.importer.the-file-is-empty-likely-a": "கோப்பு காலியாக உள்ளது; போலியாக இருக்கலாம்",
+	"server.importer.the-file-holds-no-video-track": "கோப்பில் வீடியோ டிராக் இல்லை",
+	"server.importer.it-plays-min-but-the-title": "இது {n} நிமிடம் ஓடுகிறது, ஆனால் தலைப்பு {m} நிமிடம்; சரியானதா என பாருங்கள்",
+	"server.importer.the-first-audio-track-is-not": "முதல் ஆடியோ டிராக் {a}, தலைப்பின் {b} அல்ல",
 	"server.importer.the-file-is-kb-too-small": "கோப்பு {n} KB, ஒரு பாடலுக்கு மிகச் சிறியது; போலியாக இருக்கலாம்",
 	"server.importer.the-file-is-too-small-to": "கோப்பு {size}, முழு வீடியோவுக்கு மிகச் சிறியது; போலியாக இருக்கலாம்",
 	"server.importer.a-file-where-the-release-said": "வெளியீடு {p}p எனச் சொன்னது, ஆனால் இது {ext} கோப்பு; போலியாக இருக்கலாம்",
@@ -2466,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "இது ஒரு HolyArrs வடிவத்தின் அதிகபட்ச நீளத்தை விட நீளமானது",
 	"server.migrate.already-in-the-library-the-quality": "ஏற்கனவே நூலகத்தில் உள்ளது; {n} கோப்புகளின் தரம் அல்லது வெளியீடு புதுப்பிக்கப்பட்டது",
 	"server.migrate.imported-before-2": "முன்பே இறக்குமதி செய்யப்பட்டது{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "இதன் கோப்புறை {dir} நூலகத்தில் உள்ள வேறொரு திரைப்படத்துக்குச் சொந்தமானது"
+	"server.migrate.its-folder-belongs-to-another-movie": "இதன் கோப்புறை {dir} நூலகத்தில் உள்ள வேறொரு திரைப்படத்துக்குச் சொந்தமானது",
+	"server.library.emptied-from-in-the-holding-folder": "{label} இன் ஒதுக்கீட்டுக் கோப்புறையில் {name} இலிருந்து {removed} காலி செய்யப்பட்டது"
 }

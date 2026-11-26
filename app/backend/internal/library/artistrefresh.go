@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -61,6 +62,9 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 	}
 	if t.Kind != "artist" {
 		return out, ErrNotArtist
+	}
+	if t.State == "removed" {
+		return out, nil // removed while queued: nothing left to refresh
 	}
 	p, err := s.artists()
 	if err != nil {
@@ -126,6 +130,11 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 	for i, al := range albums {
 		if ctx.Err() != nil {
 			return out, ctx.Err()
+		}
+		// Removed mid-run: stop asking for Pressings. Checked every
+		// few albums so a big artist is not one read per album.
+		if i%removedCheckEvery == removedCheckEvery-1 && s.titleRemoved(ctx, titleID) {
+			return out, nil
 		}
 		if refusedInRow >= refusedAlbumsStop {
 			// The server turned down several albums in a row: the rest would
@@ -380,20 +389,9 @@ func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressi
 	if pressingID != 0 {
 		data["pressing_id"] = pressingID
 	}
-	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumChanged, TitleID: &t.ID, Summary: fmt.Sprintf("%s: %s: %s", t.Name, p.Name, joinWords(changed)),
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumChanged, TitleID: &t.ID, Summary: fmt.Sprintf("%s: %s: %s", t.Name, p.Name, strings.Join(changed, "; ")),
 		Data: data, GroupKey: GroupKey(t.ID)})
 	return p, nil
-}
-
-func joinWords(ws []string) string {
-	out := ""
-	for i, w := range ws {
-		if i > 0 {
-			out += "; "
-		}
-		out += w
-	}
-	return out
 }
 
 // pressingLabel names a Pressing for people: "First Light (2020, XW, Digital Media, 2 tracks)".
@@ -412,21 +410,10 @@ func pressingLabel(p domain.AlbumPressing) string {
 		}
 	}
 	if len(formats) > 0 {
-		parts = append(parts, joinComma(formats))
+		parts = append(parts, strings.Join(formats, ", "))
 	}
 	parts = append(parts, fmt.Sprintf("%d tracks", p.TrackCount))
-	return p.Name + " (" + joinComma(parts) + ")"
-}
-
-func joinComma(ws []string) string {
-	out := ""
-	for i, w := range ws {
-		if i > 0 {
-			out += ", "
-		}
-		out += w
-	}
-	return out
+	return p.Name + " (" + strings.Join(parts, ", ") + ")"
 }
 
 // ArtistChoices are an artist's choices a person can change after adding.
@@ -795,4 +782,15 @@ func (s *Service) IncludeAlbumsThen(ctx context.Context, titleID int64, partIDs 
 	_, _, err = s.Queue.Enqueue(ctx, KindRefreshTitle, &domain.Subject{Type: "title", ID: t.ID}, params,
 		fmt.Sprintf("refresh_title:%d", t.ID), by)
 	return err
+}
+
+// removedCheckEvery is how many albums a refresh reads between checks that
+// the artist is still in the library.
+const removedCheckEvery = 5
+
+// titleRemoved says whether the title was removed since the job started.
+func (s *Service) titleRemoved(ctx context.Context, titleID int64) bool {
+	var state string
+	err := s.Store.Read().QueryRowContext(ctx, "SELECT state FROM titles WHERE id = ?", titleID).Scan(&state)
+	return err == nil && state == "removed"
 }

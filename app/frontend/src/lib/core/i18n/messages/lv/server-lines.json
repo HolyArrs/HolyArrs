@@ -1442,6 +1442,9 @@
 	"server.importer.no-file-in-the-download-matched-2": "neviens lejupielādes fails neatbilda epizodei; sasaisti failus ar roku",
 	"server.importer.no-file-in-the-download-matched-3": "neviens lejupielādes fails neatbilda šai filmai; sasaisti failus ar roku",
 	"server.importer.the-file-is-empty-likely-a": "fails ir tukšs; visticamāk viltojums",
+	"server.importer.the-file-holds-no-video-track": "failā nav video celiņa",
+	"server.importer.it-plays-min-but-the-title": "tas ilgst {n} min, bet nosaukums {m} min; pārbaudiet, vai tas ir pareizais",
+	"server.importer.the-first-audio-track-is-not": "pirmais audio celiņš ir {a}, nevis nosaukuma {b}",
 	"server.importer.the-file-is-kb-too-small": "fails ir {n} KB, par mazu, lai būtu dziesma; visticamāk viltojums",
 	"server.importer.the-file-is-too-small-to": "fails ir {size}, par mazu, lai būtu viss video; visticamāk viltojums",
 	"server.importer.a-file-where-the-release-said": "{ext} fails, lai gan Izlaidumā bija norādīts {p}p; visticamāk viltojums",
@@ -2466,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "tas ir garāks, nekā var būt HolyArrs šablons",
 	"server.migrate.already-in-the-library-the-quality": "jau ir Bibliotēkā; atjaunināta {n} failu kvalitāte vai izlaidums",
 	"server.migrate.imported-before-2": "importēts agrāk{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "tā mape {dir} pieder citai Bibliotēkas filmai"
+	"server.migrate.its-folder-belongs-to-another-movie": "tā mape {dir} pieder citai Bibliotēkas filmai",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} iztukšoti no {name} aizturēšanas mapē: {label}"
 }

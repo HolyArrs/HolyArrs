@@ -80,7 +80,7 @@ export function needLabel(need: string, p: Plugin): string {
 	if (kind === 'host') return t('plugins.canHosts', { hosts: name });
 	if (kind === 'scope') {
 		const g = p.scope_groups?.find((x) => x.scopes.includes(name));
-		return g ? `${scopeLine(name, g.id)} (${name})` : t('plugins.needScope', { scope: name });
+		return g ? scopeLine(name, g.id) : t('plugins.needScope', { scope: name });
 	}
 	if (kind === 'resources') return t('plugins.needResources');
 	if (kind === 'event') return t('plugins.canEvents', { events: eventLabel(name) });
@@ -95,6 +95,9 @@ export const showsNoLockCard = (ov: Pick<PluginOverview, 'can_run' | 'no_file_lo
 export const showsNoLockTag = (ov: Pick<PluginOverview, 'can_run' | 'no_file_lock' | 'allow_no_file_lock'>): boolean => showsNoLockCard(ov) && !!ov.allow_no_file_lock;
 
 const known = new Set(['tailscale']);
+
+/** Whether the owner may add servers of their own for the plugin: Tailscale (a self-hosted Headscale) and a bot-check plugin (their FlareSolverr). */
+export const takesOwnerHosts = (p: Pick<Plugin, 'id' | 'access'>): boolean => p.id === 'tailscale' || !!p.access?.actions?.includes('sources.botcheck');
 
 /** The plugin's description: our own words for plugins we ship, else the signed manifest's. */
 export function pluginAbout(p: Plugin): string {

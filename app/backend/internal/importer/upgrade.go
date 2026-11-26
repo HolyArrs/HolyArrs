@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -35,7 +36,7 @@ type upgrade struct {
 
 func plainStep(s string) string { return strings.ReplaceAll(s, "_", " ") }
 
-func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver mediafiles.Version, d domain.Download, root string, plan []mediafiles.PlanStep, cands []Candidate, fakes fakeRules, minutes int) (upgrade, error) {
+func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver mediafiles.Version, d domain.Download, root string, plan []mediafiles.PlanStep, cands []Candidate, fakes fakeRules, minutes int, original string) (upgrade, error) {
 	u := upgrade{facts: map[string]map[string]any{}}
 	var pr mediafiles.PickRules
 	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
@@ -128,6 +129,16 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver media
 			plan[i].Why = append(plan[i].Why, why)
 			continue
 		}
+		if fakes.on {
+			langs := append(slices.Clone(u.rules.Language.Wanted), NameLanguages(plan[i].SourceFile)...)
+			langs = append(langs, releasename.Parse(u.relName, releasename.Hints{}).Languages...)
+			if why := heldWhy(facts, minutes, original, langs); why != "" {
+				u.copyWhy = why
+				plan[i].Method, plan[i].TargetPath = "refuse", ""
+				plan[i].Why = append(plan[i].Why, why)
+				continue
+			}
+		}
 		if u.old != nil {
 			id := u.old.ID
 			plan[i].ReplacesFileID = &id
@@ -159,7 +170,7 @@ func lieOf(name, relName string, hasOld bool, oldName string, rules mediafiles.P
 	}
 	sure := releasename.Parse(name, releasename.Hints{}).Source.Conf == releasename.Sure
 	if fIdx >= 0 && sure && hasOld {
-		if oStep, oIdx := mediafiles.StepOf(oldName, rules); oIdx > fIdx {
+		if oStep, oIdx := mediafiles.StepOf(oldName, rules); mediafiles.RankStep(rules, oIdx) > mediafiles.RankStep(rules, fIdx) {
 			return fmt.Sprintf("file is %s, lower than the copy in place (%s)", plainStep(fStep), plainStep(oStep))
 		}
 	}

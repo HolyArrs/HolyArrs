@@ -6,6 +6,7 @@ import { cap, episodeBits, missingLine, folderGone, folderName, plainWhy, remove
 import { canFind, filterVerb, rowLinks, type GoLink } from './history-search.ts';
 import type { HistoryRow, StepKey } from './history.ts';
 import { bytes } from '../core/format.ts';
+import { serverWords } from '#lib/core/i18n/server-words.ts';
 import type { EventRecord, TitleView } from '../core/types.ts';
 
 /** One fact row: label, value and how the value is set. */
@@ -190,7 +191,7 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	const said = lineOf(row, ctx, failedAt, own ? w.line : '');
 	const line = withNote(said.line, row);
 	// The note is a whole sentence: it is shown in full.
-	const full = !!rowNote(row);
+	const full = !!rowNote(row) || !!said.full;
 	const long = said.long || full;
 
 	// Each fact only when the Events kept it, in one fixed order.
@@ -208,12 +209,12 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	add('Quality', first(row, (x) => str(x.quality)) || resolutionOf(release) || resolutionOf(fromFile));
 	const size = first(row, (x) => String(num(x.size_bytes) || num(x.size) || num(x.bytes) || ''));
 	add('Size', size ? bytes(Number(size)) : '');
-	add('Source', first(row, (x) => str(x.source_name) || str(x.indexer) || str(x.source) || str(x.provider)));
+	add('Source', first(row, (x) => str(x.source_name) || str(x.indexer) || str(x.source) || str(x.provider) || str(x.site)));
 	add('Downloader', first(row, (x) => str(x.downloader)));
 	add('Release', release, { mono: true });
 	const path = (label: Label, full: string) => add(label, shortPath(full, e.title_name ?? ''), { mono: true, full });
 	const isRename = /^(renamed|rename_planned)$/.test(e.Kind);
-	path('File', first(row, (x, ev) => str(pathsOf(x).find((p) => str(p.to))?.to) || (isRename || /^file_(missing|back)$/.test(ev.Kind) ? str(x.to) || str(x.path) : '') || str(x.file)));
+	path('File', first(row, (x, ev) => str(pathsOf(x).find((p) => str(p.to))?.to) || (isRename || /^(file_(missing|back)|subtitle_\w+)$/.test(ev.Kind) ? str(x.to) || str(x.path) : '') || str(x.file)));
 	path('From', isRename ? str(d.from) : fromFile || first(row, (x) => str(x.from)));
 	path('Folder', str(d.folder) || str(d.path) || str(d.save_path));
 	const why = str(d.reason) || str(d.error) || str(d.message);
@@ -281,7 +282,7 @@ function factSet(row: HistoryRow, failedAt: StepKey | ''): Label[] {
 	if (/^(title_removed|episodes_removed|movie_file_removed|file_held|holding_cleaned)$/.test(k)) return ['By'];
 	if (/^download_(removed|not_removed)$/.test(k)) return ['By', 'Downloader'];
 	if (/^(ai_)?(ask|report)_/.test(k)) return ['By'];
-	if (k.startsWith('subtitle_')) return ['Source'];
+	if (k.startsWith('subtitle_')) return ['Source', 'File'];
 	if (k === 'adopted' || k.startsWith('library_folder_')) return ['Folder'];
 	if (k === 'file_missing' || k === 'file_back') return ['File'];
 	if (k === 'gate_opened' || /^sign/.test(k)) return [];
@@ -289,7 +290,10 @@ function factSet(row: HistoryRow, failedAt: StepKey | ''): Label[] {
 }
 
 /** One line of new facts, empty when the mark, title, meta and facts say it all. */
-function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fallback: string): { line: string; long: boolean } {
+/** The Settings words for each cleanup step the server names. */
+const CLEAN_STEP: Record<string, string> = { ads: 'settings.subtitles.cleanAds', hi: 'settings.subtitles.cleanHI', tags: 'settings.subtitles.cleanTags', emoji: 'settings.subtitles.cleanEmoji', ocr: 'settings.subtitles.cleanOCR', caps: 'settings.subtitles.cleanCaps', spacing: 'settings.subtitles.cleanSpacing', overlap: 'settings.subtitles.cleanOverlap' };
+
+function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fallback: string): { line: string; long: boolean; full?: boolean } {
 	const e = row.head;
 	const d = e.Data ?? {};
 	const k = e.Kind;
@@ -364,7 +368,19 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 	}
 	if (k.startsWith('subtitle_')) {
 		const langs = Array.isArray(d.languages) ? (d.languages as unknown[]).map(str).filter(Boolean).join(', ') : str(d.language);
-		return { line: langs || fallback, long: false };
+		const list = (v: unknown) => (Array.isArray(v) ? (v as unknown[]).map(str).filter(Boolean) : []);
+		const bits = [langs];
+		if (num(d.score) && /^subtitle_(saved|upgraded)$/.test(k)) bits.push(say('downloads.hp.subScore', { n: num(d.score) }));
+		if (k === 'subtitle_cleaned') {
+			if (d.ads != null || d.changed != null) bits.push(say('downloads.hp.subCleaned', { ads: num(d.ads), changed: num(d.changed) }));
+			const steps = list(d.steps).map((x) => (x in CLEAN_STEP ? say(CLEAN_STEP[x]) : x));
+			if (steps.length) bits.push(say('downloads.hp.subSteps', { list: steps.join(', ') }));
+			const skipped = list(d.skipped).map((x) => serverWords(x));
+			if (skipped.length) bits.push(say('downloads.hp.subSkipped', { list: skipped.join('; ') }));
+		}
+		const line = bits.filter(Boolean).join(' · ');
+		// A cleanup line lists every step: shown in full, never cut.
+		return { line: line || fallback, long: bits.length > 2, full: bits.length > 2 };
 	}
 	return { line: fallback, long: false };
 }

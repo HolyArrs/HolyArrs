@@ -371,7 +371,7 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 }
 
 // Every state a plugin can be in, in Cards, Large and List and in its dialog: the one right action,
-// with nothing hidden and no "Downloadingâ€¦" on Stop or Start. The list answer is dressed per state.
+// with nothing hidden and no "Downloading…" on Stop or Start. The list answer is dressed per state.
 for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 	test(`plugins: every state shows the right action and why at ${width}`, async ({ browser }) => {
 		test.setTimeout(180_000);
@@ -405,7 +405,7 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 		const row = (id: string) => page.locator(`[data-testid="plugin-row"][data-id="${id}"]`);
 		for (const v of ['Cards', 'Large', 'List']) {
 			await pick(page, v);
-			await expect(row('checking').getByTestId('plugin-step')).toHaveText('Checkingâ€¦');
+			await expect(row('checking').getByTestId('plugin-step')).toHaveText('Checking…');
 			await expect(row('failed-install').getByTestId('plugin-card-retry')).toBeEnabled();
 			await expect(row('needs-newer').getByTestId('plugin-card-update')).toHaveCount(0);
 			await expect(row('needs-newer').getByTestId('plugin-card-stop')).toBeVisible();
@@ -436,12 +436,12 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 		await expect(row('failed-update').getByTestId('plugin-install-error')).toContainText('checked file changed');
 		await expect(row('needs-newer').getByTestId('plugin-update-needs-app')).toHaveText('Needs HolyArrs 9.9.0 or newer');
 
-		// Start on a card shows a spinner on Start, never "Downloadingâ€¦".
+		// Start on a card shows a spinner on Start, never "Downloading…".
 		await row('stopped').getByTestId('plugin-card-start').click();
 		await expect.poll(() => !!hold).toBe(true);
 		await expect(row('stopped').getByTestId('plugin-card-start')).toBeDisabled();
 		await expect(row('stopped').getByTestId('plugin-step')).toHaveCount(0);
-		await expect(page.getByText('Downloadingâ€¦')).toHaveCount(0);
+		await expect(page.getByText('Downloading…')).toHaveCount(0);
 		hold!();
 		await expect(row('stopped').getByTestId('plugin-card-stop')).toBeVisible();
 
@@ -508,10 +508,47 @@ test('plugins: settings save, restart failure and own fields', async ({ browser 
 	await expect.poll(() => puts.length).toBe(1);
 	expect(JSON.parse(puts[0]).values).toEqual({ exit: 'false' });
 	await expect(page.getByText('Tailscale settings saved')).toBeVisible();
-	await expect(page.getByText('Couldnâ€™t start Tailscale').or(page.getByText("Couldn't start Tailscale"))).toBeVisible();
+	await expect(page.getByText('Couldn’t start Tailscale').or(page.getByText("Couldn't start Tailscale"))).toBeVisible();
 	await expect(page.getByText("Couldn't save the settings")).toHaveCount(0);
 	await page.context().close();
 });
+
+// A developer plugin that declares settings gets the same Settings button once it is installed;
+// before Install from folder there is nothing to set yet, so the button stays away.
+for (const width of [1366, 390]) {
+	test(`plugins: developer plugin settings at ${width}`, async ({ browser }) => {
+		const page = await (await browser.newContext({ viewport: { width, height: width > 500 ? 768 : 844 } })).newPage();
+		await signIn(page, owner());
+		const ov = structuredClone(fake) as typeof fake & { dev_mode?: boolean; plugins: Record<string, unknown>[] };
+		ov.dev_mode = true;
+		const fields = [{ key: 'greeting', label: 'Greeting', type: 'text', default: 'hi' }];
+		ov.plugins.push({ id: 'my-dev', version: '0.0.1', dev: true, installed: true, running: true, enabled: true, name: 'My dev plugin', access: { hosts: [], folders: [], actions: [] }, settings: fields });
+		ov.plugins.push({ id: 'new-dev', version: '0.0.1', dev: true, installed: false, running: false, enabled: false, name: 'New dev plugin', access: { hosts: [], folders: [], actions: [] }, settings: fields });
+		const puts: string[] = [];
+		await page.route('**/api/v1/plugins**', async (route) => {
+			const r = route.request();
+			if (r.url().endsWith('/my-dev/settings')) {
+				if (r.method() === 'PUT') puts.push(r.postData() ?? '');
+				return route.fulfill({ json: { fields, values: { greeting: 'hi' }, secrets_set: {} } });
+			}
+			return route.fulfill({ json: ov });
+		});
+		await page.goto('/plugins#new-dev');
+		await expect(page.getByTestId('plugin-dev-install')).toBeVisible();
+		await expect(page.getByTestId('plugin-detail').getByTestId('plugin-settings')).toHaveCount(0);
+		await page.goto('/plugins#my-dev');
+		const panel = page.getByTestId('plugin-detail');
+		await expect(panel.getByTestId('plugin-dev-install')).toBeVisible();
+		await panel.getByTestId('plugin-settings').click();
+		const form = page.getByTestId('plugin-settings-form');
+		await form.getByLabel('Greeting').fill('hello');
+		await form.getByTestId('plugin-settings-save').click();
+		await expect.poll(() => puts.length).toBe(1);
+		expect(JSON.parse(puts[0]).values).toEqual({ greeting: 'hello' });
+		await noSidewaysScroll(page);
+		await page.context().close();
+	});
+}
 
 // A link to /plugins#<id> opens that plugin; Esc closes it, clears the address and puts focus back on its tile.
 // Update all updates every plugin with an update, after the same access question.
@@ -725,7 +762,7 @@ for (const width of [1280, 375]) {
 			return route.fulfill({ json: { id: 2, key: 'hak_e2e_fake_key_value', label: body.label } });
 		});
 		await page.goto('/settings/ai');
-		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See Â· Add Â· Downloads Â· Settings Â· Delete Â· Admin']);
+		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See · Add · Downloads · Settings · Delete · Admin']);
 		await page.getByText('Make a key by hand').click();
 		const form = page.getByTestId('ai-key-groups-form');
 		for (const name of ['See library and activity', 'Add and request', 'Control downloads', 'Change settings']) await expect(form.getByRole('checkbox', { name })).toBeChecked();
@@ -741,7 +778,7 @@ for (const width of [1280, 375]) {
 		await page.getByLabel('Key name').fill('Claude Desktop');
 		await page.getByRole('button', { name: 'Make an AI key' }).click();
 		await expect.poll(() => sent).toEqual([{ label: 'Claude Desktop', scopes: ['mcp'], mcp_groups: ['see', 'add', 'control', 'delete'] }]);
-		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See Â· Add Â· Downloads Â· Settings Â· Delete Â· Admin', 'Can: See Â· Add Â· Downloads Â· Delete']);
+		await expect(page.getByTestId('ai-key-groups')).toHaveText(['Can: See · Add · Downloads · Settings · Delete · Admin', 'Can: See · Add · Downloads · Delete']);
 		// The boxes go back to the defaults for the next key.
 		await expect(form.getByRole('checkbox', { name: 'Change settings' })).toBeChecked();
 		await expect(form.getByRole('checkbox', { name: 'Delete' })).not.toBeChecked();
@@ -755,7 +792,7 @@ for (const width of [1280, 375]) {
 		await page.screenshot({ path: test.info().outputPath(`ai-key-edit-${width}.png`), fullPage: true });
 		await page.getByRole('button', { name: 'Save' }).click();
 		await expect.poll(() => edits).toEqual([{ mcp_groups: ['see', 'add', 'control', 'settings', 'delete', 'approve'] }]);
-		await expect(page.getByTestId('ai-key-groups').first()).toHaveText('Can: See Â· Add Â· Downloads Â· Settings Â· Delete Â· Approve');
+		await expect(page.getByTestId('ai-key-groups').first()).toHaveText('Can: See · Add · Downloads · Settings · Delete · Approve');
 		await page.context().close();
 	});
 }
@@ -987,3 +1024,27 @@ test('plugins: Language Packs row lines up in the list view', async ({ browser }
 	await page.screenshot({ path: test.info().outputPath('list-view-1280.png') });
 	await page.context().close();
 });
+
+// The card's Install on a developer plugin installs from the developer folder, not the signed list.
+for (const [width, height] of [[1280, 800], [390, 844]]) {
+	test(`plugins: card Install on a developer plugin uses dev-install at ${width}`, async ({ browser }) => {
+		const page = await (await browser.newContext({ viewport: { width, height } })).newPage();
+		await signIn(page, owner());
+		const ov = { ...fake, blocklist_stale: false, dev_mode: true, dev_dir: '/config/plugins/_dev', plugins: [{ id: 'subtitle-log', version: '0.1.0', installed: false, running: false, enabled: false, dev: true, access: { hosts: [], folders: [], actions: [] } }, { id: 'broken-dev', version: '0.1.0', installed: false, running: false, enabled: false, dev: true, dev_error: 'plugin.json is missing', access: { hosts: [], folders: [], actions: [] } }] };
+		const calls: string[] = [];
+		await page.route('**/api/v1/plugins**', async (route) => {
+			const r = route.request();
+			if (r.method() === 'GET') return route.fulfill({ json: ov });
+			calls.push(`${r.method()} ${new URL(r.url()).pathname}`);
+			return route.fulfill({ json: { ok: true } });
+		});
+		await page.goto('/plugins');
+		await page.locator('[data-testid="plugin-row"][data-id="subtitle-log"]').getByTestId('plugin-card-install').click();
+		await expect.poll(() => calls).toContain('POST /api/v1/plugins/subtitle-log/dev-install');
+		expect(calls).not.toContain('POST /api/v1/plugins/subtitle-log/install');
+		// One whose files can't be read can't be installed from the card either.
+		await expect(page.locator('[data-testid="plugin-row"][data-id="broken-dev"]').getByTestId('plugin-card-install')).toBeDisabled();
+		await noSidewaysScroll(page);
+		await page.context().close();
+	});
+}

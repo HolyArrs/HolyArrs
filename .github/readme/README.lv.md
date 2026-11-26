@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: spraudņi dzird, kas notiek HolyArrs.** Izstrādātāja režīms palaiž spraudni, ko tu veido, un testa versijas ļauj dažiem cilvēkiem to izmēģināt pirmajiem. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: importē failus ar roku no Bibliotēkas.** Filmu failiem pirms importa pārbauda garumu, video un audio, kā arī daudz labojumu. [Skaties, kas jauns](https://holyarrs.com/whats-new/)
 
 > Katrs plakāts, treileris un vērtējums tavā HolyArrs nāk no servera, ko es pats uzturu un apmaksāju, lai tas paliktu bezmaksas visiem. Ja HolyArrs ir padarījis filmu vakaru mazliet labāku, sponsors palīdz mums visiem uzturēt gaismu 💛
 >

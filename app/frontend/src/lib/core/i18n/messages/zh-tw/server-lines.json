@@ -1442,6 +1442,9 @@
 	"server.importer.no-file-in-the-download-matched-2": "下載中沒有檔案與任何一集相符；請手動配對檔案",
 	"server.importer.no-file-in-the-download-matched-3": "下載中沒有檔案與這部電影相符；請手動配對檔案",
 	"server.importer.the-file-is-empty-likely-a": "檔案是空的；很可能是假的",
+	"server.importer.the-file-holds-no-video-track": "檔案沒有影片軌",
+	"server.importer.it-plays-min-but-the-title": "播放長度 {n} 分鐘，但該作品長 {m} 分鐘；請確認是否正確",
+	"server.importer.the-first-audio-track-is-not": "第一條音軌是 {a}，不是該作品的 {b}",
 	"server.importer.the-file-is-kb-too-small": "檔案只有 {n} KB，太小，不像一首曲目；很可能是假的",
 	"server.importer.the-file-is-too-small-to": "檔案只有 {size}，太小，不像完整影片；很可能是假的",
 	"server.importer.a-file-where-the-release-said": "資源寫的是 {p}p，卻是 {ext} 檔案；很可能是假的",
@@ -2466,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "長度超過了 HolyArrs 模式的上限",
 	"server.migrate.already-in-the-library-the-quality": "已在媒體庫中；已更新 {n} 個檔案的品質或版本",
 	"server.migrate.imported-before-2": "之前已匯入{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "它的資料夾 {dir} 屬於媒體庫中的另一部電影"
+	"server.migrate.its-folder-belongs-to-another-movie": "它的資料夾 {dir} 屬於媒體庫中的另一部電影",
+	"server.library.emptied-from-in-the-holding-folder": "已從 {label} 的暫存資料夾中的 {name} 清空 {removed}"
 }

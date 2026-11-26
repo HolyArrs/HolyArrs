@@ -745,7 +745,13 @@
 	@media (max-width: 767px) { .types :global(.ui-seg) { display: grid; width: 100%; } .types :global(.ui-seg button) { padding: 0 8px; } .music-banner { margin-top: 28px; } }
 	/* Phones: the pills share the row with Genres (never wider than the screen); a long genre name ends in an ellipsis. */
 	@media (max-width: 767px) { .types { max-width: 100%; } .types :global(.ui-seg) { flex: 1 1 auto; width: auto; min-width: 0; } .genre-pick { flex: none; min-width: 0; } .genre-pick :global(.trigger) { max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
-	@media (max-width: 479px) { .types :global(.ui-seg button) { padding: 0 6px; font-size: 13px; min-width: 0; } .genre-pick { margin-left: 6px; } .genre-pick :global(.trigger) { padding: 0 12px; font-size: 13px; } }
+	@media (max-width: 479px) { .types :global(.ui-seg button) { padding: 0 6px; font-size: 13px; min-width: max-content; white-space: nowrap; } .genre-pick { flex: 0 1 auto; margin-left: 6px; } .genre-pick :global(.trigger) { padding: 0 12px; font-size: 13px; } }
+	/* Small phones: each pill is as wide as its name so none breaks onto two lines; the picked one carries the fill, as an equal-width thumb would miss. */
+	@media (max-width: 479px) {
+		.types :global(.ui-seg) { grid-auto-columns: auto; }
+		.types :global(.ui-seg .thumb) { display: none; }
+		.types :global(.ui-seg button[aria-checked='true']) { background: var(--seg-thumb); box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 .5px rgb(0 0 0 / 4%); }
+	}
 	/* Phones: the words win, the glyphs step aside, so no label is clipped. */
 	@media (min-width: 360px) and (max-width: 479px) { .types :global(.ui-seg button svg) { display: none; } }
 	@media (max-width: 359px) {
