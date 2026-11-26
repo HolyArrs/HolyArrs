@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Slutte å holde {label}-versjonen av denne filmen oppdatert? Filer på disken berøres ikke.",
 	"movies.versions.removeFailed": "Kunne ikke fjerne versjonen",
+	"movies.versions.deleteFile": "Slett fil",
+	"movies.versions.deleteFileConfirm": "Slette {name}? Den flyttes til Nylig slettet, der du kan gjenopprette den.",
+	"movies.versions.deleteFileFailed": "Kunne ikke slette filen",
 	"movies.versions.title": "Versjoner",
 	"movies.versions.showLess": "Vis færre",
 	"movies.versions.seeAll": "Se alle {count}",

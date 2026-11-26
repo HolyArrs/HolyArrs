@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "இந்தத் திரைப்படத்தின் {label} பதிப்பை வைத்திருப்பதை நிறுத்தவா? வட்டில் உள்ள கோப்புகள் தொடப்படாது.",
 	"movies.versions.removeFailed": "பதிப்பை நீக்க முடியவில்லை",
+	"movies.versions.deleteFile": "கோப்பை நீக்கு",
+	"movies.versions.deleteFileConfirm": "{name} ஐ நீக்கவா? இது சமீபத்தில் நீக்கப்பட்டவை பகுதிக்குச் செல்லும், அங்கிருந்து மீட்டெடுக்கலாம்.",
+	"movies.versions.deleteFileFailed": "கோப்பை நீக்க முடியவில்லை",
 	"movies.versions.title": "பதிப்புகள்",
 	"movies.versions.showLess": "குறைவாகக் காட்டு",
 	"movies.versions.seeAll": "{count} அனைத்தையும் பார்",

@@ -110,6 +110,8 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/plugins/{id}/remote/signout":          Core,
 	"POST /api/v1/plugins/{id}/remote/name":             Core,
 	"POST /api/v1/plugin-hooks/link":                    Core,
+	"GET /api/v1/plugin-hooks/links":                    Core,
+	"DELETE /api/v1/plugin-hooks/links/{user}":          Core,
 	"GET /api/v1/my/plugin-links":                       Core,
 	"POST /api/v1/my/plugin-links":                      Core,
 	"DELETE /api/v1/my/plugin-links/{plugin}":           Core,

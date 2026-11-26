@@ -25833,6 +25833,42 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/plugin-hooks/links": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The people who linked the plugin, each with the outside account the plugin named"
+          }
+        },
+        "summary": "A plugin's own links",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
+    "/api/v1/plugin-hooks/links/{user}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The plugin's links after the person was removed"
+          }
+        },
+        "summary": "Remove a plugin's link to a person",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/plugin-hooks/metadata": {
       "get": {
         "responses": {

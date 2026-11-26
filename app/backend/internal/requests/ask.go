@@ -150,6 +150,9 @@ type Service struct {
 	PrefetchParts bool
 	// Watch reads where a title streams (the metadata server when nil).
 	Watch func(ctx context.Context, kind, tmdbID string) (map[string][]metadata.WatchService, error)
+	// AnimeMap reads the anime ID mapping of a title (by tmdb_tv or
+	// tmdb_movie); nil tells anime by genre and original language alone.
+	AnimeMap func(ctx context.Context, by, id string) (metadata.AnimeMap, error)
 	// CleanupWait makes StartCleanup wait for the check to end (tests).
 	CleanupWait bool
 

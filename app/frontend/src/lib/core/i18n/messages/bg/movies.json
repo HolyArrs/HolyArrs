@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Да се спре ли поддържането на варианта „{label}“ на този филм? Файловете на диска не се пипат.",
 	"movies.versions.removeFailed": "Вариантът не можа да се премахне",
+	"movies.versions.deleteFile": "Изтриване на файла",
+	"movies.versions.deleteFileConfirm": "Да се изтрие ли {name}? Отива в „Наскоро изтрити“, откъдето можете да го възстановите.",
+	"movies.versions.deleteFileFailed": "Файлът не можа да бъде изтрит",
 	"movies.versions.title": "Варианти",
 	"movies.versions.showLess": "Покажи по-малко",
 	"movies.versions.seeAll": "Виж всички {count}",

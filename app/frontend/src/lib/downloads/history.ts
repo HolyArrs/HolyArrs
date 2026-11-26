@@ -41,7 +41,7 @@ export const kindGroups: KindGroup[] = [
 	{ key: 'fail', get label() { return say('downloads.hg.fail'); }, kinds: ['download_failed', 'download_vanished', 'import_failed', 'import_rejected', 'file_hold_failed'] },
 	{ key: 'import', get label() { return say('downloads.hg.import'); }, kinds: ['import_done', 'import_partly_done', 'file_replaced', 'free_space_low'] },
 	{ key: 'rename', get label() { return say('downloads.hg.rename'); }, kinds: ['renamed', 'rename_planned'] },
-	{ key: 'delete', get label() { return say('downloads.hg.delete'); }, kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned', 'download_removed', 'download_not_removed'] },
+	{ key: 'delete', get label() { return say('downloads.hg.delete'); }, kinds: ['title_removed', 'episodes_removed', 'movie_file_removed', 'file_held', 'holding_cleaned', 'download_removed', 'download_not_removed'] },
 	{ key: 'subtitles', get label() { return say('downloads.hg.subtitles'); }, kinds: ['subtitle_*'] },
 	{ key: 'scan', get label() { return say('downloads.hg.scan'); }, kinds: ['library_scanned', 'library_rescanned', 'folder_scanned', 'file_missing', 'file_back', 'library_folder_*', 'title_refreshed', 'episodes_changed', 'details_source_changed'] },
 	{ key: 'decide', get label() { return say('downloads.hg.decide'); }, kinds: ['needs_decision', 'stopped_looking'] },

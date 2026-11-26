@@ -54,6 +54,7 @@ const (
 	EventFileBack          = "file_back"                  // a missing File is there again
 	EventTitleRemoved      = "title_removed"              // a movie was deleted from the Library
 	EventFileHeld          = "file_held"                  // a File went to the holding folder
+	EventMovieFileRemoved  = "movie_file_removed"         // one file of a movie was deleted; the movie stays
 	EventHoldingCleaned    = "holding_cleaned"            // old files left the holding folder
 )
 
