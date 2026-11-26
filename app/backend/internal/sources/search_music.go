@@ -113,7 +113,7 @@ func (s *Searcher) HandleAlbum(ctx context.Context, r *jobs.Run) error {
 			looking = append(looking, t)
 		}
 	}
-	result := map[string]any{"album": part.Name, "version_id": ver.ID}
+	result := map[string]any{"album": part.Name, "version_id": ver.ID, "pick_rules_id": ver.PickRulesID}
 	if len(looking) == 0 {
 		result["skipped"] = "no track of " + part.Name + " is looking for a copy"
 		r.SetResult(result)
@@ -377,7 +377,7 @@ func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, ha
 	rels := make([]mediafiles.ReleaseFacts, len(all))
 	vs := make([]mediafiles.Verdict, len(all))
 	for i, f := range all {
-		p := releasename.Parse(f.item.Title, releasename.Hints{Size: f.item.Size, Music: true})
+		p := parseItem(f.item, releasename.Hints{Size: f.item.Size, Music: true, MultiLanguages: f.src.MultiLanguages, NoLanguage: f.src.NoLanguageLanguages})
 		rels[i] = mediafiles.ReleaseFacts{Name: f.item.Title, Parse: p, Size: f.item.Size, Protocol: f.item.Protocol, Seeders: f.item.Seeders,
 			PublishedAt: f.item.Published, InfoHash: f.item.InfoHash, SourcePriority: f.src.Priority, Dangerous: bad.has(listingHash(f.item.InfoHash, f.item.Link), f.item.Title)}
 		ss := mediafiles.SlotSet{Match: mediafiles.MatchRelease(p, []mediafiles.TitleRef{tref}), MinSeeders: f.src.MinSeeders, HandSearch: hand, Listing: set.listing, SkipGate: skipGate, Out: true,
@@ -387,6 +387,7 @@ func (s *Searcher) judgeAlbum(ctx context.Context, set albumSet, all []found, ha
 		}
 		vs[i] = mediafiles.Judge(rels[i], ss, set.pr.Body)
 	}
+	s.holdStalled(ctx, rels, vs, hand, time.Now())
 	mediafiles.Rank(rels, vs, set.pr.Body)
 	return rels, vs
 }

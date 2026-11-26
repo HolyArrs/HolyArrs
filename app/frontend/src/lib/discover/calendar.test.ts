@@ -1,4 +1,4 @@
-import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, monthGrid, monthRange, shiftMonth, ymd, weekStart, readView, saveView, startView, viewFromAddress, entryArt, bannerArt, type BannerEntry } from './calendar.ts';
+import { addDays, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, followerNames, withFollow, startFollows, readFollows, saveFollows, type MovieFacts, byDay, monthGrid, monthRange, shiftMonth, ymd, weekStart, readView, saveView, startView, viewFromAddress, entryArt, bannerArt, canSearch, searchBody, missingToSearch, type BannerEntry } from './calendar.ts';
 import { describe, expect, it } from 'vitest';
 import type { CalendarEntry } from '../core/types.ts';
 
@@ -89,6 +89,33 @@ describe('status and filters', () => {
 		expect(itemDot(ep('2026-10-20', 'in_library'), '2026-10-21')).toBe('have');
 		expect(itemDot(ep('2026-10-20'), '2026-10-21')).toBe('missing');
 		expect(itemDot(ep('2026-10-22'), '2026-10-21')).toBe('upcoming');
+	});
+	it('says when a date is on its way or stuck (#404)', () => {
+		for (const s of ['searching', 'chosen', 'downloading', 'importing', 'held']) expect(itemDot(ep('2026-10-20', s), '2026-10-21')).toBe('getting');
+		for (const s of ['failed', 'stalled', 'needs_a_decision', 'rejected']) expect(itemDot(ep('2026-10-22', s), '2026-10-21')).toBe('problem');
+		expect(itemDot(ep('2026-10-20', 'wanted'), '2026-10-21')).toBe('missing');
+		expect(itemDot(ep('2026-10-22', 'not_out_yet'), '2026-10-21')).toBe('upcoming');
+		// Another Version downloading counts; one in the Library is enough to have it.
+		expect(itemDot({ ...ep('2026-10-20', 'wanted'), versions: [{ label: 'A', state: 'wanted' }, { label: 'B', state: 'downloading' }] }, '2026-10-21')).toBe('getting');
+		expect(itemDot({ ...ep('2026-10-20', 'failed'), versions: [{ label: 'A', state: 'failed' }, { label: 'B', state: 'in_library' }] }, '2026-10-21')).toBe('have');
+		// A copy kept while a better one is wanted is still in the Library.
+		expect(itemDot(ep('2026-10-20', 'better_wanted'), '2026-10-21')).toBe('have');
+		// A movie with an odd or unknown state still falls back by its day.
+		expect(itemDot({ title_id: 2, name: 'M', kind: 'digital', date: '2026-10-20', state: 'something_new' }, '2026-10-21')).toBe('missing');
+	});
+	it('picks the missing dates in view for one search (#404)', () => {
+		const m = (kind: string, date: string, state?: string) => ({ title_id: 5, name: 'M', kind, date, state }) as CalendarEntry;
+		const list = [ep('2026-10-20'), ep('2026-10-20'), ep('2026-10-22'), ep('2026-10-19', 'downloading'), ep('2026-10-19', 'failed'), ep('2026-10-19', 'in_library'), m('digital', '2026-10-18'), m('physical', '2026-10-19'), m('digital', '2026-10-18', 'better_wanted')];
+		const got = missingToSearch(list, '2026-10-21');
+		expect(got.map((e) => e.kind)).toEqual(['episode', 'digital']);
+		expect(missingToSearch([], '2026-10-21')).toEqual([]);
+	});
+	it('searches one date from the window', () => {
+		expect(canSearch(ep('2026-10-22'), '2026-10-21')).toBe(true);
+		expect(canSearch(ep('2026-10-20', 'in_library'), '2026-10-21')).toBe(false);
+		expect(searchBody({ kind: 'episode', item_id: 7 })).toEqual({ item_id: 7 });
+		expect(searchBody({ kind: 'album', part_id: 9 })).toEqual({ album_id: 9 });
+		expect(searchBody({ kind: 'digital' })).toEqual({});
 	});
 });
 

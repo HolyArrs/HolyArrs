@@ -90,7 +90,8 @@ func TestPlanAdoptOnAFixtureTree(t *testing.T) {
 		t.Fatal("planning changed something")
 	}
 	got := byFolder(plan)
-	if len(got) != 5 {
+	// The loose video at the top is offered as a movie of its own.
+	if len(got) != 6 || !got["loose file.mkv"].Loose || got["loose file.mkv"].Status != "unmatched" {
 		t.Fatalf("folders %v", plan.Folders)
 	}
 	for _, c := range []struct {

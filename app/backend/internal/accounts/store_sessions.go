@@ -3,6 +3,7 @@ package accounts
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -52,17 +53,28 @@ func insertSession(ctx context.Context, q conn, hash string, userID int64, csrf,
 }
 
 // copySessionRotated stores the next cookie of a session: a copy under the
-// new hash that carries the rotation time.
-func copySessionRotated(ctx context.Context, q conn, newHash, now, oldHash string) error {
+// new hash that carries the rotation time. The expiry is given, so a copy never
+// takes over the short expiry of a cookie that was already retired.
+func copySessionRotated(ctx context.Context, q conn, newHash, now, expires, oldHash string) error {
 	_, err := q.ExecContext(ctx, `INSERT INTO sessions(hash, user_id, csrf, created_at, rotated_at, last_seen_at, expires_at, user_agent, family, auth_method, local_auth_at)
-				SELECT ?, user_id, csrf, created_at, ?, ?, expires_at, user_agent, family, auth_method, local_auth_at FROM sessions WHERE hash = ?`, newHash, now, now, oldHash)
+				SELECT ?, user_id, csrf, created_at, ?, ?, ?, user_agent, family, auth_method, local_auth_at FROM sessions WHERE hash = ?`, newHash, now, now, expires, oldHash)
 	return err
 }
 
-// retireSession lets a replaced cookie live on until expires.
+// errAlreadyRotated means another request replaced the cookie first.
+var errAlreadyRotated = errors.New("session already rotated")
+
+// retireSession lets a replaced cookie live on until expires. Only the first
+// request to retire it wins; later ones get errAlreadyRotated.
 func retireSession(ctx context.Context, q conn, expires, rotated, hash string) error {
-	_, err := q.ExecContext(ctx, "UPDATE sessions SET expires_at = ?, rotated_at = ?, replaced = 1 WHERE hash = ?", expires, rotated, hash)
-	return err
+	res, err := q.ExecContext(ctx, "UPDATE sessions SET expires_at = ?, rotated_at = ?, replaced = 1 WHERE hash = ? AND replaced = 0", expires, rotated, hash)
+	if err != nil {
+		return err
+	}
+	if n, err := res.RowsAffected(); err == nil && n == 0 {
+		return errAlreadyRotated
+	}
+	return nil
 }
 
 // touchSession records that a session was used.

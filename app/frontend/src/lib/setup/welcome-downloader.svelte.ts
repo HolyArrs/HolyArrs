@@ -12,6 +12,38 @@ export function createWelcomeDownloader(ctx: any) {
 	let dlList = $state<DownloaderView[]>([]);
 	let dlTests = $state<Record<number, { ok: boolean; text: string }>>({});
 	let dlAdding = $state(false);
+	// The old app each Downloader came from ("sonarr"), by id, when an import brought it.
+	// Kept for this tab, so a reload of the step still says where each came from.
+	const FOUND_KEY = 'holyarrs.welcome.found';
+	let found = $state<Record<number, string>>(readKept(FOUND_KEY));
+	// The ones whose key or password the old app hides, by id: the client kind and what to paste.
+	const HIDDEN_KEY = 'holyarrs.welcome.hidden';
+	let hidden = $state<Record<number, { kind: string; needs: string }>>(readKept(HIDDEN_KEY));
+	function readKept<T>(key: string): Record<number, T> {
+		try {
+			return JSON.parse(sessionStorage.getItem(key) ?? '{}') ?? {};
+		} catch {
+			return {};
+		}
+	}
+	function keep(key: string, v: unknown) {
+		try {
+			sessionStorage.setItem(key, JSON.stringify(v));
+		} catch {
+			// No storage: this visit still shows it.
+		}
+	}
+	// An import brought these: say where each came from, and which wait for a key.
+	function addBrought(list: { id: number; app: string; kind?: string; needs?: string }[]) {
+		found = { ...found, ...Object.fromEntries(list.map((b) => [b.id, b.app])) };
+		hidden = { ...hidden, ...Object.fromEntries(list.filter((b) => b.needs).map((b) => [b.id, { kind: b.kind ?? '', needs: b.needs ?? '' }])) };
+		keep(FOUND_KEY, found);
+		keep(HIDDEN_KEY, hidden);
+	}
+	// A key pasted on a brought row: the row shows the new test answer.
+	function keySaved(id: number, r: { ok: boolean; text: string }) {
+		dlTests = { ...dlTests, [id]: r };
+	}
 	// The downloader being edited (its form is open), or null when adding a new one.
 	let dlEditing = $state<number | null>(null);
 	// Connect's answer when the downloader did not answer, shown under Address.
@@ -67,8 +99,10 @@ export function createWelcomeDownloader(ctx: any) {
 	}
 	async function testDl(id: number) {
 		try {
-			const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${id}/test`);
+			const t = await api.post<{ ok: boolean; text: string; health?: { state: string } }>(`/downloaders/${id}/test`);
 			dlTests = { ...dlTests, [id]: { ok: t.ok, text: t.ok ? t.text : reachWords(t.text) } };
+			// One the old apps used comes over paused; it answers, so it is connected.
+			if (t.ok && found[id] && t.health?.state === 'paused') await api.post(`/downloaders/${id}/resume`).catch(() => {});
 		} catch (err) {
 			dlTests = { ...dlTests, [id]: { ok: false, text: reachWords(message(err)) } };
 		}
@@ -96,7 +130,8 @@ export function createWelcomeDownloader(ctx: any) {
 	async function saveDownloader(e: SubmitEvent) {
 		e.preventDefault();
 		if (ctx.busy) return;
-		if (!dlForm) return afterDownloader();
+		// Enter with no form open stays on the step; Continue moves on.
+		if (!dlForm) return;
 		ctx.error = '';
 		ctx.busy = true;
 		dlError = '';
@@ -134,24 +169,50 @@ export function createWelcomeDownloader(ctx: any) {
 	}
 	// An app that signs in, turned down with no user name typed: ask for both, under User name (the server's answer names an API key field the wizard does not have).
 	function askSignIn(words: string): boolean {
-		if (!dlUser || dl.username.trim() || words.startsWith("Can't reach")) return false;
+		if (!dlUser || dl.username.trim() || words === say('core.settings.cantReach') || words === say('core.settings.tryHttp')) return false;
 		dlAuth = say('setup.addUserPasswordHint');
 		void tick().then(() => document.getElementById('dl-user')?.focus());
 		return true;
 	}
-	// Fresh setup always asks for a Source next; after an import only when none came over.
-	async function afterDownloader() {
-		if (ctx.busy) return;
-		ctx.busy = true;
+
+	// Check connection before keeping it: a new one is added, tested and taken back, so nothing is saved yet.
+	let dlChecked = $state(false);
+	let dlChecking = $state(false);
+	async function checkDl() {
+		if (ctx.busy || dlChecking || dlEditing != null) return;
+		ctx.error = '';
+		dlError = '';
+		dlAuth = '';
+		dlChecked = false;
+		const u = dl.url.trim();
+		if (u && !/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) dl.url = `http://${u}`;
+		dlChecking = true;
 		try {
-			if (ctx.fromApps && (await ctx.sourcesStep.sourceCount()) > 0) return ctx.go('done');
-			ctx.go('source');
+			const body = { ...formBody(dl), ...(dl.kind === 'qbittorrent' && qbitWay === 'key' ? { username: '' } : {}) };
+			const v = await api.post<DownloaderView>('/downloaders', body);
+			const t = await api.post<{ ok: boolean; text: string }>(`/downloaders/${v.id}/test`).catch((err) => ({ ok: false, text: message(err) }));
+			await api.del(`/downloaders/${v.id}`).catch(() => {});
+			if (t.ok) dlChecked = true;
+			else {
+				const words = reachWords(t.text);
+				if (!askSignIn(words)) dlError = words;
+			}
+		} catch (err) {
+			if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) ctx.error = say('setup.notAnswering');
+			else if (!askSignIn(reachWords(message(err)))) ctx.error = message(err);
 		} finally {
-			ctx.busy = false;
+			dlChecking = false;
 		}
 	}
 
-	// Source.
+	// Continue with an address typed but Connect not pressed: connect it first, and move on only once it answers.
+	const typed = $derived(dlForm && dl.url.trim() !== '' && dl.url.trim() !== 'http://');
+	async function connectTyped(): Promise<boolean> {
+		if (!typed) return true;
+		await saveDownloader(new SubmitEvent('submit'));
+		return !dlForm && !dlError && !ctx.error;
+	}
+
 
 	return {
 		listDownloaders,
@@ -166,8 +227,14 @@ export function createWelcomeDownloader(ctx: any) {
 		get dlTests() { return dlTests; },
 		set dlTests(v) { dlTests = v; },
 		get dlForm() { return dlForm; },
+		get typed() { return typed; },
+		connectTyped,
 		editDl,
 		removeDl,
+		get found() { return found; },
+		get hidden() { return hidden; },
+		addBrought,
+		keySaved,
 		get dlAdding() { return dlAdding; },
 		set dlAdding(v) { dlAdding = v; },
 		get dlKinds() { return dlKinds; },
@@ -179,10 +246,13 @@ export function createWelcomeDownloader(ctx: any) {
 		get qbitWay() { return qbitWay; },
 		pickWay,
 		resetForm,
+		checkDl,
+		get dlChecked() { return dlChecked; },
+		set dlChecked(v) { dlChecked = v; },
+		get dlChecking() { return dlChecking; },
 		get dlAuth() { return dlAuth; },
 		set dlAuth(v) { dlAuth = v; },
 		get dlEditing() { return dlEditing; },
 		set dlEditing(v) { dlEditing = v; },
-		afterDownloader,
 	};
 }

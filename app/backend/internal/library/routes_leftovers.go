@@ -1,6 +1,7 @@
 package library
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -16,12 +17,32 @@ func (h *OrganiseHandlers) listLeftovers(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
-	ls, err := h.Lib.Leftovers(r.Context(), t.ID)
+	// brief=1 skips reading music files again: the count, not the details.
+	if r.URL.Query().Get("brief") == "1" {
+		ls, err := h.Lib.Leftovers(r.Context(), t.ID)
+		if err != nil {
+			webserver.Internal(w, "api", err)
+			return
+		}
+		webserver.WriteJSON(w, http.StatusOK, map[string]any{"leftovers": ls, "pressings": []PressingHint{}})
+		return
+	}
+	ls, hints, err := h.Lib.LeftoverList(r.Context(), t.ID)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"leftovers": ls})
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"leftovers": ls, "pressings": hints})
+}
+
+// listUnmatchedMusic answers how many found music files fit no track, by artist.
+func (h *OrganiseHandlers) listUnmatchedMusic(w http.ResponseWriter, r *http.Request) {
+	total, artists, err := h.Lib.UnmatchedMusic(r.Context())
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"total": total, "artists": artists})
 }
 
 func (h *OrganiseHandlers) matchLeftovers(w http.ResponseWriter, r *http.Request) {
@@ -112,4 +133,28 @@ func (h *OrganiseHandlers) rescanTitle(w http.ResponseWriter, r *http.Request) {
 
 func (h *OrganiseHandlers) actor(r *http.Request) domain.Actor {
 	return webserver.ActorOr(r, database.Actor{Kind: "user", ID: 1})
+}
+
+// slotPoints answers how the Pick rules score the file a Slot of the title
+// holds (?slot=<id>), beside the good enough step and points.
+func (h *OrganiseHandlers) slotPoints(w http.ResponseWriter, r *http.Request) {
+	t, ok := h.TitleID(w, r)
+	if !ok {
+		return
+	}
+	slot, err := strconv.ParseInt(r.URL.Query().Get("slot"), 10, 64)
+	if err != nil || slot <= 0 {
+		webserver.Fail(w, http.StatusBadRequest, "no such Slot on this Title")
+		return
+	}
+	p, err := h.Lib.SlotPoints(r.Context(), t.ID, slot)
+	if errors.Is(err, ErrNoFilePoints) {
+		webserver.Fail(w, http.StatusNotFound, err.Error())
+		return
+	}
+	if err != nil {
+		webserver.Internal(w, "api", err)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, p)
 }

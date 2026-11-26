@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { serverWords } from '#lib/core/i18n/server-words.ts';
 		import type { OwnedIndex } from '#lib/ui/title-cards.ts';
 	import { defaultRegion } from '#lib/ui/region.ts';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
@@ -327,10 +328,10 @@
 
 		{#each (answer?.rows ?? []).filter((r) => r.shape !== 'tile' && r.shape !== 'grid') as row, ri (row.id)}
 			{#if row.shape === 'wide'}
-			<MusicVideoRow title={row.title} reason={row.reason} items={row.items} />
+			<MusicVideoRow title={serverWords(row.title)} reason={row.reason} items={row.items} />
 			{:else if row.shape === 'song'}
 			<section class="row plain" data-testid="music-row-{row.type}">
-				<h2 class="rhead">{row.title}</h2>
+				<h2 class="rhead">{serverWords(row.title)}</h2>
 				<div class="songs">
 					{#each row.items as c (c.key)}
 						{@const sc = coverFor(c.image ? (c.image.startsWith('/') ? musicImage(c) : c.image) : null, 44)}
@@ -347,7 +348,7 @@
 					</select>
 				</div>
 			{/if}
-			<Shelf title={row.type === 'popular_country' ? t('music.popularIn', { region: regionName(row.id.split(':')[1] ?? '') }) : row.title} subtitle={row.type === 'popular_country' ? t('music.thisWeekSTop', { region: regionName(row.id.split(':')[1] ?? '') }) : row.reason} item={row.shape === 'round' ? 'var(--music-circle, var(--explore-item))' : 'var(--explore-item)'}
+			<Shelf title={row.type === 'popular_country' ? t('music.popularIn', { region: regionName(row.id.split(':')[1] ?? '') }) : serverWords(row.title)} subtitle={row.type === 'popular_country' ? t('music.thisWeekSTop', { region: regionName(row.id.split(':')[1] ?? '') }) : row.reason} item={row.shape === 'round' ? 'var(--music-circle, var(--explore-item))' : 'var(--explore-item)'}
 				items={row.items} key={(c) => c.key} defer={false} placeholder={row.shape === 'square' ? 'square' : 'round'} lines={row.items.some((c) => musicCardNote(row, c)) ? 2 : 1}>
 				{#snippet card(raw: MusicCardData)}
 					{@const c = live(raw)}

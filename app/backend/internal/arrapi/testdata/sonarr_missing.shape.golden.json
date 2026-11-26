@@ -15,7 +15,9 @@
       "series": {
         "added": "string",
         "alternateTitles": [],
+        "cleanTitle": "string",
         "ended": "bool",
+        "firstAired": "string",
         "genres": [],
         "id": "number",
         "images": [],
@@ -30,6 +32,10 @@
         "path": "string",
         "previousAiring": "string",
         "qualityProfileId": "number",
+        "ratings": {
+          "value": "number",
+          "votes": "number"
+        },
         "rootFolderPath": "string",
         "runtime": "number",
         "seasonFolder": "bool",
@@ -65,6 +71,7 @@
         "titleSlug": "string",
         "tmdbId": "number",
         "tvMazeId": "number",
+        "tvRageId": "number",
         "tvdbId": "number",
         "useSceneNumbering": "bool",
         "year": "number"

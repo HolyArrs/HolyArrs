@@ -281,8 +281,10 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 		switch in.Adapter {
 		case "qbittorrent", "transmission", "deluge", "rtorrent", "aria2":
 			d.Protocol = "torrent"
-		case "sabnzbd", "nzbget":
+		case "sabnzbd", "nzbget", "plugin-usenet":
 			d.Protocol = "usenet"
+		case "plugin-torrent":
+			d.Protocol = "torrent"
 		default:
 			return ErrAdapter
 		}
@@ -291,7 +293,12 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 		}
 		d.Adapter = in.Adapter
 	}
-	if raw := strings.TrimSpace(in.URL); raw != "" || isNew {
+	if raw := strings.TrimSpace(in.URL); PluginAdapter(d.Adapter) && (raw != "" || isNew) {
+		if _, ok := PluginID(raw); !ok {
+			return ErrURL
+		}
+		d.URL = raw
+	} else if raw != "" || isNew {
 		u, err := url.Parse(raw)
 		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || u.RawQuery != "" {
 			return ErrURL

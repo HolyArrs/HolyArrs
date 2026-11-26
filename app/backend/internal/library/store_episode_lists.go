@@ -105,6 +105,7 @@ type SeasonCount struct {
 	PreviousAired *string
 	ReleaseGroups string // comma separated
 	LastAired     *string
+	FirstAired    *string // the oldest air date, aired or not
 }
 
 // SeasonCounts adds up the episodes of every season of the shows in titleIDs
@@ -116,7 +117,7 @@ func SeasonCounts(ctx context.Context, q database.Lister, titleIDs []int64, now 
 		sum(s.file_id IS NOT NULL), COALESCE(sum(f.size), 0),
 		min(CASE WHEN i.keep_up_to_date = 1 AND i.air_date > ? THEN i.air_date END),
 		max(CASE WHEN i.keep_up_to_date = 1 AND i.air_date <= ? THEN i.air_date END),
-		COALESCE(group_concat(DISTINCT f.release_group), ''), max(CASE WHEN i.air_date <= ? THEN i.air_date END)
+		COALESCE(group_concat(DISTINCT f.release_group), ''), max(CASE WHEN i.air_date <= ? THEN i.air_date END), min(i.air_date)
 		FROM items i
 		LEFT JOIN versions v ON v.title_id = i.title_id AND v.is_main = 1
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = v.id
@@ -129,7 +130,7 @@ func SeasonCounts(ctx context.Context, q database.Lister, titleIDs []int64, now 
 	var out []SeasonCount
 	for rows.Next() {
 		var c SeasonCount
-		if err := rows.Scan(&c.TitleID, &c.Season, &c.Total, &c.Wanted, &c.WithFile, &c.Size, &c.NextAiring, &c.PreviousAired, &c.ReleaseGroups, &c.LastAired); err != nil {
+		if err := rows.Scan(&c.TitleID, &c.Season, &c.Total, &c.Wanted, &c.WithFile, &c.Size, &c.NextAiring, &c.PreviousAired, &c.ReleaseGroups, &c.LastAired, &c.FirstAired); err != nil {
 			return nil, err
 		}
 		out = append(out, c)
@@ -145,12 +146,13 @@ type SlotItem struct {
 	TitleID  int64
 	ItemKind string
 	Season   *int
+	HasFile  bool // the Slot holds a file already (an upgrade is on its way)
 }
 
 // SlotItems reads the items of the given Slots, leaving out those of removed
 // titles.
 func SlotItems(ctx context.Context, q database.Lister, slotIDs []int64) ([]SlotItem, error) {
-	rows, err := q.QueryContext(ctx, `SELECT s.id, s.state, i.id, i.title_id, i.kind, json_extract(i.numbers, '$.season') FROM slots s
+	rows, err := q.QueryContext(ctx, `SELECT s.id, s.state, i.id, i.title_id, i.kind, json_extract(i.numbers, '$.season'), s.file_id IS NOT NULL FROM slots s
 		JOIN items i ON i.id = s.item_id JOIN titles t ON t.id = i.title_id WHERE t.state != 'removed' AND s.id IN `+idTuple(slotIDs))
 	if err != nil {
 		return nil, err
@@ -159,7 +161,7 @@ func SlotItems(ctx context.Context, q database.Lister, slotIDs []int64) ([]SlotI
 	var out []SlotItem
 	for rows.Next() {
 		var s SlotItem
-		if err := rows.Scan(&s.SlotID, &s.State, &s.ItemID, &s.TitleID, &s.ItemKind, &s.Season); err != nil {
+		if err := rows.Scan(&s.SlotID, &s.State, &s.ItemID, &s.TitleID, &s.ItemKind, &s.Season, &s.HasFile); err != nil {
 			return nil, err
 		}
 		out = append(out, s)
@@ -279,6 +281,7 @@ func HasEpisodeGroup(ctx context.Context, q database.Lister, titleID int64) (boo
 // episode order read it. AltSeason is 0 when the episode has no
 // release-name season.
 type OrderEpisodeRow struct {
+	Reason    string
 	PartID    int64
 	AltSeason int
 	AirDate   sql.NullString
@@ -291,7 +294,7 @@ type OrderEpisodeRow struct {
 // OrderEpisodeRows reads every episode of a show with its release-name
 // season and the main Version's Slot state, in that season's order.
 func OrderEpisodeRows(ctx context.Context, q database.Lister, titleID int64) ([]OrderEpisodeRow, error) {
-	rows, err := q.QueryContext(ctx, `SELECT COALESCE(i.part_id, 0), COALESCE(json_extract(i.numbers, '$.alt_season'), 0) AS sn, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL FROM items i
+	rows, err := q.QueryContext(ctx, `SELECT COALESCE(i.part_id, 0), COALESCE(json_extract(i.numbers, '$.alt_season'), 0) AS sn, i.air_date, COALESCE(i.air_day, ''), i.keep_up_to_date, COALESCE(s.state, ''), s.file_id IS NOT NULL, COALESCE(s.last_reason, '') FROM items i
 		LEFT JOIN slots s ON s.item_id = i.id AND s.version_id = (SELECT id FROM versions WHERE title_id = ? ORDER BY is_main DESC, id LIMIT 1)
 		WHERE i.title_id = ? AND i.kind = 'episode' ORDER BY sn`, titleID, titleID)
 	if err != nil {
@@ -301,7 +304,7 @@ func OrderEpisodeRows(ctx context.Context, q database.Lister, titleID int64) ([]
 	var out []OrderEpisodeRow
 	for rows.Next() {
 		var r OrderEpisodeRow
-		if err := rows.Scan(&r.PartID, &r.AltSeason, &r.AirDate, &r.AirDay, &r.Keep, &r.State, &r.HasFile); err != nil {
+		if err := rows.Scan(&r.PartID, &r.AltSeason, &r.AirDate, &r.AirDay, &r.Keep, &r.State, &r.HasFile, &r.Reason); err != nil {
 			return nil, err
 		}
 		out = append(out, r)

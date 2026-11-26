@@ -86,6 +86,8 @@
 		if (!tmdb || asking) return;
 		current = c;
 		if (act === 'ask' && c.kind === 'movie') return askMovie?.open({ tmdb, name: c.name, year: c.year, ask: c.ask });
+		// Folders or Pick rules that failed or never came are asked for again, so the sheet is not stuck saying there are none.
+		if (act === 'add' && manage && (choicesFailed || !foldersLoaded || !rules.length)) loadAddChoices();
 		asking = c.key;
 		try {
 			const d = await loadDetails(api.get, c.kind as 'movie' | 'show', tmdb);
@@ -164,8 +166,8 @@
 </script>
 
 {#if manage}
-	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} onadded={(_m, title) => added(title)} />
-	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} onadded={(_s, title) => added(title)} />
+	<AddMovieDialog bind:this={addMovie} {folders} {rules} {gateDefault} loaded={foldersLoaded} failed={choicesFailed} onretry={loadAddChoices} onadded={(_m, title) => added(title)} />
+	<AddShowDialog bind:this={addShow} {folders} {rules} defaults={showDefaults} loaded={foldersLoaded} failed={choicesFailed} onretry={loadAddChoices} onadded={(_s, title) => added(title)} />
 	<AskAllSheet bind:this={askAllSheet} online={allLine} {folders} {rules} {gateDefault} loaded={foldersLoaded} failed={choicesFailed} onretry={loadAddChoices} />
 {:else if mayAsk}
 	<AskAllSheet bind:this={askAllSheet} online={allLine} />

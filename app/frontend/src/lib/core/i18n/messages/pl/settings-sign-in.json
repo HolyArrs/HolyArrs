@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Tylko one mogą podać, skąd przyszła wizyta.",
 	"settings.signIn.fixToSaveOne": "Popraw 1 wiersz, aby zapisać",
 	"settings.signIn.fixToSaveOther": "Popraw wiersze ({n}), aby zapisać",
-	"settings.signIn.localSaved": "Zapisano sieć lokalną"
+	"settings.signIn.localSaved": "Zapisano sieć lokalną",
+	"settings.signIn.forgotTitle": "Nie pamiętasz hasła?",
+	"settings.signIn.forgotOn": "Pokazuj Nie pamiętasz hasła? na stronie logowania",
+	"settings.signIn.forgotNote": "Właściciel dostaje jednorazowy kod z logu serwera. Wyłącz to, jeśli wszyscy logują się przez logowanie jednokrotne. Polecenie reset-owner nadal działa.",
+	"settings.signIn.forgotShown": "Nie pamiętasz hasła? jest włączone",
+	"settings.signIn.forgotHidden": "Nie pamiętasz hasła? jest wyłączone"
 }

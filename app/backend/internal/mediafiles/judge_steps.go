@@ -49,6 +49,7 @@ func scoreTraits(p releasename.Result, rules PickRulesBody) (int, []traitHit) {
 			n += int64(tp.Points)
 		}
 	}
+	n -= int64(DevicePenalty * len(deviceMisses(p, rules.Devices)))
 	return int(max(-MaxPoints, min(MaxPoints, n))), hits
 }
 
@@ -122,7 +123,7 @@ func (v *Verdict) size(rel ReleaseFacts, rules PickRulesBody, step string, runti
 		return
 	}
 	got := gbOf(rel.Size)
-	v.sizeOff = rel.Size - sizeMidpoint(lo, hi)
+	v.sizeOff = rel.Size - sizeTarget(l, runtime, lo, hi)
 	if v.sizeOff < 0 {
 		v.sizeOff = -v.sizeOff
 	}
@@ -149,7 +150,8 @@ var langNames = map[string]string{"en": "English", "fr": "French", "de": "German
 	"es": "Spanish", "ru": "Russian", "ja": "Japanese", "ko": "Korean",
 	"pl": "Polish", "nl": "Dutch", "pt": "Portuguese", "sv": "Swedish", "da": "Danish", "no": "Norwegian",
 	"fi": "Finnish", "cs": "Czech", "hu": "Hungarian", "el": "Greek", "he": "Hebrew", "tr": "Turkish",
-	"ar": "Arabic", "hi": "Hindi", "zh": "Chinese", "th": "Thai", "vi": "Vietnamese", "uk": "Ukrainian"}
+	"ar": "Arabic", "hi": "Hindi", "zh": "Chinese", "th": "Thai", "vi": "Vietnamese", "uk": "Ukrainian",
+	"bg": "Bulgarian", "ro": "Romanian", "ca": "Catalan", "lv": "Latvian", "lt": "Lithuanian", "sk": "Slovak", "is": "Icelandic", "fa": "Persian", "bn": "Bengali", "ta": "Tamil", "te": "Telugu", "ml": "Malayalam", "kn": "Kannada", "ka": "Georgian", "ur": "Urdu", "et": "Estonian", "sr": "Serbian", "hr": "Croatian", "sl": "Slovenian", "id": "Indonesian", "ms": "Malay", "sq": "Albanian", "af": "Afrikaans", "mr": "Marathi", "tl": "Filipino", "mk": "Macedonian", "bs": "Bosnian", "pa": "Punjabi", "gu": "Gujarati"}
 
 func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRef) {
 	langs := p.Languages
@@ -158,22 +160,32 @@ func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRe
 		langs = []string{t.OriginalLanguage}
 	}
 	if len(langs) == 0 {
+		// Read as the original language: turned away when only other languages are wanted.
+		if o := t.OriginalLanguage; o != "" && !rules.Language.OriginalOK && len(rules.Language.Wanted) > 0 && !slices.Contains(rules.Language.Wanted, o) {
+			v.add("hard", "language", "fail", "no language in the name; assumed the original language, "+LanguageName(o)+", not wanted", 0)
+			return
+		}
 		v.add("hard", "language", "warn", "no language in the name; assumed the original language", 0)
+		v.originalOnly = rules.Language.OriginalOK && len(rules.Language.Wanted) > 0 && !slices.Contains(rules.Language.Wanted, t.OriginalLanguage)
 		return
 	}
-	keepsOriginal := p.Has("dual") || p.Has("multi")
+	keepsOriginal := p.Has("dual") || p.Has("multi") || p.Has("original")
 	for _, l := range langs {
 		if slices.Contains(rules.Language.Wanted, l) {
 			v.add("hard", "language", "pass", LanguageName(l)+" is wanted", 0)
 			return
 		}
+	}
+	for _, l := range langs {
 		if rules.Language.OriginalOK && l == t.OriginalLanguage {
 			v.add("hard", "language", "pass", LanguageName(l)+" is the original language", 0)
+			v.originalOnly = len(rules.Language.Wanted) > 0
 			return
 		}
 	}
 	if rules.Language.OriginalOK && keepsOriginal {
 		v.add("hard", "language", "pass", "also has the original language", 0)
+		v.originalOnly = len(rules.Language.Wanted) > 0
 		return
 	}
 	v.add("hard", "language", "fail", "language "+LanguageName(langs[0])+" not wanted", 0)
@@ -187,10 +199,40 @@ func LanguageName(code string) string {
 	return code
 }
 
+// LanguageCode is the code for a language name or code a Source sends
+// ("French", "fr", "pt-BR"), or "" when it is not one the reader knows.
+func LanguageCode(v string) string {
+	v = strings.ToLower(strings.TrimSpace(v))
+	if v == "" {
+		return ""
+	}
+	if _, ok := langNames[v]; ok {
+		return v
+	}
+	if base, _, ok := strings.Cut(v, "-"); ok {
+		if _, known := langNames[base]; known {
+			return base
+		}
+	}
+	if base, _, ok := strings.Cut(v, "("); ok {
+		v = strings.TrimSpace(base)
+	}
+	for code, name := range langNames {
+		if strings.ToLower(name) == v {
+			return code
+		}
+	}
+	return ""
+}
+
 // better applies pick-rules.md section 4. A fix of the same step counts
 // first under take_any, with no time limit, so a proper replaces a copy that is already good enough.
-func (v *Verdict) better(rel ReleaseFacts, rules PickRulesBody, cur *Current, idx, points int) {
+func (v *Verdict) better(rel ReleaseFacts, rules PickRulesBody, cur *Current, idx, points, runtime int) {
 	curIdx := stepIndex(rules, cur.Step)
+	if rankStep(rules, idx) >= rankStep(rules, curIdx) && cur.parse != nil && FileUnderMin(rules, cur.Step, cur.parse.Size, runtime) {
+		v.add("better", "under_min", "pass", "the current file is below the smallest size for "+StepWord(cur.Step), 0)
+		return
+	}
 	p := rel.Parse
 	pol := rules.ProperPolicy
 	fixCounts := p.Fix > cur.Fix && idx == curIdx
@@ -200,17 +242,36 @@ func (v *Verdict) better(rel ReleaseFacts, rules PickRulesBody, cur *Current, id
 	case "prefer_only", "ignore":
 		fixCounts = false
 	}
+	// Steps of one old-app group rank equal from here on.
+	low := StepWord(rules.Steps[idx].Quality)
+	idx, curIdx = rankStep(rules, idx), rankStep(rules, curIdx)
 	if fixCounts && pol.MaxAgeDays > 0 && !cur.ImportedAt.IsZero() && time.Since(cur.ImportedAt) > time.Duration(pol.MaxAgeDays)*24*time.Hour {
 		fixCounts = false
 	}
-	if rules.Synced.OldApp() {
-		v.betterImported(rules, cur, idx, curIdx, points, fixCounts)
+	if idx >= curIdx && languageUpgrade(p, rules, cur) {
+		v.add("better", "language", "pass", "in a wanted language; the current file is not", 0)
+		return
+	}
+	switch frenchBetter(p, rules, cur) {
+	case 1:
+		if idx >= curIdx {
+			v.add("better", "french_version", "pass", "a wanted French version; the current file is not", 0)
+			return
+		}
+	case -1:
+		v.add("better", "french_version", "fail", "the current file has a wanted French version; this one does not", 0)
+		return
+	}
+	// Points first is a choice old apps do not have, so once it is set
+	// the rules are judged the way rules made here are.
+	if rules.Synced.OldApp() && rules.Order != "points_then_quality" {
+		v.betterImported(rules, cur, idx, curIdx, points, fixCounts, low)
 		return
 	}
 	ge := curIdx >= stepIndex(rules, rules.GoodEnoughAt) && (rules.GoodEnoughPoints == nil || cur.Points >= *rules.GoodEnoughPoints)
 	switch {
 	case idx < curIdx:
-		v.add("better", "lower_step", "fail", fmt.Sprintf("%s is lower than the current file (%s)", rules.Steps[idx].Quality, cur.Step), 0)
+		v.add("better", "lower_step", "fail", fmt.Sprintf("%s is lower than the current file's %s", low, StepWord(cur.Step)), 0)
 	case fixCounts:
 		v.add("better", "fix", "pass", fmt.Sprintf("a fixed copy (fix %d over %d) of the same step", p.Fix, cur.Fix), 0)
 	case ge:
@@ -230,14 +291,29 @@ func (v *Verdict) better(rel ReleaseFacts, rules PickRulesBody, cur *Current, id
 	}
 }
 
+// FileUnderMin reports whether a File of this step and size is below the
+// step's smallest size while the rules replace such Files. An unknown size
+// or runtime is never below.
+func FileUnderMin(rules PickRulesBody, step string, size int64, runtime int) bool {
+	if !rules.ReplaceUnderMin || step == "" || size <= 0 || runtime <= 0 {
+		return false
+	}
+	l, ok := sizeLimit(rules, step)
+	if !ok {
+		return false
+	}
+	lo, _ := scaledSizeLimit(l, runtime)
+	return size < lo
+}
+
 // betterImported is the check for Pick rules brought from an old app, in
 // its order: a higher step counts only while the file is below the Good
 // enough step, and more points only while the file is below the Good
 // enough points, each on its own.
-func (v *Verdict) betterImported(rules PickRulesBody, cur *Current, idx, curIdx, points int, fixCounts bool) {
+func (v *Verdict) betterImported(rules PickRulesBody, cur *Current, idx, curIdx, points int, fixCounts bool, low string) {
 	switch {
 	case idx < curIdx:
-		v.add("better", "lower_step", "fail", fmt.Sprintf("%s is lower than the current file (%s)", rules.Steps[idx].Quality, cur.Step), 0)
+		v.add("better", "lower_step", "fail", fmt.Sprintf("%s is lower than the current file's %s", low, StepWord(cur.Step)), 0)
 	case fixCounts:
 		v.add("better", "fix", "pass", "a fixed copy of the same step", 0)
 	case idx > curIdx && curIdx < stepIndex(rules, rules.GoodEnoughAt):

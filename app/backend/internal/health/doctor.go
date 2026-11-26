@@ -131,10 +131,10 @@ func RunDoctor(ctx context.Context, o DoctorOptions) Report {
 	var r Report
 	uid, gid := os.Geteuid(), os.Getegid()
 	appChecks(&r, o.Version, uid, gid)
-	configChecks(&r, o.ConfigDir, uid, gid, files.IsNetworkShare)
+	unraid := configChecks(&r, o.ConfigDir, uid, gid, files.IsNetworkShare)
 	if o.ConfigDir != "" {
 		if lockProbe != nil {
-			lockChecks(&r, o.ConfigDir, lockProbe)
+			lockChecks(&r, o.ConfigDir, lockProbe, unraid)
 		}
 		unmappedChecks(&r, o.ConfigDir, unmappedConfig(o.ConfigDir))
 	}
@@ -369,12 +369,12 @@ func writeFix(path string, uid, gid int, owner string, err error) string {
 	return fix
 }
 
-func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool, string, error)) {
+func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool, string, error)) (unraid bool) {
 	const s = "Config folder"
 	st, err := os.Stat(dir)
 	if err != nil || !st.IsDir() {
 		r.add(s, StatusFail, dir+": the folder does not exist", "mount a local folder at "+dir+" (the /config volume)")
-		return
+		return false
 	}
 	owner, mode := ownerOf(st), st.Mode().String()
 	text := dir + ": mode " + mode
@@ -415,8 +415,13 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 			r.add(s, StatusFail, "in memory ("+kind+"); everything in it is lost at the next restart, so HolyArrs will not start",
 				"put /config on a disk (on Unraid: /mnt/<pool>/appdata/holyarrs, and check that the pool exists)")
 		}
+	case files.UnraidUserShare(kind, configMountType(dir)):
+		unraid = true
+		r.add(s, StatusWarn, "on an Unraid user share (fuse.shfs), so the database runs in a slower, safer mode (rollback journal, full sync); if the mover moves the database while HolyArrs runs, it can be damaged", files.UnraidShareFix)
 	case kind == "fakeowner" && files.DesktopFolderAllowed():
 		r.add(s, StatusWarn, "a Docker Desktop folder share, used because "+files.EnvAllowDesktopFolder+" is set; file locks there may not work", files.ShareFix(kind))
+	case kind == "fuse" && files.FuseFolderAllowed():
+		r.add(s, StatusWarn, "a FUSE folder (for example an Unraid user share), used because "+files.EnvAllowFuseFolder+" is set; the database can be damaged there", files.ShareFix(kind))
 	default:
 		text := "on a shared or network folder (" + kind + "); the database must be on a local disk"
 		if fs := files.MountType(dir); fs != "" {
@@ -426,13 +431,23 @@ func configChecks(r *Report, dir string, uid, gid int, share func(string) (bool,
 		}
 		r.add(s, StatusFail, text, files.ShareFix(kind))
 	}
+	return unraid
 }
 
-// lockChecks reports whether file locks work in the config folder. It only
-// reports: start-up never refuses on it.
-func lockChecks(r *Report, dir string, probe func(string) error) {
+// configMountType is files.MountType; tests swap it to act as an Unraid
+// user share.
+var configMountType = files.MountType
+
+// lockChecks reports whether file locks work in the config folder. Start-up
+// never refuses on it. On an Unraid user share the database relies on
+// these locks, so broken locks there are a FAIL; elsewhere a WARN.
+func lockChecks(r *Report, dir string, probe func(string) error, unraid bool) {
 	const s = "Config folder"
 	if err := probe(dir); err != nil {
+		if unraid {
+			r.add(s, StatusFail, "file locks do not work on this Unraid user share ("+err.Error()+"), so the database can be damaged", files.UnraidShareFix)
+			return
+		}
 		r.add(s, StatusWarn, "file locks do not work in the config folder ("+err.Error()+"), so the database could be damaged",
 			"use a named volume for /config (-v holyarrs-config:/config), or a local disk")
 		return
@@ -573,7 +588,7 @@ func clockChecks(r *Report, now time.Time, tz string) {
 
 // readFolders lists the Library folders (path, kind).
 func readFolders(ctx context.Context, db database.Lister) ([][2]string, error) {
-	rows, err := db.QueryContext(ctx, "SELECT path, kind FROM library_folders ORDER BY kind, path")
+	rows, err := db.QueryContext(ctx, "SELECT path, kind FROM library_folders WHERE stand_in = 0 ORDER BY kind, path")
 	if err != nil {
 		return nil, err
 	}

@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Додати до списку «ніколи не додавати»",
 	"settings.outsideLists.showDot": "серіал ·",
 	"settings.outsideLists.takeOff": "Зняти {name}",
-	"settings.outsideLists.empty": "У цьому списку поки нічого немає"
+	"settings.outsideLists.empty": "У цьому списку поки нічого немає",
+	"settings.outsideLists.traktSignInTitle": "Вхід у Trakt",
+	"settings.outsideLists.traktSignInInfo": "Увійди, щоб читати твої приватні списки й список «Буду дивитися» в Trakt та додавати переглянуте в Trakt до історії переглядів.",
+	"settings.outsideLists.traktSignedInAs": "Вхід виконано як {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Вхід не виконано. Читаються лише публічні списки.",
+	"settings.outsideLists.traktSignIn": "Увійти через Trakt",
+	"settings.outsideLists.traktDeviceSteps": "На будь-якому пристрої відкрий <a>{url}</a> і введи <code>{code}</code>. Ця сторінка чекає, поки ти схвалиш.",
+	"settings.outsideLists.traktDenied": "Вхід у Trakt відхилено.",
+	"settings.outsideLists.traktExpired": "Термін дії коду минув. Почни знову.",
+	"settings.outsideLists.traktSignOut": "Вийти з Trakt",
+	"settings.outsideLists.traktSignedIn": "Вхід у Trakt виконано",
+	"settings.outsideLists.traktSignedOut": "Вихід із Trakt виконано",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (потрібен для входу через Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Спершу збережіть client secret свого застосунку Trakt; він потрібен Trakt, щоб ви залишалися в системі."
 }

@@ -572,9 +572,9 @@ async function declineOnCard(p: Page) {
 test('#136 several admins decline the same movie: the window names who else declined', async ({ browser }) => {
 	test.setTimeout(150_000);
 	const hal = await member(browser, 'hal');
-	const ada = await admin(browser, 't-req-ada', 'Ada Quill');
-	const bea = await admin(browser, 't-req-bea', 'Bea Thorn');
-	const cy = await admin(browser, 't-req-cy', 'Cy Marsh');
+	const ada = await admin(browser, 't_req_ada', 'Ada Quill');
+	const bea = await admin(browser, 't_req_bea', 'Bea Thorn');
+	const cy = await admin(browser, 't_req_cy', 'Cy Marsh');
 	const stateOf = async (id: number) => (await asksFor(ada, harrow)).find((a) => a.id === id)?.state;
 
 	// 1. Ada declines hal's first request.
@@ -666,8 +666,7 @@ test('a member sees the answer to their request live, without a reload', async (
 	await expect(card).toHaveCount(0, { timeout: 15_000 });
 	await zed.getByRole('button', { name: /^Declined/ }).click();
 	await expect(card.getByTestId('ask-state')).toHaveText('Declined');
-	await expect(card.getByTestId('decided-by')).toContainText('Declined by an admin');
-	await expect(card).not.toContainText('luis');
+	await expect(card.getByTestId('decided-by')).toContainText('Declined by luis');
 });
 
 // the person who asked sees their approved request's steps live

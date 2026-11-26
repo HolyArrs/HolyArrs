@@ -28,6 +28,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediaservers"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/requests"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
@@ -89,7 +90,15 @@ type handlers struct {
 func buildHandlers(s services) *handlers {
 	accounts.SetViewKeyCheck(discover.ExploreViewKeyOK)
 	s.fill()
-	a := &handlers{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media}}
+	a := &handlers{s: s, media: &mediaservers.Handlers{Store: s.Store, Vault: s.Secrets, Linker: s.Media,
+		AskedBy: func(ctx context.Context) (map[int64][]int64, error) {
+			return requests.AskersByTitle(ctx, s.Store.Read())
+		}}}
+	if s.Auth != nil {
+		a.media.PlexServerToken = s.Auth.PlexServerToken
+		a.media.MediaSignInKey = s.Auth.MediaSignInKey
+		a.media.NameCase = accounts.RealCase
+	}
 	a.mf = &mediafiles.Handlers{Deps: mediafiles.Deps{Store: s.Store, Queue: s.Queue, Metadata: s.Metadata, KidMax: a.kidMax, RouteUsable: routeUsable}}
 	a.mf.DetailsRating = a.detailsRating
 	a.mf.KindShown = a.kindShown
@@ -126,6 +135,9 @@ func buildHandlers(s services) *handlers {
 	a.titles = a.newTitlePages()
 	a.trailers = a.newTrailers()
 	a.ai = &ai.Handlers{Store: s.Store, Version: s.Version, PartOn: a.partIsOn}
+	if s.PluginHooks != nil {
+		a.ai.PluginTools = pluginTools{s.PluginHooks}
+	}
 	a.shows = shows.NewHandlers(shows.Deps{Store: s.Store, Library: s.Library, Metadata: s.Metadata, AnimeMap: s.AnimeMap,
 		PackNext: func(ctx context.Context, titleID int64, season int, by domain.Actor) (int64, int, error) {
 			if a.s.Downloads == nil {

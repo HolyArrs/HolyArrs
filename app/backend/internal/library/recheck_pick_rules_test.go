@@ -94,4 +94,12 @@ func TestSavingPickRulesRechecksGoodEnough(t *testing.T) {
 	waitSlot(mediafiles.SlotBetterWanted, false)
 	save(mediafiles.GoodEveryday())
 	waitSlot(mediafiles.SlotInLibrary, true)
+
+	// Replace files under the smallest size: the tiny copy wants a better one.
+	small := mediafiles.GoodEveryday()
+	small.ReplaceUnderMin = true
+	save(small)
+	waitSlot(mediafiles.SlotBetterWanted, false)
+	save(mediafiles.GoodEveryday())
+	waitSlot(mediafiles.SlotInLibrary, true)
 }

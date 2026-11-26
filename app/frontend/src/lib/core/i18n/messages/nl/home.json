@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "Kies wat je hierna aanvraagt",
 	"home.newPopular": "Nieuw en populair",
 	"home.whatSTrending": "Wat nu trending is",
+	"home.gettingReady": "Alles wordt klaargezet…",
 	"home.top10sAndComing": "Top 10's en binnenkort",
 	"home.whatSNext": "Wat er komt",
 	"home.airDatesAndReleases": "Uitzenddata en releases",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Afleveringen en films die deze week uitkomen",
 	"home.popularThisWeek": "Populaire releases die deze week uitkomen",
 	"home.peopleCheck": "Personencontrole",
-	"home.cantReadUsers": "gebruikerslijst niet leesbaar"
+	"home.cantReadUsers": "gebruikerslijst niet leesbaar",
+	"home.joined.title": "Welkom, {name}",
+	"home.joined.find": "Vind iets in {explore} of {search}.",
+	"home.joined.ask": "Tik op {request} bij een titel om hem te krijgen. Je kunt vragen om:",
+	"home.joined.track": "Volg ze allemaal in {requests}.",
+	"home.joined.noLimit": "Geen weeklimiet.",
+	"home.joined.gotIt": "Begrepen",
+	"home.joined.explore": "{explore} openen"
 }

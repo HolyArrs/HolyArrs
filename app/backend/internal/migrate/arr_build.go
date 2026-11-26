@@ -1,6 +1,7 @@
 package migrate
 
 import (
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"math"
 	"strconv"
 	"strings"
@@ -40,7 +41,14 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 	}
 	quality := map[int64]string{}
 	for _, m := range in.sets["qualitydefs"] {
-		quality[num(m["quality"])] = str(m["title"])
+		id := num(m["quality"])
+		if qm := obj(m["quality"]); qm != nil { // the API answers the quality as an object
+			id = num(lower(qm)["id"])
+		}
+		quality[id] = str(m["title"])
+		if r.kind == Sonarr || r.kind == Radarr {
+			s.QualitySizes = append(s.QualitySizes, library.OldQualitySize{Quality: str(m["title"]), Min: fnum(m["minsize"]), Max: fnum(m["maxsize"]), Preferred: fnum(m["preferredsize"])})
+		}
 	}
 	formatName := map[int64]string{}
 	langName := map[int64]string{}
@@ -138,6 +146,20 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 	if rows := in.sets["indexerconfig"]; len(rows) > 0 && rows[0]["availabilitydelay"] != nil {
 		s.Settings = map[string]any{"availability_delay": num(rows[0]["availabilitydelay"])}
 	}
+	for _, m := range in.sets["blocklist"] {
+		s.Blocklist = append(s.Blocklist, Blocked{TitleID: num(first(m, "movieid", "seriesid")), Name: clip(str(m["sourcetitle"]), 300),
+			InfoHash: clip(str(m["torrentinfohash"]), 100), Protocol: protocolName(m["protocol"]), Indexer: clip(str(m["indexer"]), 200),
+			Reason: clip(str(m["message"]), 300), Episodes: blockedEpisodes(m["episodes"])})
+	}
+	if rows := in.sets["media"]; len(rows) > 0 {
+		v := first(rows[0], "autounmonitorpreviouslydownloadedmovies", "autounmonitorpreviouslydownloadedepisodes")
+		if v != nil {
+			if s.Settings == nil {
+				s.Settings = map[string]any{}
+			}
+			s.Settings["unkeep_deleted"] = boolean(v)
+		}
+	}
 	for _, m := range in.sets["appprofiles"] {
 		set, _ := plainSettings(m)
 		s.AppProfiles = append(s.AppProfiles, set)
@@ -146,14 +168,18 @@ func (r arrReader) build(in *arrRows) *Snapshot {
 		return s
 	}
 	files := filesByTitle(in.sets["filequalities"])
-	for _, m := range in.sets["titles"] {
+	past := pastByTitle(in.sets["past"])
+	off := episodesOffByTitle(in.sets["episodesoff"])
+	in.eachTitle(func(m map[string]any) {
 		t := r.title(m, profileName, labels)
 		t.Files = files[num(m["id"])]
+		t.History = past[num(m["id"])]
+		t.EpisodesOff = off[num(m["id"])]
 		if t.Folder == "" {
 			t.Folder = folderOf(t.Path, s.Folders)
 		}
 		s.Titles = append(s.Titles, t)
-	}
+	})
 	if r.kind == Lidarr {
 		byArtist := map[int64]int{}
 		for i := range s.Titles {
@@ -232,6 +258,9 @@ func (r arrReader) title(m map[string]any, profileName map[int64]string, labels 
 		Monitored: boolean(m["monitored"]), Added: str(m["added"]), Tags: labels(m["tags"]),
 		IDs: map[string]string{}, Extra: map[string]any{}}
 	t.ProfileID = num(first(m, "qualityprofileid", "profileid"))
+	if v, ok := m["trackfilecount"]; ok {
+		t.Extra["track_files"] = num(v)
+	}
 	t.Profile = profileName[t.ProfileID]
 	idCols := map[string]string{"tmdbid": "tmdb", "imdbid": "imdb", "tvdbid": "tvdb", "tvmazeid": "tvmaze", "foreignartistid": "musicbrainz"}
 	for col, key := range idCols {
@@ -310,7 +339,7 @@ func profile(m map[string]any, quality, formatName map[int64]string) Profile {
 		p.Language = str(lower(l)["name"])
 	}
 	cutoff := num(m["cutoff"])
-	p.Qualities, p.CutoffQualities = openQualities(list(m["items"]), quality, cutoff)
+	p.Qualities, p.CutoffQualities, p.Groups = openQualities(list(m["items"]), quality, cutoff)
 	var walk func(items []any)
 	walk = func(items []any) {
 		for _, it := range items {
@@ -361,6 +390,9 @@ func profile(m map[string]any, quality, formatName map[int64]string) Profile {
 // specItem keeps a custom format condition's plain parts.
 func specItem(sp any) map[string]any {
 	m := lower(obj(sp))
+	if body := obj(m["body"]); body != nil && m["implementation"] == nil {
+		m = backupSpec(str(m["type"]), body)
+	}
 	out := map[string]any{"name": str(m["name"]), "kind": str(m["implementation"]),
 		"negate": boolean(m["negate"]), "required": boolean(m["required"])}
 	var set map[string]any
@@ -376,6 +408,24 @@ func specItem(sp any) map[string]any {
 		}
 	}
 	return out
+}
+
+// backupSpec turns a backup's condition ({type, body} with the values
+// flat in the body) into the API shape: the values become fields.
+func backupSpec(kind string, body map[string]any) map[string]any {
+	m := map[string]any{"implementation": kind}
+	fields := map[string]any{}
+	for k, v := range body {
+		switch lk := strings.ToLower(k); lk {
+		case "name", "negate", "required":
+			m[lk] = v
+		case "order", "implementationname", "infolink":
+		default:
+			fields[strings.ToLower(k[:1])+k[1:]] = v
+		}
+	}
+	m["fields"] = fields
+	return m
 }
 
 // releaseWords keeps one release word rule: its must-contain and
@@ -500,7 +550,7 @@ func itemQuality(im map[string]any, quality map[int64]string) (string, int64) {
 // openQualities lists a profile's allowed qualities with groups opened up
 // (every quality in an allowed group counts), and the cutoff's: a group's
 // cutoff is matched by the group's id, never a quality's.
-func openQualities(items []any, quality map[int64]string, cutoff int64) (allowed, cut []string) {
+func openQualities(items []any, quality map[int64]string, cutoff int64) (allowed, cut []string, groups [][]string) {
 	for _, it := range items {
 		im := lower(obj(it))
 		name, id := itemQuality(im, quality)
@@ -516,12 +566,15 @@ func openQualities(items []any, quality map[int64]string, cutoff int64) (allowed
 		}
 		if boolean(im["allowed"]) {
 			allowed = append(allowed, names...)
+			if len(list(im["items"])) > 0 {
+				groups = append(groups, names)
+			}
 		}
 		if id == cutoff && cut == nil {
 			cut = names
 		}
 	}
-	return allowed, cut
+	return allowed, cut, groups
 }
 
 // itemValue reads a condition's field (value, min, max, exceptlanguage)

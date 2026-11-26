@@ -85,5 +85,21 @@
 	"sources.uses.auto": "caută singură",
 	"sources.uses.feed": "lista celor mai noi",
 	"sources.uses.hand": "căutare manuală",
-	"sources.uses.none": "nefolosită"
+	"sources.uses.none": "nefolosită",
+	"sources.bridge.removeTitle": "Elimini {name}?",
+	"sources.bridge.find": "Caută {name} în rețeaua mea",
+	"sources.bridge.noneFound": "Niciun {name} nu a răspuns în rețeaua ta.",
+	"sources.bridge.keyFound": "Am primit cheia de la {name}",
+	"sources.bridge.keyKept": "{name} nu și-a dat cheia (autentificarea e pornită). Folosește Obține cheia ca s-o copiezi.",
+	"sources.bridge.keyKeptJackett": "Jackett nu și-a dat cheia (are parolă de administrator). Folosește Obține cheia ca s-o copiezi.",
+	"sources.bridge.notReached": "Nu s-a putut ajunge la {name}.",
+	"sources.bridge.brings.title": "Ce se preia",
+	"sources.bridge.brings.sites": "Indexatorii lui, ca Surse",
+	"sources.bridge.brings.categories": "Categoriile lor",
+	"sources.bridge.brings.search": "Căutările trec prin {name}",
+	"sources.bridge.brings.sync": "Modificările din {name} se preiau",
+	"sources.bridge.brings.stays": "Indexatorii tăi rămân configurați în {name}.",
+	"sources.bridge.brings.had": "{n} indexatori deja aici",
+	"sources.bridge.brings.hadFrom": "Importați prin {apps}",
+	"sources.bridge.brings.keyKept": "Lasă cheia goală ca să o folosească pe cea pe care o au deja."
 }

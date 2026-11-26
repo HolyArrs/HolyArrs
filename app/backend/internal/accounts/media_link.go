@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
@@ -46,6 +47,8 @@ type MediaLinks struct {
 	Servers  func(ctx context.Context) ([]LinkServer, error)
 	Accounts func(ctx context.Context, serverID int64) ([]ServerAccount, error)
 	Linked   func()
+	// Forget deletes the saved media servers of one kind (unlink during first-run setup).
+	Forget func(ctx context.Context, kind string) error
 }
 
 // SetMediaLinks wires the media servers in; call it before serving.
@@ -142,7 +145,7 @@ func (a *Auth) myMediaLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// The server took a while: the session must still be there and fresh.
-	cookie, _ := r.Cookie(CookieName)
+	cookie, _ := sessionCookie(r)
 	proof := ssoLinkProof{family: a.currentFamily(r), userID: who.UserID}
 	if cookie != nil && cookie.Value != "" {
 		proof.hash = sum(cookie.Value)
@@ -151,7 +154,7 @@ func (a *Auth) myMediaLink(w http.ResponseWriter, r *http.Request) {
 		if proof.hash == "" || proof.family == "" {
 			return errNotAllowed
 		}
-		if err := a.linkSessionFreshTx(tx, proof); err != nil {
+		if err := a.mediaLinkSessionFreshTx(tx, proof); err != nil {
 			return err
 		}
 		return a.linkMediaTx(ctx, tx, who.UserID, m, got.ID, got.Name)
@@ -275,6 +278,7 @@ func (a *Auth) unlinkMedia(w http.ResponseWriter, r *http.Request, userID int64,
 		return
 	}
 	ctx := r.Context()
+	inSetup := false
 	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		hash, err := passwordHashOf(ctx, tx, userID)
 		if err != nil {
@@ -294,6 +298,17 @@ func (a *Auth) unlinkMedia(w http.ResponseWriter, r *http.Request, userID int64,
 		if n == 0 {
 			return sql.ErrNoRows
 		}
+		// During first-run setup the link turned this sign-in way on (linkSetupServerTx); unlinking it there turns it off again.
+		inSetup = database.SettingOr(ctx, tx, settingsGroup, settingFirstRunDone, "") != "1"
+		if inSetup {
+			g := signInPrefix + kind
+			if err := database.PutSetting(tx, settingsGroup, g+"_on", "false", domain.System, a.now()); err != nil {
+				return err
+			}
+			if err := database.PutSetting(tx, settingsGroup, g+"_url", "", domain.System, a.now()); err != nil {
+				return err
+			}
+		}
 		_, err = deleteSessionsByMethod(ctx, tx, userID, kind)
 		return err
 	})
@@ -312,12 +327,27 @@ func (a *Auth) unlinkMedia(w http.ResponseWriter, r *http.Request, userID int64,
 		serverError(w, "media unlink", err)
 		return
 	}
+	// During setup the server saved for this link goes too, so linking again starts clean.
+	if inSetup {
+		a.forgetSetupServer(ctx, kind)
+	}
 	a.dropTickets(func(t *ticket) bool { return t.userID == userID && t.method == kind })
 	a.accountEvent(r, userID, "sign_in_unlinked", byName(r)+" unlinked the "+kind+" account of "+a.userName(ctx, userID), map[string]any{"provider": kind})
 	if a.media.Linked != nil {
 		a.media.Linked()
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// forgetSetupServer drops what a first-run link of kind left behind: the
+// media server saved for it and the API key kept for the Media server step.
+func (a *Auth) forgetSetupServer(ctx context.Context, kind string) {
+	a.dropSetupKey(kind)
+	if a.media.Forget != nil {
+		if err := a.media.Forget(ctx, kind); err != nil {
+			log.Printf("accounts: setup unlink %s: forget media server: %v", kind, err)
+		}
+	}
 }
 
 // serverAccounts lists every connected Jellyfin and Emby server with its

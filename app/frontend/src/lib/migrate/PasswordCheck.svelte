@@ -19,7 +19,9 @@
 {/if}
 
 <style>
-	.setpw { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
-	.setpw.one-col { grid-template-columns: 1fr; }
-	@media (max-width: 600px) { .setpw { grid-template-columns: 1fr; } }
+	.setpw { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; }
+	.setpw.one-col { grid-template-columns: minmax(0, 1fr); }
+	.setpw > .input { width: 100%; min-width: 0; }
+	.setpw > .form-error { grid-column: 1 / -1; margin: 0; }
+	@media (max-width: 600px) { .setpw { grid-template-columns: minmax(0, 1fr); } }
 </style>

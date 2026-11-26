@@ -19,6 +19,14 @@ A Version is one copy of a title with its own folder, Pick rules and upgrades. H
 
 HolyArrs never copies a file into a second Version on its own.
 
+## A whole library in one language
+
+To keep only one copy, in your language, set the languages on the main Version instead of adding a second one. A second Version means a second copy.
+
+- **One title:** on the title page, edit the main Version and enter its audio languages, such as `it`.
+- **Many titles:** in the Library, select the titles, open **Quality**, choose **Audio languages** and enter the codes. Each movie's or show's main Version gets them. Artists are left out. An empty box takes any audio again.
+- **New titles:** in **Settings > Library folders**, fill **Audio for new titles** on a movie or show folder. Each new title added there, including approved requests, starts with those languages on its main Version. Titles already in the Library and titles brought in from files already in the folder keep what they have.
+
 ## How languages are matched
 
 - Codes for one language are the same: `eng` matches `en`, `fra` matches `fr`.
@@ -34,12 +42,18 @@ This applies to movies and shows. Music is not checked this way.
 
 Searches for a Version also read the language tags in each Release name, such as `FRENCH` or `GERMAN`.
 
-- A name with no language tag counts as the title's original language.
+- A name with no language tag counts as the title's original language, unless its Source says otherwise (below).
 - A name that clearly lacks a language the Version needs is refused.
 - `MULTI`, or `DUAL` with no language named, may hold any language, so these names only get a warning.
 - Subtitle tags such as `VOSTFR` or `SUBFRENCH` never count as audio.
 
 The file's real tracks are still checked on import.
+
+### Sources whose names leave out the language
+
+Some trackers require one audio language on every release but never put it in the name. In **Settings > Sources**, open the Source and fill **When a name shows no language** with that language's code, such as `uk`. A name from that Source with no language tag then counts as having those languages. So does a name with only `DUAL`, or only `MULTI` when **What MULTi means** is empty. A name that does say its languages, such as `Eng`, keeps them.
+
+**What MULTi means** on the same Source does the same for names tagged `MULTI`.
 
 ## The Copies section
 

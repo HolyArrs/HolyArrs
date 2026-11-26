@@ -85,5 +85,21 @@
 	"sources.uses.auto": "търси само",
 	"sources.uses.feed": "най-нов списък",
 	"sources.uses.hand": "търсене на ръка",
-	"sources.uses.none": "не се ползва"
+	"sources.uses.none": "не се ползва",
+	"sources.bridge.removeTitle": "Да се премахне ли {name}?",
+	"sources.bridge.find": "Намери {name} в моята мрежа",
+	"sources.bridge.noneFound": "Нито един {name} не отговори във вашата мрежа.",
+	"sources.bridge.keyFound": "Ключът е получен от {name}",
+	"sources.bridge.keyKept": "{name} не даде ключа си (входът е включен). Копирайте го с „Вземи ключ“.",
+	"sources.bridge.keyKeptJackett": "Jackett не даде ключа си (има администраторска парола). Копирайте го с „Вземи ключ“.",
+	"sources.bridge.notReached": "{name} не може да бъде достигнат.",
+	"sources.bridge.brings.title": "Какво се пренася",
+	"sources.bridge.brings.sites": "Неговите индексатори, като Източници",
+	"sources.bridge.brings.categories": "Техните категории",
+	"sources.bridge.brings.search": "Търсенията минават през {name}",
+	"sources.bridge.brings.sync": "Промените в {name} се пренасят",
+	"sources.bridge.brings.stays": "Индексаторите ви остават настроени в {name}.",
+	"sources.bridge.brings.had": "Индексатори вече тук: {n}",
+	"sources.bridge.brings.hadFrom": "Внесени чрез {apps}",
+	"sources.bridge.brings.keyKept": "Оставете ключа празен, за да се ползва този, който вече имат."
 }

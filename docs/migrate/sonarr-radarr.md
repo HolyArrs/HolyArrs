@@ -9,7 +9,7 @@ Move your shows from Sonarr and movies from Radarr, with their folders, files an
 
 ## Before you start
 
-- Have each app's address and API key (in that app's settings), or its backup zip.
+- Have each app's address and API key (in that app's settings).
 - Map your media folders into HolyArrs. The old app's folder names can differ; you match them in **What to import**.
 
 ## Import Sonarr and Radarr
@@ -32,13 +32,16 @@ Old apps often run in other containers and see folders under other names. A rule
 | Movies and shows | Titles, matched by TMDB or TVDB id. Folders and files stay where they are. A watched title gets **Keep up to date**; seasons that were not watched stay off. Nothing is searched for during the move. |
 | Quality profiles | Each one matched to the closest **Pick rules** preset (Standard, 4K). The **Import** step shows why. Titles use the preset of their profile. |
 | Exclusions | The **Never-add** list. |
+| Blocklist | The **Turned down** list of each title that comes over, so those releases are never taken again. A show's release is turned down for the exact episodes Sonarr kept for it; when those can't be read, for the episodes its name gives (season and episode, anime number or air date). A name that gives no episode is listed as not moved instead of turning down the whole show. Each one is kept under the Source with the old indexer's name, or else the first Source of its protocol, so add or link your Sources first. |
 | Radarr's release stage per movie, and its availability delay | Each movie's **Release gate** and gate delay, up to 365 days. Your default for new movies stays. |
 | The untagged default wait rule | The preferred protocol and Usenet and torrent waits on the matched Pick rules, up to 7 days. See [Waits](#waits). |
-| Radarr TMDB lists, Trakt lists and Trakt watchlists | **Outside lists**, added paused, with folder, Pick rules, Keep up to date, search on add, Release gate and read interval (6 to 168 hours). A Trakt list must be public and needs your Trakt key. |
+| Radarr TMDB lists, Trakt lists and Trakt watchlists | **Outside lists** for movies, added paused, with folder, Pick rules, Keep up to date, search on add, Release gate and read interval (6 to 168 hours). A Trakt list needs your Trakt key; a private one also needs **Sign in with Trakt**. |
+| Sonarr Trakt lists and Trakt watchlists | **Outside lists** for shows, added paused, with folder, Pick rules, seasons, new seasons, search on add and read interval. A Trakt list needs your Trakt key; a private one also needs **Sign in with Trakt**. **Pilot** keeps the first season. A list that both apps read becomes two lists, one for movies and one for shows; the Sonarr one gets " (sonarr)" after its name. |
 | Torznab, Newznab and RSS indexers | **Sources**, added paused and blocked from your home network. |
 | Download clients (qBittorrent, SABnzbd, Transmission, Deluge, rTorrent, aria2, NZBGet) | **Downloaders**, added paused and blocked from your home network. They use the `holyarrs` category, so they never pick up the old apps' downloads. For rTorrent, the old directory, priority, add-stopped and post-import label are not used. For aria2, the RPC path is read and switched to `/jsonrpc`, the secret token must be typed again, and the old directory is not used. |
 | Remote path mappings | **Different folder names** on the Downloader at that host, up to 100 pairs. A Downloader that was already here is left alone, and its pairs are listed for you to add by hand. A pair whose folder HolyArrs cannot see yet is still added and marked "not visible here yet (check your mounts)". |
 | Naming | HolyArrs naming, where a pattern word has a match. Nothing on disk is renamed. |
+| "Unmonitor deleted episodes" and "Unmonitor deleted movies" | **Stop looking for deleted episodes** and **Stop looking for deleted movies** under **Settings > Naming and files**, listed with Naming. |
 | Discord, webhook and email notifications | **Alerts**, off until you type the link, address or mail password. |
 
 An indexer is a site that lists releases; in HolyArrs it is a **Source**.
@@ -57,7 +60,7 @@ The old default wait rule comes over only when it differs from that app's own de
 
 ## What stays behind
 
-Custom formats, tag-scoped wait rules (listed with their waits, so you can set them under Pick rules), release word rules, language profiles, tags, import lists from Sonarr (Outside lists add movies only), list kinds HolyArrs does not read (IMDb, Plex, another Radarr, Trakt watched or collection lists), MDBList lists (add them again under **Settings > Outside lists**), metadata writers, download categories and notification kinds other than Discord, webhook and email. Each is on the **not moved** list with its reason. Auto-tag rules and history are not read.
+Custom formats, tag-scoped wait rules (listed with their waits, so you can set them under Pick rules), release word rules, language profiles, tags, list kinds HolyArrs does not read (IMDb, Plex, another Radarr or Sonarr, Trakt popular, watched or collection lists), MDBList lists (add them again under **Settings > Outside lists**), metadata writers, download categories and notification kinds other than Discord, webhook and email. Each is on the **not moved** list with its reason. Auto-tag rules and history are not read.
 
 ## If it does not work
 

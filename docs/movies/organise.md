@@ -71,7 +71,9 @@ You should see the movie gone from **Library**. Its history stays. Downloads sti
 
 ### Missing files
 
-Once a day HolyArrs checks the Library on disk. A file that disappeared is marked missing, and one that comes back is marked present.
+Once a day HolyArrs checks the Library on disk. A file that disappeared is marked missing, and one that comes back is marked present. HolyArrs does not download a missing file again by itself. It can still replace it with a better copy while the movie wants one.
+
+To stop that too, turn on **Stop looking for deleted movies** under **Settings > Naming and files**. A movie whose file a rescan finds deleted then gets **Keep up to date** turned off. A movie with more than one Version keeps it while another Version's file is still on disk; only the Version whose file went stops. This is Radarr's "Unmonitor deleted movies". The import from Radarr carries your choice over.
 
 If a whole Library folder is gone, or most of its files vanish at once, HolyArrs warns you and marks nothing missing. This covers a disk that did not mount.
 
@@ -106,6 +108,8 @@ Fix: add it again. If you deleted its files, take them back from `.holyarrs-repl
 | Folders read per library scan | 10 to 100000. A bigger Library shows **Scan the rest**. | 5000 | Scans of a huge Library are slow. |
 | Always leave this much free space (MB) | HolyArrs refuses an import that would leave less, before it writes anything. 100 to 1048576. | 100 | Your disk needs more headroom. |
 | Skip the free-space check | Turns the check off. | Off | Your disk misreports free space. |
+| Stop looking for deleted movies | A movie whose file a rescan finds deleted from disk gets Keep up to date turned off. | Off | You delete movies by hand and never want them back. |
+| Stop looking for deleted episodes | The same for an episode. The show and its other episodes keep theirs. | Off | You delete episodes by hand and never want them back. |
 
 **Movie names**
 

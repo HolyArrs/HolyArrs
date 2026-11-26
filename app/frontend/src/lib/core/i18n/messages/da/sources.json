@@ -85,5 +85,21 @@
 	"sources.uses.auto": "søger af sig selv",
 	"sources.uses.feed": "nyeste liste",
 	"sources.uses.hand": "søg i hånden",
-	"sources.uses.none": "bruges ikke"
+	"sources.uses.none": "bruges ikke",
+	"sources.bridge.removeTitle": "Fjern {name}?",
+	"sources.bridge.find": "Find {name} på mit netværk",
+	"sources.bridge.noneFound": "Ingen {name} svarede på dit netværk.",
+	"sources.bridge.keyFound": "Fik nøglen fra {name}",
+	"sources.bridge.keyKept": "{name} udleverede ikke nøglen (login er slået til). Kopiér den via Hent nøgle.",
+	"sources.bridge.keyKeptJackett": "Jackett udleverede ikke nøglen (den har en admin-adgangskode). Kopiér den via Hent nøgle.",
+	"sources.bridge.notReached": "Kunne ikke nå {name}.",
+	"sources.bridge.brings.title": "Hvad der følger med",
+	"sources.bridge.brings.sites": "Dens indekserere, som Kilder",
+	"sources.bridge.brings.categories": "Deres kategorier",
+	"sources.bridge.brings.search": "Søgninger går gennem {name}",
+	"sources.bridge.brings.sync": "Ændringer i {name} følger med",
+	"sources.bridge.brings.stays": "Dine indekserere forbliver opsat i {name}.",
+	"sources.bridge.brings.had": "{n} indekserere allerede her",
+	"sources.bridge.brings.hadFrom": "Importeret via {apps}",
+	"sources.bridge.brings.keyKept": "Lad nøglen være tom for at bruge den, de allerede har."
 }

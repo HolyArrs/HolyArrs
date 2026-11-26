@@ -64,6 +64,9 @@ func (a *Auth) inviteOpen(w http.ResponseWriter, r *http.Request) (string, bool)
 		fail(w, http.StatusNotFound, "this invite link is used up, ended or wrong; ask for a new one")
 		return "", false
 	}
+	if !a.inviteJoins.allow(w, sum(tok), a.now()) {
+		return "", false
+	}
 	return tok, true
 }
 

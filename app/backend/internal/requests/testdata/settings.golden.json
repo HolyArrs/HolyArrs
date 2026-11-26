@@ -42,5 +42,11 @@
         "ready": true
       }
     ]
-  }
+  },
+  "pick_many": true,
+  "streaming_region": "s",
+  "streaming_services": [
+    7
+  ],
+  "skip_on_services": true
 }

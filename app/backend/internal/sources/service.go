@@ -36,6 +36,7 @@ var (
 	// ErrQuery matches ErrURL under errors.Is, so callers that check ErrURL treat it the same.
 	ErrQuery      error = queryErr{}
 	ErrPriority         = errors.New("priority must be 1 to 50 (1 is asked first)")
+	ErrLanguages        = errors.New("languages need codes release names show, such as uk, it or en")
 	ErrLimits           = errors.New("limits must be 0 or more: searches_per_window up to 10000, window_seconds up to 7 days, gap_ms up to 10 minutes, timeout_ms up to 5 minutes")
 	ErrKinds            = errors.New("kinds may be movie, tv and music")
 	ErrUse              = errors.New("an rss Source can only be used for the feed; it cannot search")
@@ -46,6 +47,8 @@ var (
 	ErrKeyAgainProxy = errors.New("the proxy changed and the Source address is plain http, so the new proxy would see the key; type the key again")
 	ErrNoVault       = errors.New("keys cannot be stored: the secrets vault is not open")
 	ErrSeeders       = errors.New("min_seeders must be 0 or more")
+	ErrSiteUser      = errors.New("site_user is your user id on the site: digits only")
+	ErrSiteLogin     = errors.New("site_login is passkey or cookie, and site_agent is one line of up to 500 characters")
 )
 
 // AllKinds lists the media types a Source may serve.
@@ -62,7 +65,15 @@ type Input struct {
 	Format string `json:"format"`
 	// Site names the built-in site a site-format Source reads (knaben,
 	// torrentscsv, subsplease, iptorrents). It is set when the Source is added.
-	Site            string               `json:"site,omitempty"`
+	Site string `json:"site,omitempty"`
+	// SiteUser is the person's user id on a built-in site that asks for one
+	// beside its key (IPTorrents: the passkey goes in APIKey). Nil keeps it.
+	SiteUser *string `json:"site_user,omitempty"`
+	// SiteLogin is how a Source signs in to IPTorrents: "passkey" (user id +
+	// passkey, the default) or "cookie" (a browser cookie, kept as the key).
+	SiteLogin *string `json:"site_login,omitempty"`
+	// SiteAgent is the browser user agent sent with that cookie; optional.
+	SiteAgent       *string              `json:"site_agent,omitempty"`
 	Protocol        string               `json:"protocol"`
 	URL             string               `json:"url"`
 	APIKey          string               `json:"api_key"`
@@ -79,6 +90,11 @@ type Input struct {
 	ProxyAllowLocal *bool                `json:"proxy_allow_local_network"`
 	// Tags limit the Source to titles that share one of them. Nil keeps the stored tags.
 	Tags []string `json:"tags"`
+	// MultiLanguages are what MULTi means on this Source. Nil keeps the stored list.
+	MultiLanguages []string `json:"multi_languages"`
+	// NoLanguageLanguages are the audio languages a release here carries when
+	// its name shows none. Nil keeps the stored list.
+	NoLanguageLanguages []string `json:"no_language_languages"`
 	// DownloaderID picks the one Downloader this Source's grabs go to; 0 is
 	// any Downloader and nil keeps the stored choice.
 	DownloaderID *int64 `json:"downloader_id"`
@@ -220,8 +236,33 @@ func Change(ctx context.Context, s *database.Store, v *secrets.Vault, id int64, 
 	return src, nil
 }
 
+// removeBatch is how many Releases or calls of a removed Source one write
+// deletes, so a Source that gathered a great many never holds the database
+// past the write cap.
+const removeBatch = 2000
+
 // Remove deletes a Source together with its secrets, Releases and call record.
+// The Releases and calls go first, a batch per write; the Source row last.
 func Remove(ctx context.Context, s *database.Store, id int64) error {
+	var src domain.Source
+	if err := database.Get(ctx, s.Read(), "sources", id, &src); err != nil {
+		return err
+	}
+	for _, table := range []string{"source_calls", "releases"} {
+		for {
+			var n int64
+			err := s.Write(ctx, func(tx *sql.Tx) (err error) {
+				n, err = deleteSourceRowsTx(ctx, tx, table, id, removeBatch)
+				return err
+			})
+			if err != nil {
+				return err
+			}
+			if n < removeBatch {
+				break
+			}
+		}
+	}
 	return s.Write(ctx, func(tx *sql.Tx) error {
 		var src domain.Source
 		if err := database.Get(ctx, tx, "sources", id, &src); err != nil {
@@ -236,7 +277,7 @@ func Remove(ctx context.Context, s *database.Store, id int64) error {
 		if err := dropSecret(tx, &src.PathSecretRef); err != nil {
 			return err
 		}
-		return deleteSource(tx, id)
+		return deleteSource(ctx, tx, id)
 	})
 }
 
@@ -264,7 +305,7 @@ func SetPaused(ctx context.Context, s *database.Store, id int64, paused bool, by
 
 // ConfigFor builds the Client settings for a Source and opens its key, passkey and proxy password.
 func ConfigFor(ctx context.Context, src domain.Source, sec SecretReader) (Config, error) {
-	cfg := Config{Site: src.Extra[extraSiteKind], URL: src.URL, AllowLocal: src.AllowLocal, Protocol: src.Protocol, Format: src.Format,
+	cfg := Config{Site: src.Extra[extraSiteKind], SiteUser: src.Extra[extraSiteUser], SiteLogin: src.Extra[extraSiteLogin], SiteAgent: src.Extra[extraSiteAgent], URL: src.URL, AllowLocal: src.AllowLocal, Protocol: src.Protocol, Format: src.Format,
 		GapMS: src.Limits.GapMS, PerWindow: src.Limits.SearchesPerWindow, ProxyAllowLocal: src.ProxyAllowLocal,
 		Window: time.Duration(src.Limits.WindowSeconds) * time.Second, Timeout: time.Duration(src.Limits.TimeoutMS) * time.Millisecond}
 	open := func(ref *int64) (string, error) {
@@ -412,6 +453,14 @@ func explainWith(sourceURL string, err error, c doctor.Cause, dial doctor.Dial) 
 	if line := doctor.Line(c); line != "" {
 		text = line
 	}
+	if se := (*Error)(nil); errors.As(err, &se) && se.mainApp != "" {
+		return mainAddressWords[se.mainApp]
+	}
+	if c == doctor.WrongApp {
+		if app := mainAddressOf(sourceURL); app != "" {
+			return mainAddressWords[app]
+		}
+	}
 	switch {
 	case c == doctor.Refused, c == doctor.Timeout, c == doctor.DNS:
 	case c == doctor.Unknown && strings.HasPrefix(text, "HolyArrs could not reach the Source"):
@@ -426,6 +475,31 @@ func explainWith(sourceURL string, err error, c doctor.Cause, dial doctor.Dial) 
 		return text
 	}
 	return via + " isn't answering. Sources brought in from " + via + " search through it, so keep " + via + " running, or change the address."
+}
+
+// mainAddressWords say what to do when a Source address is Prowlarr's or Jackett's main page.
+var mainAddressWords = map[string]string{
+	"Prowlarr": "That is Prowlarr's main address, not one site's feed. Connect Prowlarr under Prowlarr or Jackett on this page to bring in all its sites, or paste one site's Torznab feed address from Prowlarr.",
+	"Jackett":  "That is Jackett's main address, not one site's feed. Connect Jackett under Prowlarr or Jackett on this page to bring in all its sites, or paste one site's Torznab feed address from Jackett.",
+}
+
+// mainAddressOf names Prowlarr or Jackett when a Source address is that app's
+// own main page (no site path) on its usual port; such a page is not a feed.
+func mainAddressOf(sourceURL string) string {
+	u, err := url.Parse(strings.TrimSpace(sourceURL))
+	if err != nil || u.Host == "" {
+		return ""
+	}
+	if p := strings.Trim(u.Path, "/"); p != "" && p != "api" {
+		return ""
+	}
+	switch u.Port() {
+	case findPorts[BridgeKindProwlarr]:
+		return "Prowlarr"
+	case findPorts[BridgeKindJackett]:
+		return "Jackett"
+	}
+	return ""
 }
 
 // bridgeOf names the app a Source's address goes through ("" for a site of its own).
@@ -453,6 +527,13 @@ func splitRSS(raw string) (base, query string) {
 
 func checkURL(raw string) (*url.URL, error) {
 	u, err := url.Parse(raw)
+	if err == nil && u.Scheme == "plugin" {
+		// A plugin search source: plugin://<id>, nothing else.
+		if !pluginHostRe.MatchString(u.Host) || u.Path != "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+			return nil, ErrURL
+		}
+		return u, nil
+	}
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
 		return nil, ErrURL
 	}
@@ -610,6 +691,16 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 	if in.Tags != nil || isNew || src.Tags == nil {
 		src.Tags = mediafiles.CleanTags(in.Tags)
 	}
+	if in.MultiLanguages != nil || isNew || src.MultiLanguages == nil {
+		src.MultiLanguages = CleanLanguages(in.MultiLanguages)
+	}
+	if in.NoLanguageLanguages != nil || isNew || src.NoLanguageLanguages == nil {
+		langs, err := checkLanguages(in.NoLanguageLanguages)
+		if err != nil {
+			return "", "", err
+		}
+		src.NoLanguageLanguages = langs
+	}
 	if in.DownloaderID != nil {
 		src.DownloaderID = nil
 		if *in.DownloaderID > 0 {
@@ -651,6 +742,41 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 			src.Extra = map[string]string{}
 		}
 		src.Extra[extraSiteKind] = site.ID
+		if in.SiteUser != nil {
+			user := strings.TrimSpace(*in.SiteUser)
+			if len(user) > 20 || strings.Trim(user, "0123456789") != "" {
+				return "", "", ErrSiteUser
+			}
+			if user == "" {
+				delete(src.Extra, extraSiteUser)
+			} else {
+				src.Extra[extraSiteUser] = user
+			}
+		}
+		if in.SiteLogin != nil {
+			switch strings.TrimSpace(*in.SiteLogin) {
+			case "", "passkey":
+				delete(src.Extra, extraSiteLogin)
+			case "cookie":
+				if site.ID != "iptorrents" {
+					return "", "", ErrSiteLogin
+				}
+				src.Extra[extraSiteLogin] = "cookie"
+			default:
+				return "", "", ErrSiteLogin
+			}
+		}
+		if in.SiteAgent != nil {
+			agent := strings.TrimSpace(*in.SiteAgent)
+			if len(agent) > 500 || strings.ContainsAny(agent, "\r\n") {
+				return "", "", ErrSiteLogin
+			}
+			if agent == "" {
+				delete(src.Extra, extraSiteAgent)
+			} else {
+				src.Extra[extraSiteAgent] = agent
+			}
+		}
 	}
 	return key, proxyPass, nil
 }
@@ -664,33 +790,6 @@ func nameUsed(tx *sql.Tx, name string, id int64) error {
 		return ErrNameUsed
 	}
 	return nil
-}
-
-// putSecret replaces the secret at ref with plain, and does nothing when plain is empty.
-func putSecret(tx *sql.Tx, v *secrets.Vault, ref **int64, kind, plain string, by domain.Actor) error {
-	if plain == "" {
-		return nil
-	}
-	if v == nil {
-		return ErrNoVault
-	}
-	if *ref != nil {
-		if err := secrets.DeleteTx(context.Background(), tx, **ref); err != nil {
-			return err
-		}
-	}
-	id, err := v.PutTx(tx, kind, plain, by)
-	*ref = &id
-	return err
-}
-
-func dropSecret(tx *sql.Tx, ref **int64) error {
-	if *ref == nil {
-		return nil
-	}
-	err := secrets.DeleteTx(context.Background(), tx, **ref)
-	*ref = nil
-	return err
 }
 
 func (queryErr) Error() string {

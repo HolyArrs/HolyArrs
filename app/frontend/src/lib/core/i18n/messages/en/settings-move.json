@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Undo import {id}?",
 	"settings.move.undoQuestion": "Undo this import?",
 	"settings.move.undoNote": "Removes what this import added; your later changes stay. Download the report first if you want it.",
-	"settings.move.undoMove": "Undo import"
+	"settings.move.undoMove": "Undo import",
+	"settings.move.continueSetup": "Continue setup",
+	"settings.move.backToChoose": "Back to Choose"
 }

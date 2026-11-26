@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "요청",
 	"settings.appearance.colRate": "행당",
 	"settings.appearance.noRows": "집계된 둘러보기 행이 아직 없습니다.",
+	"settings.appearance.rowStats": "둘러보기 행",
+	"settings.appearance.rowStatsDesc": "최근 30일 동안 행별 열기와 요청 수, 모두 합산. 이 서버에서만 집계됩니다.",
+	"settings.appearance.colRow": "행",
+	"settings.appearance.row.because_have": "가진 타이틀과 비슷한",
+	"settings.appearance.row.because_asked": "내 요청과 비슷한",
+	"settings.appearance.row.person": "한 인물의 더 많은 작품",
+	"settings.appearance.row.genre": "나를 위한 장르 추천",
+	"settings.appearance.row.popular_genre": "장르별 인기",
+	"settings.appearance.row.popular_decade": "연대별 인기",
+	"settings.appearance.row.decade": "연대별",
+	"settings.appearance.row.mood": "분위기별",
+	"settings.appearance.row.hero": "상단 배너",
 	"settings.appearance.motion": "모션",
 	"settings.appearance.motionNote": "기기의 동작 줄이기 설정을 따릅니다"
 }

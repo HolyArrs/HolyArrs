@@ -64,7 +64,8 @@ func TestSeerrAPI(t *testing.T) {
 		!slices.Equal(ana.Permissions, []string{"REQUEST", "AUTO_APPROVE"}) {
 		t.Fatalf("ana %+v", ana)
 	}
-	if len(s.Requests) != 2 || !hasNote(s, "2 finished, failed or turned-down") {
+	// A completed request (12) comes over as Done, not left out.
+	if len(s.Requests) != 3 || !s.Requests[2].Done || s.Requests[0].Done || !hasNote(s, "1 finished, failed or turned-down") {
 		t.Fatalf("requests %+v %v", s.Requests, s.Notes)
 	}
 	m, tv := s.Requests[0], s.Requests[1]
@@ -149,7 +150,7 @@ func TestSeerrBackup(t *testing.T) {
 		if len(s.Users) != 2 || s.Users[0].Name != "luis" || !s.Users[0].Admin || s.Users[0].ExternalID != "9" || s.Users[1].Name != "bo" || s.Users[1].MovieLimit != 1 || s.Users[1].MovieDays != 7 {
 			t.Fatalf("%s users %+v", kind, s.Users)
 		}
-		if len(s.Requests) != 2 || s.Requests[1].State != "approved" || !s.Requests[1].FourK || !slices.Equal(s.Requests[1].Seasons, []int{1, 3}) ||
+		if len(s.Requests) != 3 || !s.Requests[2].Done || s.Requests[1].Done || s.Requests[1].State != "approved" || !s.Requests[1].FourK || !slices.Equal(s.Requests[1].Seasons, []int{1, 3}) ||
 			s.Requests[0].IDs["imdb"] != "tt0133093" || s.Requests[0].ByName != "bo" || s.Requests[1].DecidedBy != 1 {
 			t.Fatalf("%s requests %+v", kind, s.Requests)
 		}

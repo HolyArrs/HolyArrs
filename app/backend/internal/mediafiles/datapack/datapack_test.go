@@ -515,3 +515,34 @@ func TestPickRuleWithOwnTraitIsRefused(t *testing.T) {
 		}
 	}
 }
+
+// A naming set's colon and character rules reach shows and music too, even
+// once each part has its own saved value.
+func TestApplyNamingSetsEveryPartsColonRules(t *testing.T) {
+	st, p := importedPack(t)
+	ctx := context.Background()
+	ns := mediafiles.NamingDefaults()
+	ns.Colon, ns.ShowColon, ns.MusicColon = mediafiles.ColonRemove, mediafiles.ColonRemove, mediafiles.ColonRemove
+	ns.Illegal, ns.ShowIllegal, ns.MusicIllegal = mediafiles.IllegalRemove, mediafiles.IllegalRemove, mediafiles.IllegalRemove
+	if err := mediafiles.PutNamingSettings(ctx, st, ns, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	selection := Selection{NamingID: p.Naming[0].ID}
+	preview, err := Preview(ctx, st, p.ID, selection)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Apply(ctx, st, p.ID, selection, preview.ApprovalHash, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	got, err := mediafiles.ReadNaming(ctx, st.Read())
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := p.Naming[0].Patterns
+	for _, part := range []string{mediafiles.PartMovies, mediafiles.PartShows, mediafiles.PartMusic} {
+		if s := got.For(part); s.Colon != want.Colon || s.Illegal != want.Illegal {
+			t.Errorf("%s: colon %q illegal %q, want %q %q", part, s.Colon, s.Illegal, want.Colon, want.Illegal)
+		}
+	}
+}

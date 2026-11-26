@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Cancel",
 	"settings.schedules.stages": "Stages",
 	"settings.schedules.stagesNote": "Pause or restart them in <a>Parts</a>.",
-	"settings.schedules.allTime": "All the time"
+	"settings.schedules.allTime": "All the time",
+	"settings.schedules.skip.nothing": "Nothing to do",
+	"settings.schedules.skip.plexOff": "Off: turn on {setting} in {page}",
+	"settings.schedules.skip.plexNobody": "Nothing to do: no one has turned their Plex watchlist on",
+	"settings.schedules.skip.settingOff": "Off: turn it on in its settings",
+	"settings.schedules.skip.starting": "Skipped: HolyArrs was still starting",
+	"settings.schedules.took": "Took {time}",
+	"settings.schedules.finished": "{label} finished",
+	"settings.schedules.nothingToDo": "{label}: nothing to do",
+	"settings.schedules.runFailed": "{label} failed"
 }

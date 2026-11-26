@@ -17,6 +17,9 @@ type InstallView struct {
 	Mode      string `json:"mode"`
 	// ModeLocked says HOLYARRS_UPDATES sets the mode.
 	ModeLocked bool `json:"mode_locked"`
+	// CheckOn says HolyArrs asks about new versions at all ("Tell me about
+	// new versions"); off means no update request and no installs.
+	CheckOn bool `json:"check_on"`
 	// Source is "image" or "update": where the running program came from.
 	Source string `json:"source"`
 	// Previous is the version "Go back" returns to ("" when none).
@@ -41,7 +44,7 @@ func (h *Handlers) installRoutes(m *http.ServeMux) {
 func (h *Handlers) View(ctx context.Context) InstallView {
 	c := h.Checker
 	mode, locked := c.Mode(ctx)
-	v := InstallView{Available: c.CanInstall(), Mode: mode, ModeLocked: locked, Source: "image", Running: c.Version, Progress: Progress{Phase: PhaseIdle}}
+	v := InstallView{Available: c.CanInstall(), Mode: mode, ModeLocked: locked, CheckOn: c.updateOn(ctx), Source: "image", Running: c.Version, Progress: Progress{Phase: PhaseIdle}}
 	if in := c.Installer; in != nil {
 		v.Launch = in.Launch()
 		v.Progress = in.Progress()
@@ -95,10 +98,21 @@ func (h *Handlers) goBack(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) setMode(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Mode string `json:"mode"`
+		Mode    string `json:"mode"`
+		CheckOn *bool  `json:"check_on"`
 	}
 	if !webserver.Decode(w, r, &body, "the update mode is off, ask or auto") {
 		return
+	}
+	if body.CheckOn != nil {
+		if err := h.Checker.SetCheckOn(r.Context(), *body.CheckOn); err != nil {
+			webserver.Fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if body.Mode == "" {
+			webserver.WriteJSON(w, http.StatusOK, h.View(r.Context()))
+			return
+		}
 	}
 	if err := h.Checker.SetMode(r.Context(), body.Mode); err != nil {
 		code := http.StatusBadRequest

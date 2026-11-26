@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: kırmızı bir nokta neyin ilgi beklediğini gösterir, bağlantı testi de sorunun tam adını söyler.** İstenen başlıklar için Plex etiketleri, kendi dilinizde adlar ve 30'dan fazla düzeltme. Uygulamaları, kontrolü sizde olan anahtarlarla MCP üzerinden bağlayın. [Yenilikler](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: eklentiler HolyArrs'ta olanları duyar.** Geliştirici modu geliştirdiğiniz eklentiyi çalıştırır, test sürümleri de birkaç kişinin önce denemesine izin verir. [Yenilikler](https://holyarrs.com/whats-new/)
 
 > HolyArrs'ındaki her afiş, fragman ve puan, kendim çalıştırıp ödediğim bir sunucudan geliyor; böylece herkes için ücretsiz kalıyor. HolyArrs film gecene biraz güzellik kattıysa, sponsor olmak hepimiz için ışıkları açık tutar 💛
 >
@@ -374,7 +374,7 @@ Yeni sürüm verilerin saklanma biçimini değiştiriyorsa HolyArrs önce bir ye
 - Sahip hesabına giremiyorsan:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Sürüm numarası:

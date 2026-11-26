@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
-	let { calm }: { calm: boolean } = $props();
+	import { RESET_CMD } from './reset-owner.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	// onforgot opens "Forgot password?" when the server offers it.
+	let { calm, onforgot }: { calm: boolean; onforgot?: () => void } = $props();
 
-	const RESET_CMD = 'docker exec -i holyarrs /holyarrs reset-owner';
 	let copied = $state(false);
 	let copyNote = $state('');
 	let cmdEl = $state<HTMLElement>();
@@ -25,6 +27,9 @@
 	}
 </script>
 
+{#if onforgot && session.s.ownerReset}
+	<button class="forgot" type="button" onclick={onforgot} data-testid="forgot-password">{t('accounts.forgot.link')}</button>
+{/if}
 <!-- Opening brings the answers into view (the frame would otherwise hide the last lines). -->
 <details class="help" ontoggle={(e) => { const d = e.currentTarget; if (d.open) d.scrollIntoView({ block: 'nearest', behavior: calm ? 'auto' : 'smooth' }); }}>
 	<summary>{t('accounts.signin.cant')}</summary>
@@ -41,6 +46,7 @@
 			<button type="button" class="cp" onclick={copyCmd}>{copied ? t('accounts.signin.copied') : t('accounts.signin.copy')}</button>
 		</div>
 		<p>{t('accounts.signin.typeName')}</p>
+		<p data-testid="reset-owner-host">{t('accounts.signin.hostShell')}</p>
 		<p class="note">{t('accounts.signin.everyone')}</p>
 	</div>
 </details>
@@ -70,6 +76,11 @@
 	.help { margin-top: 12px; color: var(--text-muted); font: var(--t-footnote); scroll-margin-bottom: calc(var(--fr, 0px) + 16px); }
 	/* Sized to its words, like the other text links (not the whole panel width). */
 	.help summary { cursor: pointer; width: fit-content; margin: 0 auto; padding: 0 10px; min-height: 36px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-sm); color: var(--accent-text); font: 500 14px/1 var(--font-ui); list-style: none; }
+	.forgot { display: block; margin: 12px auto 0; padding: 0 10px; min-height: 36px; border: 0; border-radius: var(--r-sm); background: none; color: var(--accent-text); font: 500 14px/1 var(--font-ui); cursor: pointer; }
+	.forgot:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+	:global(.light) .forgot { color: #1d1d1f; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgb(0 0 0 / 0.25); }
+	@media (hover: hover) { .forgot:hover { background: rgb(255 255 255 / 0.08); } :global(.light) .forgot:hover { background: rgb(0 0 0 / 0.05); } }
+	@media (pointer: coarse) { .forgot { min-height: 44px; } }
 	.help summary::-webkit-details-marker { display: none; }
 	.help summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 	@media (max-width: 767px) and (pointer: coarse) { .help summary { min-height: 44px; }

@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: un punto rosso mostra cosa richiede attenzione, e i test di connessione indicano il problema esatto.** Etichette Plex per i titoli richiesti, nomi nella tua lingua e oltre 30 correzioni. Collega app tramite MCP con chiavi che controlli tu. [Novità](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: i plugin sentono cosa succede in HolyArrs.** La modalità sviluppatore esegue il plugin che stai creando, e le versioni di prova permettono a poche persone di provarlo per prime. [Novità](https://holyarrs.com/whats-new/)
 
 > Ogni locandina, trailer e voto del tuo HolyArrs arriva da un server che gestisco e pago di tasca mia, così resta gratis per tutti. Se HolyArrs ha reso la tua serata film un po' più bella, una sponsorizzazione tiene le luci accese per tutti noi 💛
 >
@@ -374,7 +374,7 @@ L'immagine non ha una shell, quindi `docker exec -it holyarrs /bin/bash` non fun
 - Bloccato fuori dall'account Proprietario:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Numero di versione:

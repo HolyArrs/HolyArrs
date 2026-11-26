@@ -46,6 +46,7 @@ func (h *AskHandlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/asks/{id}/turn-down", h.turnDownAsk)
 	m.HandleFunc("GET /api/v1/settings/asks", h.getAskSettings)
 	m.HandleFunc("PUT /api/v1/settings/asks", h.putAskSettings)
+	h.StreamingRoutes(m)
 	m.HandleFunc("GET /api/v1/ask-limits", h.listAskLimits)
 	m.HandleFunc("PUT /api/v1/ask-limits/{id}", h.putAskLimit)
 	m.HandleFunc("GET /api/v1/messages", h.listMessages)
@@ -78,7 +79,7 @@ func (h *AskHandlers) askError(w http.ResponseWriter, err error) {
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, ErrNotYours), errors.Is(err, ErrAboveLimit):
 		webserver.Fail(w, http.StatusForbidden, err.Error())
-	case errors.Is(err, ErrNoteLength), errors.Is(err, ErrPerWeek), errors.Is(err, ErrEmail), errors.Is(err, ErrDiscordID),
+	case errors.Is(err, ErrNoteLength), errors.Is(err, ErrPerWeek), errors.Is(err, ErrStreamingRegion), errors.Is(err, ErrStreamingServices), errors.Is(err, ErrNoMyServices), errors.Is(err, ErrEmail), errors.Is(err, ErrDiscordID),
 		errors.Is(err, ErrNoSuchSeason), errors.Is(err, ErrBadEpisode), errors.Is(err, ErrNotAlbumTrack), errors.Is(err, ErrNotAskedPart), errors.Is(err, ErrNoFourKRules):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, ErrNoSuchAlbum), errors.Is(err, library.ErrCopyChoice):
@@ -126,7 +127,8 @@ func (h *AskHandlers) askViews(r *http.Request, where string, args ...any) ([]Vi
 }
 
 // listAsks lists everyone's asks for people who approve, else only the
-// person's own. ?mine=1 and ?state=<state> narrow the list.
+// person's own. ?mine=1 and ?state=<state> narrow the list; ?limit= and
+// ?offset= page it.
 func (h *AskHandlers) listAsks(w http.ResponseWriter, r *http.Request) {
 	where, args := []string{"1=1"}, []any{}
 	if !mayApprove(r) || r.URL.Query().Get("mine") == "1" {
@@ -170,6 +172,9 @@ func (h *AskHandlers) listAsks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	total := len(vs)
+	// ?offset= reads on past the first page, so a long list loads as it scrolls.
+	off, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	vs = vs[min(max(off, 0), len(vs)):]
 	vs = vs[:min(len(vs), askLimitParam(r, 200))]
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"asks": vs, "counts": counts, "total": total})
 }
@@ -331,9 +336,12 @@ func (h *AskHandlers) askLimit(w http.ResponseWriter, r *http.Request) {
 	// Qualities are the lines of what people can ask for that this person
 	// may use, per kind, in order (the Quality row on the Ask sheets; one
 	// line or none hides the row). FourK says which kinds offer the 4K line.
+	// PickMany lets the row take a line kept as its own copy (4K) on top of
+	// the one picked; each is asked for on its own.
 	out := struct {
 		Limit
-		FourK struct {
+		PickMany bool `json:"pick_many"`
+		FourK    struct {
 			Movie bool `json:"movie"`
 			Show  bool `json:"show"`
 		} `json:"four_k"`
@@ -347,6 +355,7 @@ func (h *AskHandlers) askLimit(w http.ResponseWriter, r *http.Request) {
 		webserver.Internal(w, "api", err)
 		return
 	}
+	out.PickMany = set.PickMany
 	p := h.Person(r)
 	if err := loadPersonQualities(r.Context(), h.Svc.Store.Read(), &p); err != nil {
 		webserver.Internal(w, "api", err)

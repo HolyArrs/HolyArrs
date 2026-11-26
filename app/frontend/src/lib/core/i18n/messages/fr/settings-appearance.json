@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Demandes",
 	"settings.appearance.colRate": "Par rangée",
 	"settings.appearance.noRows": "Aucune rangée d'Explorer comptée pour l'instant.",
+	"settings.appearance.rowStats": "Rangées d'Explorer",
+	"settings.appearance.rowStatsDesc": "Ouvertures et demandes par rangée sur les 30 derniers jours, pour tout le monde. Comptées sur ce serveur uniquement.",
+	"settings.appearance.colRow": "Rangée",
+	"settings.appearance.row.because_have": "Comme vos titres",
+	"settings.appearance.row.because_asked": "Comme vos demandes",
+	"settings.appearance.row.person": "Plus d'une personne",
+	"settings.appearance.row.genre": "Genres choisis pour vous",
+	"settings.appearance.row.popular_genre": "Populaires par genre",
+	"settings.appearance.row.popular_decade": "Populaires par décennie",
+	"settings.appearance.row.decade": "Par décennie",
+	"settings.appearance.row.mood": "Par humeur",
+	"settings.appearance.row.hero": "Bannière du haut",
 	"settings.appearance.motion": "Animations",
 	"settings.appearance.motionNote": "Suit le réglage Réduire les animations de votre appareil"
 }

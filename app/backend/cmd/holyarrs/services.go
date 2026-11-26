@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins/hooks"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
@@ -43,6 +44,13 @@ type services struct {
 	Store *database.Store
 	// Plugins runs the Plugin Engine; nil answers that plugins are not set up.
 	Plugins *plugins.Engine
+	// PluginHooks are what running plugins provide; nil means none.
+	PluginHooks *hooks.Registry
+	// PluginStreamFile replaces the check of a plugin's granted folders in
+	// tests that have no installed plugin; nil in the real program.
+	PluginStreamFile func(ctx context.Context, plugin string, fileID int64) (string, error)
+	// Languages keeps the language packs; nil answers that they are not set up.
+	Languages *plugins.Languages
 	// DLSync is the background download reader (downloads.sync = on); nil
 	// keeps the Downloads view's own client reads.
 	DLSync   *downloads.Sync
@@ -174,6 +182,9 @@ func (s *services) fill() {
 	if s.Lists == nil {
 		s.Lists = &requests.OutsideLists{Store: s.Store, Queue: s.Queue, Library: s.Library, Metadata: s.Metadata}
 	}
+	if s.Lists.TraktAuth == nil && s.Secrets != nil {
+		s.Lists.TraktAuth = &metadata.TraktAuth{Secrets: s.Secrets, Base: s.TraktBase}
+	}
 	if s.Alerts == nil && s.Secrets != nil {
 		s.Alerts = &alerts.Sender{Store: s.Store, Vault: s.Secrets, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Store.Read()) }}
 	}
@@ -205,7 +216,7 @@ func (s *services) fill() {
 		WireUpdateChecks(s.Health, s.Updates)
 	}
 	if s.Media == nil && s.Secrets != nil {
-		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets, Asked: requests.AskedForLabels(s.Store)}
+		s.Media = &mediaservers.Linker{Store: s.Store, Vault: s.Secrets, Asked: requests.AskedForLabels(s.Store), Trakt: s.Lists.TraktAuth}
 	}
 	if s.Subtitles == nil {
 		s.Subtitles = subtitles.NewService(s.Store, s.Secrets, s.Live, s.Queue)

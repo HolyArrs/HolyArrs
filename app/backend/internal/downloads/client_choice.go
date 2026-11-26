@@ -51,6 +51,8 @@ type settings struct {
 	removeFailed         bool
 	failDangerous        bool
 	replaceVanished      bool
+	// downloaderStuck is set per Downloader for one sync (see downloaderStuck).
+	downloaderStuck bool
 	// The dead or crawling torrent rule; zero is off.
 	deadMetadata time.Duration
 	crawlKBps    float64
@@ -91,18 +93,14 @@ func (m *Manager) Check(ctx context.Context, d domain.Downloader) (Health, error
 	}
 	h, err := e.Health(ctx)
 	if err == nil {
-		raw := e
-		if guarded, ok := e.(*guardedEngine); ok {
-			raw = guarded.Engine
-		}
-		raw = unwrapReadOnly(raw)
 		// Only SABnzbd: qBittorrent makes a missing category on the first add.
-		if s, ok := raw.(*Sabnzbd); ok {
+		// One the import set is made here, as the old apps' client had it.
+		if s, ok := rawEngine(e).(*Sabnzbd); ok {
 			for _, c := range d.Categories() {
 				if c == "" || c == "*" {
 					continue
 				}
-				if has, cerr := s.HasCategory(ctx, c); cerr == nil && !has {
+				if has, cerr := s.HasCategory(ctx, c); cerr == nil && !has && !madeImported(ctx, s, d, c) {
 					err = fmt.Errorf("%w (%s)", ErrNoCategory, c)
 					break
 				}

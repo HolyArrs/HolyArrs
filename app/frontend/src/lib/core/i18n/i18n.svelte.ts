@@ -1,4 +1,6 @@
-// The app's words in the person's language. English ships in the bundle; other languages load when picked, and any missing line falls back to English.
+// The app's words in the person's language. English ships in the bundle; the others are signed language packs the server
+// installs (GET /api/v1/languages/<code>/pack), loaded when picked. Any missing line, or a pack not installed yet, shows English.
+import { to } from '#lib/core/paths.ts';
 
 export type Locale =
 	| 'en' | 'es' | 'pt-br' | 'pt-pt' | 'fr' | 'de' | 'it' | 'nl' | 'sv' | 'nb' | 'da' | 'fi' | 'ru' | 'uk' | 'pl' | 'cs' | 'hu' | 'ro' | 'el'
@@ -59,8 +61,7 @@ const RTL = new Set<Locale>(['ar', 'he', 'fa']);
 type Words = Record<string, string>;
 // One file per module per language (messages/<lang>/<module>.json), so the words sit beside each other but never collide.
 const en: Words = merge(import.meta.glob<{ default: Words }>('./messages/en/*.json', { eager: true }));
-// Other languages ship as one pack each (scripts/pack-lang.mjs): only the lines, in sorted English key order.
-const packs = import.meta.glob<string>(['./packs/*.json', '!./packs/fit.json'], { query: '?url', import: 'default', eager: true });
+// Each other language is one pack (scripts/pack-lang.mjs): only the lines, in sorted English key order. fit names the key list this build's packs must match.
 const fit = (Object.values(import.meta.glob<{ fit: string }>('./packs/fit.json', { eager: true, import: 'default' }))[0] ?? { fit: '' }).fit;
 const ORDER = Object.keys(en).sort();
 
@@ -69,6 +70,9 @@ export const lang = $state<{ value: Locale; choice: LocaleChoice; words: Record<
 	choice: 'auto',
 	words: en
 });
+
+/** A language asked for whose pack is not installed on the server yet (it shows in English meanwhile); null when none. */
+export const langPack = $state<{ missing: Locale | null }>({ missing: null });
 
 /** The line for `key` in the current language, with {name} filled from `vars`. */
 export function t(key: string, vars?: Record<string, string | number>): string {
@@ -166,11 +170,12 @@ async function use(l: Locale): Promise<void> {
 	want = l;
 	let words: Record<string, string> = en;
 	if (l !== 'en') {
-		const got = await readPack(packs[`./packs/${l}.json`]);
-		if (want !== l || got === 'reload') return;
+		const got = await readPack(to(`/api/v1/languages/${l}/pack`));
+		if (want !== l) return;
+		langPack.missing = got ? null : l;
 		if (got) words = got;
 		else l = 'en';
-	}
+	} else langPack.missing = null;
 	lang.value = l;
 	lang.words = words;
 	if (typeof document !== 'undefined') {
@@ -179,23 +184,14 @@ async function use(l: Locale): Promise<void> {
 	}
 }
 
-const RELOADED = 'holyarrs-lang-reloaded';
-
-/** One language's words from its pack (lines it lacks in English); null when the pack can't be used, 'reload' when the page reloads to get a newer build's packs. */
-export async function readPack(url: string | undefined): Promise<Words | null | 'reload'> {
+/** One language's words from its pack (lines it lacks in English); null when the pack is not installed or doesn't fit this build. */
+export async function readPack(url: string | undefined): Promise<Words | null> {
 	try {
 		if (!url) return null;
 		const res = await fetch(url);
-		// A tab from before an update asks for the old build's pack, which is gone: one reload brings the new page and its packs.
-		if (res.status === 404 && reloadOnce()) return 'reload';
 		if (!res.ok) return null;
 		const p = (await res.json()) as { fit: string; values: (string | null)[] };
-		if (p.fit !== fit || p.values.length !== ORDER.length) return null;
-		try {
-			sessionStorage.removeItem(RELOADED);
-		} catch {
-			// No storage: nothing was kept.
-		}
+		if (p.fit !== fit || !Array.isArray(p.values) || p.values.length !== ORDER.length) return null;
 		const got: Words = {};
 		ORDER.forEach((k, i) => {
 			const v = p.values[i];
@@ -207,16 +203,9 @@ export async function readPack(url: string | undefined): Promise<Words | null | 
 	}
 }
 
-// Reloads the page unless this tab already did for a missing pack, so a pack that is really gone shows English instead of looping.
-function reloadOnce(): boolean {
-	try {
-		if (sessionStorage.getItem(RELOADED)) return false;
-		sessionStorage.setItem(RELOADED, '1');
-		location.reload();
-		return true;
-	} catch {
-		return false;
-	}
+/** Shows the current choice again, after its pack was installed. */
+export function reloadLang(): Promise<void> {
+	return use(appLanguage());
 }
 
 function storedChoice(): LocaleChoice {

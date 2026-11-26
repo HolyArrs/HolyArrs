@@ -19,10 +19,11 @@ const (
 	KeyTVDBPIN = "tvdb_pin"
 	KeyMDBList = "mdblist_key"
 	KeyFanart  = "fanart_key"
+	KeyOMDb    = "omdb_key"
 )
 
 // OwnKeyNames are the own-key settings, in the order Settings lists them.
-var OwnKeyNames = []string{KeyTMDB, KeyTVDB, KeyTVDBPIN, KeyMDBList, KeyFanart}
+var OwnKeyNames = []string{KeyTMDB, KeyTVDB, KeyTVDBPIN, KeyMDBList, KeyFanart, KeyOMDb}
 
 // KeyReader reads one of the owner's own keys ("" when not set).
 func (h *Hosted) KeyReader(name string) func(ctx context.Context) (string, error) {
@@ -62,14 +63,15 @@ const (
 	EnvTVDBURL    = "HOLYARRS_TVDB_URL"
 	EnvMDBListURL = "HOLYARRS_MDBLIST_URL"
 	EnvFanartURL  = "HOLYARRS_FANART_URL"
+	EnvOMDbURL    = "HOLYARRS_OMDB_URL"
 )
 
 // TestKey checks one own key before it is used: a TMDB token, a TheTVDB
-// key with its PIN, an MDBList or a fanart.tv key. The owner asked for it,
+// key with its PIN, an MDBList, a fanart.tv or an OMDb key. The owner asked for it,
 // so it goes out in any mode, over public addresses only.
 func (h *Hosted) TestKey(ctx context.Context, key, value, pin string) error {
 	stand := func(env string) bool { return os.Getenv(env) != "" }
-	cl := &http.Client{Timeout: 15 * time.Second, Transport: publicTransport(h.stand != "" || stand(EnvTVDBURL) || stand(EnvMDBListURL) || stand(EnvFanartURL))}
+	cl := &http.Client{Timeout: 15 * time.Second, Transport: publicTransport(h.stand != "" || stand(EnvTVDBURL) || stand(EnvMDBListURL) || stand(EnvFanartURL) || stand(EnvOMDbURL))}
 	fixed := func(context.Context) (string, error) { return value, nil }
 	switch key {
 	case KeyTMDB:
@@ -90,6 +92,13 @@ func (h *Hosted) TestKey(ctx context.Context, key, value, pin string) error {
 			o.FanartKey = fixed
 			_, err = o.Art(ctx, "movie", "603")
 		}
+		if errors.Is(err, ErrNotFound) {
+			return nil // the key was taken; that title just has nothing
+		}
+		return err
+	case KeyOMDb:
+		o := &OMDb{Base: os.Getenv(EnvOMDbURL), Key: fixed, HTTP: cl}
+		_, err := o.Scores(ctx, "tt0133093")
 		if errors.Is(err, ErrNotFound) {
 			return nil // the key was taken; that title just has nothing
 		}

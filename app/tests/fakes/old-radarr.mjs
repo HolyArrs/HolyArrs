@@ -16,7 +16,7 @@ export function startOldRadarrFake() {
 		'/api/v3/config/naming': { id: 1, renameMovies: true, standardMovieFormat: '{Movie Title} ({Release Year}) {Quality Full}' },
 		'/api/v3/indexer': [{ id: 1, name: 'Old Torznab', implementation: 'Torznab', protocol: 'torrent', priority: 25, enableRss: true, fields: [{ name: 'baseUrl', value: 'http://127.0.0.1:9/old/' }, { name: 'apiKey', value: '********', privacy: 'apiKey' }] }],
 		'/api/v3/downloadclient': [{ id: 1, name: 'Old qBit', implementation: 'QBittorrent', enable: true, priority: 1, protocol: 'torrent', fields: [{ name: 'host', value: 'old-qbit' }, { name: 'port', value: 8080 }, { name: 'username', value: 'admin' }, { name: 'password', value: '********', privacy: 'password' }] }],
-		'/api/v3/notification': [{ id: 1, name: 'Old Discord', implementation: 'Discord', onGrab: true, fields: [{ name: 'webHookUrl', value: '********', privacy: 'apiKey' }] }, { id: 2, name: 'Old Pushover', implementation: 'Pushover', fields: [] }]
+		'/api/v3/notification': [{ id: 1, name: 'Old Discord', implementation: 'Discord', onGrab: true, fields: [{ name: 'webHookUrl', value: '********', privacy: 'apiKey' }] }, { id: 2, name: 'Old Pushover', implementation: 'Pushover', fields: [] }, { id: 3, name: 'Old Telegram', implementation: 'Telegram', onGrab: true, onDownload: true, onHealthIssue: false, fields: [{ name: 'botToken', value: '********', privacy: 'apiKey' }, { name: 'chatId', value: '@lodestone_news' }, { name: 'topicId', value: 7 }, { name: 'sendSilently', value: true }] }]
 	};
 	const oldRadarr = createServer((req, res) => {
 		const url = new URL(req.url ?? '/', 'http://x');

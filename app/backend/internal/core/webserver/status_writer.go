@@ -21,3 +21,7 @@ func (s *StatusWriter) Write(b []byte) (int, error) {
 	}
 	return s.ResponseWriter.Write(b)
 }
+
+// Unwrap gives http.ResponseController the underlying writer, so a handler
+// behind it can still move its read deadline (the restore upload) or flush.
+func (s *StatusWriter) Unwrap() http.ResponseWriter { return s.ResponseWriter }

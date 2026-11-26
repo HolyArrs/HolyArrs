@@ -36,5 +36,7 @@
 	"settings.move.undoId": "インポート {id} を取り消しますか?",
 	"settings.move.undoQuestion": "このインポートを取り消しますか?",
 	"settings.move.undoNote": "このインポートで追加したものを削除します。その後の変更は残ります。レポートが必要なら、先にダウンロードしてください。",
-	"settings.move.undoMove": "インポートを取り消す"
+	"settings.move.undoMove": "インポートを取り消す",
+	"settings.move.continueSetup": "セットアップを続ける",
+	"settings.move.backToChoose": "選択に戻る"
 }

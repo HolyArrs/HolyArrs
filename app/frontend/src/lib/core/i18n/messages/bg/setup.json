@@ -8,10 +8,14 @@
 	"setup.fullPath": "Въведете пълния път до папката, например {path}.",
 	"setup.folderUsed": "Тази папка вече се използва или е вътре в такава.",
 	"setup.folderMissing": "Тази папка не съществува. Проверете пътя.",
-	"setup.addFolderOrOff": "Добавете папка или изключете това.",
+	"setup.addFolderOrOff": "Добавете папка или натиснете „Пропускане засега“.",
 	"setup.notAnswering": "HolyArrs не отговаря. Опитайте пак след малко.",
 	"setup.addUserPasswordHint": "Въведете потребителско име и парола.",
 	"setup.folders": "Папки",
 	"setup.downloader": "Програма за изтегляне",
-	"setup.source": "Източник"
+	"setup.source": "Източник",
+	"setup.alertsNeedKeyOne": "Известия: 1 има нужда от ключ",
+	"setup.alertsNeedKey": "Известия: {n} имат нужда от ключ",
+	"setup.folderNoAccess": "HolyArrs не може да отвори тази папка. Проверете правата ѝ.",
+	"setup.folderCantUse": "HolyArrs не може да използва тази папка. Проверете пътя."
 }

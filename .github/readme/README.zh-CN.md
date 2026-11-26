@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0：红点显示需要处理的事项，连接测试会说出具体问题。**为请求的作品加 Plex 标签，名称用你的语言，以及 30 多项修复。 用你自己掌控的密钥，通过 MCP 连接应用。[查看新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1：插件能听到 HolyArrs 里发生的事。**开发者模式会运行你正在构建的插件，测试版则让少数人先试用。 [查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 里每一张海报、每一段预告片和每一个评分，都来自我自己运营、自己付费的服务器，所以它对所有人都免费。如果 HolyArrs 让你的电影之夜更好了一点，赞助一下，就能为我们所有人留着这盏灯 💛
 >
@@ -374,7 +374,7 @@ docker compose up -d
 - 无法登录所有者账号：
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - 版本号：

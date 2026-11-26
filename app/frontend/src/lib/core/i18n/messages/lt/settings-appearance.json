@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Užsakymai",
 	"settings.appearance.colRate": "Eilutei",
 	"settings.appearance.noRows": "Naršymo eilučių dar nesuskaičiuota.",
+	"settings.appearance.rowStats": "Naršymo eilutės",
+	"settings.appearance.rowStatsDesc": "Atidarymai ir užsakymai kiekvienoje eilutėje per pastarąsias 30 dienų, visų kartu. Skaičiuojama tik šiame serveryje.",
+	"settings.appearance.colRow": "Eilutė",
+	"settings.appearance.row.because_have": "Kaip jūsų turimi pavadinimai",
+	"settings.appearance.row.because_asked": "Kaip jūsų užsakymai",
+	"settings.appearance.row.person": "Daugiau iš asmens",
+	"settings.appearance.row.genre": "Žanrų parinktys jums",
+	"settings.appearance.row.popular_genre": "Populiaru pagal žanrą",
+	"settings.appearance.row.popular_decade": "Populiaru pagal dešimtmetį",
+	"settings.appearance.row.decade": "Pagal dešimtmetį",
+	"settings.appearance.row.mood": "Pagal nuotaiką",
+	"settings.appearance.row.hero": "Viršutinė juosta",
 	"settings.appearance.motion": "Judesys",
 	"settings.appearance.motionNote": "Atitinka jūsų įrenginio nustatymą Sumažinti judesį"
 }

@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Tik šie gali pasakyti, iš kur atėjo apsilankymas.",
 	"settings.signIn.fixToSaveOne": "Pataisykite 1 eilutę, kad išsaugotumėte",
 	"settings.signIn.fixToSaveOther": "Pataisykite eilučių: {n}, kad išsaugotumėte",
-	"settings.signIn.localSaved": "Vietinis tinklas išsaugotas"
+	"settings.signIn.localSaved": "Vietinis tinklas išsaugotas",
+	"settings.signIn.forgotTitle": "Pamiršote slaptažodį?",
+	"settings.signIn.forgotOn": "Rodyti Pamiršote slaptažodį? prisijungimo puslapyje",
+	"settings.signIn.forgotNote": "Savininkas gauna vienkartinį kodą iš serverio žurnalo. Išjunkite, jei visi jungiasi per bendrą prisijungimą. Komanda reset-owner vis tiek veikia.",
+	"settings.signIn.forgotShown": "Pamiršote slaptažodį? įjungta",
+	"settings.signIn.forgotHidden": "Pamiršote slaptažodį? išjungta"
 }

@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Изберете какво да заявите следващо",
 	"home.newPopular": "Ново и популярно",
 	"home.whatSTrending": "Какво е актуално",
+	"home.gettingReady": "Подготвя се…",
 	"home.top10sAndComing": "Топ 10 и скоро",
 	"home.whatSNext": "Какво следва",
 	"home.airDatesAndReleases": "Дати на излъчване и излизане",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Епизоди и филми, които излизат тази седмица",
 	"home.popularThisWeek": "Популярни заглавия, които излизат тази седмица",
 	"home.peopleCheck": "Проверка на хората",
-	"home.cantReadUsers": "списъкът с потребители не може да се прочете"
+	"home.cantReadUsers": "списъкът с потребители не може да се прочете",
+	"home.joined.title": "Добре дошли, {name}",
+	"home.joined.find": "Намерете нещо в {explore} или {search}.",
+	"home.joined.ask": "Докоснете {request} при заглавие, за да го получите. Можете да поискате:",
+	"home.joined.track": "Следете всяка в {requests}.",
+	"home.joined.noLimit": "Без седмичен лимит.",
+	"home.joined.gotIt": "Разбрах",
+	"home.joined.explore": "Отвори {explore}"
 }

@@ -72,7 +72,8 @@ func sqlList(vals []string) string {
 
 // bucket names one file's fact: an allowed value as itself, an empty one
 // as missing, any other value as "other"; a file nobody read yet is
-// "unchecked" (music by its extension when that names the fact) and one
+// "unchecked" (music by its extension when that names the fact), one in a
+// container HolyArrs does not read (WMV, FLV) is "unsupported", shown as "from the file name", and one
 // that could not be read is "unknown".
 func (sf statFact) bucket(kind, status, ext, val string) string {
 	status = strings.ToLower(status)
@@ -91,6 +92,9 @@ func (sf statFact) bucket(kind, status, ext, val string) string {
 	}
 	if status == "" {
 		return "unchecked"
+	}
+	if status == "unsupported" {
+		return "unsupported"
 	}
 	return "unknown"
 }

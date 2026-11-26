@@ -21,6 +21,11 @@ func JudgeName(name string, mediaInfo map[string]any) string {
 		name += " " + rec
 		p = releasename.Parse(name, releasename.Hints{})
 	}
+	if fv, _ := mediaInfo["french_version"].(string); fv != "" && releasename.FrenchVersion(name) == "" {
+		// Read from the .nfo or the audio tracks after download.
+		name += " " + fv
+		p = releasename.Parse(name, releasename.Hints{})
+	}
 	r, _ := mediaInfo["resolution"].(string)
 	if !inspectedRes.MatchString(r) || p.Resolution.Value > 0 {
 		return name

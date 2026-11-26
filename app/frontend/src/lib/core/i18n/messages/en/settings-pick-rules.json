@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Can't be undone. Files stay.",
 	"settings.pickRules.removeUsed": "{used}. Pick other rules there first.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Cancel"
+	"settings.pickRules.cancel": "Cancel",
+	"settings.pickRules.check.title": "Check a release name",
+	"settings.pickRules.check.desc": "Paste a release name to see how HolyArrs reads it and how your quality sets judge it. Nothing is searched or downloaded.",
+	"settings.pickRules.check.name": "Release name",
+	"settings.pickRules.check.rules": "Judge with",
+	"settings.pickRules.check.copies": "The matching title's copies",
+	"settings.pickRules.check.size": "Size in GB (optional)",
+	"settings.pickRules.check.check": "Check",
+	"settings.pickRules.check.failed": "Couldn't check the name",
+	"settings.pickRules.check.readAs": "Read as",
+	"settings.pickRules.check.matches": "Matches {name}",
+	"settings.pickRules.check.noTitle": "Matches no title in your Library. Pick a quality set above to judge it anyway.",
+	"settings.pickRules.check.noAlbum": "Matches {name}, but none of its albums.",
+	"settings.pickRules.check.noCopies": "This title has no copies to judge.",
+	"settings.pickRules.check.hasFile": "Has a file"
 }

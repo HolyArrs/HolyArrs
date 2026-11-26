@@ -37,6 +37,8 @@ const (
 	ssoKeyRedirect = "oidc_redirect_url"
 	ssoKeyJoin     = "oidc_join"
 	ssoKeyVaultRef = "oidc_vault_ref" // the client secret's vault id; "" is a public client
+	ssoKeyGroups   = "oidc_groups_claim"
+	ssoKeyRoles    = "oidc_group_roles" // "group=role, ..." (sso_groups.go)
 )
 
 var errNoWayIn = errors.New("no other way in")
@@ -49,6 +51,8 @@ type savedOIDC struct {
 	RedirectURL string
 	AllowJoin   bool
 	SecretID    int64
+	GroupsClaim string
+	GroupRoles  map[string]string
 }
 
 // SSOView is the single sign-on setup as Settings shows it. Never a secret.
@@ -62,7 +66,9 @@ type SSOView struct {
 	RedirectURL string        `json:"redirect_url"`
 	Suggested   string        `json:"suggested_redirect_url"`
 	AllowJoin   bool          `json:"allow_join"`
-	Links       int           `json:"links"` // people linked through this issuer
+	GroupsClaim string        `json:"groups_claim"`
+	GroupRoles  string        `json:"group_roles"` // "group=role, ..."
+	Links       int           `json:"links"`       // people linked through this issuer
 	LocalOK     bool          `json:"local_network_allowed"`
 	Forward     ForwardStatus `json:"forward"`
 }
@@ -86,6 +92,8 @@ type ssoSaveBody struct {
 	RedirectURL     string `json:"redirect_url"`  // keeps the saved callback when it is the same; anything else takes this browser's address
 	AllowJoin       bool   `json:"allow_join"`
 	ConfirmEveryone bool   `json:"confirm_everyone"`
+	GroupsClaim     string `json:"groups_claim"`
+	GroupRoles      string `json:"group_roles"`
 }
 
 // SSOLinkView is one single sign-on or trusted proxy identity linked to a person.
@@ -104,7 +112,13 @@ type unlinkBody struct {
 
 func (a *Auth) savedOIDCNow(ctx context.Context) savedOIDC {
 	id, _ := strconv.ParseInt(a.signInSetting(ctx, ssoKeyVaultRef), 10, 64)
+	roles, err := parseGroupRoles(a.signInSetting(ctx, ssoKeyRoles))
+	if err != nil {
+		roles = nil
+	}
 	return savedOIDC{
+		GroupsClaim: a.signInSetting(ctx, ssoKeyGroups),
+		GroupRoles:  roles,
 		On:          a.signInSetting(ctx, ssoKeyOn) == "true",
 		Issuer:      a.signInSetting(ctx, ssoKeyIssuer),
 		ClientID:    a.signInSetting(ctx, ssoKeyClient),
@@ -116,7 +130,7 @@ func (a *Auth) savedOIDCNow(ctx context.Context) savedOIDC {
 
 func (a *Auth) oidcOptions(s savedOIDC, secret string) OIDCOptions {
 	return OIDCOptions{Issuer: s.Issuer, ClientID: s.ClientID, ClientSecret: secret, RedirectURL: s.RedirectURL,
-		AllowJoin: s.AllowJoin, AllowLocal: a.ssoOpt.SavedLimits.AllowLocal, AllowLoopbackHTTP: a.ssoOpt.SavedLimits.AllowLoopbackHTTP}
+		AllowJoin: s.AllowJoin, GroupsClaim: s.GroupsClaim, GroupRoles: s.GroupRoles, AllowLocal: a.ssoOpt.SavedLimits.AllowLocal, AllowLoopbackHTTP: a.ssoOpt.SavedLimits.AllowLoopbackHTTP}
 }
 
 // loadSavedOIDC starts single sign-on from Settings at startup. A setup that
@@ -190,10 +204,12 @@ func (a *Auth) ssoView(r *http.Request) SSOView {
 			o := now.oidc.opt
 			v.On, v.Issuer, v.ClientID, v.SecretSet, v.RedirectURL, v.AllowJoin = true, o.Issuer, o.ClientID, o.ClientSecret != "", o.RedirectURL, o.AllowJoin
 			v.LocalOK = o.AllowLocal
+			v.GroupsClaim, v.GroupRoles = o.GroupsClaim, formatGroupRoles(o.GroupRoles)
 		}
 	} else {
 		s := a.savedOIDCNow(ctx)
 		v.On, v.Issuer, v.ClientID, v.SecretSet, v.RedirectURL, v.AllowJoin = s.On, s.Issuer, s.ClientID, s.SecretID != 0, s.RedirectURL, s.AllowJoin
+		v.GroupsClaim, v.GroupRoles = s.GroupsClaim, formatGroupRoles(s.GroupRoles)
 	}
 	if v.Issuer != "" {
 		v.Links, _ = countOIDCLinks(ctx, a.s.Read(), v.Issuer)
@@ -285,12 +301,19 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 	if !a.checkOwnerProof(w, r, who, body.Password, body.Code) {
 		return
 	}
+	groupRoles, err := parseGroupRoles(body.GroupRoles)
+	body.GroupsClaim = strings.TrimSpace(body.GroupsClaim)
+	if err != nil || !validGroupsClaim(body.GroupsClaim) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "check the groups claim and group roles: write each as group=admin or group=member, separated by commas", "code": "group_roles"})
+		return
+	}
 	ctx := r.Context()
 	cur := a.savedOIDCNow(ctx)
 	// The callback is never typed: it is the saved one, or this browser's
 	// address for HolyArrs, so a session cannot send codes to another host.
 	next := savedOIDC{On: body.On, Issuer: strings.TrimSpace(body.Issuer), ClientID: strings.TrimSpace(body.ClientID),
-		RedirectURL: a.suggestedRedirect(r), AllowJoin: body.AllowJoin, SecretID: cur.SecretID}
+		RedirectURL: a.suggestedRedirect(r), AllowJoin: body.AllowJoin, SecretID: cur.SecretID,
+		GroupsClaim: body.GroupsClaim, GroupRoles: groupRoles}
 	if cur.RedirectURL != "" && strings.TrimSpace(body.RedirectURL) == cur.RedirectURL {
 		next.RedirectURL = cur.RedirectURL
 	}
@@ -342,7 +365,7 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 	}
 	var linksGone, sessionsGone int64
 	by := webserver.Actor(ctx)
-	err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
+	err = a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		if newSecret != "" || body.PublicClient {
 			if cur.SecretID != 0 {
 				if err := a.vault.DeleteTx(ctx, tx, cur.SecretID); err != nil {
@@ -363,7 +386,8 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 			secretRef = strconv.FormatInt(next.SecretID, 10)
 		}
 		for k, v := range map[string]string{ssoKeyOn: strconv.FormatBool(next.On), ssoKeyIssuer: next.Issuer, ssoKeyClient: next.ClientID,
-			ssoKeyRedirect: next.RedirectURL, ssoKeyJoin: strconv.FormatBool(next.AllowJoin), ssoKeyVaultRef: secretRef} {
+			ssoKeyRedirect: next.RedirectURL, ssoKeyJoin: strconv.FormatBool(next.AllowJoin), ssoKeyVaultRef: secretRef,
+			ssoKeyGroups: next.GroupsClaim, ssoKeyRoles: formatGroupRoles(next.GroupRoles)} {
 			if err := database.PutSetting(tx, settingsGroup, signInPrefix+k, v, by, a.now()); err != nil {
 				return err
 			}
@@ -412,7 +436,7 @@ func (a *Auth) putSSO(w http.ResponseWriter, r *http.Request) {
 	}
 	a.event(r, by, "settings_changed", byName(r)+" changed single sign-on", map[string]any{"area": "sign-in", "action": "changed", "what": "single sign-on",
 		"on": next.On, "issuer": next.Issuer, "old_issuer": cur.Issuer, "client_id": next.ClientID, "old_client_id": cur.ClientID,
-		"allow_join": next.AllowJoin, "links_removed": linksGone, "sessions_ended": sessionsGone})
+		"allow_join": next.AllowJoin, "groups_claim": next.GroupsClaim, "group_roles": formatGroupRoles(next.GroupRoles), "links_removed": linksGone, "sessions_ended": sessionsGone})
 	log.Printf("auth: single sign-on changed by user %d (on %t, links removed %d, sessions ended %d)", who.UserID, next.On, linksGone, sessionsGone)
 	writeJSON(w, http.StatusOK, map[string]any{"sso": a.ssoView(r), "links_removed": linksGone, "sessions_ended": sessionsGone})
 }

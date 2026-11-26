@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Pieprasījumi",
 	"settings.appearance.colRate": "Katrā rindā",
 	"settings.appearance.noRows": "Izpētīt rindas vēl nav saskaitītas.",
+	"settings.appearance.rowStats": "Izpētīt rindas",
+	"settings.appearance.rowStatsDesc": "Atvēršanas un pieprasījumi katrai rindai pēdējās 30 dienās, visiem kopā. Skaitīti tikai šajā serverī.",
+	"settings.appearance.colRow": "Rinda",
+	"settings.appearance.row.because_have": "Kā tavi nosaukumi",
+	"settings.appearance.row.because_asked": "Kā tavi pieprasījumi",
+	"settings.appearance.row.person": "Vairāk no personas",
+	"settings.appearance.row.genre": "Žanru izvēle tev",
+	"settings.appearance.row.popular_genre": "Populāri pēc žanra",
+	"settings.appearance.row.popular_decade": "Populāri pēc desmitgades",
+	"settings.appearance.row.decade": "Pēc desmitgades",
+	"settings.appearance.row.mood": "Pēc noskaņas",
+	"settings.appearance.row.hero": "Augšējais baneris",
 	"settings.appearance.motion": "Kustība",
 	"settings.appearance.motionNote": "Seko ierīces iestatījumam Samazināt kustību"
 }

@@ -28,6 +28,40 @@ type fakeSab struct {
 	added   []map[string]string
 	refuse  string
 	addFail bool
+	// keyAlways and missing play SAB-like apps that want the key on every
+	// call and lack some modes.
+	keyAlways bool
+	missing   map[string]bool
+}
+
+func TestSabnzbdLikeApps(t *testing.T) {
+	for _, c := range []struct {
+		name      string
+		keyAlways bool
+		missing   map[string]bool
+	}{
+		{"real sabnzbd", false, nil},
+		{"key on every call", true, nil},
+		{"key on every call, no categories or status", true, map[string]bool{"get_cats": true, "fullstatus": true}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			f := &fakeSab{keyAlways: c.keyAlways, missing: c.missing}
+			s := NewSabnzbd(startSab(t, f), sabKey, nil)
+			ctx := context.Background()
+			if h, err := s.Health(ctx); err != nil || h.Version != "5.1.3" {
+				t.Fatalf("health %+v %v", h, err)
+			}
+			if _, err := s.HasCategory(ctx, "movies"); err != nil {
+				t.Fatalf("category: %v", err)
+			}
+			if id, err := s.Add(ctx, AddRequest{URL: "http://x/a.nzb", Category: "movies", Name: "A"}); err != nil || id == "" {
+				t.Fatalf("add %q %v", id, err)
+			}
+			if _, err := NewSabnzbd(startSab(t, f), "wrong", nil).Health(ctx); !errors.Is(err, ErrAuth) {
+				t.Fatalf("wrong key: %v", err)
+			}
+		})
+	}
 }
 
 func TestSabnzbdHealthChecksTheKey(t *testing.T) {
@@ -195,6 +229,16 @@ func startSab(t *testing.T, f *fakeSab) string {
 		if f.refuse != "" {
 			w.WriteHeader(http.StatusForbidden)
 			_, _ = w.Write([]byte(f.refuse))
+			return
+		}
+		if f.keyAlways && q.Get("apikey") != sabKey {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"error":"Not Authorised"}`))
+			return
+		}
+		if f.missing[mode] {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"error":"API Not Found"}`))
 			return
 		}
 		if mode != "version" && q.Get("apikey") != sabKey {

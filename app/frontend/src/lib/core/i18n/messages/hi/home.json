@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "चुनें कि अगली रिक्वेस्ट क्या हो",
 	"home.newPopular": "नया और लोकप्रिय",
 	"home.whatSTrending": "क्या ट्रेंड में है",
+	"home.gettingReady": "तैयारी हो रही है…",
 	"home.top10sAndComing": "टॉप 10 और जल्द आने वाले",
 	"home.whatSNext": "आगे क्या",
 	"home.airDatesAndReleases": "प्रसारण की तारीखें और रिलीज़",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "इस हफ़्ते आ रहे एपिसोड और फ़िल्में",
 	"home.popularThisWeek": "इस हफ़्ते आ रही लोकप्रिय रिलीज़",
 	"home.peopleCheck": "लोगों की जाँच",
-	"home.cantReadUsers": "उपयोगकर्ता सूची पढ़ी नहीं जा सकती"
+	"home.cantReadUsers": "उपयोगकर्ता सूची पढ़ी नहीं जा सकती",
+	"home.joined.title": "स्वागत है, {name}",
+	"home.joined.find": "{explore} या {search} में कुछ खोजें।",
+	"home.joined.ask": "पाने के लिए किसी टाइटल पर {request} दबाएँ। आप माँग सकते हैं:",
+	"home.joined.track": "हर एक को {requests} में देखें।",
+	"home.joined.noLimit": "कोई साप्ताहिक सीमा नहीं।",
+	"home.joined.gotIt": "समझ गया",
+	"home.joined.explore": "{explore} खोलें"
 }

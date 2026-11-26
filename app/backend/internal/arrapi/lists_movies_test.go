@@ -365,11 +365,11 @@ func TestRadarrQueueDetailsAndStatus(t *testing.T) {
 		t.Fatalf("no such movie: %s", b)
 	}
 	for side, b := range r.both("queue/status") {
-		var s map[string]int
+		var s map[string]any
 		if err := json.Unmarshal(b, &s); err != nil {
 			t.Fatalf("%s: %v %s", side, err, b)
 		}
-		if side == "radarr" && (s["totalCount"] != 3 || s["count"] != 3 || s["warnings"] != 1 || s["errors"] != 0) {
+		if side == "radarr" && (s["totalCount"] != 3.0 || s["count"] != 3.0 || s["warnings"] != true || s["errors"] != false || s["unknownErrors"] != false) {
 			t.Fatalf("%s: %s", side, b)
 		}
 		for _, k := range []string{"totalCount", "count", "unknownCount", "errors", "warnings", "unknownErrors", "unknownWarnings"} {
@@ -408,5 +408,31 @@ func TestCalendarWholeRangeOnceEach(t *testing.T) {
 	}
 	if d := time.Since(start); d > 3*time.Second {
 		t.Fatalf("took %s", d)
+	}
+}
+
+// A movie whose Release gate is "announced" may be searched at any time, so
+// the Radarr side calls it available although it has no gate date; one
+// gated on a date still to come is not.
+func TestMovieAvailableOnAnnouncedGate(t *testing.T) {
+	r := newPinRig(t)
+	open := r.movie("Open", "700", 0)
+	r.exec("UPDATE titles SET release_gate = 'announced', gate_driver = 'announced', gate_opens_at = NULL WHERE id = ?", open)
+	shut := r.movie("Shut", "701", 1)
+	r.exec("UPDATE titles SET release_gate = 'released', gate_driver = 'digital', gate_opens_at = '2099-01-01T00:00:00Z' WHERE id = ?", shut)
+	st, b := r.radarr("movie")
+	var ms []struct {
+		Title       string
+		IsAvailable bool
+	}
+	if st != 200 || json.Unmarshal(b, &ms) != nil {
+		t.Fatalf("movies: %d %s", st, b)
+	}
+	got := map[string]bool{}
+	for _, m := range ms {
+		got[m.Title] = m.IsAvailable
+	}
+	if !got["Open"] || got["Shut"] {
+		t.Fatalf("isAvailable: %v", got)
 	}
 }

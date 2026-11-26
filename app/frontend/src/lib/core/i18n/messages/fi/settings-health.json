@@ -14,7 +14,6 @@
 	"settings.health.none": "Ei tuloksia. Tarkista uudelleen ajaaksesi ne.",
 	"settings.health.since": "Alkaen",
 	"settings.health.settings": "Kuntotarkistusten asetukset",
-	"settings.health.updateCheck": "Tarkista uudempi HolyArrs",
 	"settings.health.onlyChecks": "Vain tarkistaa. Ei koskaan asenna.",
 	"settings.health.every": "Tarkista päivitykset joka",
 	"settings.health.day": "päivä",

@@ -138,10 +138,16 @@ func LookingSlotsOfTitle(ctx context.Context, q database.Lister, titleID int64, 
 // TitlesLooking lists the active Titles that have a Slot in one of three
 // states, by sort name.
 func TitlesLooking(ctx context.Context, q database.Lister, states [3]string) ([]Title, error) {
-	return database.Select[Title](ctx, q, "titles", `state = 'active' AND EXISTS (
-		SELECT 1 FROM items i JOIN slots sl ON sl.item_id = i.id
-		WHERE i.title_id = titles.id AND sl.state IN (?, ?, ?)) ORDER BY sort_name, id`, states[0], states[1], states[2])
+	return database.Select[Title](ctx, q, "titles", titlesLookingWhere, states[0], states[1], states[2])
 }
+
+// titlesLookingWhere reads the looking Slots once, as a list of Title ids.
+// A subquery tied to each Title made SQLite walk every wanted Slot once per
+// Title, which took half a minute on a large library.
+const titlesLookingWhere = `state = 'active' AND id IN (
+		SELECT i.title_id FROM slots sl JOIN items i ON i.id = sl.item_id
+		JOIN versions v ON v.id = sl.version_id
+		WHERE sl.state IN (?, ?, ?) AND NOT ` + LookOnlySQL + `) ORDER BY sort_name, id`
 
 // LookingRuleTags maps each Title with a Slot in one of these states to the
 // tags of the Pick rules those Slots use.
@@ -302,6 +308,31 @@ func VersionsOfTitle(ctx context.Context, q database.Lister, titleID int64) ([]V
 // SlotsOfItem lists an Item's Slots, oldest first.
 func SlotsOfItem(ctx context.Context, q database.Lister, itemID int64) ([]Slot, error) {
 	return database.Select[Slot](ctx, q, "slots", "item_id = ? ORDER BY id", itemID)
+}
+
+// SlotItems is the Item of each of these Slots, by Slot id.
+func SlotItems(ctx context.Context, q database.Lister, slotIDs []int64) (map[int64]int64, error) {
+	out := map[int64]int64{}
+	if len(slotIDs) == 0 {
+		return out, nil
+	}
+	in, err := json.Marshal(slotIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.QueryContext(ctx, "SELECT id, item_id FROM slots WHERE id IN (SELECT value FROM json_each(?))", string(in))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, item int64
+		if err := rows.Scan(&id, &item); err != nil {
+			return nil, err
+		}
+		out[id] = item
+	}
+	return out, rows.Err()
 }
 
 // SeasonPartID is the id of a show's season Part with that number.

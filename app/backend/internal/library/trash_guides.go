@@ -275,7 +275,7 @@ var trashSkippedKinds = map[string]string{
 // Sources the old apps number, mapped to HolyArrs sources.
 var (
 	trashSonarrSources = map[int]string{1: "tv", 2: "tv", 3: "web_dl", 4: "web_rip", 5: "dvd", 6: "bluray", 7: "remux,disc_image"}
-	trashRadarrSources = map[int]string{1: "cam", 2: "telesync", 5: "dvd", 6: "tv", 7: "web_dl", 8: "web_rip", 9: "bluray,remux,disc_image"}
+	trashRadarrSources = map[int]string{1: "cam", 2: "telesync", 3: "telecine", 4: "workprint", 5: "dvd", 6: "tv", 7: "web_dl", 8: "web_rip", 9: "bluray,remux,disc_image"}
 )
 
 // TrashMaxPoints is the Pick rules points bound; TRaSH scores past it are cut.

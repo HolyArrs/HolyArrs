@@ -38,6 +38,7 @@ type ReleaseView struct {
 	JobID      *int64 `json:"job_id,omitempty"`
 	SourceID   int64  `json:"source_id"`
 	SourceName string `json:"source_name"`
+	InfoURL    string `json:"info_url,omitempty"` // the release's page on its Source
 	SlotID     *int64 `json:"slot_id,omitempty"`
 	Version    string `json:"version,omitempty"`
 	TitleID    *int64 `json:"title_id,omitempty"`
@@ -61,6 +62,7 @@ type ReleaseView struct {
 	NeedsForce    bool           `json:"needs_force"`
 	GateSkip      bool           `json:"gate_skipped"`
 	Reasons       []Reason       `json:"reasons"`
+	Read          *ReleaseRead   `json:"read,omitempty"`
 	Verdict       map[string]any `json:"verdict"`
 	CreatedAt     time.Time      `json:"created_at"`
 }
@@ -68,7 +70,8 @@ type ReleaseView struct {
 func releaseView(x domain.Release) ReleaseView {
 	v := ReleaseView{ID: x.ID, Name: x.Name, Size: x.Size, Seeders: x.Seeders, Peers: x.Peers, Protocol: x.Protocol, State: x.State, FoundBy: x.FoundBy,
 		JobID: x.JobID, SourceID: x.SourceID, Published: x.PublishedAt, HoldUntil: x.HoldUntil, Verdict: x.Verdict, CreatedAt: x.CreatedAt,
-		Reasons: []Reason{}, NeedsForce: x.State == "refused" || x.State == "turned_down" || RefusedByRules(x)}
+		Reasons: []Reason{}, NeedsForce: x.State == "refused" || x.State == "turned_down" || RefusedByRules(x),
+		InfoURL: storedInfoURL(x.Parsed)}
 	if len(x.MatchedSlotIDs) > 0 {
 		id := x.MatchedSlotIDs[0]
 		v.SlotID = &id
@@ -85,6 +88,7 @@ func releaseView(x domain.Release) ReleaseView {
 			v.SlotID = &id
 		}
 	}
+	v.Read = readOf(x.Parsed)
 	v.Outcome, _ = x.Verdict["outcome"].(string)
 	v.Passed, _ = x.Verdict["passed"].(bool)
 	v.GoodEnough, _ = x.Verdict["good_enough"].(bool)
@@ -104,7 +108,8 @@ func releaseView(x domain.Release) ReleaseView {
 		rule, _ := m["rule"].(string)
 		eff, _ := m["effect"].(string)
 		text, _ := m["detail"].(string)
-		if pts, ok := m["points"].(float64); ok && pts != 0 {
+		// The total line already says its points.
+		if pts, ok := m["points"].(float64); ok && pts != 0 && step+"."+rule != "points.total" {
 			text = fmt.Sprintf("%s (%+d points)", text, int(pts))
 		}
 		if step+"."+rule == "hard.gate_skipped" {
@@ -149,6 +154,7 @@ func (h *Handlers) titleReleases(w http.ResponseWriter, r *http.Request) {
 	n, off := queryPage(r, 100)
 	db := h.Store.Read()
 	var filters []slotFilter
+	oneEpisode := false
 	for _, f := range []struct{ param, cond string }{{"slot_id", " AND s.id = ?"}, {"item_id", " AND i.id = ?"},
 		{"season", " AND json_extract(i.numbers, '$.season') = ?"}, {"version_id", " AND s.version_id = ?"}, {"album_id", " AND i.part_id = ?"}} {
 		sid := r.URL.Query().Get(f.param)
@@ -161,6 +167,7 @@ func (h *Handlers) titleReleases(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		filters = append(filters, slotFilter{cond: f.cond, id: id})
+		oneEpisode = oneEpisode || f.param == "slot_id" || f.param == "item_id"
 	}
 	jobIDs, err := latestSearchJobs(r.Context(), db, t.ID, filters)
 	if err != nil {
@@ -170,8 +177,17 @@ func (h *Handlers) titleReleases(w http.ResponseWriter, r *http.Request) {
 	out := []ReleaseView{}
 	total := 0
 	if len(jobIDs) > 0 {
+		// One episode lists only its own Releases, not those a wider
+		// search found for the show's other episodes.
+		var only []int64
+		if oneEpisode {
+			if only, err = filteredSlots(r.Context(), db, t.ID, filters); err != nil {
+				webserver.Internal(w, "sources", err)
+				return
+			}
+		}
 		var rels []domain.Release
-		rels, total, err = releasesOfJobs(r.Context(), db, jobIDs, n, off)
+		rels, total, err = releasesOfJobs(r.Context(), db, jobIDs, only, n, off)
 		if err != nil {
 			webserver.Internal(w, "sources", err)
 			return
@@ -181,9 +197,17 @@ func (h *Handlers) titleReleases(w http.ResponseWriter, r *http.Request) {
 		}
 		h.named(r.Context(), out)
 	}
+	stale := len(jobIDs) > 0 && rulesChangedSince(r.Context(), db, t.ID, jobIDs)
 	// Searches of this Title still running, so a screen can wait for them.
 	running := runningSearchJobs(r.Context(), db, t.ID)
-	webserver.WriteJSON(w, http.StatusOK, map[string]any{"releases": out, "total": total, "limit": n, "offset": off, "running_job_ids": running})
+	body := map[string]any{"releases": out, "total": total, "limit": n, "offset": off, "running_job_ids": running, "rules_changed": stale}
+	// With nothing to list, say whether a search ran and what came of it.
+	if total == 0 {
+		if ls := lastSearch(r.Context(), db, t.ID, filters); ls != nil {
+			body["last_search"] = ls
+		}
+	}
+	webserver.WriteJSON(w, http.StatusOK, body)
 }
 
 // SearchError answers a search refusal with its status and reason.

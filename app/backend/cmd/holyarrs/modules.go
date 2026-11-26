@@ -10,6 +10,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/migrate"
@@ -105,9 +106,19 @@ func (o oldApps) SetOn(ctx context.Context, by domain.Actor, on bool) error {
 func (a *handlers) arr() *arrapi.Handlers {
 	return &arrapi.Handlers{
 		Deps: arrapi.Deps{Store: a.s.Store, Library: a.s.Library, Metadata: a.s.Metadata, Queue: a.s.Queue,
-			Picture: a.oldAppPicture, Secrets: a.s.Secrets, SourceSaved: a.publishSource, SourceRemoved: a.forgetSource},
+			Picture: a.oldAppPicture, Secrets: a.s.Secrets, SourceSaved: a.publishSource, SourceRemoved: a.forgetSource,
+			Search: a.s.Search, Downloads: a.downloadsManager},
 		Auth: a.s.Auth,
 	}
+}
+
+// downloadsManager is the Downloads page's Manager, so the arr API removes
+// downloads the same way. Nil before the routes are built.
+func (a *handlers) downloadsManager() *downloads.Manager {
+	if a.dl == nil {
+		return nil
+	}
+	return a.dl.Manager()
 }
 
 // forgetSource drops what the searcher keeps of a removed Source, as the
@@ -159,7 +170,20 @@ func serveCover(w http.ResponseWriter, r *http.Request, name, p string) {
 }
 
 func (a *handlers) migrateHandlers() *migrate.Handlers {
-	return &migrate.Handlers{Store: a.s.Store, Secrets: a.s.Secrets, Mover: a.mover, SafeMode: a.safeMode}
+	return &migrate.Handlers{Store: a.s.Store, Secrets: a.s.Secrets, Mover: a.mover, SafeMode: a.safeMode, PlexToken: a.callerPlexToken}
+}
+
+// callerPlexToken is the signed-in person's kept Plex token, or "".
+func (a *handlers) callerPlexToken(ctx context.Context) string {
+	c, ok := webserver.From(ctx)
+	if a.s.Auth == nil || !ok {
+		return ""
+	}
+	tok, err := a.s.Auth.PlexToken(ctx, c.UserID)
+	if err != nil {
+		return ""
+	}
+	return tok
 }
 
 // mover is the move runner (made on first use in tests).
@@ -178,9 +202,10 @@ func (a *handlers) safeMode() bool { return a.s.SafeMode || (a.s.Parts != nil &&
 // holding is the holding-folder routes of mediafiles on the library service.
 func (a *handlers) holding() *mediafiles.HoldingHandlers {
 	return &mediafiles.HoldingHandlers{
-		HeldFiles: func(ctx context.Context) (any, error) { return a.s.Library.HeldFiles(ctx) },
-		RestoreHeld: func(ctx context.Context, ids []int64, by domain.Actor) (any, []int64, error) {
-			return a.s.Library.RestoreHeld(ctx, ids, by)
+		HeldFiles: func(ctx context.Context, titleID int64) (any, error) { return a.s.Library.HeldFiles(ctx, titleID) },
+		HeldCount: a.s.Library.HeldCount,
+		RestoreHeld: func(ctx context.Context, ids []int64, how string, by domain.Actor) (any, []int64, error) {
+			return a.s.Library.RestoreHeld(ctx, ids, how, by)
 		},
 		QueueRescan: func(ctx context.Context, by domain.Actor) (int64, error) {
 			id, _, err := a.s.Queue.Enqueue(ctx, library.KindRescan, nil, nil, library.KindRescan, by)

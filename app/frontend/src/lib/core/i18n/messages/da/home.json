@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Vælg, hvad du vil anmode om næste gang",
 	"home.newPopular": "Nyt og populært",
 	"home.whatSTrending": "Hvad der trender",
+	"home.gettingReady": "Gør klar…",
 	"home.top10sAndComing": "Top 10 og kommer snart",
 	"home.whatSNext": "Hvad er det næste",
 	"home.airDatesAndReleases": "Sendedatoer og udgivelser",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Afsnit og film, der kommer i denne uge",
 	"home.popularThisWeek": "Populære udgivelser, der kommer i denne uge",
 	"home.peopleCheck": "Personkontrol",
-	"home.cantReadUsers": "brugerlisten kan ikke læses"
+	"home.cantReadUsers": "brugerlisten kan ikke læses",
+	"home.joined.title": "Velkommen, {name}",
+	"home.joined.find": "Find noget i {explore} eller {search}.",
+	"home.joined.ask": "Tryk på {request} på en titel for at få den. Du kan bede om:",
+	"home.joined.track": "Følg hver enkelt i {requests}.",
+	"home.joined.noLimit": "Ingen ugegrænse.",
+	"home.joined.gotIt": "Forstået",
+	"home.joined.explore": "Åbn {explore}"
 }

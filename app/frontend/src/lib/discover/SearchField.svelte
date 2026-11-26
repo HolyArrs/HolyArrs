@@ -6,7 +6,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { appPath, to } from '../core/paths.ts';
-	import { dlScope, registerField, rememberReturn, searchField, searchHooks } from '../core/search-field.svelte.ts';
+	import { dlScope, pluginScope, registerField, rememberReturn, searchField, searchHooks } from '../core/search-field.svelte.ts';
 	import { api } from '../core/api.ts';
 	import { inSettings, settingsFind } from '../core/settings-find.svelte.ts';
 
@@ -17,10 +17,14 @@
 	$effect(() => (el ? registerField(el) : undefined));
 	const onSearch = () => appPath(page.url.pathname).startsWith('/search');
 	// On Downloads the field searches that list (a chip says so); removing the chip searches all of HolyArrs again.
-	const scoped = $derived(dlScope.on && !dlScope.off && appPath(page.url.pathname).startsWith('/downloads'));
+	const dlScoped = $derived(dlScope.on && !dlScope.off && appPath(page.url.pathname).startsWith('/downloads'));
+	// On Plugins it filters the plugin grid as you type.
+	const plScoped = $derived(pluginScope.on && appPath(page.url.pathname).startsWith('/plugins'));
+	const scoped = $derived(dlScoped || plScoped);
+	const scope = $derived(plScoped ? pluginScope : dlScope);
 	// In Settings the field searches settings instead, with results on the Settings home.
 	const settings = $derived(inSettings(appPath(page.url.pathname)));
-	const shown = $derived(settings ? settingsFind.term : scoped ? dlScope.term : searchField.term);
+	const shown = $derived(settings ? settingsFind.term : scoped ? scope.term : searchField.term);
 	function settingsTyped(v: string) {
 		settingsFind.term = v;
 		if (appPath(page.url.pathname) !== '/settings' && v.trim()) void goto(to('/settings')).then(() => el?.focus());
@@ -126,7 +130,7 @@
 		if (e.key !== 'Escape') return;
 		if (scoped) {
 			e.preventDefault();
-			if (dlScope.term) dlScope.term = '';
+			if (scope.term) scope.term = '';
 			else el?.blur();
 			return;
 		}
@@ -166,10 +170,10 @@
 	<input {id} bind:this={el} type="search" value={shown} oninput={(e) => settingsTyped(e.currentTarget.value)} onkeydown={settingsKey} placeholder={t('discover.searchField.searchSettings')} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
 	{#if shown}<button type="button" class="clear" tabindex="-1" aria-label={t('discover.searchField.clearTheSearch')} onclick={() => { settingsFind.term = ''; el?.focus(); }}><Icon name="x" size={14} /></button>{:else}<kbd class="hint" aria-hidden="true">{searchKey}</kbd>{/if}
 	{:else}
-	<input {id} class:scoped bind:this={el} type="search" value={shown} oninput={(e) => { if (scoped) dlScope.term = e.currentTarget.value; else { searchField.term = e.currentTarget.value; typed(); } }} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} placeholder={scoped ? t('discover.searchField.searchDownloads') : t('discover.searchField.showsMoviesPeople')} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
-	{#if scoped}<span class="scope" data-testid="dl-scope-chip">{t('discover.searchField.downloads')}<button type="button" aria-label={t('discover.searchField.searchAllOfHolyArrs')} title={t('discover.searchField.searchAllOfHolyArrs2')} onclick={leaveScope} data-testid="dl-scope-chip-x"><Icon name="x" size={11} /></button></span>{/if}
+	<input {id} class:dlscoped={dlScoped} bind:this={el} type="search" value={shown} oninput={(e) => { if (scoped) scope.term = e.currentTarget.value; else { searchField.term = e.currentTarget.value; typed(); } }} onfocus={focused} onclick={focused} onblur={() => { close(); searchHooks.blur?.(); }} role="combobox" aria-expanded={!!answer} aria-controls={answer ? listId : undefined} aria-autocomplete="list" aria-activedescendant={answer && active >= 0 ? `${listId}-${active}` : undefined} onkeydown={keyed} placeholder={plScoped ? t('plugins.search') : scoped ? t('discover.searchField.searchDownloads') : t('discover.searchField.showsMoviesPeople')} autocomplete="off" spellcheck="false" enterkeyhint="search" data-testid={testid} />
+	{#if dlScoped}<span class="scope" data-testid="dl-scope-chip">{t('discover.searchField.downloads')}<button type="button" aria-label={t('discover.searchField.searchAllOfHolyArrs')} title={t('discover.searchField.searchAllOfHolyArrs2')} onclick={leaveScope} data-testid="dl-scope-chip-x"><Icon name="x" size={11} /></button></span>{/if}
 	{#if shown && !one}
-		<button type="button" class="clear" aria-label={t('discover.searchField.clearTheSearch')} onclick={() => { if (scoped) dlScope.term = ''; else searchField.term = ''; close(); el?.focus(); }}><Icon name="x" size={14} /></button>
+		<button type="button" class="clear" aria-label={t('discover.searchField.clearTheSearch')} onclick={() => { if (scoped) scope.term = ''; else searchField.term = ''; close(); el?.focus(); }}><Icon name="x" size={14} /></button>
 	{:else if !here}
 		<kbd class="hint" aria-hidden="true">{searchKey}</kbd>
 	{/if}
@@ -188,7 +192,7 @@
 	.scope button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; opacity: 0.75; cursor: pointer; }
 	.scope button:hover { opacity: 1; background: rgb(127 127 127 / 18%); }
 	.scope button:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-	input.scoped { padding-inline-start: 164px; }
+	input.dlscoped { padding-inline-start: 164px; }
 	input { text-overflow: ellipsis; }
 	input::placeholder { color: var(--text-muted); text-overflow: ellipsis; }
 	input::-webkit-search-cancel-button { display: none; }

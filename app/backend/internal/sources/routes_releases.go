@@ -1,6 +1,7 @@
 package sources
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -33,22 +34,34 @@ func (h *Handlers) chooseRelease(w http.ResponseWriter, r *http.Request) {
 }
 
 // turnDownRelease puts a Release on the Turned down list. Body (optional):
-// {"reason": text}.
+// {"reason": text, "slot_id": int, "block_group": bool}; block_group
+// also blocks the release group in the Pick rules its Slots use.
 func (h *Handlers) turnDownRelease(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
 		return
 	}
 	var in struct {
-		Reason string `json:"reason"`
-		SlotID int64  `json:"slot_id"`
+		Reason     string `json:"reason"`
+		SlotID     int64  `json:"slot_id"`
+		BlockGroup bool   `json:"block_group"`
 	}
-	if r.ContentLength != 0 && !webserver.Decode(w, r, &in, `body is {"reason": text, "slot_id": int}, both optional`) {
+	if r.ContentLength != 0 && !webserver.Decode(w, r, &in, `body is {"reason": text, "slot_id": int, "block_group": bool}, all optional`) {
 		return
 	}
 	if len(in.Reason) > 500 {
 		webserver.Fail(w, http.StatusBadRequest, "reason is at most 500 characters")
 		return
+	}
+	if in.BlockGroup {
+		// The group is blocked first, so a name with no group turns nothing down.
+		if _, err := h.search().BlockGroup(r.Context(), id, in.SlotID, actorOf(r)); errors.Is(err, ErrNoGroup) {
+			webserver.Fail(w, http.StatusBadRequest, "This release name shows no release group to block.")
+			return
+		} else if err != nil {
+			SearchError(w, err)
+			return
+		}
 	}
 	if err := h.search().TurnDownFor(r.Context(), id, in.SlotID, strings.TrimSpace(in.Reason), actorOf(r)); err != nil {
 		SearchError(w, err)

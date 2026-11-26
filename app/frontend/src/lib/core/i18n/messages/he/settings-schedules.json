@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "ביטול",
 	"settings.schedules.stages": "שלבים",
 	"settings.schedules.stagesNote": "אפשר להשהות או להפעיל מחדש ב<a>רכיבים</a>.",
-	"settings.schedules.allTime": "כל הזמן"
+	"settings.schedules.allTime": "כל הזמן",
+	"settings.schedules.skip.nothing": "אין מה לעשות",
+	"settings.schedules.skip.plexOff": "כבוי: הפעילו את {setting} ב{page}",
+	"settings.schedules.skip.plexNobody": "אין מה לעשות: אף אחד לא הפעיל את רשימת הצפייה שלו ב-Plex",
+	"settings.schedules.skip.settingOff": "כבוי: הפעילו אותו בהגדרות שלו",
+	"settings.schedules.skip.starting": "דולג: HolyArrs עדיין עלה",
+	"settings.schedules.took": "נמשך {time}",
+	"settings.schedules.finished": "{label} הסתיים",
+	"settings.schedules.nothingToDo": "{label}: אין מה לעשות",
+	"settings.schedules.runFailed": "{label} נכשל"
 }

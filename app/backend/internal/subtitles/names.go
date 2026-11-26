@@ -9,7 +9,16 @@ import (
 // Linking this package in hands the library its rules for subtitle file names.
 func init() {
 	library.UseSubtitleNames(Names{})
-	importer.UseLanguages(NormLanguage)
+	importer.UseLanguages(sideTag)
+}
+
+// sideTag is the language part of an imported side file's new name, in the
+// same form as the files HolyArrs fetches: zh-TW gives zh-Hant, pt-br gives pt-BR.
+func sideTag(word string) string {
+	if code := NormLanguage(word); code != "" {
+		return LanguageTag(code)
+	}
+	return ""
 }
 
 // Names tells the library which files beside a video are its subtitles.

@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Thêm vào danh sách Không bao giờ thêm",
 	"settings.outsideLists.showDot": "phim bộ ·",
 	"settings.outsideLists.takeOff": "Gỡ {name}",
-	"settings.outsideLists.empty": "Danh sách này chưa có gì"
+	"settings.outsideLists.empty": "Danh sách này chưa có gì",
+	"settings.outsideLists.traktSignInTitle": "Đăng nhập Trakt",
+	"settings.outsideLists.traktSignInInfo": "Đăng nhập để đọc các danh sách riêng tư và danh sách muốn xem trên Trakt của bạn, và để thêm những gì bạn đã xem trên Trakt vào lịch sử xem.",
+	"settings.outsideLists.traktSignedInAs": "Đã đăng nhập với tên {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Chưa đăng nhập. Chỉ đọc các danh sách công khai.",
+	"settings.outsideLists.traktSignIn": "Đăng nhập bằng Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Trên bất kỳ thiết bị nào, hãy mở <a>{url}</a> và nhập <code>{code}</code>. Trang này sẽ chờ đến khi bạn chấp thuận.",
+	"settings.outsideLists.traktDenied": "Đăng nhập Trakt đã bị từ chối.",
+	"settings.outsideLists.traktExpired": "Mã đã hết hạn. Hãy bắt đầu lại.",
+	"settings.outsideLists.traktSignOut": "Đăng xuất khỏi Trakt",
+	"settings.outsideLists.traktSignedIn": "Đã đăng nhập Trakt",
+	"settings.outsideLists.traktSignedOut": "Đã đăng xuất khỏi Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (cần để đăng nhập bằng Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Hãy lưu client secret của ứng dụng Trakt trước; Trakt cần nó để giữ bạn đăng nhập."
 }

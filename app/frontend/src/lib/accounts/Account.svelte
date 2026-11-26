@@ -8,7 +8,9 @@
 	import SaveBar from '#lib/ui/SaveBar.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
 	import Sessions from './Sessions.svelte';
+	import PluginLinks from './PluginLinks.svelte';
 	import LanguagePicker from './LanguagePicker.svelte';
+	import LanguageRetry from './LanguageRetry.svelte';
 	import AccountSecurity from './AccountSecurity.svelte';
 	import { strong } from './strong-error.ts';
 	import { profile, loadProfile, saveDisplayName } from './profile.svelte.ts';
@@ -25,7 +27,7 @@
 	import { session } from '../core/session.svelte.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import { to } from '../core/paths.ts';
-	import { autoplayPref, setAutoplayPref, type AutoplayPref } from '../core/trailer/trailer.ts';
+	import { autoplayPref, previewPref, setAutoplayPref, setPreviewPref, type AutoplayPref, type PreviewPref } from '../core/trailer/trailer.ts';
 	import { minimalLook } from '../core/look.svelte.ts';
 
 	// Display name: edited inline; Save is on once it differs.
@@ -222,6 +224,7 @@
 	}
 
 	let pref = $state<AutoplayPref>(autoplayPref());
+	let hoverPref = $state<PreviewPref>(previewPref());
 
 	// Profile picture: choose, see it in the circle, then save or cancel.
 	const AVATAR_MAX = 5 * 1024 * 1024;
@@ -339,6 +342,9 @@
 			{#if !session.s.hasPassword && !session.s.localRecent && outsideWay(session.s)}
 				<!-- Not fresh enough to set one: sign in again with Plex, Jellyfin or Emby first ("link" asks whenever the proof is stale). -->
 				<Confirm action="link" reveal={false}>{#snippet children()}{/snippet}</Confirm>
+			{:else if !session.s.hasPassword && !session.s.localRecent && session.s.authMethod === 'forward_auth'}
+				<!-- A proxy header proves no fresh presence: the owner uses the reset code from the server log instead. -->
+				<span class="hint">{t(session.s.role === 'owner' ? 'accounts.account.noneYetProxyOwner' : 'accounts.account.noneYetProxy')}</span>
 			{:else if !session.s.hasPassword && !session.s.localRecent}
 				<span class="hint">{t('accounts.account.noneYet', { method: authMethodWord(session.s.authMethod) })}</span>
 			{:else if !session.s.hasPassword && !pwOpen}
@@ -375,10 +381,15 @@
 	<div class="srow" id="language-row-me">
 		<div class="txt"><span class="label" id="language-me-label">{t('accounts.language.label')}</span><span class="hint">{t('accounts.language.hint')}</span></div>
 		<div class="ctl"><LanguagePicker id="language-me" align="end" /></div>
+		<LanguageRetry />
 	</div>
 	<div class="srow">
 		<div class="txt"><span class="label">{t('accounts.account.trailers')}</span>{#if minimalLook()}<span class="hint">{t('accounts.account.trailersMinimal')}</span>{:else}<span class="hint" title={t('accounts.account.trailersHint')}>{t('accounts.account.trailersHint')}</span>{/if}</div>
 		<div class="ctl"><SegmentedControl size="sm" label={t('accounts.account.playTrailers')} options={[{ value: 'auto', label: t('accounts.account.auto') }, { value: 'always', label: t('accounts.account.always') }, { value: 'never', label: t('accounts.account.never') }] as { value: AutoplayPref; label: string }[]} value={pref} onchange={(v) => { pref = v; setAutoplayPref(v); location.reload(); }} /></div>
+	</div>
+	<div class="srow" id="previews-me">
+		<div class="txt"><span class="label">{t('accounts.account.previews')}</span><span class="hint" title={t('accounts.account.previewsHint')}>{t('accounts.account.previewsHint')}</span></div>
+		<div class="ctl"><SegmentedControl size="sm" label={t('accounts.account.previews')} options={[{ value: 'on', label: t('accounts.account.previewsOn') }, { value: 'slow', label: t('accounts.account.previewsSlow') }, { value: 'off', label: t('accounts.account.previewsOff') }] as { value: PreviewPref; label: string }[]} value={hoverPref} onchange={(v) => { hoverPref = v; setPreviewPref(v); }} /></div>
 	</div>
 	<div class="srow" id="recommendations-me">
 		<div class="txt"><span class="label">{t('accounts.account.reco')}</span><span class="hint" title={t('accounts.account.recoTip')}>{t('accounts.account.recoHint')}</span></div>
@@ -475,6 +486,10 @@
 
 <SettingsCard id="sessions-me" title={t('accounts.account.devices')} description={t('accounts.account.devicesDesc')} icon="tv">
 	<Sessions path="/auth/sessions" first={5} />
+</SettingsCard>
+
+<SettingsCard id="plugin-links" title={t('accounts.pluginLinks.title')} description={t('accounts.pluginLinks.desc')} icon="plug">
+	<PluginLinks />
 </SettingsCard>
 </div>
 

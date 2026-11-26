@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Előbb a legjobb példány; egyenlőség esetén az évadcsomag nyer",
 	"settings.search.preferAlways": "Évadcsomag, ha megfelel a minőségi beállításnak",
 	"settings.search.multi": "Több évadot tartalmazó release-ek felvétele",
-	"settings.search.multiHint": "Kitölti a benne lévő összes hiányzó epizódot",
+	"settings.search.multiHint": "Kitölti a benne lévő összes hiányzó epizódot. Azonos minőségnél a több keresett epizódot tartalmazó kiadás nyer",
 	"settings.search.music": "Zene",
 	"settings.search.albums": "A hiányzó albumokat is keresse",
 	"settings.search.albumsHint": "Megjelent albumok, egyenként egy keresés",

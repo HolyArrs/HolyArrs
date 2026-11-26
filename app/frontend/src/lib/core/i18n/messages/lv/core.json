@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Veido: {what}… mēģinājums {attempt}",
 	"core.testTag.connected": "Savienots",
 	"core.api.notAnswering": "HolyArrs neatbild. Pārbaudi, vai tas darbojas.",
+	"core.api.tooSlow": "HolyArrs atbildēja pārāk ilgi. Mēģini vēlreiz pēc minūtes.",
 	"core.api.requestFailed": "Pieprasījums neizdevās ({status})",
 	"core.api.wentWrong": "Kaut kas nogāja greizi.",
 	"core.trailerMiss.trailer": "treileris",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Apstiprināts automātiski",
 	"core.plain.approvedBy": "Apstiprināja: {who}",
 	"core.settings.cantReach": "Šo adresi nevar sasniegt. Pārbaudi to un to, vai lietotne darbojas.",
+	"core.settings.tryHttp": "Šī adrese neatbild caur https. Mēģini http://.",
 	"core.settings.groupLibrary.label": "Bibliotēka",
 	"core.settings.groupLibrary.line": "Kur atrodas nosaukumi",
 	"core.settings.groupLibrary.about": "Mapes, daļas, noklusējumi, subtitri, failu nosaukumi un importēšana.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Divi lejupielādētāji sasniedz to pašu lejupielādes lietotni, tāpēc lejupielādes var parādīties divreiz.",
 	"core.plain.peopleCheck": "Multivides servera lietotāju sarakstu nevar nolasīt, tāpēc tur noņemtie cilvēki šeit netiek izslēgti.",
 	"core.plain.deleted": "dzēsts",
-	"core.plain.deletedName": "{name} (dzēsts)"
+	"core.plain.deletedName": "{name} (dzēsts)",
+	"core.api.handsOffFiles": "Neiejaukšanās režīms ir ieslēgts, tāpēc HolyArrs neaiztiek lejupielādētos failus. Izslēdziet to iestatījumos, lai importētu, pārdēvētu, pārvietotu vai skenētu failus.",
+	"core.api.handsOffSubtitles": "Neiejaukšanās režīms ir ieslēgts, tāpēc HolyArrs nekad neatver lejupielādētos failus. Izslēdziet to iestatījumos, lai lietotu subtitrus."
 }

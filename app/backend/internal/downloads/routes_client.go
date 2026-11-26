@@ -178,64 +178,153 @@ func finishedShare(detail string) string {
 	return "finished"
 }
 
+// removedKeepsListing is how long a removed download keeps hiding its
+// Downloader's copy after HolyArrs asked for it to go. A client may list a
+// job for a moment after the call, and a snapshot may be a little old.
+const removedKeepsListing = 10 * time.Minute
+
+// knownDownload is the part of a Download row knownTitles reads: its hash,
+// state and the timers that say whether a client copy is still being removed.
+type knownDownload struct {
+	ExternalID     string     `db:"external_id"`
+	State          string     `db:"state"`
+	ReleaseID      *int64     `db:"release_id"`
+	SlotIDs        []int64    `db:"slot_ids,json"`
+	RemovalPending *int64     `db:"removal_pending"`
+	ClearRetryAt   *time.Time `db:"clear_retry_at"`
+	CleanedAt      *time.Time `db:"cleaned_at"`
+	UpdatedAt      time.Time  `db:"updated_at"`
+}
+
+// cleanedAt is when the row was marked cleaned. A row from before that column
+// existed falls back to its last write, as the migration does.
+func cleanedAt(d knownDownload) time.Time {
+	if d.CleanedAt != nil {
+		return *d.CleanedAt
+	}
+	return d.UpdatedAt
+}
+
+// hidesClientCopy reports whether a cleaned-up Download still hides the
+// Downloader's copy of its job: while means are pending to make the client
+// let go, or for a short while after it was asked. After that the copy is a
+// job the person added again, and it shows as an outside row. The wait counts
+// from cleaned_at, so a later write to the row (its files, a relink) does not
+// start it again.
+func hidesClientCopy(d knownDownload, now time.Time) bool {
+	return d.RemovalPending != nil || d.ClearRetryAt != nil || now.Sub(cleanedAt(d)) < removedKeepsListing
+}
+
 // knownTitles names the client items HolyArrs already knows by hash (its
-// own downloads older than the list), and drops their outside mark.
-func (a *Web) knownTitles(ctx context.Context, downloaderID int64, rows []DownloadRow) {
+// own downloads older than the list), and drops their outside mark. It
+// returns the hashes whose removed download still hides the Downloader's
+// copy: a job the client lists for a moment, or one HolyArrs is still
+// asking it to remove, must not come back as a client row of its own.
+func (a *Web) knownTitles(ctx context.Context, downloaderID int64, rows []DownloadRow) map[string]bool {
 	at := map[string]int{}
 	for i, r := range rows {
-		at[r.Hash] = i
+		// A row without a hash (a Usenet item) is nobody's own job: leave the
+		// empty key out, so a download with an empty external id cannot match it.
+		if h := strings.ToLower(r.Hash); h != "" {
+			at[h] = i
+		}
 	}
-	hashes := make([]string, 0, len(rows))
+	hashes := make([]string, 0, len(at))
 	for h := range at {
 		hashes = append(hashes, h)
 	}
 	db := a.read()
+	var ds []knownDownload
 	for len(hashes) > 0 {
 		n := min(len(hashes), 400)
-		part := hashes[:n]
+		chunk := hashes[:n]
 		hashes = hashes[n:]
 		args := []any{downloaderID}
-		for _, h := range part {
+		for _, h := range chunk {
 			args = append(args, h)
 		}
-		ds, err := database.Select[domain.Download](ctx, db, "downloads", "downloader_id = ? AND lower(external_id) IN (?"+strings.Repeat(", ?", len(part)-1)+")", args...)
+		found, err := database.Select[knownDownload](ctx, db, "downloads", "downloader_id = ? AND lower(external_id) IN (?"+strings.Repeat(", ?", len(chunk)-1)+")", args...)
 		if err != nil {
 			continue
 		}
-		first, relIDs := []int64{}, []int64{}
-		for _, d := range ds {
-			if len(d.SlotIDs) > 0 {
-				first = append(first, d.SlotIDs[0])
+		ds = append(ds, found...)
+	}
+	now := a.Manager().now() // the same clock as the removal it is timed against
+	live, hiding := map[string]bool{}, map[string]bool{}
+	for _, d := range ds {
+		h := strings.ToLower(d.ExternalID)
+		if d.State == "cleaned" || d.State == "vanished" {
+			if hidesClientCopy(d, now) {
+				hiding[h] = true
 			}
-			if d.ReleaseID != nil {
-				relIDs = append(relIDs, *d.ReleaseID)
-			}
-		}
-		slots := slotInfos(ctx, db, first)
-		rels := releaseNames(ctx, db, relIDs)
-		for _, d := range ds {
-			i, ok := at[strings.ToLower(d.ExternalID)]
-			if !ok {
-				continue
-			}
-			row := &rows[i]
-			row.Outside = false
-			if d.ReleaseID != nil {
-				if rl, ok := rels[*d.ReleaseID]; ok {
-					row.SourceName, row.SourceID = rl.source, rl.sourceID
-					if rl.posted != nil && row.Protocol == "usenet" {
-						row.PostedAt = rl.posted
-					}
-				}
-			}
-			if len(d.SlotIDs) == 0 {
-				continue
-			}
-			if si, ok := slots[d.SlotIDs[0]]; ok && si.full {
-				row.TitleID, row.Title, row.Kind, row.Version = si.titleID, si.title, si.kind, si.version
-			}
+		} else {
+			live[h] = true
 		}
 	}
+	gone := map[string]bool{}
+	for h := range hiding {
+		if !live[h] {
+			gone[h] = true
+		}
+	}
+	first, relIDs := []int64{}, []int64{}
+	for _, d := range ds {
+		if !live[strings.ToLower(d.ExternalID)] {
+			continue
+		}
+		if len(d.SlotIDs) > 0 {
+			first = append(first, d.SlotIDs[0])
+		}
+		if d.ReleaseID != nil {
+			relIDs = append(relIDs, *d.ReleaseID)
+		}
+	}
+	slots := slotInfos(ctx, db, first)
+	rels := releaseNames(ctx, db, relIDs)
+	for _, d := range ds {
+		h := strings.ToLower(d.ExternalID)
+		// A cleaned-up download no longer claims a job the person added again.
+		if !live[h] {
+			continue
+		}
+		i, ok := at[h]
+		if !ok {
+			continue
+		}
+		row := &rows[i]
+		row.Outside = false
+		if d.ReleaseID != nil {
+			if rl, ok := rels[*d.ReleaseID]; ok {
+				row.SourceName, row.SourceID = rl.source, rl.sourceID
+				if rl.posted != nil && row.Protocol == "usenet" {
+					row.PostedAt = rl.posted
+				}
+			}
+		}
+		if len(d.SlotIDs) == 0 {
+			continue
+		}
+		if si, ok := slots[d.SlotIDs[0]]; ok && si.full {
+			row.TitleID, row.Title, row.Kind, row.Version = si.titleID, si.title, si.kind, si.version
+		}
+	}
+	return gone
+}
+
+// goneRows drops the client rows of hashes HolyArrs removed: its own row is
+// gone from the Downloads list, and the Downloader's copy must not take its
+// place as an outside row.
+func goneRows(rows []DownloadRow, gone map[string]bool) []DownloadRow {
+	if len(gone) == 0 {
+		return rows
+	}
+	kept := rows[:0]
+	for _, r := range rows {
+		if !gone[strings.ToLower(r.Hash)] {
+			kept = append(kept, r)
+		}
+	}
+	return kept
 }
 
 // Client item routes: the client controls, addressed by Downloader id and

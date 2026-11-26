@@ -14,7 +14,6 @@
 	"settings.health.none": "Rezultātu nav. Pārbaudi vēlreiz, lai tos palaistu.",
 	"settings.health.since": "Kopš",
 	"settings.health.settings": "Veselības pārbaužu iestatījumi",
-	"settings.health.updateCheck": "Pārbaudīt, vai ir jaunāks HolyArrs",
 	"settings.health.onlyChecks": "Tikai pārbauda. Nekad neinstalē.",
 	"settings.health.every": "Pārbaudīt atjauninājumus ik pēc",
 	"settings.health.day": "dienas",

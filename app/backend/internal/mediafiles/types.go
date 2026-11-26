@@ -21,6 +21,16 @@ type LibraryFolder struct {
 	CopiesExpected    bool       `db:"copies_expected"` // copying without hardlinks is wanted
 	NewTitleTags      []string   `db:"new_title_tags,json"`
 	OnlyTaggedSources bool       `db:"only_tagged_sources"` // titles here ask only Sources sharing these tags
+	// NewTitleAudio are the audio languages the main copy of a new movie or
+	// show added here needs (empty: any audio).
+	NewTitleAudio []string `db:"new_title_audio,json"`
+	LookOnly      bool     `db:"look_only"` // HolyArrs only reads this folder
+	// Flat: a movie Library folder with every movie as a file directly in
+	// it; new movies get no folder of their own.
+	Flat bool `db:"flat"`
+	// StandIn: not a real folder; a hands-off title with no Library folder
+	// of its kind points here (see StandInFolder).
+	StandIn bool `db:"stand_in"`
 }
 
 // Title is one movie, show or artist in the Library.
@@ -81,7 +91,9 @@ type Title struct {
 	// Details for screens, from the metadata source: wide picture and logo
 	// URLs, genre names, runtime in minutes, the US rating and the people
 	// (top cast, then directors).
-	Backdrop       string   `db:"backdrop"`
+	Backdrop string `db:"backdrop"`
+	// PosterURL is where the stored poster (in Artwork) was fetched from.
+	PosterURL      string   `db:"poster_url"`
 	Logo           string   `db:"logo"`
 	Genres         []string `db:"genres,json"`
 	RuntimeMinutes int      `db:"runtime_minutes"`
@@ -91,6 +103,20 @@ type Title struct {
 	// after scores were kept; 0 when the source has none) and Votes how many voted.
 	Score *float64 `db:"score"`
 	Votes int      `db:"votes"`
+	// IMDb's score out of 10 with its vote count, Rotten Tomatoes' critics
+	// percent and the Metascore (0-100), read from OMDb with the owner's
+	// key; nil when not known. OMDbCheckedAt is when OMDb was last asked.
+	IMDbRating     *float64   `db:"imdb_rating"`
+	IMDbVotes      int        `db:"imdb_votes"`
+	RottenTomatoes *int       `db:"rotten_tomatoes"`
+	Metacritic     *int       `db:"metacritic"`
+	OMDbCheckedAt  *time.Time `db:"omdb_checked_at"`
+	// TraktRating is Trakt's rating out of 10 with its vote count, read
+	// with the Trakt client id; nil when not known. TraktCheckedAt is when
+	// Trakt was last asked.
+	TraktRating    *float64   `db:"trakt_rating"`
+	TraktVotes     int        `db:"trakt_votes"`
+	TraktCheckedAt *time.Time `db:"trakt_checked_at"`
 	// Directors are a movie's directors alone (People mixes them in after the cast).
 	Directors []string `db:"directors,json"`
 	// Studio is a movie's first production company.
@@ -183,6 +209,8 @@ type Version struct {
 	AudioLanguages  []string `db:"audio_languages,json"`
 	// FourK marks the title's 4K copy (at most one a title).
 	FourK bool `db:"four_k"`
+	// SharedFolder adopts only reviewed files, never the folder's other videos.
+	SharedFolder bool `db:"shared_folder"`
 }
 
 // Slot is one Item in one Version; the core loop state lives here.
@@ -212,13 +240,16 @@ type PickRules struct {
 
 // PlanStep is one file in an Import plan.
 type PlanStep struct {
-	SourceFile     string   `json:"source_file"`
-	TargetSlotIDs  []int64  `json:"target_slot_ids"`
-	TargetPath     string   `json:"target_path"`
-	Method         string   `json:"method"` // hardlink, move, copy
+	SourceFile    string  `json:"source_file"`
+	TargetSlotIDs []int64 `json:"target_slot_ids"`
+	TargetPath    string  `json:"target_path"`
+	Method        string  `json:"method"` // hardlink, move, copy
 	// Move tries a rename into the Library first: the file is not needed in
 	// the download folder afterwards (a finished Usenet job, an unpacked file).
 	Move bool `json:"move,omitempty"`
+	// Symlink places a link to the download instead of the file itself
+	// (a path pair with "Place a link" on).
+	Symlink        bool     `json:"symlink,omitempty"`
 	ReplacesFileID *int64   `json:"replaces_file_id,omitempty"`
 	Confidence     float64  `json:"confidence"`
 	Why            []string `json:"why"`
@@ -230,8 +261,11 @@ type PlaceResult struct {
 	Outcome    string `json:"outcome"`
 	PlacedBy   string `json:"placed_by"`
 	FellBack   bool   `json:"fell_back"`
-	Error      string `json:"error,omitempty"`
-	HeldAside  string `json:"held_aside,omitempty"` // where the replaced copy was moved before this file was placed
+	// Linked: the Library entry is a symlink to the download; deleting the
+	// download breaks it.
+	Linked    bool   `json:"linked,omitempty"`
+	Error     string `json:"error,omitempty"`
+	HeldAside string `json:"held_aside,omitempty"` // where the replaced copy was moved before this file was placed
 	// MoveSize and MoveMod (unix nanoseconds) are the source's size and time
 	// before a move, so a retry knows the moved file as its own.
 	MoveSize int64 `json:"move_size,omitempty"`

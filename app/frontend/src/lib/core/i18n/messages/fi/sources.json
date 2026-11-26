@@ -85,5 +85,21 @@
 	"sources.uses.auto": "hakee itsenäisesti",
 	"sources.uses.feed": "uusimpien lista",
 	"sources.uses.hand": "haku käsin",
-	"sources.uses.none": "ei käytössä"
+	"sources.uses.none": "ei käytössä",
+	"sources.bridge.removeTitle": "Poistetaanko {name}?",
+	"sources.bridge.find": "Etsi {name} verkostani",
+	"sources.bridge.noneFound": "Yksikään {name} ei vastannut verkossasi.",
+	"sources.bridge.keyFound": "Avain saatiin kohteesta {name}",
+	"sources.bridge.keyKept": "{name} ei antanut avaintaan (kirjautuminen on päällä). Kopioi se kohdasta Hae avain.",
+	"sources.bridge.keyKeptJackett": "Jackett ei antanut avaintaan (sillä on ylläpitäjän salasana). Kopioi se kohdasta Hae avain.",
+	"sources.bridge.notReached": "Kohteeseen {name} ei saatu yhteyttä.",
+	"sources.bridge.brings.title": "Mitä tuodaan",
+	"sources.bridge.brings.sites": "Sen indeksoijat, Lähteinä",
+	"sources.bridge.brings.categories": "Niiden luokat",
+	"sources.bridge.brings.search": "Haut kulkevat kohteen {name} kautta",
+	"sources.bridge.brings.sync": "Muutokset kohteessa {name} siirtyvät",
+	"sources.bridge.brings.stays": "Indeksoijasi pysyvät määritettyinä kohteessa {name}.",
+	"sources.bridge.brings.had": "{n} indeksoijaa jo täällä",
+	"sources.bridge.brings.hadFrom": "Tuotu kautta: {apps}",
+	"sources.bridge.brings.keyKept": "Jätä avain tyhjäksi käyttääksesi niiden nykyistä."
 }

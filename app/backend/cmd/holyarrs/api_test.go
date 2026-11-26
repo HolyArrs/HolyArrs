@@ -49,7 +49,8 @@ func setup(t *testing.T) (*httptest.Server, *database.Store, *jobs.Queue) {
 // route: GET /api/v1/titles/{id}/releases
 func TestAddListSearch(t *testing.T) {
 	t.Parallel()
-	srv, _, q := setup(t)
+	srv, st, q := setup(t)
+	searchSource(t, st) // a search by hand needs a Source
 	// Nothing yet.
 	var list struct {
 		Titles []TitleView `json:"titles"`
@@ -172,6 +173,13 @@ func TestSignInGuardsRoutes(t *testing.T) {
 	do(t, "GET", srv.URL+"/live", "", 401)
 	do(t, "GET", srv.URL+"/healthz", "", 200)
 	do(t, "GET", srv.URL+"/readyz", "", 200)
+	if b := do(t, "GET", srv.URL+"/ping", "", 200); string(b) != `{"status":"OK"}`+"\n" {
+		t.Fatalf("/ping: %q", b)
+	}
+	do(t, "HEAD", srv.URL+"/ping", "", 200)
+	if b := do(t, "GET", srv.URL+"/api/v1/health", "", 401); !strings.Contains(string(b), "/healthz") {
+		t.Fatalf("/api/v1/health 401 gives no probe hint: %q", b)
+	}
 	if b := do(t, "GET", srv.URL+"/login", "", 200); !strings.Contains(string(b), "/_app/immutable/") {
 		t.Fatal("sign-in page missing")
 	}

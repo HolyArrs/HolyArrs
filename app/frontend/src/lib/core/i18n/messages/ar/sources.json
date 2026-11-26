@@ -85,5 +85,21 @@
 	"sources.uses.auto": "يبحث من تلقاء نفسه",
 	"sources.uses.feed": "قائمة الأحدث",
 	"sources.uses.hand": "بحث يدوي",
-	"sources.uses.none": "غير مستخدم"
+	"sources.uses.none": "غير مستخدم",
+	"sources.bridge.removeTitle": "إزالة {name}؟",
+	"sources.bridge.find": "البحث عن {name} في شبكتي",
+	"sources.bridge.noneFound": "لم يستجب أي {name} في شبكتك.",
+	"sources.bridge.keyFound": "تم الحصول على المفتاح من {name}",
+	"sources.bridge.keyKept": "لم يُعطِ {name} مفتاحه (تسجيل الدخول مفعّل). استخدم «احصل على المفتاح» لنسخه.",
+	"sources.bridge.keyKeptJackett": "لم يُعطِ Jackett مفتاحه (لديه كلمة مرور للمسؤول). استخدم «احصل على المفتاح» لنسخه.",
+	"sources.bridge.notReached": "تعذّر الوصول إلى {name}.",
+	"sources.bridge.brings.title": "ما الذي يُنقل",
+	"sources.bridge.brings.sites": "مفهرساته، كمصادر",
+	"sources.bridge.brings.categories": "فئاتها",
+	"sources.bridge.brings.search": "تمر عمليات البحث عبر {name}",
+	"sources.bridge.brings.sync": "تنتقل التغييرات في {name}",
+	"sources.bridge.brings.stays": "تبقى مفهرساتك مُعدّة في {name}.",
+	"sources.bridge.brings.had": "المفهرسات الموجودة هنا مسبقًا: {n}",
+	"sources.bridge.brings.hadFrom": "مستوردة عبر {apps}",
+	"sources.bridge.brings.keyKept": "اترك المفتاح فارغًا لاستخدام المفتاح الموجود لديهم."
 }

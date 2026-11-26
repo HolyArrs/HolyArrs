@@ -36,5 +36,7 @@
 	"settings.move.undoId": "{id} içe aktarması geri alınsın mı?",
 	"settings.move.undoQuestion": "Bu içe aktarma geri alınsın mı?",
 	"settings.move.undoNote": "Bu içe aktarmanın eklediklerini kaldırır; sonraki değişikliklerin kalır. İstersen önce raporu indir.",
-	"settings.move.undoMove": "İçe aktarmayı geri al"
+	"settings.move.undoMove": "İçe aktarmayı geri al",
+	"settings.move.continueSetup": "Kuruluma devam et",
+	"settings.move.backToChoose": "Seçime dön"
 }

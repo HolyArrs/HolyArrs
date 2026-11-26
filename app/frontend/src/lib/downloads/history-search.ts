@@ -94,12 +94,13 @@ export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
 	{ key: 'upgraded', get label() { return W('Upgraded'); }, kinds: ['file_replaced'] },
 	{ key: 'renamed', get label() { return W('Renamed'); }, kinds: ['renamed', 'rename_planned'] },
 	{ key: 'deleted', get label() { return W('Deleted'); }, kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
-	{ key: 'declined', get label() { return W('Turned down'); }, kinds: ['ask_turned_down', 'release_turned_down', 'ai_ask_turned_down'] },
+	{ key: 'declined', get label() { return W('Turned down'); }, kinds: ['ask_turned_down', 'release_turned_down', 'ai_ask_turned_down', 'subtitle_turned_down'] },
 	{ key: 'failed', get label() { return W('Failed'); }, kinds: (tabKinds('problems') ?? []).filter((k) => !decideKinds.includes(k)) },
 	{ key: 'asked', get label() { return W('Asked'); }, kinds: ['ask_made', 'ai_ask_made'] },
 	{ key: 'approved', get label() { return W('Approved'); }, kinds: ['ask_approved', 'ai_ask_approved'] },
 	{ key: 'added', get label() { return W('Added'); }, kinds: ['title_added', 'list_synced', 'version_changed', 'gate_opened'] },
-	{ key: 'subtitles', get label() { return W('Subtitled'); }, kinds: ['subtitle_*'] },
+	// Subtitled counts only a subtitle file written beside the video; searches that found nothing keep their own word.
+	{ key: 'subtitles', get label() { return W('Subtitled'); }, kinds: ['subtitle_saved', 'subtitle_upgraded', 'subtitle_synced', 'subtitle_translated', 'subtitle_cleaned'] },
 	{ key: 'reported', get label() { return W('Reported'); }, kinds: ['report_*'] },
 	{ key: 'decide', get label() { return W('Needs you'); }, kinds: decideKinds },
 	{ key: 'system', get label() { return W('System'); }, kinds: tabKinds('changes', 'system') ?? [] }
@@ -230,7 +231,7 @@ export function isProblem(kind: string): boolean {
 const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^(ai_)?ask_made$/, { get label() { return W('Asked'); }, icon: 'wish' }],
 	[/^(ai_)?ask_approved$/, { get label() { return W('Approved'); }, icon: 'check' }],
-	[/^(ask|release|ai_ask)_turned_down$/, { get label() { return W('Turned down'); }, icon: 'declined' }],
+	[/^(ask|release|ai_ask|subtitle)_turned_down$/, { get label() { return W('Turned down'); }, icon: 'declined' }],
 	[/^report_(made|reopened)$/, { get label() { return W('Reported'); }, icon: 'alert' }],
 	[/^(report_fixed|health_recovered|file_back)$/, { get label() { return W('Fixed'); }, icon: 'check' }],
 	[/^(title_added|list_synced|version_changed)$/, { get label() { return W('Added'); }, icon: 'plus' }],
@@ -241,6 +242,8 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^download_(finished|seeding)$/, { get label() { return W('Downloaded'); }, icon: 'download' }],
 	[/^(import_done|import_partly_done|adopted)$/, { get label() { return W('Imported'); }, icon: 'folder' }],
 	[/^(renamed|rename_planned)$/, { get label() { return W('Renamed'); }, icon: 'copy' }],
+	[/^subtitle_none_good_enough$/, { get label() { return W('None passed'); }, icon: 'search' }],
+	[/^subtitle_held$/, { get label() { return W('Held'); }, icon: 'folder' }],
 	[/^subtitle_/, { get label() { return W('Subtitles'); }, icon: 'subtitle' }],
 	[/^media_server_told$/, { get label() { return W('In media server'); }, icon: 'tv' }],
 	[/^file_replaced$/, { get label() { return W('Upgraded'); }, icon: 'sparkle' }],
@@ -252,6 +255,8 @@ export function rowStep(row: HistoryRow, fallback = ''): RowStep {
 	const kinds = row.events.map((e) => e.Kind);
 	const bad = row.events.find((e) => isProblem(e.Kind) && !fineCheck(e))?.Kind;
 	// Low space and a check's warning stay under the Filter's Failed but never take the fail tone.
+	// A paused subtitle site waits and comes back on its own.
+	if (bad === 'subtitle_site_paused' && row.steps.length === 0) return { label: W('Paused'), icon: 'alert', failed: false };
 	if (bad && row.steps.length === 0 && (bad === 'free_space_low' || (bad === 'health_broken' && row.head.Data?.state === 'warning'))) return { label: W('Failed'), icon: 'alert', failed: false };
 	if (bad || row.steps.some((s) => s.state === 'failed')) return { label: bad === 'needs_decision' ? W('Needs you') : W('Failed'), icon: bad === 'needs_decision' ? 'alert' : 'x', failed: true };
 	const pick = row.steps.length ? (kinds.includes('file_replaced') ? 'file_replaced' : kinds.find((k) => /^import_/.test(k)) ?? kinds.find((k) => /^download_(finished|seeding)$/.test(k)) ?? row.head.Kind) : row.head.Kind;
@@ -260,7 +265,10 @@ export function rowStep(row: HistoryRow, fallback = ''): RowStep {
 }
 /** The extra piece after a row's step: who for asks and adds, quality when chosen or sent, size when imported, old → new quality when upgraded, language for subtitles, otherwise the reason. */
 export function rowExtra(row: HistoryRow, step: RowStep, who: (e: EventRecord) => string = () => '', line = ''): string {
-	return withNote(extraOf(row, step, who) || (row.head.TitleID ? '' : line), row);
+	const extra = withNote(extraOf(row, step, who) || (row.head.TitleID ? '' : line), row);
+	// A past download an import brought from Sonarr or Radarr says so ("7.5 GB · From Radarr").
+	const app = String(row.head.Data?.moved_from ?? '');
+	return app ? [extra, say('downloads.hl.fromApp', { app })].filter(Boolean).join(' · ') : extra;
 }
 /** A row's step as the mark its details show, so both name the same step. */
 export function stepVerb(row: HistoryRow, tag: Verb): Verb {
@@ -389,23 +397,28 @@ export function findTarget(row: HistoryRow): { releaseId: number; slotId: number
 
 /** A place a row's details lead to. */
 export interface GoLink {
-	key: 'plan' | 'title' | 'downloads' | 'requests' | 'reports';
+	key: 'plan' | 'title' | 'downloads' | 'requests' | 'reports' | 'deleted';
 	label: string;
 	href: string;
 }
-/** The import plan for a decision, the title page, Downloads for releases and downloads (opening the download if known), Requests for asks and Problems for reports. */
+/** The import plan for a decision, the title page, Downloads for releases and downloads (opening the download if known), Requests for asks, Problems for reports, and Recently deleted for a replaced or deleted copy. */
 export function rowLinks(row: HistoryRow, titleHref?: string): GoLink[] {
 	const out: GoLink[] = [];
+	// A removed download leaves the Downloads list, so opening it by id would go nowhere.
+	const left = /^(download_removed|download_not_removed)$/.test(row.head.Kind) && row.head.Data?.state === 'cleaned';
 	const decide = row.events.find((e) => e.Kind === 'needs_decision');
 	if (decide) {
 		const slot = decide.SlotID ?? 0;
 		const id = decide.DownloadID ?? (typeof decide.Data?.download_id === 'number' ? decide.Data.download_id : 0);
-		out.push({ key: 'plan', get label() { return W('Import plan'); }, href: slot ? `/downloads?slot=${slot}` : id ? `/downloads?open=${id}` : '/downloads' });
+		out.push({ key: 'plan', get label() { return W('Import plan'); }, href: slot ? `/downloads?slot=${slot}` : id ? (left ? '/downloads' : `/downloads?open=${id}`) : '/downloads' });
 	}
 	if (titleHref) out.push({ key: 'title', get label() { return W('Title page'); }, href: titleHref });
+	// A copy that was replaced or deleted waits in Recently deleted, shown for its title.
+	const held = row.events.find((e) => e.Kind === 'file_replaced' || e.Kind === 'file_held');
+	if (held) out.push({ key: 'deleted', get label() { return W('Recently deleted'); }, href: held.TitleID ? `/library/deleted?title=${held.TitleID}` : '/library/deleted' });
 	const dl = row.events.map((e) => e.DownloadID ?? (typeof e.Data?.download_id === 'number' ? e.Data.download_id : null)).find((v) => v != null);
 	// Only rows about a release or a download lead to Downloads; a sign-in does not.
-	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', get label() { return W('Downloads'); }, href: dl ? `/downloads?open=${dl}` : '/downloads' });
+	if (dl != null || row.events.some((e) => findKind.test(e.Kind))) out.push({ key: 'downloads', get label() { return W('Downloads'); }, href: dl != null && !left ? `/downloads?open=${dl}` : '/downloads' });
 	const ask = row.events.map((e) => (typeof e.Data?.ask_id === 'number' ? e.Data.ask_id : null)).find((v) => v != null);
 	if (row.events.some((e) => /^(ai_)?ask_/.test(e.Kind))) out.push({ key: 'requests', get label() { return W('Requests'); }, href: ask ? `/requests?ask=${ask}` : '/requests' });
 	if (row.events.some((e) => /^report_/.test(e.Kind))) out.push({ key: 'reports', get label() { return W('Problems'); }, href: '/requests/reports?show=all' });

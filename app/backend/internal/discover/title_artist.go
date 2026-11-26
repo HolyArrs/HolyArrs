@@ -30,6 +30,7 @@ type ArtistInfo struct {
 	Downloading     int        `json:"downloading"`
 	Failed          int        `json:"failed"`
 	NextRelease     *time.Time `json:"next_release,omitempty"`
+	LastRelease     *time.Time `json:"last_release,omitempty"`
 	// Bio is the start of the artist's kept Wikipedia summary (Library list
 	// only, read from what is already stored; empty when none is kept).
 	Bio string `json:"bio,omitempty"`
@@ -44,5 +45,5 @@ func (h *ViewHandlers) artistInfo(ctx context.Context, t mediafiles.Title) (*Art
 		AlbumChoice: strOr(t.AlbumChoice), NewAlbums: library.NewAlbumsOf(t.NewPartsPolicy), AlbumTypes: music.ListOr(t.MusicTypes),
 		SecondaryTypes: music.ListOr(t.MusicSecondary), ReleaseStatuses: music.ListOr(t.MusicStatuses), Albums: n.Albums, Included: n.Included,
 		Tracks: n.Tracks, InLibrary: n.InLibrary, Missing: n.Missing, NotOutYet: n.NotOutYet, BetterWanted: n.BetterWanted,
-		Downloading: n.Downloading, Failed: n.Failed, NextRelease: n.NextRelease}, nil
+		Downloading: n.Downloading, Failed: n.Failed, NextRelease: n.NextRelease, LastRelease: n.LastRelease}, nil
 }

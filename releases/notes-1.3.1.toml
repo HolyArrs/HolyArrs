@@ -1,0 +1,36 @@
+version = "1.3.1"
+theme = "Plugins hear what happens, and building your own plugin gets easy."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""
+known_issues = []
+security = []
+credits = [
+  {name = "AlmostEpic89", discord = true, issues = [728]},
+]
+
+[[highlights]]
+line = "Plugins can be told when titles are added, downloaded or requested."
+issues = [707]
+shot = "A plugin's install sheet listing the events it wants"
+
+[[highlights]]
+line = "Developer mode runs the plugin you're building from a folder."
+issues = [728]
+shot = "The Add sheet with developer mode on and the folder path"
+
+[[highlights]]
+line = "Test versions let you try a plugin's next version first."
+issues = [729]
+shot = "A plugin panel offering a test version with Get test versions"
+
+[groups]
+Alerts = [
+  "A Cover art changed Alert, off until you turn it on. (#730)",
+]
+
+[stats]
+issues_done = 4
+still_building = 0
+people_credited = 1

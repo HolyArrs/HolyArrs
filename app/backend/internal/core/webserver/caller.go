@@ -32,7 +32,7 @@ const (
 type Caller struct {
 	UserID int64
 	Name   string
-	Via    string // session, api_key, local_network
+	Via    string // session, api_key, local_network, plugin
 	CSRF   string
 	Role   string
 	Perms  []Perm
@@ -69,6 +69,9 @@ type Caller struct {
 	// session); AI connections write them into History.
 	KeyID    int64
 	KeyLabel string
+	// PluginID names the plugin a request came from (Via "plugin"); its
+	// Scopes are then plugin scopes, which never match the key scopes.
+	PluginID string
 }
 
 type callerKey struct{}
@@ -126,7 +129,7 @@ func RequireStrong(w http.ResponseWriter, r *http.Request) bool {
 // HasScope reports whether the request's key holds scope; a session or the
 // local network holds every scope. ScopeAll covers read, write and admin.
 func (c Caller) HasScope(scope string) bool {
-	if c.Via != "api_key" {
+	if c.Via != "api_key" && c.Via != "plugin" {
 		return true
 	}
 	return ScopesCover(c.Scopes, scope)

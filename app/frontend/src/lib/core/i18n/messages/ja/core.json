@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "{what} を構築中… {attempt} 回目",
 	"core.testTag.connected": "接続済み",
 	"core.api.notAnswering": "HolyArrs が応答していません。起動しているか確認してください。",
+	"core.api.tooSlow": "HolyArrs の応答に時間がかかりすぎました。1分後にもう一度お試しください。",
 	"core.api.requestFailed": "リクエストに失敗しました({status})",
 	"core.api.wentWrong": "問題が発生しました。",
 	"core.trailerMiss.trailer": "予告編",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "自動承認",
 	"core.plain.approvedBy": "{who} が承認",
 	"core.settings.cantReach": "そのアドレスに接続できません。アドレスと、アプリが起動しているかを確認してください。",
+	"core.settings.tryHttp": "このアドレスは https では応答しません。代わりに http:// を試してください。",
 	"core.settings.groupLibrary.label": "ライブラリ",
 	"core.settings.groupLibrary.line": "作品の置き場所",
 	"core.settings.groupLibrary.about": "フォルダー、パート、初期設定、字幕、ファイル名、インポート。",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "2つのダウンローダーが同じダウンロードアプリにつながっているため、ダウンロードが二重に表示されることがあります。",
 	"core.plain.peopleCheck": "メディアサーバーのユーザー一覧を読み取れないため、そこで削除された人をここでオフにできません。",
 	"core.plain.deleted": "削除済み",
-	"core.plain.deletedName": "{name}（削除済み）"
+	"core.plain.deletedName": "{name}（削除済み）",
+	"core.api.handsOffFiles": "ハンズオフモードがオンのため、HolyArrs はダウンロードしたファイルに触れません。ファイルの取り込み、名前の変更、移動、スキャンを行うには、設定でオフにしてください。",
+	"core.api.handsOffSubtitles": "ハンズオフモードがオンのため、HolyArrs はダウンロードしたファイルを開きません。字幕を使うには、設定でオフにしてください。"
 }

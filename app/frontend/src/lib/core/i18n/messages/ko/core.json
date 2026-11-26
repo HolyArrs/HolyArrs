@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "{what} 만드는 중… {attempt}번째 시도",
 	"core.testTag.connected": "연결됨",
 	"core.api.notAnswering": "HolyArrs가 응답하지 않습니다. 실행 중인지 확인하세요.",
+	"core.api.tooSlow": "HolyArrs 응답이 너무 오래 걸렸습니다. 1분 후 다시 시도하세요.",
 	"core.api.requestFailed": "요청 실패 ({status})",
 	"core.api.wentWrong": "문제가 발생했습니다.",
 	"core.trailerMiss.trailer": "예고편",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "자동 승인됨",
 	"core.plain.approvedBy": "{who}님이 승인함",
 	"core.settings.cantReach": "해당 주소에 연결할 수 없습니다. 주소와 앱 실행 여부를 확인하세요.",
+	"core.settings.tryHttp": "이 주소는 https로 응답하지 않아요. 대신 http://를 사용해 보세요.",
 	"core.settings.groupLibrary.label": "라이브러리",
 	"core.settings.groupLibrary.line": "작품이 있는 곳",
 	"core.settings.groupLibrary.about": "폴더, 파트, 기본값, 자막, 파일 이름, 가져오기.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "두 다운로더가 같은 다운로드 앱에 연결되어 다운로드가 두 번 보일 수 있습니다.",
 	"core.plain.peopleCheck": "미디어 서버의 사용자 목록을 읽을 수 없어 그곳에서 삭제된 사람을 여기서 끄지 못합니다.",
 	"core.plain.deleted": "삭제됨",
-	"core.plain.deletedName": "{name} (삭제됨)"
+	"core.plain.deletedName": "{name} (삭제됨)",
+	"core.api.handsOffFiles": "핸즈오프 모드가 켜져 있어 HolyArrs는 다운로드한 파일을 건드리지 않습니다. 파일을 가져오거나 이름 변경, 이동, 스캔하려면 설정에서 끄세요.",
+	"core.api.handsOffSubtitles": "핸즈오프 모드가 켜져 있어 HolyArrs는 다운로드한 파일을 열지 않습니다. 자막을 쓰려면 설정에서 끄세요."
 }

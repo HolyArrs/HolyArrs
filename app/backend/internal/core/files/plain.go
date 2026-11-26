@@ -53,7 +53,7 @@ func Family(fstype string) (label, fix string) {
 	case "9p", "fuse.grpcfuse", "osxfs", "fakeowner":
 		return "a folder shared from the host (Docker Desktop or a VM folder share)", desktopFix
 	case "fuse.shfs":
-		return "an Unraid user share (/mnt/user)", "use /mnt/<pool>/appdata/holyarrs, or set the appdata share to Exclusive access"
+		return "an Unraid user share (/mnt/user)", "use /mnt/<pool>/appdata/holyarrs, or /mnt/disk1/appdata/holyarrs with no pool, or set the appdata share to Exclusive access"
 	case "fuse.mergerfs":
 		return "a mergerfs pool", "put /config on one member disk of the pool, not on the pooled path"
 	case "fuseblk", "fuse.ntfs-3g", "ntfs-3g", "ntfs", "ntfs3", "exfat", "vfat":
@@ -66,7 +66,7 @@ func Family(fstype string) (label, fix string) {
 		return "a network share (NFS or SMB)", "put /config on a local disk of the machine that runs HolyArrs; media folders can stay on the share"
 	}
 	if fstype == "fuse" || strings.HasPrefix(fstype, "fuse.") {
-		return "a FUSE filesystem (for example Unraid /mnt/user, mergerfs, rclone, ntfs-3g)", "put /config on a local disk (on Unraid: /mnt/<pool>/appdata/holyarrs)"
+		return "a FUSE filesystem (for example Unraid /mnt/user, mergerfs, rclone, ntfs-3g)", "put /config on a local disk (on Unraid: /mnt/<pool>/appdata/holyarrs, or /mnt/disk1/appdata/holyarrs with no pool)"
 	}
 	return "", ""
 }

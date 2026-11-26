@@ -14,7 +14,6 @@
 	"settings.health.none": "Chưa có kết quả. Hãy kiểm tra lại để chạy.",
 	"settings.health.since": "Từ",
 	"settings.health.settings": "Cài đặt kiểm tra tình trạng",
-	"settings.health.updateCheck": "Kiểm tra bản HolyArrs mới hơn",
 	"settings.health.onlyChecks": "Chỉ kiểm tra. Không bao giờ tự cài.",
 	"settings.health.every": "Kiểm tra cập nhật mỗi",
 	"settings.health.day": "ngày",

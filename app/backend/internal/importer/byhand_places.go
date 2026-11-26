@@ -126,6 +126,8 @@ type ByHandPlaces struct {
 	Library     []string `json:"library_folders"`
 	Downloaders []string `json:"downloader_folders"`
 	Extra       []string `json:"extra_folders"`
+	// Watch are the folders HolyArrs imports from on its own.
+	Watch []string `json:"watch_folders"`
 	// Downloads are the own folders (or one loose file) of finished downloads
 	// HolyArrs sent: each may be read, never the save folder around it.
 	Downloads []string `json:"-"`
@@ -134,7 +136,7 @@ type ByHandPlaces struct {
 func (ps ByHandPlaces) all() []string {
 	var out []string
 	seen := map[string]bool{}
-	for _, l := range [][]string{ps.Library, ps.Downloaders, ps.Extra} {
+	for _, l := range [][]string{ps.Library, ps.Downloaders, ps.Extra, ps.Watch} {
 		for _, p := range l {
 			if p != "" && !seen[p] {
 				seen[p] = true
@@ -210,7 +212,7 @@ func samePath(a, b string) bool {
 }
 
 func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folders []mediafiles.LibraryFolder) (ByHandPlaces, error) {
-	ps := ByHandPlaces{Library: []string{}, Downloaders: []string{}, Extra: []string{}}
+	ps := ByHandPlaces{Library: []string{}, Downloaders: []string{}, Extra: []string{}, Watch: []string{}}
 	for _, lf := range folders {
 		if !wholeDisk(lf.Path) {
 			ps.Library = append(ps.Library, lf.Path)
@@ -248,7 +250,10 @@ func (im *Importer) byHandPlaces(ctx context.Context, db database.Lister, folder
 			}
 		}
 	}
-	ps.Extra, err = ReadImportFolders(ctx, db)
+	if ps.Extra, err = ReadImportFolders(ctx, db); err != nil {
+		return ps, err
+	}
+	ps.Watch, err = ReadWatchFolders(ctx, db)
 	return ps, err
 }
 

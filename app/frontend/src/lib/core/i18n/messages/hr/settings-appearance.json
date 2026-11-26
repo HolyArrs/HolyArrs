@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Zahtjevi",
 	"settings.appearance.colRate": "Po retku",
 	"settings.appearance.noRows": "Još nema prebrojanih redaka na Istraži.",
+	"settings.appearance.rowStats": "Retci na Istraži",
+	"settings.appearance.rowStatsDesc": "Otvaranja i zahtjevi po retku u zadnjih 30 dana, za sve zajedno. Broji se samo na ovom poslužitelju.",
+	"settings.appearance.colRow": "Redak",
+	"settings.appearance.row.because_have": "Kao naslovi koje imaš",
+	"settings.appearance.row.because_asked": "Kao tvoji zahtjevi",
+	"settings.appearance.row.person": "Više od osobe",
+	"settings.appearance.row.genre": "Žanrovski odabir za tebe",
+	"settings.appearance.row.popular_genre": "Popularno po žanru",
+	"settings.appearance.row.popular_decade": "Popularno po desetljeću",
+	"settings.appearance.row.decade": "Po desetljeću",
+	"settings.appearance.row.mood": "Po raspoloženju",
+	"settings.appearance.row.hero": "Gornji natpis",
 	"settings.appearance.motion": "Pokret",
 	"settings.appearance.motionNote": "Prati postavku Smanji pokret na tvom uređaju"
 }

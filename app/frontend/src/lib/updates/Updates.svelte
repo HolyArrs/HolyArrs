@@ -9,7 +9,6 @@
 	import { page } from '$app/state';
 	import { api, message } from '../core/api.ts';
 	import { ago, dateTime } from '../core/format.ts';
-	import { to } from '../core/paths.ts';
 	import { toasts } from '../core/toasts.svelte.ts';
 	import type { HealthCheck, UpdateInfo } from '../core/types.ts';
 
@@ -90,7 +89,6 @@
 		{#if upd?.checked_at}<span class="when">{t('updates.band.checked')} <time datetime={upd.checked_at} title={dateTime(upd.checked_at)}>{ago(upd.checked_at)}</time></span>{/if}
 		{#if link}<a class="xbtn" href={link} target="_blank" rel="noopener noreferrer">{t('updates.band.whatChanged')}</a>{/if}
 		{#if canAct && upd?.on}<Button {busy} onclick={check}>{upd.checked_at ? t('updates.band.checkAgain') : t('updates.band.checkNow')}</Button>{/if}
-		{#if canAct && upd && !upd.on}<Button href={to('/settings/health')}>{t('updates.band.turnOn')}</Button>{/if}
 	</div>
 </section>
 
@@ -101,7 +99,7 @@
 	</section>
 {/if}
 
-<InApp {canAct} />
+<InApp {canAct} onchecked={async () => { try { onupd(await api.get<Update>('/app/update')); } catch { /* the band keeps its last state */ } }} />
 
 {#if !session.held('go_back')}<GoBack version={real?.version} {canAct} />{/if}
 

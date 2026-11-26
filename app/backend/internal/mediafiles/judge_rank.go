@@ -2,6 +2,7 @@ package mediafiles
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"time"
 
@@ -31,7 +32,7 @@ func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst boo
 		a, b   func(i int) int
 		higher bool
 	}
-	step := func(i int) int { return vs[i].Step.Index }
+	step := func(i int) int { return rankStep(rules, vs[i].Step.Index) }
 	pts := func(i int) int { return vs[i].Points }
 	keys := []key{{"quality", step, step, true}, {"points", pts, pts, true}}
 	if rules.Order == "points_then_quality" {
@@ -45,6 +46,16 @@ func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst boo
 			return 0
 		}
 		keys = append([]key{{"season pack", pack, pack, true}}, keys...)
+	}
+	if rules.Language.WaitDays > 0 {
+		// With a language wait, a wanted language wins over the original.
+		lang := func(i int) int {
+			if vs[i].originalOnly {
+				return 0
+			}
+			return 1
+		}
+		keys = append([]key{{"language", lang, lang, true}}, keys...)
 	}
 	middle := func(i int) int { return -int(vs[i].sizeOff >> 20) }
 	cmp := func(a, b int) (int, string) {
@@ -70,6 +81,19 @@ func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst boo
 				return -1, "on preferred protocol"
 			}
 			return 1, "on preferred protocol"
+		}
+		// Two packs of equal quality, points and protocol: the one covering
+		// more wanted episodes wins (a multi-season pack over a one-season
+		// pack when both are allowed), so a search for many missing seasons
+		// takes one pack instead of several. SlotIDs hold only the
+		// episodes the pack would fill.
+		if pa.IsShow() && pb.IsShow() && isPack(pa) && isPack(pb) {
+			if x, y := len(vs[a].SlotIDs), len(vs[b].SlotIDs); x != y {
+				if x > y {
+					return -1, fmt.Sprintf("on wanted episodes covered (%d vs %d)", y, x)
+				}
+				return 1, fmt.Sprintf("on wanted episodes covered (%d vs %d)", x, y)
+			}
 		}
 		if c, why := episodeOrder(pa, pb); c != 0 {
 			return c, why
@@ -113,7 +137,20 @@ func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst boo
 			vs[i].add("rank", "first", "rank", fmt.Sprintf("ranked 1 of %d", len(idx)), 0)
 			continue
 		}
-		w := idx[0]
+		// A Release loses only to the best one ahead of it that holds one of
+		// its Slots; one for other episodes is no rival (the pickers take
+		// one per Slot), so with none it stays the best for its own.
+		w := -1
+		for _, j := range idx[:pos] {
+			if shareSlot(vs[j].SlotIDs, vs[i].SlotIDs) {
+				w = j
+				break
+			}
+		}
+		if w < 0 {
+			vs[i].add("rank", "first", "rank", fmt.Sprintf("ranked 1 for what it holds (%d of %d overall)", pos+1, len(idx)), 0)
+			continue
+		}
 		_, why := cmp(w, i)
 		if why == "" {
 			why = "on order found"
@@ -123,12 +160,26 @@ func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst boo
 	}
 }
 
+// shareSlot says two Releases hold a Slot in common. One with no Slots
+// (not matched to any yet) counts as a rival of every other, as before.
+func shareSlot(a, b []int64) bool {
+	if len(a) == 0 || len(b) == 0 {
+		return true
+	}
+	for _, x := range a {
+		if slices.Contains(b, x) {
+			return true
+		}
+	}
+	return false
+}
+
 // ReachesGoodEnough reports whether a file with this release name meets the
 // rules' Good enough step (and points, when set). It is used when the Pick
 // rules of a Version change.
 func ReachesGoodEnough(releaseName string, rules PickRulesBody) bool {
 	p := releasename.Parse(releaseName, hintsFor(rules))
-	idx := stepIndex(rules, StepFor(p))
+	idx := rankStep(rules, stepIndex(rules, StepFor(p)))
 	if idx < 0 || idx < stepIndex(rules, rules.GoodEnoughAt) {
 		return false
 	}

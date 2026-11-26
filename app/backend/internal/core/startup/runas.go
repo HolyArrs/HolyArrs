@@ -48,8 +48,8 @@ var startMask = 0o022
 // (docker cp into a named volume, sudo cp, a root backup tool) keep root as
 // owner while the folder itself is right, so these are checked too.
 var ownFiles = []string{
-	"holyarrs.db", "holyarrs.db-wal", "holyarrs.db-shm",
-	"holyarrs-events.db", "holyarrs-events.db-wal", "holyarrs-events.db-shm",
+	"holyarrs.db", "holyarrs.db-wal", "holyarrs.db-shm", "holyarrs.db-journal",
+	"holyarrs-events.db", "holyarrs-events.db-wal", "holyarrs-events.db-shm", "holyarrs-events.db-journal",
 	"holyarrs.key", "logs", "logs/holyarrs.log",
 }
 

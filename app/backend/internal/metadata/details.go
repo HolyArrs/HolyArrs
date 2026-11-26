@@ -37,9 +37,13 @@ type DetailSeason struct {
 // Details is a movie or show looked up for its page, in the Library or not.
 type Details struct {
 	DiscoverItem
-	Logo           string `json:"logo,omitempty"`
-	RuntimeMinutes int    `json:"runtime_minutes,omitempty"`
-	Rating         string `json:"rating,omitempty"`
+	Logo string `json:"logo,omitempty"`
+	// Logos are the title's logos in other app languages (app language to
+	// URL); the page shows the reader's one, else Logo.
+	Logos          map[string]string `json:"logos,omitempty"`
+	LogosRead      bool              `json:"logos_read,omitempty"`
+	RuntimeMinutes int               `json:"runtime_minutes,omitempty"`
+	Rating         string            `json:"rating,omitempty"`
 	// Score is TMDB's average vote out of 10 and Votes how many voted.
 	Score  float64        `json:"score,omitempty"`
 	Votes  int            `json:"votes,omitempty"`
@@ -49,6 +53,9 @@ type Details struct {
 	// Keywords are the title's TMDB keyword names (the Explore strip's
 	// keyword taste, and the page's topic tags).
 	Keywords []string `json:"keywords,omitempty"`
+	// ContentNotes are what the title shows that some people want to know
+	// before asking for it (nudity, a pet dying…), read from Keywords.
+	ContentNotes []string `json:"content_notes,omitempty"`
 	// Status is TMDB's word for where the title stands: Released, In
 	// Production, Post Production (movies); Returning Series, Ended,
 	// Canceled (shows).
@@ -174,8 +181,10 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	if kind == "show" {
 		appendTo = "content_ratings,images,credits,recommendations,videos,keywords,translations"
 	}
-	b, err := t.get(ctx, "/"+tvPath(kind)+"/"+strconv.FormatInt(n, 10),
-		url.Values{"append_to_response": {appendTo}, "include_image_language": {"en,null"}})
+	path := "/" + tvPath(kind) + "/" + strconv.FormatInt(n, 10)
+	// English and textless logos; the reader's own comes from TitleLogo,
+	// since TMDB drops most codes of a long list.
+	b, err := t.get(ctx, path, url.Values{"append_to_response": {appendTo}, "include_image_language": {"en,null"}})
 	if err != nil {
 		return Details{}, err
 	}
@@ -248,7 +257,9 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 			Backdrops []struct {
 				FilePath string  `json:"file_path"`
 				Vote     float64 `json:"vote_average"`
+				Language *string `json:"iso_639_1"`
 			} `json:"backdrops"`
+			Logos []tmdbLogo `json:"logos"`
 		} `json:"images"`
 		Videos *struct {
 			Results []struct {
@@ -364,6 +375,7 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 	}
 	d.Moods = Moods(keywords, d.Genres)
 	d.Keywords = keywords
+	d.ContentNotes = ContentNotes(keywords)
 	if raw.Images != nil {
 		bs := raw.Images.Backdrops
 		sort.SliceStable(bs, func(i, j int) bool { return bs[i].Vote > bs[j].Vote })
@@ -371,12 +383,23 @@ func (t *TMDB) Details(ctx context.Context, kind, tmdbID string) (Details, error
 			if len(d.Backdrops) == maxBackdrops {
 				break
 			}
+			// Only English or textless backdrops, as before logos in
+			// other languages were asked for.
+			if b.Language != nil && *b.Language != "en" {
+				continue
+			}
 			u := t.images() + "/w1280" + b.FilePath
 			if b.FilePath == "" || u == d.Backdrop || slices.Contains(d.Backdrops, u) {
 				continue
 			}
 			d.Backdrops = append(d.Backdrops, u)
 		}
+	}
+	// LogosRead marks details read with the logos in every language, so
+	// pages kept before that are read again once (discover.DetailsTTL).
+	d.LogosRead = true
+	if raw.Images != nil {
+		d.Logos = otherLogos(raw.Images.Logos, t.images(), raw.Language)
 	}
 	if raw.Videos != nil {
 		for _, v := range raw.Videos.Results {

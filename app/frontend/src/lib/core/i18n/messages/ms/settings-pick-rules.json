@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Tidak boleh dibatalkan. Fail kekal.",
 	"settings.pickRules.removeUsed": "{used}. Pilih peraturan lain di sana dahulu.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Batal"
+	"settings.pickRules.cancel": "Batal",
+	"settings.pickRules.check.title": "Semak nama keluaran",
+	"settings.pickRules.check.desc": "Tampal nama keluaran untuk melihat cara HolyArrs membacanya dan cara set kualiti anda menilainya. Tiada apa-apa dicari atau dimuat turun.",
+	"settings.pickRules.check.name": "Nama keluaran",
+	"settings.pickRules.check.rules": "Nilai dengan",
+	"settings.pickRules.check.copies": "Salinan tajuk yang sepadan",
+	"settings.pickRules.check.size": "Saiz dalam GB (pilihan)",
+	"settings.pickRules.check.check": "Semak",
+	"settings.pickRules.check.failed": "Nama tidak dapat disemak",
+	"settings.pickRules.check.readAs": "Dibaca sebagai",
+	"settings.pickRules.check.matches": "Sepadan dengan {name}",
+	"settings.pickRules.check.noTitle": "Tidak sepadan dengan mana-mana tajuk dalam Pustaka anda. Pilih set kualiti di atas untuk menilainya juga.",
+	"settings.pickRules.check.noAlbum": "Sepadan dengan {name}, tetapi tidak dengan mana-mana albumnya.",
+	"settings.pickRules.check.noCopies": "Tajuk ini tiada salinan untuk dinilai.",
+	"settings.pickRules.check.hasFile": "Ada fail"
 }

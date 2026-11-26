@@ -269,6 +269,7 @@ func (n NamingSet) validate() error {
 	s.ArtistFolderPattern, s.AlbumFolderPattern = p.ArtistFolderPattern, p.AlbumFolderPattern
 	s.TrackPattern, s.MultiDiscTrackPattern, s.DiscFolderPattern = p.TrackPattern, p.MultiDiscTrackPattern, p.DiscFolderPattern
 	s.Colon, s.Illegal = p.Colon, p.Illegal
+	s.ShowColon, s.ShowIllegal, s.MusicColon, s.MusicIllegal = p.Colon, p.Illegal, p.Colon, p.Illegal
 	s.MultiEpisodeStyle, s.AirDateStyle, s.AbsoluteDigits = p.MultiEpisodeStyle, p.AirDateStyle, p.AbsoluteDigits
 	if err := s.Validate(); err != nil {
 		return fmt.Errorf("naming patterns: %w", err)

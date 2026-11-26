@@ -32,7 +32,7 @@
 	import { artistSheets, askShowSheet, quickAskSheet } from '#lib/requests/index.ts';
 	import { slotNotes, facts, keyReasons, pager, verdict, verdictTone, RenamePreview, CopyControls, deleteSummary, artName, crumbFor, qualityBadges } from '#lib/mediafiles/index.ts';
 	import { ReportSheet } from '#lib/requests/index.ts';
-	import { percent, timeLeft, groupLabel, kindTone } from '#lib/downloads/index.ts';
+	import { percent, timeLeft, groupLabel, kindTone, FilePoints } from '#lib/downloads/index.ts';
 	import { SubtitlePanel } from '#lib/subtitles/index.ts';
 	import { ShowPage } from '#lib/shows/index.ts';
 	import { ArtistPage } from '#lib/music/index.ts';
@@ -413,6 +413,7 @@
 									{:else}
 										<span class="xs muted">{tr('movies.versions.noFile')}</span>
 									{/if}
+									{#if f && s && manage}<FilePoints titleId={title.id} slotId={s.id} />{/if}
 									{#if f || v.folder_path}
 										<details class="tp-details">
 											<summary>{tr('movies.versions.details')}</summary>

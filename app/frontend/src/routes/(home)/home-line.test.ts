@@ -234,6 +234,8 @@ describe('greeting and news beside the switch', () => {
 		expect(homeGreeting({ name: 'luis', now: at(7) })).toBe('Good morning, Luis');
 		expect(homeGreeting({ name: 'luis', now: at(14) })).toBe('Good afternoon, Luis');
 		expect(homeGreeting({ name: 'luis', now: at(23) })).toBe('Good evening, Luis');
+		// The display name from My account wins over the account name.
+		expect(homeGreeting({ name: 'volemont', displayName: 'Vince Lemont', now: at(14) })).toBe('Good afternoon, Vince');
 		expect(homeGreeting({ name: '', now: at(10) })).toBe('Good morning');
 	});
 	it('says what is going on without a name, and nothing when it is quiet', () => {

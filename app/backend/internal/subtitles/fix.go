@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"os"
 	"path"
 	"path/filepath"
@@ -28,6 +29,9 @@ func (s *Service) besideRow(ctx context.Context, id int64) (Subtitle, *fileCtx, 
 		return row, nil, ErrNotBeside
 	}
 	fc, err := s.load(ctx, row.FileID)
+	if err == nil && fc.look {
+		return row, nil, mediafiles.ErrLookOnly
+	}
 	return row, fc, err
 }
 
@@ -62,7 +66,7 @@ func (s *Service) Sync(ctx context.Context, id int64, fix subtext.Fix, by domain
 	if format != "" {
 		format = format[1:]
 	}
-	text, err := subtext.Clean(b, format)
+	text, err := subtext.CleanFor(b, format, row.Language)
 	if err != nil {
 		return row, err
 	}
@@ -140,6 +144,9 @@ func (s *Service) Choose(ctx context.Context, fileID int64, siteName, key string
 	fc, err := s.load(ctx, fileID)
 	if err != nil {
 		return "", err
+	}
+	if fc.look {
+		return "", mediafiles.ErrLookOnly
 	}
 	rows, err := Sites(ctx, s.Store.Read())
 	if err != nil {

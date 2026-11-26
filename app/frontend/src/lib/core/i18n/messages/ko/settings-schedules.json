@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "취소",
 	"settings.schedules.stages": "단계",
 	"settings.schedules.stagesNote": "<a>파트</a>에서 일시 중지하거나 다시 시작하세요.",
-	"settings.schedules.allTime": "항상"
+	"settings.schedules.allTime": "항상",
+	"settings.schedules.skip.nothing": "할 일 없음",
+	"settings.schedules.skip.plexOff": "꺼짐: {page}에서 {setting}을(를) 켜세요",
+	"settings.schedules.skip.plexNobody": "할 일 없음: Plex 워치리스트를 켠 사람이 없습니다",
+	"settings.schedules.skip.settingOff": "꺼짐: 설정에서 켜세요",
+	"settings.schedules.skip.starting": "건너뜀: HolyArrs가 아직 시작 중이었습니다",
+	"settings.schedules.took": "{time} 걸림",
+	"settings.schedules.finished": "{label} 완료",
+	"settings.schedules.nothingToDo": "{label}: 할 일 없음",
+	"settings.schedules.runFailed": "{label} 실패"
 }

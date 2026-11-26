@@ -36,5 +36,7 @@
 	"settings.move.undoId": "復原匯入 {id}？",
 	"settings.move.undoQuestion": "復原這次匯入？",
 	"settings.move.undoNote": "移除這次匯入新增的內容；你之後的更改會保留。如需報告，請先下載。",
-	"settings.move.undoMove": "復原匯入"
+	"settings.move.undoMove": "復原匯入",
+	"settings.move.continueSetup": "繼續設定",
+	"settings.move.backToChoose": "返回選擇"
 }

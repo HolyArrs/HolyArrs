@@ -8,10 +8,14 @@
 	"setup.fullPath": "Izmanto pilnu mapes ceļu, piemēram, {path}.",
 	"setup.folderUsed": "Šī mape jau tiek izmantota vai atrodas citā, kas tiek izmantota.",
 	"setup.folderMissing": "Šāda mape neeksistē. Pārbaudi ceļu.",
-	"setup.addFolderOrOff": "Pievieno mapi vai izslēdz šo.",
+	"setup.addFolderOrOff": "Pievienojiet mapi vai nospiediet “Pagaidām izlaist”.",
 	"setup.notAnswering": "HolyArrs neatbild. Pēc brīža mēģini vēlreiz.",
 	"setup.addUserPasswordHint": "Pievieno lietotājvārdu un paroli.",
 	"setup.folders": "Mapes",
 	"setup.downloader": "Lejupielādētājs",
-	"setup.source": "Avots"
+	"setup.source": "Avots",
+	"setup.alertsNeedKeyOne": "Paziņojumi: 1 vajag atslēgu",
+	"setup.alertsNeedKey": "Paziņojumi: {n} vajag atslēgu",
+	"setup.folderNoAccess": "HolyArrs nevar atvērt šo mapi. Pārbaudiet tās atļaujas.",
+	"setup.folderCantUse": "HolyArrs nevar izmantot šo mapi. Pārbaudiet ceļu."
 }

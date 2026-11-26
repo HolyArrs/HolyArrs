@@ -266,3 +266,28 @@ func TestManualBackupStopsOnShutdown(t *testing.T) {
 		t.Fatalf("no backup should be made: %v", all)
 	}
 }
+
+// A rollback journal (an Unraid share runs in DELETE mode) left beside the
+// old database moves out with it: SQLite would otherwise play it back into
+// the restored file.
+func TestRestoreMovesRollbackJournalAside(t *testing.T) {
+	dir := t.TempDir()
+	put(t, filepath.Join(dir, database.MainFile), "old-main")
+	put(t, filepath.Join(dir, database.MainFile+"-journal"), "old-main-journal")
+	put(t, filepath.Join(dir, StagedDir, database.MainFile), "new-main")
+	put(t, filepath.Join(dir, StagedDir, readyFile), "x")
+	done, err := ApplyStaged(dir)
+	if err != nil || !done {
+		t.Fatalf("ApplyStaged = %v, %v", done, err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, database.MainFile+"-journal")); err == nil {
+		t.Fatal("old -journal left beside the restored database")
+	}
+	if got := read(t, filepath.Join(dir, database.MainFile)); got != "new-main" {
+		t.Fatalf("main = %q", got)
+	}
+	keeps, _ := filepath.Glob(filepath.Join(dir, "backups", "before-restore-*", database.MainFile+"-journal"))
+	if len(keeps) != 1 {
+		t.Fatalf("old -journal not kept with the old database: %v", keeps)
+	}
+}

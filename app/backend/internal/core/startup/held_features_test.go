@@ -24,10 +24,10 @@ func TestSwitchTurnsOneFeatureOn(t *testing.T) {
 	if !FeatureOn(AIApps) || !FeatureOn(GoBack) {
 		t.Fatal("listed switches are not on")
 	}
-	if FeatureOn(EmbySignIn) {
+	if FeatureOn(RowTitleStats) {
 		t.Fatal("an unlisted switch is on")
 	}
-	if got := FeaturesOff(); slices.Contains(got, AIApps) || !slices.Contains(got, EmbySignIn) || len(got) != len(HeldFeatures())-2 {
+	if got := FeaturesOff(); slices.Contains(got, AIApps) || !slices.Contains(got, RowTitleStats) || len(got) != len(HeldFeatures())-2 {
 		t.Errorf("FeaturesOff() = %v", got)
 	}
 }

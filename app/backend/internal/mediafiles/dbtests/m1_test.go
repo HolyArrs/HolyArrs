@@ -320,8 +320,14 @@ func TestM1MigrationsAreAddOnly(t *testing.T) {
 		// TestSourcesKeptBySiteMigration proves no Source or id is lost.
 		// 0123 rebuilds outside_lists to add the mdblist_list kind;
 		// TestMDBListListsMigration proves no list or column is lost.
+		// 0138 rebuilds media_servers to add the subsonic kind;
+		// TestMediaServersKeptBySubsonicMigration proves no row or id is lost.
+		// 0156 rebuilds media_servers to add the kodi kind;
+		// TestMediaServersKeptByKodiMigration proves no row or id is lost.
+		// 0158 rebuilds downloaders to add the plugin adapters;
+		// TestDownloadersKeptByPluginMigration proves no row is lost.
 		if m.Version < 7 || m.Version == 8 || m.Version == 19 || m.Version == 21 || m.Version == 23 || m.Version == 25 || m.Version == 42 || m.Version == 82 ||
-			m.Version == 84 || m.Version == 95 || m.Version == 102 || m.Version == 103 || m.Version == 106 || m.Version == 109 || m.Version == 121 || m.Version == 123 {
+			m.Version == 84 || m.Version == 95 || m.Version == 102 || m.Version == 103 || m.Version == 106 || m.Version == 109 || m.Version == 121 || m.Version == 123 || m.Version == 138 || m.Version == 156 || m.Version == 158 {
 			continue
 		}
 		up := strings.ToUpper(m.SQL)

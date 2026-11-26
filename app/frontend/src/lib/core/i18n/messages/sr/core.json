@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Градим: {what}… покушај {attempt}",
 	"core.testTag.connected": "Повезан",
 	"core.api.notAnswering": "HolyArrs не одговара. Провери да ли ради.",
+	"core.api.tooSlow": "HolyArrs je predugo odgovarao. Pokušaj ponovo za minut.",
 	"core.api.requestFailed": "Захтев није успео ({status})",
 	"core.api.wentWrong": "Нешто је пошло по злу.",
 	"core.trailerMiss.trailer": "трејлер",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Аутоматски одобрено",
 	"core.plain.approvedBy": "Одобрио: {who}",
 	"core.settings.cantReach": "Не могу да допрем до те адресе. Провери је и да ли апликација ради.",
+	"core.settings.tryHttp": "Ta adresa ne odgovara preko https. Probaj http://.",
 	"core.settings.groupLibrary.label": "Библиотека",
 	"core.settings.groupLibrary.line": "Где живе наслови",
 	"core.settings.groupLibrary.about": "Фасцикле, делови, подразумевано, титлови, називи датотека и увоз.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Два преузимача воде до исте апликације за преузимање, па се преузимања могу приказати двапут.",
 	"core.plain.peopleCheck": "Списак корисника медијског сервера не може да се прочита, па се овде не искључују особе уклоњене тамо.",
 	"core.plain.deleted": "obrisan",
-	"core.plain.deletedName": "{name} (obrisan)"
+	"core.plain.deletedName": "{name} (obrisan)",
+	"core.api.handsOffFiles": "Режим без мешања је укључен, па HolyArrs не дира преузете датотеке. Искључите га у Подешавањима да бисте увозили, преименовали, премештали или скенирали датотеке.",
+	"core.api.handsOffSubtitles": "Режим без мешања је укључен, па HolyArrs никад не отвара преузете датотеке. Искључите га у Подешавањима да бисте користили титлове."
 }

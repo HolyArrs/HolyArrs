@@ -21,7 +21,8 @@ import (
 // records. The address, the extra headers and the sign-in are sealed in
 // the vault; the rest of the record is kept as sent and given back as it
 // came, with header values and the password masked. A record is saved
-// only after a test call to it worked, as the old apps do.
+// only after a test call to it worked, as the old apps do, unless the
+// caller sends forceSave.
 
 // hookTestTimeout bounds one test call to a hook, inside Pulsarr's own
 // ten-second wait for the whole check.
@@ -340,7 +341,8 @@ func (h *handler) listHooks(w http.ResponseWriter, r *http.Request) {
 }
 
 // saveHookFrom checks the name, tests the hook and stores it. stored is
-// the record it replaces, nil for a new one.
+// the record it replaces, nil for a new one. With forceSave the test call
+// is left out, as in the old apps: Helmarr saves its hook that way.
 func (h *handler) saveHookFrom(w http.ResponseWriter, r *http.Request, in hookIn, stored *hook) {
 	ctx := r.Context()
 	var old *hookSecret
@@ -372,7 +374,7 @@ func (h *handler) saveHookFrom(w http.ResponseWriter, r *http.Request, in hookIn
 			return
 		}
 	}
-	if !h.testHookCall(w, r, in) {
+	if !queryBool(r, "forceSave") && !h.testHookCall(w, r, in) {
 		return
 	}
 	sealed, _ := json.Marshal(in.sec)

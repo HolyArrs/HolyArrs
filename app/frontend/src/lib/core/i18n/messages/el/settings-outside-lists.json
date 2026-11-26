@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Προσθήκη στη λίστα μη προσθήκης",
 	"settings.outsideLists.showDot": "σειρά ·",
 	"settings.outsideLists.takeOff": "Αφαίρεση του «{name}»",
-	"settings.outsideLists.empty": "Δεν υπάρχει τίποτα ακόμα σε αυτή τη λίστα"
+	"settings.outsideLists.empty": "Δεν υπάρχει τίποτα ακόμα σε αυτή τη λίστα",
+	"settings.outsideLists.traktSignInTitle": "Σύνδεση στο Trakt",
+	"settings.outsideLists.traktSignInInfo": "Συνδεθείτε για να διαβάζονται οι ιδιωτικές σας λίστες και η λίστα παρακολούθησης στο Trakt και για να προστίθεται στο ιστορικό προβολών ό,τι είδατε στο Trakt.",
+	"settings.outsideLists.traktSignedInAs": "Έχετε συνδεθεί ως {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Δεν έχετε συνδεθεί. Διαβάζονται μόνο δημόσιες λίστες.",
+	"settings.outsideLists.traktSignIn": "Σύνδεση με Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Σε οποιαδήποτε συσκευή, ανοίξτε το <a>{url}</a> και πληκτρολογήστε <code>{code}</code>. Αυτή η σελίδα περιμένει μέχρι να εγκρίνετε.",
+	"settings.outsideLists.traktDenied": "Η σύνδεση στο Trakt απορρίφθηκε.",
+	"settings.outsideLists.traktExpired": "Ο κωδικός έληξε. Ξεκινήστε ξανά.",
+	"settings.outsideLists.traktSignOut": "Αποσύνδεση από το Trakt",
+	"settings.outsideLists.traktSignedIn": "Συνδεθήκατε στο Trakt",
+	"settings.outsideLists.traktSignedOut": "Αποσυνδεθήκατε από το Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (χρειάζεται για σύνδεση με Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Αποθηκεύστε πρώτα το client secret της εφαρμογής σας στο Trakt· το Trakt το χρειάζεται για να μένετε συνδεδεμένοι."
 }

@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Bare disse kan si hvor et besøk kom fra.",
 	"settings.signIn.fixToSaveOne": "Rett 1 linje for å lagre",
 	"settings.signIn.fixToSaveOther": "Rett {n} linjer for å lagre",
-	"settings.signIn.localSaved": "Lokalt nettverk lagret"
+	"settings.signIn.localSaved": "Lokalt nettverk lagret",
+	"settings.signIn.forgotTitle": "Glemt passordet?",
+	"settings.signIn.forgotOn": "Vis Glemt passordet? på innloggingssiden",
+	"settings.signIn.forgotNote": "Eieren får en engangskode fra serverloggen. Slå det av hvis alle logger inn med enkel pålogging. Kommandoen reset-owner virker fortsatt.",
+	"settings.signIn.forgotShown": "Glemt passordet? er på",
+	"settings.signIn.forgotHidden": "Glemt passordet? er av"
 }

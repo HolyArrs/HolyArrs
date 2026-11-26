@@ -1,0 +1,16 @@
+{
+  "id": "example",
+  "name": "Example",
+  "author": "HolyArrs",
+  "description": "Test plugin for the publishing job. Never published.",
+  "access": {
+    "hosts": [],
+    "folders": [],
+    "actions": [],
+    "events": ["library.add"]
+  },
+  "support_email": "support@holyarrs.com",
+  "support_url": "https://github.com/HolyArrs/holyarrs/issues",
+  "min_app_version": "1.3.1",
+  "licence": "AGPL-3.0"
+}

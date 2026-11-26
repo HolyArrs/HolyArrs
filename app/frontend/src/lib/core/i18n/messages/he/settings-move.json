@@ -36,5 +36,7 @@
 	"settings.move.undoId": "לבטל את ייבוא {id}?",
 	"settings.move.undoQuestion": "לבטל את הייבוא הזה?",
 	"settings.move.undoNote": "מסיר את מה שהייבוא הוסיף; שינויים מאוחרים שלך נשארים. הורד את הדוח קודם אם תרצה אותו.",
-	"settings.move.undoMove": "ביטול ייבוא"
+	"settings.move.undoMove": "ביטול ייבוא",
+	"settings.move.continueSetup": "המשך בהגדרה",
+	"settings.move.backToChoose": "חזרה לבחירה"
 }

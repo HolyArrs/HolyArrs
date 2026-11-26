@@ -85,5 +85,21 @@
 	"sources.uses.auto": "magától keres",
 	"sources.uses.feed": "legújabbak listája",
 	"sources.uses.hand": "kézi keresés",
-	"sources.uses.none": "nincs használatban"
+	"sources.uses.none": "nincs használatban",
+	"sources.bridge.removeTitle": "Eltávolítod: {name}?",
+	"sources.bridge.find": "{name} keresése a hálózatomon",
+	"sources.bridge.noneFound": "Egy {name} sem válaszolt a hálózatodon.",
+	"sources.bridge.keyFound": "Kulcs megszerezve innen: {name}",
+	"sources.bridge.keyKept": "A(z) {name} nem adta ki a kulcsát (be van kapcsolva a bejelentkezés). Másold ki a Kulcs lekérése gombbal.",
+	"sources.bridge.keyKeptJackett": "A Jackett nem adta ki a kulcsát (rendszergazdai jelszava van). Másold ki a(z) Kulcs lekérése gombbal.",
+	"sources.bridge.notReached": "Nem érhető el: {name}.",
+	"sources.bridge.brings.title": "Mi jön át",
+	"sources.bridge.brings.sites": "Az indexerei, Forrásokként",
+	"sources.bridge.brings.categories": "A kategóriáik",
+	"sources.bridge.brings.search": "A keresések a(z) {name} útján mennek",
+	"sources.bridge.brings.sync": "A(z) {name} változásai átjönnek",
+	"sources.bridge.brings.stays": "Az indexereid a(z) {name} alkalmazásban maradnak beállítva.",
+	"sources.bridge.brings.had": "{n} indexer már itt van",
+	"sources.bridge.brings.hadFrom": "Importálva innen: {apps}",
+	"sources.bridge.brings.keyKept": "Hagyd üresen a kulcsot, hogy a meglévőt használja."
 }

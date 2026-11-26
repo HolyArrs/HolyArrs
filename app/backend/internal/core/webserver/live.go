@@ -63,6 +63,24 @@ type LiveHub struct {
 	dlRing  []LiveEvent
 	evicted uint64 // newest id pushed out of ring
 	clients map[*liveClient]struct{}
+	closed  bool // after Close a late stream ends at once instead of holding shutdown
+	tap     chan LiveEvent
+}
+
+// tapQueue is how many messages may wait for the tap; more are dropped.
+const tapQueue = 256
+
+// Tap hands every published message to f as well, in order, from one
+// goroutine and a bounded queue (the plugin event feed); a message that
+// finds the queue full is dropped. Set it once, before the hub is used.
+func (h *LiveHub) Tap(f func(topic string, data json.RawMessage)) {
+	ch := make(chan LiveEvent, tapQueue)
+	h.tap = ch
+	go func() {
+		for e := range ch {
+			f(e.Topic, e.Data)
+		}
+	}()
 }
 
 // liveClient is one open stream.
@@ -215,6 +233,17 @@ func (e LiveEvent) visible(v LiveViewer) bool {
 
 func (c *liveClient) drop() { c.once.Do(func() { close(c.gone) }) }
 
+// Close ends every open stream, so on shutdown browsers see the stream end at
+// once and start retrying instead of holding a silent stream until the stop.
+func (h *LiveHub) Close() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.closed = true
+	for c := range h.clients {
+		c.drop()
+	}
+}
+
 // offer hands a Downloads event to the stream: through ch when there is room
 // and nothing for its key waits, otherwise into the key's slot, merged.
 func (c *liveClient) offer(e LiveEvent, merge func(old, cur json.RawMessage) json.RawMessage) {
@@ -267,6 +296,12 @@ func (h *LiveHub) publishEvent(topic, key string, data any, aud LiveAudience, on
 	defer h.mu.Unlock()
 	h.next++
 	e := LiveEvent{ID: h.next, Topic: topic, Data: b, Key: key, aud: aud, only: only}
+	if h.tap != nil {
+		select {
+		case h.tap <- LiveEvent{Topic: topic, Data: b}:
+		default:
+		}
+	}
 	if topic == LiveTopicDL {
 		h.dlRing, _, _ = pushRing(h.dlRing, h.opt.DLRing, e)
 	} else {
@@ -301,6 +336,9 @@ func (h *LiveHub) subscribe(who LiveViewer, last string) (*liveClient, []LiveEve
 	c := &liveClient{who: who, ch: make(chan LiveEvent, h.opt.ClientQueue), gone: make(chan struct{}), wake: make(chan struct{}, 1), check: make(chan struct{}, 1)}
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	if h.closed {
+		c.drop()
+	}
 	h.clients[c] = struct{}{}
 	if last == "" {
 		return c, nil
@@ -427,7 +465,9 @@ func (h *LiveHub) serve(w http.ResponseWriter, r *http.Request, who LiveViewer, 
 			if still != nil && !still() {
 				return
 			}
-			if _, err := fmt.Fprintf(w, ": ping\n\n"); err != nil || rc.Flush() != nil {
+			// The empty data line lets a browser see the beat (it never sees
+			// comments), so a hung server shows as reconnecting.
+			if _, err := fmt.Fprintf(w, ": ping\ndata: {}\n\n"); err != nil || rc.Flush() != nil {
 				return
 			}
 		}

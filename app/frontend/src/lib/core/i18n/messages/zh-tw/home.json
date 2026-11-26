@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "選擇接下來要請求的內容",
 	"home.newPopular": "最新與熱門",
 	"home.whatSTrending": "目前熱門",
+	"home.gettingReady": "正在準備…",
 	"home.top10sAndComing": "Top 10 與即將推出",
 	"home.whatSNext": "接下來是什麼",
 	"home.airDatesAndReleases": "播出日期和發行",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "本週上線的劇集和電影",
 	"home.popularThisWeek": "本週上線的熱門作品",
 	"home.peopleCheck": "人員檢查",
-	"home.cantReadUsers": "無法讀取使用者清單"
+	"home.cantReadUsers": "無法讀取使用者清單",
+	"home.joined.title": "歡迎，{name}",
+	"home.joined.find": "在{explore}或{search}中尋找內容。",
+	"home.joined.ask": "在作品上點按{request}即可取得。你可以請求：",
+	"home.joined.track": "在{requests}中查看每一項。",
+	"home.joined.noLimit": "沒有每週上限。",
+	"home.joined.gotIt": "知道了",
+	"home.joined.explore": "開啟{explore}"
 }

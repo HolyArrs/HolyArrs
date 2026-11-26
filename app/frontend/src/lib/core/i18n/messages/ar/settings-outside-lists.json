@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "أضف إلى قائمة عدم الإضافة",
 	"settings.outsideLists.showDot": "مسلسل ·",
 	"settings.outsideLists.takeOff": "أزل {name}",
-	"settings.outsideLists.empty": "لا شيء في هذه القائمة بعد"
+	"settings.outsideLists.empty": "لا شيء في هذه القائمة بعد",
+	"settings.outsideLists.traktSignInTitle": "تسجيل الدخول إلى Trakt",
+	"settings.outsideLists.traktSignInInfo": "سجّل الدخول لقراءة قوائم Trakt الخاصة بك وقائمة المشاهدة، ولإضافة ما شاهدته على Trakt إلى سجل المشاهدة.",
+	"settings.outsideLists.traktSignedInAs": "تم تسجيل الدخول باسم {name}.",
+	"settings.outsideLists.traktNotSignedIn": "لم تسجّل الدخول. تُقرأ القوائم العامة فقط.",
+	"settings.outsideLists.traktSignIn": "تسجيل الدخول عبر Trakt",
+	"settings.outsideLists.traktDeviceSteps": "على أي جهاز، افتح <a>{url}</a> وأدخل <code>{code}</code>. تنتظر هذه الصفحة حتى توافق.",
+	"settings.outsideLists.traktDenied": "تم رفض تسجيل الدخول إلى Trakt.",
+	"settings.outsideLists.traktExpired": "انتهت صلاحية الرمز. ابدأ من جديد.",
+	"settings.outsideLists.traktSignOut": "تسجيل الخروج من Trakt",
+	"settings.outsideLists.traktSignedIn": "تم تسجيل الدخول إلى Trakt",
+	"settings.outsideLists.traktSignedOut": "تم تسجيل الخروج من Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (مطلوب لتسجيل الدخول عبر Trakt)",
+	"settings.outsideLists.traktSecretFirst": "احفظ Client secret لتطبيق Trakt أولًا؛ يحتاجه Trakt ليبقيك مسجّل الدخول."
 }

@@ -226,7 +226,7 @@ func TestOptionalDownloadersMigrationRollsBack(t *testing.T) {
 func TestRebuildMigrationRestoresForeignKeys(t *testing.T) {
 	for _, failure := range []string{"statement", "foreign_key", "panic", "canceled"} {
 		t.Run(failure, func(t *testing.T) {
-			w, err := newWriter(filepath.Join(t.TempDir(), "rebuild.db"), 1024, DefaultWriteCap)
+			w, err := newWriter(filepath.Join(t.TempDir(), "rebuild.db"), 1024, DefaultWriteCap, false)
 			if err != nil {
 				t.Fatal(err)
 			}

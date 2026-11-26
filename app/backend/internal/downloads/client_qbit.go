@@ -52,7 +52,9 @@ type Qbittorrent struct {
 
 // qbitTorrent is one row of torrents/info. Pointer fields are the ones older clients leave out.
 type qbitTorrent struct {
-	Hash        string   `json:"hash"`
+	Hash string `json:"hash"`
+	// InfohashV1 differs from Hash for a hybrid torrent, which qBittorrent lists by its v2 hash.
+	InfohashV1  string   `json:"infohash_v1"`
 	Name        string   `json:"name"`
 	Category    string   `json:"category"`
 	SavePath    string   `json:"save_path"`
@@ -408,6 +410,12 @@ func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.V
 		req.Header.Set("Referer", q.base)
 	}
 	resp, err := q.http.Do(req)
+	// A closed idle connection fails one GET with EOF; a GET is safe to send again.
+	// A timeout is not retried, so a hung client is not waited on twice.
+	var te interface{ Timeout() bool }
+	if err != nil && method == http.MethodGet && ctx.Err() == nil && !(errors.As(err, &te) && te.Timeout()) {
+		resp, err = q.http.Do(req.Clone(ctx))
+	}
 	if err != nil {
 		var ue *url.Error
 		if errors.As(err, &ue) {
@@ -426,7 +434,11 @@ func (q *Qbittorrent) doRaw(ctx context.Context, method, path string, form url.V
 		return 0, nil, fmt.Errorf("qbittorrent %s: %w", path, ErrTooLarge)
 	}
 	code := resp.StatusCode
-	if code >= 400 {
+	// rdt-client and other .NET stand-ins answer a lapsed session with an empty
+	// Kestrel 403, the same as qBittorrent's own 403, so it signs in again.
+	// Sonarr and its family answer 401 there, so they are still caught.
+	kestrel403 := code == http.StatusForbidden && doctor.Who(resp.Header, b) == "kestrel"
+	if code >= 400 && !kestrel403 {
 		// Another app on the port is not a key or path problem.
 		if e := doctor.Other(resp.Header, b, "qbittorrent"); e != nil {
 			return code, nil, fmt.Errorf("qbittorrent %s: %w", path, e)
@@ -470,17 +482,29 @@ func jobFromTorrent(t qbitTorrent) Job {
 	if eta >= 8640000 || eta < 0 {
 		eta = 0
 	}
-	state, save := qbitState(t.State), t.SavePath
+	state, save, detail := qbitState(t.State), t.SavePath, t.State
 	if state == StateFinished && t.stillIncomplete() {
 		save = t.DownloadPath
+		if t.DoneOn > 0 && time.Since(time.Unix(t.DoneOn, 0)) < moveWait {
+			// The client moves the data to the save folder next; import once it is there.
+			state, detail = StateQueued, "moving"
+		}
 	}
-	return Job{ID: strings.ToLower(t.Hash), Name: t.Name, Category: t.Category, SavePath: save, ContentPath: t.ContentPath,
-		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), SeedsTotal: max(t.NumComplete, 0), PeersTotal: max(t.NumIncompl, 0), ETA: eta, State: state, Detail: t.State,
+	alt := strings.ToLower(t.InfohashV1)
+	if alt == strings.ToLower(t.Hash) {
+		alt = ""
+	}
+	return Job{ID: strings.ToLower(t.Hash), AltID: alt, Name: t.Name, Category: t.Category, SavePath: save, ContentPath: t.ContentPath,
+		Size: t.Size, Progress: t.Progress, Speed: t.DLSpeed, UpSpeed: max(t.UPSpeed, 0), Seeds: max(t.NumSeeds, 0), Peers: max(t.NumLeechs, 0), SeedsTotal: max(t.NumComplete, 0), PeersTotal: max(t.NumIncompl, 0), ETA: eta, State: state, Detail: detail,
 		AddedAt: max(t.AddedOn, 0), Ratio: max(t.Ratio, 0), Limits: t.limits(),
 		DoneAt: max(t.DoneOn, 0), QueuePos: max(t.QueuePos, 0), Tracker: HostOnly(t.Tracker), TrackerProblem: t.problem(),
 		LimitDown: max(t.DLLimit, 0), LimitUp: max(t.UPLimit, 0),
 		LastActivity: max(t.LastAct, 0), SeedingTime: max(t.SeedTime, 0), SeenComplete: max(t.SeenDone, 0), Uploaded: max(t.Uploaded, 0), TimeActive: max(t.TimeActive, 0), Availability: t.avail()}
 }
+
+// moveWait is how long a finished torrent may sit in the temporary folder
+// before it is imported from there: past it the client is not moving it.
+const moveWait = 15 * time.Minute
 
 // stillIncomplete spots a finished torrent whose data still sits in the temporary folder, because the client has not moved it yet. Then the save path is the temporary one.
 func (t qbitTorrent) stillIncomplete() bool {

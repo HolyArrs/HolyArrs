@@ -75,3 +75,13 @@ func (c *Calls) String() string {
 	}
 	return "member=" + strconv.Itoa(c.Member) + " shared=" + strconv.Itoa(c.Shared) + " (" + strings.Join(parts, " ") + ")"
 }
+
+// Total is the outside calls counted so far.
+func (c *Calls) Total() int {
+	if c == nil {
+		return 0
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.Member + c.Shared
+}

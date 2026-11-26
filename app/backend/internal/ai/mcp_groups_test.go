@@ -35,6 +35,7 @@ func TestCallRefusedPerGroup(t *testing.T) {
 		mcpkeys.Delete:   {"DELETE", "/api/v1/asks/3"},
 		mcpkeys.Admin:    {"POST", "/api/v1/backups"},
 		mcpkeys.Approve:  {"POST", "/api/v1/asks/3/approve"},
+		mcpkeys.Plugins:  {"GET", "/api/v1/plugin-pages"},
 	}
 	for _, g := range mcpkeys.All {
 		rt, ok := routes[g]
@@ -120,4 +121,34 @@ func TestMCPSwitchOff(t *testing.T) {
 			t.Errorf("%s: %d %s", p, rec.Code, rec.Body.String())
 		}
 	}
+}
+
+func TestPluginToolsNeedTheirBox(t *testing.T) {
+	h := &Handlers{PluginTools: fakePluginTools{}}
+	for _, c := range []struct {
+		groups []string
+		on     bool
+	}{
+		{[]string{"see", "add", "control", "settings"}, false},
+		{[]string{"admin"}, false},
+		{[]string{"see", "plugins"}, true},
+	} {
+		if got := h.pluginToolsOn(webserver.Caller{MCPGroups: c.groups}); got != c.on {
+			t.Errorf("%v: %v", c.groups, got)
+		}
+	}
+	if (&Handlers{}).pluginToolsOn(webserver.Caller{MCPGroups: []string{"plugins"}}) {
+		t.Error("on without plugin tools")
+	}
+	res, _ := (&Handlers{}).callTool(httptest.NewRequest("POST", "/mcp", nil), webserver.Caller{}, "plugin.x.y", nil)
+	if res["isError"] != true {
+		t.Error("plugin tool ran with plugin tools off")
+	}
+}
+
+type fakePluginTools struct{}
+
+func (fakePluginTools) List(webserver.Caller) []map[string]any { return nil }
+func (fakePluginTools) Call(*http.Request, webserver.Caller, string, map[string]any) (any, error) {
+	return nil, nil
 }

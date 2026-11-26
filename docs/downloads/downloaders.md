@@ -78,17 +78,19 @@ HolyArrs talks to aria2 over JSON-RPC. The default **Address** is `http://host:6
 
 HolyArrs fetches each `.torrent` file itself and sends it to aria2, so aria2 never contacts the Source. HolyArrs sends torrents and magnet links only; it never uses aria2 for direct downloads.
 
-For a very large `.torrent`, raise `--rpc-max-request-size` (2M by default). Keep `rpc-save-upload-metadata=true` so a torrent HolyArrs sent survives an aria2 restart. aria2 then leaves a `<hash>.torrent` copy in its download folder, and HolyArrs does not delete it.
+For a very large `.torrent`, raise `--rpc-max-request-size` (2M by default). Keep `rpc-save-upload-metadata=true` so a torrent HolyArrs sent survives an aria2 restart. aria2 then leaves a `<hash>.torrent` copy in its download folder, and HolyArrs does not delete it. HolyArrs also asks aria2 to write its session file as soon as it has taken a Release, so a killed aria2 finds it again with `--save-session` and `--input-file`. Keep `--max-download-result` at 1 or more (the default is 1000): at 0, aria2 drops a download the moment it finishes, so HolyArrs never sees one finish and nothing is imported.
+
+HolyArrs adds every torrent and magnet started, whatever `--pause` or `--pause-metadata` say: aria2 copies those onto each download it takes, and nothing would start a download that arrived paused.
 
 A private torrent gets only its own trackers: HolyArrs clears aria2's `bt-tracker` list for it.
 
 Some aria2 images stop seeding as soon as a download finishes (`seed-time=0`). Private trackers may count that against you, so raise it there.
 
-aria2 forgets finished downloads when it restarts. If that happens before HolyArrs imports one, its row shows the download as gone from the Downloader. Nothing is deleted.
+aria2 forgets finished downloads when it restarts. If that happens before HolyArrs imports one, its row shows the download as gone, and says aria2 restarted and forgot it. Nothing is deleted, and the files stay where they are.
 
 When aria2 reports an error on a download, HolyArrs shows it as paused with aria2's message. aria2 tries it again after its next restart, so HolyArrs does not fail it or delete its files.
 
-aria2 does not keep speed limits across a restart.
+A speed limit set on an aria2 Downloader goes on its own downloads, not on aria2's `max-overall` limits: another app's downloads in the same aria2 keep their speed, and the limits in `aria2.conf` stay as they are. HolyArrs holds the limit in memory, so set it again after HolyArrs restarts; a download already running keeps the limit it was given until then.
 
 ### aria2 on a seedbox
 
@@ -205,6 +207,10 @@ If nothing else passes your rules, the title shows **Needs a decision**.
 **Symptom:** aria2 refuses a Release with `already in aria2 in another folder`.
 **Cause:** The same torrent is in aria2 under a folder that is not this Downloader's category.
 **Fix:** Remove it in aria2, or let it finish there.
+
+**Symptom:** The aria2 test says `HolyArrs can never see one finish`.
+**Cause:** `max-download-result=0` in `aria2.conf`: aria2 drops a download as soon as it finishes, so nothing is left to import.
+**Fix:** Raise it, for example `max-download-result=1000`, then press **Test** again.
 
 **Symptom:** A `.torrent` or `.nzb` from a Source with a proxy is refused.
 **Cause:** Transmission, Deluge, rTorrent, aria2 and NZBGet cannot take those files through a proxied Source yet. Magnet links work.

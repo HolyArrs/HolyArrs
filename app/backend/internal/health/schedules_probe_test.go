@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/jobs"
 )
 
 func TestSchedulesShowEffectiveProbeTimeWithoutChangingHistory(t *testing.T) {
@@ -58,5 +60,38 @@ func TestRunScheduleBypassesProbeWithoutMovingClock(t *testing.T) {
 	}
 	if nextAfter != nextBefore || lastAfter != lastBefore {
 		t.Fatalf("Run now moved clock: next %v -> %v, last %v -> %v", nextBefore, nextAfter, lastBefore, lastAfter)
+	}
+}
+
+// The page gets the newest no-work check and why, and for the newest Job
+// why it did nothing and how long it took.
+func TestSchedulesShowCheckReasonNoteAndDuration(t *testing.T) {
+	t.Parallel()
+	f := newCtl(t)
+	now := time.Now().UTC().Add(time.Second)
+	f.q.ProbeSchedule("feed_check", func(context.Context, time.Time) (bool, any, error) {
+		return false, jobs.SkipReason("setting_off"), nil
+	})
+	if _, err := f.q.RunSchedules(context.Background(), now); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := tx.Exec(`INSERT INTO jobs (created_at, created_by, updated_at, updated_by, kind, params, priority, state, attempt, max_attempts, run_after, started_at, ended_at, result, asked_by)
+			VALUES ('2026-11-19T10:00:00Z', '{"kind":"system"}', '2026-11-19T10:00:00Z', '{"kind":"system"}', 'feed_check', '{}', 'normal', 'done', 1, 5, '2026-11-19T10:00:00Z',
+			'2026-11-19T10:00:00Z', '2026-11-19T10:00:02.5Z', '{"skipped":"setting_off"}', '{"kind":"user"}')`)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	var answer schedulesAnswer
+	if err := json.Unmarshal(do(t, "GET", f.srv.URL+"/api/v1/schedules", "", 200), &answer); err != nil {
+		t.Fatal(err)
+	}
+	v := scheduleNamed(t, answer, "feed_check")
+	if v.LastChecked == nil || !v.LastChecked.Equal(now) || v.LastSkip != "setting_off" || v.LastRun != nil {
+		t.Fatalf("check %v %q last_run %v", v.LastChecked, v.LastSkip, v.LastRun)
+	}
+	if v.LastJob != "done" || v.LastJobNote != "setting_off" || v.LastJobSeconds == nil || *v.LastJobSeconds != 2.5 {
+		t.Fatalf("job %q note %q secs %v", v.LastJob, v.LastJobNote, v.LastJobSeconds)
 	}
 }

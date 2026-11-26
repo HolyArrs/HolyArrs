@@ -85,5 +85,21 @@
 	"sources.uses.auto": "cherche seule",
 	"sources.uses.feed": "liste des nouveautés",
 	"sources.uses.hand": "recherche à la main",
-	"sources.uses.none": "inutilisée"
+	"sources.uses.none": "inutilisée",
+	"sources.bridge.removeTitle": "Retirer {name} ?",
+	"sources.bridge.find": "Chercher {name} sur mon réseau",
+	"sources.bridge.noneFound": "Aucun {name} n'a répondu sur votre réseau.",
+	"sources.bridge.keyFound": "Clé obtenue de {name}",
+	"sources.bridge.keyKept": "{name} n'a pas donné sa clé (sa connexion est activée). Utilisez Obtenir la clé pour la copier.",
+	"sources.bridge.keyKeptJackett": "Jackett n'a pas donné sa clé (il a un mot de passe administrateur). Utilisez Obtenir la clé pour la copier.",
+	"sources.bridge.notReached": "Impossible de joindre {name}.",
+	"sources.bridge.brings.title": "Ce qui est repris",
+	"sources.bridge.brings.sites": "Ses indexeurs, en tant que Sources",
+	"sources.bridge.brings.categories": "Leurs catégories",
+	"sources.bridge.brings.search": "Les recherches passent par {name}",
+	"sources.bridge.brings.sync": "Les changements dans {name} sont repris",
+	"sources.bridge.brings.stays": "Vos indexeurs restent configurés dans {name}.",
+	"sources.bridge.brings.had": "{n} indexeurs déjà ici",
+	"sources.bridge.brings.hadFrom": "Importés via {apps}",
+	"sources.bridge.brings.keyKept": "Laissez la clé vide pour utiliser celle qu'ils ont déjà."
 }

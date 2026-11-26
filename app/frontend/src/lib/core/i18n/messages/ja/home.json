@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "次にリクエストするものを選ぶ",
 	"home.newPopular": "新着と人気",
 	"home.whatSTrending": "トレンド",
+	"home.gettingReady": "準備しています…",
 	"home.top10sAndComing": "トップ 10 と近日公開",
 	"home.whatSNext": "これから",
 	"home.airDatesAndReleases": "放送日と公開日",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "今週公開のエピソードと映画",
 	"home.popularThisWeek": "今週公開の人気作品",
 	"home.peopleCheck": "利用者チェック",
-	"home.cantReadUsers": "ユーザー一覧を読み取れません"
+	"home.cantReadUsers": "ユーザー一覧を読み取れません",
+	"home.joined.title": "ようこそ、{name}さん",
+	"home.joined.find": "{explore} か {search} で探せます。",
+	"home.joined.ask": "作品の {request} を押すと届きます。リクエストできるもの:",
+	"home.joined.track": "それぞれの状況は {requests} で確認できます。",
+	"home.joined.noLimit": "週ごとの上限はありません。",
+	"home.joined.gotIt": "OK",
+	"home.joined.explore": "{explore} を開く"
 }

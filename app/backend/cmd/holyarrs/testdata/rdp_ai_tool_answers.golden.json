@@ -59,6 +59,7 @@
         "used": "number"
       },
       "no_limit": "bool",
+      "pick_many": "bool",
       "qualities": {
         "movie": [
           {

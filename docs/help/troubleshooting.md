@@ -133,7 +133,7 @@ At start, HolyArrs checks its folders and logs one summary line, such as `folder
 
 <details class="ha-more"><summary>No shell in the image</summary>
 
-The image holds only the HolyArrs program, so it stays small and leaves less for an attacker. `docker exec holyarrs sh` fails by design. For a closer look, start a throwaway helper beside it:
+The image holds only the HolyArrs program, so it stays small and leaves less for an attacker. `docker exec holyarrs sh` fails by design with `OCI runtime exec failed`, and so do the **Shell** and **Console** buttons in TrueNAS, Unraid, Synology and Portainer. HolyArrs commands run without a shell: `docker exec -it holyarrs /holyarrs <command>` from the host's terminal, keeping `/holyarrs` in it. For a closer look, start a throwaway helper beside it:
 
 ```sh
 docker run --rm -it --pid container:holyarrs --network container:holyarrs --volumes-from holyarrs busybox sh

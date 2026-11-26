@@ -29,7 +29,7 @@
 	import Icon from '#lib/ui/Icon.svelte';
 	import { artistSheets } from '#lib/requests/index.ts';
 	import { libraryTitles, ownedLibrary, partOff, partOn } from '#lib/mediafiles/index.ts';
-	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, TopServicesRow, ExploreHero, CategoryStrip, GenreBanner, leaveOut, newHref, newServicesPath, type NewServicesAnswer, whyShown } from '#lib/discover/index.ts';
+	import { anchorDelta, canReturn, putOffsets, readAnchor, readOffsets, type ExploreReturn, headPath, serverRow, tailPath, type HeadAnswer, type TailAnswer, markTransitions, dedupeTop, filterRows, parseType, typeHref, enoughCards, genreRowPath, genreCardHref, genreRowAfter, GENRE_ROW_MAX, ROW_MIN, type GenreRowCard, type ExploreType, TopServicesRow, ExploreHero, heroFallback, CategoryStrip, GenreBanner, leaveOut, newHref, newServicesPath, type NewServicesAnswer, whyShown } from '#lib/discover/index.ts';
 	import { detailPath, remember, MetadataNotice } from '#lib/metadata/index.ts';
 	import { QuickAsk } from '#lib/requests/index.ts';
 	import { MusicTrendingRows, musicCardHref, MusicGenreTiles } from '#lib/music/index.ts';
@@ -54,7 +54,7 @@
 	let heroAt = $state(0);
 	// First visit: the server may still be fetching the hero's pictures, so the page keeps a same-size placeholder and asks again a few times.
 	let heroWait = $state(0);
-	const HERO_TRIES = 5;
+	const HERO_TRIES = 24;
 	let headLoaded = $state(false);
 	let tailPageNext = 0;
 	let tailMore = $state(false);
@@ -283,7 +283,8 @@
 	// Hero badges: why the featured title shows (New season, Picked for you).
 	let heroGenres = $state<Record<string, string[]>>({});
 	let taste = $state<string[]>([]);
-	const heroCards = $derived(genreView.genreOn ? genreView.genreHero : hero);
+	// Until the server's hero is in, the first pictured titles of the loaded rows stand in, so the hero is never an empty box.
+	const heroCards = $derived(genreView.genreOn ? genreView.genreHero : hero.length ? hero : heroFallback(head));
 	/** The titles of Trending on streaming, as that row shows them now. */
 	let servicesShown = $state<string[]>([]);
 	// A title shows once in the first 8 rows, counting the hero and the services row.
@@ -517,7 +518,7 @@
 					followTmdb={!c.titleId && c.kind === 'show'}>
 					{#snippet growAction()}
 						{#if act && cardTmdb(c)}
-							<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
+							<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => { count(row.type, 'ask'); void quick(c, act); }} />
 						{/if}
 					{/snippet}
 				</WideCard>
@@ -527,12 +528,12 @@
 {/snippet}
 
 <!-- A row outside this page (Trending on streaming) asks with the card as this page last saw it, so the button goes once asked. -->
-{#snippet rowAsk(c: ExploreCard)}{@render heroAction(live(c))}{/snippet}
+{#snippet rowAsk(c: ExploreCard)}{@render heroAction(live(c), 'top_services')}{/snippet}
 
-{#snippet heroAction(c: ExploreCard)}
+{#snippet heroAction(c: ExploreCard, rowType = 'hero')}
 	{@const act = cardAction(c, { manage, ask: mayAsk })}
 	{#if act && cardTmdb(c)}
-		<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => void quick(c, act)} />
+		<IconButton icon="plus" label={act === 'add' ? t('discover.explore.add', { name: c.name }) : t('discover.explore.askFor', { name: c.name })} variant="glass" size="lg" aria-haspopup="dialog" aria-busy={flow?.busy(c) || undefined} onclick={() => { count(rowType, 'ask'); void quick(c, act); }} />
 	{/if}
 {/snippet}
 

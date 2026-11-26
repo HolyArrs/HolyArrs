@@ -268,8 +268,15 @@ func TestImportedRulesMatchTheProfile(t *testing.T) {
 
 	p = base
 	p.Qualities = []string{"Bluray-1080p", "WEBDL-1080p"}
-	if notes := strings.Join(planRules(t, Radarr, p, oneFormat).Notes, "; "); !strings.Contains(notes, "order") {
-		t.Errorf("no order note: %q", notes)
+	// The profile's own order is kept (web above Blu-ray here).
+	var allowed []string
+	for _, s := range planRules(t, Radarr, p, oneFormat).Body.Steps {
+		if s.Allowed {
+			allowed = append(allowed, s.Quality)
+		}
+	}
+	if !slices.Equal(allowed, []string{"1080p_bluray", "1080p_web"}) {
+		t.Errorf("profile order not kept: %v", allowed)
 	}
 }
 

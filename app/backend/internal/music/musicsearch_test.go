@@ -31,6 +31,7 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 	t.Parallel()
 	srv, s, lib, _ := musicSetup(t)
 	u := srv.URL + "/api/v1"
+	searchSource(t, s) // a search by hand needs a Source
 	ctx := context.Background()
 	var added struct {
 		Title struct {
@@ -239,4 +240,18 @@ func TestAlbumSearchOverHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	do(t, "POST", u+"/artists", fmt.Sprintf(`{"id":"mbid:%s","pick_rules_id":%d}`, apiArtist, good), 400)
+}
+
+// searchSource adds a paused Source, so a search by hand is taken
+// while nothing is asked.
+func searchSource(t *testing.T, s *database.Store) {
+	t.Helper()
+	err := s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := database.Insert(tx, "sources", &domain.Source{Name: "Waiting", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{},
+			Categories: map[string][]int{}, State: "paused", Extra: map[string]string{}}, domain.System)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 }

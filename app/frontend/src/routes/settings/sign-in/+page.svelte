@@ -13,7 +13,7 @@
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
-	import { LocalSkipCard, SsoCard, type LocalSkip } from '#lib/accounts/index.ts';
+	import { LocalSkipCard, SsoCard, closePlexWindow, openPlexWindow, sendToPlex, type LocalSkip } from '#lib/accounts/index.ts';
 	import { onMount } from 'svelte';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -47,6 +47,7 @@
 	interface SignInSettings extends LocalSkip {
 		allowed_hosts?: string[];
 		require_two_factor_admins: boolean;
+		owner_reset_link?: boolean;
 		min_password_length: number;
 		plex: Way;
 		jellyfin: Way;
@@ -56,6 +57,8 @@
 	const blank = (): Way => ({ on: false, url: '', server_id: '', join: 'nobody', allow: '' });
 	let ways = $state<Record<WayName, Way>>({ plex: blank(), jellyfin: blank(), emby: blank() });
 	let requireAdmins = $state(false);
+	let resetLink = $state(true);
+	let savingReset = $state(false);
 	let minLength = $state(4);
 	let savingMinLength = $state(false);
 	let savingWay = $state<WayName | ''>('');
@@ -73,13 +76,11 @@
 	async function linkPlex() {
 		linking = true;
 		linkNote = t('settings.signIn.confirmPlex');
-		const win = window.open('about:blank', 'plex-link', 'width=600,height=720');
-		// The Plex page must not reach back into this tab.
-		if (win) win.opener = null;
+		const win = openPlexWindow('plex-link');
 		try {
 			const r = await api.post<{ id: number; auth_url: string }>('/auth/plex/link/start', {});
-			if (win) win.location.href = r.auth_url;
-			else linkNote = t('settings.signIn.blocked');
+			// A blocked popup (or a phone) opens Plex in a new tab instead.
+			sendToPlex(win, r.auth_url);
 			const until = Date.now() + 10 * 60 * 1000;
 			while (Date.now() < until) {
 				await new Promise((ok) => setTimeout(ok, 2000));
@@ -94,7 +95,7 @@
 				plexServers = done.servers;
 				plexOwner = { linked: true, name: done.name, can_import: true };
 				if (!ways.plex.server_id && done.servers.length === 1) ways.plex.server_id = done.servers[0].id;
-				// Plex's page cuts this tab's hold on its window, so it may stay open.
+				closePlexWindow(win);
 				linkNote = done.servers.length ? t('settings.signIn.linkedPick') : t('settings.signIn.linkedNone');
 				toasts.push(t('settings.signIn.plexLinked', { name: done.name }), 'ok');
 				return;
@@ -104,11 +105,7 @@
 			linkNote = strongNote(err);
 		} finally {
 			linking = false;
-			try {
-				win?.close();
-			} catch {
-				// The window may already be gone.
-			}
+			closePlexWindow(win);
 		}
 	}
 	async function unlinkPlex() {
@@ -216,6 +213,7 @@
 		local = r;
 		hostNames = (r.allowed_hosts ?? []).join('\n');
 		requireAdmins = r.require_two_factor_admins;
+		resetLink = r.owner_reset_link ?? true;
 		minLength = r.min_password_length ?? 8;
 		ways = { plex: { ...blank(), ...r.plex }, jellyfin: { ...blank(), ...r.jellyfin }, emby: { ...blank(), ...r.emby } };
 		savedJoin = { plex: ways.plex.join, jellyfin: ways.jellyfin.join, emby: ways.emby.join };
@@ -262,6 +260,22 @@
 			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: strongNote(err) });
 		} finally {
 			savingRequire = false;
+		}
+	}
+
+	async function setResetLink(v: boolean) {
+		if (savingReset) return;
+		const before = resetLink;
+		resetLink = v;
+		savingReset = true;
+		try {
+			took(await api.put<SignInSettings>('/auth/settings', { owner_reset_link: v }));
+			toasts.push(v ? t('settings.signIn.forgotShown') : t('settings.signIn.forgotHidden'), 'ok');
+		} catch (err) {
+			resetLink = before;
+			toasts.push(t('settings.signIn.couldntSave'), 'fail', { body: strongNote(err) });
+		} finally {
+			savingReset = false;
 		}
 	}
 
@@ -356,7 +370,18 @@
 		</p>
 	</SettingsCard>
 
-	{#each (['plex', 'jellyfin', 'emby'] as const).filter((x) => x !== 'emby' || !session.held('emby_signin')) as w (w)}
+	<SettingsCard id="forgot-card" title={t('settings.signIn.forgotTitle')}>
+		<label class="switch">
+			<input type="checkbox" checked={resetLink} disabled={!isOwner || savingReset} aria-busy={savingReset} onchange={(e) => setResetLink(e.currentTarget.checked)} data-testid="owner-reset-link" />
+			<span class="sw" aria-hidden="true"></span>
+			<span>{t('settings.signIn.forgotOn')}</span>
+		</label>
+		<p class="hint">
+			{t('settings.signIn.forgotNote')}{#if !isOwner}{' '}{t('settings.signIn.onlyOwnerChange')}{/if}
+		</p>
+	</SettingsCard>
+
+	{#each (['plex', 'jellyfin', 'emby'] as const) as w (w)}
 		<SettingsCard id="{w}-card" title={t('settings.signIn.signInWith', { app: wayWord[w] })}>
 			<p class="small muted" style="margin: var(--s-2) 0 var(--s-4)">
 				{#if w === 'plex'}

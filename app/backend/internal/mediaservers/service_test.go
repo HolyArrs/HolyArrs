@@ -448,3 +448,63 @@ func TestMapPathShowFolder(t *testing.T) {
 		}
 	}
 }
+
+// Many subtitles saved for one title make one call for its folder.
+func TestSubtitleSavesBatchPerFolder(t *testing.T) {
+	w := newWorld(t)
+	srv, calls := fakeServer(t, "emby", "")
+	ctx := context.Background()
+	if _, err := Add(ctx, w.s, w.v, Input{Name: "emby", Kind: "emby", URL: srv.URL, Token: tok, PathFrom: w.lib, PathTo: "/data/movies"}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	l := &Linker{Store: w.s, Vault: w.v, Delay: time.Hour}
+	l.Watch(ctx)
+	for _, k := range []string{"subtitle_saved", "subtitle_upgraded", "subtitle_none_good_enough", "subtitle_saved"} {
+		w.emit(t, k, nil)
+	}
+	waitPending(t, l, w.folder(), subtitleWritten)
+	l.mu.Lock()
+	n := len(l.pending)
+	l.mu.Unlock()
+	if n != 1 {
+		t.Fatalf("pending folders %d, want 1", n)
+	}
+	l.Flush(ctx)
+	cs := calls()
+	if len(cs) != 1 || !strings.Contains(cs[0].body, `"Modified"`) || !strings.Contains(cs[0].body, "/data/movies/Arrival (2016)") {
+		t.Fatalf("calls %+v", cs)
+	}
+}
+
+// A subtitle is new content: renames off and imports on still refresh;
+// imports off does not.
+func TestSubtitleFollowsImportsSwitch(t *testing.T) {
+	w := newWorld(t)
+	srv, calls := fakeServer(t, "emby", "")
+	ctx := context.Background()
+	if _, err := Add(ctx, w.s, w.v, Input{Name: "emby", Kind: "emby", URL: srv.URL, Token: tok, PathFrom: w.lib, PathTo: "/data/movies"}, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	l := &Linker{Store: w.s, Vault: w.v, Delay: time.Hour}
+	l.Watch(ctx)
+	for _, c := range []struct {
+		imports, renames bool
+		want             int
+	}{{true, false, 1}, {false, true, 0}} {
+		imp, ren := c.imports, c.renames
+		if _, err := Change(ctx, w.s, w.v, 1, Input{Name: "emby", OnImport: &imp, OnRename: &ren, PathFrom: w.lib, PathTo: "/data/movies"}, domain.System); err != nil {
+			t.Fatal(err)
+		}
+		before := len(calls())
+		w.emit(t, "subtitle_saved", nil)
+		waitPending(t, l, w.folder(), subtitleWritten)
+		l.Flush(ctx)
+		cs := calls()
+		if len(cs)-before != c.want {
+			t.Fatalf("imports %v renames %v: %d calls, want %d", imp, ren, len(cs)-before, c.want)
+		}
+		if c.want == 1 && !strings.Contains(cs[before].body, `"Modified"`) {
+			t.Fatalf("body %s", cs[before].body)
+		}
+	}
+}

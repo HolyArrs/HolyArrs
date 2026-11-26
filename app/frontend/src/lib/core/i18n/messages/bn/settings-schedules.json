@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "বাতিল",
 	"settings.schedules.stages": "স্টেজ",
 	"settings.schedules.stagesNote": "<a>অংশ</a>-এ এগুলো থামান বা রিস্টার্ট করুন।",
-	"settings.schedules.allTime": "সবসময়"
+	"settings.schedules.allTime": "সবসময়",
+	"settings.schedules.skip.nothing": "করার কিছু নেই",
+	"settings.schedules.skip.plexOff": "বন্ধ: {page}-এ {setting} চালু করুন",
+	"settings.schedules.skip.plexNobody": "করার কিছু নেই: কেউ নিজের Plex ওয়াচলিস্ট চালু করেননি",
+	"settings.schedules.skip.settingOff": "বন্ধ: এর সেটিংসে এটি চালু করুন",
+	"settings.schedules.skip.starting": "বাদ দেওয়া হয়েছে: HolyArrs তখনও চালু হচ্ছিল",
+	"settings.schedules.took": "সময় লেগেছে {time}",
+	"settings.schedules.finished": "{label} শেষ হয়েছে",
+	"settings.schedules.nothingToDo": "{label}: করার কিছু নেই",
+	"settings.schedules.runFailed": "{label} ব্যর্থ হয়েছে"
 }

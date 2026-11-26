@@ -8,10 +8,14 @@
 	"setup.fullPath": "Saisissez le chemin complet du dossier, par exemple {path}.",
 	"setup.folderUsed": "Ce dossier est déjà utilisé, ou il se trouve dans un dossier déjà utilisé.",
 	"setup.folderMissing": "Ce dossier n'existe pas. Vérifiez le chemin.",
-	"setup.addFolderOrOff": "Ajoutez un dossier ou désactivez cette option.",
+	"setup.addFolderOrOff": "Ajoutez un dossier ou appuyez sur « Passer pour l'instant ».",
 	"setup.notAnswering": "HolyArrs ne répond pas. Réessayez dans un instant.",
 	"setup.addUserPasswordHint": "Saisissez le nom d'utilisateur et le mot de passe.",
 	"setup.folders": "Dossiers",
 	"setup.downloader": "Client de téléchargement",
-	"setup.source": "Source"
+	"setup.source": "Source",
+	"setup.alertsNeedKeyOne": "Alertes : 1 a besoin d'une clé",
+	"setup.alertsNeedKey": "Alertes : {n} ont besoin d'une clé",
+	"setup.folderNoAccess": "HolyArrs ne peut pas ouvrir ce dossier. Vérifiez ses autorisations.",
+	"setup.folderCantUse": "HolyArrs ne peut pas utiliser ce dossier. Vérifiez le chemin."
 }

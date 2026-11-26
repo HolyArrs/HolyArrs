@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Vain nämä voivat kertoa, mistä käynti tuli.",
 	"settings.signIn.fixToSaveOne": "Korjaa 1 rivi tallentaaksesi",
 	"settings.signIn.fixToSaveOther": "Korjaa {n} riviä tallentaaksesi",
-	"settings.signIn.localSaved": "Paikallinen verkko tallennettu"
+	"settings.signIn.localSaved": "Paikallinen verkko tallennettu",
+	"settings.signIn.forgotTitle": "Unohtuiko salasana?",
+	"settings.signIn.forgotOn": "Näytä Unohtuiko salasana? kirjautumissivulla",
+	"settings.signIn.forgotNote": "Omistaja saa kertakäyttökoodin palvelimen lokista. Poista se käytöstä, jos kaikki kirjautuvat kertakirjautumisella. Komento reset-owner toimii silti.",
+	"settings.signIn.forgotShown": "Unohtuiko salasana? on päällä",
+	"settings.signIn.forgotHidden": "Unohtuiko salasana? on pois"
 }

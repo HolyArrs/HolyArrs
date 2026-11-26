@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Vyberte, o čo požiadať ďalej",
 	"home.newPopular": "Nové a populárne",
 	"home.whatSTrending": "Čo je v trende",
+	"home.gettingReady": "Pripravuje sa všetko potrebné…",
 	"home.top10sAndComing": "Top 10 a čoskoro",
 	"home.whatSNext": "Čo bude ďalej",
 	"home.airDatesAndReleases": "Dátumy vysielania a vydaní",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Diely a filmy, ktoré vyjdú tento týždeň",
 	"home.popularThisWeek": "Obľúbené novinky, ktoré vyjdú tento týždeň",
 	"home.peopleCheck": "Kontrola ľudí",
-	"home.cantReadUsers": "zoznam používateľov sa nedá prečítať"
+	"home.cantReadUsers": "zoznam používateľov sa nedá prečítať",
+	"home.joined.title": "Vitajte, {name}",
+	"home.joined.find": "Nájdite niečo v {explore} alebo {search}.",
+	"home.joined.ask": "Ťuknite pri titule na {request} a získate ho. Môžete žiadať o:",
+	"home.joined.track": "Sledujte každú v {requests}.",
+	"home.joined.noLimit": "Bez týždenného limitu.",
+	"home.joined.gotIt": "Rozumiem",
+	"home.joined.explore": "Otvoriť {explore}"
 }

@@ -44,6 +44,10 @@ type Aria2 struct {
 	// Keep lists folders that are never deleted, nor anything in or around
 	// them: the Library folders. Without it nothing is deleted.
 	Keep func(ctx context.Context) ([]string, error)
+	// LimitDown and LimitUp cap this Downloader's own downloads in bytes per
+	// second, 0 for none. aria2 keeps them per download, so a cap here never
+	// touches aria2's own global limits or another app's downloads.
+	LimitDown, LimitUp int64
 
 	endpoint, secret string
 	http             *http.Client
@@ -115,7 +119,39 @@ func (a *Aria2) Health(ctx context.Context) (Health, error) {
 	if strings.TrimSpace(opts["bt-tracker"]) != "" {
 		notes = append(notes, "aria2 adds its own tracker list to every torrent, private ones included")
 	}
+	if a2Num(opts["max-download-result"]) == 0 && opts["max-download-result"] != "" {
+		// aria2 drops a finished download from its list at once, so nothing ever
+		// reads as finished and no import starts.
+		notes = append(notes, "aria2 keeps no finished downloads (max-download-result is 0), so HolyArrs can never see one finish; raise it, 1000 is the default")
+	}
+	if strings.TrimSpace(opts["save-session"]) == "" {
+		notes = append(notes, "aria2 is given no save-session file, so a restart forgets the downloads it was sent; set --save-session and --input-file")
+	}
 	return Health{Version: v.Version, At: time.Now().UTC(), Note: strings.Join(notes, "; ")}, nil
+}
+
+// Session returns aria2's id for this run of the program, which changes when it
+// starts again. A restarted aria2 has forgotten the downloads it was given.
+func (a *Aria2) Session(ctx context.Context) (string, error) {
+	var v struct {
+		SessionID string `json:"sessionId"`
+	}
+	if err := a.call(ctx, "aria2.getSessionInfo", &v); err != nil {
+		return "", err
+	}
+	if v.SessionID == "" {
+		return "", errNotAria2
+	}
+	return v.SessionID, nil
+}
+
+// saveSession writes aria2's session file now, so a download it was just given
+// survives a restart: without --save-session-interval, aria2 saves only on a
+// clean exit. Best effort, and nothing to save when aria2 has no session file.
+func (a *Aria2) saveSession(ctx context.Context) {
+	if err := a.call(ctx, "aria2.saveSession", nil); err != nil && !faultSays(err, "Filename is not given") {
+		logf("aria2: the session file was not written: %v", firstLine(err.Error()))
+	}
 }
 
 // List returns the torrents in the category's folder. An empty category
@@ -226,9 +262,19 @@ func (a *Aria2) Add(ctx context.Context, req AddRequest) (string, error) {
 		return expected, nil
 	}
 	opts := map[string]string{"dir": folder}
+	// aria2 copies its own global options onto every job it takes. A global
+	// --pause or --pause-metadata would therefore leave the download, or the
+	// content job a magnet hands over to, sitting paused with nobody to start it.
+	opts["pause"], opts["pause-metadata"] = "false", "false"
 	if torrent != nil && torrentPrivate(torrent) {
 		// aria2's own tracker list would otherwise be added to a private torrent.
 		opts["bt-tracker"] = ""
+	}
+	if a.LimitDown > 0 {
+		opts["max-download-limit"] = strconv.FormatInt(a.LimitDown, 10)
+	}
+	if a.LimitUp > 0 {
+		opts["max-upload-limit"] = strconv.FormatInt(a.LimitUp, 10)
 	}
 	var gid string
 	var sendErr error
@@ -245,7 +291,11 @@ func (a *Aria2) Add(ctx context.Context, req AddRequest) (string, error) {
 	if sendErr != nil {
 		gid = ""
 	}
-	return a.confirm(ctx, gid, expected, folder, sendErr)
+	id, err := a.confirm(ctx, gid, expected, folder, sendErr)
+	if err == nil {
+		a.saveSession(ctx)
+	}
+	return id, err
 }
 
 // duplicate looks for the hash before an add, since a second add of a live

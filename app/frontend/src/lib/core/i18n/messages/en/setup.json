@@ -8,10 +8,14 @@
 	"setup.fullPath": "Use the full folder path, like {path}.",
 	"setup.folderUsed": "This folder is already used, or sits inside one that is.",
 	"setup.folderMissing": "That folder doesn't exist. Check the path.",
-	"setup.addFolderOrOff": "Add a folder or turn this off.",
+	"setup.addFolderOrOff": "Add a folder, or press Skip for now.",
 	"setup.notAnswering": "HolyArrs isn’t answering. Try again in a moment.",
-	"setup.addUserPasswordHint": "Add the user name and password.",
+	"setup.addUserPasswordHint": "Add the username and password.",
 	"setup.folders": "Folders",
 	"setup.downloader": "Downloader",
-	"setup.source": "Source"
+	"setup.source": "Source",
+	"setup.alertsNeedKeyOne": "Alerts: 1 needs a key",
+	"setup.alertsNeedKey": "Alerts: {n} need a key",
+	"setup.folderNoAccess": "HolyArrs can't open this folder. Check its permissions.",
+	"setup.folderCantUse": "HolyArrs can't use this folder. Check the path."
 }

@@ -52,6 +52,32 @@ func LayerTotals(ctx context.Context, q conn, from string) ([]LayerTotal, error)
 	return out, rows.Err()
 }
 
+// RowTotal is one Explore row type's sums over a span of days.
+type RowTotal struct {
+	Row                string
+	Shown, Opens, Asks int
+}
+
+// RowTotals sums the row counts of every person from day from on, busiest
+// row (opens plus asks) first. It never says who opened or asked.
+func RowTotals(ctx context.Context, q conn, from string) ([]RowTotal, error) {
+	rows, err := q.QueryContext(ctx, `SELECT row_type, SUM(shown), SUM(opens), SUM(asks) FROM explore_counts
+		WHERE day >= ? GROUP BY row_type ORDER BY SUM(opens) + SUM(asks) DESC, SUM(shown) DESC, row_type`, from)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []RowTotal
+	for rows.Next() {
+		var t RowTotal
+		if err := rows.Scan(&t.Row, &t.Shown, &t.Opens, &t.Asks); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
 // CategoryKeysOn counts the category keys a person has on day.
 func CategoryKeysOn(ctx context.Context, q conn, member int64, day string) (int, error) {
 	var n int

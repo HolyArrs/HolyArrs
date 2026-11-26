@@ -6,6 +6,7 @@ import (
 	"errors"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -45,6 +46,34 @@ type musicTrack struct {
 	name   string
 	slot   int64
 	filled bool
+	length int // milliseconds; 0 when the source gives none
+}
+
+// length is the file's play length in milliseconds; 0 when unknown.
+func (f *ByHandFile) length() int {
+	if !f.lengthRead {
+		f.lengthMS, f.lengthRead = tags.LengthFile(f.Path), true
+	}
+	return f.lengthMS
+}
+
+// lengthSlack is how far a file's play length may be from the track's and still agree.
+const lengthSlack = 3000
+
+// fits says how the file's play length agrees with the track's: 1 within
+// lengthSlack, -1 further off, 0 when either is unknown.
+func (tr *musicTrack) fits(f *ByHandFile) int {
+	if tr.length <= 0 {
+		return 0
+	}
+	ms := f.length()
+	switch {
+	case ms <= 0:
+		return 0
+	case ms-tr.length <= lengthSlack && tr.length-ms <= lengthSlack:
+		return 1
+	}
+	return -1
 }
 
 // musicLibrary is what the by-hand scan matches music files against: the
@@ -53,7 +82,9 @@ type musicLibrary struct {
 	db       *sql.DB
 	readTags bool
 	artists  []mediafiles.Title
-	loaded   map[int64]*musicArtist
+	// roots are the Library and import folders: their own names are never an artist or an album.
+	roots  []string
+	loaded map[int64]*musicArtist
 }
 
 func newMusicLibrary(ctx context.Context, db *sql.DB) (*musicLibrary, error) {
@@ -68,27 +99,48 @@ func newMusicLibrary(ctx context.Context, db *sql.DB) (*musicLibrary, error) {
 	return &musicLibrary{db: db, readTags: ns.MusicReadTags, artists: artists, loaded: map[int64]*musicArtist{}}, nil
 }
 
+func (ml *musicLibrary) isRoot(dir string) bool {
+	for _, r := range ml.roots {
+		if strings.EqualFold(filepath.Clean(r), filepath.Clean(dir)) {
+			return true
+		}
+	}
+	return false
+}
+
 func (ml *musicLibrary) artist(ctx context.Context, t mediafiles.Title) (*musicArtist, error) {
 	if a := ml.loaded[t.ID]; a != nil {
 		return a, nil
 	}
-	a := &musicArtist{t: t}
 	vers, err := mediafiles.VersionsOfTitle(ctx, ml.db, t.ID)
 	if err != nil {
 		return nil, err
 	}
+	var main int64
 	if len(vers) > 0 {
-		a.main = vers[0].ID
+		main = vers[0].ID
 	}
-	parts, err := database.Select[mediafiles.Part](ctx, ml.db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", t.ID)
+	a, err := loadMusicArtist(ctx, ml.db, t, main)
 	if err != nil {
 		return nil, err
 	}
-	items, err := database.Select[mediafiles.Item](ctx, ml.db, "items", "title_id = ? AND kind = 'track' AND dropped_at IS NULL", t.ID)
+	ml.loaded[t.ID] = a
+	return a, nil
+}
+
+// loadMusicArtist reads one artist's albums and tracks with the Slots of
+// one of its versions.
+func loadMusicArtist(ctx context.Context, db *sql.DB, t mediafiles.Title, versionID int64) (*musicArtist, error) {
+	a := &musicArtist{t: t, main: versionID}
+	parts, err := database.Select[mediafiles.Part](ctx, db, "parts", "title_id = ? AND kind = 'album' AND dropped_at IS NULL", t.ID)
 	if err != nil {
 		return nil, err
 	}
-	slots, err := database.Select[mediafiles.Slot](ctx, ml.db, "slots", "version_id = ?", a.main)
+	items, err := database.Select[mediafiles.Item](ctx, db, "items", "title_id = ? AND kind = 'track' AND dropped_at IS NULL", t.ID)
+	if err != nil {
+		return nil, err
+	}
+	slots, err := database.Select[mediafiles.Slot](ctx, db, "slots", "version_id = ?", a.main)
 	if err != nil {
 		return nil, err
 	}
@@ -124,13 +176,15 @@ func (ml *musicLibrary) artist(ctx context.Context, t mediafiles.Title) (*musicA
 		if it.Name != nil {
 			tr.name = *it.Name
 		}
+		if it.LengthMS != nil {
+			tr.length = *it.LengthMS
+		}
 		if s, ok := slotOf[it.ID]; ok {
 			tr.slot, tr.filled = s.ID, s.FileID != nil
 		}
 		al := byPart[*it.PartID]
 		al.tracks = append(al.tracks, tr)
 	}
-	ml.loaded[t.ID] = a
 	return a, nil
 }
 
@@ -247,6 +301,16 @@ func (ml *musicLibrary) guessMusicByHand(ctx context.Context, f *ByHandFile) err
 		tg, _ = tags.ReadFile(f.Path)
 	}
 	dirArtist, dirAlbum, dirYear := musicFolders(f.Path)
+	// A file loose in a Library or import folder, or one album deep in it, takes no names from that folder.
+	albumDir := filepath.Dir(f.Path)
+	if discDir.MatchString(filepath.Base(albumDir)) {
+		albumDir = filepath.Dir(albumDir)
+	}
+	if ml.isRoot(albumDir) {
+		dirArtist, dirAlbum, dirYear = "", "", 0
+	} else if ml.isRoot(filepath.Dir(albumDir)) {
+		dirArtist = ""
+	}
 	if f.InLibrary {
 		f.Note = "already a file in the Library"
 	}
@@ -327,7 +391,7 @@ func (ml *musicLibrary) guessMusicByHand(ctx context.Context, f *ByHandFile) err
 // album finds the album by its MusicBrainz ids, then by the album tag, then by the folder name.
 func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicAlbum, string, bool) {
 	for _, al := range a.albums {
-		if tg.ReleaseGroupID != "" && strings.EqualFold(al.part.SourceIDs["musicbrainz"], tg.ReleaseGroupID) || tg.ReleaseID != "" && al.releases[tg.ReleaseID] {
+		if tg.ReleaseGroupID != "" && strings.EqualFold(al.part.SourceIDs["musicbrainz"], tg.ReleaseGroupID) || tg.ReleaseID != "" && al.releases[strings.ToLower(tg.ReleaseID)] {
 			return al, "", false
 		}
 	}
@@ -375,7 +439,9 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 		case len(hits) == 1:
 			// A name that only matches once a "(Live)" or "(Deluxe Edition)" is cut off may be another recording.
 			// A folder hit after an album tag that found nothing is a guess too.
-			loose := !sameName(hits[0].part.Name, name) && !sameName(hits[0].part.Name, exact) || name == dirAlbum && tg.Album != "" && !sameName(tg.Album, dirAlbum)
+			// An edition tail such as "(Deluxe Edition)" or "[2011 Remaster]" names another pressing of the same album, so it stays sure.
+			loose := !sameName(hits[0].part.Name, name) && !sameName(hits[0].part.Name, exact) && !editionOf(name, hits[0].part.Name) ||
+				name == dirAlbum && tg.Album != "" && !sameName(tg.Album, dirAlbum) && !editionOf(tg.Album, hits[0].part.Name)
 			return hits[0], "", loose
 		case len(hits) > 1:
 			reason = MusicTwoAlbum
@@ -386,7 +452,9 @@ func (a *musicArtist) album(tg tags.Tags, dirAlbum string, dirYear int) (*musicA
 
 // track finds the track by its MusicBrainz recording id, then by the tag's
 // disc and track number, then by the file name; sure is false when the number
-// and the name disagree.
+// and the name disagree. The play length is a second opinion: within a few
+// seconds of the track it vouches for a number whose title reads differently,
+// and far off it takes the sureness from a match by number or file name alone.
 func (al *musicAlbum) track(f *ByHandFile, tg tags.Tags) (*musicTrack, bool) {
 	discs := 1
 	for _, tr := range al.tracks {
@@ -404,19 +472,47 @@ func (al *musicAlbum) track(f *ByHandFile, tg tags.Tags) (*musicTrack, bool) {
 		if disc == 0 {
 			disc = discOf(f.Path)
 		}
-		var hit *musicTrack
-		for i := range al.tracks {
-			tr := &al.tracks[i]
-			if tr.number == tg.Track && (tr.disc == disc || disc == 0 && discs == 1) {
-				hit = tr
-				break
+		if hit := al.numbered(disc, tg.Track, discs, false); hit != nil {
+			if tg.Title == "" {
+				return hit, hit.fits(f) >= 0
+			}
+			return hit, sameSong(tg.Title, hit.name) || hit.fits(f) > 0 && sameTake(tg.Title, hit.name)
+		}
+		// Counting across the album or reading "201" is only a reading of the
+		// number: it counts when the title agrees, else the title or the file name
+		// (which may carry the disc) come first and the count is a guess.
+		counted := al.numbered(disc, tg.Track, discs, true)
+		if counted != nil && tg.Title != "" && sameSong(tg.Title, counted.name) {
+			return counted, true
+		}
+		// The number points at no track, as a deluxe pressing's bonus numbering may: the title alone, when one track has it.
+		if tg.Title != "" {
+			if byName := al.titled(tg.Title); byName != nil {
+				return byName, byName.fits(f) >= 0
 			}
 		}
-		if hit != nil {
-			return hit, tg.Title == "" || fold(tg.Title) == fold(hit.name)
+		if counted != nil {
+			if byFile, ok := al.byFileName(f); ok && byFile.fits(f) >= 0 {
+				return byFile, true
+			}
+			return counted, tg.Title == "" && (tg.Track > 100 && counted.fits(f) >= 0 || counted.fits(f) > 0)
 		}
 	}
 	// No usable tags: the file name, the way an album download is matched.
+	if tr, ok := al.byFileName(f); ok {
+		return tr, tr.fits(f) >= 0
+	}
+	return nil, false
+}
+
+// sameTake says two titles that read differently are not a live, acoustic
+// or other take of each other, so an agreeing length may vouch for them.
+func sameTake(a, b string) bool {
+	return otherTake.MatchString(a) == otherTake.MatchString(b)
+}
+
+// byFileName matches the file name the way an album download is matched.
+func (al *musicAlbum) byFileName(f *ByHandFile) (*musicTrack, bool) {
 	ts := make([]Track, len(al.tracks))
 	for i, tr := range al.tracks {
 		ts[i] = Track{ItemID: tr.item.ID, Disc: tr.disc, Number: tr.number, Name: tr.name, SlotID: int64(i + 1), Wanted: true}
@@ -426,6 +522,104 @@ func (al *musicAlbum) track(f *ByHandFile, tg tags.Tags) (*musicTrack, bool) {
 		return &al.tracks[steps[0].TargetSlotIDs[0]-1], true
 	}
 	return nil, false
+}
+
+// numbered finds the track at disc and number. A file with no disc on an
+// album of several discs may count across the whole album (disc 2 track 1 as
+// 13) or write the disc in front of the number (201).
+// With counted false only the plain disc and number are read.
+func (al *musicAlbum) numbered(disc, number, discs int, counted bool) *musicTrack {
+	if !counted {
+		for i := range al.tracks {
+			tr := &al.tracks[i]
+			if tr.number == number && (tr.disc == disc || disc == 0 && discs == 1) {
+				return tr
+			}
+		}
+		return nil
+	}
+	if disc != 0 || discs == 1 {
+		return nil
+	}
+	if number > 100 {
+		if tr := al.numbered(number/100, number%100, discs, false); tr != nil {
+			return tr
+		}
+	}
+	order := make([]*musicTrack, len(al.tracks))
+	for i := range al.tracks {
+		order[i] = &al.tracks[i]
+	}
+	sort.SliceStable(order, func(i, j int) bool {
+		if order[i].disc != order[j].disc {
+			return order[i].disc < order[j].disc
+		}
+		return order[i].number < order[j].number
+	})
+	if number >= 1 && number <= len(order) {
+		return order[number-1]
+	}
+	return nil
+}
+
+// titled finds the one track whose title is the same song as title.
+func (al *musicAlbum) titled(title string) *musicTrack {
+	var hit *musicTrack
+	for i := range al.tracks {
+		if sameSong(title, al.tracks[i].name) {
+			if hit != nil {
+				return nil
+			}
+			hit = &al.tracks[i]
+		}
+	}
+	return hit
+}
+
+var (
+	// songTail is a "(feat. X)", "(2011 Remaster)" or " - Remastered" tail that leaves the song the same.
+	songTail = regexp.MustCompile(`(?i)\s*(?:[\(\[]\s*(?:feat\.?|ft\.?|featuring|with)\s[^\)\]]*[\)\]]|[\(\[][^\)\]]*(?:remaster(?:ed)?|\bmono\b|\bstereo\b|single version|album version|radio edit|\bexplicit\b|\bclean\b)[^\)\]]*[\)\]]|\s-\s.*(?:remaster(?:ed)?|\bmono\b|\bstereo\b|single version|album version|radio edit).*|\s(?:feat\.?|ft\.|featuring)\s.*)$`)
+	// editionTail is a tail naming another pressing of the same recordings; a live, acoustic or demo tail is not one.
+	editionTail = regexp.MustCompile(`(?i)^(?:\s*[\(\[][^\)\]]*(?:deluxe|remaster(?:ed)?|expanded|anniversary|special|collector'?s|bonus|edition|reissue|(?:19|20)\d{2}|flac|mp3|web|cd|hi-?res|\d{2}-?bit)[^\)\]]*[\)\]])+\s*$`)
+	notEdition  = regexp.MustCompile(`(?i)(?:live|acoustic|demo|instrumental|karaoke|remix(?:es)?|unplugged|session)`)
+	// otherTake is a word in a song tail that names another recording, so "(Live 2011 Remaster)" stays apart from the studio take.
+	otherTake = regexp.MustCompile(`(?i)\b(?:live|acoustic|demo|instrumental|karaoke|remix(?:es)?|unplugged|session)\b`)
+)
+
+// songName cuts the tails off a track title that leave the song the same.
+func songName(s string) string {
+	for i := 0; i < 3; i++ {
+		s = songTail.ReplaceAllStringFunc(s, func(tail string) string {
+			if otherTake.MatchString(tail) {
+				return tail
+			}
+			return ""
+		})
+	}
+	return s
+}
+
+// sameSong compares two track titles leaving out case, marks, featured artists and remaster tails.
+func sameSong(a, b string) bool {
+	if fold(a) != "" && fold(a) == fold(b) {
+		return true
+	}
+	fa, fb := fold(songName(a)), fold(songName(b))
+	return fa != "" && fa == fb
+}
+
+// editionOf says name is album with only an edition tail added, such as "(Deluxe Edition)".
+func editionOf(name, album string) bool {
+	n := strings.TrimSpace(name)
+	for i := 0; i < len(n); i++ {
+		if n[i] != '(' && n[i] != '[' {
+			continue
+		}
+		if tail := n[i:]; sameName(n[:i], album) && editionTail.MatchString(tail) && !notEdition.MatchString(tail) {
+			return true
+		}
+	}
+	return false
 }
 
 // trackTarget is where a track file chosen by hand goes: the same naming an
@@ -445,3 +639,7 @@ func trackTarget(ctx context.Context, db database.Querier, ns mediafiles.NamingS
 	}
 	return filepath.Join(lf.Path, filepath.FromSlash(at.trackFile(at.Tracks[0], strings.ToLower(filepath.Ext(src)), discs, src))), nil
 }
+
+// SameSong compares two track titles the way found files are matched:
+// leaving out case, marks, featured artists and remaster tails.
+func SameSong(a, b string) bool { return sameSong(a, b) }

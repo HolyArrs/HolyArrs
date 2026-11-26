@@ -14,7 +14,6 @@
 	"settings.health.none": "Результатів немає. Перевір знову, щоб їх отримати.",
 	"settings.health.since": "З",
 	"settings.health.settings": "Налаштування перевірок справності",
-	"settings.health.updateCheck": "Перевіряти, чи є новіший HolyArrs",
 	"settings.health.onlyChecks": "Лише перевіряє. Ніколи не встановлює.",
 	"settings.health.every": "Перевіряти оновлення кожні",
 	"settings.health.day": "день",

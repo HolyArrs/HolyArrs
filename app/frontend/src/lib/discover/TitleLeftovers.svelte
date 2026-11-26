@@ -6,6 +6,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
 	import { bytes } from '#lib/core/format.ts';
 	import { followJob, type JobView } from '#lib/mediafiles/index.ts';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
@@ -160,9 +161,10 @@
 </script>
 
 {#if own.manage && o}
-	<button type="button" class="lo-row" data-testid="rescan-row" disabled={busy === 'rescan'} onclick={rescan}>
+	<!-- Hands-off mode never scans files. -->
+	{#if !session.s.handsOff}<button type="button" class="lo-row" data-testid="rescan-row" disabled={busy === 'rescan'} onclick={rescan}>
 		<span><b>{t('discover.leftovers.rescanFolder')}</b><small>{busy === 'rescan' ? t('discover.leftovers.rescanningShort') : t('discover.leftovers.rescanHint')}</small></span><Icon name="refresh" size={16} />
-	</button>
+	</button>{/if}
 	{#if open.length || alone.length}
 		<button type="button" class="lo-row" data-testid="leftovers-row" onclick={openList}>
 			<span><b>{t('discover.leftovers.title')}</b><small>{open.length ? t(open.length === 1 ? 'discover.leftovers.countOne' : 'discover.leftovers.countOther', { n: open.length }) : t('discover.leftovers.aloneCount', { n: alone.length })}</small></span><Icon name="chevronRight" size={16} />

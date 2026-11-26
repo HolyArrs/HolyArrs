@@ -85,5 +85,21 @@
 	"sources.uses.auto": "cerca per si sola",
 	"sources.uses.feed": "llista del més nou",
 	"sources.uses.hand": "cerca a mà",
-	"sources.uses.none": "no s'utilitza"
+	"sources.uses.none": "no s'utilitza",
+	"sources.bridge.removeTitle": "Vols eliminar {name}?",
+	"sources.bridge.find": "Cerca {name} a la meva xarxa",
+	"sources.bridge.noneFound": "Cap {name} ha respost a la teva xarxa.",
+	"sources.bridge.keyFound": "Clau obtinguda de {name}",
+	"sources.bridge.keyKept": "{name} no ha donat la clau (té l'inici de sessió activat). Fes servir Obtén la clau per copiar-la.",
+	"sources.bridge.keyKeptJackett": "Jackett no ha donat la clau (té contrasenya d'administrador). Fes servir Obtén la clau per copiar-la.",
+	"sources.bridge.notReached": "No s'ha pogut connectar amb {name}.",
+	"sources.bridge.brings.title": "Què s'hi porta",
+	"sources.bridge.brings.sites": "Els seus indexadors, com a Fonts",
+	"sources.bridge.brings.categories": "Les seves categories",
+	"sources.bridge.brings.search": "Les cerques passen per {name}",
+	"sources.bridge.brings.sync": "Els canvis a {name} es traslladen",
+	"sources.bridge.brings.stays": "Els teus indexadors continuen configurats a {name}.",
+	"sources.bridge.brings.had": "{n} indexadors ja aquí",
+	"sources.bridge.brings.hadFrom": "Importats mitjançant {apps}",
+	"sources.bridge.brings.keyKept": "Deixa la clau buida per fer servir la que ja tenen."
 }

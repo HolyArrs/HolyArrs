@@ -30,7 +30,7 @@ type KeyView struct {
 // MCPDefault what a key holds unless told otherwise. They are the groups of
 // internal/ai/mcpkeys (its test keeps them the same).
 var (
-	MCPGroups  = []string{"see", "add", "control", "settings", "delete", "admin", "approve"}
+	MCPGroups  = []string{"see", "add", "control", "settings", "delete", "admin", "approve", "plugins"}
 	MCPDefault = []string{"see", "add", "control", "settings"}
 )
 

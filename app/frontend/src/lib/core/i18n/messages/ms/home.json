@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Pilih apa yang hendak diminta seterusnya",
 	"home.newPopular": "Baharu dan popular",
 	"home.whatSTrending": "Apa yang sedang tren",
+	"home.gettingReady": "Menyediakan sesuatu…",
 	"home.top10sAndComing": "10 Teratas dan akan datang",
 	"home.whatSNext": "Apa yang seterusnya",
 	"home.airDatesAndReleases": "Tarikh tayangan dan keluaran",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Episod dan filem yang tiba minggu ini",
 	"home.popularThisWeek": "Keluaran popular yang tiba minggu ini",
 	"home.peopleCheck": "Semakan orang",
-	"home.cantReadUsers": "senarai pengguna tidak dapat dibaca"
+	"home.cantReadUsers": "senarai pengguna tidak dapat dibaca",
+	"home.joined.title": "Selamat datang, {name}",
+	"home.joined.find": "Cari sesuatu di {explore} atau {search}.",
+	"home.joined.ask": "Ketik {request} pada tajuk untuk mendapatkannya. Anda boleh minta:",
+	"home.joined.track": "Ikuti setiap satu di {requests}.",
+	"home.joined.noLimit": "Tiada had mingguan.",
+	"home.joined.gotIt": "Faham",
+	"home.joined.explore": "Buka {explore}"
 }

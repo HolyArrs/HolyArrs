@@ -16,12 +16,14 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/files"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
 // migrationCopyRx matches the store's pinned pre-update copies
@@ -297,11 +299,27 @@ func (m *Manager) Open(name string) (*os.File, error) {
 	return os.Open(p)
 }
 
-// MaxUpload is the largest restore zip accepted.
-const MaxUpload = 2 << 30
+// MaxUpload is the largest restore zip accepted. Backups are made with no
+// size cap, so a restore must take what a big Library's backup reaches;
+// the limit that matters is the free space checked while unpacking.
+const MaxUpload = 256 << 30
 
-// maxUnpacked caps all entries of a restore zip together.
+// maxUnpacked caps all entries of a restore zip together, so a zip that
+// unpacks far beyond its size is refused.
 var maxUnpacked int64 = MaxUpload
+
+// unpackHeadroom stays free on the config disk while a restore uploads
+// and unpacks, so the running HolyArrs can still write its databases.
+const unpackHeadroom = 512 << 20
+
+// stageMu lets one restore stage at a time.
+var stageMu sync.Mutex
+
+// maxMeta caps backup.json, which is read whole into memory.
+const maxMeta = 1 << 20
+
+// noRoomForBackup is said when the config disk cannot hold a restore.
+const noRoomForBackup = "Not enough free space for the backup on the disk that holds the config folder. Free some space there"
 
 var allowed = map[string]bool{MetaFile: true, database.MainFile: true, database.EventsFile: true}
 
@@ -313,21 +331,47 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 		return err
 	}
 	defer os.RemoveAll(tmp)
+	// The zip and then its unpacked databases go on the config disk, so
+	// both stay within its free space, less the headroom. Unknown free
+	// space leaves only the ceilings.
+	free := m.FreeSpace
+	if free == nil {
+		free = importer.FreeSpace
+	}
+	room := func() (int64, bool) {
+		if n := free(m.Dir); n >= 0 {
+			return max(n-unpackHeadroom, 0), true
+		}
+		return 0, false
+	}
+	zipLimit, zipSpace := int64(MaxUpload), false
+	if n, ok := room(); ok && n < zipLimit {
+		zipLimit, zipSpace = n, true
+	}
 	zp := filepath.Join(tmp, "upload.zip")
 	f, err := os.OpenFile(zp, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
 	if err != nil {
 		return err
 	}
-	n, err := io.Copy(f, io.LimitReader(r, MaxUpload+1))
+	n, err := io.Copy(f, io.LimitReader(r, zipLimit+1))
 	if cerr := f.Close(); err == nil {
 		err = cerr
 	}
 	if err != nil {
 		return err
 	}
-	if n > MaxUpload {
+	if n > zipLimit && zipSpace {
+		return errors.New(noRoomForBackup)
+	}
+	if n > zipLimit {
 		return errors.New("the backup is too large")
 	}
+	// One restore unpacks and stages at a time: two would count the same
+	// free space and replace each other's staged backup. The lock is taken
+	// only now the upload has arrived, so a slow upload holds no one up;
+	// the free space is measured again below.
+	stageMu.Lock()
+	defer stageMu.Unlock()
 	zr, err := zip.OpenReader(zp)
 	if err != nil {
 		return errors.New("this is not a zip file")
@@ -336,6 +380,24 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 	out := filepath.Join(tmp, "files")
 	if err := os.Mkdir(out, 0o750); err != nil {
 		return err
+	}
+	// Measured again now the zip is on the disk.
+	limit, spaceBound := maxUnpacked, false
+	if n, ok := room(); ok && n < limit {
+		limit, spaceBound = n, true
+	}
+	// The sizes the zip declares are refused up front when they cannot
+	// fit; the bytes really read are capped below, as a zip can lie.
+	var declared uint64
+	for _, zf := range zr.File {
+		// Capped as it adds up, so huge declared sizes cannot wrap around.
+		declared = min(declared+min(zf.UncompressedSize64, uint64(limit)+1), uint64(limit)+1)
+	}
+	if declared > uint64(limit) && spaceBound {
+		return errors.New(noRoomForBackup)
+	}
+	if declared > uint64(limit) {
+		return errors.New("the backup unpacks too large")
 	}
 	var meta *Meta
 	got := map[string]bool{}
@@ -355,7 +417,11 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 			rc.Close()
 			return err
 		}
-		n, err := io.Copy(w, io.LimitReader(rc, maxUnpacked-total+1))
+		allow := limit - total
+		if zf.Name == MetaFile {
+			allow = min(allow, maxMeta)
+		}
+		n, err := io.Copy(w, io.LimitReader(rc, allow+1))
 		total += n
 		rc.Close()
 		if cerr := w.Close(); err == nil {
@@ -364,7 +430,13 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 		if err != nil {
 			return fmt.Errorf("reading %s from the backup: %w", zf.Name, err)
 		}
-		if total > maxUnpacked {
+		if zf.Name == MetaFile && n > maxMeta {
+			return errors.New("backup.json is damaged")
+		}
+		if total > limit && spaceBound {
+			return errors.New(noRoomForBackup)
+		}
+		if total > limit {
 			return errors.New("the backup unpacks too large")
 		}
 		if zf.Name == MetaFile {
@@ -398,14 +470,22 @@ func (m *Manager) Stage(_ context.Context, r io.Reader) (err error) {
 			return fmt.Errorf("the backup's secrets cannot be read with this master key (moving to a new machine? see \"Move to a new machine\" in the HolyArrs docs, in docs/run/backups.md): %w", err)
 		}
 	}
+	// The new restore is marked ready before it takes the staged place, and
+	// a restore staged before stays until the new one is in place, so a
+	// failure here never leaves neither.
+	if err := os.WriteFile(filepath.Join(out, readyFile), []byte(meta.CreatedAt.Format(time.RFC3339)+"\n"), 0o600); err != nil {
+		return err
+	}
 	staged := filepath.Join(m.Dir, StagedDir)
-	if err := os.RemoveAll(staged); err != nil {
-		return err
-	}
+	prev := filepath.Join(tmp, "previous")
+	hadPrev := os.Rename(staged, prev) == nil
 	if err := os.Rename(out, staged); err != nil {
+		if hadPrev {
+			_ = os.Rename(prev, staged)
+		}
 		return err
 	}
-	return os.WriteFile(filepath.Join(staged, readyFile), []byte(meta.CreatedAt.Format(time.RFC3339)+"\n"), 0o600)
+	return nil
 }
 
 func integrity(path string) error {
@@ -664,7 +744,9 @@ func ApplyStaged(dir string) (bool, error) {
 		if _, err := os.Stat(filepath.Join(staged, db)); err != nil {
 			continue // not in the backup: keep the current one
 		}
-		for _, suffix := range []string{"", "-wal", "-shm"} {
+		// -journal too: a rollback journal left beside a restored file would be
+		// played back into it.
+		for _, suffix := range []string{"", "-wal", "-shm", "-journal"} {
 			if present(filepath.Join(dir, db+suffix)) {
 				j.Moves = append(j.Moves, journalMove{From: db + suffix, To: filepath.Join(keepRel, db+suffix)})
 			}

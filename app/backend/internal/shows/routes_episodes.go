@@ -23,6 +23,11 @@ type EpisodeSlot struct {
 	StateLabel string `json:"state_label"`
 	Reason     string `json:"reason,omitempty"`
 	FileID     *int64 `json:"file_id,omitempty"`
+	// GoodEnough is the saved flag that stops the search for a better copy.
+	GoodEnough bool `json:"good_enough"`
+	// Points and GoodEnoughPoints score the file, asked for with points=1.
+	Points           *int `json:"points,omitempty"`
+	GoodEnoughPoints *int `json:"good_enough_points,omitempty"`
 	// File is the episode's file (path, size, quality, media info), asked for with files=1.
 	File *mediafiles.File `json:"file,omitempty"`
 }
@@ -154,7 +159,9 @@ func (h *EpisodeHandlers) listEpisodes(w http.ResponseWriter, r *http.Request) {
 	}
 	// files=1 adds each episode's file, for the episode details on the title page.
 	files := map[int64]*mediafiles.File{}
-	if r.URL.Query().Get("files") == "1" {
+	// points=1 adds each file's points, for the episode list's Points column.
+	wantFiles, wantPoints := r.URL.Query().Get("files") == "1", r.URL.Query().Get("points") == "1"
+	if wantFiles || wantPoints {
 		fs, err := mediafiles.EpisodeFilesOfTitle(r.Context(), db, t.ID)
 		if err != nil {
 			webserver.Internal(w, "api", err)
@@ -164,12 +171,23 @@ func (h *EpisodeHandlers) listEpisodes(w http.ResponseWriter, r *http.Request) {
 			files[fs[i].ID] = &fs[i]
 		}
 	}
+	score := slotScorer(r.Context(), db, vs)
+	listed := map[int64]bool{}
+	for _, it := range its {
+		listed[it.ID] = true
+	}
 	byItem := map[int64][]EpisodeSlot{}
 	now := time.Now()
 	for _, s := range slots {
-		es := EpisodeSlot{ID: s.ID, Version: label[s.VersionID], VersionID: s.VersionID, State: string(s.State), StateLabel: h.StateLabels[s.State], FileID: s.FileID}
+		es := EpisodeSlot{ID: s.ID, Version: label[s.VersionID], VersionID: s.VersionID, State: string(s.State), StateLabel: h.StateLabels[s.State], FileID: s.FileID, GoodEnough: s.GoodEnough}
 		if s.FileID != nil {
-			es.File = files[*s.FileID]
+			f := files[*s.FileID]
+			if wantPoints && f != nil && listed[s.ItemID] {
+				es.Points, es.GoodEnoughPoints = score(*f, s.VersionID)
+			}
+			if wantFiles {
+				es.File = f
+			}
 		}
 		if s.LastReason != nil {
 			es.Reason = *s.LastReason
@@ -220,4 +238,33 @@ func (h *EpisodeHandlers) setEpisode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webserver.WriteJSON(w, http.StatusOK, EpisodeViewOf(it))
+}
+
+// slotScorer scores a file in one of the title's Versions, reading each
+// Version's Pick rules once. A Version whose rules cannot be read scores nil.
+func slotScorer(ctx context.Context, db database.Querier, vs []mediafiles.Version) func(f mediafiles.File, versionID int64) (*int, *int) {
+	ver := map[int64]mediafiles.Version{}
+	for _, v := range vs {
+		ver[v.ID] = v
+	}
+	rules := map[int64]*mediafiles.PickRulesBody{}
+	return func(f mediafiles.File, versionID int64) (*int, *int) {
+		v, ok := ver[versionID]
+		if !ok {
+			return nil, nil
+		}
+		body, seen := rules[v.PickRulesID]
+		if !seen {
+			var pr mediafiles.PickRules
+			if database.Get(ctx, db, "pick_rules", v.PickRulesID, &pr) == nil {
+				body = &pr.Body
+			}
+			rules[v.PickRulesID] = body
+		}
+		if body == nil {
+			return nil, nil
+		}
+		fp := library.ScoreSlotFile(f, v, *body)
+		return &fp.Points, fp.GoodEnoughPoints
+	}
 }

@@ -22,6 +22,11 @@ func MomentOf(e domain.Event) string {
 	case "download_finished":
 		return MomentDownloaded
 	case "download_failed":
+		// A Release that keeps stalling speaks once more on its second stall,
+		// then stays quiet while it waits; History still lists each one.
+		if stallCount(e.Data) > 2 {
+			return ""
+		}
 		return MomentDownloadFailed
 	case "import_done", "import_partly_done":
 		return MomentImport
@@ -29,6 +34,8 @@ func MomentOf(e domain.Event) string {
 		return MomentRename
 	case domain.EventTitleAdded:
 		return MomentAdd
+	case domain.EventArtworkChanged:
+		return MomentArtwork
 	case domain.EventTitleRemoved, domain.EventEpisodesRemoved:
 		return MomentDelete
 	case domain.EventHealthBroken, domain.EventHealthRecovered:
@@ -51,40 +58,7 @@ func (s *Sender) MessageFor(ctx context.Context, e domain.Event) (Message, bool)
 		return Message{}, false
 	}
 	m := Message{Moment: moment, Event: &e, Text: e.Summary, lang: s.lang(ctx)}
-	db := s.Store.Read()
-	if e.TitleID != nil {
-		var mv Movie
-		var kind string
-		var year *int
-		var tmdb, imdb, tvdb, maze, mb *string
-		err := db.QueryRowContext(ctx, `SELECT id, kind, name, year, json_extract(source_ids, '$.tmdb'), json_extract(source_ids, '$.imdb'),
-			json_extract(source_ids, '$.tvdb'), json_extract(source_ids, '$.tvmaze'), json_extract(source_ids, '$.musicbrainz') FROM titles WHERE id = ?`,
-			*e.TitleID).Scan(&mv.ID, &kind, &mv.Name, &year, &tmdb, &imdb, &tvdb, &maze, &mb)
-		str := func(p *string) string {
-			if p == nil {
-				return ""
-			}
-			return *p
-		}
-		switch {
-		case err != nil:
-		case kind == "artist":
-			m.Artist = &Artist{ID: mv.ID, Name: mv.Name, MusicBrainz: str(mb)}
-			if e.Kind != domain.EventEpisodesRemoved && e.Kind != domain.EventTitleRemoved {
-				m.Tracks = tracksOf(ctx, db, slotIDsOf(ctx, db, e))
-			}
-		case kind == "show":
-			m.Show = &Show{ID: mv.ID, Name: mv.Name, Year: year, TMDB: str(tmdb), IMDb: str(imdb), TVDB: str(tvdb), TVMaze: str(maze)}
-			if e.Kind == domain.EventEpisodesRemoved {
-				m.Episodes = episodesFromLabels(e)
-			} else if e.Kind != domain.EventTitleRemoved {
-				m.Episodes = episodesOf(ctx, db, slotIDsOf(ctx, db, e))
-			}
-		default:
-			mv.Year, mv.TMDB, mv.IMDb = year, str(tmdb), str(imdb)
-			m.Movie = &mv
-		}
-	}
+	s.titleInto(ctx, e, &m)
 	name := ""
 	switch {
 	case m.Movie != nil:
@@ -133,6 +107,45 @@ func (s *Sender) MessageFor(ctx context.Context, e domain.Event) (Message, bool)
 	return m, true
 }
 
+// titleInto fills m's movie, show and episodes, or artist and tracks, from
+// the title e is about.
+func (s *Sender) titleInto(ctx context.Context, e domain.Event, m *Message) {
+	db := s.Store.Read()
+	if e.TitleID != nil {
+		var mv Movie
+		var kind string
+		var year *int
+		var tmdb, imdb, tvdb, maze, mb *string
+		err := db.QueryRowContext(ctx, `SELECT id, kind, name, year, json_extract(source_ids, '$.tmdb'), json_extract(source_ids, '$.imdb'),
+			json_extract(source_ids, '$.tvdb'), json_extract(source_ids, '$.tvmaze'), json_extract(source_ids, '$.musicbrainz') FROM titles WHERE id = ?`,
+			*e.TitleID).Scan(&mv.ID, &kind, &mv.Name, &year, &tmdb, &imdb, &tvdb, &maze, &mb)
+		str := func(p *string) string {
+			if p == nil {
+				return ""
+			}
+			return *p
+		}
+		switch {
+		case err != nil:
+		case kind == "artist":
+			m.Artist = &Artist{ID: mv.ID, Name: mv.Name, MusicBrainz: str(mb)}
+			if e.Kind != domain.EventEpisodesRemoved && e.Kind != domain.EventTitleRemoved {
+				m.Tracks = tracksOf(ctx, db, slotIDsOf(ctx, db, e))
+			}
+		case kind == "show":
+			m.Show = &Show{ID: mv.ID, Name: mv.Name, Year: year, TMDB: str(tmdb), IMDb: str(imdb), TVDB: str(tvdb), TVMaze: str(maze)}
+			if e.Kind == domain.EventEpisodesRemoved {
+				m.Episodes = episodesFromLabels(e)
+			} else if e.Kind != domain.EventTitleRemoved {
+				m.Episodes = episodesOf(ctx, db, slotIDsOf(ctx, db, e))
+			}
+		default:
+			mv.Year, mv.TMDB, mv.IMDb = year, str(tmdb), str(imdb)
+			m.Movie = &mv
+		}
+	}
+}
+
 // Watch sends every stored Library Event through the Alerts that speak for
 // its moment, each on its own goroutine (Wait waits for them); ending base
 // stops the sends and their new tries.
@@ -147,7 +160,17 @@ func (s *Sender) Watch(base context.Context) {
 			jobs.Guard("alerts", func() {
 				ctx, cancel := context.WithTimeout(base, 10*time.Minute)
 				defer cancel()
-				for _, m := range s.MessagesFor(ctx, e) {
+				ms := s.MessagesFor(ctx, e)
+				if s.Tap != nil && len(ms) > 0 {
+					// Plugins get one message per Event, whatever the
+					// owner's pack setting split it into.
+					if whole, ok := s.MessageFor(ctx, e); ok && len(ms) > 1 {
+						s.Tap(whole)
+					} else {
+						s.Tap(ms[0])
+					}
+				}
+				for _, m := range ms {
 					if err := s.Send(ctx, m); err != nil {
 						log.Printf("alerts: %s: %s", m.Moment, redact(err.Error()))
 					}
@@ -229,3 +252,14 @@ func (s *Sender) trackMessages(ctx context.Context, m Message) []Message {
 
 // Wait waits for the sends Watch started.
 func (s *Sender) Wait() { s.wg.Wait() }
+
+// stallCount reads an Event's stall_count, a number in memory or from JSON.
+func stallCount(data map[string]any) int {
+	switch n := data["stall_count"].(type) {
+	case int:
+		return n
+	case float64:
+		return int(n)
+	}
+	return 0
+}

@@ -37,6 +37,7 @@ var optionalInterfaces = []reflect.Type{
 	reflect.TypeFor[QueueReader](),
 	reflect.TypeFor[UsenetInspector](),
 	reflect.TypeFor[UsenetQueue](),
+	reflect.TypeFor[Sessioner](),
 }
 
 type readOnlyMarker interface{ readOnlyInner() Engine }
@@ -86,10 +87,11 @@ type roTransmission struct {
 	roAllLister
 }
 
-// roAria2 is aria2's shape: the engine plus the row controls.
+// roAria2 is aria2's shape: the engine plus the row controls and its run id.
 type roAria2 struct {
 	*roCore
 	roController
+	roSessioner
 }
 
 type roUsenetQueue struct{ c *roCore }
@@ -127,6 +129,8 @@ type roHistoryReader struct{ c *roCore }
 type roQueueReader struct{ c *roCore }
 
 type roUsenetInspector struct{ c *roCore }
+
+type roSessioner struct{ c *roCore }
 
 // ReadOnlyByEnv reports whether the env var marks d as read only.
 func ReadOnlyByEnv(d domain.Downloader) bool {
@@ -205,6 +209,10 @@ func (r roAllLister) ListAll(ctx context.Context) ([]Job, error) {
 
 func (r roActiveLister) ListActive(ctx context.Context, ids []string) ([]Job, error) {
 	return r.c.inner.(ActiveLister).ListActive(ctx, ids)
+}
+
+func (r roSessioner) Session(ctx context.Context) (string, error) {
+	return r.c.inner.(Sessioner).Session(ctx)
 }
 
 func (r roTorrentAdder) AddTorrents(ctx context.Context, b AddBatch) (AddOutcome, error) {
@@ -306,7 +314,7 @@ func readOnlyWrap(inner Engine, allowAdd bool) Engine {
 	case shapeOf(&RTorrent{}):
 		return roRTorrent{c, roController{c}, roActiveLister{c}}
 	case shapeOf(&Aria2{}):
-		return roAria2{c, roController{c}}
+		return roAria2{c, roController{c}, roSessioner{c}}
 	case shapeOf(&Transmission{}):
 		return roTransmission{c, roAllLister{c}}
 	}

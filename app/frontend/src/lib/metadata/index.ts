@@ -20,5 +20,5 @@ export { remembered } from './title-details.ts';
 export { watchMetadata } from './health.svelte.ts';
 export type { DetailKind } from './title-details.ts';
 export type { TitleDetails } from './title-details.ts';
-export { keyBody, keyForm, testWords } from './mode.ts';
+export { KEY_LINKS, keyBody, keyForm, testWords } from './mode.ts';
 export type { KeyName, MetadataAnswer, Mode } from './mode.ts';

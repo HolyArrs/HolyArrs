@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Kan ikke fortrydes. Filerne bliver.",
 	"settings.pickRules.removeUsed": "{used}. Vælg først andre regler dér.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Annuller"
+	"settings.pickRules.cancel": "Annuller",
+	"settings.pickRules.check.title": "Tjek et udgivelsesnavn",
+	"settings.pickRules.check.desc": "Indsæt et udgivelsesnavn for at se, hvordan HolyArrs læser det, og hvordan dine kvalitetssæt bedømmer det. Der søges og downloades intet.",
+	"settings.pickRules.check.name": "Udgivelsesnavn",
+	"settings.pickRules.check.rules": "Bedøm med",
+	"settings.pickRules.check.copies": "Kopierne af den titel, der passer",
+	"settings.pickRules.check.size": "Størrelse i GB (valgfri)",
+	"settings.pickRules.check.check": "Tjek",
+	"settings.pickRules.check.failed": "Kunne ikke tjekke navnet",
+	"settings.pickRules.check.readAs": "Læst som",
+	"settings.pickRules.check.matches": "Passer til {name}",
+	"settings.pickRules.check.noTitle": "Passer ikke til nogen titel i dit Bibliotek. Vælg et kvalitetssæt ovenfor for at bedømme det alligevel.",
+	"settings.pickRules.check.noAlbum": "Passer til {name}, men ikke til nogen af dets album.",
+	"settings.pickRules.check.noCopies": "Denne titel har ingen kopier at bedømme.",
+	"settings.pickRules.check.hasFile": "Har en fil"
 }

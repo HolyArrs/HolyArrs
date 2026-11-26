@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { finishFirstRun } from '../helpers/helpers.ts';
+import { finishFirstRun, reachSetupAccount } from '../helpers/helpers.ts';
 
 // The whole app at http://127.0.0.1:18735/holyarrs behind a reverse proxy
 // that answers nothing outside /holyarrs: first run, sign-in, pages, the
@@ -15,6 +15,8 @@ const proxy = `127.0.0.1:${process.env.HOLYARRS_E2E_BASE_PROXY_PORT ?? '18735'}`
 const root = `http://${proxy}/holyarrs`;
 
 test('the app works under /holyarrs behind a proxy', async ({ page }) => {
+	// The first run now has ten steps to walk.
+	test.setTimeout(120_000);
 	const outside: string[] = [];
 	page.on('request', (r) => {
 		const u = new URL(r.url());
@@ -30,12 +32,12 @@ test('the app works under /holyarrs behind a proxy', async ({ page }) => {
 	await expect.poll(async () => (await page.request.get(`${root}/readyz`)).status(), { timeout: 120_000 }).toBe(200);
 	await page.goto(root);
 	await expect(page).toHaveURL(/\/holyarrs\/login/);
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill('luis');
+	await reachSetupAccount(page);
+	await page.getByLabel('Username').fill('luis');
 	await page.getByLabel('Password', { exact: true }).fill('base-test-password');
-	await page.getByLabel('Password again').fill('base-test-password');
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await expect(page).toHaveURL(`${root}/welcome?first=1`);
+	await page.getByLabel('Confirm password').fill('base-test-password');
+	await page.getByRole('button', { name: 'Create account and continue' }).click();
+	await expect(page).toHaveURL(`${root}/welcome?first=1&step=server`);
 	const movies = join(here, '..', '.tmp-base', 'movies');
 	mkdirSync(movies, { recursive: true });
 	await finishFirstRun(page, movies);

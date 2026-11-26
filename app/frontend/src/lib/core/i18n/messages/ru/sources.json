@@ -85,5 +85,21 @@
 	"sources.uses.auto": "ищет сам",
 	"sources.uses.feed": "список новейшего",
 	"sources.uses.hand": "поиск вручную",
-	"sources.uses.none": "не используется"
+	"sources.uses.none": "не используется",
+	"sources.bridge.removeTitle": "Удалить {name}?",
+	"sources.bridge.find": "Найти {name} в моей сети",
+	"sources.bridge.noneFound": "Ни один {name} не ответил в вашей сети.",
+	"sources.bridge.keyFound": "Ключ получен от {name}",
+	"sources.bridge.keyKept": "{name} не отдал ключ (включён вход). Скопируйте его через «Получить ключ».",
+	"sources.bridge.keyKeptJackett": "Jackett не отдал ключ (у него задан пароль администратора). Скопируйте его через «Получить ключ».",
+	"sources.bridge.notReached": "Не удалось связаться с {name}.",
+	"sources.bridge.brings.title": "Что переносится",
+	"sources.bridge.brings.sites": "Его индексаторы — как Источники",
+	"sources.bridge.brings.categories": "Их категории",
+	"sources.bridge.brings.search": "Поиск идёт через {name}",
+	"sources.bridge.brings.sync": "Изменения в {name} переносятся",
+	"sources.bridge.brings.stays": "Ваши индексаторы остаются настроенными в {name}.",
+	"sources.bridge.brings.had": "Индексаторов уже здесь: {n}",
+	"sources.bridge.brings.hadFrom": "Импортировано через {apps}",
+	"sources.bridge.brings.keyKept": "Оставьте ключ пустым, чтобы использовать уже имеющийся."
 }

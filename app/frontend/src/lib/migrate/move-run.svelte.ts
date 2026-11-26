@@ -8,6 +8,11 @@ import { t } from '#lib/core/i18n/i18n.svelte.ts';
 export function createMoveRun(ctx: { moves: Move[]; picked: number[]; [key: string]: any }) {
 	async function moveNow() {
 		if (ctx.checking || ctx.starting) return;
+		// Setup's Folders step: the import starts at once from the plan on screen; it checks each title itself while setup goes on.
+		if (ctx.quick && ctx.planHash && !ctx.planning) {
+			void start();
+			return;
+		}
 		ctx.checking = true;
 		ctx.actionError = '';
 		try {
@@ -18,6 +23,8 @@ export function createMoveRun(ctx: { moves: Move[]; picked: number[]; [key: stri
 			}
 			if (!ctx.dry || ctx.stale || ctx.step !== 'choose') return;
 			if (ctx.problems > 0) ctx.beforeOpen = true;
+			// Setup asks nothing more: the import starts.
+			else if (ctx.embedded) void start();
 			else ctx.confirmMove = true;
 		} finally {
 			ctx.checking = false;
@@ -35,7 +42,8 @@ export function createMoveRun(ctx: { moves: Move[]; picked: number[]; [key: stri
 
 	// Step 3: the move.
 	async function start() {
-		if (!ctx.dry || ctx.stale) return;
+		// Setup starts from the checked plan (its hash), with no test run first.
+		if ((!ctx.dry && !(ctx.quick && ctx.planHash)) || ctx.stale) return;
 		let recheck = false;
 		ctx.starting = true;
 		ctx.actionError = '';

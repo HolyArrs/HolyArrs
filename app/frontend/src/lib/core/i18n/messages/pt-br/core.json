@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Montando {what}… tentativa {attempt}",
 	"core.testTag.connected": "Conectado",
 	"core.api.notAnswering": "O HolyArrs não está respondendo. Confira se ele está rodando.",
+	"core.api.tooSlow": "O HolyArrs demorou demais para responder. Tente de novo em um minuto.",
 	"core.api.requestFailed": "A requisição falhou ({status})",
 	"core.api.wentWrong": "Algo deu errado.",
 	"core.trailerMiss.trailer": "trailer",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Aprovado automaticamente",
 	"core.plain.approvedBy": "Aprovado por {who}",
 	"core.settings.cantReach": "Não foi possível acessar esse endereço. Confira-o e se o app está rodando.",
+	"core.settings.tryHttp": "Esse endereço não responde em https. Tente http://.",
 	"core.settings.groupLibrary.label": "Biblioteca",
 	"core.settings.groupLibrary.line": "Onde os títulos ficam",
 	"core.settings.groupLibrary.about": "Pastas, partes, padrões, legendas, nomes de arquivos e importação.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dois gerenciadores de downloads chegam ao mesmo app, então os downloads podem aparecer duas vezes.",
 	"core.plain.peopleCheck": "Não é possível ler a lista de usuários do servidor de mídia, então quem é removido lá não é desativado aqui.",
 	"core.plain.deleted": "excluído",
-	"core.plain.deletedName": "{name} (excluído)"
+	"core.plain.deletedName": "{name} (excluído)",
+	"core.api.handsOffFiles": "O modo sem intervenção está ativado, então o HolyArrs não mexe nos arquivos baixados. Desative-o em Configurações para importar, renomear, mover ou verificar arquivos.",
+	"core.api.handsOffSubtitles": "O modo sem intervenção está ativado, então o HolyArrs nunca abre os arquivos baixados. Desative-o em Configurações para usar legendas."
 }

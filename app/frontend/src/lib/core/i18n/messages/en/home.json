@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "Pick what to ask for next",
 	"home.newPopular": "New & Popular",
 	"home.whatSTrending": "What's trending",
+	"home.gettingReady": "Getting ready…",
 	"home.top10sAndComing": "Top 10s and coming soon",
 	"home.whatSNext": "What's next",
 	"home.airDatesAndReleases": "Air dates and releases",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Episodes and movies landing this week",
 	"home.popularThisWeek": "Popular releases landing this week",
 	"home.peopleCheck": "People check",
-	"home.cantReadUsers": "can't read the user list"
+	"home.cantReadUsers": "can't read the user list",
+	"home.joined.title": "Welcome, {name}",
+	"home.joined.find": "Find something in {explore} or {search}.",
+	"home.joined.ask": "Tap {request} on a title to get it. You can ask for:",
+	"home.joined.track": "Follow each one in {requests}.",
+	"home.joined.noLimit": "No weekly limit.",
+	"home.joined.gotIt": "Got it",
+	"home.joined.explore": "Open {explore}"
 }

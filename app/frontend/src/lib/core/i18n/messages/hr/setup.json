@@ -8,10 +8,14 @@
 	"setup.fullPath": "Upiši cijelu putanju mape, na primjer {path}.",
 	"setup.folderUsed": "Ova se mapa već koristi ili se nalazi unutar mape koja se koristi.",
 	"setup.folderMissing": "Ta mapa ne postoji. Provjeri putanju.",
-	"setup.addFolderOrOff": "Dodaj mapu ili isključi ovo.",
+	"setup.addFolderOrOff": "Dodajte mapu ili pritisnite „Preskoči za sada”.",
 	"setup.notAnswering": "HolyArrs ne odgovara. Pokušaj ponovno za trenutak.",
 	"setup.addUserPasswordHint": "Dodaj korisničko ime i lozinku.",
 	"setup.folders": "Mape",
 	"setup.downloader": "Preuzimatelj",
-	"setup.source": "Izvor"
+	"setup.source": "Izvor",
+	"setup.alertsNeedKeyOne": "Obavijesti: 1 treba ključ",
+	"setup.alertsNeedKey": "Obavijesti: {n} trebaju ključ",
+	"setup.folderNoAccess": "HolyArrs ne može otvoriti ovu mapu. Provjerite njezine dozvole.",
+	"setup.folderCantUse": "HolyArrs ne može koristiti ovu mapu. Provjerite putanju."
 }

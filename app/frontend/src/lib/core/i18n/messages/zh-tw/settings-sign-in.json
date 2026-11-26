@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "只有這些能說明訪問來自何處。",
 	"settings.signIn.fixToSaveOne": "修正 1 行即可儲存",
 	"settings.signIn.fixToSaveOther": "修正 {n} 行即可儲存",
-	"settings.signIn.localSaved": "區域網路已儲存"
+	"settings.signIn.localSaved": "區域網路已儲存",
+	"settings.signIn.forgotTitle": "忘記密碼?",
+	"settings.signIn.forgotOn": "在登入頁顯示「忘記密碼?」",
+	"settings.signIn.forgotNote": "擁有者從伺服器記錄檔取得一次性代碼。如果大家都透過單一登入登入,請關閉。reset-owner 指令仍然可用。",
+	"settings.signIn.forgotShown": "「忘記密碼?」已開啟",
+	"settings.signIn.forgotHidden": "「忘記密碼?」已關閉"
 }

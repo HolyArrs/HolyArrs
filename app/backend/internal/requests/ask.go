@@ -148,6 +148,12 @@ type Service struct {
 	// PrefetchParts stores an ask's episode and song lists in the
 	// background when it is asked for (off in tests).
 	PrefetchParts bool
+	// Watch reads where a title streams (the metadata server when nil).
+	Watch func(ctx context.Context, kind, tmdbID string) (map[string][]metadata.WatchService, error)
+	// CleanupWait makes StartCleanup wait for the check to end (tests).
+	CleanupWait bool
+
+	cleanup streamingCleanup
 
 	fill     askFill
 	sendMu   sync.Mutex
@@ -544,7 +550,7 @@ func (s *Service) ask(ctx context.Context, p Person, tmdbID string, q QualityLin
 		if err := s.checkLimit(ctx, tx, p, KindMovies); err != nil {
 			return err
 		}
-		if _, err := database.Insert(tx, "asks", &a, p.actor()); err != nil {
+		if _, err := database.Insert(tx, "asks", viaPlugin(ctx, &a), p.actor()); err != nil {
 			return err
 		}
 		_, err = tx.Exec(askSQL3, a.ID, p.UserID, database.FormatTime(now))
@@ -600,4 +606,10 @@ func (s *Service) join(ctx context.Context, p Person, id int64) (Result, error) 
 	}
 	s.changed(ctx, a.ID)
 	return Result{Ask: a, Joined: true}, nil
+}
+
+// viaPlugin marks a with the plugin that made it, when one did.
+func viaPlugin(ctx context.Context, a *domain.Ask) *domain.Ask {
+	a.ViaPlugin = database.ViaPlugin(ctx)
+	return a
 }

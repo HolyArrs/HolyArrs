@@ -73,7 +73,7 @@ test('Choose a release shows every Release with its verdict and plain reasons; t
 	await expect(best).toContainText('50 seeders');
 	const runnerUp = release(sheet, '.720p.');
 	await expect(runnerUp.locator('.rs-rec')).toHaveCount(0);
-	await expect(verdict(runnerUp)).toHaveCount(0);
+	await expect(verdict(runnerUp)).toHaveText('Passed over');
 	const cam = release(sheet, '.HDCAM.');
 	await expect(verdict(cam)).toHaveText('Turned away by the rules');
 	await expect(cam.locator('.rs-why.fail').first()).toBeVisible();

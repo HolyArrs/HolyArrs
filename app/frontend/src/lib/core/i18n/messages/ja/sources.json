@@ -85,5 +85,21 @@
 "sources.uses.auto": "自動で検索",
 "sources.uses.feed": "新着リスト",
 "sources.uses.hand": "手動で検索",
-"sources.uses.none": "未使用"
+"sources.uses.none": "未使用",
+"sources.bridge.removeTitle": "{name} を削除しますか？",
+	"sources.bridge.find": "ネットワーク上の {name} を探す",
+	"sources.bridge.noneFound": "ネットワーク上で応答した {name} はありませんでした。",
+	"sources.bridge.keyFound": "{name} からキーを取得しました",
+	"sources.bridge.keyKept": "{name} はキーを渡しませんでした（サインインが有効です）。「キーを取得」でコピーしてください。",
+	"sources.bridge.keyKeptJackett": "Jackett はキーを渡しませんでした（管理者パスワードが設定されています）。「キーを取得」でコピーしてください。",
+	"sources.bridge.notReached": "{name} に接続できませんでした。",
+	"sources.bridge.brings.title": "引き継がれるもの",
+	"sources.bridge.brings.sites": "そのインデクサー（ソースとして）",
+	"sources.bridge.brings.categories": "それぞれのカテゴリー",
+	"sources.bridge.brings.search": "検索は {name} を経由します",
+	"sources.bridge.brings.sync": "{name} での変更が反映されます",
+	"sources.bridge.brings.stays": "インデクサーは {name} に設定されたままです。",
+	"sources.bridge.brings.had": "すでに {n} 件のインデクサーがあります",
+	"sources.bridge.brings.hadFrom": "{apps} から取り込み済み",
+	"sources.bridge.brings.keyKept": "キーを空にすると、すでにあるキーを使います。"
 }

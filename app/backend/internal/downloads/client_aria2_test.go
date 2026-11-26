@@ -122,7 +122,7 @@ func TestAria2AddsTorrentBytes(t *testing.T) {
 	if len(f.adds) != 1 || f.adds[0].method != "aria2.addTorrent" || f.called("aria2.addUri") != 0 {
 		t.Fatalf("adds %+v", f.adds)
 	}
-	if o := f.adds[0].opts; len(o) != 1 || o["dir"] != "/downloads/holyarrs" {
+	if o := f.adds[0].opts; len(o) != 3 || o["dir"] != "/downloads/holyarrs" {
 		t.Errorf("options %v", o)
 	}
 	j, err := e.Get(context.Background(), id)
@@ -140,7 +140,7 @@ func TestAria2PrivateTorrentDropsExtraTrackers(t *testing.T) {
 		t.Fatal(err)
 	}
 	o := f.adds[0].opts
-	if v, ok := o["bt-tracker"]; !ok || v != "" || len(o) != 2 {
+	if v, ok := o["bt-tracker"]; !ok || v != "" || len(o) != 4 {
 		t.Errorf("options %v", o)
 	}
 	for _, k := range []string{"allow-overwrite", "check-integrity", "out", "index-out"} {
@@ -157,7 +157,7 @@ func TestAria2MagnetAdd(t *testing.T) {
 	if err != nil || id != rtHash {
 		t.Fatalf("add: %q %v", id, err)
 	}
-	if len(f.adds) != 1 || f.adds[0].method != "aria2.addUri" || len(f.adds[0].uris) != 1 || len(f.adds[0].opts) != 1 {
+	if len(f.adds) != 1 || f.adds[0].method != "aria2.addUri" || len(f.adds[0].uris) != 1 || len(f.adds[0].opts) != 3 {
 		t.Fatalf("adds %+v", f.adds)
 	}
 	if j, err := e.Get(context.Background(), id); err != nil || j.State != StateDownloading || j.Detail != "metadata" || j.Name != "Lab" {
@@ -165,6 +165,45 @@ func TestAria2MagnetAdd(t *testing.T) {
 	}
 	if _, err := e.Add(context.Background(), AddRequest{URL: "magnet:?xt=urn:btih:" + rtHash, Category: "movies", InfoHash: a2Other}); err == nil {
 		t.Error("a magnet for another hash was sent")
+	}
+}
+
+// aria2 copies its global options onto every job it takes, so its own --pause or
+// --pause-metadata would leave a grab, or the content job a magnet hands over to,
+// paused with nobody to start it. HolyArrs asks for them started.
+func TestAria2AddStartsTheDownload(t *testing.T) {
+	f := &fakeAria2{opts: map[string]string{"pause": "true", "pause-metadata": "true"}}
+	e := NewAria2(startAria2(t, f), "", nil)
+	payload := rtTorrentFile("Lab.Movie.2024.mkv", []byte("x"))
+	if _, err := e.Add(context.Background(), AddRequest{File: payload, Category: "movies", AllowLocal: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.Add(context.Background(), AddRequest{URL: "magnet:?xt=urn:btih:" + a2Other + "&dn=Lab", Category: "movies"}); err != nil {
+		t.Fatal(err)
+	}
+	for _, sent := range f.adds {
+		if sent.opts["pause"] != "false" || sent.opts["pause-metadata"] != "false" {
+			t.Errorf("%s sent %v", sent.method, sent.opts)
+		}
+	}
+}
+
+// A session id names the run of aria2's process, and a new one means aria2 started
+// again and forgot the downloads it was given.
+func TestAria2Session(t *testing.T) {
+	f := &fakeAria2{}
+	e := NewAria2(startAria2(t, f), "", nil)
+	ctx := context.Background()
+	first, err := e.Session(ctx)
+	if err != nil || first == "" {
+		t.Fatalf("session: %q %v", first, err)
+	}
+	if again, err := e.Session(ctx); err != nil || again != first {
+		t.Errorf("the same aria2 gave %q then %q (%v)", first, again, err)
+	}
+	f.restart()
+	if after, err := e.Session(ctx); err != nil || after == first {
+		t.Errorf("a restarted aria2 kept %q (%v)", after, err)
 	}
 }
 
@@ -365,6 +404,44 @@ func TestAria2Health(t *testing.T) {
 	}
 	if strings.Count(h.Note, "; ") != 3 {
 		t.Errorf("note %q", h.Note)
+	}
+}
+
+// Two aria2 settings leave HolyArrs with nothing to import: a download result it
+// drops at once, and a restart that forgets what it was given.
+func TestAria2HealthNotesWhatStopsImports(t *testing.T) {
+	ctx := context.Background()
+	f := &fakeAria2{opts: map[string]string{"max-download-result": "0", "save-session": ""}}
+	h, err := NewAria2(startAria2(t, f), "", nil).Health(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"never see one finish", "forgets the downloads"} {
+		if !strings.Contains(h.Note, want) {
+			t.Errorf("note %q lacks %q", h.Note, want)
+		}
+	}
+}
+
+// aria2 saves its session file on a clean exit only unless --save-session-interval
+// is set, so a grab is written out at once: a killed aria2 then still knows it.
+func TestAria2AddSavesTheSession(t *testing.T) {
+	f := &fakeAria2{}
+	e := NewAria2(startAria2(t, f), "", nil)
+	if _, err := e.Add(context.Background(), AddRequest{URL: "magnet:?xt=urn:btih:" + rtHash + "&dn=Lab", Category: "movies"}); err != nil {
+		t.Fatal(err)
+	}
+	if f.called("aria2.saveSession") == 0 {
+		t.Error("the grab was not written to aria2's session file")
+	}
+	// A Downloader with no session file is not a failed add.
+	quiet := &fakeAria2{opts: map[string]string{"save-session": ""}}
+	logged := a2Quiet(t)
+	if _, err := NewAria2(startAria2(t, quiet), "", nil).Add(context.Background(), AddRequest{URL: "magnet:?xt=urn:btih:" + rtHash + "&dn=Lab", Category: "movies"}); err != nil {
+		t.Fatalf("an add without a session file: %v", err)
+	}
+	if strings.Contains(strings.Join(*logged, "\n"), "session") {
+		t.Errorf("a Downloader without a session file was reported: %v", *logged)
 	}
 }
 

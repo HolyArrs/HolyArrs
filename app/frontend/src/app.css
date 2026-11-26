@@ -129,9 +129,20 @@ code, kbd, pre, samp {
 	border: 0;
 }
 
-:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+:where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex='-1'])):focus-visible {
 	outline: none;
 	box-shadow: var(--focus-ring);
+}
+/* Headings, panels and sheets focused by script (for screen readers) never show a ring. */
+:where([tabindex='-1']):focus {
+	outline: none;
+}
+/* Rings follow the keyboard: after a mouse, pen or touch press nothing shows one (lib focus.ts). */
+:root:not([data-input='keyboard']) * {
+	--focus-ring: 0 0 #0000 !important;
+}
+:root:not([data-input='keyboard']) :focus-visible {
+	outline: none !important;
 }
 
 /* Headings */
@@ -439,6 +450,8 @@ dialog[open]::backdrop { animation: rise var(--dur-fast) var(--ease-out); }
 		padding: var(--s-4);
 	}
 	.input { font-size: 16px; }
+	/* iOS zooms in on a focused text field under 16px and stays zoomed. */
+	input:not([type='checkbox']):not([type='radio']):not([type='range']), textarea, select { font-size: max(16px, 1em) !important; }
 	dl.facts {
 		grid-template-columns: 1fr;
 		gap: 2px;
@@ -505,3 +518,11 @@ html[data-tint='album'] .ui-tabbar { background: color-mix(in srgb, var(--tint-b
 @media (prefers-reduced-motion: reduce) {
 	html[data-tint] body, html[data-tint] .ui-sidebar, html[data-tint] .ui-topbar, html[data-tint] .ui-tabbar { transition: none; }
 }
+
+/* Fit-to-screen layout for plugin windows (and any window that must not scroll on desktop):
+   .fit-grid lays a list out in as many columns as fit (min --fit-col), so a long list goes wide, not tall;
+   .fit-clamp cuts long text to --fit-lines lines (lib/ui/ClampText.svelte adds More); .fit-one keeps a line to one row.
+   The plugins e2e guard opens every plugin window at 1440x900 and 1280x800 and fails if anything scrolls. */
+.fit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--fit-col, 240px), 100%), 1fr)); gap: var(--fit-gap, 6px 16px); min-width: 0; }
+.fit-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--fit-lines, 4); line-clamp: var(--fit-lines, 4); overflow: hidden; }
+.fit-one { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

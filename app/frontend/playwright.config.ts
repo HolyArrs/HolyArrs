@@ -103,6 +103,7 @@ export default defineConfig({
 		// Explore memory: heap, DOM nodes and listeners back to the start after 20 Home, Explore and title rounds.
 		{ name: 'home', testMatch: '**/whole-app/home.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
 		{ name: 'exploremem', testMatch: '**/discover/explore-memory.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['desktop'] },
+		{ name: 'rowarrows', testMatch: '**/discover/row-arrows.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		{ name: 'communitybrowse', testMatch: '**/discover/community-browse.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },
 		// Explore's hero on the first visit: a placeholder, then the hero without a reload.
 		{ name: 'herofirst', testMatch: '**/discover/hero-first-load.spec.ts', use: { ...devices['Desktop Chrome'] }, dependencies: ['setup'] },

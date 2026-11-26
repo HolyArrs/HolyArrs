@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Kas võtta import {id} tagasi?",
 	"settings.move.undoQuestion": "Kas võtta see import tagasi?",
 	"settings.move.undoNote": "Eemaldab selle impordiga lisatu; sinu hilisemad muudatused jäävad. Laadi aruanne enne alla, kui soovid seda.",
-	"settings.move.undoMove": "Võta import tagasi"
+	"settings.move.undoMove": "Võta import tagasi",
+	"settings.move.continueSetup": "Jätka seadistamist",
+	"settings.move.backToChoose": "Tagasi valiku juurde"
 }

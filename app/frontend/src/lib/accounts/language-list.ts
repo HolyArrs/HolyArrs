@@ -6,9 +6,14 @@ export type Language = { code: Locale; name: string };
 
 const TOP = ['en', 'es', 'pt-br', 'fr', 'de', 'it', 'ru', 'zh-cn', 'ja', 'ar'];
 
-export function languageGroups(): { top: Language[]; more: Language[] } {
-	const top = LOCALES.filter((l) => TOP.includes(l.code));
-	const more = LOCALES.filter((l) => !TOP.includes(l.code)).sort((a, b) => a.name.localeCompare(b.name));
+/**
+ * installed: English and the installed packs, once known (null shows every language); choice stays listed
+ * either way, so the current pick never disappears from the list.
+ */
+export function languageGroups(installed: ReadonlySet<string> | null = null, choice = 'en'): { top: Language[]; more: Language[] } {
+	const list = installed ? LOCALES.filter((l) => l.code === 'en' || l.code === choice || installed.has(l.code)) : LOCALES;
+	const top = list.filter((l) => TOP.includes(l.code));
+	const more = list.filter((l) => !TOP.includes(l.code)).sort((a, b) => a.name.localeCompare(b.name));
 	return { top, more };
 }
 
@@ -23,8 +28,8 @@ function nameIn(page: string, code: string): string {
 }
 
 // Keeps the list order: Most used, then More languages.
-export function matchLanguages(query: string, page: string): Language[] {
-	const { top, more } = languageGroups();
+export function matchLanguages(query: string, page: string, installed: ReadonlySet<string> | null = null, choice = 'en'): Language[] {
+	const { top, more } = languageGroups(installed, choice);
 	const all = [...top, ...more];
 	const q = fold(query.trim());
 	if (!q) return all;

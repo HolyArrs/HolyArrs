@@ -8,10 +8,14 @@
 	"setup.fullPath": "Kasuta kausta täispikka teed, näiteks {path}.",
 	"setup.folderUsed": "See kaust on juba kasutusel või asub kasutusel oleva kausta sees.",
 	"setup.folderMissing": "Sellist kausta pole. Kontrolli teed.",
-	"setup.addFolderOrOff": "Lisa kaust või lülita see välja.",
+	"setup.addFolderOrOff": "Lisa kaust või vajuta „Jäta praegu vahele”.",
 	"setup.notAnswering": "HolyArrs ei vasta. Proovi hetke pärast uuesti.",
 	"setup.addUserPasswordHint": "Lisa kasutajanimi ja parool.",
 	"setup.folders": "Kaustad",
 	"setup.downloader": "Allalaadija",
-	"setup.source": "Allikas"
+	"setup.source": "Allikas",
+	"setup.alertsNeedKeyOne": "Teavitused: 1 vajab võtit",
+	"setup.alertsNeedKey": "Teavitused: {n} vajavad võtit",
+	"setup.folderNoAccess": "HolyArrs ei saa seda kausta avada. Kontrolli selle õigusi.",
+	"setup.folderCantUse": "HolyArrs ei saa seda kausta kasutada. Kontrolli teed."
 }

@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: titik merah menunjukkan apa yang perlu diberi perhatian, dan ujian sambungan menyebut masalah yang tepat.** Label Plex untuk tajuk yang diminta, nama dalam bahasa anda dan lebih 30 pembaikan. Sambungkan aplikasi melalui MCP dengan kunci yang anda kawal. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: pemalam mendengar apa yang berlaku dalam HolyArrs.** Mod pembangun menjalankan pemalam yang anda bina, dan versi ujian membolehkan beberapa orang mencubanya dahulu. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
 
 > Setiap poster, treler dan skor dalam HolyArrs anda datang daripada pelayan yang saya jalankan dan bayar sendiri, supaya ia kekal percuma untuk semua orang. Jika HolyArrs menjadikan malam menonton filem anda sedikit lebih baik, seorang penaja membantu menghidupkan lampu untuk kita semua 💛
 >
@@ -374,7 +374,7 @@ Imej tidak mempunyai shell, jadi `docker exec -it holyarrs /bin/bash` tidak akan
 - Terkunci keluar daripada akaun pemilik:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Nombor versi:

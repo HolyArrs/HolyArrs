@@ -8,10 +8,14 @@
 	"setup.fullPath": "Gunakan path folder lengkap, misalnya {path}.",
 	"setup.folderUsed": "Folder ini sudah dipakai, atau berada di dalam folder yang sudah dipakai.",
 	"setup.folderMissing": "Folder itu tidak ada. Periksa path-nya.",
-	"setup.addFolderOrOff": "Tambahkan folder atau matikan opsi ini.",
+	"setup.addFolderOrOff": "Tambahkan folder, atau tekan Lewati dulu.",
 	"setup.notAnswering": "HolyArrs tidak merespons. Coba lagi sebentar lagi.",
 	"setup.addUserPasswordHint": "Isi nama pengguna dan kata sandi.",
 	"setup.folders": "Folder",
 	"setup.downloader": "Pengunduh",
-	"setup.source": "Sumber"
+	"setup.source": "Sumber",
+	"setup.alertsNeedKeyOne": "Peringatan: 1 perlu kunci",
+	"setup.alertsNeedKey": "Peringatan: {n} perlu kunci",
+	"setup.folderNoAccess": "HolyArrs tidak bisa membuka folder ini. Periksa izinnya.",
+	"setup.folderCantUse": "HolyArrs tidak bisa memakai folder ini. Periksa path-nya."
 }

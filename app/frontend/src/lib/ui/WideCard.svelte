@@ -11,12 +11,12 @@
 	import StatusPill, { type StatusKind } from './StatusPill.svelte';
 	import { cardTemplate, type CardArtPick } from './card-art.ts';
 	import { freshLabel, shownFresh, typeWord, type Fresh } from './fresh.ts';
-	import { GROW_DELAY } from './grow.ts';
+	import { GROW_DELAY, nearArrow, rowArrows } from './grow.ts';
 	import { shelfNear, whenLoaded } from './lazy-art.ts';
 	import { press, viewTransitionName } from '../core/motion.ts';
 	import { sized } from '../core/tmdb-image.ts';
 	import { prefetchTrailer, watchTrailer } from '../core/trailer/autoplay.svelte.ts';
-	import { dwell, finePointer, HOVER_DELAY, modalOpen, scrollHold } from '../core/trailer/trailer.ts';
+	import { dwell, finePointer, HOVER_DELAY, modalOpen, previewDelay, scrollHold } from '../core/trailer/trailer.ts';
 
 	let {
 		title,
@@ -137,7 +137,8 @@
 	// A drag on the row must not open previews under the pointer.
 	const dragging = () => !!root?.closest('.dragging');
 	// svelte-ignore state_referenced_locally
-	const opener = dwell(cover ? GROW_DELAY : HOVER_DELAY, () => {
+	const hoverWait = previewDelay(cover ? GROW_DELAY : HOVER_DELAY);
+	const opener = dwell(hoverWait ?? 0, () => {
 		if (dragging() || scrollHold() || modalOpen()) return;
 		leaving = false;
 		open = true;
@@ -150,9 +151,14 @@
 		closer.cancel();
 		if (open && leaving) leaving = false;
 		if (!open) {
+			if (hoverWait === null && !byKey) return;
 			opener.start();
 			prefetchTrailer(preview.kind, preview.tmdb);
 		}
+	}
+	// Near a row arrow the pointer is aiming at the arrow, not this card.
+	function byArrow(e: PointerEvent) {
+		return nearArrow(e.clientX, e.clientY, rowArrows(root));
 	}
 	function leave() {
 		opener.cancel();
@@ -186,7 +192,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="ui-wide" class:gone={needsArt && (!src || failed)} class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={() => ((byKey = false), enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && !opener.pending && ((byKey = false), enter())} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
+<div class="ui-wide" class:gone={needsArt && (!src || failed)} class:cover class:big class:grown={cover && open} style:width bind:this={root} onpointerenter={(e) => ((byKey = false), byArrow(e) ? opener.cancel() : enter())} onpointermove={(e) => (e.movementX || e.movementY) && !open && (byArrow(e) ? opener.cancel() : !opener.pending && ((byKey = false), enter()))} onpointerleave={leave} onfocusin={(e) => (e.target as HTMLElement)?.matches?.(':focus-visible') && ((byKey = true), enter())} onfocusout={(e) => !root?.contains(e.relatedTarget as Node) && leave()} onpointerdown={() => opener.cancel()}>
 	<svelte:element this={href ? 'a' : 'div'} class="hit" href={href} role={href ? undefined : 'group'} bind:this={hit} use:press={'card'} aria-label={cover ? [title, typedWord, sub, stripWords].filter(Boolean).join(', ') : undefined} title={cover ? title : undefined}>
 		<span class="art" class:low={badgesAt === 'bottom' && (badges.length || status)} use:viewTransitionName={vtName} bind:this={artEl}>
 			{#if !src || failed || !loaded}<ArtPlaceholder name={title} shape="wide" loading={!!src && !failed && near() && !loaded} />{/if}

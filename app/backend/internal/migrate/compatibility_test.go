@@ -397,14 +397,16 @@ func TestCompatibilityQueuedMoveRequiresExactServerApprovedPlan(t *testing.T) {
 	if err != nil || kept.Choices.ApprovedHash != PlanHash(p) {
 		t.Fatalf("server approval was not persisted: %q %v", kept.Choices.ApprovedHash, err)
 	}
-	var raw string
+	var raw []byte
 	if err := l.st.Read().QueryRow("SELECT data FROM migrate_snapshots WHERE id=?", l.snaps[0]).Scan(&raw); err != nil {
 		t.Fatal(err)
 	}
-	var changed Snapshot
-	if err := json.Unmarshal([]byte(raw), &changed); err != nil {
+	// Written back as plain JSON: a read kept before 1.2.1 still opens.
+	changedp, err := decodeSnapshot(raw)
+	if err != nil {
 		t.Fatal(err)
 	}
+	changed := *changedp
 	changed.Notifications = append(changed.Notifications, Provider{Name: "changed after approval", Kind: "Discord", Enabled: true})
 	b, _ := json.Marshal(changed)
 	if err := l.st.Write(ctx, func(tx *sql.Tx) error {

@@ -155,6 +155,17 @@ export function chosenColumns(cols: Column[], key: SortKey): Column[] {
 	return on;
 }
 
+/** One fit rule for every view: chosen columns keep the person's order and show while they fit; the rest are cut at this width, from the end. The first column always shows. */
+export function fitColumns(cols: Column[], room: number, widthOf: (c: Column) => number, gap = 12): { shown: Column[]; cut: Column[] } {
+	let i = 0;
+	for (; i < cols.length; i++) {
+		const w = widthOf(cols[i]) + gap;
+		if (i > 0 && room < w) break;
+		room -= w;
+	}
+	return { shown: cols.slice(0, i), cut: cols.slice(i) };
+}
+
 export function columnsKey(member: number | undefined, kind: LibKind): string {
 	return `holyarrs.library-columns.${member ?? 'me'}.${kind}`;
 }

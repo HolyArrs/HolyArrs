@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Изабери шта да затражиш следеће",
 	"home.newPopular": "Ново и популарно",
 	"home.whatSTrending": "Шта је у тренду",
+	"home.gettingReady": "Припремам ствари…",
 	"home.top10sAndComing": "Топ 10 и ускоро",
 	"home.whatSNext": "Шта следи",
 	"home.airDatesAndReleases": "Датуми емитовања и изласци",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Епизоде и филмови који стижу ове недеље",
 	"home.popularThisWeek": "Популарна издања која стижу ове недеље",
 	"home.peopleCheck": "Провера особа",
-	"home.cantReadUsers": "списак корисника не може да се прочита"
+	"home.cantReadUsers": "списак корисника не може да се прочита",
+	"home.joined.title": "Добро дошли, {name}",
+	"home.joined.find": "Пронађите нешто у {explore} или {search}.",
+	"home.joined.ask": "Додирните {request} на наслову да га добијете. Можете тражити:",
+	"home.joined.track": "Пратите сваки у {requests}.",
+	"home.joined.noLimit": "Нема недељног ограничења.",
+	"home.joined.gotIt": "Разумем",
+	"home.joined.explore": "Отвори {explore}"
 }

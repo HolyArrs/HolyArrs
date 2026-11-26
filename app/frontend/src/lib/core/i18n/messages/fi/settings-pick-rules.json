@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Ei voi perua. Tiedostot säilyvät.",
 	"settings.pickRules.removeUsed": "{used}. Valitse niille ensin muut säännöt.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Peruuta"
+	"settings.pickRules.cancel": "Peruuta",
+	"settings.pickRules.check.title": "Tarkista julkaisun nimi",
+	"settings.pickRules.check.desc": "Liitä julkaisun nimi nähdäksesi, miten HolyArrs lukee sen ja miten laatuasetuksesi arvioivat sen. Mitään ei haeta eikä ladata.",
+	"settings.pickRules.check.name": "Julkaisun nimi",
+	"settings.pickRules.check.rules": "Arvioi asetuksella",
+	"settings.pickRules.check.copies": "Vastaavan nimikkeen kopiot",
+	"settings.pickRules.check.size": "Koko gigatavuina (valinnainen)",
+	"settings.pickRules.check.check": "Tarkista",
+	"settings.pickRules.check.failed": "Nimeä ei voitu tarkistaa",
+	"settings.pickRules.check.readAs": "Luettu näin",
+	"settings.pickRules.check.matches": "Vastaa nimikettä {name}",
+	"settings.pickRules.check.noTitle": "Ei vastaa mitään Kirjastosi nimikettä. Valitse yllä laatuasetus arvioidaksesi sen silti.",
+	"settings.pickRules.check.noAlbum": "Vastaa nimikettä {name}, mutta ei mitään sen albumia.",
+	"settings.pickRules.check.noCopies": "Tällä nimikkeellä ei ole arvioitavia kopioita.",
+	"settings.pickRules.check.hasFile": "Tiedosto on olemassa"
 }

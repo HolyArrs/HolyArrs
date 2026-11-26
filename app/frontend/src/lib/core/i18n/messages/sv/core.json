@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Bygger {what}… försök {attempt}",
 	"core.testTag.connected": "Ansluten",
 	"core.api.notAnswering": "HolyArrs svarar inte. Kontrollera att den körs.",
+	"core.api.tooSlow": "HolyArrs tog för lång tid att svara. Försök igen om en minut.",
 	"core.api.requestFailed": "Förfrågan misslyckades ({status})",
 	"core.api.wentWrong": "Något gick fel.",
 	"core.trailerMiss.trailer": "trailer",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Godkändes automatiskt",
 	"core.plain.approvedBy": "Godkändes av {who}",
 	"core.settings.cantReach": "Det går inte att nå den adressen. Kontrollera den och att appen körs.",
+	"core.settings.tryHttp": "Den adressen svarar inte på https. Prova http:// i stället.",
 	"core.settings.groupLibrary.label": "Bibliotek",
 	"core.settings.groupLibrary.line": "Där titlarna finns",
 	"core.settings.groupLibrary.about": "Mappar, delar, standardvärden, undertexter, filnamn och import.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Två nedladdare når samma nedladdningsapp, så nedladdningar kan visas två gånger.",
 	"core.plain.peopleCheck": "Mediaserverns användarlista kan inte läsas, så personer som tagits bort där stängs inte av här.",
 	"core.plain.deleted": "raderad",
-	"core.plain.deletedName": "{name} (raderad)"
+	"core.plain.deletedName": "{name} (raderad)",
+	"core.api.handsOffFiles": "Hands-off-läget är på, så HolyArrs rör inte de nedladdade filerna. Stäng av det i Inställningar för att importera, byta namn på, flytta eller skanna filer.",
+	"core.api.handsOffSubtitles": "Hands-off-läget är på, så HolyArrs öppnar aldrig de nedladdade filerna. Stäng av det i Inställningar för att använda undertexter."
 }
