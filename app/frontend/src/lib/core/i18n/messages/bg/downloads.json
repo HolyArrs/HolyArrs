@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Добави програма за изтегляне",
 	"downloads.hl.noUsenetDl": "няма настроена програма за изтегляне от Usenet",
 	"downloads.hl.noTorrentDl": "няма настроена програма за изтегляне на торенти",
+	"downloads.problem.waitingForFiles": "Изчакване на файлове",
 	"downloads.problem.importBlocked": "Импортът е блокиран",
 	"downloads.problem.missingArticles": "Липсващи статии",
 	"downloads.problem.noFullCopy": "Няма пълно копие",
