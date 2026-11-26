@@ -15,6 +15,7 @@ Content-Encoding
 Content-Length
 Content-Security-Policy
 Content-Type
+Cookie
 Cross-Origin-Resource-Policy
 ETag
 Forwarded

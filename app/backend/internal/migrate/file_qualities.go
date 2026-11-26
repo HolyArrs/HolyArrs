@@ -13,10 +13,13 @@ import (
 
 // TitleFile is one file the old app holds for a title and the quality it
 // recorded for it ("WEBDL-1080p"). The old app read the quality from the
-// release it downloaded, which the file name often no longer says.
+// release it downloaded, which the file name often no longer says; it also
+// keeps that release's name (SceneName) and group.
 type TitleFile struct {
-	Name    string `json:"name"` // the file's base name
-	Quality string `json:"quality"`
+	Name      string `json:"name"` // the file's base name
+	Quality   string `json:"quality"`
+	SceneName string `json:"scene_name,omitempty"`
+	Group     string `json:"release_group,omitempty"`
 	// Episodes are the old app's episodes the file holds (Sonarr).
 	Episodes []OldEpisode `json:"episodes,omitempty"`
 }
@@ -33,7 +36,7 @@ func (r arrReader) fileQualitiesAPI(ctx context.Context, c *apiClient, out *arrR
 		var rows []map[string]any
 		out.eachTitle(func(m map[string]any) {
 			if f := mapOf(m["moviefile"]); f != nil {
-				rows = append(rows, map[string]any{"titleid": m["id"], "relativepath": f["relativepath"], "quality": qualityName(f["quality"], nil)})
+				rows = append(rows, fileRow(m["id"], f, qualityName(f["quality"], nil), nil))
 			}
 		})
 		out.sets["filequalities"] = rows
@@ -62,7 +65,7 @@ func (r arrReader) fileQualitiesAPI(ctx context.Context, c *apiClient, out *arrR
 			byFile := oldEpisodesByFile(eps)
 			off = append(off, episodesOffRows(eps, id)...)
 			for _, f := range got {
-				rows = append(rows, map[string]any{"titleid": id, "relativepath": f["relativepath"], "quality": qualityName(f["quality"], nil), "episodes": byFile[num(f["id"])]})
+				rows = append(rows, fileRow(id, f, qualityName(f["quality"], nil), byFile[num(f["id"])]))
 			}
 		}
 		if skipped > 0 {
@@ -105,9 +108,16 @@ func (r arrReader) fileQualitiesBackup(ctx context.Context, t table, out *arrRow
 	}
 	var outRows []map[string]any
 	for _, m := range rows {
-		outRows = append(outRows, map[string]any{"titleid": m[link], "relativepath": m["relativepath"], "quality": qualityName(m["quality"], defs), "episodes": byFile[num(m["id"])]})
+		outRows = append(outRows, fileRow(m[link], m, qualityName(m["quality"], defs), byFile[num(m["id"])]))
 	}
 	out.sets["filequalities"] = outRows
+}
+
+// fileRow is one file's row for filesByTitle, from the API's file entry or
+// a backup's row (lower-case keys): the same fields in both.
+func fileRow(titleID any, f map[string]any, quality string, eps []OldEpisode) map[string]any {
+	return map[string]any{"titleid": titleID, "relativepath": f["relativepath"], "quality": quality, "episodes": eps,
+		"scenename": f["scenename"], "releasegroup": f["releasegroup"]}
 }
 
 // qualityName reads a recorded quality: the API's {"quality":{"name":...}}
@@ -148,11 +158,12 @@ func filesByTitle(rows []map[string]any) map[int64][]TitleFile {
 	for _, m := range rows {
 		q, p := str(m["quality"]), str(m["relativepath"])
 		eps, _ := m["episodes"].([]OldEpisode)
-		if q == "" && len(eps) == 0 || p == "" {
+		scene, group := clip(str(m["scenename"]), maxSceneName), clip(str(m["releasegroup"]), maxGroup)
+		if q == "" && len(eps) == 0 && scene == "" && group == "" || p == "" {
 			continue
 		}
 		base := path.Base(strings.ReplaceAll(p, `\`, "/"))
-		out[num(m["titleid"])] = append(out[num(m["titleid"])], TitleFile{Name: base, Quality: q, Episodes: eps})
+		out[num(m["titleid"])] = append(out[num(m["titleid"])], TitleFile{Name: base, Quality: q, SceneName: scene, Group: group, Episodes: eps})
 	}
 	return out
 }
@@ -200,4 +211,34 @@ func fileFacts(files []TitleFile) (map[string]string, map[string][]OldEpisode) {
 		}
 	}
 	return q, eps
+}
+
+// The longest scene name and release group kept from the old app.
+const (
+	maxSceneName = 300
+	maxGroup     = 60
+)
+
+// OldRelease is the release the old app recorded for a file.
+type OldRelease = library.OldRelease
+
+// fileReleases is the release the old app recorded for each file (its
+// scene name and group), by the file's base name (nil when there are none).
+// A base name that two files share gets none: which file it is is unknown.
+func fileReleases(files []TitleFile) map[string]OldRelease {
+	var out map[string]OldRelease
+	seen := map[string]int{}
+	for _, f := range files {
+		seen[f.Name]++
+	}
+	for _, f := range files {
+		if f.SceneName == "" && f.Group == "" || seen[f.Name] > 1 {
+			continue
+		}
+		if out == nil {
+			out = map[string]OldRelease{}
+		}
+		out[f.Name] = OldRelease{Name: f.SceneName, Group: f.Group}
+	}
+	return out
 }

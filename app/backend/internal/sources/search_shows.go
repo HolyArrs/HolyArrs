@@ -118,7 +118,7 @@ func currentOf(ctx context.Context, db *sql.DB, ti mediafiles.Title, sl mediafil
 	var ver mediafiles.Version
 	_ = database.Get(ctx, db, "versions", sl.VersionID, &ver)
 	audio := mediafiles.FileLanguages(f.MediaInfo, ver.AudioLanguages)
-	if cur := mediafiles.CurrentOfTitleFile(mediafiles.JudgeName(name, f.MediaInfo), f.Size, f.AddedAt, audio, ti, pr.Body); cur.Step != "" {
+	if cur := mediafiles.CurrentOfOwnedFile(f, name, audio, ti, pr.Body); cur.Step != "" {
 		return &cur
 	}
 	if mediafiles.IsMusicRules(pr.Body) {

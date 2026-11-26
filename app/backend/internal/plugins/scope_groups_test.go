@@ -21,6 +21,7 @@ func TestScopeGroups(t *testing.T) {
 		}},
 		{"artwork", []string{"library.artwork.set"}, []ScopeGroup{{ID: "library", Change: true, Scopes: []string{"library.artwork.set"}, Warnings: []string{"artwork"}}}},
 		{"messages", []string{"alerts.webhooks.send"}, []ScopeGroup{{ID: "alerts", Change: true, Scopes: []string{"alerts.webhooks.send"}, Warnings: []string{"notify"}}}},
+		{"botcheck", []string{"sources.botcheck"}, []ScopeGroup{{ID: "network", Change: true, Scopes: []string{"sources.botcheck"}, Warnings: []string{"forward"}}}},
 		{"ratings", []string{"sources.metadata"}, []ScopeGroup{{ID: "network", Change: true, Scopes: []string{"sources.metadata"}, Warnings: []string{"ratings"}}}},
 		{"title sections", []string{"pages.title-section"}, []ScopeGroup{{ID: "network", Change: true, Scopes: []string{"pages.title-section"}, Warnings: []string{"sections"}}}},
 		{"downloader", []string{"sources.downloader"}, []ScopeGroup{{ID: "network", Change: true, Scopes: []string{"sources.downloader"}, Warnings: []string{"downloader"}}}},
