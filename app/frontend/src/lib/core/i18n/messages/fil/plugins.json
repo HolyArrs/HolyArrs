@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Tumatakbo rito ang mga signed plugin nang walang file lock. Naka-on pa rin ang iba pang safety limit.",
 	"plugins.noLockOffNow": "Mananatiling nakahinto ang mga plugin hangga't walang file lock ang system na ito.",
 	"plugins.noLockChange": "Baguhin",
+	"plugins.noLockLearn": "Paano gumagana ang file lock ng plugin",
 	"plugins.noLockTag": "Walang file lock sa system na ito",
 	"plugins.noLockKeptOff": "Nananatiling nakahinto ang mga plugin nang walang file lock",
 	"plugins.secAccess": "Maaaring ma-access",

@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Plugin đã ký chạy ở đây mà không có khóa tệp. Các giới hạn an toàn còn lại vẫn bật.",
 	"plugins.noLockOffNow": "Plugin vẫn dừng cho đến khi hệ thống này có khóa tệp.",
 	"plugins.noLockChange": "Thay đổi",
+	"plugins.noLockLearn": "Khóa tệp của plugin hoạt động thế nào",
 	"plugins.noLockTag": "Không có khóa tệp trên hệ thống này",
 	"plugins.noLockKeptOff": "Plugin vẫn dừng khi không có khóa tệp",
 	"plugins.secAccess": "Có thể truy cập",

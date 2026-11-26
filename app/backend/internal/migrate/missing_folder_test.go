@@ -62,8 +62,13 @@ func TestMoveAddsTitleWithoutItsFolder(t *testing.T) {
 }
 
 // With no Library folder here, the title still says no folder here.
+// The old folder is one no machine has: on Windows /movies is the drive's
+// own \movies, which may well be there.
 func TestDryRunTitleWithoutLibraryFolderNotFound(t *testing.T) {
-	l := newMoveLab(t)
+	l := newMoveLabWith(t, func(radarr, _, _ *Snapshot) {
+		radarr.Folders[0].Path = "/holyarrs-no-such-folder/movies"
+		radarr.Titles[0].Path = "/holyarrs-no-such-folder/movies/The Matrix (1999)"
+	})
 	l.rules = nil
 	rep := l.mv.Run(context.Background(), 0, l.plan(t), true, domain.Actor{Kind: "user", ID: 1}, nil)
 	if got := lineOf(t, rep, "title:movie:tmdb:603"); got.Result != ResNotFound {

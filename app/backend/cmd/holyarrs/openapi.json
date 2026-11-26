@@ -25571,6 +25571,30 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/plugin-hooks/botcheck": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A job, or 204 when none came"
+          }
+        },
+        "summary": "Next bot-check page for a plugin to open",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Answer taken"
+          }
+        },
+        "summary": "Answer a bot-check page",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/plugin-hooks/downloader": {
       "get": {
         "responses": {

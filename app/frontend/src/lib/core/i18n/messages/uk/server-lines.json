@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "надішли {\"on\": true} або {\"on\": false}",
 	"server.library.deleted-of": "Видалено {relativepath} з {name}",
 	"server.importer.the-file-is-not-present-yet": "файлу ще немає; HolyArrs спробує імпортувати його знову",
-	"server.migrate.the-same-as-a-source-that": "те саме, що {name}, джерело, яке вже є"
+	"server.migrate.the-same-as-a-source-that": "те саме, що {name}, джерело, яке вже є",
+	"server.accounts.name-the-person-by-their-user": "вкажіть людину за її ID користувача",
+	"server.migrate.it-is-longer-than-a-holyarrs": "він довший, ніж може бути шаблон HolyArrs"
 }
