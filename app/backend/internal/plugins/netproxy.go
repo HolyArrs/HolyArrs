@@ -65,7 +65,7 @@ type ProxyHandle struct {
 	p      *Proxy
 	id     string
 	hosts  []string
-	owner  map[string]map[int]bool // owner-added host -> its extra ports (every pair kept)
+	owner  map[string]int // owner-added host -> its extra port (0: none)
 	token  string
 	ln     net.Listener
 	closed atomic.Bool
@@ -91,19 +91,14 @@ func (p *Proxy) Register(id string, hosts, owner []string) (*ProxyHandle, error)
 		ln.Close()
 		return nil, err
 	}
-	h := &ProxyHandle{p: p, id: id, token: hex.EncodeToString(b), ln: ln, owner: map[string]map[int]bool{},
+	h := &ProxyHandle{p: p, id: id, token: hex.EncodeToString(b), ln: ln, owner: map[string]int{},
 		routes: map[int]int{}, changed: make(chan struct{}), logged: map[string]time.Time{}}
 	for _, x := range hosts {
 		h.hosts = append(h.hosts, strings.ToLower(x))
 	}
 	for _, o := range owner {
 		if n, port, ok := ParseOwnerHost(o); ok {
-			if h.owner[n] == nil {
-				h.owner[n] = map[int]bool{}
-			}
-			if port != 0 {
-				h.owner[n][port] = true
-			}
+			h.owner[n] = port
 		}
 	}
 	p.mu.Lock()
@@ -406,16 +401,6 @@ func splitHostPortNum(s string) (string, int, bool) {
 	return host, port, true
 }
 
-// ownerPort says whether name is an owner host and, if so, whether port is
-// allowed for it: 80, 443 or any port the owner saved with that name.
-func (h *ProxyHandle) ownerPort(name string, port int) (owner, ok bool) {
-	ports, owner := h.owner[name]
-	if !owner {
-		return false, false
-	}
-	return true, port == 443 || port == 80 || ports[port]
-}
-
 // dial checks the name and port, resolves the name, refuses unsafe answers
 // and dials the checked address. It returns the reason when it refuses.
 func (h *ProxyHandle) dial(host string, port int) (net.Conn, string) {
@@ -426,10 +411,10 @@ func (h *ProxyHandle) dial(host string, port int) (net.Conn, string) {
 	if name == "" {
 		return nil, "bad name"
 	}
-	isOwner, portOK := h.ownerPort(name, port)
+	ownerPort, isOwner := h.owner[name]
 	switch {
 	case isOwner:
-		if !portOK {
+		if port != 443 && port != 80 && port != ownerPort {
 			return nil, "port not allowed"
 		}
 	case matchHost(h.hosts, name):
