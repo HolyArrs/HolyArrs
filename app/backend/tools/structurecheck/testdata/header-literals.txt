@@ -32,6 +32,7 @@ Remote-User
 Retry-After
 SOAPAction
 Sec-Fetch-Dest
+Sec-Fetch-Mode
 Sec-Fetch-Site
 Server
 Server-Timing

@@ -106,6 +106,8 @@ var Kinds = []Kind{
 		Note:    "Needs your account: an API key from the site's consumer page, plus your username and password (downloads need a sign-in). Free accounts get a small number of downloads a day."},
 	{Kind: "subdl", Name: "subdl", DefaultURL: "https://api.subdl.com/api/v1", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"api_key"},
 		Note: "Needs your account: an API key from your subdl account page. Its download count resets at midnight UTC."},
+	{Kind: "titlovi", Name: "Titlovi", DefaultURL: "https://titlovi.com", Movies: true, Shows: true,
+		Note: "Croatian, Serbian, Bosnian, Slovenian and Macedonian subtitles from titlovi.com. No account: it reads the public search page. Titlovi often blocks data-centre addresses, so HolyArrs must run on a home connection. Tested against the live site and against recorded pages."},
 	{Kind: "podnapisi", Name: "Podnapisi", DefaultURL: "https://www.podnapisi.net", Movies: true, Shows: true, DefaultOff: true,
 		Note: "No account. Starts turned off: the site name does not resolve right now."},
 	{Kind: "gestdown", Name: "Gestdown", DefaultURL: "https://api.gestdown.info", Shows: true,
@@ -176,6 +178,8 @@ func New(kind string, cfg Config) (Site, error) {
 		return newYify(c), nil
 	case "tvsubtitles":
 		return newTVSubs(c), nil
+	case "titlovi":
+		return newTitlovi(c), nil
 	case "bsplayer":
 		return newBSPlayer(c), nil
 	case "napiprojekt":

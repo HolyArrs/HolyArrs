@@ -26,7 +26,7 @@ const notWords = new Set(['dash', 'each', 'range', 'smart', 'remove', 'normal', 
 	'COMPLETE.BLURAY',
 	// Language names Gestdown is asked by (subtitles/sites/adapters.go langNames): sent to the site, never shown.
 	'Bulgarian', 'Catalan', 'Chinese (Simplified)', 'Chinese (Traditional)', 'Croatian', 'Euskera', 'Galego', 'Portuguese (Brazilian)', 'Romanian', 'Serbian', 'Slovenian',
-	'podnapisi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'napiprojekt', 'napisy24', 'assrt', 'qBittorrent', 'Jackett', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}',
+	'podnapisi', 'titlovi', 'gestdown', 'yifysubtitles', 'tvsubtitles', 'bsplayer', 'napiprojekt', 'napisy24', 'assrt', 'qBittorrent', 'Jackett', 'subtitles:languages', 'subtitle site ', 'tmdb:{v}', 'mbid:{v}',
 	// migrate past_history.go: the old app's column names, never shown.
 	'movieid', 'seriesid',
 	// Answers only a plugin program reads (its token, hook and bridge routes) and scope names: for plugin authors, never shown in the app.
