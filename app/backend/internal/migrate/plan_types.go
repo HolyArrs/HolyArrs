@@ -290,6 +290,9 @@ type TitlePlan struct {
 	// OldEpisodes are the old app's episodes in each file, by the file's
 	// base name: a show whose seasons differ places a file by them.
 	OldEpisodes map[string][]OldEpisode `json:"old_episodes,omitempty"`
+	// Releases are the release each file came from as the old app recorded
+	// it (scene name and group), by the file's base name.
+	Releases map[string]OldRelease `json:"releases,omitempty"`
 	// History is the old app's past downloads of the title, brought to
 	// its History; App names the old app ("sonarr").
 	History []PastEvent `json:"history,omitempty"`
@@ -314,6 +317,9 @@ type FourKPlan struct {
 	// Qualities is the quality the 4K app recorded for each file, by the
 	// file's base name.
 	Qualities map[string]string `json:"qualities,omitempty"`
+	// Releases are the release each file came from as the 4K app recorded
+	// it, by the file's base name.
+	Releases map[string]OldRelease `json:"releases,omitempty"`
 	// File is the file the 4K app recorded, as TitlePlan.File names it.
 	File string `json:"file,omitempty"`
 	// Unresolved says why the folder could not be placed ("" when it can).

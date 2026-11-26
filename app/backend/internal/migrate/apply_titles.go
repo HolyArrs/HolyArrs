@@ -60,7 +60,7 @@ func (r *run) title(it Item) (string, string) {
 			d := "already in the Library"
 			if !r.dry {
 				if n := r.recordQualities(id, t); n > 0 {
-					d = "already in the Library; the quality of " + strconv.Itoa(n) + " files was updated"
+					d = "already in the Library; the quality or release of " + strconv.Itoa(n) + " files was updated"
 				}
 			}
 			if t.FourK != nil {
@@ -290,8 +290,8 @@ func (r *run) title(it Item) (string, string) {
 		}
 		return ResFailed, "adopted, but its mark was not kept, so it was taken out again: " + mk.Error()
 	}
-	// The quality the old app recorded; a file it cannot match keeps the
-	// quality read from its name and the file.
+	// The quality and release the old app recorded; a file it cannot match
+	// keeps what was read from its name and the file.
 	_ = r.recordQualities(id, t)
 	pr := r.presetID(t.Preset, t.Kind)
 	err = r.m.Store.Write(r.ctx, func(tx *sql.Tx) error {

@@ -210,24 +210,24 @@ func mainCopyFile(lib string, t *TitlePlan) string {
 }
 
 // recordQualities puts the quality the old app recorded on the title's
-// files, as SetRecordedQualities always has. For a merged movie each app's
+// files, as SetRecordedFiles always has. For a merged movie each app's
 // goes on the copy it came from only (copyVersions): the main app's on the
 // main copy's Version, the 4K app's on the 4K copy's. A 1080p and a 4K
 // copy often share a file name, so a quality must never cross to the other
 // copy. It says how many changed.
 func (r *run) recordQualities(id int64, t *TitlePlan) int {
 	if t.FourK == nil {
-		n, _ := r.m.Library.SetRecordedQualities(r.ctx, id, t.Qualities, r.by)
+		n, _ := r.m.Library.SetRecordedFiles(r.ctx, id, t.Qualities, t.Releases, r.by)
 		return n
 	}
 	n := 0
 	main, fourK := r.copyVersions(id, t)
-	if main != 0 && len(t.Qualities) > 0 {
-		m, _ := r.m.Library.SetVersionRecordedQualities(r.ctx, id, main, t.Qualities, r.by)
+	if main != 0 {
+		m, _ := r.m.Library.SetVersionRecordedFiles(r.ctx, id, main, t.Qualities, t.Releases, r.by)
 		n += m
 	}
-	if fourK != 0 && len(t.FourK.Qualities) > 0 {
-		m, _ := r.m.Library.SetVersionRecordedQualities(r.ctx, id, fourK, t.FourK.Qualities, r.by)
+	if fourK != 0 {
+		m, _ := r.m.Library.SetVersionRecordedFiles(r.ctx, id, fourK, t.FourK.Qualities, t.FourK.Releases, r.by)
 		n += m
 	}
 	return n
@@ -324,9 +324,9 @@ func (r *run) linkFourK(titleID, vID int64, lib string, fk *FourKPlan, fresh boo
 		}
 		note += ", with " + video
 	}
-	if len(fk.Qualities) > 0 {
-		// The quality the 4K app recorded, on the 4K copy only.
-		_, _ = r.m.Library.SetVersionRecordedQualities(r.ctx, titleID, vID, fk.Qualities, r.by)
+	if len(fk.Qualities) > 0 || len(fk.Releases) > 0 {
+		// The quality and release the 4K app recorded, on the 4K copy only.
+		_, _ = r.m.Library.SetVersionRecordedFiles(r.ctx, titleID, vID, fk.Qualities, fk.Releases, r.by)
 	}
 	return note
 }
@@ -405,7 +405,7 @@ func (r *run) finishMovedTitle(id int64, key string, t *TitlePlan) string {
 	d := ""
 	if !r.dry {
 		if n := r.recordQualities(id, t); n > 0 {
-			d = "; the quality of " + strconv.Itoa(n) + " files was updated"
+			d = "; the quality or release of " + strconv.Itoa(n) + " files was updated"
 		}
 	}
 	if t.FourK == nil {

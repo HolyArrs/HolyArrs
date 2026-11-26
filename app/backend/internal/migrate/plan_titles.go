@@ -107,7 +107,7 @@ func titleDetail(tp *TitlePlan, monitored bool, gateNote string) string {
 // cannot keep, is not placed: the real run could not add it.
 func fourKPlanOf(main, tp *TitlePlan, from string) *FourKPlan {
 	fk := &FourKPlan{Library: tp.Library, Folder: tp.Folder, Preset: tp.Preset, KeepUpToDate: tp.KeepUpToDate,
-		Qualities: tp.Qualities, File: tp.File, Unresolved: tp.Unresolved, From: from}
+		Qualities: tp.Qualities, Releases: tp.Releases, File: tp.File, Unresolved: tp.Unresolved, From: from}
 	switch {
 	case fk.Unresolved != "":
 	case main.Unresolved == "" && main.Folder != "" && main.Library == fk.Library && foldName(main.Folder) == foldName(fk.Folder):

@@ -638,6 +638,7 @@ func (b *builder) titleList(s *Snapshot) {
 				tp.File = t.Files[0].Path
 			}
 		}
+		tp.Releases = fileReleases(t.Files)
 		tp.hasFiles = len(t.Files) > 0 || num(t.Extra["track_files"]) > 0
 		tp.History, tp.App = t.History, string(s.Kind)
 		for _, se := range t.Seasons {
