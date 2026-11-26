@@ -913,6 +913,7 @@ const heavy = {
 		actions: ['library.read', 'library.write', 'downloads.read', 'downloads.control', 'requests.read', 'requests.create', 'requests.approve', 'activity.read', 'watched.write', 'settings.read', 'schedules.run', 'subtitles.write']
 	},
 	installed_access: { hosts: [], folders: [], actions: [] },
+	scope_groups: [{ id: 'network', scopes: ['network.forward'], change: true, warnings: ['forward'] }],
 	settings: Array.from({ length: 16 }, (_, i) => ({ key: `opt${i}`, label: `Option number ${i + 1} with a longer label`, type: ['text', 'number', 'toggle', 'select', 'secret'][i % 5], options: ['One', 'Two', 'Three'], help: i % 3 ? undefined : 'A short line of help that explains what this option changes.', group: i < 8 ? 'Main' : 'Extra' }))
 };
 async function sameHeight(page: Page) {
@@ -947,6 +948,8 @@ for (const [width, height] of [[1440, 900], [1280, 800], [390, 844]] as const) {
 		await expect(page.getByTestId('plugin-detail')).toBeVisible();
 		await page.waitForTimeout(400);
 		await shot('info');
+		// The red forwarding warning shows where the access is approved, with its icon.
+		await expect(page.getByTestId('approve-warning')).toContainText('Sees everything sent through it');
 		if (desk) await noScrollIn(page, 'plugin window');
 		if (desk) await sameHeight(page);
 		// Its settings.

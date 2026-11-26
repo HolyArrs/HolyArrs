@@ -6,7 +6,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -259,9 +258,8 @@ func holdsTitles(p *Plan, old, here string) bool {
 	seen := false
 	for _, g := range p.Groups {
 		for _, it := range g.Items {
-			if t := it.Title; t != nil && t.Folder != "" && libs[t.Library] {
-				seen = true
-				if isDir(filepath.Join(here, t.Folder)) {
+			for _, pl := range titlePlaces(it.Title) {
+				if seen = seen || libs[pl[0]]; libs[pl[0]] && isDir(filepath.Join(here, pl[1])) {
 					return true
 				}
 			}
@@ -321,15 +319,20 @@ type run struct {
 	// check has no overall time limit, only one per lookup (dryCallLimit).
 	watch     func(done, total int, name, result string)
 	unchecked []TitlePlan
-	// foldersOff says the Library folders group was left out; coming lists,
-	// per kind, the planned Library folders on this server that this run adds.
+	// foldersOff says the Library folders group was left out; coming lists the
+	// planned Library folders here this run adds, by kind (comingAll: in order).
 	foldersOff bool
 	coming     map[string][]string
+	comingAll  []string
 	// left names the planned Library folders set to "Don't bring them";
 	// unseen, by the folder here a path rule points at, an old folder this
 	// server cannot see whose titles are not in that folder.
 	left   map[string]bool
 	unseen map[string]string
+	// claimed is the dry run's record of the folders this import's titles
+	// take here, by claimKey: claimMain for a title's own folder, claimFourK
+	// for a merged movie's 4K copy. The real run reads the Library instead.
+	claimed map[string]string
 	// movieFolders counts the movies of this import by folder name, any case.
 	movieFolders map[string]int
 	// prowlarr is the kept Prowlarr address and key, read once.
@@ -363,9 +366,9 @@ func (r *run) sourceOrMoveTime(source string) (time.Time, error) {
 }
 
 // folderGroup reads the Library folders group: whether it was left out,
-// and the folders on this server it adds.
+// and the folders on this server it adds (none whose part is off).
 func (r *run) folderGroup(p *Plan) {
-	r.coming, r.left, r.unseen, r.movieFolders = map[string][]string{}, map[string]bool{}, map[string]string{}, map[string]int{}
+	r.coming, r.comingAll, r.left, r.unseen, r.movieFolders = map[string][]string{}, nil, map[string]bool{}, map[string]string{}, map[string]int{}
 	for _, g := range p.Groups {
 		for _, it := range g.Items {
 			if t := it.Title; t != nil && t.Kind == "movie" {
@@ -383,8 +386,9 @@ func (r *run) folderGroup(p *Plan) {
 			if f := it.Folder; f != nil && f.Path != f.OldPath && !isDir(filepath.FromSlash(f.OldPath)) && !holdsTitles(p, f.OldPath, f.Path) {
 				r.unseen[filepath.Clean(filepath.FromSlash(f.Path))] = f.OldPath
 			}
-			if f := it.Folder; f != nil && !g.Skipped && !f.Left && isDir(filepath.FromSlash(f.Path)) {
+			if f := it.Folder; f != nil && !g.Skipped && !f.Left && r.m.partOn(partOf(it)) && isDir(filepath.FromSlash(f.Path)) {
 				r.coming[f.Kind] = append(r.coming[f.Kind], filepath.Clean(filepath.FromSlash(f.Path)))
+				r.comingAll = append(r.comingAll, filepath.Clean(filepath.FromSlash(f.Path)))
 			}
 		}
 	}
@@ -748,10 +752,8 @@ func (r *run) one(group string, it Item) (string, string) {
 		}
 		// A title moved before still takes the quality the old app recorded
 		// for each file, so moving again after reading the old app updates it.
-		if it.Title != nil && it.Title.Music == nil && (len(it.Title.Qualities) > 0 || len(it.Title.Releases) > 0) && !r.dry {
-			if n, err := r.m.Library.SetRecordedFiles(r.ctx, id, it.Title.Qualities, it.Title.Releases, r.by); err == nil && n > 0 {
-				return ResAlready, "imported before; the quality or release of " + strconv.Itoa(n) + " files was updated"
-			}
+		if it.Title != nil && it.Title.Music == nil && (!r.dry || it.Title.FourK != nil) {
+			return ResAlready, "imported before" + r.finishMovedTitle(id, it.Key, it.Title)
 		}
 		if it.Downloader != nil {
 			if added := r.downloaderAgain(it, id); added != "" {

@@ -303,7 +303,13 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 	stats := e.stats()
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	// Scopes an installed plugin was granted outside its manifest (the 1.3.0 upgrade's network.forward for an old
+	// Tailscale): they count for the install groups and their red warnings too.
+	kept := map[string][]string{}
 	for id, in := range st.Plugins {
+		if in.Approval != nil {
+			kept[id] = in.Approval.Kept
+		}
 		p, ok := rows[id]
 		if !ok {
 			p = &Plugin{ID: id, Version: in.Version}
@@ -334,7 +340,7 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 	for _, id := range order {
 		rows[id].InstallStep, rows[id].InstallError = e.steps[id], e.fails[id]
 		rows[id].ReachesApp = e.Forwards != nil && e.Forwards(id)
-		rows[id].ScopeGroups = scopeGroups(rows[id].Access)
+		rows[id].ScopeGroups = scopeGroups(withKept(rows[id].Access, kept[id]))
 		if s, ok := stats[id]; ok {
 			s := s
 			rows[id].Stats = &s

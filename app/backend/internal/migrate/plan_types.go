@@ -297,6 +297,35 @@ type TitlePlan struct {
 	// its History; App names the old app ("sonarr").
 	History []PastEvent `json:"history,omitempty"`
 	App     string      `json:"app,omitempty"`
+	// FourK is a movie's 4K copy from a second Radarr read: it becomes a
+	// 4K Version of this same title, adopting its folder where it is.
+	FourK *FourKPlan `json:"four_k,omitempty"`
+	// File is the file the old app recorded for a movie, by its path in
+	// the movie's folder with forward slashes (its base name when directly
+	// in it), with or without a quality: a merged movie's main copy adopts it.
+	File string `json:"file,omitempty"`
+}
+
+// FourKPlan is the 4K copy of a merged movie: the second Radarr's folder,
+// Pick rules and monitoring, adopted as a 4K Version where it is.
+type FourKPlan struct {
+	// Library is the Library folder's path here; Folder its folder in it.
+	Library      string `json:"library"`
+	Folder       string `json:"folder"`
+	Preset       string `json:"pick_rules,omitempty"`
+	KeepUpToDate bool   `json:"keep_up_to_date"`
+	// Qualities is the quality the 4K app recorded for each file, by the
+	// file's base name.
+	Qualities map[string]string `json:"qualities,omitempty"`
+	// Releases are the release each file came from as the 4K app recorded
+	// it, by the file's base name.
+	Releases map[string]OldRelease `json:"releases,omitempty"`
+	// File is the file the 4K app recorded, as TitlePlan.File names it.
+	File string `json:"file,omitempty"`
+	// Unresolved says why the folder could not be placed ("" when it can).
+	Unresolved string `json:"unresolved,omitempty"`
+	// From says where the copy came from ("radarr titles[3]").
+	From string `json:"from"`
 }
 
 // MusicPolicyPlan is the supported part of an artist's Lidarr monitoring
