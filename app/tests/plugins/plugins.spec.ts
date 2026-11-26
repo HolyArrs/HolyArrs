@@ -589,6 +589,15 @@ test('plugins: one file lock choice for the install', async ({ browser }) => {
 	await expect.poll(() => calls).toContain('PUT /api/v1/plugins/file-lock {"allow_without":true}');
 	await expect(card).toContainText('Signed plugins run here without the file lock.');
 	await expect(page.getByTestId('plugin-nolock')).toHaveCount(4);
+	// The tag explains itself (tooltip on the tile) and opens in the plugin's window with the reason and a docs link.
+	await expect(page.getByTestId('plugin-nolock').first()).toHaveAttribute('title', /seccomp/);
+	await page.getByTestId('plugin-row').first().locator('.open').click();
+	const tag = page.getByTestId('plugin-detail').getByTestId('plugin-nolock');
+	await tag.locator('summary').click();
+	await expect(tag).toContainText("container's security profile (seccomp)");
+	await expect(tag.getByTestId('plugin-nolock-docs')).toHaveAttribute('href', /docs\.holyarrs\.com/);
+	await page.screenshot({ path: test.info().outputPath('nolock-window.png') });
+	await page.keyboard.press('Escape');
 	await card.getByRole('button', { name: 'Change' }).click();
 	await card.getByRole('button', { name: 'Keep off' }).click();
 	await expect.poll(() => calls).toContain('PUT /api/v1/plugins/file-lock {"allow_without":false}');

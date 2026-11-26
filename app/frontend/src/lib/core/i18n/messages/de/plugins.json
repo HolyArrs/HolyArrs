@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Signierte Plugins laufen hier ohne Dateisperre. Die übrigen Schutzgrenzen bleiben aktiv.",
 	"plugins.noLockOffNow": "Plugins bleiben gestoppt, bis dieses System die Dateisperre hat.",
 	"plugins.noLockChange": "Ändern",
+	"plugins.noLockLearn": "So funktioniert die Dateisperre für Plugins",
 	"plugins.noLockTag": "Keine Dateisperre auf diesem System",
 	"plugins.noLockKeptOff": "Plugins bleiben ohne Dateisperre gestoppt",
 	"plugins.secAccess": "Hat Zugriff auf",

@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Parakstīti spraudņi šeit darbojas bez failu slēdzenes. Pārējie drošības ierobežojumi paliek ieslēgti.",
 	"plugins.noLockOffNow": "Spraudņi paliek apturēti, līdz sistēmai būs failu slēdzene.",
 	"plugins.noLockChange": "Mainīt",
+	"plugins.noLockLearn": "Kā darbojas spraudņu failu slēdzene",
 	"plugins.noLockTag": "Šajā sistēmā nav failu slēdzenes",
 	"plugins.noLockKeptOff": "Spraudņi paliek apturēti bez failu slēdzenes",
 	"plugins.secAccess": "Var piekļūt",

@@ -11,14 +11,16 @@
 	import ScopeDetails from './ScopeDetails.svelte';
 	import PluginPagesLinks from './PluginPagesLinks.svelte';
 	import PluginActivity from './PluginActivity.svelte';
-	import { abilities, categoryLabel, categoryOf, developers, pluginAbout, pluginState, offReason, safeLink, shownName, shownVersion, freshUpdate, shortCount, shortDate, pluginIcon, devPicture, devLink, isProject, brokenPics as broken } from './view.ts';
+	import { abilities, categoryLabel, categoryOf, developers, pluginAbout, pluginState, offReason, safeLink, noLockNotice, shownName, shownVersion, freshUpdate, shortCount, shortDate, pluginIcon, devPicture, devLink, isProject, brokenPics as broken } from './view.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import ClampText from './ClampText.svelte';
-	import type { Plugin } from './types.ts';
+	import type { Plugin, PluginOverview } from './types.ts';
 	import { tint } from './tint.ts';
 
-	let { p, badge = '', noLockTag = false, actions, extra, onclose, wideExtra = false, can: canGiven }: { p: Plugin; badge?: string; noLockTag?: boolean; actions: Snippet; extra?: Snippet; onclose: () => void; /** The extra part runs the whole width (Language Packs' list). */ wideExtra?: boolean; /** What it can reach, when not a plugin's own access (Language Packs). */ can?: string[] } = $props();
+	let { p, badge = '', noLockTag = false, noLockReason, actions, extra, onclose, wideExtra = false, can: canGiven }: { p: Plugin; badge?: string; noLockTag?: boolean; noLockReason?: PluginOverview['file_lock_reason']; actions: Snippet; extra?: Snippet; onclose: () => void; /** The extra part runs the whole width (Language Packs' list). */ wideExtra?: boolean; /** What it can reach, when not a plugin's own access (Language Packs). */ can?: string[] } = $props();
 
+	// Where the plugin file lock is explained.
+	const NO_LOCK_DOCS = 'https://docs.holyarrs.com/run/platforms/#plugin-file-lock';
 	const name = $derived(shownName(p));
 	const devs = $derived(developers(p));
 	const can = $derived(canGiven ?? abilities(p));
@@ -101,7 +103,7 @@
 	<span class="shut"><IconButton icon="x" label={t('ui.sheet.close')} variant="tinted" size="sm" tooltip={false} onclick={onclose} data-testid="plugin-detail-close" /></span>
 	<div class="acts pills" data-testid="plugin-acts">
 		{@render actions()}
-		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+		{#if noLockTag}<details class="xs nolock" data-testid="plugin-nolock"><summary><Icon name="info" size={13} />{t('plugins.noLockTag')}</summary><p class="small">{noLockNotice(noLockReason)} {t('plugins.noLockRisk')}</p><a class="small" href={NO_LOCK_DOCS} target="_blank" rel="noopener noreferrer" data-testid="plugin-nolock-docs">{t('plugins.noLockLearn')}<Icon name="arrowUpRight" size={13} /></a></details>{/if}
 	</div>
 	<section class="cell a-about"><h3>{t('plugins.secAbout')}</h3><ClampText lines={4}>{#each aboutParas as para, i (i)}<p class="small body" dir="auto">{para}</p>{/each}</ClampText></section>
 	<section class="cell a-reach" data-testid="plugin-reach"><h3>{t('plugins.secAccess')}</h3><ul class="can small fit-grid" style:--fit-col="230px">{#each can as c (c)}<li class:wide={c.length > 80}><Icon name="check" size={15} /><span dir="auto">{c}</span></li>{/each}</ul><ScopeDetails {p} />{#if p.installed}<PluginPagesLinks id={p.id} /><PluginActivity id={p.id} />{/if}</section>
@@ -125,7 +127,11 @@
 	.meta { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--s-2); row-gap: var(--s-1); }
 	.signed { display: inline-flex; align-items: center; gap: var(--s-1); }
 	.acts { display: flex; flex-wrap: wrap; gap: var(--s-2); }
-	.nolock { display: flex; align-items: center; gap: var(--s-1); margin: 0; color: var(--wait); }
+	/* The tag opens to say why there is no lock here, what that means, and where to read more. */
+	.nolock { margin: 0; color: var(--wait); }
+	.nolock summary { display: inline-flex; align-items: center; gap: var(--s-1); cursor: pointer; min-height: 32px; }
+	.nolock p { margin: 4px 0; color: var(--text); }
+	.nolock a { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); }
 	.body { margin: 0; overflow-wrap: anywhere; }
 	.can { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
 	.can li { display: flex; gap: var(--s-2); align-items: flex-start; min-width: 0; }

@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Plugin bertanda tangan berjalan di sini tanpa kunci file. Batas keamanan lainnya tetap aktif.",
 	"plugins.noLockOffNow": "Plugin tetap berhenti sampai sistem ini punya kunci file.",
 	"plugins.noLockChange": "Ubah",
+	"plugins.noLockLearn": "Cara kerja kunci file plugin",
 	"plugins.noLockTag": "Tidak ada kunci file di sistem ini",
 	"plugins.noLockKeptOff": "Plugin tetap berhenti tanpa kunci file",
 	"plugins.secAccess": "Dapat mengakses",
