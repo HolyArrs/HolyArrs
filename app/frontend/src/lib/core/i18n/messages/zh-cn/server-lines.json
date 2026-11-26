@@ -2460,6 +2460,7 @@
 	"server.plugins.send-event-library-add": "发送 {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "发送 {\"on\": true} 或 {\"on\": false}",
 	"server.importer.the-file-is-not-present-yet": "文件还不在；HolyArrs 会再次尝试导入",
+	"server.migrate.the-same-as-a-source-that": "与 {name} 相同，这里已有此来源",
 	"server.mediaservers.invalid-playback-history-date-range": "播放历史的日期范围无效",
 	"server.mediaservers.sign-in-as-the-owner-to": "请以所有者身份登录以管理 Plex 播放"
 }

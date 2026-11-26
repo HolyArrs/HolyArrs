@@ -435,7 +435,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 		ge := false
 		if fileID > 0 {
-			ge = mediafiles.ReachesGoodEnough(newName, up.rules)
+			ge = mediafiles.ReachesGoodEnoughFor(newName, ti, up.rules)
 			if _, err := tx.Exec("UPDATE slots SET file_id = ?, active_download_id = NULL, good_enough = ? WHERE id = ?", fileID, ge, sl.ID); err != nil {
 				return err
 			}

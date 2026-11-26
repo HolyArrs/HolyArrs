@@ -415,5 +415,7 @@
 	"migrate.nFound": "βρέθηκαν {found}",
 	"migrate.readOnly": "Μόνο ανάγνωση",
 	"migrate.folderReadOnly": "Το HolyArrs δεν μπορεί να γράψει σε αυτόν τον φάκελο, οπότε δεν μπορεί να εισαχθεί τίποτα σε αυτόν. Κάντε τον τόμο εγγράψιμο (αφαιρέστε το :ro) στη ρύθμιση Docker του HolyArrs και μετά δημιουργήστε ξανά το κοντέινερ.",
-	"migrate.someFound": "Βρέθηκαν: {n}"
+	"migrate.someFound": "Βρέθηκαν: {n}",
+	"migrate.sameSource": "το ίδιο με {list}: μία Πηγή",
+	"migrate.nameInApps": "{name} στο {apps}"
 }

@@ -2460,6 +2460,7 @@
 	"server.plugins.send-event-library-add": "sendu {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "sendu {\"on\": true} eða {\"on\": false}",
 	"server.importer.the-file-is-not-present-yet": "skráin er ekki komin enn; HolyArrs reynir að flytja hana inn aftur",
+	"server.migrate.the-same-as-a-source-that": "það sama og {name}, heimild sem er hér",
 	"server.mediaservers.invalid-playback-history-date-range": "ógilt dagabil fyrir afspilunarferil",
 	"server.mediaservers.sign-in-as-the-owner-to": "skráðu þig inn sem eigandi til að stjórna afspilun Plex"
 }

@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} encontrados",
 	"migrate.readOnly": "Só de leitura",
 	"migrate.folderReadOnly": "O HolyArrs não consegue escrever nesta pasta, por isso nada pode ser importado para ela. Torne o volume gravável (remova :ro) na configuração Docker do HolyArrs e depois recrie o contentor.",
-	"migrate.someFound": "{n} encontrados"
+	"migrate.someFound": "{n} encontrados",
+	"migrate.sameSource": "o mesmo que {list}: uma só Fonte",
+	"migrate.nameInApps": "{name} no {apps}"
 }

@@ -344,7 +344,7 @@ func (s *Searcher) loadAlbum(ctx context.Context, ti mediafiles.Title, ver media
 		}
 		t.kept = it.KeepUpToDate && albumKept && ver.KeepUpToDate && ti.KeepUpToDate
 		if t.sl != nil {
-			t.cur = currentOf(ctx, db, *t.sl, set.pr)
+			t.cur = currentOf(ctx, db, ti, *t.sl, set.pr)
 		}
 		set.tracks = append(set.tracks, t)
 	}

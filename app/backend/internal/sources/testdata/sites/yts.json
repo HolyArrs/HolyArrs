@@ -1,0 +1,51 @@
+{
+  "status": "ok",
+  "data": {
+    "movie_count": 2,
+    "movies": [
+      {
+        "title": "Salt Choir",
+        "year": 2020,
+        "imdb_code": "tt0012345",
+        "url": "https://yts.pw/movies/salt-choir-2020",
+        "language": "en",
+        "torrents": [
+          {
+            "hash": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "quality": "1080p",
+            "type": "bluray",
+            "video_codec": "x264",
+            "bit_depth": "8",
+            "audio_channels": "5.1",
+            "size_bytes": 1500000000,
+            "seeds": 42,
+            "peers": 8,
+            "date_uploaded_unix": 1700000000
+          },
+          {
+            "hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "quality": "2160p",
+            "type": "web",
+            "video_codec": "x265",
+            "bit_depth": "10",
+            "audio_channels": "5.1",
+            "size_bytes": 2500000000,
+            "seeds": 21,
+            "peers": 3,
+            "date_uploaded_unix": 1700000100
+          },
+          {
+            "hash": "invalid",
+            "quality": "1080p",
+            "size_bytes": 1000
+          }
+        ]
+      },
+      {
+        "title": "No torrents yet",
+        "year": 2026,
+        "imdb_code": "tt7654321"
+      }
+    ]
+  }
+}

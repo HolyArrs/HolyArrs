@@ -639,7 +639,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if r.FellBack {
 				how += " (hardlink not possible)"
 			}
-			ge := mediafiles.ReachesGoodEnough(name, pr.Body)
+			ge := mediafiles.ReachesGoodEnoughFor(name, ti, pr.Body)
 			for _, sid := range step.TargetSlotIDs {
 				ss := slots[sid]
 				if _, err := tx.Exec("UPDATE slots SET file_id = ?, active_download_id = NULL, good_enough = ? WHERE id = ?", id, ge, sid); err != nil {

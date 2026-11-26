@@ -14,9 +14,9 @@ A Source is a feed HolyArrs asks for Releases. It reads 4 kinds itself:
 | Torznab | Torrents (Jackett and Prowlarr give these) | Yes |
 | Newznab | Usenet | Yes |
 | RSS | Newest Releases only | No |
-| Built-in site | Knaben, TorrentsCSV, SubsPlease or IPTorrents, read directly | Yes |
+| Built-in site | Knaben, TorrentsCSV, SubsPlease, YTS or IPTorrents, read directly | Yes |
 
-Four torrent sites are built in, so you need no Jackett or Prowlarr for them. See [Built-in sites](built-in-sites.md). Pick **Built-in site** under **Kind of feed** when you add a Source.
+Five torrent sites are built in, so you need no Jackett or Prowlarr for them. See [Built-in sites](built-in-sites.md). Pick **Built-in site** under **Kind of feed** when you add a Source.
 
 Most other torrent sites have no feed of their own. For those, run Jackett or Prowlarr next to HolyArrs. They sign in to the sites and give HolyArrs one feed per site.
 

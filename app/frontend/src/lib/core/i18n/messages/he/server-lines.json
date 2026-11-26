@@ -2460,6 +2460,7 @@
 	"server.plugins.send-event-library-add": "שלח {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "שלח {\"on\": true} או {\"on\": false}",
 	"server.importer.the-file-is-not-present-yet": "הקובץ עדיין לא כאן; HolyArrs ינסה לייבא אותו שוב",
+	"server.migrate.the-same-as-a-source-that": "זהה ל-{name}, מקור שכבר כאן",
 	"server.mediaservers.invalid-playback-history-date-range": "טווח תאריכים לא תקין להיסטוריית הניגון",
 	"server.mediaservers.sign-in-as-the-owner-to": "יש להיכנס כבעלים כדי לנהל את הניגון ב-Plex"
 }

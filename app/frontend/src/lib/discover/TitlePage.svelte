@@ -244,7 +244,7 @@
 		addMovie?.open(details?.movie as LookupMovie, { choose: true, rulesId });
 	}
 	async function added(title: TitleView, choose = false) {
-		toasts.push(t('discover.titlePage.added2', { name: title.name }), 'ok');
+		toasts.push(t('discover.titlePage.added2', { name: title.name }), 'ok', { href: `/library/${title.id}` });
 		const pick = choose ? checked : null;
 		checked = null;
 		if (pick) {
