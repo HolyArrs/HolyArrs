@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Plugin bertandatangan berjalan di sini tanpa kunci fail. Had keselamatan yang lain kekal hidup.",
 	"plugins.noLockOffNow": "Plugin kekal berhenti sehingga sistem ini mempunyai kunci fail.",
 	"plugins.noLockChange": "Tukar",
+	"plugins.noLockLearn": "Cara kunci fail plugin berfungsi",
 	"plugins.noLockTag": "Tiada kunci fail pada sistem ini",
 	"plugins.noLockKeptOff": "Plugin kekal berhenti tanpa kunci fail",
 	"plugins.secAccess": "Boleh mengakses",

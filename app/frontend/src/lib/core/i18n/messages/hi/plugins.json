@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "साइन किए गए प्लगइन यहाँ फ़ाइल लॉक के बिना चलते हैं। बाकी सुरक्षा सीमाएँ चालू रहती हैं।",
 	"plugins.noLockOffNow": "जब तक इस सिस्टम में फ़ाइल लॉक नहीं होता, प्लगइन रुके रहते हैं।",
 	"plugins.noLockChange": "बदलें",
+	"plugins.noLockLearn": "प्लगइन फ़ाइल लॉक कैसे काम करता है",
 	"plugins.noLockTag": "इस सिस्टम पर फ़ाइल लॉक नहीं है",
 	"plugins.noLockKeptOff": "फ़ाइल लॉक के बिना प्लगइन रुके रहते हैं",
 	"plugins.secAccess": "इन तक पहुँच सकता है",

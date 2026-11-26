@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "تعمل الإضافات الموقّعة هنا دون قفل الملفات. تبقى حدود الأمان الأخرى مفعّلة.",
 	"plugins.noLockOffNow": "تبقى الإضافات متوقفة حتى يتوفر قفل الملفات في هذا النظام.",
 	"plugins.noLockChange": "تغيير",
+	"plugins.noLockLearn": "كيف يعمل قفل ملفات الإضافات",
 	"plugins.noLockTag": "لا يوجد قفل ملفات على هذا النظام",
 	"plugins.noLockKeptOff": "تبقى الإضافات متوقفة دون قفل الملفات",
 	"plugins.secAccess": "يمكنه الوصول إلى",

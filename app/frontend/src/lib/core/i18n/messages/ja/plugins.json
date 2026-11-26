@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "署名済みプラグインはここでファイルロックなしで動いています。ほかの安全制限は有効です。",
 	"plugins.noLockOffNow": "このシステムでファイルロックが使えるまで、プラグインは停止したままです。",
 	"plugins.noLockChange": "変更",
+	"plugins.noLockLearn": "プラグインのファイルロックの仕組み",
 	"plugins.noLockTag": "このシステムにはファイルロックがありません",
 	"plugins.noLockKeptOff": "ファイルロックがないため、プラグインは停止したままです",
 	"plugins.secAccess": "アクセスできるもの",

@@ -162,6 +162,7 @@
 	"plugins.noLockOnNow": "Signed plugins run here without the file lock. The other safety limits stay on.",
 	"plugins.noLockOffNow": "Plugins stay stopped until this system has the file lock.",
 	"plugins.noLockChange": "Change",
+	"plugins.noLockLearn": "How the plugin file lock works",
 	"plugins.noLockTag": "No file lock on this system",
 	"plugins.noLockKeptOff": "Plugins stay stopped without the file lock",
 	"plugins.secAccess": "Can access",
