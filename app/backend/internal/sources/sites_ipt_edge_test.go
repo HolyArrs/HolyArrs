@@ -5,9 +5,55 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"slices"
+	"strings"
 	"testing"
 )
+
+func TestIPTorrentsCookiePageSize(t *testing.T) {
+	raw, err := os.ReadFile("testdata/sites/iptorrents_cookie.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, page := range []string{string(raw), strings.ReplaceAll(string(raw), "</td>", "")} {
+		items, err := parseIPTorrents([]byte(page), "https://example.com", "")
+		if err != nil || len(items) != 1 || items[0].Size != 3<<29 {
+			t.Fatalf("cookie page: %+v, %v", items, err)
+		}
+		if items[0].Title != "Snoopy Presents 12 Days of Snoopy 2026 1080p DSNP WEB-DL DDP 5 1 H264-SPWEB" || items[0].Seeders == nil || *items[0].Seeders != 38 || items[0].Peers == nil || *items[0].Peers != 39 {
+			t.Fatalf("cookie page metadata: %+v", items[0])
+		}
+	}
+}
+
+func TestIPTorrentsCookieNetworkResponse(t *testing.T) {
+	t.Parallel()
+	srv := siteServer(t, "iptorrents_cookie_raw.html", func(r *http.Request, _ string) {
+		if r.URL.Path != "/t" || r.Header.Get("Cookie") != "uid=1234; pass=cookiepass" {
+			t.Errorf("unexpected cookie search request")
+		}
+	})
+	c := New(Config{URL: srv.URL, Format: "site", Site: "iptorrents", Protocol: "torrent", AllowLocal: true,
+		SiteLogin: "cookie", APIKey: "uid=1234; pass=cookiepass"})
+	items, err := c.Search(context.Background(), Query{Title: "snoopy"})
+	if err != nil || len(items) != 2 {
+		t.Fatalf("network response: %+v, %v", items, err)
+	}
+	for i, want := range []struct {
+		id             string
+		size           int64
+		seeders, peers int
+	}{{"7854327", 3 << 29, 38, 39}, {"7846350", 796 << 20, 49, 49}} {
+		it := items[i]
+		if it.GUID != srv.URL+"/t/"+want.id || it.Size != want.size || it.Seeders == nil || *it.Seeders != want.seeders || it.Peers == nil || *it.Peers != want.peers {
+			t.Fatalf("result %d: %+v", i, it)
+		}
+		if !strings.Contains(it.Link, "/download.php/"+want.id+"/") {
+			t.Fatalf("wrong download link for result %d: %s", i, it.Link)
+		}
+	}
+}
 
 // Edge cases for the IPTorrents key, categories and RSS reader.
 func TestIPTorrentsSizeWhitespace(t *testing.T) {
