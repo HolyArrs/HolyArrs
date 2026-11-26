@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "pošlete {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Nový obal",
 	"server.plugins.send-event-library-add": "pošli {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "pošli {\"on\": true} nebo {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "pošli {\"on\": true} nebo {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "soubor tu ještě není; HolyArrs ho zkusí importovat znovu"
 }

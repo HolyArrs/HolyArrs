@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "hantar {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Kulit baharu",
 	"server.plugins.send-event-library-add": "hantar {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "hantar {\"on\": true} atau {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "hantar {\"on\": true} atau {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "fail belum ada; HolyArrs akan cuba mengimportnya semula"
 }

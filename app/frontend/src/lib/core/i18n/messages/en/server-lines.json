@@ -2458,5 +2458,6 @@
 	"server.accounts.too-many-wrong-codes-try-again": "too many wrong codes; try again in ten minutes",
 	"server.library.new-cover-art": "New cover art",
 	"server.plugins.send-event-library-add": "send {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "send {\"on\": true} or {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "send {\"on\": true} or {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "the file is not present yet; HolyArrs will try importing it again"
 }

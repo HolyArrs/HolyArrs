@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "trimite {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Copertă nouă",
 	"server.plugins.send-event-library-add": "trimite {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "trimite {\"on\": true} sau {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "trimite {\"on\": true} sau {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "fișierul nu este încă acolo; HolyArrs va încerca din nou să-l importe"
 }

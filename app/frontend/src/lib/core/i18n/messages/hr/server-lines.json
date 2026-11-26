@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "pošalji {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Nova naslovnica",
 	"server.plugins.send-event-library-add": "pošalji {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "pošalji {\"on\": true} ili {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "pošalji {\"on\": true} ili {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "datoteka još nije tu; HolyArrs će je ponovno pokušati uvesti"
 }

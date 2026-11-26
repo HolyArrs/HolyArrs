@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "sūti {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Jauns vāka attēls",
 	"server.plugins.send-event-library-add": "sūti {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "sūti {\"on\": true} vai {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "sūti {\"on\": true} vai {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "faila vēl nav; HolyArrs mēģinās to importēt vēlreiz"
 }
