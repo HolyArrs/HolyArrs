@@ -40,7 +40,7 @@ describe('a folder kept to tagged Sources, in German', () => {
 	});
 	it('keeps a stored line with "; " in its own words whole when it fills a gap', () => {
 		expect(serverWords('Download failed: the metadata server did not answer; try again shortly')).toContain('versuche es gleich noch einmal');
-		expect(serverWords('Download failed: HolyArrs has no tags; check it before you resume it')).toContain('bevor du es fortsetzt');
+		expect(serverWords('Download failed: the import does not bring tags over; check it before you resume it')).toContain('bevor du es fortsetzt');
 		expect(serverWords('Download failed: you left them out; their asks come over as yours')).toContain('du hast sie ausgelassen; ihre Anfragen kommen als deine her');
 	});
 	it('says every Downloader that cannot take a download', () => {

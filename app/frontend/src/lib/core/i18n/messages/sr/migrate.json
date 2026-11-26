@@ -415,5 +415,7 @@
 	"migrate.nFound": "пронађено {found}",
 	"migrate.readOnly": "Само за читање",
 	"migrate.folderReadOnly": "HolyArrs не може да уписује у ову фасциклу, па се у њу ништа не може увести. Омогућите упис у волумен (уклоните :ro) у Docker подешавању за HolyArrs, па поново направите контејнер.",
-	"migrate.someFound": "Пронађено: {n}"
+	"migrate.someFound": "Пронађено: {n}",
+	"migrate.sameSource": "исто као {list}: један Извор",
+	"migrate.nameInApps": "{name} у {apps}"
 }

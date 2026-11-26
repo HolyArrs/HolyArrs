@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} găsite",
 	"migrate.readOnly": "Doar citire",
 	"migrate.folderReadOnly": "HolyArrs nu poate scrie în acest folder, deci nu se poate importa nimic în el. Fă volumul inscriptibil (elimină :ro) în configurarea Docker a HolyArrs, apoi recreează containerul.",
-	"migrate.someFound": "{n} găsite"
+	"migrate.someFound": "{n} găsite",
+	"migrate.sameSource": "la fel ca {list}: o singură Sursă",
+	"migrate.nameInApps": "{name} în {apps}"
 }

@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Ajouter un client de téléchargement",
 	"downloads.hl.noUsenetDl": "aucun client de téléchargement Usenet n'est configuré",
 	"downloads.hl.noTorrentDl": "aucun client de téléchargement torrent n'est configuré",
+	"downloads.problem.waitingForFiles": "En attente des fichiers",
 	"downloads.problem.importBlocked": "Import bloqué",
 	"downloads.problem.missingArticles": "Articles manquants",
 	"downloads.problem.noFullCopy": "Aucune copie complète",

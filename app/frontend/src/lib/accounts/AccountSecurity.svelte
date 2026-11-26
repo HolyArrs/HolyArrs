@@ -2,7 +2,7 @@
 	import { RESET_CMD } from './reset-owner.ts';
 	import { closePlexWindow, openPlexWindow, sendToPlex } from './plex-window.ts';
 	import Words from '#lib/ui/Words.svelte';
-	import { t } from '#lib/core/i18n/i18n.svelte.ts';
+	import { ltr, t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import Confirm from '#lib/ui/Confirm.svelte';
@@ -149,8 +149,11 @@
 		linkError = '';
 		linkBusy = true;
 		try {
-			const { auth_url } = await session.oidcLink();
-			window.location.assign(auth_url);
+			const { auth_url, link_at } = await session.oidcLink();
+			if (auth_url) return window.location.assign(auth_url);
+			// The provider answers at another address of this server, where this sign-in does not exist: name it.
+			linkError = t('accounts.security.ssoLinkAt', { address: ltr(link_at ?? '') });
+			linkBusy = false;
 		} catch (err) {
 			linkError = message(err);
 			linkBusy = false;

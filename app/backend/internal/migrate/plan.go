@@ -40,6 +40,7 @@ type builder struct {
 	// one copy of that app is imported ("" otherwise).
 	label string
 	paths []pathRow // usable path rewrites from every app, placed by pathMaps
+	srcs  []srcSeen // Sources planned, to find the same one from another app
 }
 
 // waitFrom is one app's untagged default wait rule as Pick rules waits.

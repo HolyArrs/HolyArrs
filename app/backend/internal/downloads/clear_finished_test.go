@@ -170,6 +170,72 @@ func TestClearFinishedDeletesTheFoldersOfAJobNamedByItsFile(t *testing.T) {
 	}
 }
 
+func TestClearFinishedDeletesEmptyJobFolderAfterFileMoved(t *testing.T) {
+	cases := []struct {
+		name     string
+		dirName  string
+		fileName string
+	}{
+		{"release named file", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.mkv"},
+		{"obfuscated file in suffixed folder", "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS.1", "a1b2c3d4.mp4"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			share := t.TempDir()
+			movies := filepath.Join(share, "complete", "movies")
+			job := filepath.Join(movies, tc.dirName)
+			other := filepath.Join(movies, "Other.Movie.2020.1080p-GRP")
+			for _, d := range []string{job, other} {
+				if err := os.MkdirAll(d, 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			// The video file was already moved into the Library, leaving only the empty job folder.
+			w, m, id, spy := usenetDownload(t)
+			if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+				t.Fatal(err)
+			}
+			m.Forget(w.download(t, id).DownloaderID)
+			spy.content = "/downloads/complete/movies/" + tc.dirName + "/" + tc.fileName
+			m.ClearFinished(context.Background(), id)
+			if _, err := os.Stat(job); !errors.Is(err, os.ErrNotExist) {
+				t.Fatalf("the empty job folder is still on disk: %v", err)
+			}
+			for _, p := range []string{movies, other} {
+				if _, err := os.Stat(p); err != nil {
+					t.Fatalf("%s was deleted: %v", p, err)
+				}
+			}
+			var summary string
+			if err := w.s.ReadEvents().QueryRow("SELECT summary FROM events WHERE kind = 'download_removed' AND download_id = ?", id).Scan(&summary); err != nil {
+				t.Fatalf("no History entry: %v", err)
+			}
+			if !strings.Contains(summary, "and its files") {
+				t.Fatalf("History summary did not report deleted files: %q", summary)
+			}
+		})
+	}
+}
+
+func TestClearFinishedDoesNotStepUpFromMissingJobFolder(t *testing.T) {
+	const name = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+	share := t.TempDir()
+	parent := filepath.Join(share, "complete", name)
+	if err := os.MkdirAll(parent, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	w, m, id, spy := usenetDownload(t)
+	if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+		t.Fatal(err)
+	}
+	m.Forget(w.download(t, id).DownloaderID)
+	spy.content = "/downloads/complete/" + name + "/" + name
+	m.ClearFinished(context.Background(), id)
+	if _, err := os.Stat(parent); err != nil {
+		t.Fatalf("the parent folder was deleted when the reported job folder was already missing: %v", err)
+	}
+}
+
 func TestClearFinishedNeverDeletesOutsideOrTheShareItself(t *testing.T) {
 	share, outside := t.TempDir(), t.TempDir()
 	w, m, id, spy := usenetDownload(t)
@@ -292,3 +358,30 @@ func countEvents(t *testing.T, w *world, kind string, id int64) int {
 }
 
 func jsonStr(s string) string { b, _ := json.Marshal(s); return string(b) }
+
+func TestClearFinishedKeepsAFilledJobFolderWhenTheReportedFileIsGone(t *testing.T) {
+	const name = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+	for _, kind := range []string{"movies", "tv", "music"} {
+		t.Run(kind, func(t *testing.T) {
+			share := t.TempDir()
+			job := filepath.Join(share, "complete", kind, name)
+			if err := os.MkdirAll(job, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			kept := filepath.Join(job, "kept.srt")
+			if err := os.WriteFile(kept, []byte("x"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			w, m, id, spy := usenetDownload(t)
+			if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+				t.Fatal(err)
+			}
+			m.Forget(w.download(t, id).DownloaderID)
+			spy.content = "/downloads/complete/" + kind + "/" + name + "/" + name + ".mkv"
+			m.ClearFinished(context.Background(), id)
+			if _, err := os.Stat(kept); err != nil {
+				t.Fatalf("a file left in the job folder was deleted: %v", err)
+			}
+		})
+	}
+}

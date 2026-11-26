@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Добавить загрузчик",
 	"downloads.hl.noUsenetDl": "не настроен ни один загрузчик Usenet",
 	"downloads.hl.noTorrentDl": "не настроен ни один торрент-загрузчик",
+	"downloads.problem.waitingForFiles": "Ожидание файлов",
 	"downloads.problem.importBlocked": "Импорт заблокирован",
 	"downloads.problem.missingArticles": "Отсутствуют статьи",
 	"downloads.problem.noFullCopy": "Нет полной копии",

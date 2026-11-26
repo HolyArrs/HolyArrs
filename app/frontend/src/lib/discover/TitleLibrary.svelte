@@ -17,6 +17,7 @@
 	import { page } from '$app/state';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { to } from '#lib/core/paths.ts';
+	import { episodeWords } from '#lib/core/episodes.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { session } from '#lib/core/session.svelte.ts';
@@ -108,13 +109,14 @@
 	}
 
 	// Look for one episode, or a whole season's missing ones.
-	async function epSearch(body: Record<string, unknown>, key: string, done: string) {
+	// The toast opens the show on the searched season, from wherever it is read later (the alerts list).
+	async function epSearch(body: Record<string, unknown>, key: string, done: string, more: { body?: string; season?: number } = {}) {
 		const o = owned;
 		if (!o) return;
 		own.busyAction = key;
 		try {
 			const res = await api.post(`/titles/${o.id}/search`, body);
-			if (searchQueued(res)) toasts.push(done, 'info'); else toasts.push(t(nothingQueuedKey(!!o.keep_up_to_date)), 'info');
+			if (searchQueued(res)) toasts.push(done, 'info', { body: more.body, href: `/library/${o.id}${more.season != null ? `?season=${more.season}` : ''}` }); else toasts.push(t(nothingQueuedKey(!!o.keep_up_to_date)), 'info');
 		} catch (e) {
 			toasts.push(t('discover.titleLibrary.couldntStartSearch'), 'fail', { body: message(e) });
 		} finally {
@@ -436,7 +438,7 @@
 								</button>
 								{#if manage}
 									<span class="lib-sr-acts">
-										<button type="button" class="lib-ico" title={t('discover.titleLibrary.getTheMissingEpisodes')} aria-label={t('discover.titleLibrary.getTheMissingEpisodes2', { number: se.number })} disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, t('discover.titleLibrary.searchingSeason', { n: se.number }))}><Icon name="search" size={15} /></button>
+										<button type="button" class="lib-ico" title={t('discover.titleLibrary.getTheMissingEpisodes')} aria-label={t('discover.titleLibrary.getTheMissingEpisodes2', { number: se.number })} disabled={!se.missing || busyAction === `s${se.number}`} onclick={() => epSearch({ season: se.number }, `s${se.number}`, t('discover.titleOwned.searchingFor', { name: o.name }), { body: t('discover.titleLibrary.seasonN', { n: se.number }), season: se.number })}><Icon name="search" size={15} /></button>
 										<button type="button" class="lib-ico" title={t('discover.titleLibrary.chooseAReleaseFor')} aria-label={t('discover.titleLibrary.chooseAReleaseFor2', { number: se.number })} onclick={() => own.openPick({ label: se.number === 0 ? t('discover.titleLibrary.specials') : t('discover.titleLibrary.seasonN', { n: se.number }), query: `season=${se.number}`, body: { season: se.number } })}><Icon name="grid" size={15} /></button>
 										<button type="button" class="lib-ico" title={t('discover.titleLibrary.seasonTools')} aria-label={t('discover.titleLibrary.seasonTools2', { number: se.number })} onclick={() => openTools(o.id, se.number)}><Icon name="more" size={15} /></button>
 									</span>
@@ -463,7 +465,7 @@
 											<span class="lib-ep-st {aired ? tone : 'future'}"><span class="own-dot {tone}" aria-hidden="true"></span>{aired ? epQuality(e) || (st?.state === 'not_out_yet' ? t('discover.titleLibrary.waitingAfterAir') : '') || serverWords(st?.state_label) || t('discover.titleLibrary.missing') : t('discover.titleLibrary.notOutYet')}</span>
 											{#if manage && st}
 												<span class="lib-ep-acts">
-													<button type="button" class="lib-ico" title={t('discover.titleLibrary.lookForItNow')} aria-label={t('discover.titleLibrary.lookForEpisode', { episode: e.episode })} disabled={tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, t('discover.titleLibrary.searchingEpisode', { episode: e.episode })); }}><Icon name="search" size={14} /></button>
+													<button type="button" class="lib-ico" title={t('discover.titleLibrary.lookForItNow')} aria-label={t('discover.titleLibrary.lookForEpisode', { episode: e.episode })} disabled={tone === 'downloading' || busyAction === `e${e.id}`} onclick={(ev) => { ev.stopPropagation(); void epSearch({ slot_id: st.id }, `e${e.id}`, t('discover.titleOwned.searchingFor', { name: o.name }), { body: episodeWords(se.number, e.episode, e.name), season: se.number }); }}><Icon name="search" size={14} /></button>
 													<button type="button" class="lib-ico" title={t('discover.titleLibrary.chooseAReleaseFor3')} aria-label={t('discover.titleLibrary.chooseAReleaseFor4', { episode: e.episode })} onclick={(ev) => { ev.stopPropagation(); own.openPick({ label: `S${se.number} E${e.episode}`, query: `item_id=${e.id}`, body: { slot_id: st.id } }); }}><Icon name="grid" size={14} /></button>
 												</span>
 											{/if}

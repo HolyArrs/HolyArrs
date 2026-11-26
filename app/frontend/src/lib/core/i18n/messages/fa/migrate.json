@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} پیدا شد",
 	"migrate.readOnly": "فقط خواندنی",
 	"migrate.folderReadOnly": "HolyArrs نمی‌تواند در این پوشه بنویسد، پس چیزی نمی‌توان به آن وارد کرد. حجم را در تنظیمات Docker برنامهٔ HolyArrs قابل نوشتن کنید (:ro را حذف کنید)، سپس کانتینر را دوباره بسازید.",
-	"migrate.someFound": "{n} پیدا شد"
+	"migrate.someFound": "{n} پیدا شد",
+	"migrate.sameSource": "همان {list} است: یک منبع",
+	"migrate.nameInApps": "{name} در {apps}"
 }
