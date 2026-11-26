@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// Edge cases for one Source per site (#669), beyond the PR's own tests.
+// Edge cases for one Source per site, beyond the first tests.
 
 func torznab(name, base string, cats ...int) Provider {
 	cs := make([]any, 0, len(cats))
