@@ -183,3 +183,58 @@ func TestDeleteUnlinksDownloadsAndRepeats(t *testing.T) {
 		t.Fatalf("unlinked %v", unlinked)
 	}
 }
+
+// #802: a held File goes once its own deleted time is HoldingDays old, not a
+// day later when its whole day folder is; a later one from the same day stays.
+func TestHoldingCleanUpByDeletedTime(t *testing.T) {
+	svc, s, lf, _, fs := deleteWorld(t)
+	ctx := context.Background()
+	rules, err := importer.ReadFileRules(ctx, s.Read())
+	if err != nil {
+		t.Fatal(err)
+	}
+	day := now.AddDate(0, 0, -rules.HoldingDays).Truncate(24 * time.Hour)
+	early := importer.HoldingDir + "/" + day.Format("2006-01-02") + "/Dune - Part Two (2024)/early.mkv"
+	late := importer.HoldingDir + "/" + day.Format("2006-01-02") + "/Late (2020)/late.mkv"
+	for id, row := range map[int64][2]string{
+		fs[1].ID: {early, database.FormatTime(now.AddDate(0, 0, -rules.HoldingDays).Add(-time.Hour))},
+		fs[2].ID: {late, database.FormatTime(now.AddDate(0, 0, -rules.HoldingDays).Add(time.Hour))},
+	} {
+		if err := s.Write(ctx, func(tx *sql.Tx) error {
+			_, err := tx.Exec("UPDATE files SET state = 'gone', relative_path = ?, updated_at = ? WHERE id = ?", row[0], row[1], id)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(row[0])), "x")
+	}
+	// Each held its subtitle with it.
+	earlySub := strings.TrimSuffix(early, ".mkv") + ".en.srt"
+	lateSub := strings.TrimSuffix(late, ".mkv") + ".en.srt"
+	for id, p := range map[int64][2]string{fs[1].ID: {early, earlySub}, fs[2].ID: {late, lateSub}} {
+		writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(p[1])), "x")
+		svc.Emit(ctx, &domain.Event{Actor: domain.System, Kind: domain.EventFileHeld, Summary: "held",
+			Data: map[string]any{"file_id": id, "to": p[0], "subtitles": []string{p[1]}}})
+	}
+	n, err := svc.CleanHolding(ctx, domain.System)
+	if err != nil || n != 1 {
+		t.Fatalf("cleaned %d %v", n, err)
+	}
+	if onDisk(lf, early) || !onDisk(lf, late) {
+		t.Fatalf("early there=%v late there=%v", onDisk(lf, early), onDisk(lf, late))
+	}
+	if onDisk(lf, earlySub) || !onDisk(lf, lateSub) {
+		t.Fatalf("early subtitle there=%v late subtitle there=%v", onDisk(lf, earlySub), onDisk(lf, lateSub))
+	}
+	if _, err := os.Stat(filepath.Join(lf.Path, importer.HoldingDir, day.Format("2006-01-02"), "Dune - Part Two (2024)")); err == nil {
+		t.Fatal("emptied folder left behind")
+	}
+	if f := fileRow(t, s, fs[2].ID); f.State != "gone" || f.RelativePath != late {
+		t.Fatalf("late row %+v", f)
+	}
+	// An hour after the late one's time is up, it goes too.
+	svc.Now = func() time.Time { return now.Add(2 * time.Hour) }
+	if n, err := svc.CleanHolding(ctx, domain.System); err != nil || n != 1 || onDisk(lf, late) {
+		t.Fatalf("second run %d %v", n, err)
+	}
+}

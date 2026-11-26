@@ -79,7 +79,7 @@ Press **Unlink** on the card, then pick:
 | **Unreachable** | No answer, or an answer HolyArrs could not read |
 | **Key turned down** or **Key refused** | The key was not accepted |
 | **Slowed down** | The Source asked HolyArrs to wait |
-| **Blocked** | The site has a bot check, such as Cloudflare. Use Jackett or Prowlarr for it |
+| **Blocked** | The site has a bot check, such as Cloudflare. Use Jackett or Prowlarr for it, or the [FlareSolverr plugin](flaresolverr.md) |
 | **Paused** | You paused it. Press **Resume** to use it again |
 
 A failing Source is retried by itself: after 1 minute at first, then at double the wait each time, up to 6 hours. The Source shows the next try. **Try now** tries at once.
@@ -93,7 +93,7 @@ A failing Source is retried by itself: after 1 minute at first, then at double t
 | HolyArrs could not reach the Source | Check that Jackett, Prowlarr or the site is running and the address and port are right |
 | The answer is not a feed HolyArrs can read | The address is not a Torznab or Newznab feed. Copy it again |
 | The Source asked HolyArrs to slow down | Wait, or raise **Least time between calls** under **Limits** |
-| The site has a bot check | Add the site to Jackett or Prowlarr and link it, or install a bot-check plugin. A Source with a key needs its key typed again after the plugin is installed or changed |
+| The site has a bot check | Add the site to Jackett or Prowlarr and link it, or install a bot-check plugin such as [FlareSolverr](flaresolverr.md). A Source with a key needs its key typed again after the plugin is installed or changed |
 | Prowlarr will not link | Set a HolyArrs password first. Check Prowlarr can reach the address on the card |
 | Another app stopped working after linking Prowlarr | You replaced a key. Give that app the new key |
 

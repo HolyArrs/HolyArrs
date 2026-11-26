@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Đang dọn dẹp mọi phụ đề trong Thư viện",
 	"settings.subtitles.cleanAllFailed": "Không thể bắt đầu dọn dẹp",
 	"settings.subtitles.cleanRow": "Các bước cho",
-	"settings.subtitles.cleanEvery": "Mọi ngôn ngữ khác",
+	"settings.subtitles.cleanEvery": "Tất cả ngôn ngữ",
+	"settings.subtitles.cleanEveryHint": "Áp dụng cho mọi ngôn ngữ chưa có bước riêng.",
 	"settings.subtitles.cleanAddLang": "Thêm ngôn ngữ",
 	"settings.subtitles.cleanRemoveLang": "Bỏ ngôn ngữ này"
 }

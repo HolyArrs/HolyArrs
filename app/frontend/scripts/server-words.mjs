@@ -96,6 +96,9 @@ const handLines = { 'Because you have {name}': 'suggest',
 	// importer.PlaceError, the refusal of a folder Import by hand may not read.
 	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders, and none is set up yet. Add one in Settings > Library folders.": 'importer',
 	"Import by hand reads only from the Library folders, the Downloaders' folders and the extra import folders in Settings > Library folders: {all}": 'importer',
+	// importer file_checks.go heldWhy: why a movie file waits in Review before import.
+	'the file holds no video track': 'importer', 'it plays {n} min but the title runs {m} min; check it is the right one': 'importer',
+	"the first audio track is {a}, not the title's {b}": 'importer',
 	// importer refusedMedia: the file name and its refusal, put together at run time.
 	'HolyArrs refused {name}: the Downloader reported a file outside the download folder': 'importer',
 	// place_why.go: why a file was not placed (targetTakenWhy, noWriteWhy, noReadWhy, notThereWhy) and the lead for the system's own words.

@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Se curăță toate subtitrările din bibliotecă",
 	"settings.subtitles.cleanAllFailed": "Curățarea nu a putut porni",
 	"settings.subtitles.cleanRow": "Pași pentru",
-	"settings.subtitles.cleanEvery": "Orice altă limbă",
+	"settings.subtitles.cleanEvery": "Toate limbile",
+	"settings.subtitles.cleanEveryHint": "Se aplică oricărei limbi fără pași proprii.",
 	"settings.subtitles.cleanAddLang": "Adaugă o limbă",
 	"settings.subtitles.cleanRemoveLang": "Elimină această limbă"
 }

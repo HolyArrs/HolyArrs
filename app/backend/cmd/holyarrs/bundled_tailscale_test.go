@@ -14,7 +14,7 @@ import (
 // The bundled Tailscale manifest asks for network.forward, parses as a
 // signed manifest would, and a start of it gets the app address and a mark.
 func TestBundledTailscaleForwards(t *testing.T) {
-	raw, err := os.ReadFile("../../../plugins/tailscale/holyarrs-plugin.json")
+	raw, err := os.ReadFile("../../internal/plugins/testdata/tailscale-plugin.json")
 	if err != nil {
 		t.Fatal(err)
 	}

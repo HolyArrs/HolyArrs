@@ -12,7 +12,7 @@
 	import { densityLabels, loadDensity, loadPosterSize, posterLabels, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/ui/library-art.ts';
 	import { reaskWhileFilling } from '#lib/music/index.ts';
 	import { DlFind } from '#lib/downloads/index.ts';
-	import { ImportList, ImportToolbar, adoptInParts, askThrough, canAdopt, cutFromJobs, cutKeyOf, cutsGone, findCut, findKept, holdWhile, importKey, itemsAreFiles, foldersThenNotes, jobForgotten, notesThenLocks, scansGone, staleCuts, keepAsking, partEnd, lookFail, quiet, scanEnd, scanFromFirstLeft, throughNow, type Cut, type PartResult, LibraryToolPage, PosterLightbox, TidyFolders, choices, fileName, findFolders, followJob, scanCount, waitOf, matchKey, canTick, pickedOf, readImportView, showIdOf, sortFolders, startPicks, statusCounts, statusLabel, tickCounts, type AdoptCandidate, type AdoptPlan, type AdoptResult, type ImportFilter, type ImportView, type JobView, type Named } from '#lib/mediafiles/index.ts';
+	import { ImportList, ImportToolbar, adoptInParts, askThrough, canAdopt, cutFromJobs, cutKeyOf, cutsGone, findCut, findKept, holdWhile, importKey, itemsAreFiles, foldersThenNotes, jobForgotten, notesThenLocks, scansGone, staleCuts, keepAsking, partEnd, lookFail, quiet, scanEnd, scanFromFirstLeft, throughNow, type Cut, type PartResult, LibraryToolPage, PosterLightbox, TidyFolders, choices, fileName, findFolders, finished, followJob, throughJobs, scanCount, waitOf, matchKey, canTick, pickedOf, readImportView, showIdOf, sortFolders, startPicks, statusCounts, statusLabel, tickCounts, type AdoptCandidate, type AdoptPlan, type AdoptResult, type ImportFilter, type ImportView, type JobView, type Named } from '#lib/mediafiles/index.ts';
 	import type { LookupArtist } from '#lib/music/index.ts';
 	import { onDestroy, onMount } from 'svelte';
 	import { beforeNavigate } from '$app/navigation';
@@ -47,6 +47,8 @@
 	let results = $state<PartResult[] | null>(null);
 	// A large selection goes in parts: how many folders are through so far.
 	let sent = $state<{ done: number; total: number } | null>(null);
+	// Every part is with the server (#712): it goes on with this page closed, so leaving stops nothing.
+	let handed = $state(false);
 	// A large folder scanned in parts: where the next scan starts, kept after adopting.
 	let restFrom = $state('');
 	// Where this scan began, and where a scan reaches the first folder that did not go through.
@@ -252,7 +254,9 @@
 			// A part the server no longer knows: how far it got cannot be told, so the note goes.
 			// A part not answered this time: the note stays as it is for the next visit, and this tab never clears it.
 			const note = cutFromJobs(was, jobs);
-			if (note === undefined) wasKey = '';
+			// Parts still with the server go on without this page (#712): the page follows them again.
+			if (note !== undefined && jobs.some((j) => j && !finished(j))) void watchHanded(was, jobs);
+			else if (note === undefined) wasKey = '';
 			else if (!note) noteCut(null);
 			else if (folders.some((f) => f.id === was?.lf)) {
 				cut = { ...note, lf: was.lf };
@@ -280,14 +284,47 @@
 	onDestroy(() => {
 		gone = true;
 		// A sign-in that ended somewhere else (another tab) takes the page away without a page change of its own.
-		if (adopting && session.s.state !== 'signed_in') signedOut();
+		if (adopting && !handed && session.s.state !== 'signed_in') signedOut();
 	});
 	beforeNavigate((nav) => {
-		if (!adopting || nav.willUnload) return;
+		if (!adopting || handed || nav.willUnload) return;
 		if (session.s.state !== 'signed_in') return signedOut();
 		if (!confirm(t(importKey('leaveAsk', flat)))) nav.cancel();
 		else noteWhy('left');
 	});
+
+	// An import handed to the server before this page opened: shown until its parts finish, then
+	// told like one this page sent. A part not answered this time leaves the note for the next visit.
+	async function watchHanded(c: Cut, first: (JobView | null | undefined)[]) {
+		adopting = handed = true;
+		folderId = c.lf;
+		// Held like a sending tab's, so other tabs leave this note be while it is followed here.
+		const free = holdWhile(navigator.locks, wasKey);
+		let jobs = first;
+		try {
+			while (!gone && jobs.some((j) => j && !finished(j))) {
+				sent = { done: throughJobs(jobs), total: c.total };
+				await new Promise((r) => setTimeout(r, 3000));
+				// A poll not answered keeps what was last heard, so one blip never ends the watch.
+				const was = jobs;
+				jobs = await Promise.all(c.jobs.map((id, k) => api.get<JobView>(`/jobs/${id}`).catch((e) => (jobForgotten(e) ? null : was[k]))));
+			}
+			if (gone) return;
+			const note = cutFromJobs(c, jobs);
+			if (note === undefined) return;
+			if (note) {
+				cut = { ...note, lf: c.lf };
+				return;
+			}
+			noteCut(null);
+			const n = jobs.flatMap((j) => (j?.Result?.results as AdoptResult[] | undefined) ?? []).filter((x) => x.title_id && !x.error).length;
+			toasts.push(t(n === 1 ? 'library.import.adoptedOne' : 'library.import.adoptedMany', { n: n.toLocaleString(appLocale()), word: w, words: ws }), n ? 'ok' : 'info', { body: t('library.import.noFileMoved') });
+		} finally {
+			free();
+			adopting = handed = false;
+			sent = null;
+		}
+	}
 
 	function follow(id: number) {
 		return followJob(
@@ -433,17 +470,20 @@
 					const r = await answered(api.post<{ job_id: number }>(`/library-folders/${lf}/adopt`, { folders: part, follow: followAll }));
 					if (track) noteCut({ ...track, jobs: [...track.jobs, r.job_id] }, track.why === 'closed');
 					// The server took the part: from here a lost answer means "not known", never "not sent".
-					const end = await keepAsking(() => follow(r.job_id), () => gone);
-					const { res, fail } = partEnd(end, (m) => serverWords(m) || t('library.import.adoptUnfinished'));
-					if (fail && !partFail) partFail = fail;
-					return res;
+					return async () => {
+						const end = await keepAsking(() => follow(r.job_id), () => gone);
+						const { res, fail } = partEnd(end, (m) => serverWords(m) || t('library.import.adoptUnfinished'));
+						if (fail && !partFail) partFail = fail;
+						return res;
+					};
 				},
 				{ unknown: t('library.import.resultUnknown'), notSent: t('library.import.notSentRest') },
 				(done, total) => {
 					sent = { done, total };
 					job = null;
 				},
-				() => gone || lost
+				() => gone || lost,
+				() => (handed = true)
 			);
 			if (lost) signedOut();
 			if (gone || lost) return;
@@ -468,6 +508,7 @@
 		} finally {
 			free();
 			adopting = false;
+			handed = false;
 			job = null;
 			sent = null;
 		}
@@ -480,7 +521,7 @@
 	}
 </script>
 
-<svelte:window onbeforeunload={(e) => { if (adopting) e.preventDefault(); }} onpagehide={() => { if (adopting && track) noteCut(track, false); }} />
+<svelte:window onbeforeunload={(e) => { if (adopting && !handed) e.preventDefault(); }} onpagehide={() => { if (adopting && track) noteCut(track, false); }} />
 
 <svelte:head><title>{t('library.import.title')} · HolyArrs</title></svelte:head>
 
@@ -517,7 +558,7 @@
 			{@const through = throughNow(sent, scanCount(job?.ProgressNote))}
 			<div aria-live="polite" data-testid="adopt-progress">
 				<div class="bar"><ProgressBar value={sent.total ? (through / sent.total) * 100 : 0} label={t('library.import.progress')} /></div>
-				<p class="xs muted">{t('library.import.adoptCount', { done: through.toLocaleString(appLocale()), total: sent.total.toLocaleString(appLocale()) })} {t('library.import.keepOpen')}</p>
+				<p class="xs muted">{t('library.import.adoptCount', { done: through.toLocaleString(appLocale()), total: sent.total.toLocaleString(appLocale()) })} {t(handed ? 'library.import.closeOk' : 'library.import.keepOpen')}</p>
 				{#if waiting}<p class="xs muted" role="status" data-testid="adopt-waiting">{t('library.import.waiting', { left: waiting.left.toLocaleString(appLocale()), min: waiting.min.toLocaleString(appLocale()) })}</p>{/if}
 			</div>
 		{:else if running}

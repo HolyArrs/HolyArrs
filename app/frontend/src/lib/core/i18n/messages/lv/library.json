@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Dažas mapes netika cauri. Skenē vēlreiz, lai tās pārņemtu; mapes, kas jau ir Bibliotēkā, paliek, kā ir.",
 	"library.import.scanAgain": "Skenēt vēlreiz",
 	"library.import.keepOpen": "Turi šo lapu atvērtu, līdz tas ir pabeigts.",
+	"library.import.closeOk": "Tas darbojas serverī, tāpēc vari aizvērt šo lapu.",
 	"library.import.waiting": "Metadatu serveris ir aizņemts. HolyArrs atkārtoti mēģinās pēdējos {left} pēc {min} min.",
 	"library.import.leaveAsk": "Notiek imports. Ja pametīsi šo lapu, vēl nenosūtītās mapes netiks pārņemtas. Vai tomēr pamest?",
 	"library.import.interrupted": "Imports apstājās pie {done} no {total} mapēm, kad tā lapa tika aizvērta. Skenē vēlreiz, lai pārņemtu pārējās; jau pārņemtās mapes paliek, kā ir.",

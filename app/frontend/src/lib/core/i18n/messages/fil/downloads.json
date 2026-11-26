@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Dubbed, walang orihinal na tunog",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision na walang HDR10 na reserba",
+	"downloads.pr.traits.sdr_4k": "4K na walang HDR (SDR)",
 	"downloads.pr.traits.executable": "May program",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (gumagana halos kahit saan)",
