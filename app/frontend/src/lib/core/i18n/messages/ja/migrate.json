@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} 件あり",
 	"migrate.readOnly": "読み取り専用",
 	"migrate.folderReadOnly": "HolyArrs はこのフォルダーに書き込めないため、ここには何もインポートできません。HolyArrs の Docker 設定でボリュームを書き込み可能にし（:ro を外す）、コンテナーを作り直してください。",
-	"migrate.someFound": "{n} 件見つかりました"
+	"migrate.someFound": "{n} 件見つかりました",
+	"migrate.sameSource": "{list} と同じ: 1 つのソース",
+	"migrate.nameInApps": "{apps} の {name}"
 }

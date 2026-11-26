@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "Új borítókép",
 	"server.plugins.send-event-library-add": "küldd {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "küldd {\"on\": true} vagy {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "a fájl még nincs meg; a HolyArrs újra megpróbálja importálni"
+	"server.importer.the-file-is-not-present-yet": "a fájl még nincs meg; a HolyArrs újra megpróbálja importálni",
+	"server.migrate.the-same-as-a-source-that": "ugyanaz, mint {name}, egy Forrás, ami már itt van"
 }

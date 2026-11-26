@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "تصویر جلد جدید",
 	"server.plugins.send-event-library-add": "بفرست {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "بفرست {\"on\": true} یا {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "فایل هنوز نرسیده است؛ HolyArrs دوباره برای وارد کردن آن تلاش می‌کند"
+	"server.importer.the-file-is-not-present-yet": "فایل هنوز نرسیده است؛ HolyArrs دوباره برای وارد کردن آن تلاش می‌کند",
+	"server.migrate.the-same-as-a-source-that": "همان {name} است، منبعی که اینجا هست"
 }

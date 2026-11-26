@@ -415,5 +415,7 @@
 	"migrate.nFound": "znaleziono {found}",
 	"migrate.readOnly": "Tylko do odczytu",
 	"migrate.folderReadOnly": "HolyArrs nie może zapisywać w tym folderze, więc nie da się do niego nic zaimportować. Włącz zapis dla woluminu (usuń :ro) w konfiguracji Dockera dla HolyArrs, a potem utwórz kontener ponownie.",
-	"migrate.someFound": "Znaleziono: {n}"
+	"migrate.someFound": "Znaleziono: {n}",
+	"migrate.sameSource": "to samo co {list}: jedno Źródło",
+	"migrate.nameInApps": "{name} w {apps}"
 }

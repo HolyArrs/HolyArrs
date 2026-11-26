@@ -54,6 +54,42 @@ func (r *run) sameSource(s *SourcePlan) string {
 	return ""
 }
 
+// sameIndexerHere names a Source here that is the same indexer as this one
+// under another address or name: one at an address the other apps reach it
+// at, or, for the same protocol, one named like an indexer it is the same
+// as, with or without the " (Prowlarr)" Prowlarr adds to the names in the
+// other apps. So an import of Prowlarr after Sonarr and Radarr, or before
+// them, adds nothing twice. "" when there is none.
+func (r *run) sameIndexerHere(it Item) string {
+	have, err := database.Select[domain.Source](r.ctx, r.m.Store.Read(), "sources", "name NOT LIKE '% (removed %)' ORDER BY id")
+	if err != nil {
+		return ""
+	}
+	s := it.Source
+	names := []string{it.Name}
+	addrs := map[string]bool{}
+	for _, u := range s.Through {
+		addrs[addrKey(u)] = true
+	}
+	for _, x := range s.SameAs {
+		names = append(names, x.Name)
+		addrs[addrKey(x.URL)] = true
+	}
+	delete(addrs, "")
+	want := map[string]bool{}
+	for _, n := range names {
+		base, _ := prowlarrName(n)
+		want[strings.ToLower(base)] = true
+		want[strings.ToLower(base+prowlarrSuffix)] = true
+	}
+	for _, h := range have {
+		if addrs[addrKey(h.URL)] || h.Protocol == s.Protocol && want[strings.ToLower(h.Name)] {
+			return h.Name
+		}
+	}
+	return ""
+}
+
 // sameAlert names an Alert here of the same kind that writes to the same
 // place (a Telegram chat, or the same mail server, sender and recipients), or "".
 // ntfy and Gotify never match on the server alone: the topic or app token

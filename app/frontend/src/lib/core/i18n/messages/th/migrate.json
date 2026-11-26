@@ -415,5 +415,7 @@
 	"migrate.nFound": "พบ {found}",
 	"migrate.readOnly": "อ่านอย่างเดียว",
 	"migrate.folderReadOnly": "HolyArrs เขียนลงโฟลเดอร์นี้ไม่ได้ จึงนำเข้าอะไรลงไปไม่ได้ ทำให้วอลุ่มเขียนได้ (ลบ :ro) ในการตั้งค่า Docker ของ HolyArrs แล้วสร้างคอนเทนเนอร์ใหม่",
-	"migrate.someFound": "พบ {n} รายการ"
+	"migrate.someFound": "พบ {n} รายการ",
+	"migrate.sameSource": "เหมือนกับ {list}: แหล่งที่มาเดียว",
+	"migrate.nameInApps": "{name} ใน {apps}"
 }

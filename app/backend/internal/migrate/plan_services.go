@@ -177,28 +177,8 @@ func (b *builder) indexers(s *Snapshot) {
 				it.Detail += "; used proxy " + clip(px.Name, 80) + " there; set a proxy on this Source"
 			}
 		}
-		if prev := b.sameSource(it.Key, sp); prev != nil {
-			// The same indexer in another app: one Source serves both kinds.
-			for _, k := range sp.Kinds {
-				if !slices.Contains(prev.Kinds, k) {
-					prev.Kinds = append(prev.Kinds, k)
-				}
-				if cs := sp.Categories[k]; len(cs) > 0 && len(prev.Categories[k]) == 0 {
-					if prev.Categories == nil {
-						prev.Categories = map[string][]int{}
-					}
-					prev.Categories[k] = cs
-				}
-			}
-			for _, c := range sp.MultiLanguages {
-				if !slices.Contains(prev.MultiLanguages, c) {
-					prev.MultiLanguages = append(prev.MultiLanguages, c)
-				}
-			}
-			b.p.Mapped = append(b.p.Mapped, from)
-		} else {
-			b.addTagged(s.Kind, GroupSources, it, ix.Tags)
-		}
+		// The same indexer in another app, or Prowlarr's copy of it, is one Source.
+		b.addSource(s, ix, it, true)
 		keys := make([]string, 0, len(ix.Settings))
 		for k := range ix.Settings {
 			keys = append(keys, k)
@@ -215,20 +195,6 @@ func (b *builder) indexers(s *Snapshot) {
 			b.not(GroupSources, from+"."+k, ix.Name+": "+k, "no Source setting matches it")
 		}
 	}
-}
-
-// sameSource finds the Source already planned under this key when it is
-// the same feed (format and address), or nil.
-func (b *builder) sameSource(key string, sp *SourcePlan) *SourcePlan {
-	if !b.keys[key] {
-		return nil
-	}
-	for _, it := range b.items[GroupSources].Items {
-		if it.Key == key && it.Source != nil && it.Source.Format == sp.Format && it.Source.URL == sp.URL && it.Source.Protocol == sp.Protocol {
-			return it.Source
-		}
-	}
-	return nil
 }
 
 func anyKey(m map[string]any, key string) any {

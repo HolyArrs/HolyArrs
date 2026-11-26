@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "नया कवर आर्ट",
 	"server.plugins.send-event-library-add": "भेजें {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "भेजें {\"on\": true} या {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "फ़ाइल अभी मौजूद नहीं है; HolyArrs इसे फिर से इम्पोर्ट करने की कोशिश करेगा"
+	"server.importer.the-file-is-not-present-yet": "फ़ाइल अभी मौजूद नहीं है; HolyArrs इसे फिर से इम्पोर्ट करने की कोशिश करेगा",
+	"server.migrate.the-same-as-a-source-that": "{name} जैसा ही, एक सोर्स जो यहां है"
 }
