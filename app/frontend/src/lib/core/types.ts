@@ -326,6 +326,7 @@ export type Moment =
 	| 'rename'
 	| 'add'
 	| 'delete'
+	| 'artwork'
 	| 'health'
 	| 'needs_decision'
 	| 'plugin_message';

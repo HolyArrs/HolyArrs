@@ -46,6 +46,13 @@ const (
 type State struct {
 	ListCounter  uint64 `json:"list_counter"`
 	BlockCounter uint64 `json:"block_counter"`
+	// TestCounter is the counter of the last test-version list accepted.
+	TestCounter uint64 `json:"test_counter,omitempty"`
+	// DevMode is the owner's choice to run unsigned plugins from the
+	// developer folder (dev.go); off by default.
+	DevMode bool `json:"dev_mode,omitempty"`
+	// TestVersions lists the plugins whose owner asked for test versions.
+	TestVersions map[string]bool `json:"test_versions,omitempty"`
 	// BlockCheckedAt is when the blocklist last verified.
 	BlockCheckedAt time.Time `json:"block_checked_at,omitempty"`
 	// AllowNoFileLock is the owner's one choice, for the whole install, to
@@ -82,6 +89,10 @@ type Installed struct {
 	// Key is the signing key (hex) of the list this version came from; an
 	// update signed by another key is refused.
 	Key string `json:"key,omitempty"`
+	// Dev is an unsigned plugin from the developer folder; it starts only
+	// while developer mode is on. Test is a version from the test list.
+	Dev  bool `json:"dev,omitempty"`
+	Test bool `json:"test,omitempty"`
 }
 
 // Store keeps plugin programs, data folders and state under one folder.
@@ -160,7 +171,11 @@ func (s *Store) Install(a *Accepted) error {
 	if err != nil {
 		return err
 	}
-	if a.ListCounter < st.ListCounter || a.BlockCounter < st.BlockCounter {
+	last := st.ListCounter
+	if a.Kind == KindTest {
+		last = st.TestCounter
+	}
+	if !a.Dev && (a.ListCounter < last || a.BlockCounter < st.BlockCounter) {
 		return ErrCounterOlder
 	}
 	m := a.Manifest
@@ -197,8 +212,14 @@ func (s *Store) Install(a *Accepted) error {
 	syncDir(verDir)
 
 	old := st.Plugins[m.ID]
-	st.ListCounter, st.BlockCounter, st.BlockCheckedAt = a.ListCounter, a.BlockCounter, time.Now().UTC()
-	in := &Installed{ID: m.ID, Version: m.Version, SHA256: m.SHA256, Dir: verName, Enabled: true}
+	switch {
+	case a.Dev:
+	case a.Kind == KindTest:
+		st.TestCounter, st.BlockCounter, st.BlockCheckedAt = a.ListCounter, a.BlockCounter, time.Now().UTC()
+	default:
+		st.ListCounter, st.BlockCounter, st.BlockCheckedAt = a.ListCounter, a.BlockCounter, time.Now().UTC()
+	}
+	in := &Installed{ID: m.ID, Version: m.Version, SHA256: m.SHA256, Dir: verName, Enabled: true, Dev: a.Dev, Test: a.Kind == KindTest}
 	if old != nil {
 		in.Approval = old.Approval // an update that asks for more is held at start until approved
 		in.Key = old.Key

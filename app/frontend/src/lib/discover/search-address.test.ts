@@ -15,6 +15,15 @@ describe('search page scope and recents', () => {
 		expect(searchAddress(bare, new URL('http://h.test/search?q=a'), 'http://h.test/search?q=b').href).toBe('http://h.test/search?q=a');
 		// Back after Forward, or Search opened from the top bar: the kit mounts on bare /search, the address bar still has ?q=.
 		expect(searchAddress(bare, null, 'http://h.test/search?q=Driftwood+Moon&kind=movie').searchParams.get('q')).toBe('Driftwood Moon');
+		// New & Popular and Explore: shallow tab and genre parameters survive Back, including clearing back to All.
+		const popBare = new URL('http://h.test/popular');
+		expect(searchAddress(popBare, new URL('http://h.test/popular?type=movies'), 'http://h.test/popular?type=movies').searchParams.get('type')).toBe('movies');
+		expect(searchAddress(popBare, null, 'http://h.test/popular?type=shows').searchParams.get('type')).toBe('shows');
+		expect(searchAddress(new URL('http://h.test/popular?type=movies'), null, 'http://h.test/popular').searchParams.get('type')).toBeNull();
+		const expBare = new URL('http://h.test/explore');
+		const expGenre = searchAddress(expBare, null, 'http://h.test/explore?type=movies&genre=28');
+		expect(expGenre.searchParams.get('type')).toBe('movies');
+		expect(expGenre.searchParams.get('genre')).toBe('28');
 		// While leaving for a movie the browser address is another page: keep the kit's.
 		expect(searchAddress(bare, undefined, 'http://h.test/library/4').href).toBe(bare.href);
 		expect(searchAddress(bare, undefined, undefined).href).toBe(bare.href);

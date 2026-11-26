@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "An das Team: Ein Film oder eine Serie wurde von Hand, aus einer Liste oder über eine genehmigte Anfrage hinzugefügt.",
 	"requests.moment.delete.title": "Gelöscht",
 	"requests.moment.delete.body": "An das Team: Ein Film, eine Serie oder eine Staffel oder Folgen einer Serie haben die Bibliothek verlassen.",
+	"requests.moment.artwork.title": "Cover geändert",
+	"requests.moment.artwork.body": "An das Team: Ein Titel in der Bibliothek hat ein neues Cover.",
 	"requests.moment.health.title": "Zustand",
 	"requests.moment.health.body": "An das Team: Eine Zustandsprüfung ist ausgefallen oder wieder in Ordnung.",
 	"requests.moment.needs_decision.title": "Entscheidung nötig",

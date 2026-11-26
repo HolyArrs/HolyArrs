@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Al personal: una pel·lícula o sèrie afegida a mà, des d'una llista o d'una sol·licitud aprovada.",
 	"requests.moment.delete.title": "Suprimit",
 	"requests.moment.delete.body": "Al personal: una pel·lícula, una sèrie, o una temporada o episodis d'una sèrie han sortit de la Biblioteca.",
+	"requests.moment.artwork.title": "Portada canviada",
+	"requests.moment.artwork.body": "Al personal: un títol de la Biblioteca té una portada nova.",
 	"requests.moment.health.title": "Estat",
 	"requests.moment.health.body": "Al personal: una comprovació d'estat ha fallat, o s'ha reparat.",
 	"requests.moment.needs_decision.title": "Requereix una decisió",

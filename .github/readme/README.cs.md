@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.0: přes 150 oprav a funkcí od 101 lidí.** Systém pluginů, nový průvodce nastavením a režim bez zásahu, který nikdy nesahá na vaše soubory. [Co je nového](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: pluginy slyší, co se děje v HolyArrs.** Vývojářský režim spouští plugin, který vytváříte, a testovací verze umožní několika lidem vyzkoušet ho jako první. [Co je nového](https://holyarrs.com/whats-new/)
 
 > Každý plakát, trailer i hodnocení ve tvém HolyArrs pochází ze serveru, který sám provozuji a platím, aby zůstal zdarma pro všechny. Pokud ti HolyArrs udělal filmový večer o něco lepší, sponzorství nám všem udrží světla zapnutá 💛
 >

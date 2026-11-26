@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "Allo staff: un film o una serie aggiunti a mano, da una lista o da una richiesta approvata.",
 	"requests.moment.delete.title": "Eliminato",
 	"requests.moment.delete.body": "Allo staff: un film, una serie, oppure una stagione o degli episodi di una serie hanno lasciato la Libreria.",
+	"requests.moment.artwork.title": "Copertina cambiata",
+	"requests.moment.artwork.body": "Allo staff: un titolo della Libreria ha una nuova copertina.",
 	"requests.moment.health.title": "Stato",
 	"requests.moment.health.body": "Allo staff: un controllo di salute è saltato, oppure è di nuovo a posto.",
 	"requests.moment.needs_decision.title": "Richiede una decisione",

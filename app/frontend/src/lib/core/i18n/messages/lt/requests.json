@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Darbuotojams: filmas ar serialas pridėtas ranka, iš sąrašo ar patvirtinto užsakymo.",
 	"requests.moment.delete.title": "Ištrinta",
 	"requests.moment.delete.body": "Darbuotojams: filmas, serialas ar serialo sezonas ar epizodai paliko Biblioteką.",
+	"requests.moment.artwork.title": "Viršelis pasikeitė",
+	"requests.moment.artwork.body": "Darbuotojams: pavadinimas Bibliotekoje gavo naują viršelį.",
 	"requests.moment.health.title": "Būklė",
 	"requests.moment.health.body": "Darbuotojams: būklės patikra sugedo arba vėl veikia.",
 	"requests.moment.needs_decision.title": "Reikia sprendimo",

@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.0: higit 150 ayos at feature mula sa 101 tao.** Isang plugin system, bagong setup wizard, at hands-off mode na hindi kailanman gagalaw sa mga file mo. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: naririnig ng mga plugin ang nangyayari sa HolyArrs.** Pinapatakbo ng developer mode ang plugin na ginagawa mo, at hinahayaan ng mga test version na subukan muna ito ng ilang tao. [Tingnan ang mga bago](https://holyarrs.com/whats-new/)
 
 > Ang bawat poster, trailer at score sa HolyArrs mo ay galing sa server na ako mismo ang nagpapatakbo at nagbabayad, kaya nananatili itong libre para sa lahat. Kung napaganda nang kaunti ng HolyArrs ang movie night mo, ang sponsor ang nagpapanatiling bukas ang ilaw para sa ating lahat 💛
 >

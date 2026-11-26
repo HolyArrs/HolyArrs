@@ -70,7 +70,8 @@ func fill(in Input, a *domain.Alert, isNew bool) error {
 	if moments == nil {
 		moments = a.Moments
 		if isNew {
-			moments = slices.Clone(Moments)
+			// Cover art changes are opt-in: a refresh can bring many.
+			moments = slices.DeleteFunc(slices.Clone(Moments), func(m string) bool { return m == MomentArtwork })
 		}
 	}
 	for _, m := range moments {

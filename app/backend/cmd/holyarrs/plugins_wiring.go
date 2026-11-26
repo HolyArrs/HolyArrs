@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 )
 
@@ -21,8 +22,19 @@ const defaultPluginListURL = "https://plugins.holyarrs.com/"
 
 // startPlugins builds the Engine and, outside safe mode, starts the
 // enabled plugins and the blocklist check; they stop when ctx ends.
-func startPlugins(ctx context.Context, c config, key []byte, appVersion string, reg *hooks.Registry) *plugins.Engine {
+func startPlugins(ctx context.Context, c config, key []byte, appVersion string, reg *hooks.Registry, sender *alerts.Sender) *plugins.Engine {
 	pe := newPluginEngine(c)
+	if sender != nil {
+		// A plugin that was stopped catches up on what it missed.
+		pe.Replay = func(ctx context.Context, events []string, after int64, limit int) []plugins.Replayed {
+			var out []plugins.Replayed
+			for _, r := range sender.PluginReplay(ctx, events, after, limit) {
+				out = append(out, plugins.Replayed{Event: r.Event, ID: r.ID, Payload: r.Payload})
+			}
+			return out
+		}
+		pe.LastEventID = sender.Store.LastEventID
+	}
 	pe.SettingsKey = key
 	pe.AppVersion = appVersion
 	pe.Env = func(id string) []string { return pluginEnv(id, pe.GrantedScopes(id), c.Addr) }
@@ -131,4 +143,19 @@ func newPluginEngine(c config) *plugins.Engine {
 	return &plugins.Engine{Dir: filepath.Join(c.ConfigDir, "plugins"), ListURL: c.PluginListURL, Keys: keys, Runner: run, NoFileLock: noLock, FileLockReason: limits.FileLockReason,
 		NoNetLock: noNet, NetLockReason: limits.NetLockReason,
 		HTTP: &http.Client{Timeout: 5 * time.Minute, CheckRedirect: plugins.RedirectGuard(c.PluginListURL)}}
+}
+
+// tellPlugins hands a Library message to the plugins that asked for its
+// event, as the webhook payload without the people who asked.
+func tellPlugins(pe *plugins.Engine, m alerts.Message) {
+	if pe == nil {
+		return
+	}
+	if ev := alerts.PluginMomentEvents[m.Moment]; ev != "" {
+		var id int64
+		if m.Event != nil {
+			id = m.Event.ID
+		}
+		pe.DeliverEvent(ev, id, alerts.PluginPayload(m))
+	}
 }

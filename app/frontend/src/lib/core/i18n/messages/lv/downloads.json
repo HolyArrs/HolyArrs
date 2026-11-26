@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Pievienot lejupielādētāju",
 	"downloads.hl.noUsenetDl": "nav iestatīts neviens Usenet lejupielādētājs",
 	"downloads.hl.noTorrentDl": "nav iestatīts neviens torrentu lejupielādētājs",
+	"downloads.problem.waitingForFiles": "Gaida failus",
 	"downloads.problem.importBlocked": "Importēšana bloķēta",
 	"downloads.problem.missingArticles": "Trūkst rakstu",
 	"downloads.problem.noFullCopy": "Nav pilnas kopijas",

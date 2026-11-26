@@ -48,6 +48,8 @@ type Approval struct {
 	// OwnerLimits the caps the owner set, which always win.
 	Resources   *Resources `json:"resources,omitempty"`
 	OwnerLimits *Resources `json:"owner_limits,omitempty"`
+	// Events are the events the owner approved (see EventNames).
+	Events []string `json:"events,omitempty"`
 }
 
 // FolderGrant is one approved folder: its real path and the device and
@@ -73,7 +75,7 @@ func approvalFor(in *Installed, m *Manifest) Approval {
 	return a
 }
 
-// accessDiff lists what m asks for beyond a: "host:<name>", "folder:<name>"
+// accessDiff lists what m asks for beyond a: "host:<name>", "event:<name>", "folder:<name>"
 // (new, or read-write where read was approved) and "choose:<name>" for a
 // required folder with no folder chosen. Empty means it may start.
 func accessDiff(m *Manifest, a Approval) []string {
@@ -96,6 +98,11 @@ func accessDiff(m *Manifest, a Approval) []string {
 	for _, sc := range m.Access.Actions {
 		if !slices.Contains(a.Scopes, sc) {
 			out = append(out, "scope:"+sc)
+		}
+	}
+	for _, ev := range m.Access.Events {
+		if !slices.Contains(a.Events, ev) {
+			out = append(out, "event:"+ev)
 		}
 	}
 	seen := map[string]FolderReq{}
@@ -272,6 +279,7 @@ func (e *Engine) approve(id string, in ApproveInput, withHosts bool) error {
 	a := approvalFor(p, m)
 	if withHosts {
 		a.Hosts = append([]string(nil), m.Access.Hosts...)
+		a.Events = append([]string(nil), m.Access.Events...)
 	}
 	a.Folders = append([]FolderReq(nil), m.Access.Folders...)
 	a.Scopes = append([]string(nil), m.Access.Actions...)
@@ -468,6 +476,7 @@ func (e *Engine) startAccess(id string, env []string) (StartAccess, error) {
 		return StartAccess{}, err
 	}
 	acc.Folders = folders
+	acc.Events = eventsFor(m, a)
 	acc.Env = append(acc.Env, folderEnv(folders)...)
 	var hosts []string
 	if m != nil {

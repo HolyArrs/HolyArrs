@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Kepada kakitangan: filem atau siri yang ditambah dengan tangan, daripada senarai atau permintaan yang diluluskan.",
 	"requests.moment.delete.title": "Dipadam",
 	"requests.moment.delete.body": "Kepada kakitangan: sebuah filem, siri, atau musim atau episod sesuatu siri telah keluar dari Pustaka.",
+	"requests.moment.artwork.title": "Kulit muka berubah",
+	"requests.moment.artwork.body": "Kepada kakitangan: sebuah tajuk dalam Pustaka mendapat kulit muka baharu.",
 	"requests.moment.health.title": "Kesihatan",
 	"requests.moment.health.body": "Kepada kakitangan: semakan kesihatan gagal, atau sudah dibaiki semula.",
 	"requests.moment.needs_decision.title": "Perlu keputusan",

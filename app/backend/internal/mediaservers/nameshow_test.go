@@ -24,7 +24,9 @@ func TestMediaServerTestShowsWhatTheNameTurnedInto(t *testing.T) {
 		url, want string
 		cause     doctor.Cause
 	}{
-		{"http://holyarrs-nameshow-test.home.arpa:8096", "holyarrs-nameshow-test.home.arpa → not found. HolyArrs can't find this name. Use the IP instead.", doctor.DNS},
+		// The trailing dot makes the name absolute: a DNS search domain with a
+		// wildcard record would otherwise turn the name into one that resolves.
+		{"http://holyarrs-nameshow-test.home.arpa.:8096", "holyarrs-nameshow-test.home.arpa. → not found. HolyArrs can't find this name. Use the IP instead.", doctor.DNS},
 		{"http://localhost:" + port, "→ refused on port " + port + ". The name works, but nothing answers on that port. Check the port.", doctor.Refused},
 	}
 	for i, tc := range cases {

@@ -349,7 +349,7 @@ func AddMovie(ctx context.Context, s *database.Store, m metadata.Movie, opt AddO
 			return err
 		}
 		if opt.Adopt != nil && opt.Adopt.File != "" {
-			if err := adoptFile(ctx, tx, *opt.Adopt, sl.ID, v.ID, prID, keep, now, by); err != nil {
+			if err := adoptFile(ctx, tx, *opt.Adopt, *t, sl.ID, v.ID, prID, keep, now, by); err != nil {
 				return err
 			}
 		}
@@ -426,10 +426,10 @@ func SortName(n string) string {
 	return c
 }
 
-// adoptFile records an adopted main File for a new Slot and says whether
-// it is good enough; below good enough and kept up to date, the Slot looks
-// for a better copy, as after an import.
-func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, pickRulesID int64, keep bool, now time.Time, by domain.Actor) error {
+// adoptFile records an adopted main File of Title t for a new Slot and
+// says whether it is good enough; below good enough and kept up to date,
+// the Slot looks for a better copy, as after an import.
+func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, t mediafiles.Title, slotID, versionID, pickRulesID int64, keep bool, now time.Time, by domain.Actor) error {
 	ext := path.Ext(a.File)
 	release := strings.TrimSuffix(path.Base(a.File), ext)
 	judge := mediafiles.JudgeName(release, a.MediaInfo)
@@ -455,7 +455,7 @@ func adoptFile(ctx context.Context, tx *sql.Tx, a Adoption, slotID, versionID, p
 	if err := database.Get(ctx, tx, "pick_rules", pickRulesID, &pr); err != nil {
 		return err
 	}
-	ge := mediafiles.OwnedReachesGoodEnough(release, a.MediaInfo, pr.Body)
+	ge := mediafiles.OwnedReachesGoodEnoughFor(release, a.MediaInfo, t, pr.Body)
 	if _, err := tx.Exec("UPDATE slots SET file_id = ?, good_enough = ? WHERE id = ?", fileID, ge, slotID); err != nil {
 		return err
 	}

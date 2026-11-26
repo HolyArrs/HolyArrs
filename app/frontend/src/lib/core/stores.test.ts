@@ -108,6 +108,21 @@ describe('toasts', () => {
 		expect(t.list.map((x) => x.text)).toEqual(['c']);
 	});
 
+	it('keeps the page a toast opens, on screen and in the alerts list', () => {
+		const t = createToasts(1000);
+		t.push('Searching for Copper Valley', 'info', { body: 'S01E02 · Flood', href: '/library/7?season=1' });
+		t.record('Copper Valley added', 'ok', { href: '/library/7' });
+		expect(t.list[0].href).toBe('/library/7?season=1');
+		expect(t.past.map((p) => p.href)).toEqual(['/library/7', '/library/7?season=1']);
+	});
+
+	it('does not merge the same words about two titles', () => {
+		const t = createToasts(1000);
+		t.push('Searching for a Release', 'info', { href: '/library/1' });
+		t.push('Searching for a Release', 'info', { href: '/library/2' });
+		expect(t.list.map((x) => x.href)).toEqual(['/library/1', '/library/2']);
+	});
+
 	it('refreshes the same message instead of stacking it', () => {
 		vi.useFakeTimers();
 		const t = createToasts(1000);

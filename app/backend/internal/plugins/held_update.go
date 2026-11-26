@@ -22,6 +22,8 @@ var ErrPublisherChanged = errors.New("this update is signed by another key than 
 type Pending struct {
 	Version string `json:"version"`
 	SHA256  string `json:"sha256"`
+	// Test is a version from the test list.
+	Test bool `json:"test,omitempty"`
 }
 
 const pendingName = "pending"
@@ -145,7 +147,7 @@ func (e *Engine) holdUpdate(id string, acc *Accepted, manRaw []byte) (bool, erro
 	if err := writeFileSynced(filepath.Join(dir, "manifest.json"), manRaw); err != nil {
 		return true, err
 	}
-	if err := e.store.SetPending(id, &Pending{Version: acc.Manifest.Version, SHA256: acc.Manifest.SHA256}); err != nil {
+	if err := e.store.SetPending(id, &Pending{Version: acc.Manifest.Version, SHA256: acc.Manifest.SHA256, Test: acc.Kind == KindTest}); err != nil {
 		return true, err
 	}
 	return true, ErrNeedsApproval
@@ -187,7 +189,11 @@ func (e *Engine) promotePending(id string) error {
 	}
 	_ = e.stopProc(id)
 	dir := e.store.pendingDir(id)
-	if err := e.store.Install(&Accepted{Manifest: m, FilePath: filepath.Join(dir, programName), ListCounter: st.ListCounter, BlockCounter: st.BlockCounter}); err != nil {
+	acc := &Accepted{Manifest: m, FilePath: filepath.Join(dir, programName), ListCounter: st.ListCounter, BlockCounter: st.BlockCounter}
+	if in.Pending.Test {
+		acc.Kind, acc.ListCounter = KindTest, st.TestCounter
+	}
+	if err := e.store.Install(acc); err != nil {
 		return err
 	}
 	raw, err := os.ReadFile(filepath.Join(dir, "manifest.json"))

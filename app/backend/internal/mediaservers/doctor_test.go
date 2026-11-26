@@ -50,7 +50,9 @@ func TestMediaServerTestNamesEachCause(t *testing.T) {
 		local bool
 		want  doctor.Cause
 	}{
-		{"name not found", "http://nas.invalid:8096", true, doctor.DNS},
+		// The trailing dot makes the name absolute: a DNS search domain with a
+		// wildcard record would otherwise turn the name into one that resolves.
+		{"name not found", "http://nas.invalid.:8096", true, doctor.DNS},
 		{"refused", closed, true, doctor.Refused},
 		{"self-signed certificate", secure.URL, true, doctor.TLS},
 		{"https on an http port", strings.Replace(plain.URL, "http://", "https://", 1), true, doctor.UseHTTP},

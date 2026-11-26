@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "স্টাফদের জন্য: হাতে, তালিকা থেকে বা অনুমোদিত রিকোয়েস্টে যোগ হওয়া সিনেমা বা শো।",
 	"requests.moment.delete.title": "মোছা হয়েছে",
 	"requests.moment.delete.body": "স্টাফদের জন্য: একটি সিনেমা, শো, বা শোয়ের সিজন বা এপিসোড লাইব্রেরি ছেড়ে গেছে।",
+	"requests.moment.artwork.title": "কভার আর্ট বদলেছে",
+	"requests.moment.artwork.body": "স্টাফদের জন্য: লাইব্রেরির একটি টাইটেল নতুন কভার আর্ট পেয়েছে।",
 	"requests.moment.health.title": "হেলথ",
 	"requests.moment.health.body": "স্টাফদের জন্য: একটি হেলথ চেক নষ্ট হয়েছে, বা আবার ঠিক হয়েছে।",
 	"requests.moment.needs_decision.title": "সিদ্ধান্ত দরকার",

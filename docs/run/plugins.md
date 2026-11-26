@@ -55,6 +55,14 @@ To install Tailscale, follow these steps and pick **Tailscale**, then finish its
 
 Tailscale reaches only Tailscale's own servers. For a self-hosted Headscale, add its name under **Also allow your own server**, for example `headscale.example.com:8080`. Up to 3; names only, not addresses. These may reach devices on your network.
 
+### Test versions
+
+Some plugins publish test versions before a release. Open the plugin and select **Get test versions** to get them at the next update. They are signed and checked like normal versions, but not finished. Select **Stop test versions** to go back to normal versions at the next update.
+
+### Developer mode
+
+Developer mode is for people building their own plugin. It runs unsigned plugins from a folder on your server, in the same sandbox. Turn it on under **Add** > **Build with code**. A banner shows while it is on. Leave it off unless you are building a plugin. See [Developer mode](../dev/plugins.md#developer-mode).
+
 ## Start, stop and remove
 
 - **Stop** shuts the plugin down. It stays installed and shows **Stopped**.

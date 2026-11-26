@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "Персоналу: фильм или сериал добавлен вручную, из списка или по одобренному запросу.",
 	"requests.moment.delete.title": "Удалено",
 	"requests.moment.delete.body": "Персоналу: фильм, сериал либо сезон или серии сериала покинули Медиатеку.",
+	"requests.moment.artwork.title": "Обложка изменилась",
+	"requests.moment.artwork.body": "Персоналу: у тайтла в Медиатеке новая обложка.",
 	"requests.moment.health.title": "Исправность",
 	"requests.moment.health.body": "Персоналу: проверка исправности сломалась или снова починена.",
 	"requests.moment.needs_decision.title": "Требует решения",

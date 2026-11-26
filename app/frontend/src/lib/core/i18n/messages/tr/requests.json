@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "Ekibe: elle, bir listeden ya da onaylanmış bir istekten eklenen film ya da dizi.",
 	"requests.moment.delete.title": "Silindi",
 	"requests.moment.delete.body": "Ekibe: bir film, bir dizi ya da bir dizinin sezonu veya bölümleri Kütüphaneden çıktı.",
+	"requests.moment.artwork.title": "Kapak görseli değişti",
+	"requests.moment.artwork.body": "Ekibe: Kütüphanedeki bir yapımın yeni kapak görseli var.",
 	"requests.moment.health.title": "Sağlık",
 	"requests.moment.health.body": "Ekibe: bir sağlık denetimi bozuldu ya da yeniden düzeldi.",
 	"requests.moment.needs_decision.title": "Karar bekliyor",

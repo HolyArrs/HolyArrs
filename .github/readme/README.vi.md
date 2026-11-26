@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.0: hơn 150 bản sửa lỗi và tính năng từ 101 người.** Hệ thống plugin, trình hướng dẫn thiết lập mới, và chế độ không can thiệp không bao giờ đụng đến tệp của bạn. [Xem có gì mới](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: plugin nghe được những gì xảy ra trong HolyArrs.** Chế độ nhà phát triển chạy plugin bạn đang xây dựng, và phiên bản thử nghiệm cho vài người dùng thử trước. [Xem có gì mới](https://holyarrs.com/whats-new/)
 
 > Mọi poster, trailer và điểm đánh giá trong HolyArrs của bạn đều đến từ một máy chủ do chính tôi vận hành và trả tiền, để nó luôn miễn phí cho mọi người. Nếu HolyArrs làm buổi xem phim của bạn vui hơn một chút, một lượt tài trợ sẽ giúp giữ đèn sáng cho tất cả chúng ta 💛
 >

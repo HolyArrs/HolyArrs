@@ -36,6 +36,8 @@ type InstallInput struct {
 	// TempDir holds the checked file until it is installed; "" is the
 	// system temp folder.
 	TempDir string
+	// Kind is the list the version comes from: KindPlugins ("") or KindTest.
+	Kind string
 }
 
 // Accepted is the result of a passed check; the caller stores the counters
@@ -47,6 +49,10 @@ type Accepted struct {
 	FilePath     string
 	ListCounter  uint64
 	BlockCounter uint64
+	// Kind is the list it came from (KindPlugins or KindTest); Dev is an
+	// unsigned developer-folder plugin (dev.go), with no list at all.
+	Kind string
+	Dev  bool
 }
 
 // Close removes the checked file.
@@ -61,7 +67,11 @@ func (a *Accepted) Close() error {
 // matches the manifest, the exact id, version and hash are on the list, and
 // nothing on the blocklist covers it. Anything else is refused.
 func CheckInstall(in InstallInput) (*Accepted, error) {
-	list, err := VerifyList(in.PublicKey, in.List, KindPlugins, in.LastListCounter)
+	kind := in.Kind
+	if kind == "" {
+		kind = KindPlugins
+	}
+	list, err := VerifyList(in.PublicKey, in.List, kind, in.LastListCounter)
 	if err != nil {
 		return nil, fmt.Errorf("plugin list: %w", err)
 	}
@@ -103,7 +113,7 @@ func CheckInstall(in InstallInput) (*Accepted, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Accepted{Manifest: m, FilePath: path, ListCounter: list.Counter, BlockCounter: block.Counter}, nil
+	return &Accepted{Manifest: m, FilePath: path, ListCounter: list.Counter, BlockCounter: block.Counter, Kind: kind}, nil
 }
 
 // spoolFile streams r to a private temp file while hashing it, and keeps the

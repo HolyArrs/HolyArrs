@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "स्टाफ़ को: कोई फ़िल्म या शो हाथ से, किसी सूची से या मंज़ूर रिक्वेस्ट से जोड़ा गया।",
 	"requests.moment.delete.title": "हटाया गया",
 	"requests.moment.delete.body": "स्टाफ़ को: कोई फ़िल्म, शो, या शो का कोई सीज़न या एपिसोड लाइब्रेरी से हट गया।",
+	"requests.moment.artwork.title": "कवर आर्ट बदला",
+	"requests.moment.artwork.body": "स्टाफ़ को: लाइब्रेरी के एक टाइटल को नया कवर आर्ट मिला।",
 	"requests.moment.health.title": "हेल्थ",
 	"requests.moment.health.body": "स्टाफ़ को: कोई हेल्थ चेक टूटा, या दोबारा ठीक हुआ।",
 	"requests.moment.needs_decision.title": "फ़ैसला चाहिए",

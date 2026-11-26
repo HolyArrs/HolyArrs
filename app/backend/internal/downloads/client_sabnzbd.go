@@ -30,9 +30,11 @@ var trailLink = regexp.MustCompile(`\s+-\s+https?://\S+$`)
 
 // Sabnzbd is a Client for the SABnzbd HTTP API.
 type Sabnzbd struct {
-	base string
-	key  string
-	http *http.Client
+	base  string
+	key   string
+	http  *http.Client
+	meter sabMeter
+	now   func() time.Time // nil is time.Now
 }
 
 type sabQueue struct {
@@ -473,12 +475,6 @@ func (s *Sabnzbd) jobs(ctx context.Context, q url.Values) ([]Job, error) {
 		return nil, fmt.Errorf("sabnzbd queue: %w", err)
 	}
 	var out []Job
-	moving := 0
-	for _, x := range qu.Queue.Slots {
-		if sabQueueState(x.Status) == StateDownloading {
-			moving++
-		}
-	}
 	for _, x := range qu.Queue.Slots {
 		mb, left := num(x.MB), num(x.MBLeft)
 		p := num(x.Percentage) / 100
@@ -487,11 +483,10 @@ func (s *Sabnzbd) jobs(ctx context.Context, q url.Values) ([]Job, error) {
 		}
 		j := Job{ID: x.ID, Name: x.Filename, Category: x.Cat, Size: int64(mb * 1024 * 1024), Progress: min(max(p, 0), 1),
 			ETA: clock(x.TimeLeft), State: sabQueueState(x.Status), Detail: x.Status, PostedAt: sabPostedAt(x.AvgAge, time.Now())}
-		if j.State == StateDownloading && moving > 0 {
-			j.Speed = int64(num(qu.Queue.KBPerSec)*1024) / int64(moving)
-		}
 		out = append(out, j)
 	}
+	whole := q.Get("category") == "" && q.Get("nzo_ids") == ""
+	sabShare(out, s.meter.rates(out, s.clock()), int64(num(qu.Queue.KBPerSec)*1024), whole)
 	hq := url.Values{"start": {"0"}, "limit": {"200"}}
 	for _, k := range []string{"category", "nzo_ids"} {
 		if v := q.Get(k); v != "" {

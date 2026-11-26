@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Para a equipa: um filme ou série adicionado à mão, por uma lista ou por um pedido aprovado.",
 	"requests.moment.delete.title": "Apagado",
 	"requests.moment.delete.body": "Para a equipa: um filme, uma série, ou uma temporada ou episódios de uma série saíram da Biblioteca.",
+	"requests.moment.artwork.title": "Capa alterada",
+	"requests.moment.artwork.body": "Para a equipa: um título da Biblioteca recebeu uma capa nova.",
 	"requests.moment.health.title": "Saúde",
 	"requests.moment.health.body": "Para a equipa: uma verificação de saúde falhou, ou voltou a funcionar.",
 	"requests.moment.needs_decision.title": "Precisa de uma decisão",

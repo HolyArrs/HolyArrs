@@ -207,12 +207,29 @@ func (s *Service) CachePoster(ctx context.Context, titleID int64, poster string,
 		return
 	}
 	art := `["poster:` + name + `"]`
+	changed := false
 	err = s.Store.Write(ctx, func(tx *sql.Tx) error {
-		_, err := tx.Exec("UPDATE titles SET artwork = ?, poster_url = ?, updated_at = ?, updated_by = ? WHERE id = ? AND (artwork != ? OR poster_url != ?)",
+		// A title that had a poster and gets another one changed its cover
+		// art; the first poster of a new title is part of adding it.
+		var old string
+		if err := tx.QueryRow("SELECT artwork FROM titles WHERE id = ?", titleID).Scan(&old); err != nil {
+			return err
+		}
+		res, err := tx.Exec("UPDATE titles SET artwork = ?, poster_url = ?, updated_at = ?, updated_by = ? WHERE id = ? AND (artwork != ? OR poster_url != ?)",
 			art, src, database.FormatTime(s.now()), ActorText(by), titleID, art, src)
+		if err != nil {
+			return err
+		}
+		n, err := res.RowsAffected()
+		changed = n > 0 && old != art && strings.Contains(old, "poster:")
 		return err
 	})
 	if err != nil {
 		log.Printf("library: poster for title %d: %v", titleID, err)
+		return
+	}
+	if changed {
+		s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventArtworkChanged, TitleID: &titleID, GroupKey: GroupKey(titleID),
+			Summary: "New cover art", Data: map[string]any{"artwork": name}})
 	}
 }

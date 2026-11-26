@@ -35,6 +35,10 @@ type listServer struct {
 	file     []byte
 	version  string
 	redirect string // when set, plugins.json redirects here
+	// testList is plugins-test.json (nil: 404); extra serves other
+	// versions' manifest and file, by version.
+	testList []byte
+	extra    map[string][2][]byte
 }
 
 var pluginFile = []byte("plugin program bytes")
@@ -67,7 +71,23 @@ func newListServer(t *testing.T) (*listServer, ed25519.PublicKey) {
 		ls.mu.Lock()
 		defer ls.mu.Unlock()
 		base := "/list/plugins/tailscale/" + ls.version
+		for v, mf := range ls.extra {
+			switch r.URL.Path {
+			case "/list/plugins/tailscale/" + v + "/manifest.json":
+				w.Write(mf[0])
+				return
+			case "/list/plugins/tailscale/" + v + "/plugin":
+				w.Write(mf[1])
+				return
+			}
+		}
 		switch r.URL.Path {
+		case "/list/plugins-test.json":
+			if ls.testList == nil {
+				http.NotFound(w, r)
+				return
+			}
+			w.Write(ls.testList)
 		case "/list/plugins.json":
 			if ls.redirect != "" {
 				http.Redirect(w, r, ls.redirect, http.StatusFound)
@@ -77,7 +97,7 @@ func newListServer(t *testing.T) (*listServer, ed25519.PublicKey) {
 		case "/list/blocklist.json":
 			w.Write(ls.block)
 		case "/list/stats.json":
-			w.Write([]byte(`{"tailscale":{"downloads":1234,"week":40,"stars":9,"listed":"2026-11-01T05:18:53Z"}}`))
+			w.Write([]byte(`{"tailscale":{"downloads":1234,"week":40,"stars":9,"listed":"2026-11-01T05:18:53Z"},"language-packs":{"downloads":291}}`))
 		case base + "/manifest.json":
 			w.Write(ls.manifest)
 		case base + "/plugin":
@@ -936,6 +956,32 @@ func TestListShowsStats(t *testing.T) {
 	}
 	if st["listed"] != "2026-11-01T05:18:53Z" {
 		t.Fatalf("listed = %v", st["listed"])
+	}
+}
+
+// The numbers are fetched when the engine starts, so the very first list
+// after a start already shows them.
+func TestFirstListAfterStartHasStats(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	e.StartEnabled()
+	p := row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	st, _ := p["stats"].(map[string]any)
+	if st == nil || st["downloads"] != float64(1234) {
+		t.Fatalf("first list stats = %v", p["stats"])
+	}
+}
+
+// The language packs are not a listed plugin, so their numbers come on the
+// list itself.
+func TestFirstListHasLanguagePackStats(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	e.StartEnabled()
+	ov := call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK)
+	st, _ := ov["language_packs"].(map[string]any)
+	if st == nil || st["downloads"] != float64(291) {
+		t.Fatalf("language_packs = %v", ov["language_packs"])
 	}
 }
 

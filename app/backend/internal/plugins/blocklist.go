@@ -64,6 +64,7 @@ func (e *Engine) CheckBlocklist(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("blocklist: %w", err)
 	}
+	testRaw := e.testList(ctx, st, true)
 	// The cache is written before the counters, so a failed write never
 	// leaves the stored counters newer than the cached lists (which would
 	// refuse every later start).
@@ -88,7 +89,7 @@ func (e *Engine) CheckBlocklist(ctx context.Context) error {
 			}
 			continue
 		}
-		if _, err := e.store.CheckStart(id, StartInput{PublicKey: key, List: listRaw, Blocklist: blockRaw}); err != nil {
+		if _, err := e.store.CheckStart(id, StartInput{PublicKey: key, List: listRaw, Blocklist: blockRaw, TestList: testRaw}); err != nil {
 			log.Printf("plugins: %s stopped and disabled: %v", id, err)
 			if serr := e.stopProc(id); serr != nil {
 				log.Printf("plugins: stopping %s: %v", id, serr)
@@ -133,6 +134,37 @@ func (e *Engine) cachedCounter(name, kind string) uint64 {
 	return l.Counter
 }
 
+// testList is the test-version list: fetched again when fresh is true or
+// none is cached, and cached when it verifies; else the cached one. nil
+// when there is none (most lists have no test versions).
+func (e *Engine) testList(ctx context.Context, st *State, fresh bool) []byte {
+	path := filepath.Join(e.Dir, e.cacheTestListName())
+	cached, err := os.ReadFile(path)
+	if err == nil && !fresh {
+		return cached
+	}
+	if len(e.Keys) == 0 {
+		return cached
+	}
+	raw, ferr := e.fetch(ctx, TestListName(e.platform()))
+	if ferr != nil {
+		return cached
+	}
+	if _, _, verr := e.verify(raw, KindTest, st.TestCounter); verr != nil {
+		log.Printf("plugins: test-version list check failed: %v", verr)
+		return cached
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if cached != nil && e.cachedCounter(e.cacheTestListName(), KindTest) > 0 {
+		if l, _, err := e.verify(raw, KindTest, e.cachedCounter(e.cacheTestListName(), KindTest)); err != nil || l == nil {
+			return cached // never put back an older list
+		}
+	}
+	_ = writeFileSynced(path, raw)
+	return raw
+}
+
 // verify checks raw with each pinned key and returns the key that signed it.
 func (e *Engine) verify(raw []byte, kind string, last uint64) (*List, ed25519.PublicKey, error) {
 	if len(e.Keys) == 0 {
@@ -175,4 +207,33 @@ func blockedBy(block *List, p *Installed) bool {
 		}
 	}
 	return false
+}
+
+// startInput reads the cached lists and picks the key they verify with.
+// Called with e.mu held.
+func (e *Engine) startInput() (StartInput, error) {
+	list, err1 := os.ReadFile(filepath.Join(e.Dir, e.cacheListName()))
+	block, err2 := os.ReadFile(filepath.Join(e.Dir, cacheBlocklist))
+	if err := errors.Join(err1, err2); err != nil {
+		return StartInput{}, fmt.Errorf("cached plugin lists: %w", err)
+	}
+	st, err := e.store.Load()
+	if err != nil {
+		return StartInput{}, err
+	}
+	if _, _, err := e.verify(block, KindBlocklist, st.BlockCounter); err != nil {
+		return StartInput{}, fmt.Errorf("cached blocklist: %w", err)
+	}
+	_, key, err := e.verify(list, KindPlugins, st.ListCounter)
+	if err != nil {
+		key = nil
+		if len(e.Keys) > 0 {
+			key = e.Keys[0] // CheckStart refuses and disables with the reason
+		}
+	}
+	if key == nil {
+		return StartInput{}, ErrNoKey
+	}
+	test, _ := os.ReadFile(filepath.Join(e.Dir, e.cacheTestListName()))
+	return StartInput{PublicKey: key, List: list, Blocklist: block, TestList: test}, nil
 }

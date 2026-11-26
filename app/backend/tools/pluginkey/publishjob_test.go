@@ -193,6 +193,32 @@ func TestPublishJob(t *testing.T) {
 	_ = os.RemoveAll(tree)
 	copyTree(t, v2, tree)
 
+	// A test version goes on the test lists only, with its events, and
+	// installs as a test version; the plugin list doesn't name it.
+	tv := runJob("publish", "--id", "example", "--version", "1.1.0-test.1", "--src", src, "--test")
+	tvDir := filepath.Join(tv, "plugins", "example", "1.1.0-test.1")
+	tl, err := plugins.VerifyList(pub, read(t, tv, "plugins-test.json"), plugins.KindTest, 0)
+	if err != nil || len(tl.Entries) != 1 || tl.Entries[0].Version != "1.1.0-test.1" {
+		t.Fatalf("test list: %+v, %v", tl, err)
+	}
+	if ml, _ := lists(tv); len(ml.Entries) != 2 {
+		t.Fatalf("the plugin list changed for a test version: %+v", ml)
+	}
+	if !strings.Contains(string(read(t, tvDir, "manifest.json")), `"events"`) {
+		t.Fatal("events dropped from the manifest")
+	}
+	tf, _ := os.Open(filepath.Join(tvDir, "plugin"))
+	acc, err := plugins.CheckInstall(plugins.InstallInput{PublicKey: pub, Kind: plugins.KindTest, List: read(t, tv, "plugins-test.json"),
+		Blocklist: read(t, tv, "blocklist.json"), Manifest: read(t, tvDir, "manifest.json"), File: tf, TempDir: tmp})
+	tf.Close()
+	if err != nil {
+		t.Fatalf("test version install: %v", err)
+	}
+	acc.Close()
+	if err := install(tv, tvDir); !errors.Is(err, plugins.ErrNotOnList) {
+		t.Fatalf("test version installed from the plugin list: %v", err)
+	}
+
 	// 3. Block 1.0.0: it is refused, 1.0.1 still installs.
 	blk := runJob("block", "--id", "example", "--version", "1.0.0", "--reason", "test block")
 	l3, b3 := lists(blk)
@@ -204,6 +230,9 @@ func TestPublishJob(t *testing.T) {
 	}
 	if err := install(blk, v2Dir); err != nil {
 		t.Fatalf("1.0.1 after the block: %v", err)
+	}
+	if tl, err := plugins.VerifyList(pub, read(t, blk, "plugins-test.json"), plugins.KindTest, 0); err != nil || *tl.MinBlocklistCounter != b3.Counter {
+		t.Fatalf("test list after block: %+v, %v", tl, err)
 	}
 	for _, plat := range plugins.Platforms {
 		pl, err := plugins.VerifyList(pub, read(t, blk, plugins.ListName(plat)), plugins.KindPlugins, 0)

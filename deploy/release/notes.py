@@ -28,6 +28,7 @@ PREFIXES = ("Fixed: ", "Changed: ", "Docs: ")
 # Places in the order users touch them most; any other place follows in file order.
 PLACE_ORDER = ("Requests", "Library", "Downloads", "Indexers", "Accounts", "Health", "Setup", "Install")
 DM_LIMIT = 1000
+SPONSOR_LINK = "https://github.com/sponsors/CoderLuii"
 EMBED_LIMIT = 4096
 BANNED = re.compile(r"\b(seamless\w*|robust\w*|enhanced|leverag\w*|excited|refactor\w*|modules?|"
                     r"clean room|sessions?|agents?|worktrees?)\b|\bv\d+\.\d+(\.\d+)?\b", re.I)
@@ -127,7 +128,8 @@ def credit_line(c, cmap):
     if empty(c.get("name")):
         name = "@" + str(c["github"])
         return "[%s](%s)" % (name, c["link"]) if c.get("link") else name
-    name = "u/" + bare(c["name"])
+    # A Discord member keeps their plain name; everyone else is a Reddit u/.
+    name = bare(c["name"]) + " (Discord)" if c.get("discord") else "u/" + bare(c["name"])
     text = "[%s](%s)" % (name, c["link"]) if c.get("link") else name
     return text + (" (@%s)" % login if login else "")
 
@@ -247,6 +249,10 @@ def render_discord(n, bold=False):
         # The first release has nothing to compare with, so its posts say what it has.
         label = "What's in it: " if n["version"] == "1.0.0" else "What changed: "
         out.append(label + release_link(n))
+        # The channel post ends with a sponsor ask; the DM stays short.
+        if bold:
+            ask = n.get("sponsor_line") or "HolyArrs stays free because sponsors keep the servers running."
+            out += ["", ask + " " + SPONSOR_LINK]
         return "\n".join(out) + "\n"
     for theme in (True, False):
         text = build(theme)

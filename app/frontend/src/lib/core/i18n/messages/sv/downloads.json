@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Lägg till en nedladdare",
 	"downloads.hl.noUsenetDl": "ingen Usenet-nedladdare är inställd",
 	"downloads.hl.noTorrentDl": "ingen torrent-nedladdare är inställd",
+	"downloads.problem.waitingForFiles": "Väntar på filer",
 	"downloads.problem.importBlocked": "Import blockerad",
 	"downloads.problem.missingArticles": "Saknade artiklar",
 	"downloads.problem.noFullCopy": "Ingen fullständig kopia",

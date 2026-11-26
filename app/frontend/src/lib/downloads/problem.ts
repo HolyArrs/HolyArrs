@@ -10,6 +10,7 @@ type Bits = Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'text'> &
 
 /** The message key that shows each problem's words in the picked language. */
 export const PROBLEM_KEY: Record<string, string> = {
+	'waiting for files': 'downloads.problem.waitingForFiles',
 	'import blocked': 'downloads.problem.importBlocked',
 	'missing articles': 'downloads.problem.missingArticles',
 	'no full copy': 'downloads.problem.noFullCopy',
@@ -26,6 +27,8 @@ export const PROBLEM_KEY: Record<string, string> = {
 export function problem(r: Bits): Problem | null {
 	const stage = stageOf(r);
 	if (stage === 'done' || stage === 'paused') return null;
+	// The importer retries automatically while a finished download's files arrive.
+	if (r.phase === 'waiting_to_import' && r.text?.startsWith('Waiting for the files to arrive;')) return { text: 'waiting for files', tone: 'wait' };
 	const failed = stage === 'failed';
 	if (protocolOf(r) === 'usenet') {
 		// SABnzbd and NZBGet fail or warning lines, already in plain words.

@@ -22,6 +22,8 @@
 
 	type Kind = 'discord' | 'email' | 'webhook' | 'telegram' | 'ntfy' | 'gotify' | 'pushover';
 	const allMoments: Moment[] = [...askMoments, ...libraryMoments];
+	// A new Alert starts with every moment but cover art changes, which a refresh can bring many of.
+	const startMoments: Moment[] = allMoments.filter((m) => m !== 'artwork');
 	const momentGroups = $derived<{ id: string; label: string; hint: string; moments: readonly Moment[] }[]>([
 		{ id: 'requests', label: t('settings.alerts.groupRequests'), hint: t('settings.alerts.groupRequestsHint'), moments: askMoments },
 		{ id: 'library', label: t('settings.alerts.groupLibrary'), hint: t('settings.alerts.groupLibraryHint'), moments: libraryMoments }
@@ -39,7 +41,7 @@
 		name: '',
 		kind: 'discord' as Kind,
 		enabled: true,
-		moments: [...allMoments] as Moment[],
+		moments: [...startMoments] as Moment[],
 		url: '',
 		smtp_host: '',
 		smtp_port: 587,
@@ -112,8 +114,8 @@
 
 	function startAdd() {
 		isNew = true;
-		editing = { id: 0, name: '', kind: 'discord', enabled: true, moments: [...allMoments] };
-		form = { name: '', kind: 'discord', enabled: true, moments: [...allMoments], url: '', smtp_host: '', smtp_port: 587, smtp_security: 'starttls', smtp_from: '', smtp_user: '', smtp_pass: '', staff_to: '', secret: '', webhook_auth: 'sign', bot_token: '', chat_id: '', server_url: '', topic: '', user_key: '', app_token: '', clear_app_token: false, allow_local_network: false };
+		editing = { id: 0, name: '', kind: 'discord', enabled: true, moments: [...startMoments] };
+		form = { name: '', kind: 'discord', enabled: true, moments: [...startMoments], url: '', smtp_host: '', smtp_port: 587, smtp_security: 'starttls', smtp_from: '', smtp_user: '', smtp_pass: '', staff_to: '', secret: '', webhook_auth: 'sign', bot_token: '', chat_id: '', server_url: '', topic: '', user_key: '', app_token: '', clear_app_token: false, allow_local_network: false };
 		formError = '';
 	}
 

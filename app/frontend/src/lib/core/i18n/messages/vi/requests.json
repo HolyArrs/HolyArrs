@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Gửi tới nhân viên: một phim hoặc phim bộ được thêm thủ công, từ danh sách hoặc từ một yêu cầu đã duyệt.",
 	"requests.moment.delete.title": "Đã xóa",
 	"requests.moment.delete.body": "Gửi tới nhân viên: một phim, một phim bộ, hoặc một mùa hay các tập của phim bộ đã rời khỏi Thư viện.",
+	"requests.moment.artwork.title": "Ảnh bìa đã thay đổi",
+	"requests.moment.artwork.body": "Gửi tới nhân viên: một tựa trong Thư viện có ảnh bìa mới.",
 	"requests.moment.health.title": "Tình trạng",
 	"requests.moment.health.body": "Gửi tới nhân viên: một kiểm tra tình trạng bị lỗi, hoặc đã ổn trở lại.",
 	"requests.moment.needs_decision.title": "Cần quyết định",

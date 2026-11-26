@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Pre personál: film alebo seriál pridaný ručne, zo zoznamu alebo zo schválenej žiadosti.",
 	"requests.moment.delete.title": "Odstránené",
 	"requests.moment.delete.body": "Pre personál: film, seriál, alebo séria či epizódy seriálu opustili Knižnicu.",
+	"requests.moment.artwork.title": "Obal sa zmenil",
+	"requests.moment.artwork.body": "Pre personál: titul v Knižnici dostal nový obal.",
 	"requests.moment.health.title": "Stav",
 	"requests.moment.health.body": "Pre personál: kontrola stavu zlyhala alebo je znova v poriadku.",
 	"requests.moment.needs_decision.title": "Vyžaduje rozhodnutie",

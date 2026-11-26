@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "לצוות: סרט או סדרה שנוספו ידנית, מרשימה או מבקשה שאושרה.",
 	"requests.moment.delete.title": "נמחק",
 	"requests.moment.delete.body": "לצוות: סרט, סדרה, או עונה או פרקים של סדרה עזבו את הספרייה.",
+	"requests.moment.artwork.title": "תמונת העטיפה השתנתה",
+	"requests.moment.artwork.body": "לצוות: כותר בספרייה קיבל תמונת עטיפה חדשה.",
 	"requests.moment.health.title": "תקינות",
 	"requests.moment.health.body": "לצוות: בדיקת תקינות נשברה, או תוקנה שוב.",
 	"requests.moment.needs_decision.title": "דורש החלטה",

@@ -128,7 +128,6 @@ The checks live in `app/backend/tools/structurecheck`. Most need `-tags structur
 | `TestCommentHygiene` | Comment rules above |
 | `TestRouteTableUnchanged`, `TestMigrationsUnchanged`, `TestHeaderAndJSONLiteralsUnchanged` | A move changes no route, migration, HTTP header name or JSON key |
 | `TestNoOldPageAddresses`, `TestNoOldPagesInTestsOrDocs` | Old page addresses stay gone from code, tests and docs |
-| `TestNoDependencyBotConfig` | No dependency bot file in `.github` |
 
 </details>
 

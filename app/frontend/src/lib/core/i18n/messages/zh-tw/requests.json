@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "發給管理人員：手動新增、來自清單或來自已核准請求的電影或影集。",
 	"requests.moment.delete.title": "已刪除",
 	"requests.moment.delete.body": "發給管理人員：有電影、影集，或影集的某一季或某些單集離開了媒體庫。",
+	"requests.moment.artwork.title": "封面圖已更換",
+	"requests.moment.artwork.body": "發給管理人員：媒體庫中的一個作品換了新封面圖。",
 	"requests.moment.health.title": "健康狀況",
 	"requests.moment.health.body": "發給管理人員：某項健康檢查出了故障，或已還原。",
 	"requests.moment.needs_decision.title": "待你決定",

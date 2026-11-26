@@ -20,14 +20,14 @@
 	import { libraryTitles, ownedLibrary, partOff, partOn, savedDefaults } from '#lib/mediafiles/index.ts';
 	import { detailPath, loadDetails, remember, MetadataNotice } from '#lib/metadata/index.ts';
 	import { QuickAsk } from '#lib/requests/index.ts';
-	import { serverRow, serviceRegion, type WatchService, cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem, PopularRail as NewRail, ExploreHero, whyShown, type Why } from '#lib/discover/index.ts';
+	import { serverRow, serviceRegion, type WatchService, cardServices, hasServiceChips, isRanked, newPath, newServicePath, parseNewType, pickService, searchAddress, type NewAnswer, type NewServiceAnswer, type NewType, type RailDay, type RailItem, PopularRail as NewRail, ExploreHero, whyShown, type Why } from '#lib/discover/index.ts';
 	import type { GateDefaults } from '#lib/mediafiles/index.ts';
 	import type { ShowSettings } from '#lib/shows/index.ts';
 	import { seasonWords } from '#lib/shows/index.ts';
 	import { MusicNewTab } from '#lib/music/index.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
 	import { proxied } from '#lib/core/tmdb-image.ts';
 	import { api, message } from '#lib/core/api.ts';
@@ -44,7 +44,9 @@
 	const mayAsk = $derived(session.can('ask'));
 	const who = $derived(audienceOf(session.can));
 
-	let type = $state<NewType>(parseNewType(page.url.searchParams.get('type') ?? page.url.searchParams.get('kind')));
+	// Back can restore a shallow address with the tab picked after New & Popular opened.
+	const here = () => searchAddress(page.url, page.shallow?.url, typeof location === 'undefined' ? undefined : location.href);
+	let type = $state<NewType>(parseNewType(here().searchParams.get('type') ?? here().searchParams.get('kind')));
 	const typeOptions = $derived(
 		([
 			{ value: 'all', label: t('discover.popular.all'), icon: 'grid' },
@@ -92,13 +94,24 @@
 		svcLists = new Map();
 		svcGen++;
 		svcPicks = new Map();
-		const url = new URL((page.shallow?.url ?? page.url).href);
+		const url = new URL(here().href);
 		if (t === 'all') url.searchParams.delete('type');
 		else url.searchParams.set('type', t);
 		url.searchParams.delete('kind');
 		void goto(url, { replace: true, shallow: true, reset: false });
 		if (t !== 'music') void loadFirst();
 	}
+
+	afterNavigate(({ to: dest, type: navType }) => {
+		if (!dest || navType === 'enter') return;
+		const next = parseNewType(here().searchParams.get('type') ?? here().searchParams.get('kind'));
+		if (next === type) return;
+		type = next;
+		svcLists = new Map();
+		svcGen++;
+		svcPicks = new Map();
+		if (next !== 'music') void loadFirst();
+	});
 
 	/** Reads page 0; while lists are still building it asks again every 3 s (at most a minute). */
 	async function loadFirst(tries = 0) {

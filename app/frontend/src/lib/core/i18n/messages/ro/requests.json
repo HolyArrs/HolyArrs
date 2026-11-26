@@ -28,6 +28,8 @@
 	"requests.moment.add.body": "Pentru personal: un film sau serial adăugat manual, dintr-o listă sau dintr-o cerere aprobată.",
 	"requests.moment.delete.title": "Șters",
 	"requests.moment.delete.body": "Pentru personal: un film, un serial sau un sezon sau episoade dintr-un serial au ieșit din Bibliotecă.",
+	"requests.moment.artwork.title": "Copertă schimbată",
+	"requests.moment.artwork.body": "Pentru personal: un titlu din Bibliotecă are o copertă nouă.",
 	"requests.moment.health.title": "Stare",
 	"requests.moment.health.body": "Pentru personal: o verificare de stare a căzut sau e din nou reparată.",
 	"requests.moment.needs_decision.title": "Necesită o decizie",

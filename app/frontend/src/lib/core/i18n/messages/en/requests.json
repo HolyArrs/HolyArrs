@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "To the staff: a movie or show added by hand, from a list or an approved request.",
 	"requests.moment.delete.title": "Deleted",
 	"requests.moment.delete.body": "To the staff: a movie, a show, or a season or episodes of a show left the Library.",
+	"requests.moment.artwork.title": "Cover art changed",
+	"requests.moment.artwork.body": "To the staff: a title in the Library got new cover art.",
 	"requests.moment.health.title": "Health",
 	"requests.moment.health.body": "To the staff: a health check broke, or is fixed again.",
 	"requests.moment.needs_decision.title": "Needs a decision",

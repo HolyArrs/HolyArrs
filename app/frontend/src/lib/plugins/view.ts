@@ -83,6 +83,7 @@ export function needLabel(need: string, p: Plugin): string {
 		return g ? `${scopeLine(name, g.id)} (${name})` : t('plugins.needScope', { scope: name });
 	}
 	if (kind === 'resources') return t('plugins.needResources');
+	if (kind === 'event') return t('plugins.canEvents', { events: eventLabel(name) });
 	const f = p.access?.folders?.find((x) => x.name === name);
 	return f ? folderLabel(f) : name;
 }
@@ -103,6 +104,14 @@ export function pluginAbout(p: Plugin): string {
 /** Actions with our own plain words; any other shows as the manifest wrote it. */
 const knownActions = new Set(['library.read', 'watched.write', 'activity.read', 'requests.create', 'requests.read', 'requests.approve', 'collections.write', 'downloads.read', 'downloads.pause', 'ui.theme']);
 
+/** Events with our own plain words; any other shows as the manifest wrote it. */
+const knownEvents = new Set(['library.add', 'library.delete', 'library.import', 'library.rename', 'library.artwork', 'library.subtitle', 'library.needs_decision', 'download.grab', 'download.done', 'download.failed', 'system.health', 'library.upgraded', 'library.edited', 'library.refreshed', 'library.moved', 'library.episodes_changed', 'library.adopted', 'library.file_missing', 'library.file_back', 'download.rejected', 'download.vanished', 'search.done', 'search.failed', 'search.release_held', 'request.made', 'request.approved', 'request.declined', 'request.available', 'report.made', 'report.fixed', 'system.media_server_updated', 'system.list_synced', 'system.folder_unreachable', 'system.disk_low']);
+
+/** One event a plugin asks to be told, in plain words. */
+export function eventLabel(ev: string): string {
+	return knownEvents.has(ev) ? t(`plugins.ev.${ev.replace('.', '_')}`) : ev;
+}
+
 /** What the signed manifest lets the plugin reach outside its own folder, in plain words. */
 export function reaches(p: Plugin): string[] {
 	const out: string[] = [];
@@ -116,6 +125,8 @@ export function reaches(p: Plugin): string[] {
 	if (p.reaches_app) out.push(known.has(p.id) ? t(`plugins.can.${p.id}.app`) : t('plugins.canApp'));
 	if (p.scope_groups) out.push(...p.scope_groups.map(groupLine));
 	else for (const a of p.access?.actions ?? []) out.push(knownActions.has(a) ? t(`plugins.act.${a.replace('.', '_')}`) : t('plugins.canAction', { action: a }));
+	const events = p.access?.events ?? [];
+	if (events.length) out.push(t('plugins.canEvents', { events: events.map(eventLabel).join(', ') }));
 	const folders = (p.access?.folders ?? []).map((f) => (typeof f === 'string' ? { name: f, mode: 'read' } : f));
 	if (folders.length) out.push(t('plugins.canFolders', { folders: shortList(folders.map(folderLabel)) }));
 	return out;
@@ -160,8 +171,14 @@ export function abilities(p: Plugin): string[] {
 /** What an update can do that the installed version can't, in plain words; empty when it asks for nothing new. */
 export function newAbilities(p: Plugin): string[] {
 	if (!p.installed || !p.installed_access) return [];
-	const had = new Set(reaches({ ...p, access: p.installed_access }));
-	return reaches(p).filter((a) => !had.has(a));
+	const old = p.installed_access;
+	const had = new Set(reaches({ ...p, access: old }));
+	// Events read as one line: name only the events the installed version was not told.
+	const hadEvents = new Set(old.events ?? []);
+	const added = (p.access?.events ?? []).filter((e) => !hadEvents.has(e));
+	const out = reaches({ ...p, access: p.access ? { ...p.access, events: [] } : p.access }).filter((a) => !had.has(a));
+	if (added.length) out.push(t('plugins.canEvents', { events: added.map(eventLabel).join(', ') }));
+	return out;
 }
 
 /** Arrow-key target in a list or grid of items: the next, previous, or the one above or below (same column). */
@@ -361,4 +378,13 @@ export function foldersMissing(p: Plugin): boolean {
 /** Whether a plugin forwards HolyArrs from outside (it asks for network.forward). */
 export function forwards(p: { access?: { actions?: string[] | null } | null }): boolean {
 	return !!p.access?.actions?.includes('network.forward');
+}
+
+/** The tile's small badge: only for installed plugins (and developer ones), so the directory stays calm. */
+export function pluginBadge(p: Plugin): string {
+	if (p.dev) return t('plugins.devBadge');
+	if (!p.installed) return '';
+	if (hasUpdate(p)) return t('plugins.stateUpdate');
+	if (p.test) return t('plugins.testBadge');
+	return pluginState(p) === 'off' ? t('plugins.stateOff') : stateLabel(p);
 }

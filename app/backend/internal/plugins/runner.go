@@ -53,6 +53,10 @@ type Spec struct {
 	AllowNoNetLock bool
 	// Folders are the folders the owner approved, already open.
 	Folders []GrantedFolder
+	// Events is the program's stdin: one JSON line per approved event. Nil
+	// leaves stdin empty, as for every plugin that asks for no events. An
+	// *os.File here is the runner's to close once the program has it.
+	Events io.Reader
 }
 
 // GrantedFolder is one approved folder for one start. File is the folder
@@ -151,8 +155,14 @@ func (r ExecRunner) Start(ctx context.Context, spec Spec) (Process, error) {
 		return nil, err
 	}
 	cmd.Stdout, cmd.Stderr = out, out
+	if spec.Events != nil {
+		cmd.Stdin = spec.Events
+	}
 	err = cmd.Start()
 	_ = out.Close() // the program holds its own copy
+	if f, ok := spec.Events.(*os.File); ok {
+		_ = f.Close()
+	}
 	if err != nil {
 		_ = cleanup()
 		return nil, err

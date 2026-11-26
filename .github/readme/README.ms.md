@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.0: lebih 150 pembaikan dan ciri daripada 101 orang.** Sistem pemalam, wizard persediaan baharu, dan mod lepas tangan yang tidak pernah menyentuh fail anda. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: pemalam mendengar apa yang berlaku dalam HolyArrs.** Mod pembangun menjalankan pemalam yang anda bina, dan versi ujian membolehkan beberapa orang mencubanya dahulu. [Lihat perkara baharu](https://holyarrs.com/whats-new/)
 
 > Setiap poster, treler dan skor dalam HolyArrs anda datang daripada pelayan yang saya jalankan dan bayar sendiri, supaya ia kekal percuma untuk semua orang. Jika HolyArrs menjadikan malam menonton filem anda sedikit lebih baik, seorang penaja membantu menghidupkan lampu untuk kita semua 💛
 >

@@ -278,3 +278,39 @@ func BumpFailedSignIn(ctx context.Context, tx *sql.Tx, now time.Time, ip, name, 
 	}
 	return res.RowsAffected()
 }
+
+// EventsAfter lists up to limit Events of the given kinds with an id above
+// after, oldest first: what a plugin missed while it was stopped.
+func (s *Store) EventsAfter(ctx context.Context, after int64, kinds []string, limit int) ([]Event, error) {
+	if len(kinds) == 0 || limit <= 0 {
+		return nil, nil
+	}
+	marks := strings.TrimSuffix(strings.Repeat("?,", len(kinds)), ",")
+	args := []any{after}
+	for _, k := range kinds {
+		args = append(args, k)
+	}
+	var e Event
+	rows, err := s.readEv.QueryContext(ctx, "SELECT "+SelectList(&e)+" FROM events WHERE id > ? AND kind IN ("+marks+") ORDER BY id LIMIT ?",
+		append(args, limit)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Event
+	for rows.Next() {
+		var e Event
+		if err := rows.Scan(ScanInto(&e)...); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// LastEventID is the newest Event's id, 0 when there is none.
+func (s *Store) LastEventID(ctx context.Context) (int64, error) {
+	var id sql.NullInt64
+	err := s.readEv.QueryRowContext(ctx, "SELECT max(id) FROM events").Scan(&id)
+	return id.Int64, err
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { abilities, categories, categoryLabel, developers, findPlugins, inTab, notices, platformLabel, safeLink, shownName, sortPlugins, reaches, pluginName, pluginState, shownVersion, noLockNotice, showsNoLockCard, showsNoLockTag, stateLabel } from './view.ts';
+import { eventLabel, needLabel, newAbilities } from './view.ts';
 import { isNew, freshUpdate, trendingIds, shortDate, pluginIcon, devPicture } from './view.ts';
 import type { Plugin } from './types.ts';
 
@@ -167,5 +168,36 @@ describe('folders before start', () => {
 		expect(foldersMissing(p)).toBe(true);
 		expect(foldersMissing({ ...p, grants: { media: { path: '/data/media', mode: 'read' } } } as Plugin)).toBe(false);
 		expect(foldersMissing(base)).toBe(false);
+	});
+});
+
+describe('plugin events', () => {
+	const base = { id: 'covers', installed: true, access: { hosts: [], folders: [], actions: [], events: ['library.add', 'library.artwork'] } } as unknown as Plugin;
+	it('lists the events it is told, in plain words', () => {
+		const line = reaches(base).find((l) => l.includes('a title is added'));
+		expect(line).toContain('cover art changes');
+	});
+	it('names a held event in the approval list', () => {
+		expect(needLabel('event:library.delete', base)).toContain('a title is deleted');
+		expect(eventLabel('library.someday')).toBe('library.someday');
+	});
+	it('says nothing about events for a plugin that asks for none', () => {
+		expect(reaches({ ...base, access: { hosts: [], folders: [], actions: [] } } as unknown as Plugin).some((l) => l.includes('right away'))).toBe(false);
+	});
+});
+
+describe('an update that asks for more events', () => {
+	it('names only the new events', () => {
+		const p = { id: 'covers', installed: true, installed_version: '1.0.0', version: '1.0.1',
+			installed_access: { hosts: [], folders: [], actions: [], events: ['library.add'] },
+			access: { hosts: [], folders: [], actions: [], events: ['library.add', 'library.delete'] } } as unknown as Plugin;
+		const n = newAbilities(p);
+		expect(n).toHaveLength(1);
+		expect(n[0]).toContain('a title is deleted');
+		expect(n[0]).not.toContain('a title is added');
+	});
+	it('says nothing new when the events stay the same', () => {
+		const same = { hosts: [], folders: [], actions: [], events: ['library.add'] };
+		expect(newAbilities({ id: 'covers', installed: true, installed_access: same, access: same } as unknown as Plugin)).toEqual([]);
 	});
 });

@@ -22,6 +22,8 @@ type StartInput struct {
 	PublicKey ed25519.PublicKey
 	List      []byte
 	Blocklist []byte
+	// TestList is the cached test-version list, nil when none.
+	TestList []byte
 }
 
 // CheckStart re-hashes the program on disk and checks it against state and
@@ -67,6 +69,10 @@ type StartAccess struct {
 	Folders  []GrantedFolder
 	Env      []string
 	Limits   Limits
+	// Events are the events this start is told (asked for and approved);
+	// Stdin is where they arrive, nil when there are none.
+	Events []string
+	Stdin  io.Reader
 }
 
 // Start checks the plugin and starts it with its own data folder plus what
@@ -104,7 +110,7 @@ func (s *Store) Start(ctx context.Context, r Runner, id string, in StartInput, a
 	spec := Spec{ID: id, Program: run, Args: args, Env: pluginEnv(env, data), DataDir: data,
 		AllowNoFileLock: allow, AllowNoNetLock: allowNet}
 	for _, a := range acc {
-		spec.Proxy, spec.SelfAddr, spec.Folders, spec.Limits = a.Proxy, a.SelfAddr, a.Folders, a.Limits
+		spec.Proxy, spec.SelfAddr, spec.Folders, spec.Limits, spec.Events = a.Proxy, a.SelfAddr, a.Folders, a.Limits, a.Stdin
 		spec.Env = append(spec.Env, a.Env...)
 	}
 	proc, err := r.Start(ctx, spec)
@@ -141,7 +147,14 @@ func pluginEnv(env []string, home string) []string {
 // verifyStart also moves the stored counters forward when newer lists pass,
 // so an older list is never accepted again. It returns the checked bytes.
 func (s *Store) verifyStart(st *State, p *Installed, in StartInput) ([]byte, error) {
-	list, err := VerifyList(in.PublicKey, in.List, KindPlugins, st.ListCounter)
+	if p.Dev {
+		return s.verifyDevStart(st, p)
+	}
+	kind, raw, last := KindPlugins, in.List, st.ListCounter
+	if p.Test {
+		kind, raw, last = KindTest, in.TestList, st.TestCounter
+	}
+	list, err := VerifyList(in.PublicKey, raw, kind, last)
 	if err != nil {
 		return nil, fmt.Errorf("plugin list: %w", err)
 	}
@@ -179,7 +192,12 @@ func (s *Store) verifyStart(st *State, p *Installed, in StartInput) ([]byte, err
 	if !onList {
 		return nil, fmt.Errorf("%w: %s %s", ErrNotOnList, p.ID, p.Version)
 	}
-	st.ListCounter, st.BlockCounter = list.Counter, block.Counter
+	if p.Test {
+		st.TestCounter = list.Counter
+	} else {
+		st.ListCounter = list.Counter
+	}
+	st.BlockCounter = block.Counter
 	return file, nil
 }
 

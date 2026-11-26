@@ -32,6 +32,8 @@
 	"requests.moment.add.body": "Персоналу: фільм чи серіал додано вручну, зі списку або зі схваленого запиту.",
 	"requests.moment.delete.title": "Видалено",
 	"requests.moment.delete.body": "Персоналу: фільм, серіал, сезон чи серії серіалу залишили бібліотеку.",
+	"requests.moment.artwork.title": "Обкладинку змінено",
+	"requests.moment.artwork.body": "Персоналу: тайтл у бібліотеці отримав нову обкладинку.",
 	"requests.moment.health.title": "Справність",
 	"requests.moment.health.body": "Персоналу: перевірка справності збилася або знову виправлена.",
 	"requests.moment.needs_decision.title": "Потрібне рішення",
