@@ -22,7 +22,8 @@ export function decisionPins(): PinnedAlert[] {
 		title: t('frame.feeds.decision', { title: `${d.title}${d.year ? ` (${d.year})` : ''}` }),
 		body: d.reason ? cut(d.reason) : undefined,
 		tone: 'warn',
-		href: '/downloads',
+		// Opens this decision's row on Downloads, as Home's Needs attention does.
+		href: `/downloads?show=problems.decide&slot=${d.slot_id}`,
 		label: t('frame.feeds.downloads')
 	}));
 }

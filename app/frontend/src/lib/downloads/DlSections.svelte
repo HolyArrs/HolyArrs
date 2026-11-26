@@ -135,6 +135,16 @@
 	const start = showOf(page.url.searchParams.get('show'));
 	let show = $state(start.show);
 	let sub = $state(start.sub);
+	// A link followed while the page is open (a pin in the alerts list) picks its tab too; the address this page writes itself reads back as the same tab.
+	let linkShow = page.url.searchParams.get('show');
+	$effect(() => {
+		const v = page.url.searchParams.get('show');
+		if (v === linkShow) return;
+		linkShow = v;
+		const next = showOf(v);
+		show = next.show;
+		sub = next.sub;
+	});
 	function remember() {
 		try {
 			const u = new URL(location.href);

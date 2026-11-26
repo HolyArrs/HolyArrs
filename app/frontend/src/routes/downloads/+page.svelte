@@ -145,22 +145,22 @@
 		if (loaded && openId && !allRows.some((r) => r.id === openId)) openId = 0;
 	});
 
-	// &open=<download id> or &slot=<slot id> (Home's Needs attention) opens that row's details once.
-	let opened = false;
+	// &open=<download id> or &slot=<slot id> (Home's Needs attention, the alerts list) opens that row's details once per link: a second link followed while already on Downloads opens its own row.
+	let handled: string | null = null;
 	$effect(() => {
-		if (opened || !loaded) return;
-		// A watcher has no decisions to wait for: the link opens only a row already in the list.
-		if (watch) opened = true;
+		const link = page.url.search;
+		if (handled === link || !loaded) return;
 		const q = page.url.searchParams;
 		const dl = Number(q.get('open'));
 		const slot = Number(q.get('slot'));
 		if (!dl && !slot) {
-			opened = true;
+			handled = link;
 			return;
 		}
 		const d = slot ? decisions.items.find((x) => x.slot_id === slot) : undefined;
-		if (slot && !d && decisions.items.length === 0 && !watch) return; // The decisions are still loading.
-		opened = true;
+		// The decisions are still loading. A watcher has none to wait for: the link opens only a row already in the list.
+		if (slot && !d && decisions.items.length === 0 && !watch) return;
+		handled = link;
 		const id = dl || (d?.download_id && rowIds.has(d.download_id) ? d.download_id : -slot);
 		if (allRows.some((r) => r.id === id)) openId = id;
 	});

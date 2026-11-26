@@ -19,7 +19,8 @@ vi.mock('#lib/downloads/index.ts', () => ({ decisions: { items: [] } }));
 vi.mock('#lib/core/inbox.svelte.ts', () => ({ inbox: { messages: [] } }));
 vi.mock('#lib/core/toasts.svelte.ts', () => ({ toasts: { push: vi.fn(), record: vi.fn() } }));
 
-const { startBellFeeds } = await import('./bell-feeds.svelte.ts');
+const { startBellFeeds, decisionPins } = await import('./bell-feeds.svelte.ts');
+const { decisions } = await import('#lib/downloads/index.ts');
 const { toasts } = await import('#lib/core/toasts.svelte.ts');
 
 // The live stream hands every topic listener null on a resync (server restart, missed events).
@@ -43,5 +44,13 @@ describe('bell download feed', () => {
 		stop = startBellFeeds(true);
 		fire({ State: 'failed', StateReason: 'no seeders' });
 		expect(toasts.push).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('decision pins', () => {
+	it('open the decision they are about on Downloads', () => {
+		(decisions.items as unknown[]).push({ slot_id: 42, title: 'Arrival', year: 2016, reason: 'Two files match.' });
+		expect(decisionPins()[0]).toMatchObject({ key: 'decision|42', href: '/downloads?show=problems.decide&slot=42' });
+		decisions.items.length = 0;
 	});
 });
