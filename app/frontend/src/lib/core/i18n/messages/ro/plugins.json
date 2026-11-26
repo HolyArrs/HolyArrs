@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Pluginurile semnate rulează aici fără blocarea fișierelor. Celelalte limite de siguranță rămân active.",
 	"plugins.noLockOffNow": "Pluginurile rămân oprite până când sistemul are blocarea fișierelor.",
 	"plugins.noLockChange": "Schimbă",
+	"plugins.noLockLearn": "Cum funcționează blocarea fișierelor pluginurilor",
 	"plugins.noLockTag": "Fără blocarea fișierelor pe acest sistem",
 	"plugins.noLockKeptOff": "Pluginurile rămân oprite fără blocarea fișierelor",
 	"plugins.secAccess": "Are acces la",

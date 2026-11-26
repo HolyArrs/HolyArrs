@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Kai kurie aplankai neperėjo. Nuskaitykite dar kartą, kad juos perimtumėte; aplankai, kurie jau yra Bibliotekoje, lieka tokie, kokie yra.",
 	"library.import.scanAgain": "Nuskaityti dar kartą",
 	"library.import.keepOpen": "Laikykite šį puslapį atvirą, kol baigsis.",
+	"library.import.closeOk": "Tai vyksta serveryje, todėl gali uždaryti šį puslapį.",
 	"library.import.waiting": "Metaduomenų serveris užimtas. HolyArrs paskutinius {left} bandys dar kartą po {min} min.",
 	"library.import.leaveAsk": "Vyksta importas. Jei išeisite iš šio puslapio, dar neišsiųsti aplankai nebus perimti. Vis tiek išeiti?",
 	"library.import.interrupted": "Importas sustojo ties {done} iš {total} aplankų, kai buvo uždarytas jo puslapis. Nuskaitykite dar kartą, kad perimtumėte likusius; jau perimti aplankai lieka tokie, kokie yra.",

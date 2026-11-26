@@ -19,7 +19,7 @@ func TestTranslatePatternIDBraces(t *testing.T) {
 // any case come across; a word with no match is named without its brackets.
 func TestTranslatePatternWrappedWords(t *testing.T) {
 	for in, want := range map[string]string{
-		"{Movie CleanTitle} {(Release Year)} {imdb-{ImdbId}} {edition-{Edition Tags}} {[Quality Full]}{-Release Group}": "{title} ({year}) {imdb-{imdb}} {edition-{edition}} [{quality}]-{group}",
+		"{Movie CleanTitle} {(Release Year)} {imdb-{ImdbId}} {edition-{Edition Tags}} {[Quality Full]}{-Release Group}": "{title} ({year}) {imdb-{imdb}} {edition-{edition}} [{quality_full}]-{group}",
 		"{Movie Title} ({Release Year}) {tmdb-{tmdbid}}":                                                                "{title} ({year}) {tmdb-{tmdb}}",
 		"{Series TitleYear} [tvdbid-{TVDBID}]":                                                                          "{title} ({year}) [tvdbid-{tvdb}]",
 		"{Series TitleYear} - S{season:00}E{episode:00} - {Episode CleanTitle}":                                         "{title} ({year}) - {episode} - {episode_title}",

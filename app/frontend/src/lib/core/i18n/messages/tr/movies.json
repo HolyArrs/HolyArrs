@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Bu filmin {label} versiyonu güncel tutulmasın mı? Diskteki dosyalara dokunulmaz.",
 	"movies.versions.removeFailed": "Versiyon kaldırılamadı",
+	"movies.versions.deleteFile": "Dosyayı sil",
+	"movies.versions.deleteFileConfirm": "{name} silinsin mi? Son silinenler'e taşınır ve oradan geri yükleyebilirsiniz.",
+	"movies.versions.deleteFileFailed": "Dosya silinemedi",
 	"movies.versions.title": "Versiyonlar",
 	"movies.versions.showLess": "Daha az göster",
 	"movies.versions.seeAll": "{count} tanesinin hepsini gör",

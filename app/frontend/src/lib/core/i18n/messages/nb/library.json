@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Noen mapper kom ikke gjennom. Skann på nytt for å få dem med; mapper som allerede er i Biblioteket, blir som de er.",
 	"library.import.scanAgain": "Skann på nytt",
 	"library.import.keepOpen": "Hold denne siden åpen til det er ferdig.",
+	"library.import.closeOk": "Det kjører på serveren, så du kan lukke denne siden.",
 	"library.import.waiting": "Metadataserveren er opptatt. HolyArrs prøver de siste {left} igjen om {min} min.",
 	"library.import.leaveAsk": "Et import pågår. Hvis du forlater siden, blir mappene som ikke er sendt ennå, ikke overtatt. Vil du forlate den likevel?",
 	"library.import.interrupted": "Et import stoppet ved {done} av {total} mapper da siden ble lukket. Skann på nytt for å overta resten; mapper som allerede er overtatt, blir som de er.",

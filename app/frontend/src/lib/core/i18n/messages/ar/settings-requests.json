@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "أين تذهب طلبات 4K الموافق عليها وكيف تُختار",
 	"settings.requests.fourKSameFolder": "مثل الطلبات الأخرى",
 	"settings.requests.fourKNamedRules": "الجودة المسماة 4K",
+	"settings.requests.anime": "أنمي",
+	"settings.requests.animeDesc": "أين تذهب طلبات الأنمي الموافق عليها",
 	"settings.requests.choices": "ما يمكن للناس طلبه",
 	"settings.requests.choicesDesc": "أزرار الجودة في نوافذ الطلب، بهذا الترتيب. أعد تسميتها أو أخفها هنا؛ يحصل الأطفال على أول زر ظاهر.",
 	"settings.requests.choiceShown": "إظهار للناس",

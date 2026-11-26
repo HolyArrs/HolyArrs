@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Dodaj preuzimatelja",
 	"downloads.hl.noUsenetDl": "nijedan Usenet preuzimatelj nije postavljen",
 	"downloads.hl.noTorrentDl": "nijedan torrent preuzimatelj nije postavljen",
+	"downloads.problem.waitingForFiles": "Čekanje datoteka",
 	"downloads.problem.importBlocked": "Uvoz blokiran",
 	"downloads.problem.missingArticles": "Nedostaju članci",
 	"downloads.problem.noFullCopy": "Nema potpune kopije",

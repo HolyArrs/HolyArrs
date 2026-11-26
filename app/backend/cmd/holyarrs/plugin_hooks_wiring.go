@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -33,6 +34,37 @@ func newPluginHooks() *hooks.Registry {
 	}
 	sources.PluginTransport = func(id string) http.RoundTripper { return &hooks.ReleaseTransport{Broker: b, Plugin: id} }
 	return reg
+}
+
+// wireBotCheck lets a plugin with sources.botcheck open a Source's bot
+// check. With several, the first by id serves. Its pin is its id and the
+// hosts it may reach, so a Source with a key needs the key typed again
+// when the solver, or where it can send what it is handed, changes.
+func wireBotCheck(b *hooks.Broker, reach func(id string) []string) {
+	sources.BotCheck = func() *sources.BotCheckSolver {
+		ids := b.Providers(hooks.Botcheck)
+		if len(ids) == 0 {
+			return nil
+		}
+		slices.Sort(ids)
+		id := ids[0]
+		return &sources.BotCheckSolver{Pin: sources.BotCheckPin(id, reach(id)), Solve: func(ctx context.Context, ask sources.BotCheckAsk) (sources.BotCheckAnswer, error) {
+			in := hooks.BotcheckAsk{URL: ask.URL}
+			if p := ask.Proxy; p != nil {
+				pass, _ := p.User.Password()
+				in.Proxy = &hooks.BotcheckProxy{URL: p.Scheme + "://" + p.Host, Username: p.User.Username(), Password: pass}
+			}
+			a, err := hooks.SolveBotcheck(ctx, b, id, in)
+			if err != nil {
+				return sources.BotCheckAnswer{}, err
+			}
+			out := sources.BotCheckAnswer{URL: a.URL, Status: a.Status, Body: a.Body, UserAgent: a.UserAgent}
+			for _, k := range a.Cookies {
+				out.Cookies = append(out.Cookies, sources.BotCheckCookie{Name: k.Name, Value: k.Value})
+			}
+			return out, nil
+		}}
+	}
 }
 
 // pluginDownloader is the download client a plugin serves.

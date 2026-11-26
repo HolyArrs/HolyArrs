@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "เลิกเก็บเวอร์ชัน {label} ของภาพยนตร์เรื่องนี้ไหม ไฟล์บนดิสก์จะไม่ถูกแตะต้อง",
 	"movies.versions.removeFailed": "ลบเวอร์ชันไม่สำเร็จ",
+	"movies.versions.deleteFile": "ลบไฟล์",
+	"movies.versions.deleteFileConfirm": "ลบ {name} หรือไม่ ไฟล์จะไปอยู่ในรายการที่ลบล่าสุด ซึ่งคุณกู้คืนได้",
+	"movies.versions.deleteFileFailed": "ลบไฟล์ไม่ได้",
 	"movies.versions.title": "เวอร์ชัน",
 	"movies.versions.showLess": "แสดงน้อยลง",
 	"movies.versions.seeAll": "ดูทั้ง {count}",

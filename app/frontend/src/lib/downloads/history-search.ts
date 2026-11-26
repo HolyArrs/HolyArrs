@@ -93,7 +93,7 @@ export const searchSteps: { key: string; label: string; kinds: string[] }[] = [
 	{ key: 'imported', get label() { return W('Imported'); }, kinds: ['import_done', 'import_partly_done', 'adopted', 'media_server_told'] },
 	{ key: 'upgraded', get label() { return W('Upgraded'); }, kinds: ['file_replaced'] },
 	{ key: 'renamed', get label() { return W('Renamed'); }, kinds: ['renamed', 'rename_planned'] },
-	{ key: 'deleted', get label() { return W('Deleted'); }, kinds: ['title_removed', 'episodes_removed', 'file_held', 'holding_cleaned'] },
+	{ key: 'deleted', get label() { return W('Deleted'); }, kinds: ['title_removed', 'episodes_removed', 'movie_file_removed', 'file_held', 'holding_cleaned'] },
 	{ key: 'declined', get label() { return W('Turned down'); }, kinds: ['ask_turned_down', 'release_turned_down', 'ai_ask_turned_down', 'subtitle_turned_down'] },
 	{ key: 'failed', get label() { return W('Failed'); }, kinds: (tabKinds('problems') ?? []).filter((k) => !decideKinds.includes(k)) },
 	{ key: 'asked', get label() { return W('Asked'); }, kinds: ['ask_made', 'ai_ask_made'] },
@@ -247,7 +247,7 @@ const kindStep: [RegExp, Omit<RowStep, 'failed'>][] = [
 	[/^subtitle_/, { get label() { return W('Subtitles'); }, icon: 'subtitle' }],
 	[/^media_server_told$/, { get label() { return W('In media server'); }, icon: 'tv' }],
 	[/^file_replaced$/, { get label() { return W('Upgraded'); }, icon: 'sparkle' }],
-	[/^(title_removed|episodes_removed|file_held|holding_cleaned|download_removed)$/, { get label() { return W('Deleted'); }, icon: 'trash' }],
+	[/^(title_removed|episodes_removed|movie_file_removed|file_held|holding_cleaned|download_removed)$/, { get label() { return W('Deleted'); }, icon: 'trash' }],
 	[/^(signed_in|sign_in_failed|signed_out|api_key_created|api_key_deleted|settings_changed|secrets_imported|account_changed|backup_used)$/, { get label() { return W('System'); }, icon: 'info' }]
 ];
 /** Names a row's newest step; a folded download reads its furthest step. */

@@ -121,6 +121,8 @@
 					<span class="tx">
 						<span class="t">{p.text}</span>
 						{#if p.body}<span class="b">{p.body}</span>{/if}
+						<!-- A row about a title opens its page, as the pinned rows above do. -->
+						{#if p.href && !live(p)}<a class="act" href={to(p.href)} data-testid="alert-open" onclick={() => (alertsPanel.open = false)}>{t('frame.feeds.open')}</a>{/if}
 						{#if live(p)}<button type="button" class="act" onclick={() => toasts.runPast(p.id)}>{p.action?.label}</button>{/if}
 					</span>
 					<span class="side">
@@ -178,13 +180,15 @@
 	.clear { font: var(--t-footnote); font-weight: 600; color: var(--text-muted); padding: 4px 8px; border-radius: 999px; }
 	.clear:hover { color: var(--text); background: var(--surface-2); }
 	.rows { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; overscroll-behavior: contain; }
-	.row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px 10px 12px; border-radius: 16px; background: var(--surface-2); box-shadow: inset 0 0 0 0.5px var(--line); transition: background var(--dur-fast, 0.15s) var(--ease-out, ease); }
+	/* flex: none: in a long, scrolling list a row keeps its full height (with its Open or Undo button) instead of being squeezed. */
+	.row { flex: none; display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px 10px 12px; border-radius: 16px; background: var(--surface-2); box-shadow: inset 0 0 0 0.5px var(--line); transition: background var(--dur-fast, 0.15s) var(--ease-out, ease); }
 	.row:hover { background: color-mix(in srgb, var(--surface-2) 85%, var(--text) 6%); }
 	.row.fresh { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--info, #0071e3) 35%, transparent); }
 	.tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-	.t { font: var(--t-subhead); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	/* Title and second line wrap: an alert is read here in full, and the list scrolls. */
+	.t { font: var(--t-subhead); font-weight: 600; overflow-wrap: anywhere; }
 	.fresh .t::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--info, #0071e3); vertical-align: middle; }
-	.b { font: var(--t-footnote); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.b { font: var(--t-footnote); color: var(--text-muted); overflow-wrap: anywhere; }
 	.row :global(.ui-alert-sym) { margin-top: 1px; --sym: var(--info); }
 	.row :global(.ui-alert-sym.ok) { --sym: var(--ok); }
 	.row :global(.ui-alert-sym.fail) { --sym: var(--fail); }

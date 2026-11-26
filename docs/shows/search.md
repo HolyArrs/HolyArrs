@@ -39,6 +39,8 @@ You should see the episodes on **Downloads**. Each release lists the episodes it
 
 The confirm box warns you when the release failed the rules (the button then says **Choose anyway**), when the episode has not aired, or when you already have a good enough copy.
 
+On a season's list, **Choose anyway** also takes a release named for the show with only a site word before it (such as `Watch`), a release tag after it (such as `Uncut`) or its own group beside it. The release must still name a season or episode. A show with a one-word name is never loosened, and a name that belongs to another show in your library is refused.
+
 :::tip
 **Turn down** on an episode's list turns the release down for that episode only. On a season's list it covers every episode the release holds.
 :::

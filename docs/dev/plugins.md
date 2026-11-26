@@ -31,6 +31,7 @@ Each published version has a `manifest.json`. The release tools build it from `h
 | `icon` | Optional. A PNG or SVG data URL under 48 KB. In `holyarrs-plugin.json`, set `icon_file` to a `.png` or `.svg` next to it instead |
 | `support_email`, `support_url` | How people reach the author for help. A listed plugin needs at least one; the URL must be https. The Plugins page shows them under Contact |
 | `size` | Size of the plugin file in bytes for that CPU type. Added by the release tools |
+| `download_types` | Optional. Download types the plugin brings itself, beyond torrent and usenet, such as `["soulseek"]`. Up to 4, each 2 to 31 lowercase letters, digits and dashes, starting with a letter. See [Own download types](#own-download-types) |
 
 The Plugins page shows these lists to the owner before install. Installing approves the websites and events; each folder gets a real folder only once the owner picks one. An update that asks for more (a new website, event or folder, or `read_write` where `read` was approved) is installed but held until the owner approves it. An update that asks for less starts at once.
 
@@ -39,6 +40,18 @@ The Plugins page shows these lists to the owner before install. Installing appro
 - `HTTPS_PROXY`, `HTTP_PROXY` and `ALL_PROXY` point at the plugin's own proxy in HolyArrs. Use your HTTP library's standard proxy support. A connect that ignores them still ends at the proxy, which then reads the TLS server name.
 - `HOLYARRS_PLUGIN_FOLDER_<NAME>` for each approved folder (the name in capitals, other characters as `_`), and `HOLYARRS_PLUGIN_FOLDERS` as a JSON map of name to path.
 - `HOLYARRS_PLUGIN_NO_UDP=1`: UDP is not available. Only TCP to the listed websites on ports 443 and 80 works.
+
+### Own download types
+
+A plugin that serves a Source (`plugin://<id>`) and a Downloader can bring a download type of its own, for downloads that are neither torrent nor usenet:
+
+- List it in `download_types`, for example `["soulseek"]`.
+- The owner adds the plugin's Source with that type as its protocol, and a Downloader of kind `plugin` (address `plugin://<id>`) with the same type. HolyArrs refuses a type the plugin did not list.
+- Every result from that Source carries the type. A Release of that type only ever goes to a Downloader of the same type, never to a torrent or usenet client, and torrent or usenet Releases never go to it.
+- Releases of the type wait like usenet ones in the pick rules. When a protocol is preferred, two Releases that are both not on it tie on that step.
+- Sonarr- and Radarr-style API clients see the protocol as `unknown`.
+
+The `plugin-torrent` and `plugin-usenet` Downloader kinds keep working as before.
 
 ## Events
 
@@ -86,6 +99,43 @@ A plugin that lists `access.events` is told each one as it happens: one line of 
 | `system.list_synced` | An Outside list is synced |
 | `system.folder_unreachable` | A Library folder can't be reached |
 | `system.disk_low` | An import was refused because the disk is too full |
+
+## Bot-check solver hook
+
+A plugin can open the bot check (Cloudflare, DDoS-Guard) that some sites put in front of their feed, for example by asking a FlareSolverr or Byparr the owner runs. HolyArrs runs no browser itself; with no such plugin, a Source behind a bot check stays **Blocked** as before.
+
+The plugin asks for the `sources.botcheck` action. The Plugins page shows it with the "Sees everything sent through it" warning, because it is handed the Source's page address, key included.
+
+The plugin polls for work with its token and answers each job:
+
+- `GET /api/v1/plugin-hooks/botcheck` waits up to 25 seconds and answers `200` with a job, or `204` when none came. Ask again.
+- `POST /api/v1/plugin-hooks/botcheck` with `{"job": "<id>", "data": <answer>}`, or `{"job": "<id>", "error": "<why>"}` when it could not pass the check. HolyArrs waits up to 75 seconds for the answer.
+
+A job has `op` `"open"` and this payload:
+
+```json
+{"url": "https://site.example/api?t=search&q=dune&apikey=...", "proxy": {"url": "socks5://vpn:1080", "username": "me", "password": "..."}}
+```
+
+`proxy` is the Source's own proxy, when it has one, so the page comes from the same address as every other call to that Source. Open `url` with a plain GET. The answer:
+
+```json
+{"url": "https://site.example/api?t=search&q=dune&apikey=...", "status": 200, "body": "<html>...</html>", "cookies": [{"name": "cf_clearance", "value": "..."}], "user_agent": "Mozilla/5.0 ..."}
+```
+
+`url` is where the browser ended, `body` the page as text (up to 16 MB). HolyArrs takes the feed back out of a browser page itself: JSON or text in a `<pre>`, and XML shown by Chrome's XML viewer.
+
+What HolyArrs checks, so a plugin can't widen what a Source reaches:
+
+- Only a plain GET that meets a bot check is handed over. A POST, a call with its own headers (a site sign-in cookie) and a plugin Source never are.
+- The page must be on the Source's own site, and the Source's address rule (local network or not, never cloud metadata addresses) is checked before the plugin is asked and again on `url`. Another site (`www.` aside), or a name that now leads somewhere the Source may not go, is refused and nothing is kept.
+- The cookies and User-Agent are kept per host and sent straight to the site on later calls, until the site checks again. Cookies that could break the header are left out.
+- A Source with a key, passkey or proxy password is only handed to the plugin it was saved with. Its pin is the plugin id plus the hosts it may reach, so installing another solver, or adding a host to it, needs the key typed again on the Source. A Source with no key needs nothing.
+- With more than one solver, the first by id serves.
+
+### A FlareSolverr plugin
+
+A FlareSolverr plugin needs one setting, the FlareSolverr address (such as `http://flaresolverr.home.arpa:8191`), and that host added by the owner on the Plugins page, since only hosts the owner adds may reach the LAN. For each job it sends FlareSolverr `POST /v1` with `{"cmd": "request.get", "url": <url>, "maxTimeout": 60000, "proxy": <proxy>}` and maps the answer's `solution` (`url`, `status`, `response`, `cookies`, `userAgent`) to the answer above. When FlareSolverr's `status` is not `"ok"`, it answers with `error` set to its `message`.
 
 ## The sandbox
 

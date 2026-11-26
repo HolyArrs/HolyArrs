@@ -327,7 +327,7 @@ func ChangeOf(e domain.Event) string {
 		return Modified
 	case "subtitle_saved", "subtitle_upgraded", "subtitle_synced", "subtitle_translated", "subtitle_cleaned":
 		return subtitleWritten
-	case domain.EventTitleRemoved, domain.EventEpisodesRemoved:
+	case domain.EventTitleRemoved, domain.EventEpisodesRemoved, domain.EventMovieFileRemoved:
 		if del, _ := e.Data["delete_files"].(bool); del {
 			return Deleted
 		}

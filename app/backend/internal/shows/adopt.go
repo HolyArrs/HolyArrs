@@ -391,6 +391,10 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 	if err := database.Get(ctx, tx, "pick_rules", pickRulesID, &pr); err != nil {
 		return err
 	}
+	var ti mediafiles.Title
+	if err := database.Get(ctx, tx, "titles", titleID, &ti); err != nil {
+		return err
+	}
 	for _, af := range files {
 		if len(af.Keys) == 0 {
 			a.Unknown = append(a.Unknown, af.Path+": "+af.Why)
@@ -449,7 +453,7 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 		if err != nil {
 			return err
 		}
-		ge := mediafiles.OwnedReachesGoodEnough(release, info, pr.Body)
+		ge := mediafiles.OwnedReachesGoodEnoughFor(release, info, ti, pr.Body)
 		state, why := mediafiles.SlotInLibrary, "adopted from "+a.FolderName
 		if !ge && keep {
 			state, why = mediafiles.SlotBetterWanted, "adopted below good enough, so a better copy is sought"

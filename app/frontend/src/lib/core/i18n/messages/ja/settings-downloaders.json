@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd のユーザー名",
 	"settings.downloaders.sabPass": "SABnzbd のパスワード",
 	"settings.downloaders.keyWrongLogin": "SABnzbd がそのユーザー名とパスワードを受け付けませんでした。",
-	"settings.downloaders.keyNotFound": "キーを読み取れませんでした。「キーを取得」を使ってそこからコピーしてください。"
+	"settings.downloaders.keyNotFound": "キーを読み取れませんでした。「キーを取得」を使ってそこからコピーしてください。",
+	"settings.downloaders.pluginKind": "プラグイン"
 }

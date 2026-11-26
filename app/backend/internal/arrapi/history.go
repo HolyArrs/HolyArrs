@@ -163,7 +163,7 @@ func (h *handler) historyRows(ctx context.Context) ([]historyRow, error) {
 	facts, _ := sources.ReleaseFactsOf(ctx, db, relIDs)
 	rels := map[int64]historyRelease{}
 	for id, f := range facts {
-		rels[id] = historyRelease{size: strconv.FormatInt(f.Size, 10), protocol: f.Protocol, published: f.PublishedAt, hash: f.InfoHash,
+		rels[id] = historyRelease{size: strconv.FormatInt(f.Size, 10), protocol: arrProtocol(f.Protocol), published: f.PublishedAt, hash: f.InfoHash,
 			indexer: f.SourceName, info: f.InfoURL}
 	}
 	out := []historyRow{}

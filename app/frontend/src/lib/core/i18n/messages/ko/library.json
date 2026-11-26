@@ -166,6 +166,7 @@
 	"library.import.leftHint": "일부 폴더가 처리되지 않았습니다. 다시 스캔해서 편입하세요. 이미 라이브러리에 있는 폴더는 그대로 둡니다.",
 	"library.import.scanAgain": "다시 스캔",
 	"library.import.keepOpen": "끝날 때까지 이 페이지를 열어 두세요.",
+	"library.import.closeOk": "서버에서 실행되므로 이 페이지를 닫아도 됩니다.",
 	"library.import.waiting": "메타데이터 서버가 바쁩니다. HolyArrs가 남은 {left}개를 {min}분 후에 다시 시도합니다.",
 	"library.import.leaveAsk": "가져오기가 실행 중입니다. 이 페이지를 떠나면 아직 보내지 않은 폴더는 편입되지 않습니다. 그래도 떠날까요?",
 	"library.import.interrupted": "페이지가 닫히면서 가져오기가 폴더 {total}개 중 {done}개에서 멈췄습니다. 다시 스캔해서 나머지를 편입하세요. 이미 편입된 폴더는 그대로 둡니다.",

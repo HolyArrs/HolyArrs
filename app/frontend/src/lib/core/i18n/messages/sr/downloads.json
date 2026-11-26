@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Додај преузимач",
 	"downloads.hl.noUsenetDl": "ниједан Usenet преузимач није подешен",
 	"downloads.hl.noTorrentDl": "ниједан торент преузимач није подешен",
+	"downloads.problem.waitingForFiles": "Чекање датотека",
 	"downloads.problem.importBlocked": "Увоз блокиран",
 	"downloads.problem.missingArticles": "Недостају чланци",
 	"downloads.problem.noFullCopy": "Нема потпуне копије",

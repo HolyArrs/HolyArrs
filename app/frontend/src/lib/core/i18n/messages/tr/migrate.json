@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} bulundu",
 	"migrate.readOnly": "Salt okunur",
 	"migrate.folderReadOnly": "HolyArrs bu klasöre yazamıyor, bu yüzden içine hiçbir şey içe aktarılamaz. HolyArrs'ın Docker kurulumunda birimi yazılabilir yapın (:ro'yu kaldırın), sonra kapsayıcıyı yeniden oluşturun.",
-	"migrate.someFound": "{n} bulundu"
+	"migrate.someFound": "{n} bulundu",
+	"migrate.sameSource": "{list} ile aynı: tek Kaynak",
+	"migrate.nameInApps": "{apps} içinde {name}"
 }

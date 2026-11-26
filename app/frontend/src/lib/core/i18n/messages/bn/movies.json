@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "এই সিনেমার {label} ভার্সন আর রাখবেন না? ডিস্কের ফাইলে হাত দেওয়া হবে না।",
 	"movies.versions.removeFailed": "ভার্সন সরানো যায়নি",
+	"movies.versions.deleteFile": "ফাইল মুছুন",
+	"movies.versions.deleteFileConfirm": "{name} মুছবেন? এটি সম্প্রতি মোছা-তে যাবে, সেখান থেকে আপনি এটি ফিরিয়ে আনতে পারবেন।",
+	"movies.versions.deleteFileFailed": "ফাইলটি মোছা যায়নি",
 	"movies.versions.title": "ভার্সন",
 	"movies.versions.showLess": "কম দেখান",
 	"movies.versions.seeAll": "সব {count}টি দেখুন",

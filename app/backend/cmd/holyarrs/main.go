@@ -587,11 +587,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
 	optional(jobs.Loop{Name: "omdb_scores", Label: "IMDb, Rotten Tomatoes and Metacritic scores", Every: library.OMDbEvery, Run: lib.OMDbPass})
 	optional(jobs.Loop{Name: "trakt_ratings", Label: "Trakt ratings", Every: library.TraktEvery, Run: lib.TraktPass})
-	sso, err := accounts.SSOFromEnv(c.URLBase)
+	au, err := startAuth(ctx, s, vault, c, unmapped != "")
 	if err != nil {
-		return err
+		return authRefused(err, hold)
 	}
-	au := accounts.New(s, accounts.Options{Vault: vault, SafeMode: c.SafeMode, SSO: sso, ConfigUnmapped: unmapped != ""})
 	defer au.Close()
 	loop(jobs.Loop{Name: "sessions", Label: "Session clean-up", Every: time.Hour, Run: au.Cleanup})
 	var restarting atomic.Bool
@@ -623,7 +622,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}()
 		return nil
 	}
-	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) }}
+	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) },
+		Pictures: hosted.Service.Base() + "/v1/img"}
 	var pluginEvents atomic.Pointer[plugins.Engine] // set once the plugins start below
 	sender.Tap = func(m alerts.Message) { tellPlugins(pluginEvents.Load(), m) }
 	sender.Watch(ctx)
@@ -653,7 +653,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	optional(jobs.Loop{Name: "plex_labels", Label: "Plex labels", Every: 15 * time.Minute, Run: media.LabelPass})        // only while the owner keeps it on
 	optional(jobs.Loop{Name: "default_tracks", Label: "Default tracks", Every: 15 * time.Minute, Run: media.TracksPass}) // only while the owner keeps it on
 	defer sender.Wait()
-	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
+	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub, AnimeMap: hosted.Service.AnimeMap}
 	readyCheck.Store(requestsSvc)
 	optional(jobs.Loop{Name: "wishlist", Label: "Requests ready check", Every: 30 * time.Second, Run: func(ctx context.Context) error {
 		requestsSvc.FillAskDetailsLater() // imported asks' names, until found
@@ -699,6 +699,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// safe mode, where one can still be started by hand).
 	pe := startPlugins(ctx, c, key, version, phooks, sender)
 	pluginEvents.Store(pe)
+	wireBotCheck(phooks.Broker, pe.ReachHosts)
 	defer pe.StopAll()
 	langs := newLanguages(c, pe, func() bool { return accounts.HasOwner(ctx, s.Read()) })
 	a := buildHandlers(services{Plugins: pe, PluginHooks: phooks, Languages: langs, Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,

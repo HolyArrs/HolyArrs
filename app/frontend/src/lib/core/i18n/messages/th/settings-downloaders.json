@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "ชื่อผู้ใช้ SABnzbd",
 	"settings.downloaders.sabPass": "รหัสผ่าน SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd ไม่ยอมรับชื่อผู้ใช้และรหัสผ่านนี้",
-	"settings.downloaders.keyNotFound": "อ่านคีย์ไม่ได้ ใช้ รับคีย์ แล้วคัดลอกจากที่นั่น"
+	"settings.downloaders.keyNotFound": "อ่านคีย์ไม่ได้ ใช้ รับคีย์ แล้วคัดลอกจากที่นั่น",
+	"settings.downloaders.pluginKind": "ปลั๊กอิน"
 }

@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Tên người dùng SABnzbd",
 	"settings.downloaders.sabPass": "Mật khẩu SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd không chấp nhận tên người dùng và mật khẩu đó.",
-	"settings.downloaders.keyNotFound": "Không đọc được khóa. Dùng Lấy khóa và sao chép từ đó."
+	"settings.downloaders.keyNotFound": "Không đọc được khóa. Dùng Lấy khóa và sao chép từ đó.",
+	"settings.downloaders.pluginKind": "Plugin"
 }

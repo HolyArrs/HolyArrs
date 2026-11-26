@@ -13,6 +13,10 @@ name: HolyArrs - Plugins
 # plugins.holyarrs.com (Cloudflare Pages: both lists, the manifests and a
 # redirect per file to its release) is deployed in one go. The app trusts a file
 # only when its hash matches the signed list. "Dry run" uploads nothing.
+#
+# Two jobs: "sign" holds the signing key and runs only repo code and Go (no
+# npm). "deploy" holds only the Cloudflare token, gets the signed files as an
+# artifact and runs wrangler from the pinned .github/deploy lockfile.
 
 on:
   push:
@@ -49,12 +53,16 @@ env:
   LIST_URL: https://plugins.holyarrs.com
 
 jobs:
-  plugins:
-    name: Plugins (${{ inputs.action || 'publish' }})
+  sign:
+    name: Sign (${{ inputs.action || 'publish' }})
     runs-on: ubuntu-latest
     environment: plugins
     permissions:
-      contents: write
+      contents: write # the GitHub release for the plugin files
+    outputs:
+      action: ${{ steps.what.outputs.action }}
+      id: ${{ steps.what.outputs.id }}
+      dry: ${{ steps.what.outputs.dry }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -176,8 +184,41 @@ jobs:
           gh release create "$tag" assets/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
             --title "Plugin: $ID $VERSION" --notes "Signed plugin files for HolyArrs. Install from the Plugins page." --latest=false
 
+  deploy:
+    name: Publish to plugins.holyarrs.com
+    needs: sign
+    if: needs.sign.outputs.dry != 'true'
+    runs-on: ubuntu-latest
+    environment: plugins
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Get the signed files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: plugins-${{ needs.sign.outputs.action }}-${{ needs.sign.outputs.id }}
+          path: out/
+
+      - name: Build the check tool and check the signatures
+        run: |
+          set -euo pipefail
+          mkdir -p app/frontend/dist && touch app/frontend/dist/.placeholder
+          go build -o pluginkey ./app/backend/tools/pluginkey
+          ./pluginkey check -kind blocklist -in out/blocklist.json
+          ./pluginkey check -kind plugins -in out/plugins.json
+
+      - name: Install wrangler from the lockfile
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix .github/deploy
+
       - name: Build the plugins.holyarrs.com site
-        if: steps.what.outputs.dry != 'true'
         run: |
           set -euo pipefail
           mkdir -p site
@@ -197,14 +238,12 @@ jobs:
           find site -type f | sort
 
       - name: Publish to plugins.holyarrs.com
-        if: steps.what.outputs.dry != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.PLUGINS_CLOUDFLARE_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.PLUGINS_CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4.20.0 pages deploy site --project-name holyarrs-plugins --branch main --commit-dirty=true
+        run: .github/deploy/node_modules/.bin/wrangler pages deploy site --project-name holyarrs-plugins --branch main --commit-dirty=true
 
       - name: Check what is live now
-        if: steps.what.outputs.dry != 'true'
         run: |
           set -euo pipefail
           mkdir -p after

@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Mõned kaustad ei läinud läbi. Skanni uuesti, et need üle võtta; kaustad, mis on meediakogus juba olemas, jäävad nagu on.",
 	"library.import.scanAgain": "Skanni uuesti",
 	"library.import.keepOpen": "Hoia see leht lahti, kuni see on valmis.",
+	"library.import.closeOk": "See töötab serveris, nii et võid selle lehe sulgeda.",
 	"library.import.waiting": "Metaandmete server on hõivatud. HolyArrs proovib viimast {left} uuesti {min} min pärast.",
 	"library.import.leaveAsk": "Import töötab. Kui lahkud sellelt lehelt, ei võeta veel saatmata kaustu üle. Kas lahkud ikkagi?",
 	"library.import.interrupted": "Import peatus {done} / {total} kaustal, kui selle leht suleti. Skanni uuesti, et ülejäänud üle võtta; juba üle võetud kaustad jäävad nagu on.",

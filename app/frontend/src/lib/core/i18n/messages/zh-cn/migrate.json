@@ -415,5 +415,7 @@
 	"migrate.nFound": "找到 {found} 个",
 	"migrate.readOnly": "只读",
 	"migrate.folderReadOnly": "HolyArrs 无法写入这个文件夹，因此无法导入任何内容。请在 HolyArrs 的 Docker 配置中将该卷设为可写（去掉 :ro），然后重新创建容器。",
-	"migrate.someFound": "找到 {n} 个"
+	"migrate.someFound": "找到 {n} 个",
+	"migrate.sameSource": "与 {list} 相同：同一个来源",
+	"migrate.nameInApps": "{apps} 中的 {name}"
 }

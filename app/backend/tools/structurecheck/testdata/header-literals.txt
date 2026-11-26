@@ -11,9 +11,11 @@ Cf-Mitigated
 Clear-Site-Data
 Click
 Content-Disposition
+Content-Encoding
 Content-Length
 Content-Security-Policy
 Content-Type
+Cookie
 Cross-Origin-Resource-Policy
 ETag
 Forwarded
@@ -32,6 +34,7 @@ Remote-User
 Retry-After
 SOAPAction
 Sec-Fetch-Dest
+Sec-Fetch-Mode
 Sec-Fetch-Site
 Server
 Server-Timing

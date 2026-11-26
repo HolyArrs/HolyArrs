@@ -34,6 +34,8 @@ export interface Plugin {
 	author?: string;
 	description?: string;
 	icon?: string;
+	/** Download types the plugin brings itself, such as soulseek. */
+	download_types?: string[];
 	/** The robot's copy of the logo on the plugin site: images/<id>/icon-256.webp. Wins over icon. */
 	icon_url?: string;
 	access: PluginAccess | null;
@@ -132,6 +134,8 @@ export interface PluginOverview {
 	/** The owner runs unsigned plugins from dev_dir. */
 	dev_mode?: boolean;
 	dev_dir?: string;
+	/** The language packs' download numbers; that card is not a listed plugin. */
+	language_packs?: Plugin['stats'];
 	plugins: Plugin[];
 }
 

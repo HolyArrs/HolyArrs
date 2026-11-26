@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Aqui os plugins assinados correm sem o bloqueio de ficheiros. Os outros limites de segurança continuam ativos.",
 	"plugins.noLockOffNow": "Os plugins ficam parados até este sistema ter o bloqueio de ficheiros.",
 	"plugins.noLockChange": "Alterar",
+	"plugins.noLockLearn": "Como funciona o bloqueio de ficheiros dos plugins",
 	"plugins.noLockTag": "Sem bloqueio de ficheiros neste sistema",
 	"plugins.noLockKeptOff": "Os plugins ficam parados sem o bloqueio de ficheiros",
 	"plugins.secAccess": "Pode aceder a",

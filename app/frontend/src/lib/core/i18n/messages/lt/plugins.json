@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Pasirašyti papildiniai čia veikia be failų užrakto. Kitos saugos ribos lieka įjungtos.",
 	"plugins.noLockOffNow": "Papildiniai lieka sustabdyti, kol sistema turės failų užraktą.",
 	"plugins.noLockChange": "Keisti",
+	"plugins.noLockLearn": "Kaip veikia papildinių failų užraktas",
 	"plugins.noLockTag": "Šioje sistemoje nėra failų užrakto",
 	"plugins.noLockKeptOff": "Papildiniai lieka sustabdyti be failų užrakto",
 	"plugins.secAccess": "Gali pasiekti",

@@ -264,7 +264,9 @@ func TestSeedRefusesWhileTheAppRunsOrOutsideTheLab(t *testing.T) {
 		t.Fatalf("stopped app refused: %v", err)
 	}
 	// Anything but a refused connection is not proof the app is stopped:
-	// a name that does not resolve, or an answer cut off.
+	// a name that does not resolve, or an answer cut off. The name is absolute
+	// (trailing dot) so a DNS search domain with a wildcard record cannot
+	// make it resolve.
 	cut := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		c, _, err := w.(http.Hijacker).Hijack()
 		if err == nil {
@@ -272,7 +274,7 @@ func TestSeedRefusesWhileTheAppRunsOrOutsideTheLab(t *testing.T) {
 		}
 	}))
 	defer cut.Close()
-	for _, u := range []string{"http://holyarrs-demo-test.invalid:18730", cut.URL} {
+	for _, u := range []string{"http://holyarrs-demo-test.invalid.:18730", cut.URL} {
 		if err := checkStopped(context.Background(), u, false); err == nil || errors.Is(err, errRunning) {
 			t.Fatalf("%s: unclear state not refused: %v", u, err)
 		}

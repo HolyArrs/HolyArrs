@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "إيقاف إبقاء النسخة {label} من هذا الفيلم؟ لا تُمس الملفات على القرص.",
 	"movies.versions.removeFailed": "تعذّرت إزالة النسخة",
+	"movies.versions.deleteFile": "حذف الملف",
+	"movies.versions.deleteFileConfirm": "حذف {name}؟ سينتقل إلى المحذوفة مؤخرًا، حيث يمكنك استعادته.",
+	"movies.versions.deleteFileFailed": "تعذّر حذف الملف",
 	"movies.versions.title": "النسخ",
 	"movies.versions.showLess": "عرض أقل",
 	"movies.versions.seeAll": "عرض الكل ({count})",

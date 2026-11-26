@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Unde ajung cererile 4K aprobate și cum sunt alese",
 	"settings.requests.fourKSameFolder": "La fel ca celelalte cereri",
 	"settings.requests.fourKNamedRules": "Calitatea numită 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Unde ajung cererile de anime aprobate",
 	"settings.requests.choices": "Ce pot cere oamenii",
 	"settings.requests.choicesDesc": "Butoanele de calitate din foile de cerere, în această ordine. Redenumește-le sau ascunde-le aici; copiii primesc primul afișat.",
 	"settings.requests.choiceShown": "Arată oamenilor",

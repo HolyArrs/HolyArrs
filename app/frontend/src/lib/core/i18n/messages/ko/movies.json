@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "이 영화의 {label} 버전 유지를 중단할까요? 디스크의 파일은 건드리지 않습니다.",
 	"movies.versions.removeFailed": "버전을 삭제할 수 없습니다",
+	"movies.versions.deleteFile": "파일 삭제",
+	"movies.versions.deleteFileConfirm": "{name}을(를) 삭제할까요? 최근 삭제된 항목으로 이동하며, 그곳에서 복원할 수 있습니다.",
+	"movies.versions.deleteFileFailed": "파일을 삭제할 수 없습니다",
 	"movies.versions.title": "버전",
 	"movies.versions.showLess": "간단히 보기",
 	"movies.versions.seeAll": "전체 {count}개 보기",

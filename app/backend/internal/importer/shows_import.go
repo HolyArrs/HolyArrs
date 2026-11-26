@@ -217,6 +217,16 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		if plan[i].Method != "hardlink" {
 			continue
 		}
+		if sourceNotPresent(root, cands, plan[i].SourceFile) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, NotPresentYetWhy)
+			continue
+		}
+		if copyInProgress(cands, plan[i].SourceFile) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, CopyingWhy)
+			continue
+		}
 		seen := map[int64]bool{}
 		for _, id := range plan[i].TargetSlotIDs {
 			ss := slots[id]
@@ -629,7 +639,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if r.FellBack {
 				how += " (hardlink not possible)"
 			}
-			ge := mediafiles.ReachesGoodEnough(name, pr.Body)
+			ge := mediafiles.ReachesGoodEnoughFor(name, ti, pr.Body)
 			for _, sid := range step.TargetSlotIDs {
 				ss := slots[sid]
 				if _, err := tx.Exec("UPDATE slots SET file_id = ?, active_download_id = NULL, good_enough = ? WHERE id = ?", id, ge, sid); err != nil {
@@ -747,6 +757,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 	if imp.State == "partly_done" {
 		im.noteCleanupWait(ctx, d, slots, e)
 	}
+	im.markShowUpgrade(ctx, e.Data, newFiles, len(placedIDs)) // #733
 	if im.Store.AddEvent(ctx, e) == nil {
 		im.publish("event", e)
 	}

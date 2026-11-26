@@ -31,7 +31,7 @@ Stays behind: metadata profiles, import lists for music, custom formats, release
 | From Bazarr | In HolyArrs |
 | --- | --- |
 | Default language profile | Default subtitle languages. |
-| Sites that need no account: Podnapisi, Gestdown, YIFY Subtitles, TVsubtitles, BSPlayer and NapiProjekt (Napisy24 needs your own account, so it is added by hand) | **Subtitle sites**, one of each kind. A kind already here is left alone. |
+| Sites that need no account: Podnapisi, Gestdown, YIFY Subtitles, TVsubtitles, BSPlayer, NapiProjekt and Titlovi (Napisy24 needs your own account, so it is added by hand) | **Subtitle sites**, one of each kind. A kind already here is left alone. |
 
 Stays behind: other subtitle sites and their accounts. HolyArrs reaches Addic7ed through Gestdown with no account, so add Gestdown under **Settings > Subtitles**. For a site with an account, type it there or use [Import keys from a file](import-secrets.md).
 
@@ -44,7 +44,9 @@ Stays behind: other subtitle sites and their accounts. HolyArrs reaches Addic7ed
 
 Stays behind: app links, sync profiles, indexer proxies and notification kinds HolyArrs does not have.
 
-Sources brought in from Prowlarr still search through Prowlarr, so keep it running. If it stops, those Sources say Prowlarr isn't answering.
+Import Prowlarr together with Sonarr and Radarr, or before or after them. The indexers Prowlarr put in those apps are not added again: each one is the same Source as its Torznab, Newznab or RSS indexer in Prowlarr. A site definition in Prowlarr is not moved, so its copy in Sonarr and Radarr comes over once, through Prowlarr. See [The same indexer in more than one app](sonarr-radarr.md#the-same-indexer-in-more-than-one-app).
+
+Sources at a Prowlarr address (the copies in Sonarr and Radarr of Prowlarr's site definitions) still search through Prowlarr, so keep it running. If it stops, those Sources say Prowlarr isn't answering.
 
 :::tip
 To keep Prowlarr running and let it push Sources into HolyArrs instead, see [Old-app API](../reference/old-app-api.md).

@@ -145,6 +145,11 @@ func languagesOf(p releasename.Result) []string {
 		return p.AudioLanguages
 	}
 	if len(p.Languages) > 0 {
+		// A name that keeps the original language (German DL, ORIGINAL)
+		// has it too, as the old apps read it.
+		if p.Has("original") && p.OriginalLanguage != "" && !slices.Contains(p.Languages, p.OriginalLanguage) {
+			return append(slices.Clip(p.Languages), p.OriginalLanguage)
+		}
 		return p.Languages
 	}
 	if p.OriginalLanguage != "" {

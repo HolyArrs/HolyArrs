@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} leitud",
 	"migrate.readOnly": "Kirjutuskaitstud",
 	"migrate.folderReadOnly": "HolyArrs ei saa sellesse kausta kirjutada, seega ei saa sinna midagi importida. Tee köide kirjutatavaks (eemalda :ro) HolyArrsi Dockeri seadistuses ja loo siis konteiner uuesti.",
-	"migrate.someFound": "{n} leitud"
+	"migrate.someFound": "{n} leitud",
+	"migrate.sameSource": "sama mis {list}: üks allikas",
+	"migrate.nameInApps": "{name} rakenduses {apps}"
 }

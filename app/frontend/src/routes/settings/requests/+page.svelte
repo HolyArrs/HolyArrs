@@ -31,6 +31,8 @@
 		four_k_pick_rules_id: 0,
 		show_four_k_library_folder_id: 0,
 		show_four_k_pick_rules_id: 0,
+		anime_library_folder_id: 0,
+		show_anime_library_folder_id: 0,
 		plex_watchlists: false,
 		plex_watchlists_everyone: false,
 		plex_friends: false,
@@ -284,6 +286,24 @@
 					<option value={0}>{t('settings.requests.fourKNamedRules')}</option>
 					{#each showRules as r (r.id)}
 						<option value={r.id}>{r.name}</option>
+					{/each}
+				</select>
+			</Field>
+		</SettingsCard>
+		<SettingsCard id="anime" title={t('settings.requests.anime')} description={t('settings.requests.animeDesc')}>
+			<Field id="ask-anime-folder" label={t('settings.requests.movieFolder')}>
+				<select id="ask-anime-folder" class="input" bind:value={settings.anime_library_folder_id}>
+					<option value={0}>{t('settings.requests.fourKSameFolder')}</option>
+					{#each movieFolders as f (f.id)}
+						<option value={f.id}>{f.label || f.path} ({f.path})</option>
+					{/each}
+				</select>
+			</Field>
+			<Field id="ask-show-anime-folder" label={t('settings.requests.showFolder')}>
+				<select id="ask-show-anime-folder" class="input" bind:value={settings.show_anime_library_folder_id}>
+					<option value={0}>{t('settings.requests.fourKSameFolder')}</option>
+					{#each showFolders as f (f.id)}
+						<option value={f.id}>{f.label || f.path} ({f.path})</option>
 					{/each}
 				</select>
 			</Field>

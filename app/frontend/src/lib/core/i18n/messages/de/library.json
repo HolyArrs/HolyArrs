@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Einige Ordner sind nicht durchgegangen. Scanne erneut, um sie zu übernehmen; Ordner, die schon in der Bibliothek sind, bleiben wie sie sind.",
 	"library.import.scanAgain": "Erneut scannen",
 	"library.import.keepOpen": "Lass diese Seite offen, bis es fertig ist.",
+	"library.import.closeOk": "Es läuft auf dem Server, du kannst diese Seite also schließen.",
 	"library.import.waiting": "Der Metadaten-Server ist ausgelastet. HolyArrs versucht die letzten {left} in {min} Min. erneut.",
 	"library.import.leaveAsk": "Ein Import läuft. Wenn du diese Seite verlässt, werden die noch nicht gesendeten Ordner nicht übernommen. Trotzdem verlassen?",
 	"library.import.interrupted": "Ein Import ist bei {done} von {total} Ordnern stehen geblieben, als seine Seite geschlossen wurde. Scanne erneut, um den Rest zu übernehmen; schon übernommene Ordner bleiben wie sie sind.",

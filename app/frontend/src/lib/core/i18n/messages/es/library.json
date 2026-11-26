@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Algunas carpetas no pasaron. Vuelve a escanear para traerlas; las carpetas que ya están en la Biblioteca se quedan como están.",
 	"library.import.scanAgain": "Volver a escanear",
 	"library.import.keepOpen": "Deja esta página abierta hasta que termine.",
+	"library.import.closeOk": "Se ejecuta en el servidor, así que puedes cerrar esta página.",
 	"library.import.waiting": "El servidor de metadatos está ocupado. HolyArrs vuelve a intentar los últimos {left} en {min} min.",
 	"library.import.leaveAsk": "Hay una importación en marcha. Si sales de esta página, las carpetas que aún no se han enviado no se adoptarán. ¿Salir de todos modos?",
 	"library.import.interrupted": "Una importación se detuvo en {done} de {total} carpetas cuando se cerró su página. Vuelve a escanear para adoptar el resto; las carpetas ya adoptadas se quedan como están.",

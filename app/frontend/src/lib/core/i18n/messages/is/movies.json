@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Hætta að halda {label}-eintaki þessarar kvikmyndar? Skrár á diski haldast óbreyttar.",
 	"movies.versions.removeFailed": "Ekki tókst að fjarlægja afbrigði",
+	"movies.versions.deleteFile": "Eyða skrá",
+	"movies.versions.deleteFileConfirm": "Eyða {name}? Hún fer í Nýlega eytt, þar sem þú getur endurheimt hana.",
+	"movies.versions.deleteFileFailed": "Ekki tókst að eyða skránni",
 	"movies.versions.title": "Afbrigði",
 	"movies.versions.showLess": "Sýna minna",
 	"movies.versions.seeAll": "Sjá öll {count}",

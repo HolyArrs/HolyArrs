@@ -20,7 +20,7 @@
 	import { date } from '#lib/core/format.ts';
 	import { PluginInfo, PluginSettings, AddSheet, DevActions, NoLockCard, NoNetLockCard, ApproveAccess, wheelSideways, fitChips, tagRoom, arrowKeys, tint, LanguagesSection, languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from '#lib/plugins/index.ts';
 	import { listLanguages, packList } from '#lib/core/i18n/language-packs.svelte.ts';
-	import { abilities, newAbilities, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, forwards, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
+	import { abilities, newAbilities, noLockNotice, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, settingsPage, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import { DlFind } from '#lib/downloads/index.ts';
 	import { barTools, barLead, pluginScope } from '#lib/core/search-field.svelte.ts';
@@ -92,7 +92,7 @@
 	let showOnly = $state<'all' | 'installed' | 'updates'>('all');
 	const lang = $derived(languageCard(packList.installed, q, tab, showOnly, t('plugins.tabLanguagePacks')));
 	// Language Packs opens the same window as a plugin: its own logo, About, what it can reach, then the languages.
-	const langPlugin = $derived({ id: 'language-packs', version: LANGUAGE_PACKS_VERSION, installed: !!lang?.installed, running: false, enabled: true, name: t('plugins.tabLanguagePacks'), author: 'HolyArrs', category: t('plugins.languages'), description: t('plugins.languagesIntro'), icon: LANGUAGE_PACKS_ICON, access: { hosts: ['plugins.holyarrs.com'], folders: [], actions: [] } } as Plugin);
+	const langPlugin = $derived({ id: 'language-packs', version: LANGUAGE_PACKS_VERSION, installed: !!lang?.installed, running: false, enabled: true, name: t('plugins.tabLanguagePacks'), author: 'HolyArrs', category: t('plugins.languages'), description: t('plugins.languagesIntro'), icon: LANGUAGE_PACKS_ICON, stats: ov?.language_packs, access: { hosts: ['plugins.holyarrs.com'], folders: [], actions: [] } } as Plugin);
 	const trending = $derived(trendingIds(ov?.plugins ?? []));
 	const updates = $derived((ov?.plugins ?? []).filter((p) => p.installed && hasUpdate(p) && !p.needs_app));
 	const filterItems = $derived<MenuItem[]>([
@@ -135,6 +135,7 @@
 	const noLockCard = $derived(!!ov && showsNoLockCard(ov));
 	const noNetCard = $derived(!!ov && showsNoNetLockCard(ov));
 	const noLockTag = $derived(!!ov && showsNoLockTag(ov));
+	const noLockWhy = $derived(ov ? `${noLockNotice(ov.file_lock_reason)} ${t('plugins.noLockRisk')}` : ''); // the tag explains itself
 	const asking = $derived(noLockCard && (askLock || !ov?.no_file_lock_asked));
 
 	let linked = false;
@@ -178,7 +179,6 @@
 			pluginScope.term = '';
 		};
 	});
-
 	// From 768px the tools sit beside the top bar's search box; below that (bar hidden) beside the page's own box.
 	$effect(() => {
 		barTools.snippet = vw >= 768 ? pageTools : null;
@@ -296,14 +296,10 @@
 		if (p) void act(p, () => api.del(path(p)), 'plugins.removed', 'plugins.removeFailed');
 	}
 
-	// A plugin whose settings live on an app page is listed here; its manifest's own fields, when it declares any, open in the dialog instead.
-	// Forwarding plugins (network.forward) open Remote access.
-	const settingsPage = (p: Plugin) => (p.settings?.length ? '' : forwards(p) ? `/settings/remote-access?plugin=${encodeURIComponent(p.id)}` : '');
-
 </script>
 
 <svelte:window bind:innerWidth={vw} onhashchange={onHash} />
-<svelte:head><title>{t('plugins.title')} · HolyArrs</title></svelte:head>
+<svelte:head><title>{t('plugins.title')} Ã‚Â· HolyArrs</title></svelte:head>
 
 <h1 class="sr-only">{t('plugins.title')}</h1>
 
@@ -326,7 +322,7 @@
 		<div class="ft" data-testid="plugin-card-foot">{@render footChips(p)}<span class="st">{@render cardAct(p, name)}</span></div>
 		{#if p.install_error && !p.install_step}<p class="xs ierr" data-testid="plugin-install-error"><Icon name="alert" size={13} /><span>{p.install_error}</span></p>{/if}
 		{#if p.installed && p.needs_app && hasUpdate(p)}<p class="xs need full" data-testid="plugin-update-needs-app">{t('plugins.needsApp', { version: p.needs_app })}</p>{/if}
-		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock" title={noLockWhy}><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
 	</li>
 {/snippet}
 
@@ -342,19 +338,19 @@
 			{#if kind === 'big'}
 				<div class="bhead"><h2 class="pname" dir="auto">{name}</h2><span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span><span class="cat">{t('plugins.languages')}</span></div>
 				<p class="full small" dir="auto">{about}</p>
-				<div class="bfoot" data-testid="language-packs-foot"><span class="chips"><span class="chip xs mono vchip">{LANG_VERSION}</span></span><span class="st">{@render langAct(name)}</span></div>
+				<div class="bfoot" data-testid="language-packs-foot"><span class="chips" use:fitChips><span class="chip xs mono vchip">{LANG_VERSION}</span>{@render dlChip(langPlugin)}</span><span class="st">{@render langAct(name)}</span></div>
 			{:else if kind === 'card'}
 				<h2 class="pname" dir="auto">{name}</h2>
 				<span class="cat">{t('plugins.languages')}</span>
 				<p class="one small" dir="auto"><span class="otext">{about}</span></p>
 				<span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span>
-				<div class="ft" data-testid="language-packs-foot"><span class="chips"><span class="chip xs mono vchip">{LANG_VERSION}</span></span><span class="st">{@render langAct(name)}</span></div>
+				<div class="ft" data-testid="language-packs-foot"><span class="chips" use:fitChips><span class="chip xs mono vchip">{LANG_VERSION}</span>{@render dlChip(langPlugin)}</span><span class="st">{@render langAct(name)}</span></div>
 			{:else}
 				<h2 class="pname" dir="auto">{name}</h2>
 				<p class="one small" dir="auto">{about}</p>
 				<span class="cat">{t('plugins.languages')}</span>
 				<span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span>
-				<span class="ver xs"><span class="mono">{LANG_VERSION}</span></span>
+				<span class="ver xs"><span class="mono">{LANG_VERSION}</span>{@render dls(langPlugin)}</span>
 				<span class="stt xs"></span>
 				<span class="st">{@render langAct(name)}</span>
 			{/if}
@@ -375,12 +371,16 @@
 	{#if p.stats?.downloads != null}<span class="dls" data-testid="plugin-downloads">{t('plugins.downloads', { n: shortCount(p.stats.downloads, appLocale()) })}</span>{/if}
 {/snippet}
 
+{#snippet dlChip(p: Plugin)}
+	{@const dl = p.stats?.downloads != null ? shortCount(p.stats.downloads, appLocale()) : ''}
+	{#if dl}<span class="chip xs dlc" data-drop="1" title={t('plugins.downloads', { n: dl })} data-testid="plugin-downloads"><span class="sr-only">{t('plugins.downloads', { n: dl })}</span><span class="dnum" aria-hidden="true"><Icon name="download" size={11} />{dl}</span></span>{/if}
+{/snippet}
+
 {#snippet footChips(p: Plugin)}
 	<!-- One line of chips: the version always shows whole; downloads drop first, then the date goes numeric, then chips tighten. -->
-	{@const dl = p.stats?.downloads != null ? shortCount(p.stats.downloads, appLocale()) : ''}
 	<span class="chips" use:fitChips>
 		<span class="chip xs mono vchip" title={shownVersion(p)}>{shownVersion(p)}</span>
-		{#if dl}<span class="chip xs dlc" data-drop="1" title={t('plugins.downloads', { n: dl })} data-testid="plugin-downloads"><span class="sr-only">{t('plugins.downloads', { n: dl })}</span><span class="dnum" aria-hidden="true"><Icon name="download" size={11} />{dl}</span></span>{/if}
+		{@render dlChip(p)}
 		{#if p.updated}<span class="chip xs dchip" class:fresh={freshUpdate(p)} title="{t('plugins.factUpdated')} {date(p.updated + 'T12:00:00Z')}" data-testid="plugin-card-updated"><span class="dlong">{shortDay(p.updated, appLocale())}</span><span class="dshort">{numDay(p.updated, appLocale())}</span></span>{/if}
 	</span>
 {/snippet}
@@ -419,7 +419,7 @@
 			{#if hasUpdate(p) && p.installed}<span class="udot inl" role="img" aria-label={t('plugins.stateUpdate')} title={t('plugins.stateUpdate')} data-testid="plugin-update-dot"></span>{/if}
 			<span class="st">{@render cardAct(p, name)}</span>
 		</div>
-		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock" title={noLockWhy}><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
 	</li>
 {/snippet}
 
@@ -437,13 +437,13 @@
 		<span class="ver xs"><span class="mono">{shownVersion(p)}</span>{@render dls(p)}{#if hasUpdate(p) && p.installed}<span class="udot inl" role="img" aria-label={t('plugins.stateUpdate')} title={t('plugins.stateUpdate')} data-testid="plugin-update-dot"></span>{/if}</span>
 		<span class="stt xs">{p.installed ? badge(p) : stateLabel(p)}</span>
 		<span class="st">{@render cardAct(p, name)}</span>
-		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock"><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
+		{#if noLockTag}<p class="xs nolock" data-testid="plugin-nolock" title={noLockWhy}><Icon name="info" size={13} />{t('plugins.noLockTag')}</p>{/if}
 	</li>
 {/snippet}
 
 {#snippet info(p: Plugin)}
 	{#if editing === p.id}<PluginSettings {p} onback={() => (editing = '')} />{:else}
-	<PluginInfo {p} badge={badge(p)} {noLockTag} onclose={close}>
+	<PluginInfo {p} badge={badge(p)} {noLockTag} noLockReason={ov?.file_lock_reason} onclose={close}>
 		{#snippet actions()}{@render acts(p)}{/snippet}
 		{#snippet extra()}<ApproveAccess {p} reload={load} />{/snippet}
 	</PluginInfo>{/if}
@@ -790,7 +790,7 @@
 	.tag.new { background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); color: var(--text); }
 	.tag.hot { background: color-mix(in srgb, var(--wait) 18%, var(--surface-2)); color: var(--text); }
 	.dls { color: var(--text-muted); white-space: nowrap; }
-	.ver .dls::before { content: '·'; margin: 0 5px; }
+	.ver .dls::before { content: 'Ã‚Â·'; margin: 0 5px; }
 	.chip.fresh { background: color-mix(in srgb, var(--ok) 18%, var(--surface-2)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 40%, var(--line)); }
 	.lrow .get { background: var(--surface-1); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); white-space: nowrap; }
 	.get { white-space: nowrap; }

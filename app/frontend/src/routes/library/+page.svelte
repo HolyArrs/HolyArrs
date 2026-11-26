@@ -337,7 +337,7 @@
 		...(!partOff('movies') ? ([{ label: tr('library.page.addMovie'), icon: 'film', href: to('/search?kind=movie') }] as MenuItem[]) : []),
 		...(!partOff('shows') ? ([{ label: tr('library.page.addShow'), icon: 'tv', href: to('/search?kind=show') }] as MenuItem[]) : []),
 		...(!partOff('music') ? ([{ label: tr('library.page.addArtist'), icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : []),
-		...(canManage ? ([{ label: tr('library.page.importFromFolder'), icon: 'folder', href: to('/library/import') }] as MenuItem[]) : [])
+		...(canManage ? ([{ label: tr('library.page.importFromFolder'), icon: 'folder', href: to('/library/import') }, { label: tr('library.byHand.title'), icon: 'folderMove', href: to('/library/import-files') }] as MenuItem[]) : [])
 	]);
 	// Recently deleted sits in the top row with its count (a database count, no disk scan); read on open and again when Sort & filter opens, at most once a minute.
 	let deletedCount = $state<number | null>(null);

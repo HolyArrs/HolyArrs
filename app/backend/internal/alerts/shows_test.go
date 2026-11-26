@@ -207,8 +207,12 @@ func TestEpisodeAlertFormatting(t *testing.T) {
 	if len(p) != 1 {
 		t.Fatalf("posts %v", p)
 	}
-	c, _ := p[0]["content"].(string)
-	if n := utf8.RuneCountInString(c); n > 2000 || !utf8.ValidString(c) || strings.ContainsRune(c, utf8.RuneError) || !strings.HasSuffix(c, "…") {
+	es, _ := p[0]["embeds"].([]any)
+	c, _ := es[0].(map[string]any)["description"].(string)
+	if title, _ := es[0].(map[string]any)["title"].(string); strings.ContainsAny(title, "\r\n") || utf8.RuneCountInString(title) > 256 {
+		t.Fatalf("discord title %q", title)
+	}
+	if n := utf8.RuneCountInString(c); n > 4096 || !utf8.ValidString(c) || strings.ContainsRune(c, utf8.RuneError) || !strings.HasSuffix(c, "…") {
 		t.Fatalf("discord content %d runes, ends %q", n, c[len(c)-20:])
 	}
 	m := mails()

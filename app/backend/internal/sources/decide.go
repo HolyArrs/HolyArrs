@@ -73,7 +73,7 @@ func (s *Searcher) loadSlot(ctx context.Context, slotID int64) (slotCtx, error) 
 		return c, err
 	}
 
-	c.cur = currentOf(ctx, db, c.sl, c.pr)
+	c.cur = currentOf(ctx, db, c.ti, c.sl, c.pr)
 	return c, nil
 }
 

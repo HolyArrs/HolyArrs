@@ -76,7 +76,7 @@ func rank(rels []ReleaseFacts, vs []Verdict, rules PickRulesBody, packsFirst boo
 			}
 			return 1, "on fix number"
 		}
-		if pref := rules.Protocol.Prefer; pref != "either" && rels[a].Protocol != rels[b].Protocol {
+		if pref := rules.Protocol.Prefer; pref != "either" && rels[a].Protocol != rels[b].Protocol && (rels[a].Protocol == pref || rels[b].Protocol == pref) {
 			if rels[a].Protocol == pref {
 				return -1, "on preferred protocol"
 			}
@@ -178,7 +178,21 @@ func shareSlot(a, b []int64) bool {
 // rules' Good enough step (and points, when set). It is used when the Pick
 // rules of a Version change.
 func ReachesGoodEnough(releaseName string, rules PickRulesBody) bool {
+	return ReachesGoodEnoughFor(releaseName, Title{}, rules)
+}
+
+// ReachesGoodEnoughFor is ReachesGoodEnough for a file of Title t: language
+// and year tests read t's original language and year (withTitle).
+func ReachesGoodEnoughFor(releaseName string, t Title, rules PickRulesBody) bool {
+	return reachesGoodEnough(releaseName, "", t, rules)
+}
+
+// reachesGoodEnough is ReachesGoodEnoughFor with the group stored on the
+// File (withGroup).
+func reachesGoodEnough(releaseName, group string, t Title, rules PickRulesBody) bool {
 	p := releasename.Parse(releaseName, hintsFor(rules))
+	withTitle(&p, t)
+	withGroup(&p, group)
 	idx := rankStep(rules, stepIndex(rules, StepFor(p)))
 	if idx < 0 || idx < stepIndex(rules, rules.GoodEnoughAt) {
 		return false
@@ -197,10 +211,37 @@ func CurrentOf(releaseName string, size int64, importedAt time.Time, rules PickR
 // CurrentOfFile is CurrentOf for a File whose audio languages are known
 // (FileLanguages): language trait tests read them before the name.
 func CurrentOfFile(releaseName string, size int64, importedAt time.Time, audio []string, rules PickRulesBody) Current {
+	return CurrentOfTitleFile(releaseName, size, importedAt, audio, Title{}, rules)
+}
+
+// CurrentOfTitleFile is CurrentOfFile for a File of Title t: language and
+// year tests read t's original language and year (withTitle).
+func CurrentOfTitleFile(releaseName string, size int64, importedAt time.Time, audio []string, t Title, rules PickRulesBody) Current {
+	return currentOfTitleFile(releaseName, "", size, importedAt, audio, t, rules)
+}
+
+// currentOfTitleFile is CurrentOfTitleFile with the group stored on the
+// File (withGroup).
+func currentOfTitleFile(releaseName, group string, size int64, importedAt time.Time, audio []string, t Title, rules PickRulesBody) Current {
 	p := releasename.Parse(releaseName, hintsFor(rules))
 	p.Size = size
 	p.AudioLanguages = audio
+	withTitle(&p, t)
+	withGroup(&p, group)
 	return Current{Step: StepFor(p), Points: sumPoints(p, rules), Group: p.Group.Value, Fix: p.Fix, ImportedAt: importedAt, parse: &p}
+}
+
+// withTitle gives a file's parse its Title's original language and year
+// when the name lacks them, as Judge does for a Release. A file at rest has
+// no Release to take them from, and without the original language an
+// "other than the original" test fits a file that is in it.
+func withTitle(p *releasename.Result, t Title) {
+	if p.OriginalLanguage == "" && t.OriginalLanguage != nil {
+		p.OriginalLanguage = *t.OriginalLanguage
+	}
+	if p.TitleYear == 0 && t.Year != nil {
+		p.TitleYear = *t.Year
+	}
 }
 
 // currentWithTitle scores the current file again with what the Release's

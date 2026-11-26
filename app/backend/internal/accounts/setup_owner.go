@@ -59,6 +59,19 @@ func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+// insertFirstOwner makes the owner, or returns errOwnerExists when there is
+// one. The count runs in the same write, so two first runs cannot both win.
+func insertFirstOwner(ctx context.Context, tx *sql.Tx, name, hash string) (int64, error) {
+	n, err := countOwners(ctx, tx)
+	if err != nil {
+		return 0, err
+	}
+	if n > 0 {
+		return 0, errOwnerExists
+	}
+	return insertUserTx(tx, &domain.User{Name: name, Role: "owner", PasswordHash: hash, State: "active", Perms: "[]"}, domain.System)
+}
+
 func readCreds(w http.ResponseWriter, r *http.Request) (creds, bool) {
 	var c creds
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&c); err != nil {
@@ -115,14 +128,8 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 	var id int64
 	var saved []string
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		n, err := countOwners(r.Context(), tx)
-		if err != nil {
-			return err
-		}
-		if n > 0 {
-			return errOwnerExists
-		}
-		id, err = insertUserTx(tx, &domain.User{Name: c.Name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
+		var err error
+		id, err = insertFirstOwner(r.Context(), tx, c.Name, h)
 		if err == nil && display != "" {
 			err = putDisplayName(r.Context(), tx, id, display)
 		}

@@ -159,6 +159,12 @@ func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRe
 		// As the old apps: no language word means the original language.
 		langs = []string{t.OriginalLanguage}
 	}
+	if len(langs) == 0 && (p.Has("dual") || p.Has("multi")) {
+		// DUAL / MULTi with no language word: more than one audio language,
+		// so not the original language alone; import reads the audio.
+		v.add("hard", "language", "warn", "dual or multi audio with no language named; audio languages get checked at import", 0)
+		return
+	}
 	if len(langs) == 0 {
 		// Read as the original language: turned away when only other languages are wanted.
 		if o := t.OriginalLanguage; o != "" && !rules.Language.OriginalOK && len(rules.Language.Wanted) > 0 && !slices.Contains(rules.Language.Wanted, o) {
@@ -170,6 +176,11 @@ func (v *Verdict) language(p releasename.Result, rules PickRulesBody, t *TitleRe
 		return
 	}
 	keepsOriginal := p.Has("dual") || p.Has("multi") || p.Has("original")
+	if p.Has("original") && rules.Synced.OldApp() && t.OriginalLanguage != "" && !slices.Contains(langs, t.OriginalLanguage) {
+		// As the old apps: a name that keeps the original language (German
+		// DL) is in that language too.
+		langs = append(slices.Clip(langs), t.OriginalLanguage)
+	}
 	for _, l := range langs {
 		if slices.Contains(rules.Language.Wanted, l) {
 			v.add("hard", "language", "pass", LanguageName(l)+" is wanted", 0)
