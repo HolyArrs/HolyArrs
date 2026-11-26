@@ -73,7 +73,7 @@
 			</label>
 		{/each}
 		{#if ownHosts}
-			<label class="row">
+			<label class="row wide">
 				<span class="small lab">{t('plugins.ownerHosts')}<span class="xs muted"> · {t('plugins.ownerHostsHelp')}</span></span>
 				<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder={p.id === 'tailscale' ? 'headscale.example.com:8080' : 'flaresolverr:8191'} bind:value={hosts} data-testid="plugin-owner-hosts" />
 			</label>
@@ -109,6 +109,8 @@
 	.limits legend { grid-column: 1 / -1; padding: 0; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
 	.limits legend.lab { font-size: 12px; }
 	.row { display: grid; gap: 4px; align-content: start; min-width: 0; }
+	/* The own-server box spans the card so its example address shows in full. */
+	.wide { grid-column: 1 / -1; }
 	.lab { font-size: 12px; overflow-wrap: anywhere; }
 	.why { overflow-wrap: anywhere; }
 	.row .input { width: 100%; min-width: 0; height: 36px; min-height: 36px; box-sizing: border-box; font-size: 13px; }

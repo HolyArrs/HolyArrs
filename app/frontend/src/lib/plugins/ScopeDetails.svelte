@@ -18,7 +18,7 @@
 		{#if scopes.length}
 			<p class="xs muted">{t('plugins.scopeDetails')}</p>
 			<ul class="list xs fit-grid" style:--fit-col="260px" data-testid="plugin-scope-lines">
-				{#each scopes as s (s.scope)}<li><span dir="auto">{s.line}</span> <code dir="ltr">{s.scope}</code></li>{/each}
+				{#each scopes as s (s.scope)}<li><span dir="auto">{s.line}</span></li>{/each}
 			</ul>
 		{/if}
 	</div>
@@ -30,5 +30,4 @@
 	.warn :global(svg) { flex: none; margin-top: 2px; }
 	.warn span, .muted { overflow-wrap: anywhere; margin: 0; }
 	.list { margin: var(--s-1) 0 0; padding-inline-start: var(--s-5); max-height: 40vh; overflow-y: auto; }
-	code { overflow-wrap: anywhere; }
 </style>
