@@ -693,7 +693,7 @@
 	.atv-grid dt { color: var(--text); font: 400 12px/16px var(--font-ui); }
 	.atv-grid dd { margin: 0; color: var(--text-muted); font: 400 12px/16px var(--font-ui); overflow-wrap: anywhere; }
 	.atv-h3 { margin: 22px 0 13px; color: var(--text); font: 700 17px/21px var(--font-ui); }
-	/* Links out sit under the facts line as small chips (#745); the whole chip is the link, 44px tall on touch phones. */
+	/* Links out sit under the facts line as small chips; the whole chip is the link, 44px tall on touch phones. */
 	.d-left .out-links { margin-top: -8px; }
 	.out-links li { padding: 0; min-height: 28px; color: var(--text-muted); font-size: 12px; }
 	.out-links a { display: inline-flex; align-items: center; min-height: inherit; padding: 0 12px; color: inherit; text-decoration: none; }

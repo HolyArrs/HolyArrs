@@ -7,7 +7,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
-// #861: a finished download whose folder read found no file at all, shortly
+// A finished download whose folder read found no file at all, shortly
 // after it finished, waits for the files and is tried again on its own: on a
 // network share the job's folder can show up a moment after the Downloader is
 // done. Later, or with files read, the no-match line stays.

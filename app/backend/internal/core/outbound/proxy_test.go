@@ -383,7 +383,7 @@ func TestSetProxyClosesOpenConnections(t *testing.T) {
 
 // A proxy that answers CONNECT with "200 OK" and "Transfer-Encoding: chunked"
 // (Gluetun 3.41.3 does) must still open the tunnel at once: RFC 9110 9.3.6 says
-// the client ignores those headers on a successful CONNECT (#768, #718).
+// the client ignores those headers on a successful CONNECT.
 func TestHTTPConnectIgnoresChunkedOnSuccess(t *testing.T) {
 	for _, hdr := range []string{"Transfer-Encoding: chunked\r\n", "Content-Length: 50\r\n"} {
 		client, server := net.Pipe()

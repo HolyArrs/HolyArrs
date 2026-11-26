@@ -352,7 +352,7 @@ func (d *TVDB) Show(ctx context.Context, id string) (Show, error) {
 // englishEpisodeNames swaps each episode's name for its English one. TVDB's
 // default list names episodes in the show's original language, so a Japanese
 // show's files were renamed in Japanese while the show itself is named in
-// English (#769). An episode with no English name keeps its own, and when the
+// English. An episode with no English name keeps its own, and when the
 // English list fails every episode keeps its name.
 func (d *TVDB) englishEpisodeNames(ctx context.Context, id string, eps []Episode) {
 	eng := map[string]string{}

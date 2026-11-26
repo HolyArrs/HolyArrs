@@ -252,7 +252,7 @@ func (s *Service) handleScan(ctx context.Context, r *jobs.Run) error {
 	db := s.Store.Read()
 	var kind, state string
 	if err := db.QueryRowContext(ctx, "SELECT kind, state FROM titles WHERE id = ?", titleID).Scan(&kind, &state); err == nil && kind == "artist" && state == "removed" {
-		return nil // the artist was removed after this scan was queued (#805)
+		return nil // the artist was removed after this scan was queued
 	}
 	vs, err := database.Select[mediafiles.Version](ctx, db, "versions", "title_id = ? ORDER BY id", titleID)
 	if err != nil {

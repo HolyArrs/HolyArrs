@@ -10,7 +10,7 @@ import (
 
 // TVDB's default episode list names a Japanese show's episodes in Japanese.
 // They are named in English, like the show; an episode with no English name
-// keeps its own, and a failed English list keeps every name (#769).
+// keeps its own, and a failed English list keeps every name.
 func TestTVDBEpisodeNamesInEnglish(t *testing.T) {
 	cases := []struct {
 		lang, english string

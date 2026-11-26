@@ -42,7 +42,7 @@ func TestShowImportWithSaveFolderKeepsNothingMatched(t *testing.T) {
 	if err := execSQL(w.s, "UPDATE downloaders SET adapter = 'sabnzbd', protocol = 'usenet'"); err != nil {
 		t.Fatal(err)
 	}
-	// Past the wait for files still on their way (#861).
+	// Past the wait for files still on their way.
 	if err := execSQL(w.s, "UPDATE downloads SET finished_at = ?", time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano)); err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestMovieImportWithNoSaveFolderSaysWhereToSetIt(t *testing.T) {
 		t.Fatalf("reason %q", why)
 	}
 	// A path pair is set up: the folder was read, so matching by hand is the
-	// answer once the wait for files still on their way is over (#861).
+	// answer once the wait for files still on their way is over.
 	if err := execSQL(w.s, "UPDATE downloads SET finished_at = ?", time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano)); err != nil {
 		t.Fatal(err)
 	}

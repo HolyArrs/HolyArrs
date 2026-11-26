@@ -8,7 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// #741: two artists with the same name both score 100%, so each match
+// Two artists with the same name both score 100%, so each match
 // carries MusicBrainz's note that tells them apart.
 func TestMusicAdoptMatchCarriesDisambiguation(t *testing.T) {
 	_, s, fm, lf := musicService(t)

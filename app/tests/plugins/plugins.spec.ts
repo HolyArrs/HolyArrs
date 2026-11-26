@@ -513,7 +513,7 @@ test('plugins: settings save, restart failure and own fields', async ({ browser 
 	await page.context().close();
 });
 
-// A developer plugin that declares settings gets the same Settings button once it is installed (#834);
+// A developer plugin that declares settings gets the same Settings button once it is installed;
 // before Install from folder there is nothing to set yet, so the button stays away.
 for (const width of [1366, 390]) {
 	test(`plugins: developer plugin settings at ${width}`, async ({ browser }) => {
@@ -1025,7 +1025,7 @@ test('plugins: Language Packs row lines up in the list view', async ({ browser }
 	await page.context().close();
 });
 
-// #835: the card's Install on a developer plugin installs from the developer folder, not the signed list.
+// The card's Install on a developer plugin installs from the developer folder, not the signed list.
 for (const [width, height] of [[1280, 800], [390, 844]]) {
 	test(`plugins: card Install on a developer plugin uses dev-install at ${width}`, async ({ browser }) => {
 		const page = await (await browser.newContext({ viewport: { width, height } })).newPage();

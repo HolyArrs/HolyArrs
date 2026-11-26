@@ -377,7 +377,7 @@ func TestFileHeaderIPTorrentsCookie(t *testing.T) {
 	}
 }
 
-// A feed read asks Knaben only for the kinds the feed wants (#806), so its
+// A feed read asks Knaben only for the kinds the feed wants, so its
 // 100 newest items are not mostly games and music.
 func TestKnabenFeedCategories(t *testing.T) {
 	t.Parallel()

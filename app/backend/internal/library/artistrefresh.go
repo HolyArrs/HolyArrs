@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
@@ -63,7 +64,7 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 		return out, ErrNotArtist
 	}
 	if t.State == "removed" {
-		return out, nil // removed while queued: nothing left to refresh (#805)
+		return out, nil // removed while queued: nothing left to refresh
 	}
 	p, err := s.artists()
 	if err != nil {
@@ -130,7 +131,7 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 		if ctx.Err() != nil {
 			return out, ctx.Err()
 		}
-		// Removed mid-run: stop asking for Pressings (#805). Checked every
+		// Removed mid-run: stop asking for Pressings. Checked every
 		// few albums so a big artist is not one read per album.
 		if i%removedCheckEvery == removedCheckEvery-1 && s.titleRemoved(ctx, titleID) {
 			return out, nil
@@ -388,20 +389,9 @@ func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressi
 	if pressingID != 0 {
 		data["pressing_id"] = pressingID
 	}
-	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumChanged, TitleID: &t.ID, Summary: fmt.Sprintf("%s: %s: %s", t.Name, p.Name, joinWords(changed)),
+	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumChanged, TitleID: &t.ID, Summary: fmt.Sprintf("%s: %s: %s", t.Name, p.Name, strings.Join(changed, "; ")),
 		Data: data, GroupKey: GroupKey(t.ID)})
 	return p, nil
-}
-
-func joinWords(ws []string) string {
-	out := ""
-	for i, w := range ws {
-		if i > 0 {
-			out += "; "
-		}
-		out += w
-	}
-	return out
 }
 
 // pressingLabel names a Pressing for people: "First Light (2020, XW, Digital Media, 2 tracks)".
@@ -420,21 +410,10 @@ func pressingLabel(p domain.AlbumPressing) string {
 		}
 	}
 	if len(formats) > 0 {
-		parts = append(parts, joinComma(formats))
+		parts = append(parts, strings.Join(formats, ", "))
 	}
 	parts = append(parts, fmt.Sprintf("%d tracks", p.TrackCount))
-	return p.Name + " (" + joinComma(parts) + ")"
-}
-
-func joinComma(ws []string) string {
-	out := ""
-	for i, w := range ws {
-		if i > 0 {
-			out += ", "
-		}
-		out += w
-	}
-	return out
+	return p.Name + " (" + strings.Join(parts, ", ") + ")"
 }
 
 // ArtistChoices are an artist's choices a person can change after adding.

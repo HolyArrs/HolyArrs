@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// #732: a tvdb:<id> the chosen source (TMDB) has no link for, with no
+// A tvdb:<id> the chosen source (TMDB) has no link for, with no
 // TVDB key set, is still found through TVMaze and added from it.
 func TestLookupTVDBIDWithoutSourceLink(t *testing.T) {
 	ctx := context.Background()

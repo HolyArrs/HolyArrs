@@ -92,7 +92,7 @@ func (s *Service) LookupShow(ctx context.Context, id, source string) (metadata.S
 	// Ask the id's own source, then TVMaze (no key needed) for a TVDB or
 	// IMDb id, for the show's other ids. The first show found this way is
 	// kept: when the chosen source has no link for the id, that show is
-	// used instead of finding nothing (#732, as Sonarr does).
+	// used instead of finding nothing (as Sonarr does).
 	var found metadata.Show
 	var helperErr error
 	helpers := []string{kind}
@@ -235,7 +235,7 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	}
 	if sh.Source != "" && sh.Source != opt.Source && metadata.ValidShowSource(sh.Source) {
 		// The chosen source has no link for this id: the show comes from
-		// the source that knows it, and stays with it on refresh (#732).
+		// the source that knows it, and stays with it on refresh.
 		opt.Source = sh.Source
 	}
 	s.addAirTimes(ctx, &sh)

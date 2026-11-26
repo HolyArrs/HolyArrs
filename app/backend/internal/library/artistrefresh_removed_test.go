@@ -29,7 +29,7 @@ func (r *removeDuring) Pressings(ctx context.Context, mbid string) ([]metadata.P
 	return r.fakeMusic.Pressings(ctx, mbid)
 }
 
-// TestRefreshStopsWhenArtistRemoved (#805): removing an artist stops its
+// TestRefreshStopsWhenArtistRemoved: removing an artist stops its
 // running refresh within a few albums, and a queued refresh or scan of a
 // removed artist does no work.
 func TestRefreshStopsWhenArtistRemoved(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 )
 
 // A 2160p file with no quality words in its name, moved over from Sonarr
-// with its recorded quality, is a 2160p step, never SD from TV (#874).
+// with its recorded quality, is a 2160p step, never SD from TV.
 func TestStepFor2160pTVFile(t *testing.T) {
 	name := "The Book of Boba Fett (2021) - 1x01 - Chapter 1 Stranger in a Strange Land.mkv"
 	cases := []struct{ rec, res, want string }{

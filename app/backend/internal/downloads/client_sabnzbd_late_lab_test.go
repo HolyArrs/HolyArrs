@@ -20,7 +20,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 )
 
-// #861: a plain one-file movie job on a real SABnzbd. The first read of the
+// A plain one-file movie job on a real SABnzbd. The first read of the
 // finished job happens while its folder is not visible here yet (a network
 // share that shows it a moment later): it finds no file, and the import waits
 // and tries again on its own. The read after the folder shows up finds the

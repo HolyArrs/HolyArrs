@@ -233,9 +233,7 @@
 	// A plugin turned off for the missing file lock can start again once the owner allowed it to run without.
 	const startable = (p: Plugin) =>
 		!p.disabled_reason || p.disabled_reason === 'stopped by the owner' || p.disabled_reason === 'signed out by the owner' || (!!ov?.allow_no_file_lock && p.disabled_reason.includes('(Landlock)')) || (!!ov?.allow_no_net_lock && p.disabled_reason.includes('(seccomp user-notify)'));
-
 	const path = (p: Plugin) => `/plugins/${encodeURIComponent(p.id)}`;
-
 	// Install or update with the steps on the button: the list is read again while the engine works.
 	// An update that asks for more than the installed version asks first.
 	function install(p: Plugin) {
@@ -296,14 +294,11 @@
 		removeOpen = false;
 		if (p) void act(p, () => api.del(path(p)), 'plugins.removed', 'plugins.removeFailed');
 	}
-
 </script>
 
 <svelte:window bind:innerWidth={vw} onhashchange={onHash} />
 <svelte:head><title>{t('plugins.title')} · HolyArrs</title></svelte:head>
-
 <h1 class="sr-only">{t('plugins.title')}</h1>
-
 {#snippet logo(p: Plugin, size: number)}
 	{@const src = pluginIcon(p, size)}{#if src && !broken.has(src)}<img class="pic" {src} alt="" width={size} height={size} style:--pic={size + 'px'} onerror={() => broken.add(src)} />{:else}<span class="pic none" aria-hidden="true" style:--pic={size + 'px'}>{shownName(p).slice(0, 1)}</span>{/if}
 {/snippet}
