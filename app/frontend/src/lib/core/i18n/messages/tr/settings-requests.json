@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Onaylanan 4K istekleri nereye gider ve nasıl seçilir",
 	"settings.requests.fourKSameFolder": "Diğer isteklerle aynı",
 	"settings.requests.fourKNamedRules": "4K adlı kalite",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Onaylanan anime istekleri nereye gider",
 	"settings.requests.choices": "İnsanların isteyebilecekleri",
 	"settings.requests.choicesDesc": "İstek sayfalarındaki Kalite düğmeleri, bu sırayla. Burada yeniden adlandırın veya gizleyin; çocuklar ilk görüneni alır.",
 	"settings.requests.choiceShown": "İnsanlara göster",

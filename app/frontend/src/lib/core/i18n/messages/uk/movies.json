@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Припинити тримати Варіант {label} цього фільму? Файли на диску не зачіпаються.",
 	"movies.versions.removeFailed": "Не вдалося видалити Варіант",
+	"movies.versions.deleteFile": "Видалити файл",
+	"movies.versions.deleteFileConfirm": "Видалити {name}? Файл потрапить до «Нещодавно видалених», звідки його можна відновити.",
+	"movies.versions.deleteFileFailed": "Не вдалося видалити файл",
 	"movies.versions.title": "Варіанти",
 	"movies.versions.showLess": "Показати менше",
 	"movies.versions.seeAll": "Показати всі ({count})",

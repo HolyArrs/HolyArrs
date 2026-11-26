@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Die Variante {label} dieses Films nicht mehr aktuell halten? Dateien auf dem Datenträger bleiben unberührt.",
 	"movies.versions.removeFailed": "Variante konnte nicht entfernt werden",
+	"movies.versions.deleteFile": "Datei löschen",
+	"movies.versions.deleteFileConfirm": "{name} löschen? Die Datei kommt in „Kürzlich gelöscht“ und kann dort wiederhergestellt werden.",
+	"movies.versions.deleteFileFailed": "Datei konnte nicht gelöscht werden",
 	"movies.versions.title": "Varianten",
 	"movies.versions.showLess": "Weniger anzeigen",
 	"movies.versions.seeAll": "Alle {count} ansehen",

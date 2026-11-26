@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Parar de manter a Versão {label} deste filme? Os arquivos no disco não são tocados.",
 	"movies.versions.removeFailed": "Não foi possível remover a Versão",
+	"movies.versions.deleteFile": "Excluir arquivo",
+	"movies.versions.deleteFileConfirm": "Excluir {name}? Ele vai para Excluídos recentemente, onde você pode restaurá-lo.",
+	"movies.versions.deleteFileFailed": "Não foi possível excluir o arquivo",
 	"movies.versions.title": "Versões",
 	"movies.versions.showLess": "Mostrar menos",
 	"movies.versions.seeAll": "Ver todas as {count}",

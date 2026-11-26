@@ -92,7 +92,7 @@
 	let showOnly = $state<'all' | 'installed' | 'updates'>('all');
 	const lang = $derived(languageCard(packList.installed, q, tab, showOnly, t('plugins.tabLanguagePacks')));
 	// Language Packs opens the same window as a plugin: its own logo, About, what it can reach, then the languages.
-	const langPlugin = $derived({ id: 'language-packs', version: LANGUAGE_PACKS_VERSION, installed: !!lang?.installed, running: false, enabled: true, name: t('plugins.tabLanguagePacks'), author: 'HolyArrs', category: t('plugins.languages'), description: t('plugins.languagesIntro'), icon: LANGUAGE_PACKS_ICON, access: { hosts: ['plugins.holyarrs.com'], folders: [], actions: [] } } as Plugin);
+	const langPlugin = $derived({ id: 'language-packs', version: LANGUAGE_PACKS_VERSION, installed: !!lang?.installed, running: false, enabled: true, name: t('plugins.tabLanguagePacks'), author: 'HolyArrs', category: t('plugins.languages'), description: t('plugins.languagesIntro'), icon: LANGUAGE_PACKS_ICON, stats: ov?.language_packs, access: { hosts: ['plugins.holyarrs.com'], folders: [], actions: [] } } as Plugin);
 	const trending = $derived(trendingIds(ov?.plugins ?? []));
 	const updates = $derived((ov?.plugins ?? []).filter((p) => p.installed && hasUpdate(p) && !p.needs_app));
 	const filterItems = $derived<MenuItem[]>([
@@ -342,19 +342,19 @@
 			{#if kind === 'big'}
 				<div class="bhead"><h2 class="pname" dir="auto">{name}</h2><span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span><span class="cat">{t('plugins.languages')}</span></div>
 				<p class="full small" dir="auto">{about}</p>
-				<div class="bfoot" data-testid="language-packs-foot"><span class="chips"><span class="chip xs mono vchip">{LANG_VERSION}</span></span><span class="st">{@render langAct(name)}</span></div>
+				<div class="bfoot" data-testid="language-packs-foot"><span class="chips" use:fitChips><span class="chip xs mono vchip">{LANG_VERSION}</span>{@render dlChip(langPlugin)}</span><span class="st">{@render langAct(name)}</span></div>
 			{:else if kind === 'card'}
 				<h2 class="pname" dir="auto">{name}</h2>
 				<span class="cat">{t('plugins.languages')}</span>
 				<p class="one small" dir="auto"><span class="otext">{about}</span></p>
 				<span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span>
-				<div class="ft" data-testid="language-packs-foot"><span class="chips"><span class="chip xs mono vchip">{LANG_VERSION}</span></span><span class="st">{@render langAct(name)}</span></div>
+				<div class="ft" data-testid="language-packs-foot"><span class="chips" use:fitChips><span class="chip xs mono vchip">{LANG_VERSION}</span>{@render dlChip(langPlugin)}</span><span class="st">{@render langAct(name)}</span></div>
 			{:else}
 				<h2 class="pname" dir="auto">{name}</h2>
 				<p class="one small" dir="auto">{about}</p>
 				<span class="cat">{t('plugins.languages')}</span>
 				<span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span>
-				<span class="ver xs"><span class="mono">{LANG_VERSION}</span></span>
+				<span class="ver xs"><span class="mono">{LANG_VERSION}</span>{@render dls(langPlugin)}</span>
 				<span class="stt xs"></span>
 				<span class="st">{@render langAct(name)}</span>
 			{/if}
@@ -375,12 +375,16 @@
 	{#if p.stats?.downloads != null}<span class="dls" data-testid="plugin-downloads">{t('plugins.downloads', { n: shortCount(p.stats.downloads, appLocale()) })}</span>{/if}
 {/snippet}
 
+{#snippet dlChip(p: Plugin)}
+	{@const dl = p.stats?.downloads != null ? shortCount(p.stats.downloads, appLocale()) : ''}
+	{#if dl}<span class="chip xs dlc" data-drop="1" title={t('plugins.downloads', { n: dl })} data-testid="plugin-downloads"><span class="sr-only">{t('plugins.downloads', { n: dl })}</span><span class="dnum" aria-hidden="true"><Icon name="download" size={11} />{dl}</span></span>{/if}
+{/snippet}
+
 {#snippet footChips(p: Plugin)}
 	<!-- One line of chips: the version always shows whole; downloads drop first, then the date goes numeric, then chips tighten. -->
-	{@const dl = p.stats?.downloads != null ? shortCount(p.stats.downloads, appLocale()) : ''}
 	<span class="chips" use:fitChips>
 		<span class="chip xs mono vchip" title={shownVersion(p)}>{shownVersion(p)}</span>
-		{#if dl}<span class="chip xs dlc" data-drop="1" title={t('plugins.downloads', { n: dl })} data-testid="plugin-downloads"><span class="sr-only">{t('plugins.downloads', { n: dl })}</span><span class="dnum" aria-hidden="true"><Icon name="download" size={11} />{dl}</span></span>{/if}
+		{@render dlChip(p)}
 		{#if p.updated}<span class="chip xs dchip" class:fresh={freshUpdate(p)} title="{t('plugins.factUpdated')} {date(p.updated + 'T12:00:00Z')}" data-testid="plugin-card-updated"><span class="dlong">{shortDay(p.updated, appLocale())}</span><span class="dshort">{numDay(p.updated, appLocale())}</span></span>{/if}
 	</span>
 {/snippet}

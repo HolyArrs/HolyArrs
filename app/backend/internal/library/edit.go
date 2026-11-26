@@ -269,6 +269,10 @@ func goodEnoughTx(ctx context.Context, tx *sql.Tx, v mediafiles.Version, keep bo
 	if err != nil {
 		return nil, err
 	}
+	var t mediafiles.Title
+	if err := database.Get(ctx, tx, "titles", v.TitleID, &t); err != nil {
+		return nil, err
+	}
 	var out []SlotChange
 	for _, sl := range slots {
 		var f mediafiles.File
@@ -279,7 +283,7 @@ func goodEnoughTx(ctx context.Context, tx *sql.Tx, v mediafiles.Version, keep bo
 		if f.ReleaseName != nil && *f.ReleaseName != "" {
 			name = *f.ReleaseName
 		}
-		ge := mediafiles.OwnedReachesGoodEnough(name, f.MediaInfo, pr.Body) && fileMeetsVersionChoices(v, f)
+		ge := mediafiles.OwnedReachesGoodEnoughFor(name, f.MediaInfo, t, pr.Body) && fileMeetsVersionChoices(v, f)
 		if ge && pr.Body.ReplaceUnderMin {
 			ge = !underMinTx(ctx, tx, v, sl, name, f, pr.Body)
 		}

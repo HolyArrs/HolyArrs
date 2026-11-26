@@ -7,6 +7,8 @@ export interface Toast {
 	body?: string;
 	tone: ToastTone;
 	action?: ToastAction;
+	/** App path the toast's row in the alerts list opens (an Open button), such as the title page it is about. The pop-up itself shows no button. */
+	href?: string;
 	seen: number;
 }
 export interface ToastAction {
@@ -21,6 +23,8 @@ export interface PastAlert {
 	at: number;
 	action?: ToastAction;
 	until?: number;
+	/** App path the row opens, kept from the toast. */
+	href?: string;
 	fresh: boolean;
 }
 
@@ -77,13 +81,13 @@ export function createToasts(ms = 6000) {
 
 	function remember(t: Toast, left: number) {
 		const now = Date.now();
-		past.unshift({ id: t.id, text: t.text, body: t.body, tone: t.tone, at: now, action: t.action, until: t.action ? now + left : undefined, fresh: true });
+		past.unshift({ id: t.id, text: t.text, body: t.body, tone: t.tone, at: now, action: t.action, until: t.action ? now + left : undefined, href: t.href, fresh: true });
 		if (past.length > KEEP) past.length = KEEP;
 	}
 
-	function push(text: string, tone: ToastTone = 'info', opts: { action?: ToastAction; ms?: number; body?: string } = {}): number {
+	function push(text: string, tone: ToastTone = 'info', opts: { action?: ToastAction; ms?: number; body?: string; href?: string } = {}): number {
 		const left = life(tone, text + (opts.body ?? ''), opts.ms);
-		const alike = (t: { text: string; body?: string; tone: ToastTone; action?: ToastAction }) => t.text === text && t.body === opts.body && t.tone === tone && !t.action && !opts.action;
+		const alike = (t: { text: string; body?: string; tone: ToastTone; action?: ToastAction; href?: string }) => t.text === text && t.body === opts.body && t.tone === tone && t.href === opts.href && !t.action && !opts.action;
 		// Repeats of a toast on screen only bump its count and restart its timer.
 		const same = list.find(alike);
 		if (same) {
@@ -98,7 +102,7 @@ export function createToasts(ms = 6000) {
 		const queued = waiting.find(alike);
 		if (queued) return queued.id;
 
-		const t: Toast = { id: next++, text, body: opts.body, tone, action: opts.action, seen: 0 };
+		const t: Toast = { id: next++, text, body: opts.body, tone, action: opts.action, href: opts.href, seen: 0 };
 		remember(t, left);
 		if (list.length >= SHOW) {
 			// When full, drop the oldest plain one; toasts with an action are kept.
@@ -159,8 +163,8 @@ export function createToasts(ms = 6000) {
 		act.run();
 	}
 	// History only: the entry is stored but nothing pops up.
-	function record(text: string, tone: ToastTone = 'info', opts: { body?: string } = {}): number {
-		const t: Toast = { id: next++, text, body: opts.body, tone, seen: 0 };
+	function record(text: string, tone: ToastTone = 'info', opts: { body?: string; href?: string } = {}): number {
+		const t: Toast = { id: next++, text, body: opts.body, tone, href: opts.href, seen: 0 };
 		remember(t, 0);
 		return t.id;
 	}

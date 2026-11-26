@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "نگه داشتن نسخه {label} این فیلم متوقف شود؟ فایل‌های روی دیسک دست نمی‌خورند.",
 	"movies.versions.removeFailed": "نسخه حذف نشد",
+	"movies.versions.deleteFile": "حذف فایل",
+	"movies.versions.deleteFileConfirm": "{name} حذف شود؟ به «اخیراً حذف‌شده» می‌رود و می‌توانید آن را از آنجا بازگردانید.",
+	"movies.versions.deleteFileFailed": "فایل حذف نشد",
 	"movies.versions.title": "نسخه‌ها",
 	"movies.versions.showLess": "نمایش کمتر",
 	"movies.versions.seeAll": "دیدن همه {count} مورد",

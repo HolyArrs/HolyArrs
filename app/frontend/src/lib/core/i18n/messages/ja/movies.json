@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "この映画の {label} バージョンを最新に保つのをやめますか?ディスク上のファイルには手を加えません。",
 	"movies.versions.removeFailed": "バージョンを削除できませんでした",
+	"movies.versions.deleteFile": "ファイルを削除",
+	"movies.versions.deleteFileConfirm": "{name} を削除しますか?最近削除した項目に移動し、そこから復元できます。",
+	"movies.versions.deleteFileFailed": "ファイルを削除できませんでした",
 	"movies.versions.title": "バージョン",
 	"movies.versions.showLess": "表示を減らす",
 	"movies.versions.seeAll": "{count} 件すべてを見る",

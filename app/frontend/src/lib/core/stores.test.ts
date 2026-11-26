@@ -108,6 +108,21 @@ describe('toasts', () => {
 		expect(t.list.map((x) => x.text)).toEqual(['c']);
 	});
 
+	it('keeps the page a toast opens, on screen and in the alerts list', () => {
+		const t = createToasts(1000);
+		t.push('Searching for Copper Valley', 'info', { body: 'S01E02 · Flood', href: '/library/7?season=1' });
+		t.record('Copper Valley added', 'ok', { href: '/library/7' });
+		expect(t.list[0].href).toBe('/library/7?season=1');
+		expect(t.past.map((p) => p.href)).toEqual(['/library/7', '/library/7?season=1']);
+	});
+
+	it('does not merge the same words about two titles', () => {
+		const t = createToasts(1000);
+		t.push('Searching for a Release', 'info', { href: '/library/1' });
+		t.push('Searching for a Release', 'info', { href: '/library/2' });
+		expect(t.list.map((x) => x.href)).toEqual(['/library/1', '/library/2']);
+	});
+
 	it('refreshes the same message instead of stacking it', () => {
 		vi.useFakeTimers();
 		const t = createToasts(1000);
@@ -472,6 +487,30 @@ describe('session', () => {
 		expect(s.s.name).toBe('ana');
 		expect(s.s.authMethod).toBe('oidc');
 		expect(c.csrf()).toBe('oidc-csrf');
+	});
+
+	it('asks for proof at the address the provider answers at, and comes back to the page it was asked on there', async () => {
+		const assign = vi.fn();
+		vi.stubGlobal('window', { location: { assign } });
+		vi.stubGlobal('sessionStorage', { setItem: vi.fn() });
+		try {
+			const answers = [{ 'POST /auth/oidc/start': json(200, { continue_at: 'https://media.example.test/login?sso=start&fresh=1' }) }, { 'POST /auth/oidc/start': json(200, { auth_url: 'https://id.example.test/authorize' }) }];
+			const me = { 'GET /auth/me': json(200, { name: 'ana', via: 'session', csrf: 'c', auth_method: 'oidc' }) };
+			const goto = vi.fn();
+			let s = createSession(server({ ...me, ...answers[0] }));
+			await s.load();
+			await s.signInAgain('/settings/users?x=1', goto, (p) => p);
+			expect(assign).toHaveBeenLastCalledWith('https://media.example.test/login?sso=start&fresh=1&next=%2Fsettings%2Fusers%3Fx%3D1');
+			expect(sessionStorage.setItem).not.toHaveBeenCalled();
+			s = createSession(server({ ...me, ...answers[1] }));
+			await s.load();
+			await s.signInAgain('/settings/users', goto, (p) => p);
+			expect(assign).toHaveBeenLastCalledWith('https://id.example.test/authorize');
+			expect(sessionStorage.setItem).toHaveBeenCalledWith('holyarrs-sso-next', '/settings/users');
+			expect(goto).not.toHaveBeenCalled();
+		} finally {
+			vi.unstubAllGlobals();
+		}
 	});
 
 	it('does not let a stale initial load overwrite a finished OIDC sign-in', async () => {

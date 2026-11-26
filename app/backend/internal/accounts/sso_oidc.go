@@ -323,15 +323,21 @@ func (r *oidcRuntime) begin(ctx context.Context, now time.Time, ip string, userI
 }
 
 func (r *oidcRuntime) takeTransaction(now time.Time, states []string, browser string) (oidcTransaction, error) {
-	if len(states) != 1 || states[0] == "" || browser == "" {
-		return oidcTransaction{}, errOIDCFlow
+	if len(states) != 1 || states[0] == "" {
+		return oidcTransaction{}, errOIDCNoState
+	}
+	if browser == "" {
+		return oidcTransaction{}, errOIDCNoCookie
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.clean(now)
 	tx, ok := r.flows[states[0]]
-	if !ok || subtle.ConstantTimeCompare([]byte(tx.cookie), []byte(sum(browser))) != 1 || !now.Before(tx.expires) {
-		return oidcTransaction{}, errOIDCFlow
+	if !ok || !now.Before(tx.expires) {
+		return oidcTransaction{}, errOIDCUnknown
+	}
+	if subtle.ConstantTimeCompare([]byte(tx.cookie), []byte(sum(browser))) != 1 {
+		return oidcTransaction{}, errOIDCCookie
 	}
 	delete(r.flows, states[0])
 	return tx, nil
@@ -556,6 +562,10 @@ func (a *Auth) oidcStart(w http.ResponseWriter, r *http.Request, linking bool) {
 			return
 		}
 	}
+	if !a.oidcOnRedirectOrigin(r, o) {
+		writeJSON(w, http.StatusOK, oidcElsewhere(o, linking, body.Fresh))
+		return
+	}
 	if !a.ssoAttempt(w, r) {
 		return
 	}
@@ -575,12 +585,25 @@ func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	o := a.ssoNow().oidc // read once: a settings save may swap it
 	if o == nil {
+		logOIDCRefusal(a.now(), "single sign-on is not set up")
 		fail(w, http.StatusBadRequest, "OIDC callback was not accepted")
 		return
 	}
-	if !a.oidcCallbackTrusted(r, o) {
+	// The browser that came back is not the one that started (a home-screen
+	// app, an in-app browser, another address), or it took too long: a person
+	// lands on the sign-in page with a plain message. Scripts and API clients
+	// keep the bare 400, and neither answer says which check failed.
+	refused := func(why string) {
+		logOIDCRefusal(a.now(), why)
 		a.setOIDCCookie(w, o, "", -1)
+		if oidcBrowserNavigation(r) {
+			http.Redirect(w, r, webserver.URLBaseFrom(r.Context())+"/login?sso=elsewhere", http.StatusSeeOther)
+			return
+		}
 		fail(w, http.StatusBadRequest, "OIDC callback was not accepted")
+	}
+	if !a.oidcCallbackTrusted(r, o) {
+		refused("host or path differs from the redirect URL")
 		return
 	}
 	ck, _ := r.Cookie(oidcCookieName)
@@ -590,8 +613,11 @@ func (a *Auth) oidcCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	tx, err := o.takeTransaction(a.now(), r.URL.Query()["state"], browser)
 	if err != nil {
-		a.setOIDCCookie(w, o, "", -1)
-		fail(w, http.StatusBadRequest, "OIDC callback was not accepted")
+		why := "sign-in could not be continued"
+		if re := (*oidcRefusal)(nil); errors.As(err, &re) {
+			why = re.why
+		}
+		refused(why)
 		return
 	}
 	// From here the browser came back from the provider: failures go back to
@@ -680,13 +706,7 @@ func (a *Auth) oidcFinish(w http.ResponseWriter, r *http.Request, linking bool) 
 }
 
 func (a *Auth) oidcCallbackTrusted(r *http.Request, o *oidcRuntime) bool {
-	scheme := "http"
-	if r.TLS != nil || a.behindHTTPS(r) {
-		scheme = "https"
-	}
-	host := &url.URL{Scheme: scheme, Host: r.Host}
-	return strings.EqualFold(scheme, o.redirect.Scheme) && oidcOriginHost(host) == oidcOriginHost(o.redirect) &&
-		webserver.URLBaseFrom(r.Context())+r.URL.Path == o.redirect.Path
+	return a.oidcOnRedirectOrigin(r, o) && webserver.URLBaseFrom(r.Context())+r.URL.Path == o.redirect.Path
 }
 
 func (a *Auth) setOIDCCookie(w http.ResponseWriter, o *oidcRuntime, value string, maxAge int) {

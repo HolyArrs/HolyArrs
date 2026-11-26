@@ -10,6 +10,24 @@ import (
 )
 
 // Edge cases for the IPTorrents key, categories and RSS reader.
+func TestIPTorrentsSizeWhitespace(t *testing.T) {
+	t.Parallel()
+	for _, size := range []string{"1.5 GB", "1.5&nbsp;GB", "1.5\u00a0GB", "1.5\u202fGB", "1.5<br>GB"} {
+		t.Run(size, func(t *testing.T) {
+			page := `<table><tr><td><a class="hv" href="/t/9">Sample</a></td><td><a href="/download.php/9/sample.torrent"></a></td><td>` + size + `</td></tr></table>`
+			items, err := parseIPTorrents([]byte(page), "https://example.com", "")
+			if err != nil || len(items) != 1 || items[0].Size != 3<<29 {
+				t.Fatalf("HTML size: %+v, %v", items, err)
+			}
+			feed := `<rss version="2.0"><channel><item><title>Sample</title><link>https://example.com/download.php/9/sample.torrent</link><description><![CDATA[` + size + `; TV (S:1 L:0)]]></description></item></channel></rss>`
+			items, err = parseIPTorrentsFeed([]byte(feed))
+			if err != nil || len(items) != 1 || items[0].Size != 3<<29 {
+				t.Fatalf("RSS size: %+v, %v", items, err)
+			}
+		})
+	}
+}
+
 func TestIPTorrentsKeyEdges(t *testing.T) {
 	t.Parallel()
 	cases := []struct {

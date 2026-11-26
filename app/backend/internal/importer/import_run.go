@@ -133,7 +133,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 	if it.Runtime != nil {
 		minutes = *it.Runtime
 	}
-	up, err := checkUpgrade(ctx, db, sl, ver, d, plan, cands, im.refuseFakes(ctx, db), minutes)
+	up, err := checkUpgrade(ctx, db, sl, ver, d, root, plan, cands, im.refuseFakes(ctx, db), minutes)
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +435,7 @@ func (im *Importer) Import(ctx context.Context, downloadID int64, dryRun bool, b
 		}
 		ge := false
 		if fileID > 0 {
-			ge = mediafiles.ReachesGoodEnough(newName, up.rules)
+			ge = mediafiles.ReachesGoodEnoughFor(newName, ti, up.rules)
 			if _, err := tx.Exec("UPDATE slots SET file_id = ?, active_download_id = NULL, good_enough = ? WHERE id = ?", fileID, ge, sl.ID); err != nil {
 				return err
 			}

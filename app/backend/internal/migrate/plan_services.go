@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/downloads"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles"
 )
 
@@ -177,28 +178,8 @@ func (b *builder) indexers(s *Snapshot) {
 				it.Detail += "; used proxy " + clip(px.Name, 80) + " there; set a proxy on this Source"
 			}
 		}
-		if prev := b.sameSource(it.Key, sp); prev != nil {
-			// The same indexer in another app: one Source serves both kinds.
-			for _, k := range sp.Kinds {
-				if !slices.Contains(prev.Kinds, k) {
-					prev.Kinds = append(prev.Kinds, k)
-				}
-				if cs := sp.Categories[k]; len(cs) > 0 && len(prev.Categories[k]) == 0 {
-					if prev.Categories == nil {
-						prev.Categories = map[string][]int{}
-					}
-					prev.Categories[k] = cs
-				}
-			}
-			for _, c := range sp.MultiLanguages {
-				if !slices.Contains(prev.MultiLanguages, c) {
-					prev.MultiLanguages = append(prev.MultiLanguages, c)
-				}
-			}
-			b.p.Mapped = append(b.p.Mapped, from)
-		} else {
-			b.addTagged(s.Kind, GroupSources, it, ix.Tags)
-		}
+		// The same indexer in another app, or Prowlarr's copy of it, is one Source.
+		b.addSource(s, ix, it, true)
 		keys := make([]string, 0, len(ix.Settings))
 		for k := range ix.Settings {
 			keys = append(keys, k)
@@ -215,20 +196,6 @@ func (b *builder) indexers(s *Snapshot) {
 			b.not(GroupSources, from+"."+k, ix.Name+": "+k, "no Source setting matches it")
 		}
 	}
-}
-
-// sameSource finds the Source already planned under this key when it is
-// the same feed (format and address), or nil.
-func (b *builder) sameSource(key string, sp *SourcePlan) *SourcePlan {
-	if !b.keys[key] {
-		return nil
-	}
-	for _, it := range b.items[GroupSources].Items {
-		if it.Key == key && it.Source != nil && it.Source.Format == sp.Format && it.Source.URL == sp.URL && it.Source.Protocol == sp.Protocol {
-			return it.Source
-		}
-	}
-	return nil
 }
 
 func anyKey(m map[string]any, key string) any {
@@ -424,7 +391,7 @@ var patternWords = [][2]string{
 	{"S{season:00}E{episode:00}", "{episode}"}, {"s{season:00}e{episode:00}", "{episode}"},
 	{"{Movie TitleThe}", "{sort_title}"}, {"{Movie Title}", "{title}"}, {"{Movie CleanTitle}", "{title}"},
 	{"{Series TitleThe}", "{sort_title}"}, {"{Series TitleYear}", "{title} ({year})"}, {"{Series Title}", "{title}"}, {"{Series CleanTitle}", "{title}"},
-	{"{Release Year}", "{year}"}, {"{Series Year}", "{year}"}, {"{Quality Full}", "{quality}"}, {"{Quality Title}", "{quality}"},
+	{"{Release Year}", "{year}"}, {"{Series Year}", "{year}"}, {"{Quality Full}", "{quality_full}"}, {"{Quality Title}", "{quality_title}"}, {"{Quality Proper}", "{proper}"},
 	{"{Edition Tags}", "{edition}"}, {"{Release Group}", "{group}"}, {"{TmdbId}", "{tmdb}"}, {"{TvdbId}", "{tvdb}"}, {"{ImdbId}", "{imdb}"},
 	{"{Original Title}", "{release}"}, {"{Episode Title}", "{episode_title}"}, {"{Episode CleanTitle}", "{episode_title}"},
 	{"{Air-Date}", "{air_date}"}, {"{Air Date}", "{air_date}"}, {"{absolute:000}", "{absolute}"}, {"{absolute:00}", "{absolute}"},
@@ -433,6 +400,12 @@ var patternWords = [][2]string{
 	{"{Album Title}", "{album}"}, {"{Album CleanTitle}", "{album}"}, {"{Album Type}", "{album_type}"}, {"{Album Disambiguation}", "{edition}"},
 	{"{Track Title}", "{track_title}"}, {"{Track CleanTitle}", "{track_title}"}, {"{Track ArtistName}", "{track_artist}"},
 	{"{track:00}", "{track}"}, {"{track:0}", "{track}"}, {"{medium:00}", "{disc}"}, {"{medium:0}", "{disc}"},
+	// MediaInfo words with one of ours that gives the same value, written both ways as TRaSH does. The rest stay
+	// unmatched, 3D too: " {[MediaInfo 3D]}{[Quality Full]}" with the brackets moved out loses its space when empty.
+	{"{MediaInfo AudioCodec}", "{audio}"}, {"{Mediainfo AudioCodec}", "{audio}"}, {"{MediaInfo AudioChannels}", "{audio_channels}"},
+	{"{Mediainfo AudioChannels}", "{audio_channels}"}, {"{MediaInfo AudioLanguages}", "{audio_languages}"}, {"{Mediainfo AudioLanguages}", "{audio_languages}"},
+	{"{MediaInfo VideoCodec}", "{video_codec}"}, {"{Mediainfo VideoCodec}", "{video_codec}"}, {"{MediaInfo VideoBitDepth}", "{bit_depth}"},
+	{"{Mediainfo VideoBitDepth}", "{bit_depth}"}, {"{MediaInfo VideoDynamicRangeType}", "{hdr_type}"}, {"{Mediainfo VideoDynamicRangeType}", "{hdr_type}"},
 }
 
 var (
@@ -444,7 +417,11 @@ var (
 // false when a word has no match in the pattern's part (words, as ourWords
 // or musicOurWords).
 func translatePattern(p string, words map[string]bool) (string, string, bool) {
-	out := clip(p, 200)
+	// Refused, not cut short: TRaSH's names run past 200 characters.
+	out := clip(p, mediafiles.MaxPattern+1)
+	if len(out) > mediafiles.MaxPattern {
+		return "", "it is longer than a HolyArrs pattern can be", false
+	}
 	// Their "{(Release Year)}" and "{-Release Group}" carry the text around a
 	// word inside its braces (TRaSH's names use them); ours put it outside.
 	out = wrappedWord.ReplaceAllString(out, "$1{$2}$3") // a plain {word} stays as it is
@@ -481,7 +458,9 @@ func translatePattern(p string, words map[string]bool) (string, string, bool) {
 
 var ourWords = map[string]bool{"title": true, "sort_title": true, "year": true, "quality": true, "resolution": true, "source": true,
 	"edition": true, "group": true, "tmdb": true, "tvdb": true, "imdb": true, "release": true, "season": true, "episode": true,
-	"episode_title": true, "air_date": true, "absolute": true, "season_padded": true}
+	"episode_title": true, "air_date": true, "absolute": true, "season_padded": true,
+	"quality_full": true, "quality_title": true, "proper": true, "audio": true, "audio_channels": true, "audio_languages": true,
+	"video_codec": true, "bit_depth": true, "hdr_type": true}
 
 // musicOurWords are the words music patterns take: a movie or show word
 // there (such as {quality}) is listed as no match, not moved to fail the
@@ -635,7 +614,7 @@ func musicPatterns(key, p string) (map[string]string, string) {
 
 // subtitleSiteKinds maps their subtitle site names to ours.
 var subtitleSiteKinds = map[string]string{"podnapisi": "podnapisi", "gestdown": "gestdown", "yifysubtitles": "yifysubtitles",
-	"tvsubtitles": "tvsubtitles", "bsplayer": "bsplayer", "napiprojekt": "napiprojekt"}
+	"tvsubtitles": "tvsubtitles", "bsplayer": "bsplayer", "napiprojekt": "napiprojekt", "titlovi": "titlovi"}
 
 func (b *builder) subtitles(s *Snapshot) {
 	b.cover("subtitles")

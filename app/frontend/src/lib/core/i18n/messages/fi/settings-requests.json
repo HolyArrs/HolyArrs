@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Minne hyväksytyt 4K-pyynnöt menevät ja miten ne valitaan",
 	"settings.requests.fourKSameFolder": "Kuten muut pyynnöt",
 	"settings.requests.fourKNamedRules": "Laatu nimeltä 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Minne hyväksytyt animepyynnöt menevät",
 	"settings.requests.choices": "Mitä ihmiset voivat pyytää",
 	"settings.requests.choicesDesc": "Laatupainikkeet pyyntöikkunoissa tässä järjestyksessä. Nimeä tai piilota ne täällä; lapset saavat ensimmäisen näkyvän.",
 	"settings.requests.choiceShown": "Näytä ihmisille",
