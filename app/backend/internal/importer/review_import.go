@@ -132,7 +132,7 @@ func (im *Importer) ImportReviewFile(ctx context.Context, slotID, downloadID int
 		return ByHandResult{}, err
 	}
 	it := ByHandItem{Path: src, SlotID: slotID, Replace: replace, fromDownload: downloadID}
-	r, err := im.importOneByHand(ctx, db, ns, folders, ByHandPlaces{}, it, by)
+	r, err := im.importOneByHand(ctx, db, ns, folders, src, it, by)
 	if err != nil {
 		// The system's words of a fault that is not a placing go to the log, never onto the card.
 		log.Printf("importer: review import of slot %d: %v", slotID, err)
