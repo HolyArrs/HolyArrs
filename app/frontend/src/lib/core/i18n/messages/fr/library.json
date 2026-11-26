@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Certains dossiers ne sont pas passés. Relancez l'analyse pour les adopter ; les dossiers déjà dans la Bibliothèque restent tels quels.",
 	"library.import.scanAgain": "Analyser à nouveau",
 	"library.import.keepOpen": "Gardez cette page ouverte jusqu'à la fin.",
+	"library.import.closeOk": "Cela tourne sur le serveur, vous pouvez donc fermer cette page.",
 	"library.import.waiting": "Le serveur de métadonnées est occupé. HolyArrs réessaie les {left} derniers dans {min} min.",
 	"library.import.leaveAsk": "Un import est en cours. Si vous quittez cette page, les dossiers pas encore envoyés ne seront pas adoptés. Quitter quand même ?",
 	"library.import.interrupted": "Un import s'est arrêté à {done} dossiers sur {total} quand sa page a été fermée. Relancez l'analyse pour adopter le reste ; les dossiers déjà adoptés restent tels quels.",

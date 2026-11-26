@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Dubattu, ilman alkuperäistä ääntä",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision ilman HDR10-varaa",
+	"downloads.pr.traits.sdr_4k": "4K ilman HDR:ää (SDR)",
 	"downloads.pr.traits.executable": "Sisältää ohjelman",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (toimii melkein kaikkialla)",

@@ -130,6 +130,25 @@ func TestWatchLinksNone(t *testing.T) {
 	}
 }
 
+// Two rows for one server (#717) give the same link; it shows once, since the
+// title page keys its buttons by link.
+func TestWatchLinksSameServerTwice(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	var reads atomic.Int32
+	srv := itemServer(t, &reads)
+	l := &Linker{Store: w.s, Vault: w.v}
+	setTitleIDs(t, w, w.title, map[string]string{"tmdb": "329865"})
+	for _, name := range []string{"Jelly", "Jelly again"} {
+		if _, err := Add(ctx, w.s, w.v, Input{Name: name, Kind: "jellyfin", URL: srv.URL, Token: tok, WebURL: "http://jelly.example"}, domain.System); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := l.WatchLinks(ctx, w.title)
+	if err != nil || len(got) != 1 || got[0].Server != "Jelly" {
+		t.Fatalf("same server twice: %+v %v", got, err)
+	}
+}
 // A title the kept list lacks reads the list again once the retry wait is
 // over, so a title that just arrived gets its button soon.
 func TestWatchLinksRereadsForNewTitle(t *testing.T) {

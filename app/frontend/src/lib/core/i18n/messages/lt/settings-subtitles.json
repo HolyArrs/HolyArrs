@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Valomi visi bibliotekos subtitrai",
 	"settings.subtitles.cleanAllFailed": "Nepavyko pradėti valymo",
 	"settings.subtitles.cleanRow": "Žingsniai kalbai",
-	"settings.subtitles.cleanEvery": "Visos kitos kalbos",
+	"settings.subtitles.cleanEvery": "Visos kalbos",
+	"settings.subtitles.cleanEveryHint": "Taikoma kiekvienai kalbai, neturinčiai savo žingsnių.",
 	"settings.subtitles.cleanAddLang": "Pridėti kalbą",
 	"settings.subtitles.cleanRemoveLang": "Pašalinti šią kalbą"
 }

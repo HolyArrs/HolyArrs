@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Καθαρίζονται όλοι οι υπότιτλοι της βιβλιοθήκης",
 	"settings.subtitles.cleanAllFailed": "Ο καθαρισμός δεν μπόρεσε να ξεκινήσει",
 	"settings.subtitles.cleanRow": "Βήματα για",
-	"settings.subtitles.cleanEvery": "Κάθε άλλη γλώσσα",
+	"settings.subtitles.cleanEvery": "Όλες οι γλώσσες",
+	"settings.subtitles.cleanEveryHint": "Ισχύει για κάθε γλώσσα χωρίς δικά της βήματα.",
 	"settings.subtitles.cleanAddLang": "Προσθήκη γλώσσας",
 	"settings.subtitles.cleanRemoveLang": "Αφαίρεση αυτής της γλώσσας"
 }

@@ -117,3 +117,35 @@ func TestAskStepsAreTheAsksOwn(t *testing.T) {
 		t.Fatalf("a Version nobody searches still gives a step %+v", s)
 	}
 }
+
+// a future-only show ask with no next episode listed waits for one: the
+// card says Upcoming, never a Processing that spins for months (#716).
+func TestAskStepFutureOnlyNothingListed(t *testing.T) {
+	r := showRig(t)
+	ctx := context.Background()
+	res, err := r.svc.AskShowFutureOnly(ctx, r.ana, "tmdb:100")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.svc.Approve(ctx, res.Ask.ID, r.luis, ApproveOptions{})
+	if err != nil || got.TitleID == nil {
+		t.Fatalf("approve %+v %v", got, err)
+	}
+	if err := r.st.Write(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.Exec("UPDATE jobs SET state = 'done'"); err != nil {
+			return err
+		}
+		_, err := tx.Exec("UPDATE slots SET state = 'in_library' WHERE id IN (SELECT s.id FROM slots s JOIN items i ON i.id = s.item_id WHERE i.title_id = ?)", *got.TitleID)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	vs, err := r.svc.Views(ctx, "a.id = ?", res.Ask.ID)
+	if err != nil || len(vs) != 1 || !vs[0].FutureOnly {
+		t.Fatalf("views %+v %v", vs, err)
+	}
+	r.svc.AddSteps(ctx, vs, true)
+	if s := vs[0].Step; s == nil || s.Kind != "not_out" {
+		t.Fatalf("future-only with nothing listed: step %+v, want not_out", s)
+	}
+}

@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Dubliuota, be originalaus garso",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision be atsarginio HDR10",
+	"downloads.pr.traits.sdr_4k": "4K be HDR (SDR)",
 	"downloads.pr.traits.executable": "Turi programą",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (groja beveik visur)",

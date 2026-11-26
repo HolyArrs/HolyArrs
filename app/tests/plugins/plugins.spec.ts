@@ -987,3 +987,27 @@ test('plugins: Language Packs row lines up in the list view', async ({ browser }
 	await page.screenshot({ path: test.info().outputPath('list-view-1280.png') });
 	await page.context().close();
 });
+
+// #835: the card's Install on a developer plugin installs from the developer folder, not the signed list.
+for (const [width, height] of [[1280, 800], [390, 844]]) {
+	test(`plugins: card Install on a developer plugin uses dev-install at ${width}`, async ({ browser }) => {
+		const page = await (await browser.newContext({ viewport: { width, height } })).newPage();
+		await signIn(page, owner());
+		const ov = { ...fake, blocklist_stale: false, dev_mode: true, dev_dir: '/config/plugins/_dev', plugins: [{ id: 'subtitle-log', version: '0.1.0', installed: false, running: false, enabled: false, dev: true, access: { hosts: [], folders: [], actions: [] } }, { id: 'broken-dev', version: '0.1.0', installed: false, running: false, enabled: false, dev: true, dev_error: 'plugin.json is missing', access: { hosts: [], folders: [], actions: [] } }] };
+		const calls: string[] = [];
+		await page.route('**/api/v1/plugins**', async (route) => {
+			const r = route.request();
+			if (r.method() === 'GET') return route.fulfill({ json: ov });
+			calls.push(`${r.method()} ${new URL(r.url()).pathname}`);
+			return route.fulfill({ json: { ok: true } });
+		});
+		await page.goto('/plugins');
+		await page.locator('[data-testid="plugin-row"][data-id="subtitle-log"]').getByTestId('plugin-card-install').click();
+		await expect.poll(() => calls).toContain('POST /api/v1/plugins/subtitle-log/dev-install');
+		expect(calls).not.toContain('POST /api/v1/plugins/subtitle-log/install');
+		// One whose files can't be read can't be installed from the card either.
+		await expect(page.locator('[data-testid="plugin-row"][data-id="broken-dev"]').getByTestId('plugin-card-install')).toBeDisabled();
+		await noSidewaysScroll(page);
+		await page.context().close();
+	});
+}

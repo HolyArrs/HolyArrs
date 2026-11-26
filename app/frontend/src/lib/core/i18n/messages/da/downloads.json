@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Dubbet, uden den originale lyd",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision uden HDR10-reserve",
+	"downloads.pr.traits.sdr_4k": "4K uden HDR (SDR)",
 	"downloads.pr.traits.executable": "Indeholder et program",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (afspilles næsten overalt)",

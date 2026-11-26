@@ -163,6 +163,10 @@ func stepOf(ctx context.Context, db *sql.DB, v View) (Step, bool) {
 		return st, true
 	case seen[mediafiles.SlotNotOutYet]:
 		return Step{Kind: "not_out"}, true
+	// Future seasons only, and no next episode listed yet: it waits for one,
+	// it is not being got.
+	case v.Kind == "show" && v.FutureOnly:
+		return Step{Kind: "not_out"}, true
 	}
 	return Step{}, false
 }

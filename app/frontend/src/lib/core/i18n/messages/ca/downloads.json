@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Doblat, sense el so original",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision sense còpia HDR10",
+	"downloads.pr.traits.sdr_4k": "4K sense HDR (SDR)",
 	"downloads.pr.traits.executable": "Conté un programa",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (es reprodueix gairebé a tot arreu)",

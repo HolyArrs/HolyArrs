@@ -133,7 +133,7 @@
 		{:else}
 		<div class="tp-sheet">
 			<ul class="tp-rows people">
-				{#each watched.people as p (p.server + '/' + p.name)}
+				{#each watched.people as p (p.key)}
 					<li class="person" data-testid="stats-person">
 						<span class="av" aria-hidden="true">{(p.user_name || p.name).slice(0, 1).toUpperCase()}</span>
 						<div class="who">

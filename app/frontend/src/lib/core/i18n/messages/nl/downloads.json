@@ -1034,6 +1034,7 @@
 	"downloads.pr.traits.dubbed_only": "Nagesynchroniseerd, zonder het originele geluid",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision zonder HDR10-terugval",
+	"downloads.pr.traits.sdr_4k": "4K zonder HDR (SDR)",
 	"downloads.pr.traits.executable": "Bevat een programma",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (speelt bijna overal af)",
