@@ -358,3 +358,30 @@ func countEvents(t *testing.T, w *world, kind string, id int64) int {
 }
 
 func jsonStr(s string) string { b, _ := json.Marshal(s); return string(b) }
+
+func TestClearFinishedKeepsAFilledJobFolderWhenTheReportedFileIsGone(t *testing.T) {
+	const name = "Dune.Part.Two.2024.1080p.WEB.H264-HOLYARRS"
+	for _, kind := range []string{"movies", "tv", "music"} {
+		t.Run(kind, func(t *testing.T) {
+			share := t.TempDir()
+			job := filepath.Join(share, "complete", kind, name)
+			if err := os.MkdirAll(job, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			kept := filepath.Join(job, "kept.srt")
+			if err := os.WriteFile(kept, []byte("x"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			w, m, id, spy := usenetDownload(t)
+			if err := execSQL(w, `UPDATE downloaders SET path_map = '[{"theirs":"/downloads","ours":`+jsonStr(share)+`}]'`); err != nil {
+				t.Fatal(err)
+			}
+			m.Forget(w.download(t, id).DownloaderID)
+			spy.content = "/downloads/complete/" + kind + "/" + name + "/" + name + ".mkv"
+			m.ClearFinished(context.Background(), id)
+			if _, err := os.Stat(kept); err != nil {
+				t.Fatalf("a file left in the job folder was deleted: %v", err)
+			}
+		})
+	}
+}
