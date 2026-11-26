@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Néhány mappa nem ment át. Olvassa be újra, hogy átvegye őket; a már a Médiatárban lévő mappák úgy maradnak, ahogy vannak.",
 	"library.import.scanAgain": "Beolvasás újra",
 	"library.import.keepOpen": "Tartsa nyitva ezt az oldalt, amíg el nem készül.",
+	"library.import.closeOk": "A szerveren fut, így bezárhatod ezt az oldalt.",
 	"library.import.waiting": "A metaadat-szerver foglalt. A HolyArrs {min} perc múlva újra próbálja az utolsó {left} elemet.",
 	"library.import.leaveAsk": "Egy import fut. Ha elhagyja az oldalt, a még el nem küldött mappák nem lesznek átvéve. Mégis elhagyja?",
 	"library.import.interrupted": "Egy import megállt {done} / {total} mappánál, amikor bezárták az oldalát. Olvassa be újra a többi átvételéhez; a már átvett mappák úgy maradnak, ahogy vannak.",

@@ -166,6 +166,7 @@
 	"library.import.leftHint": "有些資料夾沒有成功。請重新掃描以接管它們；已在媒體庫中的資料夾維持原樣。",
 	"library.import.scanAgain": "重新掃描",
 	"library.import.keepOpen": "完成之前請保持此頁面開啟。",
+	"library.import.closeOk": "它在伺服器上執行，所以你可以關閉此頁面。",
 	"library.import.waiting": "中繼資料伺服器忙碌中。HolyArrs 將在 {min} 分鐘後重試剩下的 {left} 項。",
 	"library.import.leaveAsk": "有一項匯入正在進行。如果你離開此頁面，尚未傳送的資料夾不會被接管。仍要離開嗎？",
 	"library.import.interrupted": "頁面關閉時，一項匯入停在了 {total} 個資料夾中的第 {done} 個。請重新掃描以接管剩餘部分；已接管的資料夾維持原樣。",

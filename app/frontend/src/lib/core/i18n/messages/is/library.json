@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Sumar möppur fóru ekki í gegn. Skannaðu aftur til að taka þær upp; möppur sem eru þegar í safninu haldast óbreyttar.",
 	"library.import.scanAgain": "Skanna aftur",
 	"library.import.keepOpen": "Hafðu þessa síðu opna þar til því er lokið.",
+	"library.import.closeOk": "Þetta keyrir á þjóninum, svo þú mátt loka þessari síðu.",
 	"library.import.waiting": "Lýsigagnaþjónninn er upptekinn. HolyArrs reynir síðustu {left} aftur eftir {min} mín.",
 	"library.import.leaveAsk": "Innflutningur er í gangi. Ef þú ferð af þessari síðu verða möppur sem ekki hafa verið sendar ekki teknar upp. Fara samt?",
 	"library.import.interrupted": "Innflutningur stöðvaðist við {done} af {total} möppum þegar síðunni hans var lokað. Skannaðu aftur til að taka upp restina; möppur sem þegar eru teknar upp haldast óbreyttar.",

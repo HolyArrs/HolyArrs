@@ -166,7 +166,7 @@ func (c *CardArt) Library(r *http.Request, titles []mediafiles.Title) map[string
 	var keys [][2]string
 	var items []engine.Item
 	for _, t := range titles {
-		if id := t.SourceIDs["tmdb"]; id != "" && (t.Kind == "movie" || t.Kind == "show") {
+		if id := t.TrustedTMDB(); id != "" && (t.Kind == "movie" || t.Kind == "show") {
 			keys = append(keys, [2]string{t.Kind, id})
 			items = append(items, engine.Item{Kind: t.Kind, TMDBID: id, Backdrop: t.Backdrop})
 		}

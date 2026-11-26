@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Talsett, án upprunalega hljóðsins",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision án HDR10 varaleiðar",
+	"downloads.pr.traits.sdr_4k": "4K án HDR (SDR)",
 	"downloads.pr.traits.executable": "Inniheldur forrit",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (spilast nánast alls staðar)",

@@ -1,13 +1,13 @@
 <script lang="ts">
 	// What an installed plugin may reach that the owner chooses: a real folder for each folder it asks for, hosts of the owner's own
-	// (Tailscale: a self-hosted Headscale), and the OK for an update that asks for more. Nothing is granted until saved.
+	// (Tailscale: a self-hosted Headscale; a bot-check plugin: their FlareSolverr), and the OK for an update that asks for more. Nothing is granted until saved.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { folderLabel, needLabel, scopeWarnings } from './view.ts';
+	import { folderLabel, needLabel, scopeWarnings, takesOwnerHosts } from './view.ts';
 	import type { Plugin, PluginResources } from './types.ts';
 
 	let { p, reload }: { p: Plugin; reload: () => Promise<void> } = $props();
@@ -15,7 +15,7 @@
 	const folders = $derived((p.access?.folders ?? []).map((f) => (typeof f === 'string' ? { name: f, mode: 'read' as const } : f)));
 	const needs = $derived(p.needs_approval ?? []);
 	const warns = $derived(scopeWarnings(p.scope_groups));
-	const ownHosts = $derived(p.id === 'tailscale');
+	const ownHosts = $derived(takesOwnerHosts(p));
 	let paths = $state<Record<string, string>>({});
 	let hosts = $state('');
 	let busy = $state(false);
@@ -75,7 +75,7 @@
 		{#if ownHosts}
 			<label class="row">
 				<span class="small lab">{t('plugins.ownerHosts')}<span class="xs muted"> Â· {t('plugins.ownerHostsHelp')}</span></span>
-				<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder="headscale.example.com:8080" bind:value={hosts} data-testid="plugin-owner-hosts" />
+				<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder={p.id === 'tailscale' ? 'headscale.example.com:8080' : 'flaresolverr:8191'} bind:value={hosts} data-testid="plugin-owner-hosts" />
 			</label>
 		{/if}
 		</div>{/if}
