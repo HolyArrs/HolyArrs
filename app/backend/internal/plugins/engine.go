@@ -232,7 +232,10 @@ type Overview struct {
 	// DevMode is on when the owner runs unsigned plugins from DevDir.
 	DevMode bool     `json:"dev_mode"`
 	DevDir  string   `json:"dev_dir,omitempty"`
-	Plugins []Plugin `json:"plugins"`
+	// LanguagePacks are the language packs' download numbers, when known;
+	// that card is not a listed plugin.
+	LanguagePacks *Stat    `json:"language_packs,omitempty"`
+	Plugins       []Plugin `json:"plugins"`
 }
 
 // List shows the plugins of the cached signed list (fetched once when none
@@ -325,6 +328,9 @@ func (e *Engine) List(ctx context.Context) (*Overview, error) {
 		}
 	}
 	order = e.showDev(st, rows, order)
+	if s, ok := stats["language-packs"]; ok {
+		ov.LanguagePacks = &s
+	}
 	for _, id := range order {
 		rows[id].InstallStep, rows[id].InstallError = e.steps[id], e.fails[id]
 		rows[id].ReachesApp = e.Forwards != nil && e.Forwards(id)

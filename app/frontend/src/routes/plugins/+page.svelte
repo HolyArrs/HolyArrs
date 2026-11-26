@@ -92,7 +92,7 @@
 	let showOnly = $state<'all' | 'installed' | 'updates'>('all');
 	const lang = $derived(languageCard(packList.installed, q, tab, showOnly, t('plugins.tabLanguagePacks')));
 	// Language Packs opens the same window as a plugin: its own logo, About, what it can reach, then the languages.
-	const langPlugin = $derived({ id: 'language-packs', version: LANGUAGE_PACKS_VERSION, installed: !!lang?.installed, running: false, enabled: true, name: t('plugins.tabLanguagePacks'), author: 'HolyArrs', category: t('plugins.languages'), description: t('plugins.languagesIntro'), icon: LANGUAGE_PACKS_ICON, access: { hosts: ['plugins.holyarrs.com'], folders: [], actions: [] } } as Plugin);
+	const langPlugin = $derived({ id: 'language-packs', version: LANGUAGE_PACKS_VERSION, installed: !!lang?.installed, running: false, enabled: true, name: t('plugins.tabLanguagePacks'), author: 'HolyArrs', category: t('plugins.languages'), description: t('plugins.languagesIntro'), icon: LANGUAGE_PACKS_ICON, stats: ov?.language_packs, access: { hosts: ['plugins.holyarrs.com'], folders: [], actions: [] } } as Plugin);
 	const trending = $derived(trendingIds(ov?.plugins ?? []));
 	const updates = $derived((ov?.plugins ?? []).filter((p) => p.installed && hasUpdate(p) && !p.needs_app));
 	const filterItems = $derived<MenuItem[]>([
@@ -342,24 +342,29 @@
 			{#if kind === 'big'}
 				<div class="bhead"><h2 class="pname" dir="auto">{name}</h2><span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span><span class="cat">{t('plugins.languages')}</span></div>
 				<p class="full small" dir="auto">{about}</p>
-				<div class="bfoot" data-testid="language-packs-foot"><span class="chips"><span class="chip xs mono vchip">{LANG_VERSION}</span></span><span class="st">{@render langAct(name)}</span></div>
+				<div class="bfoot" data-testid="language-packs-foot"><span class="chips" use:fitChips><span class="chip xs mono vchip">{LANG_VERSION}</span>{@render langDls()}</span><span class="st">{@render langAct(name)}</span></div>
 			{:else if kind === 'card'}
 				<h2 class="pname" dir="auto">{name}</h2>
 				<span class="cat">{t('plugins.languages')}</span>
 				<p class="one small" dir="auto"><span class="otext">{about}</span></p>
 				<span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span>
-				<div class="ft" data-testid="language-packs-foot"><span class="chips"><span class="chip xs mono vchip">{LANG_VERSION}</span></span><span class="st">{@render langAct(name)}</span></div>
+				<div class="ft" data-testid="language-packs-foot"><span class="chips" use:fitChips><span class="chip xs mono vchip">{LANG_VERSION}</span>{@render langDls()}</span><span class="st">{@render langAct(name)}</span></div>
 			{:else}
 				<h2 class="pname" dir="auto">{name}</h2>
 				<p class="one small" dir="auto">{about}</p>
 				<span class="cat">{t('plugins.languages')}</span>
 				<span class="by xs"><Avatar name="HolyArrs" src={devPicture('HolyArrs')} bare size={16} /><span class="bn">HolyArrs</span></span>
-				<span class="ver xs"><span class="mono">{LANG_VERSION}</span></span>
+				<span class="ver xs"><span class="mono">{LANG_VERSION}</span>{@render dls(langPlugin)}</span>
 				<span class="stt xs"></span>
 				<span class="st">{@render langAct(name)}</span>
 			{/if}
 		</li>
 	{/if}
+{/snippet}
+
+{#snippet langDls()}
+	{@const dl = ov?.language_packs?.downloads != null ? shortCount(ov.language_packs.downloads, appLocale()) : ''}
+	{#if dl}<span class="chip xs dlc" data-drop="1" title={t('plugins.downloads', { n: dl })} data-testid="plugin-downloads"><span class="sr-only">{t('plugins.downloads', { n: dl })}</span><span class="dnum" aria-hidden="true"><Icon name="download" size={11} />{dl}</span></span>{/if}
 {/snippet}
 
 {#snippet langAct(name: string)}
