@@ -110,12 +110,24 @@ type OldRelease struct {
 // move calls it for titles it adopts and for titles already here, so
 // moving again after reading the old app updates them.
 func (s *Service) SetRecordedFiles(ctx context.Context, titleID int64, qualities map[string]string, releases map[string]OldRelease, by domain.Actor) (int, error) {
+	return s.setRecordedFiles(ctx, titleID, 0, qualities, releases, by)
+}
+
+// SetVersionRecordedFiles is SetRecordedFiles for one Version of the
+// title. A 1080p and a 4K copy often share a file name, so what one old
+// app recorded must reach only the copy it came from.
+func (s *Service) SetVersionRecordedFiles(ctx context.Context, titleID, versionID int64, qualities map[string]string, releases map[string]OldRelease, by domain.Actor) (int, error) {
+	return s.setRecordedFiles(ctx, titleID, versionID, qualities, releases, by)
+}
+
+// setRecordedFiles does both; versionID 0 means every Version.
+func (s *Service) setRecordedFiles(ctx context.Context, titleID, versionID int64, qualities map[string]string, releases map[string]OldRelease, by domain.Actor) (int, error) {
 	if len(qualities) == 0 && len(releases) == 0 {
 		return 0, nil
 	}
 	updated := 0
 	err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-		versions, err := database.Select[mediafiles.Version](ctx, tx, "versions", "title_id = ?", titleID)
+		versions, err := database.Select[mediafiles.Version](ctx, tx, "versions", "title_id = ? AND (? = 0 OR id = ?)", titleID, versionID, versionID)
 		if err != nil {
 			return err
 		}

@@ -43,6 +43,12 @@ func (b *builder) folderList(s *Snapshot) {
 	}
 }
 
+// fourKCutoff says a profile's cutoff aims for 2160p (the 4K kind).
+func fourKCutoff(p Profile) bool {
+	cut := strings.ToLower(p.Cutoff)
+	return strings.Contains(cut, "2160") || strings.Contains(cut, "4k") || strings.Contains(cut, "uhd")
+}
+
 // matchPreset finds the closest Pick rules preset for one of their
 // profiles and says why.
 func matchPreset(k Kind, p Profile) (string, string) {
@@ -62,8 +68,7 @@ func matchPreset(k Kind, p Profile) (string, string) {
 		}
 		return "Any music", "it allows a mix of audio kinds" + scores
 	}
-	cut := strings.ToLower(p.Cutoff)
-	if strings.Contains(cut, "2160") || strings.Contains(cut, "4k") || strings.Contains(cut, "uhd") {
+	if fourKCutoff(p) {
 		return "4K", "it aims for 2160p (" + clip(p.Cutoff, 60) + ")" + scores
 	}
 	why := "it aims for " + clip(p.Cutoff, 60) + " or lower; Standard picks the best copy up to 1080p"
@@ -84,6 +89,9 @@ func (b *builder) profiles(s *Snapshot) {
 	ownRules := false
 	for i, p := range s.QualityProfiles {
 		preset, why := matchPreset(s.Kind, p)
+		// The 4K kind comes from the cutoff alone, even when the profile
+		// becomes its own Pick rules instead of a ready-made match.
+		b.fourK[b.presetKey(s.Kind, p.ID)] = s.Kind != Lidarr && fourKCutoff(p)
 		key := fmt.Sprintf("pick_rules:%d:%s:%d", b.snapID, s.Kind, p.ID)
 		if rp, ok := b.importedRules(s, p, preset); ok {
 			ownRules = true
@@ -570,41 +578,6 @@ func isMBID(s string) bool {
 	return true
 }
 
-// place finds the Library folder (here) and the one folder in it that hold
-// a title's old path.
-func (b *builder) place(t Title) (lib, folder, why string) {
-	op := oldPath(t.Path)
-	if op == "" {
-		return "", "", "its folder is not a full path"
-	}
-	best := -1
-	for i, f := range b.folders {
-		if under(op, f.OldPath) && op != f.OldPath && (best < 0 || len(f.OldPath) > len(b.folders[best].OldPath)) {
-			best = i
-		}
-	}
-	if best < 0 {
-		return "", "", "its folder " + op + " is in none of the library folders read"
-	}
-	f := b.folders[best]
-	rest := strings.TrimPrefix(strings.TrimPrefix(op, f.OldPath), "/")
-	if f.OldPath == "/" {
-		rest = strings.TrimPrefix(op, "/")
-	}
-	if rest == "" || strings.Contains(rest, "/") || strings.HasPrefix(rest, ".") {
-		return "", "", "its folder is not directly in its library folder"
-	}
-	return f.Path, rest, ""
-}
-
-// releaseGates are Radarr's release stages (words or the backup's numbers)
-// as Release gate choices.
-var releaseGates = map[string]string{"tba": "announced", "0": "announced", "announced": "announced", "1": "announced",
-	"incinemas": "in_cinemas", "2": "in_cinemas", "released": "released", "3": "released"}
-
-// gateWords say a Release gate choice in the plan's details.
-var gateWords = map[string]string{"announced": "announced", "in_cinemas": "in cinemas", "released": "released", "": "this server's default"}
-
 func (b *builder) titleList(s *Snapshot) {
 	b.cover("titles")
 	extras := map[string]int{}
@@ -659,6 +632,12 @@ func (b *builder) titleList(s *Snapshot) {
 			tp.Preset = "Standard"
 		}
 		tp.Qualities, tp.OldEpisodes = fileFacts(t.Files)
+		if kind == "movie" && len(t.Files) == 1 {
+			tp.File = t.Files[0].Name
+			if t.Files[0].Path != "" {
+				tp.File = t.Files[0].Path
+			}
+		}
 		tp.Releases = fileReleases(t.Files)
 		tp.hasFiles = len(t.Files) > 0 || num(t.Extra["track_files"]) > 0
 		tp.History, tp.App = t.History, string(s.Kind)
@@ -692,21 +671,36 @@ func (b *builder) titleList(s *Snapshot) {
 				b.titles[kind+":ids:"+clip(v, 60)] = name
 			}
 		}
-		if tp.Unresolved != "" {
-			b.not(GroupTitles, from, name, "not placed: "+tp.Unresolved+"; add a path rule and plan again")
+		key := "title:" + kind + ":" + id
+		if kind == "movie" && b.keys[key] && b.mergeFourK(key, tp, from, t, gateNote, &gated) {
+			for k := range t.Extra {
+				if k != "minimum_availability" {
+					extras[k]++
+				}
+			}
+			tags += len(t.Tags)
 			continue
 		}
-		detail := "uses the folder " + path.Join(tp.Library, tp.Folder) + " where it is"
-		if !t.Monitored {
-			detail += "; Keep up to date off"
+		if tp.Unresolved != "" {
+			b.not(GroupTitles, from, name, "not placed: "+tp.Unresolved+"; add a path rule and plan again")
+			if _, seen := b.unplaced[key]; kind == "movie" && !seen {
+				b.unplaced[key] = unplacedCopy{tp: tp, from: from, snap: b.snapID, fourK: b.fourK[b.presetKey(s.Kind, t.ProfileID)], addr: b.addr,
+					note: b.p.NotMoved[len(b.p.NotMoved)-1]}
+			}
+			continue
 		}
-		detail += gateNote
+		detail := titleDetail(tp, t.Monitored, gateNote)
 		if t.Year > 0 {
 			name = fmt.Sprintf("%s (%d)", name, t.Year)
 		}
-		key := "title:" + kind + ":" + id
 		before := len(b.items[GroupTitles].Items)
 		b.add(GroupTitles, Item{Key: key, Name: name, From: from, Detail: detail, Title: tp})
+		if len(b.items[GroupTitles].Items) > before {
+			b.titleSrc[key] = titleCopy{snap: b.snapID, fourK: b.fourK[b.presetKey(s.Kind, t.ProfileID)], idx: len(b.items[GroupTitles].Items) - 1, addr: b.addr}
+			if kind == "movie" {
+				b.carryUnplacedFourK(key, len(b.items[GroupTitles].Items)-1, b.fourK[b.presetKey(s.Kind, t.ProfileID)])
+			}
+		}
 		if tp.GateDelayDays != nil && len(b.items[GroupTitles].Items) > before {
 			gated++
 		}

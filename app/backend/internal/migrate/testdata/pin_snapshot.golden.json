@@ -51,6 +51,7 @@
           "quality": "s",
           "scene_name": "s",
           "release_group": "s",
+          "path": "s",
           "episodes": [
             {
               "season": 7,
