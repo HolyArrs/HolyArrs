@@ -29,6 +29,7 @@ DELETE /api/v1/never-add/{id} auth=manage_library scope=write assurance=false pa
 DELETE /api/v1/outside-lists/{id} auth=settings scope=write assurance=false part=media
 DELETE /api/v1/own-traits/{id} auth=settings scope=write assurance=false part=media
 DELETE /api/v1/pick-rules/{id} auth=settings scope=write assurance=false part=media
+DELETE /api/v1/plugin-hooks/links/{user} auth=owner scope=admin assurance=false part=core
 DELETE /api/v1/plugins/{id} auth=owner scope=admin assurance=false part=core
 DELETE /api/v1/settings/old-app-api/keys/{side} auth=settings scope=admin assurance=true part=core
 DELETE /api/v1/settings/trakt-signin auth=owner scope=admin assurance=false part=core
@@ -216,6 +217,7 @@ GET /api/v1/pick-rules auth=manage_library scope=read assurance=false part=media
 GET /api/v1/pick-rules/{id} auth=manage_library scope=read assurance=false part=media
 GET /api/v1/plugin-hooks/downloader auth=owner scope=admin assurance=false part=core
 GET /api/v1/plugin-hooks/events auth=owner scope=admin assurance=false part=core
+GET /api/v1/plugin-hooks/links auth=owner scope=admin assurance=false part=core
 GET /api/v1/plugin-hooks/metadata auth=owner scope=admin assurance=false part=core
 GET /api/v1/plugin-hooks/pages auth=owner scope=admin assurance=false part=core
 GET /api/v1/plugin-hooks/releases auth=owner scope=admin assurance=false part=core

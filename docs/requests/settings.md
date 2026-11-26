@@ -38,6 +38,9 @@ These decide where approved titles go and which Pick rules they get.
 | **Music folder**, **Music quality** | The same for artists and albums | First music Library folder, and that folder's quality |
 | **Search when approved** | Search as soon as a request is approved. Movies at once, shows at the next feed check | On |
 | **4K copy** | Folder and Pick rules for approved 4K requests, kept as their own copy | Same folder as other requests, and the quality named 4K |
+| **Anime** | Folder for approved requests for anime movies, and one for anime shows | Same folder as other requests |
+
+A title counts as anime when its page says so. A folder the approver picks wins over the anime folder, and a 4K request still goes to the 4K folder when one is set. The quality stays the one for requests: leave **Movie quality** and **Show quality** on the folder's quality to use the anime folder's own.
 
 ### Approvals
 

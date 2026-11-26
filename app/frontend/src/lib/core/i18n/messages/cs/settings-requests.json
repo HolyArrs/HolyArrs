@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Kam jdou schválené žádosti ve 4K a jak se vybírají",
 	"settings.requests.fourKSameFolder": "Stejně jako ostatní žádosti",
 	"settings.requests.fourKNamedRules": "Kvalita s názvem 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Kam jdou schválené žádosti o anime",
 	"settings.requests.choices": "O co mohou lidé žádat",
 	"settings.requests.choicesDesc": "Tlačítka kvality v okně žádosti, v tomto pořadí. Tady je přejmenujte nebo skryjte; děti dostanou první zobrazené.",
 	"settings.requests.choiceShown": "Zobrazit lidem",

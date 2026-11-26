@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} találat",
 	"migrate.readOnly": "Csak olvasható",
 	"migrate.folderReadOnly": "A HolyArrs nem tud írni ebbe a mappába, így semmit sem lehet bele importálni. Tedd írhatóvá a kötetet (töröld a :ro részt) a HolyArrs Docker-beállításában, majd hozd létre újra a konténert.",
-	"migrate.someFound": "{n} találat"
+	"migrate.someFound": "{n} találat",
+	"migrate.sameSource": "ugyanaz, mint {list}: egy Forrás",
+	"migrate.nameInApps": "{name} itt: {apps}"
 }

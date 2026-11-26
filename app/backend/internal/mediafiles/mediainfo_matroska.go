@@ -245,7 +245,8 @@ func (p *matroskaParser) readTracks(start, end int64, depth int) ([]Track, error
 func (p *matroskaParser) readTrack(start, end int64, depth int) (Track, error) {
 	track := Track{Default: true} // FlagDefault is 1 when not written
 	var kind uint64
-	var language, languageBCP string
+	language := "eng" // Language is eng when not written
+	var languageBCP string
 	var private []byte
 	var frameNanos uint64
 	c := colour{dvCompat: -1}

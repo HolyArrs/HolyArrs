@@ -16,6 +16,7 @@ var RouteScopes = map[string]string{
 	"GET /api/v1/my/plugin-links":                                webserver.ScopeAdmin,
 	"GET /api/v1/plugin-hooks/downloader":                        webserver.ScopeAdmin,
 	"GET /api/v1/plugin-hooks/events":                            webserver.ScopeAdmin,
+	"GET /api/v1/plugin-hooks/links":                             webserver.ScopeAdmin,
 	"GET /api/v1/plugin-hooks/pages":                             webserver.ScopeAdmin,
 	"GET /api/v1/plugin-hooks/releases":                          webserver.ScopeAdmin,
 	"GET /api/v1/plugin-hooks/sections":                          webserver.ScopeAdmin,

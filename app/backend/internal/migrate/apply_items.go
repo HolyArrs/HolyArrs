@@ -60,11 +60,14 @@ func (r *run) neverAdd(it Item) (string, string) {
 // link-local and metadata refusal of the dial policies stays either way.
 func (r *run) source(it Item) (string, string) {
 	s := it.Source
-	if r.id("SELECT id FROM sources WHERE name = ?", it.Name) != 0 {
+	if r.id("SELECT id FROM sources WHERE name = ? COLLATE NOCASE", it.Name) != 0 {
 		return ResAlready, "a Source with this name is here"
 	}
 	if r.sameSource(s) != "" {
 		return ResAlready, "a Source at this address is already there, kept"
+	}
+	if name := r.sameIndexerHere(it); name != "" {
+		return ResAlready, "the same as " + name + ", a Source that is here"
 	}
 	what := s.Format + " at " + s.URL + ", paused until you check and resume it"
 	if r.dry {

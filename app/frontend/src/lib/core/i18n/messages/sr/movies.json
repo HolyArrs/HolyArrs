@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "Престати са одржавањем Верзије {label} овог филма? Датотеке на диску се не дирају.",
 	"movies.versions.removeFailed": "Верзија није уклоњена",
+	"movies.versions.deleteFile": "Обриши датотеку",
+	"movies.versions.deleteFileConfirm": "Обрисати {name}? Иде у Недавно обрисано, одакле је можете вратити.",
+	"movies.versions.deleteFileFailed": "Датотеку није могуће обрисати",
 	"movies.versions.title": "Верзије",
 	"movies.versions.showLess": "Прикажи мање",
 	"movies.versions.seeAll": "Погледај свих {count}",

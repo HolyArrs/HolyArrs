@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Πού πηγαίνουν τα εγκεκριμένα αιτήματα 4K και πώς επιλέγονται",
 	"settings.requests.fourKSameFolder": "Όπως τα άλλα αιτήματα",
 	"settings.requests.fourKNamedRules": "Η ποιότητα με όνομα 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Πού πηγαίνουν τα εγκεκριμένα αιτήματα anime",
 	"settings.requests.choices": "Τι μπορούν να ζητήσουν οι χρήστες",
 	"settings.requests.choicesDesc": "Τα κουμπιά ποιότητας στα παράθυρα αιτήματος, με αυτή τη σειρά. Μετονομάστε ή κρύψτε τα εδώ· τα παιδιά παίρνουν το πρώτο ορατό.",
 	"settings.requests.choiceShown": "Εμφάνιση στους χρήστες",

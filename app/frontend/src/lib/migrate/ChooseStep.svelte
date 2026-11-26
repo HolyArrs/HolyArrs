@@ -204,11 +204,18 @@
 		void n;
 		return { text: '', warn: false };
 	}
+	// The old indexers that come over as this Source: "the same as Nyaa.si (Prowlarr) in Sonarr and Radarr".
+	function sameAs(it: PlanItem): string {
+		const byName = new Map<string, string[]>();
+		for (const x of it.source?.same_as ?? []) byName.set(x.name, [...(byName.get(x.name) ?? []), appName(x.app)]);
+		if (byName.size === 0) return '';
+		return t('migrate.sameSource', { list: andList([...byName].map(([name, apps]) => t('migrate.nameInApps', { name, apps: andList(apps) }))) });
+	}
 	function itemRow(it: PlanItem) {
 		const traits = it.rules?.traits?.length ? t('migrate.formatTraits', { list: it.rules.traits.map((x) => `${x.name} ${x.points > 0 ? '+' : ''}${x.points}`).join(', ') }) : '';
 		const left = it.rules?.skipped?.length ? t('migrate.formatsLeftOut', { list: it.rules.skipped.map((x) => `${x.name} (${serverWords(x.reason)})`).join('; ') }) : '';
 		const lead = it.rules?.body ? [serverWords(it.detail), serverWords(it.why)] : [serverWords(it.why || it.detail)];
-		const hint = [...lead, traits, left, it.needs ? t('migrate.needs', { what: serverWords(it.needs) }) : ''].filter(Boolean).join(' · ');
+		const hint = [...lead, sameAs(it), traits, left, it.needs ? t('migrate.needs', { what: serverWords(it.needs) }) : ''].filter(Boolean).join(' · ');
 		const check = toCheck.get(it.key);
 		if (check) return { key: it.key, name: check.name, hint: serverWords(check.detail), pill: { word: t('migrate.needsALook'), tone: 'warn' as const }, look: true };
 		return { key: it.key, name: serverWords(it.name), hint };

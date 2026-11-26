@@ -36,7 +36,7 @@ func MomentOf(e domain.Event) string {
 		return MomentAdd
 	case domain.EventArtworkChanged:
 		return MomentArtwork
-	case domain.EventTitleRemoved, domain.EventEpisodesRemoved:
+	case domain.EventTitleRemoved, domain.EventEpisodesRemoved, domain.EventMovieFileRemoved:
 		return MomentDelete
 	case domain.EventHealthBroken, domain.EventHealthRecovered:
 		return MomentHealth

@@ -109,7 +109,7 @@ func (h *Handlers) listSites(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"sites": Sites})
 }
 
-const sourceHelp = `send name, format (torznab, newznab, rss or site; a site Source also sends site: knaben, torrentscsv, subsplease or iptorrents), url, and if needed api_key (for iptorrents the passkey, with site_user: your user id there; or site_login: cookie with the browser cookie as api_key and an optional site_agent), protocol, use_for {feed, auto_search, hand_search}, kinds, categories, min_seeders, limits, priority (1 to 50), allow_local_network, proxy, proxy_password, proxy_allow_local_network, multi_languages (language codes a MULTi release carries here), no_language_languages (language codes a release here carries when its name shows none)`
+const sourceHelp = `send name, format (torznab, newznab, rss or site; a site Source also sends site: knaben, torrentscsv, subsplease, yts or iptorrents), url, and if needed api_key (for iptorrents the passkey, with site_user: your user id there; or site_login: cookie with the browser cookie as api_key and an optional site_agent), protocol, use_for {feed, auto_search, hand_search}, kinds, categories, min_seeders, limits, priority (1 to 50), allow_local_network, proxy, proxy_password, proxy_allow_local_network, multi_languages (language codes a MULTi release carries here), no_language_languages (language codes a release here carries when its name shows none)`
 
 // readSource reads a Source body; the masked placeholder keeps the stored secret.
 func readSource(w http.ResponseWriter, r *http.Request) (Input, bool) {

@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Where approved 4K requests go and how they are picked",
 	"settings.requests.fourKSameFolder": "Same as other requests",
 	"settings.requests.fourKNamedRules": "The quality named 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Where approved anime requests go",
 	"settings.requests.choices": "What people can ask for",
 	"settings.requests.choicesDesc": "The Quality buttons on request sheets, in this order. Rename or hide them here; Kids get the first one shown.",
 	"settings.requests.choiceShown": "Show to people",

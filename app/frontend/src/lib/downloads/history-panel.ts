@@ -278,7 +278,7 @@ function factSet(row: HistoryRow, failedAt: StepKey | ''): Label[] {
 	if (row.steps.length || /^(release_chosen|release_chosen_by_hand|download_(sent|queued|downloading|finished|seeding|stalled|paused|failed|vanished))$/.test(k)) return DOWNLOAD;
 	if (k === 'needs_decision' || k === 'stopped_looking') return ['Release'];
 	if (/^(renamed|rename_planned)$/.test(k)) return ['File', 'From'];
-	if (/^(title_removed|episodes_removed|file_held|holding_cleaned)$/.test(k)) return ['By'];
+	if (/^(title_removed|episodes_removed|movie_file_removed|file_held|holding_cleaned)$/.test(k)) return ['By'];
 	if (/^download_(removed|not_removed)$/.test(k)) return ['By', 'Downloader'];
 	if (/^(ai_)?(ask|report)_/.test(k)) return ['By'];
 	if (k.startsWith('subtitle_')) return ['Source'];

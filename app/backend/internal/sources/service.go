@@ -31,7 +31,7 @@ var (
 	ErrName     = errors.New("give the Source a name of 1 to 80 characters")
 	ErrNameUsed = errors.New("another Source has that name")
 	ErrFormat   = errors.New("format must be torznab, newznab, rss or site")
-	ErrSite     = errors.New("site must be one of the built-in sites: knaben, torrentscsv, subsplease or iptorrents")
+	ErrSite     = errors.New("site must be one of the built-in sites: knaben, torrentscsv, subsplease, yts or iptorrents")
 	ErrProtocol = errors.New("protocol must be torrent, usenet or a download type the Source's plugin brings")
 	ErrURL      = errors.New("the address must start with http:// or https:// and name a host")
 	// ErrQuery matches ErrURL under errors.Is, so callers that check ErrURL treat it the same.
@@ -65,7 +65,7 @@ type Input struct {
 	Name   string `json:"name"`
 	Format string `json:"format"`
 	// Site names the built-in site a site-format Source reads (knaben,
-	// torrentscsv, subsplease, iptorrents). It is set when the Source is added.
+	// torrentscsv, subsplease, yts, iptorrents). It is set when the Source is added.
 	Site string `json:"site,omitempty"`
 	// SiteUser is the person's user id on a built-in site that asks for one
 	// beside its key (IPTorrents: the passkey goes in APIKey). Nil keeps it.
