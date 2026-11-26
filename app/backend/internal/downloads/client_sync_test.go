@@ -54,7 +54,7 @@ var writeMethods = map[string]bool{
 var readMethods = map[string]bool{
 	"Health": true, "List": true, "Get": true, "Status": true, "Trackers": true, "Peers": true, "Properties": true,
 	"TorrentFiles": true, "ListAll": true, "ListActive": true, "SaveBase": true, "SyncMain": true, "History": true,
-	"Queue": true, "JobStages": true, "ServerStats": true,
+	"Queue": true, "JobStages": true, "ServerStats": true, "Session": true,
 }
 
 var syncerIfaces = map[reflect.Type]bool{

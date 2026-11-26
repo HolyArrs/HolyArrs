@@ -15,10 +15,16 @@ import (
 )
 
 // languageTMDB answers movies 11 and 12 and show 21 with their Spanish
-// translations, and season 1 of the show in English and in Spanish.
+// translations, and season 1 of the show in English and in Spanish. hits
+// counts page reads; the reader's-language logo read is its own call, made
+// once per title and language, and not counted.
 func languageTMDB(t *testing.T, hits *atomic.Int32) *metadata.TMDB {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/images") {
+			_, _ = w.Write([]byte(`{"logos":[]}`))
+			return
+		}
 		hits.Add(1)
 		switch r.URL.Path {
 		case "/3/genre/movie/list", "/3/genre/tv/list":
@@ -132,7 +138,7 @@ func TestMetadataDetailsKeptWithoutTexts(t *testing.T) {
 	t.Parallel()
 	var hits atomic.Int32
 	srv, s := discoverRig(t, languageTMDB(t, &hits))
-	metadata.KeepOnDisk(context.Background(), s, "details|movie|11", metadata.Details{DiscoverItem: metadata.DiscoverItem{TMDBID: "11", Kind: "movie", Name: "Eleven", Overview: "English story", Genres: []string{}}})
+	metadata.KeepOnDisk(context.Background(), s, "details|movie|11", metadata.Details{LogosRead: true, DiscoverItem: metadata.DiscoverItem{TMDBID: "11", Kind: "movie", Name: "Eleven", Overview: "English story", Genres: []string{}}})
 	url := srv.URL + "/api/v1/metadata/movie/11"
 	if en := titleText(t, url, nil); en.Name != "Eleven" || hits.Load() != 0 {
 		t.Fatalf("English from the kept page: %+v, %d asks", en, hits.Load())

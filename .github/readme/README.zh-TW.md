@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0：紅點顯示需要處理的事項，連線測試會說出具體問題。**為請求的作品加 Plex 標籤，名稱用你的語言，以及 30 多項修正。 用你自己掌控的金鑰，透過 MCP 連接應用程式。[查看新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1：外掛能聽到 HolyArrs 裡發生的事。**開發者模式會執行你正在建構的外掛，測試版則讓少數人先試用。 [查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 裡每一張海報、每一支預告片和每一個評分，都來自我自己架設、自己付費的伺服器，所以它能對所有人保持免費。如果 HolyArrs 讓你的電影夜好過了一點，贊助能讓我們大家的燈一直亮著 💛
 >
@@ -374,7 +374,7 @@ docker compose up -d
 - 被鎖在擁有者帳號外面：
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - 版本號碼：

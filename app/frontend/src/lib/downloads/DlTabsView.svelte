@@ -46,7 +46,7 @@
 {/snippet}
 
 	{#if tab === 'Info'}
-		{@const shown = tor ? infoGroups(r, d) : usenetGroups(r, d, importOf.get(r.id))}
+		{@const shown = tor ? infoGroups(r, d, importOf.get(r.id)) : usenetGroups(r, d, importOf.get(r.id))}
 		<div class="facts" data-testid="dl-info">
 			{#if stageOf(r) === 'failed' || problem(r)?.tone === 'fail'}<a class="hlink" href={to('/downloads/history?step=failed')} data-testid="dl-see-history">{t('downloads.tv.seeHistory')}</a>{/if}
 			{#if tor && d?.torrent_error}<p class="calm slim" role="status" data-testid="dl-panel-error"><span>{calmErr()}</span><button type="button" class="xbn" onclick={() => void pane.readDetail(r, 'Info')} data-testid="dl-panel-retry">{t('health.sections.tryAgain')}</button></p>{/if}
@@ -56,7 +56,7 @@
 						<div class="fcol">
 							<h3 class="fcap">{g.cap}</h3>
 							<dl class="fgrid" aria-label={g.cap}>
-								{#each g.rows as x (x.k)}<div class="fr"><dt>{x.k}</dt><dd class:path={x.path} title={x.path || x.v.length > 24 ? personText(x.v) : undefined} data-testid={x.tid}><PersonText text={x.v} /></dd></div>{/each}
+								{#each g.rows as x (x.k)}<div class="fr" class:wrap={x.wrap}><dt>{x.k}</dt><dd class:path={x.path} title={x.path || x.v.length > 24 ? personText(x.v) : undefined} data-testid={x.tid}><PersonText text={x.v} /></dd></div>{/each}
 							</dl>
 						</div>
 					{/each}
@@ -355,6 +355,9 @@
 	.fr dt { flex: none; color: var(--text-muted); }
 	.fr dd { flex: 1 1 auto; min-width: 0; margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.fr dd.path { direction: rtl; }
+	/* A failure reason is read in full here, so it wraps instead of being cut. */
+	.fr.wrap { align-items: flex-start; height: auto; min-height: 36px; padding: 8px 0; }
+	.fr.wrap dd { white-space: normal; overflow-wrap: anywhere; }
 	.fr:last-child { border-bottom-color: transparent; }
 	.prf { flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 0 8px; }
 	.hlink { display: inline-block; margin: 6px 12px 2px; color: var(--accent-text); font: var(--t-footnote); }

@@ -4,6 +4,7 @@ import type { TitleView } from '../core/types.ts';
 import type { StatusKind } from '#lib/ui/StatusPill.svelte';
 import type { IconName } from '#lib/ui/Icon.svelte';
 import { quality } from '#lib/ui/title-cards.ts';
+import { serverWords } from '../core/i18n/server-words.ts';
 import { date } from '../core/format.ts';
 import { t as tr } from '../core/i18n/i18n.svelte.ts';
 
@@ -16,6 +17,7 @@ export type LibTone = 'ok' | 'info' | 'wait' | 'fail' | 'idle';
 export interface LibState {
 	key: LibStateKey;
 	label: string;
+	detail?: string;
 	tone: LibTone;
 	icon: IconName;
 	pill: StatusKind;
@@ -91,8 +93,8 @@ function askState(ask: ReturnType<typeof askOf>): LibState | null {
 function movieState(t: TitleView, now: number): LibState {
 	const slots = t.slots ?? [];
 	const st = (s: string) => slots.some((x) => x.state === s);
-	if (st('failed')) return make('failed', tr('mediafiles.state.failed'));
-	if (st('needs_a_decision')) return make('needs_decision', tr('mediafiles.state.toReview'));
+	const issue = issueState(slots);
+	if (issue) return issue;
 	const dl = slots.find((s) => s.download?.active || ['chosen', 'downloading', 'stalled', 'importing'].includes(s.state));
 	if (dl) {
 		const d = dl.download;
@@ -123,6 +125,8 @@ function groupState(t: TitleView, now: number): LibState | null {
 	const show = t.kind === 'show';
 	const s = show ? t.show : t.artist;
 	if (!s) return askState(askOf(t));
+	const issue = issueState(t.show?.issues ?? []);
+	if (issue) return issue;
 	const dl = s.downloading ?? 0;
 	const failed = s.failed ?? 0;
 	if (failed > 0) return make('failed', tr('mediafiles.state.failedN', { n: failed }));
@@ -148,4 +152,19 @@ function groupState(t: TitleView, now: number): LibState | null {
 	}
 	if (show && t.show?.status === 'ended') return make('ended', tr('mediafiles.state.completeEnded'));
 	return make('up_to_date', tr('mediafiles.state.complete'));
+}
+
+// Keep the existing urgency ordering, but show the recorded causes instead
+// of replacing all decisions with the same uninformative label.
+function issueState(slots: { state: string; reason?: string }[]): LibState | null {
+ const issues = slots.filter((s) => s.state === 'failed' || s.state === 'needs_a_decision');
+ if (!issues.length) return null;
+ const failed = issues.some((s) => s.state === 'failed');
+ const labels = [...new Set(issues.map((s) => s.reason?.trim()
+  ? serverWords(s.reason.trim())
+  : tr(s.state === 'failed' ? 'mediafiles.state.failureReasonMissing' : 'mediafiles.state.decisionReasonMissing')))];
+ const summaries = issues.map((s) => s.reason?.startsWith("HolyArrs can't find the downloaded file where the Downloader says it is;")
+  ? tr('mediafiles.state.downloadedFileMissing')
+  : s.reason?.trim() ? serverWords(s.reason.trim()) : tr(s.state === 'failed' ? 'mediafiles.state.failureReasonMissing' : 'mediafiles.state.decisionReasonMissing'));
+ return { ...make(failed ? 'failed' : 'needs_decision', [...new Set(summaries)].join('; ')), detail: labels.join('\n') };
 }

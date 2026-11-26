@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Захтеви",
 	"settings.appearance.colRate": "По реду",
 	"settings.appearance.noRows": "Још нису пребројани редови на Истражи.",
+	"settings.appearance.rowStats": "Редови на Истражи",
+	"settings.appearance.rowStatsDesc": "Отварања и захтеви по реду у последњих 30 дана, за све заједно. Броји се само на овом серверу.",
+	"settings.appearance.colRow": "Ред",
+	"settings.appearance.row.because_have": "Као наслови које имаш",
+	"settings.appearance.row.because_asked": "Као твоји захтеви",
+	"settings.appearance.row.person": "Више од особе",
+	"settings.appearance.row.genre": "Жанровски избор за тебе",
+	"settings.appearance.row.popular_genre": "Популарно по жанру",
+	"settings.appearance.row.popular_decade": "Популарно по деценији",
+	"settings.appearance.row.decade": "По деценији",
+	"settings.appearance.row.mood": "По расположењу",
+	"settings.appearance.row.hero": "Горњи банер",
 	"settings.appearance.motion": "Кретање",
 	"settings.appearance.motionNote": "Прати подешавање Смањено кретање на твом уређају"
 }

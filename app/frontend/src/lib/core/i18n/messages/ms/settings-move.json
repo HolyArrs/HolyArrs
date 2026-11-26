@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Buat asal import {id}?",
 	"settings.move.undoQuestion": "Buat asal import ini?",
 	"settings.move.undoNote": "Membuang apa yang ditambah oleh import ini; perubahan anda selepas itu kekal. Muat turun laporan dahulu jika anda mahukannya.",
-	"settings.move.undoMove": "Buat asal import"
+	"settings.move.undoMove": "Buat asal import",
+	"settings.move.continueSetup": "Teruskan persediaan",
+	"settings.move.backToChoose": "Kembali ke Pilih"
 }

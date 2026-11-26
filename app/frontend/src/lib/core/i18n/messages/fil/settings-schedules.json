@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Kanselahin",
 	"settings.schedules.stages": "Mga Yugto",
 	"settings.schedules.stagesNote": "I-pause o i-restart ang mga ito sa <a>Mga Bahagi</a>.",
-	"settings.schedules.allTime": "Sa lahat ng oras"
+	"settings.schedules.allTime": "Sa lahat ng oras",
+	"settings.schedules.skip.nothing": "Walang gagawin",
+	"settings.schedules.skip.plexOff": "Naka-off: i-on ang {setting} sa {page}",
+	"settings.schedules.skip.plexNobody": "Walang gagawin: walang nag-on ng kanilang Plex watchlist",
+	"settings.schedules.skip.settingOff": "Naka-off: i-on ito sa mga setting nito",
+	"settings.schedules.skip.starting": "Nilaktawan: nagsisimula pa ang HolyArrs",
+	"settings.schedules.took": "Tumagal nang {time}",
+	"settings.schedules.finished": "Tapos na ang {label}",
+	"settings.schedules.nothingToDo": "{label}: walang gagawin",
+	"settings.schedules.runFailed": "Pumalya ang {label}"
 }

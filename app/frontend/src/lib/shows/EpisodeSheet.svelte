@@ -8,9 +8,10 @@
 	import { qualityBadges } from '#lib/mediafiles/index.ts';
 	import { SubtitlePanel } from '#lib/subtitles/index.ts';
 	import type { TitleSubtitles } from '#lib/subtitles/index.ts';
-	import { HistoryLine as CompactRow, isRoutine, groupDownloads } from '#lib/downloads/index.ts';
+	import { HistoryLine as CompactRow, isRoutine, groupDownloads, FilePoints } from '#lib/downloads/index.ts';
 	import { goto } from '$app/navigation';
 	import { to } from '#lib/core/paths.ts';
+	import { episodeWords } from '#lib/core/episodes.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
 	import { ago, bytes } from '#lib/core/format.ts';
@@ -28,7 +29,7 @@
 		still?: string;
 		keep_up_to_date?: boolean;
 		outside_order?: boolean;
-		slots: { id: number; state: string; state_label: string; reason?: string; file?: Record<string, any> | null }[];
+		slots: { id: number; state: string; state_label: string; reason?: string; file?: Record<string, any> | null; good_enough?: boolean; points?: number; good_enough_points?: number }[];
 	};
 
 	let {
@@ -141,7 +142,10 @@
 		busy = 'look';
 		try {
 			await api.post(`/titles/${titleId}/search`, { slot_id: slot.id });
-			toasts.push(t('shows.sheet.searchingEpisode', { n: ep?.episode ?? '' }), 'info');
+			// Named with the show and the episode, and opens the show on its season: the toast is often read later, in the alerts list.
+			const href = `/library/${titleId}${ep?.season != null ? `?season=${ep.season}` : ''}`;
+			if (show && ep) toasts.push(t('shows.page.searchingNamed', { name: show.name }), 'info', { body: episodeWords(ep.season, ep.episode, ep.name), href });
+			else toasts.push(t('shows.sheet.searchingEpisode', { n: ep?.episode ?? '' }), 'info', { href });
 		} catch (e) {
 			toasts.push(t('shows.sheet.startSearchFailed'), 'fail', { body: message(e) });
 		} finally {
@@ -198,6 +202,7 @@
 					{#if fileFacts.audio.length || fileFacts.subs.length}
 						<p class="es-langs">{#if fileFacts.audio.length}<span class="muted">{t('shows.sheet.audio')}</span>{#each fileFacts.audio as l (l)}<span class="es-lang">{l}</span>{/each}{/if}{#if fileFacts.subs.length}<span class="muted">{t('shows.sheet.subtitles')}</span>{#each fileFacts.subs as l (l)}<span class="es-lang">{l}</span>{/each}{/if}</p>
 					{/if}
+					{#if manage && slot}<FilePoints {titleId} slotId={slot.id} />{/if}
 					<p class="es-name" title={fileFacts.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{fileFacts.name}</span></p>
 				</article>
 			{/if}

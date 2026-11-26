@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Desfazer a importação {id}?",
 	"settings.move.undoQuestion": "Desfazer esta importação?",
 	"settings.move.undoNote": "Remove o que esta importação adicionou; suas mudanças posteriores ficam. Baixe o relatório antes, se quiser.",
-	"settings.move.undoMove": "Desfazer importação"
+	"settings.move.undoMove": "Desfazer importação",
+	"settings.move.continueSetup": "Continuar a configuração",
+	"settings.move.backToChoose": "Voltar para Escolher"
 }

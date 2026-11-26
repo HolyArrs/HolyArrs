@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "لا يمكن التراجع. تبقى الملفات.",
 	"settings.pickRules.removeUsed": "{used}. اختر قواعد أخرى هناك أولًا.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "إلغاء"
+	"settings.pickRules.cancel": "إلغاء",
+	"settings.pickRules.check.title": "فحص اسم إصدار",
+	"settings.pickRules.check.desc": "الصق اسم إصدار لترى كيف يقرؤه HolyArrs وكيف تحكم عليه مجموعات الجودة الخاصة بك. لا يتم البحث عن أي شيء أو تنزيله.",
+	"settings.pickRules.check.name": "اسم الإصدار",
+	"settings.pickRules.check.rules": "الحكم باستخدام",
+	"settings.pickRules.check.copies": "نسخ العنوان المطابق",
+	"settings.pickRules.check.size": "الحجم بالغيغابايت (اختياري)",
+	"settings.pickRules.check.check": "فحص",
+	"settings.pickRules.check.failed": "تعذر فحص الاسم",
+	"settings.pickRules.check.readAs": "قُرئ على أنه",
+	"settings.pickRules.check.matches": "يطابق {name}",
+	"settings.pickRules.check.noTitle": "لا يطابق أي عنوان في مكتبتك. اختر مجموعة جودة أعلاه للحكم عليه على أي حال.",
+	"settings.pickRules.check.noAlbum": "يطابق {name}، لكن لا يطابق أيًّا من ألبوماته.",
+	"settings.pickRules.check.noCopies": "لا توجد نسخ لهذا العنوان للحكم عليها.",
+	"settings.pickRules.check.hasFile": "لديه ملف"
 }

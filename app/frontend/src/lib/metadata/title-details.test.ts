@@ -25,6 +25,47 @@ describe('title details', () => {
 		expect(d.similar).toEqual([{ kind: 'movie', tmdb: '2', name: 'Arrival', year: 2016, poster: undefined }]);
 	});
 
+	it('a failing title load asks a bounded number of times, then gives up', async () => {
+		const asked: string[] = [];
+		const get = async <T,>(path: string): Promise<T> => {
+			asked.push(path);
+			if (path.startsWith('/metadata/')) throw new ApiError('bad gateway', 502);
+			return { movies: [] } as T;
+		};
+		await expect(loadDetails(get, 'movie', '900006', undefined, undefined, 1)).rejects.toMatchObject({ status: 502 });
+		// One retry of the details and one lookup, then the page shows Could not load this title with Retry.
+		expect(asked.filter((p) => p.startsWith('/metadata/'))).toHaveLength(2);
+		expect(asked).toHaveLength(3);
+	});
+
+	it('a 404 or a 403 is never asked again', async () => {
+		for (const status of [404, 403]) {
+			let meta = 0;
+			const get = async <T,>(path: string): Promise<T> => {
+				if (path.startsWith('/metadata/')) {
+					meta++;
+					throw new ApiError('no', status);
+				}
+				return { movies: [] } as T;
+			};
+			await loadDetails(get, 'movie', '1', undefined, undefined, 1).catch(() => {});
+			expect(meta, String(status)).toBe(1);
+		}
+	});
+
+	it('a details read that fails once loads on the retry', async () => {
+		let meta = 0;
+		const get = async <T,>(path: string): Promise<T> => {
+			if (path.startsWith('/metadata/')) {
+				if (++meta === 1) throw new ApiError('bad gateway', 502);
+				return { title: 'Ember Road', year: 2019 } as T;
+			}
+			return { movies: [] } as T;
+		};
+		expect((await loadDetails(get, 'movie', '900006', undefined, undefined, 1))?.name).toBe('Ember Road');
+		expect(meta).toBe(2);
+	});
+
 	it('falls back to the lookup when the metadata endpoint is missing', async () => {
 		const get = async <T,>(path: string): Promise<T> => {
 			if (path.startsWith('/metadata/')) throw new ApiError('not found', 404);

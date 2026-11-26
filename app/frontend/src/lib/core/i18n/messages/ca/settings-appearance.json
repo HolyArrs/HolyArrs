@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Sol·licituds",
 	"settings.appearance.colRate": "Per fila",
 	"settings.appearance.noRows": "Encara no s'ha comptat cap fila d'Explora.",
+	"settings.appearance.rowStats": "Files d'Explora",
+	"settings.appearance.rowStatsDesc": "Obertures i sol·licituds per fila en els últims 30 dies, de tothom junt. Només es compten en aquest servidor.",
+	"settings.appearance.colRow": "Fila",
+	"settings.appearance.row.because_have": "Com títols que tens",
+	"settings.appearance.row.because_asked": "Com les teves sol·licituds",
+	"settings.appearance.row.person": "Més d'una persona",
+	"settings.appearance.row.genre": "Gèneres triats per a tu",
+	"settings.appearance.row.popular_genre": "Populars per gènere",
+	"settings.appearance.row.popular_decade": "Populars per dècada",
+	"settings.appearance.row.decade": "Per dècada",
+	"settings.appearance.row.mood": "Per estat d'ànim",
+	"settings.appearance.row.hero": "Bàner superior",
 	"settings.appearance.motion": "Moviment",
 	"settings.appearance.motionNote": "Segueix l'opció Redueix el moviment del teu dispositiu"
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -43,16 +44,60 @@ func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episo
 	if t.Naming != nil {
 		ns = *t.Naming
 	}
+	ns = ns.For(mediafiles.PartShows)
 	ext := filepath.Ext(source)
 	release := strings.TrimSuffix(filepath.Base(source), ext)
 	if t.ByOrder {
 		eps = NamedEpisodes(eps)
 	}
 	f := EpisodeFactsFor(t.Show.Name, t.Show.Year, t.IDs, t.Order, p, release, ext, eps)
-	if !ns.RenameOnImport {
-		return path.Join(t.FolderName, mediafiles.SeasonFolder(ns, f.Season), mediafiles.CleanWith(ns, release)+strings.ToLower(ext))
+	if ns.RenameOnImport && f.FrenchVersion == "" && (mediafiles.UsesWord(ns.EpisodePattern, "french_version") ||
+		mediafiles.UsesWord(ns.DailyPattern, "french_version") || mediafiles.UsesWord(ns.AnimePattern, "french_version")) {
+		f.AddFrenchVersion(FrenchVersionOf(source))
 	}
-	return mediafiles.EpisodePath(ns, t.FolderName, f)
+	season := ExistingSeasonFolder(filepath.Join(t.LibraryPath, filepath.FromSlash(t.FolderName)), f.Season, mediafiles.SeasonFolder(ns, f.Season))
+	if !ns.RenameOnImport {
+		return path.Join(t.FolderName, season, mediafiles.CleanWith(ns, release)+strings.ToLower(ext))
+	}
+	return path.Join(t.FolderName, season, mediafiles.EpisodeFile(ns, f))
+}
+
+var seasonDirRe = regexp.MustCompile(`(?i)^season[ ._-]*0*(\d+)$`)
+
+// ExistingSeasonFolder returns the folder already in showDir that holds this
+// season ("Season 1", "Season 01", "season 001", "Specials" for 0, or the
+// configured name in any case), so an import never splits one season into two
+// folders. With none found, or season folders off, it returns named.
+func ExistingSeasonFolder(showDir string, season int, named string) string {
+	if named == "" || showDir == "" {
+		return named
+	}
+	ents, err := os.ReadDir(showDir)
+	if err != nil {
+		return named
+	}
+	var match string
+	for _, e := range ents {
+		if !e.IsDir() {
+			continue
+		}
+		n := e.Name()
+		if n == named {
+			return named
+		}
+		if match != "" {
+			continue
+		}
+		if strings.EqualFold(n, named) || (season == 0 && strings.EqualFold(n, "specials")) {
+			match = n
+		} else if m := seasonDirRe.FindStringSubmatch(n); m != nil && m[1] == strconv.Itoa(season) {
+			match = n
+		}
+	}
+	if match != "" {
+		return match
+	}
+	return named
 }
 
 // EpisodeFactsFor builds the naming facts for one episode file.
@@ -222,6 +267,11 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 						m = fm
 						break
 					}
+				}
+			}
+			if m.Title == nil {
+				if gp, gm, ok := withoutLeadGroup(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true}, lib); ok && gp.IsShow() && !mediafiles.IsPack(gp) {
+					p, m = gp, gm
 				}
 			}
 			if m.Title == nil {

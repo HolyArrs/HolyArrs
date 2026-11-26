@@ -164,6 +164,16 @@
 	const doneClear = $derived(clearScope(doneAsks, statusOf, status, doneTotal));
 	// Approve all: the waiting cards, minus any already in their Approved beat.
 	const toApprove = $derived(cardsShown.filter((x) => waiting(x) && !approving.has(x.id)));
+	// Approve all takes every waiting request the filters show, past the loaded cards: with none of the page's filters on the button says the server's count.
+	const aaN = $derived(ctx.listCap && ctx.totalsKnown && !status ? Math.max(toApprove.length, ctx.approverCounts.pending) : toApprove.length);
+	// The next requests load as the end of the list scrolls near.
+	let moreAt = $state<HTMLElement>();
+	$effect(() => {
+		if (!moreAt || typeof IntersectionObserver === 'undefined') return;
+		const io = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) ctx.loadMore(); }, { rootMargin: '0px 0px 800px 0px' });
+		io.observe(moreAt);
+		return () => io.disconnect();
+	});
 
 	// The card's banner: the title's wide art (show or movie backdrop, the artist's wide photo).
 	const banner = (a: Ask) => {
@@ -347,7 +357,7 @@
 				<a class="rp-btn" href={to('/requests/reports')} data-testid="reports-link" aria-label={ctx.reports ? t('requests.board.reportsOpen', { n: ctx.reports }) : t('requests.reports.title')}><Icon name="alert" size={16} /><span class="rp-v">{t('requests.reports.title')}</span>{#if ctx.reports}<span class="rp-n" aria-hidden="true">{ctx.reports > 99 ? '99+' : ctx.reports}</span>{/if}</a>
 			{/if}
 			{#if ctx.approverTab === 'pending' && toApprove.length > 1}
-				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} onclick={() => ctx.approve(toApprove)}><Icon name="check" size={16} />{t('requests.board.approveAll')}<span class="aa-n">{toApprove.length}</span></button>
+				<button type="button" class="approve-all" in:fade={{ duration: ms(200) }} data-testid="approve-all" onclick={() => ctx.approveAll(toApprove, (a) => !status || statusOf(a) === status)}><Icon name="check" size={16} />{t('requests.board.approveAll')}<span class="aa-n">{aaN}</span></button>
 			{/if}
 			{#if ctx.approverTab === 'processing' && failedClear.n > 0}
 				<button type="button" class="approve-all clear" in:fade={{ duration: ms(200) }} data-testid="clear-failed" onclick={() => ctx.clearAll('failed', () => failedClear.asks, failedClear.n, failedClear.narrowed)}><Icon name="trash" size={16} />{t('requests.board.clearFailed')}<span class="aa-n">{failedClear.n}</span></button>
@@ -441,6 +451,7 @@
 			{/each}
 		</ul>
 		{/key}
+		{#if ctx.listCap}<div class="more" bind:this={moreAt} aria-hidden="true"></div>{/if}
 </div>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
@@ -501,6 +512,7 @@
 	@media (max-width: 379px) { .right .approve-all :global(svg), .right .rp-btn :global(svg), .right :global(.sf-btn .sf-funnel) { display: none; } }
 	.new-mark { align-self: flex-start; margin-bottom: 4px; padding: 2px 8px; border-radius: var(--r-pill); background: var(--accent-fill); color: var(--text-on-red); font: 600 11px/16px var(--font-ui); }
 	.capped { margin: 0; color: var(--text-muted); font: var(--t-footnote); }
+	.more { height: 1px; }
 	.approve-all:active { transform: scale(0.96); }
 	.aa-n { margin-left: -2px; font-variant-numeric: tabular-nums; }
 

@@ -273,6 +273,8 @@ func namingValues(p NamingPatterns) map[string]string {
 		"daily_pattern": p.DailyPattern, "anime_pattern": p.AnimePattern, "artist_folder_pattern": p.ArtistFolderPattern,
 		"album_folder_pattern": p.AlbumFolderPattern, "track_pattern": p.TrackPattern, "multi_disc_track_pattern": p.MultiDiscTrackPattern,
 		"disc_folder_pattern": p.DiscFolderPattern, "colon": p.Colon, "illegal": p.Illegal,
+		// Shows and music keep their own colon and character rules.
+		"show_colon": p.Colon, "show_illegal": p.Illegal, "music_colon": p.Colon, "music_illegal": p.Illegal,
 		"multi_episode_style": p.MultiEpisodeStyle, "air_date_style": p.AirDateStyle, "absolute_digits": strconv.Itoa(p.AbsoluteDigits),
 	}
 }
@@ -284,6 +286,7 @@ func overlayNaming(s mediafiles.NamingSettings, p NamingPatterns) mediafiles.Nam
 	s.ArtistFolderPattern, s.AlbumFolderPattern = p.ArtistFolderPattern, p.AlbumFolderPattern
 	s.TrackPattern, s.MultiDiscTrackPattern, s.DiscFolderPattern = p.TrackPattern, p.MultiDiscTrackPattern, p.DiscFolderPattern
 	s.Colon, s.Illegal = p.Colon, p.Illegal
+	s.ShowColon, s.ShowIllegal, s.MusicColon, s.MusicIllegal = p.Colon, p.Illegal, p.Colon, p.Illegal
 	s.MultiEpisodeStyle, s.AirDateStyle, s.AbsoluteDigits = p.MultiEpisodeStyle, p.AirDateStyle, p.AbsoluteDigits
 	return s
 }

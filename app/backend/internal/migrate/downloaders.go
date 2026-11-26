@@ -266,6 +266,7 @@ func (r sabReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 	s := &Snapshot{Downloader: d}
 	var misc map[string]any
 	var cats, servers []map[string]any
+	var typed *url.URL
 	if src.Via() == ViaBackup {
 		f, err := r.ini(src)
 		if err != nil {
@@ -312,18 +313,24 @@ func (r sabReader) Read(ctx context.Context, src Source) (*Snapshot, error) {
 		if misc == nil {
 			return nil, ErrBadAnswer
 		}
-		u, _ := url.Parse(src.URL)
-		d.Host = u.Hostname()
+		typed, _ = url.Parse(src.URL)
 	}
-	if d.Host == "" {
+	if typed != nil && typed.Hostname() != "" {
+		// The address the owner typed and tested is the one that reaches
+		// SABnzbd from here; its own port and url_base are the inside ones
+		// (in Docker the published port often differs).
+		d.Host, d.TLS = typed.Hostname(), typed.Scheme == "https"
+		d.Port, _ = strconv.Atoi(typed.Port())
+		d.URLBase = strings.TrimRight(typed.Path, "/")
+	} else {
 		d.Host = str(misc["host"])
+		d.TLS = boolean(misc["enable_https"])
+		d.Port = smallInt(num(misc["port"]))
+		if d.TLS && num(misc["https_port"]) != 0 {
+			d.Port = smallInt(num(misc["https_port"]))
+		}
+		d.URLBase = str(misc["url_base"])
 	}
-	d.TLS = boolean(misc["enable_https"])
-	d.Port = int(num(misc["port"]))
-	if d.TLS && num(misc["https_port"]) != 0 {
-		d.Port = int(num(misc["https_port"]))
-	}
-	d.URLBase = str(misc["url_base"])
 	d.Username = str(misc["username"])
 	d.SavePath, d.CompletePath = str(misc["download_dir"]), str(misc["complete_dir"])
 	for _, m := range cats {

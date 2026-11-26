@@ -772,7 +772,7 @@ func TestRefreshLeavesAlbumWhenPressingsFail(t *testing.T) {
 		err   error
 		empty bool
 		fails bool
-	}{{"not found", metadata.ErrArtistNotFound, false, false}, {"empty", nil, true, false}, {"plain error", errors.New("MusicBrainz could not answer"), false, true}} {
+	}{{"not found", metadata.ErrArtistNotFound, false, false}, {"empty", nil, true, false}, {"plain error", errors.New("MusicBrainz could not answer"), false, false}} {
 		t.Run(c.name, func(t *testing.T) {
 			svc, s, fm, _ := musicService(t)
 			ctx := context.Background()
@@ -790,9 +790,10 @@ func TestRefreshLeavesAlbumWhenPressingsFail(t *testing.T) {
 				fm.pressErr = map[string]error{rgOld: c.err}
 			}
 			fm.mu.Unlock()
-			_, err := svc.RefreshArtist(ctx, id, domain.System, nil)
-			if c.fails != (err != nil) {
-				t.Fatalf("refresh: %v", err)
+			// One album that cannot be read is skipped, never fails the artist.
+			res, err := svc.RefreshArtist(ctx, id, domain.System, nil)
+			if c.fails != (err != nil) || (c.err != nil && c.err != metadata.ErrArtistNotFound && res.AlbumsFailed != 1) {
+				t.Fatalf("refresh: %v, failed %d", err, res.AlbumsFailed)
 			}
 			after := tracksOf(t, s, al[rgOld].ID)
 			if len(after) != len(before) || len(after) != 4 {

@@ -20,6 +20,7 @@
   "PathTo": "/media",
   "AllowLocal": true,
   "WebURL": "",
+  "PlainPassword": false,
   "LastOKAt": "2026-10-01T12:00:00Z",
   "LastError": "slow"
 }

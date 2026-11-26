@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "다음에 요청할 작품을 고르세요",
 	"home.newPopular": "신작 & 인기",
 	"home.whatSTrending": "지금 뜨는 작품",
+	"home.gettingReady": "준비하는 중…",
 	"home.top10sAndComing": "Top 10과 공개 예정",
 	"home.whatSNext": "다음 일정",
 	"home.airDatesAndReleases": "방영일과 출시일",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "이번 주 공개되는 에피소드와 영화",
 	"home.popularThisWeek": "이번 주 공개되는 인기 작품",
 	"home.peopleCheck": "사용자 확인",
-	"home.cantReadUsers": "사용자 목록을 읽을 수 없음"
+	"home.cantReadUsers": "사용자 목록을 읽을 수 없음",
+	"home.joined.title": "환영합니다, {name}님",
+	"home.joined.find": "{explore} 또는 {search}에서 찾아보세요.",
+	"home.joined.ask": "작품에서 {request}을(를) 누르면 받을 수 있어요. 요청할 수 있는 것:",
+	"home.joined.track": "각 요청은 {requests}에서 확인하세요.",
+	"home.joined.noLimit": "주간 한도가 없습니다.",
+	"home.joined.gotIt": "확인",
+	"home.joined.explore": "{explore} 열기"
 }

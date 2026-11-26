@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: czerwona kropka pokazuje, co wymaga uwagi, a test połączenia nazywa dokładny problem.** Etykiety Plex dla zamówionych tytułów, nazwy w Twoim języku i ponad 30 poprawek. Łącz aplikacje przez MCP kluczami, nad którymi masz kontrolę. [Co nowego](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: wtyczki słyszą, co dzieje się w HolyArrs.** Tryb deweloperski uruchamia wtyczkę, którą tworzysz, a wersje testowe pozwalają kilku osobom wypróbować ją jako pierwszym. [Co nowego](https://holyarrs.com/whats-new/)
 
 > Każdy plakat, zwiastun i ocena w twoim HolyArrs pochodzą z serwera, który sam utrzymuję i opłacam, żeby był darmowy dla wszystkich. Jeśli HolyArrs choć trochę umilił ci wieczór z filmem, sponsoring pozwala utrzymać to światło dla nas wszystkich 💛
 >
@@ -374,7 +374,7 @@ Image nie ma shella, więc `docker exec -it holyarrs /bin/bash` nie zadziała. W
 - Zablokowany dostęp do konta właściciela:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Numer wersji:

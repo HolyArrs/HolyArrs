@@ -17,22 +17,49 @@ func markedReq(method, path, mark string) *http.Request {
 	return r
 }
 
-func TestPluginMarkCompare(t *testing.T) {
-	if len(PluginMark()) < 16 || PluginMark() != PluginMark() {
-		t.Fatal("mark must be a stable random token")
+// testMark is a live mark for the tailscale plugin.
+func testMark(t *testing.T) string {
+	t.Helper()
+	m := IssuePluginMark("tailscale")
+	t.Cleanup(func() { RevokePluginMark("tailscale") })
+	return m
+}
+
+func TestPluginMarkPerPluginRotated(t *testing.T) {
+	a := IssuePluginMark("netbird")
+	b := IssuePluginMark("cloudflared")
+	t.Cleanup(func() { RevokePluginMark("netbird"); RevokePluginMark("cloudflared") })
+	a2 := IssuePluginMark("netbird") // a restart rotates it
+	for _, c := range []struct {
+		name, mark, owner string
+	}{
+		{"first start no longer counts", a, ""},
+		{"current start", a2, "netbird"},
+		{"other plugin's own mark", b, "cloudflared"},
+		{"wrong", "wrong", ""},
+		{"empty", "", ""},
+	} {
+		if got := markOwner(markedReq("GET", "/", c.mark)); got != c.owner {
+			t.Errorf("%s: owner %q, want %q", c.name, got, c.owner)
+		}
 	}
-	if !pluginMarked(markedReq("GET", "/", PluginMark())) || pluginMarked(markedReq("GET", "/", "wrong")) {
-		t.Fatal("mark compare")
+	if len(a2) < 16 || a == a2 || a2 == b {
+		t.Error("marks must be random and distinct")
+	}
+	RevokePluginMark("netbird")
+	if pluginMarked(markedReq("GET", "/", a2)) {
+		t.Error("a stopped plugin's mark still counts")
 	}
 }
 
 func TestPluginSetupRefused(t *testing.T) {
+	mark := testMark(t)
 	a := &Auth{hosts: map[string]bool{"localhost": true}}
 	h := a.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { t.Errorf("%s reached handler", r.URL.Path) }))
 	for _, c := range []struct{ m, p string }{{"POST", "/api/v1/auth/setup"}, {"POST", "/api/v1/auth/setup/plex/start"},
 		{"POST", "/api/v1/auth/setup/plex/finish"}, {"POST", "/api/v1/auth/setup/media-server/jellyfin"}, {"GET", "/api/v1/auth/setup/discover"}} {
 		w := httptest.NewRecorder()
-		h.ServeHTTP(w, markedReq(c.m, c.p, PluginMark()))
+		h.ServeHTTP(w, markedReq(c.m, c.p, mark))
 		if w.Code != http.StatusForbidden || !strings.Contains(w.Body.String(), "Finish setup on the home network first.") {
 			t.Errorf("%s %s = %d %s", c.m, c.p, w.Code, w.Body)
 		}
@@ -42,11 +69,12 @@ func TestPluginSetupRefused(t *testing.T) {
 func TestPluginHostAndAddr(t *testing.T) {
 	a := &Auth{hosts: map[string]bool{"localhost": true}}
 	a.skipLocal.Store(true)
-	good := markedReq("GET", "/", PluginMark())
+	mark := testMark(t)
+	good := markedReq("GET", "/", mark)
 	if !a.hostAllowed(good) {
 		t.Error("own ts.net name with the mark refused")
 	}
-	other := markedReq("GET", "/", PluginMark())
+	other := markedReq("GET", "/", mark)
 	other.Host = "evil.example.com"
 	if a.hostAllowed(other) || a.hostAllowed(markedReq("GET", "/", "wrong")) {
 		t.Error("host allowed without matching name and mark")

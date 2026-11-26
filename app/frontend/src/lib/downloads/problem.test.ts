@@ -22,9 +22,20 @@ describe('problem', () => {
 		expect(problem(row({ protocol: 'torrent', availability: 0.6 }))).toEqual({ text: 'no full copy', tone: 'wait' });
 		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', availability: 0.6 }))?.tone).toBe('fail');
 	});
+	it('blames the Downloader when every download on it stopped together (#443)', () => {
+		const text = 'Every download on this Downloader stopped at the same time; check its internet connection (a VPN, for example).';
+		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', seeds: 0, peers: 0, text }))).toEqual({ text: 'downloader stopped', tone: 'wait' });
+	});
+
 	it('says no peers for a stalled torrent nobody shares', () => {
 		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', seeds: 0, peers: 0 }))).toEqual({ text: 'no peers', tone: 'wait' });
 		expect(problem(row({ protocol: 'torrent', phase: 'stalled', state: 'stalled', seeds: 2 }))).toBeNull();
+	});
+	it('shows automatic file waits without an import-blocked warning', () => {
+		for (const protocol of ['torrent', 'usenet']) {
+			expect(problem(row({ protocol, phase: 'waiting_to_import', state: 'finished', progress: 1, text: 'Waiting for the files to arrive; HolyArrs will check again automatically.' }))).toEqual({ text: 'waiting for files', tone: 'wait' });
+		}
+		expect(problem(row({ phase: 'waiting_to_import', state: 'finished', progress: 1, text: 'The Downloader is done; HolyArrs will import it next.' }))).toBeNull();
 	});
 	it('says import blocked when the files did not match', () => {
 		expect(problem(row({ phase: 'import_refused', state: 'failed' }))).toEqual({ text: 'import blocked', tone: 'fail' });

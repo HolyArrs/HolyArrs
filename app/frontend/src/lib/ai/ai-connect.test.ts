@@ -4,7 +4,7 @@ import { DEFAULT_MCP_GROUPS, MCP_GROUPS, aiKeyBody, aiKeyGroupsBody, aiURL, isAI
 describe('ai-connect', () => {
 	it('starts AI keys with the first four tick boxes, without Delete and Admin', () => {
 		expect(DEFAULT_MCP_GROUPS).toEqual(['see', 'add', 'control', 'settings']);
-		expect(MCP_GROUPS).toEqual(['see', 'add', 'control', 'settings', 'delete', 'admin', 'approve']);
+		expect(MCP_GROUPS).toEqual(['see', 'add', 'control', 'settings', 'delete', 'admin', 'approve', 'plugins']);
 	});
 	it('sends the ticked groups in screen order with the mcp scope', () => {
 		expect(aiKeyBody('Claude', DEFAULT_MCP_GROUPS)).toEqual({ label: 'Claude', scopes: ['mcp'], mcp_groups: ['see', 'add', 'control', 'settings'] });

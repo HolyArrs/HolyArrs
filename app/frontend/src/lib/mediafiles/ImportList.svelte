@@ -4,7 +4,8 @@
 	import { posterMinFor, posterRatio, type Density, type PosterSize } from '#lib/ui/library-art.ts';
 	import BannerArt from './BannerArt.svelte';
 	import ImportFolderFiles from './ImportFolderFiles.svelte';
-	import { canAdopt, fileName, score, type AdoptCandidate } from './organise.ts';
+	import { importKey } from './adopt-parts.ts';
+	import { canAdopt, fileName, score, sureName, type AdoptCandidate } from './organise.ts';
 	import { bannerTitle, folderParts, matchOptions, placeText, needsLook, pickedOf, statusLabel, type ImportView, type Named } from './import-view.ts';
 	import { bytes } from '../core/format.ts';
 	import { to } from '../core/paths.ts';
@@ -12,6 +13,7 @@
 	import { serverWords } from '#lib/core/i18n/server-words.ts';
 
 	let {
+		flat = false,
 		folders,
 		view,
 		size,
@@ -24,6 +26,8 @@
 		onlook,
 		onzoom
 	}: {
+		/** The Library folder keeps movies as files, so the items are files. */
+		flat?: boolean;
 		folders: AdoptCandidate[];
 		view: ImportView;
 		size: PosterSize;
@@ -79,7 +83,7 @@
 
 	function pillText(f: AdoptCandidate): string {
 		const label = statusLabel(f.status, kind);
-		return (f.status === 'matched' || f.status === 'unsure') && f.match ? `${label} · ${score(f.match.score)}` : label;
+		return f.match && (f.status === 'matched' || (f.status === 'unsure' && !sureName(f))) ? `${label} · ${score(f.match.score)}` : label;
 	}
 </script>
 
@@ -160,7 +164,7 @@
 			{#if !phone && view !== 'overview'}
 				<div class="hd row">
 					<span></span>
-					{#if view === 'rows'}<span></span><span>{t('mediafiles.list.title')}</span><span class="c-fd">{t('mediafiles.col.path')}</span>{:else}<span>{t('mediafiles.list.banner')}</span><span>{t('library.import.titleAndFolder')}</span>{/if}
+					{#if view === 'rows'}<span></span><span>{t('mediafiles.list.title')}</span><span class="c-fd">{t(flat ? 'library.import.flatColPath' : 'mediafiles.col.path')}</span>{:else}<span>{t('mediafiles.list.banner')}</span><span>{t(importKey('titleAndFolder', flat))}</span>{/if}
 					<span>{t('mediafiles.col.status')}</span>
 					<span>{t('discover.leftovers.match')}</span>
 				</div>
@@ -194,7 +198,7 @@
 						<span class="tx">
 							<span class="tline">{@render titleLine(f, true)}{@render pill(f)}</span>
 							<dl>
-								<dt>{t('mediafiles.col.path')}</dt><dd title={f.folder}>{f.folder}</dd>
+								<dt>{t(flat ? 'library.import.flatColPath' : 'mediafiles.col.path')}</dt><dd title={f.folder}>{f.folder}</dd>
 								{#if f.main}<dt>{t('mediafiles.sheet.file')}</dt><dd title={fileName(f.main)}>{fileName(f.main)}</dd>{/if}
 								{#if f.videos[0]}<dt>{t('mediafiles.col.size')}</dt><dd>{bytes(f.videos[0].size)}</dd>{/if}
 							</dl>

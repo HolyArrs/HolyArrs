@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "בחר מה לבקש הלאה",
 	"home.newPopular": "חדש ופופולרי",
 	"home.whatSTrending": "מה בטרנד",
+	"home.gettingReady": "מכין הכול…",
 	"home.top10sAndComing": "טופ 10 ובקרוב",
 	"home.whatSNext": "מה הלאה",
 	"home.airDatesAndReleases": "תאריכי שידור ויציאות",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "פרקים וסרטים שיוצאים השבוע",
 	"home.popularThisWeek": "יציאות פופולריות שמגיעות השבוע",
 	"home.peopleCheck": "בדיקת אנשים",
-	"home.cantReadUsers": "לא ניתן לקרוא את רשימת המשתמשים"
+	"home.cantReadUsers": "לא ניתן לקרוא את רשימת המשתמשים",
+	"home.joined.title": "ברוך הבא, {name}",
+	"home.joined.find": "מצאו משהו ב{explore} או ב{search}.",
+	"home.joined.ask": "הקישו {request} על כותר כדי לקבל אותו. אפשר לבקש:",
+	"home.joined.track": "עקבו אחרי כל אחת ב{requests}.",
+	"home.joined.noLimit": "אין מגבלה שבועית.",
+	"home.joined.gotIt": "הבנתי",
+	"home.joined.explore": "פתיחת {explore}"
 }

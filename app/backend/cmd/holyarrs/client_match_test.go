@@ -48,11 +48,13 @@ func mediaClient(t *testing.T) *httptest.Server {
 	return qb
 }
 
+// addQB adds the client with no category of its own, so every torrent on
+// it is HolyArrs's to match (a set category leaves the others alone).
 func addQB(t *testing.T, st *database.Store, url string) int64 {
 	t.Helper()
 	var id int64
 	err := st.Write(context.Background(), func(tx *sql.Tx) error {
-		dr := &domain.Downloader{Writable: true, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: url, Category: "holyarrs", Priority: 1,
+		dr := &domain.Downloader{Writable: true, Name: "Q", Adapter: "qbittorrent", Protocol: "torrent", URL: url, Category: "", Priority: 1,
 			PathMap: []domain.PathMap{}, AfterImport: "leave", State: "ok", AllowLocal: true}
 		var err error
 		id, err = database.Insert(tx, "downloaders", dr, domain.System)

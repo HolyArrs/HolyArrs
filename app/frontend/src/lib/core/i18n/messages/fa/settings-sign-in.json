@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "فقط اینها می‌توانند بگویند یک بازدید از کجا آمده است.",
 	"settings.signIn.fixToSaveOne": "برای ذخیره، ۱ خط را اصلاح کنید",
 	"settings.signIn.fixToSaveOther": "برای ذخیره، {n} خط را اصلاح کنید",
-	"settings.signIn.localSaved": "شبکه محلی ذخیره شد"
+	"settings.signIn.localSaved": "شبکه محلی ذخیره شد",
+	"settings.signIn.forgotTitle": "رمز را فراموش کرده‌اید؟",
+	"settings.signIn.forgotOn": "نمایش رمز را فراموش کرده‌اید؟ در صفحهٔ ورود",
+	"settings.signIn.forgotNote": "مالک یک کد یک‌بارمصرف از گزارش سرور می‌گیرد. اگر همه با ورود یکپارچه وارد می‌شوند، خاموشش کنید. فرمان reset-owner همچنان کار می‌کند.",
+	"settings.signIn.forgotShown": "رمز را فراموش کرده‌اید؟ روشن است",
+	"settings.signIn.forgotHidden": "رمز را فراموش کرده‌اید؟ خاموش است"
 }

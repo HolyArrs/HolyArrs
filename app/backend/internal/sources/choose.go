@@ -104,14 +104,14 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 			if ids, album := s.albumSearchSlots(ctx, rel); len(ids) > 0 {
 				return s.chooseMany(ctx, rel, ids, nil, true, force, []string{"its name did not match " + album + "; it was found searching for it"}, by)
 			}
-			// Picked from a season's Choose a release although its year did not match the show: it goes to the episodes it names, with force.
+			// Picked from a season's Choose a release although its year did not match the show, or its name is the show's plus a site's lead word, a release tag or its group: it goes to the episodes it names, with force.
 			// Nothing is sent when it holds another season or no episode would gain, even with force.
-			ids, skipped, show, wider := s.showSearchSlots(ctx, rel)
+			ids, skipped, why, wider := s.showSearchSlots(ctx, rel)
 			switch {
 			case wider:
 				return Choice{}, &NeedsForceError{Reasons: []string{"it holds more than this season; pick it from a search of the whole show or leave it"}}
 			case len(ids) > 0:
-				return s.chooseMany(ctx, rel, ids, skipped, false, force, []string{"its year did not match " + show + "; it was found searching for it"}, by)
+				return s.chooseMany(ctx, rel, ids, skipped, false, force, why, by)
 			case len(skipped) > 0:
 				return Choice{}, &NeedsForceError{Reasons: []string{"nothing would gain: " + strings.Join(skipped, "; ")}}
 			}
@@ -135,6 +135,11 @@ func (s *Searcher) Choose(ctx context.Context, releaseID, slotID int64, force bo
 	c, err := s.loadSlot(ctx, slotID)
 	if err != nil {
 		return Choice{}, ErrNoSlot
+	}
+	if !canTakePick(c.sl.State) && !StuckChoice(c.sl, time.Now()) && s.settleGone(ctx, c.sl) {
+		if c, err = s.loadSlot(ctx, slotID); err != nil {
+			return Choice{}, ErrNoSlot
+		}
 	}
 	if !canTakePick(c.sl.State) && !StuckChoice(c.sl, time.Now()) {
 		return Choice{}, busyErr(c.sl.State)
@@ -434,6 +439,15 @@ func failReasons(rel domain.Release) []string {
 		out = []string{"it did not pass"}
 	}
 	return out
+}
+
+// settleGone asks the Downloads side to settle a Slot's download its
+// Downloader no longer has, so a pick by hand can go ahead at once.
+func (s *Searcher) settleGone(ctx context.Context, sl mediafiles.Slot) bool {
+	if s.SettleGone == nil || sl.State != mediafiles.SlotDownloading && sl.State != mediafiles.SlotStalled {
+		return false
+	}
+	return s.SettleGone(ctx, sl.ID)
 }
 
 // canTakePick reports whether a Slot in this state can be given a Release now.

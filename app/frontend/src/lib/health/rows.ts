@@ -4,7 +4,7 @@ import { serverWords } from '#lib/core/i18n/server-words.ts';
 import type { AlertView, HealthCheck } from '../core/types.ts';
 import type { OutsideList } from '../requests/index.ts';
 import type { StageState } from './types.ts';
-import type { ScheduleRow } from './schedules.ts';
+import { lastSeen, skipWords, type ScheduleRow } from './schedules.ts';
 
 export type Tone = 'ok' | 'wait' | 'fail' | 'idle';
 export type GroupId = 'sources' | 'downloaders' | 'library' | 'media' | 'subtitles' | 'lists' | 'alerts' | 'metadata' | 'app' | 'jobs';
@@ -176,9 +176,10 @@ export function jobTone(s: ScheduleRow, now = Date.now()): { tone: Tone; word: s
 	if (s.last_job === 'failed') return { tone: 'fail', word: t('health.result.failed'), reason: s.last_job_error || t('health.job.failedWhy') };
 	const next = s.next_run ? new Date(s.next_run).getTime() : NaN;
 	if (s.state === 'waiting' && !Number.isNaN(next) && now - next > LATE_MS) return { tone: 'wait', word: t('health.job.late'), reason: t('health.job.lateWhy') };
-	if (!s.last_run) return { tone: 'idle', word: t('health.job.notRun'), reason: '' };
-	if (s.last_job === 'cancelled') return { tone: 'idle', word: t('health.result.cancelled'), reason: t('health.job.cancelledWhy') };
-	return { tone: 'ok', word: t('health.result.ok'), reason: '' };
+	const seen = lastSeen(s);
+	if (!seen.at) return { tone: 'idle', word: t('health.job.notRun'), reason: '' };
+	if (s.last_job === 'cancelled' && !seen.checked) return { tone: 'idle', word: t('health.result.cancelled'), reason: t('health.job.cancelledWhy') };
+	return { tone: 'ok', word: t('health.result.ok'), reason: seen.why ? skipWords(s.kind, seen.why) : '' };
 }
 
 const downloaderChecks = new Set(['save_folder', 'no_downloader', 'same_downloader']);
@@ -192,7 +193,12 @@ export function buildRows(i: StatusInput): StatusRow[] {
 		if (!m) continue;
 		const id = linkId(s.key);
 		const check: CheckAction | undefined = id && (s.kind === 'source' || s.kind === 'downloader') ? { kind: s.kind, id } : undefined;
-		rows.push({ group: m.g, key: s.key, name: s.name, ...linkTone(s), reason: serverWords(s.reason), at: realTime(s.since), fix: m.fix, check });
+		const row: StatusRow = { group: m.g, key: s.key, name: s.name, ...linkTone(s), reason: serverWords(s.reason), at: realTime(s.since), fix: m.fix, check };
+		// A Downloader that answers can still warn (every download on it stopped together);
+		// that check has no row of its own, so it shows on the Downloader's row.
+		const warn = s.kind === 'downloader' && row.tone === 'ok' ? (i.checks ?? []).find((c) => c.kind === 'downloader' && c.state !== 'ok' && linkId(c.key) === id) : undefined;
+		if (warn) Object.assign(row, { tone: 'wait', word: t('health.state.warning'), reason: serverWords(warn.message) });
+		rows.push(row);
 	}
 	for (const c of i.checks ?? []) {
 		if (typeof checkFix[c.kind] !== 'string') continue;
@@ -238,7 +244,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 			name: s.label,
 			...jobTone(s, i.now),
 			at: s.last_job_ended || s.last_run,
-			lastRun: s.last_run,
+			lastRun: lastSeen(s).at,
 			nextRun: s.next_run,
 			lastResult: s.last_job,
 			fix: '/settings/schedules',

@@ -4,12 +4,13 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
-	import { secondVersion, builtInDefaults, startChoices, savedDefaults, saveSearchChoice } from '../mediafiles/index.ts';
+	import { needsFolder, secondVersion, builtInDefaults, startChoices, savedDefaults, saveSearchChoice } from '../mediafiles/index.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from '../shows/index.ts';
 	import type { ShowSettings } from '../shows/index.ts';
 	import type { TitleDefaults } from '../mediafiles/index.ts';
 	import { to } from '../core/paths.ts';
 	import { api, message } from '../core/api.ts';
+	import { session } from '../core/session.svelte.ts';
 	import type { LibraryFolder, PickRulesView, TitleView } from '../core/types.ts';
 	import type { LookupShow } from '../core/types.ts';
 
@@ -19,11 +20,19 @@
 		folders,
 		rules,
 		defaults,
+		loaded = true,
+		failed = false,
+		onretry,
 		onadded
 	}: {
 		folders: LibraryFolder[];
 		rules: PickRulesView[];
 		defaults: ShowSettings | null;
+		/** False until the Library folders and Pick rules have answered, so the sheet does not say there are none while they load. */
+		loaded?: boolean;
+		/** The Library folders or Pick rules did not load: the sheet says so and offers to try again. */
+		failed?: boolean;
+		onretry?: () => void;
 		onadded: (show: LookupShow, title: TitleView) => void;
 	} = $props();
 
@@ -49,20 +58,29 @@
 	// The saved defaults once they are in; the sheet shows a placeholder until then.
 	let titleDefaults = $state<TitleDefaults | null>(null);
 	let ready = $state(false);
+	// Counts opens, so a late defaults answer only fills the newest open. `picked` is a
+	// $state proxy and never equals the plain title passed in, so it cannot be compared.
+	let opens = 0;
+	// The saved defaults did not answer in time, so the built-in ones are picked; the sheet says so.
+	let late = $state(false);
 
 	const showFolders = $derived(folders.filter((f) => f.kind === 'show'));
+	// Hands-off mode needs no Library folder: the show only goes to the Downloader.
+	const noFolder = $derived(needsFolder(showFolders.length, session.s.handsOff));
 	const showRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('show')));
 
 	/** Shows the dialog for one looked-up show. */
 	export async function open(s: LookupShow) {
+		const mine = ++opens;
 		follow = true;
 		picked = s;
 		error = '';
 		ready = false;
 		sheetOpen = true;
 		const d = await savedDefaults.load();
-		if (picked !== s) return;
+		if (mine !== opens || !sheetOpen) return;
 		titleDefaults = d;
+		late = d === null;
 		const start = startChoices(titleDefaults, folders, rules, 'show');
 		folderId = start.folderId;
 		rulesId = start.rulesId;
@@ -79,6 +97,14 @@
 		moreFolder = sv.library_folder_id;
 		ready = true;
 	}
+
+	// Folders that answer after the sheet opened: start from the usual folder and Pick rules then.
+	$effect(() => {
+		if (!ready || folderId || !showFolders.length) return;
+		const start = startChoices(titleDefaults, folders, rules, 'show');
+		folderId = start.folderId;
+		rulesId = start.rulesId;
+	});
 
 	// Another folder: the saved default Pick rules, else that folder's own, else the first offered.
 	function chooseRules(fid: number) {
@@ -128,19 +154,24 @@
 		<div class="form-sk" aria-busy="true" aria-label={t('requests.add.loadingDefaults')}>{#each [0, 1, 2] as i (i)}<span class="sk sk-line" style="width: 30%; height: 11px"></span><span class="sk" style="height: 44px; border-radius: var(--r-btn); margin-bottom: 8px"></span>{/each}</div>
 	{:else if picked}
 		<form id="add-show-title" class="sheet-form" onsubmit={add}>
-			{#if showFolders.length === 0}
-				<p class="notice warn" >
-					<Words key="requests.add.noFolder.show" links={{ a: to('/settings/library-folders') }} linkClass="ul" />
+			{#if late}<p class="hint" role="status">{t('requests.add.defaultsLate')}</p>{/if}
+			{#if showFolders.length === 0 && failed}
+				<p class="notice warn failed" role="alert"><span>{t('library.import.foldersFailed')}</span><Button size="sm" onclick={() => onretry?.()}>{t('discover.titleLibrary.tryAgain')}</Button></p>
+			{:else if showFolders.length === 0 && !loaded}
+				<div class="form-sk" aria-busy="true" aria-label={t('requests.add.loadingDefaults')}><span class="sk sk-line" style="width: 30%; height: 11px"></span><span class="sk" style="height: 44px; border-radius: var(--r-btn); margin-bottom: 8px"></span></div>
+			{:else if noFolder}
+				<p class="notice warn">
+					<span><Words key="requests.add.noFolder.show" links={{ a: to('/settings/library-folders') }} linkClass="ul" /></span>
 				</p>
 			{:else}
-				<div class="field">
+				{#if showFolders.length}<div class="field">
 					<label for="show-folder">{t('requests.add.folder')}</label>
 					<select id="show-folder" class="input" bind:value={folderId} onchange={() => chooseRules(folderId)}>
 						{#each showFolders as f (f.id)}
 							<option value={f.id}>{f.label || f.path} ({f.path})</option>
 						{/each}
 					</select>
-				</div>
+				</div>{:else}<p class="hint" data-testid="hands-off-hint">{t('requests.add.handsOff')}</p>{/if}
 				<div class="field">
 					<label for="show-rules">{t('requests.add.rules')}</label>
 					<select id="show-rules" class="input" bind:value={rulesId}>
@@ -204,13 +235,13 @@
 								{#each showRules as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
 							</select>
 						</div>
-						<div class="field">
+						{#if showFolders.length}<div class="field">
 							<label for="show-more-folder">{t('requests.add.moreFolder')}</label>
 							<select id="show-more-folder" class="input" bind:value={moreFolder}>
 								{#each showFolders as f (f.id)}<option value={f.id}>{f.label || f.path} ({f.path})</option>{/each}
 							</select>
 							{#if moreFolder === folderId}<span class="hint">{t('requests.addShow.sameFolder', { label: moreLabel.trim() || '4K' })}</span>{/if}
-						</div>
+						</div>{/if}
 					</fieldset>
 				{/if}
 				{#if !searchOnAdd}<p class="hint" data-testid="no-show-search">{t('requests.addShow.noSearch')}</p>{/if}
@@ -224,11 +255,12 @@
 	{/if}
 	{#snippet footer()}
 				<Button variant="plain" onclick={() => (sheetOpen = false)}>{t('requests.add.cancel')}</Button>
-				<Button variant="primary" type="submit" form="add-show-title" disabled={showFolders.length === 0 || !ready} busy={adding}>{t('requests.add.submit')}</Button>
+				<Button variant="primary" type="submit" form="add-show-title" disabled={noFolder || !ready} busy={adding}>{t('requests.add.submit')}</Button>
 	{/snippet}
 </Sheet>
 
 <style>
+	.failed { flex-wrap: wrap; align-items: center; justify-content: space-between; }
 	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
 	.form-error { margin: 8px 0 0; color: var(--fail); font: var(--t-callout); }
 	.notice :global(.ul) {

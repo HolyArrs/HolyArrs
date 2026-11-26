@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Първо най-доброто копие; пакетът за сезон печели при равенство",
 	"settings.search.preferAlways": "Пакет за сезон, винаги щом отговаря на набора за качество",
 	"settings.search.multi": "Вземане на релийзи с няколко сезона",
-	"settings.search.multiHint": "Запълва всеки липсващ епизод в него",
+	"settings.search.multiHint": "Запълва всеки липсващ епизод в него. При еднакво качество печели изданието с повече търсени епизоди",
 	"settings.search.music": "Музика",
 	"settings.search.albums": "Търси и липсващи албуми",
 	"settings.search.albumsHint": "Излезли албуми, по едно търсене за всеки",

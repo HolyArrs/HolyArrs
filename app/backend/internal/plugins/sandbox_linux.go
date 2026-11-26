@@ -15,7 +15,12 @@
 // Filesystem (Landlock): the plugin may read and write its data folder, read
 // and execute its run copy, and read /etc/ssl/certs, /etc/resolv.conf,
 // /etc/hosts, /dev/null and /dev/urandom. Every other path is denied. When
-// the kernel has no Landlock, starting fails unless AllowWeaker is set.
+// Landlock is missing, starting fails closed with ErrNoLandlock. The owner
+// can allow one signed-list plugin to start without it on the Plugins page
+// (Spec.AllowNoFileLock); the other limits stay on and the log says so.
+// Why it is missing decides what the page suggests: an old kernel (ENOSYS),
+// a container profile that blocks it (EPERM) or a boot setting that turns
+// it off (EOPNOTSUPP).
 //
 // Also: no_new_privs; its own process group, killed as a whole on stop;
 // rlimits open files 1024 and no core dumps (address space is left alone,
@@ -33,13 +38,31 @@
 // then removes the folder. Without a usable cgroup the start goes on with
 // the process group kill only; Active reports which caps apply.
 //
-// Known limits: no network allowlist (Landlock TCP port rules may come
-// later). A cgroup whose program ended on its own is killed and removed then.
+// Network (seccomp, see seccomp_linux.go and supervisor_linux.go): a plugin
+// that lists no hosts and is not handed the app's address gets no network
+// sockets. Otherwise every connect is caught by a seccomp user-notify filter
+// and answered by a supervisor in HolyArrs, which connects the plugin's own
+// socket to the app's address or to the plugin's proxy (netproxy.go); the
+// proxy lets through only the listed names. UDP, raw sockets, io_uring and
+// TCP fast open are refused for every plugin. Without user-notify (kernel
+// below 5.9, or blocked) a plugin with hosts starts only when the owner
+// allowed it (Spec.AllowNoNetLock); the other refusals stay on.
+//
+// Folders: each folder the owner approved is opened by HolyArrs and passed
+// to the helper as an open file, which gets the Landlock rule, so its path is
+// never looked up again. Read-write folders cannot get symlinks, fifos,
+// sockets or device files.
+//
+// Known limits: a cgroup whose program ended on its own is killed and
+// removed then.
 package plugins
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"net/netip"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -47,6 +70,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -60,23 +84,83 @@ const landlockRulePathBeneath = 1
 // sandboxReadOnly is the fixed list of system paths a plugin may read.
 var sandboxReadOnly = []string{"/etc/ssl/certs", "/etc/resolv.conf", "/etc/hosts", "/dev/null", "/dev/urandom"}
 
-// ErrNoLandlock means the kernel cannot apply the filesystem lockdown.
-var ErrNoLandlock = errors.New("plugin sandbox: kernel has no Landlock")
-
-// LinuxSandbox locks plugin programs down with Landlock, no_new_privs,
-// rlimits and a process group of their own.
+// LinuxSandbox locks plugin programs down with Landlock, seccomp,
+// no_new_privs, rlimits and a process group of their own.
 type LinuxSandbox struct {
 	// Helper is the binary that runs RunSandboxHelper; empty means this one.
 	Helper string
-	// AllowWeaker starts plugins without Landlock when the kernel lacks it.
+	// AllowWeaker starts every plugin without Landlock when it is missing.
+	// Only tests set it; real starts use the per-plugin Spec.AllowNoFileLock.
 	AllowWeaker bool
+	// NetLock is true when the system gives seccomp user-notify (the
+	// network lock); DefaultRunner sets it from netLockProbe.
+	NetLock bool
+}
+
+// helperConfig is what the helper gets as its one argument.
+type helperConfig struct {
+	DataDir string `json:"data"`
+	Weaker  bool   `json:"weaker,omitempty"`
+	Cgroup  string `json:"cgroup,omitempty"`
+	// OpenFiles is the open-file limit.
+	OpenFiles uint64         `json:"open_files,omitempty"`
+	Net       string         `json:"net"`
+	Folders   []helperFolder `json:"folders,omitempty"`
+	// NetBestEffort lets the start go on when the filter cannot load (the
+	// owner chose to run without the network lock).
+	NetBestEffort bool `json:"net_best_effort,omitempty"`
+}
+
+// helperFolder is one approved folder, already open at fd FD in the helper.
+type helperFolder struct {
+	FD    int  `json:"fd"`
+	Write bool `json:"write,omitempty"`
+}
+
+// sbState is what Started and Cleanup need about one start.
+type sbState struct {
+	cfg    helperConfig
+	parent *os.File // our end of the socketpair the helper sends the listener on
+	child  *os.File
+	self   netip.AddrPort
+	proxy  *ProxyHandle
+	sup    *netSupervisor
+}
+
+var sbStates sync.Map // *exec.Cmd -> *sbState
+
+// netMode picks the filter for one start.
+func (s LinuxSandbox) netMode(spec Spec) (mode string, bestEffort bool, err error) {
+	if spec.Proxy == nil && spec.SelfAddr == "" {
+		return netNone, false, nil
+	}
+	if s.NetLock {
+		return netNotify, false, nil
+	}
+	if spec.AllowNoNetLock {
+		return netOpen, true, nil
+	}
+	return "", false, ErrNoNetLock
 }
 
 // Apply turns cmd into a helper start that locks itself down and then execs
 // the plugin.
 func (s LinuxSandbox) Apply(cmd *exec.Cmd, spec Spec) error {
-	if landlockABI() < 1 && !s.AllowWeaker {
+	weakerOK := s.AllowWeaker || spec.AllowNoFileLock
+	if landlockABI() < 1 && !weakerOK {
 		return ErrNoLandlock
+	}
+	mode, best, err := s.netMode(spec)
+	if err != nil {
+		return err
+	}
+	st := &sbState{cfg: helperConfig{DataDir: spec.DataDir, Weaker: weakerOK, Net: mode, NetBestEffort: best, OpenFiles: spec.Limits.openFiles()}, proxy: spec.Proxy}
+	if spec.SelfAddr != "" {
+		ap, err := netip.ParseAddrPort(spec.SelfAddr)
+		if err != nil {
+			return fmt.Errorf("plugin app address: %w", err)
+		}
+		st.self = netip.AddrPortFrom(ap.Addr().Unmap(), ap.Port())
 	}
 	helper := s.Helper
 	if helper == "" {
@@ -86,10 +170,6 @@ func (s LinuxSandbox) Apply(cmd *exec.Cmd, spec Spec) error {
 		}
 		helper = self
 	}
-	weaker := "0"
-	if s.AllowWeaker {
-		weaker = "1"
-	}
 	env := cmd.Env[:0:0]
 	for _, kv := range cmd.Env {
 		if !strings.HasPrefix(kv, "GO") {
@@ -98,20 +178,42 @@ func (s LinuxSandbox) Apply(cmd *exec.Cmd, spec Spec) error {
 	}
 	cmd.Env = env
 	cmd.Path = helper
-	cg := ""
+	if mode == netNotify {
+		fds, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
+		if err != nil {
+			return fmt.Errorf("plugin sandbox socketpair: %w", err)
+		}
+		st.parent, st.child = os.NewFile(uintptr(fds[0]), "sandbox-parent"), os.NewFile(uintptr(fds[1]), "sandbox-child")
+		cmd.ExtraFiles = append(cmd.ExtraFiles, st.child) // fd 3
+	}
+	if landlockABI() >= 1 {
+		for _, f := range spec.Folders {
+			if f.File == nil {
+				continue
+			}
+			cmd.ExtraFiles = append(cmd.ExtraFiles, f.File)
+			st.cfg.Folders = append(st.cfg.Folders, helperFolder{FD: 2 + len(cmd.ExtraFiles), Write: f.Mode == FolderReadWrite})
+		}
+	}
 	if cgroupUsable() {
-		var err error
-		if cg, err = cgroupCreate(spec.ID, spec.Limits); err != nil {
+		if st.cfg.Cgroup, err = cgroupCreate(spec.ID, spec.Limits); err != nil {
+			st.closeFiles()
 			return err
 		}
 	}
-	cmd.Args = append([]string{helper, sandboxHelperArg, spec.DataDir, weaker, cg, spec.Program}, spec.Args...)
+	raw, err := json.Marshal(st.cfg)
+	if err != nil {
+		st.closeFiles()
+		return err
+	}
+	cmd.Args = append([]string{helper, sandboxHelperArg, string(raw), spec.Program}, spec.Args...)
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
 	cmd.SysProcAttr.Setpgid = true
 	var once sync.Once
 	var cancelErr error
+	cg := st.cfg.Cgroup
 	cmd.Cancel = func() error {
 		once.Do(func() {
 			cancelErr = killProcess(cmd)
@@ -121,64 +223,191 @@ func (s LinuxSandbox) Apply(cmd *exec.Cmd, spec Spec) error {
 		})
 		return cancelErr
 	}
+	sbStates.Store(cmd, st)
 	return nil
 }
 
-// Cleanup removes a start's cgroup when Start failed or the program ended
-// on its own, killing anything it left behind.
-func (LinuxSandbox) Cleanup(cmd *exec.Cmd) error {
-	if len(cmd.Args) > 4 && cmd.Args[1] == sandboxHelperArg && cmd.Args[4] != "" {
-		return cgroupKill(cmd.Args[4])
+func (st *sbState) closeFiles() {
+	if st.parent != nil {
+		st.parent.Close()
+		st.parent = nil
 	}
+	if st.child != nil {
+		st.child.Close()
+		st.child = nil
+	}
+}
+
+// Started runs right after the helper started: it takes the seccomp
+// listener the helper sends and starts the supervisor.
+func (LinuxSandbox) Started(cmd *exec.Cmd) error {
+	v, ok := sbStates.Load(cmd)
+	if !ok {
+		return nil
+	}
+	st := v.(*sbState)
+	if st.child != nil {
+		st.child.Close()
+		st.child = nil
+	}
+	if st.parent == nil {
+		return nil
+	}
+	parent := st.parent
+	st.parent = nil
+	defer parent.Close()
+	fd, err := recvFD(parent, 10*time.Second)
+	if err != nil {
+		return fmt.Errorf("plugin network lock: %w", err)
+	}
+	st.sup = startSupervisor(fd, st.self, st.proxy)
 	return nil
 }
 
-// Active reports which resource caps and stop guarantees this host gives.
-func (LinuxSandbox) Active() ActiveLimits { return cgroupActive() }
+// recvFD reads one file descriptor sent with SCM_RIGHTS.
+func recvFD(f *os.File, wait time.Duration) (int, error) {
+	c, err := net.FileConn(f)
+	if err != nil {
+		return -1, err
+	}
+	defer c.Close()
+	uc, ok := c.(*net.UnixConn)
+	if !ok {
+		return -1, errors.New("not a unix socket")
+	}
+	_ = uc.SetReadDeadline(time.Now().Add(wait))
+	buf := make([]byte, 1)
+	oob := make([]byte, unix.CmsgSpace(4))
+	_, oobn, _, _, err := uc.ReadMsgUnix(buf, oob)
+	none := errors.New("the plugin helper sent no seccomp listener")
+	if err != nil {
+		return -1, fmt.Errorf("%w: %v", none, err)
+	}
+	msgs, err := unix.ParseSocketControlMessage(oob[:oobn])
+	if err != nil || len(msgs) != 1 {
+		return -1, none
+	}
+	fds, err := unix.ParseUnixRights(&msgs[0])
+	if err != nil || len(fds) != 1 {
+		for _, fd := range fds {
+			unix.Close(fd)
+		}
+		return -1, none
+	}
+	return fds[0], nil
+}
+
+// Cleanup removes a start's cgroup and supervisor when Start failed or the
+// program ended, killing anything it left behind.
+func (LinuxSandbox) Cleanup(cmd *exec.Cmd) error {
+	v, ok := sbStates.LoadAndDelete(cmd)
+	if !ok {
+		return nil
+	}
+	st := v.(*sbState)
+	st.closeFiles()
+	var err error
+	if st.cfg.Cgroup != "" {
+		err = cgroupKill(st.cfg.Cgroup)
+	}
+	if st.sup != nil {
+		st.sup.Close()
+	}
+	return err
+}
+
+// Active reports which resource caps, locks and stop guarantees this host gives.
+func (s LinuxSandbox) Active() ActiveLimits {
+	al := cgroupActive()
+	al.FileLock = landlockABI() >= 1
+	al.NetLock = s.NetLock
+	return al
+}
 
 // RunSandboxHelper does nothing unless this process was started as the
-// sandbox helper; then it locks down and execs the plugin, never returning.
+// sandbox helper or the network lock probe; then it locks down and execs
+// the plugin, never returning.
 func RunSandboxHelper() {
-	if len(os.Args) < 6 || os.Args[1] != sandboxHelperArg {
+	if len(os.Args) >= 2 && os.Args[1] == netProbeArg {
+		os.Exit(netProbeChild())
+	}
+	if len(os.Args) < 4 || os.Args[1] != sandboxHelperArg {
 		return
 	}
-	err := sandboxExec(os.Args[2], os.Args[3] == "1", os.Args[4], os.Args[5], os.Args[6:])
+	var cfg helperConfig
+	err := json.Unmarshal([]byte(os.Args[2]), &cfg)
+	if err == nil {
+		err = sandboxExec(cfg, os.Args[3], os.Args[4:])
+	}
 	fmt.Fprintln(os.Stderr, "plugin sandbox:", err)
 	os.Exit(126)
 }
 
-func sandboxExec(dataDir string, allowWeaker bool, cgroup, program string, args []string) error {
-	if cgroup != "" {
-		if err := cgroupJoin(cgroup); err != nil {
+func sandboxExec(cfg helperConfig, program string, args []string) error {
+	if cfg.Cgroup != "" {
+		if err := cgroupJoin(cfg.Cgroup); err != nil {
 			return fmt.Errorf("join cgroup: %w", err)
 		}
 	}
-	runtime.LockOSThread() // Landlock and no_new_privs are per thread; exec from this one.
+	runtime.LockOSThread() // Landlock, seccomp and no_new_privs are per thread; exec from this one.
 	if err := unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); err != nil {
 		return fmt.Errorf("no_new_privs: %w", err)
 	}
 	// syscall.Setrlimit (not unix) so Go does not put back its raised file limit on exec.
-	if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &syscall.Rlimit{Cur: 1024, Max: 1024}); err != nil {
+	if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &syscall.Rlimit{Cur: max(cfg.OpenFiles, 64), Max: max(cfg.OpenFiles, 64)}); err != nil {
 		return fmt.Errorf("rlimit open files: %w", err)
 	}
 	if err := syscall.Setrlimit(syscall.RLIMIT_CORE, &syscall.Rlimit{}); err != nil {
 		return fmt.Errorf("rlimit core: %w", err)
 	}
-	if err := landlockRestrict(dataDir, program); err != nil {
-		if !errors.Is(err, ErrNoLandlock) || !allowWeaker {
+	if err := landlockRestrict(cfg.DataDir, program, cfg.Folders); err != nil {
+		if !errors.Is(err, ErrNoLandlock) || !cfg.Weaker {
 			return err
 		}
+	}
+	for _, f := range cfg.Folders {
+		unix.Close(f.FD)
+	}
+	listener, err := installFilter(cfg.Net)
+	if err != nil && !cfg.NetBestEffort {
+		return err
+	}
+	if listener >= 0 {
+		if err := unix.Sendmsg(3, []byte{1}, unix.UnixRights(listener), nil, 0); err != nil {
+			return fmt.Errorf("send seccomp listener: %w", err)
+		}
+		unix.Close(listener)
+		unix.Close(3)
 	}
 	return unix.Exec(program, append([]string{program}, args...), os.Environ())
 }
 
 // landlockABI returns the kernel's Landlock ABI version, 0 when it has none.
 func landlockABI() int {
+	abi, _ := landlockProbe()
+	return abi
+}
+
+// landlockProbe returns the Landlock ABI version, or 0 and the errno that
+// says why it is missing.
+func landlockProbe() (int, syscall.Errno) {
 	v, _, errno := unix.Syscall(unix.SYS_LANDLOCK_CREATE_RULESET, 0, 0, unix.LANDLOCK_CREATE_RULESET_VERSION)
 	if errno != 0 {
-		return 0
+		return 0, errno
 	}
-	return int(v)
+	return int(v), 0
+}
+
+// fileLockReason maps the probe's errno to a reason; unknown errors count as
+// an old kernel, the case with no setting to change.
+func fileLockReason(errno syscall.Errno) string {
+	switch errno {
+	case unix.EPERM:
+		return FileLockBlocked
+	case unix.EOPNOTSUPP:
+		return FileLockTurnedOff
+	}
+	return FileLockOldKernel
 }
 
 const (
@@ -188,6 +417,10 @@ const (
 	llDirRW    = llFileRW | unix.LANDLOCK_ACCESS_FS_READ_DIR | unix.LANDLOCK_ACCESS_FS_REMOVE_DIR |
 		unix.LANDLOCK_ACCESS_FS_REMOVE_FILE | unix.LANDLOCK_ACCESS_FS_MAKE_DIR | unix.LANDLOCK_ACCESS_FS_MAKE_REG |
 		unix.LANDLOCK_ACCESS_FS_MAKE_SYM | unix.LANDLOCK_ACCESS_FS_REFER
+	// llFolderRW is an approved read-write folder: no symlinks (nor fifos,
+	// sockets or devices, which llDirRW never had), so a plugin cannot plant
+	// links for HolyArrs's own scanners.
+	llFolderRW = llDirRW &^ unix.LANDLOCK_ACCESS_FS_MAKE_SYM
 )
 
 // landlockHandled is every filesystem right the ABI knows, so each is
@@ -210,7 +443,7 @@ func landlockHandled(abi int) uint64 {
 	return h
 }
 
-func landlockRestrict(dataDir, program string) error {
+func landlockRestrict(dataDir, program string, folders []helperFolder) error {
 	// Never grant anything under the cgroup tree, so the plugin cannot raise its own caps.
 	for _, p := range []string{dataDir, program} {
 		if c := filepath.Clean(p); c == cgroupRoot || strings.HasPrefix(c, cgroupRoot+"/") {
@@ -266,6 +499,16 @@ func landlockRestrict(dataDir, program string) error {
 			return err
 		}
 	}
+	for _, f := range folders {
+		access := uint64(llDirRead)
+		if f.Write {
+			access = llFolderRW
+		}
+		rule := unix.LandlockPathBeneathAttr{Allowed_access: access & handled, Parent_fd: int32(f.FD)}
+		if _, _, errno := unix.Syscall6(unix.SYS_LANDLOCK_ADD_RULE, fd, landlockRulePathBeneath, uintptr(unsafe.Pointer(&rule)), 0, 0, 0); errno != 0 {
+			return fmt.Errorf("landlock folder: %w", errno)
+		}
+	}
 	if _, _, errno := unix.Syscall(unix.SYS_LANDLOCK_RESTRICT_SELF, fd, 0, 0); errno != 0 {
 		return fmt.Errorf("landlock restrict: %w", errno)
 	}
@@ -283,6 +526,20 @@ func killProcess(cmd *exec.Cmd) error {
 
 // DefaultRunner runs plugins in the LinuxSandbox and reports its caps.
 func DefaultRunner() (Runner, ActiveLimits, error) {
-	sb := LinuxSandbox{}
-	return ExecRunner{Sandbox: sb}, sb.Active(), nil
+	sb, al := defaultSandbox(landlockProbe())
+	sb.NetLock, al.NetLockReason = netLockProbe()
+	al.NetLock = sb.NetLock
+	return ExecRunner{Sandbox: sb}, al, nil
+}
+
+// defaultSandbox picks the sandbox for the Landlock probe result. It never
+// allows a weaker start on its own: without Landlock a plugin starts only
+// when the owner allowed it for that plugin.
+func defaultSandbox(abi int, errno syscall.Errno) (LinuxSandbox, ActiveLimits) {
+	al := cgroupActive()
+	al.FileLock = abi >= 1
+	if !al.FileLock {
+		al.FileLockReason = fileLockReason(errno)
+	}
+	return LinuxSandbox{}, al
 }

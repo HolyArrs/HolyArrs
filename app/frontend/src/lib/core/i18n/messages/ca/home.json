@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Tria què sol·licitar a continuació",
 	"home.newPopular": "Novetats i populars",
 	"home.whatSTrending": "El que està de moda",
+	"home.gettingReady": "Preparant-ho tot…",
 	"home.top10sAndComing": "Els 10 millors i properament",
 	"home.whatSNext": "El que ve",
 	"home.airDatesAndReleases": "Dates d'emissió i estrenes",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Episodis i pel·lícules que arriben aquesta setmana",
 	"home.popularThisWeek": "Estrenes populars que arriben aquesta setmana",
 	"home.peopleCheck": "Comprovació de persones",
-	"home.cantReadUsers": "no es pot llegir la llista d’usuaris"
+	"home.cantReadUsers": "no es pot llegir la llista d’usuaris",
+	"home.joined.title": "Benvingut, {name}",
+	"home.joined.find": "Troba alguna cosa a {explore} o {search}.",
+	"home.joined.ask": "Toca {request} en un títol per aconseguir-lo. Pots demanar:",
+	"home.joined.track": "Segueix cadascuna a {requests}.",
+	"home.joined.noLimit": "Sense límit setmanal.",
+	"home.joined.gotIt": "Entesos",
+	"home.joined.explore": "Obre {explore}"
 }

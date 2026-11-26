@@ -12,7 +12,7 @@ type SourceRow struct {
 	Server bool
 	// Own: asked directly in Your own keys mode; Key, when set, is the own
 	// key it needs. Everywhere: asked directly in every mode but off, once
-	// Key is set (TheTVDB).
+	// Key is set (TheTVDB, OMDb).
 	Own        bool
 	Key        string
 	Everywhere bool
@@ -35,6 +35,7 @@ var SourceTable = []SourceRow{
 	{ID: "trailers", Name: "Trailers", Server: true, Own: true, Key: KeyTMDB, Hosts: []string{"www.youtube.com"}},
 	{ID: "ratings", Name: "Outside ratings", Server: true, Own: true, Key: KeyMDBList, Hosts: []string{"api.mdblist.com"}},
 	{ID: "art", Name: "Title logos and wide backgrounds", Server: true, Own: true, Key: KeyFanart, Hosts: []string{"webservice.fanart.tv", "assets.fanart.tv"}},
+	{ID: "omdb", Name: "IMDb, Rotten Tomatoes and Metacritic scores for Library titles", Everywhere: true, Key: KeyOMDb, Hosts: []string{OMDbHost}},
 	{ID: "charts", Name: "Music charts and new music rows", Server: true},
 	{ID: "streaming", Name: "Top 10 on streaming services", Server: true},
 	{ID: "wiki", Name: "Wikipedia facts and awards", Server: true},

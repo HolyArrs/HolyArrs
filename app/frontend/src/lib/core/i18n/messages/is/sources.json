@@ -85,5 +85,21 @@
 	"sources.uses.auto": "leitar sjálf",
 	"sources.uses.feed": "nýjasti listi",
 	"sources.uses.hand": "leita í höndunum",
-	"sources.uses.none": "ekki notað"
+	"sources.uses.none": "ekki notað",
+	"sources.bridge.removeTitle": "Fjarlægja {name}?",
+	"sources.bridge.find": "Finna {name} á netinu mínu",
+	"sources.bridge.noneFound": "Enginn {name} svaraði á netinu þínu.",
+	"sources.bridge.keyFound": "Fékk lykilinn frá {name}",
+	"sources.bridge.keyKept": "{name} gaf ekki upp lykilinn (innskráning er á). Afritaðu hann með Sækja lykil.",
+	"sources.bridge.keyKeptJackett": "Jackett gaf ekki upp lykilinn (það er með stjórnandalykilorð). Afritaðu hann með Sækja lykil.",
+	"sources.bridge.notReached": "Náði ekki sambandi við {name}.",
+	"sources.bridge.brings.title": "Það sem kemur yfir",
+	"sources.bridge.brings.sites": "Leitarvélar þess, sem Heimildir",
+	"sources.bridge.brings.categories": "Flokkar þeirra",
+	"sources.bridge.brings.search": "Leitir fara í gegnum {name}",
+	"sources.bridge.brings.sync": "Breytingar í {name} flytjast yfir",
+	"sources.bridge.brings.stays": "Leitarvélarnar þínar verða áfram uppsettar í {name}.",
+	"sources.bridge.brings.had": "{n} leitarvélar þegar hér",
+	"sources.bridge.brings.hadFrom": "Flutt inn í gegnum {apps}",
+	"sources.bridge.brings.keyKept": "Hafðu lykilinn tóman til að nota þann sem þau hafa nú þegar."
 }

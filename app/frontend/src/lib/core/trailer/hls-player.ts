@@ -16,6 +16,15 @@ export const BUFFER = {
 	startFragPrefetch: false
 } as const;
 
+// hls.js gives each text track it makes a <track src="data:,WEBVTT">, which the
+// page's media-src blocks. The player shows no captions, so it makes none.
+const NO_TRACKS = {
+	renderTextTracksNatively: false,
+	enableID3MetadataCues: false,
+	enableEmsgMetadataCues: false,
+	enableDateRangeMetadataCues: false
+} as const;
+
 // target is the tallest picture worth fetching; floor is the least height to keep
 // whatever the player's size (a retry when a smaller one would not decode).
 export async function attachHLS(video: HTMLVideoElement, url: string, native: boolean, start = 0, target = 720, floor = 0): Promise<() => void> {
@@ -29,7 +38,7 @@ export async function attachHLS(video: HTMLVideoElement, url: string, native: bo
 	}
 	const Hls = await loadHls();
 	if (!Hls.isSupported()) throw new Error('no MediaSource');
-	const hls = new Hls({ startPosition: start, ...BUFFER, capLevelToPlayerSize: false, enableWorker: true, abrEwmaDefaultEstimate: 8_000_000 });
+	const hls = new Hls({ startPosition: start, ...BUFFER, ...NO_TRACKS, capLevelToPlayerSize: false, enableWorker: true, abrEwmaDefaultEstimate: 8_000_000 });
 	// The stream mixes codecs at the same sizes and switching codec mid-play stalls,
 	// so only H.264 stays. The cap follows what the player shows now.
 	let avc: { height: number }[] = [];

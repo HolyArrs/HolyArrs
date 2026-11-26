@@ -7,6 +7,7 @@
 	import StepCapsule from './StepCapsule.svelte';
 	import ResultGroups from './ResultGroups.svelte';
 	import FolderOutcome from './FolderOutcome.svelte';
+	import { FinishAlerts } from '#lib/alerts/index.ts';
 	import type { ShowList } from './ItemsSheet.svelte';
 	import { doneLook, moveCounts, noFolderCount, progressWords, running as isRunning, seasonsShows, type Bucket, type Move } from './move.ts';
 	import { to } from '../core/paths.ts';
@@ -45,6 +46,10 @@
 	const noFolder = $derived(noFolderCount(lines));
 	const seasons = $derived(seasonsShows(lines));
 	const look = $derived(doneLook(counts.failed ?? 0, seasons.length));
+	// The import made Alerts: the Finish your alerts card asks for what each still needs.
+	// Rename was chosen: the Rename preview shows each change before any file moves.
+	const renameNext = $derived(!rep?.undo && !undone && move.choices?.names === 'rename');
+	const madeAlerts = $derived(!rep?.undo && !undone && lines.some((l) => l.group === 'alerts' && l.result === 'created'));
 </script>
 
 <SettingsCard id="move-step" title={countSteps ? t('migrate.step4Of4') : t('migrate.done')}>
@@ -70,7 +75,7 @@
 </SettingsCard>
 
 {#if rep && !busy}
-	{#if plainNext || noFolder > 0 || openChoices > 0 || (counts.failed ?? 0) > 0 || seasons.length > 0}
+	{#if plainNext || renameNext || noFolder > 0 || openChoices > 0 || (counts.failed ?? 0) > 0 || seasons.length > 0}
 	<SettingsCard id="move-todo" title={t('migrate.needsYou')}>
 		{#if plainNext}
 			{#each rep.next as n (n)}
@@ -86,6 +91,9 @@
 				{/snippet}
 				{#if noFolder > 0}
 					{@render card(noFolder === 1 ? t('migrate.titleHaveNoFolder', { n: noFolder }) : t('migrate.titlesHaveNoFolder', { n: noFolder }), t('migrate.addTheirFolderThen'), t('migrate.folders'), to('/settings/library-folders'))}
+				{/if}
+				{#if renameNext}
+					{@render card(t('migrate.namesRenameNext'), t('migrate.namesRenameNextHint'), t('migrate.namesRenameCheck'), to('/library/rename'))}
 				{/if}
 				{#if openChoices > 0}
 					{@render card(openChoices === 1 ? t('migrate.chooseForPerson', { n: openChoices }) : t('migrate.chooseForPeople', { n: openChoices }), t('migrate.theyStayBehindUntil'), t('migrate.choose'), onchoose)}
@@ -105,6 +113,7 @@
 		{/if}
 	</SettingsCard>
 	{/if}
+	{#if madeAlerts}<FinishAlerts />{/if}
 	{#if groups.length > 0}
 		<SettingsCard id="move-results" title={t('migrate.results')}>
 			{#if !rep.undo}<div class="fo-gap"><FolderOutcome {lines} after /></div>{/if}

@@ -157,3 +157,48 @@ func linkTags(ctx context.Context, st *database.Store, titleID int64, tagIDs []i
 		return err
 	})
 }
+
+// tagByID reads one tag. It gives sql.ErrNoRows when no tag has the id.
+func tagByID(ctx context.Context, q database.Lister, id int64) (tag, error) {
+	var t tag
+	rows, err := q.QueryContext(ctx, "SELECT id, label FROM compat_tags WHERE id = ?", id)
+	if err != nil {
+		return t, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
+			return t, err
+		}
+		return t, sql.ErrNoRows
+	}
+	err = rows.Scan(&t.ID, &t.Label)
+	return t, err
+}
+
+// applyTags changes the tags of many titles in one transaction. add puts
+// the tags on, remove takes them off, replace leaves exactly these tags.
+// Ids no tag has are skipped.
+func applyTags(ctx context.Context, st *database.Store, titleIDs, tagIDs []int64, mode string) error {
+	titles, _ := json.Marshal(titleIDs)
+	tags, _ := json.Marshal(tagIDs)
+	return st.Write(ctx, func(tx *sql.Tx) error {
+		if mode == "remove" || mode == "replace" {
+			q := "DELETE FROM compat_title_tags WHERE title_id IN (SELECT value FROM json_each(?))"
+			if mode == "remove" {
+				q += " AND tag_id IN (SELECT value FROM json_each(?))"
+			} else {
+				q += " AND tag_id NOT IN (SELECT value FROM json_each(?))"
+			}
+			if _, err := tx.Exec(q, string(titles), string(tags)); err != nil {
+				return err
+			}
+		}
+		if mode == "remove" {
+			return nil
+		}
+		_, err := tx.Exec(`INSERT OR IGNORE INTO compat_title_tags (tag_id, title_id)
+			SELECT t.id, s.value FROM compat_tags t, json_each(?) s WHERE t.id IN (SELECT value FROM json_each(?))`, string(titles), string(tags))
+		return err
+	})
+}

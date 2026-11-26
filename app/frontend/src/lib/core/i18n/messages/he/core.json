@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "בונה את {what}… ניסיון {attempt}",
 	"core.testTag.connected": "מחובר",
 	"core.api.notAnswering": "HolyArrs לא עונה. בדוק שהוא פועל.",
+	"core.api.tooSlow": "HolyArrs לקח יותר מדי זמן לענות. נסו שוב בעוד דקה.",
 	"core.api.requestFailed": "הבקשה נכשלה ({status})",
 	"core.api.wentWrong": "משהו השתבש.",
 	"core.trailerMiss.trailer": "טריילר",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "אושר אוטומטית",
 	"core.plain.approvedBy": "אושר על ידי {who}",
 	"core.settings.cantReach": "אי אפשר להגיע לכתובת הזו. בדוק אותה ואת האפליקציה.",
+	"core.settings.tryHttp": "הכתובת הזו לא עונה ב-https. נסו http:// במקום.",
 	"core.settings.groupLibrary.label": "ספרייה",
 	"core.settings.groupLibrary.line": "איפה הכותרים נמצאים",
 	"core.settings.groupLibrary.about": "תיקיות, רכיבים, ברירות מחדל, כתוביות, שמות קבצים וייבוא.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "שני מורידים מגיעים לאותה אפליקציית הורדות, לכן הורדות עלולות להופיע פעמיים.",
 	"core.plain.peopleCheck": "לא ניתן לקרוא את רשימת המשתמשים של שרת המדיה, ולכן מי שהוסר שם לא מכובה כאן.",
 	"core.plain.deleted": "נמחק",
-	"core.plain.deletedName": "{name} (נמחק)"
+	"core.plain.deletedName": "{name} (נמחק)",
+	"core.api.handsOffFiles": "מצב ללא התערבות פעיל, ולכן HolyArrs לא נוגע בקבצים שהורדו. כבו אותו בהגדרות כדי לייבא, לשנות שם, להעביר או לסרוק קבצים.",
+	"core.api.handsOffSubtitles": "מצב ללא התערבות פעיל, ולכן HolyArrs אף פעם לא פותח את הקבצים שהורדו. כבו אותו בהגדרות כדי להשתמש בכתוביות."
 }

@@ -15,5 +15,5 @@ func OpenReadOnly(dir string) (*sql.DB, error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, fmt.Errorf("no database in %s: %w", dir, err)
 	}
-	return openPool(path, 2000, true, 1)
+	return openPool(path, 2000, true, 1, false)
 }

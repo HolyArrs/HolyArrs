@@ -75,6 +75,10 @@ export interface BoardCtx {
 	isPending(id: number): boolean;
 	/** Approve with the Undo toast (the quick ✓). */
 	approve(list: Ask[]): void;
+	/** Approve all: every waiting request that `match` keeps (read past the loaded ones when the list is cut), after a confirm that says how many. */
+	approveAll(shown: Ask[], match: (a: Ask) => boolean): void;
+	/** Loads the next page of requests when the list is cut (scrolled near its end). */
+	loadMore(): void;
 	/** Approve one ask with the approver's rule, language and note (with the Undo toast). */
 	approveWith(a: Ask, opt: DecideOptions): void;
 	/** Turn down with an optional note (the sheet with Undo). */

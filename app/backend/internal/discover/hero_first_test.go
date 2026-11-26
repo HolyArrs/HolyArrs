@@ -72,3 +72,18 @@ func TestHeroReadyArtOnlyTopsUp(t *testing.T) {
 		t.Fatalf("hero ready %+v", got)
 	}
 }
+
+// On a slow server no logo may have come in yet: the hero still shows the
+// titles that have a backdrop (their name stands in for the logo), never
+// nothing.
+func TestHeroReadyFallsBackToBackdrops(t *testing.T) {
+	t.Parallel()
+	vs := []ItemView{
+		{DiscoverItem: metadata.DiscoverItem{Kind: "movie", TMDBID: "1"}},
+		{DiscoverItem: metadata.DiscoverItem{Kind: "movie", TMDBID: "2", Backdrop: "b.jpg"}},
+	}
+	got := HeroReady(vs, 6)
+	if len(got) != 1 || got[0].TMDBID != "2" {
+		t.Fatalf("hero ready %+v", got)
+	}
+}

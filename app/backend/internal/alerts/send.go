@@ -53,6 +53,7 @@ const (
 	MomentRename   = "rename"         // files got new names
 	MomentAdd      = "add"            // a movie was added
 	MomentDelete   = "delete"         // a movie was deleted
+	MomentArtwork  = "artwork"        // a title got new cover art
 	MomentHealth   = "health"         // a health check broke or recovered
 	MomentDecision = "needs_decision" // a movie needs a decision
 	MomentSubtitle = "subtitle"       // a subtitle was saved or upgraded, could not be saved, or a Subtitle site rests
@@ -64,9 +65,13 @@ const (
 	MomentDownloadFailed = "download_failed" // a download failed; its Release is turned down
 )
 
+// MomentPlugin is a message a plugin sends (alerts.webhooks.send), to the
+// staff; an Alert carries it only when the owner ticks it.
+const MomentPlugin = "plugin_message"
+
 // Moments lists the moments in the order screens show them.
 var Moments = []string{MomentWaiting, MomentApproved, MomentTurnedDown, MomentReady, MomentNewEpisodes, MomentNewAlbums,
-	MomentReported, MomentFixed, MomentGrab, MomentDownloaded, MomentDownloadFailed, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentHealth, MomentDecision, MomentSubtitle}
+	MomentReported, MomentFixed, MomentGrab, MomentDownloaded, MomentDownloadFailed, MomentImport, MomentRename, MomentAdd, MomentDelete, MomentArtwork, MomentHealth, MomentDecision, MomentSubtitle, MomentPlugin}
 
 // Person is someone a message is about, with where Alerts reach them.
 type Person struct {
@@ -198,6 +203,9 @@ type Sender struct {
 	// Backoff is the wait before each new try of a failed send; nil means
 	// DefaultBackoff, an empty list never tries again.
 	Backoff []time.Duration
+	// Tap, when set, is handed every Library message as it is built, whether
+	// or not an Alert speaks for it (the plugins' events). It must not wait.
+	Tap func(Message)
 	// Lang is the owner's app language for the fixed words of a message
 	// (nil or "" means English).
 	Lang func(context.Context) string
@@ -568,6 +576,21 @@ func (s *Sender) email(ctx context.Context, a domain.Alert, m Message) error {
 	if len(to) == 0 {
 		return nil // nobody to reach for this moment
 	}
+	if forPeople(m.Moment) {
+		// One mail each, so people who asked for the same title never see
+		// each other's address.
+		var errs []error
+		for _, x := range to {
+			if err := s.emailTo(ctx, a, m, []string{x}); err != nil {
+				errs = append(errs, err)
+			}
+		}
+		return errors.Join(errs...)
+	}
+	return s.emailTo(ctx, a, m, to)
+}
+
+func (s *Sender) emailTo(ctx context.Context, a domain.Alert, m Message, to []string) error {
 	if a.SMTPHost == "" || a.SMTPPort < 1 || a.SMTPPort > 65535 || !CheckAddress(a.SMTPFrom) {
 		return ErrSMTP
 	}

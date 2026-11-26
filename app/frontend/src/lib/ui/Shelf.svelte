@@ -136,8 +136,8 @@
 		<div class="row" use:dragScroll use:rove bind:this={scroller} onscroll={measure} role="group" aria-labelledby="{id}-t">
 			{#if items && card}{#each shown as it, i (keyOf(it, i))}{@render card(it, i)}{/each}{:else}{@render children?.()}{/if}
 		</div>
-		<span class="arrow left" class:hide={atStart}><IconButton icon="chevronLeft" label={t('ui.shelf.scrollBack', { title })} variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(-1)} /></span>
-		<span class="arrow right" class:hide={atEnd}><IconButton icon="chevronRight" label={t('ui.shelf.scrollForward', { title })} variant="tinted" tabindex={-1} tooltip={false} onclick={() => page(1)} /></span>
+		<span class="arrow left" class:hide={atStart}><IconButton icon="chevronLeft" label={t('ui.shelf.scrollBack', { title })} variant="tinted" size="lg" tabindex={-1} tooltip={false} onclick={() => page(-1)} /></span>
+		<span class="arrow right" class:hide={atEnd}><IconButton icon="chevronRight" label={t('ui.shelf.scrollForward', { title })} variant="tinted" size="lg" tabindex={-1} tooltip={false} onclick={() => page(1)} /></span>
 	</div>
 	{/if}
 </section>
@@ -173,8 +173,8 @@
 	.sk.wide { --art: calc(var(--w) * 9 / 16); --text-h: 0px; }
 	@media (max-width: 767px) { .sk { --w: calc(var(--item) * .78); } }
 	.row > :global(*) { scroll-snap-align: start; }
-	.arrow { position: absolute; top: calc(50% - 26px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
-	.arrow :global(.ui-ibtn) { width: 36px; height: 36px; box-shadow: var(--shadow-lift); background: var(--surface-1); color: var(--text); }
+	.arrow { position: absolute; top: calc(50% - 30px); opacity: 0; transition: opacity var(--dur-fast) var(--ease-out); }
+	.arrow :global(.ui-ibtn) { box-shadow: var(--shadow-lift); background: var(--surface-1); color: var(--text); }
 	.left { inset-inline-start: -12px; }
 	.right { inset-inline-end: -12px; }
 	.wrap:hover .arrow:not(.hide) { opacity: 1; }

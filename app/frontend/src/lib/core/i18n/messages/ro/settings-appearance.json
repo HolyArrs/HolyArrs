@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Cereri",
 	"settings.appearance.colRate": "Pe rând",
 	"settings.appearance.noRows": "Încă nu s-a numărat niciun rând din Explorează.",
+	"settings.appearance.rowStats": "Rândurile din Explorează",
+	"settings.appearance.rowStatsDesc": "Deschideri și cereri pe rând în ultimele 30 de zile, pentru toți la un loc. Numărate doar pe acest server.",
+	"settings.appearance.colRow": "Rând",
+	"settings.appearance.row.because_have": "Ca titlurile pe care le ai",
+	"settings.appearance.row.because_asked": "Ca cererile tale",
+	"settings.appearance.row.person": "Mai mult de la o persoană",
+	"settings.appearance.row.genre": "Genuri alese pentru tine",
+	"settings.appearance.row.popular_genre": "Populare pe gen",
+	"settings.appearance.row.popular_decade": "Populare pe deceniu",
+	"settings.appearance.row.decade": "Pe deceniu",
+	"settings.appearance.row.mood": "După stare",
+	"settings.appearance.row.hero": "Bannerul de sus",
 	"settings.appearance.motion": "Mișcare",
 	"settings.appearance.motionNote": "Urmează setarea Reducerea mișcării a dispozitivului tău"
 }

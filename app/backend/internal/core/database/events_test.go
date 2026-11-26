@@ -201,8 +201,8 @@ func TestEventsNotedIndexFreshAndUpgrade(t *testing.T) {
 	check := func(t *testing.T, s *Store) {
 		t.Helper()
 		v, err := SchemaVersion(s.ReadEvents())
-		if err != nil || v != 3 {
-			t.Fatalf("events version %d, %v; want 3", v, err)
+		if err != nil || v != 4 {
+			t.Fatalf("events version %d, %v; want 4", v, err)
 		}
 		var n int
 		if err := s.ReadEvents().QueryRow("SELECT count(*) FROM sqlite_master WHERE type='index' AND name='events_noted'").Scan(&n); err != nil || n != 1 {

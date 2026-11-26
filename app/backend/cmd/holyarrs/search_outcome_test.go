@@ -68,3 +68,45 @@ func TestSearchOutcomeOwnerSeesSourcesMemberDoesNot(t *testing.T) {
 		t.Fatalf("member must not see Sources: %v", raw)
 	}
 }
+
+// route: GET /api/v1/titles/{id}/search-outcome
+func TestSearchOutcomeSaysWhenPickRulesRefusedAll(t *testing.T) {
+	t.Parallel()
+	r := newAskRig(t)
+	ctx := context.Background()
+	cases := []struct {
+		name    string
+		kind    string
+		data    map[string]any
+		refused bool
+	}{
+		{"all refused", sources.EventSearchDone, map[string]any{"found": 4}, true},
+		{"nothing found", sources.EventSearchDone, map[string]any{"found": 0}, false},
+		{"older event without a count", sources.EventSearchDone, nil, false},
+		{"no Source answered", sources.EventSearchFailed, map[string]any{"found": 3}, false},
+	}
+	for i, c := range cases {
+		var titleID int64
+		err := r.st.Write(ctx, func(tx *sql.Tx) error {
+			title := mediafiles.Title{Kind: "movie", Name: "Refused " + c.name, SortName: "refused " + c.name, SourceIDs: map[string]string{"tmdb": itoa(int64(910000 + i))}, MetadataSource: "tmdb",
+				Rating: "PG", WhyAdded: "by_hand", State: "active", NewPartsPolicy: "all", ReleaseGate: "released", GateDriver: "none", Status: "released", KeepUpToDate: true}
+			_, err := database.Insert(tx, "titles", &title, domain.System)
+			titleID = title.ID
+			return err
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		tid := titleID
+		if err := r.st.AddEvent(ctx, &domain.Event{Actor: domain.System, Kind: c.kind, TitleID: &tid, Summary: "searched", Data: c.data}); err != nil {
+			t.Fatal(err)
+		}
+		for _, who := range []*signedIn{r.owner, r.ana} {
+			var raw map[string]any
+			_ = json.Unmarshal(who.call("GET", "/api/v1/titles/"+itoa(titleID)+"/search-outcome", "", 200), &raw)
+			if got := raw["refused"] == true; got != c.refused || raw["empty"] != true {
+				t.Fatalf("%s: got %v", c.name, raw)
+			}
+		}
+	}
+}

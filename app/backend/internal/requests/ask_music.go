@@ -138,7 +138,7 @@ func (s *Service) askArtist(ctx context.Context, p Person, mbid string, albums [
 		if err := s.checkLimit(ctx, tx, p, KindMusic); err != nil {
 			return err
 		}
-		if _, err := database.Insert(tx, "asks", &a, p.actor()); err != nil {
+		if _, err := database.Insert(tx, "asks", viaPlugin(ctx, &a), p.actor()); err != nil {
 			return err
 		}
 		_, err = tx.Exec(askArtistSQL, a.ID, p.UserID, database.FormatTime(now))

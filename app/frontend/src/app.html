@@ -219,6 +219,9 @@
 			#hl.handoff.out .hw{transform:scale(.86);opacity:0;transition-duration:.42s}
 			html.hl-arrive #main{animation:hla .42s cubic-bezier(.22,1,.36,1) both}
 			@keyframes hla{from{opacity:0;transform:translateY(14px)}}
+			/* A transform on #main would make it the box for the first-run art's fixed layers, so they shrink to its height for the ease-in: fade only. */
+			html.hl-arrive #main:has(.over-art){animation-name:hlo}
+			@keyframes hlo{from{opacity:0}}
 			@media (prefers-reduced-motion:reduce){#hl .hw,#hl.handoff,#hl.handoff::before{transition:opacity .3s}}
 			@keyframes hlr{to{transform:rotate(360deg)}}
 			@keyframes hls{0%,100%{opacity:.8}50%{opacity:1}}

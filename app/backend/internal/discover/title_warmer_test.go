@@ -56,7 +56,7 @@ func TestTitleWarmerReadsDetailsWithoutTexts(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 	f := &textDetails{Static: metadata.Lab(), kept: map[string]bool{"movie:6": true}}
 	c := &Cache{}
-	fresh := Entry{At: time.Now(), Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "abcdefgh"}}}}
+	fresh := Entry{At: time.Now(), Details: &metadata.Details{LogosRead: true, Videos: []metadata.DetailVideo{{Key: "abcdefgh"}}}}
 	c.Put("details|movie|5", fresh)
 	c.Put("details|movie|6", fresh)
 	// The trailer key is each title's last step (trailers play by default):

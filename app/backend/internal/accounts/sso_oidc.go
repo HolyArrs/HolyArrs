@@ -7,10 +7,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -42,6 +44,8 @@ type OIDCOptions struct {
 	AllowJoin         bool
 	AllowLocal        bool
 	AllowLoopbackHTTP bool
+	GroupsClaim       string            // claim that carries groups; "" turns roles from groups off
+	GroupRoles        map[string]string // group to "admin" or "member"
 }
 
 type oidcRuntime struct {
@@ -72,11 +76,14 @@ type oidcTransaction struct {
 	expires time.Time
 	userID  int64
 	family  string
+	fresh   bool // asked the provider for a real new sign-in
 }
 
 type oidcClaims struct {
-	subject string
-	display string
+	subject  string
+	display  string
+	authTime time.Time // the provider's auth_time; zero when it sent none
+	role     string    // role from groups; "" leaves the role alone
 }
 
 type oidcResult struct {
@@ -85,6 +92,7 @@ type oidcResult struct {
 	ip      string
 	userID  int64
 	family  string
+	freshAt time.Time // set only when a fresh sign-in was asked for and checked
 }
 
 func newOIDCRuntime(opt OIDCOptions) (*oidcRuntime, error) {
@@ -162,7 +170,7 @@ func (r *oidcRuntime) discoverProvider(done chan struct{}) {
 		return
 	}
 	oauth := &oauth2.Config{ClientID: r.opt.ClientID, ClientSecret: r.opt.ClientSecret, Endpoint: provider.Endpoint(),
-		RedirectURL: r.opt.RedirectURL, Scopes: []string{oidc.ScopeOpenID, "profile"}}
+		RedirectURL: r.opt.RedirectURL, Scopes: oidcScopes(r.opt)}
 	if r.opt.ClientSecret == "" {
 		oauth.Endpoint.AuthStyle = oauth2.AuthStyleInParams
 	} else {
@@ -230,10 +238,23 @@ func oidcLoopbackHost(host string) bool {
 	return strings.EqualFold(host, "localhost") || net.ParseIP(host) != nil && net.ParseIP(host).IsLoopback()
 }
 
+// oidcSiblingHosts lists providers whose discovery document puts the token,
+// key and user-info endpoints on other hosts the provider owns. Google signs
+// in on accounts.google.com but hands out tokens and keys from googleapis.com.
+var oidcSiblingHosts = map[string][]string{
+	"accounts.google.com:443": {"oauth2.googleapis.com:443", "www.googleapis.com:443", "openidconnect.googleapis.com:443"},
+}
+
 func oidcEndpointAllowed(issuer *url.URL, raw string) bool {
 	u, err := url.Parse(raw)
-	return err == nil && u.User == nil && u.Host != "" && u.Fragment == "" &&
-		strings.EqualFold(u.Scheme, issuer.Scheme) && oidcOriginHost(u) == oidcOriginHost(issuer)
+	if err != nil || u.User != nil || u.Host == "" || u.Fragment != "" || !strings.EqualFold(u.Scheme, issuer.Scheme) {
+		return false
+	}
+	host, own := oidcOriginHost(u), oidcOriginHost(issuer)
+	if host == own {
+		return true
+	}
+	return strings.EqualFold(issuer.Scheme, "https") && slices.Contains(oidcSiblingHosts[own], host)
 }
 
 func oidcOriginHost(u *url.URL) string {
@@ -267,7 +288,7 @@ func (r *oidcRuntime) close() {
 	r.client.CloseIdleConnections()
 }
 
-func (r *oidcRuntime) begin(ctx context.Context, now time.Time, ip string, userID int64, family string) (string, string, error) {
+func (r *oidcRuntime) begin(ctx context.Context, now time.Time, ip string, userID int64, family string, fresh bool) (string, string, error) {
 	if err := r.ensureProvider(ctx); err != nil {
 		return "", "", err
 	}
@@ -289,10 +310,15 @@ func (r *oidcRuntime) begin(ctx context.Context, now time.Time, ip string, userI
 	state, nonce, verifier, browser := token(32), token(32), token(48), token(32)
 	challenge := sha256.Sum256([]byte(verifier))
 	r.flows[state] = oidcTransaction{cookie: sum(browser), nonce: nonce, pkce: verifier, ip: ip,
-		expires: now.Add(oidcFlowLife), userID: userID, family: family}
-	authURL := r.oauth.AuthCodeURL(state, oauth2.SetAuthURLParam("nonce", nonce),
+		expires: now.Add(oidcFlowLife), userID: userID, family: family, fresh: fresh}
+	opts := []oauth2.AuthCodeOption{oauth2.SetAuthURLParam("nonce", nonce),
 		oauth2.SetAuthURLParam("code_challenge", base64.RawURLEncoding.EncodeToString(challenge[:])),
-		oauth2.SetAuthURLParam("code_challenge_method", "S256"))
+		oauth2.SetAuthURLParam("code_challenge_method", "S256")}
+	if fresh {
+		// The provider must ask again, not pass a signed-in browser straight through.
+		opts = append(opts, oauth2.SetAuthURLParam("prompt", "login"), oauth2.SetAuthURLParam("max_age", "0"))
+	}
+	authURL := r.oauth.AuthCodeURL(state, opts...)
 	return authURL, browser, nil
 }
 
@@ -345,58 +371,88 @@ func (r *oidcRuntime) exchange(ctx context.Context, code string, tx oidcTransact
 		AZP               string `json:"azp"`
 		Name              string `json:"name"`
 		PreferredUsername string `json:"preferred_username"`
+		AuthTime          int64  `json:"auth_time"`
 	}
 	if id.Claims(&extra) != nil ||
 		extra.AZP != "" && extra.AZP != r.opt.ClientID ||
 		len(id.Audience) > 1 && extra.AZP != r.opt.ClientID {
 		return oidcClaims{}, errOIDCProvider
 	}
+	var all map[string]any
+	_ = id.Claims(&all)
+	role := groupRole(r.opt.GroupsClaim, r.opt.GroupRoles, all)
 	display := strings.TrimSpace(extra.Name)
 	if !ssoText(display, 200) {
 		display = strings.TrimSpace(extra.PreferredUsername)
 	}
+	var info map[string]any
+	if !ssoText(display, 200) || role == "" && r.opt.GroupsClaim != "" {
+		info = r.userInfo(ctx, tok, id.Subject)
+	}
 	if !ssoText(display, 200) {
-		display = r.userInfoName(ctx, tok, id.Subject)
+		display = userInfoName(info)
+	}
+	if role == "" {
+		role = groupRole(r.opt.GroupsClaim, r.opt.GroupRoles, info)
 	}
 	if !ssoText(display, 200) {
 		display = "oidc-user"
 	}
-	return oidcClaims{subject: id.Subject, display: display}, nil
+	var at time.Time
+	if extra.AuthTime > 0 {
+		at = time.Unix(extra.AuthTime, 0)
+	}
+	return oidcClaims{subject: id.Subject, display: display, authTime: at, role: role}, nil
 }
 
-// userInfoName asks the userinfo endpoint for a name when the ID token has
-// none (Authelia 4.39 sends profile claims only there). The answer counts
-// only for the same subject; any failure just leaves the name empty.
-func (r *oidcRuntime) userInfoName(ctx context.Context, tok *oauth2.Token, subject string) string {
+// userInfo asks the userinfo endpoint for what the ID token lacks: a name or
+// groups (Authelia 4.39 sends profile and group claims only there). The
+// answer counts only for the same subject; any failure just returns nil.
+func (r *oidcRuntime) userInfo(ctx context.Context, tok *oauth2.Token, subject string) map[string]any {
 	r.mu.Lock()
 	endpoint := r.userinfo
 	r.mu.Unlock()
 	if endpoint == "" || tok.AccessToken == "" {
-		return ""
+		return nil
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return ""
+		return nil
 	}
 	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
 	req.Header.Set("Accept", "application/json")
 	resp, err := r.client.Do(req)
 	if err != nil {
-		return ""
+		return nil
 	}
 	defer resp.Body.Close()
-	var info struct {
-		Subject           string `json:"sub"`
-		Name              string `json:"name"`
-		PreferredUsername string `json:"preferred_username"`
+	var info map[string]any
+	if resp.StatusCode != http.StatusOK || json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&info) != nil {
+		return nil
 	}
-	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&info) != nil || info.Subject != subject {
-		return ""
+	if sub, _ := info["sub"].(string); sub != subject {
+		return nil
 	}
-	if name := strings.TrimSpace(info.Name); ssoText(name, 200) {
+	return info
+}
+
+// userInfoName is the name from a userinfo answer, or "".
+func userInfoName(info map[string]any) string {
+	name, _ := info["name"].(string)
+	if name = strings.TrimSpace(name); ssoText(name, 200) {
 		return name
 	}
-	return strings.TrimSpace(info.PreferredUsername)
+	user, _ := info["preferred_username"].(string)
+	return strings.TrimSpace(user)
+}
+
+// oidcScopes asks for groups too when roles come from groups; most
+// providers send the groups claim only for this scope.
+func oidcScopes(o OIDCOptions) []string {
+	if o.GroupsClaim != "" && len(o.GroupRoles) > 0 {
+		return []string{oidc.ScopeOpenID, "profile", "groups"}
+	}
+	return []string{oidc.ScopeOpenID, "profile"}
 }
 
 func (r *oidcRuntime) saveResult(now time.Time, claims oidcClaims, tx oidcTransaction) (string, error) {
@@ -416,8 +472,19 @@ func (r *oidcRuntime) saveResult(now time.Time, claims oidcClaims, tx oidcTransa
 		return "", errOIDCFlow
 	}
 	browser := token(32)
-	r.results[sum(browser)] = oidcResult{oidcClaims: claims, expires: now.Add(oidcFlowLife), ip: tx.ip, userID: tx.userID, family: tx.family}
+	res := oidcResult{oidcClaims: claims, expires: now.Add(oidcFlowLife), ip: tx.ip, userID: tx.userID, family: tx.family}
+	if tx.fresh && oidcFreshEnough(claims.authTime, now) {
+		res.freshAt = claims.authTime
+	}
+	r.results[sum(browser)] = res
 	return browser, nil
+}
+
+// oidcFreshEnough says whether the provider's sign-in time is recent enough to
+// stand in for a password: inside the recent window, and not more than a
+// minute ahead of this clock.
+func oidcFreshEnough(at, now time.Time) bool {
+	return !at.IsZero() && !at.After(now.Add(time.Minute)) && now.Sub(at) < localRecentFor
 }
 
 func (r *oidcRuntime) takeResult(now time.Time, browser string) (oidcResult, error) {
@@ -470,6 +537,14 @@ func (a *Auth) oidcStart(w http.ResponseWriter, r *http.Request, linking bool) {
 	}
 	var userID int64
 	var family string
+	// {"fresh": true} asks the provider for a real new sign-in, the proof a
+	// person with no HolyArrs password gives before a protected change.
+	var body struct {
+		Fresh bool `json:"fresh"`
+	}
+	if !linking {
+		_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<10)).Decode(&body)
+	}
 	if linking {
 		who, ok := a.requireSSOLink(w, r)
 		if !ok {
@@ -484,7 +559,7 @@ func (a *Auth) oidcStart(w http.ResponseWriter, r *http.Request, linking bool) {
 	if !a.ssoAttempt(w, r) {
 		return
 	}
-	authURL, browser, err := o.begin(r.Context(), a.now(), a.clientKey(r), userID, family)
+	authURL, browser, err := o.begin(r.Context(), a.now(), a.clientKey(r), userID, family, body.Fresh)
 	if err != nil {
 		fail(w, http.StatusServiceUnavailable, "OIDC provider is temporarily unavailable")
 		return
@@ -591,13 +666,16 @@ func (a *Auth) oidcFinish(w http.ResponseWriter, r *http.Request, linking bool) 
 		a.ssoPassed(r)
 		return
 	}
-	id, name, err := a.ssoIdentity(r.Context(), "oidc", o.opt.Issuer, result.subject, result.display, o.opt.AllowJoin, 0)
+	id, name, err := a.ssoIdentityRole(r.Context(), "oidc", o.opt.Issuer, result.subject, result.display, o.opt.AllowJoin, result.role)
 	if err != nil {
 		a.failedEvent(r, outsideName(result.display), ssoRefusal("oidc", err))
 		fail(w, http.StatusUnauthorized, "OIDC identity is not allowed to sign in")
 		return
 	}
 	a.ssoPassed(r)
+	if !result.freshAt.IsZero() {
+		r = r.WithContext(withOutsideProof(r.Context(), result.freshAt))
+	}
 	a.passedAs(w, r, id, name, "oidc")
 }
 

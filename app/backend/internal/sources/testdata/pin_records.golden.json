@@ -85,6 +85,8 @@
     "ProxyAllowLocal": false,
     "PathSecretRef": null,
     "Tags": null,
+    "MultiLanguages": null,
+    "NoLanguageLanguages": null,
     "DownloaderID": null
   }
 }

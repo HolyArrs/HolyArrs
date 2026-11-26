@@ -14,7 +14,6 @@
 	"settings.health.none": "Sin resultados. Comprueba de nuevo para ejecutarlas.",
 	"settings.health.since": "Desde",
 	"settings.health.settings": "Ajustes de comprobaciones de salud",
-	"settings.health.updateCheck": "Buscar un HolyArrs más nuevo",
 	"settings.health.onlyChecks": "Solo comprueba. Nunca instala.",
 	"settings.health.every": "Buscar actualizaciones cada",
 	"settings.health.day": "día",

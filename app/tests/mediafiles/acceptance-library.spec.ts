@@ -1,7 +1,7 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { openLibraryTab, openSeasonNamed, finishFirstRun } from '../helpers/helpers.ts';
+import { openLibraryTab, openSeasonNamed, finishFirstRun, reachSetupAccount } from '../helpers/helpers.ts';
 import { dataDir } from '../helpers/data-folder.ts';
 
 test.describe.configure({ mode: 'serial' });
@@ -58,13 +58,12 @@ test.beforeAll(async ({ browser }) => {
 	context = await browser.newContext();
 	page = await context.newPage();
 	await page.goto('/');
-	await expect(page.getByRole('heading', { name: 'Set up HolyArrs' })).toBeVisible();
-	await page.getByTestId('setup-ways').getByRole('button', { name: 'Password' }).click();
-	await page.getByLabel('Name').fill(owner.name);
+	await reachSetupAccount(page);
+	await page.getByLabel('Username').fill(owner.name);
 	await page.getByLabel('Password', { exact: true }).fill(owner.password);
-	await page.getByLabel('Password again').fill(owner.password);
-	await page.getByRole('button', { name: 'Create account' }).click();
-	await expect(page).toHaveURL(/\/welcome\?first=1$/);
+	await page.getByLabel('Confirm password').fill(owner.password);
+	await page.getByRole('button', { name: 'Create account and continue' }).click();
+	await expect(page).toHaveURL(/\/welcome\?first=1/);
 	await finishFirstRun(page, moviesDir, { music: true });
 	await expect(page).toHaveURL(/\/$/);
 

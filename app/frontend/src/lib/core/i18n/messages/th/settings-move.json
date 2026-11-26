@@ -36,5 +36,7 @@
 	"settings.move.undoId": "เลิกทำการนำเข้า {id} ไหม",
 	"settings.move.undoQuestion": "เลิกทำการนำเข้านี้ไหม",
 	"settings.move.undoNote": "ลบสิ่งที่การนำเข้านี้เพิ่มเข้ามา ส่วนการเปลี่ยนแปลงของคุณภายหลังจะคงอยู่ ดาวน์โหลดรายงานก่อนหากต้องการ",
-	"settings.move.undoMove": "เลิกทำการนำเข้า"
+	"settings.move.undoMove": "เลิกทำการนำเข้า",
+	"settings.move.continueSetup": "ตั้งค่าต่อ",
+	"settings.move.backToChoose": "กลับไปที่เลือก"
 }

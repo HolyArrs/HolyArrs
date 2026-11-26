@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "คำขอ",
 	"settings.appearance.colRate": "ต่อแถว",
 	"settings.appearance.noRows": "ยังไม่มีแถวในหน้าสำรวจที่ถูกนับ",
+	"settings.appearance.rowStats": "แถวในหน้าสำรวจ",
+	"settings.appearance.rowStatsDesc": "จำนวนการเปิดและคำขอต่อแถวใน 30 วันที่ผ่านมา รวมทุกคน นับบนเซิร์ฟเวอร์นี้เท่านั้น",
+	"settings.appearance.colRow": "แถว",
+	"settings.appearance.row.because_have": "คล้ายเรื่องที่คุณมี",
+	"settings.appearance.row.because_asked": "คล้ายคำขอของคุณ",
+	"settings.appearance.row.person": "เพิ่มเติมจากบุคคล",
+	"settings.appearance.row.genre": "แนวที่เลือกให้คุณ",
+	"settings.appearance.row.popular_genre": "ยอดนิยมตามแนว",
+	"settings.appearance.row.popular_decade": "ยอดนิยมตามทศวรรษ",
+	"settings.appearance.row.decade": "ตามทศวรรษ",
+	"settings.appearance.row.mood": "ตามอารมณ์",
+	"settings.appearance.row.hero": "แบนเนอร์ด้านบน",
 	"settings.appearance.motion": "การเคลื่อนไหว",
 	"settings.appearance.motionNote": "ตามการตั้งค่าลดการเคลื่อนไหวของอุปกรณ์คุณ"
 }

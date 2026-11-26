@@ -606,6 +606,9 @@ func (c *ArtworkCache) trim() {
 		if e.IsDir() || strings.HasPrefix(e.Name(), ".") {
 			continue
 		}
+		if _, err := os.Stat(filepath.Join(c.Dir, keepName(e.Name()))); err == nil {
+			continue // a plugin's picture: it can't be fetched again
+		}
 		if in, err := e.Info(); err == nil {
 			fs = append(fs, f{filepath.Join(c.Dir, e.Name()), in.Size(), in.ModTime()})
 			total += in.Size()

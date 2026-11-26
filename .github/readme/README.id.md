@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: titik merah menunjukkan apa yang perlu diperhatikan, dan tes koneksi menyebut masalah yang tepat.** Label Plex untuk judul yang diminta, nama dalam bahasa Anda, dan lebih dari 30 perbaikan. Hubungkan aplikasi lewat MCP dengan kunci yang Anda kendalikan. [Lihat yang baru](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: plugin mendengar apa yang terjadi di HolyArrs.** Mode pengembang menjalankan plugin yang sedang kamu buat, dan versi uji coba memungkinkan beberapa orang mencobanya lebih dulu. [Lihat yang baru](https://holyarrs.com/whats-new/)
 
 > Setiap poster, trailer, dan skor di HolyArrs kamu berasal dari server yang saya jalankan dan bayar sendiri, supaya tetap gratis untuk semua orang. Kalau HolyArrs membuat malam nonton kamu sedikit lebih menyenangkan, sponsor membantu menjaga semuanya tetap menyala untuk kita semua 💛
 >
@@ -374,7 +374,7 @@ Image ini tidak punya shell, jadi `docker exec -it holyarrs /bin/bash` tidak aka
 - Terkunci dari akun pemilik:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Nomor versi:

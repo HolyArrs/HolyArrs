@@ -31,8 +31,8 @@ func addUsenet(t *testing.T, s *database.Store, name, cat, shows string) int64 {
 
 // A shared SABnzbd: jobs in other apps' categories are never matched and
 // never offered in Confirm match, as Sonarr and Radarr leave other
-// categories alone. Own categories, torrent clients and a Usenet client
-// with no category of its own match as before.
+// categories alone. Own categories and a Usenet client with no category of
+// its own match as before; a torrent client's other categories do not.
 func TestUsenetOtherCategoriesNotMatched(t *testing.T) {
 	t.Parallel()
 	x := seed41(t, mediafiles.SlotDownloading, "downloading")
@@ -54,13 +54,17 @@ func TestUsenetOtherCategoriesNotMatched(t *testing.T) {
 	for _, c := range []struct {
 		id  int64
 		cat string
-	}{{sab, "holyarrs"}, {sab, "HolyArrs-TV"}, {open, "tv"}, {1, "tv"}} {
+	}{{sab, "holyarrs"}, {sab, "HolyArrs-TV"}, {open, "tv"}} {
 		if out, _, err := x.dl.MatchLinkOnly(ctx, c.id, "k-"+c.cat, "QI.XL.S24E02.720p.WEB", c.cat); err != nil || out != LinkUnsure {
 			t.Fatalf("downloader %d category %q: %q %v", c.id, c.cat, out, err)
 		}
 	}
 
-	// Rows already waiting: the other app's one is left out of the list.
+	if out, _, err := x.dl.MatchLinkOnly(ctx, 1, "k-1-tv", "QI.XL.S24E02.720p.WEB", "tv"); err != nil || out != matchOtherApp {
+		t.Fatalf("torrent client, other category: %q %v", out, err)
+	}
+
+	// Rows already waiting: the other apps' ones are left out of the list.
 	exec41(t, x.s, `DELETE FROM client_links`)
 	for _, r := range []struct {
 		id       int64
@@ -80,7 +84,7 @@ func TestUsenetOtherCategoriesNotMatched(t *testing.T) {
 	for _, m := range got.Matches {
 		names[m.Name] = true
 	}
-	if len(got.Matches) != 2 || !names["sabnzbd_nzo_b"] || !names["eeee"] || got.Counts[LinkUnsure] != 2 {
+	if len(got.Matches) != 1 || !names["sabnzbd_nzo_b"] || got.Counts[LinkUnsure] != 1 {
 		t.Fatalf("matches %v counts %v", names, got.Counts)
 	}
 
@@ -105,7 +109,7 @@ func TestOtherApp(t *testing.T) {
 		{sab, "", true},
 		{domain.Downloader{Protocol: "usenet"}, "tv", false},
 		{domain.Downloader{Protocol: "usenet", Category: "*"}, "tv", false},
-		{domain.Downloader{Protocol: "torrent", Category: "holyarrs"}, "tv", false},
+		{domain.Downloader{Protocol: "torrent", Category: "holyarrs"}, "tv", true},
 	} {
 		if got := otherApp(c.d, c.cat); got != c.want {
 			t.Errorf("%+v %q: %v", c.d, c.cat, got)

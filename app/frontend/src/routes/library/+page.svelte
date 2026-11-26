@@ -8,9 +8,9 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { audienceOf } from '#lib/ui/title-status.ts';
 	import { densityLabels, loadDensity, loadPosterSize, posterLabels, saveDensity, savePosterSize, type Density, type PosterSize } from '#lib/ui/library-art.ts';
-	import { libraryGrid, filters, kinds, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind, activeCount, filterCounts, loadColumns, loadSaved, passes, saveColumns, saveSaved, sortTitles, sortsFor, startDir, chosenColumns, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, detailLabels, flipFrom, loadPosterDetail, savePosterDetail, type PosterDetail, rememberLibraryKind, partsNow, codecLabel, copyCodecs, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
+	import { libraryGrid, filters, kinds, matchesTitleQuery, ofKind, titleQuery, type Filter, type Kind, activeCount, filterCounts, loadColumns, loadSaved, passes, saveColumns, saveSaved, sortTitles, sortsFor, startDir, chosenColumns, columnsFor, defaultSort, type Column, type FilterContext, type FilterState, type Kept, type LibKind, type SavedFilter, type SortDir, type SortKey, detailLabels, flipFrom, loadPosterDetail, savePosterDetail, loadPosterDates, savePosterDates, type PosterDetail, rememberLibraryKind, partsNow, codecLabel, copyCodecs, type CopySearchPreview, type CopySearchResult, deleteBody } from '#lib/mediafiles/index.ts';
 	import { episodeLabel, showProgress } from '#lib/shows/index.ts';
-	import { artistProgress, artistHref } from '#lib/music/index.ts';
+	import { artistProgress, artistHref, UnmatchedMusicNote } from '#lib/music/index.ts';
 	import { DlFind, searchShortcut, dlTop } from '#lib/downloads/index.ts';
 	import type { MovieCollection, CollectionDetail } from '#lib/mediafiles/index.ts';
 	import { onMount, tick, untrack } from 'svelte';
@@ -141,11 +141,13 @@
 			const el = view === 'posters' ? gridEl : listEl;
 			if (el && !reducedMotion()) el.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: DUR.base, easing: EASE.out });
 		});
-		savedViews.set(`library.view.${kind}`, v);
+		// Movies, shows and both together share one view, so a switch on one holds on the others; music keeps its own.
+		for (const k of kind === 'artist' ? (['artist'] as const) : (['all', 'movie', 'show'] as const)) savedViews.set(`library.view.${k}`, v);
 	}
 
 	let listWidth = $state(1000);
 	let columns = $state<Column[]>(columnsFor('movie'));
+	let cutIds = $state<string[]>([]);
 	$effect(() => {
 		const k = libKind;
 		const me = myId;
@@ -156,11 +158,13 @@
 	let density = $state<Density>('large');
 	let posterSize = $state<PosterSize>('m');
 	let posterDetail = $state<PosterDetail>('status');
+	let posterDates = $state(false);
 	$effect(() => {
 		const me = myId;
 		density = loadDensity(me);
 		posterSize = loadPosterSize(me);
 		posterDetail = loadPosterDetail(me);
+		posterDates = loadPosterDates(me);
 	});
 	function setDensity(d: Density) {
 		density = d;
@@ -188,13 +192,18 @@
 		posterDetail = d;
 		savePosterDetail(myId, d);
 	}
+	function togglePosterDates() {
+		posterDates = !posterDates;
+		savePosterDates(myId, posterDates);
+	}
 	const phone = $derived(listWidth < 640);
 	let listEl = $state<HTMLElement | null>(null);
 	const sizeItems = $derived<MenuItem[]>(
 		view === 'posters'
 			? [
 					{ kind: 'heading', label: tr('library.page.posterSize') }, ...(['s', 'm', 'l'] as const).map((z) => ({ label: posterLabels[z], checked: posterSize === z, onselect: () => setPosterSize(z) })),
-					{ kind: 'separator' }, { kind: 'heading', label: tr('library.page.posterDetails') }, ...(['title', 'status', 'full'] as const).map((d) => ({ label: detailLabels[d], checked: posterDetail === d, onselect: () => setPosterDetail(d) }))
+					{ kind: 'separator' }, { kind: 'heading', label: tr('library.page.posterDetails') }, ...(['title', 'status', 'full'] as const).map((d) => ({ label: detailLabels[d], checked: posterDetail === d, onselect: () => setPosterDetail(d) })),
+					{ kind: 'separator' }, { label: tr('library.page.fullDates'), checked: posterDates, onselect: togglePosterDates }
 				] as MenuItem[]
 			: [{ kind: 'heading', label: tr('library.page.bannerSize') }, ...(['large', 'comfortable', 'compact'] as const).map((d) => ({ label: densityLabels[d], checked: density === d, onselect: () => setDensity(d) }))]
 	);
@@ -330,13 +339,14 @@
 		...(!partOff('music') ? ([{ label: tr('library.page.addArtist'), icon: 'music', href: to('/search?kind=music') }] as MenuItem[]) : []),
 		...(canManage ? ([{ label: tr('library.page.importFromFolder'), icon: 'folder', href: to('/library/import') }] as MenuItem[]) : [])
 	]);
-	// Recently deleted lives in Sort & filter: its count is read when the panel opens (at most once a minute).
+	// Recently deleted sits in the top row with its count (a database count, no disk scan); read on open and again when Sort & filter opens, at most once a minute.
 	let deletedCount = $state<number | null>(null);
 	let deletedAt = 0;
 	$effect(() => {
-		if (!sortOpen || !canManage || Date.now() - deletedAt < 60_000) return;
+		void sortOpen;
+		if (!canManage || Date.now() - deletedAt < 60_000) return;
 		deletedAt = Date.now();
-		void api.get<{ files: unknown[] }>('/holding').then((r) => (deletedCount = r.files?.length ?? 0), () => {});
+		void api.get<{ count: number }>('/holding?count=1').then((r) => (deletedCount = r.count ?? 0), () => {});
 	});
 	const grouped = $derived(groupSets && kind === 'movie');
 	let selecting = $state(false);
@@ -516,6 +526,31 @@
 		const k = [...kinds][0] === 'artist' ? 'music' : [...kinds][0];
 		return folders.filter((f) => f.kind === k).map((f): MenuItem => ({ label: f.label || f.path, disabled: busy || !pickedShown.length, onselect: () => moveTitles(pickedShown.map((t) => t.id), f) }));
 	});
+	// Audio languages: the main copy of each ticked movie or show then needs them; artists are left out.
+	let audioDialog = $state<HTMLDialogElement | null>(null);
+	let audioCodes = $state('');
+	const audioIds = $derived(pickedShown.filter((t) => t.kind === 'movie' || t.kind === 'show').map((t) => t.id));
+	function askAudio() {
+		audioCodes = '';
+		audioDialog?.showModal();
+	}
+	async function setAudio() {
+		const ids = audioIds;
+		const codes = audioCodes.split(/[\s,;]+/).map((c) => c.trim().toLowerCase()).filter(Boolean);
+		busy = true;
+		let why = '';
+		const failed = await eachTitle(ids, (id) => api.put(`/titles/${id}/versions/main`, { audio_languages: codes }).catch((e) => {
+			why = message(e);
+			throw e;
+		}));
+		busy = false;
+		audioDialog?.close();
+		// A bad code fails every title the same way; say why instead of only a count.
+		if (failed && why) toasts.push(tr(`library.report.audio.${ids.length === 1 ? 'partOne' : 'partMany'}`, { ok: ids.length - failed, total: ids.length }), 'info', { body: why });
+		else report('audio', failed, ids.length);
+		await load();
+	}
+	const audioItem = $derived<MenuItem>({ label: tr('mediafiles.select.audio'), icon: 'globe', disabled: busy || !audioIds.length, onselect: askAudio });
 	// Only rules that fit every ticked title (Music rules say "music", artist titles "artist").
 	const rulesItems = $derived.by<MenuItem[]>(() => {
 		const need = new Set((pickedShown.length ? pickedShown.map((t) => t.kind) : kind === 'all' ? [] : [kind]).map((k) => (k === 'artist' ? 'music' : k)));
@@ -529,6 +564,7 @@
 		{ label: tr('mediafiles.select.stopKeeping'), icon: 'bell', disabled: busy || !pickedShown.length, onselect: () => setKeep(pickedShown.map((t) => t.id), false) },
 		{ label: tr('mediafiles.select.searchNow'), icon: 'search', disabled: busy || !pickedShown.length, onselect: () => searchTitles(pickedShown.map((t) => t.id)) },
 		...(kind === 'movie' ? ([{ label: tr('mediafiles.select.findCopy'), icon: 'copy', disabled: busy || !copyPicks.length, onselect: reviewCopies }] as MenuItem[]) : []),
+		...(kind === 'artist' ? [] : [audioItem]),
 		...(rulesItems.length ? ([{ kind: 'separator' }, { kind: 'heading', label: tr('mediafiles.select.quality') }, ...rulesItems] as MenuItem[]) : []),
 		...(moveItems.length > 1 ? ([{ kind: 'separator' }, { kind: 'heading', label: tr('library.page.moveTo') }, ...moveItems] as MenuItem[]) : [])
 	]);
@@ -652,7 +688,7 @@
 
 <div class="library" class:selecting>
 	<h1 class="sr-only">{kindTitle}</h1>
-	<LibraryToolbar {phone} {kind} {kindTitle} {loaded} {error} {countText} {shelfItems} sidebarCollapsed={dlTop.collapsed} {sortFilter} {view} {setView} {sizeItems} {posterSize} {density} {listWidth} {filtersOn} bind:sortOpen bind:findOpen {findWords} bind:q {syncUrl} {columns} {libKind} {setColumns} {canManage} shownCount={shown.length} {selecting} {startSelecting} {stopSelecting} {addItems}>
+	<LibraryToolbar {phone} {kind} {kindTitle} {loaded} {error} {countText} {shelfItems} sidebarCollapsed={dlTop.collapsed} {sortFilter} {view} {setView} {sizeItems} {posterSize} {density} {listWidth} {filtersOn} bind:sortOpen bind:findOpen {findWords} bind:q {syncUrl} {columns} {cutIds} {libKind} {setColumns} {canManage} shownCount={shown.length} {selecting} {startSelecting} {stopSelecting} {addItems} deletedCount={!partOff('movies') || !partOff('shows') || !partOff('music') ? deletedCount : null}>
 		{#snippet sidebarButton()}<IconButton icon="sidebar" label={tr('library.page.showSidebar')} onclick={() => dlTop.toggle()} data-testid="library-side-btn" />{/snippet}
 		{#snippet find()}<DlFind bind:term={() => q, setQ} shown={shown.length} total={kindTotal} searchKey={dlTop.searchKey} placeholder={findWords} note={loaded && !error ? countText : ''} testid="library-find" />{/snippet}
 	</LibraryToolbar>
@@ -676,14 +712,15 @@
 			{#if canManage && filter.status === 'missing' && missingCount}<span class="t-miss"><Button size="md" icon="search" disabled={searchingAll} onclick={() => missingDialog?.showModal()} data-testid="search-all-missing">{missingWhat}</Button></span>{/if}
 		</div>
 	{/if}
+	{#if canManage && (kind === 'artist' || kind === 'all') && !partOff('music')}<UnmatchedMusicNote />{/if}
 	{#if searchError && !error}<p class="search-error" role="alert"><Icon name="alert" size={16} />{plainReason(searchError).text}</p>{/if}
 
-	<LibraryList bind:this={list} {titles} {shown} {loaded} {error} {view} {kind} {libKind} {filter} {sort} {grouped} {kindTitle} {q} {filtersOn} {who} {canManage} {selecting} {picked} {lastOpenedId} {chosenCols} {density} {posterSize} {posterDetail} {seriesOfTitle} {seriesName} {phone} bind:listWidth bind:gridEl bind:listEl {progressText} {artistHref} {episodeLabel} {retryLoad} {clearFilters} {togglePick} {startSelecting} {setSort} {searchTitles} {setKeep} {refreshTitle} />
+	<LibraryList bind:this={list} {titles} {shown} {loaded} {error} {view} {kind} {libKind} {filter} {sort} {grouped} {kindTitle} {q} {filtersOn} {who} {canManage} {selecting} {picked} {lastOpenedId} {chosenCols} {density} {posterSize} {posterDetail} {posterDates} {seriesOfTitle} {seriesName} {phone} bind:listWidth bind:cutIds bind:gridEl bind:listEl {progressText} {artistHref} {episodeLabel} {retryLoad} {clearFilters} {togglePick} {startSelecting} {setSort} {searchTitles} {setKeep} {refreshTitle} />
 
-	<LibrarySelectBar {selecting} {phone} {kind} {busy} pickedCount={pickedShown.length} pickedIds={pickedShown.map((t) => t.id)} shownCount={shown.length} {allPicked} copyPicksCount={copyPicks.length} {phoneActs} {moveItems} {rulesItems} {pickAll} {setKeep} {searchTitles} {reviewCopies} {askDelete} {stopSelecting} />
+	<LibrarySelectBar {selecting} {phone} {kind} {busy} pickedCount={pickedShown.length} pickedIds={pickedShown.map((t) => t.id)} shownCount={shown.length} {allPicked} copyPicksCount={copyPicks.length} {phoneActs} {moveItems} rulesItems={rulesItems.length && kind !== 'artist' ? [...rulesItems, { kind: 'separator' }, audioItem] : rulesItems} {pickAll} {setKeep} {searchTitles} {reviewCopies} {askDelete} {stopSelecting} />
 </div>
 
-<LibraryDialogs bind:deleteDialog bind:copyDialog bind:missingDialog bind:saveDialog bind:copyPreview bind:saveName {deleteIds} {deleteWord} {busy} {missingCount} {searchingAll} {confirmDelete} {findCopies} {searchAllMissing} {saveCurrent} />
+<LibraryDialogs bind:deleteDialog bind:copyDialog bind:missingDialog bind:saveDialog bind:copyPreview bind:saveName {deleteIds} {deleteWord} {busy} {missingCount} {searchingAll} {confirmDelete} {findCopies} {searchAllMissing} {saveCurrent} bind:audioDialog bind:audioCodes audioCount={audioIds.length} {setAudio} />
 
 {#snippet sortFilter()}
 	<LibrarySortFilter {kind} {sort} {filter} {counts} {askers} {series} {subsTitles} {anyoneWatched} {loaded} {myId} {canManage} anyPart={!partOff('movies') || !partOff('shows') || !partOff('music')} {deletedCount} bind:groupSets {phone} {view} {sizeItems} foot={panelFoot} {setSort} {setFilter} {syncUrl} onclose={() => (sortOpen = false)} />

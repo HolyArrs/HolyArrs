@@ -14,7 +14,6 @@
 	"settings.health.none": "কোনো ফলাফল নেই। চালাতে আবার চেক করুন।",
 	"settings.health.since": "থেকে",
 	"settings.health.settings": "হেলথ চেক সেটিংস",
-	"settings.health.updateCheck": "নতুন HolyArrs আছে কি না দেখুন",
 	"settings.health.onlyChecks": "শুধু চেক করে। কখনো ইনস্টল করে না।",
 	"settings.health.every": "আপডেট চেক করুন প্রতি",
 	"settings.health.day": "দিন",

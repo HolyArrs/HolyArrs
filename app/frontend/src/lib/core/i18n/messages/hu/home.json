@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Válassza ki, mit kér legközelebb",
 	"home.newPopular": "Újdonságok és népszerűek",
 	"home.whatSTrending": "Ami most felkapott",
+	"home.gettingReady": "Előkészítés…",
 	"home.top10sAndComing": "Top 10-ek és hamarosan érkezők",
 	"home.whatSNext": "Mi következik",
 	"home.airDatesAndReleases": "Adásnapok és megjelenések",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Ezen a héten érkező epizódok és filmek",
 	"home.popularThisWeek": "Ezen a héten érkező népszerű megjelenések",
 	"home.peopleCheck": "Személyek ellenőrzése",
-	"home.cantReadUsers": "a felhasználólista nem olvasható"
+	"home.cantReadUsers": "a felhasználólista nem olvasható",
+	"home.joined.title": "Üdv, {name}",
+	"home.joined.find": "Keress valamit itt: {explore} vagy {search}.",
+	"home.joined.ask": "Koppints egy címnél a(z) {request} gombra, hogy megkapd. Kérhetsz:",
+	"home.joined.track": "Kövesd mindet itt: {requests}.",
+	"home.joined.noLimit": "Nincs heti korlát.",
+	"home.joined.gotIt": "Értem",
+	"home.joined.explore": "{explore} megnyitása"
 }

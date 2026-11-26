@@ -57,6 +57,17 @@ func (s *Service) adoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 	if !filepath.IsLocal(rel) || err != nil || !filepath.IsLocal(within) || !importer.InsideRealFile(root, abs) || !importer.InsideRealFile(lf.Path, abs) {
 		return f, fmt.Errorf("%w: choose a file inside this Version's folder", ErrCopyChoice)
 	}
+	if v.FolderName == "" {
+		// A flat Library folder holds every movie's files: only a file at
+		// its top that no other movie owns can be another copy.
+		owned, err := looseKnown(ctx, s.Store.Read(), lf.ID, FoldsCase(lf.Path))
+		if err != nil {
+			return f, err
+		}
+		if id, ok := owned[FolderKey(filepath.ToSlash(rel), FoldsCase(lf.Path))]; strings.Contains(filepath.ToSlash(rel), "/") || ok && id != titleID {
+			return f, fmt.Errorf("%w: choose a file of this movie, not one of another", ErrCopyChoice)
+		}
+	}
 	fi, err := os.Stat(abs)
 	if err != nil || !fi.Mode().IsRegular() || !videoExt[strings.ToLower(filepath.Ext(abs))] {
 		return f, fmt.Errorf("%w: choose an existing video file", ErrCopyChoice)

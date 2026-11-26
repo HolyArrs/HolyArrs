@@ -1,12 +1,14 @@
 package arrapi
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
+	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
@@ -53,25 +55,41 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &in) {
 		return
 	}
-	if in.TvdbID <= 0 {
-		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "send the show's TVDB id", AttemptedValue: in.TvdbID})
+	id, f, err := h.addOneSeries(ctx, in, actor(r))
+	if f != nil {
+		refuse(w, *f)
 		return
 	}
-	if in.QualityProfileID < 0 {
-		refuse(w, failure{PropertyName: "QualityProfileId", ErrorMessage: "send the Pick rules id as a number"})
-		return
-	}
-	if id, err := library.ShowByIDs(ctx, h.Store.Read(), map[string]string{"tvdb": itoa(in.TvdbID)}); err != nil {
+	if err != nil {
 		internalError(w, err)
 		return
-	} else if id != 0 {
-		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: showAlreadyAdded, AttemptedValue: in.TvdbID, ErrorCode: "AlreadyInLibrary"})
+	}
+	s, _, err := h.oneSeries(ctx, id)
+	if err != nil {
+		internalError(w, err)
 		return
+	}
+	w.Header().Set("Location", "/"+h.side+"/api/v3/series/"+itoa(id))
+	writeJSON(w, http.StatusCreated, s)
+}
+
+// addOneSeries adds one show. A refusal the app can show comes back as a
+// failure; anything else as an error.
+func (h *handler) addOneSeries(ctx context.Context, in seriesIn, by domain.Actor) (int64, *failure, error) {
+	if in.TvdbID <= 0 {
+		return 0, &failure{PropertyName: "TvdbId", ErrorMessage: "send the show's TVDB id", AttemptedValue: in.TvdbID}, nil
+	}
+	if in.QualityProfileID < 0 {
+		return 0, &failure{PropertyName: "QualityProfileId", ErrorMessage: "send the Pick rules id as a number"}, nil
+	}
+	if id, err := library.ShowByIDs(ctx, h.Store.Read(), map[string]string{"tvdb": itoa(in.TvdbID)}); err != nil {
+		return 0, nil, err
+	} else if id != 0 {
+		return 0, &failure{PropertyName: "TvdbId", ErrorMessage: showAlreadyAdded, AttemptedValue: in.TvdbID, ErrorCode: "AlreadyInLibrary"}, nil
 	}
 	folder, ok := h.folderByPath(ctx, in.RootFolderPath)
 	if !ok {
-		refuse(w, failure{PropertyName: "RootFolderPath", ErrorMessage: "no TV show Library folder has this path", AttemptedValue: in.RootFolderPath})
-		return
+		return 0, &failure{PropertyName: "RootFolderPath", ErrorMessage: "no TV show Library folder has this path", AttemptedValue: in.RootFolderPath}, nil
 	}
 	// A missing monitored counts as false, as in the old apps.
 	keep := in.Monitored != nil && *in.Monitored
@@ -92,37 +110,25 @@ func (h *handler) addSeries(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	id, _, err := shows.New(h.Library).AddShow(ctx, "tvdb:"+itoa(in.TvdbID), opt, actor(r))
+	id, _, err := shows.New(h.Library).AddShow(ctx, "tvdb:"+itoa(in.TvdbID), opt, by)
 	var dup *shows.ShowAlreadyAddedError
 	switch {
 	case errors.As(err, &dup):
-		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: showAlreadyAdded, AttemptedValue: in.TvdbID, ErrorCode: "AlreadyInLibrary"})
-		return
+		return 0, &failure{PropertyName: "TvdbId", ErrorMessage: showAlreadyAdded, AttemptedValue: in.TvdbID, ErrorCode: "AlreadyInLibrary"}, nil
 	case errors.Is(err, shows.ErrShowNeverAdd):
-		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "this show is on HolyArrs' Never-add list", AttemptedValue: in.TvdbID})
-		return
+		return 0, &failure{PropertyName: "TvdbId", ErrorMessage: "this show is on HolyArrs' Never-add list", AttemptedValue: in.TvdbID}, nil
 	case errors.Is(err, metadata.ErrShowNotFound), errors.Is(err, metadata.ErrNoTVDBKey):
-		refuse(w, failure{PropertyName: "TvdbId", ErrorMessage: "no show with this TVDB id was found", AttemptedValue: in.TvdbID})
-		return
+		return 0, &failure{PropertyName: "TvdbId", ErrorMessage: "no show with this TVDB id was found", AttemptedValue: in.TvdbID}, nil
 	case err != nil:
 		if f, ok := addFailure(err, int64(in.QualityProfileID), in.RootFolderPath); ok {
-			refuse(w, f)
-			return
+			return 0, &f, nil
 		}
-		internalError(w, err)
-		return
+		return 0, nil, err
 	}
 	if err := linkTags(ctx, h.Store, id, tagIDs(in.Tags)); err != nil {
-		internalError(w, err)
-		return
+		return 0, nil, err
 	}
-	s, _, err := h.oneSeries(ctx, id)
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	w.Header().Set("Location", "/"+h.side+"/api/v3/series/"+itoa(id))
-	writeJSON(w, http.StatusCreated, s)
+	return id, nil, nil
 }
 
 // addFailure turns a Library refusal of the folder or Pick rules into a
@@ -158,7 +164,24 @@ func (h *handler) putSeries(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	by := actor(r)
+	if f, err := h.putSeriesOne(ctx, t, in, actor(r)); f != nil {
+		refuse(w, *f)
+		return
+	} else if err != nil {
+		internalError(w, err)
+		return
+	}
+	s, _, err := h.oneSeries(ctx, t.ID)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusAccepted, s)
+}
+
+// putSeriesOne applies the changes in to one show. A refusal the app can show
+// comes back as a failure.
+func (h *handler) putSeriesOne(ctx context.Context, t mediafiles.Title, in seriesIn, by domain.Actor) (*failure, error) {
 	var c library.TitleChange
 	if in.Monitored != nil && *in.Monitored != t.KeepUpToDate {
 		c.KeepUpToDate = in.Monitored
@@ -168,8 +191,7 @@ func (h *handler) putSeries(w http.ResponseWriter, r *http.Request) {
 	}
 	mains, err := h.mainVersions(ctx, []int64{t.ID})
 	if err != nil {
-		internalError(w, err)
-		return
+		return nil, err
 	}
 	if p := int64(in.QualityProfileID); p > 0 && p != mains[t.ID].PickRulesID {
 		c.PickRulesID = &p
@@ -177,34 +199,25 @@ func (h *handler) putSeries(w http.ResponseWriter, r *http.Request) {
 	if c != (library.TitleChange{}) {
 		if _, err := h.Library.Edit(ctx, t.ID, c, false, by); err != nil {
 			if f, ok := addFailure(err, int64(in.QualityProfileID), in.RootFolderPath); ok {
-				refuse(w, f)
-				return
+				return &f, nil
 			}
-			internalError(w, err)
-			return
+			return nil, err
 		}
 	}
 	parts, err := database.Select[mediafiles.Part](ctx, h.Store.Read(), "parts", "title_id = ? AND kind = 'season'", t.ID)
 	if err != nil {
-		internalError(w, err)
-		return
+		return nil, err
 	}
 	for _, se := range in.Seasons {
 		for _, p := range parts {
 			if p.Number != nil && *p.Number == se.SeasonNumber && p.KeepUpToDate != se.Monitored {
 				if err := shows.New(h.Library).SetSeason(ctx, t.ID, se.SeasonNumber, se.Monitored, by); err != nil {
-					internalError(w, err)
-					return
+					return nil, err
 				}
 			}
 		}
 	}
-	s, _, err := h.oneSeries(ctx, t.ID)
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusAccepted, s)
+	return nil, nil
 }
 
 // deleteTitle takes a show or movie out of the Library. The row stays as

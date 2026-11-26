@@ -8,6 +8,11 @@ import type { ImportRecord } from './types.ts';
 import type { UsenetView } from './usenet.ts';
 import { ago, dateTime, duration, percent } from '../core/format.ts';
 import type { DownloadRow } from '../core/types.ts';
+import { historyStatus } from './sections.ts';
+import { stageOf } from './status-tabs.ts';
+
+// A failed download's whole reason: the row cuts it to fit and a tooltip is out of reach on touch.
+const failedFact = (r: DownloadRow, im: ImportRecord | undefined): Fact | null => (stageOf(r) === 'failed' ? { k: say('downloads.fact.status'), v: historyStatus(r, im).text, tid: 'dl-info-status', wrap: true } : null);
 
 export type PaneTab = (typeof TORRENT_TABS)[number] | (typeof USENET_TABS)[number];
 
@@ -17,7 +22,7 @@ export type TFile = { index: number; name: string; size: number; progress: numbe
 export type Tracker = { url: string; tier: number; status: string; message: string; seeds: number; peers: number; next_check: number; fixed?: boolean; ref?: string };
 export type Peer = { address: string; client: string; progress: number; speed: number; up_speed: number; country: string };
 export type Det = { id: number; detail?: Detail; files?: TFile[]; filesErr?: string; trackers?: Tracker[]; peers?: Peer[]; swarmErr?: string; usenet?: UsenetView; usenetErr?: string };
-export type Fact = { k: string; v: string; tid?: string; path?: boolean };
+export type Fact = { k: string; v: string; tid?: string; path?: boolean; wrap?: boolean };
 
 // The detail tabs follow the download's kind: a torrent has peers and trackers, a Usenet job its servers. Usenet steps sit at the top of its Log.
 export const TORRENT_TABS = ['Info', 'Files', 'Peers', 'Trackers', 'Log'] as const;
@@ -52,7 +57,7 @@ export const TRACKER_WORD: Record<string, string> = {
 // Panel reads never show the server's own words, only a calm line and Retry.
 export const calmErr = () => say('downloads.pf.calm');
 
-export function infoGroups(r: DownloadRow, d: Detail | undefined): { cap: string; rows: Fact[] }[] {
+export function infoGroups(r: DownloadRow, d: Detail | undefined, im?: ImportRecord): { cap: string; rows: Fact[] }[] {
 	const t = d?.torrent;
 	const speed = t?.speed ?? r.speed ?? 0;
 	const up = t?.up_speed ?? r.up_speed ?? 0;
@@ -68,8 +73,8 @@ export function infoGroups(r: DownloadRow, d: Detail | undefined): { cap: string
 	const downRow = f(say('downloads.pf.down'), speed ? `${bytes(speed)}/s` : '');
 	const upRow = f(say('downloads.pf.up'), up ? `${bytes(up)}/s` : '');
 	const transfer = seeding
-		? [ratio, uploaded, seedTime, activity, f(say('downloads.pf.size'), size ? bytes(size) : ''), upRow, downRow, f(say('downloads.pf.wasted'), t?.wasted ? bytes(t.wasted) : '')]
-		: [f(say('downloads.pf.downloaded'), got), downRow, upRow, f(say('downloads.pf.timeLeft'), eta ? duration(eta) : ''), uploaded, ratio, activity, f(say('downloads.pf.wasted'), t?.wasted ? bytes(t.wasted) : '')];
+		? [failedFact(r, im), ratio, uploaded, seedTime, activity, f(say('downloads.pf.size'), size ? bytes(size) : ''), upRow, downRow, f(say('downloads.pf.wasted'), t?.wasted ? bytes(t.wasted) : '')]
+		: [failedFact(r, im), f(say('downloads.pf.downloaded'), got), downRow, upRow, f(say('downloads.pf.timeLeft'), eta ? duration(eta) : ''), uploaded, ratio, activity, f(say('downloads.pf.wasted'), t?.wasted ? bytes(t.wasted) : '')];
 	const swarm = [f(say('downloads.facet.seeds'), t ? swarmLine(t.seeds, t.seeds_total) : ''), f(say('downloads.facet.peers'), t ? swarmLine(t.peers, t.peers_total) : ''), f(say('downloads.pf.private'), t?.private == null ? '' : t.private ? say('health.sections.yes') : say('health.sections.no'))];
 	const dates = [
 		f(say('downloads.pf.added'), dateTime(t?.added_at ?? r.started_at)),
@@ -100,7 +105,7 @@ export function usenetGroups(r: DownloadRow, d: Detail | undefined, im: ImportRe
 	const f = (k: string, v: string | false | undefined | null, tid?: string, path?: boolean): Fact | null => (v ? { k, v, tid, path } : null);
 	const done = r.progress >= 1;
 	const got = r.size ? (done ? bytes(r.size) : say('downloads.pf.of', { a: bytes((r.size * percent(r.progress)) / 100), b: bytes(r.size) })) : '';
-	const transfer = [f(done ? say('downloads.pf.size') : say('downloads.pf.downloaded'), got), f(say('downloads.pf.down'), r.speed ? `${bytes(r.speed)}/s` : ''), f(say('downloads.pf.timeLeft'), !done && r.eta ? duration(r.eta) : '')];
+	const transfer = [failedFact(r, im), f(done ? say('downloads.pf.size') : say('downloads.pf.downloaded'), got), f(say('downloads.pf.down'), r.speed ? `${bytes(r.speed)}/s` : ''), f(say('downloads.pf.timeLeft'), !done && r.eta ? duration(r.eta) : '')];
 	const dates = [f(say('downloads.pf.posted'), r.posted_at ? say('downloads.pf.ago', { age: shortAge(r.posted_at) }) : ''), f(say('downloads.pf.added'), dateTime(r.started_at)), f(say('downloads.pf.done'), dateTime(r.finished_at))];
 	const folder = im?.Plan?.find((p) => p.target_path)?.target_path || r.path;
 	const where = [f(say('downloads.pf.release'), r.name, 'dl-info-release', true), f(say('downloads.col.proto'), d?.downloader || r.downloader), f(say('downloads.col.category'), r.category), f(say('downloads.pf.folder'), folder, undefined, true), f(say('downloads.col.requested'), shownPerson(d?.requested_by || r.requested_by), 'dl-info-asker')];

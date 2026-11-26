@@ -10,10 +10,12 @@ type Bits = Pick<DownloadRow, 'phase' | 'state' | 'progress' | 'text'> &
 
 /** The message key that shows each problem's words in the picked language. */
 export const PROBLEM_KEY: Record<string, string> = {
+	'waiting for files': 'downloads.problem.waitingForFiles',
 	'import blocked': 'downloads.problem.importBlocked',
 	'missing articles': 'downloads.problem.missingArticles',
 	'no full copy': 'downloads.problem.noFullCopy',
 	'no peers': 'downloads.problem.noPeers',
+	'downloader stopped': 'downloads.problem.downloaderStopped',
 	'repair needed': 'downloads.problem.repairNeeded',
 	repairing: 'downloads.step.repairing',
 	'tracker error': 'downloads.tracker.error',
@@ -25,6 +27,8 @@ export const PROBLEM_KEY: Record<string, string> = {
 export function problem(r: Bits): Problem | null {
 	const stage = stageOf(r);
 	if (stage === 'done' || stage === 'paused') return null;
+	// The importer retries automatically while a finished download's files arrive.
+	if (r.phase === 'waiting_to_import' && r.text?.startsWith('Waiting for the files to arrive;')) return { text: 'waiting for files', tone: 'wait' };
 	const failed = stage === 'failed';
 	if (protocolOf(r) === 'usenet') {
 		// SABnzbd and NZBGet fail or warning lines, already in plain words.
@@ -37,6 +41,8 @@ export function problem(r: Bits): Problem | null {
 	if (r.phase === 'import_refused' || stage === 'decide') return { text: 'import blocked', tone: 'fail' };
 	if (r.tracker_problem === 'error') return { text: 'tracker error', tone: 'fail' };
 	if (r.tracker_problem === 'announce') return { text: 'no tracker reply', tone: 'wait' };
+	// Every download on the Downloader stopped together: its connection, not this Release.
+	if (stage === 'stalled' && /^every download on this downloader stopped/i.test(r.text ?? '')) return { text: 'downloader stopped', tone: 'wait' };
 	// A season pack taken a few episodes at a time leaves the other files unwanted on purpose, so copies and peers say nothing.
 	const getting = (stage === 'downloading' || stage === 'stalled') && !partialPack(r);
 	if (getting && typeof r.availability === 'number' && r.availability < 1) return { text: 'no full copy', tone: stage === 'stalled' ? 'fail' : 'wait' };

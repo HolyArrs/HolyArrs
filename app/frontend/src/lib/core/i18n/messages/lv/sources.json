@@ -85,5 +85,21 @@
 	"sources.uses.auto": "meklē pats",
 	"sources.uses.feed": "jaunāko saraksts",
 	"sources.uses.hand": "meklēšana ar roku",
-	"sources.uses.none": "netiek izmantots"
+	"sources.uses.none": "netiek izmantots",
+	"sources.bridge.removeTitle": "Noņemt {name}?",
+	"sources.bridge.find": "Atrast {name} manā tīklā",
+	"sources.bridge.noneFound": "Jūsu tīklā neatbildēja neviens {name}.",
+	"sources.bridge.keyFound": "Atslēga saņemta no {name}",
+	"sources.bridge.keyKept": "{name} neatdeva atslēgu (ieslēgta pierakstīšanās). Nokopējiet to ar Iegūt atslēgu.",
+	"sources.bridge.keyKeptJackett": "Jackett neatdeva atslēgu (tam ir administratora parole). Nokopējiet to ar Iegūt atslēgu.",
+	"sources.bridge.notReached": "Neizdevās sasniegt {name}.",
+	"sources.bridge.brings.title": "Kas tiek pārnests",
+	"sources.bridge.brings.sites": "Tā indeksētāji, kā Avoti",
+	"sources.bridge.brings.categories": "To kategorijas",
+	"sources.bridge.brings.search": "Meklēšana notiek caur {name}",
+	"sources.bridge.brings.sync": "Izmaiņas {name} tiek pārnestas",
+	"sources.bridge.brings.stays": "Jūsu indeksētāji paliek iestatīti {name}.",
+	"sources.bridge.brings.had": "Indeksētāji jau šeit: {n}",
+	"sources.bridge.brings.hadFrom": "Importēts caur {apps}",
+	"sources.bridge.brings.keyKept": "Atstājiet atslēgu tukšu, lai izmantotu jau esošo."
 }

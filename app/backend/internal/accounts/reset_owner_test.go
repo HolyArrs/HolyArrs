@@ -3,8 +3,11 @@ package accounts
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"io"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
@@ -22,6 +25,13 @@ func TestReadNewOwner(t *testing.T) {
 		{in: "name: luis\n" + pw + ": abc\n", bad: true},
 		{in: pw + ": " + val + "\n", bad: true},
 		{in: "", bad: true},
+		// Follow-ups: the line after a name is the password as typed.
+		{in: "luis\npass:word1234\n", name: "luis", want: "pass:word1234"},
+		{in: "luis\nuser=bob is long\n", name: "luis", want: "user=bob is long"},
+		{in: "name: luis\n" + val + "\n", name: "luis", want: val},
+		{in: pw + ": " + val + "\nluis\n", name: "luis", want: val},
+		{in: string(rune(0xfeff)) + "luis\r\n" + val + "\r\n", name: "luis", want: val},
+		{in: "\n\n", bad: true},
 	}
 	for _, c := range cases {
 		n, p, err := ReadNewOwner(strings.NewReader(c.in))
@@ -34,6 +44,21 @@ func TestReadNewOwner(t *testing.T) {
 		if err != nil || n != c.name || p != c.want {
 			t.Errorf("%q: got %q %q %v", c.in, n, p, err)
 		}
+	}
+}
+
+func TestReadNewOwnerNoInput(t *testing.T) {
+	// docker exec without -i: stdin is empty, and the command says to add -it.
+	for _, in := range []string{"", "\n \r\n"} {
+		if _, _, err := ReadNewOwner(strings.NewReader(in)); !errors.Is(err, ErrNoOwnerInput) {
+			t.Errorf("%q: got %v", in, err)
+		}
+	}
+	// It stops after two lines, so a terminal that never ends input does not hang.
+	r, w := io.Pipe()
+	go func() { _, _ = w.Write([]byte("luis\na long phrase\n")) }()
+	if n, _, err := ReadNewOwner(r); err != nil || n != "luis" {
+		t.Fatalf("got %q %v", n, err)
 	}
 }
 
@@ -105,5 +130,37 @@ func TestResetOwnerClearsInvitesAndArrKeys(t *testing.T) {
 	_ = s.Read().QueryRow("SELECT count(*) FROM compat_keys").Scan(&keys)
 	if open != 0 || used != 1 || keys != 0 {
 		t.Fatalf("open=%d used=%d keys=%d, want 0 1 0", open, used, keys)
+	}
+}
+
+// stallReader gives its text, then blocks like a terminal that never sends end of input.
+type stallReader struct{ s *strings.Reader }
+
+func (r stallReader) Read(p []byte) (int, error) {
+	if r.s.Len() == 0 {
+		select {}
+	}
+	return r.s.Read(p[:1])
+}
+
+func TestReadNewOwnerStopsAfterTwoLines(t *testing.T) {
+	val := "a long phrase"
+	done := make(chan string, 1)
+	go func() {
+		n, p, err := ReadNewOwner(stallReader{strings.NewReader("luis\n" + val + "\n")})
+		done <- n + "|" + p + "|" + func() string {
+			if err != nil {
+				return err.Error()
+			}
+			return ""
+		}()
+	}()
+	select {
+	case got := <-done:
+		if got != "luis|"+val+"|" {
+			t.Fatalf("got %q", got)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("ReadNewOwner waited for end of input after the password line")
 	}
 }

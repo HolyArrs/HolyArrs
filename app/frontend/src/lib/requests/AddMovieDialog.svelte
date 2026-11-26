@@ -4,11 +4,12 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
-	import { loadChoices, saveChoices, secondVersion, builtInDefaults, gateChoices as gates, startChoices, savedDefaults, saveSearchChoice } from '../mediafiles/index.ts';
+	import { needsFolder, loadChoices, saveChoices, secondVersion, builtInDefaults, gateChoices as gates, startChoices, savedDefaults, saveSearchChoice } from '../mediafiles/index.ts';
 	import type { TitleDefaults } from '../mediafiles/index.ts';
 	import { to } from '../core/paths.ts';
 	import { api, message } from '../core/api.ts';
 	import { plainReason } from '../core/plain.ts';
+	import { session } from '../core/session.svelte.ts';
 	import type { LibraryFolder, LookupMovie, PickRulesView, TitleView } from '../core/types.ts';
 
 	// Adds a movie to the Library: folder, Pick rules, Release gate, Keep up to date, Search when added and an optional second Version. Used by Search and the title detail page; open(movie) shows it. It starts from the Movies and TV defaults.
@@ -16,12 +17,21 @@
 		folders,
 		rules,
 		gateDefault = 'released',
+		loaded = true,
+		failed = false,
+		onretry,
 		onadded
 	}: {
 		folders: LibraryFolder[];
 		rules: PickRulesView[];
 		gateDefault?: string;
-		onadded: (movie: LookupMovie, title: TitleView) => void;
+		/** False until the Library folders and Pick rules have answered, so the sheet does not say there are none while they load. */
+		loaded?: boolean;
+		/** The Library folders or Pick rules did not load: the sheet says so and offers to try again. */
+		failed?: boolean;
+		onretry?: () => void;
+		/** choose: the person picked Choose a release, so nothing searches on add and they pick the release next. */
+		onadded: (movie: LookupMovie, title: TitleView, choose: boolean) => void;
 	} = $props();
 
 	let addOpen = $state(false);
@@ -33,6 +43,8 @@
 	let gate = $state('released');
 	let keep = $state(true);
 	let searchOnAdd = $state(true);
+	// Opened from Choose a release: added without a search, then the person picks the release.
+	let choose = $state(false);
 	// A second Version, such as 4K, next to the main one.
 	let more = $state(false);
 	let moreLabel = $state('4K');
@@ -43,24 +55,35 @@
 	// The saved defaults once they are in; the sheet shows a placeholder until then.
 	let titleDefaults = $state<TitleDefaults | null>(null);
 	let ready = $state(false);
+	// Counts opens, so a late defaults answer only fills the newest open. `picked` is a
+	// $state proxy and never equals the plain title passed in, so it cannot be compared.
+	let opens = 0;
+	// The saved defaults did not answer in time, so the built-in ones are picked; the sheet says so.
+	let late = $state(false);
 
 	const movieFolders = $derived(folders.filter((f) => f.kind === 'movie'));
+	// Hands-off mode needs no Library folder: the movie only goes to the Downloader.
+	const noFolder = $derived(needsFolder(movieFolders.length, session.s.handsOff));
 	const movieRules = $derived(rules.filter((r) => !r.kinds.length || r.kinds.includes('movie')));
 
-	export async function open(m: LookupMovie) {
+	/** rulesId: the Pick rules a release check judged with, picked here too. */
+	export async function open(m: LookupMovie, opts: { choose?: boolean; rulesId?: number } = {}) {
+		const mine = ++opens;
+		choose = !!opts.choose;
 		follow = true;
 		picked = m;
 		addError = '';
 		ready = false;
 		addOpen = true;
 		const d = await savedDefaults.load();
-		if (picked !== m) return;
+		if (mine !== opens || !addOpen) return;
 		titleDefaults = d;
+		late = d === null;
 		const start = startChoices(titleDefaults, folders, rules, 'movie');
 		folderId = start.folderId;
-		rulesId = start.rulesId;
+		rulesId = opts.rulesId && movieRules.some((r) => r.id === opts.rulesId) ? opts.rulesId : start.rulesId;
 		keep = start.keep;
-		searchOnAdd = start.searchOnAdd;
+		searchOnAdd = choose ? false : start.searchOnAdd;
 		// The Release gate this browser picked last, while it is still offered.
 		const last = loadChoices();
 		gate = last.release_gate && gates.some(([g]) => g === last.release_gate) ? last.release_gate : gateDefault;
@@ -71,6 +94,14 @@
 		moreFolder = sv.library_folder_id;
 		ready = true;
 	}
+
+	// Folders that answer after the sheet opened: start from the usual folder and Pick rules then.
+	$effect(() => {
+		if (!ready || folderId || !movieFolders.length) return;
+		const start = startChoices(titleDefaults, folders, rules, 'movie');
+		folderId = start.folderId;
+		rulesId = start.rulesId;
+	});
 
 	// Another folder: the saved default Pick rules, else that folder's own, else the first offered.
 	function chooseRulesFor(fid: number) {
@@ -91,13 +122,13 @@
 				pick_rules_id: rulesId,
 				release_gate: gate,
 				keep_up_to_date: keep,
-				search_on_add: searchOnAdd,
+				search_on_add: choose ? false : searchOnAdd,
 				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : []
 			});
-			void saveSearchChoice('movie', searchOnAdd);
+			if (!choose) void saveSearchChoice('movie', searchOnAdd);
 			saveChoices({ release_gate: gate });
 			addOpen = false;
-			onadded(picked, r.title);
+			onadded(picked, r.title, choose);
 		} catch (err) {
 			addError = message(err);
 		} finally {
@@ -112,19 +143,24 @@
 		<div class="form-sk" aria-busy="true" aria-label={t('requests.add.loadingDefaults')}>{#each [0, 1, 2] as i (i)}<span class="sk sk-line" style="width: 30%; height: 11px"></span><span class="sk" style="height: 44px; border-radius: var(--r-btn); margin-bottom: 8px"></span>{/each}</div>
 	{:else if picked}
 		<form id="add-movie" class="sheet-form" onsubmit={add}>
-			{#if movieFolders.length === 0}
+			{#if late}<p class="hint" role="status">{t('requests.add.defaultsLate')}</p>{/if}
+			{#if movieFolders.length === 0 && failed}
+				<p class="notice warn failed" role="alert"><span>{t('library.import.foldersFailed')}</span><Button size="sm" onclick={() => onretry?.()}>{t('discover.titleLibrary.tryAgain')}</Button></p>
+			{:else if movieFolders.length === 0 && !loaded}
+				<div class="form-sk" aria-busy="true" aria-label={t('requests.add.loadingDefaults')}><span class="sk sk-line" style="width: 30%; height: 11px"></span><span class="sk" style="height: 44px; border-radius: var(--r-btn); margin-bottom: 8px"></span></div>
+			{:else if noFolder}
 				<p class="notice warn">
-					<Words key="requests.add.noFolder.movie" links={{ a: to('/settings/library-folders') }} linkClass="ul" />
+					<span><Words key="requests.add.noFolder.movie" links={{ a: to('/settings/library-folders') }} linkClass="ul" /></span>
 				</p>
 			{:else}
-				<div class="field">
+				{#if movieFolders.length}<div class="field">
 					<label for="folder">{t('requests.add.folder')}</label>
 					<select id="folder" class="input" bind:value={folderId} onchange={() => chooseRulesFor(folderId)}>
 						{#each movieFolders as f (f.id)}
 							<option value={f.id}>{f.label || f.path} ({f.path})</option>
 						{/each}
 					</select>
-				</div>
+				</div>{:else}<p class="hint" data-testid="hands-off-hint">{t('requests.add.handsOff')}</p>{/if}
 				<div class="field">
 					<label for="rules">{t('requests.add.rules')}</label>
 					<select id="rules" class="input" bind:value={rulesId}>
@@ -147,10 +183,10 @@
 					<input type="checkbox" bind:checked={keep} />
 					<span><b>{t('requests.add.keep')}</b><br /><span class="hint">{t('requests.addMovie.keepHint')}</span></span>
 				</label>
-				<label class="checkline">
+				{#if !choose}<label class="checkline">
 					<input type="checkbox" bind:checked={searchOnAdd} />
 					<span><b>{t('requests.add.search')}</b><br /><span class="hint">{t('requests.addMovie.searchHint')}</span></span>
-				</label>
+				</label>{/if}
 				<label class="checkline">
 					<input type="checkbox" bind:checked={more} />
 					<span><b>{t('requests.add.more')}</b><br /><span class="hint">{t('requests.addMovie.moreHint')}</span></span>
@@ -170,7 +206,7 @@
 								{/each}
 							</select>
 						</div>
-						<div class="field">
+						{#if movieFolders.length}<div class="field">
 							<label for="more-folder">{t('requests.add.moreFolder')}</label>
 							<select id="more-folder" class="input" bind:value={moreFolder}>
 								{#each movieFolders as f (f.id)}
@@ -178,7 +214,7 @@
 								{/each}
 							</select>
 							{#if moreFolder === folderId}<span class="hint">{t('requests.addMovie.sameFolder', { label: moreLabel.trim() || '4K' })}</span>{/if}
-						</div>
+						</div>{/if}
 					</fieldset>
 				{/if}
 			{/if}
@@ -191,11 +227,12 @@
 	{/if}
 	{#snippet footer()}
 		<Button variant="plain" onclick={() => (addOpen = false)}>{t('requests.add.cancel')}</Button>
-		<Button variant="primary" type="submit" form="add-movie" disabled={movieFolders.length === 0 || !ready} busy={adding}>{t('requests.add.submit')}</Button>
+		<Button variant="primary" type="submit" form="add-movie" disabled={noFolder || !ready} busy={adding}>{choose ? t('requests.add.submitChoose') : t('requests.add.submit')}</Button>
 	{/snippet}
 </Sheet>
 
 <style>
+	.failed { flex-wrap: wrap; align-items: center; justify-content: space-between; }
 	.sheet-form { display: flex; flex-direction: column; gap: 4px; }
 	.notice { display: flex; gap: 8px; margin: 0; padding: 10px 12px; border: 0; border-radius: var(--r-btn); background: var(--surface-2); font: var(--t-callout); }
 	.notice.warn { color: var(--text); }

@@ -31,6 +31,9 @@ const (
 	setupRecentFor = 24 * time.Hour
 	// settingFirstRunDone (this_app group) records that the wizard finished.
 	settingFirstRunDone = "first_run_done"
+	// settingFirstRunSkipped records that the owner skipped the rest of the wizard after the account step; it ends setup
+	// like Done (no setup proof, first-run-only routes closed) and only shows a Finish setup card until the wizard ends.
+	settingFirstRunSkipped = "first_run_skipped"
 	// setupFamily starts the family id of that setup session. A '.' never
 	// comes out of token()'s base64url, so no other family can start so; the
 	// id is kept across rotation and replaced by any later sign-in or reauth.
@@ -254,7 +257,7 @@ func (a *Auth) setupDone(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusForbidden, "only the owner finishes first-run setup")
 		return
 	}
-	ck, err := r.Cookie(CookieName)
+	ck, err := sessionCookie(r)
 	if err != nil {
 		fail(w, http.StatusForbidden, "sign in in the browser first")
 		return
@@ -262,6 +265,14 @@ func (a *Auth) setupDone(w http.ResponseWriter, r *http.Request) {
 	now := a.now()
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		if err := database.PutSetting(tx, settingsGroup, settingFirstRunDone, "1", domain.Actor{Kind: "user", ID: who.UserID}, now); err != nil {
+			return err
+		}
+		// ?skipped=1: the owner skipped the rest of setup; finishing the wizard later clears it.
+		skipped := ""
+		if r.URL.Query().Get("skipped") == "1" {
+			skipped = "1"
+		}
+		if err := database.PutSetting(tx, settingsGroup, settingFirstRunSkipped, skipped, domain.Actor{Kind: "user", ID: who.UserID}, now); err != nil {
 			return err
 		}
 		return markSetupDone(r.Context(), tx, len(setupFamily)+1, sum(ck.Value))

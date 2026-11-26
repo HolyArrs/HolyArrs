@@ -31,14 +31,16 @@ const MaxTraits = 256
 const MaxPoints = math.MaxInt32
 
 const (
-	pickMaxText   = 200
-	pickMaxNested = 64
-	pickMaxWait   = 10080
-	pickMaxAge    = 36500
+	pickMaxText    = 200
+	pickMaxNested  = 64
+	pickMaxWait    = 10080
+	pickMaxDubWait = 90
+	pickMaxAge     = 36500
 )
 
 var (
-	videoTraits       = traitSet("hevc", "ddp_audio", "web_dl", "upscaled", "dubbed_only", "hardcoded_subs", "3d", "cam", "telesync", "remux", "av1", "dv", "hdr10", "hdr10plus", "atmos")
+	videoTraits = traitSet("hevc", "ddp_audio", "web_dl", "upscaled", "dubbed_only", "hardcoded_subs", "3d", "cam", "telesync", "remux", "av1", "dv", "hdr10", "hdr10plus", "atmos",
+		"h264", "dts_audio", "truehd_audio", "dv_no_fallback")
 	musicTraits       = traitSet("cd_source", "web_source", "vinyl_source", "log_cue", "hires", "mp3", "aac", "opus", "vorbis", "flac", "alac", "single_image", "lossy_transcode", "deluxe")
 	checkSafetyTraits = traitSet("sample", "executable", "password_protected", "disc_image")
 	pickLangs         = traitSet("en", "fr", "de", "it", "es", "ru", "ja", "ko",
@@ -143,6 +145,14 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 			seen[trait] = true
 		}
 	}
+	if err := checkBlockedGroups(b.BlockedGroups); err != nil {
+		return err
+	}
+	for _, d := range b.Devices {
+		if !slices.Contains(Devices, d) {
+			return fieldErr("body.devices", "Pick devices from the list.")
+		}
+	}
 	if len(b.Tags) > pickMaxNested {
 		return fieldErr("body.tags", "List at most 64 tags.")
 	}
@@ -170,6 +180,9 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 		if limit.Min < 0 || limit.Max < limit.Min || limit.Max > 1<<50 {
 			return fieldErr("body.size_limits", "The size limit for %q needs 0 <= smallest <= largest <= 1 PiB.", step)
 		}
+		if limit.Preferred < 0 || (limit.Preferred > 0 && (limit.Preferred < limit.Min || (limit.Max > 0 && limit.Preferred > limit.Max))) {
+			return fieldErr("body.size_limits", "The preferred size for %q must sit between its smallest and largest.", step)
+		}
 	}
 	if b.Protocol.Prefer != "torrent" && b.Protocol.Prefer != "usenet" && b.Protocol.Prefer != "either" {
 		return fieldErr("body.protocol.prefer", "Prefer must be torrent, usenet or either.")
@@ -180,6 +193,9 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 	if b.Protocol.WaitMinutesUsenet < 0 || b.Protocol.WaitMinutesUsenet > pickMaxWait {
 		return fieldErr("body.protocol.wait_minutes_usenet", "The Usenet wait must be from 0 to 10080 minutes.")
 	}
+	if b.Language.WaitDays < 0 || b.Language.WaitDays > pickMaxDubWait {
+		return fieldErr("body.language.wait_days", "The language wait must be from 0 to 90 days.")
+	}
 	if len(b.Language.Wanted) > 32 {
 		return fieldErr("body.language.wanted", "List at most 32 languages.")
 	}
@@ -189,6 +205,13 @@ func CheckPickRules(name string, kinds []string, b PickRulesBody) error {
 			return fieldErr("body.language.wanted", "Unknown or repeated language %q.", lang)
 		}
 		seenLang[lang] = true
+	}
+	seenFV := map[string]bool{}
+	for _, v := range b.Language.FrenchVersions {
+		if !slices.Contains(frenchVersionChoices, v) || seenFV[v] {
+			return fieldErr("body.language.french_versions", "Unknown or repeated French version %q.", v)
+		}
+		seenFV[v] = true
 	}
 	if b.Order != "quality_then_points" && b.Order != "points_then_quality" {
 		return fieldErr("body.order", "Order must be quality_then_points or points_then_quality.")

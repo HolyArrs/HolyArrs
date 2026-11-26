@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseWarnings, facts, feedMinutesOk, keyReasons, listedName, pager, verdict, verdictTone } from './releases.ts';
+import { chooseWarnings, facts, feedMinutesOk, keyReasons, languagesOf, listedName, pager, sortReleases, sourcesOf, verdict, verdictTone } from './releases.ts';
 import type { ReleaseView } from '../core/types.ts';
 import type { SearchView } from '../core/types.ts';
 
@@ -96,5 +96,27 @@ describe('albums', () => {
 	it('warns before choosing an album Release', () => {
 		const w = chooseWarnings(rel({ gate_skipped: true, slot_ids: [1, 2, 3], album: 'Low Tide Atlas' }), undefined, true, true);
 		expect(w).toEqual(['This album is not out yet; choosing it skips that check.', 'One download fills 3 tracks of Low Tide Atlas.']);
+	});
+});
+
+describe('Choose a release filters and points sort (#539)', () => {
+	const list = [
+		rel({ id: 1, source_name: 'Usenet One', points: 10, rank: 1, read: { languages: ['fr'] } as ReleaseView['read'] }),
+		rel({ id: 2, source_name: 'Torrent Hub', points: 40, rank: 2, read: { languages: ['fr', 'en'] } as ReleaseView['read'] }),
+		rel({ id: 3, source_name: 'Torrent Hub', points: 25, passed: false, outcome: 'refused', rank: 0 }),
+		rel({ id: 4, source_name: '', points: -5, rank: 3 })
+	];
+	it('sorts by points, refused ones included, highest first', () => {
+		expect(sortReleases(list, 'points').map((r) => r.id)).toEqual([2, 3, 1, 4]);
+	});
+	it('keeps the judge order for best match', () => {
+		expect(sortReleases(list, 'best').map((r) => r.id)).toEqual([1, 2, 4, 3]);
+	});
+	it('lists each source once, A to Z, skipping blanks', () => {
+		expect(sourcesOf(list)).toEqual(['Torrent Hub', 'Usenet One']);
+	});
+	it('lists read languages, most common first', () => {
+		expect(languagesOf(list)).toEqual(['fr', 'en']);
+		expect(languagesOf([rel()])).toEqual([]);
 	});
 });

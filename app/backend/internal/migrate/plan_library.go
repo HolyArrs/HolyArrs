@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
@@ -76,14 +77,16 @@ func matchPreset(k Kind, p Profile) (string, string) {
 }
 
 func (b *builder) profiles(s *Snapshot) {
-	b.cover("quality_profiles", "custom_formats", "release_profiles", "delay_profiles", "language_profiles", "metadata_profiles")
+	b.cover("quality_profiles", "quality_sizes", "custom_formats", "release_profiles", "delay_profiles", "language_profiles", "metadata_profiles")
 	scored := map[string]bool{}
 	leftOut := map[string]string{}
 	b.snapRules = nil
+	ownRules := false
 	for i, p := range s.QualityProfiles {
 		preset, why := matchPreset(s.Kind, p)
 		key := fmt.Sprintf("pick_rules:%d:%s:%d", b.snapID, s.Kind, p.ID)
 		if rp, ok := b.importedRules(s, p, preset); ok {
+			ownRules = true
 			b.ownRulesName(rp, leftOut)
 			b.presets[b.presetKey(s.Kind, p.ID)] = rp.Name
 			b.imported[rp.Name] = true
@@ -105,6 +108,16 @@ func (b *builder) profiles(s *Snapshot) {
 		b.presets[b.presetKey(s.Kind, p.ID)] = preset
 		b.add(GroupRules, Item{Key: key, Name: b.named(p.Name), From: b.from("quality_profiles", i),
 			Detail: "becomes " + preset, Why: why, Rules: &RulesPlan{App: string(s.Kind), Profile: clip(b.named(p.Name), maxName), Preset: preset}})
+	}
+	for i, q := range s.QualitySizes {
+		switch {
+		case !slices.Contains(mediafiles.Ladder, library.QualityStep(q.Quality)):
+			b.not(GroupRules, b.from("quality_sizes", i), q.Quality+" size", "no quality step here for it")
+		case ownRules:
+			b.p.Mapped = append(b.p.Mapped, b.from("quality_sizes", i))
+		default:
+			b.not(GroupRules, b.from("quality_sizes", i), q.Quality+" size", "its profiles became ready-made Pick rules, which keep their own sizes")
+		}
 	}
 	for i, f := range s.CustomFormats {
 		switch {
@@ -217,7 +230,7 @@ func (b *builder) waitRules(s *Snapshot) {
 		what := "wait before grabbing " + tagScope(strings.Join(d.Tags, ", "))
 		switch {
 		case len(d.Tags) > 0:
-			b.not(GroupRules, from, what, "applied only to titles tagged "+clip(strings.Join(d.Tags, ", "), 100)+"; HolyArrs has no tags, so its waits ("+values+") were not imported; set them on a copy of the Pick rules if those titles need them")
+			b.not(GroupRules, from, what, "applied only to titles tagged "+clip(strings.Join(d.Tags, ", "), 100)+"; the import does not bring tags over, so its waits ("+values+") were not imported; set them on a copy of the Pick rules if those titles need them")
 			continue
 		case i != def || mediaWord(s.Kind) == "":
 			b.not(GroupRules, from, what, "HolyArrs has waits in Pick rules (prefer, Usenet and torrent minutes) but this one was not carried over: "+values+"; set them under Pick rules")
@@ -384,9 +397,9 @@ func (b *builder) addTagged(k Kind, group string, it Item, tags []string) {
 	before := len(b.items[group].Items)
 	b.add(group, it)
 	if note != "" && len(b.items[group].Items) > before {
-		check := "HolyArrs has no tags; check it before you resume it"
+		check := "the import does not bring tags over; check it before you resume it"
 		if group == GroupAlerts {
-			check = "HolyArrs has no tags; check it before you turn it on"
+			check = "the import does not bring tags over; check it before you turn it on"
 		}
 		b.not(group, it.From+".tags", clip(it.Name, 80)+" (tags: "+clip(strings.Join(tags, ", "), 100)+")", check)
 	}
@@ -646,11 +659,14 @@ func (b *builder) titleList(s *Snapshot) {
 			tp.Preset = "Standard"
 		}
 		tp.Qualities, tp.OldEpisodes = fileFacts(t.Files)
+		tp.hasFiles = len(t.Files) > 0 || num(t.Extra["track_files"]) > 0
+		tp.History, tp.App = t.History, string(s.Kind)
 		for _, se := range t.Seasons {
 			if !se.Monitored && se.Number >= 0 && se.Number < 10000 {
 				tp.SeasonsOff = append(tp.SeasonsOff, se.Number)
 			}
 		}
+		tp.EpisodesOff = t.EpisodesOff
 		gateNote := ""
 		if kind == "movie" {
 			if v := str(anyKey(t.Extra, "minimum_availability")); v != "" {
@@ -744,7 +760,7 @@ func (b *builder) titleList(s *Snapshot) {
 		b.not(GroupTitles, b.from("titles", -1)+"."+k, fmt.Sprintf("%s (on %d titles)", k, extras[k]), "no HolyArrs setting matches it; titles take HolyArrs's own defaults")
 	}
 	if tags > 0 {
-		b.not(GroupTitles, b.from("titles", -1)+".tags", fmt.Sprintf("tags on titles (%d)", tags), "HolyArrs has no tags")
+		b.not(GroupTitles, b.from("titles", -1)+".tags", fmt.Sprintf("tags on titles (%d)", tags), "the import does not bring tags over")
 	}
 	if delay != nil {
 		from := b.from("settings", -1) + ".availability_delay"
@@ -761,34 +777,5 @@ func (b *builder) titleList(s *Snapshot) {
 				b.not(GroupRules, b.from("metadata_profiles", i), mp.Name, "no imported artist uses this metadata profile")
 			}
 		}
-	}
-}
-
-func (b *builder) exclusions(s *Snapshot) {
-	b.cover("exclusions")
-	kind := map[Kind]string{Radarr: "movie", Sonarr: "show", Lidarr: "artist"}[s.Kind]
-	// A live read whose exclusions route failed says so in the reader's
-	// notes (a read kept before live reads had the backup-only note).
-	if slices.Contains(s.Notes, "the app has no exclusions list; skipped") || slices.Contains(s.Notes, "exclusion lists are read from a backup only") {
-		b.not(GroupNeverAdd, b.from("exclusions", -1), "exclusions", "they could not be read through the API; read a backup to bring them")
-	}
-	for i, e := range s.Exclusions {
-		from := b.from("exclusions", i)
-		ids := map[string]string{}
-		var key string
-		for _, src := range []string{"tmdb", "tvdb", "musicbrainz", "imdb"} {
-			if v := clip(e.IDs[src], 60); v != "" {
-				ids[src] = v
-				if key == "" {
-					key = src + ":" + v
-				}
-			}
-		}
-		if kind == "" || key == "" || (kind == "movie" && ids["tmdb"] == "") {
-			b.not(GroupNeverAdd, from, e.Name, "no id HolyArrs can match")
-			continue
-		}
-		b.add(GroupNeverAdd, Item{Key: "never_add:" + kind + ":" + key, Name: e.Name, From: from, Detail: "kept off the Library",
-			NeverAdd: &NeverAddPlan{Kind: kind, IDs: ids}})
 	}
 }

@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "העותק הטוב ביותר קודם; חבילת עונה מנצחת כשהם שווים",
 	"settings.search.preferAlways": "חבילת עונה בכל פעם שאחת עוברת את ערכת האיכות",
 	"settings.search.multi": "לקחת ריליזים עם כמה עונות",
-	"settings.search.multiHint": "ממלא כל פרק חסר בהם",
+	"settings.search.multiHint": "ממלא כל פרק חסר בהם. באיכות שווה, מנצחת ההוצאה שמכסה יותר פרקים מבוקשים",
 	"settings.search.music": "מוזיקה",
 	"settings.search.albums": "חיפוש גם אחר אלבומים חסרים",
 	"settings.search.albumsHint": "אלבומים שיצאו, חיפוש אחד לכל אחד",

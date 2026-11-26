@@ -8,10 +8,14 @@
 	"setup.fullPath": "Usa la ruta completa de la carpeta, como {path}.",
 	"setup.folderUsed": "Esta carpeta ya está en uso o está dentro de una que lo está.",
 	"setup.folderMissing": "Esa carpeta no existe. Revisa la ruta.",
-	"setup.addFolderOrOff": "Añade una carpeta o desactiva esto.",
+	"setup.addFolderOrOff": "Añade una carpeta o pulsa «Omitir por ahora».",
 	"setup.notAnswering": "HolyArrs no responde. Inténtalo de nuevo en un momento.",
 	"setup.addUserPasswordHint": "Añade el nombre de usuario y la contraseña.",
 	"setup.folders": "Carpetas",
 	"setup.downloader": "Gestor de descargas",
-	"setup.source": "Fuente"
+	"setup.source": "Fuente",
+	"setup.alertsNeedKeyOne": "Avisos: 1 necesita una clave",
+	"setup.alertsNeedKey": "Avisos: {n} necesitan una clave",
+	"setup.folderNoAccess": "HolyArrs no puede abrir esta carpeta. Revisa sus permisos.",
+	"setup.folderCantUse": "HolyArrs no puede usar esta carpeta. Revisa la ruta."
 }

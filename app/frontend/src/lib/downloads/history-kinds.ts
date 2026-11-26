@@ -110,8 +110,13 @@ export function rowTier(row: HistoryRow): Tier {
 	return best;
 }
 
-/** Who or what made an Event happen. */
-export function byWhom(e: Pick<EventRecord, 'Actor' | 'Data' | 'actor_name'>): string {
+/** Who or what made an Event happen, and the plugin it came through. */
+export function byWhom(e: Pick<EventRecord, 'Actor' | 'Data' | 'actor_name' | 'ViaPlugin'>): string {
+	const who = byWhomOnly(e);
+	return e.ViaPlugin ? say('downloads.hk.via', { who, plugin: e.ViaPlugin }) : who;
+}
+
+function byWhomOnly(e: Pick<EventRecord, 'Actor' | 'Data' | 'actor_name'>): string {
 	const d = e.Data ?? {};
 	const name = (v: unknown) => shownPerson(asActor(typeof v === 'string' ? v : Array.isArray(v) && typeof v[0] === 'string' ? v[0] : '', e.actor_name));
 	switch (e.Actor?.kind) {

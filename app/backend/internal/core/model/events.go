@@ -6,6 +6,7 @@ const (
 	EventTitleAdded       = "title_added"
 	EventTitleEdited      = "title_edited"
 	EventTitleRefreshed   = "title_refreshed"
+	EventArtworkChanged   = "artwork_changed"       // a title got new cover art in place of its old one
 	EventTitleDropped     = "title_dropped"         // the metadata source no longer knows it
 	EventGateOpened       = "gate_opened"           // a Slot moved from not_out_yet to wanted
 	EventGateClosed       = "gate_closed"           // new dates moved the gate later

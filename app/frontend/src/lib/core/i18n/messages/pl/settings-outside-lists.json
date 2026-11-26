@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Dodaj do listy wykluczeń",
 	"settings.outsideLists.showDot": "serial ·",
 	"settings.outsideLists.takeOff": "Zdejmij z listy: {name}",
-	"settings.outsideLists.empty": "Na tej liście nic jeszcze nie ma"
+	"settings.outsideLists.empty": "Na tej liście nic jeszcze nie ma",
+	"settings.outsideLists.traktSignInTitle": "Logowanie do Trakt",
+	"settings.outsideLists.traktSignInInfo": "Zaloguj się, aby czytać swoje prywatne listy Trakt i listę do obejrzenia oraz dodawać do historii oglądania to, co obejrzałeś na Trakt.",
+	"settings.outsideLists.traktSignedInAs": "Zalogowano jako {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Nie zalogowano. Czytane są tylko listy publiczne.",
+	"settings.outsideLists.traktSignIn": "Zaloguj się przez Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Na dowolnym urządzeniu otwórz <a>{url}</a> i wpisz <code>{code}</code>. Ta strona czeka, aż zatwierdzisz.",
+	"settings.outsideLists.traktDenied": "Logowanie do Trakt zostało odrzucone.",
+	"settings.outsideLists.traktExpired": "Kod wygasł. Zacznij od nowa.",
+	"settings.outsideLists.traktSignOut": "Wyloguj się z Trakt",
+	"settings.outsideLists.traktSignedIn": "Zalogowano do Trakt",
+	"settings.outsideLists.traktSignedOut": "Wylogowano z Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (potrzebny do logowania przez Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Najpierw zapisz client secret swojej aplikacji Trakt; Trakt potrzebuje go, żebyś pozostał zalogowany."
 }

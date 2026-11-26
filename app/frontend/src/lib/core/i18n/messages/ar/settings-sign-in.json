@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "هذه وحدها تستطيع أن تقول من أين جاءت الزيارة.",
 	"settings.signIn.fixToSaveOne": "أصلح سطرًا واحدًا للحفظ",
 	"settings.signIn.fixToSaveOther": "أصلح الأسطر ({n}) للحفظ",
-	"settings.signIn.localSaved": "حُفظت الشبكة المحلية"
+	"settings.signIn.localSaved": "حُفظت الشبكة المحلية",
+	"settings.signIn.forgotTitle": "هل نسيت كلمة المرور؟",
+	"settings.signIn.forgotOn": "إظهار هل نسيت كلمة المرور؟ في صفحة تسجيل الدخول",
+	"settings.signIn.forgotNote": "يحصل المالك على رمز لمرة واحدة من سجل الخادم. أوقفه إن كان الجميع يدخلون عبر الدخول الموحد. يظل أمر reset-owner يعمل.",
+	"settings.signIn.forgotShown": "هل نسيت كلمة المرور؟ مفعّل",
+	"settings.signIn.forgotHidden": "هل نسيت كلمة المرور؟ متوقف"
 }

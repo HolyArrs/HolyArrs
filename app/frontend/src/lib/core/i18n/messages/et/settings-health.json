@@ -14,7 +14,6 @@
 	"settings.health.none": "Tulemusi pole. Kontrolli uuesti, et need käivitada.",
 	"settings.health.since": "Alates",
 	"settings.health.settings": "Seisukorra kontrolli seaded",
-	"settings.health.updateCheck": "Otsi uuemat HolyArrsi",
 	"settings.health.onlyChecks": "Ainult kontrollib. Ei paigalda kunagi.",
 	"settings.health.every": "Otsi uuendusi iga",
 	"settings.health.day": "päev",

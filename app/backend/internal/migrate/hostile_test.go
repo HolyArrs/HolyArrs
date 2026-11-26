@@ -144,7 +144,7 @@ func TestHostileAnswers(t *testing.T) {
 	huge := "[" + strings.Repeat(`{"id":1},`, 2000) + `{"id":1}]`
 	srv = fakeAPI(t, "X-Api-Key", "k", map[string]any{"/api/v3/system/status": status, "/api/v3/movie": huge})
 	src := api(Radarr, srv.URL, "k")
-	src.Limits = Limits{MaxAnswer: 4096}
+	src.Limits = Limits{MaxList: 4096}
 	if _, err := Read(context.Background(), src); !errors.Is(err, ErrTooBig) {
 		t.Fatalf("huge answer: %v", err)
 	}

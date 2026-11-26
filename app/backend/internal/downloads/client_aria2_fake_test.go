@@ -37,8 +37,9 @@ type fakeAria2 struct {
 	hideFor    int    // tellStatus answers "not found" this many times
 	addError   string // a fresh add goes straight to this error code
 	addHash    string // a fresh add carries this hash instead of its own
-	capsIgnore bool   // changeGlobalOption answers OK and keeps nothing
+	capsIgnore bool   // changeOption answers OK and keeps nothing
 	cuts       int    // connections cut
+	session    string // the run id getSessionInfo answers with, new on every restart
 
 	optionFault bool // getOption answers with a fault
 }
@@ -59,6 +60,7 @@ type a2Job struct {
 	followedBy                         []string
 	following                          string
 	files                              []a2FakeFile
+	opts                               map[string]string // the options this job itself was given
 }
 
 type a2FakeFile struct {
@@ -93,6 +95,16 @@ func startAria2(t *testing.T, f *fakeAria2) string {
 		if _, ok := f.opts[k]; !ok {
 			f.opts[k] = "false"
 		}
+	}
+	// The defaults a stock aria2 reports, so a quiet answer stays quiet.
+	if _, ok := f.opts["max-download-result"]; !ok {
+		f.opts["max-download-result"] = "1000"
+	}
+	if _, ok := f.opts["save-session"]; !ok {
+		f.opts["save-session"] = "/config/aria2.session"
+	}
+	if f.session == "" {
+		f.session = "1f2e3d4c5b6a79880716253443526170ffeeddcc"
 	}
 	if f.path == "" {
 		f.path = "/jsonrpc"
@@ -202,6 +214,13 @@ func (f *fakeAria2) dispatch(method string, params []any) (any, *a2FakeFault) {
 	switch method {
 	case "aria2.getVersion":
 		return map[string]any{"version": f.version, "enabledFeatures": f.features}, nil
+	case "aria2.getSessionInfo":
+		return map[string]any{"sessionId": f.session}, nil
+	case "aria2.saveSession":
+		if f.opts["save-session"] == "" {
+			return nil, &a2FakeFault{"Filename is not given."}
+		}
+		return "OK", nil
 	case "aria2.getGlobalOption":
 		return f.opts, nil
 	case "aria2.changeGlobalOption":
@@ -254,12 +273,32 @@ func (f *fakeAria2) dispatch(method string, params []any) (any, *a2FakeFault) {
 		if f.optionFault {
 			return nil, &a2FakeFault{"No such download for GID#" + gid}
 		}
+		// aria2 copies its global options onto a job and then the ones it was given.
 		out := map[string]string{}
 		for k, v := range f.opts {
 			out[k] = v
 		}
+		for k, v := range j.opts {
+			out[k] = v
+		}
 		out["dir"] = j.dir
 		return out, nil
+	case "aria2.changeOption":
+		if v, ok := params[1].(map[string]any); ok {
+			if j.status != "active" && j.status != "waiting" && j.status != "paused" {
+				return nil, &a2FakeFault{"Cannot change option for GID#" + gid}
+			}
+			if !f.capsIgnore {
+				if j.opts == nil {
+					j.opts = map[string]string{}
+				}
+				for k, x := range v {
+					j.opts[k], _ = x.(string)
+				}
+			}
+			return "OK", nil
+		}
+		return nil, &a2FakeFault{"Illegal argument"}
 	case "aria2.forcePause", "aria2.pause":
 		if j.status != "active" && j.status != "waiting" {
 			return nil, &a2FakeFault{"GID#" + gid + " cannot be paused now"}
@@ -345,6 +384,14 @@ func (f *fakeAria2) add(method string, params []any) (any, *a2FakeFault) {
 	f.adds = append(f.adds, sent)
 	if d, ok := opts["dir"].(string); ok {
 		j.dir = d
+	}
+	for k, v := range opts {
+		if s, ok := v.(string); ok {
+			if j.opts == nil {
+				j.opts = map[string]string{}
+			}
+			j.opts[k] = s
+		}
 	}
 	if j.name != "" {
 		j.files = []a2FakeFile{{path: j.dir + "/" + j.name, length: j.total}}
@@ -447,7 +494,8 @@ func (f *fakeAria2) status(j *a2Job, keys []string) map[string]any {
 	return out
 }
 
-// restart forgets finished and removed results, as aria2 does when it starts again.
+// restart forgets finished and removed results and takes a new run id, as aria2
+// does when it starts again.
 func (f *fakeAria2) restart() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -458,6 +506,7 @@ func (f *fakeAria2) restart() {
 		}
 	}
 	f.jobs = kept
+	f.session = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 }
 
 func (f *fakeAria2) called(method string) int {

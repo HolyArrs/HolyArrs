@@ -22,6 +22,8 @@ type creds struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
 	Code     string `json:"code,omitempty"` // ignored; first run needs no code
+	// First run only: the owner's display name, saved with the account.
+	DisplayName string `json:"display_name,omitempty"`
 }
 
 func (a *Auth) owner(ctx context.Context) (int64, string, bool) {
@@ -40,6 +42,16 @@ func (a *Auth) state(w http.ResponseWriter, r *http.Request) {
 	// first save.
 	if !a.hostAllowed(r) {
 		out["host_refused"] = echoHost(r.Host)
+	}
+	if ok && (a.resetLinkOn(r.Context()) || a.envReset) {
+		out["owner_reset"] = true
+	}
+	if a.envReset {
+		out["owner_reset_env"] = true
+	}
+	// The owner exists but has not finished first-run setup: sign-in stays the setup step.
+	if ok && database.SettingOr(r.Context(), a.s.Read(), settingsGroup, settingFirstRunDone, "") != "1" {
+		out["setup_open"] = true
 	}
 	if !ok {
 		out["setup_ways"] = setupWaysNow()
@@ -62,12 +74,17 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if msg := nameProblem(c.Name); msg != "" {
+	if msg := typedNameProblem(c.Name); msg != "" {
 		fail(w, http.StatusBadRequest, msg)
 		return
 	}
 	if msg := passwordProblem(c.Password, MinPasswordLength(r.Context(), a.s.Read())); msg != "" {
 		fail(w, http.StatusBadRequest, msg)
+		return
+	}
+	display, ok := cleanDisplayName(c.DisplayName)
+	if !ok {
+		fail(w, http.StatusBadRequest, "pick a display name of up to 64 characters")
 		return
 	}
 	if _, _, exists := a.owner(r.Context()); exists {
@@ -106,6 +123,9 @@ func (a *Auth) setup(w http.ResponseWriter, r *http.Request) {
 			return errOwnerExists
 		}
 		id, err = insertUserTx(tx, &domain.User{Name: c.Name, Role: "owner", PasswordHash: h, State: "active", Perms: "[]"}, domain.System)
+		if err == nil && display != "" {
+			err = putDisplayName(r.Context(), tx, id, display)
+		}
 		if err != nil || newHost == "" {
 			return err
 		}

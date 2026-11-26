@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Batal",
 	"settings.schedules.stages": "Tahap",
 	"settings.schedules.stagesNote": "Jeda atau mulai ulang di <a>Bagian</a>.",
-	"settings.schedules.allTime": "Sepanjang waktu"
+	"settings.schedules.allTime": "Sepanjang waktu",
+	"settings.schedules.skip.nothing": "Tidak ada yang perlu dilakukan",
+	"settings.schedules.skip.plexOff": "Mati: nyalakan {setting} di {page}",
+	"settings.schedules.skip.plexNobody": "Tidak ada yang perlu dilakukan: belum ada yang menyalakan watchlist Plex-nya",
+	"settings.schedules.skip.settingOff": "Mati: nyalakan di pengaturannya",
+	"settings.schedules.skip.starting": "Dilewati: HolyArrs masih memulai",
+	"settings.schedules.took": "Butuh {time}",
+	"settings.schedules.finished": "{label} selesai",
+	"settings.schedules.nothingToDo": "{label}: tidak ada yang perlu dilakukan",
+	"settings.schedules.runFailed": "{label} gagal"
 }

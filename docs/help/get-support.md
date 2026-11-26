@@ -21,6 +21,7 @@ A support bundle is one zip with what a helper asks for first. Owners and admins
 
 | File | Holds |
 |---|---|
+| [HolyArrs Community](https://community.holyarrs.com) | Questions, setup help and ideas. |
 | `log.txt` | The newest log, with keys, tokens and passwords removed. |
 | `about.json` | Version and setup details. |
 | `doctor.txt` | The doctor report. |
@@ -40,9 +41,9 @@ Secrets are removed, but the bundle can still show folder paths and host names. 
 
 | Place | Use it for |
 |---|---|
-| [Discord](https://discord.com/invite/mthsvesKpC) | Questions and setup help. |
+| [Discord](https://discord.com/invite/mthsvesKpC) | Quick questions and chat. |
 | [GitHub Issues](https://github.com/HolyArrs/HolyArrs/issues) | Bugs you can repeat. |
-| [r/HolyArrs](https://www.reddit.com/r/HolyArrs/) | Ideas. |
+| [r/HolyArrs](https://www.reddit.com/r/HolyArrs/) | News and talk. |
 
 In your message, say what you did, what you expected and what happened. Attach the bundle, or paste the doctor output.
 

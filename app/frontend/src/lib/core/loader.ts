@@ -137,9 +137,48 @@ export function hideReconnecting(): void {
 	if (node && !node.hidden) leave(node);
 }
 
-// Retry wait that doubles each try up to 15 seconds.
+// While live updates reconnect a small pill shows and the page stays usable. Short drops (a restart,
+// a network switch) show nothing at all; the full cover comes only once reconnecting has failed for a
+// whole minute without a break, so the server is really down (Sonarr waits even longer).
+export const PILL_AFTER_MS = 2000;
+export const COVER_AFTER_MS = 60000;
+
+export interface ReconnectView { pill: (on: boolean) => void; cover: (on: boolean) => void }
+
+// Feeds live states in; 'connecting' between tries keeps the clock running, only 'live' or 'off' resets it.
+export function reconnectWatch(view: ReconnectView, wait = COVER_AFTER_MS, pillAfter = PILL_AFTER_MS): (state: string) => void {
+	let pillTimer: ReturnType<typeof setTimeout> | undefined;
+	let coverTimer: ReturnType<typeof setTimeout> | undefined;
+	let down = false;
+	let pill = false;
+	let cover = false;
+	return (state) => {
+		if (state === 'reconnecting' && !down) {
+			down = true;
+			pillTimer = setTimeout(() => {
+				pill = true;
+				view.pill(true);
+			}, pillAfter);
+			coverTimer = setTimeout(() => {
+				if (pill) view.pill((pill = false));
+				cover = true;
+				view.cover(true);
+			}, wait);
+		} else if (state === 'live' || state === 'off') {
+			if (!down) return;
+			down = false;
+			clearTimeout(pillTimer);
+			clearTimeout(coverTimer);
+			if (pill) view.pill((pill = false));
+			if (cover) view.cover((cover = false));
+		}
+	};
+}
+
+// Retry wait that doubles each try up to 10 seconds, a little shorter at random so many open
+// tabs do not all knock at the same moment when the server comes back.
 export function backoff(n: number): number {
-	return Math.min(15000, 1000 * 2 ** n);
+	return Math.round(Math.min(10000, 1000 * 2 ** n) * (0.8 + Math.random() * 0.2));
 }
 
 // Shows the nav bar only if the page stays busy past the delay, so quick moves show nothing.

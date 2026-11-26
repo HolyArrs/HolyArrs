@@ -3,13 +3,18 @@
 // never prints private key material.
 //
 //	updatekey keygen -out <dir>
+//	updatekey keygen -plain -pipe -pub <file>
 //	updatekey check -key <file> [-pass-env NAME]
-//	updatekey sign -key <file> -in <list.json> -out <list.json.minisig> [-pass-env NAME]
+//	updatekey sign -key <file> -in <file> -out <file.minisig> [-binary] [-pass-env NAME]
+//	updatekey list -version V -dist <dir> -base <url> -out <manifest.json> [-auto-safe] [-one-way] [-security] [-notes TEXT]
 //	updatekey verify -pub <file> -in <list.json> -sig <list.json.minisig>
 //
 // Signatures and the public key use minisign's format, which the app checks
 // (internal/updates). The private key file holds the key id and the ed25519
-// seed sealed with XChaCha20-Poly1305 under a scrypt key from the passphrase.
+// seed sealed with XChaCha20-Poly1305 under a scrypt key from the passphrase,
+// or is a plain key (no passphrase, see plain.go): keygen -plain -pipe writes
+// it only to stdout, for piping straight into "gh secret set", and refuses
+// when stdout is a terminal. sign reads either kind.
 package main
 
 import (
@@ -71,6 +76,8 @@ func main() {
 		err = runSign(os.Args[2:])
 	case "verify":
 		err = runVerify(os.Args[2:])
+	case "list":
+		err = runList(os.Args[2:])
 	default:
 		usage()
 	}
@@ -81,14 +88,23 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: updatekey keygen|check|sign|verify [flags]")
+	fmt.Fprintln(os.Stderr, "usage: updatekey keygen|check|sign|verify|list [flags]")
 	os.Exit(2)
 }
 
 func runKeygen(args []string) error {
 	fs := flag.NewFlagSet("keygen", flag.ExitOnError)
 	out := fs.String("out", "", "folder for update-signing.key and update-signing.pub")
+	plain := fs.Bool("plain", false, "make a key with no passphrase")
+	pipe := fs.Bool("pipe", false, "with -plain: write the private key only to stdout")
+	pubOut := fs.String("pub", "", "with -pipe: public key file to write")
 	_ = fs.Parse(args)
+	if *plain {
+		if !*pipe {
+			return errors.New("-plain needs -pipe and -pub")
+		}
+		return runKeygenPlain(*pubOut)
+	}
 	if *out == "" {
 		return errors.New("-out is required")
 	}
@@ -141,15 +157,12 @@ func runSign(args []string) error {
 	in := fs.String("in", "", "update list JSON")
 	out := fs.String("out", "", "signature file to write (list.json.minisig)")
 	passEnv := fs.String("pass-env", "", "read the passphrase from this environment variable")
+	binary := fs.Bool("binary", false, "sign a program, not a JSON list")
 	_ = fs.Parse(args)
 	if *key == "" || *in == "" || *out == "" {
 		return errors.New("-key, -in and -out are required")
 	}
-	pass, err := passphrase(*passEnv)
-	if err != nil {
-		return err
-	}
-	if err := sign(*key, pass, *in, *out); err != nil {
+	if err := signFile(*key, *passEnv, *in, *out, !*binary); err != nil {
 		return err
 	}
 	fmt.Println("Signature written to", *out)
@@ -315,16 +328,40 @@ func loadKey(path string, pass []byte) ([8]byte, ed25519.PrivateKey, error) {
 // sign writes a minisign "ED" signature of the list, checked the way the
 // app will check it before it is written.
 func sign(keyPath string, pass []byte, inPath, outPath string) error {
-	data, err := os.ReadFile(inPath)
+	id, priv, err := loadKey(keyPath, pass)
 	if err != nil {
 		return err
 	}
-	if !json.Valid(data) {
-		return errors.New("the update list is not valid JSON")
+	return signWith(id, priv, inPath, outPath, true)
+}
+
+// signFile signs with a plain key, or a sealed one opened with the passphrase.
+func signFile(keyPath, passEnv, inPath, outPath string, isList bool) error {
+	raw, err := os.ReadFile(keyPath)
+	if err != nil {
+		return err
+	}
+	if id, priv, ok := parsePlain(raw); ok {
+		return signWith(id, priv, inPath, outPath, isList)
+	}
+	pass, err := passphrase(passEnv)
+	if err != nil {
+		return err
 	}
 	id, priv, err := loadKey(keyPath, pass)
 	if err != nil {
 		return err
+	}
+	return signWith(id, priv, inPath, outPath, isList)
+}
+
+func signWith(id [8]byte, priv ed25519.PrivateKey, inPath, outPath string, isList bool) error {
+	data, err := os.ReadFile(inPath)
+	if err != nil {
+		return err
+	}
+	if isList && !json.Valid(data) {
+		return errors.New("the update list is not valid JSON")
 	}
 	h := blake2b.Sum512(data)
 	s := ed25519.Sign(priv, h[:])

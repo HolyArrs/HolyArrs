@@ -70,15 +70,26 @@ export function rememberSearch(defaults: TitleDefaults | null | undefined, kind:
 }
 
 // Keeps the promise itself so many callers share one request.
+// How long the Add box waits for the saved defaults before it uses the built-in ones.
+// Short: the defaults are fetched with the page, so a slow answer here means a busy server, and the box says it used the usual ones.
+const loadWait = 3000;
+
 export function defaultsLoader(get: (path: string) => Promise<TitleDefaults>): DefaultsLoader {
 	let kept: Promise<TitleDefaults | null> | null = null;
 	return {
 		load() {
 			if (!kept) {
-				const p = get('/settings/title-defaults').catch(() => {
-					if (kept === p) kept = null;
-					return null;
-				});
+				// A load that never answers (a stuck request on a busy server) gives up after a while, so the Add box opens on
+				// the built-in choices instead of waiting forever, and the next open asks again.
+				let timer: ReturnType<typeof setTimeout> | undefined;
+				const late = new Promise<null>((ok) => (timer = setTimeout(() => ok(null), loadWait)));
+				const p: Promise<TitleDefaults | null> = Promise.race([get('/settings/title-defaults'), late])
+					.catch(() => null)
+					.then((d) => {
+						clearTimeout(timer);
+						if (d === null && kept === p) kept = null;
+						return d;
+					});
 				kept = p;
 			}
 			return kept;

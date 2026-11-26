@@ -58,7 +58,7 @@
 		openId = $bindable(0),
 		onfail,
 		onremove,
-		ondone,
+		ondone, onsearch,
 		onact,
 		onall,
 		onlimit,
@@ -89,7 +89,7 @@
 		openId?: number;
 		onfail: (r: DownloadRow) => void;
 		onremove: (r: DownloadRow, withFiles?: boolean) => void;
-		ondone: () => void;
+		ondone: () => void; onsearch?: (slotID: number) => void;
 		onact?: (r: DownloadRow, action: ClientAction) => void;
 		onall?: (pause: boolean) => void;
 		onlimit?: () => void;
@@ -602,7 +602,7 @@
 {/if}
 </div>
 {#if openRow}
-	<DlPane r={openRow} bind:paneOpen bind:openId tab={tabNow(openRow)} ontab={(id, t) => (xtabOn[id] = t)} {pane} {importOf} {titles} {titlesReady} {watch} {busy} {decisionsOf} {ondone} {onact} {onretry} {onremove} {mayEdit} {paneMenu} {maxPane} />
+	<DlPane r={openRow} bind:paneOpen bind:openId tab={tabNow(openRow)} ontab={(id, t) => (xtabOn[id] = t)} {pane} {importOf} {titles} {titlesReady} {watch} {busy} {decisionsOf} {ondone} {onsearch} {onact} {onretry} {onremove} {mayEdit} {paneMenu} {maxPane} />
 {/if}
 </div></div>
 {#snippet morePop()}<DlMorePop {notes} {dls} {watch} />{/snippet}

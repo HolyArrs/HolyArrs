@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0：赤い点で対応が必要なものがわかり、接続テストが問題をはっきり示します。**リクエスト作品への Plex ラベル、あなたの言語での名前、30 件以上の修正。 自分で管理するキーで、MCP 経由でアプリを接続できます。[新機能を見る](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1：プラグインが HolyArrs 内の出来事を受け取ります。**開発者モードでは作成中のプラグインを実行でき、テスト版なら数人が先に試せます。 [新機能を見る](https://holyarrs.com/whats-new/)
 
 > HolyArrs のポスター、予告編、スコアはすべて、私が自分で運営し費用を払っているサーバーから届いています。だから誰でも無料で使えます。HolyArrs で映画の夜が少しでも楽しくなったなら、スポンサーになってみんなの明かりを灯し続けてください 💛
 >
@@ -374,7 +374,7 @@ docker compose up -d
 - オーナーアカウントに入れなくなったとき:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - バージョン番号:

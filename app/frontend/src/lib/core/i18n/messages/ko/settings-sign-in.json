@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "방문 출처는 이 프록시만 알려 줄 수 있습니다.",
 	"settings.signIn.fixToSaveOne": "저장하려면 1줄을 고치세요",
 	"settings.signIn.fixToSaveOther": "저장하려면 {n}줄을 고치세요",
-	"settings.signIn.localSaved": "로컬 네트워크 저장됨"
+	"settings.signIn.localSaved": "로컬 네트워크 저장됨",
+	"settings.signIn.forgotTitle": "비밀번호를 잊으셨나요?",
+	"settings.signIn.forgotOn": "로그인 페이지에 비밀번호를 잊으셨나요? 표시",
+	"settings.signIn.forgotNote": "소유자는 서버 로그에서 일회용 코드를 받습니다. 모두 싱글 사인온으로 로그인한다면 끄세요. reset-owner 명령은 계속 작동합니다.",
+	"settings.signIn.forgotShown": "비밀번호를 잊으셨나요? 켜짐",
+	"settings.signIn.forgotHidden": "비밀번호를 잊으셨나요? 꺼짐"
 }

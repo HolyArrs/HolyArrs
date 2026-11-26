@@ -6,8 +6,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/HolyArrs/holyarrs/app/backend/internal/arrapi"
-	"github.com/HolyArrs/holyarrs/app/backend/internal/updates"
 
 	"io"
 	"log"
@@ -15,10 +15,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"sync/atomic"
-	"syscall"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/alerts"
@@ -53,33 +51,6 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/startup"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
-
-// runOpts are test hooks for serve.
-type runOpts struct {
-	// wrap changes each supervised loop before it starts (tests inject crashes).
-	wrap func(jobs.Loop) jobs.Loop
-	// reg replaces the Registry (tests set short restart delays).
-	reg *jobs.Registry
-	// ready is told the Registry and the address once the server listens.
-	ready func(reg *jobs.Registry, addr string)
-	// kinds is told every Job kind with a Handler.
-	kinds func([]string)
-	// parts is told the parts Control once it is made.
-	parts func(*parts.Control)
-	// store is told the main store once it is open (tests emit Events).
-	store func(*database.Store)
-}
-
-func run(c config) error {
-	startup.UseMemoryMode()
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	err := serve(ctx, c, runOpts{})
-	if err == nil && updateRun != nil {
-		updateRun.CleanStop()
-	}
-	return err
-}
 
 // serve runs HolyArrs until ctx ends or a restart is asked for.
 func serve(ctx context.Context, c config, o runOpts) error {
@@ -174,7 +145,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if _, err := backups.ApplyStaged(c.ConfigDir); err != nil {
 		return fmt.Errorf("restore: %w", err)
 	}
-	s, err := database.Open(c.ConfigDir, database.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000)})
+	s, err := database.Open(c.ConfigDir, database.Options{OnUpdating: func() { updating.Store(true) }, CacheKiB: startup.LowMemoryPick(0, 4000), ReaderCacheKiB: startup.LowMemoryPick(0, 2000),
+		WriteCap: startup.WriteCap()})
 	if err != nil {
 		if !needsPerson(err) {
 			return err
@@ -319,6 +291,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// are checked too.
 	logFolderCheck(ctx, s.Read(), c.SavePath, c.ConfigDir)
 	hub := webserver.NewLiveHub(webserver.LiveOptions{Merge: downloads.MergePatch})
+	phooks := newPluginHooks()
+	accounts.PluginHandsOff = func() bool { return parts.HandsOff(context.Background(), s.Read()) }
+	hub.Tap(phooks.Publish)
+	srv.RegisterOnShutdown(hub.Close)
 	pools := jobs.DefaultPools
 	if c.SafeMode {
 		pools = map[jobs.Pool]int{jobs.PoolCore: jobs.DefaultPools[jobs.PoolCore]}
@@ -350,15 +326,19 @@ func serve(ctx context.Context, c config, o runOpts) error {
 			return sources.Transport(cfg), nil
 		},
 		SourceHeader: sources.FileHeaders(vault),
-		FromVault:    vault.Get}
+		FromVault:    vault.Get, PluginEngine: pluginDownloader(phooks)}
 	// Background download reader: one reader per Downloader inside the
 	// "downloads" loop; the Manager and the Downloads view read its snapshots.
 	dls := &downloads.Sync{Store: &downloads.Store{}, DB: s, Manager: dm, Lines: downloads.TorrentLines}
 	dm.Sync = dls
 	im := &importer.Importer{Store: s, Live: hub, SavePath: c.SavePath}
+	// Links placed by a path pair stay Library files after a restart.
+	if drs, err := database.Select[domain.Downloader](ctx, s.Read(), "downloaders", "1 = 1"); err == nil {
+		importer.NoteLinkPairs(drs)
+	}
 	// Safe mode holds every part's work already; it says nothing about Sources.
 	sourcesOn := func() bool { return c.SafeMode || pc.On(parts.Sources) }
-	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, HasDownloader: dm.HasDownloader, SourcesOn: sourcesOn, SendWait: 20 * time.Second, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
+	sr := &sources.Searcher{Store: s, Live: hub, Secrets: vault, Queue: q, PackReady: dm.PackReady, HasDownloader: dm.HasDownloader, SettleGone: dm.SettleGone, SourcesOn: sourcesOn, SendWait: 20 * time.Second, OnChosen: func(ctx context.Context, slotID, releaseID int64) {
 		enqueue(ctx, downloads.KindGrab, domain.Subject{Type: "slot", ID: slotID}, map[string]any{"release_id": releaseID}, downloads.GrabKey(slotID, releaseID))
 	}}
 	// A rejected Import turned its Release down: remove the Download from
@@ -461,6 +441,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	go lib.Artwork.KeepTMDBFresh(ctx)
 	lib.Shows = showMD
 	lib.EpisodeGroups = hosted.TMDB()
+	lib.OMDb, lib.TraktRatings = omdbSource(hosted), traktRatings(vault)
 	lib.AnimeNames = func(ctx context.Context, kind, tmdbID, name string) []string {
 		by := "tmdb_tv"
 		if kind == "movie" {
@@ -474,6 +455,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	lib.Artists = artistMD
 	lib.DownloadRunning = downloads.RunningTx
+	lib.UnlinkDownloads = downloads.UnlinkTitleTx
 	lib.Register(q)
 	// Once per install: grey stand-ins stored before they were refused are
 	// removed, so the picture run below fetches the real ones.
@@ -506,9 +488,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	} else if n, err := lib.RecoverRenames(ctx, domain.System); err != nil || n > 0 {
 		log.Printf("renames cut off by a stop: %d finished, error %v", n, err)
 	}
-	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBRoute: hosted.ListRoute,
-		TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MDBListBase: os.Getenv(metadata.EnvMDBListURL), MDBListSite: os.Getenv("HOLYARRS_MDBLIST_SITE_URL"),
-		TraktClient: func(ctx context.Context) (string, error) { return vault.Setting(ctx, "links", "trakt_client_id") }, MDBListKey: hosted.KeyReader(metadata.KeyMDBList)}
+	ol := &requests.OutsideLists{Store: s, Queue: q, Library: lib, Metadata: md, TMDBRoute: hosted.ListRoute, TraktAuth: traktAuth(vault), TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"),
+		MDBListBase: os.Getenv(metadata.EnvMDBListURL), MDBListSite: os.Getenv("HOLYARRS_MDBLIST_SITE_URL"), MDBListKey: hosted.KeyReader(metadata.KeyMDBList)} // TraktAuth gives the Trakt key
 	ol.Register(q)
 	q.ProbeSchedule(requests.OutsideListSync, ol.ProbeSync)
 	he := &health.Engine{Store: s, Version: version, UnreadUserLists: func(ctx context.Context) map[string]string { return accounts.UnreadUserLists(ctx, s.Read()) }, ConfigUnmapped: unmapped, ConfigDir: c.ConfigDir, Publish: func(topic string, data any) { hub.Publish(topic, data) },
@@ -520,6 +501,12 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// History clean-up: once a day, old Events past their keep time.
 	q.Handle(database.KindCleanHistory, func(ctx context.Context, r *jobs.Run) error {
 		n, err := s.PruneEvents(ctx, database.ReadHistoryKeep(ctx, s.Read()), time.Now().UTC())
+		r.SetResult(map[string]any{"removed": n})
+		return err
+	})
+	// Old search results: once a day, Releases nothing needs.
+	q.Handle(sources.KindCleanReleases, func(ctx context.Context, r *jobs.Run) error {
+		n, err := sources.PruneReleases(ctx, s, time.Now().UTC())
 		r.SetResult(map[string]any{"removed": n})
 		return err
 	})
@@ -536,7 +523,7 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		if w := watchlists.Load(); w != nil {
 			return w.Run(ctx, r)
 		}
-		r.SetResult(map[string]any{"skipped": "still starting"})
+		r.SetResult(map[string]any{"skipped": "starting"})
 		return nil
 	})
 	q.ProbeSchedule(requests.KindPlexWatchlists, func(ctx context.Context, now time.Time) (bool, any, error) {
@@ -596,7 +583,10 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 		return err
 	}})
+	optional(jobs.Loop{Name: "watch_folders", Label: "Watched folders", Every: importer.WatchEvery, Deadline: time.Hour, Run: im.WatchPass})
 	optional(jobs.Loop{Name: "gates", Label: "Release gates", Every: time.Minute, Run: lib.GatesPass})
+	optional(jobs.Loop{Name: "omdb_scores", Label: "IMDb, Rotten Tomatoes and Metacritic scores", Every: library.OMDbEvery, Run: lib.OMDbPass})
+	optional(jobs.Loop{Name: "trakt_ratings", Label: "Trakt ratings", Every: library.TraktEvery, Run: lib.TraktPass})
 	sso, err := accounts.SSOFromEnv(c.URLBase)
 	if err != nil {
 		return err
@@ -634,10 +624,19 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		return nil
 	}
 	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) }}
+	var pluginEvents atomic.Pointer[plugins.Engine] // set once the plugins start below
+	sender.Tap = func(m alerts.Message) { tellPlugins(pluginEvents.Load(), m) }
 	sender.Watch(ctx)
-	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode, Asked: requests.AskedForLabels(s)}
+	sender.WatchPlugins(ctx, func(ev string, id int64, p alerts.Payload) {
+		if pe := pluginEvents.Load(); pe != nil {
+			pe.DeliverEvent(ev, id, p)
+		}
+	})
+	media := &mediaservers.Linker{Store: s, Vault: vault, Paused: c.SafeMode, Asked: requests.AskedForLabels(s),
+		Langs: mediaservers.TrackLanguages{Norm: subtitles.NormLanguage, Match: subtitles.LangMatches, Three: subtitles.ThreeLetter}, Trakt: ol.TraktAuth}
 	reg.AlsoWait(func() { media.Stop(); media.Wait() })
-	au.SetMediaLinks(accounts.MediaLinks{Servers: media.LinkServers, Accounts: media.ServerAccounts, Linked: media.ReadWatchHistorySoon})
+	au.SetMediaLinks(accounts.MediaLinks{Servers: media.LinkServers, Accounts: media.ServerAccounts, Linked: media.ReadWatchHistorySoon,
+		Forget: func(ctx context.Context, kind string) error { return mediaservers.RemoveKind(ctx, s, vault, kind) }})
 	reg.AlsoWait(he.Wait)
 	if !c.SafeMode {
 		media.Watch(ctx)
@@ -651,7 +650,8 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}})
 	// People removed on the server are turned off; history only while it is on.
 	optional(jobs.Loop{Name: "watch_history", Label: "Watch history read", Every: 30 * time.Minute, Run: media.CheckPeopleAndHistory})
-	optional(jobs.Loop{Name: "plex_labels", Label: "Plex labels", Every: 15 * time.Minute, Run: media.LabelPass}) // only while the owner keeps it on
+	optional(jobs.Loop{Name: "plex_labels", Label: "Plex labels", Every: 15 * time.Minute, Run: media.LabelPass})        // only while the owner keeps it on
+	optional(jobs.Loop{Name: "default_tracks", Label: "Default tracks", Every: 15 * time.Minute, Run: media.TracksPass}) // only while the owner keeps it on
 	defer sender.Wait()
 	requestsSvc := &requests.Service{Store: s, Library: lib, Metadata: md, Alerts: sender, Live: hub}
 	readyCheck.Store(requestsSvc)
@@ -695,11 +695,17 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// the hosted music source answers from them first.
 	pkgs, own := &music.PackageSync{Store: s, Source: hosted.Service}, ownExtras(hosted)
 	hosted.Service.SetLocalMusic(pkgs)
-	a := buildHandlers(services{Plugins: startPlugins(ctx, c), Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
+	// Plugins stop before run returns, so none outlives HolyArrs (also in
+	// safe mode, where one can still be started by hand).
+	pe := startPlugins(ctx, c, key, version, phooks, sender)
+	pluginEvents.Store(pe)
+	defer pe.StopAll()
+	langs := newLanguages(c, pe, func() bool { return accounts.HasOwner(ctx, s.Read()) })
+	a := buildHandlers(services{Plugins: pe, PluginHooks: phooks, Languages: langs, Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,
 		Secrets: vault, TraktBase: os.Getenv("HOLYARRS_TRAKT_URL"), MetadataUp: metadataUp(hosted), MetadataModes: hosted.Modes, MetadataTest: hosted.TestKey, MetadataEnvKey: hosted.OwnKey, ServiceTop: hosted.Service.ServiceTop, TrailerPick: func(ctx context.Context, kind, id, lang string) (string, error) {
 			t, err := hosted.Service.TrailerPick(ctx, kind, id, lang)
 			return t.Key, err
-		}, AnimeMap: hosted.Service.AnimeMap, ExtraArt: metadata.ModeArt(hosted.Modes, hosted.Service.Art, own.Art), ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: metadata.ModeRatings(hosted.Modes, hosted.Service.Ratings, own.Ratings), CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: requestsSvc, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
+		}, AnimeMap: hosted.Service.AnimeMap, ExtraArt: metadata.ModeArt(hosted.Modes, hosted.Service.Art, own.Art), ImageBase: hosted.Service.Base() + "/v1/img", MusicControl: hosted.Service.Control, ArtistVideos: hosted.Service.ArtistVideos, ExtraRatings: phooks.WithPluginRatings(metadata.ModeRatings(hosted.Modes, hosted.Service.Ratings, own.Ratings)), CountryCount: hosted.Gate.SetCountryCount, WikiTitle: hosted.Service.WikiTitle, WikiPerson: hosted.Service.WikiPerson, AwardWinners: hosted.Service.AwardWinners, Alerts: sender, Asks: requestsSvc, Watchlists: plexWatch, Search: sr, Downloads: dm, DLSync: dls, Health: he, Updates: uc, Media: media, Subtitles: subs, States: reg, SafeMode: c.SafeMode, Parts: pc, ExitApp: exitApp, Mover: mover,
 		Log: applogs, ConfigDir: c.ConfigDir, SavePath: c.SavePath, URLBase: c.URLBase, Deps: ownPictures(musicDeps(hosted.Service, serverDeezer, serverDeezerAlbum, serverBio), hosted, version)})
 	// "Count this install" rides on every request to the metadata server.
 	a.ApplyCountryCount(ctx)
@@ -730,6 +736,9 @@ func serve(ctx context.Context, c config, o runOpts) error {
 		}
 	})
 	pc.Start(ctx)
+	// The first start of a new version brings the language packs up to date
+	// before the app opens, so people keep seeing their language.
+	keepLanguages(ctx, langs, func() []string { return accounts.AccountLanguages(ctx, s.Read()) })
 	swap.set(routes(a, c))
 	log.Printf("holyarrs %s: config %s, listening on %s%s", version, c.ConfigDir, ln.Addr(), c.URLBase)
 	if o.ready != nil {
@@ -756,6 +765,10 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-healthcheck" {
 		os.Exit(healthcheckCmd())
 	}
+	if len(os.Args) > 1 && (os.Args[1] == "help" || os.Args[1] == "--help" || os.Args[1] == "-h") {
+		printHelp(os.Stdout)
+		return
+	}
 	// FILE__, UMASK and PUID/PGID come first, for the server and for every
 	// command that opens the database, so a root docker exec never leaves
 	// root-owned files. Started as root on Linux this restarts as PUID:PGID.
@@ -763,20 +776,8 @@ func main() {
 		log.Printf("holyarrs: %v", err)
 		os.Exit(1)
 	}
-	if len(os.Args) > 1 && os.Args[1] == "reset-owner" {
-		os.Exit(resetOwner(os.Args[2:]))
-	}
-	if len(os.Args) > 1 && os.Args[1] == "restore" {
-		os.Exit(restoreCmd(os.Args[2:], os.Stdout, os.Stderr))
-	}
-	if len(os.Args) > 1 && os.Args[1] == "import-secrets" {
-		os.Exit(importSecrets(os.Args[2:], os.Stdout, os.Stderr))
-	}
-	if len(os.Args) > 1 && os.Args[1] == updates.CheckCommand {
-		os.Exit(updateCheckCmd(os.Args[2:], os.Stderr))
-	}
-	if len(os.Args) > 1 && os.Args[1] == "doctor" {
-		os.Exit(doctorCmd(os.Args[2:], os.Stdout, os.Stderr))
+	if code, ok := subcommand(os.Args[1:]); ok {
+		os.Exit(code)
 	}
 	c, err := parseFlags(os.Args[1:], os.Stderr)
 	if err != nil {

@@ -36,5 +36,7 @@
 	"settings.move.undoId": "இறக்குமதி {id} ஐச் செயல்தவிர்க்கவா?",
 	"settings.move.undoQuestion": "இந்த இறக்குமதியைச் செயல்தவிர்க்கவா?",
 	"settings.move.undoNote": "இந்த இறக்குமதி சேர்த்ததை நீக்கும்; பின்னர் நீங்கள் செய்த மாற்றங்கள் இருக்கும். வேண்டுமெனில் முதலில் அறிக்கையைப் பதிவிறக்குங்கள்.",
-	"settings.move.undoMove": "இறக்குமதியைச் செயல்தவிர்"
+	"settings.move.undoMove": "இறக்குமதியைச் செயல்தவிர்",
+	"settings.move.continueSetup": "அமைப்பைத் தொடரவும்",
+	"settings.move.backToChoose": "தேர்வுக்குத் திரும்பு"
 }

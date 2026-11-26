@@ -109,7 +109,7 @@ func (c *CardArt) Fill(r *http.Request, items []ItemView) {
 	if c.Metadata != nil {
 		FillText(r, c.Metadata(), items)
 	}
-	lang := metadata.TrailerLanguage(r)
+	lang := metadata.TextLanguage(r)
 	c.NoteLang(lang)
 	var keys [][2]string
 	for _, v := range items {
@@ -161,7 +161,7 @@ func (c *CardArt) langsAsked() []string {
 // "kind:tmdb id". Titles without a pick are queued for the paced filler
 // (no outside call on the request).
 func (c *CardArt) Library(r *http.Request, titles []mediafiles.Title) map[string]metadata.CardArt {
-	lang := metadata.TrailerLanguage(r)
+	lang := metadata.TextLanguage(r)
 	c.NoteLang(lang)
 	var keys [][2]string
 	var items []engine.Item

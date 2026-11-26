@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appName, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, doneLook, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, noFolderCount, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, seasonsShows, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, usedByMoves, type Plan, type Report } from './move.ts';
+import { appName, browsable, progressWords, hostOf, instanceKey, latestPerInstance, asStep, buckets, chooseHint, cleanPath, cleanRules, countWord, countWords, doneLook, extraProblems, folderOutcome, folderProblem, LEAVE, leaveFolders, moveCounts, moveStateWord, moveTotal, needsGroups, noFolderCount, OTHER, placeholderFor, resultWords, ruleProblem, rulesFrom, running, seasonsShows, setChoice, sharedTargets, stepGate, summary, tone, unseenFolder, usedByMoves, type Plan, type Report } from './move.ts';
 
 describe('seasonsShows', () => {
 	it("lists every show found only by the old app's TMDB number, by its name here with the old name beside it", () => {
@@ -295,5 +295,59 @@ describe('usedByMoves', () => {
 		// Read 8 was removed after Import 4 and its number given to a new read.
 		const m = usedByMoves(moves, [snap(7, '2026-11-12T09:00:00Z'), snap(8, '2026-11-13T08:00:00Z')]);
 		expect([m.get(7), m.get(8)]).toEqual([4, undefined]);
+	});
+});
+
+describe('usableHits', () => {
+	it('keeps only network hits for apps this dialog can add, so Use never fills an address under another app', async () => {
+		const { usableHits } = await import('./move.ts');
+		const hits = [{ kind: 'radarr', address: 'http://a:7878' }, { kind: 'bazarr', address: 'http://b:6767' }];
+		expect(usableHits(hits, ['radarr', 'sonarr'])).toEqual([hits[0]]);
+	});
+});
+
+describe('listNames', () => {
+	it('joins names the way the language does', async () => {
+		const { listNames } = await import('./move.ts');
+		expect(listNames(['Sonarr', 'Radarr', 'Plex'], 'en')).toBe('Sonarr, Radarr, and Plex');
+		expect(listNames(['Sonarr', 'Radarr'], 'de')).toBe('Sonarr und Radarr');
+	});
+});
+
+describe('splitHits', () => {
+	const hits = [
+		{ kind: 'lidarr', address: 'http://l:8686' },
+		{ kind: 'radarr', address: 'http://r:7878' },
+		{ kind: 'sonarr', address: 'http://s:8989' }
+	];
+	it('lists the picked app first and folds the rest', async () => {
+		const { splitHits } = await import('./move.ts');
+		expect(splitHits(hits, 'radarr')).toEqual({ mine: [hits[1]], others: [hits[0], hits[2]] });
+	});
+	it('re-sorts for a new pick without a new search', async () => {
+		const { splitHits } = await import('./move.ts');
+		expect(splitHits(hits, 'sonarr').mine).toEqual([hits[2]]);
+	});
+	it('leaves mine empty when the picked app did not answer', async () => {
+		const { splitHits } = await import('./move.ts');
+		expect(splitHits(hits, 'prowlarr')).toEqual({ mine: [], others: hits });
+	});
+});
+
+describe('progressWords', () => {
+	it.each([
+		['120 of 1550 imported', '120 of 1550'],
+		['120 of 1550 imported wait 600 1', '120 of 1550 The metadata server is busy. HolyArrs tries the last 1 again in 10 min.'],
+		['3 of 3 imported wait 0 0', '3 of 3'],
+		['Reading Sonarr', 'Reading Sonarr']
+	])('%s', (note, want) => {
+		expect(progressWords(note)).toBe(want);
+	});
+});
+
+describe('browsable', () => {
+	it('links a key page only for a host a browser can open, never a bare Docker name', () => {
+		expect(['10.10.25.25', 'radarr.example.lan', 'localhost', '[::1]'].map(browsable)).toEqual([true, true, true, true]);
+		expect(['radarr', 'seerr', ''].map(browsable)).toEqual([false, false, false]);
 	});
 });

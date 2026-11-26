@@ -8,10 +8,14 @@
 	"setup.fullPath": "Podaj pełną ścieżkę folderu, na przykład {path}.",
 	"setup.folderUsed": "Ten folder jest już używany albo leży w folderze, który jest używany.",
 	"setup.folderMissing": "Ten folder nie istnieje. Sprawdź ścieżkę.",
-	"setup.addFolderOrOff": "Dodaj folder albo wyłącz tę opcję.",
+	"setup.addFolderOrOff": "Dodaj folder lub naciśnij „Pomiń na razie”.",
 	"setup.notAnswering": "HolyArrs nie odpowiada. Spróbuj za chwilę.",
 	"setup.addUserPasswordHint": "Dodaj nazwę użytkownika i hasło.",
 	"setup.folders": "Foldery",
 	"setup.downloader": "Downloader",
-	"setup.source": "Źródło"
+	"setup.source": "Źródło",
+	"setup.alertsNeedKeyOne": "Powiadomienia: 1 potrzebuje klucza",
+	"setup.alertsNeedKey": "Powiadomienia: {n} potrzebuje klucza",
+	"setup.folderNoAccess": "HolyArrs nie może otworzyć tego folderu. Sprawdź jego uprawnienia.",
+	"setup.folderCantUse": "HolyArrs nie może użyć tego folderu. Sprawdź ścieżkę."
 }

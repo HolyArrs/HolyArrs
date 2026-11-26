@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Заявки",
 	"settings.appearance.colRate": "На ред",
 	"settings.appearance.noRows": "Още няма отчетени редове в „Разгледай“.",
+	"settings.appearance.rowStats": "Редове в „Разгледай“",
+	"settings.appearance.rowStatsDesc": "Отваряния и заявки за всеки ред за последните 30 дни, общо за всички. Броят се само на този сървър.",
+	"settings.appearance.colRow": "Ред",
+	"settings.appearance.row.because_have": "Като заглавия, които имаш",
+	"settings.appearance.row.because_asked": "Като твоите заявки",
+	"settings.appearance.row.person": "Още от човек",
+	"settings.appearance.row.genre": "Избрано по жанр за теб",
+	"settings.appearance.row.popular_genre": "Популярни по жанр",
+	"settings.appearance.row.popular_decade": "Популярни по десетилетие",
+	"settings.appearance.row.decade": "По десетилетие",
+	"settings.appearance.row.mood": "По настроение",
+	"settings.appearance.row.hero": "Горен банер",
 	"settings.appearance.motion": "Движение",
 	"settings.appearance.motionNote": "Следва настройката на устройството за намалено движение"
 }

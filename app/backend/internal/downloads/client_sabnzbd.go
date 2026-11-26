@@ -23,13 +23,18 @@ var ErrNoCategory = errors.New("the category does not exist in SABnzbd; add it t
 
 var errSabNo = errors.New("sabnzbd said no")
 
+// errNoMode means the address has no such API call; SAB-like apps lack some.
+var errNoMode = errors.New("no API at this address")
+
 var trailLink = regexp.MustCompile(`\s+-\s+https?://\S+$`)
 
 // Sabnzbd is a Client for the SABnzbd HTTP API.
 type Sabnzbd struct {
-	base string
-	key  string
-	http *http.Client
+	base  string
+	key   string
+	http  *http.Client
+	meter sabMeter
+	now   func() time.Time // nil is time.Now
 }
 
 type sabQueue struct {
@@ -83,7 +88,9 @@ func NewSabnzbd(base, key string, h *http.Client) *Sabnzbd {
 
 // Health reports whether SABnzbd answers and accepts the key.
 func (s *Sabnzbd) Health(ctx context.Context) (Health, error) {
-	b, err := s.call(ctx, "version", nil, false)
+	// SABnzbd answers version without a key, but SAB-like apps want it on
+	// every call, and SABnzbd does not mind it.
+	b, err := s.call(ctx, "version", nil, true)
 	if err != nil {
 		return Health{}, err
 	}
@@ -102,6 +109,9 @@ func (s *Sabnzbd) Health(ctx context.Context) (Health, error) {
 // HasCategory reports whether cat exists in SABnzbd.
 func (s *Sabnzbd) HasCategory(ctx context.Context, cat string) (bool, error) {
 	b, err := s.call(ctx, "get_cats", nil, true)
+	if errors.Is(err, errNoMode) {
+		return true, nil // a SAB-like app with no category list; let the add decide
+	}
 	if err != nil {
 		return false, err
 	}
@@ -311,7 +321,7 @@ func (s *Sabnzbd) do(req *http.Request, mode string) ([]byte, error) {
 	}
 	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized {
 		line := strings.TrimSpace(string(b))
-		if line == "" || strings.Contains(line, "API Key") {
+		if line == "" || strings.Contains(line, "API Key") || strings.Contains(line, "Not Authorised") {
 			return nil, ErrAuth
 		}
 		switch {
@@ -323,7 +333,7 @@ func (s *Sabnzbd) do(req *http.Request, mode string) ([]byte, error) {
 		return nil, fmt.Errorf("sabnzbd refused the call (%s)", resp.Status)
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("sabnzbd %s: no API at this address", mode)
+		return nil, fmt.Errorf("sabnzbd %s: %w", mode, errNoMode)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		if e := doctor.Answer(resp.StatusCode, b); e != nil {
@@ -361,8 +371,8 @@ func (x sabHistorySlot) job() Job {
 	case "Completed":
 		j.State, j.Progress = StateFinished, 1
 		j.DoneAt = x.Completed
-		j.ContentPath = x.Storage
-		j.SavePath = parentDir(x.Storage)
+		j.ContentPath = jobFolder(x.Storage, x.Name)
+		j.SavePath = parentDir(j.ContentPath)
 	case "Failed":
 		j.State, j.Progress = StateFailed, 0
 		if m := x.failReason(); m != "" {
@@ -426,6 +436,27 @@ func sabQueueState(s string) string {
 	return StateDownloading
 }
 
+// jobFolder is the job's own folder when SABnzbd names a folder or file
+// inside it as the job's place (a pack unpacked into one folder per episode):
+// the nearest folder above named like the job. Otherwise storage as given.
+func jobFolder(storage, name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return storage
+	}
+	p := strings.TrimRight(storage, `/\`)
+	for {
+		i := strings.LastIndexAny(p, `/\`)
+		if i <= 0 {
+			return storage
+		}
+		if strings.EqualFold(p[i+1:], name) {
+			return p
+		}
+		p = p[:i]
+	}
+}
+
 func parentDir(p string) string {
 	p = strings.TrimRight(p, `/\`)
 	if i := strings.LastIndexAny(p, `/\`); i > 0 {
@@ -444,12 +475,6 @@ func (s *Sabnzbd) jobs(ctx context.Context, q url.Values) ([]Job, error) {
 		return nil, fmt.Errorf("sabnzbd queue: %w", err)
 	}
 	var out []Job
-	moving := 0
-	for _, x := range qu.Queue.Slots {
-		if sabQueueState(x.Status) == StateDownloading {
-			moving++
-		}
-	}
 	for _, x := range qu.Queue.Slots {
 		mb, left := num(x.MB), num(x.MBLeft)
 		p := num(x.Percentage) / 100
@@ -458,11 +483,10 @@ func (s *Sabnzbd) jobs(ctx context.Context, q url.Values) ([]Job, error) {
 		}
 		j := Job{ID: x.ID, Name: x.Filename, Category: x.Cat, Size: int64(mb * 1024 * 1024), Progress: min(max(p, 0), 1),
 			ETA: clock(x.TimeLeft), State: sabQueueState(x.Status), Detail: x.Status, PostedAt: sabPostedAt(x.AvgAge, time.Now())}
-		if j.State == StateDownloading && moving > 0 {
-			j.Speed = int64(num(qu.Queue.KBPerSec)*1024) / int64(moving)
-		}
 		out = append(out, j)
 	}
+	whole := q.Get("category") == "" && q.Get("nzo_ids") == ""
+	sabShare(out, s.meter.rates(out, s.clock()), int64(num(qu.Queue.KBPerSec)*1024), whole)
 	hq := url.Values{"start": {"0"}, "limit": {"200"}}
 	for _, k := range []string{"category", "nzo_ids"} {
 		if v := q.Get(k); v != "" {

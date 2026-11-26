@@ -24,7 +24,21 @@ type arrRows struct {
 	version string
 	schema  int
 	sets    map[string][]map[string]any
-	notes   []string
+	// titles are the slim titles read from the API; a backup's
+	// titles are in sets["titles"].
+	titles []slimTitle
+	notes  []string
+}
+
+// eachTitle hands every title row to fn, building an API title's row only
+// while fn runs so the rows are never all held at once.
+func (o *arrRows) eachTitle(fn func(m map[string]any)) {
+	for _, m := range o.sets["titles"] {
+		fn(m)
+	}
+	for i := range o.titles {
+		fn(o.titles[i].row())
+	}
 }
 
 // arrSets are the row sets: the API path, the backup table, and for the
@@ -35,6 +49,9 @@ type arrSet struct {
 	table  string
 	only   []Kind // nil: every arr app
 	needed bool   // a failure fails the read (else a note)
+	// soft makes any failure a note, for a list that may be too large to
+	// read and is not worth failing the whole read for.
+	soft bool
 }
 
 func (r arrReader) apiBase() string {
@@ -112,12 +129,17 @@ func (r arrReader) sets() []arrSet {
 		{name: "folders", api: []string{"/rootfolder"}, table: "RootFolders"},
 		{name: "profiles", api: []string{"/qualityprofile"}, table: "QualityProfiles"},
 		{name: "formats", api: []string{"/customformat"}, table: "CustomFormats"},
+		// The size table; a backup reads QualityDefinitions in fromBackup.
+		{name: "qualitydefs", api: []string{"/qualitydefinition"}, only: []Kind{Sonarr, Radarr}},
 		// Language names, so language tests are brought by name (the ids differ per app).
 		{name: "languages", api: []string{"/language"}, only: []Kind{Sonarr, Radarr}},
 		{name: "releasewords", api: []string{"/releaseprofile"}, table: "ReleaseProfiles"},
 		{name: "delays", api: []string{"/delayprofile"}, table: "DelayProfiles"},
 		// The availability delay; a backup keeps it in the Config table (fromBackup).
 		{name: "indexerconfig", api: []string{"/config/indexer"}, only: []Kind{Radarr}},
+		// The "unmonitor deleted" switch; a backup keeps it in the Config table (fromBackup).
+		{name: "media", api: []string{"/config/mediamanagement"}, only: []Kind{Sonarr, Radarr}},
+		{name: "blocklist", api: []string{"/blocklist"}, table: "Blocklist", only: []Kind{Sonarr, Radarr}, soft: true},
 		excl,
 		{name: "naming", api: []string{"/config/naming", "/settings/naming"}, table: "NamingConfig"},
 		{name: "indexers", api: []string{"/indexer"}, table: "Indexers"},
@@ -226,6 +248,14 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 		var got any
 		var lastErr error
 		var used string
+		// The title list can be very large and has no paging: read it entry by
+		// entry, keeping only what the import uses.
+		if s.name == "titles" && r.kind != Prowlarr {
+			if out.titles, err = c.getTitles(ctx, r.apiBase()+s.api[0]); err != nil {
+				return nil, err
+			}
+			continue
+		}
 		for _, p := range s.api {
 			used = p
 			lastErr = c.getJSON(ctx, r.apiBase()+p, nil, &got)
@@ -235,10 +265,12 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 		}
 		// A large Lidarr answers its whole album list in one piece; read it artist by artist instead.
 		if s.name == "albums" && errors.Is(lastErr, ErrTooBig) {
-			got, lastErr = r.albumsByArtist(ctx, c, out.sets["titles"])
+			var artists []map[string]any
+			out.eachTitle(func(m map[string]any) { artists = append(artists, map[string]any{"id": m["id"]}) })
+			got, lastErr = r.albumsByArtist(ctx, c, artists)
 		}
 		if lastErr != nil {
-			if s.needed || !errors.Is(lastErr, ErrBadAnswer) {
+			if s.needed || !s.soft && !errors.Is(lastErr, ErrBadAnswer) {
 				return nil, lastErr
 			}
 			out.notes = append(out.notes, "the app has no "+s.name+" list; skipped")
@@ -259,7 +291,7 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 			if _, paged := lower(x)["records"]; paged {
 				if rows, err = r.pages(ctx, c, used); err != nil {
 					// A later page that fails is skipped like a missing route.
-					if s.needed || !errors.Is(err, ErrBadAnswer) {
+					if s.needed || !s.soft && !errors.Is(err, ErrBadAnswer) {
 						return nil, err
 					}
 					out.notes = append(out.notes, "the app has no "+s.name+" list; skipped")
@@ -272,6 +304,8 @@ func (r arrReader) fromAPI(ctx context.Context, src Source) (*arrRows, error) {
 		out.sets[s.name] = rows
 	}
 	r.fileQualitiesAPI(ctx, c, out)
+	r.pastAPI(ctx, c, out)
+	r.blockedEpisodesAPI(ctx, c, out)
 	return out, nil
 }
 
@@ -340,16 +374,22 @@ func (r arrReader) fromBackup(ctx context.Context, src Source) (*arrRows, error)
 		return nil, err
 	}
 	r.fileQualitiesBackup(ctx, t, out)
-	// Radarr's availability delay is one key of the Config table (keys
-	// lower-cased); a backup without it leaves this server's default.
-	if r.kind == Radarr && t.exists(ctx, "Config") {
+	r.pastBackup(ctx, t, out)
+	r.blockedEpisodesBackup(ctx, t, out)
+	// Radarr's availability delay and the "unmonitor deleted" switch are
+	// keys of the Config table (keys lower-cased); a backup without them
+	// leaves this server's defaults.
+	if (r.kind == Radarr || r.kind == Sonarr) && t.exists(ctx, "Config") {
 		rows, err := t.all(ctx, "Config")
 		if err != nil {
 			return nil, err
 		}
 		for _, m := range rows {
-			if strings.EqualFold(str(m["key"]), "availabilitydelay") {
+			switch k := strings.ToLower(str(m["key"])); {
+			case k == "availabilitydelay" && r.kind == Radarr:
 				out.sets["indexerconfig"] = []map[string]any{{"availabilitydelay": m["value"]}}
+			case k == "autounmonitorpreviouslydownloadedmovies" && r.kind == Radarr, k == "autounmonitorpreviouslydownloadedepisodes" && r.kind == Sonarr:
+				out.sets["media"] = []map[string]any{{k: m["value"]}}
 			}
 		}
 	}

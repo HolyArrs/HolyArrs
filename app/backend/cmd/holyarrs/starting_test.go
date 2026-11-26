@@ -19,7 +19,7 @@ import (
 func TestStartingPageAnswersHealth(t *testing.T) {
 	srv := httptest.NewServer(startingHandler(nil))
 	defer srv.Close()
-	for p, want := range map[string]int{"/healthz": 200, "/readyz": 503, "/library": 503} {
+	for p, want := range map[string]int{"/healthz": 200, "/readyz": 503, "/library": 503, "/ping": 200} {
 		resp, err := http.Get(srv.URL + p)
 		if err != nil {
 			t.Fatal(err)
@@ -119,6 +119,23 @@ func TestGoBackWordingFitsDocker(t *testing.T) {
 		}
 		if strings.Contains(s, "stop HolyArrs first") {
 			t.Errorf("%q asks Docker users to stop first", s)
+		}
+	}
+}
+
+// A failed start still answers /ping with 200, so a liveness probe on it
+// does not restart HolyArrs in a loop, while /healthz reports the failure.
+func TestFailedStartAnswersPing(t *testing.T) {
+	srv := httptest.NewServer(failedHandler("test"))
+	defer srv.Close()
+	for p, want := range map[string]int{"/ping": 200, "/healthz": 503, "/readyz": 503} {
+		resp, err := http.Head(srv.URL + p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != want {
+			t.Fatalf("HEAD %s: %d, want %d", p, resp.StatusCode, want)
 		}
 	}
 }

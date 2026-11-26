@@ -14,7 +14,6 @@
 	"settings.health.none": "Žádné výsledky. Spusťte je novou kontrolou.",
 	"settings.health.since": "Od",
 	"settings.health.settings": "Nastavení kontrol stavu",
-	"settings.health.updateCheck": "Hledat novější HolyArrs",
 	"settings.health.onlyChecks": "Jen kontroluje. Nikdy neinstaluje.",
 	"settings.health.every": "Hledat aktualizace každých",
 	"settings.health.day": "den",

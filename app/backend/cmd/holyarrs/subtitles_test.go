@@ -79,6 +79,9 @@ func subtitleMovie(t *testing.T, s *database.Store) (int64, int64, string) {
 // route: POST /api/v1/files/{id}/subtitles/choose
 // route: POST /api/v1/subtitles/{id}/sync
 // route: POST /api/v1/subtitles/{id}/turn-down
+// route: POST /api/v1/subtitles/{id}/clean
+// route: POST /api/v1/titles/{id}/subtitles/clean
+// route: POST /api/v1/subtitles/clean
 func TestSubtitleRoutes(t *testing.T) {
 	t.Parallel()
 	srv, s, _ := setup(t)
@@ -106,6 +109,17 @@ func TestSubtitleRoutes(t *testing.T) {
 	if set["search_hours"] != float64(12) {
 		t.Fatalf("%v", set)
 	}
+	// Cleanup steps per language: a sent map replaces the old one, one left out keeps it.
+	if c, _ := set["clean"].(map[string]any); c["*"] == nil {
+		t.Fatalf("%v", set["clean"])
+	}
+	do(t, "PUT", u+"/settings/subtitles", `{"clean": {"en us": {}}}`, 400)
+	do(t, "PUT", u+"/settings/subtitles", `{"clean": {"EN": {"hi": true}}}`, 200)
+	do(t, "PUT", u+"/settings/subtitles", `{"search_hours": 12}`, 200)
+	decodeJSON(t, do(t, "GET", u+"/settings/subtitles", "", 200), &set)
+	if c, _ := set["clean"].(map[string]any); c["*"] != nil || c["en"] == nil {
+		t.Fatalf("%v", set["clean"])
+	}
 	// Wishes.
 	do(t, "PUT", u+"/titles/"+itoa(titleID)+"/subtitle-wish", `{"languages": [{"language": "klingon"}]}`, 400)
 	do(t, "PUT", u+"/titles/"+itoa(titleID)+"/subtitle-wish", `{"version_id": 999, "languages": []}`, 404)
@@ -116,7 +130,7 @@ func TestSubtitleRoutes(t *testing.T) {
 		Kinds []struct{ Kind string } `json:"kinds"`
 	}
 	decodeJSON(t, do(t, "GET", u+"/subtitle-sites/kinds", "", 200), &kinds)
-	if len(kinds.Kinds) != 10 {
+	if len(kinds.Kinds) != 13 {
 		t.Fatalf("%v", kinds)
 	}
 	do(t, "POST", u+"/subtitle-sites", `{"kind": "nope"}`, 400)
@@ -211,6 +225,12 @@ func TestSubtitleRoutes(t *testing.T) {
 			subID = r.ID
 		}
 	}
+	// Clean again: nothing to clean with the default steps.
+	do(t, "POST", u+"/subtitles/"+itoa(subID)+"/clean", `{}`, 200)
+	do(t, "POST", u+"/subtitles/9999/clean", `{}`, 404)
+	do(t, "POST", u+"/titles/"+itoa(titleID)+"/subtitles/clean", `{}`, 200)
+	do(t, "POST", u+"/titles/9999/subtitles/clean", `{}`, 404)
+	do(t, "POST", u+"/subtitles/clean", `{}`, 202)
 	// Timing fix and turn down.
 	do(t, "POST", u+"/subtitles/"+itoa(subID)+"/sync", `{"offset_ms": 99999999}`, 409)
 	var nr struct{ ID int64 }

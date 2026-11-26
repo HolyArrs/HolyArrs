@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "الطلبات",
 	"settings.appearance.colRate": "لكل صف",
 	"settings.appearance.noRows": "لم تُحتسب أي صفوف استكشاف بعد.",
+	"settings.appearance.rowStats": "صفوف الاستكشاف",
+	"settings.appearance.rowStatsDesc": "مرات الفتح والطلبات لكل صف في آخر 30 يومًا، للجميع معًا. تُحسب على هذا الخادم فقط.",
+	"settings.appearance.colRow": "الصف",
+	"settings.appearance.row.because_have": "مثل عناوين لديك",
+	"settings.appearance.row.because_asked": "مثل طلباتك",
+	"settings.appearance.row.person": "المزيد من شخص",
+	"settings.appearance.row.genre": "اختيارات النوع لك",
+	"settings.appearance.row.popular_genre": "الأكثر شيوعًا حسب النوع",
+	"settings.appearance.row.popular_decade": "الأكثر شيوعًا حسب العقد",
+	"settings.appearance.row.decade": "حسب العقد",
+	"settings.appearance.row.mood": "حسب المزاج",
+	"settings.appearance.row.hero": "الشريط العلوي",
 	"settings.appearance.motion": "الحركة",
 	"settings.appearance.motionNote": "يتبع إعداد تقليل الحركة في جهازك"
 }

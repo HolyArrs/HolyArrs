@@ -33,7 +33,7 @@ func s1(s int) []int                           { return []int{s} }
 var ShowCases = []ShowCase{
 	{ID: "S01", Name: "Copper.Valley.S01E01.1080p.WEB-DL.DDP5.1.H.264-QUILL", Kind: KindEpisode, Title: "Copper Valley", Show: sn(s1(1), 1), Resolution: 1080, Source: "web_dl", Codec: "h264", Audio: "eac3 5.1", Group: "QUILL"},
 	{ID: "S02", Name: "Copper.Valley.S01E02.720p.HDTV.x264-OXBOW", Kind: KindEpisode, Title: "Copper Valley", Show: sn(s1(1), 2), Resolution: 720, Source: "tv", Codec: "h264", Group: "OXBOW"},
-	{ID: "S03", Name: "copper_valley_1x03_hdtv_x264-oxbow", Kind: KindEpisode, Title: "Copper Valley", Show: sn(s1(1), 3), Source: "tv", Codec: "h264", Group: "oxbow"},
+	{ID: "S03", Name: "copper_valley_1x03_hdtv_x264-oxbow", Kind: KindEpisode, Title: "Copper Valley", Show: sn(s1(1), 3), Resolution: 480, Source: "tv", Codec: "h264", Group: "oxbow"},
 	{ID: "S04", Name: "Copper.Valley.S01E04E05.1080p.WEB.h264-MOSSFOX", Kind: KindMultiEpisode, Title: "Copper Valley", Show: sn(s1(1), 4, 5), Resolution: 1080, Source: "web_dl", SrcConf: Likely, Codec: "h264", Group: "MOSSFOX"},
 	{ID: "S05", Name: "Copper.Valley.S01E06-E08.1080p.WEB-DL.H.265-QUILL", Kind: KindMultiEpisode, Title: "Copper Valley", Show: sn(s1(1), 6, 7, 8), Resolution: 1080, Source: "web_dl", Codec: "h265", Group: "QUILL"},
 	{ID: "S06", Name: "Copper.Valley.S01.1080p.BluRay.x265.DDP5.1-LARKSPUR", Kind: KindSeasonPack, Title: "Copper Valley", Show: sn(s1(1)), Resolution: 1080, Source: "bluray", Codec: "h265", Audio: "eac3 5.1", Group: "LARKSPUR"},
@@ -230,5 +230,25 @@ func TestCrossNeedsSeparator(t *testing.T) {
 	}
 	if p := Parse("Copper.Valley.HDTV11x03.x264-OXBOW", Hints{}); p.Show != nil {
 		t.Errorf("glued 11x03 read as episode: %+v", p.Show)
+	}
+}
+
+// "1x01-02" and "1x01x02" are two episodes in one file.
+func TestCrossMultiEpisode(t *testing.T) {
+	for name, want := range map[string][]int{
+		"The Pillars of the Earth - 1x01-02":            {1, 2},
+		"Copper.Valley.1x01x02.720p.HDTV.x264-OXBOW":    {1, 2},
+		"Copper Valley - 2x03-x05 [1080p]":              {3, 4, 5},
+		"Copper Valley - 2x13 - The Dam Breaks [1080p]": {13},
+		"Copper.Valley.1x03-720p.HDTV-OXBOW":            {3},
+	} {
+		p := Parse(name, Hints{})
+		if p.Show == nil || !slices.Equal(p.Show.Episodes, want) {
+			t.Errorf("%s: %+v, want %v", name, p.Show, want)
+			continue
+		}
+		if len(want) > 1 && p.Kind.Value != KindMultiEpisode {
+			t.Errorf("%s: kind %s", name, p.Kind)
+		}
 	}
 }

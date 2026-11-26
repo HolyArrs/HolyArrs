@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: punainen piste näyttää, mikä vaatii huomiota, ja yhteystesti kertoo tarkan ongelman.** Plex-tunnisteet pyydetyille nimikkeille, nimet omalla kielelläsi ja yli 30 korjausta. Yhdistä sovellukset MCP:n kautta avaimilla, joita itse hallitset. [Katso mitä uutta](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: laajennukset kuulevat, mitä HolyArrsissa tapahtuu.** Kehittäjätila ajaa rakentamaasi laajennusta, ja testiversiot antavat muutaman ihmisen kokeilla sitä ensin. [Katso mitä uutta](https://holyarrs.com/whats-new/)
 
 > Jokainen julisteesi, traileri ja arvosana HolyArrsissa tulee palvelimelta, jota ylläpidän ja maksan itse, jotta se pysyy kaikille ilmaisena. Jos HolyArrs paransi elokuvailtaasi edes vähän, sponsorointi pitää valot päällä meille kaikille 💛
 >
@@ -374,7 +374,7 @@ Imagessa ei ole shelliä, joten `docker exec -it holyarrs /bin/bash` ei toimi. H
 - Lukittuna ulos omistajan tililtä:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Versionumero:

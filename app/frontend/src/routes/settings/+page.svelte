@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { FinishSetupCard } from '#lib/setup/index.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	// Settings home: five group cards in a Bento grid over the blurred wall of this Library's posters. Each card shows what lives inside it and opens on its first page (a zoom on wider screens, a push on phones). My account is in the account menu.
 	import Icon from '#lib/ui/Icon.svelte';
@@ -98,6 +99,7 @@
 <svelte:window onkeydown={key} />
 
 <div class="sx-home" bind:this={home}>
+	<div class="finish-setup"><FinishSetupCard /></div>
 	<div class="sx-head">
 		<h1 class="sr-only">{t('settings.home.title')}</h1>
 		<div class="find">
@@ -150,6 +152,8 @@
 </div>
 
 <style>
+	.finish-setup:empty { display: none; }
+	.finish-setup { margin-bottom: var(--s-4); }
 	/* Desktop: a compact landing, at most 640px tall and 1180px wide, centred. On short windows it shrinks to fit (main's 24px top and 64px bottom padding taken out), so it never scrolls. */
 	/* Desktop: the grid sits in the middle of the window, across and down, and grows with it (no scroll). */
 	.sx-home { display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: min(1480px, calc((100dvh - var(--topbar) - 88px) * 1.9)); margin-inline: auto; margin-bottom: -40px; height: calc(100dvh - var(--topbar) - 48px); min-height: 420px; }

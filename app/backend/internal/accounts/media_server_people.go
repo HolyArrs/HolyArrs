@@ -62,6 +62,7 @@ func (a *Auth) mediaServerPeopleRoutes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/auth/plex/link/start", a.plexLinkStart)
 	m.HandleFunc("POST /api/v1/auth/plex/link/finish", a.plexLinkFinish)
 	m.HandleFunc("DELETE /api/v1/auth/plex/link", a.plexUnlink)
+	m.HandleFunc("GET /api/v1/auth/plex/servers", a.plexServers)
 	m.HandleFunc("POST /api/v1/auth/media-server/{kind}/test", a.mediaServerTest)
 	m.HandleFunc("POST /api/v1/auth/import/{kind}/preview", a.importPreview)
 	m.HandleFunc("POST /api/v1/auth/import/{kind}", a.importPeople)
@@ -162,6 +163,7 @@ func (a *Auth) plexUnlink(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := r.Context()
 	me := webserver.Actor(ctx)
+	inSetup := false
 	if err := a.s.WriteCore(ctx, func(tx *sql.Tx) error {
 		ids, err := plexTokenIDsOfUser(ctx, tx, me.ID)
 		if err != nil {
@@ -170,11 +172,29 @@ func (a *Auth) plexUnlink(w http.ResponseWriter, r *http.Request) {
 		if err := a.vault.DeleteTx(ctx, tx, ids...); err != nil {
 			return err
 		}
-		_, err = deletePlexLink(ctx, tx, me.ID)
-		return err
+		if _, err = deletePlexLink(ctx, tx, me.ID); err != nil {
+			return err
+		}
+		// During first-run setup the link turned Plex sign-in on (setupPlexFinish); unlinking it there turns it off again.
+		inSetup = !FirstRunDone(ctx, tx)
+		if inSetup {
+			for _, k := range []string{"_on", "_url", "_server_id"} {
+				v := ""
+				if k == "_on" {
+					v = "false"
+				}
+				if err := database.PutSetting(tx, settingsGroup, signInPrefix+ProviderPlex+k, v, domain.System, a.now()); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
 	}); err != nil {
 		serverError(w, "plex unlink", err)
 		return
+	}
+	if inSetup {
+		a.forgetSetupServer(ctx, ProviderPlex)
 	}
 	if a.vault != nil {
 		if err := a.vault.SetSetting(ctx, settingsGroup, signInPrefix+keyPlexOwner, "", me); err != nil {

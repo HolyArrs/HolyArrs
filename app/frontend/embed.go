@@ -3,7 +3,6 @@ package frontend
 
 import (
 	"bytes"
-	"compress/bzip2"
 	"embed"
 	"errors"
 	"io"
@@ -17,9 +16,8 @@ import (
 //go:embed all:dist
 var files embed.FS
 
-// Files is the built app, rooted at its folder. The build keeps most scripts,
-// styles and language files only as packed copies to keep the program small:
-// brotli (name.br), or bzip2 (name.bz2) for the image's language files. Files
+// Files is the built app, rooted at its folder. The build keeps most scripts
+// and styles only as brotli copies (name.br) to keep the program small. Files
 // hands them out under their plain names, unpacked.
 var Files fs.FS = packed{mustSub(files, "dist")}
 
@@ -31,21 +29,18 @@ func mustSub(fsys fs.FS, dir string) fs.FS {
 	return sub
 }
 
-// packed serves name from name.br or name.bz2 when name itself is not there.
+// packed serves name from name.br when name itself is not there.
 type packed struct{ fs.FS }
 
 func (p packed) Open(name string) (fs.File, error) {
 	f, err := p.FS.Open(name)
-	if err == nil || !errors.Is(err, fs.ErrNotExist) || strings.HasSuffix(name, ".br") || strings.HasSuffix(name, ".bz2") {
+	if err == nil || !errors.Is(err, fs.ErrNotExist) || strings.HasSuffix(name, ".br") {
 		return f, err
 	}
 	var b []byte
 	if z, zerr := p.FS.Open(name + ".br"); zerr == nil {
 		defer z.Close()
 		b, err = io.ReadAll(brotli.NewReader(z))
-	} else if z, zerr := p.FS.Open(name + ".bz2"); zerr == nil {
-		defer z.Close()
-		b, err = io.ReadAll(bzip2.NewReader(z))
 	} else {
 		return nil, err
 	}

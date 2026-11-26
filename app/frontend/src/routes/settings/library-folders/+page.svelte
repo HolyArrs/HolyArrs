@@ -14,7 +14,7 @@
 	import TagInput from '#lib/ui/TagInput.svelte';
 	import { forgetTags, switchDropped } from '#lib/ui/tags.ts';
 	import { onMount } from 'svelte';
-	import { api } from '#lib/core/api.ts';
+	import { api, ApiError } from '#lib/core/api.ts';
 	import { recheckSettingsStatus } from '#lib/alerts/index.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { folderMissing, qualityFor, qualityBody, qualityValue, qualityChoices, defaultChoice, savedDefaults } from '#lib/mediafiles/index.ts';
@@ -48,6 +48,8 @@
 	let quality = $state('');
 	let newTags = $state<string[]>([]);
 	let onlyTagged = $state(false);
+	// Look only: set when adding, so a read-only share never shows as broken first.
+	let addLookOnly = $state(false);
 	// Taking the last tag away turns "only these tags" off; the form and the row say so until a tag is there again or the form is done.
 	let addDropped = $state(false);
 	let rowDropped = $state<number[]>([]);
@@ -101,6 +103,8 @@
 
 	// Extra import folders: where Import files by hand may also read.
 	let extraText = $state('');
+	// Watched folders: new files there are imported on their own.
+	let watchText = $state('');
 	let extraLoaded = $state(false);
 	let extraError = $state('');
 	let extraSaving = $state(false);
@@ -155,7 +159,9 @@
 	}
 	async function loadExtra() {
 		try {
-			extraText = (await api.get<{ extra_folders: string[] }>('/settings/import-folders')).extra_folders.join('\n');
+			const f = await api.get<{ extra_folders: string[]; watch_folders?: string[] }>('/settings/import-folders');
+			extraText = f.extra_folders.join('\n');
+			watchText = (f.watch_folders ?? []).join('\n');
 			extraLoaded = true;
 		} catch {
 			extraLoaded = false; // No settings permission: the card stays hidden.
@@ -174,8 +180,10 @@
 		extraError = '';
 		extraSaving = true;
 		try {
-			const lines = extraText.split('\n').map((l) => l.trim()).filter(Boolean);
-			extraText = (await api.put<{ extra_folders: string[] }>('/settings/import-folders', { extra_folders: lines })).extra_folders.join('\n');
+			const lines = (v: string) => v.split('\n').map((l) => l.trim()).filter(Boolean);
+			const f = await api.put<{ extra_folders: string[]; watch_folders?: string[] }>('/settings/import-folders', { extra_folders: lines(extraText), watch_folders: lines(watchText) });
+			extraText = f.extra_folders.join('\n');
+			watchText = (f.watch_folders ?? []).join('\n');
 			toasts.push(t('settings.libraryFolders.importSaved'), 'ok');
 		} catch (err) {
 			extraError = message(err);
@@ -193,7 +201,7 @@
 		}
 		saving = true;
 		try {
-			const f = await api.post<LibraryFolder>('/library-folders', { path: path.trim(), kind, label: label.trim(), new_title_tags: newTags, only_tagged_sources: newTags.length > 0 && onlyTagged, ...(quality ? qualityBody(quality) : {}) });
+			const f = await api.post<LibraryFolder>('/library-folders', { path: path.trim(), kind, label: label.trim(), new_title_tags: newTags, only_tagged_sources: newTags.length > 0 && onlyTagged, look_only: addLookOnly, ...(quality ? qualityBody(quality) : {}) });
 			folders = [...folders, f];
 			path = '';
 			label = '';
@@ -201,6 +209,7 @@
 			quality = '';
 			newTags = [];
 			onlyTagged = false;
+			addLookOnly = false;
 			addDropped = false;
 			forgetTags();
 			adding = false;
@@ -261,6 +270,22 @@
 		}
 	}
 
+	// Audio languages for new titles: saved when the field is left; a refused list puts the saved one back.
+	async function saveAudio(f: LibraryFolder, el: HTMLInputElement) {
+		const codes = el.value.split(/[\s,;]+/).map((c) => c.trim().toLowerCase()).filter(Boolean);
+		busyId = f.id;
+		try {
+			const n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, { new_title_audio: codes });
+			took(n);
+			el.value = (n.new_title_audio ?? []).join(', ');
+		} catch (err) {
+			el.value = (f.new_title_audio ?? []).join(', ');
+			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
+		} finally {
+			busyId = null;
+		}
+	}
+
 	// Each change is saved at once. A folder's saves go one after another and each sends the newest choices, so the last one made is the one kept; when the newest one fails, the row shows what the server has.
 	const tagSeq = new Map<number, number>();
 	const tagQueue = new Map<number, Promise<void>>();
@@ -304,8 +329,10 @@
 
 	// Copying on purpose (downloads and media on separate disks): the folder then counts as fine.
 	const copiesOk = (f: LibraryFolder) => f.health === 'no_hardlink' && !!f.copies_expected;
-	const rowTone = (f: LibraryFolder) => (copiesOk(f) ? 'ok' : tone(f.health));
-	const rowHealth = (f: LibraryFolder) => (copiesOk(f) ? t('settings.libraryFolders.copiesExpectedState') : f.health === 'ok' ? t('settings.libraryFolders.stateInstant') : folderHealth(f.health));
+	// Look only: nothing is written there, so writes and hardlinks do not matter.
+	const lookOk = (f: LibraryFolder) => !!f.look_only && f.health !== 'missing';
+	const rowTone = (f: LibraryFolder) => (copiesOk(f) || lookOk(f) ? 'ok' : tone(f.health));
+	const rowHealth = (f: LibraryFolder) => (lookOk(f) ? t('settings.libraryFolders.lookOnlyState') : copiesOk(f) ? t('settings.libraryFolders.copiesExpectedState') : f.health === 'ok' ? t('settings.libraryFolders.stateInstant') : folderHealth(f.health));
 	// The one /data folder layout that makes imports instant.
 	const copiesDoc = 'https://docs.holyarrs.com/start/folders/';
 	async function setCopies(f: LibraryFolder, on: boolean) {
@@ -319,6 +346,50 @@
 			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
 		} finally {
 			busyId = null;
+		}
+	}
+
+	async function setLookOnly(f: LibraryFolder, on: boolean) {
+		busyId = f.id;
+		try {
+			let n = await api.put<LibraryFolder>(`/library-folders/${f.id}`, { look_only: on });
+			// Check the folder again either way: off tests writes and hardlinks, on reads the free space back.
+			n = await api.post<LibraryFolder>(`/library-folders/${f.id}/check`);
+			took(n);
+			void recheckSettingsStatus('library_folder');
+		} catch (err) {
+			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
+		} finally {
+			busyId = null;
+		}
+	}
+
+	// Flat changes only the setting: no file moves either way.
+	async function setFlat(f: LibraryFolder, on: boolean) {
+		busyId = f.id;
+		try {
+			took(await api.put<LibraryFolder>(`/library-folders/${f.id}`, { flat: on }));
+		} catch (err) {
+			toasts.push(t('settings.libraryFolders.couldntSave'), 'fail', { body: message(err) });
+		} finally {
+			busyId = null;
+		}
+	}
+
+	// Hands-off mode: HolyArrs only sends to the Downloader and never needs a Library folder. Owner only; a browser confirms the password first (the Settings frame asks for it).
+	let handsBusy = $state(false);
+	async function flipHandsOff() {
+		const on = !session.s.handsOff;
+		handsBusy = true;
+		try {
+			const r = await api.put<{ on: boolean }>('/settings/hands-off', { on });
+			session.setHandsOff(!!r.on);
+			toasts.push(t(r.on ? 'settings.libraryFolders.handsOffOn' : 'settings.libraryFolders.handsOffOff'), 'ok');
+			void recheckSettingsStatus('library_folder');
+		} catch (err) {
+			if (!(err instanceof ApiError && err.body.code === 'reauth')) toasts.push(t('settings.libraryFolders.handsOffFailed'), 'fail', { body: message(err) });
+		} finally {
+			handsBusy = false;
 		}
 	}
 
@@ -345,6 +416,17 @@
 		{#if !adding && folders.length}<Button icon="plus" variant="primary" type="button" onclick={() => (adding = true)}>{t('settings.libraryFolders.add')}</Button>{/if}
 	{/snippet}
 </PageHeader>
+
+{#if session.can('owner')}
+	<div class="sc-form hands" data-testid="hands-off">
+		<SettingsCard id="hands-off" title={t('settings.libraryFolders.handsOff')} description={t('settings.libraryFolders.handsOffDesc')}>
+			<label class="checkline">
+				<input type="checkbox" checked={session.s.handsOff} disabled={handsBusy} onchange={(e) => { e.currentTarget.checked = session.s.handsOff; void flipHandsOff(); }} data-testid="hands-off-on" />
+				<span><b>{t('settings.libraryFolders.handsOffOnLabel')}</b><br /><span class="hint">{t('settings.libraryFolders.handsOffHint')}</span></span>
+			</label>
+		</SettingsCard>
+	</div>
+{/if}
 
 {#if adding}
 	<form class="sc-form" onsubmit={add} aria-label={t('settings.libraryFolders.addFolder')}>
@@ -380,6 +462,8 @@
 			{:else if addDropped}
 				<p class="hint only-off" role="status" data-testid="lf-only-off">{t('settings.libraryFolders.onlyTaggedOff', { label: t('settings.libraryFolders.onlyTagged') })}</p>
 			{/if}
+			<label class="only"><input type="checkbox" bind:checked={addLookOnly} aria-describedby="lf-look-hint" data-testid="lf-look-only" /><span>{t('settings.libraryFolders.lookOnly')}</span></label>
+			<p class="hint only-hint" id="lf-look-hint">{t('settings.libraryFolders.lookOnlyHint')}</p>
 			{#if formError}<p class="form-error" role="alert">{formError}</p>{/if}
 			<div class="row" style="margin-top: var(--s-5)">
 				<Button variant="primary" type="submit" disabled={saving} aria-busy={saving}>{t('settings.libraryFolders.addButton')}</Button>
@@ -427,10 +511,10 @@
 					{/if}
 				</div>
 			{/if}
-			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span>{#if f.health === 'no_hardlink'}<a class="why-link" href={copiesDoc} target="_blank" rel="noopener noreferrer">{t('settings.libraryFolders.whyCopies')}</a>{/if}</span>
+			<span class="st {rowTone(f)}"><i></i><span>{rowHealth(f)}</span>{#if f.health === 'no_hardlink' && !f.look_only}<a class="why-link" href={copiesDoc} target="_blank" rel="noopener noreferrer">{t('settings.libraryFolders.whyCopies')}</a>{/if}</span>
 			<div class="acts">
 				<IconButton icon="refresh" label={t('settings.libraryFolders.checkAgain', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => recheck(f)} />
-				{#if f.health === 'no_hardlink'}<Button type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
+				{#if f.health === 'no_hardlink' && !f.look_only}<Button type="button" disabled={busyId === f.id} onclick={() => setCopies(f, !f.copies_expected)}>{f.copies_expected ? t('settings.libraryFolders.warnAgain') : t('settings.libraryFolders.copiesExpected')}</Button>{/if}
 				<IconButton icon="pencil" label={t('settings.libraryFolders.renameOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => ((editing = f.id), (editLabel = f.label))} />
 				<IconButton icon="folderMove" label={t('settings.libraryFolders.changePathOf', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} aria-expanded={moving === f.id} onclick={() => openMove(f)} />
 				<IconButton icon="trash" label={t('settings.libraryFolders.removePath', { path: f.path })} type="button" tooltip={false} disabled={busyId === f.id} onclick={() => remove(f)} />
@@ -447,6 +531,33 @@
 						{:else if rowDropped.includes(f.id)}
 							<p class="hint only-off" role="status" data-testid="nt-only-off-{f.id}">{t('settings.libraryFolders.onlyTaggedOff', { label: t('settings.libraryFolders.onlyTagged') })}</p>
 						{/if}
+					</div>
+				</div>
+			{/if}
+			{#if f.kind !== 'music' && (canEdit || f.new_title_audio?.length)}
+				<div class="nt na" data-testid="folder-audio">
+					<label class="ql" for="na-{f.id}">{t('settings.libraryFolders.newAudio')}</label>
+					<div class="nv">
+						<input id="na-{f.id}" class="input mono" dir="ltr" value={(f.new_title_audio ?? []).join(', ')} placeholder="it" disabled={!canEdit} autocomplete="off" spellcheck="false" aria-describedby="na-{f.id}-hint" data-testid="na-{f.id}" onchange={(e) => void saveAudio(f, e.currentTarget)} />
+						<p class="hint" id="na-{f.id}-hint">{t('settings.libraryFolders.newAudioHint')}</p>
+					</div>
+				</div>
+			{/if}
+			{#if canEdit || f.look_only}
+				<div class="nt lo" data-testid="folder-look-only">
+					<span class="ql" aria-hidden="true"></span>
+					<div class="nv">
+						<label class="only"><input type="checkbox" checked={!!f.look_only} disabled={!canEdit || busyId === f.id} onchange={(e) => setLookOnly(f, e.currentTarget.checked)} aria-describedby="lo-{f.id}-hint" data-testid="look-only-{f.id}" /><span>{t('settings.libraryFolders.lookOnly')}</span></label>
+						<p class="hint only-hint" id="lo-{f.id}-hint">{t('settings.libraryFolders.lookOnlyHint')}</p>
+					</div>
+				</div>
+			{/if}
+			{#if f.kind === 'movie' && (canEdit || f.flat)}
+				<div class="nt lo flt" data-testid="folder-flat">
+					<span class="ql" aria-hidden="true"></span>
+					<div class="nv">
+						<label class="only"><input type="checkbox" checked={!!f.flat} disabled={!canEdit || busyId === f.id} onchange={(e) => setFlat(f, e.currentTarget.checked)} aria-describedby="fl-{f.id}-hint" data-testid="flat-{f.id}" /><span>{t('settings.libraryFolders.flat')}</span></label>
+						<p class="hint only-hint" id="fl-{f.id}-hint">{t('settings.libraryFolders.flatHint')}</p>
 					</div>
 				</div>
 			{/if}
@@ -479,6 +590,9 @@
 		<SettingsCard id="import-folders" title={t('settings.libraryFolders.extra')} description={t('settings.libraryFolders.extraDesc')}>
 			<Field id="if-paths" label={t('settings.libraryFolders.folders')} hint={t('settings.libraryFolders.foldersHint')} error={extraError}>
 				<textarea id="if-paths" class="input mono" rows="3" bind:value={extraText} placeholder="/data/imports" autocomplete="off" spellcheck="false" readonly={!canSaveExtra}></textarea>
+			</Field>
+			<Field id="if-watch" label={t('settings.libraryFolders.watch')} hint={t('settings.libraryFolders.watchHint')}>
+				<textarea id="if-watch" class="input mono" rows="2" bind:value={watchText} placeholder="/data/drop" autocomplete="off" spellcheck="false" readonly={!canSaveExtra}></textarea>
 			</Field>
 			{#if canSaveExtra}
 				<div class="row" style="margin-top: var(--s-5)">
@@ -513,6 +627,9 @@
 {/if}
 
 <style>
+	.hands {
+		margin-bottom: var(--s-5);
+	}
 	.extra {
 		margin-top: var(--s-5);
 	}
@@ -602,8 +719,12 @@
 	.kind { display: none; }
 
 	@container settings (max-width: 640px) {
-		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic q q' 'ic free acts' 'ic nt nt'; row-gap: 6px; }
+		.folder { grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'ic grow grow' 'ic st st' 'ic q q' 'ic free acts' 'ic nt nt' 'ic na na' 'ic lo lo' 'ic flt flt'; row-gap: 6px; }
 		.folder .nt { grid-area: nt; grid-template-columns: minmax(0, 1fr); }
+		.folder .nt.na { grid-area: na; }
+		.folder .nt.lo { grid-area: lo; }
+		.folder .nt.flt { grid-area: flt; }
+		.nt.lo .ql { display: none; }
 		.nt .ql { padding: 0; font: 400 15px/1.3 var(--font-ui); color: var(--text); }
 		.folder .qpick { grid-area: q; width: auto; border-block: 1px solid var(--line); }
 		.qpick :global(.ui-pop) { width: 100%; }
@@ -624,7 +745,7 @@
 	/* Phones: the buttons take their own line at the row's end (change path, then remove, last), so a long Rename label cannot squeeze the name. */
 	/* The state takes its own line too, so a long state never squeezes the name. */
 	@container settings (max-width: 440px) {
-		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic q q' 'ic acts acts' 'ic nt nt'; }
+		.folder { grid-template-areas: 'ic grow grow' 'ic st st' 'ic free free' 'ic q q' 'ic acts acts' 'ic nt nt' 'ic na na' 'ic lo lo' 'ic flt flt'; }
 		.folder .st { justify-self: start; white-space: normal; line-height: 1.3; }
 		.folder .acts { justify-self: end; flex-wrap: wrap; justify-content: flex-end; margin-inline-end: -8px; }
 	}

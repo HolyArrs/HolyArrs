@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -137,7 +138,7 @@ func TestDiscordNamesThePeopleWhoAsked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(a.Moments) != len(Moments) || a.URLSecretID == nil {
+	if len(a.Moments) != len(Moments)-1 || slices.Contains(a.Moments, MomentArtwork) || a.URLSecretID == nil {
 		t.Fatalf("alert %+v", a)
 	}
 	snd := &Sender{Store: s, Vault: v, Backoff: []time.Duration{}}

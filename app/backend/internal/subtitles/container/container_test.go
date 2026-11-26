@@ -49,8 +49,8 @@ func TestRefusals(t *testing.T) {
 	if _, err := Probe(dir); err == nil {
 		t.Error("a folder was read")
 	}
-	if _, err := Read(bytes.NewReader([]byte("RIFF....AVI LIST")), 16); !errors.Is(err, ErrUnknownFormat) {
-		t.Errorf("avi: %v", err)
+	if _, err := Read(bytes.NewReader([]byte("RIFF....WAVELIST")), 16); !errors.Is(err, ErrUnknownFormat) {
+		t.Errorf("wave: %v", err)
 	}
 	if runtime.GOOS != "windows" {
 		link := filepath.Join(dir, "link.mkv")

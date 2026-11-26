@@ -1,15 +1,18 @@
 // The welcome steps for sources and the import: the sources found, what is left to do.
-import type { Step } from './welcome-steps.ts';
 import { kindWords, type DownloaderView } from '#lib/downloads/index.ts';
 import { setContext } from 'svelte';
 import { api } from '#lib/core/api.ts';
-import type { LibraryFolder } from '#lib/core/types.ts';
+import type { AlertView, LibraryFolder } from '#lib/core/types.ts';
+import { alertMissing } from '#lib/alerts/index.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
-export type Todo = { label: string; path: string };
+export type Todo = { label: string; path: string; end?: string };
 
-export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () => Promise<DownloaderView[]>; extra: Step[]; go: (s: Step) => void }) {
+export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () => Promise<DownloaderView[]>; reload: () => Promise<void> }) {
 	let sources = $state(0);
+	let viaProwlarr = $state(0);
+	let prowlarrAddr = $state('');
+	let prowlarrNames = $state<string[]>([]);
 	// Sources plus linked Jackett or Prowlarr (a fresh link may not have synced its Sources yet).
 	async function sourceCount(): Promise<number> {
 		const n = async (path: string, key: string) => {
@@ -20,6 +23,14 @@ export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () =
 			}
 		};
 		const [s, b] = await Promise.all([n('/sources', 'sources'), n('/bridges', 'bridges')]);
+		// Indexers that are Prowlarr per-site feeds (http://prowlarr:9696/5/api): Radarr or Sonarr only had them from Prowlarr.
+		const list = await api.get<{ sources: { url: string; name: string }[] }>('/sources').then((r) => r.sources ?? [], () => []);
+		const viaFeeds = list.filter((x) => { try { return /^\/\d+\/api\/?$/.test(new URL(x.url).pathname); } catch { return false; } });
+		const feeds = viaFeeds.map((x) => new URL(x.url));
+		prowlarrNames = viaFeeds.map((x) => x.name);
+		viaProwlarr = feeds.length;
+		// Prowlarr's own address, from its per-site feeds: Manage opens with it filled in.
+		prowlarrAddr = feeds[0]?.origin ?? '';
 		return s + b;
 	}
 	async function loadSources() {
@@ -27,19 +38,20 @@ export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () =
 	}
 
 	// Import: the Settings move flow, right here in the panel.
-	const IMPORT_QUERY = 'first=1&step=import';
+	const IMPORT_QUERY = 'first=1&step=apps';
 	// Import offers every app, except a downloader or Prowlarr that is already connected here. The list is filled before the Read sheet first opens.
 	const hideApps: string[] = [];
 	setContext('move-hide-apps', hideApps);
 	setContext('move-hide-count', true);
 	let moveStep = $state('read');
-	// After the move: ask only for what Import did not bring.
+	// After the move: the downloaders and sources it brought show in their sections below, on the same step.
 	async function afterImport() {
 		ctx.busy = true;
-		const [dls, srcs] = await Promise.all([ctx.listDownloaders(), sourceCount()]);
-		ctx.busy = false;
-		ctx.extra = [...(dls.length ? [] : (['downloader'] as Step[])), ...(srcs ? [] : (['source'] as Step[]))];
-		ctx.go(ctx.extra[0] ?? 'done');
+		try {
+			await ctx.reload();
+		} finally {
+			ctx.busy = false;
+		}
 	}
 	async function loadHidden() {
 		const [dls, bridges] = await Promise.all([
@@ -58,12 +70,15 @@ export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () =
 	let haveSet = $state<string[]>([]);
 	async function loadTodo() {
 		const list = <T,>(path: string, key: string) => api.get<Record<string, T[]>>(path).then((r) => r[key] ?? [], () => null);
-		const [fl, dl, br, srcs] = await Promise.all([
+		const [fl, dl, br, srcs, al] = await Promise.all([
 			list<LibraryFolder>('/library-folders', 'library_folders'),
 			list<DownloaderView>('/downloaders', 'downloaders'),
 			list<{ kind: string }>('/bridges', 'bridges'),
-			sourceCount()
+			sourceCount(),
+			list<AlertView>('/alerts', 'alerts')
 		]);
+		// Imported Alerts come over off until their token is typed.
+		const keyless = (al ?? []).filter((a) => !a.enabled && alertMissing(a)).length;
 		const kindName: Record<string, string> = { movie: t('setup.movies'), show: t('setup.tvShows'), music: t('setup.music') };
 		const bridgeName: Record<string, string> = { prowlarr: 'Prowlarr', jackett: 'Jackett' };
 		// One line each: two downloaders of one kind would repeat a line, and the list is keyed by its text.
@@ -78,7 +93,8 @@ export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () =
 		todo = [
 			...(folders ? [] : [{ label: t('setup.folders'), path: '/settings/library-folders' }]),
 			...(dls ? [] : [{ label: t('setup.downloader'), path: '/settings/downloaders' }]),
-			...(srcs ? [] : [{ label: t('setup.source'), path: '/settings/sources' }])
+			...(srcs ? [] : [{ label: t('setup.source'), path: '/settings/sources' }]),
+			...(keyless ? [{ label: keyless === 1 ? t('setup.alertsNeedKeyOne') : t('setup.alertsNeedKey', { n: keyless }), path: '/settings/alerts', end: t('welcome.change') }] : [])
 		];
 	}
 	// Invite family: turns on Requests (what the old "family" question did), then opens Users.
@@ -94,6 +110,9 @@ export function createWelcomeSources(ctx: { busy: boolean; listDownloaders: () =
 		set moveStep(v) { moveStep = v; },
 		get sources() { return sources; },
 		set sources(v) { sources = v; },
+		get viaProwlarr() { return viaProwlarr; },
+		get prowlarrAddr() { return prowlarrAddr; },
+		get prowlarrNames() { return prowlarrNames; },
 		get IMPORT_QUERY() { return IMPORT_QUERY; },
 		afterImport,
 		get haveSet() { return haveSet; },

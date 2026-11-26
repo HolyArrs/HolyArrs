@@ -25,6 +25,9 @@ func TestFixReportOfDeletedPerson(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
+	// Report's own alert goes out in the background; let it land first so it
+	// is not counted as one sent by the fix.
+	r.svc.Wait()
 	before := len(r.fake.all())
 	if _, err := r.svc.FixReport(ctx, r.luis, v.ID, "done"); err != nil {
 		t.Fatal(err)

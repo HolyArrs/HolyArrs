@@ -15,6 +15,8 @@ type OldProfile struct {
 	// and CutoffQualities the cutoff's (several when it is a group).
 	Qualities       []string
 	CutoffQualities []string
+	// Groups are the allowed groups' qualities, one list per group.
+	Groups          [][]string
 	UpgradeAllowed  bool
 	MinScore        int
 	CutoffScore     int
@@ -25,6 +27,64 @@ type OldProfile struct {
 	LanguageCode string
 	// FourK starts from the 4K preset instead of Standard.
 	FourK bool
+	// Sizes is the old app's size table (shared by all its profiles);
+	// empty leaves the size limits out.
+	Sizes []OldQualitySize
+}
+
+// OldQualitySize is one row of an old app's size table, in MB a minute;
+// Max 0 means no largest size and Preferred 0 no preferred size.
+type OldQualitySize struct {
+	Quality   string  `json:"quality"`
+	Min       float64 `json:"min"`
+	Max       float64 `json:"max"`
+	Preferred float64 `json:"preferred,omitempty"`
+}
+
+// OldSizeLimits turns an old app's size table into per-minute limits per
+// ladder step. Qualities sharing a step take the widest range.
+func OldSizeLimits(rows []OldQualitySize) map[string]mediafiles.SizeLimit {
+	const mib = float64(1 << 20)
+	const noMax = int64(1) << 40 // a smallest size with no largest one
+	out := map[string]mediafiles.SizeLimit{}
+	open := map[string]bool{}
+	for _, r := range rows {
+		step := QualityStep(r.Quality)
+		if !slices.Contains(mediafiles.Ladder, step) {
+			continue
+		}
+		lo, hi, pref := int64(max(0, r.Min)*mib), int64(max(0, r.Max)*mib), int64(max(0, r.Preferred)*mib)
+		l, seen := out[step]
+		l.Preferred = max(l.Preferred, pref)
+		switch {
+		case !seen:
+			l = mediafiles.SizeLimit{Min: lo, Max: hi, Preferred: pref, PerMinute: true}
+			open[step] = hi == 0
+		default:
+			l.Min = min(l.Min, lo)
+			if hi == 0 {
+				open[step] = true
+			}
+			l.Max = max(l.Max, hi)
+		}
+		out[step] = l
+	}
+	for step, l := range out {
+		switch {
+		case open[step] && l.Min == 0:
+			l.Max = 0
+		case open[step] || l.Max < l.Min:
+			l.Max = max(noMax, l.Min)
+		}
+		if l.Preferred > 0 {
+			l.Preferred = max(l.Min, l.Preferred)
+			if l.Max > 0 {
+				l.Preferred = min(l.Max, l.Preferred)
+			}
+		}
+		out[step] = l
+	}
+	return out
 }
 
 // ClampPoints keeps points inside the Pick rules bound.
@@ -43,8 +103,10 @@ func OldProfileRules(p OldProfile) (mediafiles.PickRulesBody, []string) {
 	var notes []string
 	// The old apps keep size limits per quality and refuse no traits of
 	// their own, so the ready-made rules' limits and refusals are left out.
-	body.SizeLimits = map[string]mediafiles.SizeLimit{}
-	notes = append(notes, "its size limits are not brought; set them under Pick rules")
+	body.SizeLimits = OldSizeLimits(p.Sizes)
+	if len(body.SizeLimits) == 0 {
+		notes = append(notes, "its size limits are not brought; set them under Pick rules")
+	}
 	discs := slices.ContainsFunc(p.Qualities, func(q string) bool {
 		q = strings.ToLower(q)
 		return strings.Contains(q, "br-disk") || strings.Contains(q, "brdisk")
@@ -60,6 +122,7 @@ func OldProfileRules(p OldProfile) (mediafiles.PickRulesBody, []string) {
 		for i := range body.Steps {
 			body.Steps[i].Allowed = slices.Contains(steps, body.Steps[i].Quality)
 		}
+		keepProfileOrder(body.Steps, steps)
 		body.GoodEnoughAt = good
 		if !p.UpgradeAllowed {
 			// It never replaced a file: the first copy is good enough.
@@ -76,6 +139,8 @@ func OldProfileRules(p OldProfile) (mediafiles.PickRulesBody, []string) {
 	// Older apps have no minimum upgrade step: any gain counts, as 1 does.
 	body.UpgradeMinPoints = ClampPoints(max(p.MinUpgradeScore, 1))
 	body.Order = "quality_then_points"
+	// The old apps rank a group's qualities equal and let the score decide.
+	body.EqualSteps = groupSteps(p.Groups)
 	notes = append(notes, qualityNotes(p.Qualities)...)
 	// Sonarr profiles and Radarr's "Any" take every language; "Original"
 	// is what the ready-made rules already ask.
@@ -98,6 +163,24 @@ func OldProfileRules(p OldProfile) (mediafiles.PickRulesBody, []string) {
 	return body, notes
 }
 
+// groupSteps lists, per group, the steps its qualities fall on; only
+// groups spanning more than one step are kept.
+func groupSteps(groups [][]string) [][]string {
+	var out [][]string
+	for _, g := range groups {
+		var steps []string
+		for _, q := range g {
+			if s := QualityStep(q); s != "" && !slices.Contains(steps, s) {
+				steps = append(steps, s)
+			}
+		}
+		if len(steps) > 1 {
+			out = append(out, steps)
+		}
+	}
+	return out
+}
+
 // clipWords cuts s to n characters.
 func clipWords(s string, n int) string {
 	s = strings.TrimSpace(s)
@@ -108,26 +191,42 @@ func clipWords(s string, n int) string {
 }
 
 // qualityNotes says where a profile's qualities do not line up with the
-// ladder here: a quality with no step, and an order of its own.
+// ladder here: a quality with no step.
 func qualityNotes(qualities []string) []string {
-	var notes, lost []string
-	last, reordered := -1, false
+	var lost []string
 	for _, q := range qualities {
-		i := slices.Index(mediafiles.Ladder, QualityStep(q))
-		if i < 0 {
+		if slices.Index(mediafiles.Ladder, QualityStep(q)) < 0 {
 			lost = append(lost, clipWords(q, 40))
-			continue
 		}
-		reordered = reordered || i < last
-		last = max(last, i)
 	}
 	if len(lost) > 0 {
-		notes = append(notes, "no step here for "+strings.Join(lost, ", "))
+		return []string{"no step here for " + strings.Join(lost, ", ")}
 	}
-	if reordered {
-		notes = append(notes, "it ranks its qualities in an order of its own; here they keep the ladder's order")
+	return nil
+}
+
+// keepProfileOrder ranks the allowed steps among themselves in the
+// profile's order (low to high), so a profile that puts web above Blu-ray
+// keeps doing so. Steps not allowed keep their places.
+func keepProfileOrder(body []mediafiles.Step, order []string) {
+	var at []int
+	for i, s := range body {
+		if s.Allowed {
+			at = append(at, i)
+		}
 	}
-	return notes
+	var want []string
+	for _, q := range order {
+		if slices.ContainsFunc(body, func(s mediafiles.Step) bool { return s.Allowed && s.Quality == q }) {
+			want = append(want, q)
+		}
+	}
+	if len(want) != len(at) {
+		return
+	}
+	for k, i := range at {
+		body[i].Quality = want[k]
+	}
 }
 
 // profileSteps maps a profile's allowed qualities to ladder steps, and its
@@ -138,17 +237,18 @@ func profileSteps(qualities, cutoff []string) (steps []string, good string) {
 			steps = append(steps, s)
 		}
 	}
+	// The best is the last named in the profile's own order (low to high).
 	best := func(names []string) string {
 		top := -1
 		for _, q := range names {
-			if i := slices.Index(mediafiles.Ladder, QualityStep(q)); i > top && slices.Contains(steps, mediafiles.Ladder[i]) {
+			if i := slices.Index(steps, QualityStep(q)); i > top {
 				top = i
 			}
 		}
 		if top < 0 {
 			return ""
 		}
-		return mediafiles.Ladder[top]
+		return steps[top]
 	}
 	if good = best(cutoff); good == "" {
 		good = best(qualities)

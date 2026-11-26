@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { editForm, withoutEditing } from '#lib/ui/edit-in-place.ts';
 	import { ask } from '#lib/ui/ask.svelte.ts';
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import { SkSettings } from '#lib/ui/sk/index.ts';
@@ -6,12 +7,13 @@
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import Words from '#lib/ui/Words.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import { every, listKinds, listLink, listSeasons, titleKinds } from '#lib/requests/index.ts';
 	import type { NeverAddEntry, OutsideList } from '#lib/requests/index.ts';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { session } from '#lib/core/session.svelte.ts';
 	import { api, ApiError } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
@@ -54,6 +56,15 @@
 	// Owner only: a Trakt VIP access token adds the Trakt tab (score, watchers, comments) to title pages.
 	let traktVipMasked = $state('');
 	let traktVip = $state('');
+	// Trakt sign-in (owner only): reads private lists and the watch history.
+	type TraktStatus = { client_id: boolean; client_secret: boolean; signed_in: boolean; username?: string; waiting: boolean; problem?: string };
+	let trakt = $state<TraktStatus | null>(null);
+	let traktSecretInput = $state('');
+	let traktDevice = $state<{ user_code: string; verification_url: string; interval: number } | null>(null);
+	let traktBusy = $state(false);
+	let traktSignError = $state('');
+	let traktPoll: ReturnType<typeof setTimeout> | undefined;
+	const isOwner = $derived(session.s.role === 'owner');
 	// MDBList: optional. With the key, lists are read through the MDBList API; without it, by their public link.
 	let mdblistMasked = $state('');
 	let mdblistKey = $state('');
@@ -90,6 +101,7 @@
 			traktMasked = (await api.get<{ key: string }>('/settings/trakt-key').catch(() => ({ key: '' }))).key;
 			mdblistMasked = (await api.get<{ key: string }>('/settings/mdblist-key').catch(() => ({ key: '' }))).key;
 			if (session.s.role === 'owner') traktVipMasked = (await api.get<{ token: string }>('/settings/trakt-token').catch(() => ({ token: '' }))).token;
+			trakt = await api.get<TraktStatus>('/settings/trakt-signin').catch(() => null);
 			hasData = true;
 			error = '';
 		} catch (e) {
@@ -188,7 +200,7 @@
 	async function saveTrakt(e: SubmitEvent) {
 		e.preventDefault();
 		traktError = '';
-		if (!traktKey.trim() && !traktVip.trim()) {
+		if (!traktKey.trim() && !traktVip.trim() && !traktSecretInput.trim()) {
 			traktError = t('settings.outsideLists.pasteId');
 			return;
 		}
@@ -196,15 +208,87 @@
 		try {
 			if (traktKey.trim()) traktMasked = (await api.put<{ key: string }>('/settings/trakt-key', { key: traktKey.trim() })).key;
 			if (traktVip.trim()) traktVipMasked = (await api.put<{ token: string }>('/settings/trakt-token', { token: traktVip.trim() })).token;
+			if (traktSecretInput.trim()) trakt = await api.put<TraktStatus>('/settings/trakt-secret', { secret: traktSecretInput.trim() });
+			else if (traktKey.trim()) trakt = await api.get<TraktStatus>('/settings/trakt-signin').catch(() => trakt);
 			toasts.push(traktVip.trim() ? t('settings.outsideLists.traktSaved') : t('settings.outsideLists.traktKeySaved'), 'ok');
 			traktKey = '';
 			traktVip = '';
+			traktSecretInput = '';
 		} catch (err) {
 			traktError = err instanceof ApiError && err.status === 403 ? t('settings.outsideLists.signInToChange') : message(err);
 		} finally {
 			traktSaving = false;
 		}
 	}
+
+	function stopTraktPoll() {
+		clearTimeout(traktPoll);
+		traktPoll = undefined;
+	}
+
+	function traktFailed(err: unknown) {
+		traktSignError = err instanceof ApiError && err.status === 403 ? t('settings.outsideLists.signInToChange') : message(err);
+	}
+
+	/** The device sign-in: shows a code to enter at Trakt and asks the server at Trakt's pace until it is approved. */
+	async function startTraktDevice() {
+		stopTraktPoll();
+		traktSignError = '';
+		traktBusy = true;
+		try {
+			traktDevice = await api.post<{ user_code: string; verification_url: string; interval: number }>('/settings/trakt-signin', {});
+			pollTrakt();
+		} catch (err) {
+			traktFailed(err);
+		} finally {
+			traktBusy = false;
+		}
+	}
+
+	/** Where to type the code: Trakt's own address when it sends one, else trakt.tv/activate. */
+	function activateURL(url: string): string {
+		return /^https:\/\/([a-z0-9-]+\.)*trakt\.tv(\/|$)/i.test(url) ? url : 'https://trakt.tv/activate';
+	}
+
+	/** The address as people read it, without https://. */
+	function activateLabel(url: string): string {
+		return activateURL(url).replace(/^https:\/\//, '');
+	}
+
+	function pollTrakt() {
+		const wait = Math.max(traktDevice?.interval ?? 5, 1) * 1000;
+		traktPoll = setTimeout(async () => {
+			if (!traktDevice) return;
+			try {
+				const r = await api.post<{ state: string; status: TraktStatus }>('/settings/trakt-signin/check', {});
+				trakt = r.status;
+				if (r.state === 'waiting') return pollTrakt();
+				traktDevice = null;
+				if (r.state === 'signed_in') toasts.push(t('settings.outsideLists.traktSignedIn'), 'ok');
+				else traktSignError = r.state === 'denied' ? t('settings.outsideLists.traktDenied') : t('settings.outsideLists.traktExpired');
+			} catch (err) {
+				traktDevice = null;
+				traktFailed(err);
+			}
+		}, wait);
+	}
+
+	async function signOutTrakt() {
+		stopTraktPoll();
+		traktSignError = '';
+		traktBusy = true;
+		try {
+			trakt = await api.del<TraktStatus>('/settings/trakt-signin');
+			traktDevice = null;
+			toasts.push(t('settings.outsideLists.traktSignedOut'), 'ok');
+		} catch (err) {
+			traktFailed(err);
+		} finally {
+			traktBusy = false;
+		}
+	}
+
+	onDestroy(stopTraktPoll);
 
 	/** Saves the MDBList key, or removes it when remove is set, so lists go back to the public link. */
 	async function saveMDBList(e: SubmitEvent | null, remove = false) {
@@ -263,7 +347,7 @@
 </PageHeader>
 
 {#if formOpen}
-	<form class="sc-form" onsubmit={save} aria-label={editId === null ? t('settings.outsideLists.add') : t('settings.outsideLists.change', { name })}>
+	<form class="sc-form" use:editForm={editId} onsubmit={save} aria-label={editId === null ? t('settings.outsideLists.add') : t('settings.outsideLists.change', { name })}>
 		<SettingsCard title={editId === null ? t('settings.outsideLists.add') : t('settings.outsideLists.change', { name })}>
 			<Field id="ol-name" label={t('settings.outsideLists.name')}>
 				<input id="ol-name" class="input" bind:value={name} maxlength="80" required placeholder={t('settings.outsideLists.nameExample')} />
@@ -344,8 +428,8 @@
 		<EmptyState icon="inbox" title={t('settings.outsideLists.none')} text={t('settings.outsideLists.noneText')} action={{ label: t('settings.outsideLists.add'), onclick: () => openForm(), icon: 'plus' }} />
 	{:else if lists.length}
 		<ul class="card rows lists-card" aria-label={t('settings.outsideLists.title')}>
-			{#each lists as l (l.id)}
-				<li class="list" data-testid="outside-list">
+			{#each withoutEditing(lists, formOpen ? editId : null) as l (l.id)}
+				<li class="list" data-testid="outside-list" data-edit-row={l.id}>
 					<div class="grow">
 						<div class="row" style="gap: var(--s-2)">
 							<b>{l.name}</b>
@@ -355,7 +439,7 @@
 							{#if l.last_error}<span class="chip fail">{t('settings.outsideLists.problem')}</span>{/if}
 						</div>
 						<div class="xs muted">
-							{#if listLink(l.kind, l.ref)}<a class="ul" href={listLink(l.kind, l.ref)} target="_blank" rel="noreferrer noopener">{l.ref}</a>{:else}{l.ref}{/if}
+							{#if listLink(l.kind, l.ref, l.title_kind)}<a class="ul" href={listLink(l.kind, l.ref, l.title_kind)} target="_blank" rel="noreferrer noopener">{l.ref}</a>{:else}{l.ref}{/if}
 							· {t('settings.outsideLists.readEvery', { every: every(l.sync_every_hours) })}
 						</div>
 						{#if l.last_synced_at}
@@ -367,7 +451,7 @@
 					</div>
 					<div class="row acts">
 						<Button icon="refresh" type="button" onclick={() => syncNow(l)} disabled={busyId === l.id || !l.enabled} aria-busy={busyId === l.id}>{t('settings.outsideLists.readNow')}</Button>
-						<Button type="button" onclick={() => openForm(l)}>{t('settings.outsideLists.changeButton')}</Button>
+						<Button type="button" data-edit-change onclick={() => openForm(l)}>{t('settings.outsideLists.changeButton')}</Button>
 						<Button type="button" onclick={() => remove(l)} disabled={busyId === l.id}>{t('settings.outsideLists.remove')}</Button>
 					</div>
 				</li>
@@ -387,10 +471,52 @@
 				<Field id="trakt-token" label={traktVipMasked ? t('settings.outsideLists.replaceVip') : t('settings.outsideLists.vip')} hint={t('settings.outsideLists.vipHint')}>
 					<input id="trakt-token" class="input mono" type="password" bind:value={traktVip} autocomplete="off" spellcheck="false" />
 				</Field>
+				<Field id="trakt-secret" label={t('settings.outsideLists.traktClientSecretLabel')}>
+					<input id="trakt-secret" class="input mono" type="password" bind:value={traktSecretInput} autocomplete="off" spellcheck="false" />
+				</Field>
 			{/if}
 			{#if traktError}<p class="form-error" role="alert">{traktError}</p>{/if}
 			<div class="row"><Button type="submit" disabled={traktSaving} aria-busy={traktSaving}>{t('settings.outsideLists.save')}</Button></div>
 		</form>
+		{#if trakt && traktMasked}
+			<section class="trakt-signin" data-testid="trakt-signin">
+				<h3>{t('settings.outsideLists.traktSignInTitle')}</h3>
+				<p class="small muted">{t('settings.outsideLists.traktSignInInfo')}</p>
+				<p class="small">
+					{trakt.signed_in ? t('settings.outsideLists.traktSignedInAs', { name: trakt.username || 'Trakt' }) : t('settings.outsideLists.traktNotSignedIn')}
+				</p>
+				{#if trakt.problem && !trakt.signed_in}<p class="notice warn">{trakt.problem}</p>{/if}
+				{#if isOwner}
+					{#if trakt.signed_in}
+						<div class="row"><Button type="button" disabled={traktBusy} onclick={signOutTrakt}>{t('settings.outsideLists.traktSignOut')}</Button></div>
+					{:else}
+						<div class="row">
+							<Button
+								type="button"
+								variant="primary"
+								disabled={traktBusy || !!traktDevice || !trakt.client_secret}
+								aria-busy={traktBusy || !!traktDevice}
+								onclick={startTraktDevice}
+								>{t('settings.outsideLists.traktSignIn')}</Button
+							>
+						</div>
+						{#if !trakt.client_secret}<p class="small muted" data-testid="trakt-needs-secret">{t('settings.outsideLists.traktSecretFirst')}</p>{/if}
+						{#if traktDevice}
+							<p class="small" data-testid="trakt-device" role="status">
+								<Words
+									key="settings.outsideLists.traktDeviceSteps"
+									vars={{ url: activateLabel(traktDevice.verification_url), code: traktDevice.user_code }}
+									links={{ a: activateURL(traktDevice.verification_url) }}
+									codeClass="trakt-code"
+									external
+								/>
+							</p>
+						{/if}
+					{/if}
+					{#if traktSignError}<p class="form-error" role="alert">{traktSignError}</p>{/if}
+				{/if}
+			</section>
+		{/if}
 	</SettingsCard>
 
 	<SettingsCard id="mdblist-card" title={t('settings.outsideLists.mdblistKey')} description={`${mdblistMasked ? t('settings.outsideLists.keySaved') : t('settings.outsideLists.notSet')}. ${t('settings.outsideLists.mdblistInfo')}`}>
@@ -493,5 +619,12 @@
 	/* Buttons keep their full label; the row wraps instead. */
 	.acts :global(.ui-btn) {
 		flex: none;
+	}
+	/* The code to type at Trakt: big enough to read across the room. */
+	.trakt-signin :global(.trakt-code) {
+		font-size: 1.4em;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		user-select: all;
 	}
 </style>

@@ -85,5 +85,21 @@
 	"sources.uses.auto": "自動搜尋",
 	"sources.uses.feed": "最新清單",
 	"sources.uses.hand": "手動搜尋",
-	"sources.uses.none": "未使用"
+	"sources.uses.none": "未使用",
+	"sources.bridge.removeTitle": "要移除 {name} 嗎？",
+	"sources.bridge.find": "在我的網路中尋找 {name}",
+	"sources.bridge.noneFound": "你的網路中沒有 {name} 回應。",
+	"sources.bridge.keyFound": "已從 {name} 取得金鑰",
+	"sources.bridge.keyKept": "{name} 沒有提供金鑰（已開啟登入）。請用「取得金鑰」複製。",
+	"sources.bridge.keyKeptJackett": "Jackett 沒有提供金鑰（它設有管理員密碼）。請用「取得金鑰」複製。",
+	"sources.bridge.notReached": "無法連線到 {name}。",
+	"sources.bridge.brings.title": "會帶過來的內容",
+	"sources.bridge.brings.sites": "它的索引器（作為來源）",
+	"sources.bridge.brings.categories": "它們的分類",
+	"sources.bridge.brings.search": "搜尋會透過 {name}",
+	"sources.bridge.brings.sync": "{name} 中的變更會同步過來",
+	"sources.bridge.brings.stays": "你的索引器仍在 {name} 中設定。",
+	"sources.bridge.brings.had": "已有 {n} 個索引器",
+	"sources.bridge.brings.hadFrom": "透過 {apps} 匯入",
+	"sources.bridge.brings.keyKept": "金鑰留空即可使用他們已有的金鑰。"
 }

@@ -259,6 +259,7 @@ func TestT10PinMusicActsAndAlbumFollows(t *testing.T) {
 // (NULL first), skip dropped, excluded and complete albums.
 func TestT10PinWholeArtistSearchLargeLibrary(t *testing.T) {
 	e, artist := t10MusicWorld(t)
+	searchSource(t, e.store) // a search by hand needs a Source
 	ctx := context.Background()
 	var cloned []int64
 	err := e.store.Write(ctx, func(tx *sql.Tx) error {

@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Добавяне към списъка „Никога не добавяй“",
 	"settings.outsideLists.showDot": "сериал ·",
 	"settings.outsideLists.takeOff": "Махане на {name}",
-	"settings.outsideLists.empty": "Още няма нищо в този списък"
+	"settings.outsideLists.empty": "Още няма нищо в този списък",
+	"settings.outsideLists.traktSignInTitle": "Вход в Trakt",
+	"settings.outsideLists.traktSignInInfo": "Влезте, за да се четат личните ви списъци и списъкът за гледане в Trakt и за да се добавя гледаното в Trakt към историята на гледане.",
+	"settings.outsideLists.traktSignedInAs": "Влезли сте като {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Не сте влезли. Четат се само публичните списъци.",
+	"settings.outsideLists.traktSignIn": "Вход с Trakt",
+	"settings.outsideLists.traktDeviceSteps": "На което и да е устройство отворете <a>{url}</a> и въведете <code>{code}</code>. Тази страница чака, докато одобрите.",
+	"settings.outsideLists.traktDenied": "Входът в Trakt беше отказан.",
+	"settings.outsideLists.traktExpired": "Кодът изтече. Започнете отначало.",
+	"settings.outsideLists.traktSignOut": "Изход от Trakt",
+	"settings.outsideLists.traktSignedIn": "Влязохте в Trakt",
+	"settings.outsideLists.traktSignedOut": "Излязохте от Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (нужен за вход с Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Първо запазете client secret на приложението си в Trakt; Trakt има нужда от него, за да ви държи влезли."
 }

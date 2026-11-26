@@ -214,7 +214,7 @@ func (s *Service) askShow(ctx context.Context, p Person, id string, seasons []in
 		if err := s.checkLimit(ctx, tx, p, KindShows); err != nil {
 			return err
 		}
-		if _, err := database.Insert(tx, "asks", &a, p.actor()); err != nil {
+		if _, err := database.Insert(tx, "asks", viaPlugin(ctx, &a), p.actor()); err != nil {
 			return err
 		}
 		_, err = tx.Exec(askShowSQL2, a.ID, p.UserID, database.FormatTime(now))

@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Dodaj na popis za nikad dodati",
 	"settings.outsideLists.showDot": "serija ·",
 	"settings.outsideLists.takeOff": "Skini {name}",
-	"settings.outsideLists.empty": "Na ovom popisu još nema ničega"
+	"settings.outsideLists.empty": "Na ovom popisu još nema ničega",
+	"settings.outsideLists.traktSignInTitle": "Prijava u Trakt",
+	"settings.outsideLists.traktSignInInfo": "Prijavi se da se čitaju tvoji privatni Trakt popisi i popis za gledanje te da se ono što si gledao na Traktu doda u povijest gledanja.",
+	"settings.outsideLists.traktSignedInAs": "Prijavljen kao {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Nisi prijavljen. Čitaju se samo javni popisi.",
+	"settings.outsideLists.traktSignIn": "Prijava putem Trakta",
+	"settings.outsideLists.traktDeviceSteps": "Na bilo kojem uređaju otvori <a>{url}</a> i upiši <code>{code}</code>. Ova stranica čeka dok ne odobriš.",
+	"settings.outsideLists.traktDenied": "Prijava u Trakt je odbijena.",
+	"settings.outsideLists.traktExpired": "Kod je istekao. Počni ispočetka.",
+	"settings.outsideLists.traktSignOut": "Odjavi se s Trakta",
+	"settings.outsideLists.traktSignedIn": "Prijavljen u Trakt",
+	"settings.outsideLists.traktSignedOut": "Odjavljen s Trakta",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret (potreban za prijavu putem Trakta)",
+	"settings.outsideLists.traktSecretFirst": "Najprije spremite client secret svoje Trakt aplikacije; Trakt ga treba da biste ostali prijavljeni."
 }

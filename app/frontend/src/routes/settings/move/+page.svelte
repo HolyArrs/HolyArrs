@@ -1,16 +1,13 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
-	import { createMovePassword } from '#lib/migrate/index.ts';
-	import { createMovePlan } from '#lib/migrate/index.ts';
-	import { createMoveRun } from '#lib/migrate/index.ts';
-	import { SkSettings } from '#lib/ui/sk/index.ts';
+	import { createMovePassword, createMovePlan, createMoveRun, SetupChoose, SetupDone } from '#lib/migrate/index.ts';
 	import PageHeader from '#lib/ui/PageHeader.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
 	import SettingsCard from '#lib/ui/SettingsCard.svelte';
 	import AdminLinkButton from '#lib/ui/AdminLinkButton.svelte';
-	import { MoveSteps, PasswordCheck, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, asStep, leaveFolders, latestPerInstance, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, seasonsShows, stepGate, usedByMoves, type AppKind, type Line, type Move, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
+	import { MoveSkeleton, MoveSteps, PasswordCheck, StepFoot, ReadSheet, type ReadAnswer, type SavedKey, ItemsSheet, type SheetRow, type ShowList, ReadStep, ChooseStep, BeforeSheet, MoveStep, DoneStep, createFollower, appName, bringDownloaders, readSnapshots, BroughtList, type Brought, asStep, leaveFolders, latestPerInstance, buckets, countWords, extraProblems, folderProblem, moveTotal, plural, rulesFrom, running, seasonsShows, stepGate, usedByMoves, type AppKind, type Line, type Move, type Names, type PathRule, type PersonChoice, type Plan, type Report, type Snapshot, type Step } from '#lib/migrate/index.ts';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -27,7 +24,7 @@
 	let {
 		embedded
 	}: {
-		embedded?: { query: string; ondone?: () => void; onstep?: (s: Step) => void };
+		embedded?: { query: string; ondone?: () => void; onstep?: (s: Step) => void; onbrought?: (b: Brought[]) => void; onaway?: () => void; onback?: () => void; start?: AppKind; again?: number; onread?: (kind: AppKind, s: Snapshot, from?: AppKind, replaced?: number[]) => void; onunread?: (kind: AppKind, address: string, from: AppKind, fromUrl: string) => void; via?: { kind: string; url: string; address: string }; go?: boolean; review?: boolean; reads?: number[] };
 	} = $props();
 	// svelte-ignore state_referenced_locally
 	const stepKey = embedded ? 'mstep' : 'step';
@@ -61,6 +58,7 @@
 	let loadError = $state('');
 	let movesError = $state('');
 	let snapshots = $state<Snapshot[]>([]);
+	let brought = $state<Brought[]>([]); // Settings: the Downloaders the reads brought.
 	let moves = $state.raw<Move[]>([]);
 	let savedKeys = $state<SavedKey[]>([]);
 	let folders = $state.raw<{ path: string; kind: string; label: string }[]>([]);
@@ -89,9 +87,10 @@
 	let suggested = $state<Record<string, string>>({});
 	let missingPaths = $state<Record<string, string>>({});
 	let seenFolders = $state<string[]>([]);
+	let hereFolders = $state<string[]>([]);
 	let skip = $state<string[]>([]);
-	// On by default: profiles bring their formats and scores as traits.
-	let noFormats = $state(false);
+	// Formats on by default; file names kept as they are unless the owner picks rename.
+	let noFormats = $state(false), names = $state<Names>('keep');
 	let people = $state<Record<string, PersonChoice>>({});
 	let changes = $state(0);
 	let planTimer: ReturnType<typeof setTimeout> | undefined;
@@ -103,6 +102,8 @@
 	let dryAt = $state(-1);
 	let planHash = '';
 	let trying = $state(false);
+	// How far the server is with the plan or test run (a background check).
+	let checkNote = $state('');
 	let tryFailed = $state(false);
 	let tryNotice = $state('');
 	let seen = $state.raw(new Map<string, Line>());
@@ -167,6 +168,9 @@
 	const ruleErrors = $derived(folderErrors + extraErrors.filter((e) => e !== '').length);
 	const tried = $derived(buckets(dry));
 	const stale = $derived(!!dry && dryAt !== changes);
+	// Setup's Folders step: the import runs on the server, so setup goes on as soon as it has started.
+	let awayDone = false;
+	$effect(() => { if (embedded?.review && embedded.onaway && step === 'move' && moveRunning && !awayDone) { awayDone = true; embedded.onaway(); } });
 	const chooseLines = $derived.by(() => {
 		const out = [...tried.choose];
 		// A choice row stays after the choice, so it can be changed back.
@@ -198,7 +202,8 @@
 			stale,
 			openChoices,
 			moving: moveRunning || starting,
-			safeMode
+			safeMode,
+			progress: checkNote
 		})
 	);
 	const fromApps = $derived(
@@ -225,12 +230,18 @@
 		await Promise.all([loadMoves(), loadSaved(), loadFolders()]);
 		// Left the page while it loaded: start nothing.
 		if (destroyed) return;
-		picked = defaultPicks();
+		// Setup's Folders step imports exactly the reads its app rows show (a Downloader brought along already used a read on its own).
+		picked = embedded?.reads?.length ? embedded.reads.filter((id) => snapshots.some((s) => s.id === id)) : defaultPicks();
 		loaded = true;
 		applied = page.url.search;
 		const busy = moves.find(running);
 		if (busy) follower.follow(busy.id);
 		await arrive(page.url.searchParams);
+		// Setup's app cards: the picked app's read opens straight away (nothing running yet).
+		if (embedded?.start && !busy) ((s) => (s ? readAgainFor(s) : addApp()))(snapshots.find((x) => x.id === embedded.again));
+		// Setup's Continue under the app cards: the move for every read so far, from Choose.
+		else if (embedded?.go && !busy && picked.length) enter('choose', false);
+		settled = true;
 	}
 	async function loadMoves() {
 		try {
@@ -238,6 +249,14 @@
 			movesError = '';
 		} catch (e) {
 			movesError = message(e);
+		}
+	}
+	async function removeMove(m: Move) {
+		try {
+			await api.del(`/migrate/moves/${m.id}`);
+			moves = moves.filter((x) => x.id !== m.id);
+		} catch (err) {
+			if (!quiet(err)) toasts.push(message(err), 'fail');
 		}
 	}
 	async function loadSaved() {
@@ -341,7 +360,7 @@
 		const ok = Object.fromEntries(Object.entries(picks).filter(([p, v]) => folderProblem(p, v, others[p]) === ''));
 		// Old folders set to "Don't bring them": their titles stay behind.
 		const leave = leaveFolders(plan, folders, picks);
-		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people, no_formats: noFormats, leave_folders: leave };
+		return { snapshots: picked, path_rules: rulesFrom(ok, others, extra.filter((_, i) => extraErrors[i] === '')), skip, people, no_formats: noFormats, leave_folders: leave, names };
 	}
 
 	function changed() {
@@ -351,17 +370,24 @@
 
 	// Step 1.
 	function onread(r: ReadAnswer, kind: AppKind, usedSaved: boolean) {
-		snapshots = [r.snapshot, ...snapshots.filter((x) => x.id !== r.snapshot.id)];
-		picked = [...picked.filter((id) => id !== r.snapshot.id), r.snapshot.id];
+		const got = readSnapshots(r); // Overseerr and Seerr also read the Sonarr and Radarr they keep; only the app read is picked.
+		// The same app read before at another address (same key) was replaced on the server: it counts once.
+		const gone = [...(r.replaced ?? []), ...(r.linked ?? []).flatMap((l) => l.replaced ?? [])];
+		snapshots = [...got, ...snapshots.filter((x) => !got.some((g) => g.id === x.id) && !gone.includes(x.id))];
+		picked = [...picked.filter((id) => id !== r.snapshot.id && !gone.includes(id)), r.snapshot.id];
+		void bringDownloaders(r, kind).then((b) => (embedded ? embedded.onbrought?.(b) : (brought = [...brought.filter((x) => !b.some((y) => y.id === x.id)), ...b])));
 		// The server keeps the key until a move finishes: ask what it keeps now.
 		void loadSaved();
 		changed();
 		const what = countWords(kind, r.snapshot.counts, 1);
 		const keys = r.needs_reentry?.length ?? 0;
-		toasts.push(t('settings.move.read', { app: appName(kind) }), 'ok', { body: keys > 0 ? t(keys === 1 ? 'settings.move.keysOne' : 'settings.move.keysOther', { n: keys }) : what || undefined });
+		if (!embedded?.onread) toasts.push(t('settings.move.read', { app: appName(kind) }), 'ok', { body: keys > 0 ? t(keys === 1 ? 'settings.move.keysOne' : 'settings.move.keysOther', { n: keys }) : what || undefined });
+		// Setup: back to the app cards (the move runs later, once, for every read); Seerr's own Radarr and Sonarr get their ticks too, or Needs a look when not reached.
+		for (const x of [...(r.linked ?? []), ...(r.unread ?? []), ...(r.skipped ?? []).flatMap((s) => snapshots.filter((y) => y.address === s.address).slice(-1).map((snapshot) => ({ kind: s.kind, snapshot })))]) 'snapshot' in x ? embedded?.onread?.(x.kind, x.snapshot, kind, 'replaced' in x ? (x.replaced as number[] | undefined) : undefined) : embedded?.onunread?.(x.kind, x.address, kind, r.snapshot.address ?? '');
+		embedded?.onread?.(kind, r.snapshot, undefined, r.replaced);
 	}
 	function addApp() {
-		readStart = 'radarr';
+		readStart = embedded?.start ?? 'radarr';
 		readAgain = false;
 		readAddress = '';
 		readOpen = true;
@@ -420,33 +446,25 @@
 		get destroyed() { return destroyed; },
 		get plan() { return plan; },
 		set plan(v) { plan = v; },
-		get suggested() { return suggested; },
-		set suggested(v) { suggested = v; },
-		get missingPaths() { return missingPaths; },
-		set missingPaths(v) { missingPaths = v; },
-		get seenFolders() { return seenFolders; },
-		set seenFolders(v) { seenFolders = v; },
-		get picks() { return picks; },
-		set picks(v) { picks = v; },
-		get extra() { return extra; },
-		set extra(v) { extra = v; },
+		get suggested() { return suggested; }, set suggested(v) { suggested = v; },
+		get missingPaths() { return missingPaths; }, set missingPaths(v) { missingPaths = v; },
+		get seenFolders() { return seenFolders; }, set seenFolders(v) { seenFolders = v; },
+		get hereFolders() { return hereFolders; }, set hereFolders(v) { hereFolders = v; },
+		get picks() { return picks; }, set picks(v) { picks = v; },
+		get extra() { return extra; }, set extra(v) { extra = v; },
 		changed,
 		quiet,
-		get gone() { return gone; },
-		set gone(v) { gone = v; },
-		get others() { return others; },
-		set others(v) { others = v; },
-		get skip() { return skip; },
-		set skip(v) { skip = v; },
-		get people() { return people; },
-		set people(v) { people = v; },
-		get trySeq() { return trySeq; },
-		set trySeq(v) { trySeq = v; },
-		get tryCtrl() { return tryCtrl; },
-		set tryCtrl(v) { tryCtrl = v; },
+		get gone() { return gone; }, set gone(v) { gone = v; },
+		get others() { return others; }, set others(v) { others = v; },
+		get skip() { return skip; }, set skip(v) { skip = v; },
+		get people() { return people; }, set people(v) { people = v; },
+		get trySeq() { return trySeq; }, set trySeq(v) { trySeq = v; },
+		get tryCtrl() { return tryCtrl; }, set tryCtrl(v) { tryCtrl = v; },
 		get changes() { return changes; }, get step() { return step; },
 		get trying() { return trying; },
 		set trying(v) { trying = v; },
+		get checkNote() { return checkNote; },
+		set checkNote(v) { checkNote = v; },
 		get tryFailed() { return tryFailed; },
 		set tryFailed(v) { tryFailed = v; },
 		get actionError() { return actionError; },
@@ -454,7 +472,7 @@
 		get dry() { return dry; },
 		set dry(v) { dry = v; },
 		get planHash() { return planHash; },
-		set planHash(v) { planHash = v; },
+		set planHash(v) { planHash = v; }, get quick() { return !!embedded?.review; },
 		get dryAt() { return dryAt; },
 		set dryAt(v) { dryAt = v; },
 		get seen() { return seen; },
@@ -462,8 +480,7 @@
 	};
 	const planFlow = createMovePlan(planFlowCtx);
 	const runFlowCtx = {
-		get checking() { return checking; },
-		set checking(v) { checking = v; },
+		get checking() { return checking; }, set checking(v) { checking = v; }, get embedded() { return !!embedded; }, get quick() { return !!embedded?.review; },
 		get starting() { return starting; },
 		set starting(v) { starting = v; },
 		get actionError() { return actionError; },
@@ -475,8 +492,7 @@
 		runTry: planFlow.runTry,
 		get destroyed() { return destroyed; },
 		get tryFailed() { return tryFailed; },
-		get gone() { return gone; },
-		set gone(v) { gone = v; },
+		get gone() { return gone; }, set gone(v) { gone = v; },
 		get step() { return step; },
 		set step(v) { step = v; },
 		get problems() { return problems; },
@@ -508,16 +524,14 @@
 		get tryNotice() { return tryNotice; },
 		set tryNotice(v) { tryNotice = v; },
 		loadSaved,
-		get suggested() { return suggested; },
-		set suggested(v) { suggested = v; },
+		get suggested() { return suggested; }, set suggested(v) { suggested = v; },
 		get picked() { return picked; },
 		set picked(v) { picked = v; },
 		changed,
 		enter,
 		get confirmUndo() { return confirmUndo; },
 		set confirmUndo(v) { confirmUndo = v; },
-		get undoing() { return undoing; },
-		set undoing(v) { undoing = v; },
+		get undoing() { return undoing; }, set undoing(v) { undoing = v; },
 	};
 	const runFlow = createMoveRun(runFlowCtx);
 	async function openMove(id: number, push = true) {
@@ -556,7 +570,7 @@
 		people = { ...people, ...((m.choices?.people ?? {}) as Record<string, PersonChoice>) };
 		// The move's other choices too: the groups it left out and its folders.
 		skip = [...(m.choices?.skip ?? skip)];
-		noFormats = !!m.choices?.no_formats;
+		noFormats = !!m.choices?.no_formats; names = m.choices?.names ?? 'keep';
 		const rules = m.choices?.path_rules ?? [];
 		if (rules.length > 0) {
 			const p = { ...picks };
@@ -595,8 +609,13 @@
 	}
 
 	$effect(() => embedded?.onstep?.(step));
+	// Setup never shows the Settings list of reads: once the read closes (read, cancelled or skipped), it goes back to the app rows.
+	let settled = $state(false);
+	$effect(() => {
+		if (embedded && settled && step === 'read' && !readOpen && !reading) untrack(() => (embedded.onback ?? embedded.onaway)?.());
+	});
 
-	const railBusy = $derived(step === 'choose' && (checking || starting) ? t('settings.move.checking') : step === 'choose' && planning ? t('settings.move.updating') : '');
+	const railBusy = $derived(step === 'choose' && (checking || starting) ? checkNote || t('settings.move.checking') : step === 'choose' && planning ? checkNote || t('settings.move.updating') : '');
 	const railFill = $derived(step === 'move' && moveRunning ? progress : 0.5);
 </script>
 
@@ -607,8 +626,7 @@
 {/if}
 
 {#if !loaded}
-	<div class="sk-rail" aria-hidden="true">{#each [1, 2, 3, 4] as n (n)}<span class="sk"></span>{/each}</div>
-	<SkSettings cards={2} rows={4} />
+	<MoveSkeleton />
 {:else if loadError}
 	<LoadError hasData={false} message={loadError} onretry={load} />
 {:else}
@@ -619,7 +637,7 @@
 		</SettingsCard>
 	{/if}
 
-	{#if step === 'read'}
+	{#if step === 'read' && !embedded}
 		<ReadStep
 			{snapshots}
 			{picked}
@@ -632,8 +650,12 @@
 			onagain={readAgainFor}
 			onforget={askForget}
 			onopen={(m) => openMove(m.id)}
+			onremovemove={removeMove}
 			onretrymoves={loadMoves}
 		/>
+		{#if !embedded && brought.length}<BroughtList items={brought} />{/if}
+	{:else if step === 'choose' && embedded}
+		<SetupChoose {plan} {planning} {folders} here={hereFolders} {picks} {others} busy={checking || starting} note={checkNote} onfolder={planFlow.onfolder} onother={planFlow.onother} oncommit={() => planFlow.replan(false)} onstart={() => void runFlow.moveNow()} error={planError} review={!!embedded?.review} onrefresh={() => void planFlow.makePlan()} />
 	{:else if step === 'choose'}
 		<ChooseStep
 			{plan}
@@ -649,7 +671,7 @@
 			{skip}
 			{people}
 			{noFormats}
-			onformats={(on) => ((noFormats = !on), changed(), planFlow.replan(true))}
+			onformats={(on) => ((noFormats = !on), changed(), planFlow.replan(true))} {names} onnames={(v) => ((names = v), changed(), planFlow.replan(true))}
 			onfolder={planFlow.onfolder}
 			onother={planFlow.onother}
 			onextra={planFlow.onextra}
@@ -663,7 +685,7 @@
 	{:else if step === 'move'}
 		<MoveStep {dry} running={moveRunning} {progress} note={progressNote} {lost} {safeMode} onshow={show} />
 	{:else if step === 'done' && current}
-		<DoneStep move={current} groups={doneGroups} openChoices={doneOpen} {progress} note={progressNote} {lost} onchoose={chooseAgain} onshow={show} />
+		{@const Done = embedded ? SetupDone : DoneStep}<Done move={current} groups={doneGroups} openChoices={doneOpen} {progress} note={progressNote} {lost} onchoose={chooseAgain} onshow={show} />
 	{/if}
 
 	{#if gone}
@@ -675,27 +697,32 @@
 	{#if actionError}<p class="form-error" role="alert">{actionError}</p>{/if}
 
 	{#if step === 'read'}
-		{#if snapshots.length > 0 || reading}
-			<StepFoot label={t('settings.move.continue')} onclick={() => enter('choose')} disabled={!gate.ok} reason={gate.reason} />
+		{#if (snapshots.length > 0 || reading) && !embedded}
+			<StepFoot setup={!!embedded} label={t('settings.move.continue')} onclick={() => enter('choose')} disabled={!gate.ok} reason={gate.reason} />
 		{/if}
-	{:else if step === 'choose'}
+	{:else if step === 'choose' && !embedded}
 		<StepFoot
 			back={() => back('read')}
 			label={t('settings.move.move')}
 			onclick={() => void runFlow.moveNow()}
 			disabled={!gate.ok || safeMode || moveRunning}
 			busy={checking || starting}
-			reason={safeMode ? t('settings.move.safeMode') : checking ? t('settings.move.checking') : gate.reason}
+			reason={safeMode ? t('settings.move.safeMode') : checking ? checkNote || t('settings.move.checking') : gate.reason}
 		/>
 	{:else if step === 'move'}
-		<StepFoot back={() => back('choose')} backDisabled={moveRunning || starting} />
+		{#if embedded?.onaway && moveRunning}
+			<!-- First-run setup: the import keeps going while the owner carries on; Back returns to Choose without stopping it. -->
+			<StepFoot setup label={t('settings.move.continue')} onclick={embedded.onaway} />
+		{:else}
+			<StepFoot setup={!!embedded} back={embedded ? undefined : () => back('choose')} backDisabled={moveRunning || starting} />
+		{/if}
 	{:else if step === 'done' && current}
 		{@const m = current}
 		{@const busyNow = running(m)}
 		{@const canUndo = !busyNow && (m.state === 'done' || m.state === 'failed') && m.undo_state !== 'failed'}
 		{@const retry = !busyNow && m.undo_state === 'failed' && m.state !== 'undone'}
 		{@const restart = !!embedded?.ondone && (m.state === 'undone' || m.state === 'failed')}
-		<StepFoot
+		<StepFoot setup={!!embedded}
 			label={busyNow ? undefined : retry ? t('settings.move.tryUndo') : restart ? t('settings.move.startOver') : embedded?.ondone ? t('settings.move.continue') : t('settings.move.done')}
 			variant={retry ? 'destructive' : 'primary'}
 			onclick={retry ? () => (confirmUndo = true) : restart ? done : (embedded?.ondone ?? done)}
@@ -710,7 +737,7 @@
 	{/if}
 {/if}
 
-<ReadSheet bind:open={readOpen} bind:reading start={readStart} startAddress={readAddress} again={readAgain} saved={savedKeys} known={snapshots.map((s) => s.address ?? '')} {onread} />
+<ReadSheet inline={!!embedded} bind:open={readOpen} bind:reading start={readStart} startAddress={readAddress} again={readAgain} via={embedded?.via} saved={savedKeys} known={snapshots.map((s) => s.address ?? '')} {onread} />
 
 <ItemsSheet bind:open={listOpen} title={listTitle} items={listItems} row={listRow} />
 
@@ -768,14 +795,5 @@
 </Sheet>
 
 <style>
-	.sk-rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-	.sk-rail .sk { display: block; height: 40px; border-radius: 12px; }
-	@media (pointer: coarse) {
-		.sk-rail .sk { height: 44px; }
-	}
 	.gone { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-	@media (max-width: 600px) {
-		.sk-rail { grid-template-columns: minmax(0, 1fr) 44px 44px 44px; }
-		.sk-rail .sk { height: 44px; }
-	}
 </style>

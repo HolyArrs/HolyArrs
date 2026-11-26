@@ -59,8 +59,8 @@ func TestDeleteShowKeepsFilesAndNeverAdd(t *testing.T) {
 	if _, _, err := svc.AddShow(ctx, "tmdb:100", ShowAddOptions{}, domain.System); !errors.Is(err, ErrShowNeverAdd) {
 		t.Fatalf("add again: %v", err)
 	}
-	if _, err := svc.Remove(ctx, id, library.RemoveChoice{}, false, domain.System); !errors.Is(err, library.ErrAlreadyRemoved) {
-		t.Fatalf("again: %v", err)
+	if p, err := svc.Remove(ctx, id, library.RemoveChoice{}, false, domain.System); err != nil || p.Applied || len(p.Held) != 0 {
+		t.Fatalf("again: %+v %v", p, err)
 	}
 }
 

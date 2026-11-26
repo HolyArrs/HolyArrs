@@ -10,8 +10,11 @@ import (
 
 const (
 	serviceMusicSearchLimit = 25
-	serviceReleaseLimit     = 100
-	serviceTrackLimit       = 10000
+	// serviceReleaseLimit matches the metadata server's own edition cap
+	// (3 pages of 100). An album with more editions keeps the first ones
+	// and is marked cut, never refused.
+	serviceReleaseLimit = 300
+	serviceTrackLimit   = 10000
 )
 
 const (
@@ -281,9 +284,8 @@ func parseServiceArtist(item serviceItem, albums bool) (Artist, error) {
 	if data.ReleaseGroups == nil {
 		return Artist{}, ErrServiceIncomplete
 	}
-	if len(*data.ReleaseGroups) > serviceReleaseLimit && !item.ReleaseGroupsComplete {
-		return Artist{}, ErrServiceIncomplete
-	}
+	// A long list that is not complete is still a partial list: the
+	// caller asks MusicBrainz for the rest when the mode lets it.
 	seen := make(map[string]bool, len(*data.ReleaseGroups))
 	out.Albums = make([]Album, 0, len(*data.ReleaseGroups))
 	for _, group := range *data.ReleaseGroups {
@@ -437,9 +439,6 @@ func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Press
 	if err != nil {
 		return m.fallbackPressings(ctx, albumMBID, nil, err)
 	}
-	if len(releaseIDs) > serviceReleaseLimit {
-		return m.fallbackPressings(ctx, albumMBID, nil, ErrServiceIncomplete)
-	}
 	// Ask for the releases a few at a time (an album can have a hundred) and
 	// read them in order as they land, so the result and its first error are
 	// the same as asking one by one. At most servicePressingFetches answers
@@ -483,6 +482,11 @@ func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Press
 			return m.fallbackPressings(ctx, albumMBID, out, err)
 		}
 		pressing, err := parseServicePressingItem(ctx, m.service, albumMBID, release, &totalTracks)
+		if err != nil && totalTracks > serviceTrackLimit && len(out) > 0 {
+			// A huge album keeps the editions read so far, marked cut.
+			stop()
+			return m.fallbackPressings(ctx, albumMBID, out, ErrServiceIncomplete)
+		}
 		if err != nil {
 			return m.fallbackPressings(ctx, albumMBID, out, err)
 		}
@@ -502,10 +506,18 @@ func (m *serviceMusic) Pressings(ctx context.Context, albumMBID string) ([]Press
 
 func (m *serviceMusic) fallbackPressings(ctx context.Context, albumMBID string, partial []Pressing, err error) ([]Pressing, error) {
 	if m.direct == nil || !serviceFallback(ctx, err) {
+		if len(partial) > 0 && ctx.Err() == nil && (errors.Is(err, ErrListCut) || errors.Is(err, ErrServiceIncomplete)) {
+			return partial, ErrListCut
+		}
 		return partial, serviceMusicError(err)
 	}
 	direct, directErr := m.direct.Pressings(ctx, albumMBID)
 	if directErr != nil {
+		// Direct lookups turned off (full mode) or failing: the editions
+		// already read are kept, marked cut, instead of failing the album.
+		if len(partial) > 0 && (errors.Is(err, ErrListCut) || errors.Is(err, ErrServiceIncomplete)) && ctx.Err() == nil {
+			return partial, ErrListCut
+		}
 		return direct, directErr
 	}
 	if !validDirectPressings(direct) {
@@ -532,9 +544,6 @@ func parseServiceReleaseIDs(item serviceItem) ([]string, error) {
 	if data.Releases == nil {
 		return nil, ErrServiceIncomplete
 	}
-	if len(*data.Releases) > serviceReleaseLimit {
-		return nil, ErrServiceIncomplete
-	}
 	seen := make(map[string]bool, len(*data.Releases))
 	out := make([]string, 0, len(*data.Releases))
 	for _, release := range *data.Releases {
@@ -543,7 +552,9 @@ func parseServiceReleaseIDs(item serviceItem) ([]string, error) {
 			return nil, ErrServiceInvalid
 		}
 		seen[id] = true
-		out = append(out, id)
+		if len(out) < serviceReleaseLimit {
+			out = append(out, id)
+		}
 	}
 	return out, nil
 }

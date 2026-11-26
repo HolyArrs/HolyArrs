@@ -5,6 +5,7 @@ Access-Control-Allow-Origin
 Allow
 Api-Key
 Authorization
+CSRF-Token
 Cache-Control
 Cf-Mitigated
 Clear-Site-Data
@@ -13,6 +14,7 @@ Content-Disposition
 Content-Length
 Content-Security-Policy
 Content-Type
+Cross-Origin-Resource-Policy
 ETag
 Forwarded
 If-None-Match
@@ -21,6 +23,7 @@ Location
 MCP-Protocol-Version
 Origin
 Proxy-Authorization
+Proxy-Connection
 Range
 Referer
 Referrer-Policy
@@ -28,6 +31,7 @@ Remote-Name
 Remote-User
 Retry-After
 SOAPAction
+Sec-Fetch-Dest
 Sec-Fetch-Site
 Server
 Server-Timing
@@ -56,6 +60,7 @@ X-Real-IP
 X-Timezone
 X-Transmission-Rpc-Version
 X-Transmission-Session-Id
+X-XSRF-TOKEN
 X-YouTube-Client-Name
 X-YouTube-Client-Version
 trakt-api-key

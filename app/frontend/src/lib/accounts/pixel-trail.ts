@@ -176,6 +176,8 @@ export function pixelTrail(node: HTMLElement, opts: TrailOpts = {}) {
 	canvas.className = 'px-trail';
 	canvas.setAttribute('aria-hidden', 'true');
 	Object.assign(canvas.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', pointerEvents: 'none', borderRadius: 'inherit', zIndex: '0' });
+	// The layer fills the button only: a static button would let it spread over the nearest positioned box (the whole card).
+	if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
 	host.prepend(canvas);
 	let g: Grid | undefined;
 	let frame = 0;
@@ -217,6 +219,26 @@ export function pixelTrail(node: HTMLElement, opts: TrailOpts = {}) {
 		if (!ctx || !g) return;
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		paint(ctx, g, color, dpr);
+		keepClear(ctx);
+	}
+	// The label and the logo stay readable: no pixels under them or in a 4 px ring around them (gaps in a logo included).
+	function keepClear(ctx: CanvasRenderingContext2D) {
+		const r = host.getBoundingClientRect();
+		const s = (host.offsetWidth / r.width || 1) * dpr;
+		const pad = 4 * dpr;
+		const boxes: DOMRect[] = [];
+		for (const el of host.querySelectorAll<Element>('svg, img')) boxes.push(el.getBoundingClientRect());
+		const walk = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
+		const range = document.createRange();
+		for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+			if (!n.textContent?.trim()) continue;
+			range.selectNodeContents(n);
+			for (const b of range.getClientRects()) boxes.push(b);
+		}
+		for (const b of boxes) {
+			if (!b.width || !b.height) continue;
+			ctx.clearRect((b.left - r.left) * s - pad, (b.top - r.top) * s - pad, b.width * s + pad * 2, b.height * s + pad * 2);
+		}
 	}
 	function loop(now: number) {
 		frame = 0;

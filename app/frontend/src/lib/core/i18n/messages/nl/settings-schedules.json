@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Annuleren",
 	"settings.schedules.stages": "Fases",
 	"settings.schedules.stagesNote": "Pauzeer of herstart ze in <a>Onderdelen</a>.",
-	"settings.schedules.allTime": "Altijd"
+	"settings.schedules.allTime": "Altijd",
+	"settings.schedules.skip.nothing": "Niets te doen",
+	"settings.schedules.skip.plexOff": "Uit: zet {setting} aan in {page}",
+	"settings.schedules.skip.plexNobody": "Niets te doen: niemand heeft zijn Plex-kijklijst aangezet",
+	"settings.schedules.skip.settingOff": "Uit: zet het aan in de instellingen",
+	"settings.schedules.skip.starting": "Overgeslagen: HolyArrs was nog aan het opstarten",
+	"settings.schedules.took": "Duurde {time}",
+	"settings.schedules.finished": "{label} klaar",
+	"settings.schedules.nothingToDo": "{label}: niets te doen",
+	"settings.schedules.runFailed": "{label} mislukt"
 }

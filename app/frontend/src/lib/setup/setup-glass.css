@@ -1,0 +1,100 @@
+/* First-run setup glass: shared by the welcome page (loaded from routes/welcome/+page.svelte). */
+.sheet.glass .input:focus-visible { border-color: rgb(255 255 255 / 0.6); box-shadow: 0 0 0 3px rgb(255 255 255 / 0.18); background-color: rgb(255 255 255 / 0.1); }
+.sheet.glass .input[aria-invalid='true'] { border-color: var(--fail); }
+/* A clicked field keeps the glass (the app-wide clicked-field tint is a solid dark fill that does not belong on glass). */
+:root:not([data-input='keyboard']) .sheet.glass .input:focus-visible { background-color: var(--g-bg); border-color: var(--g-line-hover); }
+:root:not([data-input='keyboard']) .welcome.over-art[data-theme='light'] .sheet.glass .input:focus-visible { background-color: rgb(255 255 255 / 0.6); }
+.sheet.glass .cb-addr { color: #fff; font-weight: 600; }
+.sheet.glass .link, .sheet.glass .quiet { color: rgb(255 255 255 / 0.7); }
+.sheet.glass .ui-seg { display: grid; width: 100%; padding: 3px; border-radius: 12px; background: rgb(255 255 255 / 0.08); }
+.sheet.glass .ui-seg .thumb { top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / var(--n)); border-radius: 9px; background: rgb(255 255 255 / 0.92); }
+.sheet.glass .ui-seg button { min-height: 40px; color: rgb(255 255 255 / 0.7); font-size: 15px; }
+.sheet.glass .ui-seg button[aria-checked='true'] { color: #111; }
+.sheet.glass .acts.one-row > .ui-btn { flex: 1 1 100%; }
+.sheet.glass .bridges > li { background: none; border: 0; border-radius: 0; border-top: 1px solid rgb(255 255 255 / 0.1); border-bottom: 1px solid rgb(255 255 255 / 0.1); padding: 14px 2px; }
+/* Setup glass: one look for every step, the same frosted surface, 1px light border and radius as the step bar (SetupBar reads these tokens).
+   Inputs, selects, icon buttons, secondary buttons, chips, list groups and tiles all use it; Continue is the one primary, in the app's primary red. */
+.welcome.over-art {
+	--g-bg: rgb(255 255 255 / 0.06);
+	--g-bg-hover: rgb(255 255 255 / 0.1);
+	--g-line: rgb(255 255 255 / 0.1);
+	--g-line-hover: rgb(255 255 255 / 0.2);
+	--g-r: var(--r-card);
+	--g-h: 44px;
+}
+.sheet.glass .input { min-height: var(--g-h); height: var(--g-h); border-radius: var(--g-r); background: var(--g-bg); border: 1px solid var(--g-line); color: #fff; }
+.sheet.glass .input::placeholder { color: rgb(255 255 255 / 0.45); }
+.sheet.glass .input:hover { border-color: var(--g-line-hover); }
+.sheet.glass select.input { color-scheme: dark; }
+.sheet.glass select.input option { background: #1b1b1f; color: #fff; }
+.sheet.glass .card .ui-ibtn { width: var(--g-h); height: var(--g-h); border-radius: var(--g-r); background: var(--g-bg); border: 1px solid var(--g-line); color: #fff; }
+.sheet.glass .ui-btn.secondary { min-height: var(--g-h); border-radius: var(--g-r); background: var(--g-bg); border: 1px solid var(--g-line); color: #fff; }
+@media (hover: hover) {
+	.sheet.glass .card .ui-ibtn:hover:not(:disabled), .sheet.glass .ui-btn.secondary:hover:not(:disabled) { background: var(--g-bg-hover); border-color: var(--g-line-hover); }
+}
+.sheet.glass .ui-btn.primary { height: 48px; min-height: 48px; border-radius: var(--g-r); background: var(--accent-fill); color: var(--text-on-red); border: 0; box-shadow: none; }
+@media (hover: hover) { .sheet.glass .ui-btn.primary:hover:not(:disabled) { background: var(--accent-fill-hover); } }
+.sheet.glass .testtag { min-height: var(--g-h); padding: 0 14px; border-radius: var(--g-r); background: var(--g-bg); border-color: var(--g-line); font-size: 13px; }
+.sheet.glass .ui-seg { border-radius: var(--g-r); background: var(--g-bg); border: 1px solid var(--g-line); }
+.sheet.glass .ui-settings .ui-btn.primary { height: auto; min-height: var(--g-h); background: var(--g-bg); border: 1px solid var(--g-line); color: #fff; }
+@media (hover: hover) { .sheet.glass .ui-settings .ui-btn.primary:hover:not(:disabled) { background: var(--g-bg-hover); border-color: var(--g-line-hover); } }
+.sheet.glass .ui-seg .thumb { border-radius: calc(var(--g-r) - 3px); }
+.sheet.glass .ctag { border-radius: var(--g-r); }
+/* One card for every setup step on desktop: the sign-in page's setup panel and this wizard's sheet use the same box.
+   One width that fits the widest step laid out in columns (Your apps), one height fitted inside the edge frame (SigninPortals' --frame), so the page never scrolls; a long list scrolls inside its own box. */
+:root {
+	--setup-fr: 18px;
+	--setup-w: min(1180px, calc(100vw - 2 * (var(--setup-fr) + 120px)));
+	/* Never taller than the tallest step needs (Downloads, about 930 px), so a tall window does not leave big gaps. */
+	--setup-h: min(940px, calc(100dvh - 2 * (var(--setup-fr) + clamp(20px, 3.5vh, 40px))));
+}
+@media (min-width: 1280px) { :root { --setup-fr: 22px; } }
+@media (min-width: 1440px) { :root { --setup-fr: 24px; } }
+@media (min-width: 1920px) { :root { --setup-fr: 32px; } }
+@media (min-width: 2560px) { :root { --setup-fr: 40px; } }
+/* Setup steps are full-bleed on both pages: no scrollbar gutter, so the card sits in the same place on each. */
+html:has([data-signin-panel]) { scrollbar-gutter: auto; }
+
+/* Primary buttons in the wizard: the sign-in page's pixel trail and hover lift (trail-buttons.ts). */
+.sheet.glass .ui-btn.has-trail { position: relative; overflow: hidden; isolation: isolate; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
+.sheet.glass .ui-btn.has-trail > :not(canvas) { position: relative; z-index: 1; }
+.sheet.glass .ui-btn.has-trail[aria-busy='true']:disabled { opacity: 1; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+	.sheet.glass .ui-btn.has-trail:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgb(0 0 0 / 0.35), 0 0 18px rgb(255 255 255 / 0.08); }
+	.sheet.glass .ui-btn.has-trail:not(:disabled):active { transform: translateY(0) scale(0.98); box-shadow: none; }
+}
+
+/* The card's ink: white on the dark glass, near-black on the light glass. Every wizard text, box and line is drawn from it, so light mode never shows white-on-light. */
+.welcome.over-art { --ink: #fff; --ink-rgb: 255 255 255; --ink-inv: #111; }
+.welcome.over-art[data-theme='light'] {
+	--ink: #1d1d1f;
+	--ink-rgb: 29 29 31;
+	--ink-inv: #fff;
+	--g-bg: rgb(255 255 255 / 0.55);
+	--g-bg-hover: rgb(255 255 255 / 0.75);
+	--g-line: rgb(0 0 0 / 0.1);
+	--g-line-hover: rgb(0 0 0 / 0.2);
+	--line: rgb(0 0 0 / 0.1);
+	--surface-2: transparent;
+}
+.welcome.over-art[data-theme='light'] .sheet.glass .input,
+.welcome.over-art[data-theme='light'] .sheet.glass .card .ui-ibtn,
+.welcome.over-art[data-theme='light'] .sheet.glass .ui-btn.secondary,
+.welcome.over-art[data-theme='light'] .sheet.glass .ui-settings .ui-btn.primary,
+.welcome.over-art[data-theme='light'] .sheet.glass .cb-addr { color: var(--ink); }
+.welcome.over-art[data-theme='light'] .sheet.glass .input::placeholder { color: rgb(var(--ink-rgb) / 0.45); }
+.welcome.over-art[data-theme='light'] .sheet.glass .input:focus-visible { border-color: rgb(var(--ink-rgb) / 0.45); box-shadow: 0 0 0 3px rgb(var(--ink-rgb) / 0.12); background-color: rgb(255 255 255 / 0.8); }
+.welcome.over-art[data-theme='light'] .sheet.glass select.input { color-scheme: light; }
+.welcome.over-art[data-theme='light'] .sheet.glass select.input option { background: #fff; color: #1d1d1f; }
+.welcome.over-art[data-theme='light'] .sheet.glass .link,
+.welcome.over-art[data-theme='light'] .sheet.glass .quiet,
+.welcome.over-art[data-theme='light'] .sheet.glass .ui-seg button { color: rgb(var(--ink-rgb) / 0.72); }
+.welcome.over-art[data-theme='light'] .sheet.glass .ui-seg .thumb { background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+.welcome.over-art[data-theme='light'] .sheet.glass .bridges > li { border-color: rgb(0 0 0 / 0.1); }
+/* Light glass: secondary text (hints, descriptions, quiet buttons, placeholders) in one darker grey, so it keeps 4.5:1 over bright posters too. */
+.welcome.over-art[data-theme='light'] { --ink-2: #3a3a3c; --ink-ph: #5c5c60; }
+.welcome.over-art[data-theme='light'] .sheet.glass .input::placeholder { color: var(--ink-ph); opacity: 1; }
+.welcome.over-art[data-theme='light'] .sheet.glass :is(.hint, .muted, .alt, .tile-desc, .link, .quiet, .head p, .import-text span, .done-note, .app-count, .app-hint) { color: var(--ink-2); }
+@media (hover: hover) { .welcome.over-art[data-theme='light'] .sheet.glass :is(.alt, .quiet, .link):hover:not(:disabled) { color: var(--ink); } }
+.welcome.over-art[data-theme='light'] .sheet.glass .tile { color: var(--ink-2); }
+.welcome.over-art[data-theme='light'] .sheet.glass .tile-label, .welcome.over-art[data-theme='light'] .sheet.glass .tile.on { color: var(--ink); }

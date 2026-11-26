@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Mga Request",
 	"settings.appearance.colRate": "Kada row",
 	"settings.appearance.noRows": "Wala pang nabilang na row sa Explore.",
+	"settings.appearance.rowStats": "Mga row sa Explore",
+	"settings.appearance.rowStatsDesc": "Mga pagbukas at request bawat row sa nakaraang 30 araw, ng lahat. Sa server na ito lang binibilang.",
+	"settings.appearance.colRow": "Row",
+	"settings.appearance.row.because_have": "Gaya ng mga title mo",
+	"settings.appearance.row.because_asked": "Gaya ng mga request mo",
+	"settings.appearance.row.person": "Higit pa mula sa isang tao",
+	"settings.appearance.row.genre": "Mga pili sa genre para sa iyo",
+	"settings.appearance.row.popular_genre": "Sikat ayon sa genre",
+	"settings.appearance.row.popular_decade": "Sikat ayon sa dekada",
+	"settings.appearance.row.decade": "Ayon sa dekada",
+	"settings.appearance.row.mood": "Ayon sa mood",
+	"settings.appearance.row.hero": "Banner sa itaas",
 	"settings.appearance.motion": "Galaw",
 	"settings.appearance.motionNote": "Sumusunod sa setting na Reduce motion ng device mo"
 }

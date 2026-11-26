@@ -70,6 +70,17 @@ type Settings struct {
 	// API answers them filled from the settings above; only names and
 	// hidden are kept from what is sent.
 	Qualities QualityLists `json:"qualities"`
+	// PickMany lets people ask for more than one line at once: the main
+	// copy and lines kept as their own copy (Standard and 4K). Off by
+	// default; each picked line is its own ask.
+	PickMany bool `json:"pick_many"`
+	// StreamingRegion and StreamingServices are the owner's streaming
+	// services (TMDB watch provider ids, their order) and the country
+	// they are in. SkipOnServices turns down asks for movies and shows on
+	// one of them instead of downloading.
+	StreamingRegion   string  `json:"streaming_region"`
+	StreamingServices []int64 `json:"streaming_services"`
+	SkipOnServices    bool    `json:"skip_on_services"`
 }
 
 // PerWeekOf is the default weekly limit for one kind.
@@ -85,12 +96,13 @@ func (s Settings) PerWeekOf(kind string) int {
 
 var settingKeys = []string{"ask_movies_per_week", "ask_library_folder_id", "ask_pick_rules_id", "ask_search_on_approve",
 	"ask_show_library_folder_id", "ask_show_pick_rules_id", "ask_shows_per_week", "ask_music_library_folder_id", "ask_music_pick_rules_id", "ask_music_per_week", "ask_plex_watchlists", "ask_plex_watchlists_everyone", "ask_plex_friends",
-	"ask_four_k_library_folder_id", "ask_four_k_pick_rules_id", "ask_show_four_k_library_folder_id", "ask_show_four_k_pick_rules_id", "ask_qualities", "ask_owner_auto_approve"}
+	"ask_four_k_library_folder_id", "ask_four_k_pick_rules_id", "ask_show_four_k_library_folder_id", "ask_show_four_k_pick_rules_id", "ask_qualities", "ask_owner_auto_approve", "ask_pick_many",
+	"ask_streaming_region", "ask_streaming_services", "ask_skip_on_services"}
 
 // ReadSettings reads the Request settings (10 a week of each kind, search
 // on approve).
 func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
-	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true, OwnerAutoApprove: true, Qualities: defaultQualities()}
+	s := Settings{MoviesPerWeek: DefaultPerWeek, ShowsPerWeek: DefaultPerWeek, MusicPerWeek: DefaultPerWeek, SearchOnApprove: true, OwnerAutoApprove: true, Qualities: defaultQualities(), StreamingServices: []int64{}}
 	args := make([]any, len(settingKeys))
 	for i, k := range settingKeys {
 		args[i] = k
@@ -143,6 +155,14 @@ func ReadSettings(ctx context.Context, db database.Lister) (Settings, error) {
 			s.Qualities = parseQualities(v)
 		case "ask_owner_auto_approve":
 			s.OwnerAutoApprove = v != "false"
+		case "ask_pick_many":
+			s.PickMany = v == "true"
+		case "ask_streaming_region":
+			s.StreamingRegion = v
+		case "ask_streaming_services":
+			s.StreamingServices = parseServices(v)
+		case "ask_skip_on_services":
+			s.SkipOnServices = v == "true"
 		}
 	}
 	return s, rows.Err()
@@ -154,6 +174,9 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 		if n < 0 || n > 1000 {
 			return ErrPerWeek
 		}
+	}
+	if err := checkStreaming(&s); err != nil {
+		return err
 	}
 	db := st.Read()
 	if s.LibraryFolderID != 0 {
@@ -242,7 +265,8 @@ func SaveSettings(ctx context.Context, st *database.Store, s Settings, by domain
 			strconv.FormatInt(s.ShowLibraryFolderID, 10), strconv.FormatInt(s.ShowPickRulesID, 10), strconv.Itoa(s.ShowsPerWeek),
 			strconv.FormatInt(s.MusicLibraryFolderID, 10), strconv.FormatInt(s.MusicPickRulesID, 10), strconv.Itoa(s.MusicPerWeek), strconv.FormatBool(s.PlexWatchlists), strconv.FormatBool(s.PlexWatchlistsEveryone),
 			strconv.FormatBool(s.PlexFriends), strconv.FormatInt(s.FourKLibraryFolderID, 10), strconv.FormatInt(s.FourKPickRulesID, 10),
-			strconv.FormatInt(s.ShowFourKLibraryFolderID, 10), strconv.FormatInt(s.ShowFourKPickRulesID, 10), storeQualities(q), strconv.FormatBool(s.OwnerAutoApprove)}
+			strconv.FormatInt(s.ShowFourKLibraryFolderID, 10), strconv.FormatInt(s.ShowFourKPickRulesID, 10), storeQualities(q), strconv.FormatBool(s.OwnerAutoApprove), strconv.FormatBool(s.PickMany),
+			s.StreamingRegion, storeServices(s.StreamingServices), strconv.FormatBool(s.SkipOnServices)}
 		for i, k := range settingKeys {
 			_, err := tx.Exec(saveSettingsSQL2,
 				k, vals[i], now, string(who), now, string(who))

@@ -85,5 +85,21 @@
 "sources.uses.auto": "hľadá sám",
 "sources.uses.feed": "zoznam najnovších",
 "sources.uses.hand": "ručné hľadanie",
-"sources.uses.none": "nepoužíva sa"
+"sources.uses.none": "nepoužíva sa",
+"sources.bridge.removeTitle": "Odstrániť {name}?",
+	"sources.bridge.find": "Nájsť {name} v mojej sieti",
+	"sources.bridge.noneFound": "Vo vašej sieti neodpovedal žiadny {name}.",
+	"sources.bridge.keyFound": "Kľúč získaný z {name}",
+	"sources.bridge.keyKept": "{name} kľúč nevydal (má zapnuté prihlásenie). Skopírujte ho cez Získať kľúč.",
+	"sources.bridge.keyKeptJackett": "Jackett kľúč nevydal (má heslo správcu). Skopírujte ho cez Získať kľúč.",
+	"sources.bridge.notReached": "{name} sa nepodarilo zastihnúť.",
+	"sources.bridge.brings.title": "Čo sa prenesie",
+	"sources.bridge.brings.sites": "Jeho indexery, ako Zdroje",
+	"sources.bridge.brings.categories": "Ich kategórie",
+	"sources.bridge.brings.search": "Vyhľadávanie ide cez {name}",
+	"sources.bridge.brings.sync": "Zmeny v {name} sa prenesú",
+	"sources.bridge.brings.stays": "Vaše indexery zostanú nastavené v {name}.",
+	"sources.bridge.brings.had": "Indexerov už tu: {n}",
+	"sources.bridge.brings.hadFrom": "Importované cez {apps}",
+	"sources.bridge.brings.keyKept": "Nechajte kľúč prázdny, aby sa použil ten, ktorý už majú."
 }

@@ -146,7 +146,7 @@ func UsableDefault(ctx context.Context, db database.Querier, table, kind string,
 	var n int
 	switch table {
 	case "library_folders":
-		_ = db.QueryRowContext(ctx, "SELECT count(*) FROM library_folders WHERE id = ? AND kind = ?", id, kind).Scan(&n)
+		_ = db.QueryRowContext(ctx, "SELECT count(*) FROM library_folders WHERE id = ? AND kind = ? AND look_only = 0", id, kind).Scan(&n)
 	case "pick_rules":
 		_ = db.QueryRowContext(ctx, `SELECT count(*) FROM pick_rules WHERE id = ? AND kinds NOT LIKE '%"music"%'`, id).Scan(&n)
 	}

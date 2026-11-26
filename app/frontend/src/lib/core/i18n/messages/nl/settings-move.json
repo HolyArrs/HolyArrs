@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Import {id} ongedaan maken?",
 	"settings.move.undoQuestion": "Deze import ongedaan maken?",
 	"settings.move.undoNote": "Verwijdert wat deze import heeft toegevoegd; je latere wijzigingen blijven. Download eerst het rapport als je het wilt hebben.",
-	"settings.move.undoMove": "Import ongedaan maken"
+	"settings.move.undoMove": "Import ongedaan maken",
+	"settings.move.continueSetup": "Verder met instellen",
+	"settings.move.backToChoose": "Terug naar Kiezen"
 }

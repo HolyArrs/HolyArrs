@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Irréversible. Les fichiers restent.",
 	"settings.pickRules.removeUsed": "{used}. Choisissez d'abord d'autres règles à cet endroit.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Annuler"
+	"settings.pickRules.cancel": "Annuler",
+	"settings.pickRules.check.title": "Vérifier un nom de release",
+	"settings.pickRules.check.desc": "Collez un nom de release pour voir comment HolyArrs le lit et comment vos jeux de qualité le jugent. Rien n'est recherché ni téléchargé.",
+	"settings.pickRules.check.name": "Nom de release",
+	"settings.pickRules.check.rules": "Juger avec",
+	"settings.pickRules.check.copies": "Les copies du titre correspondant",
+	"settings.pickRules.check.size": "Taille en Go (facultatif)",
+	"settings.pickRules.check.check": "Vérifier",
+	"settings.pickRules.check.failed": "Impossible de vérifier le nom",
+	"settings.pickRules.check.readAs": "Lu comme",
+	"settings.pickRules.check.matches": "Correspond à {name}",
+	"settings.pickRules.check.noTitle": "Ne correspond à aucun titre de votre Bibliothèque. Choisissez un jeu de qualité ci-dessus pour le juger quand même.",
+	"settings.pickRules.check.noAlbum": "Correspond à {name}, mais à aucun de ses albums.",
+	"settings.pickRules.check.noCopies": "Ce titre n'a aucune copie à juger.",
+	"settings.pickRules.check.hasFile": "A un fichier"
 }

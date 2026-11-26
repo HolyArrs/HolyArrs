@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Føj til Aldrig-tilføj-listen",
 	"settings.outsideLists.showDot": "serie ·",
 	"settings.outsideLists.takeOff": "Tag {name} af",
-	"settings.outsideLists.empty": "Der er intet på listen endnu"
+	"settings.outsideLists.empty": "Der er intet på listen endnu",
+	"settings.outsideLists.traktSignInTitle": "Trakt-login",
+	"settings.outsideLists.traktSignInInfo": "Log ind for at læse dine private Trakt-lister og din watchlist og for at føje det, du har set på Trakt, til visningshistorikken.",
+	"settings.outsideLists.traktSignedInAs": "Logget ind som {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Ikke logget ind. Kun offentlige lister læses.",
+	"settings.outsideLists.traktSignIn": "Log ind med Trakt",
+	"settings.outsideLists.traktDeviceSteps": "Åbn <a>{url}</a> på en hvilken som helst enhed, og indtast <code>{code}</code>. Siden venter, til du godkender.",
+	"settings.outsideLists.traktDenied": "Trakt-login blev afvist.",
+	"settings.outsideLists.traktExpired": "Koden udløb. Start forfra.",
+	"settings.outsideLists.traktSignOut": "Log ud af Trakt",
+	"settings.outsideLists.traktSignedIn": "Logget ind på Trakt",
+	"settings.outsideLists.traktSignedOut": "Logget ud af Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Klienthemmelighed (kræves for at logge ind med Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Gem først din Trakt-apps klienthemmelighed; Trakt skal bruge den for at holde dig logget ind."
 }

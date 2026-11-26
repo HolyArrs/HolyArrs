@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,6 +41,9 @@ type Error struct {
 	RetryAfter time.Duration
 	Msg        string
 	cause      error
+	// mainApp names Prowlarr or Jackett when its own main page answered an
+	// address with no site in it.
+	mainApp string
 }
 
 // Error describes the failure without the URL.
@@ -83,6 +85,12 @@ type Config struct {
 	PathKeys []string
 	// Site names the built-in site a site-format Source reads (see sites.go).
 	Site string
+	// SiteUser is the person's user id on that site, for a site that asks for one beside the key.
+	SiteUser string
+	// SiteLogin is how the Source signs in to that site: "cookie", or empty for user id + passkey.
+	SiteLogin string
+	// SiteAgent is the browser user agent sent with a cookie sign-in.
+	SiteAgent string
 }
 
 // Client is a Torznab/Newznab client for one Source. It is safe for
@@ -114,6 +122,8 @@ func New(cfg Config) *Client {
 	var h http.Client
 	if cfg.HTTP != nil {
 		h = *cfg.HTTP
+	} else if id, ok := pluginSource(cfg.URL); ok {
+		h = http.Client{Timeout: cfg.Timeout, Transport: pluginTransport(id)}
 	} else {
 		h = http.Client{Timeout: cfg.Timeout, Transport: transport(cfg)}
 	}
@@ -298,6 +308,27 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 		return nil, &Error{Kind: KindDown, Msg: "reading the answer failed"}
 	}
 	outcome = outbound.HTTPOutcome(resp.StatusCode, nil, ctx)
+	out, err := c.judge(req, resp, body)
+	app := ""
+	if !siteFeedPath(req.URL.Path) {
+		app = map[string]string{"prowlarr": "Prowlarr", "jackett": "Jackett"}[doctor.Who(resp.Header, body)]
+	}
+	if app == "" {
+		return out, err
+	}
+	if err == nil && strings.Contains(strings.ToLower(string(body[:min(len(body), 4096)])), "<html") {
+		// Its web page, not a feed.
+		err = &Error{Kind: KindBroken, Msg: "a web page answered", cause: doctor.Mark(doctor.WrongApp, nil)}
+	}
+	if se := (*Error)(nil); errors.As(err, &se) {
+		se.mainApp = app
+		return nil, err
+	}
+	return out, err
+}
+
+// judge reads a Source's answer as a feed or an error.
+func (c *Client) judge(req *http.Request, resp *http.Response, body []byte) ([]byte, error) {
 	if b := botCheck(resp, body); b != "" {
 		return nil, &Error{Kind: KindBlocked, Detail: b, Msg: resp.Status + ": " + blockText[b]}
 	}
@@ -308,6 +339,9 @@ func (c *Client) send(ctx context.Context, method, raw string, payload []byte, h
 			e.RetryAfter = time.Duration(min(s, maxRetryAfter)) * time.Second
 		}
 		return nil, e
+	case (resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden) && siteFeedPath(req.URL.Path):
+		// One site's feed in Prowlarr or Jackett: a refusal there is the key.
+		return nil, &Error{Kind: KindLoginRefused, Msg: resp.Status}
 	case (resp.StatusCode == 401 || resp.StatusCode == 403 || resp.StatusCode == 404) && doctor.Other(resp.Header, body, "prowlarr", "jackett", "nzbhydra") != nil:
 		return nil, &Error{Kind: KindBroken, Msg: resp.Status, cause: doctor.Mark(doctor.WrongApp, nil)}
 	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
@@ -452,6 +486,9 @@ type Query struct {
 	Album  string
 	// feed asks a built-in site for its newest releases.
 	feed bool
+	// drops, when set, counts the id answers a Source sent that were not
+	// for the title, by Source name.
+	drops *dropTally
 }
 
 // Item is one search result, before parsing and judging.
@@ -466,10 +503,18 @@ type Item struct {
 	Published time.Time
 	InfoHash  string
 	Files     int
-	// TVDB and IMDb are the ids the Source gives for the release's show
-	// (IMDb as digits with no leading zeros); 0 and "" when it gives none.
+	// InfoURL is the release's own page on the Source; "" when it gives none.
+	InfoURL string
+	// TVDB, TMDb and IMDb are the ids the Source gives for the release's
+	// show or movie (IMDb as digits with no leading zeros); 0 and "" when it
+	// gives none.
 	TVDB int
+	TMDb int
 	IMDb string
+	// Languages are the audio languages the Source sends for the release
+	// (Torznab/Newznab "language"); when set they win over the languages
+	// read from the name, as in the old apps.
+	Languages []string
 }
 
 type rssXML struct {
@@ -477,8 +522,10 @@ type rssXML struct {
 		Title     string `xml:"title"`
 		GUID      string `xml:"guid"`
 		Link      string `xml:"link"`
+		Comments  string `xml:"comments"`
 		Size      int64  `xml:"size"`
 		PubDate   string `xml:"pubDate"`
+		Language  string `xml:"language"`
 		Enclosure struct {
 			URL    string `xml:"url,attr"`
 			Length int64  `xml:"length,attr"`
@@ -496,66 +543,6 @@ type rssXML struct {
 func (c *Client) Search(ctx context.Context, q Query) ([]Item, error) {
 	items, _, err := c.search(ctx, q)
 	return items, err
-}
-
-// search is Search that also says whether the Source was asked by an id,
-// which names the title however a release is named.
-func (c *Client) search(ctx context.Context, q Query) ([]Item, bool, error) {
-	if c.cfg.Format == "site" {
-		items, err := c.siteSearch(ctx, q, c.cfg.Observe)
-		return items, false, err
-	}
-	c.mu.Lock()
-	caps := c.caps
-	c.mu.Unlock()
-	if caps == nil {
-		got, err := c.Caps(ctx)
-		if err != nil {
-			return nil, false, err
-		}
-		caps = &got
-	}
-	v, ids, err := searchValues(q, *caps, true)
-	if err != nil {
-		return nil, false, err
-	}
-	items, err := c.searchWith(ctx, q, *caps, v)
-	if err != nil || !ids {
-		return items, false, err
-	}
-	// A site that lists an id but ignores it answers with its newest
-	// releases, and one that needs every id to match may answer nothing.
-	// When no answer names the title, ask again by title.
-	name := nameWords(q.Title)
-	if len(name) == 0 {
-		return items, true, nil
-	}
-	names := [][]string{name}
-	for _, a := range q.Aliases {
-		if w := nameWords(a); len(w) > 0 {
-			names = append(names, w)
-		}
-	}
-	for _, it := range items {
-		for _, n := range names {
-			if namesAll(it.Title, n) {
-				return items, true, nil
-			}
-		}
-	}
-	// The answers are the site's newest releases, so a failed title search
-	// gives nothing rather than them.
-	v, _, err = searchValues(q, *caps, false)
-	if err != nil {
-		return nil, false, nil
-	}
-	byName, err := c.searchWith(ctx, q, *caps, v)
-	if err != nil {
-		return nil, false, err
-	}
-	// No id answer names the title under any of its names: the site ignored
-	// the id, so its answers are its newest releases. Keep the title search.
-	return byName, false, nil
 }
 
 // ErrNothingToSearch is a search with no title and no id the Source takes. It
@@ -724,7 +711,8 @@ func parseItems(body []byte, protocol string) ([]Item, error) {
 	}
 	out := make([]Item, 0, len(x.Items))
 	for _, it := range x.Items {
-		i := Item{Title: strings.TrimSpace(it.Title), GUID: it.GUID, Link: it.Enclosure.URL, Size: it.Enclosure.Length, Protocol: protocol}
+		i := Item{Title: strings.TrimSpace(it.Title), GUID: it.GUID, Link: it.Enclosure.URL, Size: it.Enclosure.Length, Protocol: protocol,
+			InfoURL: itemInfoURL(it.Comments, it.GUID)}
 		if i.Link == "" {
 			i.Link = strings.TrimSpace(it.Link)
 		}
@@ -763,13 +751,20 @@ func parseItems(body []byte, protocol string) ([]Item, error) {
 				}
 			case "tvdbid":
 				i.TVDB, _ = strconv.Atoi(strings.TrimSpace(a.Value))
+			case "tmdbid", "tmdb":
+				i.TMDb, _ = strconv.Atoi(strings.TrimSpace(a.Value))
 			case "imdb", "imdbid":
 				i.IMDb = strings.TrimLeft(strings.TrimPrefix(strings.TrimSpace(a.Value), "tt"), "0")
+			case "language":
+				i.Languages = addLanguages(i.Languages, a.Value)
 			case "size":
 				if i.Size == 0 {
 					i.Size, _ = strconv.ParseInt(a.Value, 10, 64)
 				}
 			}
+		}
+		if len(i.Languages) == 0 {
+			i.Languages = addLanguages(nil, it.Language)
 		}
 		if i.Title == "" || i.Link == "" {
 			continue
@@ -778,21 +773,3 @@ func parseItems(body []byte, protocol string) ([]Item, error) {
 	}
 	return out, nil
 }
-
-// feedAddress is a Newznab or Torznab address ready to call. An address
-// with no path (https://indexer.example) means its /api, and so do a
-// Prowlarr site address (http://prowlarr:9696/5) and a Jackett one
-// (.../results/torznab) saved without it by earlier versions.
-func feedAddress(raw string) string {
-	raw = strings.TrimRight(raw, "/")
-	u, err := url.Parse(raw)
-	if err != nil || u.Host == "" || u.RawQuery != "" {
-		return raw
-	}
-	if u.Path == "" || prowlarrSitePath.MatchString(u.Path) || strings.HasSuffix(u.Path, "/results/torznab") {
-		return raw + "/api"
-	}
-	return raw
-}
-
-var prowlarrSitePath = regexp.MustCompile(`^/[0-9]+$`)

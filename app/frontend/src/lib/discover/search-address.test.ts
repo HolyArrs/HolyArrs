@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { addRecent, rankTop, readRecent, readScope, scopeAddress, topMatches, RECENT_MAX } from './search-address.ts';
+import { addRecent, rankTop, readRecent, readScope, scopeAddress, searchAddress, topMatches, RECENT_MAX } from './search-address.ts';
 
 describe('search page scope and recents', () => {
 	it('reads and writes the scope in the address', () => {
@@ -9,6 +9,16 @@ describe('search page scope and recents', () => {
 		expect(readScope(null)).toBe('all');
 		expect(scopeAddress({ href: 'http://h.test/search?kind=show' }, 'all', ' dune ').href).toBe('http://h.test/search?q=dune');
 		expect(scopeAddress({ href: 'http://h.test/search?q=x' }, 'music', '').href).toBe('http://h.test/search?kind=music');
+	});
+	it('reads the words from the shallow address, else the browser address on the same page', () => {
+		const bare = new URL('http://h.test/search');
+		expect(searchAddress(bare, new URL('http://h.test/search?q=a'), 'http://h.test/search?q=b').href).toBe('http://h.test/search?q=a');
+		// Back after Forward, or Search opened from the top bar: the kit mounts on bare /search, the address bar still has ?q=.
+		expect(searchAddress(bare, null, 'http://h.test/search?q=Driftwood+Moon&kind=movie').searchParams.get('q')).toBe('Driftwood Moon');
+		// While leaving for a movie the browser address is another page: keep the kit's.
+		expect(searchAddress(bare, undefined, 'http://h.test/library/4').href).toBe(bare.href);
+		expect(searchAddress(bare, undefined, undefined).href).toBe(bare.href);
+		expect(searchAddress(bare, undefined, 'not a url').href).toBe(bare.href);
 	});
 	it('keeps recent searches unique, newest first and capped', () => {
 		expect(addRecent(['Dune', 'Alien'], 'dune')).toEqual(['dune', 'Alien']);

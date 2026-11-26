@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import IconButton from '#lib/ui/IconButton.svelte';
+	import { barTools, barLead } from '#lib/core/search-field.svelte.ts';
 	import { SearchField, topBar, cameFrom, pageLabel, type CameFrom } from '#lib/discover/index.ts';
 	import { afterNavigate } from '$app/navigation';
 	import { topCrumbs } from '#lib/core/top-crumbs.svelte.ts';
@@ -78,11 +79,14 @@
 			</nav>
 		{/if}
 	</div>
-	<div class="centre"><SearchField {searchKey} /></div>
+	<div class="centre">{#if barLead.snippet}<div class="blead" data-testid="top-page-lead">{@render barLead.snippet()}</div>{/if}<SearchField {searchKey} />{#if barTools.snippet}<div class="btools" data-testid="top-page-tools">{@render barTools.snippet()}</div>{/if}</div>
 	<div class="trail"></div>
 </header>
 
 <style>
+	.centre:has(.btools), .centre:has(.blead) { display: flex; align-items: center; gap: 8px; }
+	.blead { display: flex; flex: none; align-items: center; }
+	.btools { display: flex; flex: none; align-items: center; gap: 8px; }
 	.ui-topbar {
 		position: sticky; top: 0; z-index: 30; height: var(--topbar); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
 		padding: 0 var(--gutter); background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid var(--line);

@@ -44,3 +44,21 @@ func TestProbeDialKeepsTheSourceWay(t *testing.T) {
 	}
 	c.Close()
 }
+
+// Prowlarr's or Jackett's main address as a Torznab Source says which address to use instead.
+func TestExplainMainAddressOfBridgeApp(t *testing.T) {
+	html := errors.New("the answer is not valid XML: invalid character '<'")
+	for addr, want := range map[string]string{
+		"http://192.168.1.250:9696/":    "That is Prowlarr's main address",
+		"http://172.20.0.1:9696":        "That is Prowlarr's main address",
+		"http://172.20.0.1:9696/api":    "That is Prowlarr's main address",
+		"http://jackett:9117/":          "That is Jackett's main address",
+		"http://192.168.1.250:9696/5":   "Another app answered",
+		"https://indexer.example:443/":  "Another app answered",
+		"http://host:9696/prowlarr/api": "Another app answered",
+	} {
+		if got := ExplainVia(addr, html, nil); !strings.HasPrefix(got, want) {
+			t.Errorf("%s: got %q, want it to start %q", addr, got, want)
+		}
+	}
+}

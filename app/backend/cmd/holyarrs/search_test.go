@@ -415,3 +415,45 @@ func TestHandSearchNotDedupedByBulk(t *testing.T) {
 		break
 	}
 }
+
+// A hand search with no Source on is refused at once with the reason,
+// instead of queuing a search that can only end empty.
+func TestHandSearchWithoutSourceIsRefused(t *testing.T) {
+	srv, s, _ := setup(t)
+	var resp struct {
+		Title TitleView `json:"title"`
+	}
+	_ = json.Unmarshal(do(t, "POST", srv.URL+"/api/v1/titles", `{"id":"tmdb:693134"}`, 201), &resp)
+	u := srv.URL + "/api/v1/titles/" + itoa(resp.Title.ID) + "/search"
+	addSrc := func(name, state, format string) {
+		err := s.Write(context.Background(), func(tx *sql.Tx) error {
+			_, err := database.Insert(tx, "sources", &domain.Source{Name: name, Protocol: "torrent", Format: format, URL: "http://x", Kinds: []string{}, Categories: map[string][]int{}, State: state, Extra: map[string]string{}}, domain.System)
+			return err
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if b := string(do(t, "POST", u, `{"choose":false}`, 409)); !strings.Contains(b, "No Source to search") {
+		t.Fatalf("no reason: %s", b)
+	}
+	addSrc("Off", "disabled", "torznab")
+	addSrc("Feed", "enabled", "rss")
+	do(t, "POST", u, `{"choose":false}`, 409)
+	addSrc("Paused", "paused", "torznab")
+	do(t, "POST", u, `{"choose":false}`, 202)
+}
+
+// searchSource adds a paused Source, so a search by hand is taken
+// while nothing is asked.
+func searchSource(t *testing.T, s *database.Store) {
+	t.Helper()
+	err := s.Write(context.Background(), func(tx *sql.Tx) error {
+		_, err := database.Insert(tx, "sources", &domain.Source{Name: "Waiting", Protocol: "torrent", Format: "torznab", URL: "http://x", Kinds: []string{},
+			Categories: map[string][]int{}, State: "paused", Extra: map[string]string{}}, domain.System)
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}

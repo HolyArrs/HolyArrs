@@ -82,7 +82,7 @@ Cause: a drive or share is not mounted. HolyArrs says so when it knows files in 
 Fix: mount it and scan again.
 
 **An episode shows as missing.**
-Cause: the daily disk check found its file gone. History names it. If a whole Library folder is gone, HolyArrs warns you and marks nothing missing.
+Cause: the daily disk check found its file gone. History names it. If a whole Library folder is gone, HolyArrs warns you and marks nothing missing. HolyArrs does not download it again by itself, but can still replace it with a better copy. To stop that, turn on **Stop looking for deleted episodes** under **Settings > Naming and files**: the episode then gets **Keep up to date** turned off, like Sonarr's "Unmonitor deleted episodes". The import from Sonarr carries your choice over.
 Fix: put the file back. It is marked present again.
 
 **A new file in a show folder is not used.**

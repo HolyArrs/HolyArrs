@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Chọn thứ để yêu cầu tiếp theo",
 	"home.newPopular": "Mới và phổ biến",
 	"home.whatSTrending": "Đang thịnh hành gì",
+	"home.gettingReady": "Đang chuẩn bị mọi thứ…",
 	"home.top10sAndComing": "Top 10 và sắp ra mắt",
 	"home.whatSNext": "Có gì tiếp theo",
 	"home.airDatesAndReleases": "Ngày phát sóng và phát hành",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Tập phim và phim ra mắt tuần này",
 	"home.popularThisWeek": "Phim nổi bật ra mắt tuần này",
 	"home.peopleCheck": "Kiểm tra người dùng",
-	"home.cantReadUsers": "không đọc được danh sách người dùng"
+	"home.cantReadUsers": "không đọc được danh sách người dùng",
+	"home.joined.title": "Chào mừng, {name}",
+	"home.joined.find": "Tìm nội dung trong {explore} hoặc {search}.",
+	"home.joined.ask": "Nhấn {request} trên một tựa để nhận. Bạn có thể yêu cầu:",
+	"home.joined.track": "Theo dõi từng mục trong {requests}.",
+	"home.joined.noLimit": "Không giới hạn hằng tuần.",
+	"home.joined.gotIt": "Đã hiểu",
+	"home.joined.explore": "Mở {explore}"
 }

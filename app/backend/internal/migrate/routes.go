@@ -1,7 +1,10 @@
 package migrate
 
 import (
+	"context"
 	"net/http"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -26,6 +29,17 @@ type Handlers struct {
 	// SafeMode says the app started with only the core, which keeps the
 	// Library still.
 	SafeMode func() bool
+	// PlexToken is the caller's kept Plex token ("" for none), used only on
+	// the server to sign in to Seerr or Overseerr for its key. May be nil.
+	PlexToken func(ctx context.Context) string
+	// checks are the plans and test runs worked out in the background.
+	checks checkList
+	// findMu guards finding and findAt: one network search at a time.
+	findMu  sync.Mutex
+	finding bool
+	findAt  time.Time
+	// findWaiting counts searches waiting their turn (at most findWaiters).
+	findWaiting atomic.Int32
 }
 
 // Routes registers the migrate routes.

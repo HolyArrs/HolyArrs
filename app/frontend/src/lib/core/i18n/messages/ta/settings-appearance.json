@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "கோரிக்கைகள்",
 	"settings.appearance.colRate": "வரிசைக்கு",
 	"settings.appearance.noRows": "ஆராய் வரிசைகள் எதுவும் இன்னும் எண்ணப்படவில்லை.",
+	"settings.appearance.rowStats": "ஆராய் வரிசைகள்",
+	"settings.appearance.rowStatsDesc": "கடந்த 30 நாட்களில் ஒவ்வொரு வரிசையிலும் திறப்புகள் மற்றும் கோரிக்கைகள், அனைவரும் சேர்த்து. இந்த சர்வரில் மட்டுமே எண்ணப்படும்.",
+	"settings.appearance.colRow": "வரிசை",
+	"settings.appearance.row.because_have": "உங்களிடம் உள்ள தலைப்புகள் போல",
+	"settings.appearance.row.because_asked": "உங்கள் கோரிக்கைகள் போல",
+	"settings.appearance.row.person": "ஒருவரிடமிருந்து மேலும்",
+	"settings.appearance.row.genre": "உங்களுக்கான வகைத் தேர்வுகள்",
+	"settings.appearance.row.popular_genre": "வகைப்படி பிரபலம்",
+	"settings.appearance.row.popular_decade": "பத்தாண்டுப்படி பிரபலம்",
+	"settings.appearance.row.decade": "பத்தாண்டுப்படி",
+	"settings.appearance.row.mood": "மனநிலைப்படி",
+	"settings.appearance.row.hero": "மேல் பேனர்",
 	"settings.appearance.motion": "அசைவு",
 	"settings.appearance.motionNote": "உங்கள் சாதனத்தின் அசைவைக் குறை அமைப்பைப் பின்பற்றும்"
 }

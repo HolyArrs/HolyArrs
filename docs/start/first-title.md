@@ -30,7 +30,7 @@ Add one movie and follow it from search to a file in your Library.
    You should see the file in your Library folder and on the movie's page.
 
 :::tip
-A first download can take minutes to hours, depending on the release and your connection. A row with no progress for 6 hours shows as stalled; after 24 hours HolyArrs marks it failed and tries the next release.
+A first download can take minutes to hours, depending on the release and your connection. A row with no progress for 6 hours shows as stalled; after 24 hours HolyArrs searches again, keeps the files and may pick the same release again.
 :::
 
 ## Choices

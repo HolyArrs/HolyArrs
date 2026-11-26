@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Only these can say where a visit came from.",
 	"settings.signIn.fixToSaveOne": "Fix 1 line to save",
 	"settings.signIn.fixToSaveOther": "Fix {n} lines to save",
-	"settings.signIn.localSaved": "Local network saved"
+	"settings.signIn.localSaved": "Local network saved",
+	"settings.signIn.forgotTitle": "Forgot password?",
+	"settings.signIn.forgotOn": "Show Forgot password? on the sign-in page",
+	"settings.signIn.forgotNote": "The owner gets a one-time code from the server log. Turn it off if people sign in through single sign-on. The reset-owner command still works.",
+	"settings.signIn.forgotShown": "Forgot password? is on",
+	"settings.signIn.forgotHidden": "Forgot password? is off"
 }

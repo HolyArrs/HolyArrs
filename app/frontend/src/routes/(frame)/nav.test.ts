@@ -124,3 +124,22 @@ describe('shell helpers', () => {
 		expect(homeHref()).toBe('/');
 	});
 });
+
+describe('plugin pages in the sidebar', () => {
+	const pages = [{ plugin: 'player', name: 'Player', id: 'watch', title: 'Watch' }];
+	const items = (i: NavInput) => buildNav(i).flatMap((s) => s.items);
+	it('lists each page under Plugins for the owner, plugin name first', () => {
+		const list = items({ ...owner, pluginPages: pages });
+		const at = list.findIndex((x) => x.href === '/plugins');
+		expect(list[at + 1]).toMatchObject({ href: '/plugins/player/watch', label: 'Player · Watch', need: 'owner' });
+	});
+	it('shows them to nobody else', () => {
+		const staff = new Set(['staff', 'manage', 'manage_library', 'settings']);
+		expect(items({ ...owner, allowed: (n) => staff.has(n), pluginPages: pages }).some((x) => x.href.startsWith('/plugins/'))).toBe(false);
+		expect(items({ ...member, pluginPages: pages }).some((x) => x.href.startsWith('/plugins/'))).toBe(false);
+	});
+	it('marks the page as current, not Plugins', () => {
+		const list = items({ ...owner, pluginPages: pages });
+		expect(currentHref(list, '/plugins/player/watch', new URLSearchParams())).toBe('/plugins/player/watch');
+	});
+});

@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Construction de {what}… essai {attempt}",
 	"core.testTag.connected": "Connecté",
 	"core.api.notAnswering": "HolyArrs ne répond pas. Vérifiez qu'il est en marche.",
+	"core.api.tooSlow": "HolyArrs a mis trop de temps à répondre. Réessaie dans une minute.",
 	"core.api.requestFailed": "Échec de la requête ({status})",
 	"core.api.wentWrong": "Un problème est survenu.",
 	"core.trailerMiss.trailer": "bande-annonce",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Approuvée automatiquement",
 	"core.plain.approvedBy": "Approuvée par {who}",
 	"core.settings.cantReach": "Cette adresse est injoignable. Vérifiez-la et que l'application est en marche.",
+	"core.settings.tryHttp": "Cette adresse ne répond pas en https. Essaie plutôt http://.",
 	"core.settings.groupLibrary.label": "Bibliothèque",
 	"core.settings.groupLibrary.line": "Où vivent les titres",
 	"core.settings.groupLibrary.about": "Dossiers, modules, valeurs par défaut, sous-titres, noms de fichiers et import.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Deux clients de téléchargement atteignent la même application, les téléchargements peuvent donc apparaître deux fois.",
 	"core.plain.peopleCheck": "La liste d’utilisateurs du serveur multimédia est illisible, donc les personnes supprimées là-bas ne sont pas désactivées ici.",
 	"core.plain.deleted": "supprimé",
-	"core.plain.deletedName": "{name} (supprimé)"
+	"core.plain.deletedName": "{name} (supprimé)",
+	"core.api.handsOffFiles": "Le mode sans intervention est activé, HolyArrs ne touche donc pas aux fichiers téléchargés. Désactivez-le dans Paramètres pour importer, renommer, déplacer ou analyser des fichiers.",
+	"core.api.handsOffSubtitles": "Le mode sans intervention est activé, HolyArrs n'ouvre donc jamais les fichiers téléchargés. Désactivez-le dans Paramètres pour utiliser les sous-titres."
 }

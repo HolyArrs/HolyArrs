@@ -4,12 +4,20 @@
 	import IconButton from '#lib/ui/IconButton.svelte';
 	import LanguagePicker from './LanguagePicker.svelte';
 	import { setTheme, theme } from './theme.svelte.ts';
-	import { pickBeforeSignIn } from './profile.svelte.ts';
+	import { pickBeforeSignIn, saveLanguage } from './profile.svelte.ts';
+	import { session } from '#lib/core/session.svelte.ts';
+	import { listInstalledPublic } from '#lib/core/i18n/language-packs.svelte.ts';
+	import { onMount } from 'svelte';
+
+	// Only the languages this server has: picking one it lacks would just show English.
+	onMount(() => void listInstalledPublic());
 
 	let { panelEl }: { panelEl: HTMLElement | undefined } = $props();
 
 	// The pick changes this device's words now and is kept for when they sign in.
 	function choose(c: LocaleChoice) {
+		// Signed in (the first-run wizard): keep it on the account, or the saved language comes back next visit.
+		if (session.s.state === 'signed_in') return void saveLanguage(c).catch(() => setLang(c));
 		pickBeforeSignIn();
 		void setLang(c);
 	}
@@ -20,6 +28,7 @@
 	<IconButton
 		icon={theme.value === 'light' ? 'moon' : 'sun'}
 		variant="glass"
+		size="lg"
 		tipSide="below-end"
 		label={theme.value === 'light' ? t('accounts.signin.dark') : t('accounts.signin.light')}
 		onclick={() => {
@@ -34,7 +43,7 @@
 
 <style>
 	/* The appearance switch: inside the frame's top-right corner, above the art. */
-	.mode { position: absolute; z-index: 3; top: calc(var(--fr) + 14px); inset-inline-end: calc(var(--fr) + 14px); display: flex; align-items: center; gap: 8px; }
+	.mode { position: fixed; z-index: 3; top: calc(var(--fr, var(--setup-fr, 18px)) + 14px); inset-inline-end: calc(var(--fr, var(--setup-fr, 18px)) + 14px); display: flex; align-items: center; gap: 8px; }
 	:global(.wrap.leaving) .mode { display: none; }
 	/* Desktop language button: globe and the current language, quiet like the corner links. */
 	.mode :global(.trigger.button) { min-height: 36px; padding: 0 10px; gap: 6px; border-radius: var(--r-sm); background: transparent; color: rgb(255 255 255 / 0.72); font: 500 14px/1 var(--font-ui); filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35)); transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out); }
@@ -56,6 +65,12 @@
 	@media (hover: hover) { .mode :global(.ui-ibtn.glass:hover), .mode :global(.trigger.icon:hover), .mode :global(.trigger.icon[aria-expanded='true']) { color: #fff; background: rgb(0 0 0 / 0.3); }
 }
 	.mode :global(.ui-ibtn.glass:focus-visible), .mode :global(.trigger.icon:focus-visible) { outline: none; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.85); }
+	/* Two equal icon buttons, 44 px with 20 px icons: the language shows as a globe only (its name is in the menu). */
+	.mode :global(.trigger.button) { width: 44px; height: 44px; min-height: 44px; padding: 0; justify-content: center; border-radius: 50%; }
+	.mode :global(.trigger.button .cur) { display: none; }
+	.mode :global(.trigger.button svg), .mode :global(.ui-ibtn.glass svg) { width: 20px; height: 20px; }
+	/* The wizard page scrolls below 1100 px: the corner buttons scroll away with it instead of riding over the card. */
+	@media (max-width: 1099px) { :global(body:has(.welcome.over-art)) .mode { position: absolute; } }
 	/* Touch screens: a 44 px tap for the language button too (the 36 px above beats LanguagePicker's own touch rule). */
 	@media (pointer: coarse) { .mode :global(.trigger.button) { min-height: 44px; } }
 	/* Phones: the desktop card, floating low over full-bleed art with 24 px of art on every side; it rides above the keyboard (--kb) with a smooth lift. */

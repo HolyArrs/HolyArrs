@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -67,3 +68,18 @@ func NewPersonName(s, fallback string, max int) string {
 	}
 	return s
 }
+
+// typedNameProblem is the rule for a username someone types to sign in
+// with, as Plex has it: 1 to 30 letters, digits, "_" or ".", no spaces.
+// Names taken from outside (a media server) keep nameProblem's looser rule.
+func typedNameProblem(name string) string {
+	if msg := nameProblem(name); msg != "" {
+		return msg
+	}
+	if !typedName.MatchString(name) {
+		return "usernames are 1 to 30 letters, numbers, _ or ., with no spaces"
+	}
+	return ""
+}
+
+var typedName = regexp.MustCompile(`^[A-Za-z0-9_.]{1,30}$`)

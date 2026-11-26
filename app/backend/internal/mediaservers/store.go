@@ -66,3 +66,29 @@ func markOK(ctx context.Context, s *database.Store, id int64, at string) {
 		return err
 	})
 }
+
+// serverIDsOfKind returns the ids of every media server of one kind.
+func serverIDsOfKind(ctx context.Context, q database.Lister, kind string) ([]int64, error) {
+	rows, err := q.QueryContext(ctx, `SELECT id FROM media_servers WHERE kind = ?`, kind)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// serverIDByName returns the oldest media server of a kind with that name
+// (any case).
+func serverIDByName(ctx context.Context, q database.Querier, name, kind string) (int64, error) {
+	var id int64
+	err := q.QueryRowContext(ctx, "SELECT id FROM media_servers WHERE name = ? COLLATE NOCASE AND kind = ? ORDER BY id LIMIT 1", name, kind).Scan(&id)
+	return id, err
+}

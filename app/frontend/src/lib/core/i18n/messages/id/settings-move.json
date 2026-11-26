@@ -36,5 +36,7 @@
 	"settings.move.undoId": "Urungkan impor {id}?",
 	"settings.move.undoQuestion": "Urungkan impor ini?",
 	"settings.move.undoNote": "Menghapus apa yang ditambahkan impor ini; perubahanmu setelahnya tetap ada. Unduh laporannya dulu jika perlu.",
-	"settings.move.undoMove": "Urungkan impor"
+	"settings.move.undoMove": "Urungkan impor",
+	"settings.move.continueSetup": "Lanjutkan penyiapan",
+	"settings.move.backToChoose": "Kembali ke Pilih"
 }

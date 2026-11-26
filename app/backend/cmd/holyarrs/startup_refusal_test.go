@@ -45,7 +45,7 @@ func TestPublicReasonForAShare(t *testing.T) {
 		has  []string
 	}{
 		{"9p", []string{"9p", "named volume"}},
-		{"fakeowner", []string{"Docker Desktop", "named volume"}},
+		{"fakeowner", []string{"Docker Desktop", "named volume", "HOLYARRS_ALLOW_DESKTOP_FOLDER=1"}},
 		{"fuse", []string{"/mnt/<pool>/appdata"}},
 	}
 	for _, c := range cases {

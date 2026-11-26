@@ -115,6 +115,8 @@ export function groupOf(id: GroupId | undefined): Group | undefined {
 
 /** reachWords turns any "couldn't connect" answer into one plain line; other answers pass through. */
 export function reachWords(text: string): string {
+	// https typed for an app that only speaks http: say so, it is the usual slip.
+	if (/answers on http, not https|HTTP response to HTTPS client|does not look like a TLS handshake/i.test(text)) return t('core.settings.tryHttp');
 	return /connection (was )?refused|does not answer|refused to connect|no such host|timed? ?out|unreachable|dial tcp|no route|connection reset|could not (connect|reach)|couldn.t (connect|reach)|can.t connect|EOF/i.test(text)
 		? t('core.settings.cantReach')
 		: serverWords(text);

@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Đang dựng {what}… lần thử {attempt}",
 	"core.testTag.connected": "Đã kết nối",
 	"core.api.notAnswering": "HolyArrs không phản hồi. Hãy kiểm tra xem nó có đang chạy không.",
+	"core.api.tooSlow": "HolyArrs phản hồi quá lâu. Hãy thử lại sau một phút.",
 	"core.api.requestFailed": "Yêu cầu thất bại ({status})",
 	"core.api.wentWrong": "Đã xảy ra lỗi.",
 	"core.trailerMiss.trailer": "trailer",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Tự động duyệt",
 	"core.plain.approvedBy": "Được {who} duyệt",
 	"core.settings.cantReach": "Không truy cập được địa chỉ đó. Hãy kiểm tra địa chỉ và xem ứng dụng có đang chạy không.",
+	"core.settings.tryHttp": "Địa chỉ đó không trả lời qua https. Hãy thử http://.",
 	"core.settings.groupLibrary.label": "Thư viện",
 	"core.settings.groupLibrary.line": "Nơi các tựa được lưu",
 	"core.settings.groupLibrary.about": "Thư mục, các Phần, mặc định, phụ đề, tên tệp và nhập.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Hai trình tải kết nối tới cùng một ứng dụng tải xuống, nên các lượt tải có thể hiện hai lần.",
 	"core.plain.peopleCheck": "Không đọc được danh sách người dùng của máy chủ đa phương tiện, nên người bị xóa ở đó không bị tắt ở đây.",
 	"core.plain.deleted": "đã xóa",
-	"core.plain.deletedName": "{name} (đã xóa)"
+	"core.plain.deletedName": "{name} (đã xóa)",
+	"core.api.handsOffFiles": "Chế độ không can thiệp đang bật nên HolyArrs không động vào tệp đã tải. Tắt nó trong Cài đặt để nhập, đổi tên, di chuyển hoặc quét tệp.",
+	"core.api.handsOffSubtitles": "Chế độ không can thiệp đang bật nên HolyArrs không bao giờ mở tệp đã tải. Tắt nó trong Cài đặt để dùng phụ đề."
 }

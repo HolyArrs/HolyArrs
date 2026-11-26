@@ -38,7 +38,11 @@ type MovePlan struct {
 	Steps     []MoveStep `json:"steps"`
 	// Blocked says why the move cannot be applied: HolyArrs moves only Files
 	// it imported or adopted, never ones it merely found.
-	Blocked          string `json:"blocked,omitempty"`
+	Blocked string `json:"blocked,omitempty"`
+	// ToFolderName is the Version's folder in the new Library folder: ""
+	// when that folder is flat, a movie folder when a flat movie moves
+	// into one that is not.
+	ToFolderName     string `json:"to_folder_name"`
 	fromRoot, toRoot string
 }
 
@@ -68,6 +72,9 @@ func PlanMove(ctx context.Context, db database.Querier, lister database.Lister, 
 	if want, wrong := folderKindOf(t.Kind); to.Kind != want {
 		return nil, wrong
 	}
+	if to.LookOnly {
+		return nil, mediafiles.ErrLookOnly
+	}
 	vs, err := database.Select[mediafiles.Version](ctx, lister, "versions", "title_id = ? AND is_main = 1 ORDER BY id", titleID)
 	if err != nil {
 		return nil, err
@@ -81,8 +88,29 @@ func PlanMove(ctx context.Context, db database.Querier, lister database.Lister, 
 		if err != nil {
 			return nil, err
 		}
-		p := MovePlan{VersionID: v.ID, FromDir: from, ToDir: filepath.Join(to.Path, v.FolderName), Steps: []MoveStep{},
+		folder, err := moveFolderName(ctx, lister, t, v, to)
+		if err != nil {
+			return nil, err
+		}
+		p := MovePlan{VersionID: v.ID, FromDir: from, ToDir: filepath.Join(to.Path, filepath.FromSlash(folder)), ToFolderName: folder, Steps: []MoveStep{},
 			fromRoot: fromLib.Path, toRoot: to.Path}
+		if fromLib.LookOnly {
+			p.Blocked = mediafiles.ErrLookOnly.Error()
+			out = append(out, p)
+			continue
+		}
+		if folder != "" {
+			// Every Version has a folder of its own in a Library folder.
+			used, err := database.Select[mediafiles.Version](ctx, lister, "versions", "library_folder_id = ? AND id <> ? AND lower(folder_name) = lower(?)", to.ID, v.ID, folder)
+			if err != nil {
+				return nil, err
+			}
+			if len(used) > 0 {
+				p.Blocked = ErrVersionFolder.Error()
+				out = append(out, p)
+				continue
+			}
+		}
 		files, err := database.Select[mediafiles.File](ctx, lister, "files", "version_id = ? AND state = 'present' ORDER BY id", v.ID)
 		if err != nil {
 			return nil, err
@@ -98,6 +126,12 @@ func PlanMove(ctx context.Context, db database.Querier, lister database.Lister, 
 			}
 			if f.Origin != "imported" && f.Origin != "adopted" {
 				found++
+				continue
+			}
+			if folder == "" && v.FolderName != "" && strings.ContainsAny(filepath.ToSlash(rel), "/") {
+				// Into a flat folder only the files at the top of the movie
+				// folder go; one in a subfolder would lose its place.
+				p.Blocked = "a File sits in a subfolder of the movie folder (" + f.RelativePath + "); a flat Library folder keeps only files at its top"
 				continue
 			}
 			step := MoveStep{FileID: f.ID, Origin: f.Origin, From: filepath.Join(p.FromDir, rel), To: filepath.Join(p.ToDir, rel)}
@@ -123,6 +157,14 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 	titleID := r.Job.Subject.ID
 	fid, _ := r.Job.Params["library_folder_id"].(float64)
 	apply, _ := r.Job.Params["apply"].(bool)
+	if apply {
+		// The real move takes the file lock before it reads the plan, as
+		// imports, renames and deletes do. Without it an upgrade could set
+		// a file aside, or a rename change its name, between the plan and
+		// the move, and the move would act on a stale path.
+		unlock := s.Store.LockFiles()
+		defer unlock()
+	}
 	db := s.Store.Read()
 	plans, err := PlanMove(ctx, db, db, titleID, int64(fid))
 	if err != nil {
@@ -164,9 +206,23 @@ func (s *Service) handleMove(ctx context.Context, r *jobs.Run) error {
 			_ = r.Progress(ctx, float64(moved)/float64(max(files, 1)), "moved "+filepath.Base(st.To))
 		}
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE versions SET library_folder_id = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				int64(fid), database.FormatTime(s.now()), ActorText(JobActor(r)), p.VersionID)
-			return err
+			_, err := tx.Exec("UPDATE versions SET library_folder_id = ?, folder_name = ?, updated_at = ?, updated_by = ? WHERE id = ?",
+				int64(fid), p.ToFolderName, database.FormatTime(s.now()), ActorText(JobActor(r)), p.VersionID)
+			if err != nil {
+				return err
+			}
+			// A File's path is relative to its Library folder: a movie that
+			// gets or loses its folder has its paths follow.
+			for _, st := range p.Steps {
+				rel, err := filepath.Rel(p.toRoot, st.To)
+				if err != nil || !filepath.IsLocal(rel) {
+					return fmt.Errorf("moved %s outside the Library folder", st.To)
+				}
+				if _, err := tx.Exec("UPDATE files SET relative_path = ? WHERE id = ?", filepath.ToSlash(rel), st.FileID); err != nil {
+					return err
+				}
+			}
+			return nil
 		})
 		if err != nil {
 			return err
@@ -329,7 +385,8 @@ func proofSourceUnchanged(name string, p preparedFileProof) bool {
 // moveFile hardlinks from to to and removes from, or on another disk copies
 // it through a temp file and then removes from. Neither ever replaces a file
 // at to. A move cut off after the copy finishes cleanly on the next try: a
-// target that is the same file, or has the same content, counts as ours.
+// target that is the same file, or has the same bytes in full, counts as
+// ours.
 func moveFile(from, to string) error {
 	return moveFileWithProof(from, to, "")
 }
@@ -386,7 +443,10 @@ func moveFileDistinctWithProof(from, to, proof string) error {
 			}
 			return os.Remove(from)
 		}
-		if dst.Mode().IsRegular() && importer.SameContent(from, to, src.Size()) {
+		// from is removed next, so a match on the ends alone is not
+		// enough: two encodes of one size can share them. This only runs
+		// when to already exists, such as after a cut-off move.
+		if dst.Mode().IsRegular() && dst.Size() == src.Size() && importer.SameFullContent(from, to) {
 			return os.Remove(from)
 		}
 		return fmt.Errorf("%s already exists and is a different file; HolyArrs never replaces it", to)
@@ -566,4 +626,25 @@ func moveKey(titleID int64, apply bool) string {
 		return "move_title:" + strconv.FormatInt(titleID, 10) + ":apply"
 	}
 	return "move_title:" + strconv.FormatInt(titleID, 10) + ":dry"
+}
+
+// moveFolderName is a Version's folder in the Library folder to: the same
+// name, none when to is flat (the files sit at its top), and a new movie
+// folder when a movie kept flat moves into a folder that is not.
+func moveFolderName(ctx context.Context, db database.Lister, t mediafiles.Title, v mediafiles.Version, to mediafiles.LibraryFolder) (string, error) {
+	switch {
+	case to.Flat && t.Kind == "movie":
+		return "", nil
+	case v.FolderName != "":
+		return v.FolderName, nil
+	}
+	ns, err := mediafiles.ReadNaming(ctx, db)
+	if err != nil {
+		return "", err
+	}
+	year := 0
+	if t.Year != nil {
+		year = *t.Year
+	}
+	return mediafiles.MovieFolder(ns, mediafiles.NameFacts{Title: t.Name, Year: year, TMDB: t.SourceIDs["tmdb"], IMDB: t.SourceIDs["imdb"], Genre: firstGenre(t.Genres)}), nil
 }

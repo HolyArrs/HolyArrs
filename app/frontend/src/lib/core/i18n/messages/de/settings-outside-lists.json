@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "Zur Nie-hinzufügen-Liste hinzufügen",
 	"settings.outsideLists.showDot": "Serie ·",
 	"settings.outsideLists.takeOff": "{name} entfernen",
-	"settings.outsideLists.empty": "Noch nichts auf dieser Liste"
+	"settings.outsideLists.empty": "Noch nichts auf dieser Liste",
+	"settings.outsideLists.traktSignInTitle": "Trakt-Anmeldung",
+	"settings.outsideLists.traktSignInInfo": "Melde dich an, damit deine privaten Trakt-Listen und deine Watchlist gelesen werden und das, was du auf Trakt gesehen hast, in den Wiedergabeverlauf kommt.",
+	"settings.outsideLists.traktSignedInAs": "Angemeldet als {name}.",
+	"settings.outsideLists.traktNotSignedIn": "Nicht angemeldet. Nur öffentliche Listen werden gelesen.",
+	"settings.outsideLists.traktSignIn": "Mit Trakt anmelden",
+	"settings.outsideLists.traktDeviceSteps": "Öffne auf einem beliebigen Gerät <a>{url}</a> und gib <code>{code}</code> ein. Diese Seite wartet, bis du zustimmst.",
+	"settings.outsideLists.traktDenied": "Die Trakt-Anmeldung wurde abgelehnt.",
+	"settings.outsideLists.traktExpired": "Der Code ist abgelaufen. Fang neu an.",
+	"settings.outsideLists.traktSignOut": "Von Trakt abmelden",
+	"settings.outsideLists.traktSignedIn": "Bei Trakt angemeldet",
+	"settings.outsideLists.traktSignedOut": "Von Trakt abgemeldet",
+	"settings.outsideLists.traktClientSecretLabel": "Client Secret (nötig für die Anmeldung mit Trakt)",
+	"settings.outsideLists.traktSecretFirst": "Speichere zuerst das Client Secret deiner Trakt-App; Trakt braucht es, damit du angemeldet bleibst."
 }

@@ -228,7 +228,7 @@ func (h *Handlers) testBridge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var in bridgeBody
-	if !webserver.Decode(w, r, &in, bridgeHelp) || !cleanBridge(w, &in) {
+	if !webserver.Decode(w, r, &in, bridgeHelp) || !h.importedKey(r, &in) || !cleanBridge(w, &in) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
@@ -280,7 +280,7 @@ func (h *Handlers) compatSides(ctx context.Context) (map[string]bool, error) {
 // the new address HolyArrs is reached at) instead.
 func (h *Handlers) addBridge(w http.ResponseWriter, r *http.Request) {
 	var in bridgeBody
-	if !webserver.Decode(w, r, &in, bridgeHelp) || !cleanBridge(w, &in) {
+	if !webserver.Decode(w, r, &in, bridgeHelp) || !h.importedKey(r, &in) || !cleanBridge(w, &in) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Minute)

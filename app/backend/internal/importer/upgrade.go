@@ -35,7 +35,7 @@ type upgrade struct {
 
 func plainStep(s string) string { return strings.ReplaceAll(s, "_", " ") }
 
-func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver mediafiles.Version, d domain.Download, plan []mediafiles.PlanStep, cands []Candidate, fakes fakeRules, minutes int) (upgrade, error) {
+func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver mediafiles.Version, d domain.Download, root string, plan []mediafiles.PlanStep, cands []Candidate, fakes fakeRules, minutes int) (upgrade, error) {
 	u := upgrade{facts: map[string]map[string]any{}}
 	var pr mediafiles.PickRules
 	if err := database.Get(ctx, db, "pick_rules", ver.PickRulesID, &pr); err != nil {
@@ -68,6 +68,16 @@ func checkUpgrade(ctx context.Context, db *sql.DB, sl mediafiles.Slot, ver media
 			u.copyWhy = "the copy in place is protected; choose another Version for an upgrade"
 			plan[i].Method, plan[i].TargetPath = "refuse", ""
 			plan[i].Why = append(plan[i].Why, u.copyWhy)
+			continue
+		}
+		if sourceNotPresent(root, cands, plan[i].SourceFile) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, NotPresentYetWhy)
+			continue
+		}
+		if copyInProgress(cands, plan[i].SourceFile) {
+			plan[i].Method, plan[i].TargetPath = "refuse", ""
+			plan[i].Why = append(plan[i].Why, CopyingWhy)
 			continue
 		}
 		facts := InspectFacts(plan[i].SourceFile)
@@ -262,7 +272,10 @@ var (
 	losslessExts = map[string]bool{".flac": true, ".wav": true, ".aiff": true, ".aif": true, ".ape": true, ".wv": true, ".dsf": true, ".dff": true, ".alac": true, ".tak": true}
 )
 
-var renameFile = os.Rename
+// renameFile never replaces a file at the target. A plain rename does on
+// Linux, so putting an old copy back over a spot a new copy already took
+// would destroy the new one.
+var renameFile = renameNoReplace
 
 var crashAt func(stage string) error
 
@@ -285,6 +298,7 @@ func holdPath(libPath, rel string, now time.Time) (string, error) {
 // HoldPath returns where a replaced file is held.
 func HoldPath(libPath, rel string, now time.Time) (string, error) { return holdPath(libPath, rel, now) }
 
+// moveFile moves from to to and never replaces a file already at to.
 func moveFile(from, to string) error {
 	if err := os.MkdirAll(filepath.Dir(to), 0o777); err != nil {
 		return err
@@ -292,6 +306,9 @@ func moveFile(from, to string) error {
 	err := renameFile(from, to)
 	if err == nil || errors.Is(err, os.ErrNotExist) {
 		return err
+	}
+	if errors.Is(err, os.ErrExist) {
+		return fmt.Errorf("%s is taken; HolyArrs never replaces a file: %w", to, err)
 	}
 	if cerr := copyFile(from, to); cerr != nil {
 		return fmt.Errorf("rename failed (%v), copy failed (%v)", err, cerr)

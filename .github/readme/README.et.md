@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.2.0: punane täpp näitab, mis vajab tähelepanu, ja ühenduse test nimetab täpse probleemi.** Plexi sildid soovitud pealkirjadele, nimed sinu keeles ja üle 30 paranduse. Ühenda rakendused MCP kaudu võtmetega, mida ise haldad. [Mis uut](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.1: pluginad kuulevad, mis HolyArrsis toimub.** Arendajarežiim käivitab pluginat, mida sa ehitad, ja testversioonid lasevad paaril inimesel seda esimesena proovida. [Mis uut](https://holyarrs.com/whats-new/)
 
 > Iga poster, treiler ja hinnang sinu HolyArrsis tuleb serverist, mida ma ise pean ja mille eest ise maksan, et see jääks kõigile tasuta. Kui HolyArrs tegi sinu filmiõhtu veidi paremaks, hoiab sponsor tuled meil kõigil põlemas 💛
 >
@@ -374,7 +374,7 @@ Image'is pole shelli, seega `docker exec -it holyarrs /bin/bash` ei tööta. Hol
 - Omaniku kontolt välja lukustatud:
 
     ```sh
-    docker exec -i holyarrs /holyarrs reset-owner
+    docker exec -it holyarrs /holyarrs reset-owner
     ```
 
 - Versiooninumber:

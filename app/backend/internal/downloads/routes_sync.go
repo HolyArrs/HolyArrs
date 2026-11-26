@@ -49,7 +49,9 @@ func (a *Web) storeRows(ctx context.Context, names map[int64]domain.Downloader, 
 		}
 		sortClientRows(out)
 		if len(out) > 0 {
-			a.knownTitles(ctx, d.ID, out)
+			out = goneRows(out, a.knownTitles(ctx, d.ID, out))
+		}
+		if len(out) > 0 {
 			a.linkedTitles(ctx, d.ID, out)
 			a.rowOwners(ctx, out)
 			rows = append(rows, out...)
@@ -199,9 +201,9 @@ func (a *Web) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, 
 	var st, how string
 	var tid *int64
 	if db.QueryRowContext(ctx, "SELECT state, title_id, COALESCE(how, '') FROM client_links WHERE downloader_id = ? AND hash = ?", downloaderID, key).Scan(&st, &tid, &how) == nil &&
-		!(how == "suggested" && tid == nil && a.autoAddOn(ctx)) && !(st == LinkNotMedia && how == "name") {
+		!(how == "suggested" && tid == nil) && !(st == LinkNotMedia && how == "name") {
 		// Already decided (by a person or an earlier match): leave it. Only
-		// the matcher's own calls are looked at again: a suggestion once
+		// the matcher's own calls are looked at again: a suggestion (its title
 		// auto-add is on, and a not-media name (the name reading improves).
 		if tid != nil {
 			return st, *tid, nil
@@ -275,14 +277,12 @@ func (a *Web) MatchLinkOnly(ctx context.Context, downloaderID int64, key, name, 
 // Downloads but never matched.
 const matchOtherApp = "other"
 
-// otherApp reports whether category belongs to another app on d: d is a
-// Usenet client, or one set to show only its own items, with categories of
-// its own and category is none of them. A client with no category, "" or
-// "*" has every job as its own.
+// otherApp reports whether category belongs to another app on d, whose
+// items are shown on Downloads but never matched: d has categories of its
+// own and category is none of them. Only HolyArrs's own categories ask for
+// a match, so other apps' TV or movie categories and games or software are
+// left alone. A client with no category, "" or "*" has every job as its own.
 func otherApp(d domain.Downloader, category string) bool {
-	if d.Protocol != "usenet" && !d.OwnOnly {
-		return false
-	}
 	cats := d.Categories()
 	for _, c := range cats {
 		if c == "" || c == "*" || strings.EqualFold(c, category) {
@@ -318,12 +318,10 @@ func (a *Web) libraryTitle(ctx context.Context, c Candidate) (int64, error) {
 func (a *Web) Rematch(ctx context.Context) int {
 	var n int64
 	// Not-media names go again too (a person's not-media pick stays), and
-	// with auto-add on, the matcher's suggestions, to be added.
+	// the matcher's suggestions: their title may be in the Library by now
+	// (an import still moving), or auto-add may have been turned on.
 	// Other apps' jobs too, in case HolyArrs's categories changed.
-	outs := "('', 'nomatch', 'not_media', 'other')"
-	if a.autoAddOn(ctx) {
-		outs = "('', 'nomatch', 'not_media', 'other', 'suggested')"
-	}
+	outs := "('', 'nomatch', 'not_media', 'other', 'suggested')"
 	_ = a.Store.Write(ctx, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(ctx, "UPDATE dl_match_queue SET attempts = 0, next_try_at = ?, outcome = '', last_error = '' WHERE outcome IN "+outs,
 			time.Now().UTC().Format(database.TimeLayout))

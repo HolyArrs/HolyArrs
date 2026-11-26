@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "{what} összeállítása… {attempt}. próba",
 	"core.testTag.connected": "Csatlakoztatva",
 	"core.api.notAnswering": "A HolyArrs nem válaszol. Ellenőrizze, hogy fut-e.",
+	"core.api.tooSlow": "A HolyArrs túl sokáig nem válaszolt. Próbáld újra egy perc múlva.",
 	"core.api.requestFailed": "A kérés sikertelen ({status})",
 	"core.api.wentWrong": "Valami hiba történt.",
 	"core.trailerMiss.trailer": "előzetes",
@@ -69,6 +70,7 @@
 	"core.plain.autoApproved": "Automatikusan jóváhagyva",
 	"core.plain.approvedBy": "Jóváhagyta: {who}",
 	"core.settings.cantReach": "A cím nem érhető el. Ellenőrizze, és azt is, hogy az alkalmazás fut-e.",
+	"core.settings.tryHttp": "Ez a cím nem válaszol https-en. Próbáld inkább http://-vel.",
 	"core.settings.groupLibrary.label": "Médiatár",
 	"core.settings.groupLibrary.line": "Itt laknak a címek",
 	"core.settings.groupLibrary.about": "Mappák, Modulok, alapértékek, feliratok, fájlnevek és importálás.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Két letöltő ugyanahhoz a letöltő alkalmazáshoz kapcsolódik, így a letöltések kétszer is megjelenhetnek.",
 	"core.plain.peopleCheck": "A médiaszerver felhasználólistája nem olvasható, ezért az ott eltávolítottak itt nincsenek kikapcsolva.",
 	"core.plain.deleted": "törölve",
-	"core.plain.deletedName": "{name} (törölve)"
+	"core.plain.deletedName": "{name} (törölve)",
+	"core.api.handsOffFiles": "A beavatkozásmentes mód be van kapcsolva, így a HolyArrs nem nyúl a letöltött fájlokhoz. Kapcsold ki a Beállításokban a fájlok importálásához, átnevezéséhez, áthelyezéséhez vagy átvizsgálásához.",
+	"core.api.handsOffSubtitles": "A beavatkozásmentes mód be van kapcsolva, így a HolyArrs soha nem nyitja meg a letöltött fájlokat. Kapcsold ki a Beállításokban a feliratok használatához."
 }

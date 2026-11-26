@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Tühista",
 	"settings.schedules.stages": "Etapid",
 	"settings.schedules.stagesNote": "Peata või taaskäivita need <a>Moodulites</a>.",
-	"settings.schedules.allTime": "Kogu aeg"
+	"settings.schedules.allTime": "Kogu aeg",
+	"settings.schedules.skip.nothing": "Pole midagi teha",
+	"settings.schedules.skip.plexOff": "Väljas: lülita {setting} sisse lehel {page}",
+	"settings.schedules.skip.plexNobody": "Pole midagi teha: keegi pole oma Plexi vaatamisloendit sisse lülitanud",
+	"settings.schedules.skip.settingOff": "Väljas: lülita see sisse selle seadetes",
+	"settings.schedules.skip.starting": "Vahele jäetud: HolyArrs alles käivitus",
+	"settings.schedules.took": "Kestis {time}",
+	"settings.schedules.finished": "{label} lõpetas",
+	"settings.schedules.nothingToDo": "{label}: pole midagi teha",
+	"settings.schedules.runFailed": "{label} ebaõnnestus"
 }

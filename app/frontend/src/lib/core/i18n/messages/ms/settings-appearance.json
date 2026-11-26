@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Permintaan",
 	"settings.appearance.colRate": "Setiap baris",
 	"settings.appearance.noRows": "Belum ada baris Teroka dikira.",
+	"settings.appearance.rowStats": "Baris Teroka",
+	"settings.appearance.rowStatsDesc": "Bukaan dan permintaan setiap baris dalam 30 hari lepas, semua orang bersama. Dikira di pelayan ini sahaja.",
+	"settings.appearance.colRow": "Baris",
+	"settings.appearance.row.because_have": "Seperti tajuk yang anda ada",
+	"settings.appearance.row.because_asked": "Seperti permintaan anda",
+	"settings.appearance.row.person": "Lagi daripada seseorang",
+	"settings.appearance.row.genre": "Pilihan genre untuk anda",
+	"settings.appearance.row.popular_genre": "Popular mengikut genre",
+	"settings.appearance.row.popular_decade": "Popular mengikut dekad",
+	"settings.appearance.row.decade": "Mengikut dekad",
+	"settings.appearance.row.mood": "Mengikut suasana",
+	"settings.appearance.row.hero": "Sepanduk atas",
 	"settings.appearance.motion": "Gerakan",
 	"settings.appearance.motionNote": "Mengikut tetapan Kurangkan gerakan pada peranti anda"
 }

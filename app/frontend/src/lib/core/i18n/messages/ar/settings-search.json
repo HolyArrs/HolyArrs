@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "الأفضل نسخةً أولًا؛ وتفوز حزمة الموسم عند التساوي",
 	"settings.search.preferAlways": "حزمة موسم كلما اجتازت مجموعة الجودة",
 	"settings.search.multi": "خذ الإصدارات التي تضم عدة مواسم",
-	"settings.search.multiHint": "تملأ كل حلقة ناقصة فيها",
+	"settings.search.multiHint": "تملأ كل حلقة ناقصة فيها. عند تساوي الجودة يفوز الإصدار الذي يغطي حلقات مطلوبة أكثر",
 	"settings.search.music": "الموسيقى",
 	"settings.search.albums": "ابحث عن الألبومات الناقصة أيضًا",
 	"settings.search.albumsHint": "الألبومات الصادرة، بحث واحد لكل ألبوم",

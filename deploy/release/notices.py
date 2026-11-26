@@ -269,9 +269,7 @@ def build(go: list[dict], web: list[dict], others: list[dict], static: dict) -> 
         parts.append(section(f"{p['name']}@{p['version']}", USED_FOR.get(p["name"], ""), p["declared"], files,
                              "" if files else f"The package has no licence file; it declares {p['declared']}."))
     parts += ["## Files in the web app", ""]
-    for s in static["listed"]:
-        rows.append(f"| {s['name']} |  | {s['licence']} | the web app (/{s['path']}) |")
-        parts.append(section(f"{s['name']} (/{s['path']})", s["used"], s["licence"], []))
+    # Files copied from static/ are only named in static-parts.json (their paths); their notices are kept outside this file.
     parts += ["## Other parts", ""]
     for o in [o for o in others if not SKIPPED.search(o["name"])]:
         rows.append(f"| {o['name']} | {o['version']} | {o['licence']} | {o['in']} |")

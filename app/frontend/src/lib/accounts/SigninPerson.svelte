@@ -47,7 +47,7 @@
 			<label for="password">{person.way === 'password' ? t('accounts.signin.passwordLabel') : t('accounts.signin.wayPasswordLabel', { way: wayName(person.way) })}</label>
 			<div class="pw">
 				<input id="password" class="input" type={showPw ? 'text' : 'password'} bind:value={pw} autocomplete="current-password" required />
-				<IconButton icon={showPw ? 'eyeOff' : 'eye'} label={t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
+				<IconButton tabindex={-1} icon={showPw ? 'eyeOff' : 'eye'} label={t('accounts.signin.showPasswordLabel')} aria-pressed={showPw} onclick={() => (showPw = !showPw)} />
 			</div>
 		</div>
 		{#if error}

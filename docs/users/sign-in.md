@@ -62,7 +62,16 @@ Keep a working owner password. If the provider is down, password sign-in still w
 
 ### Let new people join through single sign-on
 
-Off by default. On, anyone the provider signs in gets an account, so HolyArrs asks you to confirm. Newcomers join as members who can only ask. Single sign-on never makes an owner or admin.
+Off by default. On, anyone the provider signs in gets an account, so HolyArrs asks you to confirm. Newcomers join as members who can only ask, unless roles from groups say admin. Single sign-on never makes an owner.
+
+### Roles from groups
+
+Set roles in your sign-in service instead of in HolyArrs. In **Groups claim**, type the claim your provider puts groups in, often `groups`. In **Roles from groups**, write each group and its role, like `admins=admin, family=member`.
+
+- Each single sign-on sign-in sets the role. The highest role wins, and people in none of the listed groups become members. Take someone out of the admin group and they are a member at their next sign-in.
+- The owner never changes, and no group makes anyone owner.
+- If the provider sends no groups claim at all, the role stays as it is.
+- HolyArrs asks for the `groups` scope too. Allow that scope for the HolyArrs client at your provider (in Authelia, add `groups` to the client's scopes).
 
 ### Change the issuer or client id
 
@@ -121,6 +130,8 @@ Set these before start. Both methods are off unless turned on. A bad setup stops
 | `HOLYARRS_OIDC_CLIENT_SECRET_FILE` | File holding the client secret, at most 4096 bytes. Leave out for a public client | none |
 | `HOLYARRS_OIDC_REDIRECT_URL` | Exact HTTPS callback: your address, URL base if any, then `/api/v1/auth/oidc/callback` | none |
 | `HOLYARRS_OIDC_ALLOW_JOIN` | New people join as members who can only ask | `false` |
+| `HOLYARRS_OIDC_GROUPS_CLAIM` | Claim that carries the groups, often `groups`. Empty sets roles only in HolyArrs | none |
+| `HOLYARRS_OIDC_GROUP_ROLES` | Group to role, like `admins=admin,family=member`. Each sign-in gives the highest role; people in none are members. Never makes or changes the owner; a missing claim leaves the role alone | none |
 | `HOLYARRS_OIDC_ALLOW_LOCAL_NETWORK` | Allow a provider on your private network | `false` |
 | `HOLYARRS_OIDC_ALLOW_LOOPBACK_HTTP` | Allow plain HTTP on loopback, for testing | `false` |
 | `HOLYARRS_FORWARD_AUTH_ENABLED` | Turn on trusted proxy sign-in | `false` |

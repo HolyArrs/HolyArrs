@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Best copy first; a season pack wins when they are equal",
 	"settings.search.preferAlways": "A season pack whenever one passes the quality set",
 	"settings.search.multi": "Take Releases with several seasons",
-	"settings.search.multiHint": "Fills every missing episode in it",
+	"settings.search.multiHint": "Fills every missing episode in it. At equal quality, the one covering more wanted episodes wins",
 	"settings.search.music": "Music",
 	"settings.search.albums": "Search for missing albums too",
 	"settings.search.albumsHint": "Released albums, one search each",

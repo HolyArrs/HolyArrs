@@ -39,12 +39,22 @@ const reworded = [
 	'settings.signIn.cgnat',
 	'settings.signIn.cgnatHint',
 	'settings.tmdb.ownNote',
-	'library.stats.noMatch'
+	'library.stats.noMatch',
+	'settings.tmdb.keyTvdbHint',
+	'settings.tmdb.keyTvdbPinHint',
+	'settings.tmdb.testPinRefused',
+	// The import leaves tags behind; HolyArrs itself has tags.
+	'server.migrate.holyarrs-has-no-tags',
+	'server.migrate.holyarrs-has-no-tags-check-it',
+	'server.migrate.holyarrs-has-no-tags-check-it-2',
+	'server.migrate.applied-only-to-titles-tagged-holyarrs'
 ];
 
 // What de, fr, es and ar said before the English was reworded.
 const before: Record<string, Words> = {
 	de: {
+		'server.migrate.holyarrs-has-no-tags': 'HolyArrs hat keine Tags',
+		'server.migrate.holyarrs-has-no-tags-check-it': 'HolyArrs hat keine Tags; prüfe es, bevor du es fortsetzt',
 		'settings.downloaders.spacing': 'Sekunden zwischen Sendungen an einen Downloader',
 		'settings.downloaders.seedRemoveHint': 'Nur Downloads, die HolyArrs geschickt und schon importiert hat. Fertig, wenn {app} das Seeden stoppt.',
 		'settings.downloaders.seedRatioHint': 'Leer: auf {app} warten. Eine unbekannte Ratio zählt nie.',
@@ -52,20 +62,28 @@ const before: Record<string, Words> = {
 		'settings.requests.plexFriendsRead': 'Gelesen {when}',
 		'settings.signIn.whoHint': 'Wähle das Kind-Profil, wenn Kinder dieses Netz nutzen. Wird die Person entfernt, melden sich wieder alle an.',
 		'settings.tmdb.ownNote': 'Mit eigenen Schlüsseln fragst du jede Quelle selbst. Musik-Charts, neue Musik-Reihen, Streaming-Top-10, Wikipedia-Fakten und Anime-Zuordnungen kommen nur vom HolyArrs-Server und sind daher aus.',
-		'library.stats.noMatch': 'Zuletzt gelesen {ago}. Nichts vom Gesehenen passt bisher zu deiner Bibliothek.'
+		'library.stats.noMatch': 'Zuletzt gelesen {ago}. Nichts vom Gesehenen passt bisher zu deiner Bibliothek.',
+		'settings.tmdb.keyTvdbHint': 'Optional.',
+		'settings.tmdb.keyTvdbPinHint': 'Aus deinem TheTVDB-Konto.'
 	},
 	fr: {
+		'server.migrate.holyarrs-has-no-tags': "HolyArrs n'a pas d'étiquettes",
+		'server.migrate.holyarrs-has-no-tags-check-it': "HolyArrs n'a pas d'étiquettes ; vérifiez-le avant de le reprendre",
 		'health.check.clearWaiting': 'Téléchargements en attente de nettoyage',
 		'settings.downloaders.seedRemoveHint': 'Seulement les téléchargements envoyés par HolyArrs et déjà importés. Terminé quand {app} arrête de partager.',
 		'settings.requests.plexFriendsRead': 'Lu {when}',
 		'settings.signIn.cgnat': 'Aussi ma plage Tailscale'
 	},
 	es: {
+		'server.migrate.holyarrs-has-no-tags': 'HolyArrs no tiene etiquetas',
+		'server.migrate.holyarrs-has-no-tags-check-it': 'HolyArrs no tiene etiquetas; revísalo antes de reanudarlo',
 		'health.check.clearWaiting': 'Descargas esperando la limpieza',
 		'settings.downloaders.seedRatioHint': 'Vacío: esperar a {app}. Un ratio desconocido nunca cuenta.',
 		'settings.signIn.fixBridge': 'El bridge de Docker. Entraría cualquiera'
 	},
 	ar: {
+		'server.migrate.holyarrs-has-no-tags': 'لا يملك HolyArrs وسومًا',
+		'server.migrate.holyarrs-has-no-tags-check-it': 'لا يملك HolyArrs وسومًا؛ تحقق منه قبل استئنافه',
 		'health.check.clearWaiting': 'تنزيلات بانتظار التنظيف',
 		'settings.downloaders.seedRemoveHint': 'فقط التنزيلات التي أرسلها HolyArrs واستوردها. ينتهي عندما يوقف {app} المشاركة.',
 		'settings.requests.plexFriendsRead': 'قُرئت {when}',

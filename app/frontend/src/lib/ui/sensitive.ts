@@ -1,4 +1,5 @@
 // Decides when an account action must ask the user to confirm first.
+import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export type Sensitive = 'password' | 'link' | 'two-factor';
 
@@ -9,9 +10,10 @@ export function needsConfirm(action: Sensitive, s: { localRecent: boolean; via: 
 	return !s.localRecent;
 }
 
-// Someone with no HolyArrs password confirms by signing in again with Plex, Jellyfin or Emby. Gives that way's name, or '' when a password box is the right ask.
+// Someone with no HolyArrs password confirms by signing in again with Plex, Jellyfin, Emby or single sign-on (the provider is made to ask again). Gives that way's name, or '' when a password box is the right ask. A trusted proxy can't confirm anything.
 export function outsideWay(s: { via: string; hasPassword?: boolean; authMethod?: string }): string {
 	if (s.via !== 'session' || s.hasPassword !== false) return '';
+	if (s.authMethod === 'oidc') return t('accounts.account.method.sso');
 	return ({ plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' } as Record<string, string>)[s.authMethod ?? ''] ?? '';
 }
 

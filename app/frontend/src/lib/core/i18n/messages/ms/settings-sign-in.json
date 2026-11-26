@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Hanya ini boleh menyatakan dari mana lawatan datang.",
 	"settings.signIn.fixToSaveOne": "Betulkan 1 baris untuk menyimpan",
 	"settings.signIn.fixToSaveOther": "Betulkan {n} baris untuk menyimpan",
-	"settings.signIn.localSaved": "Rangkaian setempat disimpan"
+	"settings.signIn.localSaved": "Rangkaian setempat disimpan",
+	"settings.signIn.forgotTitle": "Lupa kata laluan?",
+	"settings.signIn.forgotOn": "Tunjuk Lupa kata laluan? di halaman log masuk",
+	"settings.signIn.forgotNote": "Pemilik mendapat kod sekali guna daripada log pelayan. Matikan jika semua orang log masuk melalui log masuk tunggal. Arahan reset-owner masih berfungsi.",
+	"settings.signIn.forgotShown": "Lupa kata laluan? dihidupkan",
+	"settings.signIn.forgotHidden": "Lupa kata laluan? dimatikan"
 }

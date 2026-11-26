@@ -289,7 +289,9 @@ func (h *handler) getNaming(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
-	// What HolyArrs uses wins over what was sent.
+	// What HolyArrs uses wins over what was sent: the Sonarr side shows the
+	// show rules, the Radarr side the movie rules.
+	n = n.For(sidePart[h.side])
 	m[map[string]string{"radarr": "renameMovies", "sonarr": "renameEpisodes"}[h.side]] = n.RenameOnImport
 	m["replaceIllegalCharacters"] = n.Illegal == mediafiles.IllegalReplace
 	if c := slices.Index(colonOurs, n.Colon); c >= 0 {
@@ -308,6 +310,9 @@ func (h *handler) getNaming(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, m)
 }
 
+// sidePart is the HolyArrs part whose naming rules each old-app side uses.
+var sidePart = map[string]string{"sonarr": mediafiles.PartShows, "radarr": mediafiles.PartMovies}
+
 func (h *handler) putNaming(w http.ResponseWriter, r *http.Request) {
 	var in obj
 	if !mayWriteRules(w, r) || !readJSONBody(w, r, &in) {
@@ -320,20 +325,25 @@ func (h *handler) putNaming(w http.ResponseWriter, r *http.Request) {
 		internalError(w, err)
 		return
 	}
+	// Each side changes only its own part's rules.
+	rename, colon, illegal := &n.RenameOnImport, &n.Colon, &n.Illegal
+	if h.side == "sonarr" {
+		rename, colon, illegal = &n.ShowRenameOnImport, &n.ShowColon, &n.ShowIllegal
+	}
 	if v, ok := in[map[string]string{"radarr": "renameMovies", "sonarr": "renameEpisodes"}[h.side]].(bool); ok {
-		n.RenameOnImport = v
+		*rename = v
 	}
 	if v, ok := in["replaceIllegalCharacters"].(bool); ok {
-		n.Illegal = map[bool]string{true: mediafiles.IllegalReplace, false: mediafiles.IllegalRemove}[v]
+		*illegal = map[bool]string{true: mediafiles.IllegalReplace, false: mediafiles.IllegalRemove}[v]
 	}
 	switch c := in["colonReplacementFormat"].(type) {
 	case string:
 		if i := slices.Index(colonWords, c); i >= 0 {
-			n.Colon = colonOurs[i]
+			*colon = colonOurs[i]
 		}
 	case float64:
 		if i := int(c); i >= 0 && i < len(colonOurs) {
-			n.Colon = colonOurs[i]
+			*colon = colonOurs[i]
 		}
 	}
 	if s, ok := in["multiEpisodeStyle"].(float64); ok && h.side == "sonarr" && s >= 0 && int(s) < len(multiOurs) && multiOurs[int(s)] != "" {

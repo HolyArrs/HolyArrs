@@ -1,5 +1,7 @@
 package mediafiles
 
+import "slices"
+
 // Ladder steps, low to high (pick-rules.md section 5).
 var Ladder = []string{
 	"cam", "telesync", "sd_tv", "sd_dvd",
@@ -21,10 +23,12 @@ type TraitPoints struct {
 }
 
 // SizeLimit bounds a Release's size in bytes. With PerMinute the limits are
-// per minute of runtime.
+// per minute of runtime. Preferred (0: none) is the size a tie goes toward;
+// without it the middle of the band.
 type SizeLimit struct {
 	Min       int64 `json:"min"`
 	Max       int64 `json:"max"`
+	Preferred int64 `json:"preferred,omitempty"`
 	PerMinute bool  `json:"per_minute"`
 }
 
@@ -40,6 +44,16 @@ type ProtocolRule struct {
 type LanguageRule struct {
 	Wanted     []string `json:"wanted"`
 	OriginalOK bool     `json:"original_ok"`
+	// WaitDays holds a Release only in the original language this many
+	// days after the Title came out, so one in a wanted language can show
+	// up first; a wanted-language Release later replaces it. 0: no wait.
+	WaitDays int `json:"wait_days,omitempty"`
+	// FrenchVersions are the French dubs wanted when French is wanted:
+	// VFF, VFQ, VFI, VF2 (read from the release name, see
+	// releasename.FrenchVersion). Empty: any. A Release with another known
+	// version is refused; one with no version never replaces a file that
+	// has a wanted one.
+	FrenchVersions []string `json:"french_versions,omitempty"`
 }
 
 // ProperPolicy says how fixed re-releases count.
@@ -50,11 +64,13 @@ type ProperPolicy struct {
 
 // PickRulesBody is the rule body stored in the pick_rules.body JSON column.
 type PickRulesBody struct {
-	Steps            []Step               `json:"steps"`
-	GoodEnoughAt     string               `json:"good_enough_at"`
-	Traits           []TraitPoints        `json:"traits"`
-	MustHave         []string             `json:"must_have"`
-	Never            []string             `json:"never"`
+	Steps        []Step        `json:"steps"`
+	GoodEnoughAt string        `json:"good_enough_at"`
+	Traits       []TraitPoints `json:"traits"`
+	MustHave     []string      `json:"must_have"`
+	Never        []string      `json:"never"`
+	// BlockedGroups are release groups never picked, matched by whole name in any case.
+	BlockedGroups    []string             `json:"blocked_groups,omitempty"`
 	MinPoints        int                  `json:"min_points"`
 	GoodEnoughPoints *int                 `json:"good_enough_points,omitempty"`
 	SizeLimits       map[string]SizeLimit `json:"size_limits"` // by step; "*" for every step
@@ -62,12 +78,39 @@ type PickRulesBody struct {
 	Language         LanguageRule         `json:"language"`
 	Order            string               `json:"order"` // quality_then_points, points_then_quality
 	UpgradeMinPoints int                  `json:"upgrade_min_points"`
-	ProperPolicy     ProperPolicy         `json:"proper_policy"`
+	// ReplaceUnderMin counts a File below its step's smallest size as worth
+	// replacing by a Release of the same step or higher.
+	ReplaceUnderMin bool         `json:"replace_under_min,omitempty"`
+	ProperPolicy    ProperPolicy `json:"proper_policy"`
 	// Tags limit the Sources these rules search: with any, only Sources
 	// sharing one of them are asked (nil: no limit).
 	Tags []string `json:"tags,omitempty"`
 	// Synced names the TRaSH Guides profile last applied, for re-syncing.
 	Synced *SyncedProfile `json:"synced,omitempty"`
+	// EqualSteps are steps that rank as one, each list as the best of them,
+	// so points decide between them: an old app's quality group.
+	EqualSteps [][]string `json:"equal_steps,omitempty"`
+	// Devices are the device families the owner plays on (see Devices):
+	// a Release with a format one of them can't play directly gets fewer
+	// points, never refused.
+	Devices []string `json:"devices,omitempty"`
+}
+
+// rankStep is the place of step idx when steps are compared: a step in one
+// of EqualSteps ranks as that group's best.
+func rankStep(rules PickRulesBody, idx int) int {
+	if idx < 0 || idx >= len(rules.Steps) {
+		return idx
+	}
+	q, top := rules.Steps[idx].Quality, idx
+	for _, g := range rules.EqualSteps {
+		if slices.Contains(g, q) {
+			for _, s := range g {
+				top = max(top, stepIndex(rules, s))
+			}
+		}
+	}
+	return top
 }
 
 // SyncedProfile is a TRaSH Guides profile applied to Pick rules, or an
@@ -200,6 +243,26 @@ func FourK() PickRulesBody {
 // (MP3 320 or V0, AAC 256 and up, Opus 160 and up), lossless (16-bit or
 // depth not given) and lossless hi-res (24-bit or a rate over 48 kHz).
 var MusicLadder = []string{"lossy_low", "lossy_mid", "lossy_high", "lossless", "lossless_hires"}
+
+// stepPlain holds the ladder steps as the Pick rules page names them
+// (downloads.pr.steps in the English page words); a Release's reasons use
+// them so no step key reaches a person.
+var stepPlain = map[string]string{
+	"cam": "Filmed in a cinema", "telesync": "Cinema copy with clean sound", "sd_tv": "SD from TV", "sd_dvd": "SD from disc (DVD, Blu-ray)",
+	"720p_tv": "720p TV", "720p_web": "720p web", "720p_bluray": "720p Blu-ray",
+	"1080p_tv": "1080p TV", "1080p_web": "1080p web", "1080p_bluray": "1080p Blu-ray", "1080p_remux": "1080p remux",
+	"2160p_web": "4K web (2160p)", "2160p_bluray": "4K Blu-ray (2160p)", "2160p_remux": "4K remux (2160p)",
+	"lossy_low": "Lossy, under 192 kbps", "lossy_mid": "Lossy, 192 to 256 kbps", "lossy_high": "Lossy at its best (MP3 320 or V0)",
+	"lossless": "Lossless (CD quality)", "lossless_hires": "Lossless hi-res",
+}
+
+// StepWord is a ladder step as a person reads it; an unknown step comes back as is.
+func StepWord(step string) string {
+	if w, ok := stepPlain[step]; ok {
+		return w
+	}
+	return step
+}
 
 // Music preset names (stage 3.3.1).
 const (

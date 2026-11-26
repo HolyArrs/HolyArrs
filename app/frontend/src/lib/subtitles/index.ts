@@ -20,7 +20,7 @@ export type { MissingTitle } from './api.ts';
 export type { SiteForm } from './api.ts';
 export type { SiteKind } from './api.ts';
 export type { SiteView } from './api.ts';
-export type { SubtitleSettings } from './api.ts';
+export type { CleanSteps, SubtitleSettings } from './api.ts';
 export type { TitleSubtitles } from './api.ts';
 export type { Translator } from './api.ts';
 export type { TranslatorForm } from './api.ts';

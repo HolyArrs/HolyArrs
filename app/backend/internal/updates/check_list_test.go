@@ -157,6 +157,7 @@ func TestUpdateListBucketStoredOnce(t *testing.T) {
 
 func TestUpdateListEmptyPinnedKeysKeepsGitHub(t *testing.T) {
 	w := newWorld(t)
+	w.e.ListKeys = []updates.PublicKey{}
 	f := newFeed(t)
 	srv := newListServer(t)
 	w.e.ReleaseFeed, w.e.ListURL = f.srv.URL, srv.url()

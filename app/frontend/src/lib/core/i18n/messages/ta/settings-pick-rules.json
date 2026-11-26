@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "மீட்க முடியாது. கோப்புகள் அப்படியே இருக்கும்.",
 	"settings.pickRules.removeUsed": "{used}. முதலில் அங்கே வேறு விதிகளைத் தேர்ந்தெடுங்கள்.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "ரத்துசெய்"
+	"settings.pickRules.cancel": "ரத்துசெய்",
+	"settings.pickRules.check.title": "வெளியீட்டுப் பெயரைச் சரிபார்",
+	"settings.pickRules.check.desc": "HolyArrs ஒரு வெளியீட்டுப் பெயரை எப்படிப் படிக்கிறது, உங்கள் தரத் தொகுப்புகள் அதை எப்படி மதிப்பிடுகின்றன என்று பார்க்க பெயரை ஒட்டவும். எதுவும் தேடப்படவோ பதிவிறக்கப்படவோ இல்லை.",
+	"settings.pickRules.check.name": "வெளியீட்டுப் பெயர்",
+	"settings.pickRules.check.rules": "இதைக் கொண்டு மதிப்பிடு",
+	"settings.pickRules.check.copies": "பொருந்தும் தலைப்பின் நகல்கள்",
+	"settings.pickRules.check.size": "அளவு GB-இல் (விருப்பம்)",
+	"settings.pickRules.check.check": "சரிபார்",
+	"settings.pickRules.check.failed": "பெயரைச் சரிபார்க்க முடியவில்லை",
+	"settings.pickRules.check.readAs": "இப்படிப் படிக்கப்பட்டது",
+	"settings.pickRules.check.matches": "{name} உடன் பொருந்துகிறது",
+	"settings.pickRules.check.noTitle": "உங்கள் நூலகத்தில் எந்தத் தலைப்புடனும் பொருந்தவில்லை. இருந்தாலும் மதிப்பிட மேலே ஒரு தரத் தொகுப்பைத் தேர்ந்தெடுக்கவும்.",
+	"settings.pickRules.check.noAlbum": "{name} உடன் பொருந்துகிறது, ஆனால் அதன் எந்த ஆல்பத்துடனும் இல்லை.",
+	"settings.pickRules.check.noCopies": "இந்தத் தலைப்பில் மதிப்பிட நகல்கள் இல்லை.",
+	"settings.pickRules.check.hasFile": "கோப்பு உள்ளது"
 }

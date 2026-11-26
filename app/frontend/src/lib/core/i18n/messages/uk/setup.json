@@ -8,10 +8,14 @@
 	"setup.fullPath": "Використай повний шлях до теки, наприклад {path}.",
 	"setup.folderUsed": "Ця тека вже використовується або розташована всередині такої.",
 	"setup.folderMissing": "Такої теки немає. Перевір шлях.",
-	"setup.addFolderOrOff": "Додай теку або вимкни це.",
+	"setup.addFolderOrOff": "Додайте папку або натисніть «Пропустити поки що».",
 	"setup.notAnswering": "HolyArrs не відповідає. Спробуй за мить.",
 	"setup.addUserPasswordHint": "Додай ім’я користувача та пароль.",
 	"setup.folders": "Теки",
 	"setup.downloader": "Завантажувач",
-	"setup.source": "Джерело"
+	"setup.source": "Джерело",
+	"setup.alertsNeedKeyOne": "Сповіщення: 1 потрібен ключ",
+	"setup.alertsNeedKey": "Сповіщення: {n} потрібен ключ",
+	"setup.folderNoAccess": "HolyArrs не може відкрити цю папку. Перевірте її дозволи.",
+	"setup.folderCantUse": "HolyArrs не може використати цю папку. Перевірте шлях."
 }

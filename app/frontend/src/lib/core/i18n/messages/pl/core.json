@@ -26,6 +26,7 @@
 	"core.silhouette.buildingTry": "Budowanie: {what}… próba {attempt}",
 	"core.testTag.connected": "Połączono",
 	"core.api.notAnswering": "HolyArrs nie odpowiada. Sprawdź, czy działa.",
+	"core.api.tooSlow": "HolyArrs odpowiadał zbyt długo. Spróbuj ponownie za minutę.",
 	"core.api.requestFailed": "Żądanie nie powiodło się ({status})",
 	"core.api.wentWrong": "Coś poszło nie tak.",
 	"core.trailerMiss.trailer": "zwiastun",
@@ -71,6 +72,7 @@
 	"core.plain.autoApproved": "Zatwierdzone automatycznie",
 	"core.plain.approvedBy": "Zatwierdzone przez: {who}",
 	"core.settings.cantReach": "Nie można połączyć się z tym adresem. Sprawdź go i czy aplikacja działa.",
+	"core.settings.tryHttp": "Ten adres nie odpowiada przez https. Spróbuj http://.",
 	"core.settings.groupLibrary.label": "Biblioteka",
 	"core.settings.groupLibrary.line": "Gdzie są tytuły",
 	"core.settings.groupLibrary.about": "Foldery, moduły, ustawienia domyślne, napisy, nazwy plików i import.",
@@ -152,5 +154,7 @@
 	"core.plain.sameDownloader": "Dwa Downloadery łączą się z tą samą aplikacją do pobierania, więc pobrania mogą pojawiać się podwójnie.",
 	"core.plain.peopleCheck": "Nie można odczytać listy użytkowników serwera multimediów, więc osoby tam usunięte nie są tu wyłączane.",
 	"core.plain.deleted": "usunięty",
-	"core.plain.deletedName": "{name} (usunięty)"
+	"core.plain.deletedName": "{name} (usunięty)",
+	"core.api.handsOffFiles": "Tryb bez ingerencji jest włączony, więc HolyArrs nie rusza pobranych plików. Wyłącz go w Ustawieniach, aby importować, zmieniać nazwy, przenosić lub skanować pliki.",
+	"core.api.handsOffSubtitles": "Tryb bez ingerencji jest włączony, więc HolyArrs nigdy nie otwiera pobranych plików. Wyłącz go w Ustawieniach, aby używać napisów."
 }

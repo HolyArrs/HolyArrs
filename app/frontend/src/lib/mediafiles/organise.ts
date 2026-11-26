@@ -50,6 +50,8 @@ export type AdoptStatus = 'matched' | 'unsure' | 'unmatched' | 'not_looked_up' |
 
 export interface AdoptCandidate {
 	folder: string;
+	/** The row is a video file right in the Library folder, not a folder. */
+	loose?: boolean;
 	parsed_name: string;
 	parsed_year?: number;
 	videos: { path: string; size: number }[];
@@ -110,6 +112,41 @@ export interface AdoptPlan {
 	/** Folders in the Library folder in all, and how many sort before this part. */
 	total?: number;
 	offset?: number;
+	/** Movies sitting as loose files (genre folder or the Library folder itself) that were left out. */
+	loose_movies?: number;
+	loose_folders?: string[];
+	/** The folder keeps movies as files right in it; suggest_flat: it is not set so but looks that way. */
+	flat?: boolean;
+	suggest_flat?: boolean;
+	/** Movies that are files right in a folder that is not flat: offered as they are, Tidy optional. */
+	loose_top?: number;
+}
+
+/** One file Tidy my folders moves, as paths inside the Library folder. */
+export interface TidyFile {
+	from: string;
+	to: string;
+}
+export interface TidyMove extends TidyFile {
+	name: string;
+	year: number;
+	files: TidyFile[];
+	problem?: string;
+	/** exists, two or has_movie, and the file or folder it is about. */
+	why?: 'exists' | 'two' | 'has_movie';
+	path?: string;
+}
+export interface TidyPlan {
+	library_folder_id: number;
+	moves: TidyMove[];
+	blocked: TidyMove[];
+	unmatched: string[];
+	hash: string;
+	undo_files: number;
+}
+export interface TidyResult {
+	moved: number;
+	failed: { from: string; why: string }[];
 }
 
 export interface AdoptResult {
@@ -153,6 +190,19 @@ export interface NamingSettings {
 	colon: string;
 	illegal: string;
 	rename_on_import: boolean;
+	/** Movie folders go in a folder of their first genre: Drama/Heat (1995)/ (off by default). */
+	group_by_genre?: boolean;
+	/** Movie folders go in a folder of their first letter: H/Heat (1995)/ (off by default). */
+	group_by_letter?: boolean;
+	/** Show folders go in a folder of their first letter: O/The Office (2005)/ (off by default). */
+	show_group_by_letter?: boolean;
+	// Shows and music keep their own rename, colon and character rules.
+	show_rename_on_import?: boolean;
+	show_colon?: string;
+	show_illegal?: string;
+	music_rename_on_import?: boolean;
+	music_colon?: string;
+	music_illegal?: string;
 	// App language whose name new movie and show names use; '' keeps English.
 	title_language?: string;
 	adopt_scan_limit: number;
@@ -206,6 +256,8 @@ export interface FileRules {
 	holding_days: number;
 	min_free_mb: number;
 	skip_free_space_check: boolean;
+	unkeep_deleted_movies: boolean;
+	unkeep_deleted_episodes: boolean;
 }
 
 export interface DeleteScope {
@@ -403,6 +455,11 @@ export function showFolderLine(c: Pick<AdoptCandidate, 'episodes' | 'unknown' | 
 }
 
 // Turns a 0 to 1 score into a percent.
+// The server's sure mark (library MatchSure): an Unsure match at or above it is unsure only because another title fits as well,
+// so its pill leaves the percent out instead of reading "Unsure · 100%"; the reason line names both titles.
+export const MATCH_SURE = 0.9;
+export const sureName = (f: Pick<AdoptCandidate, 'match'>): boolean => !!f.match && f.match.score >= MATCH_SURE;
+
 export function score(s: number): string {
 	return `${Math.round(Math.max(0, Math.min(1, s)) * 100)}%`;
 }
@@ -436,8 +493,14 @@ export function finished(j: Pick<JobView, 'State'>): boolean {
 
 /** A scan's progress note ("1200/3000"): folders read and folders this scan reads. */
 export function scanCount(note: string | null | undefined): { done: number; total: number } | null {
-	const m = /^(\d+)\/(\d+)$/.exec(note ?? '');
+	const m = /^(\d+)\/(\d+)(?: wait \d+ \d+)?$/.exec(note ?? '');
 	return m ? { done: Number(m[1]), total: Number(m[2]) } : null;
+}
+
+/** An import part waiting on the metadata server: whole minutes to the next try (at least 1) and the folders left. */
+export function waitOf(note: string | null | undefined): { min: number; left: number } | null {
+	const m = /^\d+\/\d+ wait (\d+) (\d+)$/.exec(note ?? '');
+	return m && Number(m[2]) > 0 ? { min: Math.max(1, Math.ceil(Number(m[1]) / 60)), left: Number(m[2]) } : null;
 }
 
 export async function followJob(

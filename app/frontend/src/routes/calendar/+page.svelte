@@ -11,7 +11,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Popover from '#lib/ui/Popover.svelte';
 	import { setFollow } from '#lib/ui/follow.ts';
-	import { rebaseBar, ComingSoon, MiniMonth, FollowWho, CalBanner, CalListRows, rowWords, DEFAULT_LOOK, type CaptionLook, byDay, entryKey, readMonthHidden, saveMonthHidden, shows, entryHref, weekStart, addDays, entryDay, weekRange, rangeChunks, titlesFromAddress, itemDot, oneMovieDate, movieFacts, followsOk, withFollow, readFollows, saveFollows, startFollows, type Follows, type MovieFacts, ymd, readView, saveView, startView, type CalendarView, type TitlesShown } from '#lib/discover/index.ts';
+	import { rebaseBar, ComingSoon, MiniMonth, FollowWho, CalBanner, CalListRows, rowWords, DEFAULT_LOOK, type CaptionLook, byDay, entryKey, readMonthHidden, saveMonthHidden, shows, entryHref, weekStart, addDays, entryDay, weekRange, rangeChunks, titlesFromAddress, itemDot, missingToSearch, searchBody, oneMovieDate, movieFacts, followsOk, withFollow, readFollows, saveFollows, startFollows, type Follows, type MovieFacts, ymd, readView, saveView, startView, type CalendarView, type TitlesShown } from '#lib/discover/index.ts';
 	import { libraryBrief, partOff, partOn } from '#lib/mediafiles/index.ts';
 	import { onMount, tick } from 'svelte';
 	import { page } from '$app/state';
@@ -91,6 +91,23 @@
 		// One short range everywhere ("Nov 24 – 30"); the year only when it is not this year.
 		return { from: ymd(s), long: weekRange(s, e, appLocale(), now) };
 	});
+	// One press searches every date in the week in view that has aired and is still missing, as the old apps' calendar does.
+	const weekEnd = $derived(ymd(addDays(new Date(viewWeek.from + 'T00:00:00'), 7)));
+	const missingInWeek = $derived(missingToSearch(shown.filter((e) => entryDay(e) >= viewWeek.from && entryDay(e) < weekEnd), todayKey));
+	const canManage = $derived(session.can('manage_library') && !session.kid);
+	let searchingMissing = $state(false);
+	async function searchMissing() {
+		const list = missingInWeek;
+		searchingMissing = true;
+		try {
+			const r = await Promise.allSettled(list.map((e) => api.post(`/titles/${e.title_id}/search`, searchBody(e))));
+			const bad = r.find((x): x is PromiseRejectedResult => x.status === 'rejected');
+			if (bad) toasts.push(t('discover.calWindow.couldntSearch'), 'fail', { body: message(bad.reason) });
+			else toasts.push(t('discover.calendar.searchingMissing', { n: list.length.toLocaleString(appLocale()) }), 'info');
+		} finally {
+			searchingMissing = false;
+		}
+	}
 
 	// The small month starts on the first week's month, pages on its own, and follows the day in view. It is anchored to today (or the linked month), never to the year back where loading starts.
 	let pickYear = $state((askedMonth ?? now).getFullYear());
@@ -308,7 +325,7 @@
 		}
 	}
 
-	const dotWord = $derived({ have: t('discover.calendar.inTheLibrary'), missing: t('discover.calendar.missing'), upcoming: t('discover.calendar.comingUp') });
+	const dotWord = $derived({ have: t('discover.calendar.inTheLibrary'), missing: t('discover.calendar.missing'), getting: t('discover.calendar.downloading'), problem: t('discover.calendar.needsAttention'), upcoming: t('discover.calendar.comingUp') });
 
 	onMount(() => {
 		const mq = matchMedia('(max-width: 1023px)');
@@ -404,6 +421,19 @@
 	{/if}
 {/snippet}
 
+{#snippet searchMissingBtn(primary: boolean)}
+	<!-- Search every missing date of the week in view; shown only when there is one to search. -->
+	{#if canManage && missingInWeek.length}
+		{@const label = t('discover.calendar.searchMissing', { n: missingInWeek.length.toLocaleString(appLocale()) })}
+		{#if primary}
+			<Button variant="secondary" size="sm" icon="search" busy={searchingMissing} onclick={searchMissing} data-testid="cal-search-missing">{label}</Button>
+		{:else}
+			<!-- An icon in the bar, so it fits beside the other controls at every width. -->
+			<IconButton icon="search" tipSide="below-end" {label} variant="tinted" disabled={searchingMissing} onclick={searchMissing} data-testid="cal-search-missing-slim" />
+		{/if}
+	{/if}
+{/snippet}
+
 {#snippet typeSeg(primary: boolean)}
 	<SegmentedControl
 		label={t('discover.calendar.moviesShowsOrMusic')}
@@ -470,6 +500,7 @@
 		<span class="wide-only" data-testid="cal-follows">{@render followsMenu()}</span>
 		<span class="wide-only">{@render monthBtn(true)}</span>
 		<span class="phone-only">{@render followsPhone()}</span>
+		{@render searchMissingBtn(true)}
 </section>
 <span class="head-end" bind:this={headEnd} aria-hidden="true"></span>
 
@@ -483,6 +514,7 @@
 		<span class="wide-only slim-seg">{@render typeSeg(false)}</span>
 		<span class="wide-only">{@render followsMenu()}</span>
 		<span class="wide-only">{@render monthBtn(false)}</span>
+		{@render searchMissingBtn(false)}
 		{@render todayBtn('sm')}
 		<span class="phone-only">{@render followsPhone()}</span>
 	</div>
@@ -594,7 +626,8 @@
 	/* One line, never squeezed: each control keeps its size; on narrower screens the extras step out (Cards or List first, then the kinds). */
 	@media (min-width: 1024px) { .slim > :global(*) { flex: none; } .slim .range { overflow: visible; } }
 	@media (max-width: 1320px) { .slim .slim-view { display: none; } .slim .slim-seg { margin-right: auto; } }
-	@media (min-width: 1024px) and (max-width: 1080px) { .slim .slim-seg { display: none; } .slim :global(.range-nav) { margin-right: auto; } }
+	/* Up to 1140px the type picker leaves the bar (it stays in the header) so the search icon fits. */
+	@media (min-width: 1024px) and (max-width: 1140px) { .slim .slim-seg { display: none; } .slim :global(.range-nav) { margin-right: auto; } }
 	.slim .range { min-width: 0; font: var(--t-headline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.range-btn { padding: 4px 8px; border-radius: var(--r-sm); color: var(--text); transition: background var(--dur-fast) var(--ease-out); }
 	.range-btn:hover { background: var(--surface-2); }
@@ -697,6 +730,8 @@
 	.sdot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; background: var(--text-faint); }
 	.sdot.have { background: var(--ok); }
 	.sdot.missing { background: var(--fail); }
+	.sdot.getting { background: var(--wait); }
+	.sdot.problem { background: transparent; box-shadow: inset 0 0 0 1.5px var(--fail); }
 	.sdot.upcoming { background: var(--info); }
 	.days-sk { display: flex; flex-direction: column; gap: 22px; max-width: 1120px; }
 	.day-sk { display: flex; gap: 20px; align-items: flex-start; }

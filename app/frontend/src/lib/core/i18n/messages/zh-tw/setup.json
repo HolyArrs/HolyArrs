@@ -8,10 +8,14 @@
 	"setup.fullPath": "請使用完整的資料夾路徑，例如 {path}。",
 	"setup.folderUsed": "這個資料夾已被使用，或位於已被使用的資料夾內。",
 	"setup.folderMissing": "該資料夾不存在，請檢查路徑。",
-	"setup.addFolderOrOff": "請新增資料夾，或關閉此項。",
+	"setup.addFolderOrOff": "新增一個資料夾，或按「暫時跳過」。",
 	"setup.notAnswering": "HolyArrs 沒有回應，請稍後再試。",
 	"setup.addUserPasswordHint": "請填寫使用者名稱和密碼。",
 	"setup.folders": "資料夾",
 	"setup.downloader": "下載器",
-	"setup.source": "來源"
+	"setup.source": "來源",
+	"setup.alertsNeedKeyOne": "通知：1 則需要金鑰",
+	"setup.alertsNeedKey": "通知：{n} 則需要金鑰",
+	"setup.folderNoAccess": "HolyArrs 無法開啟這個資料夾。請檢查它的權限。",
+	"setup.folderCantUse": "HolyArrs 無法使用這個資料夾。請檢查路徑。"
 }

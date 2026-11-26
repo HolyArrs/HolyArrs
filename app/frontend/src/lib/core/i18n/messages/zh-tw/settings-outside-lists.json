@@ -86,5 +86,18 @@
 	"settings.outsideLists.addNever": "新增到永不新增清單",
 	"settings.outsideLists.showDot": "影集 ·",
 	"settings.outsideLists.takeOff": "移出 {name}",
-	"settings.outsideLists.empty": "這份清單還沒有內容"
+	"settings.outsideLists.empty": "這份清單還沒有內容",
+	"settings.outsideLists.traktSignInTitle": "Trakt 登入",
+	"settings.outsideLists.traktSignInInfo": "登入後可讀取你在 Trakt 上的私人清單和待看清單，並把你在 Trakt 上看過的內容加入觀看紀錄。",
+	"settings.outsideLists.traktSignedInAs": "已登入為 {name}。",
+	"settings.outsideLists.traktNotSignedIn": "未登入。只讀取公開清單。",
+	"settings.outsideLists.traktSignIn": "使用 Trakt 登入",
+	"settings.outsideLists.traktDeviceSteps": "在任何裝置上開啟 <a>{url}</a> 並輸入 <code>{code}</code>。此頁面會等待你核准。",
+	"settings.outsideLists.traktDenied": "Trakt 登入遭到拒絕。",
+	"settings.outsideLists.traktExpired": "代碼已過期。請重新開始。",
+	"settings.outsideLists.traktSignOut": "登出 Trakt",
+	"settings.outsideLists.traktSignedIn": "已登入 Trakt",
+	"settings.outsideLists.traktSignedOut": "已登出 Trakt",
+	"settings.outsideLists.traktClientSecretLabel": "Client secret（使用 Trakt 登入時需要）",
+	"settings.outsideLists.traktSecretFirst": "請先儲存你的 Trakt 應用程式的 client secret；Trakt 需要它來保持你的登入狀態。"
 }

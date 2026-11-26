@@ -8,10 +8,14 @@
 "setup.fullPath": "Použite úplnú cestu k priečinku, napríklad {path}.",
 "setup.folderUsed": "Tento priečinok sa už používa alebo je vnútri takého, ktorý sa používa.",
 "setup.folderMissing": "Tento priečinok neexistuje. Skontrolujte cestu.",
-"setup.addFolderOrOff": "Pridajte priečinok alebo to vypnite.",
+"setup.addFolderOrOff": "Pridajte priečinok alebo stlačte „Zatiaľ preskočiť“.",
 "setup.notAnswering": "HolyArrs neodpovedá. Skúste to o chvíľu znova.",
 "setup.addUserPasswordHint": "Zadajte meno používateľa a heslo.",
 "setup.folders": "Priečinky",
 "setup.downloader": "Sťahovač",
-"setup.source": "Zdroj"
+"setup.source": "Zdroj",
+	"setup.alertsNeedKeyOne": "Upozornenia: 1 potrebuje kľúč",
+	"setup.alertsNeedKey": "Upozornenia: {n} potrebujú kľúč",
+	"setup.folderNoAccess": "HolyArrs nemôže otvoriť tento priečinok. Skontrolujte jeho oprávnenia.",
+	"setup.folderCantUse": "HolyArrs nemôže použiť tento priečinok. Skontrolujte cestu."
 }

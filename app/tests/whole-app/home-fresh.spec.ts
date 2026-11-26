@@ -53,7 +53,8 @@ async function freshHome(page: Page) {
 test.beforeAll(async ({ browser }) => {
 	test.setTimeout(240_000);
 	const page = await browser.newPage();
-	await setUpFresh(page, owner(), join(tmp, 'movies'));
+	// Requests on, as the first Home grid expects eight places (the wizard's Requests tile starts off).
+	await setUpFresh(page, owner(), join(tmp, 'movies'), { invite: true });
 	await page.context().close();
 });
 

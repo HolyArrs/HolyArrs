@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Hætta við",
 	"settings.schedules.stages": "Þrep",
 	"settings.schedules.stagesNote": "Settu í bið eða endurræstu í <a>Hlutum</a>.",
-	"settings.schedules.allTime": "Alltaf"
+	"settings.schedules.allTime": "Alltaf",
+	"settings.schedules.skip.nothing": "Ekkert að gera",
+	"settings.schedules.skip.plexOff": "Slökkt: kveiktu á {setting} í {page}",
+	"settings.schedules.skip.plexNobody": "Ekkert að gera: enginn hefur kveikt á Plex-áhorfslistanum sínum",
+	"settings.schedules.skip.settingOff": "Slökkt: kveiktu á því í stillingum þess",
+	"settings.schedules.skip.starting": "Sleppt: HolyArrs var enn að ræsa sig",
+	"settings.schedules.took": "Tók {time}",
+	"settings.schedules.finished": "{label} lokið",
+	"settings.schedules.nothingToDo": "{label}: ekkert að gera",
+	"settings.schedules.runFailed": "{label} mistókst"
 }

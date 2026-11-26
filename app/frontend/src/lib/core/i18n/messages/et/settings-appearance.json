@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "Taotlused",
 	"settings.appearance.colRate": "Rea kohta",
 	"settings.appearance.noRows": "Ühtegi Avasta lehe rida pole veel loetud.",
+	"settings.appearance.rowStats": "Avasta read",
+	"settings.appearance.rowStatsDesc": "Avamised ja taotlused rea kohta viimase 30 päeva jooksul, kõigi peale kokku. Loetakse ainult selles serveris.",
+	"settings.appearance.colRow": "Rida",
+	"settings.appearance.row.because_have": "Nagu sinu pealkirjad",
+	"settings.appearance.row.because_asked": "Nagu sinu taotlused",
+	"settings.appearance.row.person": "Rohkem ühelt inimeselt",
+	"settings.appearance.row.genre": "Žanrivalik sulle",
+	"settings.appearance.row.popular_genre": "Populaarsed žanri järgi",
+	"settings.appearance.row.popular_decade": "Populaarsed kümnendi järgi",
+	"settings.appearance.row.decade": "Kümnendi järgi",
+	"settings.appearance.row.mood": "Meeleolu järgi",
+	"settings.appearance.row.hero": "Ülemine bänner",
 	"settings.appearance.motion": "Liikumine",
 	"settings.appearance.motionNote": "Järgib sinu seadme liikumise vähendamise seadet"
 }

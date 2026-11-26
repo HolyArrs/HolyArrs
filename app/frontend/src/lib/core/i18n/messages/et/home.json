@@ -244,6 +244,7 @@
 	"home.pickWhatToAsk": "Vali, mida järgmisena taotleda",
 	"home.newPopular": "Uus ja populaarne",
 	"home.whatSTrending": "Mis on menukas",
+	"home.gettingReady": "Valmistan asju ette…",
 	"home.top10sAndComing": "Top 10 ja tulekul",
 	"home.whatSNext": "Mis on järgmine",
 	"home.airDatesAndReleases": "Eetrikuupäevad ja ilmumised",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Sel nädalal ilmuvad osad ja filmid",
 	"home.popularThisWeek": "Sel nädalal ilmuvad populaarsed uudised",
 	"home.peopleCheck": "Inimeste kontroll",
-	"home.cantReadUsers": "kasutajate loendit ei saa lugeda"
+	"home.cantReadUsers": "kasutajate loendit ei saa lugeda",
+	"home.joined.title": "Tere tulemast, {name}",
+	"home.joined.find": "Leia midagi jaotisest {explore} või {search}.",
+	"home.joined.ask": "Puuduta pealkirjal {request}, et see saada. Saad küsida:",
+	"home.joined.track": "Jälgi igaüht jaotises {requests}.",
+	"home.joined.noLimit": "Nädalapiirangut pole.",
+	"home.joined.gotIt": "Selge",
+	"home.joined.explore": "Ava {explore}"
 }

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
@@ -89,5 +90,53 @@ func TestScanOnTodaysServerLooksFoldersUpOneByOne(t *testing.T) {
 	plan, batches, singles := scanFolders(t, false, 30)
 	if plan.Counts["matched"] != 30 || batches != 0 || singles != 30 {
 		t.Fatalf("counts %v batches %d singles %d", plan.Counts, batches, singles)
+	}
+}
+
+func TestScanNestedDuplicateNamesAcrossBatches(t *testing.T) {
+	for _, batch := range []bool{true, false} {
+		t.Run(fmt.Sprintf("batch=%v", batch), func(t *testing.T) {
+			s := open(t)
+			lf := addFolder(t, s)
+			// The same basename occurs more than two windows apart. A basename
+			// index makes the first folder wait for a batch the producer cannot
+			// reach until this scan advances.
+			folders := []string{"A/Film 1 (2001)", "Z/Film 1 (2001)"}
+			for i := 2; i <= 3*scanWindow+1; i++ {
+				folders = append(folders, fmt.Sprintf("M/Film %d (2001)", i))
+			}
+			for _, folder := range folders {
+				dir := filepath.Join(lf.Path, filepath.FromSlash(folder))
+				if err := os.MkdirAll(dir, 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(filepath.Join(dir, "f.mkv"), []byte("x"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			base, _, _ := movieServer(t, batch)
+			md := &metadata.TMDB{BaseURL: base + metadata.TMDBPath, Access: func(context.Context) (string, error) { return "tok", nil }, HTTP: http.DefaultClient, Gap: 1}
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			plan, err := PlanAdopt(ctx, s.Read(), md, lf.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if plan.Counts["matched"] != len(folders) || len(plan.Folders) != len(folders) {
+				t.Fatalf("matched %d of %d folders: %+v", plan.Counts["matched"], len(folders), plan.Counts)
+			}
+			seen := map[string]bool{}
+			for _, f := range plan.Folders {
+				seen[f.Folder] = true
+				if f.Match == nil || "Film "+f.Match.TMDB+" (2001)" != filepath.Base(f.Folder) {
+					t.Fatalf("folder %s matched %+v", f.Folder, f.Match)
+				}
+			}
+			for _, folder := range folders {
+				if !seen[folder] {
+					t.Errorf("missing folder %s", folder)
+				}
+			}
+		})
 	}
 }

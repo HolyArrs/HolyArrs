@@ -1,6 +1,6 @@
 <script module lang="ts">
 	// Back to Search reuses what was on screen: the answers kept when Search was left, for that history entry and address only (a fresh visit loads anew).
-	import { historyIndex, SearchField, BrowseTile, MusicBrowseSections, MosaicReveal, browseCols, browseHref, BROWSE_ROWS, readCategory, readMood, shownCount, tileHue, SHELF_MIN, live, libraryNote, rankTop, readScope, scopeAddress, type SearchScope, describes, found, plainPath, understood, type PlainAnswer } from '#lib/discover/index.ts';
+	import { historyIndex, SearchField, BrowseTile, MusicBrowseSections, MosaicReveal, browseCols, browseHref, BROWSE_ROWS, readCategory, readMood, shownCount, tileHue, SHELF_MIN, live, libraryNote, rankTop, readScope, scopeAddress, searchAddress, type SearchScope, describes, found, plainPath, understood, type PlainAnswer } from '#lib/discover/index.ts';
 	let kept: { key: string; data: unknown } | null = null;
 	function entryKey(): string {
 		if (typeof history === 'undefined') return '';
@@ -48,9 +48,11 @@
 
 	// Search is a page; its one field is the top bar's (on phones, where the top bar is hidden, a copy sits at the page top). The words and the scope live in the address (?q=, ?kind=). Before typing it shows recent searches (this device, per user) and the Browse grid (genres and their moods, per tab); a mood tile opens a mood view here (?mood=&genre=&type=). Results come in as you type. Kid limits are applied by the server on every lookup.
 
-	// The words live in the shared field (top bar); a direct link fills it from ?q=.
-	if (!searchField.term.trim()) searchField.term = page.url.searchParams.get('q') ?? '';
-	let scope = $state<SearchScope>(readScope(page.url.searchParams.get('kind')));
+	// Back can restore a shallow address with the query typed after Search opened.
+	const here = () => searchAddress(page.url, page.shallow?.url, typeof location === 'undefined' ? undefined : location.href);
+	const initialAddress = here();
+	if (!searchField.term.trim()) searchField.term = initialAddress.searchParams.get('q') ?? '';
+	let scope = $state<SearchScope>(readScope(initialAddress.searchParams.get('kind')));
 	let busy = $state(false);
 	let error = $state('');
 	let noTMDB = $state(false);
@@ -58,15 +60,7 @@
 	let groups = $state<Record<Card['type'], Card[] | null>>({ show: null, movie: null, music: null, people: null });
 	/** What was on screen when the current search started: kept up until the new answers arrive. */
 	let stale = $state.raw<{ groups: Record<Card['type'], Card[] | null>; lib: LibraryAnswer | null } | null>(null);
-	const browseCtx = {
-		get scope() {
-			return scope;
-		},
-		get cols() {
-			return cols;
-		},
-	};
-	const browse = createSearchBrowse(browseCtx);
+	const browse = createSearchBrowse({ get scope() { return scope; }, get cols() { return cols; } });
 	// The entry: a mosaic dissolve down the whole visible page, the tiles rising row by row behind it; under reduced motion the band alone. Timing: a 120 ms hold, the band builds to about 900 ms, the last visible row lands by about 1.1 s, the field's glow settles by about 1.4 s. Only transform and opacity move.
 	const calm = reducedMotion();
 	let revealing = $state(true);
@@ -86,10 +80,7 @@
 	};
 	const entry = createSearchEntry(entryCtx);
 	let cols = $state(6);
-	const recentsCtx = {
-		run,
-	};
-	const recents = createSearchRecent(recentsCtx);
+	const recents = createSearchRecent({ run });
 	const beginSearch = createLatestOnly();
 	const who = $derived(audienceOf(session.can));
 	const manage = $derived(session.can('manage_library'));
@@ -108,7 +99,6 @@
 	const sectionTitle = (s: { id: string; title: string }) => (SECTION_KEYS[s.id] ? t(SECTION_KEYS[s.id]) : s.title);
 	const labels = $derived<Record<Card['type'], string>>({ show: t('discover.search.tvShows'), movie: t('discover.search.movies'), music: t('discover.search.music'), people: t('discover.search.people') });
 	const order = $derived(scopeOptions.map((o) => o.value).filter((v): v is Card['type'] => v !== 'all'));
-
 
 	let lib = $state<LibraryAnswer | null>(null);
 	// Search in plain words: asked only when the words describe a title.
@@ -163,9 +153,10 @@
 
 	const ownAddresses = new Set<string>();
 	function writeAddress() {
-		const url = scopeAddress(page.url, scope, searchField.term);
+		const current = here();
+		const url = scopeAddress(current, scope, searchField.term);
 		if (searchField.term.trim() || !(browse.mood || browse.mgenre || browse.cat)) for (const k of ['mood', 'genre', 'type', 'mgenre', 'cat']) url.searchParams.delete(k);
-		if (url.href === page.url.href) return;
+		if (url.href === current.href) return;
 		ownAddresses.add(url.href);
 		void goto(url, { replace: true, shallow: true });
 	}
@@ -264,7 +255,6 @@
 		scope = s;
 		void run();
 	}
-
 
 	// Back restores Search exactly. The answers come from `kept` (no refetch, no entry animation); the snapshot holds the spot: scroll, loaded Browse sections and rows, people pages and the chip. The scroll comes back once the page is tall enough.
 	const kept0 = kept && kept.key === entryKey() ? (kept.data as ReturnType<typeof keep>) : null;
@@ -381,6 +371,15 @@
 		if (!from.url.pathname.endsWith('/search')) {
 			entry.cameFrom = from.url.pathname;
 			entry.depth = 0;
+			// Back (or Forward) into Search: the words and scope come from the address bar.
+			if (type !== 'popstate') return;
+			const back = here();
+			const bq = back.searchParams.get('q') ?? '';
+			const bs = readScope(back.searchParams.get('kind'));
+			if (bq === searchField.term && bs === scope) return;
+			searchField.term = lastTerm = bq;
+			scope = bs;
+			void run();
 			return;
 		}
 		if (type === 'popstate') entry.depth = Math.max(0, entry.depth - 1);

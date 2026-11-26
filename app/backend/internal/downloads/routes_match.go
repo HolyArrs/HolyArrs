@@ -104,9 +104,10 @@ func guessOf(name, category string) guess {
 }
 
 // matchFold folds a name for comparing: lower case letters and digits only, a
-// leading "the" dropped and "&" read as "and".
+// leading "the" dropped, accents dropped ("Fiancé" is "fiance") and "&"
+// read as "and".
 func matchFold(s string) string {
-	s = strings.ToLower(strings.ReplaceAll(s, "&", " and "))
+	s = strings.ToLower(releasename.FoldAccents(strings.ReplaceAll(s, "&", " and ")))
 	var b strings.Builder
 	for _, r := range s {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
@@ -241,6 +242,7 @@ func (a *Web) candidatesFor(ctx context.Context, g guess) ([]Candidate, error) {
 			cs = append(cs, Candidate{ID: src + ":" + x.IDs[src], Kind: "show", Name: x.Name, Year: x.Year, Poster: x.Poster, Score: likeness(g.title, x.Name)})
 		}
 	}
+	a.aliasScores(ctx, g.title, cs)
 	sort.SliceStable(cs, func(i, j int) bool { return cs[i].Score > cs[j].Score })
 	if len(cs) > 6 {
 		cs = cs[:6]

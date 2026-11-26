@@ -11,6 +11,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/importer"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
@@ -28,7 +29,7 @@ var (
 	// ErrVersionFolder says the folder a Version would get is another
 	// title's folder in the same Library folder.
 	// ErrFourKTaken says the title already has its 4K copy.
-	ErrFourKTaken = errors.New("this title already has a 4K Version")
+	ErrFourKTaken    = errors.New("this title already has a 4K Version")
 	ErrVersionFolder = errors.New("another title in that Library folder already uses the folder this Version would get; choose another label or Library folder")
 )
 
@@ -111,7 +112,7 @@ func CheckVersionFolder(ctx context.Context, db database.Querier, id int64, titl
 	} else if lf.Kind != "movie" {
 		return lf, ErrNotMovieFolder
 	}
-	if h := CheckFolder(lf.Path, downloadPaths); !h.Usable() {
+	if h := CheckUse(lf, downloadPaths); !h.Usable() {
 		return lf, &FolderError{Health: h}
 	}
 	return lf, nil
@@ -157,6 +158,15 @@ func AddVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in Versio
 		keep = *in.KeepUpToDate
 	}
 	folder := main.FolderName
+	flat := mediafiles.FolderFlat(ctx, tx, in.LibraryFolderID)
+	if folder == "" && !flat {
+		// The main copy is a loose file; this one gets a folder.
+		year := 0
+		if t.Year != nil {
+			year = *t.Year
+		}
+		folder = importer.FolderName(t.Name, year)
+	}
 	var shared int
 	if err := tx.QueryRow("SELECT count(*) FROM versions WHERE title_id = ? AND library_folder_id = ?", t.ID, in.LibraryFolderID).Scan(&shared); err != nil {
 		return v, err
@@ -170,9 +180,18 @@ func AddVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in Versio
 			return v, ErrVersionFolder
 		}
 	}
+	// A flat Library folder keeps every copy as a file directly in it: no
+	// folder of its own, told apart by file name.
+	if flat && in.FolderName == "" {
+		folder = ""
+	}
 	// Every Version gets a separate folder within a Library folder.
 	var clash int
-	if err := tx.QueryRow("SELECT count(*) FROM versions WHERE library_folder_id = ? AND lower(folder_name) = lower(?)",
+	if folder == "" {
+		if !flat {
+			return v, ErrVersionFolder
+		}
+	} else if err := tx.QueryRow("SELECT count(*) FROM versions WHERE library_folder_id = ? AND lower(folder_name) = lower(?)",
 		in.LibraryFolderID, folder).Scan(&clash); err != nil {
 		return v, err
 	}
@@ -182,6 +201,9 @@ func AddVersionTx(ctx context.Context, tx *sql.Tx, t mediafiles.Title, in Versio
 	fourK, err := fourKFor(tx, t.ID, label, in.PickRulesID, in.FourK)
 	if err != nil {
 		return v, err
+	}
+	if mediafiles.FolderLookOnly(ctx, tx, in.LibraryFolderID) {
+		keep = false // look-only: never searched
 	}
 	v = mediafiles.Version{TitleID: t.ID, Label: label, PickRulesID: in.PickRulesID, LibraryFolderID: in.LibraryFolderID,
 		FolderName: folder, KeepUpToDate: keep, Edition: edition, AudioLanguages: audio, FourK: fourK}

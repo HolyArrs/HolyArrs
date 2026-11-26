@@ -50,6 +50,18 @@
 	"settings.appearance.colRequests": "請求數",
 	"settings.appearance.colRate": "每行",
 	"settings.appearance.noRows": "還沒有統計到「探索」行。",
+	"settings.appearance.rowStats": "探索行",
+	"settings.appearance.rowStatsDesc": "過去 30 天每行的開啟數和請求數，所有人合計。只在這台伺服器上統計。",
+	"settings.appearance.colRow": "行",
+	"settings.appearance.row.because_have": "類似你已有的作品",
+	"settings.appearance.row.because_asked": "類似你的請求",
+	"settings.appearance.row.person": "某人的更多作品",
+	"settings.appearance.row.genre": "為你挑選的類型",
+	"settings.appearance.row.popular_genre": "依類型熱門",
+	"settings.appearance.row.popular_decade": "依年代熱門",
+	"settings.appearance.row.decade": "依年代",
+	"settings.appearance.row.mood": "依心情",
+	"settings.appearance.row.hero": "頂部橫幅",
 	"settings.appearance.motion": "動態效果",
 	"settings.appearance.motionNote": "跟隨你裝置上的「減弱動態效果」設定"
 }

@@ -247,6 +247,7 @@
 	"home.pickWhatToAsk": "Обери, що запросити далі",
 	"home.newPopular": "Нове й популярне",
 	"home.whatSTrending": "Що в тренді",
+	"home.gettingReady": "Готуємо все…",
 	"home.top10sAndComing": "Топ-10 і скоро вийде",
 	"home.whatSNext": "Що далі",
 	"home.airDatesAndReleases": "Дати виходу й релізи",
@@ -282,5 +283,12 @@
 	"home.landingThisWeek": "Серії та фільми, що виходять цього тижня",
 	"home.popularThisWeek": "Популярні прем'єри цього тижня",
 	"home.peopleCheck": "Перевірка людей",
-	"home.cantReadUsers": "не вдається прочитати список користувачів"
+	"home.cantReadUsers": "не вдається прочитати список користувачів",
+	"home.joined.title": "Вітаємо, {name}",
+	"home.joined.find": "Знайдіть щось у розділі {explore} або {search}.",
+	"home.joined.ask": "Натисніть {request} на сторінці, щоб отримати. Можна запросити:",
+	"home.joined.track": "Стежте за кожним у розділі {requests}.",
+	"home.joined.noLimit": "Без тижневого ліміту.",
+	"home.joined.gotIt": "Зрозуміло",
+	"home.joined.explore": "Відкрити {explore}"
 }

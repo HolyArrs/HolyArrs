@@ -20,6 +20,7 @@ export { default as MusicGenreTiles } from './MusicGenreTiles.svelte';
 export { default as MusicNewTab } from './MusicNewTab.svelte';
 export { default as MusicTileGrid } from './MusicTileGrid.svelte';
 export { default as MusicTrendingRows } from './MusicTrendingRows.svelte';
+export { default as UnmatchedMusicNote } from './UnmatchedMusicNote.svelte';
 export { extraKinds } from './labels.ts';
 export { fetchMusicExplore } from './music-trending.ts';
 export { fetchMusicGenre } from './music-trending.ts';

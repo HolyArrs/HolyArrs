@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Cea mai bună copie întâi; pachetul de sezon câștigă la egalitate",
 	"settings.search.preferAlways": "Un pachet de sezon ori de câte ori trece de setul de calitate",
 	"settings.search.multi": "Alege Lansări cu mai multe sezoane",
-	"settings.search.multiHint": "Completează fiecare episod lipsă din ea",
+	"settings.search.multiHint": "Completează fiecare episod lipsă din ea. La aceeași calitate câștigă cea care acoperă mai multe episoade căutate",
 	"settings.search.music": "Muzică",
 	"settings.search.albums": "Caută și albumele lipsă",
 	"settings.search.albumsHint": "Albume lansate, o căutare pentru fiecare",

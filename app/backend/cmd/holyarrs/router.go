@@ -38,7 +38,12 @@ import (
 
 // byHandRoutes registers the import-by-hand routes (internal/importer).
 func (a *handlers) byHandRoutes(m *http.ServeMux) {
-	h := &importer.Handlers{Deps: importer.Deps{Store: a.s.Store, SavePath: a.s.SavePath}}
+	h := &importer.Handlers{Deps: importer.Deps{Store: a.s.Store, SavePath: a.s.SavePath, PluginFolders: func(id string) []string {
+		if a.s.Plugins == nil {
+			return nil
+		}
+		return a.s.Plugins.GrantedFolders(id)
+	}}}
 	if h.SavePath == "" && a.s.Library != nil {
 		h.SavePath = a.s.Library.SavePath
 	}
@@ -71,9 +76,13 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	(&requests.TitleDefaultsHandlers{Store: a.s.Store, Actor: actor}).Routes(m)
 	a.dlh.Routes(m)
 	(&library.FolderHandlers{Store: a.s.Store, DownloadPaths: a.downloadPaths, Actor: actor, Fail: library.WriteError}).Routes(m)
-	lists := &requests.OutsideListHandlers{Store: a.s.Store, Queue: a.s.Queue, Secrets: a.s.Secrets, Actor: actor, LibraryError: library.WriteError}
+	lists := &requests.OutsideListHandlers{Store: a.s.Store, Queue: a.s.Queue, Secrets: a.s.Secrets, TraktAuth: a.s.Lists.TraktAuth, Actor: actor, LibraryError: library.WriteError}
+	if a.s.Media != nil {
+		lists.TraktChanged = a.s.Media.ReadWatchHistorySoon
+	}
 	lists.Routes(m)
-	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, Show: (&shows.SearchHandlers{Store: a.s.Store, Queue: a.s.Queue}).Search, Artist: a.mh().SearchArtist}).Routes(m)
+	retry := a.dl.Manager().RetryImportFirst
+	(&sources.TitleSearchHandlers{Store: a.s.Store, Queue: a.s.Queue, RetryImport: retry, Show: (&shows.SearchHandlers{Store: a.s.Store, Queue: a.s.Queue, RetryImport: retry}).Search, Artist: a.mh().SearchArtist}).Routes(m)
 	m.HandleFunc("GET /api/v1/downloads", downloads.ListDownloads(a.s.Store))
 	m.HandleFunc("GET /api/v1/imports", mediafiles.ListImports(a.s.Store))
 	m.HandleFunc("GET /api/v1/events", shows.ListEvents(a.s.Store))
@@ -95,6 +104,10 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	(&updates.Handlers{Checker: a.s.Updates, ImageVersion: version}).Routes(m)
 	(&datapack.Handlers{Deps: datapack.Deps{Store: a.s.Store}}).Routes(m)
 	(&plugins.Handlers{Engine: a.s.Plugins, LoginServer: os.Getenv("HOLYARRS_TAILSCALE_LOGIN_SERVER")}).Routes(m)
+	a.pluginHookRoutes(m)
+	(&plugins.LanguageHandlers{Languages: a.s.Languages, SetupOpen: func(w http.ResponseWriter, r *http.Request) bool {
+		return a.s.Auth != nil && a.s.Auth.SetupOpen(w, r)
+	}}).Routes(m)
 	a.scheduleHandlers().Routes(m)
 	m.HandleFunc("GET /api/v1/metadata/search", a.searchMetadata)
 	(&metadata.Handlers{Up: func(ctx context.Context) bool { return a.s.MetadataUp == nil || a.s.MetadataUp(ctx) }, FakeIP: metadata.ServerFakeIP}).Routes(m)
@@ -114,6 +127,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	if a.s.Secrets != nil {
 		lists.MDBListKeyRoutes(m)
 		lists.TraktKeyRoutes(m)
+		lists.TraktSignInRoutes(m)
 		a.disc.TokenRoutes(m)
 	}
 	a.askHandlers().Routes(m)
@@ -132,6 +146,9 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	m.HandleFunc("GET /api/v1/openapi.json", a.openapi)
 	m.HandleFunc("GET /api/v1/health", a.health)
 	m.HandleFunc("GET /healthz", a.healthz)
+	// ping is the open alias probes copied from Sonarr or Radarr call: it
+	// says only that HolyArrs answers, without asking the database.
+	m.HandleFunc("GET /ping", ping)
 	// readyz answers 200 once the app has fully started (until then the
 	// start page answers it with 503).
 	m.HandleFunc("GET /readyz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ready\n")) })
@@ -172,6 +189,14 @@ func (a *handlers) Chain(rt *webserver.Router) http.Handler {
 
 // wrapMux lets tests record which routes the mux served.
 var wrapMux = func(h http.Handler) http.Handler { return h }
+
+// ping answers {"status":"OK"} whenever the program answers, also while
+// starting or held on a failed start, so a liveness probe on it never
+// restarts HolyArrs in a loop.
+func ping(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write([]byte(`{"status":"OK"}` + "\n"))
+}
 
 // healthz is open to everyone: it says only whether the database answers.
 // It waits at most 2 s, so a busy database answers 503 well inside the

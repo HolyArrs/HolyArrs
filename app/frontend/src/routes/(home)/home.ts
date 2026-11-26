@@ -583,3 +583,13 @@ export function welcomeRows(head: ServerRow[], max = 2, min = 5): (ExploreRow & 
 export function setupBlocker(steps: { href: string; done: boolean }[]): string {
 	return steps.find((s) => !s.done && s.href !== '/search')?.href ?? '';
 }
+
+/** A picture tile's first line: "Getting ready…" while its first list is still being fetched and it has no picture yet, else its own words. */
+export function tileWord(building: boolean, hasArt: boolean, word: string): string {
+	return building && !hasArt ? t('home.gettingReady') : word;
+}
+
+// Asking again has stopped (full, timed out, or every read failed): the tiles go back to their own words.
+export function tilesSettled<T extends { building: boolean }>(art: T): T {
+	return { ...art, building: false };
+}

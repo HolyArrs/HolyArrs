@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "Tagasi ei saa. Failid jäävad alles.",
 	"settings.pickRules.removeUsed": "{used}. Vali seal esmalt teised reeglid.",
 	"settings.pickRules.sentence": "{text}.",
-	"settings.pickRules.cancel": "Tühista"
+	"settings.pickRules.cancel": "Tühista",
+	"settings.pickRules.check.title": "Kontrolli väljalaske nime",
+	"settings.pickRules.check.desc": "Kleebi väljalaske nimi, et näha, kuidas HolyArrs seda loeb ja kuidas sinu kvaliteedikomplektid seda hindavad. Midagi ei otsita ega laadita alla.",
+	"settings.pickRules.check.name": "Väljalaske nimi",
+	"settings.pickRules.check.rules": "Hinda komplektiga",
+	"settings.pickRules.check.copies": "Sobiva pealkirja koopiad",
+	"settings.pickRules.check.size": "Suurus GB-des (valikuline)",
+	"settings.pickRules.check.check": "Kontrolli",
+	"settings.pickRules.check.failed": "Nime ei saanud kontrollida",
+	"settings.pickRules.check.readAs": "Loetud kui",
+	"settings.pickRules.check.matches": "Sobib: {name}",
+	"settings.pickRules.check.noTitle": "Ei sobi ühegi pealkirjaga sinu Kogus. Vali ülal kvaliteedikomplekt, et seda ikkagi hinnata.",
+	"settings.pickRules.check.noAlbum": "Sobib: {name}, aga mitte ühegi selle albumiga.",
+	"settings.pickRules.check.noCopies": "Sellel pealkirjal pole hinnatavaid koopiaid.",
+	"settings.pickRules.check.hasFile": "Fail on olemas"
 }

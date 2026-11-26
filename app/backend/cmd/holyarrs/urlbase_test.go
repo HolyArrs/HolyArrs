@@ -41,7 +41,7 @@ func TestServesUnderURLBase(t *testing.T) {
 	}
 	// The health check always calls the root, so /healthz and /readyz also
 	// answer there under a base set by flag; nothing else does.
-	for _, p := range []string{"/healthz", "/readyz"} {
+	for _, p := range []string{"/healthz", "/readyz", "/ping", "/holyarrs/ping"} {
 		if r, _ := get(p); r.StatusCode != 200 {
 			t.Errorf("%s at the root under a base: %d, want 200", p, r.StatusCode)
 		}

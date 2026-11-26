@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "สำเนาที่ดีที่สุดก่อน และแพ็กซีซันชนะเมื่อเท่ากัน",
 	"settings.search.preferAlways": "แพ็กซีซันเสมอ เมื่อผ่านชุดคุณภาพ",
 	"settings.search.multi": "รับรีลีสที่มีหลายซีซัน",
-	"settings.search.multiHint": "เติมทุกตอนที่ขาดในนั้น",
+	"settings.search.multiHint": "เติมทุกตอนที่ขาดในนั้น หากคุณภาพเท่ากัน รายการที่มีตอนที่ต้องการมากกว่าจะชนะ",
 	"settings.search.music": "เพลง",
 	"settings.search.albums": "ค้นหาอัลบั้มที่ขาดด้วย",
 	"settings.search.albumsHint": "อัลบั้มที่ออกแล้ว ค้นหาอย่างละครั้ง",

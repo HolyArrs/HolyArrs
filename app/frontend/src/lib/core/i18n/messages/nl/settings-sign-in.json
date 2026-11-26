@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Alleen deze mogen zeggen waar een bezoek vandaan kwam.",
 	"settings.signIn.fixToSaveOne": "Verbeter 1 regel om op te slaan",
 	"settings.signIn.fixToSaveOther": "Verbeter {n} regels om op te slaan",
-	"settings.signIn.localSaved": "Lokaal netwerk opgeslagen"
+	"settings.signIn.localSaved": "Lokaal netwerk opgeslagen",
+	"settings.signIn.forgotTitle": "Wachtwoord vergeten?",
+	"settings.signIn.forgotOn": "Wachtwoord vergeten? tonen op de aanmeldpagina",
+	"settings.signIn.forgotNote": "De eigenaar krijgt een eenmalige code uit het serverlog. Zet het uit als mensen via single sign-on aanmelden. Het commando reset-owner blijft werken.",
+	"settings.signIn.forgotShown": "Wachtwoord vergeten? staat aan",
+	"settings.signIn.forgotHidden": "Wachtwoord vergeten? staat uit"
 }

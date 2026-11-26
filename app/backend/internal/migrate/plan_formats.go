@@ -32,18 +32,43 @@ func scoresFormats(p Profile) bool {
 	return p.MinScore != 0 || p.CutoffScore != 0
 }
 
+// sameSteps says imported rules allow the same steps, up to the same Good
+// enough, as the ready-made preset they would match.
+func sameSteps(body mediafiles.PickRulesBody, preset string) bool {
+	ready := mediafiles.GoodEveryday()
+	if preset == "4K" {
+		ready = mediafiles.FourK()
+	}
+	if body.GoodEnoughAt != ready.GoodEnoughAt || len(body.Steps) != len(ready.Steps) {
+		return false
+	}
+	for i := range body.Steps {
+		if body.Steps[i] != ready.Steps[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // importedRules plans a Sonarr or Radarr profile as its own Pick rules: its
 // allowed qualities as steps, its cutoff as Good enough, each format it
 // scores as a trait with those points, and its score settings as the
-// points thresholds. ok is false when the profile stays a ready-made match.
+// points thresholds, with the app's size table. A profile is brought
+// this way when it scores formats, allows other qualities than the
+// preset it matches, or the app's size table was changed, so its own
+// qualities and sizes carry over. ok is
+// false when the profile stays a ready-made match.
 func (b *builder) importedRules(s *Snapshot, p Profile, preset string) (*RulesPlan, bool) {
-	if b.noFormats || s.Kind != Sonarr && s.Kind != Radarr || !scoresFormats(p) {
+	if b.noFormats || s.Kind != Sonarr && s.Kind != Radarr {
 		return nil, false
 	}
 	app := string(s.Kind)
-	body, notes := library.OldProfileRules(library.OldProfile{Qualities: p.Qualities, CutoffQualities: p.CutoffQualities,
+	body, notes := library.OldProfileRules(library.OldProfile{Qualities: p.Qualities, CutoffQualities: p.CutoffQualities, Groups: p.Groups,
 		UpgradeAllowed: p.UpgradeAllowed, MinScore: p.MinScore, CutoffScore: p.CutoffScore, MinUpgradeScore: p.MinUpgradeScore,
-		Language: p.Language, LanguageCode: subtitles.NormLanguage(strings.ToLower(strings.TrimSpace(p.Language))), FourK: preset == "4K"})
+		Language: p.Language, LanguageCode: subtitles.NormLanguage(strings.ToLower(strings.TrimSpace(p.Language))), FourK: preset == "4K", Sizes: s.QualitySizes})
+	if !scoresFormats(p) && sameSteps(body, preset) && !sizesChanged(s.Kind, s.QualitySizes) {
+		return nil, false
+	}
 	name := clip(b.named(p.Name), maxName)
 	rp := &RulesPlan{App: app, Profile: name, Preset: name, Name: name,
 		ProfileKey: fmt.Sprintf("%s:%s:%d", app, instanceLabel(s.Address), p.ID),

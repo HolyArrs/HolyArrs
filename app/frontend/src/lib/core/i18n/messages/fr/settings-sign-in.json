@@ -133,5 +133,10 @@
 	"settings.signIn.proxiesHelp": "Seuls ceux-ci peuvent dire d'où vient une visite.",
 	"settings.signIn.fixToSaveOne": "Corrigez 1 ligne pour enregistrer",
 	"settings.signIn.fixToSaveOther": "Corrigez {n} lignes pour enregistrer",
-	"settings.signIn.localSaved": "Réseau local enregistré"
+	"settings.signIn.localSaved": "Réseau local enregistré",
+	"settings.signIn.forgotTitle": "Mot de passe oublié ?",
+	"settings.signIn.forgotOn": "Afficher Mot de passe oublié ? sur la page de connexion",
+	"settings.signIn.forgotNote": "Le propriétaire reçoit un code à usage unique dans le journal du serveur. Désactivez-le si la connexion passe par l'authentification unique. La commande reset-owner fonctionne toujours.",
+	"settings.signIn.forgotShown": "Mot de passe oublié ? est activé",
+	"settings.signIn.forgotHidden": "Mot de passe oublié ? est désactivé"
 }

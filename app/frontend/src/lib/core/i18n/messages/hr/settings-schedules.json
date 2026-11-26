@@ -45,5 +45,14 @@
 	"settings.schedules.cancel": "Odustani",
 	"settings.schedules.stages": "Faze",
 	"settings.schedules.stagesNote": "Pauziraj ih ili ponovno pokreni u <a>Dijelovima</a>.",
-	"settings.schedules.allTime": "Cijelo vrijeme"
+	"settings.schedules.allTime": "Cijelo vrijeme",
+	"settings.schedules.skip.nothing": "Nema se što raditi",
+	"settings.schedules.skip.plexOff": "Isključeno: uključite {setting} u {page}",
+	"settings.schedules.skip.plexNobody": "Nema se što raditi: nitko nije uključio svoj Plex popis za gledanje",
+	"settings.schedules.skip.settingOff": "Isključeno: uključite ga u njegovim postavkama",
+	"settings.schedules.skip.starting": "Preskočeno: HolyArrs se još pokretao",
+	"settings.schedules.took": "Trajalo je {time}",
+	"settings.schedules.finished": "{label} je završeno",
+	"settings.schedules.nothingToDo": "{label}: nema se što raditi",
+	"settings.schedules.runFailed": "{label} nije uspjelo"
 }

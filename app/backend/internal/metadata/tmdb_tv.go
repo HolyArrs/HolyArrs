@@ -91,14 +91,16 @@ func (m tmdbShow) show(images string) Show {
 		out.Seasons = append(out.Seasons, Season{Number: s.Number, Name: s.Name})
 	}
 	out.OtherNames = append(out.OtherNames, m.OriginalName)
-	if m.AltTitles != nil {
-		for _, a := range m.AltTitles.Results {
-			out.OtherNames = append(out.OtherNames, a.Title)
-		}
-	}
+	// Translations first: they are the names local trackers use, and the
+	// list is capped, so a long list of other spellings must not push them out.
 	if m.Translations != nil {
 		for _, tr := range m.Translations.List {
 			out.OtherNames = append(out.OtherNames, tr.Data.Name)
+		}
+	}
+	if m.AltTitles != nil {
+		for _, a := range m.AltTitles.Results {
+			out.OtherNames = append(out.OtherNames, a.Title)
 		}
 	}
 	return out

@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -38,9 +39,41 @@ func showFolderName(s string) (string, int) {
 	}
 	p := releasename.Parse(s, releasename.Hints{Show: true})
 	if p.IsShow() && strings.TrimSpace(p.Title.Value) != "" {
-		return p.Title.Value, p.Year.Value
+		return trimShowTail(p.Title.Value), p.Year.Value
+	}
+	// No season, but release details (quality, source) were read: the
+	// title before them is the show's name, as in Sonarr.
+	if strings.TrimSpace(p.Title.Value) != "" && (p.Resolution.Value > 0 || p.Source.Value != "") {
+		return trimShowTail(p.Title.Value), p.Year.Value
 	}
 	return strings.Trim(s, " -._"), 0
+}
+
+// reShowTail is a pack word left at the end of a show name read from a
+// release-style folder ("Dragon Ball Super Complete Season 2").
+var reShowTail = regexp.MustCompile(`(?i)\s+(complete(\s+(series|collection|box\s*set))?)$`)
+
+// reShowCountry is a country code ending a show name ("The Office US").
+var reShowCountry = regexp.MustCompile(`(?i)\s+(US|UK|AU|NZ|CA)$`)
+
+// trimShowTail drops pack words from the end of a read show name.
+func trimShowTail(n string) string {
+	if t := strings.TrimSpace(reShowTail.ReplaceAllString(n, "")); t != "" {
+		return t
+	}
+	return n
+}
+
+// showScore scores a show answer by its best-matching name, its other
+// names (original, alternative, translated) included, as in Sonarr.
+func showScore(name string, year int, sh metadata.Show) float64 {
+	best := library.NameScore(name, year, sh.Name, sh.Year)
+	for _, o := range sh.OtherNames {
+		if v := library.NameScore(name, year, o, sh.Year); v > best {
+			best = v
+		}
+	}
+	return best
 }
 
 // showID is the id a show answer is looked up by: "<source>:<id>".
@@ -60,7 +93,14 @@ func showID(sh metadata.Show) string {
 func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string) (string, int, []library.AdoptMatch, error) {
 	if m := reShowTag.FindStringSubmatch(folder); m != nil {
 		kind := strings.ToLower(m[1])
-		sh, err := p.Show(ctx, kind+":"+m[2])
+		id := kind + ":" + strings.ToLower(m[2])
+		if kind == "imdb" || kind == "tmdb" {
+			id = library.TagID(m)
+		}
+		sh, err := metadata.Show{}, metadata.ErrShowNotFound
+		if id != "" && !(kind != "imdb" && strings.HasPrefix(id, kind+":tt")) {
+			sh, err = p.Show(ctx, id)
+		}
 		if err == nil && (kind == "tvdb" || kind == "tvmaze") && sh.Source == "tmdb" && copiedTMDB(sh.IDs) {
 			// The TMDB show whose own id is the tag's number is another
 			// show: the folder is matched by its name instead.
@@ -74,7 +114,14 @@ func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string
 		}
 	}
 	name, year := showFolderName(strings.TrimSpace(reShowTag.ReplaceAllString(folder, "")))
-	shs, err := p.SearchShows(ctx, name)
+	// "The Office US": the search uses the name without the country code;
+	// answers are scored by both, the plain name a little lower, so a show
+	// also named "The Office (US)" ranks first.
+	query := name
+	if t := strings.TrimSpace(reShowCountry.ReplaceAllString(name, "")); t != "" && t != name {
+		query = t
+	}
+	shs, err := p.SearchShows(ctx, query)
 	if err != nil {
 		return name, year, nil, err
 	}
@@ -84,7 +131,7 @@ func matchShowFolder(ctx context.Context, p metadata.ShowProvider, folder string
 		if id == "" {
 			continue
 		}
-		out = append(out, library.AdoptMatch{ID: id, TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: library.NameScore(name, year, sh.Name, sh.Year), Poster: sh.Poster})
+		out = append(out, library.AdoptMatch{ID: id, TMDB: sh.IDs["tmdb"], Name: sh.Name, Year: sh.Year, Score: max(showScore(name, year, sh), math.Round(showScore(query, year, sh)*98)/100), Poster: sh.Poster})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Score > out[j].Score })
 	if len(out) > 4 {
@@ -180,28 +227,28 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 		known[library.FolderKey(v.FolderName, fold)] = v.TitleID
 	}
 	p.Warning = library.MountWarning(ctx, db, lf, len(ents))
-	p.Offset, p.Total = library.ScanPlace(ents, after)
-	total := library.ScanTotal(ents, after, p.Limit)
+	// Show folders may sit in letter, genre or language folders.
+	all := library.ShowFolders(lf.Path, ents)
+	todo := library.AfterIn(all, after)
+	p.Offset, p.Total = len(all)-len(todo), len(all)
+	total := min(len(todo), p.Limit)
 	defer func() { library.ReportScan(ctx, len(p.Folders), total) }()
-	for _, e := range ents {
-		if !library.ScanWants(e, after) {
-			continue
-		}
+	for _, name := range todo {
 		if len(p.Folders) >= p.Limit {
 			p.More, p.Next = true, p.Folders[len(p.Folders)-1].Folder
 			break
 		}
 		library.ReportScan(ctx, len(p.Folders), total)
-		vids := library.ListVideosN(lf.Path, e.Name(), maxShowVideos)
-		c := library.AdoptCandidate{Folder: e.Name(), Videos: vids, Others: []library.AdoptMatch{}}
-		if id, ok := known[library.FolderKey(e.Name(), fold)]; ok {
+		vids := library.ListVideosN(lf.Path, name, maxShowVideos)
+		c := library.AdoptCandidate{Folder: name, Videos: vids, Others: []library.AdoptMatch{}}
+		if id, ok := known[library.FolderKey(name, fold)]; ok {
 			c.Status, c.Why, c.TitleID = "in_library", "this folder already belongs to a show in the Library", id
 			p.Folders = append(p.Folders, c)
 			p.Counts[c.Status]++
 			continue
 		}
-		name, year, ms, err := matchShowFolder(ctx, src, e.Name())
-		c.ParsedName, c.ParsedYear = name, year
+		parsed, year, ms, err := matchShowFolder(ctx, src, path.Base(name))
+		c.ParsedName, c.ParsedYear = parsed, year
 		if err != nil {
 			if ctx.Err() != nil {
 				return p, ctx.Err()
@@ -271,6 +318,12 @@ func PlanShowAdoptFrom(ctx context.Context, db library.Reader, shows metadata.Sh
 			c.Status, c.Why = "never_add", "this show is on the Never-add list"
 		case len(vids) == 0:
 			c.Status, c.Why = "no_video", "no video file in the folder; adopting adds the show with every episode missing"
+		case close && c.Match.Score >= library.MatchSure:
+			other := ms[1].Name
+			if ms[1].Year > 0 {
+				other += fmt.Sprintf(" (%d)", ms[1].Year)
+			}
+			c.Status, c.Why = "unsure", fmt.Sprintf("%s and %s both fit this folder name; check which one it is", label, other)
 		case c.Match.Score < library.MatchSure || close:
 			c.Status, c.Why = "unsure", fmt.Sprintf("best match %s at %.0f%%; check it", label, c.Match.Score*100)
 		default:
@@ -292,10 +345,41 @@ type ShowAdoption struct {
 	// SeasonsDiffer leaves every file for the person to place (leftover
 	// reason seasons_differ): the old app numbers the seasons differently.
 	SeasonsDiffer bool
+	// inspected holds each mapped file's header facts, read by AddShow
+	// before its write: reading hundreds of files inside the write held
+	// it past its time cap on slow disks.
+	inspected map[string]map[string]any
 	// Filled in by AddShow: the files adopted and the ones left alone.
 	Adopted  int
 	Episodes int
 	Unknown  []string
+}
+
+// adoptFileInfo is the media info of one mapped file: the quality step its
+// name gives, and with read its header facts. It reads the disk, so it runs
+// before the write.
+func adoptFileInfo(root string, af library.AdoptEpisodeFile, read bool) map[string]any {
+	release := strings.TrimSuffix(path.Base(af.Path), path.Ext(af.Path))
+	p := releasename.Parse(release, releasename.Hints{Size: af.Size, Show: true})
+	info := map[string]any{"step": mediafiles.StepFor(p)}
+	if read {
+		if inspected, ok := library.InspectLibraryVideo(root, af.Path, info, false); ok {
+			info = inspected
+		}
+	}
+	return info
+}
+
+// inspectAdoptFiles reads the header facts of every mapped file with
+// episodes, outside the write.
+func inspectAdoptFiles(root string, files []library.AdoptEpisodeFile) map[string]map[string]any {
+	out := make(map[string]map[string]any, len(files))
+	for _, af := range files {
+		if len(af.Keys) > 0 {
+			out[af.Path] = adoptFileInfo(root, af, true)
+		}
+	}
+	return out
 }
 
 // adoptEpisodesTx records the mapped files of a show folder as adopted
@@ -342,9 +426,9 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 		ext := path.Ext(af.Path)
 		release := strings.TrimSuffix(path.Base(af.Path), ext)
 		p := releasename.Parse(release, releasename.Hints{Size: af.Size, Show: true})
-		info := map[string]any{"step": mediafiles.StepFor(p)}
-		if inspected, ok := library.InspectLibraryVideo(a.LibraryPath, af.Path, info, false); ok {
-			info = inspected
+		info, ok := a.inspected[af.Path]
+		if !ok {
+			info = adoptFileInfo(a.LibraryPath, af, false)
 		}
 		judge := mediafiles.JudgeName(release, info)
 		if judge != release {
@@ -389,8 +473,8 @@ func adoptEpisodesTx(ctx context.Context, tx *sql.Tx, titleID, versionID, pickRu
 // they are.
 func (s *Service) adoptShowOne(ctx context.Context, lf mediafiles.LibraryFolder, c library.AdoptChoice, by domain.Actor) (library.AdoptResult, error) {
 	r := library.AdoptResult{Folder: c.Folder}
-	if c.Folder == "" || strings.ContainsAny(c.Folder, `/\`) || !filepath.IsLocal(c.Folder) || strings.HasPrefix(c.Folder, ".") {
-		return r, errors.New("the folder must be one folder directly in the Library folder")
+	if !showFolderOK(c.Folder) {
+		return r, errors.New("the folder must be a show folder in the Library folder, or in one folder there")
 	}
 	if fi, err := os.Lstat(filepath.Join(lf.Path, c.Folder)); err != nil || !fi.IsDir() {
 		return r, errors.New("no such folder in the Library folder")
@@ -533,6 +617,8 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 		}
 		if len(slotIDs) > 0 && len(slotIDs) == len(af.Keys) {
 			linked := false
+			a := &ShowAdoption{FolderName: v.FolderName, LibraryPath: lf.Path,
+				inspected: map[string]map[string]any{af.Path: adoptFileInfo(lf.Path, af, true)}}
 			err := s.Store.Write(ctx, func(tx *sql.Tx) error {
 				var stale []int64
 				for _, sid := range slotIDs {
@@ -572,7 +658,7 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 						return err
 					}
 				}
-				a := &ShowAdoption{FolderName: v.FolderName, LibraryPath: lf.Path}
+				a.Adopted, a.Episodes, a.Unknown = 0, 0, nil
 				if err := adoptEpisodesTx(ctx, tx, t.ID, v.ID, v.PickRulesID, v.KeepUpToDate, []library.AdoptEpisodeFile{af}, a, s.Clock(), by); err != nil {
 					return err
 				}
@@ -643,4 +729,20 @@ func leftoverReason(af library.AdoptEpisodeFile, slots int) string {
 		return "bigger_file_same_episode"
 	}
 	return "episode_not_listed"
+}
+
+// showFolderOK says folder is a show folder directly in the Library
+// folder, or one level down in a letter or genre folder: plain names with
+// forward slashes, nothing hidden and no way out.
+func showFolderOK(folder string) bool {
+	segs := strings.Split(folder, "/")
+	if folder == "" || len(segs) > 2 || strings.Contains(folder, `\`) || !filepath.IsLocal(filepath.FromSlash(folder)) {
+		return false
+	}
+	for _, seg := range segs {
+		if seg == "" || seg == "." || seg == ".." || strings.HasPrefix(seg, ".") || seg != strings.TrimSpace(seg) {
+			return false
+		}
+	}
+	return true
 }

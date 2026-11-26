@@ -20,10 +20,15 @@ import (
 
 // Invites.
 const (
-	InviteDays    = 7  // default life of an invite link
-	maxInviteDays = 30 // longest an invite may last
+	InviteDays    = 7    // default life of an invite link
+	maxInviteDays = 30   // longest an invite with an end may last
+	maxInviteUses = 1000 // most people a counted invite may take
 	invitePath    = "/invite/"
 )
+
+// noEnd is the expires_at of a link that never runs out. It is a real time
+// far away, so every "not ended yet" check reads the link as open.
+var noEnd = database.FormatTime(time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC))
 
 var errInviteGone = errors.New("invite gone")
 
@@ -43,6 +48,13 @@ type InviteView struct {
 	// MaxRating is the age-rating limit the new person gets ("" for none).
 	MaxRating     string `json:"max_rating"`
 	RatingCountry string `json:"rating_country"`
+	// MaxUses is how many people may join through the link (0 for no limit),
+	// Uses how many have, and Joined their names, oldest first.
+	MaxUses int      `json:"max_uses"`
+	Uses    int      `json:"uses"`
+	Joined  []string `json:"joined"`
+	// NeverExpires says the link has no end date; ExpiresAt is then far away.
+	NeverExpires bool `json:"never_expires"`
 }
 
 func (a *Auth) listInvites(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +69,9 @@ func (a *Auth) listInvites(w http.ResponseWriter, r *http.Request) {
 			n := webserver.NameFor(r.Context(), *out[i].UsedBy)
 			out[i].UsedBy = &n
 		}
+		for j := range out[i].Joined {
+			out[i].Joined[j] = webserver.NameFor(r.Context(), out[i].Joined[j])
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"invites": out})
 }
@@ -67,12 +82,17 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	by, _ := webserver.From(r.Context())
 	var body struct {
-		Role          string    `json:"role"`
-		Perms         *[]string `json:"perms"`
-		Note          string    `json:"note"`
-		Days          int       `json:"days"`
-		MaxRating     string    `json:"max_rating"`
-		RatingCountry string    `json:"rating_country"`
+		Role  string    `json:"role"`
+		Perms *[]string `json:"perms"`
+		Note  string    `json:"note"`
+		// Days is how long the link lasts: left out for the default, 1 to 30,
+		// or 0 for a link with no end date.
+		Days          *int   `json:"days"`
+		MaxRating     string `json:"max_rating"`
+		RatingCountry string `json:"rating_country"`
+		// MaxUses is how many people the link takes: left out or 1 for one
+		// person, 0 for no limit.
+		MaxUses *int `json:"max_uses"`
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil {
 		fail(w, http.StatusBadRequest, `send {"role": "member", "perms": [...], "note": "...", "days": 7}`)
@@ -105,28 +125,58 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusForbidden, err.Error())
 		return
 	}
-	if body.Days == 0 {
-		body.Days = InviteDays
+	days := InviteDays
+	if body.Days != nil {
+		days = *body.Days
 	}
-	if body.Days < 1 || body.Days > maxInviteDays {
+	never := days == 0
+	if days < 0 || days > maxInviteDays {
 		fail(w, http.StatusBadRequest, fmt.Sprintf("an invite lasts 1 to %d days", maxInviteDays))
+		return
+	}
+	maxUses := 1
+	if body.MaxUses != nil {
+		maxUses = *body.MaxUses
+	}
+	if maxUses < 0 || maxUses > maxInviteUses {
+		fail(w, http.StatusBadRequest, fmt.Sprintf("an invite takes 1 to %d people, or 0 for no limit", maxInviteUses))
+		return
+	}
+	// A standing link is easier to pass on than a one-time one, so it never
+	// hands out the admin role.
+	if body.Role == webserver.RoleAdmin && (maxUses != 1 || never) {
+		fail(w, http.StatusBadRequest, "an admin invite works once and has an end date")
+		return
+	}
+	// A link that never ends or takes anyone who has it can spread far beyond
+	// the people it was meant for, so only the owner makes one.
+	if (maxUses == 0 || never) && by.Role != webserver.RoleOwner {
+		fail(w, http.StatusForbidden, "only the owner can make a link with no end date or no limit")
 		return
 	}
 	body.Note = truncate(strings.TrimSpace(body.Note), 100)
 	tok := token(32)
 	now := a.now()
-	expires := now.Add(time.Duration(body.Days) * 24 * time.Hour)
+	expires := database.FormatTime(now.Add(time.Duration(days) * 24 * time.Hour))
+	if never {
+		expires = noEnd
+	}
 	err = a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
-		return insertInvite(r.Context(), tx, sum(tok), database.FormatTime(now), by.UserID, body.Role, permsJSON(perms), body.Note, database.FormatTime(expires), maxRating, country)
+		return insertInvite(r.Context(), tx, sum(tok), database.FormatTime(now), by.UserID, body.Role, permsJSON(perms), body.Note, expires, maxRating, country, maxUses)
 	})
 	if err != nil {
 		serverError(w, "invite", err)
 		return
 	}
 	log.Printf("auth: user %d made a %s invite", by.UserID, body.Role)
-	a.accountEvent(r, by.UserID, "invite_made", byName(r)+" made an invite for a new "+body.Role, map[string]any{"role": body.Role, "days": body.Days})
+	a.accountEvent(r, by.UserID, "invite_made", byName(r)+" made an invite for a new "+body.Role,
+		map[string]any{"role": body.Role, "days": days, "max_uses": maxUses})
+	note := "This link is shown only now and works once."
+	if maxUses != 1 {
+		note = "This link is shown only now."
+	}
 	writeJSON(w, http.StatusCreated, map[string]any{"id": sum(tok), "path": invitePath + tok, "role": body.Role, "perms": perms,
-		"expires_at": database.FormatTime(expires), "note": "This link is shown only now and works once.",
+		"expires_at": expires, "never_expires": never, "max_uses": maxUses, "note": note,
 		"max_rating": maxRating, "rating_country": country})
 }
 
@@ -139,7 +189,7 @@ func (a *Auth) deleteInvite(w http.ResponseWriter, r *http.Request) {
 	err := a.s.WriteCore(r.Context(), func(tx *sql.Tx) error {
 		// Admins may take back only their own invites.
 		var err error
-		n, err = deleteOpenInvite(r.Context(), tx, r.PathValue("id"), by.Role == webserver.RoleOwner, by.UserID)
+		n, err = deleteOpenInvite(r.Context(), tx, r.PathValue("id"), database.FormatTime(a.now()), by.Role == webserver.RoleOwner, by.UserID)
 		return err
 	})
 	if err != nil {
@@ -228,7 +278,7 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if msg := nameProblem(c.Name); msg != "" {
+	if msg := typedNameProblem(c.Name); msg != "" {
 		fail(w, http.StatusBadRequest, msg)
 		return
 	}
@@ -242,6 +292,9 @@ func (a *Auth) acceptInvite(w http.ResponseWriter, r *http.Request) {
 		a.noteFail(key)
 		a.mu.Unlock()
 		fail(w, http.StatusNotFound, "this invite link is used up, ended or wrong; ask for a new one")
+		return
+	}
+	if !a.inviteJoins.allow(w, sum(tok), a.now()) {
 		return
 	}
 	h, err := hashPassword(c.Password, a.hash)

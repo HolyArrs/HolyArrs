@@ -1,6 +1,6 @@
 import { type MenuItem } from '#lib/ui/Menu.svelte';
 import { ShowVersions } from '#lib/shows/index.ts';
-import { airedEpisodes, qualityBadges } from '#lib/mediafiles/index.ts';
+import { airedEpisodes, leftInDownloader, qualityBadges } from '#lib/mediafiles/index.ts';
 import { MovieVersions } from '#lib/movies/index.ts';
 import { replaceState } from '$app/navigation';
 import { page } from '$app/state';
@@ -80,6 +80,8 @@ export function createOwnedTitle() {
 			}
 			if (ownDownload) return { kind: 'downloading', label: ownDownload.download ? t('discover.titleOwned.downloadingPercent', { percent: Math.floor(Math.min(Math.max(ownDownload.download.progress, 0), 1) * 100) }) : t('discover.titleOwned.downloading') };
 			if (ownFiles.length) return { kind: 'have', label: t('discover.titleOwned.inLibrary') };
+			// Finished in hands-off mode: the file stays in the Downloader.
+			if ((o.slots ?? []).some(leftInDownloader)) return { kind: 'have', label: t('discover.titleOwned.downloaded') };
 			if (ownFailed) return { kind: 'failed', label: t('discover.titleOwned.downloadFailed') };
 			return { kind: 'missing', label: t('discover.titleOwned.notDownloaded') };
 		});
@@ -90,10 +92,10 @@ export function createOwnedTitle() {
 			try {
 				if (what === 'search') {
 					await api.post(`/titles/${o.id}/search`, {});
-					toasts.push(t('discover.titleOwned.searchingFor', { name: o.name }), 'info');
+					toasts.push(t('discover.titleOwned.searchingFor', { name: o.name }), 'info', { href: `/library/${o.id}` });
 				} else if (what === 'refresh') {
 					await api.post(`/titles/${o.id}/refresh`);
-					toasts.push(t('discover.titleOwned.refreshing', { name: o.name }), 'info', { body: t('discover.titleOwned.refreshingBody') });
+					toasts.push(t('discover.titleOwned.refreshing', { name: o.name }), 'info', { body: t('discover.titleOwned.refreshingBody'), href: `/library/${o.id}` });
 				} else {
 					const r = await api.put<{ title: TitleView }>(`/titles/${o.id}`, { keep_up_to_date: !o.keep_up_to_date });
 					owned = r.title;

@@ -68,7 +68,7 @@ var showRows = []showRow{
 	{ID: "S19", Name: "Copper.Valley.S02E10.1080p.WEB-DL.H.264.FRENCH-LESQUAIS", Outcome: "refused", Codes: []string{"hard.language"}, Title: 20},
 	{ID: "S20", Name: "Copper.Valley.S02E10.MULTi.1080p.WEB-DL.H.264-LESQUAIS", Outcome: "chosen", Points: 5, Title: 20},
 	{ID: "S21", Name: "Copper.Valley.S02E11.1080p.WEB-DL.H.264.HC.KORSUB-GRAVELY", Outcome: "refused", Codes: []string{"hard.never:hardcoded_subs"}, Title: 20},
-	{ID: "S23", Name: "Copper Valley - 2x13 - The Dam Breaks [1080p]", Outcome: "refused", Codes: []string{"step.none"}, Title: 20},
+	{ID: "S23", Name: "Copper Valley - 2x13 - The Dam Breaks [1080p]", Outcome: "chosen", Points: 0, Title: 20}, // no source: 1080p TV, as Sonarr
 	{ID: "S24", Name: "Copper.Valley.S03E01.2160p.WEB-DL.DV.H.265-QUILL", Outcome: "refused", Codes: []string{"step.not_allowed"}, Title: 20},
 	{ID: "S25", Name: "9.Lives.of.Mara.Penn.S01E09.720p.WEB-DL.H.264-MOSSFOX", Outcome: "chosen", Points: 5, Title: 25},
 	{ID: "S27", Name: "Copper.Valley.S01E01.Sample.1080p.WEB-DL-QUILL", Size: 45 * mb, Outcome: "refused", Codes: []string{"hard.safety:sample"}, Title: 20},

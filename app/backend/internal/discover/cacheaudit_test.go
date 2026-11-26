@@ -50,7 +50,7 @@ func TestDetailsWithoutVideosShort(t *testing.T) {
 	if d := DetailsTTL(Entry{Details: &metadata.Details{}}); d > 15*time.Minute {
 		t.Fatalf("no videos kept %v", d)
 	}
-	if d := DetailsTTL(Entry{Details: &metadata.Details{Videos: []metadata.DetailVideo{{Key: "k"}}}}); d != TTL["details"] {
+	if d := DetailsTTL(Entry{Details: &metadata.Details{LogosRead: true, Videos: []metadata.DetailVideo{{Key: "k"}}}}); d != TTL["details"] {
 		t.Fatalf("videos kept %v", d)
 	}
 }

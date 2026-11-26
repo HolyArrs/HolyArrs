@@ -32,6 +32,7 @@
 	import Icon, { type IconName } from '#lib/ui/Icon.svelte';
 	import ArtPlaceholder from '#lib/ui/ArtPlaceholder.svelte';
 	import { whenLoaded } from '#lib/ui/lazy-art.ts';
+	import { boxWidth } from '#lib/ui/box-width.ts';
 	import { tiltFor, type BarTone, type PosterDetail } from './poster.ts';
 	import type { LibState } from './library-state.ts';
 	import { reducedMotion, viewTransitionName } from '../core/motion.ts';
@@ -43,6 +44,7 @@
 	let {
 		title,
 		year,
+		note = '',
 		href,
 		image,
 		kind = 'movie',
@@ -66,6 +68,8 @@
 	}: {
 		title: string;
 		year?: number | string;
+		// A labelled day under the caption (a show's next episode, an artist's newest release).
+		note?: string;
 		href: string;
 		image?: string | null;
 		kind?: 'movie' | 'show' | 'artist';
@@ -105,7 +109,7 @@
 	const pic = $derived(sized(image, 'poster', cw || 200));
 	const kindIcon = $derived<IconName>(kind === 'show' ? 'tv' : kind === 'artist' ? 'music' : 'film');
 	const words = $derived(ls?.label ?? (bar.tone === 'ok' ? t('mediafiles.poster.inLibrary') : ''));
-	const name = $derived([title, year, words, score && `${t('mediafiles.col.score')} ${score}`, watched && watchedWords(watched, t)].filter(Boolean).join(', '));
+	const name = $derived([title, year, note, words, score && `${t('mediafiles.col.score')} ${score}`, watched && watchedWords(watched, t)].filter(Boolean).join(', '));
 
 	$effect(() => {
 		if (!root) return;
@@ -140,7 +144,7 @@
 	}
 </script>
 
-<div class="lp" class:square={kind === 'artist'} class:shown class:selecting class:selected class:attention bind:this={root} bind:clientWidth={cw}>
+<div class="lp" class:square={kind === 'artist'} class:shown class:selecting class:selected class:attention bind:this={root} use:boxWidth={(w) => (cw = w)}>
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="frame" bind:this={frame} onpointermove={move} onpointerleave={reset}>
 		<a class="art" {href} aria-label={name} use:viewTransitionName={vtName}>
@@ -175,6 +179,7 @@
 		{/if}
 	</div>
 	<p class="cap"><span class="t" title={title}>{title}</span>{#if year}<span class="y">{year}</span>{/if}</p>
+	{#if note}<p class="sub" data-testid="poster-note">{note}</p>{/if}
 	{#if detail !== 'title' && attention && ls}<p class="sub {bar.tone}">{ls.label}</p>{/if}
 	{#if detail === 'full' && extra}<p class="sub">{extra}</p>{/if}
 </div>

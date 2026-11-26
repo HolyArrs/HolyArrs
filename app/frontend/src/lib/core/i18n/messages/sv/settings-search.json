@@ -45,7 +45,7 @@
 	"settings.search.preferRank": "Bästa kopian först; ett säsongspaket vinner när de är lika",
 	"settings.search.preferAlways": "Ett säsongspaket så fort ett klarar kvalitetsuppsättningen",
 	"settings.search.multi": "Ta releaser med flera säsonger",
-	"settings.search.multiHint": "Fyller varje saknat avsnitt i den",
+	"settings.search.multiHint": "Fyller varje saknat avsnitt i den. Vid samma kvalitet vinner utgåvan med fler önskade avsnitt",
 	"settings.search.music": "Musik",
 	"settings.search.albums": "Sök även efter saknade album",
 	"settings.search.albumsHint": "Utgivna album, en sökning var",

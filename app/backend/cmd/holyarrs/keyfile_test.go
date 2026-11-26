@@ -61,6 +61,12 @@ func TestOnlyKeyFileProblemsHold(t *testing.T) {
 	}
 }
 
+// keyStartWait is how long these tests wait for start-up steps. Opening and
+// updating the data takes about two seconds on a quiet machine and several
+// times that while other test packages run, so a short fixed wait fails
+// only under load. A deadline this long costs nothing when all is well.
+const keyStartWait = 90 * time.Second
+
 // A named key file on a share that mounts after the app starts: the page
 // shows it is not there, and once it appears the app exits so the restart
 // policy starts it with the key.
@@ -83,7 +89,7 @@ func TestNamedKeyThatAppearsLaterRestarts(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- serve(ctx, c, runOpts{}) }()
 	held := false
-	for i := 0; i < 100 && !held; i++ {
+	for deadline := time.Now().Add(keyStartWait); time.Now().Before(deadline) && !held; {
 		select {
 		case err := <-done:
 			t.Fatalf("serve exited before the key file appeared: %v", err)
@@ -106,7 +112,7 @@ func TestNamedKeyThatAppearsLaterRestarts(t *testing.T) {
 		if err == nil {
 			t.Fatal("serve ended without an error, so a restart policy would not start it again")
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(keyStartWait):
 		t.Fatal("serve kept the page after the key file appeared")
 	}
 }
@@ -130,7 +136,7 @@ func TestDamagedKeyKeepsAPlainPage(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- serve(ctx, c, runOpts{}) }()
 	var resp *http.Response
-	for i := 0; i < 100; i++ {
+	for deadline := time.Now().Add(keyStartWait); time.Now().Before(deadline); {
 		select {
 		case err := <-done:
 			cancel()

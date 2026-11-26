@@ -27,7 +27,7 @@
 	import type { Ask } from '../core/types.ts';
 	import { askQualities } from './four-k-ready.ts';
 	import QualityPills from './QualityPills.svelte';
-	import { FOUR_K, STANDARD, memberRow } from './quality-row.ts';
+	import { FOUR_K, STANDARD, alsoPills, memberRow } from './quality-row.ts';
 	import type { QualityChoice } from './types.ts';
 
 	let {
@@ -45,6 +45,11 @@
 	// The Quality row: the lines of what people can ask for that I may use (one line or none hides it).
 	let choices = $state<QualityChoice[]>([]);
 	let quality = $state('');
+	// With "pick more than one" on: lines kept as their own copy (4K) asked for too, each as its own ask.
+	let pickMany = $state(false);
+	let also = $state<string[]>([]);
+	// Lines already asked for in this opening, so a retry after an error sends only the rest.
+	let sent: string[] = [];
 	// Each opening reads the lines again; an answer for an earlier opening is dropped.
 	let opened = 0;
 	let busy = $state(false);
@@ -60,6 +65,7 @@
 			prefer: picked?.fourKOnly ? FOUR_K : undefined
 		})
 	);
+	const extras = $derived(alsoPills(row.pills, quality, pickMany));
 	// Someone else asked for the picked line already: asking joins their ask.
 	const theirs = $derived(quality ? briefs[quality] : undefined);
 
@@ -67,6 +73,9 @@
 	export function open(m: AskMovie) {
 		follow = true;
 		choices = [];
+		also = [];
+		sent = [];
+		pickMany = false;
 		// Until the lines arrive, the 4K button still asks for 4K.
 		quality = m.fourKOnly ? FOUR_K : '';
 		picked = m;
@@ -76,6 +85,7 @@
 		void askQualities().then((q) => {
 			if (asked !== opened) return;
 			choices = q.movie;
+			pickMany = q.pickMany;
 			quality = row.selected || quality;
 		});
 	}
@@ -85,10 +95,17 @@
 		if (!picked || busy) return;
 		busy = true;
 		error = '';
+		const movie = picked;
+		// The picked line, then each added line as its own ask; one that went through is not asked again on a retry.
+		const todo = [quality, ...extras.filter((p) => also.includes(p.key)).map((p) => p.key)];
 		try {
-			const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { id: `tmdb:${picked.tmdb}`, follow, ...(quality ? { quality } : {}) });
+			for (const q of todo) {
+				const r = await api.post<{ ask: Ask; joined: boolean; already: boolean }>('/asks', { id: `tmdb:${movie.tmdb}`, follow, ...(q ? { quality: q } : {}) });
+				sent.push(q);
+				also = also.filter((k) => k !== q);
+				onasked(movie, r);
+			}
 			sheetOpen = false;
-			onasked(picked, r);
 		} catch (err) {
 			error = message(err);
 			if (err instanceof ApiError && err.status === 409) onrefused?.(picked, err.body);
@@ -103,6 +120,12 @@
 		<form id="ask-movie-title" class="sheet-form" onsubmit={ask}>
 			<p class="small muted">{theirs ? t('requests.askMovie.already', { state: serverWords(theirs.state_label) }) : t('requests.askMovie.hear')}</p>
 			{#if row.shown}<QualityPills pills={row.pills} bind:selected={quality} stacked />{/if}
+			{#each extras as p (p.key)}
+				<label class="checkline" data-testid="also-{p.key}">
+					<input type="checkbox" bind:group={also} value={p.key} />
+					<span><b>{t('requests.ask.alsoAsk', { name: p.label })}</b></span>
+				</label>
+			{/each}
 			<label class="checkline" data-testid="follow-box">
 				<input type="checkbox" bind:checked={follow} />
 				<span><b>{t('requests.add.follow')}</b><br /><span class="hint">{t('requests.add.followHint')}</span></span>

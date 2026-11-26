@@ -25,5 +25,19 @@
 	"settings.pickRules.removeNote": "ফেরানো যায় না। ফাইল থেকে যায়।",
 	"settings.pickRules.removeUsed": "{used}। আগে সেখানে অন্য নিয়ম বেছে নিন।",
 	"settings.pickRules.sentence": "{text}।",
-	"settings.pickRules.cancel": "বাতিল"
+	"settings.pickRules.cancel": "বাতিল",
+	"settings.pickRules.check.title": "রিলিজের নাম যাচাই করুন",
+	"settings.pickRules.check.desc": "একটি রিলিজের নাম পেস্ট করুন, দেখুন HolyArrs কীভাবে এটি পড়ে এবং আপনার কোয়ালিটি সেট কীভাবে এটি বিচার করে। কিছুই খোঁজা বা ডাউনলোড হয় না।",
+	"settings.pickRules.check.name": "রিলিজের নাম",
+	"settings.pickRules.check.rules": "যা দিয়ে বিচার",
+	"settings.pickRules.check.copies": "মিলে যাওয়া টাইটেলের কপি",
+	"settings.pickRules.check.size": "আকার GB-তে (ঐচ্ছিক)",
+	"settings.pickRules.check.check": "যাচাই",
+	"settings.pickRules.check.failed": "নাম যাচাই করা যায়নি",
+	"settings.pickRules.check.readAs": "যেভাবে পড়া হলো",
+	"settings.pickRules.check.matches": "{name}-এর সাথে মেলে",
+	"settings.pickRules.check.noTitle": "আপনার লাইব্রেরির কোনো টাইটেলের সাথে মেলে না। তবুও বিচার করতে ওপরে একটি কোয়ালিটি সেট বাছুন।",
+	"settings.pickRules.check.noAlbum": "{name}-এর সাথে মেলে, কিন্তু এর কোনো অ্যালবামের সাথে নয়।",
+	"settings.pickRules.check.noCopies": "এই টাইটেলের বিচার করার মতো কোনো কপি নেই।",
+	"settings.pickRules.check.hasFile": "ফাইল আছে"
 }

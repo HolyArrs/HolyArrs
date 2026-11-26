@@ -1,6 +1,7 @@
 package subtitles
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -8,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 	"io"
 	"os"
 	"path"
@@ -46,6 +48,7 @@ type Outcome struct {
 	Reason  string   `json:"reason,omitempty"`
 	Made    string   `json:"made,omitempty"`    // a machine-made file stood in, see Subtitle.Made
 	Choices []Scored `json:"choices,omitempty"` // filled only for Show searches
+	Covered []Have   `json:"covered,omitempty"` // Show searches: what the File already has that meets this want
 }
 
 // SearchResult is the outcome of searching one File.
@@ -71,6 +74,9 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 	fc, err := s.load(ctx, fileID)
 	if err != nil {
 		return res, err
+	}
+	if fc.look {
+		return SearchResult{}, mediafiles.ErrLookOnly
 	}
 	st, err := s.look(ctx, fc, by)
 	if err != nil {
@@ -104,12 +110,24 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 			}
 			for _, w := range st.Wish.Wants {
 				if meets(w, Have{Language: sv.Language, Forced: sv.Forced, HearingImpaired: sv.HearingImpaired}) {
+					if opt.Show && hasTarget(targets, w) {
+						break // a second saved file for the same want would list the same results twice
+					}
 					t := target{want: w, beat: *sv.Score, old: sv}
 					if stop {
 						t.beat = -1
 					}
 					targets = append(targets, t)
 					break
+				}
+			}
+		}
+		if opt.Show {
+			// A person choosing by hand sees results for every wanted language,
+			// even one a built-in or found file already covers.
+			for _, w := range st.Wish.Wants {
+				if !hasTarget(targets, w) {
+					targets = append(targets, target{want: w, beat: -1})
 				}
 			}
 		}
@@ -122,6 +140,9 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 	v := fc.videoFacts()
 	q := sites.Query{Kind: fc.item.Kind, Title: v.Title, Year: v.Year, Season: v.Season, Episode: v.Episode, ReleaseName: v.ReleaseName,
 		IMDb: fc.title.SourceIDs["imdb"], TMDB: fc.title.SourceIDs["tmdb"], TVDB: fc.title.SourceIDs["tvdb"]}
+	if _, err := os.Stat(fc.video()); err == nil {
+		q.File = fc.video() // for sites that hash the file their own way
+	}
 	if h, err := s.videoHash(ctx, fc, set); err == nil && h != "" {
 		q.Hash = h // hash-matching sites use it and the rest ignore it
 		if st, err := os.Stat(fc.video()); err == nil {
@@ -200,6 +221,11 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		out := Outcome{Want: t.want}
 		if opt.Show {
 			out.Result, out.Choices = "shown", choices
+			for _, h := range st.Haves {
+				if meets(t.want, h) {
+					out.Covered = append(out.Covered, h)
+				}
+			}
 			res.Outcomes = append(res.Outcomes, out)
 			continue
 		}
@@ -296,7 +322,8 @@ func (s *Service) fetchAndSave(ctx context.Context, fc *fileCtx, t target, c Sco
 		return "", err
 	}
 	e := pickEntry(entries)
-	text, err := subtext.Clean(e.Data, e.Format)
+	// The language picks the old encodings to try on a file that is not Unicode.
+	text, err := subtext.CleanFor(e.Data, e.Format, cmp.Or(c.Language, t.want.Language))
 	if err != nil {
 		s.failed(ctx, fc, t.want, c.Site, err, by)
 		return "", err
@@ -375,7 +402,7 @@ var ErrNotOurs = errors.New("a subtitle file HolyArrs did not save is at that na
 // holding folder if the app saved it; otherwise the save is refused.
 func (s *Service) save(ctx context.Context, fc *fileCtx, row *Subtitle, text, format string, set Settings, old *Subtitle, by domain.Actor) (string, error) {
 	rel := SubtitleName(fc.file.RelativePath, row.Language, row.HearingImpaired, row.Forced, set.HISuffix, format)
-	return s.writeAt(ctx, fc, row, text, rel, old, by)
+	return s.saveClean(ctx, fc, row, text, format, rel, set, old, by)
 }
 
 type heldSubtitle struct {
@@ -741,4 +768,14 @@ func (s *Service) turnedDown(ctx context.Context, fileID int64) map[string]bool 
 		}
 	}
 	return out
+}
+
+// hasTarget reports whether a target for w's language and forced flag is listed.
+func hasTarget(targets []target, w Want) bool {
+	for _, t := range targets {
+		if t.want.Language == w.Language && t.want.Forced == w.Forced {
+			return true
+		}
+	}
+	return false
 }
