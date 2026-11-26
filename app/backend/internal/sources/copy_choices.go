@@ -73,13 +73,13 @@ func copyChoiceVerdict(ti mediafiles.Title, ver mediafiles.Version, rel mediafil
 	return audioChoiceVerdict(ver.AudioLanguages, original, rel.Parse, v)
 }
 
-// audioChoiceVerdict checks the audio languages a Version needs against the languages a Release name claims. A name with no language is read as the original language. MULTI, or a DUAL name that names no language, may hold any language, so a gap there only warns.
+// audioChoiceVerdict checks the audio languages a Version needs against the languages a Release name claims. A name with no language is read as the original language. MULTI, or a DUAL name that names no language, may hold any language, so a gap there only warns; a MULTI whose Source says what MULTi means there holds those languages only.
 func audioChoiceVerdict(need []string, original string, p releasename.Result, v mediafiles.Verdict) mediafiles.Verdict {
 	if len(need) == 0 {
 		return v
 	}
 	have := slices.Clone(p.Languages)
-	unclear := p.Has("multi") || p.Has("dual") && len(have) == 0
+	unclear := p.Has("multi") && !p.Has("multi_known") || p.Has("dual") && len(have) == 0
 	if (len(have) == 0 || p.Has("dual")) && original != "" {
 		have = append(have, original)
 	}
