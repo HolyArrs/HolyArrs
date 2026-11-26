@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -28,8 +29,11 @@ func (h *Handlers) playbackPoster(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 4*time.Second)
 	defer cancel()
+	// A Plex original can be several megabytes. Ask Plex for a card-sized
+	// image before applying the response limit.
+	size := url.Values{"url": {path}, "width": {"360"}, "height": {"540"}}
 	var art []byte
-	err = h.Linker.doStream(ctx, m, http.MethodGet, path, nil, 2<<20, func(body io.Reader) error {
+	err = h.Linker.doStream(ctx, m, http.MethodGet, "/photo/:/transcode?"+size.Encode(), nil, 2<<20, func(body io.Reader) error {
 		var err error
 		art, err = io.ReadAll(body)
 		return err

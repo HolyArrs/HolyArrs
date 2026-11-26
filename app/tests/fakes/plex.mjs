@@ -32,7 +32,7 @@ export function startPlexFake(poster = () => ({ bytes: samplePoster, type: 'imag
 			if (req.headers['x-plex-token'] !== plexServerToken) return send(res, 401, '', 'text/plain');
 			return send(res, 200, plexSessions, 'application/xml');
 		}
-		const thumb = url.pathname.match(/^\/library\/metadata\/(\d+)\/thumb(?:\/\d+)?$/);
+		const thumb = url.pathname === '/photo/:/transcode' && url.searchParams.get('url')?.match(/^\/library\/metadata\/(\d+)\/thumb(?:\/\d+)?$/);
 		if (req.method === 'GET' && thumb) {
 			if (req.headers['x-plex-token'] !== plexServerToken) return send(res, 401, '', 'text/plain');
 			const { bytes, type } = poster(thumb[1]);
