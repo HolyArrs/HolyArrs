@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Μεταγλωττισμένο, χωρίς τον αρχικό ήχο",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision χωρίς εφεδρικό HDR10",
+	"downloads.pr.traits.sdr_4k": "4K χωρίς HDR (SDR)",
 	"downloads.pr.traits.executable": "Περιέχει πρόγραμμα",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (παίζει σχεδόν παντού)",
