@@ -6613,6 +6613,7 @@
             "enum": [
               "opensubtitles",
               "subdl",
+              "titlovi",
               "podnapisi",
               "gestdown",
               "addic7ed",
