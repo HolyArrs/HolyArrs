@@ -2,6 +2,70 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] - 2026-11-26
+### Added
+- Import files by hand right from the Library Add menu. ([#692](https://github.com/HolyArrs/HolyArrs/issues/692))
+- Movie files are checked before import: length, video and audio. ([#611](https://github.com/HolyArrs/HolyArrs/issues/611))
+- Plugins can open a site's bot check for you. ([#865](https://github.com/HolyArrs/HolyArrs/issues/865)) ([#918](https://github.com/HolyArrs/HolyArrs/pull/918))
+- Approved anime can go to its own folder. ([#855](https://github.com/HolyArrs/HolyArrs/pull/855))
+- Delete a single movie file from the Library tab. ([#821](https://github.com/HolyArrs/HolyArrs/issues/821))
+- Import a library keeps going with the page closed. ([#712](https://github.com/HolyArrs/HolyArrs/issues/712))
+- Pick rules get an SDR 4K trait and catch more AI upscales. ([#610](https://github.com/HolyArrs/HolyArrs/issues/610))
+- Pick anyway on a season search takes releases named for the show. ([#764](https://github.com/HolyArrs/HolyArrs/issues/764))
+- YTS is built in as a movie search and feed. ([#817](https://github.com/HolyArrs/HolyArrs/pull/817))
+- Titlovi joins the subtitle sites. ([#688](https://github.com/HolyArrs/HolyArrs/pull/688))
+- The owner and an API key can come from files at start. ([#660](https://github.com/HolyArrs/HolyArrs/pull/660))
+- Discord Alerts come as one card with the poster, and mark upgrades. ([#733](https://github.com/HolyArrs/HolyArrs/issues/733))
+- The Alerts panel shows an alert's full text. ([#852](https://github.com/HolyArrs/HolyArrs/pull/852))
+- Library alerts open their title; search alerts name show and episode. ([#830](https://github.com/HolyArrs/HolyArrs/issues/830))
+- A plugin can bring its own download type. ([#864](https://github.com/HolyArrs/HolyArrs/pull/864))
+- A plugin can list and remove its own links. ([#854](https://github.com/HolyArrs/HolyArrs/pull/854))
+- The approve screen shows the remote-access warning. ([#699](https://github.com/HolyArrs/HolyArrs/issues/699))
+- The No file lock tag explains what it means. ([#698](https://github.com/HolyArrs/HolyArrs/issues/698))
+- Download counts show on first view and on Language Packs. ([#851](https://github.com/HolyArrs/HolyArrs/pull/851))
+- A movie in a 1080p and a 4K Radarr becomes one title. ([#648](https://github.com/HolyArrs/HolyArrs/pull/648))
+- Files keep scene name and group, and score with the original language. ([#783](https://github.com/HolyArrs/HolyArrs/issues/783))
+- One Source per site when Prowlarr, Sonarr and Radarr are imported. ([#669](https://github.com/HolyArrs/HolyArrs/pull/669))
+- Naming comes over with the Radarr-style words. ([#857](https://github.com/HolyArrs/HolyArrs/issues/857))
+- Removing a copy's protection asks in the app's own dialog. ([#150](https://github.com/HolyArrs/HolyArrs/issues/150))
+- Show settings get a Future seasons only option. ([#720](https://github.com/HolyArrs/HolyArrs/issues/720)) ([#721](https://github.com/HolyArrs/HolyArrs/issues/721))
+### Fixed
+- Back keeps you on the Explore or New & Popular tab. ([#753](https://github.com/HolyArrs/HolyArrs/pull/753))
+- Each watch link shows once when a server is added twice. ([#717](https://github.com/HolyArrs/HolyArrs/issues/717))
+- Rescan commands rescan the title, or the whole Library. ([#808](https://github.com/HolyArrs/HolyArrs/issues/808))
+- Shows with hundreds of episodes on a network share now import. ([#682](https://github.com/HolyArrs/HolyArrs/issues/682))
+- A show no longer takes another show's picture or episodes. ([#342](https://github.com/HolyArrs/HolyArrs/issues/342))
+- Feed checks no longer time out on big libraries. ([#747](https://github.com/HolyArrs/HolyArrs/issues/747))
+- SABnzbd speed goes only to jobs that are downloading. ([#838](https://github.com/HolyArrs/HolyArrs/issues/838))
+- Empty Usenet job folders are deleted after a move import. ([#724](https://github.com/HolyArrs/HolyArrs/issues/724))
+- Imports retry when files from a remote downloader arrive late. ([#829](https://github.com/HolyArrs/HolyArrs/pull/829))
+- qBittorrent works behind proxies that compress answers, like qui. ([#846](https://github.com/HolyArrs/HolyArrs/pull/846))
+- DUAL or MULTi names now say audio is checked at import. ([#797](https://github.com/HolyArrs/HolyArrs/issues/797))
+- German DL keeps the original language in imported Pick rules. ([#858](https://github.com/HolyArrs/HolyArrs/issues/858))
+- MULTi releases without your language are skipped before download. ([#750](https://github.com/HolyArrs/HolyArrs/pull/750))
+- "amp" in a release name matches "&". ([#762](https://github.com/HolyArrs/HolyArrs/issues/762))
+- Anime names with alt-titles or [Group][Title][Episode] read right. ([#763](https://github.com/HolyArrs/HolyArrs/issues/763))
+- MKV audio with no language tag is read as English. ([#850](https://github.com/HolyArrs/HolyArrs/pull/850))
+- IPTorrents sizes with odd spaces are read right. ([#833](https://github.com/HolyArrs/HolyArrs/pull/833))
+- Single sign-on started from another address goes through. ([#708](https://github.com/HolyArrs/HolyArrs/issues/708))
+- An expired sign-in goes to sign-in, not stuck on Reconnecting. ([#793](https://github.com/HolyArrs/HolyArrs/issues/793))
+- Only warnings and errors light the Settings dot. ([#786](https://github.com/HolyArrs/HolyArrs/issues/786))
+- Plugin limit labels stay whole and boxes stay on one line. ([#862](https://github.com/HolyArrs/HolyArrs/issues/862))
+- The report says tags stay behind, not that HolyArrs has none. ([#672](https://github.com/HolyArrs/HolyArrs/issues/672))
+- Forgetting saved keys while HolyArrs runs now says how. ([#676](https://github.com/HolyArrs/HolyArrs/issues/676))
+- An empty show folder no longer breaks an import. ([#845](https://github.com/HolyArrs/HolyArrs/pull/845))
+- Who watched what no longer breaks on two same-name accounts. ([#734](https://github.com/HolyArrs/HolyArrs/issues/734))
+- Old import reports open, and plugin screens drop garbled symbols. ([#925](https://github.com/HolyArrs/HolyArrs/pull/925))
+### Changed
+- The key icon's bar starts at the ring's edge. ([#683](https://github.com/HolyArrs/HolyArrs/issues/683))
+- Plain permission names, full-width own-server box, one-line TV shows button. ([#945](https://github.com/HolyArrs/HolyArrs/pull/945))
+### Security
+- Release builds keep signing keys apart and ship with provenance. ([#839](https://github.com/HolyArrs/HolyArrs/pull/839))
+
+### Thanks
+
+Thanks to [@dhruv1220](https://github.com/HolyArrs/HolyArrs/pull/812), [@NotCavnfox](https://github.com/HolyArrs/HolyArrs/pull/854), [@diblaze](https://github.com/HolyArrs/HolyArrs/pull/673), [@lancewilhelm](https://github.com/HolyArrs/HolyArrs/pull/840), [@mbartsch](https://github.com/HolyArrs/HolyArrs/pull/817), [@wai-lau](https://github.com/HolyArrs/HolyArrs/pull/772), [@wlatic](https://github.com/HolyArrs/HolyArrs/issues/783), [@wozniakpawel](https://github.com/HolyArrs/HolyArrs/pull/918), [u/Blegrand15](https://www.reddit.com/r/HolyArrs/), [@maaximal](https://github.com/HolyArrs/HolyArrs/pull/822), [@prantzos](https://github.com/HolyArrs/HolyArrs/pull/723), [@aguanitallc](https://github.com/HolyArrs/HolyArrs/pull/850), [@ansuehu](https://github.com/HolyArrs/HolyArrs/issues/717), [@aritmp](https://github.com/HolyArrs/HolyArrs/pull/750), [@bobberb](https://github.com/HolyArrs/HolyArrs/pull/660), [@gorpet](https://github.com/HolyArrs/HolyArrs/pull/688), [@sittingmongoose](https://github.com/HolyArrs/HolyArrs/pull/648), [@soybean-alien](https://github.com/HolyArrs/HolyArrs/pull/726), [@sunboyy](https://github.com/HolyArrs/HolyArrs/issues/683), [@toverux](https://github.com/HolyArrs/HolyArrs/issues/682), [@tydude001](https://github.com/HolyArrs/HolyArrs/issues/611), [@venzellucas](https://github.com/HolyArrs/HolyArrs/issues/611), to AlmostEpic89, chesh1r3k and Harybo on Discord, and to [xrandallx](https://community.holyarrs.com/t/398) on the forum.
+
 ## [1.3.1] - 2026-11-24
 ### Added
 - Plugins can be told when titles are added, downloaded or requested. ([#707](https://github.com/HolyArrs/HolyArrs/issues/707))

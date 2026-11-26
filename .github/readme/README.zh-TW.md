@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1：外掛能聽到 HolyArrs 裡發生的事。**開發者模式會執行你正在建構的外掛，測試版則讓少數人先試用。 [查看新功能](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2：從媒體庫手動匯入檔案。**電影檔案在匯入前會檢查長度、影像和音訊，另有大量修正。 [查看新功能](https://holyarrs.com/whats-new/)
 
 > 你的 HolyArrs 裡每一張海報、每一支預告片和每一個評分，都來自我自己架設、自己付費的伺服器，所以它能對所有人保持免費。如果 HolyArrs 讓你的電影夜好過了一點，贊助能讓我們大家的燈一直亮著 💛
 >
