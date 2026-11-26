@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd felhasználónév",
 	"settings.downloaders.sabPass": "SABnzbd jelszó",
 	"settings.downloaders.keyWrongLogin": "A SABnzbd nem fogadta el ezt a felhasználónevet és jelszót.",
-	"settings.downloaders.keyNotFound": "Nem sikerült beolvasni a kulcsot. Használd ezt: Kulcs lekérése, és másold ki onnan."
+	"settings.downloaders.keyNotFound": "Nem sikerült beolvasni a kulcsot. Használd ezt: Kulcs lekérése, és másold ki onnan.",
+	"settings.downloaders.pluginKind": "Bővítmény"
 }

@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Nama pengguna SABnzbd",
 	"settings.downloaders.sabPass": "Kata sandi SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd tidak menerima nama pengguna dan kata sandi itu.",
-	"settings.downloaders.keyNotFound": "Kunci tidak bisa dibaca. Pakai Ambil kunci dan salin dari sana."
+	"settings.downloaders.keyNotFound": "Kunci tidak bisa dibaca. Pakai Ambil kunci dan salin dari sana.",
+	"settings.downloaders.pluginKind": "Plugin"
 }

@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd-Benutzername",
 	"settings.downloaders.sabPass": "SABnzbd-Passwort",
 	"settings.downloaders.keyWrongLogin": "SABnzbd hat Benutzername und Passwort nicht akzeptiert.",
-	"settings.downloaders.keyNotFound": "Schlüssel konnte nicht gelesen werden. Nutze Schlüssel holen und kopier ihn von dort."
+	"settings.downloaders.keyNotFound": "Schlüssel konnte nicht gelesen werden. Nutze Schlüssel holen und kopier ihn von dort.",
+	"settings.downloaders.pluginKind": "Plugin"
 }

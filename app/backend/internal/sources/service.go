@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"errors"
@@ -31,7 +32,7 @@ var (
 	ErrNameUsed = errors.New("another Source has that name")
 	ErrFormat   = errors.New("format must be torznab, newznab, rss or site")
 	ErrSite     = errors.New("site must be one of the built-in sites: knaben, torrentscsv, subsplease, yts or iptorrents")
-	ErrProtocol = errors.New("protocol must be torrent or usenet")
+	ErrProtocol = errors.New("protocol must be torrent, usenet or a download type the Source's plugin brings")
 	ErrURL      = errors.New("the address must start with http:// or https:// and name a host")
 	// ErrQuery matches ErrURL under errors.Is, so callers that check ErrURL treat it the same.
 	ErrQuery      error = queryErr{}
@@ -608,7 +609,7 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 			in.Kinds = site.Kinds
 		}
 	}
-	proto := in.Protocol
+	proto := cmp.Or(in.Protocol, addressProto(in, src))
 	if proto == "" && isNew {
 		proto = "torrent"
 		if src.Format == "newznab" {
@@ -616,7 +617,7 @@ func fill(in Input, src *domain.Source, isNew bool) (key, proxyPass string, err 
 		}
 	}
 	if proto != "" {
-		if proto != "torrent" && proto != "usenet" {
+		if proto != "torrent" && proto != "usenet" && !pluginTypeFits(cmp.Or(strings.TrimSpace(in.URL), src.URL), proto) {
 			return "", "", ErrProtocol
 		}
 		src.Protocol = proto

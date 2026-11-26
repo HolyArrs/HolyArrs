@@ -6,7 +6,7 @@ import { t as say } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createWelcomeDownloader(ctx: any) {
 	const dlKinds: DownloaderForm['kind'][] = ['qbittorrent', 'sabnzbd', 'transmission', 'nzbget', 'deluge', 'rtorrent', 'aria2'];
-	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112', rtorrent: '8000', aria2: '6800' };
+	const dlPorts: Record<DownloaderForm['kind'], string> = { qbittorrent: '8080', sabnzbd: '8080', transmission: '9091', nzbget: '6789', deluge: '8112', rtorrent: '8000', aria2: '6800', 'plugin-torrent': '', 'plugin-usenet': '', plugin: '' };
 	let dl = $state<DownloaderForm>(emptyForm());
 	// Every connected downloader, each with its last test answer; the form shows when there is none yet or the owner adds another.
 	let dlList = $state<DownloaderView[]>([]);

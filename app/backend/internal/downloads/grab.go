@@ -191,6 +191,14 @@ func (m *Manager) Grab(ctx context.Context, slotID, releaseID int64, by domain.A
 	if err != nil {
 		return 0, err
 	}
+	if rel.Protocol != "torrent" && rel.Protocol != "usenet" {
+		// A plugin's own type goes only to that same plugin's Downloader.
+		var src domain.Source
+		if err := database.Get(ctx, db, "sources", rel.SourceID, &src); err != nil {
+			return 0, err
+		}
+		all = slices.DeleteFunc(all, func(d domain.Downloader) bool { return d.Adapter != "plugin" || d.URL != src.URL })
+	}
 
 	hash := ""
 	if rel.InfoHash != nil && releasename.ValidInfoHash(strings.ToLower(*rel.InfoHash)) {

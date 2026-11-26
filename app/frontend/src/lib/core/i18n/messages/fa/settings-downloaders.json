@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "نام کاربری SABnzbd",
 	"settings.downloaders.sabPass": "رمز عبور SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd این نام کاربری و رمز عبور را نپذیرفت.",
-	"settings.downloaders.keyNotFound": "کلید خوانده نشد. از دریافت کلید استفاده کنید و آن را از آنجا کپی کنید."
+	"settings.downloaders.keyNotFound": "کلید خوانده نشد. از دریافت کلید استفاده کنید و آن را از آنجا کپی کنید.",
+	"settings.downloaders.pluginKind": "افزونه"
 }
