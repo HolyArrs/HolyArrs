@@ -45,8 +45,12 @@ func copyInProgress(cands []Candidate, file string) bool {
 	for _, c := range cands {
 		if c.Path == file && c.Size > 0 {
 			fi, err := os.Stat(file)
-			return err == nil && fi.Mode().IsRegular() && fi.Size() < c.Size
+			return err == nil && fi.Mode().IsRegular() && fi.Size() > 0 && fi.Size() < c.Size
 		}
 	}
 	return false
 }
+
+// FolderMissing is a whole download folder not found here: often a wrong
+// path pair or mount, so the screen keeps that hint while it retries.
+func FolderMissing(reason string) bool { return reason == notThereWhy }

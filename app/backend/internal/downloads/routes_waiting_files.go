@@ -16,7 +16,7 @@ func waitingForFiles(d domain.Download, slots map[int64]slotInfo) bool {
 			continue
 		}
 		n++
-		if !importer.FilesPending(si.lastReason) {
+		if !importer.FilesPending(si.lastReason) || importer.FolderMissing(si.lastReason) {
 			return false
 		}
 	}

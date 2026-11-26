@@ -63,7 +63,7 @@ func retryPlan(waiting []mediafiles.WaitingImport, marks map[int64]retryMark) ma
 			from = mk.last
 		}
 		wait := retryWait(mk.tries)
-		if files[id] {
+		if files[id] && mk.tries < 60 {
 			wait = time.Minute
 		}
 		plan[id] = from.Add(wait)
