@@ -296,7 +296,7 @@ func TestMoveAppliesOnceAndUndoes(t *testing.T) {
 		t.Fatal("never add")
 	}
 	ns, _ := mediafiles.ReadNaming(context.Background(), l.st.Read())
-	if ns.RenameOnImport || ns.FilePattern != "{title} ({year}) {quality}" {
+	if ns.RenameOnImport || ns.FilePattern != "{title} ({year}) {quality_full}" {
 		t.Fatalf("naming %+v", ns)
 	}
 	if langs := subtitles.ReadSettings(context.Background(), l.st.Read()).Languages; len(langs) != 2 || langs[1].Language != "es" {
