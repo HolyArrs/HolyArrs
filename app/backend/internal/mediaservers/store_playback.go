@@ -248,20 +248,52 @@ const playbackPageSize = 50
 
 type playbackViewEntry struct {
 	PlaybackEntry
-	Poster  string `db:"poster" json:"poster,omitempty"`
-	Version string `db:"version_label" json:"version,omitempty"`
+	Poster  string `db:"-" json:"poster,omitempty"`
+	Version string `db:"-" json:"version,omitempty"`
 }
 
-const playbackView = `(SELECT p.*, COALESCE(json_extract(t.artwork, '$[0]'), '') AS poster, COALESCE(v.label, '') AS version_label
-	FROM plex_playbacks p LEFT JOIN titles t ON t.id = p.title_id LEFT JOIN versions v ON v.id = p.version_id)`
+func playbackThumb(ctx context.Context, q database.Querier, server, play int64) (string, error) {
+	var path string
+	err := q.QueryRowContext(ctx, "SELECT plex_thumb FROM plex_playbacks WHERE media_server_id = ? AND id = ?", server, play).Scan(&path)
+	return path, err
+}
 
-func playbackPosters(rows []playbackViewEntry, server int64) {
-	prefix := "/api/v1/media-servers/" + strconv.FormatInt(server, 10) + "/playback/"
-	for i := range rows {
-		if rows[i].Poster == "" && rows[i].Thumb != "" {
-			rows[i].Poster = prefix + strconv.FormatInt(rows[i].ID, 10) + "/poster"
+func addPlaybackLabels(ctx context.Context, q database.Lister, server int64, groups ...[]playbackViewEntry) error {
+	var titleIDs, versionIDs []int64
+	for _, rows := range groups {
+		for _, row := range rows {
+			if row.TitleID != nil {
+				titleIDs = append(titleIDs, *row.TitleID)
+			}
+			if row.VersionID != nil {
+				versionIDs = append(versionIDs, *row.VersionID)
+			}
 		}
 	}
+	posters, err := mediafiles.TitlePosters(ctx, q, titleIDs)
+	if err != nil {
+		return err
+	}
+	versions, err := mediafiles.VersionLabels(ctx, q, versionIDs)
+	if err != nil {
+		return err
+	}
+	prefix := "/api/v1/media-servers/" + strconv.FormatInt(server, 10) + "/playback/"
+	for _, rows := range groups {
+		for i := range rows {
+			row := &rows[i]
+			if row.TitleID != nil {
+				row.Poster = posters[*row.TitleID]
+			}
+			if row.Poster == "" && row.Thumb != "" {
+				row.Poster = prefix + strconv.FormatInt(row.ID, 10) + "/poster"
+			}
+			if row.VersionID != nil {
+				row.Version = versions[*row.VersionID]
+			}
+		}
+	}
+	return nil
 }
 
 func readPlayback(ctx context.Context, q watchReader, m domain.MediaServer, filter playbackFilter, now time.Time) (playbackPage, error) {
@@ -276,7 +308,7 @@ func readPlayback(ctx context.Context, q watchReader, m domain.MediaServer, filt
 		at, err := time.Parse(database.TimeLayout, *state.lastSeen)
 		out.Stale = out.Stale || err != nil || now.Sub(at) > playbackMaxGap
 	}
-	out.Active, err = database.Select[playbackViewEntry](ctx, q, playbackView, "media_server_id = ? AND ended_at IS NULL ORDER BY started_at, id", m.ID)
+	out.Active, err = database.Select[playbackViewEntry](ctx, q, "plex_playbacks", "media_server_id = ? AND ended_at IS NULL ORDER BY started_at, id", m.ID)
 	if err != nil {
 		return out, err
 	}
@@ -322,8 +354,9 @@ func readPlayback(ctx context.Context, q watchReader, m domain.MediaServer, filt
 	if err != nil {
 		return out, err
 	}
-	out.History, err = database.Select[playbackViewEntry](ctx, q, playbackView, where+" ORDER BY started_at DESC, id DESC LIMIT ? OFFSET ?", append(args, playbackPageSize, filter.offset)...)
-	playbackPosters(out.Active, m.ID)
-	playbackPosters(out.History, m.ID)
-	return out, err
+	out.History, err = database.Select[playbackViewEntry](ctx, q, "plex_playbacks", where+" ORDER BY started_at DESC, id DESC LIMIT ? OFFSET ?", append(args, playbackPageSize, filter.offset)...)
+	if err != nil {
+		return out, err
+	}
+	return out, addPlaybackLabels(ctx, q, m.ID, out.Active, out.History)
 }

@@ -21,9 +21,8 @@ func (h *Handlers) playbackPoster(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	var path string
-	if err := h.Store.Read().QueryRowContext(r.Context(),
-		"SELECT plex_thumb FROM plex_playbacks WHERE media_server_id = ? AND id = ?", m.ID, id).Scan(&path); err != nil || !plexThumbPath.MatchString(path) {
+	path, err := playbackThumb(r.Context(), h.Store.Read(), m.ID, id)
+	if err != nil || !plexThumbPath.MatchString(path) {
 		http.NotFound(w, r)
 		return
 	}

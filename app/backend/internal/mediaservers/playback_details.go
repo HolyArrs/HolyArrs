@@ -3,18 +3,18 @@ package mediaservers
 import (
 	"context"
 	"database/sql"
-	"path/filepath"
 	"regexp"
 	"strings"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
 type plexPlaybackMedia struct {
-	Selected   bool       `xml:"selected,attr"`
-	Resolution string     `xml:"videoResolution,attr"`
-	VideoCodec string     `xml:"videoCodec,attr"`
-	AudioCodec string     `xml:"audioCodec,attr"`
+	Selected   bool               `xml:"selected,attr"`
+	Resolution string             `xml:"videoResolution,attr"`
+	VideoCodec string             `xml:"videoCodec,attr"`
+	AudioCodec string             `xml:"audioCodec,attr"`
 	Parts      []plexPlaybackPart `xml:"Part"`
 }
 
@@ -109,54 +109,22 @@ func (p plexPlayback) details(media plexPlaybackMedia, part plexPlaybackPart) st
 	return d
 }
 
-type playbackFile struct {
-	id, title, version int64
-}
-
-// Match only a unique present media file using the same path mapping that
-// HolyArrs uses to tell Plex about an import. Never open the path sent by Plex.
-func matchPlaybackFile(ctx context.Context, q *sql.Tx, server domain.MediaServer, plexFile string, title *int64) (playbackFile, error) {
-	if plexFile == "" {
-		return playbackFile{}, nil
-	}
-	rows, err := q.QueryContext(ctx, `SELECT f.id, v.title_id, v.id, lf.path, f.relative_path
-		FROM versions v JOIN files f ON f.version_id = v.id
-		JOIN library_folders lf ON lf.id = v.library_folder_id
-		WHERE f.state = 'present' AND f.role = 'main' AND (? IS NULL OR v.title_id = ?)`, title, title)
-	if err != nil {
-		return playbackFile{}, err
-	}
-	defer rows.Close()
-	fold := winPath(plexFile)
-	normalize := func(p string) string {
-		if fold {
-			return strings.ToLower(strings.ReplaceAll(p, `\`, "/"))
-		}
-		return p
-	}
-	want := normalize(plexFile)
-	var match playbackFile
-	for rows.Next() {
-		var candidate playbackFile
-		var root, rel string
-		if err := rows.Scan(&candidate.id, &candidate.title, &candidate.version, &root, &rel); err != nil {
-			return playbackFile{}, err
-		}
-		if normalize(MapPath(server, filepath.Join(root, filepath.FromSlash(rel)))) != want {
-			continue
-		}
-		if match.id != 0 {
-			return playbackFile{}, nil
-		}
-		match = candidate
-	}
-	return match, rows.Err()
-}
-
+// Match a file using the same path mapping that HolyArrs uses to tell
+// Plex about an import. The path sent by Plex is only compared as text.
 func bindPlaybackFile(ctx context.Context, q *sql.Tx, server domain.MediaServer, entry *PlaybackEntry) error {
-	match, err := matchPlaybackFile(ctx, q, server, entry.SourcePart, entry.TitleID)
-	if err == nil && match.id != 0 {
-		entry.FileID, entry.TitleID, entry.VersionID = &match.id, &match.title, &match.version
+	if entry.SourcePart == "" {
+		return nil
+	}
+	normalize := func(p string) string { return p }
+	if winPath(entry.SourcePart) {
+		normalize = func(p string) string { return strings.ToLower(strings.ReplaceAll(p, `\`, "/")) }
+	}
+	want := normalize(entry.SourcePart)
+	match, err := mediafiles.MatchPresentMainFile(ctx, q, entry.TitleID, func(path string) bool {
+		return normalize(MapPath(server, path)) == want
+	})
+	if err == nil && match.ID != 0 {
+		entry.FileID, entry.TitleID, entry.VersionID = &match.ID, &match.TitleID, &match.VersionID
 	}
 	return err
 }
