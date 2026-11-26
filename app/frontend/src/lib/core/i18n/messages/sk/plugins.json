@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Podpísané pluginy tu bežia bez zámku súborov. Ostatné bezpečnostné limity zostávajú zapnuté.",
 	"plugins.noLockOffNow": "Pluginy zostanú zastavené, kým systém nebude mať zámok súborov.",
 	"plugins.noLockChange": "Zmeniť",
+	"plugins.noLockLearn": "Ako funguje zámok súborov pluginov",
 	"plugins.noLockTag": "V tomto systéme nie je zámok súborov",
 	"plugins.noLockKeptOff": "Pluginy zostávajú bez zámku súborov zastavené",
 	"plugins.secAccess": "Má prístup k",

@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Aquí els connectors signats s'executen sense bloqueig de fitxers. Els altres límits de seguretat continuen actius.",
 	"plugins.noLockOffNow": "Els connectors continuen aturats fins que aquest sistema tingui el bloqueig de fitxers.",
 	"plugins.noLockChange": "Canvia",
+	"plugins.noLockLearn": "Com funciona el bloqueig de fitxers dels connectors",
 	"plugins.noLockTag": "Sense bloqueig de fitxers en aquest sistema",
 	"plugins.noLockKeptOff": "Els connectors continuen aturats sense bloqueig de fitxers",
 	"plugins.secAccess": "Pot accedir a",

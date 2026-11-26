@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Les plugins signés tournent ici sans verrou de fichiers. Les autres limites de sécurité restent actives.",
 	"plugins.noLockOffNow": "Les plugins restent arrêtés tant que ce système n'a pas le verrou de fichiers.",
 	"plugins.noLockChange": "Modifier",
+	"plugins.noLockLearn": "Comment fonctionne le verrou de fichiers des plugins",
 	"plugins.noLockTag": "Pas de verrou de fichiers sur ce système",
 	"plugins.noLockKeptOff": "Les plugins restent arrêtés sans verrou de fichiers",
 	"plugins.secAccess": "Peut accéder à",
