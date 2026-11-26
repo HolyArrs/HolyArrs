@@ -214,7 +214,12 @@
 						{/if}
 						<div class="stream-body">
 							<div class="stream-heading">
-								<span class="state">{play.state === 'paused' ? t('downloads.status.paused') : play.state === 'unknown' ? t('mediafiles.copies.unknown') : t('settings.mediaServers.playback.state.' + play.state)}</span>
+								<span class="state">
+									{#if play.state === 'playing' || play.state === 'paused'}
+										<Icon name={play.state === 'playing' ? 'play' : 'pause'} size={12} />
+									{/if}
+									{play.state === 'paused' ? t('downloads.status.paused') : play.state === 'unknown' ? t('mediafiles.copies.unknown') : t('settings.mediaServers.playback.state.' + play.state)}
+								</span>
 							</div>
 							<h3>{@render playTitle(play)}</h3>
 							<p class="muted">{[play.person || t('mediafiles.copies.unknown'), play.device].filter(Boolean).join(' · ')}</p>
@@ -331,7 +336,7 @@
 	.stream-details { grid-column: 1 / -1; }
 	.version-link { display: inline-flex; width: fit-content; align-items: center; gap: var(--s-1); color: var(--accent-text); font: var(--t-footnote); margin-inline-start: var(--s-1); text-decoration: underline; text-underline-offset: .2em; }
 	.stream-body .version-link { margin-inline-start: 0; }
-	.state { color: var(--accent-text); background: var(--surface-2); border-radius: var(--r-panel); padding: var(--s-1) var(--s-2); }
+	.state { display: inline-flex; align-items: center; gap: var(--s-1); color: var(--accent-text); background: var(--surface-2); border-radius: var(--r-panel); padding: var(--s-1) var(--s-2); }
 	.state, .stream-meta, .metric span { font: var(--t-footnote); }
 	.stream-meta { flex-wrap: wrap; }
 	.stream-clock { white-space: nowrap; font-variant-numeric: tabular-nums; }
