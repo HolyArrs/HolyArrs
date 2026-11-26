@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "พากย์เท่านั้น ไม่มีเสียงต้นฉบับ",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision ที่ไม่มี HDR10 สำรอง",
+	"downloads.pr.traits.sdr_4k": "4K ที่ไม่มี HDR (SDR)",
 	"downloads.pr.traits.executable": "มีโปรแกรมอยู่ข้างใน",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (เล่นได้แทบทุกที่)",

@@ -223,6 +223,7 @@ func FourK() PickRulesBody {
 			{Trait: "atmos", Points: 10},
 			{Trait: "hevc", Points: 5},
 			{Trait: "upscaled", Points: -100},
+			{Trait: "sdr_4k", Points: -100},
 		},
 		MustHave: []string{},
 		Never: []string{"sample", "executable", "password_protected", "disc_image",

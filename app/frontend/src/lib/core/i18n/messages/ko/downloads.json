@@ -1018,6 +1018,7 @@
 	"downloads.pr.traits.dubbed_only": "더빙만 있고 원음 없음",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "HDR10 대체가 없는 Dolby Vision",
+	"downloads.pr.traits.sdr_4k": "HDR 없는 4K (SDR)",
 	"downloads.pr.traits.executable": "프로그램 포함",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (거의 모든 기기에서 재생)",

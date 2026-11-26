@@ -987,6 +987,7 @@
 	"downloads.pr.traits.dubbed_only": "Szinkronizált, az eredeti hang nélkül",
 	"downloads.pr.traits.dv": "Dolby Vision",
 	"downloads.pr.traits.dv_no_fallback": "Dolby Vision HDR10 tartalék nélkül",
+	"downloads.pr.traits.sdr_4k": "4K HDR nélkül (SDR)",
 	"downloads.pr.traits.executable": "Programot tartalmaz",
 	"downloads.pr.traits.flac": "FLAC",
 	"downloads.pr.traits.h264": "H.264 (szinte mindenhol lejátszható)",

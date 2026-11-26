@@ -166,6 +166,7 @@
 	"library.import.leftHint": "Neke mape nisu prošle. Skeniraj ponovno da ih usvojiš; mape koje su već u biblioteci ostaju kakve jesu.",
 	"library.import.scanAgain": "Skeniraj ponovno",
 	"library.import.keepOpen": "Ostavi ovu stranicu otvorenom dok se ne završi.",
+	"library.import.closeOk": "Radi na poslužitelju, pa možeš zatvoriti ovu stranicu.",
 	"library.import.waiting": "Poslužitelj metapodataka je zauzet. HolyArrs ponovno pokušava zadnjih {left} za {min} min.",
 	"library.import.leaveAsk": "Uvoz je u tijeku. Ako napustiš ovu stranicu, mape koje još nisu poslane neće biti usvojene. Svejedno otići?",
 	"library.import.interrupted": "Uvoz se zaustavio na {done} od {total} mapa kad je njegova stranica zatvorena. Skeniraj ponovno da usvojiš ostalo; već usvojene mape ostaju kakve jesu.",
