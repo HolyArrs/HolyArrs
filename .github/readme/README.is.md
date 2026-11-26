@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: viðbætur heyra hvað gerist í HolyArrs.** Þróunarhamur keyrir viðbótina sem þú ert að smíða og prufuútgáfur leyfa fáeinum að prófa hana fyrst. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: flyttu inn skrár handvirkt úr Safninu.** Lengd, mynd og hljóð kvikmyndaskráa eru athuguð fyrir innflutning, og margar lagfæringar. [Sjáðu hvað er nýtt](https://holyarrs.com/whats-new/)
 
 > Hvert veggspjald, hver stikla og hver einkunn í HolyArrs kemur frá server sem ég rek og borga sjálfur, svo að það haldist ókeypis fyrir alla. Ef HolyArrs gerði bíókvöldið aðeins betra heldur styrktaraðili ljósunum kveiktum fyrir okkur öll 💛
 >

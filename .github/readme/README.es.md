@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: los plugins se enteran de lo que pasa en HolyArrs.** El modo desarrollador ejecuta el plugin que estás creando, y las versiones de prueba dejan que unas pocas personas lo prueben primero. [Novedades](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: importa archivos a mano desde la Biblioteca.** Los archivos de películas se revisan (duración, vídeo y audio) antes de importarlos, y muchas correcciones. [Novedades](https://holyarrs.com/whats-new/)
 
 > Cada póster, tráiler y puntuación de tu HolyArrs viene de un servidor que mantengo y pago yo mismo, para que siga siendo gratis para todos. Si HolyArrs hizo tu noche de películas un poco mejor, patrocinarlo mantiene las luces encendidas para todos 💛
 >

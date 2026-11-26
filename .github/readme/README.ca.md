@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: els connectors senten què passa a HolyArrs.** El mode de desenvolupador executa el connector que estàs creant, i les versions de prova deixen que unes quantes persones el provin primer. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: importa fitxers a mà des de la Biblioteca.** Els fitxers de pel·lícules es comproven (durada, vídeo i àudio) abans d'importar-los, i moltes correccions. [Mira què hi ha de nou](https://holyarrs.com/whats-new/)
 
 > Cada pòster, tràiler i puntuació del teu HolyArrs ve d'un servidor que porto i pago jo mateix, perquè segueixi sent gratuït per a tothom. Si HolyArrs t'ha fet la nit de pel·lícula una mica millor, un patrocini ens manté els llums encesos a tots 💛
 >

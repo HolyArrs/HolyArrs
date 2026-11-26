@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: plugins hører, hvad der sker i HolyArrs.** Udviklertilstand kører det plugin, du bygger, og testversioner lader nogle få prøve det først. [Se hvad der er nyt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: importér filer i hånden fra Biblioteket.** Filmfiler tjekkes for længde, video og lyd før import, plus mange rettelser. [Se hvad der er nyt](https://holyarrs.com/whats-new/)
 
 > Hver eneste plakat, trailer og score i dit HolyArrs kommer fra en server, som jeg selv kører og betaler for, så det forbliver gratis for alle. Hvis HolyArrs har gjort din filmaften lidt bedre, holder en sponsor lyset tændt for os alle sammen 💛
 >

@@ -1,0 +1,132 @@
+version = "1.3.2"
+theme = "Hand imports from Library, file checks before import, and many fixes."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""
+known_issues = []
+security = [
+  "Release builds keep signing keys apart and ship with provenance. (#839)",
+]
+credits = [
+  {github = "dhruv1220", link = "https://github.com/HolyArrs/HolyArrs/pull/812", issues = [717, 797, 808, 786, 793]},
+  {github = "diblaze", link = "https://github.com/HolyArrs/HolyArrs/pull/673", issues = [672, 747, 676]},
+  {github = "NotCavnfox", link = "https://github.com/HolyArrs/HolyArrs/pull/854", issues = [854, 855, 852, 845, 846]},
+  {github = "wlatic", link = "https://github.com/HolyArrs/HolyArrs/issues/783", issues = [783, 858, 857]},
+  {github = "lancewilhelm", link = "https://github.com/HolyArrs/HolyArrs/pull/840", issues = [724, 838, 753]},
+  {github = "wai-lau", link = "https://github.com/HolyArrs/HolyArrs/pull/772", issues = [762, 764, 763]},
+  {github = "mbartsch", link = "https://github.com/HolyArrs/HolyArrs/pull/817", issues = [817, 829, 833]},
+  {github = "wozniakpawel", link = "https://github.com/HolyArrs/HolyArrs/pull/918", issues = [708, 669, 918]},
+  {github = "maaximal", link = "https://github.com/HolyArrs/HolyArrs/pull/822", issues = [821, 830]},
+  {name = "Blegrand15", link = "https://www.reddit.com/r/HolyArrs/", issues = [610, 611]},
+  {name = "AlmostEpic89", discord = true, issues = [698, 699, 747]},
+  {github = "tydude001", link = "https://github.com/HolyArrs/HolyArrs/issues/611", issues = [611]},
+  {github = "venzellucas", link = "https://github.com/HolyArrs/HolyArrs/issues/611", issues = [611]},
+  {github = "toverux", link = "https://github.com/HolyArrs/HolyArrs/issues/682", issues = [682]},
+  {github = "ansuehu", link = "https://github.com/HolyArrs/HolyArrs/issues/717", issues = [717]},
+  {name = "xrandallx", link = "https://community.holyarrs.com/t/398", issues = [808]},
+  {name = "chesh1r3k", discord = true, issues = [692]},
+  {name = "Harybo", discord = true, issues = [692]},
+  {github = "prantzos", link = "https://github.com/HolyArrs/HolyArrs/pull/723", issues = [721, 720]},
+  {github = "sunboyy", link = "https://github.com/HolyArrs/HolyArrs/issues/683", issues = [683]},
+  {github = "aguanitallc", link = "https://github.com/HolyArrs/HolyArrs/pull/850", issues = [850]},
+  {github = "bobberb", link = "https://github.com/HolyArrs/HolyArrs/pull/660", issues = [660]},
+  {github = "sittingmongoose", link = "https://github.com/HolyArrs/HolyArrs/pull/648", issues = [648]},
+  {github = "gorpet", link = "https://github.com/HolyArrs/HolyArrs/pull/688", issues = [688]},
+  {github = "aritmp", link = "https://github.com/HolyArrs/HolyArrs/pull/750", issues = [750]},
+  {github = "soybean-alien", link = "https://github.com/HolyArrs/HolyArrs/pull/726", issues = [839]},
+]
+
+[[highlights]]
+line = "Import files by hand right from the Library Add menu."
+issues = [692]
+shot = "Library Add menu open with Import files by hand"
+
+[[highlights]]
+line = "Movie files are checked before import: length, video and audio."
+issues = [611]
+shot = "An import held back because the play length doesn't match"
+
+[[highlights]]
+line = "Plugins can open a site's bot check for you."
+issues = [865, 918]
+shot = "A bot-check plugin with the owner-host box filled in"
+
+[groups]
+Library = [
+  "Delete a single movie file from the Library tab. (#821)",
+  "Import a library keeps going with the page closed. (#712)",
+  "Fixed: Rescan commands rescan the title, or the whole Library. (#808)",
+  "Fixed: shows with hundreds of episodes on a network share now import. (#682)",
+  "Fixed: a show no longer takes another show's picture or episodes. (#342)",
+  "Fixed: feed checks no longer time out on big libraries. (#747)",
+]
+Downloads = [
+  "Pick rules get an SDR 4K trait and catch more AI upscales. (#610)",
+  "Pick anyway on a season search takes releases named for the show. (#764)",
+  "Fixed: SABnzbd speed goes only to jobs that are downloading. (#838)",
+  "Fixed: empty Usenet job folders are deleted after a move import. (#724)",
+  "Fixed: imports retry when files from a remote downloader arrive late. (#829)",
+  "Fixed: qBittorrent works behind proxies that compress answers, like qui. (#846)",
+  "Fixed: DUAL or MULTi names now say audio is checked at import. (#797)",
+  "Fixed: German DL keeps the original language in imported Pick rules. (#858)",
+  "Fixed: MULTi releases without your language are skipped before download. (#750)",
+  "Fixed: \"amp\" in a release name matches \"&\". (#762)",
+  "Fixed: anime names with alt-titles or [Group][Title][Episode] read right. (#763)",
+  "Fixed: MKV audio with no language tag is read as English. (#850)",
+]
+Indexers = [
+  "YTS is built in as a movie search and feed. (#817)",
+  "Titlovi joins the subtitle sites. (#688)",
+  "Fixed: IPTorrents sizes with odd spaces are read right. (#833)",
+]
+Accounts = [
+  "The owner and an API key can come from files at start. (#660)",
+  "Fixed: single sign-on started from another address goes through. (#708)",
+  "Fixed: an expired sign-in goes to sign-in, not stuck on Reconnecting. (#793)",
+]
+Alerts = [
+  "Discord Alerts come as one card with the poster, and mark upgrades. (#733)",
+  "The Alerts panel shows an alert's full text. (#852)",
+  "Library alerts open their title; search alerts name show and episode. (#830)",
+  "Fixed: only warnings and errors light the Settings dot. (#786)",
+]
+Plugins = [
+  "A plugin can bring its own download type. (#864)",
+  "A plugin can list and remove its own links. (#854)",
+  "The approve screen shows the remote-access warning. (#699)",
+  "The No file lock tag explains what it means. (#698)",
+  "Download counts show on first view and on Language Packs. (#851)",
+  "Fixed: plugin limit labels stay whole and boxes stay on one line. (#862)",
+]
+Import = [
+  "A movie in a 1080p and a 4K Radarr becomes one title. (#648)",
+  "Files keep scene name and group, and score with the original language. (#783)",
+  "One Source per site when Prowlarr, Sonarr and Radarr are imported. (#669)",
+  "Naming comes over with the Radarr-style words. (#857)",
+  "Fixed: the report says tags stay behind, not that HolyArrs has none. (#672)",
+  "Fixed: forgetting saved keys while HolyArrs runs now says how. (#676)",
+  "Fixed: an empty show folder no longer breaks an import. (#845)",
+]
+Requests = [
+  "Approved anime can go to its own folder. (#855)",
+  "Fixed: Back keeps you on the Explore or New & Popular tab. (#753)",
+  "Fixed: each watch link shows once when a server is added twice. (#717)",
+]
+Movies = [
+  "Removing a copy's protection asks in the app's own dialog. (#150)",
+]
+Shows = [
+  "Show settings get a Future seasons only option. (#720) (#721)",
+]
+Polish = [
+  "Fixed: Who watched what no longer breaks on two same-name accounts. (#734)",
+  "Fixed: old import reports open, and plugin screens drop garbled symbols. (#925)",
+  "Changed: the key icon's bar starts at the ring's edge. (#683)",
+  "Changed: plain permission names, full-width own-server box, one-line TV shows button. (#945)",
+]
+
+[stats]
+issues_done = 54
+still_building = 0
+people_credited = 26

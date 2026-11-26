@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: pluginad kuulevad, mis HolyArrsis toimub.** Arendajarežiim käivitab pluginat, mida sa ehitad, ja testversioonid lasevad paaril inimesel seda esimesena proovida. [Mis uut](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: impordi faile käsitsi Kogust.** Filmifailide pikkust, videot ja heli kontrollitakse enne importi, lisaks palju parandusi. [Mis uut](https://holyarrs.com/whats-new/)
 
 > Iga poster, treiler ja hinnang sinu HolyArrsis tuleb serverist, mida ma ise pean ja mille eest ise maksan, et see jääks kõigile tasuta. Kui HolyArrs tegi sinu filmiõhtu veidi paremaks, hoiab sponsor tuled meil kõigil põlemas 💛
 >

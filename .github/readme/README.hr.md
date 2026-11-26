@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: dodaci čuju što se događa u HolyArrsu.** Način za razvojne programere pokreće dodatak koji gradiš, a probne verzije omogućuju nekolicini ljudi da ga prvi isprobaju. [Pogledaj što je novo](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: ručni uvoz datoteka iz Knjižnice.** Datotekama filmova provjeravaju se trajanje, slika i zvuk prije uvoza, uz mnogo popravaka. [Pogledaj što je novo](https://holyarrs.com/whats-new/)
 
 > Svaki poster, trailer i ocjena u tvom HolyArrsu dolazi sa servera koji sâm vodim i plaćam, da ostane besplatan za sve. Ako ti je HolyArrs malo uljepšao filmsku večer, sponzorstvo drži svjetla upaljenima za sve nas 💛
 >
