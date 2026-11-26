@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Čiste se svi titlovi u biblioteci",
 	"settings.subtitles.cleanAllFailed": "Čišćenje nije moglo započeti",
 	"settings.subtitles.cleanRow": "Koraci za",
-	"settings.subtitles.cleanEvery": "Svaki drugi jezik",
+	"settings.subtitles.cleanEvery": "Svi jezici",
+	"settings.subtitles.cleanEveryHint": "Vrijedi za svaki jezik bez vlastitih koraka.",
 	"settings.subtitles.cleanAddLang": "Dodaj jezik",
 	"settings.subtitles.cleanRemoveLang": "Ukloni ovaj jezik"
 }

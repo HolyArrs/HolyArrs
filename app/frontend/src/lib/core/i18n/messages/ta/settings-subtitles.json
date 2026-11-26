@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "நூலகத்தின் எல்லா வசனங்களும் சுத்தம் செய்யப்படுகின்றன",
 	"settings.subtitles.cleanAllFailed": "சுத்தம் செய்வதைத் தொடங்க முடியவில்லை",
 	"settings.subtitles.cleanRow": "இதற்கான படிகள்",
-	"settings.subtitles.cleanEvery": "மற்ற எல்லா மொழிகளும்",
+	"settings.subtitles.cleanEvery": "அனைத்து மொழிகளும்",
+	"settings.subtitles.cleanEveryHint": "தனிப் படிகள் இல்லாத எந்த மொழிக்கும் இது பொருந்தும்.",
 	"settings.subtitles.cleanAddLang": "மொழியைச் சேர்",
 	"settings.subtitles.cleanRemoveLang": "இந்த மொழியை நீக்கு"
 }
