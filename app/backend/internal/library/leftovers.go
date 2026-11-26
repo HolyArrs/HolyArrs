@@ -303,11 +303,11 @@ func (s *Service) matchEpisodesTx(ctx context.Context, tx *sql.Tx, f mediafiles.
 		release = *f.ReleaseName
 	}
 	ge := false
-	var kind string
-	if err := tx.QueryRowContext(ctx, "SELECT kind FROM titles WHERE id = ?", v.TitleID).Scan(&kind); err != nil {
+	var t mediafiles.Title
+	if err := database.Get(ctx, tx, "titles", v.TitleID, &t); err != nil {
 		return err
 	}
-	if kind == "artist" {
+	if t.Kind == "artist" {
 		// A track file is named for its album folder and format, as a scan names it.
 		var root string
 		if err := tx.QueryRowContext(ctx, "SELECT path FROM library_folders WHERE id = ?", v.LibraryFolderID).Scan(&root); err != nil {
@@ -320,7 +320,7 @@ func (s *Service) matchEpisodesTx(ctx context.Context, tx *sql.Tx, f mediafiles.
 		}
 		ge = mediafiles.ReachesGoodEnough(release, pr.Body)
 	} else {
-		ge = mediafiles.OwnedReachesGoodEnough(release, f.MediaInfo, pr.Body)
+		ge = mediafiles.OwnedReachesGoodEnoughFor(release, f.MediaInfo, t, pr.Body)
 	}
 	state := mediafiles.SlotInLibrary
 	if !ge && v.KeepUpToDate {

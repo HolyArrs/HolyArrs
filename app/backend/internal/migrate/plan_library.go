@@ -230,7 +230,7 @@ func (b *builder) waitRules(s *Snapshot) {
 		what := "wait before grabbing " + tagScope(strings.Join(d.Tags, ", "))
 		switch {
 		case len(d.Tags) > 0:
-			b.not(GroupRules, from, what, "applied only to titles tagged "+clip(strings.Join(d.Tags, ", "), 100)+"; HolyArrs has no tags, so its waits ("+values+") were not imported; set them on a copy of the Pick rules if those titles need them")
+			b.not(GroupRules, from, what, "applied only to titles tagged "+clip(strings.Join(d.Tags, ", "), 100)+"; the import does not bring tags over, so its waits ("+values+") were not imported; set them on a copy of the Pick rules if those titles need them")
 			continue
 		case i != def || mediaWord(s.Kind) == "":
 			b.not(GroupRules, from, what, "HolyArrs has waits in Pick rules (prefer, Usenet and torrent minutes) but this one was not carried over: "+values+"; set them under Pick rules")
@@ -397,9 +397,9 @@ func (b *builder) addTagged(k Kind, group string, it Item, tags []string) {
 	before := len(b.items[group].Items)
 	b.add(group, it)
 	if note != "" && len(b.items[group].Items) > before {
-		check := "HolyArrs has no tags; check it before you resume it"
+		check := "the import does not bring tags over; check it before you resume it"
 		if group == GroupAlerts {
-			check = "HolyArrs has no tags; check it before you turn it on"
+			check = "the import does not bring tags over; check it before you turn it on"
 		}
 		b.not(group, it.From+".tags", clip(it.Name, 80)+" (tags: "+clip(strings.Join(tags, ", "), 100)+")", check)
 	}
@@ -760,7 +760,7 @@ func (b *builder) titleList(s *Snapshot) {
 		b.not(GroupTitles, b.from("titles", -1)+"."+k, fmt.Sprintf("%s (on %d titles)", k, extras[k]), "no HolyArrs setting matches it; titles take HolyArrs's own defaults")
 	}
 	if tags > 0 {
-		b.not(GroupTitles, b.from("titles", -1)+".tags", fmt.Sprintf("tags on titles (%d)", tags), "HolyArrs has no tags")
+		b.not(GroupTitles, b.from("titles", -1)+".tags", fmt.Sprintf("tags on titles (%d)", tags), "the import does not bring tags over")
 	}
 	if delay != nil {
 		from := b.from("settings", -1) + ".availability_delay"

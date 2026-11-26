@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} ditemui",
 	"migrate.readOnly": "Baca sahaja",
 	"migrate.folderReadOnly": "HolyArrs tidak dapat menulis ke folder ini, jadi tiada apa-apa boleh diimport ke dalamnya. Jadikan volum boleh ditulis (buang :ro) dalam persediaan Docker HolyArrs, kemudian cipta semula bekas.",
-	"migrate.someFound": "{n} ditemui"
+	"migrate.someFound": "{n} ditemui",
+	"migrate.sameSource": "sama seperti {list}: satu Sumber",
+	"migrate.nameInApps": "{name} dalam {apps}"
 }

@@ -415,5 +415,7 @@
 	"migrate.nFound": "atrasti {found}",
 	"migrate.readOnly": "Tikai lasāms",
 	"migrate.folderReadOnly": "HolyArrs nevar rakstīt šajā mapē, tāpēc tajā neko nevar importēt. Padariet sējumu rakstāmu (noņemiet :ro) HolyArrs Docker iestatījumos, pēc tam izveidojiet konteineru no jauna.",
-	"migrate.someFound": "Atrasti: {n}"
+	"migrate.someFound": "Atrasti: {n}",
+	"migrate.sameSource": "tas pats, kas {list}: viens Avots",
+	"migrate.nameInApps": "{name} lietotnē {apps}"
 }

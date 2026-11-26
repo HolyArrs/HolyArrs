@@ -5,6 +5,7 @@ import { readAnchor, readOffsets, type ExploreReturn } from './explore-return.ts
 import { serverRow } from './explore-server.ts';
 import { genrePath, genresFor, parseGenre, type GenreAnswer } from './genres.ts';
 import { parseType } from './explore-type.ts';
+import { searchAddress } from './search-address.ts';
 import { browsePath, browseSectionPath, tileHue, type BrowseAnswer, type BrowseSectionAnswer } from './search-browse.ts';
 import { untrack } from 'svelte';
 import { page } from '$app/state';
@@ -14,7 +15,8 @@ import { fitTile } from '#lib/core/tmdb-image.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
 export function createExploreGenre(ctx: any) {
-	const genre = $derived(parseGenre((page.shallow?.url ?? page.url).searchParams.get('genre'), ctx.type));
+	const here = () => searchAddress(page.url, page.shallow?.url, typeof location === 'undefined' ? undefined : location.href);
+	const genre = $derived(parseGenre(here().searchParams.get('genre'), ctx.type));
 	const genres = $derived(genresFor(ctx.type));
 	let musicGenres = $state<{ key: string; name: string; href: string; art: string; images?: string[]; hue: number }[]>([]);
 	let genreRows = $state<(ExploreRow & { wide: boolean; type: string })[]>([]);
@@ -48,14 +50,14 @@ export function createExploreGenre(ctx: any) {
 	// Back from a genre page lands on the tab and the spot it was opened from: the address (tab included) maps to where the page stood when a genre was opened from it.
 	const spots = new Map<string, ExploreReturn>();
 	function rememberSpot() {
-		spots.set(new URL((page.shallow?.url ?? page.url).href).href, {
+		spots.set(new URL(here().href).href, {
 			y: Math.round(scrollY),
 			rows: readOffsets(document),
 			anchor: readAnchor(document, document.querySelector('main')?.getBoundingClientRect().top ?? 0)
 		});
 	}
 	$effect(() => {
-		const u = page.shallow?.url ?? page.url;
+		const u = here();
 		untrack(() => {
 			const t = parseType(u.searchParams.get('type'), ctx.musicKept);
 			if (t !== ctx.type) {
@@ -77,7 +79,7 @@ export function createExploreGenre(ctx: any) {
 	/** Opens a genre page (a new history entry, so Back returns); null clears it. */
 	function pickGenre(id: number | null, close?: () => void) {
 		close?.();
-		const url = new URL((page.shallow?.url ?? page.url).href);
+		const url = new URL(here().href);
 		if (id !== null) rememberSpot();
 		if (id === null) url.searchParams.delete('genre');
 		else url.searchParams.set('genre', String(id));

@@ -88,6 +88,47 @@ func wantTaken(t *testing.T, w world, im *Importer) {
 	}
 }
 
+// A listed movie file that has not reached the local download folder yet gets
+// a waiting message, while a file that vanishes during placement keeps the
+// existing missing-file message below.
+func TestMovieImportSaysFileIsNotPresentYet(t *testing.T) {
+	w := setup(t)
+	if err := os.Remove(filepath.Join(w.dl, relName+".mkv")); err != nil {
+		t.Fatal(err)
+	}
+	if err := execSQL(w.s, "UPDATE slots SET active_download_id = ? WHERE id = ?", w.dlID, w.slotID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if sl := slot308(t, w); sl.State != mediafiles.SlotNeedsADecision || ptrText(sl.LastReason) != NotPresentYetWhy {
+		t.Fatalf("slot %s reason %q, want %q", sl.State, ptrText(sl.LastReason), NotPresentYetWhy)
+	}
+}
+
+// A synced file that exists but is shorter than the Downloader's file list is
+// still arriving. Keep it pending instead of importing or rejecting it.
+func TestMovieImportWaitsForAPartlyCopiedFile(t *testing.T) {
+	w := setup(t)
+	src := filepath.Join(w.dl, relName+".mkv")
+	if err := os.Truncate(src, 512); err != nil {
+		t.Fatal(err)
+	}
+	if err := execSQL(w.s, "UPDATE slots SET active_download_id = ? WHERE id = ?", w.dlID, w.slotID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (&Importer{Store: w.s}).Import(context.Background(), w.dlID, false, domain.System); err != nil {
+		t.Fatal(err)
+	}
+	if sl := slot308(t, w); sl.State != mediafiles.SlotNeedsADecision || ptrText(sl.LastReason) != CopyingWhy {
+		t.Fatalf("slot %s reason %q, want %q", sl.State, ptrText(sl.LastReason), CopyingWhy)
+	}
+	if entries, err := os.ReadDir(w.lib); err != nil || len(entries) != 0 {
+		t.Fatalf("Library changed: %v %v", entries, err)
+	}
+}
+
 // A movie whose video is gone while its folder and the files beside it stay does not blame the path pair or the mount:
 // only video or audio files count, so another app took the Usenet job's video.
 func TestMovieImportVideoGoneWhileItsFolderStays(t *testing.T) {
@@ -158,7 +199,7 @@ func TestShowImportDoesNotBlameAudioForAMissingFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	sl := w.slot(t, 1)
-	if r := ptrText(sl.LastReason); sl.State != mediafiles.SlotNeedsADecision || r != "the file for S01E01 could not be placed: "+notInFolderWhy {
+	if r := ptrText(sl.LastReason); sl.State != mediafiles.SlotNeedsADecision || r != NotPresentYetWhy {
 		t.Fatalf("slot %s reason %q", sl.State, r)
 	}
 }
@@ -168,9 +209,11 @@ func TestEpisodeRefusedWhyKeepsOnlyTheReadingReason(t *testing.T) {
 	root := t.TempDir()
 	match := []string{"Copper Valley by clean name", "holds S01E01"}
 	for why, want := range map[string]string{
-		notInFolderWhy: "the file for S01E01 could not be placed: " + notInFolderWhy,
-		unreadCheckWhy: "the file for S01E01 could not be placed: " + unreadCheckWhy,
-		noReadCheckWhy: noReadWhy,
+		NotPresentYetWhy: NotPresentYetWhy,
+		CopyingWhy:       CopyingWhy,
+		notInFolderWhy:   "the file for S01E01 could not be placed: " + notInFolderWhy,
+		unreadCheckWhy:   "the file for S01E01 could not be placed: " + unreadCheckWhy,
+		noReadCheckWhy:   noReadWhy,
 		"a sample, not the full video (it plays 1 minute)": "the file for S01E01 could not be placed: Copper Valley by clean name; holds S01E01; a sample, not the full video (it plays 1 minute)",
 	} {
 		if got := episodeRefusedWhy(root, "S01E01", append(slices.Clone(match), why)); got != want {

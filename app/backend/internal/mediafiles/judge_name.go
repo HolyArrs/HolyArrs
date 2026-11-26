@@ -44,8 +44,14 @@ const RecordedQualityKey = "recorded_quality"
 // enough when its resolution reaches the good-enough step's, so moving a
 // Library over never asks for a better copy of every file.
 func OwnedReachesGoodEnough(name string, mediaInfo map[string]any, rules PickRulesBody) bool {
+	return OwnedReachesGoodEnoughFor(name, mediaInfo, Title{}, rules)
+}
+
+// OwnedReachesGoodEnoughFor is OwnedReachesGoodEnough for a file of Title
+// t: language and year tests read t's original language and year.
+func OwnedReachesGoodEnoughFor(name string, mediaInfo map[string]any, t Title, rules PickRulesBody) bool {
 	judge := JudgeName(name, mediaInfo)
-	if ReachesGoodEnough(judge, rules) {
+	if ReachesGoodEnoughFor(judge, t, rules) {
 		return true
 	}
 	p := releasename.Parse(judge, hintsFor(rules))

@@ -319,6 +319,60 @@ test('the owner sets up single sign-on in Settings, and the sign-in page offers 
 	const visitor = await fresh(browser);
 	await visitor.goto('/login');
 	await expect(visitor.getByRole('button', { name: /single sign-on/i })).toBeVisible();
+	// A provider's answer to a browser that did not start the sign-in (a home-screen app, an in-app browser) lands on the sign-in page with a plain message, not a bare error.
+	await visitor.goto('/api/v1/auth/oidc/callback?state=started-elsewhere&code=unused');
+	await expect(visitor).toHaveURL(/\/login\?sso=elsewhere$/);
+	await expect(visitor.getByText('That sign-in was started in a different browser or took too long. Try again here.')).toBeVisible();
+
+	// Pressed at another address than the callback's, the server names the address to go on at (here faked as this one): the page goes to its /login?sso=start, which starts the sign-in by itself, once. Told to go elsewhere again, it stops with a plain message.
+	let starts = 0;
+	await visitor.route('**/api/v1/auth/oidc/start', (route) => {
+		starts++;
+		return route.fulfill({ json: { continue_at: new URL('/login?sso=start', visitor.url()).href } });
+	});
+	await visitor.goto('/login');
+	await visitor.getByRole('button', { name: /single sign-on/i }).click();
+	await expect(visitor.getByText("Single sign-on didn't finish. Try again, or sign in another way.")).toBeVisible();
+	await expect(visitor).toHaveURL(/\/login$/);
+	expect(starts).toBe(2);
+	// A reload does not start it again, and no other address of the sign-in page does.
+	await visitor.reload();
+	await visitor.goto('/login?sso=other');
+	await expect(visitor.getByRole('button', { name: /single sign-on/i })).toBeVisible();
+	expect(starts).toBe(2);
+	// At the callback's own address, /login?sso=start goes straight to the provider.
+	await visitor.unroute('**/api/v1/auth/oidc/start');
+	await visitor.goto('/login?sso=start');
+	await expect(visitor.getByLabel('Username')).toBeVisible();
+	await expect(visitor).toHaveURL(/\/oidc\//);
+	// Back from the provider is the plain sign-in page, not a second start.
+	await visitor.goBack();
+	await expect(visitor).toHaveURL(/\/login$/);
+	await expect(visitor.getByRole('button', { name: /single sign-on/i })).toBeVisible();
+
+	// A proof asked for at another address is one here too, and the page it was asked on is kept for the way back.
+	let asked: unknown;
+	await visitor.route('**/api/v1/auth/oidc/start', (route) => {
+		asked = route.request().postDataJSON();
+		return route.fulfill({ json: { auth_url: new URL('/login?asked=1', visitor.url()).href } });
+	});
+	await visitor.goto('/login?sso=start&fresh=1&next=%2Fsettings%2Fusers');
+	await expect(visitor).toHaveURL(/\/login\?asked=1$/);
+	expect(asked).toEqual({ fresh: true });
+	expect(await visitor.evaluate(() => sessionStorage.getItem('holyarrs-sso-next'))).toBe('/settings/users');
+	await visitor.evaluate(() => sessionStorage.removeItem('holyarrs-sso-next'));
+	await visitor.unroute('**/api/v1/auth/oidc/start');
+
+	// Linking from My account at another address names the address instead: the sign-in that links does not exist there.
+	await own.route('**/api/v1/auth/oidc/link', (route) => route.fulfill({ json: { link_at: 'https://media.example.test' } }));
+	await own.goto('/settings/account');
+	await own.getByTestId('link-sign-in').click();
+	await confirmIfAsked(own.locator('#linked-me'));
+	await own.locator('#linked-me').getByRole('button', { name: 'Single sign-on' }).click();
+	await expect(own.locator('#linked-me').getByRole('alert')).toHaveText('Single sign-on can only be linked at https://media.example.test. Open HolyArrs there, sign in and link it again.');
+	await expect(own).toHaveURL(/\/settings\/account$/);
+	await own.unroute('**/api/v1/auth/oidc/link');
+	await own.goto('/settings/sign-in');
 
 	// Turn it off again so later tests see the sign-in page as before.
 	await form.getByText('Show the single sign-on button on the sign-in page').click();

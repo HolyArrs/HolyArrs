@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} намерени",
 	"migrate.readOnly": "Само за четене",
 	"migrate.folderReadOnly": "HolyArrs не може да записва в тази папка, затова нищо не може да се импортира в нея. Направете тома достъпен за запис (премахнете :ro) в Docker настройката на HolyArrs, след това пресъздайте контейнера.",
-	"migrate.someFound": "Намерени: {n}"
+	"migrate.someFound": "Намерени: {n}",
+	"migrate.sameSource": "същият като {list}: един източник",
+	"migrate.nameInApps": "{name} в {apps}"
 }

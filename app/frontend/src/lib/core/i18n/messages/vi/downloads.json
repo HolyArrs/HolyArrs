@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Thêm trình tải",
 	"downloads.hl.noUsenetDl": "chưa thiết lập trình tải Usenet nào",
 	"downloads.hl.noTorrentDl": "chưa thiết lập trình tải torrent nào",
+	"downloads.problem.waitingForFiles": "Đang chờ tệp",
 	"downloads.problem.importBlocked": "Nhập bị chặn",
 	"downloads.problem.missingArticles": "Thiếu bài",
 	"downloads.problem.noFullCopy": "Không có bản đầy đủ",

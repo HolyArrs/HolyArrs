@@ -465,7 +465,7 @@ func alertLeft(kind string, set map[string]any) []string {
 func (b *builder) leftBehind(s *Snapshot) {
 	b.cover("tags", "import_lists", "metadata", "app_links", "app_profiles")
 	for i, t := range s.Tags {
-		b.not(GroupOther, b.from("tags", i), t.Label, "HolyArrs has no tags")
+		b.not(GroupOther, b.from("tags", i), t.Label, "the import does not bring tags over")
 	}
 	for i, l := range s.ImportLists {
 		if (s.Kind == Radarr || s.Kind == Sonarr) && b.outsideList(s.Kind, i, l) {
