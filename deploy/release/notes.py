@@ -128,8 +128,13 @@ def credit_line(c, cmap):
     if empty(c.get("name")):
         name = "@" + str(c["github"])
         return "[%s](%s)" % (name, c["link"]) if c.get("link") else name
-    # A Discord member keeps their plain name; everyone else is a Reddit u/.
-    name = bare(c["name"]) + " (Discord)" if c.get("discord") else "u/" + bare(c["name"])
+    # Discord and forum members keep their plain name; everyone else is a Reddit u/.
+    if c.get("discord"):
+        name = bare(c["name"]) + " (Discord)"
+    elif c.get("forum"):
+        name = bare(c["name"]) + " (forum)"
+    else:
+        name = "u/" + bare(c["name"])
     text = "[%s](%s)" % (name, c["link"]) if c.get("link") else name
     return text + (" (@%s)" % login if login else "")
 
