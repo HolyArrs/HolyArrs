@@ -45,6 +45,9 @@ type Track struct {
 	Format   string // short codec name (hevc, h264, aac, flac ...); "" when not known
 	Language string // as the file writes it (eng, en-US); "" when the file names none
 	Name     string
+	// Untagged is true when Language holds the container's default
+	// because the file names no language (Matroska: eng).
+	Untagged bool
 
 	Default         bool
 	Forced          bool
@@ -81,6 +84,10 @@ type Info struct {
 	AudioLanguages []string
 	AudioTracks    int
 	AudioUnknown   bool
+	// AudioUntagged is the container's default language ("en" for
+	// Matroska) when an audio track names none; it is not in
+	// AudioLanguages, as the file name may know better.
+	AudioUntagged string
 	// AudioCodecs are the audio tracks' codecs ("alac", "flac", "aac",
 	// "mp3", ...); a track whose codec is not known adds nothing.
 	AudioCodecs []string
@@ -263,7 +270,9 @@ func buildInfo(h headers, size int64) Info {
 			if t.Format != "" {
 				info.AudioCodecs = append(info.AudioCodecs, t.Format)
 			}
-			if normalized, ok := normalizeLanguage(t.Language); ok {
+			if normalized, ok := normalizeLanguage(t.Language); ok && t.Untagged {
+				info.AudioUntagged = normalized
+			} else if ok {
 				info.AudioLanguages = append(info.AudioLanguages, normalized)
 			} else {
 				info.AudioUnknown = true
