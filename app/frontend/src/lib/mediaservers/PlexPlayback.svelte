@@ -49,6 +49,7 @@
 	let { server }: { server: number } = $props();
 	const uid = $props.id();
 	const pageSize = 50;
+	const pollInterval = 5000;
 	const endpoint = $derived(`/media-servers/${server}/playback`);
 	let view = $state<Playback | null>(null);
 	let error = $state('');
@@ -56,6 +57,11 @@
 	let fields = $state({ title: '', account: '', from: '', through: '' });
 	let filters = $state({ ...fields });
 	let requestId = 0;
+	let clockNow = $state(0);
+	let sampleReceivedAt = $state(0);
+	const estimateMs = $derived(view?.last_seen_at && !view.stale && !error
+		? Math.min(pollInterval * 2, Math.floor(Math.max(0, clockNow - sampleReceivedAt) / 1000) * 1000)
+		: 0);
 
 	async function refresh() {
 		const id = ++requestId;
@@ -63,6 +69,9 @@
 		try {
 			const next = await api.get<Playback>(`${endpoint}?${query}`);
 			if (id === requestId) {
+				clockNow = performance.now();
+				// A refresh of the same sample does not restart its clock.
+				if (next.last_seen_at !== view?.last_seen_at) sampleReceivedAt = clockNow;
 				view = next;
 				error = '';
 			}
@@ -111,15 +120,36 @@
 		return [methodLabel(play.method), quality, play.details?.hardware ? 'HW' : ''].filter(Boolean).join(' · ');
 	}
 
+	function positionOf(play: Play): number {
+		const position = play.position_ms + (play.state === 'playing' ? estimateMs : 0);
+		return play.duration_ms > 0 ? Math.min(position, play.duration_ms) : position;
+	}
+
+	function timecode(ms: number): string {
+		const seconds = Math.floor(ms / 1000);
+		const hours = Math.floor(seconds / 3600);
+		const minutes = Math.floor(seconds / 60) % 60;
+		const ss = String(seconds % 60).padStart(2, '0');
+		return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${ss}` : `${minutes}:${ss}`;
+	}
+
 	const number = (n: number) => n.toLocaleString(lang.value);
 	const playCount = (n: number) => t(n === 1 ? 'library.stats.unit.play.one' : 'library.stats.unit.play.other', { n: number(n) });
 
 	onMount(() => {
 		void refresh();
-		const timer = window.setInterval(() => {
+		const poll = window.setInterval(() => {
 			if (!view || view.enabled) void refresh();
-		}, 5000);
-		return () => window.clearInterval(timer);
+		}, pollInterval);
+		// A single clock for all cards. Sampling performance.now also keeps
+		// the clock from lagging if the browser throttles the timer.
+		const tick = window.setInterval(() => {
+			if (view?.active?.some((play) => play.state === 'playing')) clockNow = performance.now();
+		}, 250);
+		return () => {
+			window.clearInterval(poll);
+			window.clearInterval(tick);
+		};
 	});
 </script>
 
@@ -133,7 +163,9 @@
 
 {#snippet playedVersion(play: Play)}
 	{#if play.title_id && play.version_id && play.version}
-		<a class="version-link" href={to(`/library/${play.title_id}?version=${play.version_id}#version-${play.version_id}`)}>{t('requests.report.version', { name: play.version })}</a>
+		<a class="version-link" href={to(`/library/${play.title_id}?version=${play.version_id}#version-${play.version_id}`)}>
+			{t('requests.report.version', { name: play.version })}<Icon name="chevronRight" size={12} />
+		</a>
 	{/if}
 {/snippet}
 
@@ -171,8 +203,15 @@
 		{#if view.active?.length && view.enabled}
 			<ul class="streams" aria-label={t('settings.mediaServers.playback.now')}>
 				{#each view.active as play (play.id)}
+					{@const position = positionOf(play)}
 					<li class="stream tp-sheet">
-						<div class="stream-cover"><Poster src={play.poster} name={play.title} /></div>
+						{#if play.title_id}
+							<a class="stream-cover" href={to(`/library/${play.title_id}`)} aria-label={`${t('downloads.act.library')} · ${play.title}`} title={t('downloads.act.library')}>
+								<Poster src={play.poster} name={play.title} />
+							</a>
+						{:else}
+							<div class="stream-cover"><Poster src={play.poster} name={play.title} /></div>
+						{/if}
 						<div class="stream-body">
 							<div class="stream-heading">
 								<span class="state">{play.state === 'paused' ? t('downloads.status.paused') : play.state === 'unknown' ? t('mediafiles.copies.unknown') : t('settings.mediaServers.playback.state.' + play.state)}</span>
@@ -181,11 +220,13 @@
 							<p class="muted">{[play.person || t('mediafiles.copies.unknown'), play.device].filter(Boolean).join(' · ')}</p>
 							{@render playedVersion(play)}
 							{#if play.duration_ms > 0}
-								<progress aria-label={t('downloads.col.progress')} max="100" value={percent(play.position_ms / play.duration_ms)}></progress>
+								<progress aria-label={t('downloads.col.progress')} max="100" value={percent(position / play.duration_ms)}></progress>
 							{/if}
 							<div class="stream-meta">
 								<span>{streamSummary(play)}</span>
-								{#if play.duration_ms > 0}<span class="muted">{duration(play.position_ms / 1000)} / {duration(play.duration_ms / 1000)}</span>{/if}
+								<span class="muted stream-clock">
+									<span data-testid="playback-position">{timecode(position)}</span>{#if play.duration_ms > 0}{` / ${timecode(play.duration_ms)}`}{/if}
+								</span>
 							</div>
 						</div>
 						{#if play.details}<div class="stream-details"><StreamDetails details={play.details} /></div>{/if}
@@ -284,12 +325,16 @@
 	.stream-heading { align-items: center; margin-bottom: var(--s-1); }
 	.stream { grid-template-columns: minmax(65px, 24%) minmax(0, 1fr); column-gap: var(--s-4); align-content: start; }
 	.stream-cover { --poster-ratio: 2 / 3; }
+	a.stream-cover { display: block; border-radius: 6px; }
+	a.stream-cover:hover { box-shadow: 0 0 0 2px var(--accent-text); }
 	.stream-body { display: grid; gap: var(--s-1); min-width: 0; min-height: 0; align-content: center; }
 	.stream-details { grid-column: 1 / -1; }
-	.version-link { color: var(--accent-text); font: var(--t-footnote); margin-inline-start: var(--s-1); }
+	.version-link { display: inline-flex; width: fit-content; align-items: center; gap: var(--s-1); color: var(--accent-text); font: var(--t-footnote); margin-inline-start: var(--s-1); text-decoration: underline; text-underline-offset: .2em; }
 	.stream-body .version-link { margin-inline-start: 0; }
 	.state { color: var(--accent-text); background: var(--surface-2); border-radius: var(--r-panel); padding: var(--s-1) var(--s-2); }
 	.state, .stream-meta, .metric span { font: var(--t-footnote); }
+	.stream-meta { flex-wrap: wrap; }
+	.stream-clock { white-space: nowrap; font-variant-numeric: tabular-nums; }
 	.metric b { font: var(--t-title2); }
 	.history-title { margin-top: var(--s-4); display: flex; gap: var(--s-2); align-items: center; justify-content: space-between; flex-wrap: wrap; }
 	.rankings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: var(--s-3); }
