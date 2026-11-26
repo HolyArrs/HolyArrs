@@ -89,6 +89,48 @@ func TestPluginActsOnlyForLinkedPeople(t *testing.T) {
 	if resp, body := call(t, c, "GET", srv.URL+"/api/v1/my/plugin-links", "", nil); resp.StatusCode != 200 || !strings.Contains(body, `"external":"discord:42"`) {
 		t.Errorf("my links: %d %s", resp.StatusCode, body)
 	}
+	// The plugin reads its own links, and only its own.
+	links := func(tok string) (int, string) {
+		resp, body := call(t, http.DefaultClient, "GET", srv.URL+"/api/v1/plugin-hooks/links", "", map[string]string{"Authorization": "Bearer " + tok})
+		return resp.StatusCode, body
+	}
+	if code, body := links(tok); code != 200 || !strings.Contains(body, `"user_id":1`) || !strings.Contains(body, `"external":"discord:42"`) {
+		t.Errorf("plugin links: %d %s", code, body)
+	}
+	other := IssuePluginToken("other", []string{"requests.users.read"})
+	t.Cleanup(func() { RevokePluginToken("other") })
+	if code, body := links(other); code != 200 || !strings.Contains(body, `"links":[]`) {
+		t.Errorf("another plugin sees these links: %d %s", code, body)
+	}
+	noScope := IssuePluginToken("plain", []string{"library.read"})
+	t.Cleanup(func() { RevokePluginToken("plain") })
+	if code, _ := links(noScope); code != 403 {
+		t.Errorf("links without requests.users.read: %d", code)
+	}
+	if resp, _ := call(t, c, "GET", srv.URL+"/api/v1/plugin-hooks/links", "", nil); resp.StatusCode != 403 {
+		t.Errorf("a person read a plugin's links: %d", resp.StatusCode)
+	}
+	// Another plugin cannot remove the link; a bad id is refused.
+	call(t, http.DefaultClient, "DELETE", srv.URL+"/api/v1/plugin-hooks/links/1", "", map[string]string{"Authorization": "Bearer " + other})
+	if code, body := links(tok); !strings.Contains(body, `"user_id":1`) {
+		t.Errorf("another plugin removed the link: %d %s", code, body)
+	}
+	if resp, _ := call(t, http.DefaultClient, "DELETE", srv.URL+"/api/v1/plugin-hooks/links/x", "", asPlugin); resp.StatusCode != 400 {
+		t.Errorf("bad user id: %d", resp.StatusCode)
+	}
+	// The plugin removes its own link: it can no longer act for the person.
+	if resp, body := call(t, http.DefaultClient, "DELETE", srv.URL+"/api/v1/plugin-hooks/links/1", "", asPlugin); resp.StatusCode != 200 || !strings.Contains(body, `"links":[]`) {
+		t.Errorf("plugin unlink: %d %s", resp.StatusCode, body)
+	}
+	if resp, _ := call(t, http.DefaultClient, "POST", srv.URL+"/api/v1/asks", `{}`, with(asPlugin, PluginForUserHeader, "1")); resp.StatusCode != 403 {
+		t.Errorf("after the plugin unlinked: %d", resp.StatusCode)
+	}
+	// Link again for the person's own unlink below.
+	resp, body = call(t, http.DefaultClient, "POST", srv.URL+"/api/v1/plugin-hooks/link", `{"external":"discord:42"}`, asPlugin)
+	_ = json.Unmarshal([]byte(body), &got)
+	if resp, body := call(t, c, "POST", srv.URL+"/api/v1/my/plugin-links", `{"code":"`+got.Code+`"}`, map[string]string{CSRFHeader: csrf}); resp.StatusCode != 200 {
+		t.Fatalf("owner links again: %d %s", resp.StatusCode, body)
+	}
 	// Unlinking ends it at once.
 	call(t, c, "DELETE", srv.URL+"/api/v1/my/plugin-links/bot", "", map[string]string{CSRFHeader: csrf})
 	if resp, _ := call(t, http.DefaultClient, "POST", srv.URL+"/api/v1/asks", `{}`, with(asPlugin, PluginForUserHeader, "1")); resp.StatusCode != 403 {
