@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Godkjenne eller avslå forespørsler",
 	"settings.users.permLibrary": "Styre Biblioteket",
 	"settings.users.permSettings": "Endre innstillinger",
+	"settings.users.permSaveFiles": "Lagre filer på egen enhet",
 	"settings.users.owner": "Eier",
 	"settings.users.admin": "Admin",
 	"settings.users.member": "Medlem",

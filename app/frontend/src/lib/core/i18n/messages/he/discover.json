@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "מחפש את פרק {episode}",
 	"discover.titleLibrary.versions": "גרסאות",
 	"discover.titleLibrary.file": "קובץ",
+	"discover.titleLibrary.saveToDevice": "שמירה במכשיר",
 	"discover.titleLibrary.removeLabel": "הסרת {label}",
 	"discover.titleLibrary.showLess": "הצגת פחות",
 	"discover.titleLibrary.showAll": "הצגת כל {n}",

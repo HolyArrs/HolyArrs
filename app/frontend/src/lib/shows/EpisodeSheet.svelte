@@ -5,7 +5,7 @@
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
-	import { qualityBadges } from '#lib/mediafiles/index.ts';
+	import { qualityBadges, saveHref } from '#lib/mediafiles/index.ts';
 	import { SubtitlePanel } from '#lib/subtitles/index.ts';
 	import type { TitleSubtitles } from '#lib/subtitles/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, FilePoints } from '#lib/downloads/index.ts';
@@ -74,6 +74,8 @@
 	]);
 	const slot = $derived(ep?.slots[0]);
 	const file = $derived(slot?.file ?? null);
+	// Shown only to someone who may save files; the server checks again.
+	const save = $derived(saveHref(titleId, file?.ID as number | undefined));
 	// Collapses the many slot states into the four the sheet styles.
 	const tone = $derived.by(() => {
 		const st = slot?.state ?? '';
@@ -204,6 +206,7 @@
 					{/if}
 					{#if manage && slot}<FilePoints {titleId} slotId={slot.id} />{/if}
 					<p class="es-name" title={fileFacts.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{fileFacts.name}</span></p>
+					{#if save}<p><a class="es-btn" href={save} download data-testid="episode-save"><Icon name="download" size={15} />{t('shows.sheet.saveToDevice')}</a></p>{/if}
 				</article>
 			{/if}
 
@@ -279,6 +282,7 @@
 	.es-status.failed { background: color-mix(in srgb, var(--fail) 10%, var(--surface-2)); }
 	.es-btn { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--text); font: 600 13px/1 var(--font-ui); cursor: pointer; white-space: nowrap; }
 	.es-btn.primary { background: var(--text); color: var(--bg); }
+	a.es-btn { text-decoration: none; }
 	.es-h { margin: 4px 0 -4px; font: 700 17px/1.2 var(--font-ui); }
 	.es-file { display: grid; gap: 8px; padding: 14px 16px; border-radius: 14px; background: var(--surface-2); }
 	.es-file p { margin: 0; }

@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "Mangler",
 	"shows.sheet.lookForIt": "Led efter den",
 	"shows.sheet.file": "Fil",
+	"shows.sheet.saveToDevice": "Gem på enhed",
+	"shows.page.saveToDevice": "Gem på enhed",
 	"shows.sheet.quality": "Kvalitet",
 	"shows.sheet.size": "Størrelse",
 	"shows.sheet.added": "Tilføjet",

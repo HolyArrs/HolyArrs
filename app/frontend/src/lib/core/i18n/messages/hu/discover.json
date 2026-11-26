@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "A(z) {episode}. epizód keresése",
 	"discover.titleLibrary.versions": "Változatok",
 	"discover.titleLibrary.file": "Fájl",
+	"discover.titleLibrary.saveToDevice": "Mentés az eszközre",
 	"discover.titleLibrary.removeLabel": "{label} eltávolítása",
 	"discover.titleLibrary.showLess": "Kevesebb",
 	"discover.titleLibrary.showAll": "Mind a(z) {n} megjelenítése",

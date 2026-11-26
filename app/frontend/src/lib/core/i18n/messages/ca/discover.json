@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Cercant l'episodi {episode}",
 	"discover.titleLibrary.versions": "Versions",
 	"discover.titleLibrary.file": "Fitxer",
+	"discover.titleLibrary.saveToDevice": "Desa al dispositiu",
 	"discover.titleLibrary.removeLabel": "Elimina {label}",
 	"discover.titleLibrary.showLess": "Mostra'n menys",
 	"discover.titleLibrary.showAll": "Mostra-les totes ({n})",

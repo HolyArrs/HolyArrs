@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "جارٍ البحث عن الحلقة {episode}",
 	"discover.titleLibrary.versions": "النسخ",
 	"discover.titleLibrary.file": "الملف",
+	"discover.titleLibrary.saveToDevice": "حفظ على الجهاز",
 	"discover.titleLibrary.removeLabel": "إزالة {label}",
 	"discover.titleLibrary.showLess": "عرض أقل",
 	"discover.titleLibrary.showAll": "عرض الكل ({n})",

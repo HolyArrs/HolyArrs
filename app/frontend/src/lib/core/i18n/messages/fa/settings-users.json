@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "تأیید یا رد درخواست‌ها",
 	"settings.users.permLibrary": "مدیریت کتابخانه",
 	"settings.users.permSettings": "تغییر تنظیمات",
+	"settings.users.permSaveFiles": "ذخیره فایل‌ها روی دستگاه خود",
 	"settings.users.owner": "مالک",
 	"settings.users.admin": "مدیر",
 	"settings.users.member": "عضو",

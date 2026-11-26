@@ -78,7 +78,7 @@ export const historyTabs: HistoryTab[] = [
 			{ key: 'subtitles', get label() { return say('downloads.ht.changes.subtitles.label'); }, get hint() { return say('downloads.ht.changes.subtitles.hint'); }, kinds: ['subtitle_*'] },
 			{ key: 'asks', get label() { return say('downloads.ht.changes.asks.label'); }, get hint() { return say('downloads.ht.changes.asks.hint'); }, kinds: ['ask_*', 'ai_ask_*'] },
 			{ key: 'reports', get label() { return say('downloads.ht.changes.reports.label'); }, get hint() { return say('downloads.ht.changes.reports.hint'); }, kinds: ['report_*'] },
-			{ key: 'system', get label() { return say('downloads.ht.changes.system.label'); }, get hint() { return say('downloads.ht.changes.system.hint'); }, kinds: ['sign*', 'api_key_*', 'settings_changed', 'secrets_imported', 'account_changed', 'backup_used', 'health_recovered'] }
+			{ key: 'system', get label() { return say('downloads.ht.changes.system.label'); }, get hint() { return say('downloads.ht.changes.system.hint'); }, kinds: ['sign*', 'api_key_*', 'settings_changed', 'secrets_imported', 'account_changed', 'backup_used', 'file_saved', 'health_recovered'] }
 		]
 	},
 	{

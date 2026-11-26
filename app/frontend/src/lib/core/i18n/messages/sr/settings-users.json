@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Одобрава или одбија захтеве",
 	"settings.users.permLibrary": "Води Библиотеку",
 	"settings.users.permSettings": "Мења подешавања",
+	"settings.users.permSaveFiles": "Чување датотека на свом уређају",
 	"settings.users.owner": "Власник",
 	"settings.users.admin": "Администратор",
 	"settings.users.member": "Члан",

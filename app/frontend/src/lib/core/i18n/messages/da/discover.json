@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Søger efter episode {episode}",
 	"discover.titleLibrary.versions": "Versioner",
 	"discover.titleLibrary.file": "Fil",
+	"discover.titleLibrary.saveToDevice": "Gem på enhed",
 	"discover.titleLibrary.removeLabel": "Fjern {label}",
 	"discover.titleLibrary.showLess": "Vis færre",
 	"discover.titleLibrary.showAll": "Vis alle {n}",

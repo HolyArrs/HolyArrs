@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "Не хватает",
 	"shows.sheet.lookForIt": "Искать",
 	"shows.sheet.file": "Файл",
+	"shows.sheet.saveToDevice": "Сохранить на устройство",
+	"shows.page.saveToDevice": "Сохранить на устройство",
 	"shows.sheet.quality": "Качество",
 	"shows.sheet.size": "Размер",
 	"shows.sheet.added": "Добавлено",

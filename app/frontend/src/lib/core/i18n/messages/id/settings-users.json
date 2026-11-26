@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Menyetujui atau menolak permintaan",
 	"settings.users.permLibrary": "Mengelola Pustaka",
 	"settings.users.permSettings": "Mengubah pengaturan",
+	"settings.users.permSaveFiles": "Menyimpan file ke perangkat mereka",
 	"settings.users.owner": "Pemilik",
 	"settings.users.admin": "Admin",
 	"settings.users.member": "Anggota",

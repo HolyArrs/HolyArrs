@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Hyväksyä tai hylätä pyyntöjä",
 	"settings.users.permLibrary": "Hallita kirjastoa",
 	"settings.users.permSettings": "Muuttaa asetuksia",
+	"settings.users.permSaveFiles": "Tallentaa tiedostoja omalle laitteelleen",
 	"settings.users.owner": "Omistaja",
 	"settings.users.admin": "Ylläpitäjä",
 	"settings.users.member": "Jäsen",

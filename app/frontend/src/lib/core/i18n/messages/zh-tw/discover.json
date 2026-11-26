@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "正在搜尋第 {episode} 集",
 	"discover.titleLibrary.versions": "版本",
 	"discover.titleLibrary.file": "檔案",
+	"discover.titleLibrary.saveToDevice": "儲存到裝置",
 	"discover.titleLibrary.removeLabel": "移除 {label}",
 	"discover.titleLibrary.showLess": "收起",
 	"discover.titleLibrary.showAll": "顯示全部 {n} 個",

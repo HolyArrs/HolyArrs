@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Kiita taotlusi heaks või lükata tagasi",
 	"settings.users.permLibrary": "Hallata meediakogu",
 	"settings.users.permSettings": "Muuta seadeid",
+	"settings.users.permSaveFiles": "Failide salvestamine oma seadmesse",
 	"settings.users.owner": "Omanik",
 	"settings.users.admin": "Administraator",
 	"settings.users.member": "Liige",

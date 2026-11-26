@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "אישור או דחייה של בקשות",
 	"settings.users.permLibrary": "ניהול הספרייה",
 	"settings.users.permSettings": "שינוי הגדרות",
+	"settings.users.permSaveFiles": "שמירת קבצים במכשיר שלהם",
 	"settings.users.owner": "בעלים",
 	"settings.users.admin": "מנהל",
 	"settings.users.member": "חבר",

@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Szukanie odcinka {episode}",
 	"discover.titleLibrary.versions": "Odmiany",
 	"discover.titleLibrary.file": "Plik",
+	"discover.titleLibrary.saveToDevice": "Zapisz na urządzeniu",
 	"discover.titleLibrary.removeLabel": "Usuń: {label}",
 	"discover.titleLibrary.showLess": "Pokaż mniej",
 	"discover.titleLibrary.showAll": "Pokaż wszystkie ({n})",

@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Se caută episodul {episode}",
 	"discover.titleLibrary.versions": "Versiuni",
 	"discover.titleLibrary.file": "Fișier",
+	"discover.titleLibrary.saveToDevice": "Salvează pe dispozitiv",
 	"discover.titleLibrary.removeLabel": "Elimină {label}",
 	"discover.titleLibrary.showLess": "Arată mai puține",
 	"discover.titleLibrary.showAll": "Arată toate cele {n}",

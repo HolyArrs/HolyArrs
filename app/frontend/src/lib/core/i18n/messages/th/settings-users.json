@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "อนุมัติหรือปฏิเสธคำขอ",
 	"settings.users.permLibrary": "ดูแลไลบรารี",
 	"settings.users.permSettings": "เปลี่ยนการตั้งค่า",
+	"settings.users.permSaveFiles": "บันทึกไฟล์ลงอุปกรณ์ของตนเอง",
 	"settings.users.owner": "เจ้าของ",
 	"settings.users.admin": "ผู้ดูแล",
 	"settings.users.member": "สมาชิก",

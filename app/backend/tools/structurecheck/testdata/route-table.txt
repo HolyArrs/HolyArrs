@@ -294,6 +294,7 @@ GET /api/v1/titles/{id}/albums auth=signed_in scope=read assurance=false part=mu
 GET /api/v1/titles/{id}/copies auth=manage_library scope=read assurance=false part=title
 GET /api/v1/titles/{id}/episode-groups auth=manage_library scope=read assurance=false part=shows
 GET /api/v1/titles/{id}/episodes auth=signed_in scope=read assurance=false part=shows
+GET /api/v1/titles/{id}/files/{fid}/save auth=save_files scope=read assurance=false part=title
 GET /api/v1/titles/{id}/follow auth=signed_in scope=read assurance=false part=wishlist
 GET /api/v1/titles/{id}/leftovers auth=manage_library scope=read assurance=false part=title
 GET /api/v1/titles/{id}/people auth=signed_in scope=read assurance=false part=title

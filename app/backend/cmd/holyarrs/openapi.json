@@ -33527,6 +33527,47 @@
         "x-holyarrs-scope": "write"
       }
     },
+    "/api/v1/titles/{id}/files/{fid}/save": {
+      "get": {
+        "description": "Sends one Library file as it is (no conversion) as an attachment named after the file, with range requests (Range, If-Range) so a broken save can resume; HEAD works too. Needs the save_files permission, which only the owner has until the owner gives it; a Kid account never has it. Only the main file of a Version of that title, present on disk inside its Library folder, is sent; a subtitle or other side file, a missing file, a folder, a link out of the Library folder or a file of another title answers 404. Plugins can't use it. Each save that starts from the first byte writes a file_saved Event (title and file ids).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "fid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file."
+          },
+          "206": {
+            "description": "The asked range of the file."
+          },
+          "403": {
+            "description": "No save_files permission, or the key's scope does not cover it."
+          },
+          "404": {
+            "description": "No such title or file, or not one that can be saved."
+          }
+        },
+        "summary": "Save a file to your device",
+        "x-holyarrs-part": "title",
+        "x-holyarrs-permission": "save_files",
+        "x-holyarrs-scope": "read"
+      }
+    },
     "/api/v1/titles/{id}/follow": {
       "delete": {
         "description": "No more new-episode or new-album notices for this title.",

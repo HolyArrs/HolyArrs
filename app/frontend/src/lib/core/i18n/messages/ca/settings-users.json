@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Aprovar o descartar sol·licituds",
 	"settings.users.permLibrary": "Gestionar la Biblioteca",
 	"settings.users.permSettings": "Canviar la configuració",
+	"settings.users.permSaveFiles": "Desar fitxers al seu dispositiu",
 	"settings.users.owner": "Propietari",
 	"settings.users.admin": "Administrador",
 	"settings.users.member": "Membre",

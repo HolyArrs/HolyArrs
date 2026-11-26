@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Otsin episoodi {episode}",
 	"discover.titleLibrary.versions": "Versioonid",
 	"discover.titleLibrary.file": "Fail",
+	"discover.titleLibrary.saveToDevice": "Salvesta seadmesse",
 	"discover.titleLibrary.removeLabel": "Eemalda {label}",
 	"discover.titleLibrary.showLess": "Näita vähem",
 	"discover.titleLibrary.showAll": "Näita kõiki {n}",

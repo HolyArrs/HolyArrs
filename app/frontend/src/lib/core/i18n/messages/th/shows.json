@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "ขาด",
 	"shows.sheet.lookForIt": "หาเลย",
 	"shows.sheet.file": "ไฟล์",
+	"shows.sheet.saveToDevice": "บันทึกลงอุปกรณ์",
+	"shows.page.saveToDevice": "บันทึกลงอุปกรณ์",
 	"shows.sheet.quality": "คุณภาพ",
 	"shows.sheet.size": "ขนาด",
 	"shows.sheet.added": "เพิ่มเมื่อ",

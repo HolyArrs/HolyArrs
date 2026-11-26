@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "核准或拒絕請求",
 	"settings.users.permLibrary": "管理媒體庫",
 	"settings.users.permSettings": "更改設定",
+	"settings.users.permSaveFiles": "將檔案儲存到自己的裝置",
 	"settings.users.owner": "擁有者",
 	"settings.users.admin": "管理員",
 	"settings.users.member": "成員",

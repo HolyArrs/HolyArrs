@@ -25,6 +25,9 @@ const (
 	PermApprove          Perm = "approve"        // approve or turn down other people's asks
 	PermManageLibrary    Perm = "manage_library" // add, edit, search and download titles
 	PermSettings         Perm = "settings"       // change settings
+	// PermSaveFiles: save a Library file to their own device. Nobody but the
+	// owner has it until the owner gives it, and a Kid never does.
+	PermSaveFiles Perm = "save_files"
 )
 
 // Needs a route can declare besides the permissions above.
@@ -41,7 +44,7 @@ const (
 )
 
 // AllPerms lists the permissions in the order screens show them.
-var AllPerms = []Perm{PermAsk, PermAutoApprove, PermAutoApproveFourK, PermApprove, PermManageLibrary, PermSettings}
+var AllPerms = []Perm{PermAsk, PermAutoApprove, PermAutoApproveFourK, PermApprove, PermManageLibrary, PermSettings, PermSaveFiles}
 
 // Authenticator turns a request into its Caller. Accounts implements it, so
 // no module has to import accounts to ask who is calling.
@@ -71,6 +74,8 @@ func (c Caller) Has(p Perm) bool {
 		return c.Role == RoleAdmin
 	case p == NeedOwner:
 		return false
+	case p == PermSaveFiles && c.MaxRating != "":
+		return false // a Kid never takes files out
 	}
 	return slices.Contains(c.Perms, p)
 }

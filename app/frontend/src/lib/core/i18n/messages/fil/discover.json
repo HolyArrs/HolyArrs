@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Naghahanap ng episode {episode}",
 	"discover.titleLibrary.versions": "Mga Bersyon",
 	"discover.titleLibrary.file": "File",
+	"discover.titleLibrary.saveToDevice": "I-save sa device",
 	"discover.titleLibrary.removeLabel": "Alisin ang {label}",
 	"discover.titleLibrary.showLess": "Ipakita nang mas kaunti",
 	"discover.titleLibrary.showAll": "Ipakita lahat ng {n}",

@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Zoeken naar aflevering {episode}",
 	"discover.titleLibrary.versions": "Varianten",
 	"discover.titleLibrary.file": "Bestand",
+	"discover.titleLibrary.saveToDevice": "Opslaan op apparaat",
 	"discover.titleLibrary.removeLabel": "{label} verwijderen",
 	"discover.titleLibrary.showLess": "Minder tonen",
 	"discover.titleLibrary.showAll": "Alle {n} tonen",

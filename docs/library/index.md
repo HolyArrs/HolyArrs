@@ -15,6 +15,7 @@ Set up the folders, subtitles, audio and media server links that decide how your
 | [Subtitle scoring](subtitle-scoring.md) | How HolyArrs rates a subtitle before it keeps it |
 | [Audio versions](audio-versions.md) | Keep a second language track and match it to your preference |
 | [Protected copies](protected-copies.md) | Keep a file safe from replacement |
+| [Save to device](save-to-device.md) | Save a movie or episode file to the device you are using |
 | [Codecs and inspection](codecs-inspection.md) | What HolyArrs reads from each file |
 | [Media servers](media-servers.md) | Link Jellyfin, Plex or Emby and map paths between containers |
 | [Metadata](metadata.md) | Where names, dates and posters come from, and what your install sends |

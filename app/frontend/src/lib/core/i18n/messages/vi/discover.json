@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Đang tìm tập {episode}",
 	"discover.titleLibrary.versions": "Các Phiên bản",
 	"discover.titleLibrary.file": "Tệp",
+	"discover.titleLibrary.saveToDevice": "Lưu vào thiết bị",
 	"discover.titleLibrary.removeLabel": "Xóa {label}",
 	"discover.titleLibrary.showLess": "Thu gọn",
 	"discover.titleLibrary.showAll": "Hiện cả {n}",

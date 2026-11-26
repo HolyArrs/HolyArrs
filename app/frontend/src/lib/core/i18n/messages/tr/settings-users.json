@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "İstekleri onayla ya da reddet",
 	"settings.users.permLibrary": "Kütüphaneyi yönet",
 	"settings.users.permSettings": "Ayarları değiştir",
+	"settings.users.permSaveFiles": "Dosyaları kendi cihazına kaydetme",
 	"settings.users.owner": "Sahip",
 	"settings.users.admin": "Yönetici",
 	"settings.users.member": "Üye",

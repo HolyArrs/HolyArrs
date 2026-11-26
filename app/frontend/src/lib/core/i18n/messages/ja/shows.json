@@ -115,6 +115,8 @@
 "shows.sheet.missing": "不足",
 "shows.sheet.lookForIt": "探す",
 "shows.sheet.file": "ファイル",
+"shows.sheet.saveToDevice": "デバイスに保存",
+"shows.page.saveToDevice": "デバイスに保存",
 "shows.sheet.quality": "品質",
 "shows.sheet.size": "サイズ",
 "shows.sheet.added": "追加日",

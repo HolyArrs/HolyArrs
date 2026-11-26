@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "第 {episode} 話を検索中",
 	"discover.titleLibrary.versions": "バージョン",
 	"discover.titleLibrary.file": "ファイル",
+	"discover.titleLibrary.saveToDevice": "デバイスに保存",
 	"discover.titleLibrary.removeLabel": "{label} を削除",
 	"discover.titleLibrary.showLess": "表示を減らす",
 	"discover.titleLibrary.showAll": "{n} 件すべてを表示",

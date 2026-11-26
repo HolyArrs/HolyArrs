@@ -174,6 +174,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/titles/{id}/people":                    ByTitle,
 	"PUT /api/v1/titles/{id}/files/{fid}/choices":       ByTitle,
 	"POST /api/v1/titles/{id}/files/{fid}/keep-and-add": ByTitle,
+	"GET /api/v1/titles/{id}/files/{fid}/save":          ByTitle,
 	"PUT /api/v1/downloads/{id}/edition":                Media,
 	"GET /api/v1/collections":                           movies,
 	"GET /api/v1/collections/{id}":                      movies,

@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Ieškoma {episode} epizodo",
 	"discover.titleLibrary.versions": "Versijos",
 	"discover.titleLibrary.file": "Failas",
+	"discover.titleLibrary.saveToDevice": "Įrašyti į įrenginį",
 	"discover.titleLibrary.removeLabel": "Pašalinti: {label}",
 	"discover.titleLibrary.showLess": "Rodyti mažiau",
 	"discover.titleLibrary.showAll": "Rodyti visus ({n})",

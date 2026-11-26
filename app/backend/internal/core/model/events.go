@@ -74,6 +74,10 @@ const (
 // action, target and via (session or api_key).
 const EventControl = "control_used"
 
+// EventFileSaved is a Library file someone saved to their own device. Data
+// holds title_id and file_id only; it is on the audit trail.
+const EventFileSaved = "file_saved"
+
 // Event kinds for shows.
 const (
 	EventEpisodesChanged = "episodes_changed"       // a refresh added, changed or dropped seasons or episodes

@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Одобрять или отклонять запросы",
 	"settings.users.permLibrary": "Управлять Медиатекой",
 	"settings.users.permSettings": "Менять настройки",
+	"settings.users.permSaveFiles": "Сохранять файлы на своё устройство",
 	"settings.users.owner": "Владелец",
 	"settings.users.admin": "Администратор",
 	"settings.users.member": "Участник",

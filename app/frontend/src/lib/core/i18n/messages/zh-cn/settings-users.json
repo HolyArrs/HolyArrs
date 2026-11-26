@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "批准或拒绝请求",
 	"settings.users.permLibrary": "管理媒体库",
 	"settings.users.permSettings": "更改设置",
+	"settings.users.permSaveFiles": "将文件保存到自己的设备",
 	"settings.users.owner": "所有者",
 	"settings.users.admin": "管理员",
 	"settings.users.member": "成员",

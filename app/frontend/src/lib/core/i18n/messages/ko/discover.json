@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "에피소드 {episode} 검색 중",
 	"discover.titleLibrary.versions": "버전",
 	"discover.titleLibrary.file": "파일",
+	"discover.titleLibrary.saveToDevice": "기기에 저장",
 	"discover.titleLibrary.removeLabel": "{label} 제거",
 	"discover.titleLibrary.showLess": "간략히 보기",
 	"discover.titleLibrary.showAll": "{n}개 모두 보기",

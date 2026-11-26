@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Meklē {episode}. epizodi",
 	"discover.titleLibrary.versions": "Versijas",
 	"discover.titleLibrary.file": "Fails",
+	"discover.titleLibrary.saveToDevice": "Saglabāt ierīcē",
 	"discover.titleLibrary.removeLabel": "Noņemt {label}",
 	"discover.titleLibrary.showLess": "Rādīt mazāk",
 	"discover.titleLibrary.showAll": "Rādīt visas {n}",

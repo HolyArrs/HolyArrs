@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "در حال جستجوی قسمت {episode}",
 	"discover.titleLibrary.versions": "نسخه‌ها",
 	"discover.titleLibrary.file": "فایل",
+	"discover.titleLibrary.saveToDevice": "ذخیره در دستگاه",
 	"discover.titleLibrary.removeLabel": "حذف {label}",
 	"discover.titleLibrary.showLess": "نمایش کمتر",
 	"discover.titleLibrary.showAll": "نمایش همه {n} مورد",

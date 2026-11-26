@@ -115,6 +115,8 @@
 	"shows.sheet.missing": "Eksik",
 	"shows.sheet.lookForIt": "Ara",
 	"shows.sheet.file": "Dosya",
+	"shows.sheet.saveToDevice": "Cihaza kaydet",
+	"shows.page.saveToDevice": "Cihaza kaydet",
 	"shows.sheet.quality": "Kalite",
 	"shows.sheet.size": "Boyut",
 	"shows.sheet.added": "Eklendi",

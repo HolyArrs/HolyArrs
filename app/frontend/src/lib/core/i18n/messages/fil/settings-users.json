@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Mag-apruba o tumanggi ng mga request",
 	"settings.users.permLibrary": "Patakbuhin ang Library",
 	"settings.users.permSettings": "Magbago ng mga setting",
+	"settings.users.permSaveFiles": "Mag-save ng mga file sa kanilang device",
 	"settings.users.owner": "Owner",
 	"settings.users.admin": "Admin",
 	"settings.users.member": "Member",

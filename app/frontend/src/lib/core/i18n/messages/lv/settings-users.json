@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Apstiprināt vai noraidīt pieprasījumus",
 	"settings.users.permLibrary": "Pārvaldīt Bibliotēku",
 	"settings.users.permSettings": "Mainīt iestatījumus",
+	"settings.users.permSaveFiles": "Saglabāt failus savā ierīcē",
 	"settings.users.owner": "Īpašnieks",
 	"settings.users.admin": "Admins",
 	"settings.users.member": "Dalībnieks",

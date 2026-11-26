@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Έγκριση ή απόρριψη αιτημάτων",
 	"settings.users.permLibrary": "Διαχείριση της Βιβλιοθήκης",
 	"settings.users.permSettings": "Αλλαγή ρυθμίσεων",
+	"settings.users.permSaveFiles": "Αποθήκευση αρχείων στη συσκευή τους",
 	"settings.users.owner": "Ιδιοκτήτης",
 	"settings.users.admin": "Διαχειριστής",
 	"settings.users.member": "Μέλος",

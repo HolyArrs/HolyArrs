@@ -10,7 +10,7 @@
 	import { addedOn, airWords, epFile, fileLangs as langs, pathEnd, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
 	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, chosenWhy, type SheetEpisode } from '#lib/shows/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone, FilePoints } from '#lib/downloads/index.ts';
-	import { leftInDownloader, qualityBadges, ShowDeleteDialog, standInFolder, splitSteps, TitleHeldCopies, type RenameStep } from '#lib/mediafiles/index.ts';
+	import { leftInDownloader, qualityBadges, saveHref, ShowDeleteDialog, standInFolder, splitSteps, TitleHeldCopies, type RenameStep } from '#lib/mediafiles/index.ts';
 	import { copyBadges, MovieVersions } from '#lib/movies/index.ts';
 	import { SubtitlePanel, type TitleSubtitles } from '#lib/subtitles/index.ts';
 	import { goto } from '$app/navigation';
@@ -311,7 +311,7 @@
 		const f = x.file as Record<string, any>;
 		const m = (f?.MediaInfo ?? {}) as Record<string, any>;
 		const name = String(f?.RelativePath ?? '').split(/[\\/]/).pop() ?? '';
-		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, versionId: x.version_id, has: !!x.file, left: leftInDownloader(x), state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: copyBadges(qualityBadges([f]), m.edition ? String(m.edition) : '', f?.Protected ? t('mediafiles.copy.protectedBadge') : ''), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
+		return { res: String(m.resolution ?? (f?.Quality?.resolution ? `${f.Quality.resolution}p` : '')), addedOn: addedOn(f?.AddedAt), id: x.id, save: saveHref(owned?.id, f?.ID), versionId: x.version_id, has: !!x.file, left: leftInDownloader(x), state: x.state_label, label: x.version && x.version !== 'Main' ? x.version : t('discover.titleLibrary.mainCopy'), badges: copyBadges(qualityBadges([f]), m.edition ? String(m.edition) : '', f?.Protected ? t('mediafiles.copy.protectedBadge') : ''), codec: [m.video_codec, m.audio_codec].filter(Boolean).map((c) => String(c).toUpperCase()).join(' · '), size: f?.Size ? bytes(f.Size) : '', name, added: f?.AddedAt ? ago(f.AddedAt) : '', audio: langs(m.audio_languages), subs: langs(m.subtitle_languages ?? m.subtitles) };
 	}));
 
 	let libAll = $state(false);
@@ -503,7 +503,7 @@
 							{#if f.audio.length || f.subs.length}
 								<p class="lib-langs">{#if f.audio.length}<span class="muted">{t('discover.titleLibrary.audio')}</span>{#each f.audio as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}{#if f.subs.length}<span class="muted">{t('discover.titleLibrary.subtitles')}</span>{#each f.subs as l (l)}<span class="lib-lang">{l}</span>{/each}{/if}</p>
 							{/if}
-							{#if f.name}<p class="lib-file-name" title={f.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{f.name}</span></p>{/if}
+							{#if f.name}<p class="lib-file-name" title={f.name}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg><span>{f.name}</span></p>{/if}{#if f.save}<p class="lib-acts"><a class="lib-btn sm" href={f.save} download data-testid="save-to-device"><Icon name="download" size={15} />{t('discover.titleLibrary.saveToDevice')}</a></p>{/if}
 						</article>
 					{:else}
 						<p class="muted">{t('discover.titleLibrary.noFileYet2')}</p>
@@ -739,7 +739,7 @@
 	.lib-tiles span { color: var(--text-muted); font: 500 11.5px/1.2 var(--font-ui); }
 	.lib-tiles b { font: 600 14px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-file-name svg { flex: none; width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
-	.lib-file-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.lib-file-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; } .lib-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 	.lib-file-name { display: flex !important; align-items: center; gap: 8px; margin-top: 2px !important; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--text) 8%, transparent); color: var(--text-muted); font: 500 12px/1.4 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-link { justify-self: start; margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent-text); font: 600 14px/1 var(--font-ui); cursor: pointer; }
 	.lib-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }

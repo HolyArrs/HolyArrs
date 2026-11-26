@@ -52,6 +52,7 @@ For a child with an age limit, see [Kid accounts](kids.md).
 | Approve or turn down requests | Decide other people's requests | Yes | No |
 | Run the Library | Search, organise and manage Library work | Yes | No |
 | Change settings | Open and change ordinary settings | No | No |
+| Save files to their device | Save a movie or episode file to the device they use. Never for a Kid. See [Save to device](../library/save-to-device.md) | No | No |
 
 Who can grant what:
 
@@ -123,4 +124,5 @@ Anyone can set one in **My account > Profile picture**: JPEG, PNG or WebP, up to
 
 - [Sign-in and passwords](sign-in.md)
 - [Kid accounts](kids.md)
+- [Save to device](../library/save-to-device.md)
 - [Sessions and passwords](sessions.md)

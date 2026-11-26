@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "Bölüm {episode} aranıyor",
 	"discover.titleLibrary.versions": "Versiyonlar",
 	"discover.titleLibrary.file": "Dosya",
+	"discover.titleLibrary.saveToDevice": "Cihaza kaydet",
 	"discover.titleLibrary.removeLabel": "{label} kaldır",
 	"discover.titleLibrary.showLess": "Daha az göster",
 	"discover.titleLibrary.showAll": "Tüm {n} tanesini göster",

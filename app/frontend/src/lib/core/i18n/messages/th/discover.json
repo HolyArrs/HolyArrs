@@ -534,6 +534,7 @@
 	"discover.titleLibrary.searchingEpisode": "กำลังค้นหาตอนที่ {episode}",
 	"discover.titleLibrary.versions": "เวอร์ชัน",
 	"discover.titleLibrary.file": "ไฟล์",
+	"discover.titleLibrary.saveToDevice": "บันทึกลงอุปกรณ์",
 	"discover.titleLibrary.removeLabel": "ลบ {label}",
 	"discover.titleLibrary.showLess": "แสดงน้อยลง",
 	"discover.titleLibrary.showAll": "แสดงทั้งหมด {n}",

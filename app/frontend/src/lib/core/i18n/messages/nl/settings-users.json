@@ -4,6 +4,7 @@
 	"settings.users.permApprove": "Aanvragen goedkeuren of weigeren",
 	"settings.users.permLibrary": "De Bibliotheek beheren",
 	"settings.users.permSettings": "Instellingen wijzigen",
+	"settings.users.permSaveFiles": "Bestanden op hun apparaat opslaan",
 	"settings.users.owner": "Eigenaar",
 	"settings.users.admin": "Beheerder",
 	"settings.users.member": "Lid",
