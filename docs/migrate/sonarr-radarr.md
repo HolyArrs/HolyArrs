@@ -29,7 +29,7 @@ Old apps often run in other containers and see folders under other names. A rule
 | From Sonarr or Radarr | In HolyArrs |
 | --- | --- |
 | Library folders | Library folders for movies and shows. |
-| Movies and shows | Titles, matched by TMDB or TVDB id. Folders and files stay where they are. A watched title gets **Keep up to date**; seasons that were not watched stay off. Nothing is searched for during the move. |
+| Movies and shows | Titles, matched by TMDB or TVDB id. Folders and files stay where they are. Each file keeps the quality, release name and release group the old app recorded for it, and Pick rules score the file with them. A watched title gets **Keep up to date**; seasons that were not watched stay off. Nothing is searched for during the move. |
 | Quality profiles | Each one matched to the closest **Pick rules** preset (Standard, 4K). The **Import** step shows why. Titles use the preset of their profile. |
 | Exclusions | The **Never-add** list. |
 | Blocklist | The **Turned down** list of each title that comes over, so those releases are never taken again. A show's release is turned down for the exact episodes Sonarr kept for it; when those can't be read, for the episodes its name gives (season and episode, anime number or air date). A name that gives no episode is listed as not moved instead of turning down the whole show. Each one is kept under the Source with the old indexer's name, or else the first Source of its protocol, so add or link your Sources first. |
