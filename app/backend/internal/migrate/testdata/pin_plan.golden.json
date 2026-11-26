@@ -213,7 +213,23 @@
                 "size": 7
               }
             ],
-            "app": "s"
+            "app": "s",
+            "four_k": {
+              "library": "s",
+              "folder": "s",
+              "pick_rules": "s",
+              "keep_up_to_date": true,
+              "qualities": {
+                "": ""
+              },
+              "releases": {
+                "": {}
+              },
+              "file": "s",
+              "unresolved": "s",
+              "from": "s"
+            },
+            "file": "s"
           },
           "never_add": {
             "kind": "s",
