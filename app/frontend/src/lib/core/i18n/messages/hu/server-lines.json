@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "hosszabb, mint amilyen egy HolyArrs-minta lehet",
 	"server.migrate.already-in-the-library-the-quality": "már a Könyvtárban van; {n} fájl minősége vagy kiadása frissült",
 	"server.migrate.imported-before-2": "korábban importálva{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "a mappája ({dir}) egy másik filmhez tartozik a Könyvtárban"
+	"server.migrate.its-folder-belongs-to-another-movie": "a mappája ({dir}) egy másik filmhez tartozik a Könyvtárban",
+	"server.accounts.new-people-can-start-only-with": "Az új emberek csak egy tag jogosultságaival kezdhetnek; a „Beállítások módosítása” jogot személyenként adja meg.",
+	"server.migrate.what-new-people-start-with-is": "hogy az új emberek mivel kezdenek, nem kerül át; válassza ki a Beállítások > Felhasználók és szerepkörök alatt"
 }

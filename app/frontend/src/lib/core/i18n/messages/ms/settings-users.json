@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Tidak dapat memadam",
 	"settings.users.confirmDeleteKeys": "Kunci Seerr yang dibuatnya berhenti berfungsi untuk semua orang sehingga kunci baharu dibuat.",
 	"settings.users.qualities": "Kualiti",
-	"settings.users.qualitiesHint": "Mereka hanya boleh pilih yang dihidupkan. Jika semua hidup, yang baharu turut ditawarkan."
+	"settings.users.qualitiesHint": "Mereka hanya boleh pilih yang dihidupkan. Jika semua hidup, yang baharu turut ditawarkan.",
+	"settings.users.newPeople": "Orang baharu bermula dengan",
+	"settings.users.newPeopleHint": "Untuk semua yang menyertai mulai sekarang: jemputan, Plex, Jellyfin, Emby dan log masuk tunggal. Yang sudah ada kekal dengan milik mereka.",
+	"settings.users.newPeopleSaved": "Disimpan untuk orang baharu"
 }

@@ -21,6 +21,14 @@ export const presets: Preset[] = [
 	{ id: 'kid', get label() { return t('accounts.preset.kid'); }, perms: ['ask'], maxRating: 'PG' }
 ];
 
+/** What the owner may have everyone who joins start with: a member's own permissions. Change settings is given person by person (the server holds the same list). */
+export const newPeopleChoices: readonly Perm[] = ['ask', 'auto_approve', 'auto_approve_four_k', 'approve', 'manage_library'];
+
+/** Whether two permission lists hold the same permissions, in any order. */
+export function samePerms(a: readonly Perm[], b: readonly Perm[]): boolean {
+	return a.length === b.length && a.every((p) => b.includes(p));
+}
+
 /** The presets this person may hand out: every permission must be grantable. */
 export function presetsFor(grantable: readonly Perm[]): Preset[] {
 	return presets.filter((p) => p.soon || p.perms.every((x) => grantable.includes(x)));

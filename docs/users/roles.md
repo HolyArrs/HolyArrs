@@ -11,7 +11,7 @@ Give each person in your home their own account with only the rights they need. 
 
 1. Open **Settings > Users and roles**.
 2. Choose **Member**. The owner can also choose **Admin**.
-3. Check the permissions. The role's defaults are already ticked.
+3. Check the permissions. For a member, what [new people start with](#what-new-people-start-with) is already ticked; for an admin, the admin defaults.
 4. Add a private note if you want to remember who the link is for.
 5. Pick how long the link lasts: 1 to 30 days, default 7.
 6. Select **Make an invite link** and copy it now. You should see the full link once; it works once.
@@ -45,7 +45,7 @@ For a child with an age limit, see [Kid accounts](kids.md).
 | Admin | Manages members and the Library, within its permissions |
 | Member | Usually asks for titles and sees their own requests |
 
-| Permission | What it allows | New admin | New member |
+| Permission | What it allows | New admin | New member (until you change it) |
 | --- | --- | --- | --- |
 | Request titles | Make requests | Yes | Yes |
 | Requests approved without waiting | Requests skip approval | Yes | No |
@@ -82,6 +82,20 @@ Each person does this for their own account.
 To make new backup codes or turn two-factor off, enter a current app code or an unused backup code. New codes replace the old ones.
 
 ## Choices
+
+### What new people start with
+
+The owner picks the permissions every new member starts with, for example so requests from people who sign in with Jellyfin are approved without waiting.
+
+1. Open **Settings > Users and roles**.
+2. Under **New people start with**, tick the permissions.
+3. Select **Save**.
+
+It counts for everyone who joins from then on: invite links, first sign-ins with Plex, Jellyfin, Emby or single sign-on, and people you bring over from Plex, Jellyfin or Emby. People already here keep what they have; change them one by one. Until you change it, new people start with **Request titles** only.
+
+- An invite keeps the permissions ticked on it when it was made.
+- A [Kid account](kids.md) gets only the ask permissions from the list.
+- **Change settings** cannot be picked here. Give it person by person.
 
 ### Require two-factor for admins
 

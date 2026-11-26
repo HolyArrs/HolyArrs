@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Nie udało się usunąć",
 	"settings.users.confirmDeleteKeys": "Klucze Seerr, które utworzył, przestają działać dla wszystkich, dopóki nie powstanie nowy.",
 	"settings.users.qualities": "Jakości",
-	"settings.users.qualitiesHint": "Mogą wybrać tylko włączone. Gdy włączone są wszystkie, nowe też są oferowane."
+	"settings.users.qualitiesHint": "Mogą wybrać tylko włączone. Gdy włączone są wszystkie, nowe też są oferowane.",
+	"settings.users.newPeople": "Nowe osoby zaczynają z",
+	"settings.users.newPeopleHint": "Dla każdego, kto dołączy od teraz: zaproszenia, Plex, Jellyfin, Emby i single sign-on. Osoby, które już są, zachowują swoje.",
+	"settings.users.newPeopleSaved": "Zapisano dla nowych osób"
 }

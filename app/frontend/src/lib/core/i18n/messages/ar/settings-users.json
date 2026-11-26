@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "تعذّر الحذف",
 	"settings.users.confirmDeleteKeys": "أي مفاتيح Seerr أنشأها تتوقف عن العمل للجميع حتى يُنشأ مفتاح جديد.",
 	"settings.users.qualities": "الجودات",
-	"settings.users.qualitiesHint": "يمكنهم اختيار المفعّل فقط. عند تفعيل الكل، تُعرض الجديدة أيضًا."
+	"settings.users.qualitiesHint": "يمكنهم اختيار المفعّل فقط. عند تفعيل الكل، تُعرض الجديدة أيضًا.",
+	"settings.users.newPeople": "يبدأ الأشخاص الجدد بـ",
+	"settings.users.newPeopleHint": "لكل من ينضم من الآن: الدعوات وPlex وJellyfin وEmby وتسجيل الدخول الموحّد. من هم هنا الآن يحتفظون بما لديهم.",
+	"settings.users.newPeopleSaved": "تم الحفظ للأشخاص الجدد"
 }

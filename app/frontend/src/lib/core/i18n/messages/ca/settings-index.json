@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Les teves pròpies claus",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart clau api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adreces per al teu tallafoc",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tallafoc amfitrions exteriors adreces llista de permesos"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tallafoc amfitrions exteriors adreces llista de permesos",
+	"settings.index.users.new-people-card.new-people-start-with.label": "La gent nova comença amb",
+	"settings.index.users.new-people-card.new-people-start-with.words": "permisos per defecte aprovació automàtica usuaris nous unir-se primer inici de sessió"
 }

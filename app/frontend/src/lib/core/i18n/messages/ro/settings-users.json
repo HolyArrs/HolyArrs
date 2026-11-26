@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Nu s-a putut șterge",
 	"settings.users.confirmDeleteKeys": "Cheile Seerr create de el nu mai funcționează pentru nimeni până nu se creează una nouă.",
 	"settings.users.qualities": "Calități",
-	"settings.users.qualitiesHint": "Pot alege doar pe cele pornite. Cu toate pornite, se oferă și cele noi."
+	"settings.users.qualitiesHint": "Pot alege doar pe cele pornite. Cu toate pornite, se oferă și cele noi.",
+	"settings.users.newPeople": "Oamenii noi încep cu",
+	"settings.users.newPeopleHint": "Pentru toți cei care se alătură de acum înainte: invitații, Plex, Jellyfin, Emby și autentificare unică. Cei care sunt deja aici își păstrează ale lor.",
+	"settings.users.newPeopleSaved": "Salvat pentru oamenii noi"
 }

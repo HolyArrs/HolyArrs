@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "As tuas próprias chaves",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart chave api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Endereços para a tua firewall",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall anfitriões exterior endereços lista de permissões"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall anfitriões exterior endereços lista de permissões",
+	"settings.index.users.new-people-card.new-people-start-with.label": "As pessoas novas começam com",
+	"settings.index.users.new-people-card.new-people-start-with.words": "permissões predefinidas aprovação automática utilizadores novos entrar primeiro início de sessão"
 }

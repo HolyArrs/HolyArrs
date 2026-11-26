@@ -104,7 +104,7 @@ func kidLimit(role, max, country string, perms []webserver.Perm, skipLocal bool)
 		// A Kid may only ask: any other permission would open routes
 		// (live events, downloads, history, jobs) the limit does not cover.
 		for _, p := range perms {
-			if p != webserver.PermAsk && p != webserver.PermAutoApprove && p != webserver.PermAutoApproveFourK {
+			if !kidMay(p) {
 				return "", "", errors.New("A Kid account can only ask for titles.")
 			}
 		}
@@ -143,7 +143,8 @@ func (a *Auth) listUsers(w http.ResponseWriter, r *http.Request) {
 		serverError(w, "users", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"users": out, "perms": webserver.AllPerms})
+	// new_people: what the invite form ticks for a new member.
+	writeJSON(w, http.StatusOK, map[string]any{"users": out, "perms": webserver.AllPerms, "new_people": newPeoplePerms(r.Context(), a.s.Read())})
 }
 
 // mayGrant checks the permissions an owner or admin hands out: an admin may

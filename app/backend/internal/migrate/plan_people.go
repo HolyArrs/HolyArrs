@@ -194,6 +194,11 @@ func (b *builder) people(s *Snapshot) {
 		if recognized[k] {
 			continue
 		}
+		if k == "default_permissions" {
+			// Left for the owner to pick: it decides what everyone who joins may do.
+			b.not(GroupPeople, b.from("settings", -1)+"."+k, k, "what new people start with is not imported; pick it under Settings > Users and roles")
+			continue
+		}
 		b.not(GroupPeople, b.from("settings", -1)+"."+k, k, "app-wide settings of the old app are not imported; set the Request defaults under Settings > Request rules")
 	}
 }

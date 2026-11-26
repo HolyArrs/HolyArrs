@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Ваши сопствени кључеви",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb токен tvdb pin mdblist fanart кључ api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Адресе за ваш заштитни зид",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "заштитни зид хостови спољне адресе листа дозвољених"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "заштитни зид хостови спољне адресе листа дозвољених",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Нови људи почињу са",
+	"settings.index.users.new-people-card.new-people-start-with.words": "подразумеване дозволе аутоматско одобравање нови корисници придруживање прва пријава"
 }

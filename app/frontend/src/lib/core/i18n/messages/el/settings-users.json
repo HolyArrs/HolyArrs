@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Δεν ήταν δυνατή η διαγραφή",
 	"settings.users.confirmDeleteKeys": "Τα κλειδιά Seerr που δημιούργησε σταματούν να λειτουργούν για όλους μέχρι να δημιουργηθεί νέο.",
 	"settings.users.qualities": "Ποιότητες",
-	"settings.users.qualitiesHint": "Μπορούν να διαλέξουν μόνο τις ενεργές. Με όλες ενεργές, προσφέρονται και οι νέες."
+	"settings.users.qualitiesHint": "Μπορούν να διαλέξουν μόνο τις ενεργές. Με όλες ενεργές, προσφέρονται και οι νέες.",
+	"settings.users.newPeople": "Τα νέα άτομα ξεκινούν με",
+	"settings.users.newPeopleHint": "Για όσους μπαίνουν από τώρα και πέρα: προσκλήσεις, Plex, Jellyfin, Emby και ενιαία σύνδεση. Όσοι είναι ήδη εδώ κρατούν τα δικά τους.",
+	"settings.users.newPeopleSaved": "Αποθηκεύτηκε για τα νέα άτομα"
 }

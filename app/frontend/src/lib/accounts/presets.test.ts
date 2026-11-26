@@ -1,4 +1,4 @@
-import { choosePreset, presetOf, presetOptions, presetPerms, presetsFor } from './presets.ts';
+import { choosePreset, newPeopleChoices, presetOf, presetOptions, presetPerms, presetsFor, samePerms } from './presets.ts';
 import { describe, expect, it } from 'vitest';
 import type { Perm } from '../core/session.svelte.ts';
 
@@ -66,5 +66,17 @@ describe('preset bar segments', () => {
 	it('only lets Custom be picked while there is something to show', () => {
 		expect(presetOptions(all, 'Custom', false).at(-1)?.disabled).toBe(true);
 		expect(presetOptions(all, 'Custom', true).at(-1)?.disabled).toBe(false);
+	});
+});
+
+describe('new people', () => {
+	it('offers a member\'s permissions only, never Change settings', () => {
+		expect(newPeopleChoices).toEqual(['ask', 'auto_approve', 'auto_approve_four_k', 'approve', 'manage_library']);
+		expect(newPeopleChoices).not.toContain('settings');
+	});
+	it('compares lists in any order', () => {
+		expect(samePerms(['ask', 'auto_approve'], ['auto_approve', 'ask'])).toBe(true);
+		expect(samePerms(['ask'], ['ask', 'auto_approve'])).toBe(false);
+		expect(samePerms([], [])).toBe(true);
 	});
 });

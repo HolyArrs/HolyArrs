@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Khóa riêng của bạn",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart khóa api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Địa chỉ cho tường lửa của bạn",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tường lửa host bên ngoài địa chỉ danh sách cho phép"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "tường lửa host bên ngoài địa chỉ danh sách cho phép",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Người mới bắt đầu với",
+	"settings.index.users.new-people-card.new-people-start-with.words": "quyền mặc định tự động duyệt người dùng mới tham gia đăng nhập lần đầu"
 }

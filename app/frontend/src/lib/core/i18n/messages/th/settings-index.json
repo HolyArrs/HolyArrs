@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "คีย์ของคุณเอง",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart คีย์ api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "ที่อยู่สำหรับไฟร์วอลล์ของคุณ",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ไฟร์วอลล์ โฮสต์ ภายนอก ที่อยู่ รายการอนุญาต"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ไฟร์วอลล์ โฮสต์ ภายนอก ที่อยู่ รายการอนุญาต",
+	"settings.index.users.new-people-card.new-people-start-with.label": "คนใหม่เริ่มด้วย",
+	"settings.index.users.new-people-card.new-people-start-with.words": "สิทธิ์เริ่มต้น อนุมัติอัตโนมัติ ผู้ใช้ใหม่ เข้าร่วม ลงชื่อเข้าใช้ครั้งแรก"
 }

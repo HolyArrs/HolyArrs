@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Verwijderen mislukt",
 	"settings.users.confirmDeleteKeys": "Seerr-sleutels die diegene heeft gemaakt werken voor niemand meer tot er een nieuwe is gemaakt.",
 	"settings.users.qualities": "Kwaliteiten",
-	"settings.users.qualitiesHint": "Ze kunnen alleen de ingeschakelde kiezen. Staan ze allemaal aan, dan worden nieuwe ook aangeboden."
+	"settings.users.qualitiesHint": "Ze kunnen alleen de ingeschakelde kiezen. Staan ze allemaal aan, dan worden nieuwe ook aangeboden.",
+	"settings.users.newPeople": "Nieuwe mensen beginnen met",
+	"settings.users.newPeopleHint": "Voor iedereen die vanaf nu meedoet: uitnodigingen, Plex, Jellyfin, Emby en single sign-on. Wie er al is, houdt wat die heeft.",
+	"settings.users.newPeopleSaved": "Opgeslagen voor nieuwe mensen"
 }

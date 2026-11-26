@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Não foi possível eliminar",
 	"settings.users.confirmDeleteKeys": "As chaves do Seerr que a pessoa criou deixam de funcionar para todos até ser criada uma nova.",
 	"settings.users.qualities": "Qualidades",
-	"settings.users.qualitiesHint": "Só podem escolher as ativadas. Com todas ativadas, as novas também são oferecidas."
+	"settings.users.qualitiesHint": "Só podem escolher as ativadas. Com todas ativadas, as novas também são oferecidas.",
+	"settings.users.newPeople": "As pessoas novas começam com",
+	"settings.users.newPeopleHint": "Para todos os que entrarem a partir de agora: convites, Plex, Jellyfin, Emby e início de sessão único. Quem já cá está mantém o que tem.",
+	"settings.users.newPeopleSaved": "Guardado para as pessoas novas"
 }

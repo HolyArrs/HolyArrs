@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Þínir eigin lyklar",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb tóki tvdb pin mdblist fanart lykill api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Vistföng fyrir eldvegginn þinn",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "eldveggur gestgjafar utanaðkomandi vistföng heimildalisti"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "eldveggur gestgjafar utanaðkomandi vistföng heimildalisti",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Nýtt fólk byrjar með",
+	"settings.index.users.new-people-card.new-people-start-with.words": "sjálfgefnar heimildir sjálfvirkt samþykki nýir notendur ganga í fyrsta innskráning"
 }

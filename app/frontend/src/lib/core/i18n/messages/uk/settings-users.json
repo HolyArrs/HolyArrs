@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Не вдалося видалити",
 	"settings.users.confirmDeleteKeys": "Створені ним ключі Seerr перестануть працювати для всіх, доки не буде створено новий.",
 	"settings.users.qualities": "Якість",
-	"settings.users.qualitiesHint": "Можна вибрати лише ввімкнені. Якщо ввімкнено всі, нові теж пропонуються."
+	"settings.users.qualitiesHint": "Можна вибрати лише ввімкнені. Якщо ввімкнено всі, нові теж пропонуються.",
+	"settings.users.newPeople": "Нові люди починають з",
+	"settings.users.newPeopleHint": "Для всіх, хто приєднається відтепер: запрошення, Plex, Jellyfin, Emby і єдиний вхід. Ті, хто вже тут, зберігають свої.",
+	"settings.users.newPeopleSaved": "Збережено для нових людей"
 }

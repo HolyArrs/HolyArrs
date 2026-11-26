@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "你自己的密钥",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart key api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "防火墙地址",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hosts outside addresses allow list"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "firewall hosts outside addresses allow list",
+	"settings.index.users.new-people-card.new-people-start-with.label": "新成员的初始权限",
+	"settings.index.users.new-people-card.new-people-start-with.words": "默认权限 自动批准 新用户 加入 首次登录"
 }

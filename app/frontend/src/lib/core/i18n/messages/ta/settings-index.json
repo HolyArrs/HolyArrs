@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "உங்கள் சொந்த விசைகள்",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb டோக்கன் tvdb பின் mdblist fanart விசை api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "உங்கள் ஃபயர்வாலுக்கான முகவரிகள்",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ஃபயர்வால் ஹோஸ்ட்கள் வெளி முகவரிகள் அனுமதிப் பட்டியல்"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "ஃபயர்வால் ஹோஸ்ட்கள் வெளி முகவரிகள் அனுமதிப் பட்டியல்",
+	"settings.index.users.new-people-card.new-people-start-with.label": "புதியவர்கள் தொடங்குவது இவற்றுடன்",
+	"settings.index.users.new-people-card.new-people-start-with.words": "இயல்பு அனுமதிகள் தானியங்கி ஒப்புதல் புதிய பயனர்கள் சேருதல் முதல் உள்நுழைவு"
 }

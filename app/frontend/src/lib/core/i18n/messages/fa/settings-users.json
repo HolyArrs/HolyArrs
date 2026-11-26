@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "حذف ممکن نشد",
 	"settings.users.confirmDeleteKeys": "کلیدهای Seerr که ساخته است برای همه از کار می‌افتند تا کلید تازه‌ای ساخته شود.",
 	"settings.users.qualities": "کیفیت‌ها",
-	"settings.users.qualitiesHint": "فقط موارد روشن را می‌توانند انتخاب کنند. وقتی همه روشن باشند، موارد تازه هم پیشنهاد می‌شوند."
+	"settings.users.qualitiesHint": "فقط موارد روشن را می‌توانند انتخاب کنند. وقتی همه روشن باشند، موارد تازه هم پیشنهاد می‌شوند.",
+	"settings.users.newPeople": "افراد تازه با این شروع می‌کنند",
+	"settings.users.newPeopleHint": "برای همه کسانی که از این به بعد می‌پیوندند: دعوت‌نامه، Plex، Jellyfin، Emby و ورود یکپارچه. کسانی که الان هستند مال خودشان را نگه می‌دارند.",
+	"settings.users.newPeopleSaved": "برای افراد تازه ذخیره شد"
 }

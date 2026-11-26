@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Jūsų savi raktai",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb žetonas tvdb pin mdblist fanart raktas api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresai jūsų užkardai",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "užkarda serveriai išoriniai adresai leidžiamųjų sąrašas"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "užkarda serveriai išoriniai adresai leidžiamųjų sąrašas",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Nauji žmonės pradeda su",
+	"settings.index.users.new-people-card.new-people-start-with.words": "numatytieji leidimai automatinis patvirtinimas nauji naudotojai prisijungimas pirmas prisijungimas"
 }

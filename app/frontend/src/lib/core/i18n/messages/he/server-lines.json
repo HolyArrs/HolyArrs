@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "הוא ארוך יותר ממה שתבנית של HolyArrs יכולה להיות",
 	"server.migrate.already-in-the-library-the-quality": "כבר בספרייה; האיכות או הגרסה של {n} קבצים עודכנו",
 	"server.migrate.imported-before-2": "יובא בעבר{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "התיקייה שלו {dir} שייכת לסרט אחר בספרייה"
+	"server.migrate.its-folder-belongs-to-another-movie": "התיקייה שלו {dir} שייכת לסרט אחר בספרייה",
+	"server.accounts.new-people-can-start-only-with": "אנשים חדשים יכולים להתחיל רק עם ההרשאות של חבר; תנו את \"שינוי הגדרות\" לכל אחד בנפרד.",
+	"server.migrate.what-new-people-start-with-is": "עם מה אנשים חדשים מתחילים לא מיובא; בחרו זאת בהגדרות > משתמשים ותפקידים"
 }

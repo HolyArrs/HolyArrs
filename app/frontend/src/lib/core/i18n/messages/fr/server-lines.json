@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "il est plus long qu'un modèle HolyArrs ne peut l'être",
 	"server.migrate.already-in-the-library-the-quality": "déjà dans la Bibliothèque ; la qualité ou la version de {n} fichiers a été mise à jour",
 	"server.migrate.imported-before-2": "importé auparavant{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "son dossier {dir} appartient à un autre film de la Bibliothèque"
+	"server.migrate.its-folder-belongs-to-another-movie": "son dossier {dir} appartient à un autre film de la Bibliothèque",
+	"server.accounts.new-people-can-start-only-with": "Les nouvelles personnes ne peuvent commencer qu'avec les permissions d'un membre ; donnez « Modifier les paramètres » personne par personne.",
+	"server.migrate.what-new-people-start-with-is": "ce avec quoi les nouvelles personnes commencent n'est pas importé ; choisissez-le dans Paramètres > Utilisateurs et rôles"
 }

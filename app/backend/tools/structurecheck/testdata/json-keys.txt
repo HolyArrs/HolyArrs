@@ -1277,6 +1277,7 @@ new
 new_albums
 new_episodes
 new_keys
+new_people_perms
 new_seasons
 new_title_audio
 new_title_tags

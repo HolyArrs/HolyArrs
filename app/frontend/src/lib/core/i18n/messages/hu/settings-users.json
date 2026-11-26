@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Nem sikerült törölni",
 	"settings.users.confirmDeleteKeys": "Az általa készített Seerr-kulcsok mindenkinek leállnak, amíg nem készül új.",
 	"settings.users.qualities": "Minőségek",
-	"settings.users.qualitiesHint": "Csak a bekapcsoltak közül választhatnak. Ha mind be van kapcsolva, az újakat is felkínáljuk."
+	"settings.users.qualitiesHint": "Csak a bekapcsoltak közül választhatnak. Ha mind be van kapcsolva, az újakat is felkínáljuk.",
+	"settings.users.newPeople": "Az új emberek ezzel kezdenek",
+	"settings.users.newPeopleHint": "Mindenkinek, aki mostantól csatlakozik: meghívók, Plex, Jellyfin, Emby és egyszeri bejelentkezés. Akik már itt vannak, megtartják a sajátjukat.",
+	"settings.users.newPeopleSaved": "Mentve az új embereknek"
 }

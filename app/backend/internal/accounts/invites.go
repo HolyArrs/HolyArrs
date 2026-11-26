@@ -16,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Invites.
@@ -105,13 +106,18 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "role must be admin or member")
 		return
 	}
-	perms := webserver.DefaultPerms(body.Role)
+	var perms []webserver.Perm
 	if body.Perms != nil {
 		var err error
 		if perms, err = readPerms(*body.Perms); err != nil {
 			fail(w, http.StatusBadRequest, err.Error())
 			return
 		}
+	} else {
+		// None named: the start list, without what a Kid may not hold or
+		// what the maker may not hand out, so it never fails for them.
+		kid := metadata.NormRating(body.MaxRating) != ""
+		perms = slices.DeleteFunc(startPerms(r.Context(), a.s.Read(), body.Role, kid), func(p webserver.Perm) bool { return !by.Has(p) })
 	}
 	maxRating, country, err := kidLimit(body.Role, body.MaxRating, body.RatingCountry, perms, a.skipBlocksKids(r.Context()))
 	if err != nil {

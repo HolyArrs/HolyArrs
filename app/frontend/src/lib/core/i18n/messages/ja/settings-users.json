@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "削除できませんでした",
 	"settings.users.confirmDeleteKeys": "この人が作った Seerr のキーは、新しいキーを作るまで全員で使えなくなります。",
 	"settings.users.qualities": "画質",
-	"settings.users.qualitiesHint": "オンのものだけ選べます。すべてオンなら、新しいものも表示されます。"
+	"settings.users.qualitiesHint": "オンのものだけ選べます。すべてオンなら、新しいものも表示されます。",
+	"settings.users.newPeople": "新しい人の初期権限",
+	"settings.users.newPeopleHint": "今後参加するすべての人に適用されます: 招待、Plex、Jellyfin、Emby、シングルサインオン。今いる人の権限は変わりません。",
+	"settings.users.newPeopleSaved": "新しい人向けに保存しました"
 }

@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Suppression impossible",
 	"settings.users.confirmDeleteKeys": "Les clés Seerr qu'il a créées cessent de fonctionner pour tout le monde jusqu'à ce qu'une nouvelle soit créée.",
 	"settings.users.qualities": "Qualités",
-	"settings.users.qualitiesHint": "Ils ne peuvent choisir que celles activées. Si toutes le sont, les nouvelles sont aussi proposées."
+	"settings.users.qualitiesHint": "Ils ne peuvent choisir que celles activées. Si toutes le sont, les nouvelles sont aussi proposées.",
+	"settings.users.newPeople": "Les nouvelles personnes commencent avec",
+	"settings.users.newPeopleHint": "Pour tous ceux qui arrivent à partir de maintenant : invitations, Plex, Jellyfin, Emby et authentification unique. Les personnes déjà là gardent les leurs.",
+	"settings.users.newPeopleSaved": "Enregistré pour les nouvelles personnes"
 }

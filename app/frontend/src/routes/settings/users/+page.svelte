@@ -13,7 +13,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import MoreOptions from '#lib/ui/MoreOptions.svelte';
-	import { choosePreset, presetOf, presetOptions, type Mix, Sessions, UserMediaLink, DeletePersonAsk, focusAfterAsk, InviteLinks, type Invite, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
+	import { choosePreset, presetOf, presetOptions, type Mix, NewPeopleCard, PermChecks, Sessions, UserMediaLink, DeletePersonAsk, focusAfterAsk, InviteLinks, type Invite, kidLabel, ratingChoices } from '#lib/accounts/index.ts';
 	import type { AskSettings, LimitKind, PersonLimit, PersonQualities, QualityLine } from '#lib/requests/index.ts';
 	import { QualityPicker, kindAsks } from '#lib/requests/index.ts';
 	import { onMount } from 'svelte';
@@ -96,6 +96,8 @@
 	let users = $state<User[]>([]);
 	let invites = $state<Invite[]>([]);
 	let allPerms = $state<Perm[]>(['ask', 'auto_approve', 'auto_approve_four_k', 'approve', 'manage_library', 'settings']);
+	// What a new member starts with, as the owner set it; the invite form ticks it.
+	let newPeople = $state<Perm[]>([...defaults.member]);
 	let loaded = $state(false);
 	let error = $state('');
 	let hasData = $state(false);
@@ -141,9 +143,11 @@
 
 	async function load() {
 		try {
-			const [u, i] = await Promise.all([api.get<{ users: User[]; perms: Perm[] }>('/users'), api.get<{ invites: Invite[] }>('/users/invites')]);
+			const [u, i] = await Promise.all([api.get<{ users: User[]; perms: Perm[]; new_people?: Perm[] }>('/users'), api.get<{ invites: Invite[] }>('/users/invites')]);
 			users = u.users;
 			allPerms = u.perms;
+			newPeople = u.new_people ?? newPeople;
+			if (!hasData && role === 'member') perms = newPeople.filter((p) => session.can(p));
 			invites = i.invites;
 			loadLimits();
 			hasData = true;
@@ -206,11 +210,7 @@
 		}
 		mixes['invite-preset'] = null;
 		maxRating = '';
-		perms = defaults[r].filter((p) => session.can(p));
-	}
-
-	function toggle(list: Perm[], p: Perm, on: boolean): Perm[] {
-		return on ? [...new Set([...list, p])] : list.filter((x) => x !== p);
+		perms = (r === 'member' ? newPeople : defaults.admin).filter((p) => session.can(p));
 	}
 
 	// The invite form opens as a sheet from the header; People come first.
@@ -497,6 +497,8 @@
 
 	{#if hasData}<HiddenCard people={names} />{/if}
 
+	{#if isOwner}<NewPeopleCard saved={newPeople} words={permWord} onsaved={(p) => { newPeople = p; if (role === 'member') pickRole('member'); }} />{/if}
+
 	<InviteLinks {invites} {roleWord} onchange={load} />
 {/if}
 
@@ -583,15 +585,7 @@
 			{#if editRole === 'member'}
 				{@render presetPicker(editPerms, (next) => (editPerms = next), 'edit-preset', editMax, (m) => (editMax = m))}
 			{/if}
-			<fieldset class="field">
-				<legend class="label">{t('settings.users.may')}</legend>
-				{#each grantable as p (p)}
-					<label class="checkline"
-						><input type="checkbox" checked={editPerms.includes(p)} onchange={(e) => { const next = toggle(editPerms, p, e.currentTarget.checked); switched('edit-preset', editPerms, next, editMax); editPerms = next; }} />
-						{permWord[p]}</label
-					>
-				{/each}
-			</fieldset>
+			<PermChecks perms={editPerms} choices={grantable} words={permWord} legend={t('settings.users.may')} onchange={(next) => { switched('edit-preset', editPerms, next, editMax); editPerms = next; }} />
 			{#if limits[editing.id] && !limits[editing.id].no_limit}
 				<fieldset class="field" aria-describedby="limits-hint">
 					<legend class="label">{t('settings.users.weeklyLimit')}</legend>
@@ -643,15 +637,7 @@
 				{/if}
 			</div>
 			{@render presetPicker(perms, (next) => (perms = next), 'invite-preset', maxRating, (m) => (maxRating = m))}
-			<fieldset class="field">
-				<legend class="label">{t('settings.users.may')}</legend>
-				{#each grantable as p (p)}
-					<label class="checkline"
-						><input type="checkbox" checked={perms.includes(p)} onchange={(e) => { const next = toggle(perms, p, e.currentTarget.checked); switched('invite-preset', perms, next, maxRating); perms = next; }} />
-						{permWord[p]}</label
-					>
-				{/each}
-			</fieldset>
+			<PermChecks {perms} choices={grantable} words={permWord} legend={t('settings.users.may')} onchange={(next) => { switched('invite-preset', perms, next, maxRating); perms = next; }} />
 			<div class="row">
 				<div class="field grow">
 					<label for="inv-note">{t('settings.users.note')}</label>
@@ -722,7 +708,7 @@
 		min-height: 32px;
 	}
 	/* A legend is not a flex child of the column, so float it to keep the label gap other rows have. */
-	.invite fieldset.field > legend {
+	.invite :global(fieldset.field > legend) {
 		float: left;
 	}
 	.value {

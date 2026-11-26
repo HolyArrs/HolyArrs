@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Kunne ikke slette",
 	"settings.users.confirmDeleteKeys": "Seerr-nøgler, personen har lavet, holder op med at virke for alle, indtil der laves en ny.",
 	"settings.users.qualities": "Kvaliteter",
-	"settings.users.qualitiesHint": "De kan kun vælge dem, der er slået til. Er alle slået til, tilbydes nye også."
+	"settings.users.qualitiesHint": "De kan kun vælge dem, der er slået til. Er alle slået til, tilbydes nye også.",
+	"settings.users.newPeople": "Nye personer starter med",
+	"settings.users.newPeopleHint": "For alle, der kommer til fra nu af: invitationer, Plex, Jellyfin, Emby og single sign-on. Dem, der allerede er her, beholder deres.",
+	"settings.users.newPeopleSaved": "Gemt for nye personer"
 }

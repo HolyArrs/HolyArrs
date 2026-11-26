@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "HolyArrs のパターンの上限より長すぎます",
 	"server.migrate.already-in-the-library-the-quality": "すでにライブラリにあります。{n} 個のファイルの品質またはリリースを更新しました",
 	"server.migrate.imported-before-2": "以前にインポート済み{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "フォルダー {dir} はライブラリ内の別の映画のものです"
+	"server.migrate.its-folder-belongs-to-another-movie": "フォルダー {dir} はライブラリ内の別の映画のものです",
+	"server.accounts.new-people-can-start-only-with": "新しい人に最初から付けられるのはメンバーの権限だけです。「設定を変更する」は一人ずつ付けてください。",
+	"server.migrate.what-new-people-start-with-is": "新しい人の初期権限はインポートされません。設定 > ユーザーと役割 で選んでください"
 }

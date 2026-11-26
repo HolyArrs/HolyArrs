@@ -122,5 +122,8 @@
   "settings.users.couldntDelete": "Nepodarilo sa odstrániť",
   "settings.users.confirmDeleteKeys": "Kľúče pre Seerr, ktoré vytvoril, prestanú fungovať pre všetkých, kým nevznikne nový.",
   "settings.users.qualities": "Kvality",
-  "settings.users.qualitiesHint": "Môžu vyberať len zapnuté. Keď sú zapnuté všetky, ponúknu sa aj nové."
+  "settings.users.qualitiesHint": "Môžu vyberať len zapnuté. Keď sú zapnuté všetky, ponúknu sa aj nové.",
+	"settings.users.newPeople": "Noví ľudia začínajú s",
+	"settings.users.newPeopleHint": "Pre každého, kto sa pridá odteraz: pozvánky, Plex, Jellyfin, Emby a jednotné prihlásenie. Kto už tu je, si ponechá svoje.",
+	"settings.users.newPeopleSaved": "Uložené pre nových ľudí"
 }

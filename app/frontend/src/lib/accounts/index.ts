@@ -25,6 +25,8 @@ export { default as SigninTiles } from './SigninTiles.svelte';
 export { default as SigninServerForm } from './SigninServerForm.svelte';
 export { default as SigninRecent } from './SigninRecent.svelte';
 export { default as InviteLinks } from './InviteLinks.svelte';
+export { default as NewPeopleCard } from './NewPeopleCard.svelte';
+export { default as PermChecks } from './PermChecks.svelte';
 export type { Invite } from './InviteLinks.svelte';
 export { default as LocalSkipCard } from './LocalSkipCard.svelte';
 export { default as SsoCard } from './SsoCard.svelte';

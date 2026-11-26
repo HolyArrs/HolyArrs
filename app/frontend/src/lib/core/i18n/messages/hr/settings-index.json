@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Vaši vlastiti ključevi",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart ključ api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adrese za vaš vatrozid",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "vatrozid hostovi vanjske adrese popis dopuštenih"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "vatrozid hostovi vanjske adrese popis dopuštenih",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Novi ljudi počinju s",
+	"settings.index.users.new-people-card.new-people-start-with.words": "zadane dozvole automatsko odobravanje novi korisnici pridruživanje prva prijava"
 }

@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Hindi nabura",
 	"settings.users.confirmDeleteKeys": "Hihinto sa paggana para sa lahat ang mga Seerr key na ginawa niya hanggang may gumawa ng bago.",
 	"settings.users.qualities": "Mga kalidad",
-	"settings.users.qualitiesHint": "Ang mga naka-on lang ang mapipili nila. Kapag naka-on lahat, iaalok din ang mga bago."
+	"settings.users.qualitiesHint": "Ang mga naka-on lang ang mapipili nila. Kapag naka-on lahat, iaalok din ang mga bago.",
+	"settings.users.newPeople": "Nagsisimula ang mga bagong tao sa",
+	"settings.users.newPeopleHint": "Para sa lahat ng sasali mula ngayon: mga imbitasyon, Plex, Jellyfin, Emby at single sign-on. Ang mga nandito na ay mananatili sa kanila.",
+	"settings.users.newPeopleSaved": "Na-save para sa mga bagong tao"
 }

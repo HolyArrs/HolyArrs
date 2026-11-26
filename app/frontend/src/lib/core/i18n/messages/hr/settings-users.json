@@ -122,5 +122,8 @@
 	"settings.users.couldntDelete": "Brisanje nije uspjelo",
 	"settings.users.confirmDeleteKeys": "Ključevi za Seerr koje je napravio prestaju raditi za sve dok se ne napravi novi.",
 	"settings.users.qualities": "Kvalitete",
-	"settings.users.qualitiesHint": "Mogu birati samo uključene. Kad su sve uključene, nude se i nove."
+	"settings.users.qualitiesHint": "Mogu birati samo uključene. Kad su sve uključene, nude se i nove.",
+	"settings.users.newPeople": "Novi ljudi počinju s",
+	"settings.users.newPeopleHint": "Za sve koji se pridruže od sada: pozivnice, Plex, Jellyfin, Emby i jedinstvena prijava. Oni koji su već tu zadržavaju svoje.",
+	"settings.users.newPeopleSaved": "Spremljeno za nove ljude"
 }

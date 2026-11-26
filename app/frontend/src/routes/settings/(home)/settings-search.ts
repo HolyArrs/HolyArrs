@@ -181,6 +181,7 @@ export const settingIndex: SettingEntry[] = [
 	e('/settings/requests', 'plex-watchlists', 'Request from Plex watchlists', 'plex watchlist requests everyone automatic'),
 	e('/settings/users', 'inv-note', 'Invite someone', 'invite link add user family friend new user'),
 	e('/settings/users', 'people-card', 'Users and roles', 'users people roles permissions admin member kid preset devices'),
+	e('/settings/users', 'new-people-card', 'New people start with', 'default permissions auto-approve new users join first sign-in'),
 	e('/settings/users', 'invites-card', 'Invite links', 'invites take back links'),
 
 	e('/settings/sign-in', 'local-card', 'Skip sign-in on my local network', 'local network lan no password'),

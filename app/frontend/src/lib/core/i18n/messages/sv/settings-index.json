@@ -338,5 +338,7 @@
 	"settings.index.tmdb.metadata-keys.your-own-keys.label": "Dina egna nycklar",
 	"settings.index.tmdb.metadata-keys.your-own-keys.words": "tmdb token tvdb pin mdblist fanart nyckel api",
 	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.label": "Adresser för din brandvägg",
-	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "brandvägg värdar utanför adresser tillåtelselista"
+	"settings.index.tmdb.metadata-hosts.addresses-for-your-firewall.words": "brandvägg värdar utanför adresser tillåtelselista",
+	"settings.index.users.new-people-card.new-people-start-with.label": "Nya personer börjar med",
+	"settings.index.users.new-people-card.new-people-start-with.words": "standardbehörigheter automatiskt godkännande nya användare gå med första inloggning"
 }

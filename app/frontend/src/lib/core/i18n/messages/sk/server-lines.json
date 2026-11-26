@@ -2469,5 +2469,7 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "je dlhší, než môže byť vzor HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "už je v Knižnici; kvalita alebo vydanie {n} súborov bolo aktualizované",
 	"server.migrate.imported-before-2": "importované skôr{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "jeho priečinok {dir} patrí inému filmu v Knižnici"
+	"server.migrate.its-folder-belongs-to-another-movie": "jeho priečinok {dir} patrí inému filmu v Knižnici",
+	"server.accounts.new-people-can-start-only-with": "Noví ľudia môžu začať len s oprávneniami člena; „Meniť nastavenia“ dávajte každému zvlášť.",
+	"server.migrate.what-new-people-start-with-is": "s čím začínajú noví ľudia, sa neimportuje; vyberte to v Nastavenia > Používatelia a roly"
 }
