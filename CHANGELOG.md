@@ -2,6 +2,20 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.3] - 2026-11-26
+### Fixed
+- Sources work through an HTTP proxy like Gluetun again. ([#768](https://github.com/HolyArrs/HolyArrs/issues/768))
+- Pick rules in Check releases can be changed from Standard. ([#714](https://github.com/HolyArrs/HolyArrs/issues/714))
+- SABnzbd downloads import when the job folder is the save folder. ([#861](https://github.com/HolyArrs/HolyArrs/issues/861))
+- Knaben feed checks ask only for the kinds you want. ([#806](https://github.com/HolyArrs/HolyArrs/issues/806))
+- Developer plugins with settings show the Settings button. ([#834](https://github.com/HolyArrs/HolyArrs/issues/834))
+- Install on a developer plugin's card uses its folder. ([#835](https://github.com/HolyArrs/HolyArrs/issues/835))
+- Owner hosts keep every port saved for a host name. ([#836](https://github.com/HolyArrs/HolyArrs/issues/836))
+- History shows subtitle and cleanup details. ([#823](https://github.com/HolyArrs/HolyArrs/issues/823))
+- Import takes a release the Pick rules chose as equal. ([#826](https://github.com/HolyArrs/HolyArrs/issues/826))
+### Changed
+- Cleanup says All languages, with a hint. ([#824](https://github.com/HolyArrs/HolyArrs/issues/824))
+
 ## [1.3.2] - 2026-11-26
 ### Added
 - Import files by hand right from the Library Add menu. ([#692](https://github.com/HolyArrs/HolyArrs/issues/692))
