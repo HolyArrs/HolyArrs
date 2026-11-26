@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "بفرست {\"on\": true} یا {\"on\": false}",
 	"server.library.deleted-of": "{relativepath} از {name} حذف شد",
 	"server.importer.the-file-is-not-present-yet": "فایل هنوز نرسیده است؛ HolyArrs دوباره برای وارد کردن آن تلاش می‌کند",
-	"server.migrate.the-same-as-a-source-that": "همان {name} است، منبعی که اینجا هست"
+	"server.migrate.the-same-as-a-source-that": "همان {name} است، منبعی که اینجا هست",
+	"server.accounts.name-the-person-by-their-user": "شخص را با شناسهٔ کاربری‌اش مشخص کنید",
+	"server.migrate.it-is-longer-than-a-holyarrs": "از حداکثر طول یک الگوی HolyArrs بلندتر است"
 }

@@ -11,6 +11,7 @@ Cf-Mitigated
 Clear-Site-Data
 Click
 Content-Disposition
+Content-Encoding
 Content-Length
 Content-Security-Policy
 Content-Type
