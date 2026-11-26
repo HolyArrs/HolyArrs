@@ -2,6 +2,19 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] - 2026-11-26
+### Added
+- Outside links now sit higher on the title page. ([#745](https://github.com/HolyArrs/HolyArrs/issues/745))
+- Music import shows which artist is which in the match list. ([#741](https://github.com/HolyArrs/HolyArrs/issues/741))
+### Fixed
+- 4K files with no quality in the name now show as 4K. ([#874](https://github.com/HolyArrs/HolyArrs/issues/874))
+- Episode names from TheTVDB come in your language. ([#769](https://github.com/HolyArrs/HolyArrs/issues/769))
+- Future-only show asks with nothing listed show Upcoming, not Processing. ([#716](https://github.com/HolyArrs/HolyArrs/issues/716))
+- Deleted files leave the holding folder right on their keep time. ([#802](https://github.com/HolyArrs/HolyArrs/issues/802))
+- Removing an artist stops its running refresh. ([#805](https://github.com/HolyArrs/HolyArrs/issues/805))
+- Sync fix only retimes subtitles HolyArrs saved. ([#837](https://github.com/HolyArrs/HolyArrs/issues/837))
+- Who watched what opens when two accounts share a name. ([#734](https://github.com/HolyArrs/HolyArrs/issues/734))
+
 ## [1.3.3] - 2026-11-26
 ### Fixed
 - Sources work through an HTTP proxy like Gluetun again. ([#768](https://github.com/HolyArrs/HolyArrs/issues/768))

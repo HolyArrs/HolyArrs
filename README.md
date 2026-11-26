@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.3: Sources work through an HTTP proxy again.** Pick rules can be changed in Check releases, SABnzbd imports land, and plugin fixes. [See what's new](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.4: 4K files read as 4K, and TheTVDB episode names in your language.** Outside links sit higher on title pages, plus fixes for music, subtitles and requests. [See what's new](https://holyarrs.com/whats-new/)
 
 > Every poster, trailer and score in your HolyArrs comes from a server I run and pay for myself, so it stays free for everyone. If HolyArrs made movie night a little better, a sponsor keeps the lights on for all of us 💛
 >
