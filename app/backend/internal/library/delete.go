@@ -650,12 +650,16 @@ func (s *Service) cleanHeldFiles(ctx context.Context, by domain.Actor, lf mediaf
 		return 0, err
 	}
 	n := 0
+	stop := filepath.Join(lf.Path, filepath.FromSlash(strings.TrimSuffix(prefix, "/")))
 	for _, rel := range old {
 		full := filepath.Join(lf.Path, filepath.FromSlash(rel))
 		if fi, err := os.Lstat(full); err != nil || !fi.Mode().IsRegular() {
 			continue // emptied already
 		}
 		dir := filepath.Dir(full)
+		if !importer.InsideReal(stop, dir) {
+			continue // a path or link leading out of the day folder
+		}
 		if err := os.Remove(full); err != nil {
 			return n, err
 		}
@@ -664,7 +668,6 @@ func (s *Service) cleanHeldFiles(ctx context.Context, by domain.Actor, lf mediaf
 			return n, err
 		}
 		// Remove the folders this left empty, up to the day folder.
-		stop := filepath.Join(lf.Path, filepath.FromSlash(strings.TrimSuffix(prefix, "/")))
 		for d := dir; ; d = filepath.Dir(d) {
 			if os.Remove(d) != nil || d == stop || len(d) <= len(stop) {
 				break
