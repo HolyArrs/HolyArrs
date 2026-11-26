@@ -122,6 +122,8 @@ type Engine struct {
 	statData map[string]Stat
 	statAt   time.Time
 	statBusy bool
+	// statFirst closes when the running stats fetch ends.
+	statFirst chan struct{}
 }
 
 func (e *Engine) init() error {
@@ -728,6 +730,7 @@ func (e *Engine) dropKept() {
 // StartEnabled starts every enabled plugin at app start. A plugin that
 // fails its start checks is disabled by them and logged.
 func (e *Engine) StartEnabled() {
+	e.prefetchStats() // the Plugins page shows the numbers on its first view
 	if _, err := os.Stat(e.Dir); errors.Is(err, os.ErrNotExist) {
 		return // nothing installed yet
 	}

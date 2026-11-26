@@ -959,6 +959,19 @@ func TestListShowsStats(t *testing.T) {
 	}
 }
 
+// The numbers are fetched when the engine starts, so the very first list
+// after a start already shows them.
+func TestFirstListAfterStartHasStats(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	e.StartEnabled()
+	p := row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+	st, _ := p["stats"].(map[string]any)
+	if st == nil || st["downloads"] != float64(1234) {
+		t.Fatalf("first list stats = %v", p["stats"])
+	}
+}
+
 // A plugin disabled by the blocklist can be started again once the signed
 // blocklist no longer holds it; it is not started on its own.
 func TestStartWorksAfterBlocklistLifted(t *testing.T) {
