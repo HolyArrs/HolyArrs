@@ -66,7 +66,7 @@ func holdOriginal(lib, rel, text string) string {
 // cleaned adds the History line for a cleanup.
 func (s *Service) cleaned(ctx context.Context, fc *fileCtx, row *Subtitle, rel, held string, steps subtext.Tidy, rep subtext.TidyReport, by domain.Actor) {
 	titleID, slotID := fc.title.ID, fc.file.SlotIDs[0]
-	data := map[string]any{"file_id": fc.file.ID, "subtitle_id": row.ID, "language": row.Language, "removed": rep.Removed,
+	data := map[string]any{"file_id": fc.file.ID, "subtitle_id": row.ID, "language": row.Language, "path": rel, "removed": rep.Removed,
 		"ads": rep.Ads, "changed": rep.Changed, "steps": steps.Steps()}
 	if held != "" {
 		data["original"] = held
