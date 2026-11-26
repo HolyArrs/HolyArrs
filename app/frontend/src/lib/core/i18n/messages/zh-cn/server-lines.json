@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "新封面",
 	"server.plugins.send-event-library-add": "发送 {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "发送 {\"on\": true} 或 {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "文件还不在；HolyArrs 会再次尝试导入"
+	"server.importer.the-file-is-not-present-yet": "文件还不在；HolyArrs 会再次尝试导入",
+	"server.migrate.the-same-as-a-source-that": "与 {name} 相同，这里已有此来源"
 }

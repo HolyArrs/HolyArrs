@@ -48,6 +48,16 @@ An indexer is a site that lists releases; in HolyArrs it is a **Source**.
 
 A movie in both a 1080p Radarr and a 4K Radarr comes over as one title: the 1080p copy is its main Version and the 4K copy a 4K Version, each file staying where it is. For a title already in the Library, or one an earlier import brought without its 4K copy, add the 4K copy on the title page. When both Radarrs keep the movie in the same folder, only the 1080p copy comes over, with the file the 1080p Radarr recorded: a 4K Version needs a folder of its own, so move the 4K file to one and add it on the title page. If that folder holds only the 4K file (the 1080p file is gone), the main Version links the 4K file, so leave it where it is.
 
+### The same indexer in more than one app
+
+Each site comes over once, however many apps had it:
+
+- The same Torznab, Newznab or RSS address in Sonarr and Radarr is one Source for shows and movies, with each app's categories. Letter case, the default port and a trailing `/` do not matter.
+- An indexer that Prowlarr put in Sonarr or Radarr (its address is Prowlarr's, like `http://prowlarr:9696/5/api`, and its name ends in "(Prowlarr)") is the same Source as that indexer in Prowlarr, when you import Prowlarr too and the indexer there is a Torznab, Newznab or RSS one. The Source is the one from Prowlarr, at the feed's own address. It is still the same when Sonarr or Radarr reach Prowlarr under another host name, as long as the number and name match.
+- Prowlarr can be imported in the same import, before or after. A Source already here at the same address, or named like the indexer with or without "(Prowlarr)", is listed as already here. Nothing is added twice.
+
+The **Import** step shows it on the Source: "the same as Nyaa.si (Prowlarr) in Sonarr and Radarr: one Source".
+
 ## Choices
 
 ### Folders

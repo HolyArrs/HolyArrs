@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "غلاف جديد",
 	"server.plugins.send-event-library-add": "أرسل {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "أرسل {\"on\": true} أو {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "الملف غير موجود بعد؛ سيحاول HolyArrs استيراده مرة أخرى"
+	"server.importer.the-file-is-not-present-yet": "الملف غير موجود بعد؛ سيحاول HolyArrs استيراده مرة أخرى",
+	"server.migrate.the-same-as-a-source-that": "هو نفسه {name}، وهو مصدر موجود هنا"
 }

@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "Nový obal",
 	"server.plugins.send-event-library-add": "pošli {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "pošli {\"on\": true} alebo {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "súbor tu ešte nie je; HolyArrs ho skúsi importovať znova"
+	"server.importer.the-file-is-not-present-yet": "súbor tu ešte nie je; HolyArrs ho skúsi importovať znova",
+	"server.migrate.the-same-as-a-source-that": "to isté ako {name}, Zdroj, ktorý tu už je"
 }

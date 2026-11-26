@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "Nowa okładka",
 	"server.plugins.send-event-library-add": "wyślij {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "wyślij {\"on\": true} lub {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "pliku jeszcze nie ma; HolyArrs spróbuje go zaimportować ponownie"
+	"server.importer.the-file-is-not-present-yet": "pliku jeszcze nie ma; HolyArrs spróbuje go zaimportować ponownie",
+	"server.migrate.the-same-as-a-source-that": "to samo co {name}, Źródło, które już tu jest"
 }

@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "ภาพปกใหม่",
 	"server.plugins.send-event-library-add": "ส่ง {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "ส่ง {\"on\": true} หรือ {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "ยังไม่มีไฟล์; HolyArrs จะลองนำเข้าอีกครั้ง"
+	"server.importer.the-file-is-not-present-yet": "ยังไม่มีไฟล์; HolyArrs จะลองนำเข้าอีกครั้ง",
+	"server.migrate.the-same-as-a-source-that": "เหมือนกับ {name} ซึ่งเป็นแหล่งที่มาที่มีอยู่แล้ว"
 }

@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found}টি পাওয়া গেছে",
 	"migrate.readOnly": "শুধু পড়ার জন্য",
 	"migrate.folderReadOnly": "HolyArrs এই ফোল্ডারে লিখতে পারছে না, তাই এতে কিছুই ইমপোর্ট করা যাবে না। HolyArrs-এর Docker সেটআপে ভলিউমটি লেখার যোগ্য করুন (:ro সরান), তারপর কন্টেইনারটি আবার তৈরি করুন।",
-	"migrate.someFound": "{n}টি পাওয়া গেছে"
+	"migrate.someFound": "{n}টি পাওয়া গেছে",
+	"migrate.sameSource": "{list}-এর মতোই: একটি সোর্স",
+	"migrate.nameInApps": "{apps}-এ {name}"
 }

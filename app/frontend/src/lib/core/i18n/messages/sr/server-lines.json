@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "Нова насловна слика",
 	"server.plugins.send-event-library-add": "пошаљи {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "пошаљи {\"on\": true} или {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "датотека још није ту; HolyArrs ће поново покушати да је увезе"
+	"server.importer.the-file-is-not-present-yet": "датотека још није ту; HolyArrs ће поново покушати да је увезе",
+	"server.migrate.the-same-as-a-source-that": "исто као {name}, Извор који је већ овде"
 }

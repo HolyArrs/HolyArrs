@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "புதிய அட்டைப் படம்",
 	"server.plugins.send-event-library-add": "அனுப்பு {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "அனுப்பு {\"on\": true} அல்லது {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "கோப்பு இன்னும் வரவில்லை; HolyArrs மீண்டும் இறக்க முயற்சிக்கும்"
+	"server.importer.the-file-is-not-present-yet": "கோப்பு இன்னும் வரவில்லை; HolyArrs மீண்டும் இறக்க முயற்சிக்கும்",
+	"server.migrate.the-same-as-a-source-that": "{name} போன்றதே, ஏற்கனவே உள்ள ஒரு மூலம்"
 }

@@ -2459,5 +2459,6 @@
 	"server.library.new-cover-art": "Portada nueva",
 	"server.plugins.send-event-library-add": "envía {\"event\": \"library.add\"}",
 	"server.plugins.send-on-true-or-on-false": "envía {\"on\": true} o {\"on\": false}",
-	"server.importer.the-file-is-not-present-yet": "el archivo aún no está; HolyArrs intentará importarlo de nuevo"
+	"server.importer.the-file-is-not-present-yet": "el archivo aún no está; HolyArrs intentará importarlo de nuevo",
+	"server.migrate.the-same-as-a-source-that": "lo mismo que {name}, una Fuente que ya está aquí"
 }
