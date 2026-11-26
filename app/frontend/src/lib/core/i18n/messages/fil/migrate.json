@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} nahanap",
 	"migrate.readOnly": "Read-only",
 	"migrate.folderReadOnly": "Hindi makasulat ang HolyArrs sa folder na ito, kaya walang maii-import dito. Gawing writable ang volume (alisin ang :ro) sa Docker setup ng HolyArrs, saka gawin muli ang container.",
-	"migrate.someFound": "{n} ang nahanap"
+	"migrate.someFound": "{n} ang nahanap",
+	"migrate.sameSource": "kapareho ng {list}: iisang Source",
+	"migrate.nameInApps": "{name} sa {apps}"
 }

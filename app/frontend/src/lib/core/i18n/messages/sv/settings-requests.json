@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "Vart godkända 4K-förfrågningar går och hur de väljs",
 	"settings.requests.fourKSameFolder": "Som andra förfrågningar",
 	"settings.requests.fourKNamedRules": "Kvaliteten som heter 4K",
+	"settings.requests.anime": "Anime",
+	"settings.requests.animeDesc": "Vart godkända anime-förfrågningar går",
 	"settings.requests.choices": "Vad folk kan efterfråga",
 	"settings.requests.choicesDesc": "Kvalitetsknapparna på förfrågningsbladen, i den här ordningen. Byt namn på dem eller dölj dem här; barn får den första som visas.",
 	"settings.requests.choiceShown": "Visa för folk",

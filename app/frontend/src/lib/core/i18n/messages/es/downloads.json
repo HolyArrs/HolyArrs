@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Añadir un gestor de descargas",
 	"downloads.hl.noUsenetDl": "no hay ningún gestor de descargas Usenet configurado",
 	"downloads.hl.noTorrentDl": "no hay ningún gestor de descargas de torrents configurado",
+	"downloads.problem.waitingForFiles": "Esperando archivos",
 	"downloads.problem.importBlocked": "Importación bloqueada",
 	"downloads.problem.missingArticles": "Faltan artículos",
 	"downloads.problem.noFullCopy": "Sin copia completa",

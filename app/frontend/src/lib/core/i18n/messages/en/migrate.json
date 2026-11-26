@@ -415,5 +415,7 @@
 	"migrate.nFound": "{found} found",
 	"migrate.readOnly": "Read-only",
 	"migrate.folderReadOnly": "HolyArrs can't write to this folder, so nothing can be imported into it. Make the volume writable (remove :ro) in HolyArrs's Docker setup, then recreate the container.",
-	"migrate.someFound": "{n} found"
+	"migrate.someFound": "{n} found",
+	"migrate.sameSource": "the same as {list}: one Source",
+	"migrate.nameInApps": "{name} in {apps}"
 }

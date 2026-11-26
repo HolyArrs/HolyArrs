@@ -1,6 +1,9 @@
 {
 	"movies.versions.stopConfirm": "不再维护这部电影的 {label} 版本吗？磁盘上的文件不会被改动。",
 	"movies.versions.removeFailed": "无法移除版本",
+	"movies.versions.deleteFile": "删除文件",
+	"movies.versions.deleteFileConfirm": "删除 {name}?它会进入“最近删除”,你可以在那里恢复。",
+	"movies.versions.deleteFileFailed": "无法删除文件",
 	"movies.versions.title": "版本",
 	"movies.versions.showLess": "收起",
 	"movies.versions.seeAll": "查看全部 {count} 个",

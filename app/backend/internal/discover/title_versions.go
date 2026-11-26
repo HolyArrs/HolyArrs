@@ -21,6 +21,9 @@ type VersionView struct {
 	KeepUpToDate    bool     `json:"keep_up_to_date"`
 	Edition         string   `json:"edition"`
 	AudioLanguages  []string `json:"audio_languages"`
+	// LookOnly: the Version's Library folder is look-only, so HolyArrs never
+	// changes or deletes its files.
+	LookOnly bool `json:"look_only"`
 }
 
 func VersionViewOf(ctx context.Context, db database.Querier, v mediafiles.Version) VersionView {
@@ -33,6 +36,7 @@ func VersionViewOf(ctx context.Context, db database.Querier, v mediafiles.Versio
 	if path, ok := m.folder(ctx, db, v.LibraryFolderID); ok {
 		out.FolderPath = filepath.Join(path, v.FolderName)
 	}
+	out.LookOnly = m.lookOnly(ctx, db, v.LibraryFolderID)
 	if name, ok := m.rules(ctx, db, v.PickRulesID); ok {
 		out.PickRulesName = name
 	}
@@ -41,13 +45,13 @@ func VersionViewOf(ctx context.Context, db database.Querier, v mediafiles.Versio
 
 // lookupMemo keeps the Library folder paths and Pick rules names read during
 // one request, so listing every Title reads each row once, not per Version.
-type lookupMemo struct{ folders, picks map[int64]*string }
+type lookupMemo struct{ folders, looks, picks map[int64]*string }
 
 type lookupMemoKey struct{}
 
 // WithLookupMemo keeps a memo on ctx for VersionViewOf.
 func WithLookupMemo(ctx context.Context) context.Context {
-	return context.WithValue(ctx, lookupMemoKey{}, &lookupMemo{folders: map[int64]*string{}, picks: map[int64]*string{}})
+	return context.WithValue(ctx, lookupMemoKey{}, &lookupMemo{folders: map[int64]*string{}, looks: map[int64]*string{}, picks: map[int64]*string{}})
 }
 
 // memoRead answers id from seen, or reads it once with get and keeps it
@@ -98,4 +102,23 @@ func (m *lookupMemo) rules(ctx context.Context, db database.Querier, id int64) (
 		err := database.Get(ctx, db, "pick_rules", id, &pr)
 		return pr.Name, err == nil
 	})
+}
+
+// lookOnly says whether the Library folder is look-only ("1" in the memo).
+func (m *lookupMemo) lookOnly(ctx context.Context, db database.Querier, id int64) bool {
+	var seen map[int64]*string
+	if m != nil {
+		seen = m.looks
+	}
+	v, _ := memoRead(seen, id, func() (string, bool) {
+		var lf mediafiles.LibraryFolder
+		if err := database.Get(ctx, db, "library_folders", id, &lf); err != nil {
+			return "", false
+		}
+		if lf.LookOnly {
+			return "1", true
+		}
+		return "", true
+	})
+	return v == "1"
 }

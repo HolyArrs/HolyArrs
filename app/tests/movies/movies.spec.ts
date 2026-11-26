@@ -360,3 +360,145 @@ test('the top-bar search opens Search with Library results; a movie not in the L
 	const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
 	expect(r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id), 'title details').toEqual([]);
 });
+
+const tinyPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+
+function discoverItems(kind: 'movie' | 'show' = 'movie') {
+	return [
+		{ tmdb_id: '900011', kind, name: 'Iron Lullaby', year: 2024, poster: 'https://image.tmdb.org/t/p/w500/il.jpg', backdrop: 'https://image.tmdb.org/t/p/original/ilb.jpg' },
+		...Array.from({ length: 8 }, (_, i) => ({
+			tmdb_id: String(901000 + i),
+			kind,
+			name: `Filler ${i}`,
+			year: 2024,
+			poster: `https://image.tmdb.org/t/p/w500/f${i}.jpg`,
+			backdrop: `https://image.tmdb.org/t/p/original/fb${i}.jpg`
+		}))
+	];
+}
+
+test('New & Popular keeps the selected tab across Back and Forward from a movie', async ({ browser }) => {
+	const ctx = await browser.newContext();
+	const p = await ctx.newPage();
+	await p.route('https://image.tmdb.org/**', (r) => r.fulfill({ body: tinyPng, contentType: 'image/png' }));
+	await p.route('**/api/v1/artwork/tmdb/**', (r) => r.fulfill({ body: tinyPng, contentType: 'image/png' }));
+	await p.route('**/api/v1/explore/new?**', (r) => {
+		const tab = new URL(r.request().url()).searchParams.get('type') ?? 'all';
+		return r.fulfill({ json: { type: tab, page: 0, more: false, building: false, hero: [], rail: [], rows: [{ id: `np_${tab}`, type: 'np_movies', title: `New ${tab}`, items: discoverItems() }] } });
+	});
+	await signIn(p, owner());
+
+	const tabRadio = (name: string) => p.getByTestId('new-type').getByRole('radio', { name });
+	const iron = () => p.getByRole('main').getByRole('link', { name: /Iron Lullaby/ }).first();
+	const onIron = () => expect(p.getByRole('heading', { level: 1, name: 'Iron Lullaby' })).toBeVisible();
+
+	await p.goto('/popular');
+	await tabRadio('Movies').click();
+	await expect(p).toHaveURL(/\/popular\?.*type=movies/);
+	await expect(iron()).toBeVisible();
+	await iron().click();
+	await expect(p).toHaveURL(/\/title\/movie\/900011/);
+	await onIron();
+	await p.goBack();
+	await expect(p).toHaveURL(/\/popular\?.*type=movies/);
+	await expect(tabRadio('Movies')).toBeChecked();
+	await expect(iron()).toBeVisible();
+	await p.goForward();
+	await expect(p).toHaveURL(/\/title\/movie\/900011/);
+	await onIron();
+	await p.goBack();
+	await expect(p).toHaveURL(/\/popular\?.*type=movies/);
+	await expect(tabRadio('Movies')).toBeChecked();
+	await expect(iron()).toBeVisible();
+
+	await p.goto('/popular?type=movies');
+	await expect(tabRadio('Movies')).toBeChecked();
+	await tabRadio('All').click();
+	await expect(p).not.toHaveURL(/type=/);
+	await expect(iron()).toBeVisible();
+	await iron().click();
+	await expect(p).toHaveURL(/\/title\/movie\/900011/);
+	await onIron();
+	await p.goBack();
+	await expect(p).not.toHaveURL(/type=/);
+	await expect(tabRadio('All')).toBeChecked();
+	await p.goForward();
+	await expect(p).toHaveURL(/\/title\/movie\/900011/);
+	await onIron();
+	await p.goBack();
+	await expect(p).not.toHaveURL(/type=/);
+	await expect(tabRadio('All')).toBeChecked();
+
+	await ctx.close();
+});
+
+test('Explore keeps the selected tab and genre across Back and Forward from a movie', async ({ browser }) => {
+	const ctx = await browser.newContext();
+	const p = await ctx.newPage();
+	await p.route('https://image.tmdb.org/**', (r) => r.fulfill({ body: tinyPng, contentType: 'image/png' }));
+	await p.route('**/api/v1/artwork/tmdb/**', (r) => r.fulfill({ body: tinyPng, contentType: 'image/png' }));
+	await p.route('**/api/v1/explore/head?**', (r) => {
+		const tab = new URL(r.request().url()).searchParams.get('type') ?? 'all';
+		const hero = [{ tmdb_id: '900099', kind: 'movie', name: 'Hero Movie', year: 2024, poster: 'https://image.tmdb.org/t/p/w500/h.jpg', backdrop: 'https://image.tmdb.org/t/p/original/hb.jpg' }];
+		return r.fulfill({ json: { type: tab, building: false, seeds: 0, tail_cap: 0, tail_rows: 0, hero, head: [{ id: `row_${tab}`, type: 'genre', title: `Featured ${tab}`, items: discoverItems() }] } });
+	});
+	await p.route('**/api/v1/explore/genre?**', (r) => {
+		const u = new URL(r.request().url());
+		const tab = u.searchParams.get('type') ?? 'movies';
+		const hero = [{ tmdb_id: '900098', kind: 'movie', name: 'Action Hero', year: 2024, poster: 'https://image.tmdb.org/t/p/w500/ah.jpg', backdrop: 'https://image.tmdb.org/t/p/original/ahb.jpg' }];
+		return r.fulfill({ json: { type: tab, genre: { id: 28, name: 'Action', kind: 'movie' }, hero, rows: [{ id: 'action_picks', type: 'genre', title: 'Action picks', items: discoverItems() }] } });
+	});
+	await signIn(p, owner());
+	await p.evaluate(() => localStorage.removeItem('holyarrs.explore.type'));
+
+	const tabRadio = (name: string) => p.getByTestId('explore-type').getByRole('radio', { name });
+	const genreBtn = () => p.getByTestId('genre-picker').getByRole('button').first();
+	const iron = () => p.getByRole('main').getByRole('link', { name: /Iron Lullaby/ }).first();
+	const onIron = () => expect(p.getByRole('heading', { level: 1, name: 'Iron Lullaby' })).toBeVisible();
+
+	await p.goto('/explore');
+	await tabRadio('Movies').click();
+	await expect(p).toHaveURL(/\/explore\?.*type=movies/);
+	await expect(genreBtn()).toBeVisible();
+	await genreBtn().click();
+	await p.getByTestId('music-genre-tiles').getByRole('link', { name: 'Action', exact: true }).click();
+	await expect(p).toHaveURL(/\/explore\?.*type=movies.*genre=28/);
+	await expect(genreBtn()).toHaveText('Action');
+	await expect(iron()).toBeVisible();
+	await iron().click();
+	await expect(p).toHaveURL(/\/title\/movie\/900011/);
+	await onIron();
+	await p.goBack();
+	await expect(p).toHaveURL(/\/explore\?.*type=movies.*genre=28/);
+	await expect(tabRadio('Movies')).toBeChecked();
+	await expect(genreBtn()).toHaveText('Action');
+	await expect(iron()).toBeVisible();
+	await p.goForward();
+	await expect(p).toHaveURL(/\/title\/movie\/900011/);
+	await onIron();
+	await p.goBack();
+	await expect(p).toHaveURL(/\/explore\?.*type=movies.*genre=28/);
+	await expect(tabRadio('Movies')).toBeChecked();
+	await expect(genreBtn()).toHaveText('Action');
+	await expect(iron()).toBeVisible();
+
+	await p.goto('/explore?type=movies');
+	await expect(tabRadio('Movies')).toBeChecked();
+	await tabRadio('All').click();
+	await expect(p).not.toHaveURL(/type=/);
+	await expect(iron()).toBeVisible();
+	await iron().click();
+	await expect(p).toHaveURL(/\/title\/movie\/900011/);
+	await onIron();
+	await p.goBack();
+	await expect(p).not.toHaveURL(/type=/);
+	await expect(tabRadio('All')).toBeChecked();
+	await p.goForward();
+	await expect(p).toHaveURL(/\/title\/movie\/900011/);
+	await onIron();
+	await p.goBack();
+	await expect(p).not.toHaveURL(/type=/);
+	await expect(tabRadio('All')).toBeChecked();
+
+	await ctx.close();
+});

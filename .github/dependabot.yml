@@ -1,0 +1,21 @@
+# Security updates only. open-pull-requests-limit: 0 turns off version
+# updates; Dependabot still opens a pull request when a dependency has a
+# published advisory (needs "Dependabot security updates" on in settings).
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directories: ["/", "/app/plugins/tailscale"]
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+  - package-ecosystem: npm
+    directories: ["/app/frontend", "/.github/deploy"]
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+  - package-ecosystem: docker
+    directory: "/deploy"
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0

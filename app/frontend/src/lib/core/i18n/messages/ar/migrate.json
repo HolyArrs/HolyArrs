@@ -415,5 +415,7 @@
 	"migrate.nFound": "تم العثور على {found}",
 	"migrate.readOnly": "للقراءة فقط",
 	"migrate.folderReadOnly": "لا يستطيع HolyArrs الكتابة في هذا المجلد، لذا لا يمكن استيراد أي شيء إليه. اجعل وحدة التخزين قابلة للكتابة (احذف :ro) في إعداد Docker الخاص بـ HolyArrs، ثم أعد إنشاء الحاوية.",
-	"migrate.someFound": "تم العثور على {n}"
+	"migrate.someFound": "تم العثور على {n}",
+	"migrate.sameSource": "هو نفسه {list}: مصدر واحد",
+	"migrate.nameInApps": "{name} في {apps}"
 }

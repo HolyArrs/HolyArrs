@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "獲准的 4K 請求存放在哪裡、如何挑選",
 	"settings.requests.fourKSameFolder": "與其他請求相同",
 	"settings.requests.fourKNamedRules": "名為 4K 的畫質",
+	"settings.requests.anime": "動漫",
+	"settings.requests.animeDesc": "獲准的動漫請求存放在哪裡",
 	"settings.requests.choices": "可以請求的內容",
 	"settings.requests.choicesDesc": "請求視窗中的畫質按鈕，依此順序顯示。可在這裡改名或隱藏；兒童帳號只會得到第一個顯示的按鈕。",
 	"settings.requests.choiceShown": "向大家顯示",

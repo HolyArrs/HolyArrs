@@ -43,6 +43,8 @@
 	"settings.requests.fourKDesc": "मंज़ूर 4K रिक्वेस्ट कहाँ जाती हैं और कैसे चुनी जाती हैं",
 	"settings.requests.fourKSameFolder": "दूसरी रिक्वेस्ट जैसा",
 	"settings.requests.fourKNamedRules": "4K नाम की क्वालिटी",
+	"settings.requests.anime": "एनीमे",
+	"settings.requests.animeDesc": "मंज़ूर एनीमे रिक्वेस्ट कहाँ जाती हैं",
 	"settings.requests.choices": "लोग क्या रिक्वेस्ट कर सकते हैं",
 	"settings.requests.choicesDesc": "रिक्वेस्ट शीट पर क्वालिटी बटन, इसी क्रम में। यहाँ इनका नाम बदलें या छिपाएँ; बच्चों को पहला दिखने वाला मिलता है।",
 	"settings.requests.choiceShown": "लोगों को दिखाएँ",

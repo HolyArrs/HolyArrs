@@ -68,6 +68,9 @@ export interface AskSettings {
 	four_k_pick_rules_id: number;
 	show_four_k_library_folder_id: number;
 	show_four_k_pick_rules_id: number;
+	/** Where approved requests for anime go (0: the same folder as other requests). */
+	anime_library_folder_id: number;
+	show_anime_library_folder_id: number;
 	/** People may have their Plex watchlist asked for as them. */
 	plex_watchlists?: boolean;
 	plex_watchlists_everyone?: boolean;

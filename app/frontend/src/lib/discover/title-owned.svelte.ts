@@ -92,10 +92,10 @@ export function createOwnedTitle() {
 			try {
 				if (what === 'search') {
 					await api.post(`/titles/${o.id}/search`, {});
-					toasts.push(t('discover.titleOwned.searchingFor', { name: o.name }), 'info');
+					toasts.push(t('discover.titleOwned.searchingFor', { name: o.name }), 'info', { href: `/library/${o.id}` });
 				} else if (what === 'refresh') {
 					await api.post(`/titles/${o.id}/refresh`);
-					toasts.push(t('discover.titleOwned.refreshing', { name: o.name }), 'info', { body: t('discover.titleOwned.refreshingBody') });
+					toasts.push(t('discover.titleOwned.refreshing', { name: o.name }), 'info', { body: t('discover.titleOwned.refreshingBody'), href: `/library/${o.id}` });
 				} else {
 					const r = await api.put<{ title: TitleView }>(`/titles/${o.id}`, { keep_up_to_date: !o.keep_up_to_date });
 					owned = r.title;

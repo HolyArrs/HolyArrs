@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Letöltő hozzáadása",
 	"downloads.hl.noUsenetDl": "nincs beállítva Usenet-letöltő",
 	"downloads.hl.noTorrentDl": "nincs beállítva torrentletöltő",
+	"downloads.problem.waitingForFiles": "Várakozás a fájlokra",
 	"downloads.problem.importBlocked": "Importálás letiltva",
 	"downloads.problem.missingArticles": "Hiányzó cikkek",
 	"downloads.problem.noFullCopy": "Nincs teljes másolat",

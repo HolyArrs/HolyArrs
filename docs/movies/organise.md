@@ -67,6 +67,18 @@ A rename changes file names only. Folders keep their names. The preview says why
 
 You should see the movie gone from **Library**. Its history stays. Downloads still running for it stay in the Downloader. Remove them on [Movie downloads](downloads.md#remove-a-download).
 
+## Delete one file
+
+To delete a single copy and keep the movie:
+
+1. Open the movie and go to its **Library** tab.
+2. On the file's card, open the **...** menu and press **Delete file**.
+3. Confirm.
+
+The file and the subtitles beside it move to `.holyarrs-replaced`, so **Recently deleted** can restore them until the holding days run out. The movie and its other files stay, and the movie wants a copy again. With **Stop looking for deleted movies** on, its **Keep up to date** turns off instead.
+
+**Delete file** is not offered for a file in a look-only Library folder, a protected copy, a file HolyArrs only found, or a file that is missing.
+
 ## Choices
 
 ### Missing files
