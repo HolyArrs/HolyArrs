@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
@@ -41,6 +42,10 @@ func TestShowImportWithSaveFolderKeepsNothingMatched(t *testing.T) {
 	if err := execSQL(w.s, "UPDATE downloaders SET adapter = 'sabnzbd', protocol = 'usenet'"); err != nil {
 		t.Fatal(err)
 	}
+	// Past the wait for files still on their way (#861).
+	if err := execSQL(w.s, "UPDATE downloads SET finished_at = ?", time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano)); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := (&Importer{Store: w.s, SavePath: w.dl}).Import(context.Background(), w.dlID, false, domain.System); err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +71,11 @@ func TestMovieImportWithNoSaveFolderSaysWhereToSetIt(t *testing.T) {
 	if !strings.Contains(why, "HOLYARRS_SAVE_PATH") || !strings.Contains(why, "Settings > Downloaders") || strings.Contains(why, "import plan") {
 		t.Fatalf("reason %q", why)
 	}
-	// A path pair is set up: the folder was read, so matching by hand is the answer.
+	// A path pair is set up: the folder was read, so matching by hand is the
+	// answer once the wait for files still on their way is over (#861).
+	if err := execSQL(w.s, "UPDATE downloads SET finished_at = ?", time.Now().Add(-time.Hour).UTC().Format(time.RFC3339Nano)); err != nil {
+		t.Fatal(err)
+	}
 	if err := execSQL(w.s, "UPDATE downloaders SET path_map = ?", `[{"theirs":"/downloads","ours":"`+strings.ReplaceAll(w.dl, `\`, `\\`)+`"}]`); err != nil {
 		t.Fatal(err)
 	}
