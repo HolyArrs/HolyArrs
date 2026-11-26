@@ -113,6 +113,9 @@ func rankStep(rules PickRulesBody, idx int) int {
 	return top
 }
 
+// RankStep is rankStep for the import check, so it ranks steps as judging does.
+func RankStep(rules PickRulesBody, idx int) int { return rankStep(rules, idx) }
+
 // SyncedProfile is a TRaSH Guides profile applied to Pick rules, or an
 // old app's profile imported or sent through the arr API.
 type SyncedProfile struct {

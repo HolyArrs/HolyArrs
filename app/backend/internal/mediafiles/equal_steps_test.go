@@ -1,6 +1,7 @@
 package mediafiles
 
 import (
+	"slices"
 	"testing"
 	"time"
 
@@ -53,5 +54,44 @@ func TestEqualStepsRankAndUpgrade(t *testing.T) {
 	Rank(rels[:2], vs[:2], b)
 	if vs[1].Rank != 1 {
 		t.Errorf("in the group, points did not decide: %+v", vs[:2])
+	}
+}
+
+// Judging's side of the import check: with 1080p WEB and BluRay as one step, a WEB
+// replaces a BluRay below its smallest size, and one big enough stays unless
+// the rules' own order counts the WEB better (an old app's: more points);
+// without the group the WEB is lower. The import check ranks the same way (importer TestLieOfRanksEqualSteps).
+func TestEqualStepsReplaceUnderMin(t *testing.T) {
+	const bluRay = "The.Lantern.Keepers.2021.1080p.BluRay.x264-YTS"
+	const web = "The.Lantern.Keepers.2021.1080p.AMZN.WEB-DL.DDP5.1.H.264-GRP"
+	group := GoodEveryday()
+	group.ReplaceUnderMin = true
+	group.EqualSteps = [][]string{{"1080p_web", "1080p_bluray"}}
+	oldApp := group
+	oldApp.Synced = &SyncedProfile{From: "import", App: "radarr"}
+	noPoints := oldApp
+	noPoints.Traits = nil
+	plain := GoodEveryday()
+	plain.ReplaceUnderMin = true
+	cases := []struct {
+		name    string
+		rules   PickRulesBody
+		curSize int64
+		want    string
+	}{
+		{"group, small bluray", group, 300 * mb, "better.under_min"},
+		{"group, bluray big enough", group, 4 * gb, "better.good_enough_already"},
+		{"old app group, small bluray", oldApp, 300 * mb, "better.under_min"},
+		{"old app group, bluray big enough, more points", oldApp, 4 * gb, "better.points"},
+		{"old app group, bluray big enough, no more points", noPoints, 4 * gb, "better.not_better"},
+		{"no group, small bluray", plain, 300 * mb, "better.lower_step"},
+	}
+	for _, c := range cases {
+		cur := CurrentOf(bluRay, c.curSize, time.Now().Add(-48*time.Hour), c.rules)
+		rel := release(row{Name: web})
+		v := Judge(rel, setFor(t, rel, &cur), c.rules)
+		if got := append(codes(v, "pass"), codes(v, "fail")...); !slices.Contains(got, c.want) {
+			t.Errorf("%s: want %s, got %v", c.name, c.want, got)
+		}
 	}
 }
