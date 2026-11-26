@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "Allkirjastatud pistikprogrammid töötavad siin ilma faililukuta. Ülejäänud turvapiirangud jäävad sisse.",
 	"plugins.noLockOffNow": "Pistikprogrammid jäävad peatatuks, kuni süsteemil on faililukk.",
 	"plugins.noLockChange": "Muuda",
+	"plugins.noLockLearn": "Kuidas pistikprogrammide failulukk töötab",
 	"plugins.noLockTag": "Selles süsteemis pole faililukku",
 	"plugins.noLockKeptOff": "Pistikprogrammid jäävad ilma faililukuta peatatuks",
 	"plugins.secAccess": "Pääseb ligi",

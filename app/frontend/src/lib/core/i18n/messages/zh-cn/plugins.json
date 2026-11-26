@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "已签名的插件在这里不带文件锁运行。其他安全限制仍然开启。",
 	"plugins.noLockOffNow": "在此系统有文件锁之前，插件会保持停止。",
 	"plugins.noLockChange": "更改",
+	"plugins.noLockLearn": "插件文件锁的工作原理",
 	"plugins.noLockTag": "此系统没有文件锁",
 	"plugins.noLockKeptOff": "没有文件锁，插件保持停止",
 	"plugins.secAccess": "可访问",

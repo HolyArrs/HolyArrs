@@ -158,6 +158,7 @@
 	"plugins.noLockOnNow": "İmzalı eklentiler burada dosya kilidi olmadan çalışıyor. Diğer güvenlik sınırları açık.",
 	"plugins.noLockOffNow": "Bu sistemde dosya kilidi olana kadar eklentiler durdurulmuş kalır.",
 	"plugins.noLockChange": "Değiştir",
+	"plugins.noLockLearn": "Eklenti dosya kilidi nasıl çalışır",
 	"plugins.noLockTag": "Bu sistemde dosya kilidi yok",
 	"plugins.noLockKeptOff": "Eklentiler dosya kilidi olmadan durdurulmuş kalır",
 	"plugins.secAccess": "Erişebildikleri",
