@@ -20,7 +20,7 @@
 	import { date } from '#lib/core/format.ts';
 	import { PluginInfo, PluginSettings, AddSheet, DevActions, NoLockCard, NoNetLockCard, ApproveAccess, wheelSideways, fitChips, tagRoom, arrowKeys, tint, LanguagesSection, languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from '#lib/plugins/index.ts';
 	import { listLanguages, packList } from '#lib/core/i18n/language-packs.svelte.ts';
-	import { abilities, newAbilities, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, forwards, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
+	import { abilities, newAbilities, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, settingsPage, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import { DlFind } from '#lib/downloads/index.ts';
 	import { barTools, barLead, pluginScope } from '#lib/core/search-field.svelte.ts';
@@ -295,10 +295,6 @@
 		removeOpen = false;
 		if (p) void act(p, () => api.del(path(p)), 'plugins.removed', 'plugins.removeFailed');
 	}
-
-	// A plugin whose settings live on an app page is listed here; its manifest's own fields, when it declares any, open in the dialog instead.
-	// Forwarding plugins (network.forward) open Remote access.
-	const settingsPage = (p: Plugin) => (p.settings?.length ? '' : forwards(p) ? `/settings/remote-access?plugin=${encodeURIComponent(p.id)}` : '');
 
 </script>
 

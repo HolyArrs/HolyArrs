@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "küldd {\"on\": true} vagy {\"on\": false}",
 	"server.library.deleted-of": "{relativepath} törölve ({name})",
 	"server.importer.the-file-is-not-present-yet": "a fájl még nincs meg; a HolyArrs újra megpróbálja importálni",
-	"server.migrate.the-same-as-a-source-that": "ugyanaz, mint {name}, egy Forrás, ami már itt van"
+	"server.migrate.the-same-as-a-source-that": "ugyanaz, mint {name}, egy Forrás, ami már itt van",
+	"server.accounts.name-the-person-by-their-user": "add meg a személyt a felhasználói azonosítójával",
+	"server.migrate.it-is-longer-than-a-holyarrs": "hosszabb, mint amilyen egy HolyArrs-minta lehet"
 }

@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "sūti {\"on\": true} vai {\"on\": false}",
 	"server.library.deleted-of": "Izdzēsts {relativepath} no {name}",
 	"server.importer.the-file-is-not-present-yet": "faila vēl nav; HolyArrs mēģinās to importēt vēlreiz",
-	"server.migrate.the-same-as-a-source-that": "tas pats, kas {name}, Avots, kas jau ir šeit"
+	"server.migrate.the-same-as-a-source-that": "tas pats, kas {name}, Avots, kas jau ir šeit",
+	"server.accounts.name-the-person-by-their-user": "norādi personu pēc tās lietotāja ID",
+	"server.migrate.it-is-longer-than-a-holyarrs": "tas ir garāks, nekā var būt HolyArrs šablons"
 }
