@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "sende {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Neues Cover",
 	"server.plugins.send-event-library-add": "sende {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "sende {\"on\": true} oder {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "sende {\"on\": true} oder {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "die Datei ist noch nicht da; HolyArrs versucht den Import erneut"
 }

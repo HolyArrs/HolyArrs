@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "изпратете {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Нова обложка",
 	"server.plugins.send-event-library-add": "изпрати {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "изпрати {\"on\": true} или {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "изпрати {\"on\": true} или {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "файлът още го няма; HolyArrs ще опита да го внесе отново"
 }

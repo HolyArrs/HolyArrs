@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Adaugă un program de descărcare",
 	"downloads.hl.noUsenetDl": "niciun program de descărcare Usenet nu e configurat",
 	"downloads.hl.noTorrentDl": "niciun program de descărcare torrent nu e configurat",
+	"downloads.problem.waitingForFiles": "Se așteaptă fișierele",
 	"downloads.problem.importBlocked": "Import blocat",
 	"downloads.problem.missingArticles": "Articole lipsă",
 	"downloads.problem.noFullCopy": "Nicio copie completă",

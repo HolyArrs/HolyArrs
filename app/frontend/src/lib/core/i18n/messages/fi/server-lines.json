@@ -2458,5 +2458,6 @@
 	"server.plugins.send-name": "lähetä {\"name\": \"...\"}",
 	"server.library.new-cover-art": "Uusi kansikuva",
 	"server.plugins.send-event-library-add": "lähetä {\"event\": \"library.add\"}",
-	"server.plugins.send-on-true-or-on-false": "lähetä {\"on\": true} tai {\"on\": false}"
+	"server.plugins.send-on-true-or-on-false": "lähetä {\"on\": true} tai {\"on\": false}",
+	"server.importer.the-file-is-not-present-yet": "tiedostoa ei ole vielä; HolyArrs yrittää tuoda sen uudelleen"
 }

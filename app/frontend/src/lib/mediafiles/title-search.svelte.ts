@@ -6,6 +6,9 @@ import { toasts } from '#lib/core/toasts.svelte.ts';
 import { scrollToStart } from '#lib/core/motion.ts';
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
 
+// Toasts about this title open its page, also when read later in the alerts list.
+const page = (id: number) => `/library/${id}`;
+
 export function createTitleSearch(ctx: { id: number; title: TitleView | null; slotPick: number; searching: boolean; running: number[]; relOffset: number; refreshing: boolean; load: (which?: 'all' | 'title' | 'releases') => Promise<void> }) {
 	let failing = $state(0);
 	async function markFailed(downloadID: number) {
@@ -13,7 +16,7 @@ export function createTitleSearch(ctx: { id: number; title: TitleView | null; sl
 		failing = downloadID;
 		try {
 			await api.post(`/downloads/${downloadID}/mark-failed`);
-			toasts.push(t('mediafiles.title.markedFailed'), 'ok', { body: t('mediafiles.title.searchingNext') });
+			toasts.push(t('mediafiles.title.markedFailed'), 'ok', { body: t('mediafiles.title.searchingNext'), href: page(ctx.id) });
 			await ctx.load('title');
 		} catch (e) {
 			toasts.push(t('mediafiles.title.markFailed'), 'fail', { body: message(e) });
@@ -31,7 +34,8 @@ export function createTitleSearch(ctx: { id: number; title: TitleView | null; sl
 			const r = await api.post<{ job_ids: number[] }>(`/titles/${ctx.id}/search`, body);
 			ctx.running = [...new Set([...ctx.running, ...r.job_ids])];
 			ctx.relOffset = 0;
-			toasts.push(t('mediafiles.title.searching'), 'info', pick ? undefined : { body: t('mediafiles.title.pickFromList') });
+			const name = ctx.title?.name;
+			toasts.push(name ? t('mediafiles.showReleases.searchingFor', { name }) : t('mediafiles.title.searching'), 'info', { body: pick ? (name ? t('mediafiles.title.searching') : undefined) : t('mediafiles.title.pickFromList'), href: page(ctx.id) });
 		} catch (e) {
 			toasts.push(t('mediafiles.title.startFailed'), 'fail', { body: message(e) });
 		} finally {
@@ -51,7 +55,7 @@ export function createTitleSearch(ctx: { id: number; title: TitleView | null; sl
 		ctx.refreshing = true;
 		try {
 			await api.post(`/titles/${ctx.id}/refresh`);
-			toasts.push(t('mediafiles.title.refreshing', { name: ctx.title?.name ?? t('mediafiles.title.titleLower') }), 'info', { body: t('mediafiles.title.refreshingBody') });
+			toasts.push(t('mediafiles.title.refreshing', { name: ctx.title?.name ?? t('mediafiles.title.titleLower') }), 'info', { body: t('mediafiles.title.refreshingBody'), href: page(ctx.id) });
 		} catch (e) {
 			toasts.push(t('mediafiles.title.refreshFailed'), 'fail', { body: message(e) });
 		} finally {

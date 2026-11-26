@@ -1320,6 +1320,7 @@
 	"downloads.noDl.add": "Lisää lataaja",
 	"downloads.hl.noUsenetDl": "Usenet-lataajaa ei ole määritetty",
 	"downloads.hl.noTorrentDl": "torrent-lataajaa ei ole määritetty",
+	"downloads.problem.waitingForFiles": "Odotetaan tiedostoja",
 	"downloads.problem.importBlocked": "Tuonti estetty",
 	"downloads.problem.missingArticles": "Puuttuvia artikkeleita",
 	"downloads.problem.noFullCopy": "Ei täyttä kopiota",
