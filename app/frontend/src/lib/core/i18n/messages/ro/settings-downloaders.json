@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Nume utilizator SABnzbd",
 	"settings.downloaders.sabPass": "Parolă SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd nu a acceptat acest nume de utilizator și această parolă.",
-	"settings.downloaders.keyNotFound": "Cheia nu a putut fi citită. Folosește Obține cheia și copiaz-o de acolo."
+	"settings.downloaders.keyNotFound": "Cheia nu a putut fi citită. Folosește Obține cheia și copiaz-o de acolo.",
+	"settings.downloaders.pluginKind": "Plugin"
 }

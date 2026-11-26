@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "SABnzbd vartotojo vardas",
 	"settings.downloaders.sabPass": "SABnzbd slaptažodis",
 	"settings.downloaders.keyWrongLogin": "SABnzbd nepriėmė šio vartotojo vardo ir slaptažodžio.",
-	"settings.downloaders.keyNotFound": "Nepavyko nuskaityti rakto. Naudokite „Gauti raktą“ ir nukopijuokite jį iš ten."
+	"settings.downloaders.keyNotFound": "Nepavyko nuskaityti rakto. Naudokite „Gauti raktą“ ir nukopijuokite jį iš ten.",
+	"settings.downloaders.pluginKind": "Papildinys"
 }

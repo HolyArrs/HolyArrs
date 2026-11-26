@@ -157,6 +157,8 @@ type Plugin struct {
 	IconURL     string `json:"icon_url,omitempty"`
 	Details
 	Access *Access `json:"access"`
+	// DownloadTypes are the download types the plugin brings itself.
+	DownloadTypes []string `json:"download_types,omitempty"`
 	// ReachesApp is true when the plugin is handed this server's own address.
 	ReachesApp bool `json:"reaches_app"`
 	// InstallStep is the step of an install under way: downloading,
@@ -200,7 +202,7 @@ type Plugin struct {
 func (p *Plugin) show(m *Manifest) {
 	p.Name, p.Author, p.Description, p.Icon, p.IconURL, p.Details = m.Name, m.Author, m.Description, m.Icon, m.IconURL, m.Details
 	a := m.Access
-	p.Access = &a
+	p.Access, p.DownloadTypes = &a, m.DownloadTypes
 }
 
 // Overview is the answer of the plugin list route.
@@ -230,8 +232,8 @@ type Overview struct {
 	// the page just shows no plugins.
 	ListBad bool `json:"list_bad"`
 	// DevMode is on when the owner runs unsigned plugins from DevDir.
-	DevMode bool     `json:"dev_mode"`
-	DevDir  string   `json:"dev_dir,omitempty"`
+	DevMode bool   `json:"dev_mode"`
+	DevDir  string `json:"dev_dir,omitempty"`
 	// LanguagePacks are the language packs' download numbers, when known;
 	// that card is not a listed plugin.
 	LanguagePacks *Stat    `json:"language_packs,omitempty"`

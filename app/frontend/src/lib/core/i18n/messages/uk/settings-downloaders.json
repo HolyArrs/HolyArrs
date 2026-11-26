@@ -160,5 +160,6 @@
 	"settings.downloaders.sabUser": "Ім'я користувача SABnzbd",
 	"settings.downloaders.sabPass": "Пароль SABnzbd",
 	"settings.downloaders.keyWrongLogin": "SABnzbd не прийняв це ім'я користувача й пароль.",
-	"settings.downloaders.keyNotFound": "Не вдалося прочитати ключ. Скористайтеся «Отримати ключ» і скопіюйте його звідти."
+	"settings.downloaders.keyNotFound": "Не вдалося прочитати ключ. Скористайтеся «Отримати ключ» і скопіюйте його звідти.",
+	"settings.downloaders.pluginKind": "Плагін"
 }

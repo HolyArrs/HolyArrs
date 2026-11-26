@@ -33,8 +33,9 @@ export function samePathPair(p: PathMap): boolean {
 export interface DownloaderView {
 	id: number;
 	name: string;
-	kind: 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent' | 'aria2';
-	protocol: 'torrent' | 'usenet';
+	kind: 'qbittorrent' | 'sabnzbd' | 'transmission' | 'nzbget' | 'deluge' | 'rtorrent' | 'aria2' | 'plugin-torrent' | 'plugin-usenet' | 'plugin';
+	/** torrent, usenet, or (kind plugin) a download type the plugin brings, such as soulseek. */
+	protocol: string;
 	url: string;
 	username: string;
 	secret: string;
@@ -163,7 +164,16 @@ export const kindWords: Record<DownloaderView['kind'], string> = {
 	nzbget: 'NZBGet',
 	deluge: 'Deluge',
 	rtorrent: 'rTorrent',
-	aria2: 'aria2'
+	aria2: 'aria2',
+	get 'plugin-torrent'() {
+		return t('settings.downloaders.pluginKind');
+	},
+	get 'plugin-usenet'() {
+		return t('settings.downloaders.pluginKind');
+	},
+	get plugin() {
+		return t('settings.downloaders.pluginKind');
+	}
 };
 
 const stateKeys: Record<DownloaderHealth['state'], string> = {
@@ -305,7 +315,7 @@ function goal(v: number | '' | null): number | null {
 
 /** Which After seeding fields a Downloader gets: none for Usenet, goals only where ratio and time are reported. */
 export function seedingFields(kind: DownloaderView['kind']): 'none' | 'remove' | 'goals' {
-	if (kind === 'sabnzbd' || kind === 'nzbget') return 'none';
+	if (kind === 'sabnzbd' || kind === 'nzbget' || kind === 'plugin') return 'none';
 	return seedGoalKinds.includes(kind) ? 'goals' : 'remove';
 }
 
