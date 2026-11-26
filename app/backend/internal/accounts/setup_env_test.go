@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"unicode"
@@ -734,7 +735,7 @@ func TestEnvSetupRefusalsAreForAPerson(t *testing.T) {
 	t.Setenv(EnvOwnerPassword, p)
 	err := applyEnv(t, f.a)
 	var es *EnvSetupError
-	if !errors.As(err, &es) || !strings.Contains(err.Error(), p) || strings.Contains(es.Public, p) || !strings.Contains(es.Public, EnvOwnerPassword) {
+	if !errors.As(err, &es) || !strings.Contains(err.Error(), strconv.Quote(p)) || strings.Contains(es.Public, p) || !strings.Contains(es.Public, EnvOwnerPassword) {
 		t.Fatalf("missing file: %v / %+v", err, es)
 	}
 	// Whatever went wrong with the file, the page text never shows its path,
@@ -796,7 +797,29 @@ func assertNoPath(t *testing.T, path, variable, label string) {
 		err = applyEnv(t, f.a)
 	}
 	var es *EnvSetupError
-	if !errors.As(err, &es) || !strings.Contains(err.Error(), path) || strings.Contains(es.Public, path) || !strings.Contains(es.Public, variable) {
+	if !errors.As(err, &es) || !strings.Contains(err.Error(), strconv.Quote(path)) || strings.Contains(es.Public, path) || !strings.Contains(es.Public, variable) {
 		t.Fatalf("%s %s: %v / page %+v", variable, label, err, es)
+	}
+}
+
+// An owner made from the files still meets the first-run wizard: the files
+// only take the place of the account step.
+func TestEnvOwnerStillGetsTheWizard(t *testing.T) {
+	clearEnvSetup(t)
+	f := setup(t, Options{})
+	p := filepath.Join(t.TempDir(), "owner-password")
+	if err := os.WriteFile(p, []byte("a long enough password 1\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(EnvOwnerName, "river")
+	t.Setenv(EnvOwnerPassword, p)
+	if err := applyEnv(t, f.a); err != nil {
+		t.Fatal(err)
+	}
+	if name, _ := ownerRow(t, f); name != "river" {
+		t.Fatalf("owner %q", name)
+	}
+	if FirstRunDone(context.Background(), f.s.Read()) {
+		t.Fatal("the wizard counts as finished for an owner made from the files")
 	}
 }
