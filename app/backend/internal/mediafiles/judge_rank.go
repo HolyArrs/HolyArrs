@@ -184,8 +184,15 @@ func ReachesGoodEnough(releaseName string, rules PickRulesBody) bool {
 // ReachesGoodEnoughFor is ReachesGoodEnough for a file of Title t: language
 // and year tests read t's original language and year (withTitle).
 func ReachesGoodEnoughFor(releaseName string, t Title, rules PickRulesBody) bool {
+	return reachesGoodEnough(releaseName, "", t, rules)
+}
+
+// reachesGoodEnough is ReachesGoodEnoughFor with the group stored on the
+// File (withGroup).
+func reachesGoodEnough(releaseName, group string, t Title, rules PickRulesBody) bool {
 	p := releasename.Parse(releaseName, hintsFor(rules))
 	withTitle(&p, t)
+	withGroup(&p, group)
 	idx := rankStep(rules, stepIndex(rules, StepFor(p)))
 	if idx < 0 || idx < stepIndex(rules, rules.GoodEnoughAt) {
 		return false
@@ -210,10 +217,17 @@ func CurrentOfFile(releaseName string, size int64, importedAt time.Time, audio [
 // CurrentOfTitleFile is CurrentOfFile for a File of Title t: language and
 // year tests read t's original language and year (withTitle).
 func CurrentOfTitleFile(releaseName string, size int64, importedAt time.Time, audio []string, t Title, rules PickRulesBody) Current {
+	return currentOfTitleFile(releaseName, "", size, importedAt, audio, t, rules)
+}
+
+// currentOfTitleFile is CurrentOfTitleFile with the group stored on the
+// File (withGroup).
+func currentOfTitleFile(releaseName, group string, size int64, importedAt time.Time, audio []string, t Title, rules PickRulesBody) Current {
 	p := releasename.Parse(releaseName, hintsFor(rules))
 	p.Size = size
 	p.AudioLanguages = audio
 	withTitle(&p, t)
+	withGroup(&p, group)
 	return Current{Step: StepFor(p), Points: sumPoints(p, rules), Group: p.Group.Value, Fix: p.Fix, ImportedAt: importedAt, parse: &p}
 }
 

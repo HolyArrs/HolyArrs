@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "hantar {\"on\": true} atau {\"on\": false}",
 	"server.library.deleted-of": "{relativepath} daripada {name} dipadam",
 	"server.importer.the-file-is-not-present-yet": "fail belum ada; HolyArrs akan cuba mengimportnya semula",
-	"server.migrate.the-same-as-a-source-that": "sama seperti {name}, Sumber yang ada di sini"
+	"server.migrate.the-same-as-a-source-that": "sama seperti {name}, Sumber yang ada di sini",
+	"server.accounts.name-the-person-by-their-user": "namakan orang itu dengan ID penggunanya",
+	"server.migrate.it-is-longer-than-a-holyarrs": "ia lebih panjang daripada had corak HolyArrs"
 }

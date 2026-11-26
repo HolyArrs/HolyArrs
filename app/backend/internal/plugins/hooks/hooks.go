@@ -1,5 +1,5 @@
 // Package hooks lets reviewed plugins provide parts of HolyArrs: a download
-// client, a search source, assistant tools, pages, Home widgets, title page
+// client, a search source, a bot-check solver, assistant tools, pages, Home widgets, title page
 // sections, events, user names and media streams.
 //
 // A plugin never listens: the net lock keeps it off every port. It asks
@@ -17,6 +17,7 @@ const (
 	Events     = "events"
 	Sections   = "sections"
 	Pages      = "pages"
+	Botcheck   = "botcheck"
 )
 
 // Scopes are the plugin scopes each provider hook needs.
@@ -27,4 +28,5 @@ var Scopes = map[string]string{
 	Events:     "alerts.events.subscribe",
 	Sections:   "pages.title-section",
 	Pages:      "pages.add",
+	Botcheck:   "sources.botcheck",
 }

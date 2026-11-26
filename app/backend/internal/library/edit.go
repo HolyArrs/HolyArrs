@@ -283,7 +283,7 @@ func goodEnoughTx(ctx context.Context, tx *sql.Tx, v mediafiles.Version, keep bo
 		if f.ReleaseName != nil && *f.ReleaseName != "" {
 			name = *f.ReleaseName
 		}
-		ge := mediafiles.OwnedReachesGoodEnoughFor(name, f.MediaInfo, t, pr.Body) && fileMeetsVersionChoices(v, f)
+		ge := mediafiles.OwnedFileReachesGoodEnough(f, name, t, pr.Body) && fileMeetsVersionChoices(v, f)
 		if ge && pr.Body.ReplaceUnderMin {
 			ge = !underMinTx(ctx, tx, v, sl, name, f, pr.Body)
 		}

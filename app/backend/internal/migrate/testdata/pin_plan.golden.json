@@ -192,6 +192,12 @@
                 }
               ]
             },
+            "releases": {
+              "s": {
+                "name": "s",
+                "group": "s"
+              }
+            },
             "history": [
               {
                 "old_id": 7,

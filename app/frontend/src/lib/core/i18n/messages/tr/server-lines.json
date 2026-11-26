@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "gönder {\"on\": true} veya {\"on\": false}",
 	"server.library.deleted-of": "{name} için {relativepath} silindi",
 	"server.importer.the-file-is-not-present-yet": "dosya henüz yok; HolyArrs onu yeniden içe aktarmayı deneyecek",
-	"server.migrate.the-same-as-a-source-that": "{name} ile aynı, burada zaten olan bir Kaynak"
+	"server.migrate.the-same-as-a-source-that": "{name} ile aynı, burada zaten olan bir Kaynak",
+	"server.accounts.name-the-person-by-their-user": "kişiyi kullanıcı kimliğiyle belirtin",
+	"server.migrate.it-is-longer-than-a-holyarrs": "bir HolyArrs deseninin olabileceğinden daha uzun"
 }

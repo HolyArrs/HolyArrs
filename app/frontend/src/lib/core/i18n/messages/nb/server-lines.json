@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "send {\"on\": true} eller {\"on\": false}",
 	"server.library.deleted-of": "Slettet {relativepath} fra {name}",
 	"server.importer.the-file-is-not-present-yet": "filen er ikke her ennå; HolyArrs prøver å importere den igjen",
-	"server.migrate.the-same-as-a-source-that": "det samme som {name}, en kilde som finnes her"
+	"server.migrate.the-same-as-a-source-that": "det samme som {name}, en kilde som finnes her",
+	"server.accounts.name-the-person-by-their-user": "angi personen med bruker-ID-en deres",
+	"server.migrate.it-is-longer-than-a-holyarrs": "den er lengre enn et HolyArrs-mønster kan være"
 }

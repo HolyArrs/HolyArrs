@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "ส่ง {\"on\": true} หรือ {\"on\": false}",
 	"server.library.deleted-of": "ลบ {relativepath} ของ {name} แล้ว",
 	"server.importer.the-file-is-not-present-yet": "ยังไม่มีไฟล์; HolyArrs จะลองนำเข้าอีกครั้ง",
-	"server.migrate.the-same-as-a-source-that": "เหมือนกับ {name} ซึ่งเป็นแหล่งที่มาที่มีอยู่แล้ว"
+	"server.migrate.the-same-as-a-source-that": "เหมือนกับ {name} ซึ่งเป็นแหล่งที่มาที่มีอยู่แล้ว",
+	"server.accounts.name-the-person-by-their-user": "ระบุบุคคลด้วย ID ผู้ใช้ของเขา",
+	"server.migrate.it-is-longer-than-a-holyarrs": "ยาวเกินกว่าที่รูปแบบของ HolyArrs จะรองรับได้"
 }

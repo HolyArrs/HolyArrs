@@ -2461,5 +2461,7 @@
 	"server.plugins.send-on-true-or-on-false": "stuur {\"on\": true} of {\"on\": false}",
 	"server.library.deleted-of": "{relativepath} van {name} verwijderd",
 	"server.importer.the-file-is-not-present-yet": "het bestand is er nog niet; HolyArrs probeert het opnieuw te importeren",
-	"server.migrate.the-same-as-a-source-that": "hetzelfde als {name}, een Bron die hier al staat"
+	"server.migrate.the-same-as-a-source-that": "hetzelfde als {name}, een Bron die hier al staat",
+	"server.accounts.name-the-person-by-their-user": "geef de persoon aan met hun gebruikers-id",
+	"server.migrate.it-is-longer-than-a-holyarrs": "het is langer dan een HolyArrs-patroon mag zijn"
 }
