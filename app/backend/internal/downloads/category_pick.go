@@ -35,9 +35,18 @@ func foldCategory(s string) string {
 // PickCategory returns the category in have that fits kind (show, movie,
 // artist) by name, as written in have, or "" when none does.
 func PickCategory(kind string, have []string) string {
+	return PickFreeCategory(kind, have, nil)
+}
+
+// PickFreeCategory is PickCategory for a category another Downloader on the
+// same client must keep to itself: a fitting one in taken is passed over, and
+// the next fit is used, or "" when every fit is taken. Two Downloaders on one
+// client that are kept apart by tag, disk or category must not be handed the
+// same category, or the jobs in it show on both.
+func PickFreeCategory(kind string, have, taken []string) string {
 	for _, want := range fitNames[kind] {
 		for _, c := range have {
-			if foldCategory(c) == want {
+			if foldCategory(c) == want && !hasCategory(taken, c) {
 				return c
 			}
 		}
