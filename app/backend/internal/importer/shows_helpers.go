@@ -100,9 +100,11 @@ func reopenPack(ctx context.Context, s *database.Store, id int64) error {
 	})
 }
 
-// shortNameOf reports whether a file's title is a run of words from the
-// grabbed release's title (not its group or tags) or one of the show's names: a group's short name for
-// the show, not another show.
+// shortNameOf reports whether a file's title is the show under a short name: a
+// run of words from the grabbed release's title (not its group or tags) or one
+// of the show's names, which a group takes for an arc ("[Judas] Beerus -
+// S01E05"), or their initials, which it takes for the whole show ("[Judas]
+// DBS - S01E05"). It is the show's own short name, not another show's.
 func shortNameOf(title string, t ShowTarget) bool {
 	w := mediafiles.FoldWords(title)
 	if len(w) == 0 {
@@ -117,6 +119,25 @@ func shortNameOf(title string, t ShowTarget) bool {
 				return true
 			}
 		}
+		if len(w) == 1 && len(w[0]) > 1 && initialsOf(nw, w[0]) {
+			return true
+		}
 	}
 	return false
+}
+
+// initialsOf reports whether a word spells out the first letters of a run of
+// name words, "dbs" for "Dragon Ball Super Beerus". A word of one letter is
+// no short name.
+func initialsOf(name []string, word string) bool {
+	letters := []rune(word)
+	if len(letters) < 2 || len(letters) > len(name) {
+		return false
+	}
+	for i, r := range letters {
+		if name[i] == "" || []rune(name[i])[0] != r {
+			return false
+		}
+	}
+	return true
 }
