@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { libraryState } from './library-state.ts';
+import { libraryState, partlyKept } from './library-state.ts';
 import type { TitleView, SlotView, ShowInfo } from '../core/types.ts';
 
 const now = Date.parse('2026-10-21T00:00:00Z');
@@ -47,6 +47,15 @@ describe('libraryState: shows', () => {
 		expect(label(show({ missing: 0, in_library: 0, not_out_yet: 37 }, { keep_up_to_date: false }))).toBe('Not kept');
 		const seasons = [0, 1].map((n) => ({ number: n, name: '', keep_up_to_date: n === 0, episodes: 1, aired: 1, in_library: 0, missing: 0, not_out_yet: 0, better_wanted: 0 }));
 		expect(label(show({ missing: 195, in_library: 4, seasons }))).toBe('Specials only · 4');
+	});
+	it('says kept in part when the show is off but a season or episode is kept (#927)', () => {
+		const se = (n: number, keep: boolean, kept = 0) => ({ number: n, name: '', keep_up_to_date: keep, kept, episodes: 10, aired: 10, in_library: 0, missing: 0, not_out_yet: 0, better_wanted: 0 });
+		const off = { keep_up_to_date: false };
+		expect(label(show({ missing: 0, in_library: 1, seasons: [se(1, false, 1)] }, off))).toBe('Kept in part');
+		expect(label(show({ missing: 0, in_library: 0, not_out_yet: 0, seasons: [se(1, true, 10), se(2, false)] }, off))).toBe('Kept in part');
+		expect(label(show({ missing: 0, in_library: 1, seasons: [se(1, false)] }, off))).toBe('Not kept');
+		expect(partlyKept(show({ seasons: [se(1, false, 1)] }, off))).toBe(true);
+		expect(partlyKept(show({ seasons: [se(1, false, 1)] }))).toBe(false);
 	});
 	it('shows missing counts, up to date and ended', () => {
 		expect(label(show({ missing: 28, in_library: 18 }))).toBe('Missing · 28');

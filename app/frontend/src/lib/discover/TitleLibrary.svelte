@@ -4,6 +4,7 @@
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import { partlyKept } from '#lib/mediafiles/library-state.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
@@ -300,7 +301,8 @@
 		if (folderName) out.push({ k: 'folder', icon: 'folder', v: folderName, title: o.folder_path ?? '' });
 		if (o.size_bytes) out.push({ k: 'size', icon: 'archive', v: bytes(o.size_bytes) });
 		if (o.pick_rules_name) out.push({ k: 'rules', icon: 'star', v: o.pick_rules_name });
-		out.push({ k: 'keep', icon: o.keep_up_to_date ? 'check' : 'x', v: o.keep_up_to_date ? t('discover.titleLibrary.keptUpToDate') : t('discover.titleLibrary.notKeptUpToDate') });
+		const part = partlyKept(o);
+		out.push({ k: 'keep', icon: o.keep_up_to_date || part ? 'check' : 'x', v: o.keep_up_to_date ? t('discover.titleLibrary.keptUpToDate') : part ? t('mediafiles.state.keptInPart') : t('discover.titleLibrary.notKeptUpToDate') });
 		if (o.show?.status) out.push({ k: 'status', icon: 'play', v: o.show.status.replace(/^./, (c) => c.toUpperCase()) });
 		if (o.show?.network) out.push({ k: 'net', icon: 'tv', v: o.show.network });
 		if (lang) out.push({ k: 'lang', icon: 'globe', v: lang, title: `${t('discover.titlePage.originalLanguage')}: ${lang}` });
@@ -524,9 +526,9 @@
 			{#if manage}
 				<h3 class="lib-h">{t('discover.titleLibrary.settings')}</h3>
 				<div class="lib-rows">
-					<button type="button" class="lib-row" role="switch" aria-checked={o.keep_up_to_date} disabled={busyAction === 'keep'} onclick={() => own.ownRun('keep')}>
+					<button type="button" class="lib-row" role="switch" aria-checked={o.keep_up_to_date ? 'true' : partlyKept(o) ? 'mixed' : 'false'} data-testid="show-keep-switch" disabled={busyAction === 'keep'} onclick={() => own.ownRun('keep')}>
 						<span><b>{t('discover.titleLibrary.keepUpToDate')}</b><small>{t('discover.titleLibrary.newAndBetterCopies')}</small></span>
-						<span class="lib-switch" class:on={o.keep_up_to_date} aria-hidden="true"></span>
+						<span class="lib-switch" class:on={o.keep_up_to_date} class:part={!o.keep_up_to_date && partlyKept(o)} aria-hidden="true"></span>
 					</button>
 					{#if (!o.gate_open || !o.keep_up_to_date) && o.gate_reason}
 						<div class="lib-row static">
@@ -791,6 +793,8 @@
 	.lib-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
 	.lib-switch.on { background: var(--ok); }
 	.lib-switch.on::after { transform: translateX(18px); }
+	.lib-switch.part { background: color-mix(in srgb, var(--ok) 55%, transparent); }
+	.lib-switch.part::after { transform: translateX(9px); }
 	@media (max-width: 600px) { .lib-status { padding: 18px; } .lib-btn { flex: 1; justify-content: center; } .lib-files { grid-template-columns: 1fr; } }
 	.lib-hist { display: grid; gap: 2px; margin: 0 -12px; }
 	/* A 44px-tall hit area over the 16px link line on touch phones. */

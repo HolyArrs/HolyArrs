@@ -597,6 +597,7 @@ type SeasonSummary struct {
 	Missing      int           `json:"missing"`       // aired, kept up to date, no file yet
 	BetterWanted int           `json:"better_wanted"` // in the Library, a better copy is sought
 	NotOutYet    int           `json:"not_out_yet"`
+	Kept         int           `json:"kept"`        // episodes whose own Keep up to date switch is on
 	Downloading  int           `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
 	Failed       int           `json:"failed"`      // the download failed or its import needs a decision
 	NextAirDate  *time.Time    `json:"next_air_date,omitempty"`
@@ -664,6 +665,9 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 // says (a search or a better copy on the way, an air time later today).
 func (ss *SeasonSummary) tally(air sql.NullString, day string, keep bool, state string, hasFile bool, now time.Time) {
 	ss.Episodes++
+	if keep {
+		ss.Kept++
+	}
 	aired := false
 	if air.Valid {
 		if at, err := time.Parse(database.TimeLayout, air.String); err == nil {

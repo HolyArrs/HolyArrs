@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "より良いコピー",
 	"mediafiles.state.notKeptQ": "保持しない · {q}",
 	"mediafiles.state.notKept": "保持しない",
+	"mediafiles.state.keptInPart": "一部を保持",
 	"mediafiles.state.inLibraryQ": "ライブラリにあり · {q}",
 	"mediafiles.state.inLibrary": "ライブラリにあり",
 	"mediafiles.state.upcomingOn": "公開予定 · {date}",

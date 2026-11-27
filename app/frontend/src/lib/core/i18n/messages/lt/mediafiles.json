@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Geresnė kopija",
 	"mediafiles.state.notKeptQ": "Nelaikoma · {q}",
 	"mediafiles.state.notKept": "Nelaikoma",
+	"mediafiles.state.keptInPart": "Laikoma iš dalies",
 	"mediafiles.state.inLibraryQ": "Bibliotekoje · {q}",
 	"mediafiles.state.inLibrary": "Bibliotekoje",
 	"mediafiles.state.upcomingOn": "Netrukus · {date}",

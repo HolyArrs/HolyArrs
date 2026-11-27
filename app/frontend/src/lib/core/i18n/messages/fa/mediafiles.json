@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "نسخه بهتر",
 	"mediafiles.state.notKeptQ": "نگه داشته نمی‌شود · {q}",
 	"mediafiles.state.notKept": "نگه داشته نمی‌شود",
+	"mediafiles.state.keptInPart": "تا حدی نگه‌داری می‌شود",
 	"mediafiles.state.inLibraryQ": "در کتابخانه · {q}",
 	"mediafiles.state.inLibrary": "در کتابخانه",
 	"mediafiles.state.upcomingOn": "در راه · {date}",

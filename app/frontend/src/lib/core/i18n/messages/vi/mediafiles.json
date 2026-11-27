@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Bản sao tốt hơn",
 	"mediafiles.state.notKeptQ": "Không giữ · {q}",
 	"mediafiles.state.notKept": "Không giữ",
+	"mediafiles.state.keptInPart": "Giữ một phần",
 	"mediafiles.state.inLibraryQ": "Trong thư viện · {q}",
 	"mediafiles.state.inLibrary": "Trong thư viện",
 	"mediafiles.state.upcomingOn": "Sắp tới · {date}",

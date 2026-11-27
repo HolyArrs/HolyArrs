@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Bättre kopia",
 	"mediafiles.state.notKeptQ": "Hålls inte · {q}",
 	"mediafiles.state.notKept": "Hålls inte",
+	"mediafiles.state.keptInPart": "Hålls delvis",
 	"mediafiles.state.inLibraryQ": "I biblioteket · {q}",
 	"mediafiles.state.inLibrary": "I biblioteket",
 	"mediafiles.state.upcomingOn": "Kommande · {date}",

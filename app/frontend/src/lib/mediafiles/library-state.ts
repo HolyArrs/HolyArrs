@@ -59,6 +59,14 @@ export function libraryState(t: TitleView, now = Date.now()): LibState | null {
 	return movieState(t, now);
 }
 
+// A show that is off as a whole but still keeps a season or an episode up to date.
+export function partlyKept(t: TitleView): boolean {
+	return t.kind === 'show' && !t.keep_up_to_date && (t.show?.seasons ?? []).some((x) => !x.dropped && (x.keep_up_to_date || (x.kept ?? 0) > 0));
+}
+
+// Not kept, or kept in part when a season or episode still is.
+const notKept = (t: TitleView) => make('not_kept', tr(partlyKept(t) ? 'mediafiles.state.keptInPart' : 'mediafiles.state.notKept'));
+
 // Anything ranked at or above Better copy needs attention.
 export function isProblem(s: LibState | null): boolean {
 	return !!s && s.rank <= order.indexOf('better_wanted');
@@ -131,12 +139,12 @@ function groupState(t: TitleView, now: number): LibState | null {
 	const failed = s.failed ?? 0;
 	if (failed > 0) return make('failed', tr('mediafiles.state.failedN', { n: failed }));
 	if (dl > 0) return make('downloading', tr('mediafiles.state.downloadingN', { n: dl }));
-	if (!s.in_library && !s.missing && !s.not_out_yet && !s.better_wanted && !askOf(t)) return t.keep_up_to_date ? null : make('not_kept', tr('mediafiles.state.notKept'));
+	if (!s.in_library && !s.missing && !s.not_out_yet && !s.better_wanted && !askOf(t)) return t.keep_up_to_date ? null : notKept(t);
 	if (s.in_library === 0 && s.missing === 0) {
 		const ask = askState(askOf(t));
 		if (ask) return ask;
 	}
-	if (!t.keep_up_to_date && s.missing === 0) return make('not_kept', tr('mediafiles.state.notKept'));
+	if (!t.keep_up_to_date && s.missing === 0) return notKept(t);
 	if (show && t.show) {
 		const kept = t.show.seasons.filter((x) => x.keep_up_to_date && !x.dropped);
 		if (kept.length > 0 && kept.every((x) => x.number === 0)) return make('specials_only', tr('mediafiles.state.specialsOnly', { n: t.show.in_library }));

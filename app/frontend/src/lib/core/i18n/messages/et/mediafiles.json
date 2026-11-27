@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Parem koopia",
 	"mediafiles.state.notKeptQ": "Ei hoita · {q}",
 	"mediafiles.state.notKept": "Ei hoita",
+	"mediafiles.state.keptInPart": "Osaliselt hoitud",
 	"mediafiles.state.inLibraryQ": "Meediakogus · {q}",
 	"mediafiles.state.inLibrary": "Meediakogus",
 	"mediafiles.state.upcomingOn": "Tulemas · {date}",
