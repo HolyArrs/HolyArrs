@@ -563,7 +563,7 @@
 	<div class="sheet-mini">
 		{@render rangeNav(false, false)}
 		{@render mini()}
-		<Button variant="secondary" full icon="calendar" onclick={() => { sheetOpen = false; scroller.toToday(); }}>{t('discover.calendar.today')}</Button>
+		<Button variant="secondary" full icon="calendar" onclick={scroller.toToday}>{t('discover.calendar.today')}</Button>
 	</div>
 </Sheet>
 
