@@ -54,11 +54,17 @@ func (m *Manager) SettleCategories(ctx context.Context, d domain.Downloader, pic
 	}
 	picked := map[string]string{}
 	if pick {
+		// A category another Downloader on the same client already lists is
+		// not free: two that share one show its jobs twice, and the health
+		// check says so with a line the person cannot clear without editing a
+		// field they never set. The kind falls back to this
+		// Downloader's own main category instead.
+		taken := m.twinCategories(ctx, d)
 		for kind, f := range kindFields(&d) {
 			if *f != "" {
 				continue
 			}
-			if c := PickCategory(kind, have); c != "" {
+			if c := PickFreeCategory(kind, have, taken); c != "" {
 				*f, picked[kind] = c, c
 			}
 		}
@@ -80,6 +86,34 @@ func (m *Manager) SettleCategories(ctx context.Context, d domain.Downloader, pic
 		}
 	}
 	return picked
+}
+
+// twinCategories are the categories other Downloaders that reach the same
+// client as d already list, at any id and not removed. They are not free for
+// d's auto-pick: two Downloaders on one client that share a category show its
+// jobs twice, which is a real warning the person can only clear by editing a
+// field the pick filled in. An empty main category and "*" (every item) are
+// left out, since neither names one category.
+func (m *Manager) twinCategories(ctx context.Context, d domain.Downloader) []string {
+	if m.Store == nil {
+		return nil
+	}
+	others, err := database.Select[domain.Downloader](ctx, m.Store.Read(), "downloaders", "removed = 0 ORDER BY id")
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, o := range others {
+		if o.ID == d.ID || !domain.SameClient(o, d) {
+			continue
+		}
+		for _, c := range o.Categories() {
+			if c != "" && c != "*" && !hasCategory(out, c) {
+				out = append(out, c)
+			}
+		}
+	}
+	return out
 }
 
 // usedCategories are the categories d sends grabs to: each per-kind one,
