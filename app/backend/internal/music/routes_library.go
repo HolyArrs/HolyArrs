@@ -49,7 +49,7 @@ func Error(w http.ResponseWriter, err error, fallback func(http.ResponseWriter, 
 	case errors.Is(err, library.ErrBadAlbumChoice), errors.Is(err, library.ErrBadNewAlbums), errors.Is(err, library.ErrBadAlbumKinds),
 		errors.Is(err, library.ErrBadExtraKinds), errors.Is(err, library.ErrBadStatuses), errors.Is(err, library.ErrBadPressingRule),
 		errors.Is(err, library.ErrBadMusicURL), errors.Is(err, library.ErrBadCacheHours), errors.Is(err, library.ErrNotMusicFolder),
-		errors.Is(err, library.ErrBadArtistID):
+		errors.Is(err, library.ErrBadArtistID), errors.Is(err, library.ErrBadAlbumFolder):
 		webserver.Fail(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, library.ErrNotArtist), errors.Is(err, library.ErrNotAlbum), errors.Is(err, library.ErrNoSuchPressing),
 		errors.Is(err, metadata.ErrArtistNotFound):
@@ -160,36 +160,54 @@ func (h LibraryHandlers) GetAlbum(w http.ResponseWriter, r *http.Request) {
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"album": sum, "title_id": p.TitleID, "pressings": views})
 }
 
-const albumHelp = `send {"keep_up_to_date": true or false} and/or {"pressing_id": <id of one of the album's Pressings>}`
+const albumHelp = `send {"keep_up_to_date": true or false} and/or {"pressing_id": <id of one of the album's Pressings>}, and/or {"folder": "<one album folder inside the artist's folder>"} to link that folder's files to the album's tracks by hand`
 
-// SetAlbum answers PUT /api/v1/albums/{id}.
+// SetAlbum answers PUT /api/v1/albums/{id}. A "folder" links that folder's
+// files to the album's tracks by hand, for a folder no scan could place: the
+// person's own word is all it takes.
 func (h LibraryHandlers) SetAlbum(w http.ResponseWriter, r *http.Request) {
 	p, ok := AlbumID(w, r, h.Store.Read())
 	if !ok {
 		return
 	}
 	var body struct {
-		KeepUpToDate *bool `json:"keep_up_to_date"`
-		PressingID   int64 `json:"pressing_id"`
+		KeepUpToDate *bool   `json:"keep_up_to_date"`
+		PressingID   int64   `json:"pressing_id"`
+		Folder       *string `json:"folder"`
 	}
 	if !webserver.Decode(w, r, &body, albumHelp) {
 		return
 	}
-	if body.KeepUpToDate == nil && body.PressingID == 0 {
+	if body.KeepUpToDate == nil && body.PressingID == 0 && body.Folder == nil {
 		webserver.Fail(w, http.StatusBadRequest, albumHelp)
 		return
 	}
-	p, err := h.Library.SetAlbum(r.Context(), p.ID, body.KeepUpToDate, body.PressingID, h.Actor(r))
-	if err != nil {
-		h.fail(w, err)
-		return
+	if body.KeepUpToDate != nil || body.PressingID != 0 {
+		var err error
+		if p, err = h.Library.SetAlbum(r.Context(), p.ID, body.KeepUpToDate, body.PressingID, h.Actor(r)); err != nil {
+			h.fail(w, err)
+			return
+		}
+	}
+	var linked *library.AlbumFolderLink
+	if body.Folder != nil {
+		out, err := h.Library.LinkAlbumFolder(r.Context(), p.ID, *body.Folder, h.Actor(r))
+		if err != nil {
+			h.fail(w, err)
+			return
+		}
+		linked = &out
 	}
 	sum, err := library.AlbumOf(r.Context(), h.Store.Read(), p)
 	if err != nil {
 		webserver.Internal(w, "api", err)
 		return
 	}
-	webserver.WriteJSON(w, http.StatusOK, sum)
+	if linked == nil {
+		webserver.WriteJSON(w, http.StatusOK, sum)
+		return
+	}
+	webserver.WriteJSON(w, http.StatusOK, map[string]any{"album": sum, "folder": linked})
 }
 
 // GetSettings answers GET /api/v1/settings/music.
