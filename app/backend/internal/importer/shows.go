@@ -35,6 +35,9 @@ type ShowTarget struct {
 	Episodes    []Episode
 	ReleaseName string
 	Naming      *mediafiles.NamingSettings
+	// Facts reads a file's inspected facts, so a name that gives no
+	// resolution takes the inspected one (fileQuality).
+	Facts func(string) map[string]any
 	// ByOrder names files by the show's chosen episode order.
 	ByOrder bool
 	// oneVideo says the download holds a single video (episodeName).
@@ -49,7 +52,7 @@ func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episo
 	ns = ns.For(mediafiles.PartShows)
 	ext := filepath.Ext(source)
 	base := strings.TrimSuffix(filepath.Base(source), ext)
-	release, p := t.episodeName(source, p)
+	release, p := t.fileQuality(source, p)
 	if t.ByOrder {
 		eps = NamedEpisodes(eps)
 	}

@@ -180,6 +180,8 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		bad = append(bad, unpackStep(root, unpackWhy))
 	}
 	var plan []mediafiles.PlanStep
+	inspected := map[string]map[string]any{}
+	t.Facts = inspectedFacts(inspected)
 	if music {
 		at, err := albumTarget(ctx, db, lf, ver, ti, items, slotOf, slots, dryRun, ns)
 		if err != nil {
@@ -207,7 +209,6 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 	}
 	olds := map[int][]mediafiles.File{}
-	inspected := map[string]map[string]any{}
 	fakes := im.refuseFakes(ctx, db)
 	var claimed int64
 	if d.ReleaseID != nil {
@@ -247,8 +248,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			}
 		}
 		if !music && copyWhy == "" {
-			facts := InspectFacts(plan[i].SourceFile)
-			inspected[plan[i].SourceFile] = facts
+			facts := t.Facts(plan[i].SourceFile)
 			copyWhy = unreadOr(copyRefusal(ver, filepath.Base(plan[i].SourceFile), relName, "", facts), facts, plan[i].SourceFile)
 		}
 		if copyWhy != "" {
@@ -607,8 +607,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if music && relName != "" {
 				name = relName
 			} else if !music {
-				name, p = t.episodeName(step.SourceFile, p)
-				p = withInspectedResolution(p, inspected[step.SourceFile])
+				name, p = t.fileQuality(step.SourceFile, p)
 			}
 			f := &mediafiles.File{SlotIDs: step.TargetSlotIDs, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: now,
 				Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},

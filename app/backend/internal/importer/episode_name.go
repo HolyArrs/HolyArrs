@@ -47,6 +47,32 @@ func fill[T any](f *releasename.Field[T], rel releasename.Field[T], has func(T) 
 	}
 }
 
+// fileQuality is the name and quality an episode file from a download is
+// recorded and placed by: the file name's, the grabbed release's where the
+// name gives none, then the inspected header's where neither does. The plan
+// that names the file and the import that records it both read it here, so
+// the two never disagree.
+func (t ShowTarget) fileQuality(source string, p releasename.Result) (string, releasename.Result) {
+	name, p := t.episodeName(source, p)
+	if t.Facts == nil || p.Resolution.Value > 0 {
+		return name, p
+	}
+	return name, withInspectedResolution(p, t.Facts(source))
+}
+
+// inspectedFacts reads each file's inspected facts once, so naming the plan
+// and recording the import share one reading.
+func inspectedFacts(cache map[string]map[string]any) func(string) map[string]any {
+	return func(path string) map[string]any {
+		if f, ok := cache[path]; ok {
+			return f
+		}
+		f := InspectFacts(path)
+		cache[path] = f
+		return f
+	}
+}
+
 // withInspectedResolution gives p the resolution the file inspection read
 // when no name gives one, as JudgeName does for files in the Library.
 func withInspectedResolution(p releasename.Result, facts map[string]any) releasename.Result {
