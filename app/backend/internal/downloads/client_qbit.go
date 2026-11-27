@@ -255,23 +255,31 @@ func (q *Qbittorrent) Get(ctx context.Context, id string) (Job, error) {
 
 // rootedFileNames reads file names that start with a slash, as some
 // qBittorrent-API clients send them, relative to the content path, and
-// rewrites them relative to the save path like qBittorrent's own. In a list
-// that mixes both kinds, a plain name is read the same way unless it already
-// starts with the content folder. Names are left as they are when no name
-// starts with a slash or the content path is not inside the save path; a
-// climbing name keeps its ".." so the importer still refuses it.
+// rewrites them relative to the save path like qBittorrent's own. A content
+// path that ends with a separator is one the client itself called a folder, so
+// its bare file names are missing that folder and get it here: rdt-client
+// answers that way for every torrent, a single file included, where the folder
+// and the file in it share a name. In a list that mixes both kinds, a plain
+// name is read the same way unless it already starts with the content folder.
+// Names are left as they are when no name starts with a slash and the content
+// path is not a folder, when the content path is that one file, or when it is
+// not inside the save path; a climbing name keeps its ".." so the importer
+// still refuses it.
 func rootedFileNames(files []File, save, content string) []File {
 	if content == "" || save == "" {
 		return files
 	}
+	raw := strings.ReplaceAll(content, `\`, "/")
+	// The trailing separator is the client's own word that this is a folder.
+	folder := strings.HasSuffix(raw, "/")
 	rooted := false
 	for _, f := range files {
 		rooted = rooted || strings.HasPrefix(strings.ReplaceAll(f.Name, `\`, "/"), "/")
 	}
-	if !rooted {
+	if !rooted && !folder {
 		return files
 	}
-	s, c := path.Clean(strings.ReplaceAll(save, `\`, "/")), path.Clean(strings.ReplaceAll(content, `\`, "/"))
+	s, c := path.Clean(strings.ReplaceAll(save, `\`, "/")), path.Clean(raw)
 	prefix := ""
 	switch {
 	case c == s:
@@ -280,9 +288,11 @@ func rootedFileNames(files []File, save, content string) []File {
 	default:
 		return files
 	}
-	for _, f := range files {
-		if n := strings.ReplaceAll(f.Name, `\`, "/"); strings.HasPrefix(n, "/") && strings.TrimLeft(n, "/") == prefix {
-			prefix = "" // the content path is this one file
+	if !folder {
+		for _, f := range files {
+			if n := strings.ReplaceAll(f.Name, `\`, "/"); strings.HasPrefix(n, "/") && strings.TrimLeft(n, "/") == prefix {
+				prefix = "" // the content path is this one file
+			}
 		}
 	}
 	out := make([]File, len(files))
@@ -290,7 +300,14 @@ func rootedFileNames(files []File, save, content string) []File {
 		n := strings.ReplaceAll(f.Name, `\`, "/")
 		plain := !strings.HasPrefix(n, "/")
 		n = strings.TrimLeft(n, "/")
-		if prefix != "" && !(plain && (n == prefix || strings.HasPrefix(n, prefix+"/"))) {
+		// A name that already starts with the content folder is not prefixed
+		// again. Under a folder content path, a name equal to the folder is the
+		// file inside it, so that one still is.
+		there := strings.HasPrefix(n, prefix+"/")
+		if !folder {
+			there = there || n == prefix
+		}
+		if prefix != "" && !(plain && there) {
 			n = prefix + "/" + n
 		}
 		f.Name = n
