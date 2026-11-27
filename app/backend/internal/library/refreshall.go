@@ -144,8 +144,17 @@ func (s *Service) RefreshPlan(ctx context.Context, byHand bool, lastStart *time.
 	return ids, why, nil
 }
 
+// noAccessInARow is how many lookups in a row the metadata server may
+// refuse (a dropped install sign-in, which the install makes again by
+// itself) before a run pauses. One refusal is the sign-in, not the
+// movie: the next lookup asks with the new one.
+const noAccessInARow = 3
+
 // handleRefreshTitles refreshes the planned Titles one by one. A failure
-// on one movie is recorded and the run goes on.
+// on one movie is recorded and the run goes on. A server that keeps
+// refusing every lookup pauses the run instead of failing it: the Titles
+// it never came to keep qualifying (they were never recorded as fetched),
+// so the next run takes them.
 func (s *Service) handleRefreshTitles(ctx context.Context, r *jobs.Run) error {
 	byHand, _ := r.Job.Params["by_hand"].(bool)
 	scheduled, _ := r.Job.Params["scheduled"].(bool)
@@ -170,7 +179,8 @@ func (s *Service) handleRefreshTitles(ctx context.Context, r *jobs.Run) error {
 		return err
 	}
 	var failed []string
-	dropped := 0
+	dropped, refused := 0, 0
+	var paused []int64 // Titles the run never came to: the next run takes them
 	for i, id := range ids {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -188,12 +198,24 @@ func (s *Service) handleRefreshTitles(ctx context.Context, r *jobs.Run) error {
 		_ = r.Progress(ctx, float64(i)/float64(len(ids)), fmt.Sprintf("refreshing %d of %d", i+1, len(ids)))
 		out, err := s.RefreshTitle(ctx, id, JobActor(r), &r.Job.ID)
 		if err != nil {
-			if errors.Is(err, metadata.ErrNoAccess) {
-				return err // every other movie would fail the same way
-			}
 			failed = append(failed, fmt.Sprintf("title %d: %v", id, err))
+			if !errors.Is(err, metadata.ErrNoAccess) {
+				refused = 0
+				continue
+			}
+			// A refused lookup (a 401 from the metadata server, or a
+			// sign-in dropped and being made again) is the install's, not
+			// this movie's: the run goes on so the rest are not abandoned
+			// on the first answer. A server that keeps refusing pauses
+			// the run here; nothing is recorded as fetched, so the Titles
+			// left are still in the next plan.
+			if refused++; refused >= noAccessInARow {
+				paused = ids[i+1:]
+				break
+			}
 			continue
 		}
+		refused = 0
 		if out.Dropped {
 			dropped++
 		}
@@ -202,7 +224,12 @@ func (s *Service) handleRefreshTitles(ctx context.Context, r *jobs.Run) error {
 	for _, w := range why {
 		reasons[w]++
 	}
-	r.SetResult(map[string]any{"refreshed": len(ids) - len(failed), "failed": failed, "dropped": dropped, "why": reasons})
+	result := map[string]any{"refreshed": len(ids) - len(failed) - len(paused), "failed": failed, "dropped": dropped, "why": reasons}
+	if len(paused) > 0 {
+		result["paused"], result["stopped"] = len(paused), "metadata_no_access"
+		log.Printf("library: refresh paused: the metadata server refused %d lookups in a row; %d titles wait for the next run", noAccessInARow, len(paused))
+	}
+	r.SetResult(result)
 	return nil
 }
 
