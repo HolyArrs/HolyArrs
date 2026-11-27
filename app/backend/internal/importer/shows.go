@@ -274,6 +274,13 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 					p, m = gp, gm
 				}
 			}
+			if m.Title == nil && t.ReleaseName != "" && shortNameOf(p.Title.Value, t) {
+				// Grabbed for this show, and the group shortens its name on
+				// the files ("[Judas] Beerus - S01E05", #950): take the show
+				// from the grab and only the episode from the file, as Sonarr
+				// does. A file naming another show is still refused (#527).
+				m = mediafiles.Match{Title: &lib[0], Conf: releasename.Likely, Detail: "the show the download was grabbed for"}
+			}
 			if m.Title == nil {
 				s.Method, s.Why = "refuse", []string{"does not match the show: " + m.Detail}
 				break
