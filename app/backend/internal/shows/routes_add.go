@@ -104,6 +104,7 @@ func (h *AddHandlers) lookupShows(w http.ResponseWriter, r *http.Request) {
 			h.Fail(w, err)
 			return
 		}
+		list = WithYear(r.Context(), p.SearchShows, term, list)
 	}
 	fillTMDBIDs(r.Context(), h.finderFor(source), list)
 	out := []ShowResult{}

@@ -266,6 +266,7 @@ func (h *TitleHandlers) lookupTitles(w http.ResponseWriter, r *http.Request) {
 			h.Fail(w, err)
 			return
 		}
+		ms = WithYearMovies(r.Context(), h.Metadata.Search, term, year, ms)
 	}
 	out := []LookupView{}
 	db := h.Store.Read()

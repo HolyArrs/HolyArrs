@@ -19,6 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/parts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/library"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/shows"
 )
 
 // Live search (music plan 22 October 2026, Phase 4): the search field's dropdown.
@@ -431,6 +432,7 @@ func (h *Suggest) suggestMovies(ctx context.Context, r *http.Request, q string) 
 	if err != nil {
 		return nil
 	}
+	ms = WithYearMovies(ctx, h.Metadata().Search, q, 0, ms)
 	if len(ms) > suggestFromEach {
 		ms = ms[:suggestFromEach]
 	}
@@ -466,17 +468,18 @@ func (h *Suggest) suggestShows(ctx context.Context, r *http.Request, q string) [
 	if err != nil {
 		return nil
 	}
-	shows, err := p.SearchShows(ctx, q)
+	found, err := p.SearchShows(ctx, q)
 	if err != nil {
 		return nil
 	}
-	if len(shows) > suggestFromEach {
-		shows = shows[:suggestFromEach]
+	found = shows.WithYear(ctx, p.SearchShows, q, found)
+	if len(found) > suggestFromEach {
+		found = found[:suggestFromEach]
 	}
 	db := h.Store().Read()
 	rules, _ := hideRulesFor(ctx, h.Store())
 	out := []SuggestRow{}
-	for i, sh := range shows {
+	for i, sh := range found {
 		if id := sh.IDs["tmdb"]; id != "" && rules.hides("show", id, sh.Genres) {
 			continue
 		}
@@ -492,7 +495,7 @@ func (h *Suggest) suggestShows(ctx context.Context, r *http.Request, q string) [
 		if row.TitleID == 0 && row.TMDB == "" {
 			continue
 		}
-		row.score = suggestScore(suggestText(sh.Name, q), rankP(i, len(shows)), row.State)
+		row.score = suggestScore(suggestText(sh.Name, q), rankP(i, len(found)), row.State)
 		out = append(out, row)
 	}
 	return out
