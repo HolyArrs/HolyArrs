@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "По-добро копие",
 	"mediafiles.state.notKeptQ": "Не се пази · {q}",
 	"mediafiles.state.notKept": "Не се пази",
+	"mediafiles.state.keptInPart": "Поддържа се частично",
 	"mediafiles.state.inLibraryQ": "В библиотеката · {q}",
 	"mediafiles.state.inLibrary": "В библиотеката",
 	"mediafiles.state.upcomingOn": "Предстои · {date}",

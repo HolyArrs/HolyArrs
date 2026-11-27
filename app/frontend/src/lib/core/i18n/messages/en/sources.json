@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Link",
 	"sources.bridge.linkName": "Link {name}",
 	"sources.bridge.movieKey": "Movies key (Radarr side)",
+	"sources.bridge.musicKey": "Music key (Lidarr side)",
 	"sources.bridge.notConnected": "Not connected",
 	"sources.bridge.reaches": "Prowlarr reaches HolyArrs at",
 	"sources.bridge.remove": "Remove",

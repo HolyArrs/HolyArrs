@@ -328,8 +328,10 @@ func TestM1MigrationsAreAddOnly(t *testing.T) {
 		// TestDownloadersKeptByPluginMigration proves no row is lost.
 		// 0160 rebuilds sources, releases and downloaders so protocol allows a
 		// plugin download type; TestPluginDownloadTypesMigrationKeepsRows proves no row is lost.
+		// 0162 rebuilds compat_keys to add the lidarr side;
+		// TestCompatKeysKeptByLidarrMigration proves no key is lost.
 		if m.Version < 7 || m.Version == 8 || m.Version == 19 || m.Version == 21 || m.Version == 23 || m.Version == 25 || m.Version == 42 || m.Version == 82 ||
-			m.Version == 84 || m.Version == 95 || m.Version == 102 || m.Version == 103 || m.Version == 106 || m.Version == 109 || m.Version == 121 || m.Version == 123 || m.Version == 138 || m.Version == 156 || m.Version == 158 || m.Version == 160 {
+			m.Version == 84 || m.Version == 95 || m.Version == 102 || m.Version == 103 || m.Version == 106 || m.Version == 109 || m.Version == 121 || m.Version == 123 || m.Version == 138 || m.Version == 156 || m.Version == 158 || m.Version == 160 || m.Version == 162 {
 			continue
 		}
 		up := strings.ToUpper(m.SQL)

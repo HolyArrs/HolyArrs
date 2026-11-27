@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Poveži",
 	"sources.bridge.linkName": "Poveži {name}",
 	"sources.bridge.movieKey": "Ključ za filmove (Radarr strana)",
+	"sources.bridge.musicKey": "Ključ za glazbu (Lidarr strana)",
 	"sources.bridge.notConnected": "Nije povezano",
 	"sources.bridge.reaches": "Prowlarr dolazi do HolyArrsa na",
 	"sources.bridge.remove": "Ukloni",

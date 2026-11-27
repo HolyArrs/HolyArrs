@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Kaynakların torrent indirmeleri buluyor ama kurulu bir torrent indiricisi yok, bu yüzden hiçbiri gönderilemiyor. Ayarlar › İndiriciler bölümünden bir tane ekleyin.",
 	"health.check.sameDownloader": "İki kez eklendi:",
 	"health.check.sameDownloaderWhy": "{app}, başka bir indiriciyle aynı indirme uygulamasına ulaşıyor; bu yüzden indirmeleri iki kez görünebilir. Birini Ayarlar › İndiriciler bölümünden kaldırın.",
+	"health.check.sameDownloaderShared": "{app} ve başka bir Downloader aynı \"{category}\" kategorisini kullanıyor, bu yüzden içindeki indirmeler iki kez görünebilir. Ayarlar › Downloader'lar bölümünde {app} için ayrı bir kategori belirleyin.",
 	"health.check.keyKitRecommended": "Önerilen: anahtar paketini indir",
 	"health.check.keyKitRecommendedOthers": "Önerilen: anahtar paketini sahibinden iste",
 	"health.kind.sameDownloader": "İki kez eklenmiş indirici",

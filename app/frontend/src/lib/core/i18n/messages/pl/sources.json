@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Połącz",
 	"sources.bridge.linkName": "Połącz: {name}",
 	"sources.bridge.movieKey": "Klucz do filmów (po stronie Radarr)",
+	"sources.bridge.musicKey": "Klucz do muzyki (po stronie Lidarr)",
 	"sources.bridge.notConnected": "Niepodłączone",
 	"sources.bridge.reaches": "Prowlarr łączy się z HolyArrs pod adresem",
 	"sources.bridge.remove": "Usuń",

@@ -285,6 +285,15 @@ func (s *Service) matchEpisodesTx(ctx context.Context, tx *sql.Tx, f mediafiles.
 			}
 		}
 		if sl.FileID != nil && *sl.FileID != f.ID {
+			freed, err := mediafiles.UnlinkMissingTx(ctx, tx, *sl.FileID, s.now(), by)
+			if err != nil {
+				return err
+			}
+			if freed {
+				sl.FileID = nil
+			}
+		}
+		if sl.FileID != nil && *sl.FileID != f.ID {
 			if !replace {
 				return errRefused{"episode_has_file"}
 			}

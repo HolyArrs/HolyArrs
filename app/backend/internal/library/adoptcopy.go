@@ -122,6 +122,17 @@ func (s *Service) adoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 				}
 			}
 		}
+		// A copy gone from disk no longer fills the Version: it
+		// becomes a found note and the found file takes its place.
+		if slot.FileID != nil {
+			freed, err := mediafiles.UnlinkMissingTx(ctx, tx, *slot.FileID, s.now(), by)
+			if err != nil {
+				return err
+			}
+			if freed {
+				slot.FileID = nil
+			}
+		}
 		if slot.FileID != nil || slot.ActiveDownloadID != nil || slot.State == mediafiles.SlotRemoved {
 			return fmt.Errorf("%w: this Version already has a copy or download", ErrCopyChoice)
 		}

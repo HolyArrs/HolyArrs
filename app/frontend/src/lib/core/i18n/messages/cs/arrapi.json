@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filmy",
 	"arrapi.seerr.showsLower": "seriály",
 	"arrapi.seerr.moviesLower": "filmy",
+	"arrapi.seerr.music": "Hudba",
+	"arrapi.seerr.musicLower": "hudbu",
 	"arrapi.seerr.saveFail": "Nepodařilo se uložit",
 	"arrapi.seerr.replaceConfirm": "Vyměnit klíč {app}? Současný přestane fungovat.",
 	"arrapi.seerr.makeFail": "Klíč se nepodařilo vytvořit",

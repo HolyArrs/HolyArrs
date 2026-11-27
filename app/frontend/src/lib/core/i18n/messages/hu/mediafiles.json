@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Jobb másolat",
 	"mediafiles.state.notKeptQ": "Nincs tartva · {q}",
 	"mediafiles.state.notKept": "Nincs tartva",
+	"mediafiles.state.keptInPart": "Részben követve",
 	"mediafiles.state.inLibraryQ": "A Médiatárban · {q}",
 	"mediafiles.state.inLibrary": "A Médiatárban",
 	"mediafiles.state.upcomingOn": "Hamarosan · {date}",

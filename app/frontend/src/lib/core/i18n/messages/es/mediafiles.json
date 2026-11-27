@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Copia mejor",
 	"mediafiles.state.notKeptQ": "No se mantiene · {q}",
 	"mediafiles.state.notKept": "No se mantiene",
+	"mediafiles.state.keptInPart": "Mantenido en parte",
 	"mediafiles.state.inLibraryQ": "En la biblioteca · {q}",
 	"mediafiles.state.inLibrary": "En la biblioteca",
 	"mediafiles.state.upcomingOn": "Próximamente · {date}",

@@ -26,6 +26,7 @@
 	"sources.bridge.link": "เชื่อมต่อ",
 	"sources.bridge.linkName": "เชื่อมต่อ {name}",
 	"sources.bridge.movieKey": "คีย์ภาพยนตร์ (ฝั่ง Radarr)",
+	"sources.bridge.musicKey": "คีย์เพลง (ฝั่ง Lidarr)",
 	"sources.bridge.notConnected": "ยังไม่ได้เชื่อมต่อ",
 	"sources.bridge.reaches": "Prowlarr เข้าถึง HolyArrs ที่",
 	"sources.bridge.remove": "ลบ",

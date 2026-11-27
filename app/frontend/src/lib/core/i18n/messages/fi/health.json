@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Lähteesi löytävät torrent-latauksia, mutta torrent-lataajaa ei ole määritetty, joten mitään ei voi lähettää. Lisää sellainen kohdassa Asetukset › Lataajat.",
 	"health.check.sameDownloader": "Lisätty kahdesti:",
 	"health.check.sameDownloaderWhy": "{app} yltää samaan lataussovellukseen kuin toinen lataaja, joten sen lataukset voivat näkyä kahdesti. Poista toinen kohdassa Asetukset › Lataajat.",
+	"health.check.sameDownloaderShared": "{app} ja toinen Downloader käyttävät molemmat luokkaa \"{category}\", joten sen lataukset voivat näkyä kahdesti. Anna {app}:lle oma luokka kohdassa Asetukset › Downloaderit.",
 	"health.check.keyKitRecommended": "Suositus: lataa avainpaketti",
 	"health.check.keyKitRecommendedOthers": "Suositus: pyydä avainpaketti omistajalta",
 	"health.kind.sameDownloader": "Lataaja lisätty kahdesti",

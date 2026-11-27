@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "電影",
 	"arrapi.seerr.showsLower": "影集",
 	"arrapi.seerr.moviesLower": "電影",
+	"arrapi.seerr.music": "音樂",
+	"arrapi.seerr.musicLower": "音樂",
 	"arrapi.seerr.saveFail": "儲存失敗",
 	"arrapi.seerr.replaceConfirm": "替換 {app} 金鑰？目前的金鑰將失效。",
 	"arrapi.seerr.makeFail": "無法建立金鑰",

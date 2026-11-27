@@ -24,6 +24,11 @@ func TestAlbumFolderName(t *testing.T) {
 		"lab band - Old Days":        "Old Days|0",
 		"Old Days":                   "Old Days|0",
 		"Lab Bandwagon (2001)":       "Lab Bandwagon|2001",
+		// "5:55" is "5_55" on disk; a format tag is never the title.
+		"5_55 (2006) [FLAC 24-96]": "5_55|2006",
+		"5_55 [MP3 320]":           "5_55|0",
+		"5_55 [24bit]":             "5_55|0",
+		"Old Days (2010) [FLAC]":   "Old Days|2010",
 	} {
 		n, y := albumFolderName(in, "Lab Band")
 		if got := fmt.Sprintf("%s|%d", n, y); got != want {

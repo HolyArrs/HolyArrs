@@ -43,7 +43,7 @@ func golden(t *testing.T, name, got string) {
 // The templates Prowlarr reads before it writes are Newznab and Torznab,
 // with the fields it fills and the ones it copies, per side.
 func TestIndexerSchema_Templates(t *testing.T) {
-	for _, side := range []string{"sonarr", "radarr"} {
+	for _, side := range []string{"sonarr", "radarr", "lidarr"} {
 		h := &handler{side: side}
 		rec := httptest.NewRecorder()
 		h.indexerSchema(rec, httptest.NewRequest("GET", "/indexer/schema", nil))

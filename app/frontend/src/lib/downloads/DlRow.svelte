@@ -208,7 +208,7 @@
 	.st.bad { color: var(--fail-text); }
 	.dline > .ph { display: none; }
 	.txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-footnote); }
-	.num { text-align: right; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+	.num { text-align: start; color: var(--text-muted); font: var(--t-footnote); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 	.del { display: flex; justify-content: flex-end; }
 	.bin { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-muted); cursor: pointer; transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out); }
 	.bin:hover:not(:disabled) { color: var(--fail-text); background: var(--surface-3); }
@@ -235,7 +235,7 @@
 	.prg.paused i { background: var(--text-muted); }
 	.pgw { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 	.spd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font: var(--t-caption); font-variant-numeric: tabular-nums; }
-	.dline :global(.num), .num { text-align: right; font-variant-numeric: tabular-nums; }
+	.dline :global(.num), .num { text-align: start; font-variant-numeric: tabular-nums; }
 	.pw { display: flex; align-items: center; flex: none; border-radius: 999px; background: transparent; transition: background-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); }
 	.more { min-width: 36px; padding: 0 10px; }
 	.post, .post :global(.poster) { border-radius: var(--r-poster); }
@@ -344,5 +344,5 @@
 	@media (pointer: coarse) {
 		.bin:disabled { pointer-events: none; }
 	}
-	.dline :global(.num) { text-align: right; font-variant-numeric: tabular-nums; }
+	.dline :global(.num) { text-align: start; font-variant-numeric: tabular-nums; }
 </style>

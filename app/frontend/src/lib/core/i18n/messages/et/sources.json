@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Seo",
 	"sources.bridge.linkName": "Seo {name}",
 	"sources.bridge.movieKey": "Filmide võti (Radarri pool)",
+	"sources.bridge.musicKey": "Muusika võti (Lidarri pool)",
 	"sources.bridge.notConnected": "Pole ühendatud",
 	"sources.bridge.reaches": "Prowlarr jõuab HolyArrsini aadressil",
 	"sources.bridge.remove": "Eemalda",

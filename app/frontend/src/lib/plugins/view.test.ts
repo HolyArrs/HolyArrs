@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { abilities, categories, categoryLabel, developers, findPlugins, inTab, notices, platformLabel, safeLink, shownName, sortPlugins, reaches, pluginName, pluginState, shownVersion, noLockNotice, showsNoLockCard, showsNoLockTag, stateLabel } from './view.ts';
 import { eventLabel, needLabel, newAbilities } from './view.ts';
-import { isNew, freshUpdate, trendingIds, shortDate, pluginIcon, devPicture, takesOwnerHosts } from './view.ts';
+import { isNew, freshUpdate, trendingIds, shortDate, pluginIcon, devPicture, takesOwnerHosts, showsSigned } from './view.ts';
 import type { Plugin } from './types.ts';
 
 const base: Plugin = { id: 'tailscale', version: '1.2.0', installed: false, running: false, enabled: false, access: null };
@@ -208,5 +208,12 @@ describe('servers of the owner own', () => {
 		expect(takesOwnerHosts({ ...base, id: 'flaresolverr', access: { hosts: [], folders: [], actions: ['sources.botcheck'] } })).toBe(true);
 		expect(takesOwnerHosts({ ...base, id: 'covers', access: { hosts: ['covers.example'], folders: [], actions: ['library.read'] } })).toBe(false);
 		expect(takesOwnerHosts({ ...base, id: 'covers' })).toBe(false);
+	});
+});
+
+describe('signed chip (#921)', () => {
+	it('shows Signed only for plugins from the signed list, never for a developer-folder plugin', () => {
+		expect(showsSigned(base)).toBe(true);
+		expect(showsSigned({ ...base, dev: true })).toBe(false);
 	});
 });

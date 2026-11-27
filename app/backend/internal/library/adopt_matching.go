@@ -13,6 +13,9 @@ var folderBracketYear = regexp.MustCompile(`^\[\s*(?:18|19|20)\d{2}\s*\]$`)
 var technicalParentheses = regexp.MustCompile(`\([^()]*\)`)
 var releaseDelimiters = strings.NewReplacer("[", " ", "]", " ", "(", " ", ")", " ")
 var trailingReleaseToken = regexp.MustCompile(`(?i)\s+(?:\d{3,4}[pi]|[48]k|blu-?ray|web-?dl|webrip|b[dr]rip|dvdrip|x26[45]|h26[45]|hevc|av1)$`)
+
+// folderAudioWords are music format tags such as "[FLAC 24-96]" or "[MP3 320]".
+var folderAudioWords = regexp.MustCompile(`(?i)^\s*(?:flac|mp3|alac|ogg|opus|wav|ape|dsd|hi-?res|web|cd|vinyl|\d{2}[ -]?bit|\d{2}[-/]\d{2,3}|320|v0)(?:$|[\s._-])`)
 var folderReleaseWords = regexp.MustCompile(`(?i)(?:^|[\s._-])(?:\d{3,4}[pi]|[48]k|blu-?ray|web-?dl|webrip|b[dr]rip|dvdrip|x26[45]|h26[45]|hevc|av1|hdr10\+?|hdr|sdr|dv|aac|dts|atmos)(?:$|[\s._-])`)
 
 // matchingFolderName removes release annotations from lookup text, leaving
@@ -43,9 +46,15 @@ func matchingFolderName(s string) string {
 	// In names such as [REC] (2007), the bracketed text is the title itself.
 	if strings.Trim(title, " -_()[]0123456789") == "" {
 		for _, part := range folderBrackets.FindAllString(s, -1) {
-			if !folderBracketYear.MatchString(part) && !folderReleaseWords.MatchString(strings.Trim(part, "[]")) {
+			inner := strings.Trim(part, "[]")
+			if !folderBracketYear.MatchString(part) && !folderReleaseWords.MatchString(inner) && !folderAudioWords.MatchString(inner) {
 				return strings.TrimSpace(part + " " + clean)
 			}
+		}
+		// A title of digits only, such as "5_55" for "5:55", is the
+		// title itself when every bracket is a format tag.
+		if strings.Trim(title, " -_()[]") != "" {
+			return clean
 		}
 		return s
 	}

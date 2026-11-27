@@ -190,6 +190,7 @@
   "mediafiles.state.betterCopy": "Betra eintak",
   "mediafiles.state.notKeptQ": "Ekki haldið · {q}",
   "mediafiles.state.notKept": "Ekki haldið",
+  "mediafiles.state.keptInPart": "Haldið að hluta",
   "mediafiles.state.inLibraryQ": "Í safni · {q}",
   "mediafiles.state.inLibrary": "Í safni",
   "mediafiles.state.upcomingOn": "Væntanlegt · {date}",

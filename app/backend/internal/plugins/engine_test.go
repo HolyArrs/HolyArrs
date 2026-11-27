@@ -1015,3 +1015,64 @@ func TestStartWorksAfterBlocklistLifted(t *testing.T) {
 		t.Fatalf("not running after the blocklist lifted: %v", p)
 	}
 }
+
+// with nothing installed the periodic check still refreshes the cached
+// plugin list, so newly published plugins show, and never puts back an older one.
+func TestBlocklistCheckRefreshesListWithNothingInstalled(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	if err := os.MkdirAll(e.Dir, 0o700); err != nil { // the data volume's plugins folder
+		t.Fatal(err)
+	}
+	call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK) // caches counter 1
+	zero := uint64(0)
+	sha := hashOf(pluginFile)
+	ls.mu.Lock()
+	old := ls.list
+	ls.list = ls.sign(plugins.List{Kind: plugins.KindPlugins, Counter: 2, MinBlocklistCounter: &zero,
+		Entries: []plugins.Entry{{ID: "tailscale", Version: "1.0.0", SHA256: sha, ManifestSHA256: hashOf(ls.manifest)},
+			{ID: "language-checker", Version: "1.0.1", SHA256: sha, ManifestSHA256: hashOf(ls.manifest)}}})
+	ls.mu.Unlock()
+	if listed(call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "language-checker") {
+		t.Fatal("listed before the check")
+	}
+	if err := e.CheckBlocklist(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "language-checker")
+
+	ls.mu.Lock()
+	ls.list = old
+	ls.mu.Unlock()
+	if err := e.CheckBlocklist(context.Background()); err == nil {
+		t.Fatal("older plugin list accepted")
+	}
+	row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "language-checker")
+}
+
+func listed(ov map[string]any, id string) bool {
+	ps, _ := ov["plugins"].([]any)
+	for _, p := range ps {
+		if m, _ := p.(map[string]any); m["id"] == id {
+			return true
+		}
+	}
+	return false
+}
+
+// a bad list with nothing installed changes nothing on the page.
+func TestBlocklistCheckBadListNothingInstalled(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	if err := os.MkdirAll(e.Dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK)
+	ls.mu.Lock()
+	ls.list = []byte("not a list")
+	ls.mu.Unlock()
+	if err := e.CheckBlocklist(context.Background()); err == nil {
+		t.Fatal("bad plugin list accepted")
+	}
+	row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+}

@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Kildene dine finner torrent-nedlastinger, men ingen torrent-nedlaster er satt opp, så ingen kan sendes. Legg til en under Innstillinger › Nedlastere.",
 	"health.check.sameDownloader": "Lagt til to ganger:",
 	"health.check.sameDownloaderWhy": "{app} når samme nedlastingsapp som en annen nedlaster, så nedlastingene kan vises to ganger. Fjern den ene under Innstillinger › Nedlastere.",
+	"health.check.sameDownloaderShared": "{app} og en annen Downloader bruker begge kategorien \"{category}\", så nedlastinger i den kan vises to ganger. Gi {app} sin egen kategori under Innstillinger › Downloadere.",
 	"health.check.keyKitRecommended": "Anbefalt: last ned nøkkelpakken",
 	"health.check.keyKitRecommendedOthers": "Anbefalt: be eieren om nøkkelpakken",
 	"health.kind.sameDownloader": "Nedlaster lagt til to ganger",

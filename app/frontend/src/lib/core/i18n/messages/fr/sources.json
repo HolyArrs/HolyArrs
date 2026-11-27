@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Lier",
 	"sources.bridge.linkName": "Lier {name}",
 	"sources.bridge.movieKey": "Clé des films (côté Radarr)",
+	"sources.bridge.musicKey": "Clé de la musique (côté Lidarr)",
 	"sources.bridge.notConnected": "Non connecté",
 	"sources.bridge.reaches": "Prowlarr joint HolyArrs à",
 	"sources.bridge.remove": "Retirer",

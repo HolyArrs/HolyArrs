@@ -108,7 +108,7 @@ func TestSettingsWithoutSignIn(t *testing.T) {
 	if err := json.Unmarshal(rec3.Body.Bytes(), &out); err != nil {
 		t.Fatal(err)
 	}
-	if out.Enabled || len(out.Sides) != 2 {
+	if out.Enabled || len(out.Sides) != 3 {
 		t.Fatalf("settings: %s", rec3.Body)
 	}
 	for _, s := range out.Sides {

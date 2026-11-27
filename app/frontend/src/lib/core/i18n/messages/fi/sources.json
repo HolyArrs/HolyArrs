@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Yhdistä",
 	"sources.bridge.linkName": "Yhdistä {name}",
 	"sources.bridge.movieKey": "Elokuva-avain (Radarr-puoli)",
+	"sources.bridge.musicKey": "Musiikkiavain (Lidarr-puoli)",
 	"sources.bridge.notConnected": "Ei yhdistetty",
 	"sources.bridge.reaches": "Prowlarr tavoittaa HolyArrsin osoitteessa",
 	"sources.bridge.remove": "Poista",

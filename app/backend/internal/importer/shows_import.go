@@ -187,6 +187,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 		}
 		plan = PlanTracks(cands, at)
 	} else {
+		t.oneVideo = videoFiles(cands) == 1
 		plan = PlanEpisodes(cands, t)
 	}
 	plan = append(plan, bad...)
@@ -605,6 +606,9 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			name := strings.TrimSuffix(filepath.Base(step.SourceFile), filepath.Ext(step.SourceFile))
 			if music && relName != "" {
 				name = relName
+			} else if !music {
+				name, p = t.episodeName(step.SourceFile, p)
+				p = withInspectedResolution(p, inspected[step.SourceFile])
 			}
 			f := &mediafiles.File{SlotIDs: step.TargetSlotIDs, VersionID: ver.ID, RelativePath: filepath.ToSlash(rel), Size: size, AddedAt: now,
 				Quality:   mediafiles.Quality{Resolution: p.Resolution.Value, Source: p.Source.Value, Codec: p.Codec.Value, HDR: p.HDR.Value},
@@ -639,7 +643,7 @@ func (im *Importer) importShow(ctx context.Context, d domain.Download, dr domain
 			if r.FellBack {
 				how += " (hardlink not possible)"
 			}
-			ge := mediafiles.ReachesGoodEnoughFor(name, ti, pr.Body)
+			ge := mediafiles.ReachesGoodEnoughFor(mediafiles.JudgeName(name, f.MediaInfo), ti, pr.Body)
 			for _, sid := range step.TargetSlotIDs {
 				ss := slots[sid]
 				if _, err := tx.Exec("UPDATE slots SET file_id = ?, active_download_id = NULL, good_enough = ? WHERE id = ?", id, ge, sid); err != nil {

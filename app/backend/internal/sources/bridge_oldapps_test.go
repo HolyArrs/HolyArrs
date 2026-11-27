@@ -62,7 +62,7 @@ func TestAddProwlarrBridgeRollsBackOldAppKeysOnFailure(t *testing.T) {
 	if rec.Code/100 == 2 {
 		t.Fatalf("added anyway: %d %s", rec.Code, rec.Body)
 	}
-	want := []string{"make sonarr", "make radarr", "on", "delete sonarr", "delete radarr", "off"}
+	want := []string{"make sonarr", "make radarr", "make lidarr", "on", "delete sonarr", "delete radarr", "delete lidarr", "off"}
 	if !slices.Equal(old.calls, want) {
 		t.Fatalf("calls %v want %v", old.calls, want)
 	}
@@ -76,7 +76,7 @@ func TestAddProwlarrBridgeRollsBackOldAppKeysOnFailure(t *testing.T) {
 	// Keys typed in: nothing is made, and nothing typed in is deleted.
 	typed := &fakeOldApps{canMake: true}
 	h2 := &Handlers{Store: s, Vault: v, OldApps: typed, PartOn: both}
-	rec = addProwlarrBridge(t, h2, f.srv.URL, `,"keys":{"sonarr":"a","radarr":"b"}`)
+	rec = addProwlarrBridge(t, h2, f.srv.URL, `,"keys":{"sonarr":"a","radarr":"b","lidarr":"c"}`)
 	if rec.Code/100 == 2 {
 		t.Fatalf("added anyway: %d %s", rec.Code, rec.Body)
 	}
@@ -87,7 +87,7 @@ func TestAddProwlarrBridgeRollsBackOldAppKeysOnFailure(t *testing.T) {
 	// The switch was already on: it stays on after a failure.
 	already := &fakeOldApps{canMake: true, on: true}
 	h3 := &Handlers{Store: s, Vault: v, OldApps: already, PartOn: both}
-	addProwlarrBridge(t, h3, f.srv.URL, `,"keys":{"sonarr":"a","radarr":"b"}`)
+	addProwlarrBridge(t, h3, f.srv.URL, `,"keys":{"sonarr":"a","radarr":"b","lidarr":"c"}`)
 	if len(already.calls) != 0 || !already.on {
 		t.Fatalf("already on: %v on=%v", already.calls, already.on)
 	}

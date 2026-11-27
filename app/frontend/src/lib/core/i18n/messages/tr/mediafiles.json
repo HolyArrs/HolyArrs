@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Daha iyi kopya",
 	"mediafiles.state.notKeptQ": "Tutulmuyor · {q}",
 	"mediafiles.state.notKept": "Tutulmuyor",
+	"mediafiles.state.keptInPart": "Kısmen güncel tutuluyor",
 	"mediafiles.state.inLibraryQ": "Kütüphanede · {q}",
 	"mediafiles.state.inLibrary": "Kütüphanede",
 	"mediafiles.state.upcomingOn": "Yaklaşan · {date}",

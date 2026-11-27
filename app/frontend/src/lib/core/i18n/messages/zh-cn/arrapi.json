@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "电影",
 	"arrapi.seerr.showsLower": "剧集",
 	"arrapi.seerr.moviesLower": "电影",
+	"arrapi.seerr.music": "音乐",
+	"arrapi.seerr.musicLower": "音乐",
 	"arrapi.seerr.saveFail": "保存失败",
 	"arrapi.seerr.replaceConfirm": "替换 {app} 密钥？当前的密钥将失效。",
 	"arrapi.seerr.makeFail": "无法创建密钥",

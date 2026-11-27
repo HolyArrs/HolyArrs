@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Koble til",
 	"sources.bridge.linkName": "Koble til {name}",
 	"sources.bridge.movieKey": "Filmnøkkel (Radarr-siden)",
+	"sources.bridge.musicKey": "Musikknøkkel (Lidarr-siden)",
 	"sources.bridge.notConnected": "Ikke tilkoblet",
 	"sources.bridge.reaches": "Prowlarr når HolyArrs på",
 	"sources.bridge.remove": "Fjern",

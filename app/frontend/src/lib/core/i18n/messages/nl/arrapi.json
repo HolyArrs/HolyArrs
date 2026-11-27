@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Films",
 	"arrapi.seerr.showsLower": "series",
 	"arrapi.seerr.moviesLower": "films",
+	"arrapi.seerr.music": "Muziek",
+	"arrapi.seerr.musicLower": "muziek",
 	"arrapi.seerr.saveFail": "Opslaan mislukt",
 	"arrapi.seerr.replaceConfirm": "De sleutel voor {app} vervangen? De huidige werkt dan niet meer.",
 	"arrapi.seerr.makeFail": "Sleutel maken mislukt",

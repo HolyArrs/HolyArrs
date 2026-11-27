@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "نسخة أفضل",
 	"mediafiles.state.notKeptQ": "غير مواكَب · {q}",
 	"mediafiles.state.notKept": "غير مواكَب",
+	"mediafiles.state.keptInPart": "محفوظ جزئيًا",
 	"mediafiles.state.inLibraryQ": "في المكتبة · {q}",
 	"mediafiles.state.inLibrary": "في المكتبة",
 	"mediafiles.state.upcomingOn": "قادم · {date}",

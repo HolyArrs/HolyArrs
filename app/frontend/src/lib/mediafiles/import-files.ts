@@ -173,6 +173,31 @@ export function oneTickPerTrack(files: ByHandFile[], picks: Record<string, Pick 
 	return held;
 }
 
+// After the album's Pressing changes, its tracks change: files picked for that album (or
+// newly guessed onto it) take the fresh scan's match; every other pick and tick stays.
+export function rematchAlbum(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>, albumId: number) {
+	const p: Record<string, Pick | null> = {};
+	const t: Record<string, boolean> = {};
+	for (const f of files) {
+		const was = picks[f.path];
+		if (was === undefined || was?.album_id === albumId || (!was && f.guess.album_id === albumId)) {
+			const fresh = startPick(f);
+			// No track of the new Pressing fits: keep the artist and album, ask for the track.
+			p[f.path] = was && fresh?.album_id !== albumId ? dropTrack(was) : fresh;
+			t[f.path] = p[f.path] === fresh && startTicked(f, fresh);
+		} else {
+			p[f.path] = was;
+			t[f.path] = !!ticked[f.path];
+		}
+	}
+	return { picks: p, ticked: t, held: oneTickPerTrack(files, p, t) };
+}
+
+// A pick on the album with its track cleared, for when the album's tracks changed.
+export function dropTrack(p: Pick): Pick {
+	return { ...p, slot_id: undefined, disc: undefined, track: undefined, track_name: undefined, has_file: false, replace: false };
+}
+
 // Builds the import request from ticked files that have a valid pick.
 // No mode is sent: files are placed like automatic imports (a link when possible, else a real copy).
 export function itemsFor(files: ByHandFile[], picks: Record<string, Pick | null>, ticked: Record<string, boolean>, mode: ImportMode = 'copy') {

@@ -84,6 +84,8 @@ The built-in subtitle search is held back in this release, so use Bazarr for sub
 
 Prowlarr fills your HolyArrs Sources from its indexers. Each indexer becomes one Newznab or Torznab Source pointing at Prowlarr.
 
+The easiest way is **Link** on the **Prowlarr or Jackett** card in **Settings > Sources**. It adds the apps in Prowlarr for you: a Sonarr app for shows, a Radarr app for movies and a Lidarr app for music, one for each part you have on. Prowlarr then sends each app only the indexers that have its categories, so your music indexers become music Sources. The steps below add the Sonarr and Radarr apps by hand.
+
 1. In Prowlarr, open **Settings > Apps**.
 2. Add a **Sonarr** app for shows, a **Radarr** app for movies, or one of them.
 3. Fill in the fields below.

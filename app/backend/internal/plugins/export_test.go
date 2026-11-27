@@ -22,3 +22,6 @@ func KeyForTest(e *Engine, id string) string {
 
 // KeepForwardingForTest runs the 1.3.0 upgrade step again.
 func KeepForwardingForTest(e *Engine) { e.keepForwarding() }
+
+// MayTokenForTest says whether a start here may get an API token.
+func MayTokenForTest(e *Engine) bool { return e.mayToken() }

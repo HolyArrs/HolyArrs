@@ -395,3 +395,6 @@ export function pluginBadge(p: Plugin): string {
 	if (p.test) return t('plugins.testBadge');
 	return pluginState(p) === 'off' ? t('plugins.stateOff') : stateLabel(p);
 }
+
+/** The Signed chip: plugins from the signed list only. A developer-folder plugin is unsigned and shows its Unsigned chip instead. */
+export const showsSigned = (p: Pick<Plugin, 'dev'>): boolean => !p.dev;

@@ -48,6 +48,7 @@ DELETE /blocklist/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /customformat/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /delayprofile/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /indexer/{id} auth=unlisted scope=admin assurance=false part=-
+DELETE /lidarr/ auth=manage_library scope=compat assurance=false part=music
 DELETE /movie/editor auth=unlisted scope=admin assurance=false part=-
 DELETE /movie/{id} auth=unlisted scope=admin assurance=false part=-
 DELETE /notification/{id} auth=unlisted scope=admin assurance=false part=-
@@ -345,6 +346,7 @@ GET /indexer auth=unlisted scope=admin assurance=false part=-
 GET /indexer/schema auth=unlisted scope=admin assurance=false part=-
 GET /indexer/{id} auth=unlisted scope=admin assurance=false part=-
 GET /languageprofile auth=unlisted scope=admin assurance=false part=-
+GET /lidarr/ auth=manage_library scope=compat assurance=false part=music
 GET /live auth=signed_in scope=read assurance=false part=core
 GET /log auth=unlisted scope=admin assurance=false part=-
 GET /login auth=self scope=read assurance=false part=core
@@ -631,6 +633,7 @@ POST /customformat auth=unlisted scope=admin assurance=false part=-
 POST /delayprofile auth=unlisted scope=admin assurance=false part=-
 POST /indexer auth=unlisted scope=admin assurance=false part=-
 POST /indexer/test auth=unlisted scope=admin assurance=false part=-
+POST /lidarr/ auth=manage_library scope=compat assurance=false part=music
 POST /mcp auth=signed_in scope=mcp assurance=false part=core
 POST /movie auth=unlisted scope=admin assurance=false part=-
 POST /movie/import auth=unlisted scope=admin assurance=false part=-
@@ -738,6 +741,7 @@ PUT /delayprofile/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /episode/monitor auth=unlisted scope=admin assurance=false part=-
 PUT /episode/{id} auth=unlisted scope=admin assurance=false part=-
 PUT /indexer/{id} auth=unlisted scope=admin assurance=false part=-
+PUT /lidarr/ auth=manage_library scope=compat assurance=false part=music
 PUT /movie auth=unlisted scope=admin assurance=false part=-
 PUT /movie/editor auth=unlisted scope=admin assurance=false part=-
 PUT /movie/{id} auth=unlisted scope=admin assurance=false part=-
