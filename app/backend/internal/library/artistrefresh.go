@@ -222,6 +222,9 @@ func (s *Service) RefreshArtist(ctx context.Context, titleID int64, by domain.Ac
 			Summary: fmt.Sprintf("%s: %d albums could not be read and will be tried again", t.Name, out.AlbumsFailed)})
 	}
 	s.trackGateEvents(ctx, t, out.Opened, out.Closed, by, jobID)
+	if out.PressingsChosen+out.TracksAdded+out.TracksChanged > 0 {
+		s.rematchArtist(ctx, titleID, by)
+	}
 	return out, nil
 }
 
@@ -391,6 +394,9 @@ func (s *Service) SetAlbum(ctx context.Context, partID int64, keep *bool, pressi
 	}
 	s.Emit(ctx, &domain.Event{Actor: by, Kind: domain.EventAlbumChanged, TitleID: &t.ID, Summary: fmt.Sprintf("%s: %s: %s", t.Name, p.Name, strings.Join(changed, "; ")),
 		Data: data, GroupKey: GroupKey(t.ID)})
+	if pressingID != 0 {
+		s.rematchArtist(ctx, t.ID, by)
+	}
 	return p, nil
 }
 
