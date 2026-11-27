@@ -10,6 +10,7 @@
 	import Button from '#lib/ui/Button.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import LoadError from '#lib/ui/LoadError.svelte';
+	import { badNumbers } from './settings-form.ts';
 	import { shownName, shownVersion, type Plugin, type SettingsView } from './index.ts';
 
 	type Field = SettingsView['fields'][number];
@@ -36,8 +37,7 @@
 		return all.filter((s) => s.list.length);
 	});
 
-	const whole = (v: unknown) => v == null || String(v).trim() === '' || /^\d+$/.test(String(v).trim());
-	const bad = $derived(view ? view.fields.filter((f) => f.type === 'number' && !whole(vals[f.key])).map((f) => f.key) : []);
+	const bad = $derived(view ? badNumbers(view.fields, vals) : []);
 
 	async function load() {
 		err = '';

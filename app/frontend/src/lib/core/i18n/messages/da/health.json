@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Dine kilder finder torrent-downloads, men ingen torrent-downloader er sat op, så ingen kan sendes. Tilføj en under Indstillinger › Downloadere.",
 	"health.check.sameDownloader": "Tilføjet to gange:",
 	"health.check.sameDownloaderWhy": "{app} når den samme download-app som en anden Downloader, så dens downloads kan blive vist to gange. Fjern den ene under Indstillinger › Downloadere.",
+	"health.check.sameDownloaderShared": "{app} og en anden Downloader bruger begge kategorien \"{category}\", så downloads i den kan vises to gange. Giv {app} sin egen kategori under Indstillinger › Downloadere.",
 	"health.check.keyKitRecommended": "Anbefalet: download dit nøglesæt",
 	"health.check.keyKitRecommendedOthers": "Anbefalet: bed ejeren om nøglesættet",
 	"health.kind.sameDownloader": "Downloader tilføjet to gange",

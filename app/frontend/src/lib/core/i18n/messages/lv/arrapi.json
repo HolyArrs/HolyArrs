@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filmas",
 	"arrapi.seerr.showsLower": "seriāli",
 	"arrapi.seerr.moviesLower": "filmas",
+	"arrapi.seerr.music": "Mūzika",
+	"arrapi.seerr.musicLower": "mūziku",
 	"arrapi.seerr.saveFail": "Neizdevās saglabāt",
 	"arrapi.seerr.replaceConfirm": "Aizstāt {app} atslēgu? Pašreizējā pārstās darboties.",
 	"arrapi.seerr.makeFail": "Neizdevās izveidot atslēgu",

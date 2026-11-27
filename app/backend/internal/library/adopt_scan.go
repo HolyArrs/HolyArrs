@@ -221,6 +221,7 @@ func (s *Service) rescanFolder(ctx context.Context, lf mediafiles.LibraryFolder,
 	}
 	var changes []change
 	present, gone := 0, 0
+	var goneFiles []mediafiles.File
 	for _, f := range files {
 		knownPaths[strings.ToLower(f.RelativePath)] = true
 		_, statErr := os.Stat(filepath.Join(lf.Path, filepath.FromSlash(f.RelativePath)))
@@ -241,6 +242,7 @@ func (s *Service) rescanFolder(ctx context.Context, lf mediafiles.LibraryFolder,
 		switch {
 		case f.State == "present" && errors.Is(statErr, os.ErrNotExist):
 			gone++
+			goneFiles = append(goneFiles, f)
 			changes = append(changes, change{f, "missing"})
 		case f.State == "missing" && statErr == nil:
 			changes = append(changes, change{f, "present"})
@@ -248,7 +250,13 @@ func (s *Service) rescanFolder(ctx context.Context, lf mediafiles.LibraryFolder,
 	}
 	// A mount that dropped while leaving something in the folder, or a
 	// pool that lost a disk: every known file, or most of many, gone at
-	// once. None becomes missing; the person looks first.
+	// once. None becomes missing; the person looks first. A file whose
+	// title folder now holds a video we do not know was renamed or
+	// replaced there: the disk is plainly mounted, so it does not
+	// count toward the guard.
+	if gone >= 2 {
+		gone -= replacedInPlace(lf, goneFiles, knownPaths)
+	}
 	massGone := (gone >= 2 && gone == present) || (gone >= massGoneMin && gone*2 > present)
 	if massGone {
 		res.Unreachable++
@@ -372,6 +380,32 @@ func (s *Service) updateFileInspection(ctx context.Context, fileID int64, info m
 // massGoneMin is how many files must be gone at once, and more than half of
 // those known, before a rescan takes it for a lost disk rather than deletes.
 const massGoneMin = 10
+
+// replacedInPlace counts the gone movie and episode files whose title folder
+// holds a video the database does not know: renamed, moved or replaced
+// inside that folder, not lost with a drive.
+func replacedInPlace(lf mediafiles.LibraryFolder, goneFiles []mediafiles.File, known map[string]bool) int {
+	if lf.Kind != "movie" && lf.Kind != "show" {
+		return 0
+	}
+	hasNew := map[string]bool{}
+	n := 0
+	for _, f := range goneFiles {
+		top, _, ok := strings.Cut(f.RelativePath, "/")
+		if !ok {
+			continue
+		}
+		fresh, seen := hasNew[top]
+		if !seen {
+			fresh = slices.ContainsFunc(listVideos(lf.Path, top), func(v AdoptVideo) bool { return !known[strings.ToLower(v.Path)] })
+			hasNew[top] = fresh
+		}
+		if fresh {
+			n++
+		}
+	}
+	return n
+}
 
 // unreachable says why a Library folder looks like a dropped mount: it is
 // gone, or empty while the database knows files in it.

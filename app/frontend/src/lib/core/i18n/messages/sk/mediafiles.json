@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Lepšia kópia",
 	"mediafiles.state.notKeptQ": "Neudržiava sa · {q}",
 	"mediafiles.state.notKept": "Neudržiava sa",
+	"mediafiles.state.keptInPart": "Udržiavané čiastočne",
 	"mediafiles.state.inLibraryQ": "V knižnici · {q}",
 	"mediafiles.state.inLibrary": "V knižnici",
 	"mediafiles.state.upcomingOn": "Pripravuje sa · {date}",

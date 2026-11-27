@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "영화",
 	"arrapi.seerr.showsLower": "TV 시리즈",
 	"arrapi.seerr.moviesLower": "영화",
+	"arrapi.seerr.music": "음악",
+	"arrapi.seerr.musicLower": "음악",
 	"arrapi.seerr.saveFail": "저장할 수 없습니다",
 	"arrapi.seerr.replaceConfirm": "{app} 키를 교체할까요? 현재 키는 더 이상 작동하지 않습니다.",
 	"arrapi.seerr.makeFail": "키를 만들 수 없습니다",

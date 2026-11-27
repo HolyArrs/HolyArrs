@@ -78,6 +78,10 @@ func (e *ShowAlreadyAddedError) Error() string {
 // ErrShowNeverAdd says the show is on the Never-add list.
 var ErrShowNeverAdd = errors.New("this show is on the Never-add list")
 
+// ErrTVDBIDNeedsKey is a tvdb:<id> no keyless source knows: only TVDB
+// itself could look it up, and no TVDB key is set. It is a not-found.
+var ErrTVDBIDNeedsKey = fmt.Errorf("%w: TMDB and TVMaze have no show with this TheTVDB id. Add your own TheTVDB key in Settings to look it up on TheTVDB", metadata.ErrShowNotFound)
+
 // LookupShow finds one show by "<kind>:<id>" for the given details source.
 // The id may belong to another source (a TMDB id while adding with
 // TVMaze): that source is asked first for the show's other ids.
@@ -97,6 +101,7 @@ func (s *Service) LookupShow(ctx context.Context, id, source string) (metadata.S
 	// used instead of finding nothing (as Sonarr does).
 	var found metadata.Show
 	var helperErr error
+	noKey := false // TVDB itself was skipped for want of a key
 	helpers := []string{kind}
 	if kind == "tvdb" || kind == "imdb" {
 		helpers = append(helpers, "tvmaze")
@@ -120,7 +125,9 @@ func (s *Service) LookupShow(ctx context.Context, id, source string) (metadata.S
 			if found.Source == "" {
 				found = sh
 			}
-		case errors.Is(err, metadata.ErrShowNotFound), errors.Is(err, metadata.ErrNoTVDBKey):
+		case errors.Is(err, metadata.ErrNoTVDBKey):
+			noKey = noKey || h == "tvdb"
+		case errors.Is(err, metadata.ErrShowNotFound):
 		default:
 			if helperErr == nil {
 				helperErr = err
@@ -134,6 +141,8 @@ func (s *Service) LookupShow(ctx context.Context, id, source string) (metadata.S
 			sh, err = found, nil
 		case helperErr != nil:
 			return metadata.Show{}, helperErr
+		case noKey:
+			return metadata.Show{}, ErrTVDBIDNeedsKey
 		}
 	}
 	if err != nil {
@@ -599,6 +608,7 @@ type SeasonSummary struct {
 	Missing      int           `json:"missing"`       // aired, kept up to date, no file yet
 	BetterWanted int           `json:"better_wanted"` // in the Library, a better copy is sought
 	NotOutYet    int           `json:"not_out_yet"`
+	Kept         int           `json:"kept"`        // episodes whose own Keep up to date switch is on
 	Downloading  int           `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
 	Failed       int           `json:"failed"`      // the download failed or its import needs a decision
 	NextAirDate  *time.Time    `json:"next_air_date,omitempty"`
@@ -666,6 +676,9 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 // says (a search or a better copy on the way, an air time later today).
 func (ss *SeasonSummary) tally(air sql.NullString, day string, keep bool, state string, hasFile bool, now time.Time) {
 	ss.Episodes++
+	if keep {
+		ss.Kept++
+	}
 	aired := false
 	if air.Valid {
 		if at, err := time.Parse(database.TimeLayout, air.String); err == nil {

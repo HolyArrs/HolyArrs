@@ -37,6 +37,8 @@ func (e *Engine) Run(ctx context.Context) {
 
 // CheckBlocklist fetches both lists and stops and disables every enabled
 // plugin they no longer allow. A fetch or signature failure changes nothing.
+// With nothing installed it still refreshes the cached lists, so newly
+// published plugins show on the Plugins page.
 func (e *Engine) CheckBlocklist(ctx context.Context) error {
 	if err := e.init(); err != nil {
 		return err
@@ -45,7 +47,7 @@ func (e *Engine) CheckBlocklist(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if len(st.Plugins) == 0 || len(e.Keys) == 0 {
+	if len(e.Keys) == 0 {
 		return nil
 	}
 	listRaw, err := e.fetch(ctx, ListName(e.platform()))

@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Свързване",
 	"sources.bridge.linkName": "Свързване на {name}",
 	"sources.bridge.movieKey": "Ключ за филми (страната на Radarr)",
+	"sources.bridge.musicKey": "Ключ за музика (страната на Lidarr)",
 	"sources.bridge.notConnected": "Не е свързан",
 	"sources.bridge.reaches": "Prowlarr достига HolyArrs на",
 	"sources.bridge.remove": "Премахване",

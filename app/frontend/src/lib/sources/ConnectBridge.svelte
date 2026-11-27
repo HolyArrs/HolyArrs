@@ -65,7 +65,7 @@
 	let errors = $state<Record<string, string>>({});
 	let keysNeeded = $state<string[]>([]);
 	let newKeys = $state(false);
-	let typedKeys = $state<Record<string, string>>({ sonarr: '', radarr: '' });
+	let typedKeys = $state<Record<string, string>>({ sonarr: '', radarr: '', lidarr: '' });
 	let checking = $state<number | null>(null);
 	// Arr API keys a Prowlarr connect made, shown once (an app that used a replaced one, such as Seerr, needs it). Making arr API keys wants a fresh password: the server answers "reauth". Ask inline instead of showing that answer, then run the step again.
 	let reauthFor = $state<'test' | 'connect' | null>(null);
@@ -279,7 +279,7 @@
 			toasts.push(t('sources.bridge.connected', { name: names[b.kind] }), 'ok', { body: b.kind === 'jackett' ? t(b.sources === 1 ? 'sources.bridge.added.one' : 'sources.bridge.added.other', { count: b.sources }) : t('sources.bridge.arrive') });
 			open = false;
 			key = '';
-			typedKeys = { sonarr: '', radarr: '' };
+			typedKeys = { sonarr: '', radarr: '', lidarr: '' };
 			newKeys = false;
 			keysNeeded = [];
 			await load();
@@ -457,7 +457,7 @@
 							{#if !newKeys}
 								<p class="hint">{keysNeeded.length === 1 ? t('sources.bridge.currentKey') : t('sources.bridge.currentKeys')}</p>
 								{#each keysNeeded as side (side)}
-									<Field id="br-key-{side}" label={side === 'sonarr' ? t('sources.bridge.tvKey') : t('sources.bridge.movieKey')}>
+									<Field id="br-key-{side}" label={t(side === 'sonarr' ? 'sources.bridge.tvKey' : side === 'lidarr' ? 'sources.bridge.musicKey' : 'sources.bridge.movieKey')}>
 										<input id="br-key-{side}" class="input mono" type="password" autocomplete="new-password" spellcheck="false" bind:value={typedKeys[side]} />
 									</Field>
 								{/each}

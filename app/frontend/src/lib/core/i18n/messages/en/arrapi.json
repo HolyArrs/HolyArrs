@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Movies",
 	"arrapi.seerr.showsLower": "shows",
 	"arrapi.seerr.moviesLower": "movies",
+	"arrapi.seerr.music": "Music",
+	"arrapi.seerr.musicLower": "music",
 	"arrapi.seerr.saveFail": "Couldn't save",
 	"arrapi.seerr.replaceConfirm": "Replace the {app} key? The current one stops working.",
 	"arrapi.seerr.makeFail": "Couldn't make key",

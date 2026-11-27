@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "مصادرك تجد تنزيلات تورنت، لكن لم يُعدّ أي برنامج تنزيل تورنت، لذا لا يمكن إرسال أي منها. أضف واحدًا في الإعدادات › برامج التنزيل.",
 	"health.check.sameDownloader": "مضاف مرتين:",
 	"health.check.sameDownloaderWhy": "يصل {app} إلى برنامج التنزيل نفسه مثل إعداد آخر، لذا قد تظهر تنزيلاته مرتين. احذف أحدهما في الإعدادات › برامج التنزيل.",
+	"health.check.sameDownloaderShared": "يستخدم {app} وإعداد تنزيل آخر الفئة \"{category}\" نفسها، لذا قد تظهر التنزيلات فيها مرتين. امنح {app} فئة خاصة به في الإعدادات › برامج التنزيل.",
 	"health.check.keyKitRecommended": "موصى به: نزّل حزمة المفتاح",
 	"health.check.keyKitRecommendedOthers": "موصى به: اطلب حزمة المفتاح من المالك",
 	"health.kind.sameDownloader": "برنامج تنزيل مضاف مرتين",

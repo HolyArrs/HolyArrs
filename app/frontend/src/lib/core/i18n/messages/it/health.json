@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Le tue fonti trovano download torrent, ma nessun downloader torrent è configurato, quindi non se ne può inviare nessuno. Aggiungine uno in Impostazioni › Downloader.",
 	"health.check.sameDownloader": "Aggiunto due volte:",
 	"health.check.sameDownloaderWhy": "{app} raggiunge la stessa app di download di un altro Downloader, quindi i suoi download possono comparire due volte. Rimuovine uno in Impostazioni › Downloader.",
+	"health.check.sameDownloaderShared": "{app} e un altro Downloader usano entrambi la categoria \"{category}\", quindi i download al suo interno possono comparire due volte. Assegna a {app} una categoria sua in Impostazioni › Downloader.",
 	"health.check.keyKitRecommended": "Consigliato: scarica il kit delle chiavi",
 	"health.check.keyKitRecommendedOthers": "Consigliato: chiedi il kit delle chiavi al proprietario",
 	"health.kind.sameDownloader": "Downloader aggiunto due volte",

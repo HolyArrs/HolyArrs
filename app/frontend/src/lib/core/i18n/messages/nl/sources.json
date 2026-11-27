@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Koppelen",
 	"sources.bridge.linkName": "{name} koppelen",
 	"sources.bridge.movieKey": "Sleutel voor films (Radarr-kant)",
+	"sources.bridge.musicKey": "Sleutel voor muziek (Lidarr-kant)",
 	"sources.bridge.notConnected": "Niet verbonden",
 	"sources.bridge.reaches": "Prowlarr bereikt HolyArrs op",
 	"sources.bridge.remove": "Verwijderen",

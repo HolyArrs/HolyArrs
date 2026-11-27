@@ -659,6 +659,10 @@ var RoutePerms = map[string]webserver.Perm{
 	"POST /radarr/":   webserver.PermManageLibrary,
 	"PUT /radarr/":    webserver.PermManageLibrary,
 	"DELETE /radarr/": webserver.PermManageLibrary,
+	"GET /lidarr/":    webserver.PermManageLibrary,
+	"POST /lidarr/":   webserver.PermManageLibrary,
+	"PUT /lidarr/":    webserver.PermManageLibrary,
+	"DELETE /lidarr/": webserver.PermManageLibrary,
 	// Its settings: the switch, and one key per side.
 	"GET /api/v1/settings/old-app-api":                webserver.PermSettings,
 	"PUT /api/v1/settings/old-app-api":                webserver.PermSettings,
@@ -716,7 +720,7 @@ var ScopeNotes = map[string]string{
 	webserver.ScopeControl:    "The controls: part switches, stage pause, resume and restart, reconnecting one linked app, whole-app restart, restart in safe mode and shut down.",
 	webserver.ScopeAll:        "Read, write and admin together (every route but the controls). Every key made before scopes existed holds this one.",
 	webserver.ScopeMCP:        "An AI connection only: the AI tools route and nothing else. The tools act as the key's person, within their permissions.",
-	webserver.ScopeCompat:     "The arr API only (/sonarr/ and /radarr/, for Seerr and Overseerr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
+	webserver.ScopeCompat:     "The arr API only (/sonarr/ and /radarr/, for Seerr and Overseerr, and /lidarr/ for Prowlarr). Only the keys made for it (POST /api/v1/settings/old-app-api/keys/{side}) hold this scope; an API key cannot be made with it.",
 }
 
 // Gate checks every signed-in request against RoutePerms. It must sit

@@ -135,6 +135,8 @@ export interface SeasonSummary {
 	missing: number;
 	not_out_yet: number;
 	better_wanted: number;
+	// Episodes whose own Keep up to date switch is on.
+	kept?: number;
 	downloading?: number;
 	failed?: number;
 	next_air_date?: string;

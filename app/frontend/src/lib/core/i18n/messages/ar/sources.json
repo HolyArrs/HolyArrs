@@ -26,6 +26,7 @@
 	"sources.bridge.link": "ربط",
 	"sources.bridge.linkName": "اربط {name}",
 	"sources.bridge.movieKey": "مفتاح الأفلام (جهة Radarr)",
+	"sources.bridge.musicKey": "مفتاح الموسيقى (جهة Lidarr)",
 	"sources.bridge.notConnected": "غير متصل",
 	"sources.bridge.reaches": "يصل Prowlarr إلى HolyArrs عبر",
 	"sources.bridge.remove": "إزالة",

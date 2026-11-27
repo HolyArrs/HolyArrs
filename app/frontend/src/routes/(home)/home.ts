@@ -593,3 +593,12 @@ export function tileWord(building: boolean, hasArt: boolean, word: string): stri
 export function tilesSettled<T extends { building: boolean }>(art: T): T {
 	return { ...art, building: false };
 }
+
+// the first Home of the session waits a moment for its tile pictures so the grid paints whole; every later visit shows at once and pictures fade in.
+const PICTURE_WAIT = 1500;
+let pictureWaited = false;
+export function pictureWait(): number {
+	if (pictureWaited) return 0;
+	pictureWaited = true;
+	return PICTURE_WAIT;
+}

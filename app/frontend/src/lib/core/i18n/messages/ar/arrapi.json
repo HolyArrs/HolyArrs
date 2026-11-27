@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "الأفلام",
 	"arrapi.seerr.showsLower": "المسلسلات",
 	"arrapi.seerr.moviesLower": "الأفلام",
+	"arrapi.seerr.music": "الموسيقى",
+	"arrapi.seerr.musicLower": "الموسيقى",
 	"arrapi.seerr.saveFail": "تعذّر الحفظ",
 	"arrapi.seerr.replaceConfirm": "استبدال مفتاح {app}؟ يتوقف المفتاح الحالي عن العمل.",
 	"arrapi.seerr.makeFail": "تعذّر إنشاء المفتاح",

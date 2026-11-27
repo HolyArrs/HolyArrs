@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Copie mai bună",
 	"mediafiles.state.notKeptQ": "Nepăstrat · {q}",
 	"mediafiles.state.notKept": "Nepăstrat",
+	"mediafiles.state.keptInPart": "Păstrat parțial",
 	"mediafiles.state.inLibraryQ": "În bibliotecă · {q}",
 	"mediafiles.state.inLibrary": "În bibliotecă",
 	"mediafiles.state.upcomingOn": "În curând · {date}",

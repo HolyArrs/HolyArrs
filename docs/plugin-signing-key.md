@@ -44,11 +44,20 @@ current key needs none.
 
 ## Rotating the key
 
-There is no backup key. A rotation is a new key in a release:
+Two keys are pinned in `internal/plugins/keys.go`: the main key, which lives
+in the `plugin-signing` secret, and a backup key, which is kept offline only.
+Both private keys also have an offline copy. Lists signed with either key are
+trusted. Deleting the plugins repo deletes its secrets, so put the main key
+back from the offline copy after any repo re-create.
+
+If the main key is lost or leaks, put the backup key in the secret and sign
+with it; no release is needed. Then make a new backup key, pin it in a
+release and keep it offline. To replace both:
 
 1. Run the command above again (remove `keys/main.pub` first). It replaces
-   the secret.
-2. Put the new public key in `pluginKeys` in `plugins_wiring.go`.
+   the secret. Keep an offline copy of the new key.
+2. Put the new public keys in `pinnedKeys` in `internal/plugins/keys.go` and
+   in `keys/main.pub` and `keys/backup.pub`.
 3. Release HolyArrs, then re-sign the lists with `init.yml` or the next
    `publish.yml` run.
 

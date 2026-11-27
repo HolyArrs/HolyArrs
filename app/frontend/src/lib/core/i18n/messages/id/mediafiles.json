@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Salinan lebih baik",
 	"mediafiles.state.notKeptQ": "Tidak disimpan · {q}",
 	"mediafiles.state.notKept": "Tidak disimpan",
+	"mediafiles.state.keptInPart": "Dijaga sebagian",
 	"mediafiles.state.inLibraryQ": "Di pustaka · {q}",
 	"mediafiles.state.inLibrary": "Di pustaka",
 	"mediafiles.state.upcomingOn": "Akan datang · {date}",

@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filmer",
 	"arrapi.seerr.showsLower": "serier",
 	"arrapi.seerr.moviesLower": "filmer",
+	"arrapi.seerr.music": "Musik",
+	"arrapi.seerr.musicLower": "musik",
 	"arrapi.seerr.saveFail": "Det gick inte att spara",
 	"arrapi.seerr.replaceConfirm": "Ersätta nyckeln för {app}? Den nuvarande slutar fungera.",
 	"arrapi.seerr.makeFail": "Det gick inte att skapa nyckeln",

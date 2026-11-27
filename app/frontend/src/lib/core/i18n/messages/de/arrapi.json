@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filme",
 	"arrapi.seerr.showsLower": "Serien",
 	"arrapi.seerr.moviesLower": "Filme",
+	"arrapi.seerr.music": "Musik",
+	"arrapi.seerr.musicLower": "Musik",
 	"arrapi.seerr.saveFail": "Speichern fehlgeschlagen",
 	"arrapi.seerr.replaceConfirm": "Den {app}-Schlüssel ersetzen? Der aktuelle funktioniert dann nicht mehr.",
 	"arrapi.seerr.makeFail": "Schlüssel konnte nicht erstellt werden",

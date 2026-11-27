@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filmler",
 	"arrapi.seerr.showsLower": "dizi",
 	"arrapi.seerr.moviesLower": "film",
+	"arrapi.seerr.music": "Müzik",
+	"arrapi.seerr.musicLower": "müzik",
 	"arrapi.seerr.saveFail": "Kaydedilemedi",
 	"arrapi.seerr.replaceConfirm": "{app} anahtarı değiştirilsin mi? Mevcut olan çalışmaz hale gelir.",
 	"arrapi.seerr.makeFail": "Anahtar oluşturulamadı",
