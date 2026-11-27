@@ -7,7 +7,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #950: the group leaves the show's name off its file names ("[Judas] Beerus -
+// the group leaves the show's name off its file names ("[Judas] Beerus -
 // S01E05.mkv"). The download was grabbed for this show, so the import takes
 // the show from the grab and only the episode from the file, as Sonarr does.
 func TestPlanTakesShowFromGrabWhenFileNamesAnother(t *testing.T) {

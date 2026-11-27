@@ -245,7 +245,7 @@ func TestOldAppSwitchAndKeys(t *testing.T) {
 	if st != 200 || strings.Contains(body, f.sonarrKey) || !strings.Contains(body, "…"+f.sonarrKey[28:]) || !strings.Contains(body, `"last_used_at"`) {
 		t.Fatalf("settings with keys: %d %s", st, body)
 	}
-	if st, _ := f.session("POST", "/api/v1/settings/old-app-api/keys/lidarr", ""); st != 404 {
+	if st, _ := f.session("POST", "/api/v1/settings/old-app-api/keys/readarr", ""); st != 404 {
 		t.Fatalf("unknown side: %d", st)
 	}
 	// An arr key cannot be made as a HolyArrs API key.

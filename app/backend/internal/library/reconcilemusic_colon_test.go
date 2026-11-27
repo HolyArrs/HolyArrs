@@ -12,7 +12,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #898: an album named "5:55" in a "5_55" folder, with or without a
+// an album named "5:55" in a "5_55" folder, with or without a
 // format tag, gets its files on a scan.
 func TestReconcileForbiddenCharAlbum(t *testing.T) {
 	for _, folder := range []string{"5_55", "5_55 (2006) [FLAC 24-96]", "5_55 [Japan]"} {

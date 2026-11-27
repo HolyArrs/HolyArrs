@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #798: a movie's file replaced outside the app (old gone, new one beside
+// a movie's file replaced outside the app (old gone, new one beside
 // it) is adopted on rescan; the missing row no longer blocks the slot.
 func TestMissingMovieFileDoesNotBlockNewCopy(t *testing.T) {
 	svc, s, id, rel := movieWithFoundCopy(t, "")
@@ -33,7 +33,7 @@ func TestMissingMovieFileDoesNotBlockNewCopy(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeFile(t, filepath.Join(lf.Path, filepath.FromSlash(newRel)), "new copy")
-	for i := 0; i < 2; i++ { // the missing mark and the adoption may land in separate passes (#809)
+	for i := 0; i < 2; i++ { // the missing mark and the adoption may land in separate passes
 		if _, err := svc.Rescan(ctx, domain.System); err != nil {
 			t.Fatal(err)
 		}

@@ -14,7 +14,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 )
 
-// #809: when every known file of a small Library (or of one title) is
+// when every known file of a small Library (or of one title) is
 // renamed or moved inside its own title folder, one rescan marks the old
 // paths missing. The new videos show the drive is mounted, so the
 // dropped-mount guard must not hold the change back until a second rescan.

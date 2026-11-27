@@ -150,7 +150,7 @@ func Radarr(d Deps) http.Handler {
 
 // Lidarr serves the Lidarr side, under /lidarr/, for Prowlarr only: its
 // status and the indexer calls, under /api/v1 as Lidarr has them. What
-// Prowlarr writes here becomes a music Source (#849). Nothing else of
+// Prowlarr writes here becomes a music Source. Nothing else of
 // Lidarr is answered.
 func Lidarr(d Deps) http.Handler {
 	h := &handler{Deps: d, side: "lidarr", version: LidarrVersion}

@@ -47,7 +47,7 @@
 	let albumId = $state<number | undefined>(undefined);
 	let tracks = $state<TrackView[]>([]);
 	let trackId = $state<number | undefined>(undefined);
-	// The album's Pressings, as on the album page: picking another one makes the tracks follow it (#777).
+	// The album's Pressings, as on the album page: picking another one makes the tracks follow it.
 	let pressings = $state<PressingView[]>([]);
 	let pressingId = $state(0);
 	let switching = $state(false);

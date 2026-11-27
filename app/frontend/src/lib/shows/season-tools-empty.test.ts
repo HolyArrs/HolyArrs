@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import SeasonToolsSheet from './SeasonToolsSheet.svelte';
 
-// #928: a season with nothing on disk offers no Delete Season.
+// a season with nothing on disk offers no Delete Season.
 const ep = (id: number, file: Record<string, unknown> | null) => ({ id, episode: id, slots: [{ file }] }) as never;
 
 describe('Season tools for a season with no files', () => {

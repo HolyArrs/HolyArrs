@@ -635,7 +635,7 @@ func (s *Service) recordFoundEpisodes(ctx context.Context, lf mediafiles.Library
 						return nil
 					}
 					if sl.FileID != nil {
-						// A copy gone from disk does not hold the episode (#798).
+						// A copy gone from disk does not hold the episode.
 						freed, err := mediafiles.UnlinkMissingTx(ctx, tx, *sl.FileID, s.Clock(), by)
 						if err != nil || !freed {
 							return err

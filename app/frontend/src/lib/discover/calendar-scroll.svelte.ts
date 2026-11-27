@@ -158,7 +158,7 @@ export function createCalendarScroll(ctx: any) {
 	async function toToday() {
 		stepAgain = null;
 		unhold();
-		// A load still on its way must not put the old place or a picked day back afterwards (#929).
+		// A load still on its way must not put the old place or a picked day back afterwards.
 		anchor = null;
 		goTo = null;
 		// From the phone sheet: let it close first, so the page can scroll.

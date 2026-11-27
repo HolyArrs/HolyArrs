@@ -8,7 +8,7 @@ import (
 
 // pinnedKeys are the ed25519 public keys (base64) the plugin lists must be
 // signed with. The main key lives in the plugins repo's signing environment,
-// with an offline copy Luis keeps. The backup key is kept offline only and
+// with an offline copy the maintainer keeps. The backup key is kept offline only and
 // signs if the main key is ever lost (docs/plugin-signing-key.md). The app and
 // the signing tool both read them from here, so they never drift apart.
 var pinnedKeys = []string{

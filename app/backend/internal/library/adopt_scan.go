@@ -252,7 +252,7 @@ func (s *Service) rescanFolder(ctx context.Context, lf mediafiles.LibraryFolder,
 	// pool that lost a disk: every known file, or most of many, gone at
 	// once. None becomes missing; the person looks first. A file whose
 	// title folder now holds a video we do not know was renamed or
-	// replaced there (#809): the disk is plainly mounted, so it does not
+	// replaced there: the disk is plainly mounted, so it does not
 	// count toward the guard.
 	if gone >= 2 {
 		gone -= replacedInPlace(lf, goneFiles, knownPaths)

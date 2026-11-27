@@ -13,7 +13,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
 )
 
-// Prowlarr links music indexers as a Lidarr app (#849). The Lidarr side
+// Prowlarr links music indexers as a Lidarr app. The Lidarr side
 // answers its status and indexer calls under /api/v1, and what Prowlarr
 // writes there becomes a music Source.
 func TestLidarrSide_ProwlarrMakesMusicSource(t *testing.T) {

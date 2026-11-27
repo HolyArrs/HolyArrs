@@ -116,7 +116,7 @@ func UnlinkFileTx(ctx context.Context, tx *sql.Tx, fileID int64, reason string, 
 }
 
 // UnlinkMissingTx turns a File marked missing, and not protected, back into
-// a found note so its Slots are free for a new copy (#798); the row stays so
+// a found note so its Slots are free for a new copy; the row stays so
 // the file can come back. It reports whether it freed the Slots.
 func UnlinkMissingTx(ctx context.Context, tx *sql.Tx, fileID int64, now time.Time, by database.Actor) (bool, error) {
 	var state string

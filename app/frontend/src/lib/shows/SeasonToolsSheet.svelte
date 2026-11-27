@@ -123,7 +123,7 @@
 				{:else}<li class="muted">{loadingEvents ? t('shows.tools.loading') : t('shows.tools.nothingYet')}</li>{/each}
 			</ol>
 		{/if}
-		<!-- Nothing on disk means nothing to delete (#928). -->
+		<!-- Nothing on disk means nothing to delete. -->
 		{#if ondelete && hasFiles}<button type="button" class="st-del" onclick={ondelete}><Icon name="trash" size={16} />{t('shows.tools.delete', { season: seasonName(season) })}</button>{/if}
 	</div>
 </Sheet>

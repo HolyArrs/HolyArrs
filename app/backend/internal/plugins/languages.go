@@ -388,7 +388,7 @@ func (l *Languages) LoadSizes(ctx context.Context) {
 }
 
 // pickPack is the entry for this app version; a development build takes
-// the newest one. A release whose own packs are not listed yet (#767)
+// the newest one. A release whose own packs are not listed yet
 // takes the newest earlier release's. Pages check a pack fits them before
 // using it, so a pack whose words moved only leaves English.
 func pickPack(entries []Entry, code, app string) (Entry, bool) {

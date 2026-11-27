@@ -40,7 +40,7 @@ func linkedM3(t *testing.T, s *database.Store) int {
 	return n
 }
 
-// #735: an artist refresh that adds the track a found file holds links
+// an artist refresh that adds the track a found file holds links
 // that file right away, without a full Library rescan.
 func TestRefreshArtistMatchesFoundFiles(t *testing.T) {
 	svc, s, fm, id := rematchWorld(t)
@@ -60,7 +60,7 @@ func TestRefreshArtistMatchesFoundFiles(t *testing.T) {
 	}
 }
 
-// #735: picking a Pressing by hand links a found file that only that
+// picking a Pressing by hand links a found file that only that
 // Pressing has a track for.
 func TestSetAlbumPressingMatchesFoundFiles(t *testing.T) {
 	svc, s, _, id := rematchWorld(t)

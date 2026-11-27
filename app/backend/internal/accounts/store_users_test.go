@@ -90,7 +90,7 @@ func TestMakeArrKeyReplacesAndDeleteReports(t *testing.T) {
 	if _, err := f.a.MakeArrKey(r, "readarr"); !errors.Is(err, ErrNoArrSide) {
 		t.Fatalf("readarr: %v", err)
 	}
-	// The Lidarr side takes a key, for Prowlarr's music sync (#849).
+	// The Lidarr side takes a key, for Prowlarr's music sync.
 	if _, err := f.a.MakeArrKey(r, "lidarr"); err != nil {
 		t.Fatalf("lidarr: %v", err)
 	}

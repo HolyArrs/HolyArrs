@@ -8,7 +8,7 @@
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
-	import { addedOn, airWords, epFile, fileLangs as langs, pathEnd, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
+	import { addedOn, airWords, epFile, fileLangs as langs, pathEnd, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint, qOrder, qHints, subsCodes } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
 	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, chosenWhy, type SheetEpisode } from '#lib/shows/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone, FilePoints } from '#lib/downloads/index.ts';
 	import { leftInDownloader, qualityBadges, ShowDeleteDialog, standInFolder, splitSteps, TitleHeldCopies, type RenameStep } from '#lib/mediafiles/index.ts';
@@ -126,9 +126,6 @@
 		}
 	}
 
-	// Ready-made quality sets sit in the control (4K stays for second versions); every other set is in the Custom menu.
-	const qOrder = ['Lite', 'Standard', 'Best'];
-	const qHints = (): Record<string, string> => ({ Lite: t('discover.titleLibrary.hintLite'), Standard: t('discover.titleLibrary.hintStandard'), Best: t('discover.titleLibrary.hintBest'), '4K': t('discover.titleLibrary.hint4k') });
 	const qKind = $derived(rules.filter((r) => r.kinds.includes(owned?.kind ?? '')));
 	const qPresets = $derived(qKind.filter((r) => r.preset && r.name !== '4K').sort((a, b) => (qOrder.indexOf(a.name) + 1 || 99) - (qOrder.indexOf(b.name) + 1 || 99)));
 	const qOthers = $derived(qKind.filter((r) => !qPresets.includes(r)));
@@ -339,8 +336,6 @@
 	const subsOwn = $derived(subsData?.wishes.find((w) => !w.item_id && !w.version_id));
 
 	const subsMode = $derived<'default' | 'off' | 'custom'>(!subsOwn ? 'default' : subsOwn.languages.length ? 'custom' : 'off');
-
-	const subsCodes = (ws: { language: string }[]) => [...new Set(ws.map((w) => w.language.toUpperCase()))].join(', ');
 
 	const subsHint = $derived.by(() => {
 		if (subsMode === 'off') return t('discover.titleLibrary.noSubtitles');
@@ -747,7 +742,7 @@
 	.lib-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
 	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail-text); }
-	/* These rows include child components (Season packs), so the rules reach into them (#931). */
+	/* These rows include child components (Season packs), so the rules reach into them. */
 	.lib-rows :global(.lib-row) { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
 	.lib-rows :global(.lib-row + .lib-row) { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.lib-rows :global(.lib-row:hover) { background: color-mix(in srgb, var(--text) 4%, transparent); }

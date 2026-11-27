@@ -1016,7 +1016,7 @@ func TestStartWorksAfterBlocklistLifted(t *testing.T) {
 	}
 }
 
-// #924: with nothing installed the periodic check still refreshes the cached
+// with nothing installed the periodic check still refreshes the cached
 // plugin list, so newly published plugins show, and never puts back an older one.
 func TestBlocklistCheckRefreshesListWithNothingInstalled(t *testing.T) {
 	ls, pub := newListServer(t)
@@ -1060,7 +1060,7 @@ func listed(ov map[string]any, id string) bool {
 	return false
 }
 
-// #924: a bad list with nothing installed changes nothing on the page.
+// a bad list with nothing installed changes nothing on the page.
 func TestBlocklistCheckBadListNothingInstalled(t *testing.T) {
 	ls, pub := newListServer(t)
 	e, _ := newEngine(t, ls, pub)

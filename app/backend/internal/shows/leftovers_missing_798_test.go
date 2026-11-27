@@ -11,7 +11,7 @@ import (
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 )
 
-// #798: an episode file replaced outside the app. A rescan leaves the new
+// an episode file replaced outside the app. A rescan leaves the new
 // file in the slot, not the missing row; a file it cannot place can be
 // matched by hand without replace, since the missing copy fills nothing.
 func TestMissingEpisodeFileDoesNotBlockNewCopy(t *testing.T) {
@@ -31,7 +31,7 @@ func TestMissingEpisodeFileDoesNotBlockNewCopy(t *testing.T) {
 	}
 	rescan := func() {
 		t.Helper()
-		for i := 0; i < 2; i++ { // the missing mark may need its own pass (#809)
+		for i := 0; i < 2; i++ { // the missing mark may need its own pass
 			if _, err := svc.RescanTitle(ctx, id, domain.System); err != nil {
 				t.Fatal(err)
 			}

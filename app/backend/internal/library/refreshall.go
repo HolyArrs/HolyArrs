@@ -36,7 +36,7 @@ const (
 const ScoreFillPerRun = 300
 
 // PosterRetryPerRun is how many movies still without a poster a scheduled
-// refresh tries again (#810), so a large Library is not looked up whole.
+// refresh tries again, so a large Library is not looked up whole.
 const PosterRetryPerRun = 300
 
 // NeedsScore is true for a title not looked up since scores were kept,
@@ -73,7 +73,7 @@ func ShouldRefresh(t mediafiles.Title, now time.Time) (yes bool, why string) {
 }
 
 // noPosterYet is true for a movie fetched at least 12 hours ago that still
-// has no poster: a lookup that failed under load (#810) left it marked
+// has no poster: a lookup that failed under load left it marked
 // fetched, or flagged as dropped, without artwork. It is tried again.
 func noPosterYet(t mediafiles.Title, now time.Time) bool {
 	return len(t.Artwork) == 0 && t.RefreshedAt != nil && now.Sub(*t.RefreshedAt) >= refreshFresh

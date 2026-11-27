@@ -29,7 +29,7 @@ func capsServer(t *testing.T, up *atomic.Bool, calls *atomic.Int32) string {
 }
 
 // A Source not used for the feed, paused because it failed while its
-// network was still starting (#711), is tried again once its wait is
+// network was still starting, is tried again once its wait is
 // over and goes back to working on its own.
 func TestFeedCheck_RetriesRestingSearchOnlySource(t *testing.T) {
 	var up atomic.Bool

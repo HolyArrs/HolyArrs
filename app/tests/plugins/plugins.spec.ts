@@ -550,7 +550,7 @@ for (const width of [1366, 390]) {
 	});
 }
 
-// #922: an empty number box turns Save off and says why; a whole number turns it back on.
+// an empty number box turns Save off and says why; a whole number turns it back on.
 for (const width of [1366, 390]) {
 	test(`plugins: empty number setting blocks Save at ${width}`, async ({ browser }) => {
 		const page = await (await browser.newContext({ viewport: { width, height: width > 500 ? 768 : 844 } })).newPage();

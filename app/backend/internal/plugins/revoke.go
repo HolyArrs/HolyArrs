@@ -36,7 +36,7 @@ func (e *Engine) Locked() bool {
 
 // mayToken says whether a start here may get an API token: each lock this
 // system lacks must be one the owner allowed going without on the Plugins
-// page (#746). The token adds nothing a plugin without the file lock could
+// page. The token adds nothing a plugin without the file lock could
 // not reach anyway, and without it the allowed start could not use its
 // approved scopes at all.
 func (e *Engine) mayToken() bool {
