@@ -122,7 +122,7 @@ func (s *Service) adoptMovieCopy(ctx context.Context, titleID, versionID int64, 
 				}
 			}
 		}
-		// A copy gone from disk no longer fills the Version (#798): it
+		// A copy gone from disk no longer fills the Version: it
 		// becomes a found note and the found file takes its place.
 		if slot.FileID != nil {
 			freed, err := mediafiles.UnlinkMissingTx(ctx, tx, *slot.FileID, s.now(), by)

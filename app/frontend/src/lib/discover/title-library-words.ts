@@ -71,3 +71,10 @@ export const fileLangs = (v: unknown) => (Array.isArray(v) ? v : typeof v === 's
 export const addedOn = (iso?: string) => { if (!iso) return ''; const d = new Date(iso); return d.toLocaleDateString(appLocale(), { month: 'short', day: 'numeric', ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}) }); };
 // The last two parts of a folder path, to tell same-named library folders apart.
 export const pathEnd = (p: string) => p.split(/[\\/]+/).filter(Boolean).slice(-2).join('/');
+
+// Ready-made quality sets sit in the control (4K stays for second versions); every other set is in the Custom menu.
+export const qOrder = ['Lite', 'Standard', 'Best'];
+export const qHints = (): Record<string, string> => ({ Lite: t('discover.titleLibrary.hintLite'), Standard: t('discover.titleLibrary.hintStandard'), Best: t('discover.titleLibrary.hintBest'), '4K': t('discover.titleLibrary.hint4k') });
+
+// A wish list's languages as short codes, each once.
+export const subsCodes = (ws: { language: string }[]) => [...new Set(ws.map((w) => w.language.toUpperCase()))].join(', ');

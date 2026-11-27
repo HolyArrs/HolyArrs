@@ -57,7 +57,7 @@ func TestSameDownloaderFencedCategories(t *testing.T) {
 	}
 }
 
-// #952: two fenced Downloaders on one qBittorrent that still share one
+// two fenced Downloaders on one qBittorrent that still share one
 // category (here the music one, which neither page row shows by default)
 // get a line that names that category and says to change it, not to remove
 // a Downloader: removing one would break tag routing.

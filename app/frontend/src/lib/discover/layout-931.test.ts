@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { compile } from 'svelte/compiler';
 
-// #931: small layout fixes (top bar title pill, Add a language spacing, show Library row hints).
+// small layout fixes (top bar title pill, Add a language spacing, show Library row hints).
 function styles(path: string): string {
 	const src = readFileSync(new URL(path, import.meta.url), 'utf8');
 	return compile(src, { filename: path, css: 'external' }).css?.code.replace(/:where\(\.svelte-[\w-]+\)|\.svelte-[\w-]+/g, '') ?? '';

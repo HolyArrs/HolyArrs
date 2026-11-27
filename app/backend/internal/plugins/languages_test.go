@@ -521,7 +521,7 @@ func TestLanguageSetupInstallSkipsCurrentPack(t *testing.T) {
 	}
 }
 
-// #767: a release with no packs of its own yet takes the newest earlier
+// a release with no packs of its own yet takes the newest earlier
 // release pack, never a newer one or a test build's, and keeps it without
 // fetching it again.
 func TestLanguageReleaseFallsBackToEarlierPack(t *testing.T) {

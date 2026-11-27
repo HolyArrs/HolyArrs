@@ -7,7 +7,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 )
 
-// #746: a start gets its API token when every lock this system lacks is
+// a start gets its API token when every lock this system lacks is
 // one the owner allowed going without; never when one is missing unasked.
 func TestTokenFollowsOwnerLockChoice(t *testing.T) {
 	ls, pub := newListServer(t)

@@ -183,7 +183,7 @@ export function jobTone(s: ScheduleRow, now = Date.now()): { tone: Tone; word: s
 }
 
 // sameDownloaderWhy: when the twins are fenced but still share a category,
-// the server names it in quotes, so say which one to change (#952).
+// the server names it in quotes, so say which one to change.
 function sameDownloaderWhy(c: HealthCheck): string {
 	const shared = /both use the category "([^"]*)"/.exec(c.message || '');
 	return shared ? t('health.check.sameDownloaderShared', { app: c.subject, category: shared[1] }) : t('health.check.sameDownloaderWhy', { app: c.subject });

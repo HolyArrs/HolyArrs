@@ -1,7 +1,7 @@
 import { pickLoadFrom, ymd } from './calendar.ts';
 import { describe, expect, it } from 'vitest';
 
-// #929: a day picked in the small month more than a year back did nothing.
+// a day picked in the small month more than a year back did nothing.
 describe('pickLoadFrom', () => {
 	const start = new Date('2025-11-26T00:00:00'); // the days loaded start a year back
 	it('loads back to a day older than a year', () => {

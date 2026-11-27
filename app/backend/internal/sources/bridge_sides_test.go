@@ -18,7 +18,7 @@ func TestProwlarrSidesFollowParts(t *testing.T) {
 	if len(s) != 1 || s[0].Kind != "Sonarr" || s[0].Base != "http://h:6262/sonarr" {
 		t.Fatal(s)
 	}
-	// Music gets a Lidarr side, so Prowlarr pushes its music indexers (#849).
+	// Music gets a Lidarr side, so Prowlarr pushes its music indexers.
 	h.PartOn = func(p parts.Part) bool { return p == parts.Music }
 	s = h.prowlarrSides("http://h:6262")
 	if len(s) != 1 || s[0].Kind != "Lidarr" || s[0].Base != "http://h:6262/lidarr" || sideOf(s[0].Kind) != "lidarr" {

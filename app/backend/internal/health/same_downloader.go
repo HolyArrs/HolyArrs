@@ -16,7 +16,7 @@ import (
 // each see only their own categories, with no category in common, are kept
 // apart already and get no line. Fenced twins that still share a category
 // get a line naming it, since changing it clears the line and removing a
-// Downloader would break tag routing (#952).
+// Downloader would break tag routing.
 func (e *Engine) sameDownloaders(ctx context.Context) ([]Result, error) {
 	ds, err := database.Select[domain.Downloader](ctx, e.Store.Read(), "downloaders", "removed = 0 ORDER BY id")
 	if err != nil {

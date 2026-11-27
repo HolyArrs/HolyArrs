@@ -11,7 +11,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
-// #810: a movie whose lookup failed under load is marked fetched (or
+// a movie whose lookup failed under load is marked fetched (or
 // flagged as dropped) with no poster; the scheduled refresh must pick it
 // up again instead of leaving it posterless until re-added.
 func TestRefreshPlanRetriesMoviesWithNoPoster(t *testing.T) {

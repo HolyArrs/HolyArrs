@@ -169,7 +169,7 @@
 
 	async function loadAll() {
 		// The first screen (the Home answer) loads now; the bigger asks wait until the sign-in hand-off has left, so its frames stay smooth.
-		// Home shows as soon as its answer is in. Only the first visit of the session also waits for the tile pictures, for 1.5 s at most (#758); pictures that come later fade in.
+		// Home shows as soon as its answer is in. Only the first visit of the session also waits for the tile pictures, for 1.5 s at most; pictures that come later fade in.
 		const homeRead = loadHome();
 		const art = (artReady ??= loadTileArt());
 		const picksRead = homeRead.then(() => (home?.rows?.includes('welcome') ? loadPicks() : undefined));

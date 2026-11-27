@@ -108,7 +108,7 @@
 	}
 </script>
 
-<!-- Staff always see it, so a single Version can still be changed (#796); viewers only with two or more. -->
+<!-- Staff always see it, so a single Version can still be changed; viewers only with two or more. -->
 {#if staff || title.versions.length > 1}
 <TitleSection id="h-show-versions" title={t('shows.versions.title')} testid="show-versions" primary>
 	{#snippet head()}

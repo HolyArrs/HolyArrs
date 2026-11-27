@@ -8,7 +8,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 )
 
-// A show kept only in part needs to know how many episodes are kept (#927).
+// A show kept only in part needs to know how many episodes are kept.
 func TestTallyCountsKeptEpisodes(t *testing.T) {
 	now := time.Date(2026, 11, 26, 12, 0, 0, 0, time.UTC)
 	at := func(t time.Time) sql.NullString {

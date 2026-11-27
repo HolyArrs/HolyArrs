@@ -51,7 +51,7 @@ func matchingFolderName(s string) string {
 				return strings.TrimSpace(part + " " + clean)
 			}
 		}
-		// A title of digits only, such as "5_55" for "5:55" (#898), is the
+		// A title of digits only, such as "5_55" for "5:55", is the
 		// title itself when every bracket is a format tag.
 		if strings.Trim(title, " -_()[]") != "" {
 			return clean

@@ -594,7 +594,7 @@ export function tilesSettled<T extends { building: boolean }>(art: T): T {
 	return { ...art, building: false };
 }
 
-// #758: the first Home of the session waits a moment for its tile pictures so the grid paints whole; every later visit shows at once and pictures fade in.
+// the first Home of the session waits a moment for its tile pictures so the grid paints whole; every later visit shows at once and pictures fade in.
 const PICTURE_WAIT = 1500;
 let pictureWaited = false;
 export function pictureWait(): number {
