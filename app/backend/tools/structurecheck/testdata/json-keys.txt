@@ -108,6 +108,7 @@ ads
 adult
 advanced
 after
+after_import_per_type
 after_seeding
 age
 ageHours
@@ -343,6 +344,9 @@ cat
 categories
 category
 category_after_import
+category_after_import_movies
+category_after_import_music
+category_after_import_shows
 category_movies
 category_music
 category_shows

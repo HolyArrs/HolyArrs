@@ -34,6 +34,10 @@
   "ClearFinished": false,
   "Tags": [],
   "CategoryAfterImport": "",
+  "AfterImportPerType": false,
+  "CategoryAfterImportMovies": "",
+  "CategoryAfterImportShows": "",
+  "CategoryAfterImportMusic": "",
   "OwnOnly": false,
   "CategoriesImported": null
 }

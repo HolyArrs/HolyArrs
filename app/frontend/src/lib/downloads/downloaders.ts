@@ -57,6 +57,10 @@ export interface DownloaderView {
 	after_seeding?: SeedingChoice;
 	/** qBittorrent only: a torrent moves to this category once imported; empty keeps it. */
 	category_after_import?: string;
+	after_import_per_type?: boolean;
+	category_after_import_movies?: string;
+	category_after_import_shows?: string;
+	category_after_import_music?: string;
 	/** Usenet only: an imported job and its files leave the Downloader. On by default. */
 	clear_finished?: boolean;
 	/** Shows and changes only items in this Downloader's own categories. */
@@ -131,6 +135,10 @@ export interface DownloaderForm {
 	seed_hours: number | '' | null;
 	seed_delete_files: boolean;
 	category_after_import: string;
+	after_import_mode: 'off' | 'single' | 'type';
+	category_after_import_movies: string;
+	category_after_import_shows: string;
+	category_after_import_music: string;
 	own_only: boolean;
 	clear_finished: boolean;
 }
@@ -243,6 +251,10 @@ export function emptyForm(kind: DownloaderView['kind'] = 'qbittorrent'): Downloa
 		seed_hours: '',
 		seed_delete_files: false,
 		category_after_import: '',
+		after_import_mode: 'off',
+		category_after_import_movies: '',
+		category_after_import_shows: '',
+		category_after_import_music: '',
 		own_only: false,
 		clear_finished: true
 	};
@@ -270,6 +282,10 @@ export function formFrom(d: DownloaderView): DownloaderForm {
 		seed_hours: d.after_seeding?.minutes ? Math.round((d.after_seeding.minutes / 60) * 100) / 100 : '',
 		seed_delete_files: !!d.after_seeding?.delete_files,
 		category_after_import: d.category_after_import ?? '',
+		after_import_mode: d.after_import_per_type ? 'type' : d.category_after_import ? 'single' : 'off',
+		category_after_import_movies: d.category_after_import_movies ?? '',
+		category_after_import_shows: d.category_after_import_shows ?? '',
+		category_after_import_music: d.category_after_import_music ?? '',
 		own_only: !!d.own_only,
 		clear_finished: d.clear_finished !== false
 	};
@@ -302,7 +318,13 @@ export function formBody(f: DownloaderForm): Record<string, unknown> {
 		allow_local_network: f.allow_local_network,
 		writable: f.writable,
 		tags: f.tags,
-		...(f.kind === 'qbittorrent' ? { category_after_import: f.category_after_import.trim() } : {}),
+		...(f.kind === 'qbittorrent' ? {
+			category_after_import: f.after_import_mode === 'off' ? '' : f.category_after_import.trim(),
+			after_import_per_type: f.after_import_mode === 'type',
+			category_after_import_movies: f.after_import_mode === 'off' ? '' : f.category_after_import_movies.trim(),
+			category_after_import_shows: f.after_import_mode === 'off' ? '' : f.category_after_import_shows.trim(),
+			category_after_import_music: f.after_import_mode === 'off' ? '' : f.category_after_import_music.trim()
+		} : {}),
 		...(f.kind === 'sabnzbd' || f.kind === 'nzbget' ? { clear_finished: f.clear_finished } : { own_only: f.own_only }),
 		...(seedingFields(f.kind) === 'none' ? {} : { after_seeding: seedingBody(f) })
 	};

@@ -44,6 +44,10 @@
     "4k"
   ],
   "CategoryAfterImport": "",
+  "AfterImportPerType": false,
+  "CategoryAfterImportMovies": "",
+  "CategoryAfterImportShows": "",
+  "CategoryAfterImportMusic": "",
   "OwnOnly": false,
   "CategoriesImported": null
 }

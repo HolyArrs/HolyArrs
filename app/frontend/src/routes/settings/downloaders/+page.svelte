@@ -18,7 +18,7 @@
 	import LoadError from '#lib/ui/LoadError.svelte';
 	import TestTag from '#lib/ui/TestTag.svelte';
 	import ConnectHelp from '#lib/ui/ConnectHelp.svelte';
-	import { AppTiles, KindCategories, MissingCategory, emptyForm, samePathPair, formBody, formFrom, testBody, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
+	import { AppTiles, KindCategories, ImportedCategories, MissingCategory, emptyForm, samePathPair, formBody, formFrom, testBody, healthLabel, healthTone, kindWords, pendingAttempts, seedingFields, deadRuleOn, type DownloaderAttempt, type DownloaderForm, type DownloaderHealth, type DownloaderSettings, type DownloaderView } from '#lib/downloads/index.ts';
 	import { onMount } from 'svelte';
 	import { api } from '#lib/core/api.ts';
 	import { fetchSabKey } from '#lib/downloads/index.ts';
@@ -349,9 +349,7 @@
 	<TagInput id="dl-tags" bind:value={form.tags} describedby="dl-tags-hint" testid="dl-tags" />
 </Field>
 {#if form.kind === 'qbittorrent'}
-	<Field id="dl-cat-after" label={t('settings.downloaders.categoryAfterImport')} hint={t('settings.downloaders.categoryAfterImportHint')}>
-		<input id="dl-cat-after" class="input" bind:value={form.category_after_import} maxlength="64" aria-describedby="dl-cat-after-hint" data-testid="dl-cat-after" />
-	</Field>
+	<ImportedCategories id={isNew ? 0 : (editing?.id ?? 0)} bind:form />
 {/if}
 {#if form.kind !== 'sabnzbd' && form.kind !== 'nzbget'}
 	<label class="checkline">
