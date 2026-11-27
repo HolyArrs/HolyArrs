@@ -5,7 +5,7 @@
 	import AlertSymbol from './AlertSymbol.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { alertsPanel, toasts } from '../core/toasts.svelte.ts';
-	import { pinned, type PinnedAlert } from './attention-alerts.ts';
+	import { alertFixes, type PinnedAlert } from './attention-alerts.ts';
 	import { sections } from '../core/settings.ts';
 	import { settingsNow } from './settings-status.svelte.ts';
 	import { session } from '../core/session.svelte.ts';
@@ -20,12 +20,7 @@
 	let box = $state<HTMLElement>();
 	let wasOpen = false;
 
-	const fixes = $derived([
-		...before,
-		// The server's "A newer HolyArrs is out" and "HolyArrs 1.2 is out" say the same as the Update row; show it once.
-		...(session.can('settings') ? pinned((settingsNow.answer?.items ?? []).filter((i) => !(before.some((b) => b.key === 'update') && /newer holyarrs|holyarrs \S+ is out/i.test(i.text))), sections) : []),
-		...after
-	]);
+	const fixes = $derived(alertFixes(session.can('settings') ? (settingsNow.answer?.items ?? []) : [], sections, before, after));
 
 	onMount(() => {
 		const mq = matchMedia('(max-width: 767px)');
@@ -156,7 +151,8 @@
 			<strong>{t('alerts.panel.title')}</strong>
 			{#if toasts.past.length}<button type="button" class="clear" onclick={() => toasts.forgetAll()}>{t('alerts.panel.clearAll')}</button>{/if}
 		</div>
-		{@render rows()}
+		<!-- One scroll area for Needs attention and Recent: many pinned rows would otherwise push the panel past its height and be cut off. -->
+		<div class="scroll">{@render rows()}</div>
 	</div>
 {/if}
 
@@ -184,7 +180,8 @@
 	.head { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 10px; font: var(--t-callout); font-weight: 600; }
 	.clear { font: var(--t-footnote); font-weight: 600; color: var(--text-muted); padding: 4px 8px; border-radius: 999px; }
 	.clear:hover { color: var(--text); background: var(--surface-2); }
-	.rows { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; overscroll-behavior: contain; }
+	.rows { display: flex; flex-direction: column; gap: 6px; padding: 2px; }
+	.scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 	/* flex: none: in a long, scrolling list a row keeps its full height (with its Open or Undo button) instead of being squeezed. */
 	.row { flex: none; display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px 10px 12px; border-radius: 16px; background: var(--surface-2); box-shadow: inset 0 0 0 0.5px var(--line); transition: background var(--dur-fast, 0.15s) var(--ease-out, ease); }
 	.row:hover { background: color-mix(in srgb, var(--surface-2) 85%, var(--text) 6%); }

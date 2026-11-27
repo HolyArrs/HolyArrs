@@ -28,3 +28,9 @@ export function pinned(items: Attention[], pages: { href: string; label: string 
 
 // A word like qBittorrent keeps its own casing.
 const upper = (s: string) => (!s || /^.\p{Lu}/u.test(s) ? s : s[0].toUpperCase() + s.slice(1));
+
+/** Shared by the bell count and panel so duplicate update warnings count once. */
+export function alertFixes(items: Attention[], pages: { href: string; label: string }[], before: PinnedAlert[] = [], after: PinnedAlert[] = []): PinnedAlert[] {
+	const hasUpdate = before.some((b) => b.key === 'update');
+	return [...before, ...pinned(items.filter((i) => !(hasUpdate && /newer holyarrs|holyarrs \S+ is out/i.test(i.text))), pages), ...after];
+}

@@ -14,7 +14,7 @@ import (
 	engine "github.com/HolyArrs/holyarrs/app/backend/internal/suggest"
 )
 
-// Explore â†’ Music: every row the page shows, built here so they share one
+// Explore → Music: every row the page shows, built here so they share one
 // genre filter and one set of rules. Albums are square, artists round; each
 // row says why it is there and hides below its minimum.
 
@@ -80,7 +80,7 @@ type MusicCard struct {
 	Href string `json:"href,omitempty"`
 }
 
-// MusicRow is one row of Explore â†’ Music.
+// MusicRow is one row of Explore → Music.
 type MusicRow struct {
 	ID     string      `json:"id"`
 	Type   string      `json:"type"`

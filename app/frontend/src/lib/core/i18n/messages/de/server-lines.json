@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "es ist länger, als ein HolyArrs-Muster sein darf",
 	"server.migrate.already-in-the-library-the-quality": "schon in der Bibliothek; Qualität oder Release von {n} Dateien wurde aktualisiert",
 	"server.migrate.imported-before-2": "schon früher importiert{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "sein Ordner {dir} gehört zu einem anderen Film in der Bibliothek"
+	"server.migrate.its-folder-belongs-to-another-movie": "sein Ordner {dir} gehört zu einem anderen Film in der Bibliothek",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} aus {name} im Ordner für Zurückgehaltenes von {label} geleert"
 }

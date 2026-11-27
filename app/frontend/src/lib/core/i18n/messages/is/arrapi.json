@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Kvikmyndir",
 	"arrapi.seerr.showsLower": "þættir",
 	"arrapi.seerr.moviesLower": "kvikmyndir",
+	"arrapi.seerr.music": "Tónlist",
+	"arrapi.seerr.musicLower": "tónlist",
 	"arrapi.seerr.saveFail": "Ekki tókst að vista",
 	"arrapi.seerr.replaceConfirm": "Skipta um {app}-lykil? Núverandi lykill hættir að virka.",
 	"arrapi.seerr.makeFail": "Ekki tókst að búa til lykil",

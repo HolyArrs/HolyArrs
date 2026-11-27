@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Mas magandang kopya",
 	"mediafiles.state.notKeptQ": "Hindi pinananatili · {q}",
 	"mediafiles.state.notKept": "Hindi pinananatili",
+	"mediafiles.state.keptInPart": "Bahagyang pinapanatili",
 	"mediafiles.state.inLibraryQ": "Nasa library · {q}",
 	"mediafiles.state.inLibrary": "Nasa library",
 	"mediafiles.state.upcomingOn": "Paparating · {date}",

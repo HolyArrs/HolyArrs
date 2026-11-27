@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Σύνδεση",
 	"sources.bridge.linkName": "Σύνδεση: {name}",
 	"sources.bridge.movieKey": "Κλειδί ταινιών (πλευρά Radarr)",
+	"sources.bridge.musicKey": "Κλειδί μουσικής (πλευρά Lidarr)",
 	"sources.bridge.notConnected": "Δεν είναι συνδεδεμένο",
 	"sources.bridge.reaches": "Το Prowlarr φτάνει στο HolyArrs στη διεύθυνση",
 	"sources.bridge.remove": "Αφαίρεση",

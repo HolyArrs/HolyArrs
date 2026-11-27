@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Sursele tale găsesc torrente, dar niciun program de descărcare torrent nu e configurat, așa că nu se poate trimite nimic. Adaugă unul în Setări › Programe de descărcare.",
 	"health.check.sameDownloader": "Adăugat de două ori:",
 	"health.check.sameDownloaderWhy": "{app} ajunge la aceeași aplicație de descărcare ca alt program, așa că descărcările lui pot apărea de două ori. Elimină unul din Setări › Programe de descărcare.",
+	"health.check.sameDownloaderShared": "{app} și alt Downloader folosesc aceeași categorie \"{category}\", așa că descărcările din ea pot apărea de două ori. Dă-i lui {app} o categorie proprie în Setări › Downloadere.",
 	"health.check.keyKitRecommended": "Recomandat: descarcă setul de chei",
 	"health.check.keyKitRecommendedOthers": "Recomandat: cere proprietarului setul de chei",
 	"health.kind.sameDownloader": "Program de descărcare adăugat de două ori",

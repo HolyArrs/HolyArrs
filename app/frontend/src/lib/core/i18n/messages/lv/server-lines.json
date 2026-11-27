@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "tas ir garāks, nekā var būt HolyArrs šablons",
 	"server.migrate.already-in-the-library-the-quality": "jau ir Bibliotēkā; atjaunināta {n} failu kvalitāte vai izlaidums",
 	"server.migrate.imported-before-2": "importēts agrāk{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "tā mape {dir} pieder citai Bibliotēkas filmai"
+	"server.migrate.its-folder-belongs-to-another-movie": "tā mape {dir} pieder citai Bibliotēkas filmai",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} iztukšoti no {name} aizturēšanas mapē: {label}"
 }

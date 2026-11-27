@@ -9,6 +9,7 @@
     "missing": 0,
     "better_wanted": 0,
     "not_out_yet": 0,
+    "kept": 0,
     "downloading": 0,
     "failed": 0
   },
@@ -22,6 +23,7 @@
     "missing": 0,
     "better_wanted": 1,
     "not_out_yet": 0,
+    "kept": 2,
     "downloading": 0,
     "failed": 0
   },
@@ -35,6 +37,7 @@
     "missing": 0,
     "better_wanted": 0,
     "not_out_yet": 0,
+    "kept": 3,
     "downloading": 1,
     "failed": 1,
     "next_air_date": "2026-10-19T02:00:00Z",

@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "As suas fontes encontram torrents, mas nenhum gestor de downloads de torrents está configurado, por isso nenhuma pode ser enviada. Adicione um em Definições › Gestores de downloads.",
 	"health.check.sameDownloader": "Adicionado duas vezes:",
 	"health.check.sameDownloaderWhy": "{app} chega à mesma aplicação de downloads que outro gestor, por isso os seus downloads podem aparecer duas vezes. Remova um em Definições › Gestores de downloads.",
+	"health.check.sameDownloaderShared": "{app} e outro Downloader usam a mesma categoria \"{category}\", por isso as transferências nela podem aparecer duas vezes. Dê a {app} uma categoria própria em Definições › Downloaders.",
 	"health.check.keyKitRecommended": "Recomendado: transfira o seu kit de chave",
 	"health.check.keyKitRecommendedOthers": "Recomendado: peça o kit de chave ao proprietário",
 	"health.kind.sameDownloader": "Gestor de downloads adicionado duas vezes",

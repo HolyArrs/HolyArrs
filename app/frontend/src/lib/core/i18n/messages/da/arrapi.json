@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Film",
 	"arrapi.seerr.showsLower": "serier",
 	"arrapi.seerr.moviesLower": "film",
+	"arrapi.seerr.music": "Musik",
+	"arrapi.seerr.musicLower": "musik",
 	"arrapi.seerr.saveFail": "Kunne ikke gemme",
 	"arrapi.seerr.replaceConfirm": "Udskift {app}-nøglen? Den nuværende holder op med at virke.",
 	"arrapi.seerr.makeFail": "Kunne ikke lave nøgle",

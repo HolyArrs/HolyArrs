@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "長度超過了 HolyArrs 模式的上限",
 	"server.migrate.already-in-the-library-the-quality": "已在媒體庫中；已更新 {n} 個檔案的品質或版本",
 	"server.migrate.imported-before-2": "之前已匯入{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "它的資料夾 {dir} 屬於媒體庫中的另一部電影"
+	"server.migrate.its-folder-belongs-to-another-movie": "它的資料夾 {dir} 屬於媒體庫中的另一部電影",
+	"server.library.emptied-from-in-the-holding-folder": "已從 {label} 的暫存資料夾中的 {name} 清空 {removed}"
 }

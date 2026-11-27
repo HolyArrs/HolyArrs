@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "дужи је него што HolyArrs шаблон може да буде",
 	"server.migrate.already-in-the-library-the-quality": "већ је у Библиотеци; квалитет или издање {n} датотека је ажурирано",
 	"server.migrate.imported-before-2": "увезено раније{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "његова фасцикла {dir} припада другом филму у Библиотеци"
+	"server.migrate.its-folder-belongs-to-another-movie": "његова фасцикла {dir} припада другом филму у Библиотеци",
+	"server.library.emptied-from-in-the-holding-folder": "Испражњено {removed} из {name} у фасцикли за задржавање у {label}"
 }

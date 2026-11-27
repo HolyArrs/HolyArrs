@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Parempi kopio",
 	"mediafiles.state.notKeptQ": "Ei seurata · {q}",
 	"mediafiles.state.notKept": "Ei seurata",
+	"mediafiles.state.keptInPart": "Pidetään osittain",
 	"mediafiles.state.inLibraryQ": "Kirjastossa · {q}",
 	"mediafiles.state.inLibrary": "Kirjastossa",
 	"mediafiles.state.upcomingOn": "Tulossa · {date}",

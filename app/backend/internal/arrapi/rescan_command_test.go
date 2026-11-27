@@ -25,7 +25,7 @@ func (r *pinRig) jobCount(kind string, titled bool) int {
 }
 
 // A Rescan command with a title rescans that title; without one it
-// rescans the whole Library, as the old apps do (#808).
+// rescans the whole Library, as the old apps do.
 func TestRescanCommandQueuesRescanJobs(t *testing.T) {
 	r := newPinRig(t)
 	show, _ := r.show("Rescan Show", "808", true, 1, func(int) string { return "" })

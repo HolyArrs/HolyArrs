@@ -550,7 +550,7 @@ func (s *Service) holdFiles(ctx context.Context, p *RemovePlan, titleID int64, b
 }
 
 // CleanHolding empties the holding folders (0 days keeps everything). A held
-// File goes once its own deleted time is HoldingDays old (#802). Anything else in a day folder (2 January
+// File goes once its own deleted time is HoldingDays old. Anything else in a day folder (2 January
 // 2006) goes once the whole day is that old, and an emptied day folder goes
 // too. It returns how many Files and day folders it removed.
 func (s *Service) CleanHolding(ctx context.Context, by domain.Actor) (int, error) {

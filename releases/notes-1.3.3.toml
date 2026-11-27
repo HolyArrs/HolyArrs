@@ -1,0 +1,54 @@
+version = "1.3.3"
+theme = "Fixes for Source proxies, picking releases, SABnzbd imports and plugins."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""
+known_issues = []
+security = []
+credits = [
+  {github = "kusogejp", link = "https://github.com/HolyArrs/HolyArrs/issues/768", issues = [768]},
+  {github = "AdmiralJunkie", link = "https://github.com/HolyArrs/HolyArrs/issues/718", issues = [768]},
+  {github = "JulianAtkins", link = "https://github.com/HolyArrs/HolyArrs/issues/714", issues = [714, 768]},
+  {github = "mikeruhl", link = "https://github.com/HolyArrs/HolyArrs/issues/861", issues = [861]},
+  {github = "art804", link = "https://github.com/HolyArrs/HolyArrs/issues/806", issues = [806]},
+  {github = "atocqueville", link = "https://github.com/HolyArrs/HolyArrs/issues/826", issues = [826]},
+  {github = "mandopatriot", link = "https://github.com/HolyArrs/HolyArrs/issues/823", issues = [823, 824, 834, 835, 836]},
+]
+
+[[highlights]]
+line = "Sources work through an HTTP proxy like Gluetun again."
+issues = [768]
+shot = "Sources page with every Source green behind a Gluetun proxy"
+
+[[highlights]]
+line = "Pick rules in Check releases can be changed from Standard."
+issues = [714]
+shot = "Check releases with the Pick rules drop-down open on another rule"
+
+[[highlights]]
+line = "SABnzbd downloads import when the job folder is the save folder."
+issues = [861]
+shot = "Activity showing a SABnzbd movie imported"
+
+[groups]
+Setup = [
+  "Fixed: Developer plugins with settings show the Settings button. (#834)",
+  "Fixed: Install on a developer plugin's card uses its folder. (#835)",
+  "Fixed: Owner hosts keep every port saved for a host name. (#836)",
+]
+Indexers = [
+  "Fixed: Knaben feed checks ask only for the kinds you want. (#806)",
+]
+Subtitles = [
+  "Fixed: History shows subtitle and cleanup details. (#823)",
+  "Changed: Cleanup says All languages, with a hint. (#824)",
+]
+Movies = [
+  "Fixed: Import takes a release the Pick rules chose as equal. (#826)",
+]
+
+[stats]
+issues_done = 10
+still_building = 0
+people_credited = 7

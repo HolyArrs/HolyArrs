@@ -554,7 +554,7 @@
 			</SettingsCard>
 			<SettingsCard id="clean-subs" title={t('settings.subtitles.clean')} description={t('settings.subtitles.cleanDesc')}>
 				<div class="clean-for">
-					<Field id="clean-lang" label={t('settings.subtitles.cleanRow')}>
+					<Field id="clean-lang" label={t('settings.subtitles.cleanRow')} hint={cleanLang === '*' ? t('settings.subtitles.cleanEveryHint') : ''}>
 						<select id="clean-lang" class="input narrow" value={cleanLang} onchange={(e) => pickCleanLang(e.currentTarget.value)} data-testid="clean-lang">
 							{#each cleanRows as code (code)}<option value={code}>{cleanRowName(code)}</option>{/each}
 							<optgroup label={t('settings.subtitles.cleanAddLang')}>
@@ -736,4 +736,6 @@
 	:global(#lang-card > .body:has(> .wants > li.none) > *) { margin: 0 !important; box-shadow: none !important; padding-block: 12px !important; }
 	:global(#lang-card > .body:has(> .wants > li.none) > .add) { padding-inline: 14px !important; }
 	:global(#lang-card .add .ui-btn) { white-space: nowrap; }
+	/* With languages listed: Add a language sits with the rows (no line above it) and keeps room before the line below. */
+	:global(.settings-content #lang-card > .body > .add) { box-shadow: none !important; padding-bottom: 14px; }
 </style>

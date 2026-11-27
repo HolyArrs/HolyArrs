@@ -26,6 +26,7 @@
 	"sources.bridge.link": "연결",
 	"sources.bridge.linkName": "{name} 연결",
 	"sources.bridge.movieKey": "영화 키 (Radarr 쪽)",
+	"sources.bridge.musicKey": "음악 키 (Lidarr 쪽)",
 	"sources.bridge.notConnected": "연결 안 됨",
 	"sources.bridge.reaches": "Prowlarr가 HolyArrs에 접속하는 주소",
 	"sources.bridge.remove": "삭제",

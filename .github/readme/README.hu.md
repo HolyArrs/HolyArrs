@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: a bővítmények hallják, mi történik a HolyArrsban.** A fejlesztői mód futtatja a bővítményt, amelyet éppen építesz, a tesztverziók pedig lehetővé teszik, hogy néhányan elsőként kipróbálják. [Újdonságok](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: fájlok kézi importálása a Könyvtárból.** A filmfájlok hosszát, képét és hangját importálás előtt ellenőrzi, és sok javítás is érkezett. [Újdonságok](https://holyarrs.com/whats-new/)
 
 > A HolyArrsodban minden poszter, trailer és értékelés egy általam üzemeltetett és fizetett szerverről jön, hogy mindenkinek ingyenes maradhasson. Ha a HolyArrs egy kicsit jobbá tette a filmes estédet, egy szponzoráció mindannyiunk számára életben tartja a projektet 💛
 >

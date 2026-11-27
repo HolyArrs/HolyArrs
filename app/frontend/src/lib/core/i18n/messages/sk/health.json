@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Vaše zdroje nachádzajú torrenty, ale nie je nastavený žiadny sťahovač torrentov, takže nič nemožno odoslať. Pridajte ho v Nastavenia › Sťahovače.",
 	"health.check.sameDownloader": "Pridané dvakrát:",
 	"health.check.sameDownloaderWhy": "{app} vedie k rovnakej sťahovacej aplikácii ako iný sťahovač, preto sa jeho sťahovania môžu zobraziť dvakrát. Jeden odstráňte v Nastavenia › Sťahovače.",
+	"health.check.sameDownloaderShared": "{app} a iný Downloader používajú rovnakú kategóriu \"{category}\", takže sťahovania v nej sa môžu zobraziť dvakrát. Dajte {app} vlastnú kategóriu v Nastavenia › Downloadery.",
 	"health.check.keyKitRecommended": "Odporúčané: stiahnite si súpravu kľúča",
 	"health.check.keyKitRecommendedOthers": "Odporúčané: požiadajte vlastníka o súpravu kľúča",
 	"health.kind.sameDownloader": "Sťahovač pridaný dvakrát",

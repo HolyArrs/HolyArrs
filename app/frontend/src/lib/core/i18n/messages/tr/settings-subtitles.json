@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Kütüphanedeki tüm altyazılar temizleniyor",
 	"settings.subtitles.cleanAllFailed": "Temizlik başlatılamadı",
 	"settings.subtitles.cleanRow": "Şunun için adımlar",
-	"settings.subtitles.cleanEvery": "Diğer her dil",
+	"settings.subtitles.cleanEvery": "Tüm diller",
+	"settings.subtitles.cleanEveryHint": "Kendi adımları olmayan her dil için kullanılır.",
 	"settings.subtitles.cleanAddLang": "Dil ekle",
 	"settings.subtitles.cleanRemoveLang": "Bu dili kaldır"
 }

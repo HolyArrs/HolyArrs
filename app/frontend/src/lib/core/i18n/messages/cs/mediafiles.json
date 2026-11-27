@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Lepší kopie",
 	"mediafiles.state.notKeptQ": "Neudržováno · {q}",
 	"mediafiles.state.notKept": "Neudržováno",
+	"mediafiles.state.keptInPart": "Udržováno zčásti",
 	"mediafiles.state.inLibraryQ": "V knihovně · {q}",
 	"mediafiles.state.inLibrary": "V knihovně",
 	"mediafiles.state.upcomingOn": "Připravuje se · {date}",

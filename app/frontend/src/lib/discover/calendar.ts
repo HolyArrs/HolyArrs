@@ -408,3 +408,9 @@ function dayOrder(a: CalendarEntry, b: CalendarEntry): number {
 	}
 	return (a.name ?? '').localeCompare(b.name ?? '') || (a.season ?? 0) - (b.season ?? 0) || (a.episode ?? 0) - (b.episode ?? 0);
 }
+
+/** Where the days loaded must start for a day picked in the small month, or null when it is loaded already. Any day with a date may be picked, also one more than a year back. */
+export function pickLoadFrom(day: string, start: Date): Date | null {
+	const at = new Date(day + 'T00:00:00');
+	return at < start ? at : null;
+}

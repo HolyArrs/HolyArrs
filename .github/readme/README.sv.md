@@ -23,7 +23,7 @@
 <p align="center"><a href="https://holyarrs.com/sponsor"><img src="https://holyarrs.com/sponsors/banner.gif" alt="Sponsors"></a></p>
 
 > [!NOTE]
-> **HolyArrs 1.3.1: tillägg hör vad som händer i HolyArrs.** Utvecklarläget kör tillägget du bygger, och testversioner låter några få prova det först. [Se vad som är nytt](https://holyarrs.com/whats-new/)
+> **HolyArrs 1.3.2: importera filer för hand från Biblioteket.** Filmfiler kontrolleras för längd, bild och ljud före import, plus många rättningar. [Se vad som är nytt](https://holyarrs.com/whats-new/)
 
 > Varje affisch, trailer och betyg i ditt HolyArrs kommer från en server som jag driver och betalar själv, så att det förblir gratis för alla. Om HolyArrs har gjort filmkvällen lite bättre håller en sponsor lamporna tända för oss alla 💛
 >

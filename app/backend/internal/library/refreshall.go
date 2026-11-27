@@ -35,6 +35,10 @@ const (
 // a scheduled refresh adds, so a large Library fills over a few runs.
 const ScoreFillPerRun = 300
 
+// PosterRetryPerRun is how many movies still without a poster a scheduled
+// refresh tries again, so a large Library is not looked up whole.
+const PosterRetryPerRun = 300
+
 // NeedsScore is true for a title not looked up since scores were kept,
 // not dropped by the source and not fetched within fresh.
 func NeedsScore(t mediafiles.Title, now time.Time, fresh time.Duration) bool {
@@ -68,6 +72,13 @@ func ShouldRefresh(t mediafiles.Title, now time.Time) (yes bool, why string) {
 	return false, "released"
 }
 
+// noPosterYet is true for a movie fetched at least 12 hours ago that still
+// has no poster: a lookup that failed under load left it marked
+// fetched, or flagged as dropped, without artwork. It is tried again.
+func noPosterYet(t mediafiles.Title, now time.Time) bool {
+	return len(t.Artwork) == 0 && t.RefreshedAt != nil && now.Sub(*t.RefreshedAt) >= refreshFresh
+}
+
 // changedSince is the time the changed list is asked from: the last start
 // rounded down to the hour, minus 15 minutes.
 func changedSince(lastStart time.Time) time.Time {
@@ -78,7 +89,7 @@ func changedSince(lastStart time.Time) time.Time {
 // movie. Otherwise, when the last start is under 14 days ago and the
 // provider has a changed list, the movies on it are refreshed; when that
 // list is empty or unavailable the rules decide (ShouldRefresh); movies
-// never fetched are always included. Either
+// never fetched, or fetched without a poster (noPosterYet), are always included. Either
 // way, up to ScoreFillPerRun movies with no score yet are added.
 func (s *Service) RefreshPlan(ctx context.Context, byHand bool, lastStart *time.Time) (ids []int64, why map[int64]string, err error) {
 	ts, err := database.Select[mediafiles.Title](ctx, s.Store.Read(), "titles", "kind = 'movie' AND state != 'removed' ORDER BY id")
@@ -107,21 +118,26 @@ func (s *Service) RefreshPlan(ctx context.Context, byHand bool, lastStart *time.
 			log.Printf("library: changed list: %v; using the refresh rules", err)
 		}
 	}
-	filled := 0
+	filled, retried := 0, 0
 	for _, t := range ts {
 		if filled < ScoreFillPerRun && NeedsScore(t, now, refreshFresh) {
 			ids, why[t.ID], filled = append(ids, t.ID), "no score yet", filled+1
 			continue
 		}
+		w := ""
 		if len(changed) > 0 {
 			if changed[lookupID(t)] {
-				ids, why[t.ID] = append(ids, t.ID), "on the changed list"
+				w = "on the changed list"
 			} else if t.RefreshedAt == nil { // never fetched, e.g. an unkept import
-				ids, why[t.ID] = append(ids, t.ID), "never fetched"
+				w = "never fetched"
 			}
-			continue
+		} else if yes, r := ShouldRefresh(t, now); yes {
+			w = r
 		}
-		if yes, w := ShouldRefresh(t, now); yes {
+		if w == "" && retried < PosterRetryPerRun && noPosterYet(t, now) {
+			w, retried = "no poster yet", retried+1
+		}
+		if w != "" {
 			ids, why[t.ID] = append(ids, t.ID), w
 		}
 	}

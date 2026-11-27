@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Боља копија",
 	"mediafiles.state.notKeptQ": "Не одржава се · {q}",
 	"mediafiles.state.notKept": "Не одржава се",
+	"mediafiles.state.keptInPart": "Delimično praćeno",
 	"mediafiles.state.inLibraryQ": "У библиотеци · {q}",
 	"mediafiles.state.inLibrary": "У библиотеци",
 	"mediafiles.state.upcomingOn": "Предстоји · {date}",

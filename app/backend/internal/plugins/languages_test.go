@@ -215,8 +215,8 @@ func TestLanguageRefusals(t *testing.T) {
 		"blocked": func() {
 			ps.lists(3, []plugins.Entry{ps.publish(t, "fr", "1.2.1")}, plugins.Entry{ID: "lang-fr", Version: "1.2.1"})
 		},
-		"not listed for this version": func() {
-			ps.lists(3, []plugins.Entry{ps.publish(t, "fr", "1.2.0")})
+		"only a newer version listed": func() {
+			ps.lists(3, []plugins.Entry{ps.publish(t, "fr", "1.2.2")})
 		},
 	}
 	for name, setup := range cases {
@@ -518,5 +518,43 @@ func TestLanguageSetupInstallSkipsCurrentPack(t *testing.T) {
 	ps.mu.Unlock()
 	if after != before {
 		t.Fatalf("second call fetched again: %d requests before, %d after", before, after)
+	}
+}
+
+// a release with no packs of its own yet takes the newest earlier
+// release pack, never a newer one or a test build's, and keeps it without
+// fetching it again.
+func TestLanguageReleaseFallsBackToEarlierPack(t *testing.T) {
+	ps := newPackServer(t)
+	ps.lists(1, []plugins.Entry{
+		ps.publish(t, "fr", "1.2.9"), ps.publish(t, "fr", "1.3.0"),
+		ps.publish(t, "fr", "1.3.1-test.1"), ps.publish(t, "fr", "1.3.2"),
+	})
+	l := newLanguages(t, ps, "1.3.1")
+	if err := l.Install(context.Background(), "fr"); err != nil {
+		t.Fatal(err)
+	}
+	if m := plain(t, l, "fr"); m["app"] != "1.3.0" {
+		t.Fatalf("1.3.1 took the %v pack", m["app"])
+	}
+	ps.mu.Lock()
+	before := ps.hits["/languages/fr/1.3.0.json.bz2"]
+	ps.mu.Unlock()
+	if err := l.Ensure(context.Background(), []string{"fr"}); err != nil {
+		t.Fatal(err)
+	}
+	ps.mu.Lock()
+	after := ps.hits["/languages/fr/1.3.0.json.bz2"]
+	ps.mu.Unlock()
+	if before != 1 || after != before {
+		t.Fatalf("pack fetched %d then %d times", before, after)
+	}
+	// Once the release's own pack is listed, it replaces the fallback.
+	ps.lists(2, []plugins.Entry{ps.publish(t, "fr", "1.3.0"), ps.publish(t, "fr", "1.3.1")})
+	if err := l.Ensure(context.Background(), nil); err != nil {
+		t.Fatal(err)
+	}
+	if m := plain(t, l, "fr"); m["app"] != "1.3.1" {
+		t.Fatalf("own pack not taken: %v", m["app"])
 	}
 }

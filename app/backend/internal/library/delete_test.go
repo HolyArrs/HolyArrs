@@ -184,7 +184,7 @@ func TestDeleteUnlinksDownloadsAndRepeats(t *testing.T) {
 	}
 }
 
-// #802: a held File goes once its own deleted time is HoldingDays old, not a
+// A held File goes once its own deleted time is HoldingDays old, not a
 // day later when its whole day folder is; a later one from the same day stays.
 func TestHoldingCleanUpByDeletedTime(t *testing.T) {
 	svc, s, lf, _, fs := deleteWorld(t)

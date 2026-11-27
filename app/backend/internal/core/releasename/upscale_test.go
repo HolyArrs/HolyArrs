@@ -2,7 +2,7 @@ package releasename
 
 import "testing"
 
-// Upscale tags AI upscalers and regraders put in their names (#610).
+// Upscale tags AI upscalers and regraders put in their names.
 func TestUpscaleTags(t *testing.T) {
 	cases := []struct {
 		name string

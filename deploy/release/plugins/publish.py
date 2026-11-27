@@ -188,7 +188,16 @@ def read_list(a, src, name, kind, label):
     tmp = os.path.join(a.work, label + "-" + name)
     with open(tmp, "wb") as f:
         f.write(raw)
-    verify(a, tmp, a.main_pub)
+    try:
+        verify(a, tmp, a.main_pub)
+    except Fail:
+        # Right after a key change the live lists are still signed with the
+        # previous key. They are read (never re-published as they are) and the
+        # next signing uses the main key.
+        if not (a.previous_pub and os.path.exists(a.previous_pub)):
+            raise
+        verify(a, tmp, a.previous_pub)
+        log(f"{label} {name}: signed with the previous key; re-signing with the main key")
     p = payload_of(raw)
     if p.get("kind") != kind:
         raise Fail(f"{label} {name} is kind {p.get('kind')!r}")
@@ -532,6 +541,8 @@ def main():
     ap.add_argument("--live-url", default=DEFAULT_LIVE,
                     help="live lists to compare counters with: https URL, a folder, or empty to skip")
     ap.add_argument("--main-pub", default=os.path.join(HERE, "keys", "main.pub"))
+    ap.add_argument("--previous-pub", default=os.path.join(HERE, "keys", "previous.pub"),
+                    help="the key before the last change; only to read lists it signed")
     ap.add_argument("--backup-pub", help="a second pinned key to also try (optional; none today)")
     ap.add_argument("--wiring", help="plugins_wiring.go, to check the key files against the app's pins")
     ap.add_argument("--file-url", default="",

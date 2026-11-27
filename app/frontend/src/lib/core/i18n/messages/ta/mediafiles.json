@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "சிறந்த பிரதி",
 	"mediafiles.state.notKeptQ": "வைக்கப்படவில்லை · {q}",
 	"mediafiles.state.notKept": "வைக்கப்படவில்லை",
+	"mediafiles.state.keptInPart": "பகுதியாக வைக்கப்படுகிறது",
 	"mediafiles.state.inLibraryQ": "நூலகத்தில் · {q}",
 	"mediafiles.state.inLibrary": "நூலகத்தில்",
 	"mediafiles.state.upcomingOn": "வரவிருக்கிறது · {date}",

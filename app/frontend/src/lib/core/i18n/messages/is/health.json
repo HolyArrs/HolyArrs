@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Veiturnar þínar finna torrent-niðurhöl en enginn torrent-niðurhalari er uppsettur, svo ekkert er hægt að senda. Bættu einum við í Stillingar › Niðurhalarar.",
 	"health.check.sameDownloader": "Bætt við tvisvar:",
 	"health.check.sameDownloaderWhy": "{app} nær í sama niðurhalsforrit og annar niðurhalari, svo niðurhöl hans geta birst tvisvar. Fjarlægðu annan í Stillingar › Niðurhalarar.",
+	"health.check.sameDownloaderShared": "{app} og annar Downloader nota báðir flokkinn \"{category}\", svo niðurhal í honum getur birst tvisvar. Gefðu {app} eigin flokk í Stillingar › Downloaders.",
 	"health.check.keyKitRecommended": "Mælt með: sæktu lyklapakkann",
 	"health.check.keyKitRecommendedOthers": "Mælt með: biddu eigandann um lyklapakkann",
 	"health.kind.sameDownloader": "Niðurhalara bætt við tvisvar",

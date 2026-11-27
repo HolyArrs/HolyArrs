@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filme",
 	"arrapi.seerr.showsLower": "seriale",
 	"arrapi.seerr.moviesLower": "filme",
+	"arrapi.seerr.music": "Muzică",
+	"arrapi.seerr.musicLower": "muzică",
 	"arrapi.seerr.saveFail": "Nu s-a putut salva",
 	"arrapi.seerr.replaceConfirm": "Înlocuiești cheia {app}? Cea actuală nu va mai funcționa.",
 	"arrapi.seerr.makeFail": "Nu s-a putut crea cheia",

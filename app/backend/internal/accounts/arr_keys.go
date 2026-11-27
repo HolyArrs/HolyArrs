@@ -17,11 +17,12 @@ import (
 // apart from HolyArrs API keys (hak_), never accepted anywhere else, and
 // masked in the log like every apikey= value.
 
-// ArrSides are the two sides, in the order screens show them.
-var ArrSides = []string{"sonarr", "radarr"}
+// ArrSides are the sides, in the order screens show them. The Lidarr side
+// only answers Prowlarr's indexer sync, for music Sources.
+var ArrSides = []string{"sonarr", "radarr", "lidarr"}
 
-// ErrNoArrSide says the side is not sonarr or radarr.
-var ErrNoArrSide = errors.New("the side is sonarr or radarr")
+// ErrNoArrSide says the side is not sonarr, radarr or lidarr.
+var ErrNoArrSide = errors.New("the side is sonarr, radarr or lidarr")
 
 // ArrSide names the side a path is under ("sonarr" for /sonarr/...),
 // or "" when it is under neither.
@@ -116,7 +117,7 @@ func (a *Auth) ArrKeys(ctx context.Context) ([]ArrKeyView, error) {
 // stops working at once. The key is 32 lowercase hex characters, the form
 // those apps expect.
 func (a *Auth) MakeArrKey(r *http.Request, side string) (string, error) {
-	if side != "sonarr" && side != "radarr" {
+	if ArrSide("/"+side+"/") != side {
 		return "", ErrNoArrSide
 	}
 	b := make([]byte, 16)

@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "lebih panjang dari batas pola HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "sudah ada di Pustaka; kualitas atau rilis {n} file diperbarui",
 	"server.migrate.imported-before-2": "sudah diimpor sebelumnya{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik film lain di Pustaka"
+	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik film lain di Pustaka",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} dikosongkan dari {name} di folder penampungan {label}"
 }

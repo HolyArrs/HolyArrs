@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Labāka kopija",
 	"mediafiles.state.notKeptQ": "Netiek paturēts · {q}",
 	"mediafiles.state.notKept": "Netiek paturēts",
+	"mediafiles.state.keptInPart": "Daļēji uzturēts",
 	"mediafiles.state.inLibraryQ": "Bibliotēkā · {q}",
 	"mediafiles.state.inLibrary": "Bibliotēkā",
 	"mediafiles.state.upcomingOn": "Drīzumā · {date}",

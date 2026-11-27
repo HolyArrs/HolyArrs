@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Länka",
 	"sources.bridge.linkName": "Länka {name}",
 	"sources.bridge.movieKey": "Nyckel för filmer (Radarr-sidan)",
+	"sources.bridge.musicKey": "Nyckel för musik (Lidarr-sidan)",
 	"sources.bridge.notConnected": "Inte ansluten",
 	"sources.bridge.reaches": "Prowlarr når HolyArrs på",
 	"sources.bridge.remove": "Ta bort",

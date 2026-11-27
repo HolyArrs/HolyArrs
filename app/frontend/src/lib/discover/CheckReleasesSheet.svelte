@@ -12,7 +12,7 @@
 	let rulesId = $state(0);
 	let checkId = $state(0);
 	// Each open starts from the saved Pick rules and no results, so nothing searches until asked.
-	// Only opening (or the offered rules changing) resets: it must not re-run when Pick rules are picked here (#714).
+	// Only opening (or the offered rules changing) resets: it must not re-run when Pick rules are picked here.
 	$effect(() => {
 		if (!open) return;
 		const offered = movieRules;

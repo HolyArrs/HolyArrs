@@ -124,7 +124,8 @@
 	"settings.subtitles.cleanAllQueued": "Почистват се всички субтитри в библиотеката",
 	"settings.subtitles.cleanAllFailed": "Почистването не можа да започне",
 	"settings.subtitles.cleanRow": "Стъпки за",
-	"settings.subtitles.cleanEvery": "Всеки друг език",
+	"settings.subtitles.cleanEvery": "Всички езици",
+	"settings.subtitles.cleanEveryHint": "Използва се за всеки език без собствени стъпки.",
 	"settings.subtitles.cleanAddLang": "Добавяне на език",
 	"settings.subtitles.cleanRemoveLang": "Премахване на този език"
 }

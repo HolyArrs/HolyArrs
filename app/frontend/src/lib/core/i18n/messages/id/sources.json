@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Tautkan",
 	"sources.bridge.linkName": "Tautkan {name}",
 	"sources.bridge.movieKey": "Kunci film (sisi Radarr)",
+	"sources.bridge.musicKey": "Kunci musik (sisi Lidarr)",
 	"sources.bridge.notConnected": "Tidak terhubung",
 	"sources.bridge.reaches": "Prowlarr menjangkau HolyArrs di",
 	"sources.bridge.remove": "Hapus",

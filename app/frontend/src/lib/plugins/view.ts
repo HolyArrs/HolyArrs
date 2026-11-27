@@ -80,7 +80,7 @@ export function needLabel(need: string, p: Plugin): string {
 	if (kind === 'host') return t('plugins.canHosts', { hosts: name });
 	if (kind === 'scope') {
 		const g = p.scope_groups?.find((x) => x.scopes.includes(name));
-		return g ? `${scopeLine(name, g.id)} (${name})` : t('plugins.needScope', { scope: name });
+		return g ? scopeLine(name, g.id) : t('plugins.needScope', { scope: name });
 	}
 	if (kind === 'resources') return t('plugins.needResources');
 	if (kind === 'event') return t('plugins.canEvents', { events: eventLabel(name) });
@@ -395,3 +395,6 @@ export function pluginBadge(p: Plugin): string {
 	if (p.test) return t('plugins.testBadge');
 	return pluginState(p) === 'off' ? t('plugins.stateOff') : stateLabel(p);
 }
+
+/** The Signed chip: plugins from the signed list only. A developer-folder plugin is unsigned and shows its Unsigned chip instead. */
+export const showsSigned = (p: Pick<Plugin, 'dev'>): boolean => !p.dev;

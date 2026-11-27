@@ -233,9 +233,7 @@
 	// A plugin turned off for the missing file lock can start again once the owner allowed it to run without.
 	const startable = (p: Plugin) =>
 		!p.disabled_reason || p.disabled_reason === 'stopped by the owner' || p.disabled_reason === 'signed out by the owner' || (!!ov?.allow_no_file_lock && p.disabled_reason.includes('(Landlock)')) || (!!ov?.allow_no_net_lock && p.disabled_reason.includes('(seccomp user-notify)'));
-
 	const path = (p: Plugin) => `/plugins/${encodeURIComponent(p.id)}`;
-
 	// Install or update with the steps on the button: the list is read again while the engine works.
 	// An update that asks for more than the installed version asks first.
 	function install(p: Plugin) {
@@ -250,7 +248,8 @@
 		const poll = setInterval(() => void load(), 500);
 		let ok = false;
 		try {
-			await api.post(`${path(p)}/install`);
+			// A developer plugin is not on the signed list; it installs from the developer folder.
+			await api.post(`${path(p)}/${p.dev ? 'dev-install' : 'install'}`);
 			ok = true;
 			toasts.push(t(p.installed ? 'plugins.updated' : 'plugins.installed', { name }), 'ok');
 		} catch (e) {
@@ -295,14 +294,11 @@
 		removeOpen = false;
 		if (p) void act(p, () => api.del(path(p)), 'plugins.removed', 'plugins.removeFailed');
 	}
-
 </script>
 
 <svelte:window bind:innerWidth={vw} onhashchange={onHash} />
-<svelte:head><title>{t('plugins.title')} Ã‚Â· HolyArrs</title></svelte:head>
-
+<svelte:head><title>{t('plugins.title')} · HolyArrs</title></svelte:head>
 <h1 class="sr-only">{t('plugins.title')}</h1>
-
 {#snippet logo(p: Plugin, size: number)}
 	{@const src = pluginIcon(p, size)}{#if src && !broken.has(src)}<img class="pic" {src} alt="" width={size} height={size} style:--pic={size + 'px'} onerror={() => broken.add(src)} />{:else}<span class="pic none" aria-hidden="true" style:--pic={size + 'px'}>{shownName(p).slice(0, 1)}</span>{/if}
 {/snippet}
@@ -391,7 +387,7 @@
 	{#if step}<span class="get step" role="status" data-testid="plugin-step">{#if p.install_step || installing === p.id}<span class="spin" aria-hidden="true"></span>{:else}<Icon name="owned" size={14} />{/if}{step}</span>
 	{:else if p.needs_app && !p.installed}<span class="xs muted need nchip" title={t('plugins.needsApp', { version: p.needs_app })} data-testid="plugin-card-needs-app"><span class="sr-only">{t('plugins.needsApp', { version: p.needs_app })}</span><span aria-hidden="true">{t('plugins.needsAppShort', { version: p.needs_app })}</span></span>
 	{:else if p.install_error && !p.installed}<button type="button" class="get" aria-label={t('plugins.retryName', { name })} disabled={!canInstall || !!busy} onclick={() => install(p)} data-testid="plugin-card-retry"><Icon name="refresh" size={14} />{t('plugins.retry')}</button>
-	{:else if !p.installed}<button type="button" class="get" aria-label={t('plugins.installName', { name })} disabled={!canInstall || !!busy} onclick={() => install(p)} data-testid="plugin-card-install"><Icon name="plus" size={14} />{t('plugins.install')}</button>
+	{:else if !p.installed}<button type="button" class="get" aria-label={t('plugins.installName', { name })} disabled={!canInstall || !!busy || (!!p.dev && (!ov?.dev_mode || !!p.dev_error))} onclick={() => install(p)} data-testid="plugin-card-install"><Icon name="plus" size={14} />{t('plugins.install')}</button>
 	{:else if hasUpdate(p) && !p.needs_app}<button type="button" class="get" aria-label={t('plugins.updateName', { name })} disabled={!canInstall || !!busy} onclick={() => install(p)} data-testid="plugin-card-update"><Icon name="download" size={14} />{t('plugins.update')}</button>
 	{:else if s === 'running'}<button type="button" class="get" aria-label={t('plugins.stopName', { name })} disabled={!!busy} onclick={() => act(p, () => api.post(`${path(p)}/stop`), 'plugins.stopped', 'plugins.stopFailed')} data-testid="plugin-card-stop">{#if busy === p.id}<span class="spin" aria-hidden="true"></span>{:else}<Icon name="pause" size={14} />{/if}{t('plugins.stop')}</button>
 	{:else}<button type="button" class="get" aria-label={t('plugins.startName', { name })} title={foldersMissing(p) ? t('plugins.chooseFolders') : s === 'off' && !startable(p) ? stateLabel(p) : undefined} disabled={!ov?.can_run || !!busy || foldersMissing(p) || (s === 'off' && !startable(p))} onclick={() => act(p, () => api.post(`${path(p)}/start`), 'plugins.started', 'plugins.startFailed')} data-testid="plugin-card-start">{#if busy === p.id}<span class="spin" aria-hidden="true"></span>{:else}<Icon name="play" size={14} />{/if}{t('plugins.start')}</button>{/if}
@@ -449,11 +445,17 @@
 	</PluginInfo>{/if}
 {/snippet}
 
+{#snippet settingsBtn(sel: Plugin)}
+	{@const name = shownName(sel)}
+	{#if settingsPage(sel)}<Button href={to(settingsPage(sel))} icon="sliders" aria-label={t('plugins.settingsName', { name })} data-testid="plugin-settings">{t('plugins.settings')}</Button>
+	{:else if sel.settings?.length}<Button icon="sliders" aria-label={t('plugins.settingsName', { name })} onclick={() => (editing = sel.id)} data-testid="plugin-settings">{t('plugins.settings')}</Button>{/if}
+{/snippet}
+
 {#snippet acts(sel: Plugin)}
 	{@const s = pluginState(sel)}
 	{@const name = shownName(sel)}
 	{#if sel.dev}
-		<DevActions {sel} {ov} {busy} {removing} {act} {askRemove} part="dev" />
+		<DevActions {sel} {ov} {busy} {removing} {act} {askRemove} part="dev">{#snippet settings()}{#if sel.installed}{@render settingsBtn(sel)}{/if}{/snippet}</DevActions>
 	{:else if s === 'not_installed'}
 		{#if sel.needs_app}<span class="xs muted need" data-testid="plugin-needs-app">{t('plugins.needsApp', { version: sel.needs_app })}</span>
 		{:else}<Button variant="primary" aria-label={t('plugins.installName', { name })} disabled={!canInstall || !!busy || !!sel.install_step} busy={busy === sel.id || !!sel.install_step} onclick={() => install(sel)} data-testid="plugin-main-install">{stepLabel(sel) || (sel.install_error ? t('plugins.retry') : t('plugins.install'))}</Button>{/if}
@@ -466,8 +468,7 @@
 		{:else}
 			<Button variant="primary" aria-label={t('plugins.startName', { name })} title={foldersMissing(sel) ? t('plugins.chooseFolders') : s === 'off' && !startable(sel) ? stateLabel(sel) : undefined} disabled={!ov?.can_run || !!busy || foldersMissing(sel) || (s === 'off' && !startable(sel))} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path(sel)}/start`), 'plugins.started', 'plugins.startFailed')} data-testid="plugin-main-start">{t('plugins.start')}</Button>
 		{/if}
-		{#if settingsPage(sel)}<Button href={to(settingsPage(sel))} icon="sliders" aria-label={t('plugins.settingsName', { name })} data-testid="plugin-settings">{t('plugins.settings')}</Button>
-		{:else if sel.settings?.length}<Button icon="sliders" aria-label={t('plugins.settingsName', { name })} onclick={() => (editing = sel.id)} data-testid="plugin-settings">{t('plugins.settings')}</Button>{/if}
+		{@render settingsBtn(sel)}
 		{#if hasUpdate(sel) && !sel.needs_app && s === 'running'}
 			<Button aria-label={t('plugins.stopName', { name })} disabled={!!busy} busy={busy === sel.id && !removing} onclick={() => act(sel, () => api.post(`${path(sel)}/stop`), 'plugins.stopped', 'plugins.stopFailed')} data-testid="plugin-stop">{t('plugins.stop')}</Button>
 		{:else if hasUpdate(sel) && !sel.needs_app}
@@ -790,7 +791,7 @@
 	.tag.new { background: color-mix(in srgb, var(--accent) 16%, var(--surface-2)); color: var(--text); }
 	.tag.hot { background: color-mix(in srgb, var(--wait) 18%, var(--surface-2)); color: var(--text); }
 	.dls { color: var(--text-muted); white-space: nowrap; }
-	.ver .dls::before { content: 'Ã‚Â·'; margin: 0 5px; }
+	.ver .dls::before { content: '·'; margin: 0 5px; }
 	.chip.fresh { background: color-mix(in srgb, var(--ok) 18%, var(--surface-2)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 40%, var(--line)); }
 	.lrow .get { background: var(--surface-1); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 2px rgb(0 0 0 / 0.12); white-space: nowrap; }
 	.get { white-space: nowrap; }

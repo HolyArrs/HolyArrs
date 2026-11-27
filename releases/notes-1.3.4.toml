@@ -1,0 +1,58 @@
+version = "1.3.4"
+theme = "Nine fixes from your reports, from 4K files to episode names."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""
+known_issues = []
+security = [
+  "Thanks to Andreas Døhl for reporting the signing-key gap fixed in 1.3.2. (#839)",
+]
+credits = [
+  {github = "ArChAnG3LsFuRy", link = "https://github.com/HolyArrs/HolyArrs/issues/874", issues = [874]},
+  {github = "kusogejp", link = "https://github.com/HolyArrs/HolyArrs/issues/769", issues = [769]},
+  {github = "mandopatriot", link = "https://github.com/HolyArrs/HolyArrs/issues/837", issues = [837]},
+  {github = "art804", link = "https://github.com/HolyArrs/HolyArrs/issues/716", issues = [716]},
+  {name = "Nippo", forum = true, link = "https://community.holyarrs.com/t/107", issues = [745]},
+  {name = "futureaeons", forum = true, link = "https://community.holyarrs.com/t/91", issues = [741, 805]},
+  {name = "roychassi", forum = true, link = "https://community.holyarrs.com/t/402", issues = [802]},
+  {name = "wagalan", forum = true, link = "https://community.holyarrs.com/t/395", issues = [734]},
+]
+
+[[highlights]]
+line = "4K files with no quality in the name now show as 4K."
+issues = [874]
+shot = "A 2160p file in the Library showing 4K instead of SD from TV"
+
+[[highlights]]
+line = "Episode names from TheTVDB come in your language."
+issues = [769]
+shot = "A Japanese show's episode list with English episode names"
+
+[[highlights]]
+line = "Outside links now sit higher on the title page."
+issues = [745]
+shot = "A movie title page with the links row near the top"
+
+[groups]
+Requests = [
+  "Fixed: future-only show asks with nothing listed show Upcoming, not Processing. (#716)",
+]
+Library = [
+  "Fixed: deleted files leave the holding folder right on their keep time. (#802)",
+]
+Music = [
+  "Music import shows which artist is which in the match list. (#741)",
+  "Fixed: removing an artist stops its running refresh. (#805)",
+]
+Subtitles = [
+  "Fixed: Sync fix only retimes subtitles HolyArrs saved. (#837)",
+]
+"Media servers" = [
+  "Fixed: Who watched what opens when two accounts share a name. (#734)",
+]
+
+[stats]
+issues_done = 9
+still_building = 0
+people_credited = 8

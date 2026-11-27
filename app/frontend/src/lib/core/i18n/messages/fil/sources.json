@@ -26,6 +26,7 @@
 	"sources.bridge.link": "I-link",
 	"sources.bridge.linkName": "I-link ang {name}",
 	"sources.bridge.movieKey": "Key ng pelikula (panig ng Radarr)",
+	"sources.bridge.musicKey": "Key ng musika (panig ng Lidarr)",
 	"sources.bridge.notConnected": "Hindi nakakonekta",
 	"sources.bridge.reaches": "Naaabot ng Prowlarr ang HolyArrs sa",
 	"sources.bridge.remove": "Alisin",

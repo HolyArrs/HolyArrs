@@ -7,12 +7,13 @@ import (
 )
 
 // pinnedKeys are the ed25519 public keys (base64) the plugin lists must be
-// signed with. The only key lives in the plugins repo's signing environment
-// and is never handled by a person; there is no backup key, so a rotation
-// pins a new key here in a release (docs/plugin-signing-key.md). The app and
+// signed with. The main key lives in the plugins repo's signing environment,
+// with an offline copy the maintainer keeps. The backup key is kept offline only and
+// signs if the main key is ever lost (docs/plugin-signing-key.md). The app and
 // the signing tool both read them from here, so they never drift apart.
 var pinnedKeys = []string{
-	"r66aC5kfjz7wBDfiPb94o0RlpSm4F2fwfr8Kk/KNYGw=", // main
+	"n5a8nBqYlumtATVUUeOUYSWgbWI/yi62H1xDhXx6jjY=", // main
+	"dmodZ/Y7L1QCT4EqPgZCxDhe1ZpWz1xhCgnl6PJ/uNQ=", // backup
 }
 
 // PinnedKeyStrings returns the pinned keys as written (base64).

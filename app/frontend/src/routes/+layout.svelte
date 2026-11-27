@@ -22,10 +22,11 @@
 	import { live } from '#lib/core/live.svelte.ts';
 	import { dlPush, decisions, refreshDecisions, activeDownloads, refreshActiveDownloads, resetActiveDownloads, dlTop } from '#lib/downloads/index.ts';
 	import { alertsPanel, toasts } from '#lib/core/toasts.svelte.ts';
+	import { sections as settingsPages } from '#lib/core/settings.ts';
 	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
-	import { settingsNow, refreshSettingsStatus, needsAttention, dotReasons, DotList } from '#lib/alerts/index.ts';
+	import { settingsNow, refreshSettingsStatus, needsAttention, dotReasons, DotList, alertFixes } from '#lib/alerts/index.ts';
 	import { navigateWithTransition } from '#lib/core/motion.ts';
 	import { installPersonPrefetch, installHeroAhead, checkHero, installScrollBar, showBar, arrived, leaving } from '#lib/discover/index.ts';
 	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen, installArtistVideoPrefetch } from '#lib/music/index.ts';
@@ -324,7 +325,7 @@
 	// The display name from My account when set; else an id-like account name (preview-..., e2e-...) reads as "You".
 	const shownName = $derived(profile.displayName.trim() || personName(session.s.name, t('frame.layout.you')));
 	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
-	const openFixes = $derived((settingsAttention ? (settingsNow.answer?.items.length ?? 0) : 0) + (allowed('manage_library') ? decisionPins().length : 0) + (feedPins.update ? 1 : 0));
+	const openFixes = $derived(alertFixes(settingsAttention ? (settingsNow.answer?.items ?? []) : [], settingsPages, feedPins.update ? [feedPins.update] : [], [...decisionPins(), ...(feedPins.clear ? [feedPins.clear] : [])]).length);
 	// Request updates, failed downloads and a new version reach the bell from any page.
 	$effect(() => {
 		if (session.s.state !== 'signed_in') return;

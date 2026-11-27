@@ -28,7 +28,7 @@ describe('Check releases on the title page', () => {
 		// Opening loads nothing from the Sources: with no check yet the list is empty.
 		expect(sheet).toContain('checkId ? api.get<ReleasePage>');
 	});
-	it('keeps the Pick rules picked in the sheet (#714)', () => {
+	it('keeps the Pick rules picked in the sheet', () => {
 		// The open-reset must not read rulesId, or picking 4K re-runs it and puts the saved default back.
 		const reset = sheet.slice(sheet.indexOf('$effect(() => {'), sheet.indexOf('let sheetKey'));
 		expect(reset).toContain('untrack(');

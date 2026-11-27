@@ -87,7 +87,11 @@ func TestMakeArrKeyReplacesAndDeleteReports(t *testing.T) {
 	}
 	r := httptest.NewRequest("POST", "/", nil)
 	r = r.WithContext(webserver.ContextWith(r.Context(), webserver.Caller{UserID: id, Name: "luis"}))
-	if _, err := f.a.MakeArrKey(r, "lidarr"); !errors.Is(err, ErrNoArrSide) {
+	if _, err := f.a.MakeArrKey(r, "readarr"); !errors.Is(err, ErrNoArrSide) {
+		t.Fatalf("readarr: %v", err)
+	}
+	// The Lidarr side takes a key, for Prowlarr's music sync.
+	if _, err := f.a.MakeArrKey(r, "lidarr"); err != nil {
 		t.Fatalf("lidarr: %v", err)
 	}
 	k1, err := f.a.MakeArrKey(r, "sonarr")

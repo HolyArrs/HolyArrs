@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "den er længere, end et HolyArrs-mønster kan være",
 	"server.migrate.already-in-the-library-the-quality": "allerede i Biblioteket; kvaliteten eller udgivelsen af {n} filer blev opdateret",
 	"server.migrate.imported-before-2": "importeret før{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "dens mappe {dir} tilhører en anden film i Biblioteket"
+	"server.migrate.its-folder-belongs-to-another-movie": "dens mappe {dir} tilhører en anden film i Biblioteket",
+	"server.library.emptied-from-in-the-holding-folder": "Tømte {removed} fra {name} i holdemappen for {label}"
 }

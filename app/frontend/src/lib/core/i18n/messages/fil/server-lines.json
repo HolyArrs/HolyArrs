@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "mas mahaba ito kaysa sa puwedeng haba ng isang HolyArrs pattern",
 	"server.migrate.already-in-the-library-the-quality": "nasa Library na; na-update ang kalidad o release ng {n} file",
 	"server.migrate.imported-before-2": "na-import na dati{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "ang folder nitong {dir} ay pag-aari ng ibang pelikula sa Library"
+	"server.migrate.its-folder-belongs-to-another-movie": "ang folder nitong {dir} ay pag-aari ng ibang pelikula sa Library",
+	"server.library.emptied-from-in-the-holding-folder": "Inalis ang {removed} mula sa {name} sa holding folder ng {label}"
 }

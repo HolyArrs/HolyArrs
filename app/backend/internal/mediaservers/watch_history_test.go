@@ -509,7 +509,7 @@ func TestStopEndsABackgroundRead(t *testing.T) {
 	}
 }
 
-// #734: two accounts with the same name (Plex home users, blank names)
+// Two accounts with the same name (Plex home users, blank names)
 // still get their own row and a different key.
 func TestWatchedSameNameKeepsKeysApart(t *testing.T) {
 	smallPages(t)

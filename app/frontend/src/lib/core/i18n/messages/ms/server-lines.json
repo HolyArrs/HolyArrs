@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "ia lebih panjang daripada had corak HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "sudah ada dalam Pustaka; kualiti atau keluaran {n} fail telah dikemas kini",
 	"server.migrate.imported-before-2": "sudah diimport sebelum ini{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik filem lain dalam Pustaka"
+	"server.migrate.its-folder-belongs-to-another-movie": "foldernya {dir} milik filem lain dalam Pustaka",
+	"server.library.emptied-from-in-the-holding-folder": "{removed} dikosongkan daripada {name} dalam folder penahan {label}"
 }

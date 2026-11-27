@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "HolyArrs のパターンの上限より長すぎます",
 	"server.migrate.already-in-the-library-the-quality": "すでにライブラリにあります。{n} 個のファイルの品質またはリリースを更新しました",
 	"server.migrate.imported-before-2": "以前にインポート済み{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "フォルダー {dir} はライブラリ内の別の映画のものです"
+	"server.migrate.its-folder-belongs-to-another-movie": "フォルダー {dir} はライブラリ内の別の映画のものです",
+	"server.library.emptied-from-in-the-holding-folder": "{label} の保留フォルダー内の {name} から {removed} を空にしました"
 }

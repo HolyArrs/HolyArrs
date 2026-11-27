@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Verknüpfen",
 	"sources.bridge.linkName": "{name} verknüpfen",
 	"sources.bridge.movieKey": "Schlüssel für Filme (Radarr-Seite)",
+	"sources.bridge.musicKey": "Schlüssel für Musik (Lidarr-Seite)",
 	"sources.bridge.notConnected": "Nicht verbunden",
 	"sources.bridge.reaches": "Prowlarr erreicht HolyArrs unter",
 	"sources.bridge.remove": "Entfernen",

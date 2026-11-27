@@ -76,6 +76,10 @@ func (e *ShowAlreadyAddedError) Error() string {
 // ErrShowNeverAdd says the show is on the Never-add list.
 var ErrShowNeverAdd = errors.New("this show is on the Never-add list")
 
+// ErrTVDBIDNeedsKey is a tvdb:<id> no keyless source knows: only TVDB
+// itself could look it up, and no TVDB key is set. It is a not-found.
+var ErrTVDBIDNeedsKey = fmt.Errorf("%w: TMDB and TVMaze have no show with this TheTVDB id. Add your own TheTVDB key in Settings to look it up on TheTVDB", metadata.ErrShowNotFound)
+
 // LookupShow finds one show by "<kind>:<id>" for the given details source.
 // The id may belong to another source (a TMDB id while adding with
 // TVMaze): that source is asked first for the show's other ids.
@@ -89,18 +93,56 @@ func (s *Service) LookupShow(ctx context.Context, id, source string) (metadata.S
 		return metadata.Show{}, err
 	}
 	ids := map[string]string{kind: v}
-	if kind != source {
-		if other, err := s.showSource(kind); err == nil {
-			if sh, err := other.Show(ctx, id); err == nil {
-				for k, x := range sh.IDs {
+	// Ask the id's own source, then TVMaze (no key needed) for a TVDB or
+	// IMDb id, for the show's other ids. The first show found this way is
+	// kept: when the chosen source has no link for the id, that show is
+	// used instead of finding nothing (as Sonarr does).
+	var found metadata.Show
+	var helperErr error
+	noKey := false // TVDB itself was skipped for want of a key
+	helpers := []string{kind}
+	if kind == "tvdb" || kind == "imdb" {
+		helpers = append(helpers, "tvmaze")
+	}
+	for _, h := range helpers {
+		if h == source {
+			continue
+		}
+		other, err := s.showSource(h)
+		if err != nil || other == nil {
+			continue
+		}
+		sh, err := other.Show(ctx, id)
+		switch {
+		case err == nil:
+			for k, x := range sh.IDs {
+				if ids[k] == "" {
 					ids[k] = x
 				}
-			} else if !errors.Is(err, metadata.ErrShowNotFound) && !errors.Is(err, metadata.ErrNoTVDBKey) {
-				return metadata.Show{}, err
+			}
+			if found.Source == "" {
+				found = sh
+			}
+		case errors.Is(err, metadata.ErrNoTVDBKey):
+			noKey = noKey || h == "tvdb"
+		case errors.Is(err, metadata.ErrShowNotFound):
+		default:
+			if helperErr == nil {
+				helperErr = err
 			}
 		}
 	}
 	sh, err := lookupShow(ctx, p, source, ids)
+	if errors.Is(err, metadata.ErrShowNotFound) {
+		switch {
+		case found.Source != "":
+			sh, err = found, nil
+		case helperErr != nil:
+			return metadata.Show{}, helperErr
+		case noKey:
+			return metadata.Show{}, ErrTVDBIDNeedsKey
+		}
+	}
 	if err != nil {
 		return sh, err
 	}
@@ -199,6 +241,11 @@ func (s *Service) AddShow(ctx context.Context, id string, opt ShowAddOptions, by
 	sh, err := s.LookupShow(ctx, id, opt.Source)
 	if err != nil {
 		return 0, 0, err
+	}
+	if sh.Source != "" && sh.Source != opt.Source && metadata.ValidShowSource(sh.Source) {
+		// The chosen source has no link for this id: the show comes from
+		// the source that knows it, and stays with it on refresh.
+		opt.Source = sh.Source
 	}
 	s.addAirTimes(ctx, &sh)
 	s.fixCopiedTMDB(ctx, &sh)
@@ -559,6 +606,7 @@ type SeasonSummary struct {
 	Missing      int           `json:"missing"`       // aired, kept up to date, no file yet
 	BetterWanted int           `json:"better_wanted"` // in the Library, a better copy is sought
 	NotOutYet    int           `json:"not_out_yet"`
+	Kept         int           `json:"kept"`        // episodes whose own Keep up to date switch is on
 	Downloading  int           `json:"downloading"` // a Downloader took a copy (downloading, stalled, importing)
 	Failed       int           `json:"failed"`      // the download failed or its import needs a decision
 	NextAirDate  *time.Time    `json:"next_air_date,omitempty"`
@@ -626,6 +674,9 @@ func Seasons(ctx context.Context, db database.Lister, titleID int64, now time.Ti
 // says (a search or a better copy on the way, an air time later today).
 func (ss *SeasonSummary) tally(air sql.NullString, day string, keep bool, state string, hasFile bool, now time.Time) {
 	ss.Episodes++
+	if keep {
+		ss.Kept++
+	}
 	aired := false
 	if air.Valid {
 		if at, err := time.Parse(database.TimeLayout, air.String); err == nil {

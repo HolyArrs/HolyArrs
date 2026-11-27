@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "소스가 토렌트 다운로드를 찾지만 설정된 토렌트 다운로더가 없어 아무것도 보낼 수 없습니다. 설정 › 다운로더에서 추가하세요.",
 	"health.check.sameDownloader": "두 번 추가됨:",
 	"health.check.sameDownloaderWhy": "{app}이(가) 다른 다운로더와 같은 다운로드 앱에 연결되어 다운로드가 두 번 보일 수 있습니다. 설정 › 다운로더에서 하나를 삭제하세요.",
+	"health.check.sameDownloaderShared": "{app}와(과) 다른 다운로더가 같은 카테고리 \"{category}\"를 사용하므로 그 안의 다운로드가 두 번 표시될 수 있습니다. 설정 › 다운로더에서 {app}에 별도의 카테고리를 지정하세요.",
 	"health.check.keyKitRecommended": "권장: 키 키트를 다운로드하세요",
 	"health.check.keyKitRecommendedOthers": "권장: 소유자에게 키 키트를 요청하세요",
 	"health.kind.sameDownloader": "두 번 추가된 다운로더",

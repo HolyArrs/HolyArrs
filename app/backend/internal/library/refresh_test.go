@@ -464,7 +464,7 @@ func TestRefreshPlanFillsScores(t *testing.T) {
 			q   string
 			arg any
 		}{
-			{"UPDATE titles SET score = NULL, refreshed_at = ?", ago13},
+			{`UPDATE titles SET score = NULL, artwork = '["poster:x.jpg"]', refreshed_at = ?`, ago13},
 			{`UPDATE titles SET refreshed_at = ? WHERE json_extract(source_ids, '$.tmdb') = '1'`, ago2},
 			{`UPDATE titles SET score = ? WHERE json_extract(source_ids, '$.tmdb') = '2'`, 7.4},
 			{`UPDATE titles SET dropped_at = ? WHERE json_extract(source_ids, '$.tmdb') = '3'`, ago13},

@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "és més llarg del que pot ser un patró de HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "ja és a la Biblioteca; s'ha actualitzat la qualitat o la versió de {n} fitxers",
 	"server.migrate.imported-before-2": "importat abans{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "la seva carpeta {dir} pertany a una altra pel·lícula de la Biblioteca"
+	"server.migrate.its-folder-belongs-to-another-movie": "la seva carpeta {dir} pertany a una altra pel·lícula de la Biblioteca",
+	"server.library.emptied-from-in-the-holding-folder": "S'han buidat {removed} de {name} a la carpeta de retenció de {label}"
 }

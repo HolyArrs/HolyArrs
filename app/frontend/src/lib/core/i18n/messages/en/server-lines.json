@@ -2469,5 +2469,6 @@
 	"server.migrate.its-folder-belongs-to-another-movie": "its folder {dir} belongs to another movie in the Library",
 	"server.importer.it-plays-min-but-the-title": "it plays {n} min but the title runs {m} min; check it is the right one",
 	"server.importer.the-file-holds-no-video-track": "the file holds no video track",
-	"server.importer.the-first-audio-track-is-not": "the first audio track is {a}, not the title's {b}"
+	"server.importer.the-first-audio-track-is-not": "the first audio track is {a}, not the title's {b}",
+	"server.library.emptied-from-in-the-holding-folder": "Emptied {removed} from {name} in the holding folder of {label}"
 }

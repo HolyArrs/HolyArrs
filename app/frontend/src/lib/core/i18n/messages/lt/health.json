@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Jūsų šaltiniai randa torrentų, bet nenustatytas joks torrentų atsisiuntėjas, todėl nieko negalima išsiųsti. Pridėkite jį skiltyje Nustatymai › Atsisiuntėjai.",
 	"health.check.sameDownloader": "Pridėta du kartus:",
 	"health.check.sameDownloaderWhy": "{app} pasiekia tą pačią atsisiuntimo programą kaip kitas atsisiuntėjas, todėl jo atsisiuntimai gali būti rodomi du kartus. Pašalinkite vieną: Nustatymai › Atsisiuntėjai.",
+	"health.check.sameDownloaderShared": "{app} ir kitas Downloader naudoja tą pačią kategoriją \"{category}\", todėl joje esantys atsisiuntimai gali būti rodomi du kartus. Suteikite {app} atskirą kategoriją skiltyje Nustatymai › Downloaderiai.",
 	"health.check.keyKitRecommended": "Rekomenduojama: atsisiųskite raktų rinkinį",
 	"health.check.keyKitRecommendedOthers": "Rekomenduojama: paprašykite savininko raktų rinkinio",
 	"health.kind.sameDownloader": "Atsisiuntėjas pridėtas du kartus",

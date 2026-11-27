@@ -170,7 +170,7 @@ func lieOf(name, relName string, hasOld bool, oldName string, rules mediafiles.P
 	}
 	sure := releasename.Parse(name, releasename.Hints{}).Source.Conf == releasename.Sure
 	if fIdx >= 0 && sure && hasOld {
-		if oStep, oIdx := mediafiles.StepOf(oldName, rules); oIdx > fIdx {
+		if oStep, oIdx := mediafiles.StepOf(oldName, rules); mediafiles.RankStep(rules, oIdx) > mediafiles.RankStep(rules, fIdx) {
 			return fmt.Sprintf("file is %s, lower than the copy in place (%s)", plainStep(fStep), plainStep(oStep))
 		}
 	}

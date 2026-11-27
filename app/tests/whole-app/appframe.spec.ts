@@ -161,3 +161,22 @@ test('the API page: key, scopes, base address, examples and every route', async 
 	await axe(page, '/settings/api');
 	await phone(page, '/settings/api');
 });
+
+
+test('the notification bell counts a duplicate update warning once', async ({ browser }) => {
+	const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+	const p = await ctx.newPage();
+	await p.route('**/api/v1/settings/status', (route) => route.fulfill({ json: {
+		items: [{ group: 'system', page: '/settings/this-app', text: 'HolyArrs 9.9.9 is out', severity: 'warning' }], unset: {}, known: []
+	} }));
+	await p.route('**/api/v1/app/update', (route) => route.fulfill({ json: { on: true, newer: true, latest: '9.9.9' } }));
+	await p.route('**/api/v1/health/checks', (route) => route.fulfill({ json: { checks: [] } }));
+	await signIn(p, owner());
+	const bell = p.locator('.alerts-bell');
+	await bell.click();
+	const panel = p.getByRole('dialog', { name: 'Recent alerts' });
+	await expect(panel.locator('.pins .row')).toHaveCount(1);
+	await expect(bell.locator('.alerts-count')).toHaveText('1');
+	await expect(panel).toContainText('9.9.9');
+	await ctx.close();
+});

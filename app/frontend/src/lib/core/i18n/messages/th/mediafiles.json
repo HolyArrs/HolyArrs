@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "สำเนาที่ดีกว่า",
 	"mediafiles.state.notKeptQ": "ไม่ได้เก็บไว้ · {q}",
 	"mediafiles.state.notKept": "ไม่ได้เก็บไว้",
+	"mediafiles.state.keptInPart": "เก็บไว้บางส่วน",
 	"mediafiles.state.inLibraryQ": "อยู่ในไลบรารี · {q}",
 	"mediafiles.state.inLibrary": "อยู่ในไลบรารี",
 	"mediafiles.state.upcomingOn": "เร็ว ๆ นี้ · {date}",

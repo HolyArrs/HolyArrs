@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "ยาวเกินกว่าที่รูปแบบของ HolyArrs จะรองรับได้",
 	"server.migrate.already-in-the-library-the-quality": "อยู่ในคลังแล้ว อัปเดตคุณภาพหรือรีลีสของไฟล์ {n} ไฟล์แล้ว",
 	"server.migrate.imported-before-2": "นำเข้าไว้ก่อนแล้ว{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "โฟลเดอร์ {dir} เป็นของภาพยนตร์เรื่องอื่นในคลัง"
+	"server.migrate.its-folder-belongs-to-another-movie": "โฟลเดอร์ {dir} เป็นของภาพยนตร์เรื่องอื่นในคลัง",
+	"server.library.emptied-from-in-the-holding-folder": "ล้าง {removed} จาก {name} ในโฟลเดอร์พักไว้ของ {label} แล้ว"
 }

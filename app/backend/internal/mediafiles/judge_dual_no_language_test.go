@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// TestDualNoLanguageNotOriginal (#797): DUAL or MULTi with no language word
+// TestDualNoLanguageNotOriginal: DUAL or MULTi with no language word
 // says the release has more than one audio language, so it is not read as
 // the original language alone; it gets a warning instead of being turned away.
 func TestDualNoLanguageNotOriginal(t *testing.T) {

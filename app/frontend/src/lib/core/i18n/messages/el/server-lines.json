@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "είναι μεγαλύτερο από όσο μπορεί να είναι ένα μοτίβο του HolyArrs",
 	"server.migrate.already-in-the-library-the-quality": "υπάρχει ήδη στη Βιβλιοθήκη· η ποιότητα ή η έκδοση {n} αρχείων ενημερώθηκε",
 	"server.migrate.imported-before-2": "εισήχθη παλαιότερα{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "ο φάκελός του {dir} ανήκει σε άλλη ταινία στη Βιβλιοθήκη"
+	"server.migrate.its-folder-belongs-to-another-movie": "ο φάκελός του {dir} ανήκει σε άλλη ταινία στη Βιβλιοθήκη",
+	"server.library.emptied-from-in-the-holding-folder": "Αδειάστηκαν {removed} από το «{name}» στον φάκελο αναμονής του {label}"
 }

@@ -2469,5 +2469,6 @@
 	"server.migrate.it-is-longer-than-a-holyarrs": "bir HolyArrs deseninin olabileceğinden daha uzun",
 	"server.migrate.already-in-the-library-the-quality": "zaten Kitaplıkta; {n} dosyanın kalitesi veya sürümü güncellendi",
 	"server.migrate.imported-before-2": "daha önce içe aktarıldı{title}",
-	"server.migrate.its-folder-belongs-to-another-movie": "klasörü {dir}, Kitaplıktaki başka bir filme ait"
+	"server.migrate.its-folder-belongs-to-another-movie": "klasörü {dir}, Kitaplıktaki başka bir filme ait",
+	"server.library.emptied-from-in-the-holding-folder": "{removed}, {label} bekletme klasöründeki {name} içinden boşaltıldı"
 }

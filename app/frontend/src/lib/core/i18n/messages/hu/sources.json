@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Összekapcsolás",
 	"sources.bridge.linkName": "{name} összekapcsolása",
 	"sources.bridge.movieKey": "Filmek kulcsa (Radarr oldal)",
+	"sources.bridge.musicKey": "Zene kulcsa (Lidarr oldal)",
 	"sources.bridge.notConnected": "Nincs csatlakoztatva",
 	"sources.bridge.reaches": "A Prowlarr itt éri el a HolyArrst:",
 	"sources.bridge.remove": "Eltávolítás",

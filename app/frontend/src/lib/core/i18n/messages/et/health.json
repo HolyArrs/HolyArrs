@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Sinu allikad leiavad torrenteid, aga ühtegi torrentite allalaadijat pole seadistatud, seega ei saa ühtegi saata. Lisa see jaotises Seaded › Allalaadijad.",
 	"health.check.sameDownloader": "Lisatud kaks korda:",
 	"health.check.sameDownloaderWhy": "{app} jõuab samasse allalaadimisrakendusse nagu teine allalaadija, seega võivad selle allalaadimised näha kaks korda. Eemalda üks: Seaded › Allalaadijad.",
+	"health.check.sameDownloaderShared": "{app} ja teine Downloader kasutavad mõlemad kategooriat \"{category}\", seega võivad selle allalaadimised kaks korda näha olla. Anna {app}-le oma kategooria jaotises Seaded › Downloaderid.",
 	"health.check.keyKitRecommended": "Soovitatav: laadi võtmekomplekt alla",
 	"health.check.keyKitRecommendedOthers": "Soovitatav: küsi omanikult võtmekomplekti",
 	"health.kind.sameDownloader": "Allalaadija lisatud kaks korda",

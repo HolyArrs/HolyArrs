@@ -37,6 +37,8 @@ type ShowTarget struct {
 	Naming      *mediafiles.NamingSettings
 	// ByOrder names files by the show's chosen episode order.
 	ByOrder bool
+	// oneVideo says the download holds a single video (episodeName).
+	oneVideo bool
 }
 
 func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episode) string {
@@ -46,7 +48,8 @@ func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episo
 	}
 	ns = ns.For(mediafiles.PartShows)
 	ext := filepath.Ext(source)
-	release := strings.TrimSuffix(filepath.Base(source), ext)
+	base := strings.TrimSuffix(filepath.Base(source), ext)
+	release, p := t.episodeName(source, p)
 	if t.ByOrder {
 		eps = NamedEpisodes(eps)
 	}
@@ -57,7 +60,7 @@ func (t ShowTarget) episodePath(p releasename.Result, source string, eps []Episo
 	}
 	season := ExistingSeasonFolder(filepath.Join(t.LibraryPath, filepath.FromSlash(t.FolderName)), f.Season, mediafiles.SeasonFolder(ns, f.Season))
 	if !ns.RenameOnImport {
-		return path.Join(t.FolderName, season, mediafiles.CleanWith(ns, release)+strings.ToLower(ext))
+		return path.Join(t.FolderName, season, mediafiles.CleanWith(ns, base)+strings.ToLower(ext))
 	}
 	return path.Join(t.FolderName, season, mediafiles.EpisodeFile(ns, f))
 }
@@ -224,12 +227,8 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 		refs[i] = e.Ref
 		byItem[e.Ref.ItemID] = e
 	}
-	videos := 0
-	for _, c := range cands {
-		if videoExt[strings.ToLower(filepath.Ext(c.Path))] && !isSample(c.Path, releasename.Parse(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true})) {
-			videos++
-		}
-	}
+	videos := videoFiles(cands)
+	t.oneVideo = videos == 1
 	var steps []mediafiles.PlanStep
 	for _, c := range cands {
 		ext := strings.ToLower(filepath.Ext(c.Path))
@@ -273,6 +272,13 @@ func PlanEpisodes(cands []Candidate, t ShowTarget) []mediafiles.PlanStep {
 				if gp, gm, ok := withoutLeadGroup(filepath.Base(c.Path), releasename.Hints{Size: c.Size, Show: true}, lib); ok && gp.IsShow() && !mediafiles.IsPack(gp) {
 					p, m = gp, gm
 				}
+			}
+			if m.Title == nil && t.ReleaseName != "" && shortNameOf(p.Title.Value, t) {
+				// Grabbed for this show, and the group shortens its name on
+				// the files ("[Judas] Beerus - S01E05"): take the show
+				// from the grab and only the episode from the file, as Sonarr
+				// does. A file naming another show is still refused.
+				m = mediafiles.Match{Title: &lib[0], Conf: releasename.Likely, Detail: "the show the download was grabbed for"}
 			}
 			if m.Title == nil {
 				s.Method, s.Why = "refuse", []string{"does not match the show: " + m.Detail}

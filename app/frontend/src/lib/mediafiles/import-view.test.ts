@@ -76,6 +76,10 @@ describe('pickedOf and matchOptions', () => {
 		expect(matchOptions(amelie, '99', { '99': { name: 'Amélie Two', year: 2020 } }).map((o) => o.label)).toEqual(['Amélie (2001) · 85%', 'Amelia (2009) · 50%', 'Amélie Two (2020)']);
 		expect(matchOptions(notes, undefined)).toEqual([]);
 	});
+	it('tells same-name artists apart by their disambiguation (#741)', () => {
+		const twin = f('Twin', { match: { id: 'mbid:a1', tmdb_id: '', name: 'Twin', year: 0, score: 1, disambiguation: 'UK punk band' }, others: [{ id: 'mbid:a2', tmdb_id: '', name: 'Twin', year: 0, score: 1, disambiguation: 'US rapper' }, { id: 'mbid:a3', tmdb_id: '', name: 'Twin', year: 0, score: 1 }] });
+		expect(matchOptions(twin, 'mbid:a1').map((o) => o.label)).toEqual(['Twin (UK punk band) · 100%', 'Twin (US rapper) · 100%', 'Twin · 100%']);
+	});
 });
 
 describe('ticks', () => {

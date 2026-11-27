@@ -312,7 +312,7 @@ func TestService_SyncAndTurnDown(t *testing.T) {
 	if _, err := s.Sync(ctx, nr.ID, subtext.Fix{}, domain.System); err == nil {
 		t.Fatal("empty fix")
 	}
-	// A subtitle that was already beside the video is not ours to retime (#837).
+	// A subtitle that was already beside the video is not ours to retime.
 	if err := f.st.Write(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, "UPDATE subtitles SET origin = 'found' WHERE id = ?", nr.ID)
 		return err
