@@ -181,6 +181,7 @@ func (s *Searcher) HandleFeed(ctx context.Context, r *jobs.Run) error {
 			}
 		}
 	}
+	s.retryResting(ctx, srcs)
 	all = dedupeEach(all, func(f found) { drops.add(f.src, f.item.Title, dropSame) })
 	// Nothing to match: skip loading Slots, which at library scale costs one record per episode or track.
 	if len(all) == 0 {
@@ -795,4 +796,35 @@ func movieOut(t mediafiles.Title) *time.Time {
 // lookingStateNames is lookingStates as the strings the store compares with.
 func lookingStateNames() [3]string {
 	return [3]string{string(lookingStates[0]), string(lookingStates[1]), string(lookingStates[2])}
+}
+
+// retryResting tries each paused Source the feed does not read once its
+// wait is over, so one that failed while the network was still starting
+// (#711) goes back to working on its own instead of waiting for a search.
+func (s *Searcher) retryResting(ctx context.Context, srcs []domain.Source) {
+	for _, src := range srcs {
+		if !restingOffFeed(src) {
+			continue
+		}
+		cl, err := s.client(ctx, src)
+		if err == nil {
+			start := time.Now()
+			_, err = cl.Test(ctx)
+			Record(context.WithoutCancel(ctx), s.Store, src.ID, "test", time.Since(start), err)
+		}
+		if ctx.Err() != nil {
+			return
+		}
+		if err != nil {
+			s.pause(ctx, src, err)
+			continue
+		}
+		s.recovered(ctx, src)
+	}
+}
+
+// restingOffFeed is a paused Source the feed check does not read. The feed
+// check only loads paused Sources whose wait is over.
+func restingOffFeed(src domain.Source) bool {
+	return src.State == "paused" && !src.UseFor.Feed
 }
