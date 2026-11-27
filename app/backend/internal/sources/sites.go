@@ -573,7 +573,8 @@ func (k iptKey) cookie() string {
 }
 
 var (
-	iptRow = regexp.MustCompile(`(?is)<tr[^>]*>(.*?)</tr>`)
+	iptTable = regexp.MustCompile(`(?is)<table\b[^>]*\bid\s*=\s*(?:"torrents"|'torrents'|torrents\b)[^>]*>(.*?)</table>`)
+	iptRow   = regexp.MustCompile(`(?is)<tr[^>]*>(.*?)</tr>`)
 	// The title link is the row's "hv" link; the site has pointed it at
 	// /t/<id> and at /details.php?id=<id> over time, so either address counts.
 	iptAnchor  = regexp.MustCompile(`(?is)<a\b([^>]*)>(.*?)</a>`)
@@ -581,7 +582,8 @@ var (
 	iptHV      = regexp.MustCompile(`(?is)\bclass\s*=\s*["'][^"']*\bhv\b`)
 	iptDetails = regexp.MustCompile(`(?i)^/(?:details\.php\?id=|t/)\d+`)
 	iptDL      = regexp.MustCompile(`(?is)href="(/download\.php/[^"]+\.torrent)"`)
-	iptCell    = regexp.MustCompile(`(?is)<td[^>]*>(.*?)</td>`)
+	iptCell    = regexp.MustCompile(`(?is)<td\b[^>]*>`)
+	iptTooltip = regexp.MustCompile(`(?is)<div\b[^>]*\bclass\s*=\s*["'][^"']*\btTip\b[^"']*["'][^>]*>.*?</div>`)
 	iptTags    = regexp.MustCompile(`(?s)<[^>]+>`)
 	iptSizeRe  = regexp.MustCompile(`(?i)([\d.,]+)\s*([KMGT]i?B)`)
 	iptSeeders = regexp.MustCompile(`(?is)class="[^"]*t_seeders[^"]*"[^>]*>\s*([\d,]+)`)
@@ -670,6 +672,11 @@ func parseIPTorrents(raw []byte, base, passkey string) ([]Item, error) {
 	if iptSignIn(page) {
 		return nil, &Error{Kind: KindLoginRefused, Msg: "IPTorrents shows its sign-in page; give the Source your user id and your passkey instead of a cookie"}
 	}
+	// Featured tables sit above the results and may omit their row endings.
+	// Read the search table on full pages; keep accepting bare row samples.
+	if table := iptTable.FindStringSubmatch(page); table != nil {
+		page = table[1]
+	}
 	var out []Item
 	links := 0
 	for _, row := range iptRow.FindAllStringSubmatch(page, -1) {
@@ -687,8 +694,11 @@ func parseIPTorrents(raw []byte, base, passkey string) ([]Item, error) {
 		if passkey != "" {
 			it.Link += "?torrent_pass=" + url.QueryEscape(passkey)
 		}
-		for _, c := range iptCell.FindAllStringSubmatch(r, -1) {
-			if n := parseSize(cellText(c[1])); n > 0 && it.Size == 0 && !strings.Contains(c[1], "details.php") {
+		// HTML permits </td> to be omitted. The browser adds it when copying
+		// a row, but the original response may only contain the opening tags.
+		cells := iptCell.Split(r, -1)[1:]
+		for _, c := range cells {
+			if n := parseSize(cellText(c)); n > 0 && it.Size == 0 && !strings.Contains(c, "details.php") && !iptHV.MatchString(c) {
 				it.Size = n
 			}
 		}
@@ -698,6 +708,15 @@ func parseIPTorrents(raw []byte, base, passkey string) ([]Item, error) {
 			if l := iptLeech.FindStringSubmatch(r); l != nil {
 				p, _ := strconv.Atoi(strings.ReplaceAll(l[1], ",", ""))
 				it.Peers = intPtr(n + p)
+			}
+		}
+		// Current pages use plain final columns: snatches, seeders, leechers.
+		// The optional files column changes earlier indexes, not these two.
+		if it.Seeders == nil && len(cells) >= 9 {
+			seeds, se := strconv.Atoi(strings.ReplaceAll(cellText(cells[len(cells)-2]), ",", ""))
+			leeches, le := strconv.Atoi(strings.ReplaceAll(cellText(cells[len(cells)-1]), ",", ""))
+			if se == nil && le == nil && seeds >= 0 && leeches >= 0 {
+				it.Seeders, it.Peers = intPtr(seeds), intPtr(seeds+leeches)
 			}
 		}
 		if it.Title != "" {
@@ -721,7 +740,7 @@ func iptTitleLink(row string) (href, title string) {
 		if h == nil {
 			continue
 		}
-		addr, text := htmlesc.UnescapeString(h[1]), cellText(a[2])
+		addr, text := htmlesc.UnescapeString(h[1]), cellText(iptTooltip.ReplaceAllString(a[2], ""))
 		if text == "" || !strings.HasPrefix(addr, "/") || strings.HasPrefix(addr, "/download.php") {
 			continue
 		}
