@@ -611,6 +611,7 @@
   "POST /api/v1/plugin-pages/{plugin}/play",
   "POST /api/v1/plugin-pages/{plugin}/{page}/open",
   "POST /api/v1/plugins/{id}/approve",
+  "POST /api/v1/plugins/refresh",
   "POST /api/v1/plugins/{id}/install",
   "POST /api/v1/plugins/{id}/remote/name",
   "POST /api/v1/plugins/{id}/remote/signout",

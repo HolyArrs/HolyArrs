@@ -10,6 +10,7 @@ func TestPluginRoutesAreOwnerOnly(t *testing.T) {
 	r := newAskRig(t)
 	for _, rt := range []struct{ method, path string }{
 		{http.MethodGet, "/api/v1/plugins"},
+		{http.MethodPost, "/api/v1/plugins/refresh"},
 		{http.MethodPost, "/api/v1/plugins/tailscale/install"},
 		{http.MethodPost, "/api/v1/plugins/tailscale/start"},
 		{http.MethodPost, "/api/v1/plugins/tailscale/stop"},

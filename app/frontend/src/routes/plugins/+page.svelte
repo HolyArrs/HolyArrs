@@ -18,7 +18,7 @@
 	import { to } from '#lib/core/paths.ts';
 	import '../(frame)/settings-content.css';
 	import { date } from '#lib/core/format.ts';
-	import { PluginInfo, PluginSettings, AddSheet, DevActions, NoLockCard, NoNetLockCard, ApproveAccess, wheelSideways, fitChips, tagRoom, arrowKeys, tint, LanguagesSection, languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from '#lib/plugins/index.ts';
+	import { PluginInfo, PluginSettings, AddSheet, DevActions, NoLockCard, NoNetLockCard, ApproveAccess, wheelSideways, fitChips, tagRoom, arrowKeys, tint, LanguagesSection, RefreshButton, languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from '#lib/plugins/index.ts';
 	import { listLanguages, packList } from '#lib/core/i18n/language-packs.svelte.ts';
 	import { abilities, newAbilities, noLockNotice, categories, categoryLabel, categoryOf, developers, findPlugins, hasUpdate, inTab, notices, pluginAbout, pluginState, pluginBadge as badge, showsNoLockCard, showsNoNetLockCard, showsNoLockTag, shownName, shownVersion, sortPlugins, stateLabel, foldersMissing, isNew, freshUpdate, trendingIds, shortCount, shortDate as shortDay, numDate as numDay, pluginIcon, devPicture, isProject, brokenPics as broken, settingsPage, type Plugin, type PluginOverview, type PluginSort, type PluginTab } from '#lib/plugins/index.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
@@ -578,6 +578,7 @@
 {/snippet}
 
 {#snippet pageTools()}
+	<span class="cap" data-testid="plugins-refresh"><RefreshButton onlist={(x) => (ov = x)} /></span>
 	<span class="cap" data-testid="plugins-filter"><Menu label={t('plugins.filter')} variant="icon" icon="sliders" items={filterItems} width={220} align="end" /></span>
 	{#if updates.length}<span class="cap" data-testid="plugins-update-all">{#if phone}<IconButton icon="download" label={t('plugins.updateN', { n: updates.length })} disabled={!canInstall || !!busy} onclick={updateAll} />{:else}<Button icon="download" disabled={!canInstall || !!busy} onclick={updateAll}>{t('plugins.updateN', { n: updates.length })}</Button>{/if}</span>{/if}
 {/snippet}

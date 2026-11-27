@@ -1,6 +1,9 @@
 package plugins
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // KeepCycle runs one round of the Keep loop for tests.
 func (l *Languages) KeepCycle(ctx context.Context, want []string) error {
@@ -25,3 +28,10 @@ func KeepForwardingForTest(e *Engine) { e.keepForwarding() }
 
 // MayTokenForTest says whether a start here may get an API token.
 func MayTokenForTest(e *Engine) bool { return e.mayToken() }
+
+// SetRefreshAt sets when Refresh last fetched, to step past its limit.
+func SetRefreshAt(h *Handlers, at time.Time) {
+	h.refreshMu.Lock()
+	h.refreshAt = at
+	h.refreshMu.Unlock()
+}

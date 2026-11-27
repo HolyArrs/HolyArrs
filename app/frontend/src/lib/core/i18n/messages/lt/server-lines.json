@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "jau yra Bibliotekoje; atnaujinta {n} failų kokybė arba leidimas",
 	"server.migrate.imported-before-2": "importuota anksčiau{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "jo aplankas {dir} priklauso kitam Bibliotekos filmui",
-	"server.library.emptied-from-in-the-holding-folder": "Ištuštinta {removed} iš {name} {label} laikymo aplanke"
+	"server.library.emptied-from-in-the-holding-folder": "Ištuštinta {removed} iš {name} {label} laikymo aplanke",
+	"server.plugins.couldn-t-reach-the-plugin-site": "Nepavyko pasiekti papildinių svetainės"
 }

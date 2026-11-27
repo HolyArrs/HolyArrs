@@ -559,6 +559,7 @@ POST /api/v1/plugin-hooks/tools add
 POST /api/v1/plugin-pages/{plugin}/call plugins
 POST /api/v1/plugin-pages/{plugin}/play plugins
 POST /api/v1/plugin-pages/{plugin}/{page}/open plugins
+POST /api/v1/plugins/refresh admin
 POST /api/v1/plugins/{id}/approve admin
 POST /api/v1/plugins/{id}/dev-install admin
 POST /api/v1/plugins/{id}/install admin

@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "jau ir Bibliotēkā; atjaunināta {n} failu kvalitāte vai izlaidums",
 	"server.migrate.imported-before-2": "importēts agrāk{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "tā mape {dir} pieder citai Bibliotēkas filmai",
-	"server.library.emptied-from-in-the-holding-folder": "{removed} iztukšoti no {name} aizturēšanas mapē: {label}"
+	"server.library.emptied-from-in-the-holding-folder": "{removed} iztukšoti no {name} aizturēšanas mapē: {label}",
+	"server.plugins.couldn-t-reach-the-plugin-site": "Neizdevās sasniegt spraudņu vietni"
 }

@@ -13,6 +13,7 @@ export { default as NoLockCard } from './NoLockCard.svelte';
 export { default as NoNetLockCard } from './NoNetLockCard.svelte';
 export { default as ApproveAccess } from './ApproveAccess.svelte';
 export { default as LanguagesSection } from './LanguagesSection.svelte';
+export { default as RefreshButton } from './RefreshButton.svelte';
 export { languageCard, LANGUAGE_PACKS_VERSION, LANGUAGE_PACKS_ICON } from './languages.ts';
 export { wheelSideways, fitChips, tagRoom, arrowKeys } from './actions.ts';
 export { default as FromPlugin } from './FromPlugin.svelte';

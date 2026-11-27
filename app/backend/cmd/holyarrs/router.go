@@ -103,7 +103,7 @@ func (a *handlers) Routes(rt *webserver.Router) {
 	a.appHandlers().Routes(m)
 	(&updates.Handlers{Checker: a.s.Updates, ImageVersion: version}).Routes(m)
 	(&datapack.Handlers{Deps: datapack.Deps{Store: a.s.Store}}).Routes(m)
-	(&plugins.Handlers{Engine: a.s.Plugins, LoginServer: os.Getenv("HOLYARRS_TAILSCALE_LOGIN_SERVER")}).Routes(m)
+	(&plugins.Handlers{Engine: a.s.Plugins, LoginServer: os.Getenv("HOLYARRS_TAILSCALE_LOGIN_SERVER"), Languages: a.s.Languages}).Routes(m)
 	a.pluginHookRoutes(m)
 	(&plugins.LanguageHandlers{Languages: a.s.Languages, SetupOpen: func(w http.ResponseWriter, r *http.Request) bool {
 		return a.s.Auth != nil && a.s.Auth.SetupOpen(w, r)
