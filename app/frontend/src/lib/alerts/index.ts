@@ -16,3 +16,4 @@ export type { CheckGroup } from './settings-status.svelte.ts';
 export { default as FinishAlerts } from './FinishAlerts.svelte';
 export { alertForm, alertMissing, missingWords } from './finish.ts';
 export type { Missing } from './finish.ts';
+export { alertFixes } from './attention-alerts.ts';
