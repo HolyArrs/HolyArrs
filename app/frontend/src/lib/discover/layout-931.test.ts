@@ -38,4 +38,9 @@ describe('#931 layout', () => {
 		expect(src).toMatch(/episodeOrder'\)\}<\/b>\{#if eo\.hint\}<small class="wrap">/);
 		expect(readFileSync(new URL('./SeasonPacksRow.svelte', import.meta.url), 'utf8')).toMatch(/<small class="wrap">/);
 	});
+
+	it('lines Size and Added up on the left like the other Downloads columns (as Sonarr does)', () => {
+		for (const f of ['../downloads/DlRow.svelte', '../downloads/DlSections.svelte']) expect(styles(f)).not.toMatch(/\.num[^{]*\{[^}]*text-align:\s*right/);
+		expect(readFileSync(new URL('../downloads/DlSections.svelte', import.meta.url), 'utf8')).not.toMatch(/class:end=\{c\.num\}/);
+	});
 });
