@@ -1,5 +1,5 @@
 import { t } from '#lib/core/i18n/i18n.svelte.ts';
-import type { Attention } from './settings-status.ts';
+import type { Attention, StatusAnswer } from './settings-status.ts';
 
 export interface PinnedAlert {
 	key: string;
@@ -33,4 +33,18 @@ const upper = (s: string) => (!s || /^.\p{Lu}/u.test(s) ? s : s[0].toUpperCase()
 export function alertFixes(items: Attention[], pages: { href: string; label: string }[], before: PinnedAlert[] = [], after: PinnedAlert[] = []): PinnedAlert[] {
 	const hasUpdate = before.some((b) => b.key === 'update');
 	return [...before, ...pinned(items.filter((i) => !(hasUpdate && /newer holyarrs|holyarrs \S+ is out/i.test(i.text))), pages), ...after];
+}
+
+/**
+ * The Settings rows alerts show: every item for people who may open Settings, notes included.
+ * The bell and the panel both take them from here, so a note the panel lists also counts on the bell;
+ * the menu dot keeps its own gate, which lights for warnings and errors only.
+ */
+export function alertItems(answer: StatusAnswer | null, maySee: boolean): Attention[] {
+	return maySee ? (answer?.items ?? []) : [];
+}
+
+/** The number on the bell: the pinned rows the panel shows, plus unread recent alerts. */
+export function bellBadge(fixes: PinnedAlert[], unseen: number): number {
+	return fixes.length + unseen;
 }

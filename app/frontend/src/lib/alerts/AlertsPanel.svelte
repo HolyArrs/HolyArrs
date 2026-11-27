@@ -5,7 +5,7 @@
 	import AlertSymbol from './AlertSymbol.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import { alertsPanel, toasts } from '../core/toasts.svelte.ts';
-	import { alertFixes, type PinnedAlert } from './attention-alerts.ts';
+	import { alertFixes, alertItems, type PinnedAlert } from './attention-alerts.ts';
 	import { sections } from '../core/settings.ts';
 	import { settingsNow } from './settings-status.svelte.ts';
 	import { session } from '../core/session.svelte.ts';
@@ -20,7 +20,7 @@
 	let box = $state<HTMLElement>();
 	let wasOpen = false;
 
-	const fixes = $derived(alertFixes(session.can('settings') ? (settingsNow.answer?.items ?? []) : [], sections, before, after));
+	const fixes = $derived(alertFixes(alertItems(settingsNow.answer, session.can('settings')), sections, before, after));
 
 	onMount(() => {
 		const mq = matchMedia('(max-width: 767px)');
