@@ -36,12 +36,15 @@ type SearchOptions struct {
 	// NoTranslate never queues a translation; the search a failed translation
 	// falls back to sets it.
 	NoTranslate bool
+	// NoMake never queues a plugin site's subtitle; the search a failed one
+	// falls back to sets it.
+	NoMake bool
 }
 
 // Outcome is what a search did for one wanted language.
 type Outcome struct {
 	Want    Want     `json:"want"`
-	Result  string   `json:"result"` // saved, upgraded, none_good_enough, failed, kept or translating
+	Result  string   `json:"result"` // saved, upgraded, none_good_enough, failed, kept, translating or making
 	Path    string   `json:"path,omitempty"`
 	Score   int      `json:"score,omitempty"`
 	Site    string   `json:"site,omitempty"`
@@ -138,7 +141,7 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 	set := ReadSettings(ctx, s.Store.Read())
 	pass := set.PassMark(fc.item.Kind)
 	v := fc.videoFacts()
-	q := sites.Query{Kind: fc.item.Kind, Title: v.Title, Year: v.Year, Season: v.Season, Episode: v.Episode, ReleaseName: v.ReleaseName,
+	q := sites.Query{FileID: fc.file.ID, Kind: fc.item.Kind, Title: v.Title, Year: v.Year, Season: v.Season, Episode: v.Episode, ReleaseName: v.ReleaseName,
 		IMDb: fc.title.SourceIDs["imdb"], TMDB: fc.title.SourceIDs["tmdb"], TVDB: fc.title.SourceIDs["tvdb"]}
 	if _, err := os.Stat(fc.video()); err == nil {
 		q.File = fc.video() // for sites that hash the file their own way
@@ -199,6 +202,11 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 		s.recovered(ctx, r)
 		bySite[r.Name] = r
 		for _, c := range cands[:min(len(cands), MaxCandidatesPerSite)] {
+			if r.Kind == "plugin" {
+				// A plugin site never offers a file made by a person, and it
+				// writes its file from this very File.
+				c = fromThisFile(c, v)
+			}
 			if c.MachineMade != "" && !r.MachineMade {
 				continue // the site's machine-made switch is off
 			}
@@ -215,6 +223,10 @@ func (s *Service) Search(ctx context.Context, fileID int64, opt SearchOptions, b
 				continue
 			}
 			c.Score = ScoreCandidate(v, t.want, c.Candidate)
+			if c.MachineMade == sites.Transcribed {
+				// Listed and ranked at the score it is saved with; its parts stay.
+				c.Score.Total = stopgapScore(c.MachineMade, c.Score.Total)
+			}
 			choices = append(choices, c)
 		}
 		Rank(choices)
@@ -276,7 +288,7 @@ func (s *Service) afterTarget(ctx context.Context, fc *fileCtx, t target, out *O
 		s.event(ctx, &domain.Event{Actor: by, Kind: kind, TitleID: &titleID, SlotID: &slotID,
 			Summary: fmt.Sprintf("%s %s subtitle from %s (score %d)", verb, fmtWant(t.want), out.Site, out.Score),
 			Data:    map[string]any{"file_id": fileID, "language": t.want.Language, "path": out.Path, "score": out.Score, "site": out.Site}, GroupKey: "subtitles:" + itoa(fileID)})
-	case "none_good_enough", "translating":
+	case "none_good_enough", "translating", "making":
 		next := now().Add(time.Duration(set.SearchHours) * time.Hour)
 		_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
 			var first sql.NullString
@@ -292,8 +304,8 @@ func (s *Service) afterTarget(ctx context.Context, fc *fileCtx, t target, out *O
 				database.FormatTime(now()), database.FormatTime(now()), database.FormatTime(next), database.FormatTime(now()), fileID, t.want.Language, t.want.Forced)
 			return err
 		})
-		if out.Result == "translating" {
-			return // the translation Job writes its own Event
+		if out.Result == "translating" || out.Result == "making" {
+			return // the translation or make Job writes its own Event
 		}
 		s.event(ctx, &domain.Event{Actor: by, Kind: EventNoneGood, TitleID: &titleID, SlotID: &slotID,
 			Summary: fmt.Sprintf("No %s subtitle reached the Pass mark", fmtWant(t.want)),
@@ -316,6 +328,12 @@ func (s *Service) fetchAndSave(ctx context.Context, fc *fileCtx, t target, c Sco
 		s.pause(ctx, r, err)
 		return "", err
 	}
+	return s.saveDownloaded(ctx, fc, t, c, r, data, set, by)
+}
+
+// saveDownloaded checks a downloaded candidate and saves it beside the
+// video, holding any replaced subtitle aside. It returns the saved path.
+func (s *Service) saveDownloaded(ctx context.Context, fc *fileCtx, t target, c Scored, r SiteRow, data []byte, set Settings, by domain.Actor) (string, error) {
 	entries, err := subtext.Unpack(data, c.Key+"."+c.Format)
 	if err != nil {
 		s.failed(ctx, fc, t.want, c.Site, err, by)

@@ -103,6 +103,7 @@ var loopOwners = map[string]Owner{
 	"jobs_heavy":       Core,
 	"jobs_migrate":     Core,
 	"jobs_translate":   Core,
+	"jobs_make":        Core,
 	"stranded_imports": Media,
 	"watch_folders":    Media,
 	"pack_watched":     Media,
@@ -163,6 +164,7 @@ var jobOwners = map[string]Owner{
 	"subtitle_clean":   subtitles,
 
 	"subtitle_translate": subtitles,
+	"subtitle_make":      subtitles,
 
 	// Requests.
 	"sync_plex_watchlists": wishlist,

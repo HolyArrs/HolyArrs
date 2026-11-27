@@ -25,10 +25,17 @@ func (s *Service) Register(q *jobs.Queue) {
 	q.Handle(KindBetter, s.handleBetter)
 	q.Handle(KindLook, s.handleLook)
 	q.Handle(KindTranslate, s.handleTranslate)
+	q.Handle(KindMake, s.handleMake)
 	q.Handle(KindClean, s.handleClean)
 	if s.Enqueue == nil {
 		s.Enqueue = func(ctx context.Context, kind string, subj *domain.Subject, params map[string]any, key string) error {
 			_, _, err := q.Enqueue(ctx, kind, subj, params, key, domain.System)
+			return err
+		}
+	}
+	if s.EnqueueAt == nil {
+		s.EnqueueAt = func(ctx context.Context, kind string, subj *domain.Subject, params map[string]any, key string, at time.Time) error {
+			_, _, err := q.EnqueueAt(ctx, kind, subj, params, key, domain.System, at)
 			return err
 		}
 	}

@@ -6090,12 +6090,13 @@
             "type": "string"
           },
           "made": {
-            "description": "What made the subtitle when a person did not: HolyArrs's own translation (whole or partial) or a site's machine-made file. Left out: a person.",
+            "description": "What made the subtitle when a person did not: HolyArrs's own translation (whole or partial), a site's machine-made file, or a file written from the video's own audio (transcribed, from a plugin site). Left out: a person.",
             "enum": [
               "translated",
               "translated_partial",
               "ai_translated",
-              "machine_translated"
+              "machine_translated",
+              "transcribed"
             ],
             "type": "string"
           },
@@ -6645,7 +6646,8 @@
               "bsplayer",
               "napiprojekt",
               "napisy24",
-              "assrt"
+              "assrt",
+              "plugin"
             ],
             "type": "string"
           },
@@ -17833,7 +17835,7 @@
     },
     "/api/v1/files/{id}/subtitles/choose": {
       "post": {
-        "description": "Saves one candidate from the choices at any score; it replaces a subtitle HolyArrs saved for that language (held aside).",
+        "description": "Saves one candidate from the choices at any score; it replaces a subtitle HolyArrs saved for that language (held aside). A plugin site's candidate is made in a Job of its own, which may take an hour: the answer is then 202.",
         "operationId": "chooseSubtitle",
         "parameters": [
           {
@@ -17882,6 +17884,26 @@
               }
             },
             "description": "Saved path."
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "making": {
+                      "description": "A plugin site makes it in a Job of its own.",
+                      "type": "boolean"
+                    },
+                    "path": {
+                      "description": "Empty until the Job saves it.",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "A plugin site is making it."
           },
           "400": {
             "content": {

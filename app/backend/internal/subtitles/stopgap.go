@@ -17,14 +17,18 @@ import (
 // them on a later search.
 const (
 	scoreTranslated        = 50
+	scoreTranscribed       = 45
 	scoreAITranslated      = 40
 	scoreMachineTranslated = 30
 )
 
-// stopgapScore caps a machine-made candidate's score: AI-translated files
-// above machine-translated ones, both low.
+// stopgapScore caps a machine-made candidate's score: files written from
+// the video's own audio above AI-translated ones, those above
+// machine-translated ones, all low.
 func stopgapScore(made string, total int) int {
 	switch made {
+	case sites.Transcribed:
+		return min(total, scoreTranscribed)
 	case sites.AITranslated:
 		return min(total, scoreAITranslated)
 	case sites.MachineTranslated:
@@ -33,11 +37,16 @@ func stopgapScore(made string, total int) int {
 	return total
 }
 
+// madeRank orders machine-made files: written from the video's own audio
+// first, then AI-translated, then machine-translated.
 func madeRank(made string) int {
-	if made == sites.AITranslated {
+	switch made {
+	case sites.Transcribed:
 		return 0
+	case sites.AITranslated:
+		return 1
 	}
-	return 1
+	return 2
 }
 
 // textFormat reports whether a subtitle file can be read as cues.
@@ -100,9 +109,23 @@ func (s *Service) stopgap(ctx context.Context, sc *searchCtx, t target, choices 
 			made = append(made, c)
 		}
 	}
-	// The choices are ranked by score already; AI-translated files go first.
+	// The choices are ranked by score already; files written from the audio
+	// go first, then AI-translated ones.
 	sort.SliceStable(made, func(i, j int) bool { return madeRank(made[i].MachineMade) < madeRank(made[j].MachineMade) })
 	for _, c := range made {
+		if r := sc.bySite[c.Site]; r.Kind == "plugin" {
+			// A plugin may take an hour to make it, so its own Job does, and
+			// searches never wait behind it.
+			if sc.opt.NoMake {
+				continue
+			}
+			if err := s.QueueMake(ctx, sc.fc.file.ID, makeRequest(t.want, c, r, false)); err != nil {
+				out.Reason = err.Error()
+				continue
+			}
+			out.Result, out.Site, out.Made, out.Reason = "making", c.Site, c.MachineMade, ""
+			return
+		}
 		p, err := s.fetchAndSave(ctx, sc.fc, t, c, sc.bySite[c.Site], sc.set, sc.by)
 		if err != nil {
 			out.Reason = err.Error()

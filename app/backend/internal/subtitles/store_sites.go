@@ -159,8 +159,12 @@ func (in *SiteInput) check() (sites.Kind, error) {
 	if in.URL == "" {
 		in.URL = k.DefaultURL
 	}
-	u, err := url.Parse(in.URL)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || len(in.URL) > 500 {
+	if k.Kind == "plugin" {
+		// A plugin site is reached only through its plugin: plugin://<id>.
+		if sites.PluginOf(in.URL) == "" {
+			return k, errors.New("a plugin subtitle site's url is plugin:// and the plugin's id")
+		}
+	} else if u, err := url.Parse(in.URL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil || len(in.URL) > 500 {
 		return k, errors.New("url must be an http or https address without a user name")
 	}
 	if in.Limits == nil {
@@ -227,6 +231,9 @@ func AddSite(ctx context.Context, st *database.Store, v *secrets.Vault, in SiteI
 	}
 	r := SiteRow{Name: in.Name, Kind: in.Kind, URL: in.URL, State: "enabled", Limits: *in.Limits, AllowLocalNetwork: in.AllowLocalNetwork, Priority: in.Priority,
 		MachineMade: in.MachineMade != nil && *in.MachineMade}
+	if k.Kind == "plugin" && in.MachineMade == nil {
+		r.MachineMade = true // all a plugin site offers is machine-made, so off would let nothing in
+	}
 	if (in.Enabled != nil && !*in.Enabled) || (in.Enabled == nil && k.DefaultOff) {
 		r.State = "disabled"
 	}
@@ -269,6 +276,9 @@ func EditSite(ctx context.Context, st *database.Store, v *secrets.Vault, id int6
 	}
 	if in.Kind != r.Kind {
 		return r, errors.New("the kind of a site cannot change; add a new one")
+	}
+	if in.Kind == "plugin" && in.URL == "" {
+		in.URL = r.URL // a plugin site has no default address to fall back on
 	}
 	k, err := in.check()
 	if err != nil {
@@ -532,4 +542,24 @@ func (s *Service) countDownload(ctx context.Context, r SiteRow) bool {
 		s.pause(ctx, r, &sites.Error{Kind: sites.KindDownloadLimit, Msg: "the day's downloads are used up"})
 	}
 	return ok
+}
+
+// downloadsLeft says whether the site's daily cap leaves room for one more
+// download, without counting one; when it does not, the site rests as
+// countDownload has it. A plugin site's make checks first and counts only
+// the file the plugin returns, so a plugin that was gone costs nothing.
+func (s *Service) downloadsLeft(ctx context.Context, r SiteRow) bool {
+	if r.Limits.DownloadsToDay <= 0 {
+		return true
+	}
+	var used int
+	var reset sql.NullString
+	if err := s.Store.Read().QueryRowContext(ctx, "SELECT downloads_today, downloads_reset_at FROM subtitle_sites WHERE id = ?", r.ID).Scan(&used, &reset); err != nil {
+		return false
+	}
+	if !reset.Valid || reset.String <= database.FormatTime(now()) || used < r.Limits.DownloadsToDay {
+		return true
+	}
+	s.pause(ctx, r, &sites.Error{Kind: sites.KindDownloadLimit, Msg: "the day's downloads are used up"})
+	return false
 }

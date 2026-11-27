@@ -129,6 +129,7 @@ A better subtitle must score higher than the one it replaces.
 | Assrt | movies and shows, Chinese (some sets also English) | token (in API key) | The free token from your assrt.net user page. Searches by name and season-episode, then picks the file for your language and episode out of the set. At least 3 s between calls by default, since the token allows a set number of calls a minute. |
 | TVsubtitles | shows | none | Reads the site's home page first, for its cookie and its current search page. Always uses https. |
 | Addic7ed (direct) | shows | user name and password | At least 3 s between calls and 100 calls a day by default. Unfinished subtitles are left out. HolyArrs never tries to get past a captcha. |
+| Plugin | movies and shows | none | A site a plugin you installed serves, such as one that writes subtitles from the audio. Its address is `plugin://` and the plugin's id. Everything it makes counts as machine-made (**Written from the audio**). It is made in a Job of its own, so a slow plugin never holds up other searches. Its offers match the video fully, but they show, sort and save at 45. **Downloads per day** caps how many made files it saves. See [Plugins](../dev/plugins.md#subtitle-site-hook). |
 
 The account sites have only been tested against stand-in servers. Run **Test** before your first real search.
 

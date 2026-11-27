@@ -24,6 +24,8 @@ type queued struct {
 	kind   string
 	id     int64
 	params map[string]any
+	key    string
+	at     time.Time // zero unless queued for later
 }
 
 // svc builds a Service on the fixture with the lab's fake site added.
@@ -34,8 +36,12 @@ func svc(t *testing.T, f *fix, site *fakesite.Site) (*Service, *[]queued) {
 	t.Cleanup(srv.Close)
 	s := &Service{Store: f.st}
 	var q []queued
-	s.Enqueue = func(_ context.Context, kind string, subj *domain.Subject, params map[string]any, _ string) error {
-		q = append(q, queued{kind, subj.ID, params})
+	s.Enqueue = func(_ context.Context, kind string, subj *domain.Subject, params map[string]any, key string) error {
+		q = append(q, queued{kind: kind, id: subj.ID, params: params, key: key})
+		return nil
+	}
+	s.EnqueueAt = func(_ context.Context, kind string, subj *domain.Subject, params map[string]any, key string, at time.Time) error {
+		q = append(q, queued{kind: kind, id: subj.ID, params: params, key: key, at: at})
 		return nil
 	}
 	if _, err := AddSite(context.Background(), f.st, nil, SiteInput{Kind: "fake", URL: srv.URL, AllowLocalNetwork: true,

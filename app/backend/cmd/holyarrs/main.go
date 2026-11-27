@@ -553,11 +553,13 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	if o.kinds != nil {
 		o.kinds(q.Kinds())
 	}
+	var pluginEvents atomic.Pointer[plugins.Engine] // set once the plugins start below; their sites are wired before any Job runs
+	wireSourcePlugins(phooks.Broker, pluginEvents.Load, s.Read())
 	if err := q.Start(ctx); err != nil {
 		return err
 	}
 	defer q.Stop()
-	for p, label := range map[jobs.Pool]string{jobs.PoolCore: "Core workers", jobs.PoolIO: "Search and download workers", jobs.PoolHeavy: "Import and scan workers", jobs.PoolMigrate: "Import from other apps worker", jobs.PoolTranslate: "Subtitle translation worker"} {
+	for p, label := range map[jobs.Pool]string{jobs.PoolCore: "Core workers", jobs.PoolIO: "Search and download workers", jobs.PoolHeavy: "Import and scan workers", jobs.PoolMigrate: "Import from other apps worker", jobs.PoolTranslate: "Subtitle translation worker", jobs.PoolMake: "Subtitle plugin worker"} {
 		if pools[p] == 0 {
 			reg.Set(jobs.StageKey("jobs_"+string(p)), "stage", label, jobs.Off, notStarted)
 			continue
@@ -624,7 +626,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	}
 	sender := &alerts.Sender{Store: s, Vault: vault, Lang: func(ctx context.Context) string { return accounts.OwnerLanguage(ctx, s.Read()) },
 		Pictures: hosted.Service.Base() + "/v1/img"}
-	var pluginEvents atomic.Pointer[plugins.Engine] // set once the plugins start below
 	sender.Tap = func(m alerts.Message) { tellPlugins(pluginEvents.Load(), m) }
 	sender.Watch(ctx)
 	sender.WatchPlugins(ctx, func(ev string, id int64, p alerts.Payload) {
@@ -699,7 +700,6 @@ func serve(ctx context.Context, c config, o runOpts) error {
 	// safe mode, where one can still be started by hand).
 	pe := startPlugins(ctx, c, key, version, phooks, sender)
 	pluginEvents.Store(pe)
-	wireBotCheck(phooks.Broker, pe.ReachHosts)
 	defer pe.StopAll()
 	langs := newLanguages(c, pe, func() bool { return accounts.HasOwner(ctx, s.Read()) })
 	a := buildHandlers(services{Plugins: pe, PluginHooks: phooks, Languages: langs, Bridges: bridges, Packages: pkgs, Library: lib, Lists: ol, Store: s, Queue: q, Live: hub, Metadata: md, Version: version, Auth: au, Backups: bm, Restart: restart,

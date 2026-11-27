@@ -7,7 +7,8 @@ import { axe as scan } from '../helpers/axe.ts';
 
 // Subtitles (4.16): the owner sets English and Spanish as the default
 // languages, reads what the Pass mark means, adds the lab's fake Subtitle
-// site (and one that needs an account, which waits for its key), sees every
+// site (and one that needs an account, which waits for its key, and a
+// plugin's site at plugin://), sees every
 // movie missing Spanish and searches them all, then on a movie page picks
 // the movie's own languages, chooses a subtitle by hand, fixes its timing
 // and turns one down; an episode gets its own languages from the show page.
@@ -121,6 +122,23 @@ test('Subtitle sites: the lab site is added and tested; a site that needs your a
 	await expect(acct.getByTestId('subtitle-site-state')).toHaveText('Paused');
 	await expect(acct.getByTestId('subtitle-site-text')).toContainText('Paused by you');
 	await acct.getByRole('button', { name: /^Remove / }).click();
+	await page.getByTestId('ask-yes').click();
+	await expect(page.getByTestId('subtitle-site')).toHaveCount(1);
+
+	// A plugin's site: its address is plugin:// and the plugin's id, and its machine-made switch starts on.
+	await page.getByRole('button', { name: 'Add a Subtitle site' }).click();
+	await page.getByRole('radio', { name: /^Plugin \(/ }).check();
+	const address = page.getByRole('textbox', { name: 'Address' });
+	await expect(address).toHaveValue('plugin://');
+	await expect(page.getByTestId('site-machine-made')).toBeChecked();
+	await address.fill('https://whisper.example');
+	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
+	await expect(page.getByRole('alert')).toContainText('plugin://');
+	await address.fill('plugin://whisper-subtitles');
+	await page.locator('form[aria-labelledby="h-site-form"]').getByRole('button', { name: 'Save', exact: true }).click();
+	const plugin = page.getByTestId('subtitle-site').filter({ hasText: 'plugin://whisper-subtitles' });
+	await expect(plugin).toBeVisible();
+	await plugin.getByRole('button', { name: /^Remove / }).click();
 	await page.getByTestId('ask-yes').click();
 	await expect(page.getByTestId('subtitle-site')).toHaveCount(1);
 });

@@ -9,6 +9,9 @@ import (
 const (
 	AITranslated      = "ai_translated"
 	MachineTranslated = "machine_translated"
+	// Transcribed is a subtitle a machine wrote from the video's own audio,
+	// such as a plugin site's speech-to-text.
+	Transcribed = "transcribed"
 )
 
 // variantCodes are the kinds of a language kept apart from their base
