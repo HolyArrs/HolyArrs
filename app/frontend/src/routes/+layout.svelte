@@ -325,7 +325,7 @@
 	// The display name from My account when set; else an id-like account name (preview-..., e2e-...) reads as "You".
 	const shownName = $derived(profile.displayName.trim() || personName(session.s.name, t('frame.layout.you')));
 	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
-	const openFixes = $derived(alertFixes(settingsOn ? (settingsNow.answer?.items ?? []) : [], settingsPages, feedPins.update ? [feedPins.update] : [], [...decisionPins(), ...(feedPins.clear ? [feedPins.clear] : [])]).length);
+	const openFixes = $derived(alertFixes(settingsAttention ? (settingsNow.answer?.items ?? []) : [], settingsPages, feedPins.update ? [feedPins.update] : [], [...decisionPins(), ...(feedPins.clear ? [feedPins.clear] : [])]).length);
 	// Request updates, failed downloads and a new version reach the bell from any page.
 	$effect(() => {
 		if (session.s.state !== 'signed_in') return;
