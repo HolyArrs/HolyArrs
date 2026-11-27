@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "แหล่งที่มาของคุณพบไฟล์ทอร์เรนต์ แต่ยังไม่ได้ตั้งค่าตัวดาวน์โหลดทอร์เรนต์ จึงส่งไม่ได้เลย เพิ่มได้ใน ตั้งค่า › ตัวดาวน์โหลด",
 	"health.check.sameDownloader": "เพิ่มซ้ำ:",
 	"health.check.sameDownloaderWhy": "{app} เชื่อมไปยังแอปดาวน์โหลดเดียวกับตัวดาวน์โหลดอีกตัว การดาวน์โหลดจึงอาจแสดงซ้ำสองครั้ง ลบตัวหนึ่งออกใน การตั้งค่า › ตัวดาวน์โหลด",
+	"health.check.sameDownloaderShared": "{app} และ Downloader อีกตัวใช้หมวดหมู่ \"{category}\" เดียวกัน ดาวน์โหลดในหมวดนี้จึงอาจแสดงซ้ำสองครั้ง ตั้งหมวดหมู่ของตัวเองให้ {app} ใน การตั้งค่า › Downloader",
 	"health.check.keyKitRecommended": "แนะนำ: ดาวน์โหลดชุดคีย์ของคุณ",
 	"health.check.keyKitRecommendedOthers": "แนะนำ: ขอชุดคีย์จากเจ้าของ",
 	"health.kind.sameDownloader": "ตัวดาวน์โหลดที่เพิ่มซ้ำ",

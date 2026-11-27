@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "你的來源找到了種子下載，但尚未設定種子下載器，所以無法傳送任何下載。請在 設定 › 下載器 中新增一個。",
 	"health.check.sameDownloader": "重複新增：",
 	"health.check.sameDownloaderWhy": "{app} 與另一個下載器連到同一個下載應用程式，因此它的下載可能顯示兩次。請在 設定 › 下載器 中移除其中一個。",
+	"health.check.sameDownloaderShared": "{app} 和另一個下載器都使用分類 \"{category}\"，因此其中的下載可能顯示兩次。請在 設定 › 下載器 中為 {app} 設定專屬的分類。",
 	"health.check.keyKitRecommended": "建議：下載你的金鑰包",
 	"health.check.keyKitRecommendedOthers": "建議：向擁有者索取金鑰包",
 	"health.kind.sameDownloader": "下載器重複新增",

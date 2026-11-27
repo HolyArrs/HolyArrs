@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "你的来源找到了种子下载，但尚未设置种子下载器，所以无法发送任何下载。请在 设置 › 下载器 中添加一个。",
 	"health.check.sameDownloader": "重复添加：",
 	"health.check.sameDownloaderWhy": "{app} 与另一个下载器连接到同一个下载应用，因此它的下载可能显示两次。请在 设置 › 下载器 中删除其中一个。",
+	"health.check.sameDownloaderShared": "{app} 和另一个下载器都使用分类 \"{category}\"，因此其中的下载可能显示两次。请在 设置 › 下载器 中为 {app} 设置单独的分类。",
 	"health.check.keyKitRecommended": "建议：下载你的密钥包",
 	"health.check.keyKitRecommendedOthers": "建议：向所有者索取密钥包",
 	"health.kind.sameDownloader": "下载器重复添加",

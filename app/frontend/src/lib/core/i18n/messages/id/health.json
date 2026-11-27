@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Sumbermu menemukan unduhan torrent, tapi belum ada pengunduh torrent yang disiapkan, jadi tidak ada yang bisa dikirim. Tambahkan di Pengaturan › Pengunduh.",
 	"health.check.sameDownloader": "Ditambahkan dua kali:",
 	"health.check.sameDownloaderWhy": "{app} terhubung ke aplikasi unduhan yang sama dengan pengunduh lain, jadi unduhannya bisa muncul dua kali. Hapus salah satunya di Pengaturan › Pengunduh.",
+	"health.check.sameDownloaderShared": "{app} dan Downloader lain sama-sama memakai kategori \"{category}\", jadi unduhan di dalamnya bisa muncul dua kali. Beri {app} kategori sendiri di Pengaturan › Downloader.",
 	"health.check.keyKitRecommended": "Disarankan: unduh paket kunci Anda",
 	"health.check.keyKitRecommendedOthers": "Disarankan: minta paket kunci kepada pemilik",
 	"health.kind.sameDownloader": "Pengunduh ditambahkan dua kali",

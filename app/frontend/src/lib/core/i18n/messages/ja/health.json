@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "ソースはトレントのダウンロードを見つけますが、トレント ダウンローダーが設定されていないため、送信できません。設定 › ダウンローダー で追加してください。",
 	"health.check.sameDownloader": "二重に追加:",
 	"health.check.sameDownloaderWhy": "{app} は別のダウンローダーと同じダウンロードアプリにつながっているため、ダウンロードが二重に表示されることがあります。設定 › ダウンローダーでどちらかを削除してください。",
+	"health.check.sameDownloaderShared": "{app} と別のダウンローダーが同じカテゴリ \"{category}\" を使っているため、その中のダウンロードが二重に表示されることがあります。設定 › ダウンローダーで {app} に専用のカテゴリを設定してください。",
 	"health.check.keyKitRecommended": "推奨: キーキットをダウンロードしてください",
 	"health.check.keyKitRecommendedOthers": "推奨: オーナーにキーキットを依頼してください",
 	"health.kind.sameDownloader": "二重に追加されたダウンローダー",
