@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "पहले से लाइब्रेरी में है; {n} फ़ाइलों की क्वालिटी या रिलीज़ अपडेट की गई",
 	"server.migrate.imported-before-2": "पहले इम्पोर्ट किया गया{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "इसका फ़ोल्डर {dir} लाइब्रेरी की किसी दूसरी मूवी का है",
-	"server.library.emptied-from-in-the-holding-folder": "{label} के होल्डिंग फ़ोल्डर में {name} से {removed} खाली किए गए"
+	"server.library.emptied-from-in-the-holding-folder": "{label} के होल्डिंग फ़ोल्डर में {name} से {removed} खाली किए गए",
+	"server.plugins.couldn-t-reach-the-plugin-site": "प्लगइन साइट तक नहीं पहुँच सके"
 }

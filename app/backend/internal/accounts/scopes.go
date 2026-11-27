@@ -54,6 +54,7 @@ var RoutePerms = map[string]webserver.Perm{
 	"GET /api/v1/plugin-hooks/users":                    webserver.NeedOwner, // a plugin token only; the handler refuses people
 	"POST /api/v1/plugin-hooks/stream":                  webserver.NeedOwner, // a plugin token only; the handler refuses people
 	"GET /api/v1/plugin-images/{path...}":               webserver.NeedOwner,
+	"POST /api/v1/plugins/refresh":                      webserver.NeedOwner,
 	"POST /api/v1/plugins/{id}/install":                 webserver.NeedOwner,
 	"POST /api/v1/plugins/{id}/start":                   webserver.NeedOwner,
 	"POST /api/v1/plugins/{id}/stop":                    webserver.NeedOwner,

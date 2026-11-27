@@ -143,6 +143,7 @@ var routeOwners = map[string]Owner{
 	"GET /api/v1/plugin-stream/{token}":                 Core,
 	"GET /api/v1/plugin-images/{path...}":               Core,
 	"POST /api/v1/plugins/{id}/install":                 Core,
+	"POST /api/v1/plugins/refresh":                      Core,
 	"POST /api/v1/plugins/{id}/start":                   Core,
 	"POST /api/v1/plugins/{id}/stop":                    Core,
 	"PUT /api/v1/plugins/file-lock":                     Core,

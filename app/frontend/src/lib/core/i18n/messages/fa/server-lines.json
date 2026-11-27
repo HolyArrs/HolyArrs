@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "از قبل در کتابخانه است؛ کیفیت یا نسخهٔ {n} فایل به‌روز شد",
 	"server.migrate.imported-before-2": "قبلاً وارد شده{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "پوشهٔ آن {dir} متعلق به فیلم دیگری در کتابخانه است",
-	"server.library.emptied-from-in-the-holding-folder": "{removed} از {name} در پوشه نگه‌داری {label} خالی شد"
+	"server.library.emptied-from-in-the-holding-folder": "{removed} از {name} در پوشه نگه‌داری {label} خالی شد",
+	"server.plugins.couldn-t-reach-the-plugin-site": "دسترسی به سایت افزونه‌ها ممکن نشد"
 }

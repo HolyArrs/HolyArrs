@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "ja és a la Biblioteca; s'ha actualitzat la qualitat o la versió de {n} fitxers",
 	"server.migrate.imported-before-2": "importat abans{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "la seva carpeta {dir} pertany a una altra pel·lícula de la Biblioteca",
-	"server.library.emptied-from-in-the-holding-folder": "S'han buidat {removed} de {name} a la carpeta de retenció de {label}"
+	"server.library.emptied-from-in-the-holding-folder": "S'han buidat {removed} de {name} a la carpeta de retenció de {label}",
+	"server.plugins.couldn-t-reach-the-plugin-site": "No s'ha pogut accedir al lloc de connectors"
 }

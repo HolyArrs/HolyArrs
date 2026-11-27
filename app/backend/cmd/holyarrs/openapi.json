@@ -26164,6 +26164,23 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/plugins/refresh": {
+      "post": {
+        "description": "Owner only, never with an API key. Fetches the signed plugin lists and the language list from the plugin list server now instead of at the next 6-hour check; a second press within 30 seconds fetches nothing and answers changed false.",
+        "responses": {
+          "200": {
+            "description": "The plugin list, and whether a newer signed list came"
+          },
+          "502": {
+            "description": "The plugin list server could not be reached or its lists did not check out"
+          }
+        },
+        "summary": "Refresh the plugin lists",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/plugins/{id}": {
       "delete": {
         "description": "Owner only. Lists, plugin files and the blocklist come signed from the plugin list server over https; installs refuse until a signing key is pinned, and plugins run only on Linux.",

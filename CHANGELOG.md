@@ -2,6 +2,10 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+### Added
+- Plugins has a Refresh button that checks for new plugins right away.
+
 ## [1.3.6] - 2026-11-27
 ### Fixed
 - Plugin lists update again after the signing key change.

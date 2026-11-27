@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
@@ -19,11 +21,18 @@ type Handlers struct {
 	// LoginServer is the configured Headscale address, if any; its host is
 	// the only sign-in host trusted besides login.tailscale.com.
 	LoginServer string
+	// Languages, when set, is fetched again on a Refresh press too.
+	Languages *Languages
+
+	// refreshAt is the last Refresh press that fetched (refresh.go).
+	refreshMu sync.Mutex
+	refreshAt time.Time
 }
 
 // Routes registers the plugin routes.
 func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("GET /api/v1/plugins", h.list)
+	m.HandleFunc("POST /api/v1/plugins/refresh", sessionOnly(h.refresh))
 	m.HandleFunc("POST /api/v1/plugins/{id}/install", sessionOnly(h.install))
 	m.HandleFunc("POST /api/v1/plugins/{id}/start", sessionOnly(h.start))
 	m.HandleFunc("POST /api/v1/plugins/{id}/stop", sessionOnly(h.stop))
