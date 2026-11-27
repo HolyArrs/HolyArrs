@@ -64,7 +64,7 @@ func (e *Engine) tokenEnv(id string, env []string) []string {
 		return nil
 	}
 	if !e.mayToken() {
-		log.Printf("plugins: %s starts without an API token: this system lacks a plugin lock the owner has not allowed going without", id)
+		log.Printf("plugins: %s starts without an API token: %s", id, e.noTokenWhy())
 		return nil
 	}
 	var out []string
@@ -75,4 +75,21 @@ func (e *Engine) tokenEnv(id string, env []string) []string {
 		out = append(out, kv)
 	}
 	return out
+}
+
+// noTokenWhy says which lock this system lacks and that the owner has not
+// allowed going without it, so the log line of a start without a token
+// names what to answer on the Plugins page.
+func (e *Engine) noTokenWhy() string {
+	var out []string
+	if e.NoFileLock {
+		out = append(out, "no file lock (Landlock)")
+	}
+	if e.NoNetLock {
+		out = append(out, "no network lock (seccomp user-notify)")
+	}
+	if len(out) == 0 {
+		return "plugins may not call the API on this system"
+	}
+	return strings.Join(out, " and ") + "; allow that on the Plugins page"
 }
