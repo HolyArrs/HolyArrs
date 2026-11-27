@@ -59,7 +59,7 @@ func fakeKodi(t *testing.T, pw string, answer map[string]string) (*httptest.Serv
 		switch req.Method {
 		case "Application.GetProperties":
 			_, _ = w.Write([]byte(`{"id":1,"jsonrpc":"2.0","result":{"name":"Kodi","version":{"major":21,"minor":1,"revision":"","tag":"stable"}}}`))
-		case "VideoLibrary.Scan", "VideoLibrary.Clean":
+		case "Files.GetDirectory", "VideoLibrary.Scan", "VideoLibrary.Clean":
 			_, _ = w.Write([]byte(`{"id":1,"jsonrpc":"2.0","result":"OK"}`))
 		default:
 			_, _ = w.Write([]byte(`{"id":1,"jsonrpc":"2.0","error":{"code":-32601,"message":"Method not found."}}`))
@@ -73,17 +73,26 @@ func TestKodiTestAndTell(t *testing.T) {
 	cases := []struct {
 		name    string
 		updates []Update
-		want    []string // method directory
+		want    []string // method directory [content]
 	}{
-		{"import scans the folder", []Update{{Path: "/tv/Show", Change: Created, Kind: "show"}}, []string{"VideoLibrary.Scan /tv/Show/"}},
+		{"new show: parent listed, folder scanned", []Update{{Path: "/tv/Show", Change: Created, Kind: "show"}},
+			[]string{"Files.GetDirectory /tv/", "VideoLibrary.Scan /tv/Show/"}},
+		{"one listing for a shared parent", []Update{{Path: "/tv/A", Change: Created}, {Path: "/tv/B", Change: Created}},
+			[]string{"Files.GetDirectory /tv/", "VideoLibrary.Scan /tv/A/", "VideoLibrary.Scan /tv/B/"}},
+		{"folder at a root is only scanned", []Update{{Path: "/Show", Change: Created}}, []string{"VideoLibrary.Scan /Show/"}},
 		{"rename scans then cleans", []Update{{Path: "/movies/Film (2020)", Change: Modified, Kind: "movie"}},
-			[]string{"VideoLibrary.Scan /movies/Film (2020)/", "VideoLibrary.Clean /movies/Film (2020)/"}},
-		{"delete cleans the folder", []Update{{Path: "/movies/Gone", Change: Deleted}}, []string{"VideoLibrary.Clean /movies/Gone/"}},
-		{"smb path keeps its slash", []Update{{Path: "smb://nas/tv/Show/", Change: Created, Kind: "show"}}, []string{"VideoLibrary.Scan smb://nas/tv/Show/"}},
-		{"windows path ends with a backslash", []Update{{Path: `D:\tv\Show`, Change: Created, Kind: "show"}}, []string{`VideoLibrary.Scan D:\tv\Show\`}},
+			[]string{"Files.GetDirectory /movies/", "VideoLibrary.Scan /movies/Film (2020)/", "VideoLibrary.Clean /movies/Film (2020)/ movies"}},
+		{"deleted show cleans from the folder above", []Update{{Path: "/tv/Gone", Change: Deleted, Kind: "show"}},
+			[]string{"VideoLibrary.Clean /tv/ tvshows"}},
+		{"deleted show at a root cleans itself", []Update{{Path: "/Gone", Change: Deleted, Kind: "show"}},
+			[]string{"VideoLibrary.Clean /Gone/ tvshows"}},
+		{"deleted title with no kind is a movie", []Update{{Path: "/movies/Gone", Change: Deleted}},
+			[]string{"VideoLibrary.Clean /movies/Gone/ movies"}},
+		{"smb path keeps its slash", []Update{{Path: "smb://nas/tv/Show/", Change: Created, Kind: "show"}},
+			[]string{"Files.GetDirectory smb://nas/tv/", "VideoLibrary.Scan smb://nas/tv/Show/"}},
+		{"windows path keeps backslashes", []Update{{Path: `D:\tv\Show`, Change: Created, Kind: "show"}},
+			[]string{`Files.GetDirectory D:\tv\`, `VideoLibrary.Scan D:\tv\Show\`}},
 		{"music is left out", []Update{{Path: "/music/Artist", Change: Created, Kind: "artist"}}, nil},
-		{"several folders in order", []Update{{Path: "/tv/A", Change: Created}, {Path: "/tv/B", Change: Deleted}},
-			[]string{"VideoLibrary.Scan /tv/A/", "VideoLibrary.Clean /tv/B/"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -103,10 +112,14 @@ func TestKodiTestAndTell(t *testing.T) {
 			}
 			var seen []string
 			for _, c := range calls()[1:] {
-				if c.Params["showdialogs"] != false {
+				if c.Method != "Files.GetDirectory" && c.Params["showdialogs"] != false {
 					t.Fatalf("%s showdialogs = %v, want false", c.Method, c.Params["showdialogs"])
 				}
-				seen = append(seen, c.Method+" "+c.Params["directory"].(string))
+				line := c.Method + " " + c.Params["directory"].(string)
+				if content, ok := c.Params["content"].(string); ok {
+					line += " " + content
+				}
+				seen = append(seen, line)
 			}
 			if strings.Join(seen, "|") != strings.Join(tc.want, "|") {
 				t.Fatalf("calls = %q, want %q", seen, tc.want)
@@ -167,6 +180,40 @@ func TestKodiNeedsUserAndPassword(t *testing.T) {
 	} {
 		if _, err := Add(context.Background(), w.s, w.v, in, domain.System); !errors.Is(err, ErrNoKodiUser) && !errors.Is(err, ErrNoKey) {
 			t.Fatalf("add %+v = %v, want a refusal", in, err)
+		}
+	}
+}
+
+// A parent Kodi cannot list does not stop the scan.
+func TestKodiScansWhenListingFails(t *testing.T) {
+	w := newWorld(t)
+	srv, calls := fakeKodi(t, "pw", map[string]string{"Files.GetDirectory": `{"id":1,"jsonrpc":"2.0","error":{"code":-32602,"message":"Invalid params."}}`})
+	m, err := Add(context.Background(), w.s, w.v, Input{Name: "Kodi", Kind: "kodi", URL: srv.URL, Username: "kodi", Token: "pw"}, domain.System)
+	if err != nil {
+		t.Fatal(err)
+	}
+	l := &Linker{Store: w.s, Vault: w.v}
+	if err := l.Tell(context.Background(), m, []Update{{Path: "/tv/Show", Change: Created}}); err != nil {
+		t.Fatal(err)
+	}
+	if c := calls(); len(c) != 2 || c[1].Method != "VideoLibrary.Scan" {
+		t.Fatalf("calls = %+v", c)
+	}
+}
+
+func TestKodiParent(t *testing.T) {
+	for in, want := range map[string]string{
+		"/m/Show/":           "/m/",
+		"/Show/":             "",
+		"smb://nas/tv/Show/": "smb://nas/tv/",
+		"smb://nas/":         "",
+		`D:\tv\Show\`:        `D:\tv\`,
+		`D:\`:                "",
+		`\\nas\tv\Show\`:     `\\nas\tv\`,
+		`\\nas\`:             "",
+	} {
+		if got := kodiParent(in); got != want {
+			t.Errorf("kodiParent(%q) = %q, want %q", in, got, want)
 		}
 	}
 }

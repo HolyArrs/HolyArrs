@@ -60,10 +60,49 @@ func kodiDir(p string) string {
 	return p + "/"
 }
 
+// kodiParent is the folder that holds dir, with its closing separator; "" when
+// dir sits at a root (a bare server, a drive, "/") with no folder to list.
+func kodiParent(dir string) string {
+	sep := "/"
+	if strings.Contains(dir, `\`) && !strings.Contains(dir, "/") {
+		sep = `\`
+	}
+	d := strings.TrimRight(dir, `/\`)
+	i := strings.LastIndex(d, sep)
+	if i < 0 {
+		return ""
+	}
+	p := d[:i+1]
+	if p == sep || p == `\\` || strings.HasSuffix(p, "://") {
+		return ""
+	}
+	return p
+}
+
+// kodiRefreshListing has Kodi read a folder again. Kodi keeps its last listing
+// of a folder and, asked to scan a folder made since, answers OK and skips it
+// as "does not exist". The error is dropped: the scan that follows meets the
+// same problem and reports it.
+func (l *Linker) kodiRefreshListing(ctx context.Context, m domain.MediaServer, dir string) {
+	_, _ = l.kodiCall(ctx, m, "Files.GetDirectory", map[string]any{"directory": dir, "media": "files", "limits": map[string]int{"start": 0, "end": 1}})
+}
+
+// kodiContent is the content type a clean names. Without one Kodi cleans a
+// folder of nothing and still answers OK.
+func kodiContent(kind string) string {
+	if kind == "show" {
+		return "tvshows"
+	}
+	return "movies"
+}
+
 // kodiTell scans each new or renamed folder and cleans each renamed or
-// removed one, so its old entries leave the library. Music stays out: Kodi
-// scans music only as a whole library.
+// removed one, so its old entries leave the library. Before a scan it has Kodi
+// list the parent folder again. A show is cleaned from the folder above it:
+// Kodi counts a show's own folder as seasons or episodes, which "tvshows" does
+// not match. Music stays out: Kodi scans music only as a whole library.
 func (l *Linker) kodiTell(ctx context.Context, m domain.MediaServer, us []Update) error {
+	listed := map[string]bool{}
 	for _, u := range us {
 		if u.Kind == "artist" {
 			continue
@@ -79,7 +118,18 @@ func (l *Linker) kodiTell(ctx context.Context, m domain.MediaServer, us []Update
 			methods = []string{"VideoLibrary.Scan", "VideoLibrary.Clean"}
 		}
 		for _, method := range methods {
-			if _, err := l.kodiCall(ctx, m, method, map[string]any{"directory": dir, "showdialogs": false}); err != nil {
+			params := map[string]any{"directory": dir, "showdialogs": false}
+			parent := kodiParent(dir)
+			if method == "VideoLibrary.Clean" {
+				params["content"] = kodiContent(u.Kind)
+				if u.Kind == "show" && parent != "" {
+					params["directory"] = parent
+				}
+			} else if parent != "" && !listed[parent] {
+				listed[parent] = true
+				l.kodiRefreshListing(ctx, m, parent)
+			}
+			if _, err := l.kodiCall(ctx, m, method, params); err != nil {
 				return err
 			}
 		}
