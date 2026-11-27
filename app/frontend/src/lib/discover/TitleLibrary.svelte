@@ -553,7 +553,7 @@
 							<div class="lib-pick"><Menu label={t('discover.titleLibrary.seasons')} variant="button" items={seasonMenu} width={220}>{#snippet trigger()}<span>{busyAction === 'seasons' ? t('discover.titleLibrary.saving') : seasonPickWords[seasonPick]}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div>
 						<div class="lib-row static">
-							<span><b>{t('discover.titleLibrary.episodeOrder')}</b>{#if eo.hint}<small>{eo.hint}</small>{/if}</span>
+							<span><b>{t('discover.titleLibrary.episodeOrder')}</b>{#if eo.hint}<small class="wrap">{eo.hint}</small>{/if}</span>
 							<div class="lib-pick"><Menu label={t('discover.titleLibrary.episodeOrder')} variant="button" items={eo.menu} width={eo.groupList?.groups.length ? 300 : 200}>{#snippet trigger()}<span>{busyAction === 'order' ? t('discover.titleLibrary.saving') : orderLabel(chosenGroup, orders.find(([v]) => v === o.show?.episode_order)?.[1] ?? t('discover.titleLibrary.orderAired'), t('discover.titleLibrary.orderUnavailable'))}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div><SeasonPacksRow value={o.show?.pack_window ?? 0} busy={busyAction === 'pack'} onpick={(n) => void putTitle({ pack_window: n }, 'pack')} />
 					{/if}
@@ -745,22 +745,23 @@
 	.lib-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
 	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail-text); }
-	.lib-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
-	.lib-row + .lib-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
-	.lib-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
-	.lib-row:focus-visible, .lib-sr-main:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
-	.lib-row span { display: grid; gap: 3px; min-width: 0; }
-	.lib-row b { font: 600 15px/1.2 var(--font-ui); }
-	.lib-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.lib-row :global(svg) { flex: none; color: var(--text-muted); }
-	.lib-row.static { cursor: default; }
-	.lib-row.static:hover { background: none; }
-	.lib-row small.wrap { white-space: normal; }
-	.lib-pick { flex: none; max-width: 55%; min-width: 0; }
-	.lib-pick :global(.ui-pop) { display: flex; max-width: 100%; }
-	.lib-pick :global(.trigger) { max-width: 100%; min-width: 0; overflow: hidden; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
-	.lib-pick :global(.trigger span) { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.lib-pick :global(.trigger svg) { flex: none; }
+	/* These rows include child components (Season packs), so the rules reach into them (#931). */
+	.lib-rows :global(.lib-row) { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
+	.lib-rows :global(.lib-row + .lib-row) { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
+	.lib-rows :global(.lib-row:hover) { background: color-mix(in srgb, var(--text) 4%, transparent); }
+	.lib-rows :global(.lib-row:focus-visible), .lib-sr-main:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+	.lib-rows :global(.lib-row span) { display: grid; gap: 3px; min-width: 0; }
+	.lib-rows :global(.lib-row b) { font: 600 15px/1.2 var(--font-ui); }
+	.lib-rows :global(.lib-row small) { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-rows :global(.lib-row svg) { flex: none; color: var(--text-muted); }
+	.lib-rows :global(.lib-row.static) { cursor: default; }
+	.lib-rows :global(.lib-row.static:hover) { background: none; }
+	.lib-rows :global(.lib-row small.wrap) { white-space: normal; overflow-wrap: anywhere; }
+	.lib-rows :global(.lib-pick) { flex: none; max-width: 55%; min-width: 0; }
+	.lib-rows :global(.lib-pick .ui-pop) { display: flex; max-width: 100%; }
+	.lib-rows :global(.lib-pick .trigger) { max-width: 100%; min-width: 0; overflow: hidden; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
+	.lib-rows :global(.lib-pick .trigger span) { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-rows :global(.lib-pick .trigger svg) { flex: none; }
 	.lib-pick :global(.trigger:hover), .lib-pick :global(.trigger[aria-expanded='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
 	.lib-move-path { margin: 0 0 16px; color: var(--text-muted); font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace); overflow-wrap: anywhere; }
 	.lib-move-actions { display: flex; justify-content: flex-end; gap: 8px; }
