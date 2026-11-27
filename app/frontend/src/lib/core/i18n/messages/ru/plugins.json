@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Может менять постеры и фоновые изображения тайтлов",
 	"plugins.warn.notify": "Может отправлять вам сообщения через оповещения",
 	"plugins.warn.ratings": "Добавляет оценки на страницы тайтлов",
+	"plugins.warn.subtitles": "Добавляет рядом с вашими видео субтитры, которые создаёт сам",
 	"plugins.recentCalls": "Последние вызовы: отказано {refused}, сверх лимита {limited}",
 	"plugins.callAllowed": "разрешено",
 	"plugins.callRefused": "отказано",

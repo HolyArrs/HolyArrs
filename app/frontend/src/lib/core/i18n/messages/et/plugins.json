@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Saab muuta sinu pealkirjade plakateid ja taustapilte",
 	"plugins.warn.notify": "Saab sulle sinu teavituste kaudu sõnumeid saata",
 	"plugins.warn.ratings": "Lisab hinnangud pealkirjade lehtedele",
+	"plugins.warn.subtitles": "Lisab enda tehtud subtiitrid su videote kõrvale",
 	"plugins.recentCalls": "Viimased päringud: {refused} keelatud, {limited} üle piiri",
 	"plugins.callAllowed": "lubatud",
 	"plugins.callRefused": "keelatud",

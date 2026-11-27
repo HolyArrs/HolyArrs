@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Yapımlarının afişlerini ve arka plan resimlerini değiştirebilir",
 	"plugins.warn.notify": "Uyarıların üzerinden sana mesaj gönderebilir",
 	"plugins.warn.ratings": "Yapım sayfalarına puan ekler",
+	"plugins.warn.subtitles": "Kendi oluşturduğu altyazıları videolarınızın yanına ekler",
 	"plugins.recentCalls": "Son çağrılar: {refused} reddedildi, {limited} sınırı aştı",
 	"plugins.callAllowed": "izin verildi",
 	"plugins.callRefused": "reddedildi",

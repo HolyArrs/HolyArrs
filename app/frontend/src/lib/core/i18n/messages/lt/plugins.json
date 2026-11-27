@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Gali keisti jūsų pavadinimų plakatus ir fono paveikslėlius",
 	"plugins.warn.notify": "Gali siųsti jums žinutes per pranešimus",
 	"plugins.warn.ratings": "Prideda įvertinimus pavadinimų puslapiuose",
+	"plugins.warn.subtitles": "Prideda savo sukurtus subtitrus šalia jūsų vaizdo įrašų",
 	"plugins.recentCalls": "Naujausi kvietimai: {refused} atmesta, {limited} viršijo ribą",
 	"plugins.callAllowed": "leista",
 	"plugins.callRefused": "atmesta",

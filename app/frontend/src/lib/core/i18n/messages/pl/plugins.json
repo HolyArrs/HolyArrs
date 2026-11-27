@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Może zmieniać plakaty i obrazy tła twoich tytułów",
 	"plugins.warn.notify": "Może wysyłać ci wiadomości przez twoje alerty",
 	"plugins.warn.ratings": "Dodaje oceny na stronach tytułów",
+	"plugins.warn.subtitles": "Dodaje obok Twoich filmów napisy, które sam tworzy",
 	"plugins.recentCalls": "Ostatnie wywołania: odrzucone {refused}, ponad limit {limited}",
 	"plugins.callAllowed": "dozwolone",
 	"plugins.callRefused": "odrzucone",

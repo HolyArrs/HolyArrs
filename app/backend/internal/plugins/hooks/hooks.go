@@ -1,5 +1,5 @@
 // Package hooks lets reviewed plugins provide parts of HolyArrs: a download
-// client, a search source, a bot-check solver, assistant tools, pages, Home widgets, title page
+// client, a search source, a bot-check solver, a subtitle site, assistant tools, pages, Home widgets, title page
 // sections, events, user names and media streams.
 //
 // A plugin never listens: the net lock keeps it off every port. It asks

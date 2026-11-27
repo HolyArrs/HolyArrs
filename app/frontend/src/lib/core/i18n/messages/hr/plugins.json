@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Može mijenjati plakate i pozadinske slike vaših naslova",
 	"plugins.warn.notify": "Može vam slati poruke putem vaših obavijesti",
 	"plugins.warn.ratings": "Dodaje ocjene na stranice naslova",
+	"plugins.warn.subtitles": "Dodaje titlove koje izradi uz vaše videozapise",
 	"plugins.recentCalls": "Nedavni pozivi: {refused} odbijeno, {limited} preko ograničenja",
 	"plugins.callAllowed": "dopušteno",
 	"plugins.callRefused": "odbijeno",

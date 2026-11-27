@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Може да мења постере и позадинске слике наслова",
 	"plugins.warn.notify": "Може да вам шаље поруке преко обавештења",
 	"plugins.warn.ratings": "Додаје оцене на странице наслова",
+	"plugins.warn.subtitles": "Додаје титлове које сам направи поред ваших видео-снимака",
 	"plugins.recentCalls": "Недавни позиви: {refused} одбијено, {limited} преко ограничења",
 	"plugins.callAllowed": "дозвољено",
 	"plugins.callRefused": "одбијено",

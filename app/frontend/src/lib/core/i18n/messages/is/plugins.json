@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Getur breytt plakötum og bakgrunnsmyndum titla",
 	"plugins.warn.notify": "Getur sent þér skilaboð í gegnum tilkynningar",
 	"plugins.warn.ratings": "Bætir einkunnum á síður titla",
+	"plugins.warn.subtitles": "Bætir skjátextum sem það býr til við myndböndin þín",
 	"plugins.recentCalls": "Nýleg köll: {refused} hafnað, {limited} yfir mörkum",
 	"plugins.callAllowed": "leyft",
 	"plugins.callRefused": "hafnað",

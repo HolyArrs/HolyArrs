@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Kan posters en achtergronden van je titels wijzigen",
 	"plugins.warn.notify": "Kan je berichten sturen via je meldingen",
 	"plugins.warn.ratings": "Voegt beoordelingen toe op titelpaginas",
+	"plugins.warn.subtitles": "Zet ondertitels die het maakt naast je video's",
 	"plugins.recentCalls": "Recente aanroepen: {refused} geweigerd, {limited} boven de limiet",
 	"plugins.callAllowed": "toegestaan",
 	"plugins.callRefused": "geweigerd",

@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Peut changer les affiches et images de fond de vos titres",
 	"plugins.warn.notify": "Peut vous envoyer des messages via vos alertes",
 	"plugins.warn.ratings": "Ajoute des notes sur les pages des titres",
+	"plugins.warn.subtitles": "Ajoute à côté de vos vidéos les sous-titres qu'il crée",
 	"plugins.recentCalls": "Appels récents : {refused} refusés, {limited} au-delà de la limite",
 	"plugins.callAllowed": "autorisé",
 	"plugins.callRefused": "refusé",

@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Có thể đổi áp phích và ảnh nền của phim",
 	"plugins.warn.notify": "Có thể gửi tin nhắn cho bạn qua cảnh báo",
 	"plugins.warn.ratings": "Thêm điểm đánh giá trên trang phim",
+	"plugins.warn.subtitles": "Thêm phụ đề do nó tạo bên cạnh video của bạn",
 	"plugins.recentCalls": "Lệnh gọi gần đây: {refused} bị từ chối, {limited} vượt giới hạn",
 	"plugins.callAllowed": "được phép",
 	"plugins.callRefused": "bị từ chối",

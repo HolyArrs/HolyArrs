@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Var mainīt nosaukumu plakātus un fona attēlus",
 	"plugins.warn.notify": "Var sūtīt jums ziņas caur brīdinājumiem",
 	"plugins.warn.ratings": "Pievieno vērtējumus nosaukumu lapās",
+	"plugins.warn.subtitles": "Pievieno paša veidotus subtitrus blakus jūsu video",
 	"plugins.recentCalls": "Nesenie izsaukumi: {refused} noraidīti, {limited} pāri limitam",
 	"plugins.callAllowed": "atļauts",
 	"plugins.callRefused": "noraidīts",

@@ -105,6 +105,8 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/plugin-hooks/notify":                  Core,
 	"GET /api/v1/plugin-hooks/botcheck":                 Core,
 	"POST /api/v1/plugin-hooks/botcheck":                Core,
+	"GET /api/v1/plugin-hooks/subtitles":                Core,
+	"POST /api/v1/plugin-hooks/subtitles":               Core,
 	"GET /api/v1/plugin-hooks/metadata":                 Core,
 	"POST /api/v1/plugin-hooks/metadata":                Core,
 	"GET /api/v1/plugins/{id}/activity":                 Core,

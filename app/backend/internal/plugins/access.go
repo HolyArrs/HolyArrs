@@ -582,6 +582,33 @@ func (e *Engine) DownloadTypes(id string) []string {
 	return m.DownloadTypes
 }
 
+// FolderOf names the folder id was given that holds file (a real path, links
+// followed) and the path inside it with forward slashes, as the plugin
+// finds it under HOLYARRS_PLUGIN_FOLDER_<NAME>. ok is false when no folder
+// of id holds it, or its approval does not cover what it asks for.
+func (e *Engine) FolderOf(id, file string) (name, rel string, ok bool) {
+	if len(e.GrantedScopes(id)) == 0 {
+		return "", "", false
+	}
+	p, err := e.installed(id)
+	if err != nil {
+		return "", "", false
+	}
+	m := e.readManifest(id)
+	for _, g := range grantsFor(m, approvalFor(p, m)) {
+		roots := []string{filepath.Clean(g.Path)}
+		if real, err := filepath.EvalSymlinks(g.Path); err == nil && real != roots[0] {
+			roots = append(roots, real)
+		}
+		for _, root := range roots {
+			if r, err := filepath.Rel(root, file); err == nil && filepath.IsLocal(r) {
+				return g.Name, filepath.ToSlash(r), true
+			}
+		}
+	}
+	return "", "", false
+}
+
 // GrantedFolders are the real folders the owner gave id, when its current
 // approval covers what it asks for; none otherwise.
 func (e *Engine) GrantedFolders(id string) []string {

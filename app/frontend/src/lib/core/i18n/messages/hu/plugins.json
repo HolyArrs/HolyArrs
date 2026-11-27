@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Módosíthatja a címek plakátjait és háttérképeit",
 	"plugins.warn.notify": "Üzenetet küldhet az értesítéseiden keresztül",
 	"plugins.warn.ratings": "Értékeléseket ad a címoldalakhoz",
+	"plugins.warn.subtitles": "Az általa készített feliratokat a videóid mellé teszi",
 	"plugins.recentCalls": "Legutóbbi hívások: {refused} elutasítva, {limited} a korlát felett",
 	"plugins.callAllowed": "engedélyezve",
 	"plugins.callRefused": "elutasítva",

@@ -96,8 +96,9 @@ export const showsNoLockTag = (ov: Pick<PluginOverview, 'can_run' | 'no_file_loc
 
 const known = new Set(['tailscale']);
 
-/** Whether the owner may add servers of their own for the plugin: Tailscale (a self-hosted Headscale) and a bot-check plugin (their FlareSolverr). */
-export const takesOwnerHosts = (p: Pick<Plugin, 'id' | 'access'>): boolean => p.id === 'tailscale' || !!p.access?.actions?.includes('sources.botcheck');
+/** Whether the owner may add servers of their own for the plugin: Tailscale (a self-hosted Headscale), a bot-check plugin (their FlareSolverr) and a subtitle site plugin (their Whisper server). */
+export const takesOwnerHosts = (p: Pick<Plugin, 'id' | 'access'>): boolean =>
+	p.id === 'tailscale' || !!p.access?.actions?.some((a) => a === 'sources.botcheck' || a === 'sources.subtitles');
 
 /** The plugin's description: our own words for plugins we ship, else the signed manifest's. */
 export function pluginAbout(p: Plugin): string {

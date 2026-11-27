@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "می‌تواند پوستر و تصویر پس‌زمینهٔ عنوان‌ها را عوض کند",
 	"plugins.warn.notify": "می‌تواند از راه هشدارهایتان پیام بفرستد",
 	"plugins.warn.ratings": "امتیازهایی به صفحهٔ عنوان‌ها اضافه می‌کند",
+	"plugins.warn.subtitles": "زیرنویس‌هایی را که می‌سازد کنار ویدیوهای شما اضافه می‌کند",
 	"plugins.recentCalls": "درخواست‌های اخیر: {refused} رد شده، {limited} بیش از حد",
 	"plugins.callAllowed": "مجاز",
 	"plugins.callRefused": "رد شد",

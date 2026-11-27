@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Can change the posters and background pictures of your titles",
 	"plugins.warn.notify": "Can send you messages through your alerts",
 	"plugins.warn.ratings": "Adds ratings shown on title pages",
+	"plugins.warn.subtitles": "Adds subtitles it makes beside your videos",
 	"plugins.recentCalls": "Recent calls: {refused} refused, {limited} over the limit",
 	"plugins.callAllowed": "allowed",
 	"plugins.callRefused": "refused",

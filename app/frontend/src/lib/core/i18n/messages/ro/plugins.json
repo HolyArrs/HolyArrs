@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Poate schimba afișele și imaginile de fundal ale titlurilor",
 	"plugins.warn.notify": "Îți poate trimite mesaje prin alertele tale",
 	"plugins.warn.ratings": "Adaugă note pe paginile titlurilor",
+	"plugins.warn.subtitles": "Adaugă lângă videoclipurile tale subtitrări pe care le creează",
 	"plugins.recentCalls": "Apeluri recente: {refused} refuzate, {limited} peste limită",
 	"plugins.callAllowed": "permis",
 	"plugins.callRefused": "refuzat",

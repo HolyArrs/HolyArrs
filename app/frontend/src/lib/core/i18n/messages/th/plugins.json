@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "เปลี่ยนโปสเตอร์และภาพพื้นหลังของเรื่องได้",
 	"plugins.warn.notify": "ส่งข้อความถึงคุณผ่านการแจ้งเตือนได้",
 	"plugins.warn.ratings": "เพิ่มคะแนนในหน้าของเรื่อง",
+	"plugins.warn.subtitles": "เพิ่มคำบรรยายที่สร้างเองไว้ข้างวิดีโอของคุณ",
 	"plugins.recentCalls": "การเรียกล่าสุด: ถูกปฏิเสธ {refused} ครั้ง เกินขีดจำกัด {limited} ครั้ง",
 	"plugins.callAllowed": "อนุญาต",
 	"plugins.callRefused": "ถูกปฏิเสธ",

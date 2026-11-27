@@ -25837,6 +25837,30 @@
         "x-holyarrs-scope": "admin"
       }
     },
+    "/api/v1/plugin-hooks/subtitles": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "A job (search, or make one offered subtitle), or 204 when none came"
+          }
+        },
+        "summary": "Next subtitle-site job for a plugin",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Answer taken"
+          }
+        },
+        "summary": "Answer a subtitle-site job",
+        "x-holyarrs-part": "core",
+        "x-holyarrs-permission": "owner",
+        "x-holyarrs-scope": "admin"
+      }
+    },
     "/api/v1/plugin-hooks/tools": {
       "get": {
         "responses": {

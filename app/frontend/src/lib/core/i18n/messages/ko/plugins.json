@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "작품의 포스터와 배경 이미지를 바꿀 수 있습니다",
 	"plugins.warn.notify": "알림을 통해 메시지를 보낼 수 있습니다",
 	"plugins.warn.ratings": "작품 페이지에 평점을 추가합니다",
+	"plugins.warn.subtitles": "직접 만든 자막을 동영상 옆에 추가합니다",
 	"plugins.recentCalls": "최근 호출: 거부 {refused}건, 한도 초과 {limited}건",
 	"plugins.callAllowed": "허용",
 	"plugins.callRefused": "거부",

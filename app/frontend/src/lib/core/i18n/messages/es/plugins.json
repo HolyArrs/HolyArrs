@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Puede cambiar los pósteres y las imágenes de fondo de tus títulos",
 	"plugins.warn.notify": "Puede enviarte mensajes a través de tus avisos",
 	"plugins.warn.ratings": "Añade valoraciones en las páginas de los títulos",
+	"plugins.warn.subtitles": "Añade subtítulos que crea junto a tus vídeos",
 	"plugins.recentCalls": "Llamadas recientes: {refused} rechazadas, {limited} por encima del límite",
 	"plugins.callAllowed": "permitida",
 	"plugins.callRefused": "rechazada",

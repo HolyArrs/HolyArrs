@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Pode trocar pôsteres e imagens de fundo dos seus títulos",
 	"plugins.warn.notify": "Pode enviar mensagens pelos seus alertas",
 	"plugins.warn.ratings": "Adiciona notas nas páginas dos títulos",
+	"plugins.warn.subtitles": "Adiciona ao lado dos seus vídeos legendas que ele mesmo cria",
 	"plugins.recentCalls": "Chamadas recentes: {refused} recusadas, {limited} acima do limite",
 	"plugins.callAllowed": "permitida",
 	"plugins.callRefused": "recusada",
