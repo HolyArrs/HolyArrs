@@ -26,7 +26,7 @@
 	import { decisionPins, feedPins, startBellFeeds } from './(frame)/bell-feeds.svelte.ts';
 	import { inbox, refreshInbox } from '#lib/core/inbox.svelte.ts';
 	import { partsNow, refreshParts, offPartName } from '#lib/mediafiles/index.ts';
-	import { settingsNow, refreshSettingsStatus, needsAttention, dotReasons, DotList, alertFixes } from '#lib/alerts/index.ts';
+	import { settingsNow, refreshSettingsStatus, needsAttention, dotReasons, DotList, alertFixes, alertItems, bellBadge } from '#lib/alerts/index.ts';
 	import { navigateWithTransition } from '#lib/core/motion.ts';
 	import { installPersonPrefetch, installHeroAhead, checkHero, installScrollBar, showBar, arrived, leaving } from '#lib/discover/index.ts';
 	import { forgetMusicPrefetch, installMusicPrefetch, prefetchMusicOnScreen, installArtistVideoPrefetch } from '#lib/music/index.ts';
@@ -324,15 +324,15 @@
 	const roleWord = $derived(({ owner: t('frame.layout.owner'), admin: t('frame.layout.admin'), member: t('frame.layout.member') } as Record<string, string>)[session.s.role] ?? t('frame.layout.member'));
 	// The display name from My account when set; else an id-like account name (preview-..., e2e-...) reads as "You".
 	const shownName = $derived(profile.displayName.trim() || personName(session.s.name, t('frame.layout.you')));
-	// The bell counts new alerts plus Settings warnings still open (those stay until fixed).
-	const openFixes = $derived(alertFixes(settingsAttention ? (settingsNow.answer?.items ?? []) : [], settingsPages, feedPins.update ? [feedPins.update] : [], [...decisionPins(), ...(feedPins.clear ? [feedPins.clear] : [])]).length);
+	// The bell counts new alerts plus the pinned rows the panel lists: Settings warnings still open, decisions, Clear now and an update.
+	const openFixes = $derived(alertFixes(alertItems(settingsNow.answer, settingsOn), settingsPages, feedPins.update ? [feedPins.update] : [], [...decisionPins(), ...(feedPins.clear ? [feedPins.clear] : [])]));
 	// Request updates, failed downloads and a new version reach the bell from any page.
 	$effect(() => {
 		if (session.s.state !== 'signed_in') return;
 		return startBellFeeds(allowed('manage'));
 	});
-	const unseenAlerts = $derived(toasts.unseen() + openFixes);
-	const hasFailAlert = $derived(openFixes > 0 || toasts.past.some((p) => p.fresh && p.tone === 'fail'));
+	const unseenAlerts = $derived(bellBadge(openFixes, toasts.unseen()));
+	const hasFailAlert = $derived(openFixes.length > 0 || toasts.past.some((p) => p.fresh && p.tone === 'fail'));
 	const accountItems = $derived<MenuItem[]>([
 		{ label: t('frame.layout.account'), icon: 'user', href: to('/account') },
 		// Support sits on the Status page, so only accounts that can open Status see it.
