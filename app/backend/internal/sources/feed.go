@@ -808,9 +808,7 @@ func (s *Searcher) retryResting(ctx context.Context, srcs []domain.Source) {
 		}
 		cl, err := s.client(ctx, src)
 		if err == nil {
-			start := time.Now()
-			_, err = cl.Test(ctx)
-			Record(context.WithoutCancel(ctx), s.Store, src.ID, "test", time.Since(start), err)
+			_, err = cl.Test(ctx) // the client records the call for the Source's stats
 		}
 		if ctx.Err() != nil {
 			return
