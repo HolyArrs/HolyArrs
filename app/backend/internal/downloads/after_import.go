@@ -24,6 +24,24 @@ func (m *Manager) MoveAfterImport(ctx context.Context, downloadID int64) {
 		return
 	}
 	cat := dr.CategoryAfterImport
+	if dr.AfterImportPerType {
+		if len(d.SlotIDs) == 0 {
+			return
+		}
+		kind, err := importedTitleKind(ctx, m.Store.Read(), d.SlotIDs[0])
+		if err != nil {
+			return
+		}
+		cat = ""
+		switch kind {
+		case "movie":
+			cat = dr.CategoryAfterImportMovies
+		case "show":
+			cat = dr.CategoryAfterImportShows
+		case "artist":
+			cat = dr.CategoryAfterImportMusic
+		}
+	}
 	if cat == "" || dr.Protocol != "torrent" || dr.Removed || dr.State == "disabled" || readOnlyFor(dr) || packStillOpen(d) {
 		return
 	}

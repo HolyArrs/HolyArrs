@@ -64,7 +64,11 @@ type Input struct {
 	// AfterSeeding: left out, the choice stays as it is.
 	AfterSeeding *SeedingChoice `json:"after_seeding"`
 	// CategoryAfterImport: "" clears it; qBittorrent only.
-	CategoryAfterImport *string `json:"category_after_import"`
+	CategoryAfterImport       *string `json:"category_after_import"`
+	AfterImportPerType        *bool   `json:"after_import_per_type"`
+	CategoryAfterImportMovies *string `json:"category_after_import_movies"`
+	CategoryAfterImportShows  *string `json:"category_after_import_shows"`
+	CategoryAfterImportMusic  *string `json:"category_after_import_music"`
 	// OwnOnly: show and change only HolyArrs's own items.
 	OwnOnly *bool `json:"own_only"`
 	// Protocol is the download type of a "plugin" Downloader, one its
@@ -396,6 +400,30 @@ func fill(in Input, d *domain.Downloader, isNew bool) error {
 		}
 		d.CategoryAfterImport = c
 	}
+	if in.AfterImportPerType != nil {
+		d.AfterImportPerType = *in.AfterImportPerType
+	}
+	if in.CategoryAfterImportMovies != nil {
+		c, err := checkCategory(*in.CategoryAfterImportMovies, d.Adapter)
+		if err != nil {
+			return err
+		}
+		d.CategoryAfterImportMovies = c
+	}
+	if in.CategoryAfterImportShows != nil {
+		c, err := checkCategory(*in.CategoryAfterImportShows, d.Adapter)
+		if err != nil {
+			return err
+		}
+		d.CategoryAfterImportShows = c
+	}
+	if in.CategoryAfterImportMusic != nil {
+		c, err := checkCategory(*in.CategoryAfterImportMusic, d.Adapter)
+		if err != nil {
+			return err
+		}
+		d.CategoryAfterImportMusic = c
+	}
 	if err := checkAfterImport(*d); err != nil {
 		return err
 	}
@@ -469,14 +497,19 @@ func checkCategory(raw, adapter string) (string, error) {
 // checkAfterImport refuses a category after import on anything but
 // qBittorrent, and one that is a main category.
 func checkAfterImport(d domain.Downloader) error {
-	if d.CategoryAfterImport == "" {
-		return nil
+	for _, c := range []string{d.CategoryAfterImport, d.CategoryAfterImportMovies, d.CategoryAfterImportShows, d.CategoryAfterImportMusic} {
+		if c == "" {
+			continue
+		}
+		if d.Adapter != "qbittorrent" {
+			return ErrAfterImportCategory
+		}
+		if hasCategory(mainCategories(d), c) {
+			return ErrAfterImportSame
+		}
 	}
-	if d.Adapter != "qbittorrent" {
+	if d.AfterImportPerType && d.Adapter != "qbittorrent" {
 		return ErrAfterImportCategory
-	}
-	if hasCategory(mainCategories(d), d.CategoryAfterImport) {
-		return ErrAfterImportSame
 	}
 	return nil
 }
@@ -484,5 +517,6 @@ func checkAfterImport(d domain.Downloader) error {
 // mainCategories are the categories new items go to, without the one after import.
 func mainCategories(d domain.Downloader) []string {
 	d.CategoryAfterImport = ""
+	d.CategoryAfterImportMovies, d.CategoryAfterImportShows, d.CategoryAfterImportMusic = "", "", ""
 	return d.Categories()
 }

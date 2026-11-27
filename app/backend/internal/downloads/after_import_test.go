@@ -219,3 +219,49 @@ func TestAfterImportCategorySettings(t *testing.T) {
 		t.Fatalf("categories %s", got)
 	}
 }
+
+func TestMoveAfterImportPerType(t *testing.T) {
+	for _, kind := range []string{"movie", "show", "artist"} {
+		t.Run(kind, func(t *testing.T) {
+			w, m, id, e := movedDownload(t)
+			if err := execSQL(w, `UPDATE titles SET kind = '`+kind+`'`); err != nil {
+				t.Fatal(err)
+			}
+			if err := execSQL(w, `UPDATE downloaders SET after_import_per_type = 1, category_after_import_movies = 'movies-done', category_after_import_shows = 'shows-done', category_after_import_music = 'music-done'`); err != nil {
+				t.Fatal(err)
+			}
+			m.MoveAfterImport(context.Background(), id)
+			want := map[string]string{"movie": "movies-done", "show": "shows-done", "artist": "music-done"}[kind]
+			if len(e.moves) != 1 || e.moves[0] != hash+"|"+want {
+				t.Fatalf("moves %v, want %s", e.moves, want)
+			}
+		})
+	}
+}
+
+func TestMoveAfterImportPerTypeBlankKeepsCategory(t *testing.T) {
+	w, m, id, e := movedDownload(t)
+	if err := execSQL(w, `UPDATE downloaders SET after_import_per_type = 1`); err != nil {
+		t.Fatal(err)
+	}
+	m.MoveAfterImport(context.Background(), id)
+	if len(e.moves) != 0 {
+		t.Fatalf("moves %v", e.moves)
+	}
+}
+
+func TestAfterImportPerTypeValidation(t *testing.T) {
+	for _, tc := range []struct {
+		adapter, cat string
+		want         error
+	}{
+		{"qbittorrent", "done", nil}, {"transmission", "done", ErrAfterImportCategory},
+		{"qbittorrent", "holyarrs", ErrAfterImportSame}, {"qbittorrent", "bad/name", ErrCategory},
+	} {
+		d := domain.Downloader{Adapter: tc.adapter, Category: "holyarrs"}
+		err := fill(Input{Name: "q", CategoryAfterImportMovies: &tc.cat}, &d, false)
+		if !errors.Is(err, tc.want) {
+			t.Fatalf("%s %s: %v, want %v", tc.adapter, tc.cat, err, tc.want)
+		}
+	}
+}

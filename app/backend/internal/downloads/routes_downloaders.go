@@ -66,7 +66,11 @@ type DownloaderView struct {
 	// AfterSeeding: a torrent leaves the client once imported and seeded.
 	AfterSeeding SeedingChoice `json:"after_seeding"`
 	// CategoryAfterImport: a torrent moves here once imported (qBittorrent).
-	CategoryAfterImport string `json:"category_after_import"`
+	CategoryAfterImport       string `json:"category_after_import"`
+	AfterImportPerType        bool   `json:"after_import_per_type"`
+	CategoryAfterImportMovies string `json:"category_after_import_movies"`
+	CategoryAfterImportShows  string `json:"category_after_import_shows"`
+	CategoryAfterImportMusic  string `json:"category_after_import_music"`
 	// OwnOnly: other apps' items are hidden and cannot be changed.
 	OwnOnly   bool       `json:"own_only"`
 	Tags      []string   `json:"tags"`
@@ -80,7 +84,7 @@ func downloaderView(d domain.Downloader, active int) DownloaderView {
 		CategoryMovies: d.CategoryMovies, CategoryShows: d.CategoryShows, CategoryMusic: d.CategoryMusic,
 		Priority: d.Priority, PathMap: d.PathMap, AllowLocal: d.AllowLocal, Health: HealthOf(d, time.Now()), CheckedAt: d.CheckedAt, Active: active,
 		Writable: d.Writable, WritableLocked: ReadOnlyByEnv(d), ClearFinished: d.ClearFinished, Tags: d.Tags,
-		AfterSeeding: seedingView(d), CategoryAfterImport: d.CategoryAfterImport, OwnOnly: d.OwnOnly}
+		AfterSeeding: seedingView(d), CategoryAfterImport: d.CategoryAfterImport, OwnOnly: d.OwnOnly, AfterImportPerType: d.AfterImportPerType, CategoryAfterImportMovies: d.CategoryAfterImportMovies, CategoryAfterImportShows: d.CategoryAfterImportShows, CategoryAfterImportMusic: d.CategoryAfterImportMusic}
 	if v.Tags == nil {
 		v.Tags = []string{}
 	}
