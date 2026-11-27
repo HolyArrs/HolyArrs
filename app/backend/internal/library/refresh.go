@@ -65,9 +65,15 @@ func (s *Service) RefreshTitle(ctx context.Context, titleID int64, by domain.Act
 	if errors.Is(err, metadata.ErrNotFound) {
 		out.Dropped = true
 		first := t.DroppedAt == nil
+		// The lookup came back "not found": no details were fetched, so
+		// the fetch time is left as it was. Writing it here marked the
+		// movie fetched while it still had no artwork, and kept it out of
+		// the "never fetched" rule for good, so only a delete and re-add
+		// brought the poster back. Left nil, the next scheduled refresh
+		// picks it up again.
 		err := s.Store.Write(ctx, func(tx *sql.Tx) error {
-			_, err := tx.Exec("UPDATE titles SET dropped_at = COALESCE(dropped_at, ?), refreshed_at = ?, updated_at = ?, updated_by = ? WHERE id = ?",
-				database.FormatTime(now), database.FormatTime(now), database.FormatTime(now), ActorText(by), titleID)
+			_, err := tx.Exec("UPDATE titles SET dropped_at = COALESCE(dropped_at, ?), updated_at = ?, updated_by = ? WHERE id = ?",
+				database.FormatTime(now), database.FormatTime(now), ActorText(by), titleID)
 			return err
 		})
 		if err == nil && first {
