@@ -390,6 +390,10 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 			{ id: 'needs-folder', version: '1.0.0', installed: true, installed_version: '1.0.0', running: false, enabled: false, access: { hosts: [], actions: [], folders: [{ name: 'media', mode: 'read', required: true, why: 'reads your films' }, { name: 'cache', mode: 'read_write' }] } }
 		);
 		let hold: (() => void) | null = null;
+		// The folder picker offers the Library's own folders, so the answers are fixed here.
+		await page.route('**/api/v1/library-folders', (route) =>
+			route.fulfill({ json: { library_folders: [{ label: 'Movies', path: '/data/movies' }, { label: 'Series', path: '/data/shows' }] } })
+		);
 		await page.route('**/api/v1/plugins**', async (route) => {
 			const r = route.request();
 			if (r.method() === 'GET') return route.fulfill({ json: ov });
@@ -468,20 +472,63 @@ for (const [width, height] of [[1366, 768], [1280, 800], [375, 844]]) {
 		await expect(panel.getByTestId('plugin-hint')).toContainText('stopped on its own');
 		await noSidewaysScroll(page);
 		await page.screenshot({ path: test.info().outputPath(`states-dialog-${width}.png`) });
-		// Folders: Start waits for the required one, each box hints its own path, and the why sits on its own line.
+		// Folders: Start waits for the required one, which offers the Library's folders, and the why sits on its own line.
 		await page.evaluate(() => (location.hash = 'needs-folder'));
 		await expect(panel).toHaveAttribute('data-id', 'needs-folder');
 		await expect(panel.getByTestId('plugin-main-start')).toBeDisabled();
-		await expect(panel.getByTestId('plugin-folder-media')).toHaveAttribute('placeholder', '/data/media');
-		await expect(panel.getByTestId('plugin-folder-cache')).toHaveAttribute('placeholder', '/data/cache');
+		const media = panel.getByTestId('plugin-folder-media');
+		await expect(media).toHaveValue('');
+		await expect(media.locator('option')).toHaveText(['Choose a folder', 'Movies (/data/movies)', 'Series (/data/shows)', 'Other path']);
+		// A folder the plugin does not need waits behind Add folder.
+		await expect(panel.getByTestId('plugin-folder-cache')).toHaveCount(0);
+		await panel.getByTestId('plugin-folder-add').click();
+		const cache = panel.getByTestId('plugin-folder-cache');
+		await expect(cache).toBeVisible();
 		const lab = panel.locator('.approve .lab').first(), why = panel.locator('.approve .why').first();
 		expect((await why.boundingBox())!.y).toBeGreaterThanOrEqual((await lab.boundingBox())!.y + (await lab.boundingBox())!.height - 1);
+		// A picked folder fills the value; a shared parent outside the Library is typed instead.
+		await media.selectOption('/data/movies');
+		await expect(media).toHaveValue('/data/movies');
+		await cache.selectOption({ label: 'Other path' });
+		await expect(panel.getByTestId('plugin-folder-cache-path')).toHaveAttribute('placeholder', '/data/cache');
+		await panel.getByTestId('plugin-folder-cache-path').fill('/data/shared');
 		await noSidewaysScroll(page);
 		await panel.getByTestId('plugin-approve').scrollIntoViewIfNeeded();
 		await page.screenshot({ path: test.info().outputPath(`folders-dialog-${width}.png`) });
 		await page.context().close();
 	});
 }
+
+// Approving sends every folder the plugin asked for, so a folder left empty takes its grant away instead of keeping it.
+test('plugins: approving sends every folder it asked for', async ({ browser }) => {
+	test.setTimeout(120_000);
+	const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+	await signIn(page, owner());
+	const one = {
+		id: 'folders', version: '1.0.0', installed: true, installed_version: '1.0.0', running: false, enabled: false,
+		access: { hosts: [], actions: [], folders: [{ name: 'media', mode: 'read', required: true }, { name: 'cache', mode: 'read_write' }, { name: 'extra', mode: 'read' }] },
+		grants: { cache: { path: '/data/shared', mode: 'read_write' } }
+	};
+	let sent = '';
+	await page.route('**/api/v1/plugins**', (route) => {
+		const r = route.request();
+		if (r.method() === 'POST' && new URL(r.url()).pathname.endsWith('/approve')) {
+			sent = r.postData() ?? '';
+			return route.fulfill({ json: { ok: true } });
+		}
+		return route.fulfill({ json: { ...fake, plugins: [one] } });
+	});
+	await page.route('**/api/v1/library-folders', (route) => route.fulfill({ json: { library_folders: [{ label: 'Movies', path: '/data/movies' }] } }));
+	await page.goto('/plugins#folders');
+	const panel = page.getByTestId('plugin-detail');
+	await panel.getByTestId('plugin-folder-media').selectOption('/data/movies');
+	// A grant from outside the Library already shows as itself.
+	await expect(panel.getByTestId('plugin-folder-cache')).toHaveValue('/data/shared');
+	await panel.getByTestId('plugin-approve-save').click();
+	await expect.poll(() => sent).not.toBe('');
+	expect(JSON.parse(sent).folders).toEqual({ media: '/data/movies', cache: '/data/shared', extra: '' });
+	await page.context().close();
+});
 
 // Settings: a toggle with no default reads off and saves; a save whose restart fails says the plugin
 // did not start, not that the save failed. A plugin with its own settings opens them in its dialog.

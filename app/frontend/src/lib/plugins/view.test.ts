@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { abilities, categories, categoryLabel, developers, findPlugins, inTab, notices, platformLabel, safeLink, shownName, sortPlugins, reaches, pluginName, pluginState, shownVersion, noLockNotice, showsNoLockCard, showsNoLockTag, stateLabel } from './view.ts';
 import { eventLabel, needLabel, newAbilities } from './view.ts';
 import { isNew, freshUpdate, trendingIds, shortDate, pluginIcon, devPicture, takesOwnerHosts, showsSigned } from './view.ts';
+import { folderChoices } from './view.ts';
 import type { Plugin } from './types.ts';
 
 const base: Plugin = { id: 'tailscale', version: '1.2.0', installed: false, running: false, enabled: false, access: null };
@@ -215,5 +216,21 @@ describe('signed chip (#921)', () => {
 	it('shows Signed only for plugins from the signed list, never for a developer-folder plugin', () => {
 		expect(showsSigned(base)).toBe(true);
 		expect(showsSigned({ ...base, dev: true })).toBe(false);
+	});
+});
+
+describe('folders a plugin can be pointed at', () => {
+	it('offers the Library folders by label and path, once each', () => {
+		const got = folderChoices([{ label: 'Movies', path: '/data/movies' }, { label: '', path: '/data/shows' }, { label: 'Movies again', path: '/data/movies' }], '');
+		expect(got).toEqual([{ path: '/data/movies', label: 'Movies (/data/movies)' }, { path: '/data/shows', label: '/data/shows' }]);
+	});
+	it('keeps a path granted from outside the Library so a shared parent stays on offer', () => {
+		const got = folderChoices([{ label: 'Movies', path: '/data/movies' }], '/data/shared');
+		expect(got.map((c) => c.path)).toEqual(['/data/movies', '/data/shared']);
+		expect(got[1].label).toBe('/data/shared');
+	});
+	it('offers nothing but a typed path when there are no Library folders', () => {
+		expect(folderChoices([], '')).toEqual([]);
+		expect(folderChoices([], '/data/media')).toEqual([{ path: '/data/media', label: '/data/media' }]);
 	});
 });
