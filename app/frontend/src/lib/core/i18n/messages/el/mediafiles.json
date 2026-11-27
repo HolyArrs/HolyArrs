@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Καλύτερο αντίγραφο",
 	"mediafiles.state.notKeptQ": "Δεν διατηρείται · {q}",
 	"mediafiles.state.notKept": "Δεν διατηρείται",
+	"mediafiles.state.keptInPart": "Διατηρείται εν μέρει",
 	"mediafiles.state.inLibraryQ": "Στη βιβλιοθήκη · {q}",
 	"mediafiles.state.inLibrary": "Στη βιβλιοθήκη",
 	"mediafiles.state.upcomingOn": "Προσεχώς · {date}",
