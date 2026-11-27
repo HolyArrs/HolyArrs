@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -220,6 +221,34 @@ func Fold(s string) string {
 func FoldWords(s string) []string {
 	return strings.FieldsFunc(Fold(s), func(c rune) bool { return !unicode.IsLetter(c) && !unicode.IsNumber(c) })
 }
+
+// SplitYear takes a year off the end of search words: "Strike 2017" asks
+// for Strike made in 2017. ok is false when the words end in no year, or
+// hold nothing else ("2012" is a name, not a year to filter by).
+func SplitYear(term string) (name string, year int, ok bool) {
+	words := strings.Fields(term)
+	if len(words) < 2 {
+		return term, 0, false
+	}
+	last := words[len(words)-1]
+	n, err := strconv.Atoi(strings.Trim(last, "()[]"))
+	if err != nil || n < minSearchYear || n > maxSearchYear {
+		return term, 0, false
+	}
+	name = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(term), last))
+	name = strings.TrimSpace(strings.TrimRight(name, "([-"))
+	if name == "" {
+		return term, 0, false
+	}
+	return name, n, true
+}
+
+// The years a search treats as a year: earlier and later figures ("2001" in
+// a title, "10" in another) stay words.
+const (
+	minSearchYear = 1870
+	maxSearchYear = 2099
+)
 
 // FoldPrefilter narrows a scan in SQL without changing what foldMatch
 // keeps: a row whose column is plain ASCII must hold every ASCII query word
