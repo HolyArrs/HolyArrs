@@ -58,6 +58,10 @@ func (s *Searcher) ProbeFeed(ctx context.Context, now time.Time) (bool, any, err
 	if err != nil {
 		return true, nil, err
 	}
+	// A paused Source the feed does not read is tried again by the real check.
+	if slices.ContainsFunc(srcs, restingOffFeed) {
+		return true, nil, nil
+	}
 	refs, _, err := s.wantedTitleRefs(ctx)
 	if err != nil {
 		return true, nil, err
