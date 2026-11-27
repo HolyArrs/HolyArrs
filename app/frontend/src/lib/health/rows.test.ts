@@ -147,6 +147,13 @@ describe('status rows', () => {
 		]);
 	});
 
+	it('names the category two fenced Downloaders share instead of saying to remove one (#952)', () => {
+		const rows = buildRows({
+			checks: [{ key: 'same_downloader:2', kind: 'same_downloader', subject: 'qBittorrent - Anime', state: 'warning', message: 'qBittorrent - Anime and qBittorrent both use the category "music", so downloads in it can show twice. Give qBittorrent - Anime its own category in Settings > Downloaders' } as never]
+		});
+		expect(rows.map((r) => r.reason)).toEqual(['qBittorrent - Anime and another Downloader both use the category "music", so downloads in it can show twice. Give qBittorrent - Anime its own category in Settings › Downloaders.']);
+	});
+
 	it('does not count a starting part as a problem', () => {
 		expect(needsAttention(buildRows({ states: [link('source', 1, 'starting')] }))).toEqual([]);
 	});

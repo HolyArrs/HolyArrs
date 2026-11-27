@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "A forrásaid torrenteket találnak, de nincs beállítva torrentletöltő, így egyik sem küldhető el. Adj hozzá egyet itt: Beállítások › Letöltők.",
 	"health.check.sameDownloader": "Kétszer hozzáadva:",
 	"health.check.sameDownloaderWhy": "A(z) {app} ugyanahhoz a letöltő alkalmazáshoz kapcsolódik, mint egy másik letöltő, így a letöltései kétszer is megjelenhetnek. Távolítsd el az egyiket: Beállítások › Letöltők.",
+	"health.check.sameDownloaderShared": "A(z) {app} és egy másik Downloader is a(z) \"{category}\" kategóriát használja, ezért a benne lévő letöltések kétszer jelenhetnek meg. Adj a(z) {app} számára saját kategóriát a Beállítások › Downloaderek alatt.",
 	"health.check.keyKitRecommended": "Ajánlott: töltse le a kulcscsomagot",
 	"health.check.keyKitRecommendedOthers": "Ajánlott: kérje el a kulcscsomagot a tulajdonostól",
 	"health.kind.sameDownloader": "Kétszer hozzáadott letöltő",

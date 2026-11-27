@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Dina källor hittar torrent-nedladdningar, men ingen torrent-nedladdare är inställd, så ingen kan skickas. Lägg till en under Inställningar › Nedladdare.",
 	"health.check.sameDownloader": "Tillagd två gånger:",
 	"health.check.sameDownloaderWhy": "{app} når samma nedladdningsapp som en annan nedladdare, så dess nedladdningar kan visas två gånger. Ta bort en under Inställningar › Nedladdare.",
+	"health.check.sameDownloaderShared": "{app} och en annan Downloader använder båda kategorin \"{category}\", så nedladdningar i den kan visas två gånger. Ge {app} en egen kategori under Inställningar › Downloaders.",
 	"health.check.keyKitRecommended": "Rekommenderas: ladda ned ditt nyckelpaket",
 	"health.check.keyKitRecommendedOthers": "Rekommenderas: be ägaren om nyckelpaketet",
 	"health.kind.sameDownloader": "Nedladdare tillagd två gånger",

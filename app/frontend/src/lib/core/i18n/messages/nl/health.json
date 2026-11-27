@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Je bronnen vinden torrent-downloads, maar er is geen torrent-downloader ingesteld, dus er kan niets worden verstuurd. Voeg er een toe in Instellingen › Downloaders.",
 	"health.check.sameDownloader": "Twee keer toegevoegd:",
 	"health.check.sameDownloaderWhy": "{app} bereikt dezelfde download-app als een andere Downloader, dus de downloads kunnen dubbel verschijnen. Verwijder er een in Instellingen › Downloaders.",
+	"health.check.sameDownloaderShared": "{app} en een andere Downloader gebruiken allebei de categorie \"{category}\", dus downloads daarin kunnen dubbel verschijnen. Geef {app} een eigen categorie in Instellingen › Downloaders.",
 	"health.check.keyKitRecommended": "Aanbevolen: download je sleutelpakket",
 	"health.check.keyKitRecommendedOthers": "Aanbevolen: vraag de eigenaar om het sleutelpakket",
 	"health.kind.sameDownloader": "Downloader twee keer toegevoegd",

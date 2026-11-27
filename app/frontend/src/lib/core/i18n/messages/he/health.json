@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "המקורות שלך מוצאים הורדות טורנט, אבל לא הוגדר מוריד טורנטים, ולכן אי אפשר לשלוח אף אחת. הוסיפו אחד בהגדרות › מורידים.",
 	"health.check.sameDownloader": "נוסף פעמיים:",
 	"health.check.sameDownloaderWhy": "{app} מגיע לאותה אפליקציית הורדות כמו מוריד אחר, לכן ההורדות שלו עלולות להופיע פעמיים. הסירו אחד בהגדרות › מורידים.",
+	"health.check.sameDownloaderShared": "{app} ומוריד אחר משתמשים שניהם בקטגוריה \"{category}\", לכן ההורדות בה עלולות להופיע פעמיים. תנו ל-{app} קטגוריה משלו בהגדרות › מורידים.",
 	"health.check.keyKitRecommended": "מומלץ: להוריד את ערכת המפתח",
 	"health.check.keyKitRecommendedOthers": "מומלץ: לבקש מהבעלים את ערכת המפתח",
 	"health.kind.sameDownloader": "מוריד שנוסף פעמיים",
