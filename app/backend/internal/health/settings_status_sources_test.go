@@ -22,3 +22,18 @@ func TestSettingsStatusSourceWarnings(t *testing.T) {
 		t.Fatalf("got  %+v\nwant %+v", a.Items, want)
 	}
 }
+
+// Titles no Source would search for because of tags get one warning on the Sources page.
+func TestSettingsStatusStrandedTitles(t *testing.T) {
+	t.Parallel()
+	line := "2 titles have no Source that searches for them: every Source they could use has a tag they do not share, or their Pick rules leave the Source out"
+	a := SettingsStatus(StatusInput{Sources: []NamedState{{"Toloka", "working"}}, SourcesStranded: line, Now: time.Date(2026, 11, 26, 12, 0, 0, 0, time.UTC)})
+	want := []StatusItem{{"copies", "/settings/sources", line, "warning"}}
+	if !slices.Equal(a.Items, want) {
+		t.Fatalf("got  %+v\nwant %+v", a.Items, want)
+	}
+	// With the Sources part off there are no Sources to read, and nothing is said.
+	if a := SettingsStatus(StatusInput{SourcesStranded: line, Now: time.Date(2026, 11, 26, 12, 0, 0, 0, time.UTC)}); slices.ContainsFunc(a.Items, func(i StatusItem) bool { return i.Text == line }) {
+		t.Fatalf("said with no Sources: %+v", a.Items)
+	}
+}
