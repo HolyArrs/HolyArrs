@@ -11,7 +11,7 @@
 	import ScopeDetails from './ScopeDetails.svelte';
 	import PluginPagesLinks from './PluginPagesLinks.svelte';
 	import PluginActivity from './PluginActivity.svelte';
-	import { abilities, categoryLabel, categoryOf, developers, pluginAbout, pluginState, offReason, safeLink, noLockNotice, shownName, shownVersion, freshUpdate, shortCount, shortDate, pluginIcon, devPicture, devLink, isProject, brokenPics as broken } from './view.ts';
+	import { abilities, categoryLabel, categoryOf, developers, pluginAbout, pluginState, offReason, safeLink, noLockNotice, shownName, shownVersion, freshUpdate, shortCount, shortDate, pluginIcon, devPicture, devLink, isProject, brokenPics as broken, showsSigned } from './view.ts';
 	import Avatar from '#lib/ui/Avatar.svelte';
 	import ClampText from './ClampText.svelte';
 	import type { Plugin, PluginOverview } from './types.ts';
@@ -95,7 +95,7 @@
 			<div class="devs small" data-testid="plugin-devs">{@render devLinks()}</div>
 			<div class="xs muted meta">
 				<span class="ccat">{categoryLabel(categoryOf(p))}</span>
-				<span class="signed"><Icon name="shield" size={13} />{t('plugins.signed')}</span>
+				{#if showsSigned(p)}<span class="signed" data-testid="plugin-signed"><Icon name="shield" size={13} />{t('plugins.signed')}</span>{/if}
 				{#if pluginState(p) === 'off' && p.disabled_reason}<span class="schip" data-testid="plugin-hint"><Icon name="pause" size={12} /><span>{offReason(p.disabled_reason)}</span></span>{:else if badge}<Badge label={badge} />{/if}
 			</div>
 		</div>
