@@ -2,6 +2,36 @@
 
 All notable changes to HolyArrs are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.5] - 2026-11-27
+### Fixed
+- A missing movie file no longer blocks its new file. ([#798](https://github.com/HolyArrs/HolyArrs/issues/798))
+- Prowlarr music indexers now search for albums. ([#849](https://github.com/HolyArrs/HolyArrs/issues/849))
+- Language packs install again on new versions. ([#767](https://github.com/HolyArrs/HolyArrs/issues/767))
+- One rescan marks a moved file missing. ([#809](https://github.com/HolyArrs/HolyArrs/issues/809))
+- Movies with no poster get one in the scheduled refresh. ([#810](https://github.com/HolyArrs/HolyArrs/issues/810))
+- Long title pills clear the search bar; spacing fixes. ([#931](https://github.com/HolyArrs/HolyArrs/issues/931))
+- Show imports read quality from the grabbed release. ([#770](https://github.com/HolyArrs/HolyArrs/issues/770))
+- Imports trust the grab when a file shortens the show name. ([#950](https://github.com/HolyArrs/HolyArrs/issues/950))
+- Staff can change a show's only Version. ([#796](https://github.com/HolyArrs/HolyArrs/issues/796))
+- Show settings say Kept in part when some is kept. ([#927](https://github.com/HolyArrs/HolyArrs/issues/927))
+- The empty season note fits on one line. ([#928](https://github.com/HolyArrs/HolyArrs/issues/928))
+- Calendar jumps back to the current day again. ([#929](https://github.com/HolyArrs/HolyArrs/issues/929))
+- Found music files match after an artist refresh. ([#735](https://github.com/HolyArrs/HolyArrs/issues/735))
+- Album folders like "5_55 [FLAC 24-96]" match their album. ([#898](https://github.com/HolyArrs/HolyArrs/issues/898))
+- Import by hand can pick the album's Pressing. ([#777](https://github.com/HolyArrs/HolyArrs/issues/777))
+- Plugins get an API token without the file lock. ([#746](https://github.com/HolyArrs/HolyArrs/issues/746))
+- Newly published plugins show when none are installed. ([#924](https://github.com/HolyArrs/HolyArrs/issues/924))
+- An empty number setting turns Save off. ([#922](https://github.com/HolyArrs/HolyArrs/issues/922))
+- Developer plugins no longer show a Signed chip. ([#921](https://github.com/HolyArrs/HolyArrs/issues/921))
+- The bell counts the same alerts the panel shows. ([#909](https://github.com/HolyArrs/HolyArrs/issues/909))
+- The alerts panel scrolls so pinned rows aren't cut off. ([#936](https://github.com/HolyArrs/HolyArrs/issues/936))
+- The same Downloader warning names the shared category. ([#952](https://github.com/HolyArrs/HolyArrs/issues/952))
+- Paused search-only Sources retry once their wait is over. ([#711](https://github.com/HolyArrs/HolyArrs/issues/711))
+- Home no longer waits for pictures on every visit. ([#758](https://github.com/HolyArrs/HolyArrs/issues/758))
+- Partly fixed: tvdb:<id> search without a TheTVDB key says why. ([#732](https://github.com/HolyArrs/HolyArrs/issues/732))
+### Security
+- Plugins trust a new main signing key and an offline backup key. ([#960](https://github.com/HolyArrs/HolyArrs/pull/960))
+
 ## [1.3.4] - 2026-11-26
 ### Added
 - Outside links now sit higher on the title page. ([#745](https://github.com/HolyArrs/HolyArrs/issues/745))
