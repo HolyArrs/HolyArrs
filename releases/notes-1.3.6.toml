@@ -1,0 +1,23 @@
+version = "1.3.6"
+theme = "Plugin lists update again, plus three community plugins to try."
+images = [
+  {registry = "Docker Hub", name = "holyarrs/holyarrs"},
+]
+docs_url = ""
+known_issues = []
+security = []
+community_plugins = [
+  {name = "Discord", repo = "https://github.com/NotCavnfox/holyarrs-discord", github = "NotCavnfox"},
+  {name = "FlareSolverr", repo = "https://github.com/wozniakpawel/holyarrs-flaresolverr", github = "wozniakpawel"},
+  {name = "Language Checker", repo = "https://github.com/roychassi/language-checker", github = "roychassi"},
+]
+credits = [
+  {github = "NotCavnfox", link = "https://github.com/NotCavnfox"},
+  {github = "wozniakpawel", link = "https://github.com/wozniakpawel"},
+  {github = "roychassi", link = "https://github.com/roychassi"},
+]
+
+[groups]
+
+[stats]
+people_credited = 3
