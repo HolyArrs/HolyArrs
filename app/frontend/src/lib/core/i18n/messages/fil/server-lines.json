@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "nasa Library na; na-update ang kalidad o release ng {n} file",
 	"server.migrate.imported-before-2": "na-import na dati{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "ang folder nitong {dir} ay pag-aari ng ibang pelikula sa Library",
-	"server.library.emptied-from-in-the-holding-folder": "Inalis ang {removed} mula sa {name} sa holding folder ng {label}"
+	"server.library.emptied-from-in-the-holding-folder": "Inalis ang {removed} mula sa {name} sa holding folder ng {label}",
+	"server.importer.the-downloaded-file-is-a-link": "ang na-download na file ay link sa file na wala; tiyaking naka-mount sa HolyArrs ang drive na tinuturo nito, saka mag-import ulit"
 }

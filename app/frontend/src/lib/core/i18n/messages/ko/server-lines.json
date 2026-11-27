@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "이미 라이브러리에 있습니다. 파일 {n}개의 품질 또는 릴리스를 업데이트했습니다",
 	"server.migrate.imported-before-2": "이전에 가져옴{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "폴더 {dir}은(는) 라이브러리의 다른 영화에 속해 있습니다",
-	"server.library.emptied-from-in-the-holding-folder": "{label}의 보관 폴더에 있는 {name}에서 {removed}을(를) 비웠습니다"
+	"server.library.emptied-from-in-the-holding-folder": "{label}의 보관 폴더에 있는 {name}에서 {removed}을(를) 비웠습니다",
+	"server.importer.the-downloaded-file-is-a-link": "다운로드한 파일이 존재하지 않는 파일을 가리키는 링크입니다. 링크가 가리키는 드라이브가 HolyArrs에 마운트되어 있는지 확인한 뒤 다시 가져오세요"
 }

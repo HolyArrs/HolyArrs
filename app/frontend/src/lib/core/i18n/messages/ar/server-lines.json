@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "موجود بالفعل في المكتبة؛ تم تحديث الجودة أو الإصدار لـ {n} من الملفات",
 	"server.migrate.imported-before-2": "تم استيراده من قبل{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "مجلده {dir} يخص فيلمًا آخر في المكتبة",
-	"server.library.emptied-from-in-the-holding-folder": "أُفرغ {removed} من {name} في مجلد الاحتفاظ لـ {label}"
+	"server.library.emptied-from-in-the-holding-folder": "أُفرغ {removed} من {name} في مجلد الاحتفاظ لـ {label}",
+	"server.importer.the-downloaded-file-is-a-link": "الملف الذي تم تنزيله رابط إلى ملف غير موجود؛ تحقّق من أن القرص الذي يشير إليه مركّب في HolyArrs، ثم استورد مرة أخرى"
 }

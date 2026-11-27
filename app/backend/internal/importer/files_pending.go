@@ -32,6 +32,11 @@ func sourceNotPresent(root string, cands []Candidate, file string) bool {
 	}
 	for _, c := range cands {
 		if c.Path == file {
+			// A link to nothing is here; the drive it points into is not.
+			// That is said on its own (deadLinkWhy), never waited out.
+			if DeadLink(file) {
+				return false
+			}
 			_, err := os.Stat(file)
 			return errors.Is(err, fs.ErrNotExist)
 		}

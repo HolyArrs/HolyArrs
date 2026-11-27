@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -500,14 +501,32 @@ func readFinishedIn(ctx context.Context, j Job, pm []domain.PathMap, saveRoot st
 	switch {
 	case err == nil && fi.Mode().IsRegular():
 		return save, []File{{Name: base, Size: fi.Size(), Progress: 1}}
+	case err == nil && fi.Mode()&os.ModeSymlink != 0:
+		// A job that is one link to a file counts as that file when links are
+		// followed (HOLYARRS_FOLLOW_LINKS or a link pair).
+		if size, ok := linkSize(local); ok {
+			return save, []File{{Name: base, Size: size, Progress: 1}}
+		}
 	case err == nil && fi.IsDir():
 		var out []File
 		_ = filepath.WalkDir(local, func(p string, d fs.DirEntry, err error) error {
 			if len(out) >= walkMaxFiles || ctx.Err() != nil {
 				return fs.SkipAll
 			}
-			// Symlinks are skipped so the walk cannot leave the roots.
-			if err != nil || d.Type()&fs.ModeSymlink != 0 {
+			if err != nil {
+				return nil
+			}
+			// Symlinks are never walked into, so the walk cannot leave the
+			// roots. With links followed, a link to a file is listed: a
+			// streaming drive's finished folder holds only links into its
+			// mount. The importer checks the link's own folder is inside the
+			// download, never its target.
+			if d.Type()&fs.ModeSymlink != 0 {
+				size, ok := linkSize(p)
+				rel, err := filepath.Rel(local, p)
+				if ok && err == nil {
+					out = append(out, File{Name: base + "/" + filepath.ToSlash(rel), Size: size, Progress: 1})
+				}
 				return nil
 			}
 			if d.IsDir() {
@@ -534,6 +553,22 @@ func readFinishedIn(ctx context.Context, j Job, pm []domain.PathMap, saveRoot st
 		return save, []File{{Name: base, Size: j.Size, Progress: 1}}
 	}
 	return j.SavePath, nil
+}
+
+// linkSize is the size a followed link in a finished download counts as: its
+// target's. A link to a video or music file that is not there (the streaming
+// drive is not mounted) is listed too, with size 0, and logged, so the import
+// stops with that reason rather than "no file matched". ok is false for a
+// link that is not followed, or that leads to anything but a file.
+func linkSize(p string) (int64, bool) {
+	if fi, ok := importer.LinkedFile(p); ok {
+		return fi.Size(), true
+	}
+	if importer.DeadLink(p) && importer.IsMedia(filepath.Ext(p)) {
+		log.Printf("downloads: %s is a link to a file that is not there", p)
+		return 0, true
+	}
+	return 0, false
 }
 
 // underAny reports whether p is inside any of the roots. Comparing relative paths avoids the prefix trap where /data2 would match /data.

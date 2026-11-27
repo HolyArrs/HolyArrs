@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "già nella Libreria; la qualità o la release di {n} file è stata aggiornata",
 	"server.migrate.imported-before-2": "importato in precedenza{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "la sua cartella {dir} appartiene a un altro film nella Libreria",
-	"server.library.emptied-from-in-the-holding-folder": "{removed} svuotati da {name} nella cartella di attesa di {label}"
+	"server.library.emptied-from-in-the-holding-folder": "{removed} svuotati da {name} nella cartella di attesa di {label}",
+	"server.importer.the-downloaded-file-is-a-link": "il file scaricato è un collegamento a un file che non c'è; controlla che l'unità a cui punta sia montata in HolyArrs, poi importa di nuovo"
 }

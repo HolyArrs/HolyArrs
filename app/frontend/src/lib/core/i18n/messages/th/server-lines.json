@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "อยู่ในคลังแล้ว อัปเดตคุณภาพหรือรีลีสของไฟล์ {n} ไฟล์แล้ว",
 	"server.migrate.imported-before-2": "นำเข้าไว้ก่อนแล้ว{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "โฟลเดอร์ {dir} เป็นของภาพยนตร์เรื่องอื่นในคลัง",
-	"server.library.emptied-from-in-the-holding-folder": "ล้าง {removed} จาก {name} ในโฟลเดอร์พักไว้ของ {label} แล้ว"
+	"server.library.emptied-from-in-the-holding-folder": "ล้าง {removed} จาก {name} ในโฟลเดอร์พักไว้ของ {label} แล้ว",
+	"server.importer.the-downloaded-file-is-a-link": "ไฟล์ที่ดาวน์โหลดเป็นลิงก์ไปยังไฟล์ที่ไม่มีอยู่ ตรวจสอบว่าไดรฟ์ที่ลิงก์ชี้ไปถูกเมานต์ใน HolyArrs แล้วนำเข้าอีกครั้ง"
 }

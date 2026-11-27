@@ -87,8 +87,10 @@ func (s *Service) heldFiles(ctx context.Context, id, titleID int64) ([]heldRow, 
 		if !ok || err != nil {
 			continue
 		}
-		if fi, err := os.Lstat(filepath.Join(h.root, filepath.FromSlash(h.HeldPath))); err != nil || !fi.Mode().IsRegular() {
-			continue // emptied already, or not a plain file
+		// A link HolyArrs placed (a link pair, HOLYARRS_FOLLOW_LINKS) is held
+		// as the link itself, and moveFile puts it back as one.
+		if fi, err := os.Lstat(filepath.Join(h.root, filepath.FromSlash(h.HeldPath))); err != nil || !fi.Mode().IsRegular() && fi.Mode()&os.ModeSymlink == 0 {
+			continue // emptied already, or a folder
 		}
 		h.Path = rest
 		h.Replaced = fstate == "replaced"

@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "уже в Библиотеке; качество или релиз {n} файлов обновлены",
 	"server.migrate.imported-before-2": "импортировано ранее{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "его папка {dir} принадлежит другому фильму в Библиотеке",
-	"server.library.emptied-from-in-the-holding-folder": "Очищено {removed} из {name} в папке отложенных в {label}"
+	"server.library.emptied-from-in-the-holding-folder": "Очищено {removed} из {name} в папке отложенных в {label}",
+	"server.importer.the-downloaded-file-is-a-link": "загруженный файл — ссылка на файл, которого нет; проверьте, что диск, на который она указывает, подключён в HolyArrs, и импортируйте снова"
 }

@@ -121,9 +121,17 @@ func CleanByHandPath(p string, places ByHandPlaces) (string, error) {
 		}
 	}
 	p = filepath.Clean(p)
-	if places.within(p) == "" {
+	root := places.within(p)
+	if root == "" {
 		return "", places.Refusal()
 	}
+	// Rebuilt from the allowed place and a local remainder, so every later
+	// stat, link check or copy works on a path that cannot leave it.
+	rel, err := filepath.Rel(root, p)
+	if err != nil || !filepath.IsLocal(rel) {
+		return "", places.Refusal()
+	}
+	p = filepath.Join(root, rel)
 	if _, err := byHandStat(p); err != nil {
 		return "", ErrByHandPath
 	}
@@ -260,7 +268,11 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 			}
 			return nil
 		}
-		if d.IsDir() || d.Type()&fs.ModeSymlink != 0 {
+		// Links are never walked into. With links followed, a link to a file
+		// is listed as that file (a streaming drive's download folder holds
+		// only links into its mount); any other link is left out.
+		linked, isLink := LinkedFile(p)
+		if d.IsDir() || d.Type()&fs.ModeSymlink != 0 && !isLink {
 			return nil
 		}
 		ext := strings.ToLower(filepath.Ext(p))
@@ -278,6 +290,9 @@ func (im *Importer) ScanByHand(ctx context.Context, root string) (ByHandScan, er
 			return filepath.SkipAll
 		}
 		fi, err := d.Info()
+		if isLink {
+			fi, err = linked, nil
+		}
 		if err != nil {
 			return nil
 		}
@@ -378,7 +393,12 @@ func (im *Importer) ImportByHand(ctx context.Context, items []ByHandItem, by dom
 	}
 	out := make([]ByHandResult, 0, len(items))
 	for _, it := range items {
-		r, err := im.importOneByHand(ctx, db, ns, folders, places, it, by)
+		src, err := CleanByHandPath(it.Path, places)
+		if err != nil {
+			out = append(out, ByHandResult{Path: it.Path, Outcome: "refused", Error: err.Error()})
+			continue
+		}
+		r, err := im.importOneByHand(ctx, db, ns, folders, src, it, by)
 		if err != nil {
 			r.Outcome, r.Error = "failed", err.Error()
 		}
@@ -420,8 +440,10 @@ func byHandSlot(ctx context.Context, db *sql.DB, it ByHandItem) (int64, string) 
 	return id, ""
 }
 
-func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafiles.NamingSettings, folders []mediafiles.LibraryFolder, places ByHandPlaces, it ByHandItem, by domain.Actor) (ByHandResult, error) {
-	r := ByHandResult{Path: it.Path, Outcome: "refused"}
+// importOneByHand imports it from src: a path CleanByHandPath accepted, or
+// the file Review found in its own download.
+func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafiles.NamingSettings, folders []mediafiles.LibraryFolder, src string, it ByHandItem, by domain.Actor) (ByHandResult, error) {
+	r := ByHandResult{Path: src, Outcome: "refused"}
 	refuse := func(why string) (ByHandResult, error) { r.Error = why; return r, nil }
 	mode := it.Mode
 	if mode == "" {
@@ -430,16 +452,8 @@ func (im *Importer) importOneByHand(ctx context.Context, db *sql.DB, ns mediafil
 	if mode != "copy" && mode != "move" {
 		return refuse("mode is copy or move")
 	}
-	src := filepath.Clean(it.Path)
-	if it.fromDownload == 0 {
-		var err error
-		if src, err = CleanByHandPath(it.Path, places); err != nil {
-			return refuse(err.Error())
-		}
-	}
-	r.Path = src
 	sfi, err := os.Lstat(src)
-	if err != nil || !sfi.Mode().IsRegular() {
+	if _, isLink := LinkedFile(src); err != nil || !sfi.Mode().IsRegular() && !isLink {
 		return refuse("not a plain file")
 	}
 	ext := strings.ToLower(filepath.Ext(src))

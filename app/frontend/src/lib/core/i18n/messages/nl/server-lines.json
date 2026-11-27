@@ -2470,5 +2470,6 @@
 	"server.migrate.already-in-the-library-the-quality": "staat al in de Bibliotheek; de kwaliteit of release van {n} bestanden is bijgewerkt",
 	"server.migrate.imported-before-2": "eerder geïmporteerd{title}",
 	"server.migrate.its-folder-belongs-to-another-movie": "de map {dir} hoort bij een andere film in de Bibliotheek",
-	"server.library.emptied-from-in-the-holding-folder": "{removed} geleegd uit {name} in de map voor vastgehouden bestanden van {label}"
+	"server.library.emptied-from-in-the-holding-folder": "{removed} geleegd uit {name} in de map voor vastgehouden bestanden van {label}",
+	"server.importer.the-downloaded-file-is-a-link": "het gedownloade bestand is een koppeling naar een bestand dat er niet is; controleer of de schijf waarnaar het verwijst in HolyArrs is gekoppeld en importeer opnieuw"
 }

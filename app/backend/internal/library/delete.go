@@ -660,7 +660,8 @@ func (s *Service) cleanHeldFiles(ctx context.Context, by domain.Actor, lf mediaf
 	for _, h := range old {
 		rel := h.rel
 		full := filepath.Join(lf.Path, filepath.FromSlash(rel))
-		if fi, err := os.Lstat(full); err != nil || !fi.Mode().IsRegular() {
+		// A held link goes as the link; the file it points at stays.
+		if fi, err := os.Lstat(full); err != nil || !fi.Mode().IsRegular() && fi.Mode()&os.ModeSymlink == 0 {
 			continue // emptied already
 		}
 		dir := filepath.Dir(full)
