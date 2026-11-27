@@ -32,7 +32,7 @@ describe('#931 layout', () => {
 	it('styles the Season packs row (a child component) like the other rows, and its hint wraps', () => {
 		const css = styles('./TitleLibrary.svelte');
 		expect(rule(css, '.lib-rows .lib-row')).toMatch(/display:\s*flex/);
-		expect(rule(css, '.lib-rows .lib-row small.wrap')).toMatch(/white-space:\s*normal/);
+		expect(rule(css, '.lib-rows .lib-row > span > small.wrap')).toMatch(/white-space:\s*normal/);
 		expect(rule(css, '.lib-rows .lib-pick')).toMatch(/max-width:\s*55%/);
 		const src = readFileSync(new URL('./TitleLibrary.svelte', import.meta.url), 'utf8');
 		expect(src).toMatch(/episodeOrder'\)\}<\/b>\{#if eo\.hint\}<small class="wrap">/);

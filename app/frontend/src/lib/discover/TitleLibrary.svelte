@@ -750,13 +750,13 @@
 	.lib-rows :global(.lib-row + .lib-row) { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
 	.lib-rows :global(.lib-row:hover) { background: color-mix(in srgb, var(--text) 4%, transparent); }
 	.lib-rows :global(.lib-row:focus-visible), .lib-sr-main:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
-	.lib-rows :global(.lib-row span) { display: grid; gap: 3px; min-width: 0; }
-	.lib-rows :global(.lib-row b) { font: 600 15px/1.2 var(--font-ui); }
-	.lib-rows :global(.lib-row small) { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-rows :global(.lib-row > span) { display: grid; gap: 3px; min-width: 0; }
+	.lib-rows :global(.lib-row > span > b) { font: 600 15px/1.2 var(--font-ui); }
+	.lib-rows :global(.lib-row > span > small) { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.lib-rows :global(.lib-row svg) { flex: none; color: var(--text-muted); }
 	.lib-rows :global(.lib-row.static) { cursor: default; }
 	.lib-rows :global(.lib-row.static:hover) { background: none; }
-	.lib-rows :global(.lib-row small.wrap) { white-space: normal; overflow-wrap: anywhere; }
+	.lib-rows :global(.lib-row > span > small.wrap) { white-space: normal; overflow-wrap: anywhere; }
 	.lib-rows :global(.lib-pick) { flex: none; max-width: 55%; min-width: 0; }
 	.lib-rows :global(.lib-pick .ui-pop) { display: flex; max-width: 100%; }
 	.lib-rows :global(.lib-pick .trigger) { max-width: 100%; min-width: 0; overflow: hidden; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
