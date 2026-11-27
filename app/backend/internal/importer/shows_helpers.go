@@ -98,3 +98,23 @@ func reopenPack(ctx context.Context, s *database.Store, id int64) error {
 		return err
 	})
 }
+
+// shortNameOf reports whether a file's title is a run of words from the
+// grabbed release name or one of the show's names: a group's short name for
+// the show, not another show.
+func shortNameOf(title string, t ShowTarget) bool {
+	w := mediafiles.FoldWords(title)
+	if len(w) == 0 {
+		return false
+	}
+	names := append([]string{t.ReleaseName, t.Show.Name}, t.Show.Aliases...)
+	for _, n := range names {
+		nw := mediafiles.FoldWords(n)
+		for i := 0; i+len(w) <= len(nw); i++ {
+			if slices.Equal(nw[i:i+len(w)], w) {
+				return true
+			}
+		}
+	}
+	return false
+}
