@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Enllaça",
 	"sources.bridge.linkName": "Enllaça {name}",
 	"sources.bridge.movieKey": "Clau de pel·lícules (costat de Radarr)",
+	"sources.bridge.musicKey": "Clau de música (costat de Lidarr)",
 	"sources.bridge.notConnected": "No connectat",
 	"sources.bridge.reaches": "Prowlarr arriba a HolyArrs a",
 	"sources.bridge.remove": "Elimina",

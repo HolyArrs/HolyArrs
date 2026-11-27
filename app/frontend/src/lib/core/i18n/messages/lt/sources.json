@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Susieti",
 	"sources.bridge.linkName": "Susieti: {name}",
 	"sources.bridge.movieKey": "Filmų raktas (Radarr pusė)",
+	"sources.bridge.musicKey": "Muzikos raktas (Lidarr pusė)",
 	"sources.bridge.notConnected": "Neprijungta",
 	"sources.bridge.reaches": "Prowlarr pasiekia HolyArrs adresu",
 	"sources.bridge.remove": "Pašalinti",

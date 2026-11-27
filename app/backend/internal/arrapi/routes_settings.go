@@ -79,6 +79,11 @@ func (h *Handlers) Routes(m *webserver.Router) {
 	m.Handle("POST /radarr/", webserver.PermManageLibrary, rad)
 	m.Handle("PUT /radarr/", webserver.PermManageLibrary, rad)
 	m.Handle("DELETE /radarr/", webserver.PermManageLibrary, rad)
+	lid := Lidarr(h.deps())
+	m.Handle("GET /lidarr/", webserver.PermManageLibrary, lid)
+	m.Handle("POST /lidarr/", webserver.PermManageLibrary, lid)
+	m.Handle("PUT /lidarr/", webserver.PermManageLibrary, lid)
+	m.Handle("DELETE /lidarr/", webserver.PermManageLibrary, lid)
 	m.Handle("GET /api/v1/settings/old-app-api", webserver.PermSettings, http.HandlerFunc(h.getSettings))
 	m.Handle("PUT /api/v1/settings/old-app-api", webserver.PermSettings, http.HandlerFunc(h.putSettings))
 	m.Handle("POST /api/v1/settings/old-app-api/keys/{side}", webserver.PermSettings, http.HandlerFunc(h.makeKey))
@@ -157,7 +162,7 @@ func (h *Handlers) answer(r *http.Request) (map[string]any, error) {
 		return nil, err
 	}
 	return map[string]any{"enabled": h.On(r.Context()), "delete_files": h.deleteFilesOn(r.Context()), "sides": sides,
-		"versions": map[string]string{"sonarr": SonarrVersion, "radarr": RadarrVersion}, "pushed": pushed}, nil
+		"versions": map[string]string{"sonarr": SonarrVersion, "radarr": RadarrVersion, "lidarr": LidarrVersion}, "pushed": pushed}, nil
 }
 
 // PushedFormat is a format an app sent to a side: whether it became a

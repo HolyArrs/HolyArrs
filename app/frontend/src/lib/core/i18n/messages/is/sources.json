@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Tengja",
 	"sources.bridge.linkName": "Tengja {name}",
 	"sources.bridge.movieKey": "Kvikmyndalykill (Radarr-megin)",
+	"sources.bridge.musicKey": "Tónlistarlykill (Lidarr-megin)",
 	"sources.bridge.notConnected": "Ekki tengt",
 	"sources.bridge.reaches": "Prowlarr nær til HolyArrs á",
 	"sources.bridge.remove": "Fjarlægja",

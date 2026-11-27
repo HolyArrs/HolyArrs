@@ -115,7 +115,7 @@
 				</div>
 			</div>
 			{#if a.enabled}
-				{#each a.sides as s (s.side)}
+				{#each a.sides.filter((s) => s.side in sideWord) as s (s.side)}
 					<div class="srow side" data-testid="seerr-side-{s.side}">
 						<div class="txt">
 							<span class="label">{t('arrapi.seerr.addAs', { what: sideWhat(s.side), app: sideWord[s.side].app })}</span>

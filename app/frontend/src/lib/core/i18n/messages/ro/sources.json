@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Asociază",
 	"sources.bridge.linkName": "Asociază {name}",
 	"sources.bridge.movieKey": "Cheia pentru filme (partea Radarr)",
+	"sources.bridge.musicKey": "Cheia pentru muzică (partea Lidarr)",
 	"sources.bridge.notConnected": "Neconectat",
 	"sources.bridge.reaches": "Prowlarr ajunge la HolyArrs la",
 	"sources.bridge.remove": "Elimină",

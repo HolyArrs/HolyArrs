@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Sasaistīt",
 	"sources.bridge.linkName": "Sasaistīt {name}",
 	"sources.bridge.movieKey": "Filmu atslēga (Radarr puse)",
+	"sources.bridge.musicKey": "Mūzikas atslēga (Lidarr puse)",
 	"sources.bridge.notConnected": "Nav savienots",
 	"sources.bridge.reaches": "Prowlarr sasniedz HolyArrs adresē",
 	"sources.bridge.remove": "Noņemt",

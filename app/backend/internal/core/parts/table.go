@@ -672,6 +672,10 @@ var routeOwners = map[string]Owner{
 	"POST /radarr/":   movies,
 	"PUT /radarr/":    movies,
 	"DELETE /radarr/": movies,
+	"GET /lidarr/":    music,
+	"POST /lidarr/":   music,
+	"PUT /lidarr/":    music,
+	"DELETE /lidarr/": music,
 
 	"GET /api/v1/settings/old-app-api":                Core,
 	"PUT /api/v1/settings/old-app-api":                Core,

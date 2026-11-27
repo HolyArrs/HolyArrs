@@ -26,6 +26,7 @@
 	"sources.bridge.link": "লিংক করুন",
 	"sources.bridge.linkName": "{name} লিংক করুন",
 	"sources.bridge.movieKey": "সিনেমার কী (Radarr দিক)",
+	"sources.bridge.musicKey": "গানের কী (Lidarr দিক)",
 	"sources.bridge.notConnected": "যুক্ত নয়",
 	"sources.bridge.reaches": "Prowlarr HolyArrs-এ পৌঁছায়",
 	"sources.bridge.remove": "সরান",
