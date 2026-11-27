@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "더 좋은 사본",
 	"mediafiles.state.notKeptQ": "유지 안 함 · {q}",
 	"mediafiles.state.notKept": "유지 안 함",
+	"mediafiles.state.keptInPart": "일부 유지",
 	"mediafiles.state.inLibraryQ": "라이브러리에 있음 · {q}",
 	"mediafiles.state.inLibrary": "라이브러리에 있음",
 	"mediafiles.state.upcomingOn": "공개 예정 · {date}",

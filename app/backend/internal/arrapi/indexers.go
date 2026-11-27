@@ -52,8 +52,11 @@ const bodyKeep = 64 << 10
 
 // sourceKind returns this side's Source kind.
 func (h *handler) sourceKind() string {
-	if h.side == "sonarr" {
+	switch h.side {
+	case "sonarr":
 		return "tv"
+	case "lidarr":
+		return "music"
 	}
 	return "movie"
 }
@@ -82,7 +85,10 @@ func (h *handler) schemaFields(torrent bool) []schemaField {
 			schemaField{Name: "animeStandardFormatSearch", Label: "Search anime by season and episode too", Value: false, Type: "switch", Advanced: true})
 	}
 	fs = append(fs, schemaField{Name: "additionalParameters", Label: "Extra address values", Value: "", Type: "text", Advanced: true})
-	if !sonarr {
+	if h.side == "lidarr" {
+		fs = append(fs, schemaField{Name: "earlyReleaseLimit", Label: "Early release limit (days)", Value: nil, Type: "number", Advanced: true})
+	}
+	if h.side == "radarr" {
 		fs = append(fs, schemaField{Name: "multiLanguages", Label: "Languages of multi-language releases", Value: []int{}, Type: "list", Advanced: true},
 			schemaField{Name: "removeYear", Label: "Search without the year", Value: false, Type: "switch", Advanced: true},
 			schemaField{Name: "requiredFlags", Label: "Required release flags", Value: []int{}, Type: "list", Advanced: true})
@@ -93,6 +99,9 @@ func (h *handler) schemaFields(torrent bool) []schemaField {
 			schemaField{Name: "seedCriteria.seedTime", Label: "Seed time (minutes)", Value: nil, Type: "number", Advanced: true})
 		if sonarr {
 			fs = append(fs, schemaField{Name: "seedCriteria.seasonPackSeedTime", Label: "Season pack seed time (minutes)", Value: nil, Type: "number", Advanced: true})
+		}
+		if h.side == "lidarr" {
+			fs = append(fs, schemaField{Name: "seedCriteria.discographySeedTime", Label: "Discography seed time (minutes)", Value: nil, Type: "number", Advanced: true})
 		}
 		fs = append(fs, schemaField{Name: "rejectBlocklistedTorrentHashesWhileGrabbing", Label: "Refuse torrents turned down before", Value: false, Type: "switch", Advanced: true})
 	}
@@ -514,10 +523,7 @@ func cutName(s string, n int) string {
 // unless another Source has it, such as the same indexer on the other
 // side or one made by hand. Then this side's word goes after it.
 func (h *handler) pickName(ctx context.Context, want string, own int64) (string, bool) {
-	word := " (shows)"
-	if h.side == "radarr" {
-		word = " (movies)"
-	}
+	word := map[string]string{"sonarr": " (shows)", "radarr": " (movies)", "lidarr": " (music)"}[h.side]
 	for _, n := range []string{cutName(want, 80), cutName(want, 80-len(word)) + word} {
 		if c, err := sources.CountNamed(ctx, h.Store.Read(), n, own); err == nil && c == 0 {
 			return n, true

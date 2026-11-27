@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Bağla",
 	"sources.bridge.linkName": "{name} bağla",
 	"sources.bridge.movieKey": "Filmler anahtarı (Radarr tarafı)",
+	"sources.bridge.musicKey": "Müzik anahtarı (Lidarr tarafı)",
 	"sources.bridge.notConnected": "Bağlı değil",
 	"sources.bridge.reaches": "Prowlarr HolyArrs'a şu adresten erişir",
 	"sources.bridge.remove": "Kaldır",

@@ -6,7 +6,7 @@
 	import EmptyState from '#lib/ui/EmptyState.svelte';
 	import Badge from '#lib/ui/Badge.svelte';
 	import SegmentedControl from '#lib/ui/SegmentedControl.svelte';
-	import { FolderPicker, LibraryToolPage, adoptParts, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, oneTickPerTrack, type ByHandFile, type ByHandResult, type ByHandScan, type ImportMode, type Pick } from '#lib/mediafiles/index.ts';
+	import { FolderPicker, LibraryToolPage, adoptParts, blocker, episodeCode, itemsFor, pickLine, resultLine, startPick, startTicked, oneTickPerTrack, rematchAlbum, dropTrack, type ByHandFile, type ByHandResult, type ByHandScan, type ImportMode, type Pick } from '#lib/mediafiles/index.ts';
 	import { to } from '#lib/core/paths.ts';
 	import { api, message } from '#lib/core/api.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
@@ -14,7 +14,7 @@
 	import { stepLabel } from '#lib/downloads/index.ts';
 	import { session } from '#lib/core/session.svelte.ts';
 	import type { AlbumSummary, EpisodeView, TitleView } from '#lib/core/types.ts';
-	import type { TrackView } from '#lib/music/index.ts';
+	import { pressingLabel, type PressingView, type TrackView } from '#lib/music/index.ts';
 	import { appLocale, ltr, t as tr } from '#lib/core/i18n/i18n.svelte.ts';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
@@ -47,6 +47,10 @@
 	let albumId = $state<number | undefined>(undefined);
 	let tracks = $state<TrackView[]>([]);
 	let trackId = $state<number | undefined>(undefined);
+	// The album's Pressings, as on the album page: picking another one makes the tracks follow it.
+	let pressings = $state<PressingView[]>([]);
+	let pressingId = $state(0);
+	let switching = $state(false);
 
 	const files = $derived(scan?.files ?? []);
 	const items = $derived(itemsFor(files, picks, ticked, mode));
@@ -142,12 +146,54 @@
 	async function pickAlbum(id: number | undefined, slot?: number) {
 		tracks = [];
 		trackId = undefined;
+		pressings = [];
+		pressingId = 0;
 		if (!id) return;
 		try {
-			tracks = (await api.get<{ tracks: TrackView[] }>(`/albums/${id}/tracks`)).tracks.filter((x) => !x.dropped);
+			const [ts, al] = await Promise.all([api.get<{ tracks: TrackView[] }>(`/albums/${id}/tracks`), api.get<{ pressings: PressingView[] }>(`/albums/${id}`)]);
+			if (id !== albumId) return; // another album was picked meanwhile
+			tracks = ts.tracks.filter((x) => !x.dropped);
+			pressings = al.pressings ?? [];
+			pressingId = pressings.find((p) => p.chosen)?.id ?? 0;
 			trackId = slot ? tracks.find((x) => x.slots.some((s) => s.id === slot))?.id : undefined;
 		} catch (err) {
 			lookError = message(err);
+		}
+	}
+
+	// Follows another Pressing, then matches this album's files again against its track list.
+	async function usePressing(id: number) {
+		const album = albumId;
+		if (!album || !id || pressings.find((p) => p.chosen)?.id === id) return;
+		const where = scan?.path;
+		switching = true;
+		lookError = '';
+		let moved = false;
+		try {
+			await api.put(`/albums/${album}`, { pressing_id: id });
+			moved = true;
+			toasts.push(tr('library.album.pressingChanged'), 'ok', { body: pressings.find((p) => p.id === id)?.name ?? '' });
+			await pickAlbum(album);
+			if (where) {
+				const s = await api.post<ByHandScan>('/manual-import/scan', { path: where });
+				if (scan?.path !== where) return;
+				const r = rematchAlbum(s.files, picks, ticked, album);
+				picks = r.picks;
+				ticked = r.ticked;
+				held = r.held;
+				scan = s;
+			}
+		} catch (err) {
+			if (moved) {
+				// The album now follows the new Pressing but its files weren't matched again: their old tracks are gone.
+				for (const [k, p] of Object.entries(picks)) if (p?.album_id === album) { picks[k] = dropTrack(p); ticked[k] = false; }
+				lookError = message(err);
+			} else {
+				pressingId = pressings.find((p) => p.chosen)?.id ?? 0;
+				toasts.push(tr('library.album.pressingFailed'), 'fail', { body: message(err) });
+			}
+		} finally {
+			switching = false;
 		}
 	}
 
@@ -252,7 +298,7 @@
 				<input id="mi-path" class="input mono" bind:value={path} placeholder="/downloads/complete/Some.Show.S01" autocomplete="off" spellcheck="false" aria-describedby="mi-where" />
 			</div>
 			{#if session.can('users')}<Button icon="folder" onclick={() => (picking = true)} disabled={importing}>{tr('library.byHand.browse')}</Button>{/if}
-			<Button type="submit" variant="primary" icon="search" busy={scanning} disabled={importing || !path.trim()}>{tr('library.byHand.scan')}</Button>
+			<Button type="submit" variant="primary" icon="search" busy={scanning} disabled={importing || switching || !path.trim()}>{tr('library.byHand.scan')}</Button>
 		</form>
 		<p class="xs muted where" id="mi-where">{tr('library.byHand.where')} <a href={to('/settings/library-folders#import-folders')}>{tr('library.byHand.whereLink')}</a> {tr('library.byHand.whereEnd')}</p>
 		{#if error}<p class="form-error" role="alert">{error}</p>{/if}
@@ -285,7 +331,7 @@
 								<div class="match">
 									<b class="small">{pickLine(p)}</b>
 									{#if p && f.guess.title_id === p.title_id && (p.title_kind !== 'artist' || p.slot_id === f.guess.slot_id) && f.guess.confidence > 0 && f.guess.confidence < 1}<Badge label={f.guess.confidence >= 0.7 ? tr('library.byHand.likely') : tr('library.byHand.guess')} />{/if}
-									{#if !f.in_library && editFor !== f.path}<Button variant="plain" size="sm" onclick={() => openEditor(f)} disabled={importing}>{tr('shows.versions.change')}</Button>{/if}
+									{#if !f.in_library && editFor !== f.path}<Button variant="plain" size="sm" onclick={() => openEditor(f)} disabled={importing || switching}>{tr('shows.versions.change')}</Button>{/if}
 								</div>
 							{/if}
 							{#if p?.has_file && !f.in_library && !done}
@@ -347,11 +393,19 @@
 											{#if chosen.kind === 'artist'}
 												<div class="field">
 													<label class="xs" for="alb-{f.path}">{tr('library.byHand.album')}</label>
-													<select id="alb-{f.path}" class="input" bind:value={albumId} onchange={() => pickAlbum(albumId)}>
+													<select id="alb-{f.path}" class="input" bind:value={albumId} disabled={switching} onchange={() => pickAlbum(albumId)}>
 														<option value={undefined}>{tr('library.byHand.pickOne')}</option>
 														{#each albums as a (a.id)}<option value={a.id}>{a.name}{a.release_date ? ` (${a.release_date.slice(0, 4)})` : ''}</option>{/each}
 													</select>
 												</div>
+												{#if pressings.length > 1}
+													<div class="field">
+														<label class="xs" for="prs-{f.path}">{tr('library.album.edition')}</label>
+														<select id="prs-{f.path}" class="input" data-testid="by-hand-pressing" bind:value={pressingId} disabled={switching || importing} onchange={() => usePressing(pressingId)}>
+															{#each pressings as x (x.id)}<option value={x.id}>{pressingLabel(x).replace(`${albums.find((a) => a.id === albumId)?.name ?? ''} · `, '')}</option>{/each}
+														</select>
+													</div>
+												{/if}
 												<div class="field">
 													<label class="xs" for="trk-{f.path}">{tr('library.byHand.track')}</label>
 													<select id="trk-{f.path}" class="input" bind:value={trackId} disabled={!tracks.length}>
@@ -363,7 +417,7 @@
 										</div>
 										<div class="row end tight">
 											<span class="small muted">{chosen.name}{chosen.kind === 'show' && episode !== undefined ? ` · ${episodeCode(season, episode)}` : ''}{chosen.kind === 'artist' && pickedTrack ? ` · ${String(pickedTrack.number).padStart(2, '0')}${pickedTrack.name ? ` ${pickedTrack.name}` : ''}` : ''}</span>
-											<Button variant="primary" size="sm" onclick={useMatch} disabled={(chosen.kind === 'show' && (season === undefined || episode === undefined)) || (chosen.kind === 'artist' && !trackSlot(pickedTrack))}>{tr('library.byHand.useThis')}</Button>
+											<Button variant="primary" size="sm" onclick={useMatch} disabled={switching || (chosen.kind === 'show' && (season === undefined || episode === undefined)) || (chosen.kind === 'artist' && !trackSlot(pickedTrack))}>{tr('library.byHand.useThis')}</Button>
 										</div>
 									{/if}
 								</div>
@@ -377,7 +431,7 @@
 				<p class="xs muted" data-testid="where-placed">{tr(mode === 'move' ? 'library.byHand.wherePlacedMove' : 'library.byHand.wherePlaced')}</p>
 				<div class="row end">
 					<span class="small muted">{tr('library.byHand.ticked', { n: items.length.toLocaleString(appLocale()) })}</span>
-					<Button variant="primary" icon="download" onclick={doImport} disabled={!items.length} busy={importing}>
+					<Button variant="primary" icon="download" onclick={doImport} disabled={!items.length || switching} busy={importing}>
 						{tr(items.length === 1 ? 'library.byHand.importOne' : 'library.byHand.importMany', { n: items.length.toLocaleString(appLocale()) })}
 					</Button>
 				</div>

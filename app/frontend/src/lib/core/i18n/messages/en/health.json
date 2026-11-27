@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Your Sources find torrent downloads, but no torrent Downloader is set up, so none can be sent. Add one in Settings › Downloaders.",
 	"health.check.sameDownloader": "Added twice:",
 	"health.check.sameDownloaderWhy": "{app} reaches the same download app as another Downloader, so its downloads can show twice. Remove one in Settings › Downloaders.",
+	"health.check.sameDownloaderShared": "{app} and another Downloader both use the category \"{category}\", so downloads in it can show twice. Give {app} its own category in Settings › Downloaders.",
 	"health.check.keyKitRecommended": "Recommended: download your key kit",
 	"health.check.keyKitRecommendedOthers": "Recommended: ask the owner for the key kit",
 	"health.kind.sameDownloader": "Downloader added twice",

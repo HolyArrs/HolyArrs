@@ -30,6 +30,8 @@ import (
 const (
 	SonarrVersion = "4.0.99.0"
 	RadarrVersion = "5.0.99.0"
+	// LidarrVersion: Prowlarr wants at least 1.0.2 on the Lidarr side.
+	LidarrVersion = "2.0.99.0"
 )
 
 // AppName is the instance name in the status answer.
@@ -37,7 +39,7 @@ const AppName = "HolyArrs"
 
 // oldAppNames are the app names each side answers in its status, because
 // Pulsarr refuses a server whose name is not the old app's.
-var oldAppNames = map[string]string{"sonarr": "Sonarr", "radarr": "Radarr"}
+var oldAppNames = map[string]string{"sonarr": "Sonarr", "radarr": "Radarr", "lidarr": "Lidarr"}
 
 // bodyMax caps a request body. A show sent back with every season and
 // picture stays far below it.
@@ -81,7 +83,7 @@ type Deps struct {
 
 type handler struct {
 	Deps
-	side    string // sonarr or radarr
+	side    string // sonarr, radarr or lidarr
 	version string
 }
 
@@ -143,6 +145,25 @@ func Radarr(d Deps) http.Handler {
 	mux.HandleFunc("GET /moviefile", h.movieFiles)
 	mux.HandleFunc("GET /moviefile/{id}", h.movieFile)
 	mux.HandleFunc("GET /calendar", h.calendarMovies)
+	return h.serve(mux)
+}
+
+// Lidarr serves the Lidarr side, under /lidarr/, for Prowlarr only: its
+// status and the indexer calls, under /api/v1 as Lidarr has them. What
+// Prowlarr writes here becomes a music Source. Nothing else of
+// Lidarr is answered.
+func Lidarr(d Deps) http.Handler {
+	h := &handler{Deps: d, side: "lidarr", version: LidarrVersion}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /system/status", h.status)
+	mux.HandleFunc("GET /indexer", h.listIndexers)
+	mux.HandleFunc("GET /indexer/schema", h.indexerSchema)
+	mux.HandleFunc("GET /indexer/{id}", h.getIndexer)
+	mux.HandleFunc("POST /indexer", h.addIndexer)
+	mux.HandleFunc("PUT /indexer/{id}", h.putIndexer)
+	mux.HandleFunc("DELETE /indexer/{id}", h.deleteIndexer)
+	mux.HandleFunc("POST /indexer/test", h.testIndexer)
+	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { notFound(w) })
 	return h.serve(mux)
 }
 
@@ -217,7 +238,7 @@ func (h *handler) serve(mux *http.ServeMux) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Application-Version", h.version)
 		rest := strings.ToLower(strings.TrimPrefix(r.URL.Path, "/"+h.side))
-		inner, ok := strings.CutPrefix(rest, "/api/v3/")
+		inner, ok := strings.CutPrefix(rest, "/api/"+h.apiVersion()+"/")
 		if !ok && strings.HasPrefix(rest, "/mediacover/") {
 			inner, ok = rest[1:], true
 		}
@@ -226,7 +247,7 @@ func (h *handler) serve(mux *http.ServeMux) http.Handler {
 			case "/ping": // phone apps such as Helmarr check the server is up here
 				writeJSON(w, http.StatusOK, map[string]string{"status": "OK"})
 			case "/api": // the API versions on offer
-				writeJSON(w, http.StatusOK, map[string]any{"current": "v3", "deprecated": []string{}})
+				writeJSON(w, http.StatusOK, map[string]any{"current": h.apiVersion(), "deprecated": []string{}})
 			case "/system/status":
 				// A page of the old app's own site: it sends the caller to
 				// sign in. Helmarr asks for it while it works out the address.
@@ -250,6 +271,15 @@ func (h *handler) serve(mux *http.ServeMux) http.Handler {
 		r2.URL = &u
 		mux.ServeHTTP(w, r2)
 	})
+}
+
+// apiVersion is the API path version: v1 on the Lidarr side, as Lidarr
+// has it, v3 on the others.
+func (h *handler) apiVersion() string {
+	if h.side == "lidarr" {
+		return "v1"
+	}
+	return "v3"
 }
 
 // base is this side's address prefix: the URL base, then /sonarr or

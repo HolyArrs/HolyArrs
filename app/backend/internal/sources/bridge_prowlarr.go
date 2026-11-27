@@ -22,7 +22,7 @@ type BridgeProwlarr struct {
 
 // BridgeSide is one HolyArrs side that Prowlarr connects to.
 type BridgeSide struct {
-	Kind string // Sonarr or Radarr, the app type name in Prowlarr
+	Kind string // Sonarr, Radarr or Lidarr, the app type name in Prowlarr
 	Name string // the entry's name in Prowlarr
 	Base string // the address Prowlarr uses to reach this side of HolyArrs
 	Key  string // the arr key; empty keeps the one Prowlarr has

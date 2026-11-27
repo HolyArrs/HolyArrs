@@ -26,6 +26,7 @@
 	"sources.bridge.link": "जोड़ें",
 	"sources.bridge.linkName": "{name} जोड़ें",
 	"sources.bridge.movieKey": "फ़िल्मों की कुंजी (Radarr की तरफ़)",
+	"sources.bridge.musicKey": "संगीत की कुंजी (Lidarr की तरफ़)",
 	"sources.bridge.notConnected": "जुड़ा नहीं है",
 	"sources.bridge.reaches": "Prowlarr, HolyArrs तक यहां से पहुंचता है",
 	"sources.bridge.remove": "हटाएं",

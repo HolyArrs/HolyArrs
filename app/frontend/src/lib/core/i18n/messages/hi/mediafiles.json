@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "बेहतर कॉपी",
 	"mediafiles.state.notKeptQ": "अप-टू-डेट नहीं · {q}",
 	"mediafiles.state.notKept": "अप-टू-डेट नहीं",
+	"mediafiles.state.keptInPart": "आंशिक रूप से रखा गया",
 	"mediafiles.state.inLibraryQ": "लाइब्रेरी में · {q}",
 	"mediafiles.state.inLibrary": "लाइब्रेरी में",
 	"mediafiles.state.upcomingOn": "आने वाला · {date}",

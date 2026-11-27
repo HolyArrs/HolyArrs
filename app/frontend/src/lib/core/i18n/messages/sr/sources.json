@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Повежи",
 	"sources.bridge.linkName": "Повежи {name}",
 	"sources.bridge.movieKey": "Кључ за филмове (Radarr страна)",
+	"sources.bridge.musicKey": "Кључ за музику (Lidarr страна)",
 	"sources.bridge.notConnected": "Није повезан",
 	"sources.bridge.reaches": "Prowlarr допире до HolyArrs-а на",
 	"sources.bridge.remove": "Уклони",

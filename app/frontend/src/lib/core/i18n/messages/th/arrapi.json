@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "ภาพยนตร์",
 	"arrapi.seerr.showsLower": "ซีรีส์",
 	"arrapi.seerr.moviesLower": "ภาพยนตร์",
+	"arrapi.seerr.music": "เพลง",
+	"arrapi.seerr.musicLower": "เพลง",
 	"arrapi.seerr.saveFail": "บันทึกไม่สำเร็จ",
 	"arrapi.seerr.replaceConfirm": "เปลี่ยนคีย์ {app} ไหม คีย์ปัจจุบันจะใช้ไม่ได้อีก",
 	"arrapi.seerr.makeFail": "สร้างคีย์ไม่สำเร็จ",

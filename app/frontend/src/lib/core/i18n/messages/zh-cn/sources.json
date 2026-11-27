@@ -26,6 +26,7 @@
 	"sources.bridge.link": "关联",
 	"sources.bridge.linkName": "关联 {name}",
 	"sources.bridge.movieKey": "电影密钥（Radarr 一侧）",
+	"sources.bridge.musicKey": "音乐密钥（Lidarr 一侧）",
 	"sources.bridge.notConnected": "未连接",
 	"sources.bridge.reaches": "Prowlarr 通过以下地址访问 HolyArrs",
 	"sources.bridge.remove": "移除",

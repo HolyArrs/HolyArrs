@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Deine Quellen finden Torrent-Downloads, aber kein Torrent-Downloader ist eingerichtet, daher kann keiner gesendet werden. Füge unter Einstellungen › Downloader einen hinzu.",
 	"health.check.sameDownloader": "Doppelt hinzugefügt:",
 	"health.check.sameDownloaderWhy": "{app} erreicht dieselbe Download-App wie ein anderer Downloader, daher können seine Downloads doppelt erscheinen. Entferne einen unter Einstellungen › Downloader.",
+	"health.check.sameDownloaderShared": "{app} und ein anderer Downloader nutzen beide die Kategorie \"{category}\", daher können Downloads darin doppelt erscheinen. Gib {app} unter Einstellungen › Downloader eine eigene Kategorie.",
 	"health.check.keyKitRecommended": "Empfohlen: Schlüssel-Set herunterladen",
 	"health.check.keyKitRecommendedOthers": "Empfohlen: den Besitzer um das Schlüssel-Set bitten",
 	"health.kind.sameDownloader": "Downloader doppelt hinzugefügt",

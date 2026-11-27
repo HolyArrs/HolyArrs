@@ -51,7 +51,7 @@ func newFakeProwlarrApps(t *testing.T, feedURL string) *fakeProwlarrApps {
 			_ = json.NewEncoder(w).Encode(map[string]any{"appName": "Prowlarr", "version": "2.6.5.5623"})
 		case r.URL.Path == "/api/v1/applications/schema":
 			var out []map[string]any
-			for _, impl := range []string{"Sonarr", "Radarr"} {
+			for _, impl := range []string{"Sonarr", "Radarr", "Lidarr"} {
 				out = append(out, map[string]any{"implementation": impl, "configContract": impl + "Settings", "fields": []any{
 					map[string]any{"name": "prowlarrUrl"}, map[string]any{"name": "baseUrl"}, map[string]any{"name": "apiKey"}, map[string]any{"name": "syncCategories", "value": []any{2000, 5000}}}})
 			}
@@ -105,8 +105,13 @@ func appField(a map[string]any, name string) string {
 }
 
 // pushIndexer writes one Torznab site into an app the way Prowlarr's sync does.
+// Lidarr answers under /api/v1 and takes music categories; the other two /api/v3.
 func pushIndexer(t *testing.T, base, key, feedURL string) int {
-	req, _ := http.NewRequest("GET", base+"/api/v3/indexer/schema", nil)
+	api, cats := "/api/v3", []any{2000, 5000}
+	if strings.HasSuffix(base, "/lidarr") {
+		api, cats = "/api/v1", []any{3000}
+	}
+	req, _ := http.NewRequest("GET", base+api+"/indexer/schema", nil)
 	req.Header.Set("X-Api-Key", key)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil || resp.StatusCode != 200 {
@@ -120,10 +125,10 @@ func pushIndexer(t *testing.T, base, key, feedURL string) int {
 		if tm["implementation"] != "Torznab" {
 			continue
 		}
-		body := fillIndexer(t, tm, "Lab Tracker (Prowlarr)", feedURL+"/1/", map[string]any{"categories": []any{2000, 5000}})
+		body := fillIndexer(t, tm, "Lab Tracker (Prowlarr)", feedURL+"/1/", map[string]any{"categories": cats})
 		body["priority"], body["enableRss"], body["tags"] = 25, true, []any{}
 		b, _ := json.Marshal(body)
-		req, _ := http.NewRequest("POST", base+"/api/v3/indexer", bytes.NewReader(b))
+		req, _ := http.NewRequest("POST", base+api+"/indexer", bytes.NewReader(b))
 		req.Header.Set("X-Api-Key", key)
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := http.DefaultClient.Do(req)
@@ -214,14 +219,14 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	}
 	var v sources.BridgeView
 	_ = json.Unmarshal([]byte(out), &v)
-	if v.Kind != "prowlarr" || v.Sources != 2 || v.CallbackURL != f.srv.URL || v.LastError != "" {
+	if v.Kind != "prowlarr" || v.Sources != 3 || v.CallbackURL != f.srv.URL || v.LastError != "" {
 		t.Fatalf("view %+v", v)
 	}
 	if st, body := f.session("GET", "/api/v1/settings/old-app-api", ""); st != 200 || !strings.Contains(body, `"enabled":true`) {
 		t.Fatalf("arr API not on: %s", body)
 	}
 	p.mu.Lock()
-	if len(p.apps) != 2 || p.syncs != 1 || p.pushed[f.srv.URL+"/sonarr"] != 1 || p.pushed[f.srv.URL+"/radarr"] != 1 {
+	if len(p.apps) != 3 || p.syncs != 1 || p.pushed[f.srv.URL+"/sonarr"] != 1 || p.pushed[f.srv.URL+"/radarr"] != 1 || p.pushed[f.srv.URL+"/lidarr"] != 1 {
 		t.Fatalf("prowlarr apps %d syncs %d pushed %v", len(p.apps), p.syncs, p.pushed)
 	}
 	for _, a := range p.apps {
@@ -236,7 +241,7 @@ func TestBridgeProwlarrConnectUsesTheOldAppSync(t *testing.T) {
 	}
 	// Disconnect: HolyArrs leaves Prowlarr's apps, and the Sources Prowlarr
 	// wrote go here (Prowlarr does not remove them when an app goes).
-	if st, out := f.session("DELETE", fmt.Sprintf("/api/v1/bridges/%d", v.ID), ""); st != 200 || !strings.Contains(out, `"sources":2`) {
+	if st, out := f.session("DELETE", fmt.Sprintf("/api/v1/bridges/%d", v.ID), ""); st != 200 || !strings.Contains(out, `"sources":3`) {
 		t.Fatalf("delete %d %s", st, out)
 	}
 	p.mu.Lock()

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"path"
 	"path/filepath"
 	"sort"
@@ -234,4 +235,28 @@ func foundMusicFiles(ctx context.Context, db *sql.DB, lf mediafiles.LibraryFolde
 		files = append(files, ff)
 	}
 	return files, byPath, nil
+}
+
+// rematchArtist runs reconcileFoundTracks for one artist's own folders,
+// after its tracks changed (a refresh, a Pressing picked by hand), so found
+// files that now have a track are linked without a Library rescan.
+// Only files already recorded are read; nothing moves on disk.
+func (s *Service) rematchArtist(ctx context.Context, titleID int64, by domain.Actor) {
+	vs, err := database.Select[mediafiles.Version](ctx, s.Store.Read(), "versions", "title_id = ? ORDER BY id", titleID)
+	if err != nil {
+		log.Printf("library: rematch artist %d: %v", titleID, err)
+		return
+	}
+	for _, v := range vs {
+		if v.SharedFolder || v.FolderName == "" || !filepath.IsLocal(v.FolderName) {
+			continue
+		}
+		var lf mediafiles.LibraryFolder
+		if err := database.Get(ctx, s.Store.Read(), "library_folders", v.LibraryFolderID, &lf); err != nil || lf.Kind != "music" {
+			continue
+		}
+		if _, err := s.reconcileFoundTracks(ctx, lf, v, by); err != nil {
+			log.Printf("library: rematch artist %d: %v", titleID, err)
+		}
+	}
 }

@@ -87,7 +87,7 @@ func (h *AddHandlers) lookupShows(w http.ResponseWriter, r *http.Request) {
 	byID = byID && (k == "tmdb" || k == "tvdb" || k == "tvmaze" || k == "imdb")
 	if byID {
 		sh, err := New(h.Lib).LookupShow(r.Context(), k+":"+strings.TrimSpace(term[len(k)+1:]), source)
-		if err != nil && !errors.Is(err, metadata.ErrShowNotFound) {
+		if err != nil && (!errors.Is(err, metadata.ErrShowNotFound) || errors.Is(err, ErrTVDBIDNeedsKey)) {
 			h.Fail(w, err)
 			return
 		}

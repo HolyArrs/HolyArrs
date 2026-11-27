@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "更好的副本",
 	"mediafiles.state.notKeptQ": "未追踪 · {q}",
 	"mediafiles.state.notKept": "未追踪",
+	"mediafiles.state.keptInPart": "部分保留",
 	"mediafiles.state.inLibraryQ": "在媒体库中 · {q}",
 	"mediafiles.state.inLibrary": "在媒体库中",
 	"mediafiles.state.upcomingOn": "即将推出 · {date}",

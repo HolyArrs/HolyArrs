@@ -48,6 +48,7 @@ DELETE /blocklist/{id} delete
 DELETE /customformat/{id} delete
 DELETE /delayprofile/{id} delete
 DELETE /indexer/{id} delete
+DELETE /lidarr/ delete
 DELETE /movie/editor delete
 DELETE /movie/{id} delete
 DELETE /notification/{id} delete
@@ -345,6 +346,7 @@ GET /indexer see
 GET /indexer/schema see
 GET /indexer/{id} see
 GET /languageprofile see
+GET /lidarr/ see
 GET /live see
 GET /log see
 GET /login admin
@@ -631,6 +633,7 @@ POST /customformat settings
 POST /delayprofile settings
 POST /indexer settings
 POST /indexer/test settings
+POST /lidarr/ add
 POST /mcp see
 POST /movie add
 POST /movie/import add
@@ -738,6 +741,7 @@ PUT /delayprofile/{id} settings
 PUT /episode/monitor add
 PUT /episode/{id} add
 PUT /indexer/{id} settings
+PUT /lidarr/ add
 PUT /movie add
 PUT /movie/editor add
 PUT /movie/{id} add

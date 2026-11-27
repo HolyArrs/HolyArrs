@@ -4,10 +4,11 @@
 	import { t, appLocale } from '#lib/core/i18n/i18n.svelte.ts';
 	import TitleSection from '#lib/ui/TitleSection.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
+	import { partlyKept } from '#lib/mediafiles/library-state.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
-	import { addedOn, airWords, epFile, fileLangs as langs, pathEnd, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
+	import { addedOn, airWords, epFile, fileLangs as langs, pathEnd, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint, qOrder, qHints, subsCodes } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
 	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, chosenWhy, type SheetEpisode } from '#lib/shows/index.ts';
 	import { HistoryLine as CompactRow, isRoutine, groupDownloads, downloadTone, FilePoints } from '#lib/downloads/index.ts';
 	import { leftInDownloader, qualityBadges, ShowDeleteDialog, standInFolder, splitSteps, TitleHeldCopies, type RenameStep } from '#lib/mediafiles/index.ts';
@@ -125,9 +126,6 @@
 		}
 	}
 
-	// Ready-made quality sets sit in the control (4K stays for second versions); every other set is in the Custom menu.
-	const qOrder = ['Lite', 'Standard', 'Best'];
-	const qHints = (): Record<string, string> => ({ Lite: t('discover.titleLibrary.hintLite'), Standard: t('discover.titleLibrary.hintStandard'), Best: t('discover.titleLibrary.hintBest'), '4K': t('discover.titleLibrary.hint4k') });
 	const qKind = $derived(rules.filter((r) => r.kinds.includes(owned?.kind ?? '')));
 	const qPresets = $derived(qKind.filter((r) => r.preset && r.name !== '4K').sort((a, b) => (qOrder.indexOf(a.name) + 1 || 99) - (qOrder.indexOf(b.name) + 1 || 99)));
 	const qOthers = $derived(qKind.filter((r) => !qPresets.includes(r)));
@@ -300,7 +298,8 @@
 		if (folderName) out.push({ k: 'folder', icon: 'folder', v: folderName, title: o.folder_path ?? '' });
 		if (o.size_bytes) out.push({ k: 'size', icon: 'archive', v: bytes(o.size_bytes) });
 		if (o.pick_rules_name) out.push({ k: 'rules', icon: 'star', v: o.pick_rules_name });
-		out.push({ k: 'keep', icon: o.keep_up_to_date ? 'check' : 'x', v: o.keep_up_to_date ? t('discover.titleLibrary.keptUpToDate') : t('discover.titleLibrary.notKeptUpToDate') });
+		const part = partlyKept(o);
+		out.push({ k: 'keep', icon: o.keep_up_to_date || part ? 'check' : 'x', v: o.keep_up_to_date ? t('discover.titleLibrary.keptUpToDate') : part ? t('mediafiles.state.keptInPart') : t('discover.titleLibrary.notKeptUpToDate') });
 		if (o.show?.status) out.push({ k: 'status', icon: 'play', v: o.show.status.replace(/^./, (c) => c.toUpperCase()) });
 		if (o.show?.network) out.push({ k: 'net', icon: 'tv', v: o.show.network });
 		if (lang) out.push({ k: 'lang', icon: 'globe', v: lang, title: `${t('discover.titlePage.originalLanguage')}: ${lang}` });
@@ -337,8 +336,6 @@
 	const subsOwn = $derived(subsData?.wishes.find((w) => !w.item_id && !w.version_id));
 
 	const subsMode = $derived<'default' | 'off' | 'custom'>(!subsOwn ? 'default' : subsOwn.languages.length ? 'custom' : 'off');
-
-	const subsCodes = (ws: { language: string }[]) => [...new Set(ws.map((w) => w.language.toUpperCase()))].join(', ');
 
 	const subsHint = $derived.by(() => {
 		if (subsMode === 'off') return t('discover.titleLibrary.noSubtitles');
@@ -524,9 +521,9 @@
 			{#if manage}
 				<h3 class="lib-h">{t('discover.titleLibrary.settings')}</h3>
 				<div class="lib-rows">
-					<button type="button" class="lib-row" role="switch" aria-checked={o.keep_up_to_date} disabled={busyAction === 'keep'} onclick={() => own.ownRun('keep')}>
+					<button type="button" class="lib-row" role="switch" aria-checked={o.keep_up_to_date ? 'true' : partlyKept(o) ? 'mixed' : 'false'} data-testid="show-keep-switch" disabled={busyAction === 'keep'} onclick={() => own.ownRun('keep')}>
 						<span><b>{t('discover.titleLibrary.keepUpToDate')}</b><small>{t('discover.titleLibrary.newAndBetterCopies')}</small></span>
-						<span class="lib-switch" class:on={o.keep_up_to_date} aria-hidden="true"></span>
+						<span class="lib-switch" class:on={o.keep_up_to_date} class:part={!o.keep_up_to_date && partlyKept(o)} aria-hidden="true"></span>
 					</button>
 					{#if (!o.gate_open || !o.keep_up_to_date) && o.gate_reason}
 						<div class="lib-row static">
@@ -553,7 +550,7 @@
 							<div class="lib-pick"><Menu label={t('discover.titleLibrary.seasons')} variant="button" items={seasonMenu} width={220}>{#snippet trigger()}<span>{busyAction === 'seasons' ? t('discover.titleLibrary.saving') : seasonPickWords[seasonPick]}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div>
 						<div class="lib-row static">
-							<span><b>{t('discover.titleLibrary.episodeOrder')}</b>{#if eo.hint}<small>{eo.hint}</small>{/if}</span>
+							<span><b>{t('discover.titleLibrary.episodeOrder')}</b>{#if eo.hint}<small class="wrap">{eo.hint}</small>{/if}</span>
 							<div class="lib-pick"><Menu label={t('discover.titleLibrary.episodeOrder')} variant="button" items={eo.menu} width={eo.groupList?.groups.length ? 300 : 200}>{#snippet trigger()}<span>{busyAction === 'order' ? t('discover.titleLibrary.saving') : orderLabel(chosenGroup, orders.find(([v]) => v === o.show?.episode_order)?.[1] ?? t('discover.titleLibrary.orderAired'), t('discover.titleLibrary.orderUnavailable'))}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div><SeasonPacksRow value={o.show?.pack_window ?? 0} busy={busyAction === 'pack'} onpick={(n) => void putTitle({ pack_window: n }, 'pack')} />
 					{/if}
@@ -745,22 +742,23 @@
 	.lib-rows { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: var(--r-panel); background: var(--surface-1); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
 	.lib-rows.danger { margin-top: 16px; }
 	.lib-rows.danger b, .lib-rows.danger :global(svg) { color: var(--fail-text); }
-	.lib-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
-	.lib-row + .lib-row { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
-	.lib-row:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
-	.lib-row:focus-visible, .lib-sr-main:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
-	.lib-row span { display: grid; gap: 3px; min-width: 0; }
-	.lib-row b { font: 600 15px/1.2 var(--font-ui); }
-	.lib-row small { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.lib-row :global(svg) { flex: none; color: var(--text-muted); }
-	.lib-row.static { cursor: default; }
-	.lib-row.static:hover { background: none; }
-	.lib-row small.wrap { white-space: normal; }
-	.lib-pick { flex: none; max-width: 55%; min-width: 0; }
-	.lib-pick :global(.ui-pop) { display: flex; max-width: 100%; }
-	.lib-pick :global(.trigger) { max-width: 100%; min-width: 0; overflow: hidden; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
-	.lib-pick :global(.trigger span) { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.lib-pick :global(.trigger svg) { flex: none; }
+	/* These rows include child components (Season packs), so the rules reach into them. */
+	.lib-rows :global(.lib-row) { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; padding: 14px 20px; border: 0; background: none; color: var(--text); text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
+	.lib-rows :global(.lib-row + .lib-row) { box-shadow: inset 0 .5px 0 color-mix(in srgb, var(--text) 10%, transparent); }
+	.lib-rows :global(.lib-row:hover) { background: color-mix(in srgb, var(--text) 4%, transparent); }
+	.lib-rows :global(.lib-row:focus-visible), .lib-sr-main:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+	.lib-rows :global(.lib-row > span) { display: grid; gap: 3px; min-width: 0; }
+	.lib-rows :global(.lib-row > span > b) { font: 600 15px/1.2 var(--font-ui); }
+	.lib-rows :global(.lib-row > span > small) { color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-rows :global(.lib-row svg) { flex: none; color: var(--text-muted); }
+	.lib-rows :global(.lib-row.static) { cursor: default; }
+	.lib-rows :global(.lib-row.static:hover) { background: none; }
+	.lib-rows :global(.lib-row > span > small.wrap) { white-space: normal; overflow-wrap: anywhere; }
+	.lib-rows :global(.lib-pick) { flex: none; max-width: 55%; min-width: 0; }
+	.lib-rows :global(.lib-pick .ui-pop) { display: flex; max-width: 100%; }
+	.lib-rows :global(.lib-pick .trigger) { max-width: 100%; min-width: 0; overflow: hidden; height: 34px; padding: 0 10px; border-radius: 9px; color: var(--text-muted); font: 500 14px/1 var(--font-ui); }
+	.lib-rows :global(.lib-pick .trigger span) { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lib-rows :global(.lib-pick .trigger svg) { flex: none; }
 	.lib-pick :global(.trigger:hover), .lib-pick :global(.trigger[aria-expanded='true']) { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
 	.lib-move-path { margin: 0 0 16px; color: var(--text-muted); font: 500 13px/1.4 var(--font-mono, ui-monospace, monospace); overflow-wrap: anywhere; }
 	.lib-move-actions { display: flex; justify-content: flex-end; gap: 8px; }
@@ -791,6 +789,8 @@
 	.lib-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%); transition: transform var(--dur-fast) var(--ease-out); }
 	.lib-switch.on { background: var(--ok); }
 	.lib-switch.on::after { transform: translateX(18px); }
+	.lib-switch.part { background: color-mix(in srgb, var(--ok) 55%, transparent); }
+	.lib-switch.part::after { transform: translateX(9px); }
 	@media (max-width: 600px) { .lib-status { padding: 18px; } .lib-btn { flex: 1; justify-content: center; } .lib-files { grid-template-columns: 1fr; } }
 	.lib-hist { display: grid; gap: 2px; margin: 0 -12px; }
 	/* A 44px-tall hit area over the 16px link line on touch phones. */

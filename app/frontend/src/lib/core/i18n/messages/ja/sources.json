@@ -26,6 +26,7 @@
 "sources.bridge.link": "連携",
 "sources.bridge.linkName": "{name} を連携",
 "sources.bridge.movieKey": "映画用のキー(Radarr 側)",
+"sources.bridge.musicKey": "音楽用のキー(Lidarr 側)",
 "sources.bridge.notConnected": "未接続",
 "sources.bridge.reaches": "Prowlarr が HolyArrs に接続するアドレス:",
 "sources.bridge.remove": "削除",

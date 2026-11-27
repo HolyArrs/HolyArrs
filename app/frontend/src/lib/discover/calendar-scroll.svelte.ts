@@ -1,6 +1,6 @@
 // The Calendar's moving around: jumping to a day, the arrows, endless scrolling both ways and keeping the place on screen.
 import { rebaseBar } from './scroll-bar.svelte.ts';
-import { entryKey, shiftMonth, weekStart, addDays, monthRange, oneMovieDate, ymd, saveView, type CalendarView } from './calendar.ts';
+import { entryKey, pickLoadFrom, shiftMonth, weekStart, addDays, monthRange, oneMovieDate, ymd, saveView, type CalendarView } from './calendar.ts';
 import { tick, untrack } from 'svelte';
 import { page } from '$app/state';
 import { afterNavigate, replaceState } from '$app/navigation';
@@ -154,13 +154,24 @@ export function createCalendarScroll(ctx: any) {
 		void ctx.range.to;
 		if (started) untrack(() => void ctx.load());
 	});
-	// Today glides to today's row when it is loaded, else loads the usual stretch and opens there.
-	function toToday() {
+	// Today puts today's row under the bars when it is loaded, else loads the usual stretch and opens there.
+	async function toToday() {
 		stepAgain = null;
 		unhold();
+		// A load still on its way must not put the old place or a picked day back afterwards.
+		anchor = null;
+		goTo = null;
+		// From the phone sheet: let it close first, so the page can scroll.
+		if (ctx.sheetOpen) {
+			ctx.sheetOpen = false;
+			await tick();
+		}
 		const row = ctx.firstDay <= ctx.todayKey ? todayRow() : undefined;
-		if (row) goRow(row);
-		else {
+		if (row) {
+			// Today's row goes under the bars and is kept there while rows settle; the small month and the heading go back to today too.
+			land(ctx.todayKey);
+			ctx.landOn(ctx.todayKey, ctx.narrow ? 112 : 136);
+		} else {
 			// Today is not loaded (a linked month): load the past year to six weeks ahead, then go to today.
 			if (ctx.start.getTime() === ctx.earliest.getTime() && ctx.end.getTime() === addDays(ctx.today0, 7 * ctx.REACH).getTime()) return void atToday();
 			ctx.start = ctx.earliest;
@@ -243,8 +254,9 @@ export function createCalendarScroll(ctx: any) {
 		if (fromSheet) await tick();
 		const at = new Date(day + 'T00:00:00');
 		if (day < ctx.firstDay) {
-			const to = at < ctx.earliest ? ctx.earliest : at;
-			if (to >= ctx.start) return;
+			// Also further back than a year: the small month shows those dates, so they load when picked.
+			const to = pickLoadFrom(day, ctx.start);
+			if (!to) return;
 			goTo = day;
 			earlier(to);
 			return;

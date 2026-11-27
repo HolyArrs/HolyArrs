@@ -108,8 +108,8 @@
 	}
 </script>
 
-<!-- Hidden with one Version, since the card would only repeat Settings. -->
-{#if title.versions.length > 1}
+<!-- Staff always see it, so a single Version can still be changed; viewers only with two or more. -->
+{#if staff || title.versions.length > 1}
 <TitleSection id="h-show-versions" title={t('shows.versions.title')} testid="show-versions" primary>
 	{#snippet head()}
 		<div class="tp-head-end">

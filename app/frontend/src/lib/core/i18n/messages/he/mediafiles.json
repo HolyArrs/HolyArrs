@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "עותק טוב יותר",
 	"mediafiles.state.notKeptQ": "לא נשמר · {q}",
 	"mediafiles.state.notKept": "לא נשמר",
+	"mediafiles.state.keptInPart": "נשמר חלקית",
 	"mediafiles.state.inLibraryQ": "בספרייה · {q}",
 	"mediafiles.state.inLibrary": "בספרייה",
 	"mediafiles.state.upcomingOn": "בקרוב · {date}",

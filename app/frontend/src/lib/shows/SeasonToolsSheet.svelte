@@ -58,6 +58,8 @@
 	);
 	const total = $derived(episodes.reduce((n, e) => n + Number(e.slots[0]?.file?.Size ?? 0), 0));
 	const label = $derived(seasonName(season));
+	// Any slot counts, not only the first.
+	const hasFiles = $derived(episodes.some((e) => e.slots.some((s) => s.file)));
 
 	// History loads only when its tab is open.
 	$effect(() => {
@@ -111,7 +113,7 @@
 						<span class="st-main"><b title={r.name}>{r.name}</b><small>{[r.quality, r.size, r.group].filter(Boolean).join(' · ')}</small></span>
 						{#if r.langs.length}<span class="st-langs">{#each r.langs as l (l)}<span>{l}</span>{/each}</span>{/if}
 					</li>
-				{:else}<li class="muted">{t('shows.tools.noFiles')}</li>{/each}
+				{:else}<li class="st-empty muted">{t('shows.tools.noFiles')}</li>{/each}
 			</ul>
 		{:else if mode === 'rename'}
 			{#key season}<RenamePreview {titleId} {season} onDone={() => onchange?.()} />{/key}
@@ -121,7 +123,8 @@
 				{:else}<li class="muted">{loadingEvents ? t('shows.tools.loading') : t('shows.tools.nothingYet')}</li>{/each}
 			</ol>
 		{/if}
-		{#if ondelete}<button type="button" class="st-del" onclick={ondelete}><Icon name="trash" size={16} />{t('shows.tools.delete', { season: seasonName(season) })}</button>{/if}
+		<!-- Nothing on disk means nothing to delete. -->
+		{#if ondelete && hasFiles}<button type="button" class="st-del" onclick={ondelete}><Icon name="trash" size={16} />{t('shows.tools.delete', { season: seasonName(season) })}</button>{/if}
 	</div>
 </Sheet>
 
@@ -144,6 +147,8 @@
 	.st-sum { margin: 0; color: var(--text-muted); font: 500 13px/1.3 var(--font-ui); }
 	.st-files, .st-tl { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 	.st-files li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+	/* The empty note spans the row instead of the 28px number column. */
+	.st-files li.st-empty { display: block; }
 	.st-n { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: color-mix(in srgb, var(--text) 8%, transparent); font: 700 12px/1 var(--font-ui); }
 	.st-main { display: grid; gap: 3px; min-width: 0; }
 	.st-main b { font: 600 13px/1.3 var(--font-mono, ui-monospace, monospace); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

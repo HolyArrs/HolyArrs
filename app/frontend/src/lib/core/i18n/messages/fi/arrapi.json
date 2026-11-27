@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Elokuvat",
 	"arrapi.seerr.showsLower": "sarja",
 	"arrapi.seerr.moviesLower": "elokuva",
+	"arrapi.seerr.music": "Musiikki",
+	"arrapi.seerr.musicLower": "musiikkia",
 	"arrapi.seerr.saveFail": "Tallennus ei onnistunut",
 	"arrapi.seerr.replaceConfirm": "Vaihdetaanko {app}-avain? Nykyinen lakkaa toimimasta.",
 	"arrapi.seerr.makeFail": "Avaimen luonti ei onnistunut",

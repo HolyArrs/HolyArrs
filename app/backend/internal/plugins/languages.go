@@ -297,6 +297,9 @@ func (l *Languages) install(ctx context.Context, code string) error {
 	if !safeVersion(en.Version) {
 		return fmt.Errorf("%w: version %q", ErrPack, en.Version)
 	}
+	if had && cur.Version == en.Version && cur.SHA256 == en.SHA256 {
+		return nil // already kept, e.g. an earlier release's pack still in use
+	}
 	rel := en.FileURL
 	if rel == "" {
 		rel = "languages/" + code + "/" + en.Version + ".json.bz2"
@@ -385,7 +388,9 @@ func (l *Languages) LoadSizes(ctx context.Context) {
 }
 
 // pickPack is the entry for this app version; a development build takes
-// the newest one (its pages check the pack fits them before using it).
+// the newest one. A release whose own packs are not listed yet
+// takes the newest earlier release's. Pages check a pack fits them before
+// using it, so a pack whose words moved only leaves English.
 func pickPack(entries []Entry, code, app string) (Entry, bool) {
 	var best Entry
 	found := false
@@ -396,7 +401,8 @@ func pickPack(entries []Entry, code, app string) (Entry, bool) {
 		if en.Version == app {
 			return en, true
 		}
-		if devBuild(app) && (!found || newerVersion(en.Version, best.Version)) {
+		ok := devBuild(app) || (!strings.Contains(en.Version, "-") && !strings.Contains(app, "-") && newerVersion(app, en.Version))
+		if ok && (!found || newerVersion(en.Version, best.Version)) {
 			best, found = en, true
 		}
 	}

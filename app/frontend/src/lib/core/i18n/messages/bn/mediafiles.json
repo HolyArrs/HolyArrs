@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "ভালো কপি",
 	"mediafiles.state.notKeptQ": "রাখা হয়নি · {q}",
 	"mediafiles.state.notKept": "রাখা হয়নি",
+	"mediafiles.state.keptInPart": "আংশিক রাখা",
 	"mediafiles.state.inLibraryQ": "লাইব্রেরিতে · {q}",
 	"mediafiles.state.inLibrary": "লাইব্রেরিতে",
 	"mediafiles.state.upcomingOn": "আসছে · {date}",

@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Liên kết",
 	"sources.bridge.linkName": "Liên kết {name}",
 	"sources.bridge.movieKey": "Khóa phim (phía Radarr)",
+	"sources.bridge.musicKey": "Khóa nhạc (phía Lidarr)",
 	"sources.bridge.notConnected": "Chưa kết nối",
 	"sources.bridge.reaches": "Prowlarr truy cập HolyArrs tại",
 	"sources.bridge.remove": "Xóa",

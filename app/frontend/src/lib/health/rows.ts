@@ -182,6 +182,13 @@ export function jobTone(s: ScheduleRow, now = Date.now()): { tone: Tone; word: s
 	return { tone: 'ok', word: t('health.result.ok'), reason: seen.why ? skipWords(s.kind, seen.why) : '' };
 }
 
+// sameDownloaderWhy: when the twins are fenced but still share a category,
+// the server names it in quotes, so say which one to change.
+function sameDownloaderWhy(c: HealthCheck): string {
+	const shared = /both use the category "([^"]*)"/.exec(c.message || '');
+	return shared ? t('health.check.sameDownloaderShared', { app: c.subject, category: shared[1] }) : t('health.check.sameDownloaderWhy', { app: c.subject });
+}
+
 const downloaderChecks = new Set(['save_folder', 'no_downloader', 'same_downloader']);
 
 // One pass per kind of input, so group order is set later by groupRows.
@@ -211,7 +218,7 @@ export function buildRows(i: StatusInput): StatusRow[] {
 			name: checkTitle(c),
 			tone,
 			word: tone === 'ok' ? t('health.word.working') : tone === 'wait' ? t('health.state.warning') : t('health.word.broken'),
-			reason: c.kind === 'config_folder' && c.state !== 'ok' ? t('health.check.configSteps') : c.kind === 'save_folder' && c.state !== 'ok' ? t('health.check.saveFolderWhy', { app: c.subject }) : c.kind === 'no_downloader' && c.state !== 'ok' ? t(c.subject === 'usenet' ? 'health.check.noUsenetDl' : 'health.check.noTorrentDl') : c.kind === 'same_downloader' && c.state !== 'ok' ? t('health.check.sameDownloaderWhy', { app: c.subject }) : c.key === 'backups:key' && c.state === 'ok' && c.message ? keyKitNote(c.message) : c.message,
+			reason: c.kind === 'config_folder' && c.state !== 'ok' ? t('health.check.configSteps') : c.kind === 'save_folder' && c.state !== 'ok' ? t('health.check.saveFolderWhy', { app: c.subject }) : c.kind === 'no_downloader' && c.state !== 'ok' ? t(c.subject === 'usenet' ? 'health.check.noUsenetDl' : 'health.check.noTorrentDl') : c.kind === 'same_downloader' && c.state !== 'ok' ? sameDownloaderWhy(c) : c.key === 'backups:key' && c.state === 'ok' && c.message ? keyKitNote(c.message) : c.message,
 			at: c.checked_at || c.since,
 			fix: checkFix[c.kind] || undefined,
 			check: { kind: 'checks' }

@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filmid",
 	"arrapi.seerr.showsLower": "sarjad",
 	"arrapi.seerr.moviesLower": "filmid",
+	"arrapi.seerr.music": "Muusika",
+	"arrapi.seerr.musicLower": "muusika",
 	"arrapi.seerr.saveFail": "Salvestamine ebaõnnestus",
 	"arrapi.seerr.replaceConfirm": "Kas asendada {app} võti? Praegune lakkab töötamast.",
 	"arrapi.seerr.makeFail": "Võtme loomine ebaõnnestus",

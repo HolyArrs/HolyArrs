@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "திரைப்படங்கள்",
 	"arrapi.seerr.showsLower": "தொடர்கள்",
 	"arrapi.seerr.moviesLower": "திரைப்படங்கள்",
+	"arrapi.seerr.music": "இசை",
+	"arrapi.seerr.musicLower": "இசை",
 	"arrapi.seerr.saveFail": "சேமிக்க முடியவில்லை",
 	"arrapi.seerr.replaceConfirm": "{app} விசையை மாற்றவா? தற்போதையது வேலை செய்யாது.",
 	"arrapi.seerr.makeFail": "விசையை உருவாக்க முடியவில்லை",

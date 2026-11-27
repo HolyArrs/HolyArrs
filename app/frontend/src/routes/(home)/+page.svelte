@@ -24,7 +24,7 @@
 	import PageLoader from '#lib/ui/PageLoader.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
 	import { artGone, lightOnDark } from './art-check.ts';
-	import { arrivedHead, attention, setupBlocker, tilesSettled, welcomeRows, downloadMoved, downloadingNow, fallbackRows, homeDownloadsURL, homeStrip, n, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
+	import { arrivedHead, attention, setupBlocker, tilesSettled, welcomeRows, downloadMoved, downloadingNow, fallbackRows, homeDownloadsURL, homeStrip, n, pictureWait, type HomeAnswer, type HomeCard, type HomeRow } from './home.ts';
 	import { MetadataNotice, checkMetadata, detailPath, remember } from '#lib/metadata/index.ts';
 	import { headPath, newPath, ymd, type HeadAnswer, type NewAnswer } from '#lib/discover/index.ts';
 	import { cardTmdb, type ExploreCard, type ExploreRow } from '#lib/ui/title-cards.ts';
@@ -169,16 +169,16 @@
 
 	async function loadAll() {
 		// The first screen (the Home answer) loads now; the bigger asks wait until the sign-in hand-off has left, so its frames stay smooth.
-		// A fresh install waits for everything (its picture rows too), so nothing jumps in under the welcome card.
-		// The first visit keeps the loading screen until everything Home shows is there, pictures decoded, for 30 s at most; after that Home shows and the rest fills in as it arrives. With the metadata server down there is nothing to wait for: Home shows at once and fills in when it is back.
+		// Home shows as soon as its answer is in. Only the first visit of the session also waits for the tile pictures, for 1.5 s at most; pictures that come later fade in.
 		const homeRead = loadHome();
 		const art = (artReady ??= loadTileArt());
 		const picksRead = homeRead.then(() => (home?.rows?.includes('welcome') ? loadPicks() : undefined));
-		const ready = Promise.all([homeRead, checkMetadata()]).then(([, up]) => (up ? Promise.all([art, picksRead]).then(decoded) : undefined));
+		const wait = pictureWait();
+		const ready = Promise.all([homeRead, checkMetadata()]).then(([, up]) => (up && wait ? Promise.all([art, picksRead]).then(decoded) : undefined));
 		const first = Promise.race([ready, new Promise<void>((r) => {
-			const w = setTimeout(r, FIRST_WAIT);
+			const w = setTimeout(r, wait);
 			endWait = () => (clearTimeout(w), r());
-		})]).then(() => {
+		})]).then(() => homeRead).then(() => {
 			if (home) loaded = true;
 		});
 		await afterHandoff();
@@ -207,8 +207,6 @@
 		settled = true;
 	}
 
-	// The longest the loading screen waits on the first visit.
-	const FIRST_WAIT = 30000;
 	// While Explore's lists are still being built (a fresh install, or a slow metadata server) an answer comes back empty and says so: ask again every few seconds, for two minutes at most.
 	const AGAIN_EVERY = 3000;
 	const AGAIN_FOR = 120000;

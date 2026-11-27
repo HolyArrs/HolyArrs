@@ -68,3 +68,18 @@ func TestLookupTVDBIDPrefersChosenSource(t *testing.T) {
 		t.Fatalf("%+v %v", sh, err)
 	}
 }
+
+// A tvdb:<id> that TVMaze and the chosen source don't know, with no TVDB
+// key, says that a TVDB key would look it up instead of finding nothing.
+func TestLookupTVDBIDNoKeySaysWhy(t *testing.T) {
+	svc := showService(open(t), metadata.ShowSources{"tmdb": &fakeShows{}, "tvmaze": &fakeShows{}, "tvdb": &fakeShows{err: metadata.ErrNoTVDBKey}})
+	_, err := svc.LookupShow(context.Background(), "tvdb:84847", "tmdb")
+	if !errors.Is(err, ErrTVDBIDNeedsKey) || !errors.Is(err, metadata.ErrShowNotFound) {
+		t.Fatalf("err %v", err)
+	}
+	// With a key, an id TVDB doesn't know is plainly not found.
+	svc = showService(open(t), metadata.ShowSources{"tmdb": &fakeShows{}, "tvmaze": &fakeShows{}, "tvdb": &fakeShows{}})
+	if _, err := svc.LookupShow(context.Background(), "tvdb:84847", "tmdb"); errors.Is(err, ErrTVDBIDNeedsKey) || !errors.Is(err, metadata.ErrShowNotFound) {
+		t.Fatalf("with key: %v", err)
+	}
+}

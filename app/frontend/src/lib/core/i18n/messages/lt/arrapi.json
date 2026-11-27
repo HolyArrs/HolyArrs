@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filmai",
 	"arrapi.seerr.showsLower": "serialai",
 	"arrapi.seerr.moviesLower": "filmai",
+	"arrapi.seerr.music": "Muzika",
+	"arrapi.seerr.musicLower": "muziką",
 	"arrapi.seerr.saveFail": "Nepavyko išsaugoti",
 	"arrapi.seerr.replaceConfirm": "Pakeisti {app} raktą? Dabartinis nustos veikti.",
 	"arrapi.seerr.makeFail": "Nepavyko sukurti rakto",

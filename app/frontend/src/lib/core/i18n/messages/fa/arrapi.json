@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "فیلم‌ها",
 	"arrapi.seerr.showsLower": "سریال‌ها",
 	"arrapi.seerr.moviesLower": "فیلم‌ها",
+	"arrapi.seerr.music": "موسیقی",
+	"arrapi.seerr.musicLower": "موسیقی",
 	"arrapi.seerr.saveFail": "ذخیره نشد",
 	"arrapi.seerr.replaceConfirm": "کلید {app} عوض شود؟ کلید فعلی از کار می‌افتد.",
 	"arrapi.seerr.makeFail": "کلید ساخته نشد",

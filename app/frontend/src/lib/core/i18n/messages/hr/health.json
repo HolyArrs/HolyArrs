@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Tvoji izvori pronalaze torrent preuzimanja, ali nijedan torrent preuzimatelj nije postavljen, pa se ništa ne može poslati. Dodajte ga u Postavke › Preuzimatelji.",
 	"health.check.sameDownloader": "Dodano dvaput:",
 	"health.check.sameDownloaderWhy": "{app} vodi do iste aplikacije za preuzimanje kao drugi preuzimatelj, pa se njegova preuzimanja mogu prikazati dvaput. Uklonite jedan u Postavke › Preuzimatelji.",
+	"health.check.sameDownloaderShared": "{app} i drugi Downloader koriste istu kategoriju \"{category}\", pa se preuzimanja u njoj mogu prikazati dvaput. Dajte {app} vlastitu kategoriju u Postavke › Downloaderi.",
 	"health.check.keyKitRecommended": "Preporučeno: preuzmi komplet ključeva",
 	"health.check.keyKitRecommendedOthers": "Preporučeno: zatraži komplet ključeva od vlasnika",
 	"health.kind.sameDownloader": "Preuzimatelj dodan dvaput",

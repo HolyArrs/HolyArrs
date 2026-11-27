@@ -26,6 +26,7 @@
 	"sources.bridge.link": "關聯",
 	"sources.bridge.linkName": "關聯 {name}",
 	"sources.bridge.movieKey": "電影金鑰（Radarr 一側）",
+	"sources.bridge.musicKey": "音樂金鑰（Lidarr 一側）",
 	"sources.bridge.notConnected": "未連線",
 	"sources.bridge.reaches": "Prowlarr 透過以下位址存取 HolyArrs",
 	"sources.bridge.remove": "移除",

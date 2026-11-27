@@ -287,6 +287,7 @@
 	"health.check.noTorrentDl": "Nakakahanap ang mga Source mo ng torrent download, pero walang naka-set up na torrent Downloader, kaya walang maipapadala. Magdagdag sa Mga Setting › Mga Downloader.",
 	"health.check.sameDownloader": "Dalawang beses idinagdag:",
 	"health.check.sameDownloaderWhy": "Naaabot ng {app} ang parehong download app ng isa pang Downloader, kaya puwedeng dalawang beses lumabas ang mga download nito. Alisin ang isa sa Settings › Downloaders.",
+	"health.check.sameDownloaderShared": "Pareho ng {app} at ng isa pang Downloader ang ginagamit na kategoryang \"{category}\", kaya puwedeng lumabas nang dalawang beses ang mga download dito. Bigyan ang {app} ng sariling kategorya sa Settings › Downloaders.",
 	"health.check.keyKitRecommended": "Inirerekomenda: i-download ang iyong key kit",
 	"health.check.keyKitRecommendedOthers": "Inirerekomenda: hingin sa owner ang key kit",
 	"health.kind.sameDownloader": "Downloader na dalawang beses idinagdag",

@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Film",
 	"arrapi.seerr.showsLower": "serial",
 	"arrapi.seerr.moviesLower": "film",
+	"arrapi.seerr.music": "Musik",
+	"arrapi.seerr.musicLower": "musik",
 	"arrapi.seerr.saveFail": "Tidak bisa menyimpan",
 	"arrapi.seerr.replaceConfirm": "Ganti kunci {app}? Kunci saat ini berhenti berfungsi.",
 	"arrapi.seerr.makeFail": "Tidak bisa membuat kunci",

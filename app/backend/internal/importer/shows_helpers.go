@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/HolyArrs/holyarrs/app/backend/internal/core/releasename"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/mediafiles"
 
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
@@ -97,4 +98,25 @@ func reopenPack(ctx context.Context, s *database.Store, id int64) error {
 		_, err := tx.ExecContext(ctx, "UPDATE downloads SET state = 'downloading', finished_at = NULL WHERE id = ? AND state = 'finished'", id)
 		return err
 	})
+}
+
+// shortNameOf reports whether a file's title is a run of words from the
+// grabbed release's title (not its group or tags) or one of the show's names: a group's short name for
+// the show, not another show.
+func shortNameOf(title string, t ShowTarget) bool {
+	w := mediafiles.FoldWords(title)
+	if len(w) == 0 {
+		return false
+	}
+	rel := releasename.Parse(t.ReleaseName, releasename.Hints{Show: true}).Title.Value
+	names := append([]string{rel, t.Show.Name}, t.Show.Aliases...)
+	for _, n := range names {
+		nw := mediafiles.FoldWords(n)
+		for i := 0; i+len(w) <= len(nw); i++ {
+			if slices.Equal(nw[i:i+len(w)], w) {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -190,6 +190,7 @@
 	"mediafiles.state.betterCopy": "Краща копія",
 	"mediafiles.state.notKeptQ": "Не тримається · {q}",
 	"mediafiles.state.notKept": "Не тримається",
+	"mediafiles.state.keptInPart": "Підтримується частково",
 	"mediafiles.state.inLibraryQ": "У Бібліотеці · {q}",
 	"mediafiles.state.inLibrary": "У Бібліотеці",
 	"mediafiles.state.upcomingOn": "Незабаром · {date}",
