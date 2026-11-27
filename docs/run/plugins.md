@@ -52,9 +52,9 @@ To install Tailscale, follow these steps and pick **Tailscale**, then finish its
 - An update that asks for more (a new website or folder, or writing where it could only read) is installed but stays stopped. Open the plugin, check the list, and select **Approve new access**.
 - If a chosen folder is removed or replaced, the plugin stops with "a folder this plugin uses moved or changed". Choose the folder again.
 
-### Your own server (Tailscale with Headscale, FlareSolverr)
+### Your own server (Tailscale with Headscale, FlareSolverr, subtitle sites)
 
-Tailscale reaches only Tailscale's own servers. For a self-hosted Headscale, add its name under **Also allow your own server**, for example `headscale.example.com:8080`. The FlareSolverr plugin reaches only what you add there, such as `flaresolverr:8191`. Up to 100; names only, not addresses. These may reach devices on your network.
+Tailscale reaches only Tailscale's own servers. For a self-hosted Headscale, add its name under **Also allow your own server**, for example `headscale.example.com:8080`. The FlareSolverr plugin reaches only what you add there, such as `flaresolverr:8191`, and so does a plugin that serves a subtitle site, such as your Whisper server at `whisper:9000`. Up to 100; names only, not addresses. These may reach devices on your network.
 
 ### Test versions
 

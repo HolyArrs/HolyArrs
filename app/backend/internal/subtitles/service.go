@@ -55,6 +55,9 @@ type Service struct {
 	TranslateHTTP *http.Client
 	// Enqueue adds a Job to the jobs queue. When nil, nothing runs later.
 	Enqueue func(ctx context.Context, kind string, subj *domain.Subject, params map[string]any, key string) error
+	// EnqueueAt adds a Job that runs no sooner than at. When nil, a make Job
+	// whose plugin is not running is not tried again.
+	EnqueueAt func(ctx context.Context, kind string, subj *domain.Subject, params map[string]any, key string, at time.Time) error
 
 	mu      sync.Mutex
 	clients map[int64]cached

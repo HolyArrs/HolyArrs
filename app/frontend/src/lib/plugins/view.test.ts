@@ -203,9 +203,10 @@ describe('an update that asks for more events', () => {
 });
 
 describe('servers of the owner own', () => {
-	it('lets Tailscale and bot-check plugins reach them, no other', () => {
+	it('lets Tailscale, bot-check and subtitle site plugins reach them, no other', () => {
 		expect(takesOwnerHosts(base)).toBe(true);
 		expect(takesOwnerHosts({ ...base, id: 'flaresolverr', access: { hosts: [], folders: [], actions: ['sources.botcheck'] } })).toBe(true);
+		expect(takesOwnerHosts({ ...base, id: 'whisper-subtitles', access: { hosts: [], folders: [{ name: 'movies', mode: 'read' }], actions: ['sources.subtitles', 'files.subtitles.change'] } })).toBe(true);
 		expect(takesOwnerHosts({ ...base, id: 'covers', access: { hosts: ['covers.example'], folders: [], actions: ['library.read'] } })).toBe(false);
 		expect(takesOwnerHosts({ ...base, id: 'covers' })).toBe(false);
 	});

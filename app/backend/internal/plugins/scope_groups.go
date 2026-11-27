@@ -33,6 +33,9 @@ func scopeWarning(scope string) string {
 		return "notify"
 	case scope == "sources.metadata":
 		return "ratings"
+	case scope == "sources.subtitles":
+		// A subtitle site plugin's files are saved beside the videos.
+		return "subtitles"
 	case strings.HasSuffix(scope, ".delete"):
 		return "delete"
 	case strings.HasPrefix(scope, "files.") && !strings.HasSuffix(scope, ".read"):

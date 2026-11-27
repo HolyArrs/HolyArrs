@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Може да сменя плакатите и фоновите картини на заглавията",
 	"plugins.warn.notify": "Може да ви изпраща съобщения чрез известията",
 	"plugins.warn.ratings": "Добавя оценки на страниците на заглавията",
+	"plugins.warn.subtitles": "Добавя субтитри, които създава, до видеата ви",
 	"plugins.recentCalls": "Последни заявки: {refused} отказани, {limited} над лимита",
 	"plugins.callAllowed": "разрешено",
 	"plugins.callRefused": "отказано",

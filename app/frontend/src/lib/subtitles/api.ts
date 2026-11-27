@@ -110,8 +110,8 @@ export interface SubtitleRow {
 	tries: number;
 	next_try_at?: string;
 	sync: Record<string, unknown>;
-	// What made it when a person did not: a translation, whole or partial, or a site's machine-made file.
-	made?: 'translated' | 'translated_partial' | 'ai_translated' | 'machine_translated';
+	// What made it when a person did not: a translation, whole or partial, a site's machine-made file, or a plugin site's file written from the audio.
+	made?: 'translated' | 'translated_partial' | 'ai_translated' | 'machine_translated' | 'transcribed';
 	// A built-in track stored as pictures, which cannot be translated.
 	picture?: boolean;
 	track_index?: number;
@@ -173,7 +173,7 @@ export interface Candidate {
 	trusted?: boolean;
 	downloads?: number;
 	format?: string;
-	machine_made?: 'ai_translated' | 'machine_translated';
+	machine_made?: 'ai_translated' | 'machine_translated' | 'transcribed';
 	score: { total: number; parts: ScorePart[]; refused?: string };
 }
 
@@ -384,7 +384,8 @@ export function siteForm(k: SiteKind, s?: SiteView): SiteForm {
 	return {
 		kind: k.kind,
 		name: s?.name ?? k.name,
-		url: s?.url ?? k.default_url ?? 'http://',
+		// A plugin site is reached as plugin:// and the plugin's id.
+		url: s?.url ?? k.default_url ?? (k.kind === 'plugin' ? 'plugin://' : 'http://'),
 		priority: s?.priority ?? 25,
 		allow_local_network: s?.allow_local_network ?? false,
 		enabled: s ? s.state !== 'disabled' : !k.default_off,
@@ -392,7 +393,8 @@ export function siteForm(k: SiteKind, s?: SiteView): SiteForm {
 		username: '',
 		password: '',
 		api_key: '',
-		machine_made: s?.machine_made ?? false
+		// All a plugin site offers is machine-made, so it starts with the switch on.
+		machine_made: s?.machine_made ?? k.kind === 'plugin'
 	};
 }
 
@@ -466,6 +468,8 @@ export function madeLabel(made: SubtitleRow['made']): string {
 			return t('subtitles.made.ai');
 		case 'machine_translated':
 			return t('subtitles.made.machine');
+		case 'transcribed':
+			return t('subtitles.made.transcribed');
 	}
 	return '';
 }

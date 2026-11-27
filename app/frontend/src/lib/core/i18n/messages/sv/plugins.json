@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Kan byta affischer och bakgrundsbilder för dina titlar",
 	"plugins.warn.notify": "Kan skicka meddelanden via dina aviseringar",
 	"plugins.warn.ratings": "Lägger till betyg på titelsidor",
+	"plugins.warn.subtitles": "Lägger undertexter som den skapar bredvid dina videor",
 	"plugins.recentCalls": "Senaste anrop: {refused} nekade, {limited} över gränsen",
 	"plugins.callAllowed": "tillåtet",
 	"plugins.callRefused": "nekat",

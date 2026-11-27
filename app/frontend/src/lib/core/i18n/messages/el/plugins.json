@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Μπορεί να αλλάζει τις αφίσες και τις εικόνες φόντου των τίτλων σας",
 	"plugins.warn.notify": "Μπορεί να σας στέλνει μηνύματα μέσω των ειδοποιήσεων",
 	"plugins.warn.ratings": "Προσθέτει βαθμολογίες στις σελίδες τίτλων",
+	"plugins.warn.subtitles": "Προσθέτει υπότιτλους που φτιάχνει δίπλα στα βίντεό σας",
 	"plugins.recentCalls": "Πρόσφατες κλήσεις: {refused} απορρίφθηκαν, {limited} πάνω από το όριο",
 	"plugins.callAllowed": "επιτράπηκε",
 	"plugins.callRefused": "απορρίφθηκε",

@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "可以更改作品的海报和背景图",
 	"plugins.warn.notify": "可以通过你的提醒给你发消息",
 	"plugins.warn.ratings": "在作品页面添加评分",
+	"plugins.warn.subtitles": "在你的视频旁添加它生成的字幕",
 	"plugins.recentCalls": "最近调用：拒绝 {refused} 次，超限 {limited} 次",
 	"plugins.callAllowed": "已允许",
 	"plugins.callRefused": "已拒绝",

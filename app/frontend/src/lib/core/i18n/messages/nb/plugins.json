@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Kan endre plakater og bakgrunnsbilder for titlene dine",
 	"plugins.warn.notify": "Kan sende deg meldinger gjennom varslene dine",
 	"plugins.warn.ratings": "Legger til vurderinger på tittelsider",
+	"plugins.warn.subtitles": "Legger undertekster den lager ved siden av videoene dine",
 	"plugins.recentCalls": "Siste kall: {refused} avvist, {limited} over grensen",
 	"plugins.callAllowed": "tillatt",
 	"plugins.callRefused": "avvist",

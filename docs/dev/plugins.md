@@ -137,6 +137,61 @@ What HolyArrs checks, so a plugin can't widen what a Source reaches:
 
 The FlareSolverr plugin ([holyarrs-flaresolverr](https://github.com/wozniakpawel/holyarrs-flaresolverr), listed in [HolyArrs-Plugins](https://github.com/HolyArrs/HolyArrs-Plugins)) does this; see [Get past bot checks with FlareSolverr](../downloads/flaresolverr.md). It needs one setting, the FlareSolverr address (such as `http://flaresolverr.home.arpa:8191`), and that host added by the owner on the Plugins page, since only hosts the owner adds may reach the LAN. For each job it sends FlareSolverr `POST /v1` with `{"cmd": "request.get", "url": <url>, "maxTimeout": 60000, "proxy": <proxy>}` and maps the answer's `solution` (`url`, `status`, `response`, `cookies`, `userAgent`) to the answer above. When FlareSolverr's `status` is not `"ok"`, it answers with `error` set to its `message`, any address taken out. It also answers with `error` when FlareSolverr does not answer (it then leaves FlareSolverr alone for 10 seconds, doubling up to 2 minutes), takes over 68 seconds, or ends on the check page still. It opens up to 3 pages at once, and when HolyArrs does not answer the poll it waits 1 second, doubling up to a minute.
 
+## Subtitle site hook
+
+A plugin can be a subtitle site that HolyArrs searches, scores and saves from like any other, for example one that writes subtitles from the video's audio with a Whisper server the owner runs.
+
+The plugin asks for the `sources.subtitles` action. The Plugins page shows it with the "Adds subtitles it makes beside your videos" warning, and offers **Also allow your own server** for it, so the owner can add their Whisper server. The owner then adds a subtitle site of kind **Plugin** with the address `plugin://<id>`.
+
+The plugin polls for work with its token and answers each job, as for the other hooks:
+
+- `GET /api/v1/plugin-hooks/subtitles` waits up to 25 seconds and answers `200` with a job, or `204` when none came. Ask again.
+- `POST /api/v1/plugin-hooks/subtitles` with `{"job": "<id>", "data": <answer>}`, or `{"job": "<id>", "error": "<why>"}`.
+
+Keep polling while you work on a job: a plugin that has not asked for work in 90 seconds is not a live site.
+
+### Search
+
+Op `"search"`. HolyArrs waits up to 30 seconds, since a search asks every site in turn. Only look here; make nothing.
+
+```json
+{"kind": "movie", "title": "Arrival", "year": 2016, "imdb": "tt2543164", "tmdb": "329865", "release_name": "Arrival.2016.1080p.BluRay.x264-GRP",
+ "languages": ["en", "fr"], "file_id": 4182, "folder": "movies", "path": "Arrival (2016)/Arrival (2016) 1080p BluRay.mkv"}
+```
+
+`folder` is the name of one of the plugin's own folders in its manifest, and `path` the video's place inside it, with forward slashes: open `HOLYARRS_PLUGIN_FOLDER_<FOLDER>` joined with `path`. Both are left out when the video is in none of its folders. The full path on the server and the file hash are never sent. Episodes also carry `season` and `episode`, and shows `tvdb`.
+
+The answer is a list of what the plugin can make, up to 20:
+
+```json
+[{"key": "track-2:en", "language": "en", "hearing_impaired": false, "forced": false, "format": "srt"}]
+```
+
+`key` is the plugin's own id for the offer, up to 200 characters, handed back unchanged; `language` a two-letter code. An empty list means nothing to offer.
+
+### Make
+
+Op `"make"`, when HolyArrs picks an offer. HolyArrs waits up to an hour, in a Job of its own, so a long transcription never holds up other searches.
+
+```json
+{"key": "track-2:en", "language": "en", "file_id": 4182, "folder": "movies", "path": "Arrival (2016)/Arrival (2016) 1080p BluRay.mkv"}
+```
+
+The answer is the file, up to 8 MB, base64 in `body`:
+
+```json
+{"format": "srt", "body": "MQowMDowMDowMSwwMDAgLS0+IC4uLg=="}
+```
+
+What HolyArrs does with it:
+
+- Every offer counts as machine-made (**Written from the audio**), whatever the plugin says. It is used only when no subtitle made by a person passes, scores at most 45, and a later search replaces it with a person's file. With the owner's translator set up and a subtitle to translate from, HolyArrs translates first.
+- The make link is the video's id, set by HolyArrs; a plugin can't point a make at another file.
+- Before it saves, HolyArrs reads the File again. A subtitle that arrived while the plugin worked wins, and the made file is dropped.
+- An `error` answer, or no answer within the hour, ends the Job for good: HolyArrs searches again without the plugin and leaves that language for a day. A plugin that stops or restarts mid-make (saving its settings restarts it), or isn't polling yet, is asked again about once a minute until it's back. After a day, HolyArrs stops asking for that make.
+- If HolyArrs restarts mid-make, the Job runs again by itself and the plugin is asked for the same `key` once it polls again. Keep finished files in the data folder by `key` and `file_id` for a while, so a second ask answers at once.
+- The site's **Downloads per day** caps how many made files HolyArrs takes. A make that found the plugin not running doesn't count.
+
 ## The sandbox
 
 Plugins run only when HolyArrs runs on Linux, which includes the Docker image. Each running plugin gets:

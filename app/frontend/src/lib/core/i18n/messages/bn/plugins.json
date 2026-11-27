@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "আপনার টাইটেলের পোস্টার ও পটভূমির ছবি বদলাতে পারে",
 	"plugins.warn.notify": "আপনার সতর্কবার্তার মাধ্যমে আপনাকে বার্তা পাঠাতে পারে",
 	"plugins.warn.ratings": "টাইটেল পাতায় দেখানো রেটিং যোগ করে",
+	"plugins.warn.subtitles": "নিজের বানানো সাবটাইটেল আপনার ভিডিওর পাশে যোগ করে",
 	"plugins.recentCalls": "সাম্প্রতিক কল: {refused} প্রত্যাখ্যাত, {limited} সীমার বেশি",
 	"plugins.callAllowed": "অনুমোদিত",
 	"plugins.callRefused": "প্রত্যাখ্যাত",

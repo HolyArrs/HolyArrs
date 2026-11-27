@@ -12,6 +12,7 @@ import (
 var RouteScopes = map[string]string{
 	"GET /api/v1/plugin-hooks/botcheck":                          webserver.ScopeAdmin,
 	"GET /api/v1/plugin-hooks/metadata":                          webserver.ScopeAdmin,
+	"GET /api/v1/plugin-hooks/subtitles":                         webserver.ScopeAdmin,
 	"GET /api/v1/plugins/{id}/activity":                          webserver.ScopeAdmin,
 	"GET /api/v1/plugins/{id}/remote/status":                     webserver.ScopeAdmin,
 	"GET /api/v1/my/plugin-links":                                webserver.ScopeAdmin,

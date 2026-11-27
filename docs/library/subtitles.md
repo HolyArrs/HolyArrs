@@ -41,7 +41,7 @@ A movie page has a **Subtitles** card. A show page has one for the whole show. E
 | **Translate** | Next to a missing language, when a translator is set up. Pick a text subtitle beside the video or inside it, and your translator makes the missing one. |
 | **Turn down** | For subtitles HolyArrs saved. The file goes to the holding folder, that subtitle is never picked again for this file, and HolyArrs looks for another. |
 
-A subtitle no person made carries a label: **Translated**, **Partly translated** (some lines kept the original language), **AI-translated** or **Machine-translated** (a site's own machine-made file). Picture subtitles inside the video are marked **Picture** and can't be translated.
+A subtitle no person made carries a label: **Translated**, **Partly translated** (some lines kept the original language), **AI-translated** or **Machine-translated** (a site's own machine-made file), or **Written from the audio** (made by a plugin site, for example by speech-to-text). Picture subtitles inside the video are marked **Picture** and can't be translated.
 
 Each subtitle shows its language, kind (normal, hearing-impaired or forced), source (inside the video, beside it, a site, or chosen by hand), score and file name. Everything that happens shows in the title's **History** under Subtitles, and [Alerts](../users/alerts.md) can tell you too.
 
@@ -110,6 +110,15 @@ The key is kept encrypted and never shown again. Leave the box empty to keep it,
 **Translate subtitles inside the video by themselves** lets the timed search translate text tracks inside the video. Off, those are translated only when you click **Translate**. Picture tracks are always skipped.
 
 Each subtitle site has **Machine-made subtitles**. Off by default. On, a site's AI or machine-translated files are used only when no file made by a person exists, and a person's file replaces it later.
+
+A plugin can be a subtitle site too, for example one that writes a subtitle from the video's audio. Add it under **Subtitle sites** as **Plugin**, with the address `plugin://` and the plugin's id. Its **Machine-made subtitles** starts on, since everything it makes is machine-made. Order of the stand-ins, when no file made by a person passes:
+
+1. With a translator set up and a subtitle to translate from, HolyArrs translates.
+2. Otherwise it uses a plugin site's file written from the audio, then an AI-translated file, then a machine-translated one.
+
+Its file is made from that exact video, so it matches it fully, but it's saved with a score of 45, under any pass mark. In **Choose**, its offer shows and sorts at that same 45, below every passing subtitle made by a person.
+
+A plugin can take an hour on one film, so its file is made in a Job of its own and the subtitle shows as being made until it is saved. If a subtitle arrives meanwhile, the plugin's file is dropped. If HolyArrs or the plugin restarts partway through, the make carries on by itself once the plugin is back. If the plugin fails, HolyArrs searches again without it and leaves that language for a day.
 
 How scoring works, when HolyArrs searches, and the sites it uses are in [Subtitle scoring and sites](subtitle-scoring.md).
 

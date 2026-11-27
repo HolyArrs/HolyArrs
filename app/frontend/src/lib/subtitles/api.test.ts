@@ -27,6 +27,7 @@ import {
 	translateSources,
 	translatorBody,
 	type SiteKind,
+	type SiteView,
 	type SubtitleRow
 } from './api.ts';
 
@@ -124,6 +125,12 @@ describe('sites', () => {
 		const os: SiteKind = { kind: 'opensubtitles', name: 'OpenSubtitles.com', movies: true, shows: true, needs_account: true, account: ['api_key', 'username', 'password'] };
 		expect(accountMissing(os, { ...siteForm(os), api_key: 'k' }, false)).toEqual(['username', 'password']);
 	});
+	it('starts a plugin site at plugin:// with its machine-made switch on', () => {
+		const pl: SiteKind = { kind: 'plugin', name: 'Plugin', movies: true, shows: true, needs_account: false };
+		expect(siteForm(pl)).toMatchObject({ url: 'plugin://', machine_made: true });
+		expect(siteForm(open)).toMatchObject({ machine_made: false });
+		expect(siteForm(pl, { url: 'plugin://ws', machine_made: false } as SiteView)).toMatchObject({ url: 'plugin://ws', machine_made: false });
+	});
 	it('sends account details only when typed', () => {
 		const f = siteForm(open);
 		expect(siteBody(f)).not.toHaveProperty('api_key');
@@ -162,6 +169,8 @@ describe('translation', () => {
 	it('names what made a subtitle', () => {
 		expect(madeLabel(undefined)).toBe('');
 		expect(madeLabel('ai_translated')).not.toBe('');
+		expect(madeLabel('transcribed')).not.toBe('');
+		expect(madeLabel('transcribed')).not.toBe(madeLabel('machine_translated'));
 	});
 	it('offers text subtitles in other languages only', () => {
 		const rows = [

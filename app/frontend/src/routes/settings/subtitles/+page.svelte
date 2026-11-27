@@ -395,7 +395,7 @@
 					</Field>
 				</div>
 				<Field id="st-url" label={t('settings.subtitles.address')} style="margin-top: var(--s-4)">
-					<input id="st-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" required />
+					<input id="st-url" class="input mono" bind:value={form.url} autocomplete="off" spellcheck="false" placeholder={form.kind === 'plugin' ? 'plugin://whisper-subtitles' : undefined} required />
 				</Field>
 				{#if formKind?.needs_account}
 					<fieldset class="group account" data-testid="site-account">

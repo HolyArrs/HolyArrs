@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Pot canviar els pòsters i les imatges de fons dels teus títols",
 	"plugins.warn.notify": "Pot enviar-te missatges a través dels teus avisos",
 	"plugins.warn.ratings": "Afegeix valoracions a les pàgines dels títols",
+	"plugins.warn.subtitles": "Afegeix subtítols que fa al costat dels teus vídeos",
 	"plugins.recentCalls": "Crides recents: {refused} rebutjades, {limited} per sobre del límit",
 	"plugins.callAllowed": "permesa",
 	"plugins.callRefused": "rebutjada",

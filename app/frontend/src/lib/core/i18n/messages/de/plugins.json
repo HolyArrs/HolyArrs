@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Kann Poster und Hintergrundbilder deiner Titel ändern",
 	"plugins.warn.notify": "Kann dir Nachrichten über deine Benachrichtigungen senden",
 	"plugins.warn.ratings": "Fügt Bewertungen auf Titelseiten hinzu",
+	"plugins.warn.subtitles": "Legt selbst erstellte Untertitel neben deine Videos",
 	"plugins.recentCalls": "Letzte Aufrufe: {refused} abgelehnt, {limited} über dem Limit",
 	"plugins.callAllowed": "erlaubt",
 	"plugins.callRefused": "abgelehnt",

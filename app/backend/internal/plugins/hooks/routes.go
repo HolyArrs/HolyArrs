@@ -80,6 +80,8 @@ func (h *Handlers) Routes(m *http.ServeMux) {
 	m.HandleFunc("POST /api/v1/plugin-hooks/metadata", h.answer(Metadata))
 	m.HandleFunc("GET /api/v1/plugin-hooks/botcheck", h.next(Botcheck))
 	m.HandleFunc("POST /api/v1/plugin-hooks/botcheck", h.answer(Botcheck))
+	m.HandleFunc("GET /api/v1/plugin-hooks/subtitles", h.next(Subtitles))
+	m.HandleFunc("POST /api/v1/plugin-hooks/subtitles", h.answer(Subtitles))
 	// App side.
 	m.HandleFunc("GET /api/v1/plugin-widgets", h.widgets)
 	m.HandleFunc("GET /api/v1/titles/{id}/plugin-sections", h.sections)

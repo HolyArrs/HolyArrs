@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Voi vaihtaa nimikkeidesi julisteet ja taustakuvat",
 	"plugins.warn.notify": "Voi lähettää sinulle viestejä ilmoitustesi kautta",
 	"plugins.warn.ratings": "Lisää arvioita nimikesivuille",
+	"plugins.warn.subtitles": "Lisää tekemiään tekstityksiä videoidesi viereen",
 	"plugins.recentCalls": "Viimeisimmät kutsut: {refused} estetty, {limited} yli rajan",
 	"plugins.callAllowed": "sallittu",
 	"plugins.callRefused": "estetty",

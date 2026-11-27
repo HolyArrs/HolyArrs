@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "作品のポスターと背景画像を変更できます",
 	"plugins.warn.notify": "通知を通じてメッセージを送れます",
 	"plugins.warn.ratings": "作品ページに評価を追加します",
+	"plugins.warn.subtitles": "自身で作った字幕を動画の横に追加します",
 	"plugins.recentCalls": "最近の呼び出し: 拒否 {refused} 件、上限超過 {limited} 件",
 	"plugins.callAllowed": "許可",
 	"plugins.callRefused": "拒否",

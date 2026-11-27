@@ -354,6 +354,11 @@ func (a *Handlers) chooseSubtitle(w http.ResponseWriter, r *http.Request) {
 		subtitleError(w, err)
 		return
 	}
+	if p == "" {
+		// A plugin site makes it in a Job of its own.
+		webserver.WriteJSON(w, http.StatusAccepted, map[string]any{"path": "", "making": true})
+		return
+	}
 	webserver.WriteJSON(w, http.StatusOK, map[string]any{"path": p})
 }
 

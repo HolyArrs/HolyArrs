@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Boleh menukar poster dan gambar latar tajuk anda",
 	"plugins.warn.notify": "Boleh menghantar mesej melalui amaran anda",
 	"plugins.warn.ratings": "Menambah penilaian pada halaman tajuk",
+	"plugins.warn.subtitles": "Menambah sari kata yang dibuatnya di sebelah video anda",
 	"plugins.recentCalls": "Panggilan terkini: {refused} ditolak, {limited} melebihi had",
 	"plugins.callAllowed": "dibenarkan",
 	"plugins.callRefused": "ditolak",

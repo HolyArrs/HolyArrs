@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "يمكنها تغيير الملصقات وصور الخلفية لعناوينك",
 	"plugins.warn.notify": "يمكنها إرسال رسائل إليك عبر تنبيهاتك",
 	"plugins.warn.ratings": "يضيف تقييمات تظهر في صفحات العناوين",
+	"plugins.warn.subtitles": "يضيف ترجمات يصنعها بجانب الفيديوهات",
 	"plugins.recentCalls": "آخر الطلبات: {refused} مرفوضة، {limited} فوق الحد",
 	"plugins.callAllowed": "مسموح",
 	"plugins.callRefused": "مرفوض",

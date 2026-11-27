@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "יכול לשנות פוסטרים ותמונות רקע של הכותרים שלך",
 	"plugins.warn.notify": "יכול לשלוח לך הודעות דרך ההתראות שלך",
 	"plugins.warn.ratings": "מוסיף דירוגים בדפי הכותרים",
+	"plugins.warn.subtitles": "מוסיף כתוביות שהוא יוצר ליד הסרטונים שלך",
 	"plugins.recentCalls": "קריאות אחרונות: {refused} נדחו, {limited} מעל המגבלה",
 	"plugins.callAllowed": "הותר",
 	"plugins.callRefused": "נדחה",

@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "आपके शीर्षकों के पोस्टर और पृष्ठभूमि बदल सकता है",
 	"plugins.warn.notify": "आपकी सूचनाओं से आपको संदेश भेज सकता है",
 	"plugins.warn.ratings": "शीर्षक पेजों पर रेटिंग जोड़ता है",
+	"plugins.warn.subtitles": "अपने बनाए सबटाइटल आपके वीडियो के पास जोड़ता है",
 	"plugins.recentCalls": "हाल की कॉल: {refused} मना, {limited} सीमा से ज़्यादा",
 	"plugins.callAllowed": "अनुमति मिली",
 	"plugins.callRefused": "मना",

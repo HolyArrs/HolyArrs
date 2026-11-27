@@ -1,6 +1,7 @@
 <script lang="ts">
 	// What an installed plugin may reach that the owner chooses: a real folder for each folder it asks for, hosts of the owner's own
-	// (Tailscale: a self-hosted Headscale; a bot-check plugin: their FlareSolverr), and the OK for an update that asks for more. Nothing is granted until saved.
+	// (Tailscale: a self-hosted Headscale; a bot-check plugin: their FlareSolverr; a subtitle site plugin: their Whisper server), and the OK for an update
+	// that asks for more. Nothing is granted until saved.
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Button from '#lib/ui/Button.svelte';
 	import Icon from '#lib/ui/Icon.svelte';
@@ -75,7 +76,7 @@
 		{#if ownHosts}
 			<label class="row wide">
 				<span class="small lab">{t('plugins.ownerHosts')}<span class="xs muted"> · {t('plugins.ownerHostsHelp')}</span></span>
-				<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder={p.id === 'tailscale' ? 'headscale.example.com:8080' : 'flaresolverr:8191'} bind:value={hosts} data-testid="plugin-owner-hosts" />
+				<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder={p.id === 'tailscale' ? 'headscale.example.com:8080' : p.access?.actions?.includes('sources.subtitles') ? 'whisper:9000' : 'flaresolverr:8191'} bind:value={hosts} data-testid="plugin-owner-hosts" />
 			</label>
 		{/if}
 		</div>{/if}

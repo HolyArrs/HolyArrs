@@ -39,6 +39,8 @@ type Query struct {
 	// Empty when the file could not be read.
 	File      string
 	Languages []string // two-letter codes
+	// FileID is the video's id in HolyArrs. Only plugin sites get it.
+	FileID int64
 }
 
 // Candidate is one subtitle a site offered.
@@ -65,7 +67,8 @@ type Candidate struct {
 	Downloads    int      `json:"downloads,omitempty"`
 	Format       string   `json:"format,omitempty"`
 	// MachineMade says the site flags the file as made by a machine:
-	// AITranslated or MachineTranslated. Empty means made by a person.
+	// AITranslated, MachineTranslated or Transcribed. Empty means made by a
+	// person.
 	MachineMade string `json:"machine_made,omitempty"`
 	Link        string `json:"-"` // where Download fetches it; never shown
 }
@@ -126,6 +129,8 @@ var Kinds = []Kind{
 		Note: "Polish only. Movies and shows, matched by the video file's hash and size, so it needs the file on disk. Needs your account: your Napisy24 user name and password."},
 	{Kind: "assrt", Name: "Assrt", DefaultURL: "https://api.assrt.net/v1", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"api_key"},
 		Note: "Chinese subtitles, some with English. Needs your account: the free token from your assrt.net user page goes in API key. Searches by name, so it works best with release names in English. One call every 3 seconds at most by default."},
+	{Kind: "plugin", Name: "Plugin", Movies: true, Shows: true,
+		Note: "A subtitle site served by a plugin you installed, such as one that writes subtitles from the audio. Its address is plugin:// and the plugin's id. Everything it makes counts as made by a machine: it is used only when no subtitle made by a person passes, and a later search replaces it."},
 	{Kind: "fake", Name: "Lab subtitle site", Movies: true, Shows: true, Lab: true, Note: "The lab's fake site, for tests."},
 	{Kind: "fake_account", Name: "Lab subtitle site with an account", Movies: true, Shows: true, NeedsAccount: true, Account: []string{"api_key"}, Lab: true,
 		Note: "The lab's fake site asking for a key, for tests of sites that need your account."},
@@ -159,6 +164,9 @@ type Config struct {
 
 // New builds the site for a kind.
 func New(kind string, cfg Config) (Site, error) {
+	if kind == "plugin" {
+		return newPlugin(cfg.URL)
+	}
 	c, err := newClient(cfg)
 	if err != nil {
 		return nil, err

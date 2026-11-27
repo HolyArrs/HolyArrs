@@ -138,7 +138,9 @@ func (s *Service) TurnDown(ctx context.Context, id int64, reason string, by doma
 
 // Choose saves the candidate a person picked from a shown search. Any score
 // is accepted, since the pass mark only guards searches that run alone. It
-// replaces a subtitle the app saved earlier for that language.
+// replaces a subtitle the app saved earlier for that language. A plugin
+// site's subtitle is made in a Job of its own, which may take an hour: the
+// path is then empty.
 func (s *Service) Choose(ctx context.Context, fileID int64, siteName, key string, by domain.Actor) (string, error) {
 	res, err := s.Search(ctx, fileID, SearchOptions{Show: true}, by)
 	if err != nil {
@@ -168,25 +170,15 @@ func (s *Service) Choose(ctx context.Context, fileID int64, siteName, key string
 				if r.Name != siteName {
 					continue
 				}
-				t := target{want: o.Want, beat: -1}
-				// The wish's saved file may carry a region, as a pt-BR file for a pt wish.
-				old, _ := database.Select[Subtitle](ctx, s.Store.Read(), "subtitles",
-					"file_id = ? AND place = 'beside' AND state = 'present' AND origin IN ('fetched', 'by_hand') AND forced = ?",
-					fileID, o.Want.Forced)
-				for i := range old {
-					if LangMatches(o.Want.Language, old[i].Language) {
-						t.old = &old[i]
-						break
-					}
+				if r.Kind == "plugin" {
+					return "", s.QueueMake(ctx, fileID, makeRequest(o.Want, c, r, true))
 				}
+				t := target{want: o.Want, beat: -1, old: s.savedFor(ctx, fileID, o.Want)}
 				p, err := s.fetchAndSave(ctx, fc, t, c, r, set, by)
 				if err != nil {
 					return "", err
 				}
-				_ = s.Store.Write(ctx, func(tx *sql.Tx) error {
-					_, err := tx.ExecContext(ctx, "UPDATE subtitles SET origin = 'by_hand' WHERE file_id = ? AND relative_path = ? AND state = 'present'", fileID, p)
-					return err
-				})
+				s.markByHand(ctx, fileID, p)
 				out := Outcome{Want: o.Want, Result: "saved", Path: p, Score: c.Score.Total, Site: c.Site}
 				s.afterTarget(ctx, fc, t, &out, set, by)
 				return p, nil

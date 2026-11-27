@@ -228,8 +228,10 @@
 	async function choose(fileId: number, site: string, key: string) {
 		choosingKey = key;
 		try {
-			const r = await api.post<{ path: string }>(`/files/${fileId}/subtitles/choose`, { site, key });
-			toasts.push(t('subtitles.panel.chosen'), 'ok', { body: fileName(r.path) });
+			const r = await api.post<{ path: string; making?: boolean }>(`/files/${fileId}/subtitles/choose`, { site, key });
+			// A plugin site makes it in a Job of its own, which can take a while.
+			if (r.making) toasts.push(t('subtitles.panel.making'), 'ok');
+			else toasts.push(t('subtitles.panel.chosen'), 'ok', { body: fileName(r.path) });
 			choosing = 0;
 			await load();
 		} catch (e) {

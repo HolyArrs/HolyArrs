@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Puwedeng palitan ang mga poster at background ng iyong mga pamagat",
 	"plugins.warn.notify": "Puwedeng magpadala ng mensahe sa iyo sa pamamagitan ng mga alerto mo",
 	"plugins.warn.ratings": "Nagdadagdag ng mga rating sa mga pahina ng pamagat",
+	"plugins.warn.subtitles": "Nagdadagdag ng mga subtitle na gawa nito sa tabi ng iyong mga video",
 	"plugins.recentCalls": "Mga kamakailang tawag: {refused} tinanggihan, {limited} lampas sa limit",
 	"plugins.callAllowed": "pinayagan",
 	"plugins.callRefused": "tinanggihan",

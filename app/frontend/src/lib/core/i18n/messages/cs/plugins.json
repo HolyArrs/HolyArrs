@@ -2,6 +2,7 @@
 	"plugins.warn.artwork": "Může měnit plakáty a obrázky pozadí vašich titulů",
 	"plugins.warn.notify": "Může vám posílat zprávy přes vaše upozornění",
 	"plugins.warn.ratings": "Přidává hodnocení na stránky titulů",
+	"plugins.warn.subtitles": "Přidává k vašim videím titulky, které sám vytvoří",
 	"plugins.recentCalls": "Nedávná volání: {refused} odmítnuto, {limited} nad limit",
 	"plugins.callAllowed": "povoleno",
 	"plugins.callRefused": "odmítnuto",

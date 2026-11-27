@@ -224,6 +224,7 @@ GET /api/v1/plugin-hooks/metadata auth=owner scope=admin assurance=false part=co
 GET /api/v1/plugin-hooks/pages auth=owner scope=admin assurance=false part=core
 GET /api/v1/plugin-hooks/releases auth=owner scope=admin assurance=false part=core
 GET /api/v1/plugin-hooks/sections auth=owner scope=admin assurance=false part=core
+GET /api/v1/plugin-hooks/subtitles auth=owner scope=admin assurance=false part=core
 GET /api/v1/plugin-hooks/tools auth=owner scope=admin assurance=false part=core
 GET /api/v1/plugin-hooks/users auth=owner scope=admin assurance=false part=core
 GET /api/v1/plugin-images/{path...} auth=owner scope=admin assurance=false part=core
@@ -555,6 +556,7 @@ POST /api/v1/plugin-hooks/pages auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugin-hooks/releases auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugin-hooks/sections auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugin-hooks/stream auth=owner scope=admin assurance=false part=core
+POST /api/v1/plugin-hooks/subtitles auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugin-hooks/tools auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugin-pages/{plugin}/call auth=owner scope=admin assurance=false part=core
 POST /api/v1/plugin-pages/{plugin}/play auth=owner scope=admin assurance=false part=core

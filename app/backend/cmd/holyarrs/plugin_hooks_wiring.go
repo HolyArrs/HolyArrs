@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/HolyArrs/holyarrs/app/backend/internal/accounts"
@@ -17,6 +19,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/plugins/hooks"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/sources"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/subtitles/sites"
 )
 
 // newPluginHooks makes the provider-hook registry. A plugin's grants are
@@ -34,6 +37,20 @@ func newPluginHooks() *hooks.Registry {
 	}
 	sources.PluginTransport = func(id string) http.RoundTripper { return &hooks.ReleaseTransport{Broker: b, Plugin: id} }
 	return reg
+}
+
+// wireSourcePlugins lets plugins solve bot checks for Sources and serve
+// subtitle sites. It runs before the job queue starts, so a make Job a stop
+// interrupted finds plugin sites at once; engine is nil until the plugins
+// start, and until then no plugin is asked anything.
+func wireSourcePlugins(b *hooks.Broker, engine func() *plugins.Engine, db database.Querier) {
+	wireBotCheck(b, func(id string) []string {
+		if e := engine(); e != nil {
+			return e.ReachHosts(id)
+		}
+		return nil // no plugin polls before the engine is set
+	})
+	wireSubtitleSites(b, subtitleFileFor(engine, db))
 }
 
 // wireBotCheck lets a plugin with sources.botcheck open a Source's bot
@@ -64,6 +81,94 @@ func wireBotCheck(b *hooks.Broker, reach func(id string) []string) {
 			}
 			return out, nil
 		}}
+	}
+}
+
+// wireSubtitleSites lets a plugin with sources.subtitles serve a subtitle
+// site (plugin://<id>). It is told where the video is only when the file
+// sits in a folder the owner gave it, and never the full path.
+func wireSubtitleSites(b *hooks.Broker, where func(ctx context.Context, plugin string, fileID int64) (hooks.SubtitleFile, error)) {
+	sites.PluginSite = func(id string) sites.Site { return pluginSubtitleSite{b: b, id: id, where: where} }
+}
+
+// pluginSubtitleSite is a subtitle site a plugin serves through the Broker.
+type pluginSubtitleSite struct {
+	b     *hooks.Broker
+	id    string
+	where func(ctx context.Context, plugin string, fileID int64) (hooks.SubtitleFile, error)
+}
+
+// Search asks the plugin what it can make. Every offer is machine-made, and
+// its link is the video's id, so the plugin can't point a make elsewhere.
+func (p pluginSubtitleSite) Search(ctx context.Context, q sites.Query) ([]sites.Candidate, error) {
+	file, err := p.where(ctx, p.id, q.FileID)
+	if err != nil {
+		return nil, err
+	}
+	ask := hooks.SubtitleAsk{Kind: q.Kind, Title: q.Title, Year: q.Year, Season: q.Season, Episode: q.Episode, IMDb: q.IMDb, TMDB: q.TMDB, TVDB: q.TVDB,
+		ReleaseName: q.ReleaseName, Languages: q.Languages, SubtitleFile: file}
+	offers, err := hooks.SearchSubtitles(ctx, p.b, p.id, ask)
+	if err != nil {
+		return nil, pluginSiteError(err)
+	}
+	link := strconv.FormatInt(q.FileID, 10)
+	out := make([]sites.Candidate, 0, len(offers))
+	for _, o := range offers {
+		out = append(out, sites.Candidate{Key: o.Key, Language: o.Language, HearingImpaired: o.HearingImpaired, Forced: o.Forced,
+			Format: o.Format, MachineMade: sites.Transcribed, Link: link})
+	}
+	return out, nil
+}
+
+// Download asks the plugin to make the offered subtitle; it may take an hour.
+func (p pluginSubtitleSite) Download(ctx context.Context, c sites.Candidate) ([]byte, error) {
+	fileID, err := strconv.ParseInt(c.Link, 10, 64)
+	if err != nil || fileID <= 0 {
+		return nil, errors.New("the subtitle's video is not known")
+	}
+	file, err := p.where(ctx, p.id, fileID)
+	if err != nil {
+		return nil, err
+	}
+	m, err := hooks.MakeSubtitle(ctx, p.b, p.id, hooks.SubtitleMake{Key: c.Key, Language: c.Language, SubtitleFile: file})
+	if err != nil {
+		return nil, pluginSiteError(err)
+	}
+	return m.Body, nil
+}
+
+// pluginSiteError marks a plugin that is not there (stopped, restarting or
+// swamped) so a make Job tries again once it is back.
+func pluginSiteError(err error) error {
+	if errors.Is(err, hooks.ErrNoProvider) || errors.Is(err, hooks.ErrDropped) || errors.Is(err, hooks.ErrBusy) {
+		return fmt.Errorf("%w (%v)", sites.ErrPluginGone, err)
+	}
+	return err
+}
+
+// subtitleFileFor says where a video is for plugin: the folder it was given
+// that holds the file and the path inside it, links followed. Before the
+// plugins have started it says the plugin is not running, so a plugin that
+// polls early is never sent a video without its folder.
+func subtitleFileFor(engine func() *plugins.Engine, db database.Querier) func(ctx context.Context, plugin string, fileID int64) (hooks.SubtitleFile, error) {
+	return func(ctx context.Context, plugin string, fileID int64) (hooks.SubtitleFile, error) {
+		f := hooks.SubtitleFile{FileID: fileID}
+		e := engine()
+		if e == nil {
+			return f, fmt.Errorf("%w (the plugins are still starting)", sites.ErrPluginGone)
+		}
+		p, err := mediafiles.FilePath(ctx, db, fileID)
+		if err != nil {
+			return f, nil
+		}
+		real, err := filepath.EvalSymlinks(p)
+		if err != nil {
+			return f, nil
+		}
+		if name, rel, ok := e.FolderOf(plugin, real); ok {
+			f.Folder, f.Path = name, rel
+		}
+		return f, nil
 	}
 }
 
