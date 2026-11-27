@@ -273,3 +273,28 @@ class Cli(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CommunityPlugins(unittest.TestCase):
+    def small(self):
+        n = load()
+        n["highlights"], n["groups"] = [], {}
+        n["community_plugins"] = [{"name": "Discord", "repo": "https://github.com/a/b", "github": "a"}]
+        return n
+
+    def test_plugins_alone_pass_and_link_repo_and_author(self):
+        n = self.small()
+        self.assertEqual(errors(n), [])
+        line = "- [Discord](https://github.com/a/b) by [@a](https://github.com/a)"
+        self.assertIn("## Community plugins\n" + line, notes.render_github(n, {}))
+        self.assertIn("### Community plugins\n" + line, notes.render_changelog(n, "2026-11-27"))
+
+    def test_plugin_needs_repo_and_login(self):
+        n = self.small()
+        n["community_plugins"][0]["repo"] = "github.com/a/b"
+        self.assertTrue(any("community plugin" in e for e in errors(n)))
+
+    def test_no_plugins_still_needs_highlights(self):
+        n = load()
+        n["highlights"] = []
+        self.assertTrue(any("3 highlights" in e for e in errors(n)))
