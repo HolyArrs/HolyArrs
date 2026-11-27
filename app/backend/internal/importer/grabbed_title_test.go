@@ -45,3 +45,17 @@ func TestPlanTakesShowFromGrabWhenFileNamesAnother(t *testing.T) {
 		t.Fatalf("unwanted episode: %+v", s[0])
 	}
 }
+
+// The release's group and tags are not a name for the show.
+func TestShortNameIgnoresReleaseTags(t *testing.T) {
+	tgt := ShowTarget{Show: mediafiles.TitleRef{Name: "Dragon Ball Super: Beerus"},
+		ReleaseName: "[Judas] Dragon Ball Super  - Beerus - S01E05 [1080p][HEVC x265 10bit][Multi-Subs] (Weekly)"}
+	for _, title := range []string{"Judas", "Weekly", "Multi Subs"} {
+		if shortNameOf(title, tgt) {
+			t.Errorf("%q passed as the show", title)
+		}
+	}
+	if !shortNameOf("Beerus", tgt) {
+		t.Error("Beerus refused")
+	}
+}
