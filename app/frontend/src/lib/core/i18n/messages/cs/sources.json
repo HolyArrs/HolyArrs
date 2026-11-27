@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Propojit",
 	"sources.bridge.linkName": "Propojit {name}",
 	"sources.bridge.movieKey": "Klíč pro filmy (strana Radarru)",
+	"sources.bridge.musicKey": "Klíč pro hudbu (strana Lidarru)",
 	"sources.bridge.notConnected": "Nepřipojeno",
 	"sources.bridge.reaches": "Prowlarr se k HolyArrs dostane na",
 	"sources.bridge.remove": "Odebrat",

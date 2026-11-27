@@ -26,6 +26,7 @@
 	"sources.bridge.link": "اتصال",
 	"sources.bridge.linkName": "اتصال {name}",
 	"sources.bridge.movieKey": "کلید فیلم‌ها (سمت Radarr)",
+	"sources.bridge.musicKey": "کلید موسیقی (سمت Lidarr)",
 	"sources.bridge.notConnected": "متصل نیست",
 	"sources.bridge.reaches": "Prowlarr به HolyArrs می‌رسد در",
 	"sources.bridge.remove": "حذف",

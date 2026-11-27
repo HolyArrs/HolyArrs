@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filmek",
 	"arrapi.seerr.showsLower": "sorozat",
 	"arrapi.seerr.moviesLower": "film",
+	"arrapi.seerr.music": "Zene",
+	"arrapi.seerr.musicLower": "zenét",
 	"arrapi.seerr.saveFail": "Nem sikerült menteni",
 	"arrapi.seerr.replaceConfirm": "Lecseréli a(z) {app} kulcsot? A jelenlegi nem fog működni.",
 	"arrapi.seerr.makeFail": "A kulcsot nem sikerült létrehozni",

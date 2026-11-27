@@ -32,6 +32,8 @@ Already run one of them? Linking brings in every site at once.
 
    You should see how many Sources were added.
 
+   With Prowlarr, each indexer becomes a Source for shows, movies or music, going by the categories it has.
+
 :::caution
 Prowlarr needs a HolyArrs password on your account first. The card links to your account page if you have none.
 :::

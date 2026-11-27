@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Филмови",
 	"arrapi.seerr.showsLower": "серије",
 	"arrapi.seerr.moviesLower": "филмови",
+	"arrapi.seerr.music": "Музика",
+	"arrapi.seerr.musicLower": "музику",
 	"arrapi.seerr.saveFail": "Није сачувано",
 	"arrapi.seerr.replaceConfirm": "Заменити {app} кључ? Садашњи престаје да ради.",
 	"arrapi.seerr.makeFail": "Кључ није направљен",

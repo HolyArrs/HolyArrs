@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Film",
 	"arrapi.seerr.showsLower": "serie",
 	"arrapi.seerr.moviesLower": "film",
+	"arrapi.seerr.music": "Musica",
+	"arrapi.seerr.musicLower": "musica",
 	"arrapi.seerr.saveFail": "Non sono riuscito a salvare",
 	"arrapi.seerr.replaceConfirm": "Sostituire la chiave di {app}? Quella attuale smette di funzionare.",
 	"arrapi.seerr.makeFail": "Non sono riuscito a creare la chiave",

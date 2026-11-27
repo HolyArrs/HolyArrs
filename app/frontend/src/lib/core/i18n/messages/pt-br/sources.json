@@ -26,6 +26,7 @@
 	"sources.bridge.link": "Vincular",
 	"sources.bridge.linkName": "Vincular {name}",
 	"sources.bridge.movieKey": "Chave de filmes (lado do Radarr)",
+	"sources.bridge.musicKey": "Chave de música (lado do Lidarr)",
 	"sources.bridge.notConnected": "Não conectado",
 	"sources.bridge.reaches": "O Prowlarr acessa o HolyArrs em",
 	"sources.bridge.remove": "Remover",

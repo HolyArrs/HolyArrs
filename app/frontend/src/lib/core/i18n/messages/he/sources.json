@@ -26,6 +26,7 @@
 	"sources.bridge.link": "קישור",
 	"sources.bridge.linkName": "קישור {name}",
 	"sources.bridge.movieKey": "מפתח סרטים (בצד של Radarr)",
+	"sources.bridge.musicKey": "מפתח מוזיקה (בצד של Lidarr)",
 	"sources.bridge.notConnected": "לא מחובר",
 	"sources.bridge.reaches": "Prowlarr מגיע אל HolyArrs בכתובת",
 	"sources.bridge.remove": "הסרה",

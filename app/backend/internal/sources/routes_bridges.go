@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -42,7 +43,7 @@ type bridgeBody struct {
 	// NewKeys lets the setup replace an arr key that exists already
 	// (an app using the old one must get the new one).
 	NewKeys bool `json:"new_keys"`
-	// Keys are arr keys typed in, by side (sonarr, radarr), used instead of making new ones.
+	// Keys are arr keys typed in, by side (sonarr, radarr, lidarr), used instead of making new ones.
 	Keys map[string]string `json:"keys"`
 }
 
@@ -212,15 +213,13 @@ func (h *Handlers) prowlarrSides(callback string) []BridgeSide {
 	if h.PartOn(parts.Movies) {
 		out = append(out, BridgeSide{Kind: "Radarr", Name: "HolyArrs Movies", Base: callback + "/radarr"})
 	}
+	if h.PartOn(parts.Music) {
+		out = append(out, BridgeSide{Kind: "Lidarr", Name: "HolyArrs Music", Base: callback + "/lidarr"})
+	}
 	return out
 }
 
-func sideOf(kind string) string {
-	if kind == "Sonarr" {
-		return "sonarr"
-	}
-	return "radarr"
-}
+func sideOf(kind string) string { return strings.ToLower(kind) }
 
 // testBridge checks an address and key without saving anything.
 func (h *Handlers) testBridge(w http.ResponseWriter, r *http.Request) {
@@ -429,7 +428,7 @@ func (h *Handlers) addBridge(w http.ResponseWriter, r *http.Request) {
 	if found {
 		if !bridgeSameURL(existing.CallbackURL, in.CallbackURL) {
 			// HolyArrs is reached at another address now: its old entries go.
-			_ = p.Disconnect(ctx, []string{existing.CallbackURL + "/sonarr", existing.CallbackURL + "/radarr"})
+			_ = p.Disconnect(ctx, []string{existing.CallbackURL + "/sonarr", existing.CallbackURL + "/radarr", existing.CallbackURL + "/lidarr"})
 		}
 		b, err = svc.Update(ctx, existing, in.Key, in.CallbackURL, actorOf(r))
 	} else {
@@ -533,7 +532,7 @@ func (h *Handlers) deleteBridge(w http.ResponseWriter, r *http.Request) {
 			if err == nil {
 				ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
 				p := NewBridgeProwlarr(b.URL, key)
-				err = p.Disconnect(ctx, []string{b.CallbackURL + "/sonarr", b.CallbackURL + "/radarr"})
+				err = p.Disconnect(ctx, []string{b.CallbackURL + "/sonarr", b.CallbackURL + "/radarr", b.CallbackURL + "/lidarr"})
 				cancel()
 			}
 			if err != nil {

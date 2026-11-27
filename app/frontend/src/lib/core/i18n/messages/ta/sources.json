@@ -26,6 +26,7 @@
 	"sources.bridge.link": "இணை",
 	"sources.bridge.linkName": "{name} ஐ இணை",
 	"sources.bridge.movieKey": "திரைப்பட விசை (Radarr பக்கம்)",
+	"sources.bridge.musicKey": "இசை விசை (Lidarr பக்கம்)",
 	"sources.bridge.notConnected": "இணைக்கப்படவில்லை",
 	"sources.bridge.reaches": "Prowlarr, HolyArrs ஐ அடையும் முகவரி",
 	"sources.bridge.remove": "நீக்கு",

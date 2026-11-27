@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Pel·lícules",
 	"arrapi.seerr.showsLower": "sèries",
 	"arrapi.seerr.moviesLower": "pel·lícules",
+	"arrapi.seerr.music": "Música",
+	"arrapi.seerr.musicLower": "música",
 	"arrapi.seerr.saveFail": "No s'ha pogut desar",
 	"arrapi.seerr.replaceConfirm": "Substituir la clau de {app}? L'actual deixa de funcionar.",
 	"arrapi.seerr.makeFail": "No s'ha pogut crear la clau",

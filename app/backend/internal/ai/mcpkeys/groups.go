@@ -105,7 +105,7 @@ var wildOverrides = func() []string {
 
 // roots are the first path words the app serves. Anything else is unknown.
 var roots = []string{
-	"", "api", "sonarr", "radarr", "mcp", "oauth", ".well-known", "login", "plex-done", "live", "invite", "healthz", "readyz", "ping",
+	"", "api", "sonarr", "radarr", "lidarr", "mcp", "oauth", ".well-known", "login", "plex-done", "live", "invite", "healthz", "readyz", "ping",
 	// the old-app API, below /sonarr/ and /radarr/
 	"calendar", "command", "config", "customformat", "delayprofile", "episode", "exclusions", "importlistexclusion",
 	"indexer", "languageprofile", "mediacover", "movie", "notification", "qualitydefinition", "qualityprofile",

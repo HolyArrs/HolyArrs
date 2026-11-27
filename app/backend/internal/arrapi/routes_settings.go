@@ -79,6 +79,11 @@ func (h *Handlers) Routes(m *webserver.Router) {
 	m.Handle("POST /radarr/", webserver.PermManageLibrary, rad)
 	m.Handle("PUT /radarr/", webserver.PermManageLibrary, rad)
 	m.Handle("DELETE /radarr/", webserver.PermManageLibrary, rad)
+	lid := Lidarr(h.deps())
+	m.Handle("GET /lidarr/", webserver.PermManageLibrary, lid)
+	m.Handle("POST /lidarr/", webserver.PermManageLibrary, lid)
+	m.Handle("PUT /lidarr/", webserver.PermManageLibrary, lid)
+	m.Handle("DELETE /lidarr/", webserver.PermManageLibrary, lid)
 	m.Handle("GET /api/v1/settings/old-app-api", webserver.PermSettings, http.HandlerFunc(h.getSettings))
 	m.Handle("PUT /api/v1/settings/old-app-api", webserver.PermSettings, http.HandlerFunc(h.putSettings))
 	m.Handle("POST /api/v1/settings/old-app-api/keys/{side}", webserver.PermSettings, http.HandlerFunc(h.makeKey))
@@ -120,7 +125,7 @@ func (h *Handlers) Gate(next http.Handler) http.Handler {
 
 // Side is one side as the settings page shows it.
 type Side struct {
-	Side string `json:"side"` // sonarr or radarr
+	Side string `json:"side"` // sonarr, radarr or lidarr
 	// Path is the URL base to paste into Seerr or Overseerr, next to this
 	// server's host and port. URL is the whole address as this request
 	// reached HolyArrs.
@@ -157,7 +162,7 @@ func (h *Handlers) answer(r *http.Request) (map[string]any, error) {
 		return nil, err
 	}
 	return map[string]any{"enabled": h.On(r.Context()), "delete_files": h.deleteFilesOn(r.Context()), "sides": sides,
-		"versions": map[string]string{"sonarr": SonarrVersion, "radarr": RadarrVersion}, "pushed": pushed}, nil
+		"versions": map[string]string{"sonarr": SonarrVersion, "radarr": RadarrVersion, "lidarr": LidarrVersion}, "pushed": pushed}, nil
 }
 
 // PushedFormat is a format an app sent to a side: whether it became a
@@ -240,8 +245,8 @@ func (h *Handlers) SaveSwitches(ctx context.Context, who domain.Actor, enabled, 
 // manage the Library and must have signed in with a password.
 func (h *Handlers) makeKey(w http.ResponseWriter, r *http.Request) {
 	side := r.PathValue("side")
-	if side != "sonarr" && side != "radarr" {
-		webserver.Fail(w, http.StatusNotFound, "the side is sonarr or radarr")
+	if !sideAllowed(side) {
+		webserver.Fail(w, http.StatusNotFound, "the side is sonarr, radarr or lidarr")
 		return
 	}
 	if h.Auth == nil {
@@ -276,7 +281,7 @@ func (h *Handlers) makeKey(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) deleteKey(w http.ResponseWriter, r *http.Request) {
 	side := r.PathValue("side")
-	if h.Auth == nil || (side != "sonarr" && side != "radarr") {
+	if h.Auth == nil || !sideAllowed(side) {
 		webserver.Fail(w, http.StatusNotFound, "no such key")
 		return
 	}
@@ -294,3 +299,6 @@ func (h *Handlers) deleteKey(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// sideAllowed reports whether side is one of the arr API sides.
+func sideAllowed(side string) bool { return side != "" && accounts.ArrSide("/"+side+"/") == side }

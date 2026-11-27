@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "সিনেমা",
 	"arrapi.seerr.showsLower": "শো",
 	"arrapi.seerr.moviesLower": "সিনেমা",
+	"arrapi.seerr.music": "গান",
+	"arrapi.seerr.musicLower": "গান",
 	"arrapi.seerr.saveFail": "সেভ করা যায়নি",
 	"arrapi.seerr.replaceConfirm": "{app} কী বদলাবেন? বর্তমানটি কাজ করা বন্ধ করবে।",
 	"arrapi.seerr.makeFail": "কী বানানো যায়নি",
