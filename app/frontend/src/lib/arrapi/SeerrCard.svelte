@@ -14,17 +14,18 @@
 	import { pushedRows, type Pushed } from './pushed.ts';
 
 	// Seerr and Overseerr send approved requests to Sonarr and Radarr; this card switches on HolyArrs's small API that answers them in their place. Each side gets its own key, shown once.
-	type Side = 'sonarr' | 'radarr';
+	type Side = 'sonarr' | 'radarr' | 'lidarr';
 	interface Key { side: Side; hint: string; owner: string; owner_active: boolean; created_at: string; last_used_at?: string }
 	interface SideView { side: Side; path: string; url: string; key?: Key }
 	interface Answer { enabled: boolean; delete_files: boolean; sides: SideView[]; pushed?: Pushed }
 
 	const sideWord: Record<Side, { app: string }> = {
 		sonarr: { app: 'Sonarr' },
-		radarr: { app: 'Radarr' }
+		radarr: { app: 'Radarr' },
+		lidarr: { app: 'Lidarr' }
 	};
-	const sideWhat = (side: Side) => t(side === 'sonarr' ? 'arrapi.seerr.shows' : 'arrapi.seerr.movies');
-	const sideWhatLower = (side: Side) => t(side === 'sonarr' ? 'arrapi.seerr.showsLower' : 'arrapi.seerr.moviesLower');
+	const sideWhat = (side: Side) => t(side === 'sonarr' ? 'arrapi.seerr.shows' : side === 'lidarr' ? 'arrapi.seerr.music' : 'arrapi.seerr.movies');
+	const sideWhatLower = (side: Side) => t(side === 'sonarr' ? 'arrapi.seerr.showsLower' : side === 'lidarr' ? 'arrapi.seerr.musicLower' : 'arrapi.seerr.moviesLower');
 
 	let a = $state<Answer | null>(null);
 	const sent = $derived(pushedRows(a?.pushed));
@@ -115,7 +116,7 @@
 				</div>
 			</div>
 			{#if a.enabled}
-				{#each a.sides.filter((s) => s.side in sideWord) as s (s.side)}
+				{#each a.sides as s (s.side)}
 					<div class="srow side" data-testid="seerr-side-{s.side}">
 						<div class="txt">
 							<span class="label">{t('arrapi.seerr.addAs', { what: sideWhat(s.side), app: sideWord[s.side].app })}</span>

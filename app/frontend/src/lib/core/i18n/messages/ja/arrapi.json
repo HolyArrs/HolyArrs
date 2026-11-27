@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "映画",
 	"arrapi.seerr.showsLower": "番組",
 	"arrapi.seerr.moviesLower": "映画",
+	"arrapi.seerr.music": "音楽",
+	"arrapi.seerr.musicLower": "音楽",
 	"arrapi.seerr.saveFail": "保存できませんでした",
 	"arrapi.seerr.replaceConfirm": "{app} のキーを置き換えますか?現在のキーは使えなくなります。",
 	"arrapi.seerr.makeFail": "キーを作成できませんでした",

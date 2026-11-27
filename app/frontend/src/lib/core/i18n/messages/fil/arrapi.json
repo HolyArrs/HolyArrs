@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Mga Pelikula",
 	"arrapi.seerr.showsLower": "mga show",
 	"arrapi.seerr.moviesLower": "mga pelikula",
+	"arrapi.seerr.music": "Musika",
+	"arrapi.seerr.musicLower": "musika",
 	"arrapi.seerr.saveFail": "Hindi na-save",
 	"arrapi.seerr.replaceConfirm": "Palitan ang key ng {app}? Titigil sa paggana ang kasalukuyan.",
 	"arrapi.seerr.makeFail": "Hindi nakagawa ng key",

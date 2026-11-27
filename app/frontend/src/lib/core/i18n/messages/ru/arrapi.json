@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Фильмы",
 	"arrapi.seerr.showsLower": "сериалов",
 	"arrapi.seerr.moviesLower": "фильмов",
+	"arrapi.seerr.music": "Музыка",
+	"arrapi.seerr.musicLower": "музыку",
 	"arrapi.seerr.saveFail": "Не удалось сохранить",
 	"arrapi.seerr.replaceConfirm": "Заменить ключ {app}? Текущий перестанет работать.",
 	"arrapi.seerr.makeFail": "Не удалось создать ключ",

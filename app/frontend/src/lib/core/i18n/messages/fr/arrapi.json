@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Films",
 	"arrapi.seerr.showsLower": "séries",
 	"arrapi.seerr.moviesLower": "films",
+	"arrapi.seerr.music": "Musique",
+	"arrapi.seerr.musicLower": "musique",
 	"arrapi.seerr.saveFail": "Enregistrement impossible",
 	"arrapi.seerr.replaceConfirm": "Remplacer la clé {app} ? L'actuelle cesse de fonctionner.",
 	"arrapi.seerr.makeFail": "Impossible de créer la clé",

@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filmy",
 	"arrapi.seerr.showsLower": "seriali",
 	"arrapi.seerr.moviesLower": "filmów",
+	"arrapi.seerr.music": "Muzyka",
+	"arrapi.seerr.musicLower": "muzykę",
 	"arrapi.seerr.saveFail": "Nie udało się zapisać",
 	"arrapi.seerr.replaceConfirm": "Wymienić klucz {app}? Obecny przestanie działać.",
 	"arrapi.seerr.makeFail": "Nie udało się utworzyć klucza",

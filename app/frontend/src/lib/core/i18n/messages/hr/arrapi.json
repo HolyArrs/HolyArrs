@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Filmovi",
 	"arrapi.seerr.showsLower": "serije",
 	"arrapi.seerr.moviesLower": "filmove",
+	"arrapi.seerr.music": "Glazba",
+	"arrapi.seerr.musicLower": "glazbu",
 	"arrapi.seerr.saveFail": "Spremanje nije uspjelo",
 	"arrapi.seerr.replaceConfirm": "Zamijeniti ključ za {app}? Trenutni prestaje raditi.",
 	"arrapi.seerr.makeFail": "Ključ se nije mogao napraviti",

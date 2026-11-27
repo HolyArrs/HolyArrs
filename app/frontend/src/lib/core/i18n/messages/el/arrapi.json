@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Ταινίες",
 	"arrapi.seerr.showsLower": "σειρών",
 	"arrapi.seerr.moviesLower": "ταινιών",
+	"arrapi.seerr.music": "Μουσική",
+	"arrapi.seerr.musicLower": "μουσική",
 	"arrapi.seerr.saveFail": "Δεν ήταν δυνατή η αποθήκευση",
 	"arrapi.seerr.replaceConfirm": "Να αντικατασταθεί το κλειδί {app}; Το τρέχον θα σταματήσει να λειτουργεί.",
 	"arrapi.seerr.makeFail": "Δεν ήταν δυνατή η δημιουργία κλειδιού",

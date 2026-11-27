@@ -74,3 +74,14 @@ func TestLidarrSide_ProwlarrMakesMusicSource(t *testing.T) {
 		t.Fatalf("v3: %d, want 404", rec.Code)
 	}
 }
+
+// The settings key routes take the Lidarr side too, so a key can be made
+// for a Lidarr app added in Prowlarr by hand, and removed again.
+func TestLidarrSide_KeyRouteAcceptsSide(t *testing.T) {
+	if got := sideAllowed("lidarr"); !got {
+		t.Fatal("lidarr refused")
+	}
+	if sideAllowed("readarr") || sideAllowed("") {
+		t.Fatal("unknown side allowed")
+	}
+}

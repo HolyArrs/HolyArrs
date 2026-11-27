@@ -125,7 +125,7 @@ func (h *Handlers) Gate(next http.Handler) http.Handler {
 
 // Side is one side as the settings page shows it.
 type Side struct {
-	Side string `json:"side"` // sonarr or radarr
+	Side string `json:"side"` // sonarr, radarr or lidarr
 	// Path is the URL base to paste into Seerr or Overseerr, next to this
 	// server's host and port. URL is the whole address as this request
 	// reached HolyArrs.
@@ -245,8 +245,8 @@ func (h *Handlers) SaveSwitches(ctx context.Context, who domain.Actor, enabled, 
 // manage the Library and must have signed in with a password.
 func (h *Handlers) makeKey(w http.ResponseWriter, r *http.Request) {
 	side := r.PathValue("side")
-	if side != "sonarr" && side != "radarr" {
-		webserver.Fail(w, http.StatusNotFound, "the side is sonarr or radarr")
+	if !sideAllowed(side) {
+		webserver.Fail(w, http.StatusNotFound, "the side is sonarr, radarr or lidarr")
 		return
 	}
 	if h.Auth == nil {
@@ -281,7 +281,7 @@ func (h *Handlers) makeKey(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) deleteKey(w http.ResponseWriter, r *http.Request) {
 	side := r.PathValue("side")
-	if h.Auth == nil || (side != "sonarr" && side != "radarr") {
+	if h.Auth == nil || !sideAllowed(side) {
 		webserver.Fail(w, http.StatusNotFound, "no such key")
 		return
 	}
@@ -299,3 +299,6 @@ func (h *Handlers) deleteKey(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// sideAllowed reports whether side is one of the arr API sides.
+func sideAllowed(side string) bool { return side != "" && accounts.ArrSide("/"+side+"/") == side }

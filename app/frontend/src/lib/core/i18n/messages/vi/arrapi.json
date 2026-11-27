@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "Phim",
 	"arrapi.seerr.showsLower": "phim bộ",
 	"arrapi.seerr.moviesLower": "phim",
+	"arrapi.seerr.music": "Nhạc",
+	"arrapi.seerr.musicLower": "nhạc",
 	"arrapi.seerr.saveFail": "Không thể lưu",
 	"arrapi.seerr.replaceConfirm": "Thay khóa {app}? Khóa hiện tại sẽ ngừng hoạt động.",
 	"arrapi.seerr.makeFail": "Không thể tạo khóa",

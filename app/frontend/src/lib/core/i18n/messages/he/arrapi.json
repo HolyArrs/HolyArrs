@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "סרטים",
 	"arrapi.seerr.showsLower": "סדרות",
 	"arrapi.seerr.moviesLower": "סרטים",
+	"arrapi.seerr.music": "מוזיקה",
+	"arrapi.seerr.musicLower": "מוזיקה",
 	"arrapi.seerr.saveFail": "לא ניתן לשמור",
 	"arrapi.seerr.replaceConfirm": "להחליף את המפתח של {app}? המפתח הנוכחי יפסיק לעבוד.",
 	"arrapi.seerr.makeFail": "לא ניתן ליצור מפתח",

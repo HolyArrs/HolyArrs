@@ -3,6 +3,8 @@
 	"arrapi.seerr.movies": "फ़िल्में",
 	"arrapi.seerr.showsLower": "टीवी शो",
 	"arrapi.seerr.moviesLower": "फ़िल्में",
+	"arrapi.seerr.music": "संगीत",
+	"arrapi.seerr.musicLower": "संगीत",
 	"arrapi.seerr.saveFail": "सेव नहीं हो सका",
 	"arrapi.seerr.replaceConfirm": "{app} की कुंजी बदलें? मौजूदा कुंजी काम करना बंद कर देगी।",
 	"arrapi.seerr.makeFail": "कुंजी नहीं बन सकी",
