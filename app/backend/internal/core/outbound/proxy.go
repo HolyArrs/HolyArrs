@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -239,11 +240,12 @@ func (p *Proxy) tunnel(ctx context.Context, to string) (net.Conn, error) {
 		}
 		conn = tc
 	}
-	if err := HTTPConnect(ctx, conn, to, p.user, p.pass); err != nil {
+	tc, err := HTTPConnect(ctx, conn, to, p.user, p.pass)
+	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("proxy %s: %w", p, err)
 	}
-	return conn, nil
+	return tc, nil
 }
 
 func (p *Proxy) skipsName(host string) bool {
@@ -293,8 +295,17 @@ func parseBypass(e string) (bypassRule, error) {
 	return bypassRule{name: strings.TrimSuffix(e, ".")}, nil
 }
 
-// HTTPConnect asks an http proxy on conn for a tunnel to addr.
-func HTTPConnect(ctx context.Context, conn net.Conn, addr, user, pass string) error {
+// tunnelSettle is how long a fresh tunnel is given to show its first bytes
+// before the caller starts writing. Opening the tunnel comes after the proxy's
+// answer, and a proxy that keeps whatever the client sends in between, as
+// Gluetun's does, throws away the start of a TLS hello and leaves the call
+// unanswered for good. Waiting for those first bytes costs a moment.
+const tunnelSettle = 50 * time.Millisecond
+
+// HTTPConnect asks an http proxy on conn for a tunnel to addr, and answers the
+// connection the tunnel runs on: conn itself, or a connection that gives back
+// the bytes the proxy sent with its answer first.
+func HTTPConnect(ctx context.Context, conn net.Conn, addr, user, pass string) (net.Conn, error) {
 	if dl, ok := ctx.Deadline(); ok {
 		_ = conn.SetDeadline(dl)
 	} else {
@@ -305,25 +316,53 @@ func HTTPConnect(ctx context.Context, conn net.Conn, addr, user, pass string) er
 		req.Header.Set("Proxy-Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(user+":"+pass)))
 	}
 	if err := req.Write(conn); err != nil {
-		return err
+		return nil, err
 	}
 	br := bufio.NewReader(conn)
 	resp, err := http.ReadResponse(br, req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// A 2xx answer has no body, whatever its headers say (RFC 9110 9.3.6);
 	// closing resp.Body would wait on a chunked or sized body that never comes.
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
-		return errors.New("the proxy could not connect: " + resp.Status)
+		return nil, errors.New("the proxy could not connect: " + resp.Status)
 	}
-	if br.Buffered() > 0 {
-		return errors.New("the proxy sent data before the tunnel was open")
+	// The tunnel starts right after the answer, so the proxy may already have
+	// sent its first bytes. Look for them for a moment: what arrives belongs to
+	// the caller, and a proxy that is still opening the tunnel when the caller
+	// writes would lose what it caught.
+	until := time.Now().Add(tunnelSettle)
+	if dl, ok := ctx.Deadline(); ok && dl.Before(until) {
+		until = dl
+	}
+	_ = conn.SetReadDeadline(until)
+	if _, err := br.Peek(1); err != nil && !timedOut(err) {
+		return nil, err
 	}
 	_ = conn.SetDeadline(time.Time{})
-	return nil
+	if br.Buffered() > 0 {
+		return &earlyConn{Conn: conn, br: br}, nil
+	}
+	return conn, nil
 }
+
+// timedOut says err is a read that ran out of time rather than a tunnel that
+// broke.
+func timedOut(err error) bool {
+	var ne net.Error
+	return errors.Is(err, os.ErrDeadlineExceeded) || (errors.As(err, &ne) && ne.Timeout())
+}
+
+// earlyConn is the tunnel a proxy began before it finished answering: the
+// bytes it sent with the answer come first, then the connection as it is.
+type earlyConn struct {
+	net.Conn
+	br *bufio.Reader
+}
+
+func (c *earlyConn) Read(p []byte) (int, error) { return c.br.Read(p) }
 
 // SOCKS5Connect asks a SOCKS5 proxy to connect conn to addr (RFC 1928, with
 // RFC 1929 for the name and password). An address is sent as an address and
