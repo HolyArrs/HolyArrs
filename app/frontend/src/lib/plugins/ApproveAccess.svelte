@@ -7,7 +7,7 @@
 	import { api } from '#lib/core/api.ts';
 	import { plainMessage as message } from '#lib/core/settings.ts';
 	import { toasts } from '#lib/core/toasts.svelte.ts';
-	import { folderLabel, needLabel, scopeWarnings, takesOwnerHosts } from './view.ts';
+	import { folderChoices, folderLabel, needLabel, scopeWarnings, takesOwnerHosts } from './view.ts';
 	import type { Plugin, PluginResources } from './types.ts';
 
 	let { p, reload }: { p: Plugin; reload: () => Promise<void> } = $props();
@@ -16,25 +16,62 @@
 	const needs = $derived(p.needs_approval ?? []);
 	const warns = $derived(scopeWarnings(p.scope_groups));
 	const ownHosts = $derived(takesOwnerHosts(p));
-	let paths = $state<Record<string, string>>({});
+	// The select's answer for each folder: a Library path, an empty choice, or the typed path; the typed boxes live apart.
+	const other = '#other';
+	let picks = $state<Record<string, string>>({});
+	let typed = $state<Record<string, string>>({});
+	// Folders the plugin may want but does not need stay folded away until the owner adds one.
+	let added = $state<Record<string, boolean>>({});
+	let library = $state<{ label?: string; path: string }[]>([]);
 	let hosts = $state('');
 	let busy = $state(false);
 	// The owner's caps for this plugin; an empty box keeps what it asks for.
 	const limitKeys = [['memory_mib', 'plugins.limitMemory'], ['cpus', 'plugins.limitCpus'], ['processes', 'plugins.limitProcesses'], ['open_files', 'plugins.limitOpenFiles']] as const;
 	let limits = $state<Record<string, string>>({});
+	// The Library's folders are the ones worth offering; if the list cannot be read, every box stays free text.
 	$effect(() => {
-		paths = Object.fromEntries(folders.map((f) => [f.name, p.grants?.[f.name]?.path ?? '']));
+		let live = true;
+		api.get<{ library_folders: { label?: string; path: string }[] }>('/library-folders').then(
+			(r) => {
+				if (live) library = r.library_folders ?? [];
+			},
+			() => {}
+		);
+		return () => {
+			live = false;
+		};
+	});
+	// With the Library's folders in hand the owner picks one, and a grant already saved shows as the path it is; without them every box stays free text.
+	$effect(() => {
+		const next: Record<string, string> = {};
+		const boxes: Record<string, string> = {};
+		for (const f of folders) {
+			const granted = p.grants?.[f.name]?.path ?? '';
+			next[f.name] = library.length ? granted : '';
+			boxes[f.name] = library.length ? '' : granted;
+		}
+		picks = next;
+		typed = boxes;
 		hosts = (p.owner_hosts ?? []).join(', ');
 		limits = Object.fromEntries(limitKeys.map(([k]) => [k, String(p.owner_limits?.[k] ?? '')]));
 	});
-	const missing = $derived(folders.some((f) => f.required && !paths[f.name]?.trim()));
+	const value = (name: string) => (picks[name] === other ? (typed[name] ?? '') : (picks[name] ?? ''));
+	const missing = $derived(folders.some((f) => f.required && !value(f.name).trim()));
+	// Required folders and folders that already have a grant stay on screen; optional ones wait behind Add folder.
+	const open = $derived(folders.filter((f) => f.required || p.grants?.[f.name]?.path || added[f.name]));
+	const spare = $derived(folders.filter((f) => !f.required && !p.grants?.[f.name]?.path && !added[f.name]));
+	function addAll() {
+		added = Object.fromEntries(folders.map((f) => [f.name, true]));
+	}
 	const shown = $derived(!!p.installed);
 
 	async function save() {
 		if (busy || missing) return;
 		busy = true;
 		try {
-			const body: { folders: Record<string, string>; owner_hosts?: string[]; limits?: PluginResources } = { folders: { ...paths } };
+			// Every folder is sent, so a cleared one is cleared on the server rather than left as it was.
+			const chosen = Object.fromEntries(folders.map((f) => [f.name, value(f.name)]));
+			const body: { folders: Record<string, string>; owner_hosts?: string[]; limits?: PluginResources } = { folders: chosen };
 			if (ownHosts) body.owner_hosts = hosts.split(/[\s,]+/).filter(Boolean);
 			const own: PluginResources = {};
 			for (const [k] of limitKeys) {
@@ -65,13 +102,28 @@
 		<!-- The red warnings (network.forward and the like) show where the access is approved too, not only in the details. -->
 		{#each warns as w (w)}<p class="small warn" role="note" data-testid="approve-warning"><Icon name="alert" size={15} /><span>{w}</span></p>{/each}
 		{#if folders.length || ownHosts}<div class="boxes">
-		{#each folders as f (f.name)}
-			<label class="row">
-				<span class="small lab">{folderLabel(f)}</span>
+		{#each open as f (f.name)}
+			{@const paths = folderChoices(library, picks[f.name] === other ? '' : (picks[f.name] ?? ''))}
+			<div class="row">
+				<label class="small lab" for={`folder-${p.id}-${f.name}`}>{folderLabel(f)}</label>
 				{#if f.why}<span class="xs muted why">{t('plugins.folderWhy', { why: f.why })}</span>{/if}
-				<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder={`/data/${f.name}`} bind:value={paths[f.name]} data-testid={`plugin-folder-${f.name}`} />
-			</label>
+				{#if library.length}
+					<select class="input" id={`folder-${p.id}-${f.name}`} dir="ltr" bind:value={picks[f.name]} data-testid={`plugin-folder-${f.name}`}>
+						<option value="">{t('plugins.folderChoose')}</option>
+						{#each paths as c (c.path)}<option value={c.path}>{c.label}</option>{/each}
+						<option value={other}>{t('plugins.folderOther')}</option>
+					</select>
+					{#if picks[f.name] === other}
+						<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder={`/data/${f.name}`} aria-label={t('plugins.folderOther')} bind:value={typed[f.name]} data-testid={`plugin-folder-${f.name}-path`} />
+					{/if}
+				{:else}
+					<input class="input" type="text" dir="ltr" spellcheck="false" autocomplete="off" placeholder={`/data/${f.name}`} aria-label={folderLabel(f)} bind:value={typed[f.name]} data-testid={`plugin-folder-${f.name}`} />
+				{/if}
+			</div>
 		{/each}
+		{#if spare.length}
+			<div class="row add"><Button variant="plain" size="sm" onclick={addAll} data-testid="plugin-folder-add">{t('plugins.folderAdd')}</Button></div>
+		{/if}
 		{#if ownHosts}
 			<label class="row wide">
 				<span class="small lab">{t('plugins.ownerHosts')}<span class="xs muted"> · {t('plugins.ownerHostsHelp')}</span></span>
@@ -109,6 +161,7 @@
 	.limits legend { grid-column: 1 / -1; padding: 0; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
 	.limits legend.lab { font-size: 12px; }
 	.row { display: grid; gap: 4px; align-content: start; min-width: 0; }
+	.add { align-content: end; }
 	/* The own-server box spans the card so its example address shows in full. */
 	.wide { grid-column: 1 / -1; }
 	.lab { font-size: 12px; overflow-wrap: anywhere; }

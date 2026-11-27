@@ -73,6 +73,17 @@ export function folderLabel(f: { name: string; mode: string }): string {
 	return t(f.mode === 'read_write' ? 'plugins.folderReadWrite' : 'plugins.folderRead', { name: f.name });
 }
 
+/** The paths a folder request can point at: the Library's own folders, then a path already granted from outside them so a shared parent stays on offer. */
+export function folderChoices(folders: readonly { label?: string; path: string }[], granted: string): { path: string; label: string }[] {
+	const out: { path: string; label: string }[] = [];
+	for (const f of folders) {
+		if (!f.path || out.some((o) => o.path === f.path)) continue;
+		out.push({ path: f.path, label: f.label ? `${f.label} (${f.path})` : f.path });
+	}
+	if (granted && !out.some((o) => o.path === granted)) out.push({ path: granted, label: granted });
+	return out;
+}
+
 /** One item of needs_approval in plain words. */
 export function needLabel(need: string, p: Plugin): string {
 	const [kind, ...rest] = need.split(':');
