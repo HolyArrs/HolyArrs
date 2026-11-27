@@ -163,6 +163,10 @@
 		z-index: 91;
 		bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 		width: min(380px, calc(100vw - 32px));
+		/* vh first: a browser that does not know dvh drops only the line below, so the
+		   cap still holds there. Without a cap the panel grows past the window and the
+		   last pinned rows are cut off at the bottom of the screen, out of reach. */
+		max-height: min(560px, calc(100vh - 32px));
 		max-height: min(560px, calc(100dvh - 32px));
 		display: flex;
 		flex-direction: column;
