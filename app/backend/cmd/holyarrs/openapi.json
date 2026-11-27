@@ -157,6 +157,13 @@
               "none"
             ],
             "type": "string"
+          },
+          "tags": {
+            "description": "Tags put on the title next to its Library folder's tags for new titles; tagged Sources and Downloaders serve only titles that share one. Cleaned like every tag: lowercase, spaces become '-', at most 20 of 40 characters.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -196,6 +203,13 @@
           },
           "search_on_add": {
             "type": "boolean"
+          },
+          "tags": {
+            "description": "Tags put on the title next to its Library folder's tags for new titles; tagged Sources and Downloaders serve only titles that share one. Cleaned like every tag: lowercase, spaces become '-', at most 20 of 40 characters.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "required": [

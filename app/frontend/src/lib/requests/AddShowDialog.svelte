@@ -3,6 +3,7 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import TagInput from '#lib/ui/TagInput.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
 	import { needsFolder, secondVersion, builtInDefaults, startChoices, savedDefaults, saveSearchChoice } from '../mediafiles/index.ts';
 	import { detailsSources, episodeOrders, seasonChoices } from '../shows/index.ts';
@@ -50,6 +51,8 @@
 	let searchOnAdd = $state(false);
 	// A second Version, such as 4K, next to the main one.
 	let more = $state(false);
+	// Tags for the show, next to its folder's tags for new titles: tagged Sources and Downloaders serve only titles that share a tag.
+	let tags = $state<string[]>([]);
 	let moreLabel = $state('4K');
 	let moreRules = $state(0);
 	let moreFolder = $state(0);
@@ -73,6 +76,7 @@
 	export async function open(s: LookupShow) {
 		const mine = ++opens;
 		follow = true;
+		tags = [];
 		picked = s;
 		error = '';
 		ready = false;
@@ -135,7 +139,8 @@
 				new_seasons: seasons === 'future' ? 'all' : newSeasons,
 				episode_order: order,
 				details_source: source,
-				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : []
+				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : [],
+				tags
 			});
 			void saveSearchChoice('show', searchOnAdd);
 			(sheetOpen = false);
@@ -180,6 +185,10 @@
 						{/each}
 					</select>
 					<span class="hint">{t('requests.add.rulesHint')}</span>
+				</div>
+				<div class="field">
+					<label for="show-tags">{t('requests.add.tags')}</label>
+					<TagInput id="show-tags" bind:value={tags} testid="show-tags" />
 				</div>
 				<div class="field">
 					<label for="show-seasons">{t('requests.addShow.seasons')}</label>

@@ -238,6 +238,7 @@
 	"requests.add.folder": "Mapa biblioteke",
 	"requests.add.rules": "Pravila odabira",
 	"requests.add.rulesHint": "Koja izdanja se računaju i koje je najbolje.",
+	"requests.add.tags": "Oznake",
 	"requests.add.keep": "Drži ažurnim",
 	"requests.add.search": "Traži pri dodavanju",
 	"requests.add.more": "Drži i drugu verziju",

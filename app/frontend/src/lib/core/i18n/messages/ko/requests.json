@@ -242,6 +242,7 @@
 	"requests.add.folder": "라이브러리 폴더",
 	"requests.add.rules": "선택 규칙",
 	"requests.add.rulesHint": "어떤 릴리스를 인정하고 어느 것이 가장 좋은지 정합니다.",
+	"requests.add.tags": "태그",
 	"requests.add.keep": "최신 상태 유지",
 	"requests.add.search": "추가 시 검색",
 	"requests.add.more": "두 번째 버전도 유지",

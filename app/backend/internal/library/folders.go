@@ -524,6 +524,13 @@ func TagsFromFolder(lf mediafiles.LibraryFolder) []string {
 	return append([]string{}, lf.NewTitleTags...)
 }
 
+// TitleTags is the tags a title added into the folder starts with when the
+// person adding it typed some too: the folder's and the typed ones, cleaned
+// as one list, so a tag typed in another case is not kept twice.
+func TitleTags(lf mediafiles.LibraryFolder, typed []string) []string {
+	return mediafiles.CleanTags(append(TagsFromFolder(lf), typed...))
+}
+
 // freeLabel says whether label is free among the folders of kind (skipping
 // the folder with id skip). With number, a taken label gets " 2", " 3" and so on.
 func freeLabel(all []mediafiles.LibraryFolder, kind, label string, skip int64, number bool) (string, bool) {

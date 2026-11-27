@@ -242,6 +242,7 @@
 	"requests.add.folder": "Cartella della Libreria",
 	"requests.add.rules": "Regole di scelta",
 	"requests.add.rulesHint": "Quali release contano e qual è la migliore.",
+	"requests.add.tags": "Tag",
 	"requests.add.keep": "Tieni aggiornato",
 	"requests.add.search": "Cerca all'aggiunta",
 	"requests.add.more": "Tieni anche una seconda Versione",

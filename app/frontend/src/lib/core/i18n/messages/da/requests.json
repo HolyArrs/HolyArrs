@@ -238,6 +238,7 @@
 	"requests.add.folder": "Biblioteksmappe",
 	"requests.add.rules": "Valgregler",
 	"requests.add.rulesHint": "Hvilke Udgivelser der tæller, og hvilken der er bedst.",
+	"requests.add.tags": "Tags",
 	"requests.add.keep": "Hold opdateret",
 	"requests.add.search": "Søg ved tilføjelse",
 	"requests.add.more": "Behold også en anden Version",

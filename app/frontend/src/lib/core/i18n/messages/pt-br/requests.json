@@ -242,6 +242,7 @@
 	"requests.add.folder": "Pasta da Biblioteca",
 	"requests.add.rules": "Regras de escolha",
 	"requests.add.rulesHint": "Quais lançamentos contam e qual é o melhor.",
+	"requests.add.tags": "Tags",
 	"requests.add.keep": "Manter em dia",
 	"requests.add.search": "Buscar ao adicionar",
 	"requests.add.more": "Manter também uma segunda Versão",

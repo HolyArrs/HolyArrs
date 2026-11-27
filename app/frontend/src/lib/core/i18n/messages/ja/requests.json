@@ -242,6 +242,7 @@
 	"requests.add.folder": "ライブラリフォルダー",
 	"requests.add.rules": "選定ルール",
 	"requests.add.rulesHint": "どのリリースを対象にし、どれを最良とするか。",
+	"requests.add.tags": "タグ",
 	"requests.add.keep": "最新に保つ",
 	"requests.add.search": "追加時に検索",
 	"requests.add.more": "2 つ目のバージョンも保持",

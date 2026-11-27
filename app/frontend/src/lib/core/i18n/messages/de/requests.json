@@ -242,6 +242,7 @@
 	"requests.add.folder": "Bibliotheksordner",
 	"requests.add.rules": "Auswahlregeln",
 	"requests.add.rulesHint": "Welche Releases zählen und welches das beste ist.",
+	"requests.add.tags": "Tags",
 	"requests.add.keep": "Aktuell halten",
 	"requests.add.search": "Beim Hinzufügen suchen",
 	"requests.add.more": "Auch eine zweite Variante halten",

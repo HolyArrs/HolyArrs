@@ -238,6 +238,7 @@
 	"requests.add.folder": "Folder pustaka",
 	"requests.add.rules": "Aturan pilihan",
 	"requests.add.rulesHint": "Rilis mana yang dihitung, dan mana yang terbaik.",
+	"requests.add.tags": "Tag",
 	"requests.add.keep": "Jaga tetap mutakhir",
 	"requests.add.search": "Cari saat ditambahkan",
 	"requests.add.more": "Simpan juga Versi kedua",

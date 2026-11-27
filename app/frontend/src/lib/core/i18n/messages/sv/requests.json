@@ -238,6 +238,7 @@
 	"requests.add.folder": "Biblioteksmapp",
 	"requests.add.rules": "Valregler",
 	"requests.add.rulesHint": "Vilka releaser som räknas, och vilken som är bäst.",
+	"requests.add.tags": "Taggar",
 	"requests.add.keep": "Håll uppdaterad",
 	"requests.add.search": "Sök när den läggs till",
 	"requests.add.more": "Håll också en andra version",

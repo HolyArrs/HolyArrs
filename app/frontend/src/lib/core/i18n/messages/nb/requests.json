@@ -238,6 +238,7 @@
 	"requests.add.folder": "Bibliotekmappe",
 	"requests.add.rules": "Valgregler",
 	"requests.add.rulesHint": "Hvilke utgivelser som teller, og hvilken som er best.",
+	"requests.add.tags": "Etiketter",
 	"requests.add.keep": "Hold oppdatert",
 	"requests.add.search": "Søk når den legges til",
 	"requests.add.more": "Hold også en andre versjon",

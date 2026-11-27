@@ -238,6 +238,7 @@
 	"requests.add.folder": "Kirjastokansio",
 	"requests.add.rules": "Valintasäännöt",
 	"requests.add.rulesHint": "Mitkä julkaisut lasketaan ja mikä on paras.",
+	"requests.add.tags": "Tunnisteet",
 	"requests.add.keep": "Pidä ajan tasalla",
 	"requests.add.search": "Hae lisättäessä",
 	"requests.add.more": "Pidä myös toista versiota",

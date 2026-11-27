@@ -238,6 +238,7 @@
 	"requests.add.folder": "Meediakogu kaust",
 	"requests.add.rules": "Valikureeglid",
 	"requests.add.rulesHint": "Millised väljalasked arvestatakse ja milline on parim.",
+	"requests.add.tags": "Sildid",
 	"requests.add.keep": "Hoia ajakohasena",
 	"requests.add.search": "Otsi lisamisel",
 	"requests.add.more": "Hoia ka teist versiooni",

@@ -3,6 +3,7 @@
 	import { t } from '#lib/core/i18n/i18n.svelte.ts';
 	import Sheet from '#lib/ui/Sheet.svelte';
 	import Button from '#lib/ui/Button.svelte';
+	import TagInput from '#lib/ui/TagInput.svelte';
 	import { MetadataNotice } from '#lib/metadata/index.ts';
 	import { needsFolder, loadChoices, saveChoices, secondVersion, builtInDefaults, gateChoices as gates, startChoices, savedDefaults, saveSearchChoice } from '../mediafiles/index.ts';
 	import type { TitleDefaults } from '../mediafiles/index.ts';
@@ -50,6 +51,8 @@
 	let moreLabel = $state('4K');
 	let moreRules = $state(0);
 	let moreFolder = $state(0);
+	// Tags for the movie, next to its folder's tags for new titles: tagged Sources and Downloaders serve only titles that share a tag.
+	let tags = $state<string[]>([]);
 	let adding = $state(false);
 	let addError = $state('');
 	// The saved defaults once they are in; the sheet shows a placeholder until then.
@@ -71,6 +74,7 @@
 		const mine = ++opens;
 		choose = !!opts.choose;
 		follow = true;
+		tags = [];
 		picked = m;
 		addError = '';
 		ready = false;
@@ -123,7 +127,8 @@
 				release_gate: gate,
 				keep_up_to_date: keep,
 				search_on_add: choose ? false : searchOnAdd,
-				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : []
+				more_versions: more ? [{ label: moreLabel.trim(), pick_rules_id: moreRules, library_folder_id: moreFolder }] : [],
+				tags
 			});
 			if (!choose) void saveSearchChoice('movie', searchOnAdd);
 			saveChoices({ release_gate: gate });
@@ -169,6 +174,10 @@
 						{/each}
 					</select>
 					<span class="hint">{t('requests.add.rulesHint')}</span>
+				</div>
+				<div class="field">
+					<label for="add-tags">{t('requests.add.tags')}</label>
+					<TagInput id="add-tags" bind:value={tags} testid="add-tags" />
 				</div>
 				<div class="field">
 					<label for="gate">{t('requests.addMovie.gate')}</label>

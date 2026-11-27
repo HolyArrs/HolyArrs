@@ -242,6 +242,7 @@
 	"requests.add.folder": "Папка Медиатеки",
 	"requests.add.rules": "Правила отбора",
 	"requests.add.rulesHint": "Какие релизы подходят и какой из них лучший.",
+	"requests.add.tags": "Теги",
 	"requests.add.keep": "Держать актуальным",
 	"requests.add.search": "Искать при добавлении",
 	"requests.add.more": "Также держать второй вариант",

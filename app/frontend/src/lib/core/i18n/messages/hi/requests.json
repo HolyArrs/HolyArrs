@@ -242,6 +242,7 @@
 	"requests.add.folder": "लाइब्रेरी फ़ोल्डर",
 	"requests.add.rules": "चुनाव के नियम",
 	"requests.add.rulesHint": "कौन-सी रिलीज़ मानी जाएं, और कौन-सी सबसे अच्छी है।",
+	"requests.add.tags": "टैग",
 	"requests.add.keep": "अप-टू-डेट रखना",
 	"requests.add.search": "जोड़ते ही खोजें",
 	"requests.add.more": "दूसरा वर्ज़न भी रखें",

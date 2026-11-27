@@ -242,6 +242,7 @@
 	"requests.add.folder": "Folder biblioteki",
 	"requests.add.rules": "Reguły wyboru",
 	"requests.add.rulesHint": "Które release'y się liczą i który jest najlepszy.",
+	"requests.add.tags": "Tagi",
 	"requests.add.keep": "Śledź nowości",
 	"requests.add.search": "Szukaj po dodaniu",
 	"requests.add.more": "Zachowaj też drugą Odmianę",

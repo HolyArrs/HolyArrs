@@ -238,6 +238,7 @@
 	"requests.add.folder": "媒體庫資料夾",
 	"requests.add.rules": "挑選規則",
 	"requests.add.rulesHint": "哪些資源可以接受，以及哪個最好。",
+	"requests.add.tags": "標籤",
 	"requests.add.keep": "持續追蹤",
 	"requests.add.search": "新增時搜尋",
 	"requests.add.more": "再保留第二個版本",

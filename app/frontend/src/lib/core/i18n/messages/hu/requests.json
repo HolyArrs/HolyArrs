@@ -238,6 +238,7 @@
 	"requests.add.folder": "Médiatár-mappa",
 	"requests.add.rules": "Kiválasztási szabályok",
 	"requests.add.rulesHint": "Mely release-ek számítanak, és melyik a legjobb.",
+	"requests.add.tags": "Címkék",
 	"requests.add.keep": "Naprakészen tartás",
 	"requests.add.search": "Keresés hozzáadáskor",
 	"requests.add.more": "Második Változat is",

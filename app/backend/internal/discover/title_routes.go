@@ -70,7 +70,7 @@ func (h *TitleHandlers) addTitle(w http.ResponseWriter, r *http.Request) {
 		library.AddOptions
 		Follow *bool `json:"follow"` // put it on the adder's calendar (default true)
 	}
-	sent, ok := webserver.DecodeKeys(w, r, &body, `send {"id": "tmdb:<number>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, release_gate, gate_delay_days, search_on_add, more_versions, follow`)
+	sent, ok := webserver.DecodeKeys(w, r, &body, `send {"id": "tmdb:<number>"} with optional library_folder_id, pick_rules_id, keep_up_to_date, release_gate, gate_delay_days, search_on_add, more_versions, tags, follow`)
 	if !ok {
 		return
 	}
@@ -136,7 +136,7 @@ func (h *TitleHandlers) editTitle(w http.ResponseWriter, r *http.Request) {
 		library.TitleChange
 		DetailsSource *string `json:"details_source"`
 	}
-	if !webserver.Decode(w, r, &c, "send any of keep_up_to_date, pick_rules_id, library_folder_id; for movies release_gate, gate_delay_days; for shows episode_order, episode_group_id, new_seasons, season_choice, details_source") {
+	if !webserver.Decode(w, r, &c, "send any of keep_up_to_date, pick_rules_id, library_folder_id, tags; for movies release_gate, gate_delay_days; for shows episode_order, episode_group_id, new_seasons, season_choice, details_source") {
 		return
 	}
 	dry := r.URL.Query().Get("dry_run") == "1" || r.URL.Query().Get("dry_run") == "true"

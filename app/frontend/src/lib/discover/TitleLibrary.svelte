@@ -7,6 +7,7 @@
 	import { partlyKept } from '#lib/mediafiles/library-state.ts';
 	import Menu, { type MenuItem } from '#lib/ui/Menu.svelte';
 	import Sheet from '#lib/ui/Sheet.svelte';
+	import TitleTags from './TitleTags.svelte';
 	import type { OwnedTitle } from './title-owned.svelte.ts';
 	import { addedOn, airWords, epFile, fileLangs as langs, pathEnd, epQuality, epTone, getAllMissingShown, nothingQueuedKey, searchQueued, showOffHint, qOrder, qHints, subsCodes } from './title-library-words.ts'; import SeasonPacksRow from './SeasonPacksRow.svelte'; import TitleLeftovers from './TitleLeftovers.svelte';
 	import { ShowVersions, SeasonToolsSheet, EpisodeSheet, chosenWhy, type SheetEpisode } from '#lib/shows/index.ts';
@@ -561,6 +562,7 @@
 							<div class="lib-pick"><Menu label={t('discover.titleLibrary.folder')} variant="button" items={folderMenu} width={340}>{#snippet trigger()}<span>{curFolder ? folderName(curFolder) : t('discover.titleLibrary.folderWord')}</span><Icon name="chevronDown" size={14} />{/snippet}</Menu></div>
 						</div>
 					{/if}
+					<div class="lib-row static" data-testid="tags-row"><span><b>{t('discover.titleLibrary.tags')}</b></span><TitleTags title={o} onchange={(x) => (own.owned = x)} /></div>
 					<div class="lib-row static q-row" data-testid="subtitles-row">
 						<span><b>{t('discover.titleLibrary.subtitles')}</b><small>{subsData ? subsHint : ' '}</small></span>
 						<div class="q-seg" role="radiogroup" aria-label={t('discover.titleLibrary.subtitles')}>
