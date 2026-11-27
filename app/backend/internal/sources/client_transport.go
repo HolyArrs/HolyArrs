@@ -152,11 +152,12 @@ func httpConnect(ctx context.Context, d *net.Dialer, p *url.URL, addr string) (n
 		conn = tc
 	}
 	pass, _ := p.User.Password()
-	if err := outbound.HTTPConnect(ctx, conn, addr, p.User.Username(), pass); err != nil {
+	tc, err := outbound.HTTPConnect(ctx, conn, addr, p.User.Username(), pass)
+	if err != nil {
 		conn.Close()
 		return nil, err
 	}
-	return conn, nil
+	return tc, nil
 }
 
 // sameHostRedirect follows a redirect only to the same host, so the key in

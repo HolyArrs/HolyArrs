@@ -394,7 +394,7 @@ func TestHTTPConnectIgnoresChunkedOnSuccess(t *testing.T) {
 		}()
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		start := time.Now()
-		err := HTTPConnect(ctx, client, "93.184.216.34:443", "u", "p")
+		_, err := HTTPConnect(ctx, client, "93.184.216.34:443", "u", "p")
 		cancel()
 		if err != nil || time.Since(start) > time.Second {
 			t.Fatalf("%q: err = %v after %v", hdr, err, time.Since(start))
