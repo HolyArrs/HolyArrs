@@ -238,7 +238,8 @@ export function eventText(e: EventRecord, ctx: LineContext = {}): RowText {
 			if (/^(Season \d+: )?no Release passed/i.test(e.Summary) || !m) return t(TAG.searched, join(say('downloads.hl.lookedFor'), found ? say('downloads.hl.foundNone', { n: found }) : say('downloads.hl.nothingFound'), serverWords(str(d.sources_note))));
 			return t(TAG.searched, join(say('downloads.hl.lookedFor'), say('downloads.hl.nFound', { n: found }), serverWords(str(d.sources_note))));
 		}
-		case 'search_failed': return t(TAG.failed, join(say('downloads.hl.searchFailed'), plainWhy(str(d.reason) || str(d.error)), serverWords(str(d.sources_note))));
+		// The server keeps why a search failed in the Event's Summary; Data only lists the Sources.
+		case 'search_failed': return t(TAG.failed, join(say('downloads.hl.searchFailed'), plainWhy(str(d.reason) || str(d.error) || e.Summary), serverWords(str(d.sources_note))));
 		case 'feed_checked': return t(TAG.checked, say('downloads.hl.feeds'));
 		case 'release_chosen':
 		case 'release_chosen_by_hand': {

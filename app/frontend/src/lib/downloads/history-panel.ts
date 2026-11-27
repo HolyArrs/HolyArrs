@@ -217,7 +217,8 @@ export function panelView(row: HistoryRow, ctx: PanelContext): PanelView {
 	path('File', first(row, (x, ev) => str(pathsOf(x).find((p) => str(p.to))?.to) || (isRename || /^(file_(missing|back)|subtitle_\w+)$/.test(ev.Kind) ? str(x.to) || str(x.path) : '') || str(x.file)));
 	path('From', isRename ? str(d.from) : fromFile || first(row, (x) => str(x.from)));
 	path('Folder', str(d.folder) || str(d.path) || str(d.save_path));
-	const why = str(d.reason) || str(d.error) || str(d.message);
+	// A failed search keeps its reason in the Summary only.
+	const why = str(d.reason) || str(d.error) || str(d.message) || (e.Kind === 'search_failed' ? e.Summary : '');
 	// Say the reason once: no Why when the line or title already says it.
 	const wl = plainWhy(why).toLowerCase(), ll = line.toLowerCase();
 	if (why && !ll.includes(wl) && !(ll && wl.includes(ll)) && !title.toLowerCase().includes(wl)) add('Why', cap(plainWhy(why)));
@@ -357,6 +358,8 @@ function lineOf(row: HistoryRow, ctx: PanelContext, failedAt: StepKey | '', fall
 			const files = num(d.files), albums = num(d.albums);
 			return { line: albums ? join(plural(files, 'track'), plural(albums, 'album')) : '', long: false };
 		}
+		// The line names the failure; the Why fact below holds the whole reason, one Source after another.
+		case 'search_failed': return { line: say('downloads.hl.searchFailed'), long: false };
 		case 'file_missing': return { line: missingLine(e), long: false };
 		case 'file_back': return { line: say('downloads.hk.fileBack'), long: false };
 		case 'renamed':
