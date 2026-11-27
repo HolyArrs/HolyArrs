@@ -42,6 +42,8 @@ Audio languages also decide whether a file meets a Version. See [Original and du
 
 Inspection does not play or decode the file, so it cannot prove every frame works. It uses no network and runs no other programs. Music files are not inspected.
 
+A rescan skips a file whose size and change time are the same. A file replaced at the same path, for example a 2160p copy put over a 1080p one outside HolyArrs, has a new size or time. HolyArrs reads it as a new file: its size and quality follow the new tracks, and its episode or movie is judged good enough again. If the quality Sonarr or Radarr recorded for the old file, or the release name it came from, names a different resolution, it is dropped. One that names the same resolution is kept, because the tracks cannot tell a web copy from a Blu-ray.
+
 ## If it does not work
 
 **Symptom:** A copy cannot be ticked.

@@ -227,7 +227,11 @@ func (s *Service) rescanFolder(ctx context.Context, lf mediafiles.LibraryFolder,
 		if lf.Kind != "music" && f.Role == "main" && statErr == nil {
 			backfill := *backfillLeft > 0 && importer.NeedsFacts(f.MediaInfo)
 			if info, changed := InspectLibraryVideo(lf.Path, f.RelativePath, f.MediaInfo, backfill); changed {
-				if err := s.updateFileInspection(ctx, f.ID, info, by); err != nil {
+				update := s.updateFileInspection
+				if replacedInPlace(f.MediaInfo, info) {
+					update = s.updateReplacedFile
+				}
+				if err := update(ctx, f.ID, info, by); err != nil {
 					return err
 				}
 				if backfill {
