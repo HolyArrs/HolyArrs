@@ -1059,3 +1059,20 @@ func listed(ov map[string]any, id string) bool {
 	}
 	return false
 }
+
+// #924: a bad list with nothing installed changes nothing on the page.
+func TestBlocklistCheckBadListNothingInstalled(t *testing.T) {
+	ls, pub := newListServer(t)
+	e, _ := newEngine(t, ls, pub)
+	if err := os.MkdirAll(e.Dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK)
+	ls.mu.Lock()
+	ls.list = []byte("not a list")
+	ls.mu.Unlock()
+	if err := e.CheckBlocklist(context.Background()); err == nil {
+		t.Fatal("bad plugin list accepted")
+	}
+	row(t, call(t, mux(e), "GET", "/api/v1/plugins", http.StatusOK), "tailscale")
+}
