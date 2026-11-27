@@ -302,8 +302,13 @@ func (s *Store) DataDir(id string) string {
 	return filepath.Join(s.dir, id, dataName)
 }
 
-// save writes state to a temp file and renames it over the old one.
+// save writes state to a temp file and renames it over the old one. The
+// plugins folder may not exist yet: the owner answers the file-lock card
+// before the first install, and that answer has to be kept.
 func (s *Store) save(st *State) error {
+	if err := os.MkdirAll(s.dir, 0o700); err != nil {
+		return fmt.Errorf("plugins folder: %w", err)
+	}
 	data, err := json.MarshalIndent(st, "", "  ")
 	if err != nil {
 		return err
