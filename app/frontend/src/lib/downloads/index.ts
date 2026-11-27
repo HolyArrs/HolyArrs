@@ -99,3 +99,4 @@ export type { Sync } from './dl-store.ts';
 export { checkBrought, type BroughtInfo } from './brought.ts';
 export { default as BroughtKey } from './BroughtKey.svelte';
 export { fetchSabKey, type SabKeyResult } from './sab-key.ts';
+export { default as ImportedCategories } from './ImportedCategories.svelte';

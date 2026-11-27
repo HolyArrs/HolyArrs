@@ -113,6 +113,14 @@ HolyArrs files its downloads under this category and only follows that category.
 | aria2 | A folder, not a label: aria2's download folder plus the category. Two apps that use the same folder name share those downloads |
 | NZBGet | Sent as the download category |
 
+### Category after import
+
+For qBittorrent, choose **Leave categories unchanged**, **Single category**, or **Separate categories by type** under **Category after import**. Existing single-category settings keep their behavior.
+
+When enabled, select a destination from the connected client's categories. Movie, show, and music destinations can differ; an empty destination leaves that type in its current category. New connections and clients whose category list cannot be read use text entry. A destination must differ from the main download categories.
+
+HolyArrs moves a torrent once its import is complete. This needs **HolyArrs can change this Downloader** on; an incomplete season pack waits until all its files are imported.
+
 ### Priority and tags
 
 **Priority** runs 1 to 50. The lowest number is used first, and equal numbers take turns. With **Tags**, only titles that share a tag use this Downloader. Untagged titles use untagged Downloaders.
