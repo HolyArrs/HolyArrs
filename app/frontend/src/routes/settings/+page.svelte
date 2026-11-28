@@ -89,8 +89,13 @@
 		}
 		void tick().then(() => {
 			const card = home?.querySelector<HTMLElement>(`.sx-card[data-group="${back}"]`);
-			if (home && !push(home, true) && card) zoomBack(card, back);
-			card?.focus({ preventScroll: true });
+			// A group with no card on the home (My account) has nothing to shrink into, so drop the sheet rather than leave the page covered.
+			if (!card) {
+				clearFlight();
+				return;
+			}
+			if (home && !push(home, true)) zoomBack(card, back);
+			card.focus({ preventScroll: true });
 		});
 	});
 </script>
