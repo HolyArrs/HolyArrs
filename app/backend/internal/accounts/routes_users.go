@@ -8,6 +8,7 @@ func (a *Auth) userRoutes(m *http.ServeMux) {
 	m.HandleFunc("DELETE /api/v1/users/{id}", a.deletePerson)
 	m.HandleFunc("POST /api/v1/users/{id}/two-factor/reset", a.resetUserTwoFactor)
 	m.HandleFunc("POST /api/v1/users/{id}/password", a.setUserPassword)
+	m.HandleFunc("PUT /api/v1/users/new-people", a.putNewPeople)
 	m.HandleFunc("GET /api/v1/users/invites", a.listInvites)
 	m.HandleFunc("POST /api/v1/users/invites", a.makeInvite)
 	m.HandleFunc("DELETE /api/v1/users/invites/{id}", a.deleteInvite)

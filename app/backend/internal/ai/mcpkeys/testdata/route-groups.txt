@@ -730,6 +730,7 @@ PUT /api/v1/titles/{id}/leftovers/{fid} add
 PUT /api/v1/titles/{id}/seasons/{number} add
 PUT /api/v1/titles/{id}/subtitle-wish add
 PUT /api/v1/titles/{id}/versions/{vid} add
+PUT /api/v1/users/new-people admin
 PUT /api/v1/users/{id} admin
 PUT /api/v1/users/{id}/media-link admin
 PUT /config/mediamanagement settings

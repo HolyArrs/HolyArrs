@@ -36,7 +36,7 @@ func (a *Auth) linkedUser(ctx context.Context, provider, extID, extName string, 
 		// The outside account's name (from the server) goes with the refusal.
 		return 0, strings.TrimSpace(extName), errNotAllowed
 	}
-	u := domain.User{Role: webserver.RoleMember, State: "active", Perms: permsJSON(webserver.DefaultPerms(webserver.RoleMember))}
+	u := domain.User{Role: webserver.RoleMember, State: "active", Perms: permsJSON(a.newPeoplePerms(ctx))}
 	if kid {
 		if a.skipBlocksKids(ctx) {
 			// A Kid could not be told apart from the person local visitors become.

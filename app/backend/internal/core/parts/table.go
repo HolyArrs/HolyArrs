@@ -268,6 +268,7 @@ var routeOwners = map[string]Owner{
 	"POST /api/v1/users/{id}/password":                Core,
 	"GET /api/v1/users/invites":                       Core,
 	"POST /api/v1/users/invites":                      Core,
+	"PUT /api/v1/users/new-people":                    Core,
 	"DELETE /api/v1/users/invites/{id}":               Core,
 	"GET /api/v1/auth/sessions":                       Core,
 	"DELETE /api/v1/auth/sessions":                    Core,

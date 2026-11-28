@@ -73,3 +73,5 @@ export type { RecentWay } from './recent-people.ts';
 export type { ThemeChoice } from './theme.svelte.ts';
 export type { Way } from './signin-art.ts';
 export { createSigninWays } from './signin-ways.svelte.ts';
+export { default as NewPeopleCard } from './NewPeopleCard.svelte';
+export type { NewPeople } from './NewPeopleCard.svelte';

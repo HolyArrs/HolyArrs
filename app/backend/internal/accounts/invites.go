@@ -16,6 +16,7 @@ import (
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/database"
 	domain "github.com/HolyArrs/holyarrs/app/backend/internal/core/model"
 	"github.com/HolyArrs/holyarrs/app/backend/internal/core/webserver"
+	"github.com/HolyArrs/holyarrs/app/backend/internal/metadata"
 )
 
 // Invites.
@@ -106,6 +107,14 @@ func (a *Auth) makeInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	perms := webserver.DefaultPerms(body.Role)
+	if body.Perms == nil && body.Role == webserver.RoleMember {
+		// Left out: what new people start with, as far as the inviter holds
+		// it. A Kid link asks only. Perms the inviter picks always win.
+		perms = slices.DeleteFunc(a.newPeoplePerms(r.Context()), func(p webserver.Perm) bool { return !by.Has(p) })
+		if metadata.NormRating(body.MaxRating) != "" {
+			perms = []webserver.Perm{webserver.PermAsk}
+		}
+	}
 	if body.Perms != nil {
 		var err error
 		if perms, err = readPerms(*body.Perms); err != nil {

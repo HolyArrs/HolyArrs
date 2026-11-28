@@ -74,7 +74,7 @@ Set these before start. If `HOLYARRS_OIDC_ENABLED` is present at all, even as `f
 | `HOLYARRS_OIDC_CLIENT_ID` | Registered client id. | none |
 | `HOLYARRS_OIDC_CLIENT_SECRET_FILE` | File holding the client secret, at most 4096 bytes. Leave out for a public client. | none |
 | `HOLYARRS_OIDC_REDIRECT_URL` | Exact callback: your address, URL base if any, then `/api/v1/auth/oidc/callback`. | none |
-| `HOLYARRS_OIDC_ALLOW_JOIN` | New people join as members who can only ask. | `false` |
+| `HOLYARRS_OIDC_ALLOW_JOIN` | New people join as members with what [new people start with](../users/roles.md#choose-what-new-people-start-with), only asking unless changed. | `false` |
 | `HOLYARRS_OIDC_GROUPS_CLAIM` | Claim that carries the groups, often `groups`. Empty sets roles only in HolyArrs. | none |
 | `HOLYARRS_OIDC_GROUP_ROLES` | Group to role, like `admins=admin,family=member`. Each sign-in gives the highest role; people in none are members. Never makes or changes the owner; a missing claim leaves the role alone. | none |
 | `HOLYARRS_OIDC_ALLOW_LOCAL_NETWORK` | Allow a provider on your private network. | `false` |
@@ -82,7 +82,7 @@ Set these before start. If `HOLYARRS_OIDC_ENABLED` is present at all, even as `f
 | `HOLYARRS_FORWARD_AUTH_ENABLED` | Turn on trusted proxy sign-in. | `false` |
 | `HOLYARRS_FORWARD_AUTH_ISSUER` | Stable HTTPS name for the proxy. | none |
 | `HOLYARRS_FORWARD_AUTH_TRUSTED_PEERS` | Proxy addresses or ranges allowed to send identity headers, comma separated. | none |
-| `HOLYARRS_FORWARD_AUTH_ALLOW_JOIN` | New proxy names join as members who can only ask. | `false` |
+| `HOLYARRS_FORWARD_AUTH_ALLOW_JOIN` | New proxy names join as members with what [new people start with](../users/roles.md#choose-what-new-people-start-with), only asking unless changed. | `false` |
 
 A bad setup stops HolyArrs from starting. Steps are in [Sign-in and passwords](../users/sign-in.md).
 

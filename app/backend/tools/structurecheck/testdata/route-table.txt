@@ -730,6 +730,7 @@ PUT /api/v1/titles/{id}/leftovers/{fid} auth=manage_library scope=write assuranc
 PUT /api/v1/titles/{id}/seasons/{number} auth=manage_library scope=write assurance=false part=shows
 PUT /api/v1/titles/{id}/subtitle-wish auth=manage_library scope=write assurance=false part=subtitles
 PUT /api/v1/titles/{id}/versions/{vid} auth=manage_library scope=write assurance=false part=title
+PUT /api/v1/users/new-people auth=owner scope=admin assurance=true part=core
 PUT /api/v1/users/{id} auth=users scope=admin assurance=true part=core
 PUT /api/v1/users/{id}/media-link auth=owner scope=admin assurance=true part=core
 PUT /config/mediamanagement auth=unlisted scope=admin assurance=false part=-

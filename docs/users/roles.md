@@ -48,7 +48,7 @@ For a child with an age limit, see [Kid accounts](kids.md).
 | Permission | What it allows | New admin | New member |
 | --- | --- | --- | --- |
 | Request titles | Make requests | Yes | Yes |
-| Requests approved without waiting | Requests skip approval | Yes | No |
+| Requests approved without waiting | Requests skip approval | Yes | No, unless [new people start with it](#choose-what-new-people-start-with) |
 | Approve or turn down requests | Decide other people's requests | Yes | No |
 | Run the Library | Search, organise and manage Library work | Yes | No |
 | Change settings | Open and change ordinary settings | No | No |
@@ -58,6 +58,19 @@ Who can grant what:
 - Only the owner invites an admin or makes someone one.
 - An admin invites and changes members, and grants only permissions the admin holds.
 - Nobody changes their own role or permissions.
+
+## Choose what new people start with
+
+By default a new member can only ask. The owner can change that under **Settings > Users and roles > New people**. Tick any of **Request titles**, **Requests approved without waiting** and **4K requests approved without waiting** (4K needs the one before it), then select **Save**.
+
+The list applies to everyone made from then on:
+
+- People who join by signing in with Plex, Jellyfin or Emby, single sign-on or trusted proxy sign-in, and people you import from a media server.
+- Invite links that do not pick permissions of their own. The invite form starts with the same ticks, and anything you tick there wins. A link keeps the list from the day it was made, and an admin's link gives only what that admin holds.
+
+It never applies to Kids, who stay ask-only, or to admins. Approving, running the Library and changing settings are never on the list; give those one person at a time.
+
+Only the owner can change the list, and it needs a password sign-in. People already here keep what they have.
 
 ## Change a person
 
